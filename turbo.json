@@ -1,0 +1,28 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["NODE_ENV"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "dist/**"],
+      "env": ["DATABASE_URL", "NEXT_PUBLIC_API_URL", "JWT_SECRET"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "env": [
+        "DATABASE_URL",
+        "REDIS_URL",
+        "JWT_SECRET",
+        "JWT_REFRESH_SECRET",
+        "NEXT_PUBLIC_API_URL",
+        "NEXT_PUBLIC_APP_NAME",
+        "KKPHIM_BASE_URL",
+        "PORT"
+      ]
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    }
+  }
+}

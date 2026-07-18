@@ -1,0 +1,203 @@
+.watchPage {
+  min-height: 100vh;
+  background: #0a0d10;
+}
+
+.watchTopBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-xl);
+  background: rgba(0, 0, 0, 0.5);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+}
+
+.watchTitle {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.watchEpLabel {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.watchLayout {
+  display: flex;
+  height: calc(100vh - 56px);
+}
+
+/* Player */
+.playerCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.playerWrapper {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  background: #000;
+}
+
+.player {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.playerSkeleton {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
+
+.noVideo {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  color: var(--text-muted);
+  font-size: 3rem;
+}
+.noVideo p:last-child { font-size: 1rem; }
+
+/* Player Toggle Button */
+.playerToggle {
+  position: absolute;
+  bottom: 80px;
+  right: 20px;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary) !important;
+  font-size: 0.75rem;
+  padding: 0.4rem 0.8rem !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all var(--transition-fast);
+}
+
+.playerToggle:hover {
+  background: rgba(0, 192, 48, 0.2) !important;
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 192, 48, 0.3);
+}
+
+/* Episode Navigation */
+.epNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-lg);
+  border-top: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.epNavInfo {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* Server Selection */
+.serverSelect {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  border-top: 1px solid var(--border);
+  background: var(--bg-primary);
+  flex-wrap: wrap;
+}
+
+.serverLabel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Episode Sidebar */
+.epSidebar {
+  width: 280px;
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width var(--transition);
+}
+
+.epSidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--border);
+}
+
+.epSidebarHeader h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.epList {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.epListItem {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+}
+
+.epListItem:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.epListItemActive {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .watchLayout { flex-direction: column; height: auto; }
+  .playerWrapper { aspect-ratio: 16/9; flex: none; }
+  .epSidebar {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    max-height: 300px;
+    display: none;
+  }
+  .epSidebarOpen { display: flex; }
+}

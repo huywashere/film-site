@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database (Development Only)
+  postgres:
+    image: postgres:15-alpine
+    container_name: movie_demo_postgres_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: movie_demo_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+
+  # Redis Cache (Development Only)
+  redis:
+    image: redis:7-alpine
+    container_name: movie_demo_redis_dev
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_dev_data:/data
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:

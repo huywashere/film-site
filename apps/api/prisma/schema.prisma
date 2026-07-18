@@ -1,0 +1,136 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  displayName  String?
+  avatarUrl    String?
+  bio          String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  watchlist  Watchlist[]
+  reviews    Review[]
+  ratings    Rating[]
+  following  Follow[]    @relation("follower")
+  followers  Follow[]    @relation("following")
+  reviewLikes ReviewLike[]
+
+  @@map("users")
+}
+
+model Follow {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@map("follows")
+}
+
+model Movie {
+  id            String   @id // kkphim slug
+  title         String
+  titleEn       String?
+  originName    String?
+  posterUrl     String?
+  thumbUrl      String?
+  year          Int?
+  type          String   // "series" | "single" | "hoathinh" | "tvshows"
+  status        String?  // "completed" | "ongoing"
+  totalEpisodes Int?
+  description   String?  @db.Text
+  quality       String?
+  language      String?
+  runtime       Int?     // phút
+  imdbId        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  watchlist Watchlist[]
+  reviews   Review[]
+  ratings   Rating[]
+  viewLogs  ViewLog[]
+
+  @@map("movies")
+}
+
+model Watchlist {
+  id      String   @id @default(cuid())
+  userId  String
+  movieId String
+  addedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+  @@map("watchlists")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  movieId   String
+  content   String   @db.Text
+  rating    Float?   // 0.5 - 5.0 (half star)
+  likeCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie  Movie        @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  likes  ReviewLike[]
+
+  @@map("reviews")
+}
+
+model ReviewLike {
+  userId   String
+  reviewId String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@id([userId, reviewId])
+  @@map("review_likes")
+}
+
+model Rating {
+  userId  String
+  movieId String
+  score   Float    // 0.5 - 5.0
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@id([userId, movieId])
+  @@map("ratings")
+}
+
+model ViewLog {
+  id       String   @id @default(cuid())
+  movieId  String
+  episode  String?
+  serverName String?
+  viewedAt DateTime @default(now())
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@map("view_logs")
+}

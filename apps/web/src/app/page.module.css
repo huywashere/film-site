@@ -1,0 +1,319 @@
+/* ── Hero ──────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  width: 100%;
+  height: 85vh;
+  min-height: 500px;
+  max-height: 800px;
+  margin-top: calc(-1 * var(--nav-height) - 38px);
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+.heroBg {
+  opacity: 0.35;
+  animation: heroFadeEffect 0.8s ease-in-out;
+}
+
+@keyframes heroFadeEffect {
+  from { opacity: 0; }
+  to { opacity: 0.35; }
+}
+
+.heroGradientLeft {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(20, 24, 28, 0.97) 0%,
+    rgba(20, 24, 28, 0.7) 40%,
+    rgba(20, 24, 28, 0.2) 70%,
+    transparent 100%
+  );
+  z-index: 2;
+}
+
+.heroGradientRight {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    -90deg,
+    var(--bg-primary) 0%,
+    rgba(20, 24, 28, 0.6) 20%,
+    transparent 50%
+  );
+  z-index: 2;
+}
+
+.heroGradientBottom {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    var(--bg-primary) 0%,
+    rgba(20, 24, 28, 0.4) 30%,
+    transparent 70%
+  );
+  z-index: 2;
+}
+
+.heroContent {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 120px;
+  z-index: 3;
+}
+
+.heroInfo {
+  max-width: 600px;
+}
+
+.heroBadges {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.heroTitle {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 400;
+  line-height: 1.1;
+  color: white;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+  margin-bottom: var(--space-sm);
+}
+
+.heroSubtitle {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-lg);
+  font-style: italic;
+}
+
+.heroActions {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+/* Indicators */
+.heroIndicators {
+  position: absolute;
+  bottom: var(--space-xl);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 4;
+}
+
+.indicator {
+  width: 28px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.indicatorActive {
+  background: var(--accent);
+  width: 44px;
+}
+
+/* Arrows */
+.heroArrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 4;
+  transition: all var(--transition-fast);
+}
+
+.heroArrow:hover {
+  background: rgba(0, 0, 0, 0.8);
+  border-color: var(--accent);
+}
+
+.heroArrowLeft { left: var(--space-xl); }
+.heroArrowRight { right: var(--space-xl); }
+
+/* Film strip */
+.heroStrip {
+  position: absolute;
+  bottom: 60px;
+  right: var(--space-2xl);
+  display: flex;
+  gap: 8px;
+  z-index: 4;
+}
+
+.stripItem {
+  position: relative;
+  width: 56px;
+  height: 84px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  background: var(--bg-secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.stripItem:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.stripItemActive {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(229, 91, 60, 0.5);
+  transform: translateY(-4px);
+}
+
+/* Hero skeleton */
+.heroSkeleton {
+  width: 100%;
+  height: 85vh;
+  min-height: 500px;
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card-hover) 100%);
+  animation: skeleton-shimmer 2s infinite;
+  background-size: 200% 100%;
+  margin-top: calc(-1 * var(--nav-height) - 38px);
+}
+
+/* ── Sections ──────────────────────────────────────────────── */
+.section {
+  margin-bottom: var(--space-3xl);
+}
+
+.filmRow {
+  display: flex;
+  gap: var(--space-md);
+}
+
+/* ── Genre Bar ─────────────────────────────────────────────── */
+.genreBar {
+  margin-bottom: var(--space-2xl);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--space-sm);
+}
+
+.genreList {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.genreChip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.25rem 0;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+  white-space: nowrap;
+  position: relative;
+}
+
+.genreChip svg {
+  color: var(--text-muted);
+}
+
+.genreChip::after {
+  content: '';
+  position: absolute;
+  bottom: -9px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform var(--transition-fast);
+  transform-origin: left;
+}
+
+.genreChip:hover {
+  color: var(--text-primary);
+}
+
+.genreChip:hover::after {
+  transform: scaleX(1);
+}
+
+/* ── Review Feed ───────────────────────────────────────────── */
+.reviewFeed {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-md);
+}
+
+.reviewCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.reviewCard:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.reviewMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.reviewUser {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.reviewContent {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .hero { height: 70vh; }
+  .heroContent { padding-bottom: 80px; }
+  .heroStrip { display: none; }
+  .heroArrow { display: none; }
+}
+
+@media (max-width: 480px) {
+  .hero { height: 60vh; }
+  .heroTitle { font-size: 1.75rem; }
+}
