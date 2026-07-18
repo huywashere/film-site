@@ -16,7 +16,7 @@ export async function GET() {
       .map((film: any) => {
         const title = film.name || film.title || '';
         const link = `${SITE_URL}/film/${film.slug}`;
-        
+
         let pubDate = new Date().toUTCString();
         if (film.modified) {
           const parsed = new Date(film.modified);

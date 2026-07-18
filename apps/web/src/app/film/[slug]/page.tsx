@@ -4,10 +4,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import NextImage from 'next/image';
 import { useState } from 'react';
-import {
-  Play, Bookmark, Share2, Clock, Calendar,
-  Globe, Users
-} from 'lucide-react';
+import { Play, Bookmark, Share2, Clock, Calendar, Globe, Users } from 'lucide-react';
 import { movieApi, watchlistApi, ratingsApi, reviewsApi } from '@/lib/api';
 import { StarRating } from '@/components/film/StarRating';
 import { resolveImageUrl } from '@/components/film/FilmCard';
@@ -42,15 +39,13 @@ function CastCard({ name }: { name: string }) {
     <div className={styles.castCard} title={name}>
       <div className={styles.castAvatarWrapper}>
         {isLoading ? (
-          <div className="skeleton" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+          <div
+            className="skeleton"
+            style={{ width: '100%', height: '100%', borderRadius: '50%' }}
+          />
         ) : imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={imageUrl}
-            alt={name}
-            className={styles.castAvatar}
-            loading="lazy"
-          />
+          <img src={imageUrl} alt={name} className={styles.castAvatar} loading="lazy" />
         ) : (
           <div className={styles.castInitials}>{initials || '?'}</div>
         )}
@@ -109,12 +104,17 @@ function ReviewItem({ review }: { review: any }) {
     <div className={styles.reviewItem}>
       <div className={styles.reviewHeader}>
         <img
-          src={review.user?.avatarUrl || `https://ui-avatars.com/api/?name=${review.user?.username || 'U'}&background=14181c&color=00c030&size=32`}
+          src={
+            review.user?.avatarUrl ||
+            `https://ui-avatars.com/api/?name=${review.user?.username || 'U'}&background=14181c&color=00c030&size=32`
+          }
           alt=""
           className="avatar avatar-sm"
         />
         <div>
-          <p className={styles.reviewUsername}>{review.user?.displayName || review.user?.username}</p>
+          <p className={styles.reviewUsername}>
+            {review.user?.displayName || review.user?.username}
+          </p>
           <p className="text-xs text-muted">
             {new Date(review.createdAt).toLocaleDateString('vi-VN')}
           </p>
@@ -141,7 +141,9 @@ function WriteReview({ movieId }: { movieId: string }) {
   if (!user) {
     return (
       <div className={styles.reviewLoginPrompt}>
-        <Link href="/login" className="btn btn-primary btn-sm">Đăng nhập</Link>
+        <Link href="/login" className="btn btn-primary btn-sm">
+          Đăng nhập
+        </Link>
         <span className="text-muted text-sm"> để viết đánh giá</span>
       </div>
     );
@@ -167,7 +169,10 @@ function WriteReview({ movieId }: { movieId: string }) {
     <form onSubmit={handleSubmit} className={styles.writeReview}>
       <div className={styles.writeReviewHeader}>
         <img
-          src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.username}&background=14181c&color=00c030`}
+          src={
+            user.avatarUrl ||
+            `https://ui-avatars.com/api/?name=${user.username}&background=14181c&color=00c030`
+          }
           alt=""
           className="avatar avatar-sm"
         />
@@ -211,64 +216,90 @@ export default function FilmDetailPage() {
   // Fetch reviews — cần backend, graceful fallback
   const { data: reviewsData } = useQuery({
     queryKey: ['reviews', slug],
-    queryFn: () => reviewsApi.getByMovie(slug).then((r) => r.data).catch(() => ({ reviews: [], total: 0 })),
+    queryFn: () =>
+      reviewsApi
+        .getByMovie(slug)
+        .then((r) => r.data)
+        .catch(() => ({ reviews: [], total: 0 })),
     retry: false,
   });
 
   // Fetch rating — cần backend, graceful fallback
   const { data: ratingData } = useQuery({
     queryKey: ['rating', slug],
-    queryFn: () => ratingsApi.getAverage(slug).then((r) => r.data).catch(() => ({ average: 0, count: 0 })),
+    queryFn: () =>
+      ratingsApi
+        .getAverage(slug)
+        .then((r) => r.data)
+        .catch(() => ({ average: 0, count: 0 })),
     retry: false,
   });
 
   const prefetchWatchData = () => {
     queryClient.prefetchQuery({
       queryKey: ['film-ophim', slug],
-      queryFn: () => fetch(`/api/ophim/phim/${slug}`)
-        .then((res) => {
-          if (!res.ok) return null;
-          return res.json();
-        })
-        .catch(() => null),
+      queryFn: () =>
+        fetch(`/api/ophim/phim/${slug}`)
+          .then((res) => {
+            if (!res.ok) return null;
+            return res.json();
+          })
+          .catch(() => null),
       staleTime: 5 * 60 * 1000,
     });
   };
 
   if (isLoading) return <FilmDetailSkeleton />;
-  if (error || !data) return (
-    <div className="container" style={{ paddingTop: 40, textAlign: 'center' }}>
-      <p className="text-muted">Không tìm thấy phim</p>
-    </div>
-  );
+  if (error || !data)
+    return (
+      <div className="container" style={{ paddingTop: 40, textAlign: 'center' }}>
+        <p className="text-muted">Không tìm thấy phim</p>
+      </div>
+    );
 
   const film = data.movie || data;
   const episodes = data.episodes || [];
 
-  const posterUrl = resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url) || undefined;
+  const posterUrl =
+    resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url) || undefined;
 
   const handleWatchlist = async () => {
-    if (!user) { toast('Bạn cần đăng nhập', 'error'); return; }
+    if (!user) {
+      toast('Bạn cần đăng nhập', 'error');
+      return;
+    }
     try {
       if (inWatchlist) {
         await watchlistApi.remove(slug);
         setInWatchlist(false);
         toast('Đã xóa khỏi watchlist');
       } else {
-        await watchlistApi.add(slug, { title: film.name, thumbUrl: posterUrl, type: film.type, year: film.year });
+        await watchlistApi.add(slug, {
+          title: film.name,
+          thumbUrl: posterUrl,
+          type: film.type,
+          year: film.year,
+        });
         setInWatchlist(true);
         toast('Đã thêm vào watchlist!', 'success');
       }
-    } catch { toast('Có lỗi xảy ra', 'error'); }
+    } catch {
+      toast('Có lỗi xảy ra', 'error');
+    }
   };
 
   const handleRate = async (score: number) => {
-    if (!user) { toast('Bạn cần đăng nhập để đánh giá', 'error'); return; }
+    if (!user) {
+      toast('Bạn cần đăng nhập để đánh giá', 'error');
+      return;
+    }
     try {
       await ratingsApi.rate(slug, score);
       setMyRating(score);
       toast(`Đã đánh giá ${score} sao!`, 'success');
-    } catch { toast('Không thể đánh giá', 'error'); }
+    } catch {
+      toast('Không thể đánh giá', 'error');
+    }
   };
 
   const reviews = reviewsData?.reviews || [];
@@ -285,7 +316,14 @@ export default function FilmDetailPage() {
       {/* Backdrop */}
       {posterUrl && (
         <div className={styles.backdrop}>
-          <NextImage src={posterUrl} alt="" fill sizes="100vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} unoptimized />
+          <NextImage
+            src={posterUrl}
+            alt=""
+            fill
+            sizes="100vw"
+            style={{ objectFit: 'cover', objectPosition: 'center top' }}
+            unoptimized
+          />
           <div className={styles.backdropGradient} />
         </div>
       )}
@@ -296,9 +334,24 @@ export default function FilmDetailPage() {
           <aside className={styles.posterCol}>
             <div className={styles.posterWrapper}>
               {posterUrl ? (
-                <NextImage src={posterUrl} alt={film.name} fill sizes="300px" style={{ objectFit: 'cover' }} unoptimized />
+                <NextImage
+                  src={posterUrl}
+                  alt={film.name}
+                  fill
+                  sizes="300px"
+                  style={{ objectFit: 'cover' }}
+                  unoptimized
+                />
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '4rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100%',
+                    fontSize: '4rem',
+                  }}
+                >
                   🎬
                 </div>
               )}
@@ -317,9 +370,9 @@ export default function FilmDetailPage() {
 
             {/* Actions */}
             <div className={styles.sideActions}>
-              <Link 
-                href={watchLink} 
-                className="btn btn-primary w-full" 
+              <Link
+                href={watchLink}
+                className="btn btn-primary w-full"
                 style={{ justifyContent: 'center' }}
                 onMouseEnter={prefetchWatchData}
               >
@@ -348,16 +401,26 @@ export default function FilmDetailPage() {
             {/* Title */}
             <div className={styles.filmTitleBlock}>
               <h1 className={styles.filmTitle}>{film.name}</h1>
-              {film.origin_name && (
-                <p className={styles.filmOriginTitle}>{film.origin_name}</p>
-              )}
+              {film.origin_name && <p className={styles.filmOriginTitle}>{film.origin_name}</p>}
 
               {/* Meta badges */}
               <div className={styles.metaBadges}>
-                {film.year && <span className="badge badge-muted"><Calendar size={11} /> {film.year}</span>}
+                {film.year && (
+                  <span className="badge badge-muted">
+                    <Calendar size={11} /> {film.year}
+                  </span>
+                )}
                 {film.quality && <span className="badge badge-accent">{film.quality}</span>}
-                {film.lang && <span className="badge badge-muted"><Globe size={11} /> {film.lang}</span>}
-                {film.time && <span className="badge badge-muted"><Clock size={11} /> {film.time}</span>}
+                {film.lang && (
+                  <span className="badge badge-muted">
+                    <Globe size={11} /> {film.lang}
+                  </span>
+                )}
+                {film.time && (
+                  <span className="badge badge-muted">
+                    <Clock size={11} /> {film.time}
+                  </span>
+                )}
                 {film.episode_current && (
                   <span className="badge badge-gold">
                     {film.episode_current === 'Full' ? 'Hoàn Tất' : `Tập ${film.episode_current}`}
@@ -438,9 +501,14 @@ export default function FilmDetailPage() {
               <WriteReview movieId={slug} />
 
               <div className={styles.reviewsList}>
-                {reviews.map((r: any) => <ReviewItem key={r.id} review={r} />)}
+                {reviews.map((r: any) => (
+                  <ReviewItem key={r.id} review={r} />
+                ))}
                 {reviews.length === 0 && (
-                  <p className="text-muted text-sm" style={{ textAlign: 'center', padding: '2rem 0' }}>
+                  <p
+                    className="text-muted text-sm"
+                    style={{ textAlign: 'center', padding: '2rem 0' }}
+                  >
                     Chưa có đánh giá nào. Hãy là người đầu tiên!
                   </p>
                 )}
@@ -457,7 +525,10 @@ function FilmDetailSkeleton() {
   return (
     <div className="container">
       <div style={{ display: 'flex', gap: '2rem', paddingTop: '4rem' }}>
-        <div className="skeleton" style={{ width: 240, height: 360, borderRadius: 12, flexShrink: 0 }} />
+        <div
+          className="skeleton"
+          style={{ width: 240, height: 360, borderRadius: 12, flexShrink: 0 }}
+        />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div className="skeleton" style={{ height: 40, width: '60%' }} />
           <div className="skeleton" style={{ height: 20, width: '40%' }} />

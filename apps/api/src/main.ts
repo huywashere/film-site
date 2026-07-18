@@ -42,8 +42,8 @@ async function bootstrap() {
   // ── Global input validation ───────────────────────────────────
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,            // strip unknown fields silently
-      transform: true,            // auto-cast @Query() params to correct types
+      whitelist: true, // strip unknown fields silently
+      transform: true, // auto-cast @Query() params to correct types
       forbidNonWhitelisted: true, // reject requests with unknown fields (400)
     }),
   );

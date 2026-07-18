@@ -3,8 +3,14 @@ import { createContext, useContext, useState, useCallback } from 'react';
 import { CheckCircle, XCircle, Info, X } from 'lucide-react';
 
 type ToastType = 'success' | 'error' | 'info';
-interface Toast { id: number; message: string; type: ToastType; }
-interface ToastContextValue { toast: (msg: string, type?: ToastType) => void; }
+interface Toast {
+  id: number;
+  message: string;
+  type: ToastType;
+}
+interface ToastContextValue {
+  toast: (msg: string, type?: ToastType) => void;
+}
 
 const ToastContext = createContext<ToastContextValue>({ toast: () => {} });
 export const useToast = () => useContext(ToastContext);
@@ -33,7 +39,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             <div key={t.id} className="toast animate-slide-up">
               <Icon size={16} style={{ color: colors[t.type], flexShrink: 0 }} />
               <span style={{ flex: 1, fontSize: '0.875rem' }}>{t.message}</span>
-              <button onClick={() => remove(t.id)} className="btn-ghost btn-icon-round" style={{ padding: '2px' }}>
+              <button
+                onClick={() => remove(t.id)}
+                className="btn-ghost btn-icon-round"
+                style={{ padding: '2px' }}
+              >
                 <X size={14} />
               </button>
             </div>

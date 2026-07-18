@@ -15,34 +15,22 @@ export class MoviesController {
   }
 
   @Get('series')
-  getSeries(
-    @Query('page') page = 1,
-    @Query('limit') limit = 24,
-  ) {
+  getSeries(@Query('page') page = 1, @Query('limit') limit = 24) {
     return this.moviesService.getSeries(+page, +limit);
   }
 
   @Get('single')
-  getSingle(
-    @Query('page') page = 1,
-    @Query('limit') limit = 24,
-  ) {
+  getSingle(@Query('page') page = 1, @Query('limit') limit = 24) {
     return this.moviesService.getSingle(+page, +limit);
   }
 
   @Get('anime')
-  getAnime(
-    @Query('page') page = 1,
-    @Query('limit') limit = 24,
-  ) {
+  getAnime(@Query('page') page = 1, @Query('limit') limit = 24) {
     return this.moviesService.getAnime(+page, +limit);
   }
 
   @Get('tvshows')
-  getTvShows(
-    @Query('page') page = 1,
-    @Query('limit') limit = 24,
-  ) {
+  getTvShows(@Query('page') page = 1, @Query('limit') limit = 24) {
     return this.moviesService.getTvShows(+page, +limit);
   }
 
@@ -105,26 +93,17 @@ export class MoviesController {
   // ── Thông tin bổ sung ───────────────────────────────────────────
 
   @Get('images')
-  getImages(
-    @Query('tmdb_type') tmdbType: 'tv' | 'movie',
-    @Query('tmdb_id') tmdbId: string,
-  ) {
+  getImages(@Query('tmdb_type') tmdbType: 'tv' | 'movie', @Query('tmdb_id') tmdbId: string) {
     return this.moviesService.getImages(tmdbType, tmdbId);
   }
 
   @Get('cast')
-  getCast(
-    @Query('tmdb_type') tmdbType: 'tv' | 'movie',
-    @Query('tmdb_id') tmdbId: string,
-  ) {
+  getCast(@Query('tmdb_type') tmdbType: 'tv' | 'movie', @Query('tmdb_id') tmdbId: string) {
     return this.moviesService.getCast(tmdbType, tmdbId);
   }
 
   @Get('keywords')
-  getKeywords(
-    @Query('tmdb_type') tmdbType: 'tv' | 'movie',
-    @Query('tmdb_id') tmdbId: string,
-  ) {
+  getKeywords(@Query('tmdb_type') tmdbType: 'tv' | 'movie', @Query('tmdb_id') tmdbId: string) {
     return this.moviesService.getKeywords(tmdbType, tmdbId);
   }
 
@@ -133,11 +112,7 @@ export class MoviesController {
   /** Search: stricter limit (30/min) to prevent keyword scraping */
   @Get('search')
   @Throttle({ default: { limit: 30, ttl: 60000 } })
-  search(
-    @Query('keyword') keyword: string,
-    @Query('page') page = 1,
-    @Query('limit') limit = 24,
-  ) {
+  search(@Query('keyword') keyword: string, @Query('page') page = 1, @Query('limit') limit = 24) {
     return this.moviesService.search(keyword || '', +page, +limit);
   }
 
@@ -149,11 +124,7 @@ export class MoviesController {
   }
 
   @Get('genre/:slug')
-  getByGenre(
-    @Param('slug') slug: string,
-    @Query('page') page = 1,
-    @Query('limit') limit = 24,
-  ) {
+  getByGenre(@Param('slug') slug: string, @Query('page') page = 1, @Query('limit') limit = 24) {
     return this.moviesService.getByGenre(slug, +page, +limit);
   }
 
@@ -165,11 +136,7 @@ export class MoviesController {
   }
 
   @Get('country/:slug')
-  getByCountry(
-    @Param('slug') slug: string,
-    @Query('page') page = 1,
-    @Query('limit') limit = 24,
-  ) {
+  getByCountry(@Param('slug') slug: string, @Query('page') page = 1, @Query('limit') limit = 24) {
     return this.moviesService.getByCountry(slug, +page, +limit);
   }
 
@@ -181,11 +148,7 @@ export class MoviesController {
   }
 
   @Get('year/:year')
-  getByYear(
-    @Param('year') year: number,
-    @Query('page') page = 1,
-    @Query('limit') limit = 24,
-  ) {
+  getByYear(@Param('year') year: number, @Query('page') page = 1, @Query('limit') limit = 24) {
     return this.moviesService.getByYear(+year, +page, +limit);
   }
 

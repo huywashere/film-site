@@ -14,19 +14,19 @@ const COUNTRY_NAMES: Record<string, string> = {
   'hong-kong': 'Hồng Kông',
   'dai-loan': 'Đài Loan',
   'an-do': 'Ấn Độ',
-  'anh': 'Anh',
-  'phap': 'Pháp',
-  'duc': 'Đức',
+  anh: 'Anh',
+  phap: 'Pháp',
+  duc: 'Đức',
   'tay-ban-nha': 'Tây Ban Nha',
-  'y': 'Ý',
-  'canada': 'Canada',
-  'uc': 'Úc',
-  'nga': 'Nga',
-  'mexico': 'Mexico',
-  'brazil': 'Brazil',
-  'philippines': 'Philippines',
-  'indonesia': 'Indonesia',
-  'malaysia': 'Malaysia',
+  y: 'Ý',
+  canada: 'Canada',
+  uc: 'Úc',
+  nga: 'Nga',
+  mexico: 'Mexico',
+  brazil: 'Brazil',
+  philippines: 'Philippines',
+  indonesia: 'Indonesia',
+  malaysia: 'Malaysia',
 };
 
 export default function CountryPage() {
@@ -54,14 +54,23 @@ export default function CountryPage() {
 
       {isLoading ? (
         <div className="grid-films-lg">
-          {Array.from({ length: 24 }).map((_, i) => <FilmCardSkeleton key={i} />)}
+          {Array.from({ length: 24 }).map((_, i) => (
+            <FilmCardSkeleton key={i} />
+          ))}
         </div>
       ) : (
         <div className="grid-films-lg">
           {films.length > 0 ? (
             films.map((f) => <FilmCard key={f.slug} film={f} />)
           ) : (
-            <div style={{ padding: '4rem 1rem', textAlign: 'center', gridColumn: '1 / -1', color: 'var(--text-muted)' }}>
+            <div
+              style={{
+                padding: '4rem 1rem',
+                textAlign: 'center',
+                gridColumn: '1 / -1',
+                color: 'var(--text-muted)',
+              }}
+            >
               Không có bộ phim nào thuộc quốc gia này.
             </div>
           )}
@@ -71,20 +80,33 @@ export default function CountryPage() {
       {totalPages > 1 && (
         <div className="pagination">
           {page > 1 && (
-            <button className="page-btn" onClick={() => router.push(`/country/${slug}?page=${page - 1}`)}>‹</button>
+            <button
+              className="page-btn"
+              onClick={() => router.push(`/country/${slug}?page=${page - 1}`)}
+            >
+              ‹
+            </button>
           )}
           {Array.from({ length: Math.min(totalPages, 8) }, (_, i) => {
             const p = Math.max(1, page - 3) + i;
             if (p > totalPages) return null;
             return (
-              <button key={p} className={`page-btn ${p === page ? 'active' : ''}`}
-                onClick={() => router.push(`/country/${slug}?page=${p}`)}>
+              <button
+                key={p}
+                className={`page-btn ${p === page ? 'active' : ''}`}
+                onClick={() => router.push(`/country/${slug}?page=${p}`)}
+              >
                 {p}
               </button>
             );
           })}
           {page < totalPages && (
-            <button className="page-btn" onClick={() => router.push(`/country/${slug}?page=${page + 1}`)}>›</button>
+            <button
+              className="page-btn"
+              onClick={() => router.push(`/country/${slug}?page=${page + 1}`)}
+            >
+              ›
+            </button>
           )}
         </div>
       )}

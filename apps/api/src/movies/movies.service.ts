@@ -49,11 +49,7 @@ export class MoviesService {
 
   // GET /danh-sach/phim-moi-cap-nhat?page=1
   async getLatest(page = 1) {
-    return this.cachedGet(
-      `latest:${page}`,
-      `/danh-sach/phim-moi-cap-nhat?page=${page}`,
-      120,
-    );
+    return this.cachedGet(`latest:${page}`, `/danh-sach/phim-moi-cap-nhat?page=${page}`, 120);
   }
 
   // GET /v1/api/danh-sach/phim-bo?page=1
@@ -111,40 +107,24 @@ export class MoviesService {
       }
     });
     const queryString = query.toString();
-    return this.cachedGet(
-      `filtered:${queryString}`,
-      `/v1/api/danh-sach?${queryString}`,
-      300,
-    );
+    return this.cachedGet(`filtered:${queryString}`, `/v1/api/danh-sach?${queryString}`, 300);
   }
 
   // ── Chi tiết phim ───────────────────────────────────────────────
 
   // GET /phim/:slug
   async getDetail(slug: string) {
-    return this.cachedGet(
-      `detail:${slug}`,
-      `/phim/${slug}`,
-      600,
-    );
+    return this.cachedGet(`detail:${slug}`, `/phim/${slug}`, 600);
   }
 
   // GET /v1/api/phim/:slug
   async getDetailV1(slug: string) {
-    return this.cachedGet(
-      `detailv1:${slug}`,
-      `/v1/api/phim/${slug}`,
-      600,
-    );
+    return this.cachedGet(`detailv1:${slug}`, `/v1/api/phim/${slug}`, 600);
   }
 
   // GET /phim/id/:id
   async getById(id: string) {
-    return this.cachedGet(
-      `byid:${id}`,
-      `/phim/id/${id}`,
-      600,
-    );
+    return this.cachedGet(`byid:${id}`, `/phim/id/${id}`, 600);
   }
 
   // GET /phim/tmdb?tmdb_id=xxx&type=tv&season=1
@@ -159,11 +139,7 @@ export class MoviesService {
 
   // GET /phim/imdb?imdb_id=xxx
   async getByImdb(imdbId: string) {
-    return this.cachedGet(
-      `imdb:${imdbId}`,
-      `/phim/imdb?imdb_id=${imdbId}`,
-      600,
-    );
+    return this.cachedGet(`imdb:${imdbId}`, `/phim/imdb?imdb_id=${imdbId}`, 600);
   }
 
   // ── Thông tin bổ sung ───────────────────────────────────────────

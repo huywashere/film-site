@@ -39,11 +39,11 @@ const MEM_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 /** Path-aware TTL in seconds */
 function getTtl(path: string): number {
-  if (path.includes('phim-moi-cap-nhat')) return 120;   // Latest: 2 min
-  if (path.startsWith('phim/')) return 600;              // Film detail: 10 min
+  if (path.includes('phim-moi-cap-nhat')) return 120; // Latest: 2 min
+  if (path.startsWith('phim/')) return 600; // Film detail: 10 min
   if (path.includes('the-loai') || path.includes('quoc-gia')) return 3600; // Taxonomy: 1 hr
-  if (path.includes('tim-kiem')) return 60;              // Search: 1 min
-  return 300;                                            // Default: 5 min
+  if (path.includes('tim-kiem')) return 60; // Search: 1 min
+  return 300; // Default: 5 min
 }
 
 // ── Origin validation ────────────────────────────────────────────────────────
@@ -65,10 +65,7 @@ function isRequestAllowed(request: NextRequest): boolean {
 }
 
 // ── Route handler ────────────────────────────────────────────────────────────
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { path: string[] } },
-) {
+export async function GET(request: NextRequest, { params }: { params: { path: string[] } }) {
   if (!isRequestAllowed(request)) {
     return NextResponse.json(
       { error: 'Truy cập bị chặn (403 Forbidden) - Yêu cầu không hợp lệ' },

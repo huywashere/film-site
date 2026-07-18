@@ -35,29 +35,41 @@ export default function FilmsTypePage() {
   });
 
   const films: FilmItem[] = data?.data?.items || data?.items || [];
-  const totalPages = data?.data?.params?.pagination?.totalPages || data?.pagination?.totalPages || 1;
+  const totalPages =
+    data?.data?.params?.pagination?.totalPages || data?.pagination?.totalPages || 1;
 
   return (
     <div className="container">
       <div className="section-header" style={{ marginBottom: 'var(--space-xl)' }}>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem' }}>{label}</h1>
-        <p className="text-muted text-sm">Trang {page} / {totalPages}</p>
+        <p className="text-muted text-sm">
+          Trang {page} / {totalPages}
+        </p>
       </div>
 
       {isLoading ? (
         <div className="grid-films-lg">
-          {Array.from({ length: 24 }).map((_, i) => <FilmCardSkeleton key={i} />)}
+          {Array.from({ length: 24 }).map((_, i) => (
+            <FilmCardSkeleton key={i} />
+          ))}
         </div>
       ) : (
         <div className="grid-films-lg">
-          {films.map((film) => <FilmCard key={film.slug} film={film} />)}
+          {films.map((film) => (
+            <FilmCard key={film.slug} film={film} />
+          ))}
         </div>
       )}
 
       {totalPages > 1 && (
         <div className="pagination">
           {page > 1 && (
-            <button className="page-btn" onClick={() => router.push(`/films/${type}?page=${page - 1}`)}>‹</button>
+            <button
+              className="page-btn"
+              onClick={() => router.push(`/films/${type}?page=${page - 1}`)}
+            >
+              ‹
+            </button>
           )}
           {Array.from({ length: Math.min(totalPages, 8) }, (_, i) => {
             const p = Math.max(1, page - 3) + i;
@@ -73,7 +85,12 @@ export default function FilmsTypePage() {
             );
           })}
           {page < totalPages && (
-            <button className="page-btn" onClick={() => router.push(`/films/${type}?page=${page + 1}`)}>›</button>
+            <button
+              className="page-btn"
+              onClick={() => router.push(`/films/${type}?page=${page + 1}`)}
+            >
+              ›
+            </button>
           )}
         </div>
       )}

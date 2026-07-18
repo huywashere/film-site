@@ -43,6 +43,7 @@ export const vi = {
     goHome: 'Trang chủ',
     loading: 'Đang tải...',
     offlineTitle: 'Mất Kết Nối Internet',
-    offlineDesc: 'Ứng dụng CineVerse hiện không thể kết nối tới máy chủ. Vui lòng kiểm tra lại kết nối Wifi hoặc dữ liệu di động của bạn.',
-  }
+    offlineDesc:
+      'Ứng dụng CineVerse hiện không thể kết nối tới máy chủ. Vui lòng kiểm tra lại kết nối Wifi hoặc dữ liệu di động của bạn.',
+  },
 };

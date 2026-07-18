@@ -1,6 +1,4 @@
-import {
-  Controller, Post, Body, Get, UseGuards, Request, HttpCode
-} from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Request, HttpCode } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';

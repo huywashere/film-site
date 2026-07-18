@@ -2,14 +2,20 @@
 import { useState } from 'react';
 
 interface StarRatingProps {
-  value?: number;       // 0.5 - 5.0
+  value?: number; // 0.5 - 5.0
   onChange?: (val: number) => void;
   readonly?: boolean;
   size?: number;
   showValue?: boolean;
 }
 
-export function StarRating({ value = 0, onChange, readonly = false, size = 20, showValue = false }: StarRatingProps) {
+export function StarRating({
+  value = 0,
+  onChange,
+  readonly = false,
+  size = 20,
+  showValue = false,
+}: StarRatingProps) {
   const [hovered, setHovered] = useState<number | null>(null);
 
   const displayValue = hovered !== null ? hovered : value;

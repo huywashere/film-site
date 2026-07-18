@@ -18,7 +18,10 @@ export class UsersController {
 
   @Put('me')
   @UseGuards(AuthGuard('jwt'))
-  updateMe(@Request() req, @Body() dto: { displayName?: string; bio?: string; avatarUrl?: string }) {
+  updateMe(
+    @Request() req,
+    @Body() dto: { displayName?: string; bio?: string; avatarUrl?: string },
+  ) {
     return this.usersService.updateMe(req.user.id, dto);
   }
 }

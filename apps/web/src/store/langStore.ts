@@ -18,8 +18,8 @@ export const useLangStore = create<LangState>()(
     }),
     {
       name: 'cineverse-lang',
-    }
-  )
+    },
+  ),
 );
 
 import { useEffect, useState } from 'react';
@@ -45,7 +45,7 @@ export function useTranslation() {
         return fallback || key;
       }
     }
-    return typeof value === 'string' ? value : (fallback || key);
+    return typeof value === 'string' ? value : fallback || key;
   };
 
   return { t, lang: mounted ? lang : 'vi', setLang, mounted };

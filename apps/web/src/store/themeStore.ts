@@ -18,6 +18,6 @@ export const useThemeStore = create<ThemeState>()(
     }),
     {
       name: 'cineverse-theme',
-    }
-  )
+    },
+  ),
 );

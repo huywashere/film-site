@@ -43,6 +43,7 @@ export const en = {
     goHome: 'Home',
     loading: 'Loading...',
     offlineTitle: 'Offline Mode',
-    offlineDesc: 'CineVerse is currently unable to connect to the server. Please check your Wifi or mobile data connection.',
-  }
+    offlineDesc:
+      'CineVerse is currently unable to connect to the server. Please check your Wifi or mobile data connection.',
+  },
 };

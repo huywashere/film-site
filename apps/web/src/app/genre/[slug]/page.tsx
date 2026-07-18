@@ -5,11 +5,18 @@ import { movieApi } from '@/lib/api';
 import { FilmCard, FilmItem, FilmCardSkeleton } from '@/components/film/FilmCard';
 
 const GENRE_NAMES: Record<string, string> = {
-  'hanh-dong': 'Hành Động', 'kinh-di': 'Kinh Dị', 'tinh-cam': 'Tình Cảm',
-  'hai-huoc': 'Hài Hước', 'khoa-hoc-vien-tuong': 'Khoa Học Viễn Tưởng',
-  'hoat-hinh': 'Hoạt Hình', 'co-trang': 'Cổ Trang', 'tam-ly': 'Tâm Lý',
-  'vien-tuong': 'Viễn Tưởng', 'chien-tranh': 'Chiến Tranh',
-  'the-thao': 'Thể Thao', 'am-nhac': 'Âm Nhạc',
+  'hanh-dong': 'Hành Động',
+  'kinh-di': 'Kinh Dị',
+  'tinh-cam': 'Tình Cảm',
+  'hai-huoc': 'Hài Hước',
+  'khoa-hoc-vien-tuong': 'Khoa Học Viễn Tưởng',
+  'hoat-hinh': 'Hoạt Hình',
+  'co-trang': 'Cổ Trang',
+  'tam-ly': 'Tâm Lý',
+  'vien-tuong': 'Viễn Tưởng',
+  'chien-tranh': 'Chiến Tranh',
+  'the-thao': 'Thể Thao',
+  'am-nhac': 'Âm Nhạc',
 };
 
 export default function GenrePage() {
@@ -37,31 +44,48 @@ export default function GenrePage() {
 
       {isLoading ? (
         <div className="grid-films-lg">
-          {Array.from({ length: 24 }).map((_, i) => <FilmCardSkeleton key={i} />)}
+          {Array.from({ length: 24 }).map((_, i) => (
+            <FilmCardSkeleton key={i} />
+          ))}
         </div>
       ) : (
         <div className="grid-films-lg">
-          {films.map((f) => <FilmCard key={f.slug} film={f} />)}
+          {films.map((f) => (
+            <FilmCard key={f.slug} film={f} />
+          ))}
         </div>
       )}
 
       {totalPages > 1 && (
         <div className="pagination">
           {page > 1 && (
-            <button className="page-btn" onClick={() => router.push(`/genre/${slug}?page=${page - 1}`)}>‹</button>
+            <button
+              className="page-btn"
+              onClick={() => router.push(`/genre/${slug}?page=${page - 1}`)}
+            >
+              ‹
+            </button>
           )}
           {Array.from({ length: Math.min(totalPages, 8) }, (_, i) => {
             const p = Math.max(1, page - 3) + i;
             if (p > totalPages) return null;
             return (
-              <button key={p} className={`page-btn ${p === page ? 'active' : ''}`}
-                onClick={() => router.push(`/genre/${slug}?page=${p}`)}>
+              <button
+                key={p}
+                className={`page-btn ${p === page ? 'active' : ''}`}
+                onClick={() => router.push(`/genre/${slug}?page=${p}`)}
+              >
                 {p}
               </button>
             );
           })}
           {page < totalPages && (
-            <button className="page-btn" onClick={() => router.push(`/genre/${slug}?page=${page + 1}`)}>›</button>
+            <button
+              className="page-btn"
+              onClick={() => router.push(`/genre/${slug}?page=${page + 1}`)}
+            >
+              ›
+            </button>
           )}
         </div>
       )}

@@ -10,14 +10,20 @@ export function Footer() {
           {/* Brand */}
           <div className={styles.brand}>
             <div className={styles.logo}>
-              <span className={styles.logoIcon} style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--accent)', marginRight: '6px' }}>
+              <span
+                className={styles.logoIcon}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  color: 'var(--accent)',
+                  marginRight: '6px',
+                }}
+              >
                 <Play size={16} fill="currentColor" />
               </span>
               <span>CineVerse</span>
             </div>
-            <p className={styles.tagline}>
-              Khám phá, xem và chia sẻ tình yêu điện ảnh của bạn
-            </p>
+            <p className={styles.tagline}>Khám phá, xem và chia sẻ tình yêu điện ảnh của bạn</p>
           </div>
 
           {/* Links */}

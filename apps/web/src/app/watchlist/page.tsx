@@ -25,7 +25,9 @@ function WatchlistContent() {
       <div className="container" style={{ textAlign: 'center', padding: '4rem 0' }}>
         <Bookmark size={48} style={{ margin: '0 auto var(--space-md)', opacity: 0.3 }} />
         <h2 style={{ marginBottom: 'var(--space-md)' }}>Bạn chưa đăng nhập</h2>
-        <Link href="/login" className="btn btn-primary">Đăng nhập</Link>
+        <Link href="/login" className="btn btn-primary">
+          Đăng nhập
+        </Link>
       </div>
     );
   }
@@ -36,12 +38,18 @@ function WatchlistContent() {
   return (
     <div className="container">
       <div className="section-header" style={{ marginBottom: 'var(--space-xl)' }}>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <h1
+          style={{
+            fontFamily: 'var(--font-serif)',
+            fontSize: '2rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
           <Bookmark size={28} style={{ color: 'var(--accent)' }} /> Watchlist của tôi
         </h1>
-        {data?.total > 0 && (
-          <span className="badge badge-muted">{data.total} phim</span>
-        )}
+        {data?.total > 0 && <span className="badge badge-muted">{data.total} phim</span>}
       </div>
 
       {isLoading ? (
@@ -54,7 +62,11 @@ function WatchlistContent() {
         <div style={{ textAlign: 'center', padding: '4rem 0' }}>
           <p style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>📭</p>
           <p className="text-muted">Watchlist của bạn đang trống</p>
-          <Link href="/films" className="btn btn-primary" style={{ marginTop: 'var(--space-lg)', display: 'inline-flex' }}>
+          <Link
+            href="/films"
+            className="btn btn-primary"
+            style={{ marginTop: 'var(--space-lg)', display: 'inline-flex' }}
+          >
             Khám phá phim
           </Link>
         </div>
@@ -94,12 +106,14 @@ function WatchlistContent() {
 
 export default function WatchlistPage() {
   return (
-    <Suspense fallback={
-      <div className="container" style={{ textAlign: 'center', padding: '4rem 0' }}>
-        <Bookmark size={48} style={{ margin: '0 auto var(--space-md)', opacity: 0.3 }} />
-        <h2 style={{ marginBottom: 'var(--space-md)' }}>Đang tải watchlist...</h2>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="container" style={{ textAlign: 'center', padding: '4rem 0' }}>
+          <Bookmark size={48} style={{ margin: '0 auto var(--space-md)', opacity: 0.3 }} />
+          <h2 style={{ marginBottom: 'var(--space-md)' }}>Đang tải watchlist...</h2>
+        </div>
+      }
+    >
       <WatchlistContent />
     </Suspense>
   );

@@ -23,7 +23,8 @@ export const metadata: Metadata = {
     default: 'CineVerse — Xem Phim Online',
     template: '%s | CineVerse',
   },
-  description: 'Nền tảng xem phim online chất lượng cao. Phim bộ, phim lẻ, hoạt hình, TV Shows với phụ đề tiếng Việt.',
+  description:
+    'Nền tảng xem phim online chất lượng cao. Phim bộ, phim lẻ, hoạt hình, TV Shows với phụ đề tiếng Việt.',
   keywords: ['xem phim', 'phim online', 'phim bộ', 'phim lẻ', 'hoạt hình', 'CineVerse'],
   manifest: '/manifest.json',
   appleWebApp: {
@@ -53,9 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ToastProvider>
             <ScrollProvider>
               <Navbar />
-              <main className="page-content">
-                {children}
-              </main>
+              <main className="page-content">{children}</main>
               <Footer />
             </ScrollProvider>
           </ToastProvider>

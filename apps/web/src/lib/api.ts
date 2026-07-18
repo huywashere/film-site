@@ -20,22 +20,21 @@ const fetchKKPhim = async (endpoint: string) => {
 // ── KKPhim Direct API (qua Next.js proxy) ──────────────────────────
 export const kkphimApi = {
   // Phim mới cập nhật
-  getLatest: (page = 1) =>
-    fetchKKPhim(`/danh-sach/phim-moi-cap-nhat?page=${page}`),
-  
+  getLatest: (page = 1) => fetchKKPhim(`/danh-sach/phim-moi-cap-nhat?page=${page}`),
+
   // Danh sách theo loại (v1 API)
   getSeries: (page = 1, limit = 24) =>
     fetchKKPhim(`/v1/api/danh-sach/phim-bo?page=${page}&limit=${limit}`),
-  
+
   getSingle: (page = 1, limit = 24) =>
     fetchKKPhim(`/v1/api/danh-sach/phim-le?page=${page}&limit=${limit}`),
-  
+
   getAnime: (page = 1, limit = 24) =>
     fetchKKPhim(`/v1/api/danh-sach/hoat-hinh?page=${page}&limit=${limit}`),
-  
+
   getTvShows: (page = 1, limit = 24) =>
     fetchKKPhim(`/v1/api/danh-sach/tv-shows?page=${page}&limit=${limit}`),
-  
+
   // Lọc phim với nhiều tùy chọn
   getFiltered: (params: {
     type?: string; // phim-le, phim-bo, hoat-hinh, tv-shows
@@ -58,56 +57,51 @@ export const kkphimApi = {
   },
 
   // Chi tiết phim
-  getDetail: (slug: string) =>
-    fetchKKPhim(`/phim/${slug}`),
-  
-  getDetailV1: (slug: string) =>
-    fetchKKPhim(`/v1/api/phim/${slug}`),
+  getDetail: (slug: string) => fetchKKPhim(`/phim/${slug}`),
+
+  getDetailV1: (slug: string) => fetchKKPhim(`/v1/api/phim/${slug}`),
 
   // Thông tin phim theo ID
-  getById: (id: string) =>
-    fetchKKPhim(`/phim/id/${id}`),
-  
+  getById: (id: string) => fetchKKPhim(`/phim/id/${id}`),
+
   getByTmdb: (tmdbId: string, type: 'tv' | 'movie', season?: number) => {
     const seasonParam = season ? `&season=${season}` : '';
     return fetchKKPhim(`/phim/tmdb?tmdb_id=${tmdbId}&type=${type}${seasonParam}`);
   },
-  
-  getByImdb: (imdbId: string) =>
-    fetchKKPhim(`/phim/imdb?imdb_id=${imdbId}`),
+
+  getByImdb: (imdbId: string) => fetchKKPhim(`/phim/imdb?imdb_id=${imdbId}`),
 
   // Hình ảnh, diễn viên, từ khóa
   getImages: (tmdbType: 'tv' | 'movie', tmdbId: string) =>
     fetchKKPhim(`/phim/images?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`),
-  
+
   getCast: (tmdbType: 'tv' | 'movie', tmdbId: string) =>
     fetchKKPhim(`/phim/cast?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`),
-  
+
   getKeywords: (tmdbType: 'tv' | 'movie', tmdbId: string) =>
     fetchKKPhim(`/phim/keywords?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`),
 
   // Tìm kiếm
   search: (keyword: string, page = 1, limit = 24) =>
-    fetchKKPhim(`/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`),
+    fetchKKPhim(
+      `/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`,
+    ),
 
   // Thể loại
-  getGenres: () =>
-    fetchKKPhim(`/the-loai`),
-  
+  getGenres: () => fetchKKPhim(`/the-loai`),
+
   getByGenre: (slug: string, page = 1, limit = 24) =>
     fetchKKPhim(`/v1/api/the-loai/${slug}?page=${page}&limit=${limit}`),
 
   // Quốc gia
-  getCountries: () =>
-    fetchKKPhim(`/quoc-gia`),
-  
+  getCountries: () => fetchKKPhim(`/quoc-gia`),
+
   getByCountry: (slug: string, page = 1, limit = 24) =>
     fetchKKPhim(`/v1/api/quoc-gia/${slug}?page=${page}&limit=${limit}`),
 
   // Năm phát hành
-  getYears: () =>
-    fetchKKPhim(`/nam-phat-hanh`),
-  
+  getYears: () => fetchKKPhim(`/nam-phat-hanh`),
+
   getByYear: (year: number, page = 1, limit = 24) =>
     fetchKKPhim(`/nam-phat-hanh/${year}?page=${page}&limit=${limit}`),
 };
@@ -122,13 +116,15 @@ export const movieApi = {
   getDetail: (slug: string) => kkphimApi.getDetail(slug).then((data) => ({ data })),
   getDetailV1: (slug: string) => kkphimApi.getDetailV1(slug).then((data) => ({ data })),
   search: (keyword: string, page = 1) => kkphimApi.search(keyword, page).then((data) => ({ data })),
-  getByGenre: (slug: string, page = 1) => kkphimApi.getByGenre(slug, page).then((data) => ({ data })),
-  getByCountry: (slug: string, page = 1) => kkphimApi.getByCountry(slug, page).then((data) => ({ data })),
+  getByGenre: (slug: string, page = 1) =>
+    kkphimApi.getByGenre(slug, page).then((data) => ({ data })),
+  getByCountry: (slug: string, page = 1) =>
+    kkphimApi.getByCountry(slug, page).then((data) => ({ data })),
   getByYear: (year: number, page = 1) => kkphimApi.getByYear(year, page).then((data) => ({ data })),
   getGenres: () => kkphimApi.getGenres().then((data) => ({ data })),
   getCountries: () => kkphimApi.getCountries().then((data) => ({ data })),
   getYears: () => kkphimApi.getYears().then((data) => ({ data })),
-  getFiltered: (params: Parameters<typeof kkphimApi.getFiltered>[0]) => 
+  getFiltered: (params: Parameters<typeof kkphimApi.getFiltered>[0]) =>
     kkphimApi.getFiltered(params).then((data) => ({ data })),
 };
 
@@ -176,13 +172,11 @@ api.interceptors.response.use(
   },
 );
 
-
 // ── Auth API ───────────────────────────────────────────────
 export const authApi = {
   register: (data: { email: string; username: string; password: string }) =>
     api.post('/auth/register', data),
-  login: (data: { email: string; password: string }) =>
-    api.post('/auth/login', data),
+  login: (data: { email: string; password: string }) => api.post('/auth/login', data),
   getMe: () => api.get('/auth/me'),
 };
 

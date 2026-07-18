@@ -3,9 +3,24 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import NextImage from 'next/image';
 import { useState, useEffect, useRef } from 'react';
-import { 
-  Play, ChevronRight, ChevronLeft, Info, TrendingUp, Clock, Tv, Clapperboard,
-  Flame, Ghost, Heart, Smile, Rocket, Swords, Brain, Palette, AlertTriangle
+import {
+  Play,
+  ChevronRight,
+  ChevronLeft,
+  Info,
+  TrendingUp,
+  Clock,
+  Tv,
+  Clapperboard,
+  Flame,
+  Ghost,
+  Heart,
+  Smile,
+  Rocket,
+  Swords,
+  Brain,
+  Palette,
+  AlertTriangle,
 } from 'lucide-react';
 import { movieApi } from '@/lib/api';
 import { FilmCard, FilmCardSkeleton, FilmItem, resolveImageUrl } from '@/components/film/FilmCard';
@@ -66,9 +81,13 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
               <div className={styles.heroBadges}>
                 {film.type && (
                   <span className="badge badge-accent">
-                    {film.type === 'series' ? t('nav.series') :
-                     film.type === 'single' ? t('nav.single') :
-                     film.type === 'hoathinh' ? t('nav.anime') : t('nav.tvshows')}
+                    {film.type === 'series'
+                      ? t('nav.series')
+                      : film.type === 'single'
+                        ? t('nav.single')
+                        : film.type === 'hoathinh'
+                          ? t('nav.anime')
+                          : t('nav.tvshows')}
                   </span>
                 )}
                 {film.year && <span className="badge badge-muted">{film.year}</span>}
@@ -76,9 +95,7 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
 
               {/* Title */}
               <h1 className={styles.heroTitle}>{film.name}</h1>
-              {film.origin_name && (
-                <p className={styles.heroSubtitle}>{film.origin_name}</p>
-              )}
+              {film.origin_name && <p className={styles.heroSubtitle}>{film.origin_name}</p>}
 
               {/* Actions */}
               <div className={styles.heroActions}>
@@ -133,13 +150,13 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
               type="button"
             >
               {thumb && (
-                <NextImage 
-                  src={thumb} 
-                  alt={f.name} 
-                  fill 
+                <NextImage
+                  src={thumb}
+                  alt={f.name}
+                  fill
                   sizes="150px"
-                  style={{ objectFit: 'cover' }} 
-                  unoptimized 
+                  style={{ objectFit: 'cover' }}
+                  unoptimized
                 />
               )}
             </button>
@@ -172,7 +189,11 @@ const cardVariants = {
 
 // ── Film Row Section ────────────────────────────────────────
 function FilmSection({
-  title, icon: Icon, films, isLoading, href,
+  title,
+  icon: Icon,
+  films,
+  isLoading,
+  href,
 }: {
   title: string;
   icon: React.ElementType;
@@ -198,12 +219,10 @@ function FilmSection({
         variants={containerVariants}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: true, margin: "-40px" }}
+        viewport={{ once: true, margin: '-40px' }}
       >
         {isLoading
-          ? Array.from({ length: 8 }).map((_, i) => (
-              <FilmCardSkeleton key={i} width={200} />
-            ))
+          ? Array.from({ length: 8 }).map((_, i) => <FilmCardSkeleton key={i} width={200} />)
           : films.slice(0, 10).map((film) => (
               <motion.div key={film.slug} variants={cardVariants} style={{ flexShrink: 0 }}>
                 <FilmCard film={film} width={200} variant="standard" />
@@ -230,7 +249,10 @@ function ReviewFeed({ reviews }: { reviews: any[] }) {
           <Link key={r.id} href={`/film/${r.movieId}`} className={styles.reviewCard}>
             <div className={styles.reviewMeta}>
               <img
-                src={r.user?.avatarUrl || `https://ui-avatars.com/api/?name=${r.user?.username}&background=14181c&color=00c030&size=32`}
+                src={
+                  r.user?.avatarUrl ||
+                  `https://ui-avatars.com/api/?name=${r.user?.username}&background=14181c&color=00c030&size=32`
+                }
                 alt=""
                 className="avatar avatar-sm"
               />
@@ -239,7 +261,14 @@ function ReviewFeed({ reviews }: { reviews: any[] }) {
                 <p className="text-xs text-muted">{r.movie?.title || r.movieId}</p>
               </div>
               {r.rating && (
-                <span style={{ marginLeft: 'auto', color: 'var(--star-color)', fontSize: '0.75rem', fontWeight: 700 }}>
+                <span
+                  style={{
+                    marginLeft: 'auto',
+                    color: 'var(--star-color)',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                  }}
+                >
                   {'★'.repeat(Math.round(r.rating))}
                 </span>
               )}
@@ -272,7 +301,12 @@ function GenreBar() {
           {GENRE_HIGHLIGHTS.map((g) => {
             const Icon = g.icon;
             return (
-              <Link key={g.slug} href={`/genre/${g.slug}`} className={styles.genreChip} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Link
+                key={g.slug}
+                href={`/genre/${g.slug}`}
+                className={styles.genreChip}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
                 <Icon size={14} />
                 <span>{g.label}</span>
               </Link>
@@ -289,7 +323,11 @@ export default function HomePage() {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { data: latestData, isLoading: latestLoading, error: latestError } = useQuery({
+  const {
+    data: latestData,
+    isLoading: latestLoading,
+    error: latestError,
+  } = useQuery({
     queryKey: ['latest', 1],
     queryFn: () => movieApi.getLatest(1).then((r) => r.data),
   });
@@ -327,11 +365,7 @@ export default function HomePage() {
       // Animate Hero content
       const hero = containerRef.current?.querySelector('[class*="hero"]');
       if (hero) {
-        gsap.fromTo(
-          hero,
-          { opacity: 0 },
-          { opacity: 1, duration: 1.2, ease: 'power2.out' }
-        );
+        gsap.fromTo(hero, { opacity: 0 }, { opacity: 1, duration: 1.2, ease: 'power2.out' });
       }
 
       // Animate sections on scroll
@@ -351,7 +385,7 @@ export default function HomePage() {
                 start: 'top 85%',
                 toggleActions: 'play none none none',
               },
-            }
+            },
           );
         });
       }
@@ -365,20 +399,36 @@ export default function HomePage() {
     console.log('🎬 Latest Data:', latestData);
     console.log('🎬 Latest Films:', latestFilms);
     console.log('🎬 Latest Error:', latestError);
-    console.log('🎬 Loading states:', { latestLoading, seriesLoading, singleLoading, animeLoading });
+    console.log('🎬 Loading states:', {
+      latestLoading,
+      seriesLoading,
+      singleLoading,
+      animeLoading,
+    });
   }
 
   // Show error if loading failed
   if (latestError) {
     return (
       <div className="container" style={{ padding: '4rem 1rem', textAlign: 'center' }}>
-        <h2 style={{ color: 'var(--error)', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+        <h2
+          style={{
+            color: 'var(--error)',
+            marginBottom: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+          }}
+        >
           <AlertTriangle size={24} />
           <span>{t('home.latestError', 'Không thể tải dữ liệu phim')}</span>
         </h2>
-        <p style={{ color: 'var(--text-muted)' }}>{t('home.networkError', 'Vui lòng thử lại sau hoặc kiểm tra kết nối mạng.')}</p>
-        <button 
-          onClick={() => window.location.reload()} 
+        <p style={{ color: 'var(--text-muted)' }}>
+          {t('home.networkError', 'Vui lòng thử lại sau hoặc kiểm tra kết nối mạng.')}
+        </p>
+        <button
+          onClick={() => window.location.reload()}
           className="btn btn-primary"
           style={{ marginTop: '1rem' }}
         >
@@ -391,11 +441,7 @@ export default function HomePage() {
   return (
     <div ref={containerRef}>
       {/* Hero */}
-      {latestLoading ? (
-        <div className={styles.heroSkeleton} />
-      ) : (
-        <HeroBanner films={latestFilms} />
-      )}
+      {latestLoading ? <div className={styles.heroSkeleton} /> : <HeroBanner films={latestFilms} />}
 
       <div className="container" style={{ paddingTop: 'var(--space-3xl)' }}>
         {/* Genre Bar */}

@@ -3,9 +3,26 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import {
-  Search, Film, List, Users, BookOpen, ChevronDown,
-  LogOut, User, Bookmark, Menu, X, Star, Sun, Moon,
-  Play, Globe, Loader2, Bell, Settings, History
+  Search,
+  Film,
+  List,
+  Users,
+  BookOpen,
+  ChevronDown,
+  LogOut,
+  User,
+  Bookmark,
+  Menu,
+  X,
+  Star,
+  Sun,
+  Moon,
+  Play,
+  Globe,
+  Loader2,
+  Bell,
+  Settings,
+  History,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useTranslation } from '@/store/langStore';
@@ -49,9 +66,24 @@ export function Navbar() {
   // Notifications State & References
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([
-    { id: 1, message: 'Phim "Thanh Khâu Kỳ Duyên" vừa cập nhật tập mới (Tập 12)!', time: '10 phút trước', read: false },
-    { id: 2, message: 'Chào mừng bạn đến với phiên bản CineVerse mới!', time: '1 ngày trước', read: false },
-    { id: 3, message: 'Watchlist của bạn có 1 phim sắp phát sóng tập cuối.', time: '2 ngày trước', read: true },
+    {
+      id: 1,
+      message: 'Phim "Thanh Khâu Kỳ Duyên" vừa cập nhật tập mới (Tập 12)!',
+      time: '10 phút trước',
+      read: false,
+    },
+    {
+      id: 2,
+      message: 'Chào mừng bạn đến với phiên bản CineVerse mới!',
+      time: '1 ngày trước',
+      read: false,
+    },
+    {
+      id: 3,
+      message: 'Watchlist của bạn có 1 phim sắp phát sóng tập cuối.',
+      time: '2 ngày trước',
+      read: true,
+    },
   ]);
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -60,7 +92,7 @@ export function Navbar() {
   };
 
   const markAsRead = (id: number) => {
-    setNotifications(notifications.map((n) => n.id === id ? { ...n, read: true } : n));
+    setNotifications(notifications.map((n) => (n.id === id ? { ...n, read: true } : n)));
   };
 
   const notifRef = useRef<HTMLDivElement>(null);
@@ -139,12 +171,14 @@ export function Navbar() {
         <div className={`container ${styles.navInner}`}>
           {/* Logo */}
           <Link href="/" className={styles.logo}>
-            <span className={styles.logoIcon} style={{ display: 'flex', alignItems: 'center', color: 'var(--accent)' }}>
+            <span
+              className={styles.logoIcon}
+              style={{ display: 'flex', alignItems: 'center', color: 'var(--accent)' }}
+            >
               <Play size={16} fill="currentColor" />
             </span>
             <span className={styles.logoText}>CineVerse</span>
           </Link>
-
           {/* Desktop Nav */}
           <nav className={styles.navLinks}>
             {/* Thể Loại Dropdown */}
@@ -278,11 +312,13 @@ export function Navbar() {
             </div>
 
             {/* Watchlist */}
-            <Link href="/watchlist" className={`${styles.navLink} ${pathname === '/watchlist' ? styles.navLinkActive : ''}`}>
+            <Link
+              href="/watchlist"
+              className={`${styles.navLink} ${pathname === '/watchlist' ? styles.navLinkActive : ''}`}
+            >
               Watchlist
             </Link>
           </nav>
-
           {/* Right Actions */}
           <div className={styles.navActions}>
             {/* Search */}
@@ -309,7 +345,11 @@ export function Navbar() {
             <button
               className={styles.themeBtn}
               onClick={toggleTheme}
-              title={mounted && theme === 'dark' ? 'Chuyển sang giao diện Sáng' : 'Chuyển sang giao diện Tối'}
+              title={
+                mounted && theme === 'dark'
+                  ? 'Chuyển sang giao diện Sáng'
+                  : 'Chuyển sang giao diện Tối'
+              }
             >
               {mounted && theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
             </button>
@@ -368,35 +408,64 @@ export function Navbar() {
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
                   >
                     <img
-                      src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.username}&background=121921&color=e55b3c&size=32`}
+                      src={
+                        user.avatarUrl ||
+                        `https://ui-avatars.com/api/?name=${user.username}&background=121921&color=e55b3c&size=32`
+                      }
                       alt={user.username}
                       className="avatar avatar-sm"
                     />
-                    <span className={styles.userDisplayName}>{user.displayName || user.username}</span>
+                    <span className={styles.userDisplayName}>
+                      {user.displayName || user.username}
+                    </span>
                     <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />
                   </button>
 
                   {userMenuOpen && (
                     <div className={`dropdown__menu ${styles.userDropdown}`}>
-                      <Link href={`/profile/${user.username}`} className="dropdown__item" onClick={() => setUserMenuOpen(false)}>
+                      <Link
+                        href={`/profile/${user.username}`}
+                        className="dropdown__item"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
                         <User size={15} /> {t('nav.profile')}
                       </Link>
-                      <Link href="/watchlist" className="dropdown__item" onClick={() => setUserMenuOpen(false)}>
+                      <Link
+                        href="/watchlist"
+                        className="dropdown__item"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
                         <Bookmark size={15} /> {t('nav.watchlist')}
                       </Link>
-                      <Link href="/reviews" className="dropdown__item" onClick={() => setUserMenuOpen(false)}>
+                      <Link
+                        href="/reviews"
+                        className="dropdown__item"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
                         <Star size={15} /> {t('nav.reviews')}
                       </Link>
-                      <Link href="/history" className="dropdown__item" onClick={() => setUserMenuOpen(false)}>
+                      <Link
+                        href="/history"
+                        className="dropdown__item"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
                         <History size={15} /> {t('nav.history')}
                       </Link>
-                      <Link href="/settings" className="dropdown__item" onClick={() => setUserMenuOpen(false)}>
+                      <Link
+                        href="/settings"
+                        className="dropdown__item"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
                         <Settings size={15} /> {t('nav.settings')}
                       </Link>
                       <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                       <button
                         className="dropdown__item"
-                        onClick={() => { logout(); setUserMenuOpen(false); router.push('/'); }}
+                        onClick={() => {
+                          logout();
+                          setUserMenuOpen(false);
+                          router.push('/');
+                        }}
                         style={{ width: '100%', textAlign: 'left', color: 'var(--red)' }}
                       >
                         <LogOut size={15} /> {t('nav.logout')}
@@ -407,8 +476,12 @@ export function Navbar() {
               </>
             ) : (
               <div className={styles.authLinks}>
-                <Link href="/login" className="btn btn-ghost btn-sm">{t('nav.login')}</Link>
-                <Link href="/register" className="btn btn-primary btn-sm">{t('nav.register')}</Link>
+                <Link href="/login" className="btn btn-ghost btn-sm">
+                  {t('nav.login')}
+                </Link>
+                <Link href="/register" className="btn btn-primary btn-sm">
+                  {t('nav.register')}
+                </Link>
               </div>
             )}
 
@@ -420,34 +493,26 @@ export function Navbar() {
             >
               {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-          </div>
-        </div>
-
-        {/* Sub Navigation (Browse by) */}
-        <div className={styles.subNav}>
-          <div className={`container ${styles.subNavInner}`}>
-            <span className={styles.subNavLabel}>{t('nav.browseBy')}</span>
-            <Link href="/films?sort=newest" className={styles.subNavLink}>{t('nav.newest')}</Link>
-            <Link href="/films?sort=popular" className={styles.subNavLink}>{t('nav.popular')}</Link>
-            <Link href="/films/series" className={styles.subNavLink}>{t('nav.series')}</Link>
-            <Link href="/films/single" className={styles.subNavLink}>{t('nav.single')}</Link>
-            <Link href="/films/anime" className={styles.subNavLink}>{t('nav.anime')}</Link>
-            <Link href="/films/tvshows" className={styles.subNavLink}>{t('nav.tvshows')}</Link>
-            <div className={styles.subNavSeparator} />
-            <Link href="/search" className={`${styles.subNavLink} ${styles.findFilm}`}>
-              <Search size={12} /> {t('nav.findFilm')}
-            </Link>
-          </div>
-        </div>
+          </div>{' '}
+          {/* end navActions */}
+        </div>{' '}
+        {/* end navInner */}
       </header>
 
       {/* Search Overlay */}
       {searchOpen && (
-        <div className={styles.searchOverlay} onClick={(e) => e.target === e.currentTarget && setSearchOpen(false)}>
+        <div
+          className={styles.searchOverlay}
+          onClick={(e) => e.target === e.currentTarget && setSearchOpen(false)}
+        >
           <div className={styles.searchBox}>
             <form onSubmit={handleSearch} className={styles.searchForm}>
               {isSearching ? (
-                <Loader2 size={20} className={styles.spin} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                <Loader2
+                  size={20}
+                  className={styles.spin}
+                  style={{ color: 'var(--accent)', flexShrink: 0 }}
+                />
               ) : (
                 <Search size={20} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
               )}
@@ -459,7 +524,11 @@ export function Navbar() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={styles.searchInput}
               />
-              <button type="button" onClick={() => setSearchOpen(false)} className="btn btn-ghost btn-icon">
+              <button
+                type="button"
+                onClick={() => setSearchOpen(false)}
+                className="btn btn-ghost btn-icon"
+              >
                 <X size={18} />
               </button>
             </form>
@@ -475,7 +544,8 @@ export function Navbar() {
                 ) : searchResults.length > 0 ? (
                   <div className={styles.resultsList}>
                     {searchResults.map((item: any) => {
-                      const poster = resolveImageUrl(item.thumb_url) || resolveImageUrl(item.poster_url);
+                      const poster =
+                        resolveImageUrl(item.thumb_url) || resolveImageUrl(item.poster_url);
                       return (
                         <Link
                           key={item.slug}
@@ -504,24 +574,25 @@ export function Navbar() {
                         </Link>
                       );
                     })}
-                    <button
-                      type="submit"
-                      onClick={handleSearch}
-                      className={styles.showAllBtn}
-                    >
+                    <button type="submit" onClick={handleSearch} className={styles.showAllBtn}>
                       Xem tất cả kết quả cho &ldquo;{searchQuery}&rdquo;
                     </button>
                   </div>
                 ) : (
-                  <div className={styles.noResults}>
-                    Không tìm thấy phim phù hợp
-                  </div>
+                  <div className={styles.noResults}>Không tìm thấy phim phù hợp</div>
                 )}
               </div>
             )}
 
             {!searchQuery.trim() && (
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.75rem', textAlign: 'center' }}>
+              <p
+                style={{
+                  fontSize: '0.8rem',
+                  color: 'var(--text-muted)',
+                  marginTop: '0.75rem',
+                  textAlign: 'center',
+                }}
+              >
                 {t('nav.enterSearch')}
               </p>
             )}
@@ -544,8 +615,20 @@ export function Navbar() {
           ))}
           {!user && (
             <div className={styles.mobileAuthLinks}>
-              <Link href="/login" className="btn btn-secondary w-full" onClick={() => setMobileMenuOpen(false)}>{t('nav.login')}</Link>
-              <Link href="/register" className="btn btn-primary w-full" onClick={() => setMobileMenuOpen(false)}>{t('nav.register')}</Link>
+              <Link
+                href="/login"
+                className="btn btn-secondary w-full"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {t('nav.login')}
+              </Link>
+              <Link
+                href="/register"
+                className="btn btn-primary w-full"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {t('nav.register')}
+              </Link>
             </div>
           )}
         </div>

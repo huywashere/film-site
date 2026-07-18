@@ -16,7 +16,9 @@ function getRedisClient(): Redis | null {
     });
 
     redis.on('error', (err) => {
-      console.warn('Redis connection failed on frontend, disabling Redis cache to prevent request hangs.');
+      console.warn(
+        'Redis connection failed on frontend, disabling Redis cache to prevent request hangs.',
+      );
       isRedisDisabled = true;
       if (redis) {
         try {
@@ -64,7 +66,7 @@ export async function GET(request: NextRequest) {
     // Try Vietnamese Wikipedia first
     const viRes = await fetch(
       `https://vi.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&piprop=thumbnail&pithumbsize=200&titles=${encodeURIComponent(name)}`,
-      { next: { revalidate: 86400 } } // Cache fetch for 24 hours
+      { next: { revalidate: 86400 } }, // Cache fetch for 24 hours
     );
     const viData = await viRes.json();
     const viPages = viData?.query?.pages;
@@ -79,7 +81,7 @@ export async function GET(request: NextRequest) {
     if (!imageUrl) {
       const enRes = await fetch(
         `https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&piprop=thumbnail&pithumbsize=200&titles=${encodeURIComponent(name)}`,
-        { next: { revalidate: 86400 } }
+        { next: { revalidate: 86400 } },
       );
       const enData = await enRes.json();
       const enPages = enData?.query?.pages;

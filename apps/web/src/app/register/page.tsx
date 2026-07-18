@@ -85,10 +85,20 @@ export default function RegisterPage() {
                 minLength={6}
                 style={{ paddingRight: 44 }}
               />
-              <button type="button" onClick={() => setShowPw(!showPw)} style={{
-                position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer',
-              }}>
+              <button
+                type="button"
+                onClick={() => setShowPw(!showPw)}
+                style={{
+                  position: 'absolute',
+                  right: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--text-muted)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
                 {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
@@ -107,12 +117,16 @@ export default function RegisterPage() {
 
         <div className={styles.authDivider}>
           <span>Đã có tài khoản?</span>
-          <Link href="/login" className={styles.authLink}>Đăng nhập</Link>
+          <Link href="/login" className={styles.authLink}>
+            Đăng nhập
+          </Link>
         </div>
       </div>
       <div className={styles.authBg} aria-hidden>
         {['🎬', '🎭', '🎥', '🍿', '⭐', '🎞'].map((e, i) => (
-          <span key={i} className={styles.authBgEmoji} style={{ '--i': i } as any}>{e}</span>
+          <span key={i} className={styles.authBgEmoji} style={{ '--i': i } as any}>
+            {e}
+          </span>
         ))}
       </div>
     </div>

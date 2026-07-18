@@ -36,7 +36,12 @@ export function resolveImageUrl(url?: string): string | null {
   return `/api/image-proxy?url=${encodeURIComponent(resolved)}`;
 }
 
-export function FilmCard({ film, width = 200, showActions = true, variant = 'standard' }: FilmCardProps) {
+export function FilmCard({
+  film,
+  width = 200,
+  showActions = true,
+  variant = 'standard',
+}: FilmCardProps) {
   const { user } = useAuthStore();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -44,9 +49,10 @@ export function FilmCard({ film, width = 200, showActions = true, variant = 'sta
 
   const slug = film.slug;
   const title = film.name || film.title || 'Chưa có tên';
-  const posterUrl = variant === 'landscape'
-    ? (resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url))
-    : (resolveImageUrl(film.poster_url) || resolveImageUrl(film.thumb_url));
+  const posterUrl =
+    variant === 'landscape'
+      ? resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url)
+      : resolveImageUrl(film.poster_url) || resolveImageUrl(film.thumb_url);
 
   const prefetchFilmDetail = () => {
     queryClient.prefetchQuery({
@@ -57,14 +63,22 @@ export function FilmCard({ film, width = 200, showActions = true, variant = 'sta
   };
 
   const typeLabel =
-    film.type === 'series' ? 'Bộ' :
-    film.type === 'single' ? 'Lẻ' :
-    film.type === 'hoathinh' ? 'Anime' :
-    film.type === 'tvshows' ? 'TV' : null;
+    film.type === 'series'
+      ? 'Bộ'
+      : film.type === 'single'
+        ? 'Lẻ'
+        : film.type === 'hoathinh'
+          ? 'Anime'
+          : film.type === 'tvshows'
+            ? 'TV'
+            : null;
 
   const handleWatchlist = async (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!user) { toast('Bạn cần đăng nhập để thêm vào watchlist', 'error'); return; }
+    if (!user) {
+      toast('Bạn cần đăng nhập để thêm vào watchlist', 'error');
+      return;
+    }
     try {
       if (saved) {
         await watchlistApi.remove(slug);
@@ -86,22 +100,19 @@ export function FilmCard({ film, width = 200, showActions = true, variant = 'sta
   };
 
   return (
-    <Link 
-      href={`/film/${slug}`} 
-      className="film-card" 
+    <Link
+      href={`/film/${slug}`}
+      className="film-card"
       style={{ width }}
       onMouseEnter={prefetchFilmDetail}
     >
       {/* Poster Wrapper */}
-      <div className={`film-card__poster-wrapper ${variant === 'landscape' ? 'film-card__poster-wrapper--landscape' : ''}`}>
+      <div
+        className={`film-card__poster-wrapper ${variant === 'landscape' ? 'film-card__poster-wrapper--landscape' : ''}`}
+      >
         {posterUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={posterUrl}
-            alt={title}
-            className="film-card__poster"
-            loading="lazy"
-          />
+          <img src={posterUrl} alt={title} className="film-card__poster" loading="lazy" />
         ) : (
           <div className="film-card__no-poster">
             <Clapperboard size={32} style={{ opacity: 0.4 }} />
@@ -134,10 +145,14 @@ export function FilmCard({ film, width = 200, showActions = true, variant = 'sta
 
       {/* Info details under the poster wrapper */}
       <div className="film-card__info">
-        <h4 className="film-card__title" title={title}>{title}</h4>
+        <h4 className="film-card__title" title={title}>
+          {title}
+        </h4>
         <div className="film-card__meta">
           {film.year && <span className="film-card__year">{film.year}</span>}
-          {film.year && (typeLabel || film.lang || film.episode_current) && <span className="film-card__meta-separator">•</span>}
+          {film.year && (typeLabel || film.lang || film.episode_current) && (
+            <span className="film-card__meta-separator">•</span>
+          )}
           {typeLabel && <span className="film-card__type">{typeLabel}</span>}
           {(film.episode_current || film.lang) && (
             <>
@@ -155,7 +170,10 @@ export function FilmCard({ film, width = 200, showActions = true, variant = 'sta
 export function FilmCardSkeleton({ width = 200 }: { width?: number }) {
   return (
     <div style={{ width, flexShrink: 0 }}>
-      <div className="skeleton" style={{ width: '100%', paddingTop: '150%', borderRadius: 'var(--radius-md)' }} />
+      <div
+        className="skeleton"
+        style={{ width: '100%', paddingTop: '150%', borderRadius: 'var(--radius-md)' }}
+      />
       <div className="skeleton" style={{ height: 12, marginTop: 8, borderRadius: 4 }} />
     </div>
   );

@@ -69,8 +69,14 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 style={{
-                  position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                  color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer',
+                  position: 'absolute',
+                  right: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--text-muted)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
                 }}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -91,14 +97,18 @@ export default function LoginPage() {
 
         <div className={styles.authDivider}>
           <span>Chưa có tài khoản?</span>
-          <Link href="/register" className={styles.authLink}>Đăng ký ngay</Link>
+          <Link href="/register" className={styles.authLink}>
+            Đăng ký ngay
+          </Link>
         </div>
       </div>
 
       {/* Background decoration */}
       <div className={styles.authBg} aria-hidden>
         {['🎬', '🎭', '🎥', '🍿', '⭐', '🎞'].map((e, i) => (
-          <span key={i} className={styles.authBgEmoji} style={{ '--i': i } as any}>{e}</span>
+          <span key={i} className={styles.authBgEmoji} style={{ '--i': i } as any}>
+            {e}
+          </span>
         ))}
       </div>
     </div>

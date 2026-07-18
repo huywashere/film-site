@@ -26,7 +26,9 @@ import { WatchlistModule } from './watchlist/watchlist.module';
             limit: 100,
           },
         ],
-        storage: new RedisThrottlerStorage(config.get<string>('REDIS_URL', 'redis://localhost:6379')),
+        storage: new RedisThrottlerStorage(
+          config.get<string>('REDIS_URL', 'redis://localhost:6379'),
+        ),
       }),
     }),
     PrismaModule,

@@ -19,7 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
     const data = await res.json();
     const films = data?.items || [];
-    
+
     const filmRoutes = films.map((film: any) => {
       let lastModified = new Date();
       if (film.modified) {

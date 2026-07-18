@@ -29,7 +29,11 @@ export class UsersService {
       where: { id: userId },
       data: dto,
       select: {
-        id: true, username: true, displayName: true, avatarUrl: true, bio: true,
+        id: true,
+        username: true,
+        displayName: true,
+        avatarUrl: true,
+        bio: true,
       },
     });
   }

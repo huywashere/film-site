@@ -32,15 +32,29 @@ function SearchContent() {
   return (
     <div className="container">
       <div style={{ maxWidth: 640, margin: '0 auto var(--space-2xl)' }}>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem', marginBottom: 'var(--space-lg)', textAlign: 'center' }}>
+        <h1
+          style={{
+            fontFamily: 'var(--font-serif)',
+            fontSize: '2rem',
+            marginBottom: 'var(--space-lg)',
+            textAlign: 'center',
+          }}
+        >
           Tìm kiếm phim
         </h1>
         <form onSubmit={handleSearch} style={{ display: 'flex', gap: 'var(--space-sm)' }}>
           <div style={{ position: 'relative', flex: 1 }}>
-            <Search size={16} style={{
-              position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-              color: 'var(--text-muted)', pointerEvents: 'none',
-            }} />
+            <Search
+              size={16}
+              style={{
+                position: 'absolute',
+                left: 12,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--text-muted)',
+                pointerEvents: 'none',
+              }}
+            />
             <input
               type="text"
               value={input}
@@ -50,7 +64,9 @@ function SearchContent() {
               style={{ paddingLeft: 40 }}
             />
           </div>
-          <button type="submit" className="btn btn-primary">Tìm</button>
+          <button type="submit" className="btn btn-primary">
+            Tìm
+          </button>
         </form>
       </div>
 
@@ -64,7 +80,9 @@ function SearchContent() {
 
           {isLoading ? (
             <div className="grid-films-lg">
-              {Array.from({ length: 12 }).map((_, i) => <FilmCardSkeleton key={i} />)}
+              {Array.from({ length: 12 }).map((_, i) => (
+                <FilmCardSkeleton key={i} />
+              ))}
             </div>
           ) : films.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 'var(--space-3xl) 0' }}>
@@ -86,7 +104,9 @@ function SearchContent() {
                     <button
                       key={p}
                       className={`page-btn ${p === page ? 'active' : ''}`}
-                      onClick={() => router.push(`/search?q=${encodeURIComponent(query)}&page=${p}`)}
+                      onClick={() =>
+                        router.push(`/search?q=${encodeURIComponent(query)}&page=${p}`)
+                      }
                     >
                       {p}
                     </button>
@@ -99,7 +119,9 @@ function SearchContent() {
       )}
 
       {!query && (
-        <div style={{ textAlign: 'center', padding: 'var(--space-3xl) 0', color: 'var(--text-muted)' }}>
+        <div
+          style={{ textAlign: 'center', padding: 'var(--space-3xl) 0', color: 'var(--text-muted)' }}
+        >
           <Search size={48} style={{ margin: '0 auto var(--space-md)', opacity: 0.3 }} />
           <p>Nhập từ khóa để tìm phim bạn muốn xem</p>
         </div>
@@ -110,11 +132,13 @@ function SearchContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={
-      <div className="container" style={{ textAlign: 'center', padding: 'var(--space-3xl) 0' }}>
-        <p className="text-muted">Đang tải trang tìm kiếm...</p>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="container" style={{ textAlign: 'center', padding: 'var(--space-3xl) 0' }}>
+          <p className="text-muted">Đang tải trang tìm kiếm...</p>
+        </div>
+      }
+    >
       <SearchContent />
     </Suspense>
   );

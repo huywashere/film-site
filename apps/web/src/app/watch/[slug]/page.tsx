@@ -3,7 +3,16 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useEffect, useRef, Suspense } from 'react';
-import { ChevronLeft, ChevronRight, List, ArrowLeft, Play, Tv, Clapperboard, X } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  List,
+  ArrowLeft,
+  Play,
+  Tv,
+  Clapperboard,
+  X,
+} from 'lucide-react';
 import { movieApi } from '@/lib/api';
 import { resolveImageUrl } from '@/components/film/FilmCard';
 import dynamic from 'next/dynamic';
@@ -28,12 +37,25 @@ export default function WatchPage() {
 
   const { data: ophimData } = useQuery({
     queryKey: ['film-ophim', slug],
-    queryFn: () => fetch(`/api/ophim/phim/${slug}`)
-      .then((res) => {
-        if (!res.ok) return null;
-        return res.json();
-      })
-      .catch(() => null),
+    queryFn: () =>
+      fetch(`/api/ophim/phim/${slug}`)
+        .then((res) => {
+          if (!res.ok) return null;
+          return res.json();
+        })
+        .catch(() => null),
+    enabled: !!slug,
+  });
+
+  const { data: nguoncData } = useQuery({
+    queryKey: ['film-nguonc', slug],
+    queryFn: () =>
+      fetch(`/api/nguonc/film/${slug}`)
+        .then((res) => {
+          if (!res.ok) return null;
+          return res.json();
+        })
+        .catch(() => null),
     enabled: !!slug,
   });
 
@@ -45,9 +67,10 @@ export default function WatchPage() {
   }, [searchParams]);
 
   const film = data?.movie || data;
-  
+
   const kkphimEpisodes: any[] = data?.episodes || [];
   const ophimEpisodes: any[] = ophimData?.episodes || [];
+  const nguoncEpisodes: any[] = nguoncData?.episodes || [];
 
   const mappedKKPhim = kkphimEpisodes.map((s: any) => ({
     ...s,
@@ -55,32 +78,40 @@ export default function WatchPage() {
   }));
   const mappedOphim = ophimEpisodes.map((s: any) => ({
     ...s,
-    server_name: `Server 2 (Ophim) - ${s.server_name}`,
+    server_name: `Server 2 (OPhim) - ${s.server_name}`,
+  }));
+  const mappedNguonC = nguoncEpisodes.map((s: any) => ({
+    ...s,
+    server_name: `Server 3 (NguonC) - ${s.server_name}`,
   }));
 
-  const episodes = [...mappedKKPhim, ...mappedOphim];
+  const episodes = [...mappedKKPhim, ...mappedOphim, ...mappedNguonC];
 
   // Find current episode URL
   const server = episodes[currentServer];
   const serverData: any[] = server?.server_data || [];
-  const currentEpData = serverData.find((e: any) => (e.slug || e.name) === currentEp) || serverData[0];
-  
+  const currentEpData =
+    serverData.find((e: any) => (e.slug || e.name) === currentEp) || serverData[0];
+
   // Ưu tiên link_m3u8 cho Artplayer, fallback về link_embed cho iframe
   const m3u8Url = currentEpData?.link_m3u8 || '';
   const embedUrl = currentEpData?.link_embed || '';
   const videoUrl = m3u8Url || embedUrl;
 
-  const currentEpIndex = serverData.findIndex((e: any) => (e.slug || e.name) === (currentEp || currentEpData?.slug || currentEpData?.name));
+  const currentEpIndex = serverData.findIndex(
+    (e: any) => (e.slug || e.name) === (currentEp || currentEpData?.slug || currentEpData?.name),
+  );
   const prevEp = currentEpIndex > 0 ? serverData[currentEpIndex - 1] : null;
   const nextEp = currentEpIndex < serverData.length - 1 ? serverData[currentEpIndex + 1] : null;
 
-  const posterUrl = resolveImageUrl(film?.thumb_url) || resolveImageUrl(film?.poster_url) || undefined;
+  const posterUrl =
+    resolveImageUrl(film?.thumb_url) || resolveImageUrl(film?.poster_url) || undefined;
 
   // Listen for episode toggle event from Artplayer and handle footer visibility
   useEffect(() => {
-    const handleToggle = () => setShowEpisodes(prev => !prev);
+    const handleToggle = () => setShowEpisodes((prev) => !prev);
     window.addEventListener('artplayer-toggle-episodes', handleToggle);
-    
+
     const footer = document.querySelector('footer');
     if (footer) {
       footer.style.display = 'none';
@@ -103,12 +134,11 @@ export default function WatchPage() {
         </Link>
         <h1 className={styles.watchTitle}>
           {film?.name}
-          {currentEpData?.name && <span className={styles.watchEpLabel}> — Tập {currentEpData.name}</span>}
+          {currentEpData?.name && (
+            <span className={styles.watchEpLabel}> — Tập {currentEpData.name}</span>
+          )}
         </h1>
-        <button
-          className="btn btn-secondary btn-sm"
-          onClick={() => setShowEpisodes(!showEpisodes)}
-        >
+        <button className="btn btn-secondary btn-sm" onClick={() => setShowEpisodes(!showEpisodes)}>
           <List size={15} /> Danh sách tập
         </button>
       </div>
@@ -156,7 +186,15 @@ export default function WatchPage() {
                     title={useIframe ? 'Chuyển sang Artplayer' : 'Chuyển sang Iframe'}
                     style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
                   >
-                    {useIframe ? <><Play size={12} fill="currentColor" /> Artplayer</> : <><Tv size={12} /> Iframe</>}
+                    {useIframe ? (
+                      <>
+                        <Play size={12} fill="currentColor" /> Artplayer
+                      </>
+                    ) : (
+                      <>
+                        <Tv size={12} /> Iframe
+                      </>
+                    )}
                   </button>
                 )}
               </>
@@ -177,7 +215,9 @@ export default function WatchPage() {
               >
                 <ChevronLeft size={15} /> Tập trước
               </Link>
-            ) : <div />}
+            ) : (
+              <div />
+            )}
 
             <span className={styles.epNavInfo}>
               Tập {currentEpIndex + 1} / {serverData.length}
@@ -190,7 +230,9 @@ export default function WatchPage() {
               >
                 Tập tiếp <ChevronRight size={15} />
               </Link>
-            ) : <div />}
+            ) : (
+              <div />
+            )}
           </div>
 
           {/* Server selection */}
@@ -214,13 +256,18 @@ export default function WatchPage() {
         <aside className={`${styles.epSidebar} ${showEpisodes ? styles.epSidebarOpen : ''}`}>
           <div className={styles.epSidebarHeader}>
             <h3>Danh Sách Tập</h3>
-            <button className="btn btn-ghost btn-icon" onClick={() => setShowEpisodes(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button
+              className="btn btn-ghost btn-icon"
+              onClick={() => setShowEpisodes(false)}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
               <X size={16} />
             </button>
           </div>
           <div className={styles.epList}>
             {serverData.map((ep: any) => {
-              const isActive = (ep.slug || ep.name) === (currentEpData?.slug || currentEpData?.name);
+              const isActive =
+                (ep.slug || ep.name) === (currentEpData?.slug || currentEpData?.name);
               return (
                 <Link
                   key={ep.slug || ep.name}

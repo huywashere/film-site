@@ -17,13 +17,15 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
         maxRetriesPerRequest: 1,
         connectTimeout: 500, // Fail fast if Redis server is down
       });
-      this.redis.on('error', (err) => {
+      this.redis.on('error', (_err) => {
         console.warn('Redis connection failed on backend, disabling Redis throttler storage.');
         this.isRedisDisabled = true;
         if (this.redis) {
           try {
             this.redis.disconnect();
-          } catch (e) {}
+          } catch (e) {
+            void e;
+          }
           this.redis = null;
         }
       });
