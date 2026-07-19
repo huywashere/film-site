@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from 'ioredis';
+import { CircuitBreaker, CircuitOpenError } from '@/lib/circuit-breaker';
+
+// ── Circuit Breaker ───────────────────────────────────────────────────────────
+const kkphimCB = new CircuitBreaker({ name: 'KKPhim', failureThreshold: 3, recoveryTimeoutMs: 30_000 });
 
 const KKPHIM_BASE = process.env.KKPHIM_API_BASE || 'https://phimapi.com';
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
@@ -103,17 +107,20 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
     });
   }
 
-  // ── 3. Fetch from KKPhim upstream ───────────────────────────────
+  // ── 3. Fetch from KKPhim upstream (via circuit breaker) ──────────────────
   try {
-    const res = await fetch(upstreamUrl, {
-      headers: { 'Content-Type': 'application/json' },
+    const data = await kkphimCB.execute(async () => {
+      const res = await fetch(upstreamUrl, {
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(8000), // 8s hard timeout
+      });
+
+      if (!res.ok) {
+        throw new Error(`Upstream returned ${res.status}`);
+      }
+
+      return res.json();
     });
-
-    if (!res.ok) {
-      throw new Error(`Upstream returned ${res.status}`);
-    }
-
-    const data = await res.json();
 
     // ── 4. Save to Redis ─────────────────────────────────────────
     if (client && client.status === 'ready') {
@@ -135,6 +142,16 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
 
     return NextResponse.json(data, { headers: { 'X-Cache': 'MISS' } });
   } catch (err: unknown) {
+    if (err instanceof CircuitOpenError) {
+      if (memEntry) {
+        return NextResponse.json(memEntry.data, { headers: { 'X-Cache': 'STALE-CB-OPEN' } });
+      }
+      return NextResponse.json(
+        { error: 'Nguồn KKPhim tạm thời gián đoạn, vui lòng thử lại sau.', circuitOpen: true },
+        { status: 503 },
+      );
+    }
+
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[kkphim-proxy] fetch error:', msg);
 

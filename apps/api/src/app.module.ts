@@ -10,6 +10,9 @@ import { MoviesModule } from './movies/movies.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { RatingsModule } from './ratings/ratings.module';
 import { WatchlistModule } from './watchlist/watchlist.module';
+import { MailModule } from './mail/mail.module';
+import { HealthModule } from './health/health.module';
+import { WatchHistoryModule } from './watch-history/watch-history.module';
 
 @Module({
   imports: [
@@ -22,7 +25,7 @@ import { WatchlistModule } from './watchlist/watchlist.module';
       useFactory: (config: ConfigService) => ({
         throttlers: [
           {
-            ttl: 60000,
+            ttl: 60,
             limit: 100,
           },
         ],
@@ -38,6 +41,9 @@ import { WatchlistModule } from './watchlist/watchlist.module';
     ReviewsModule,
     RatingsModule,
     WatchlistModule,
+    MailModule,
+    HealthModule,
+    WatchHistoryModule,
   ],
 })
 export class AppModule {}

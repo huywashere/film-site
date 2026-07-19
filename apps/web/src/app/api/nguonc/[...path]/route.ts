@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from 'ioredis';
+import { CircuitBreaker, CircuitOpenError } from '@/lib/circuit-breaker';
 
 /**
  * NguonC API Proxy — Source C (https://phim.nguonc.com)
@@ -20,6 +21,10 @@ import { Redis } from 'ioredis';
  *   language     → lang           ⚠️ different key
  *   casts        → actor (array vs comma-string) ⚠️ different format
  */
+
+// ── Circuit Breaker ───────────────────────────────────────────────────────────
+const nguoncCB = new CircuitBreaker({ name: 'NguonC', failureThreshold: 3, recoveryTimeoutMs: 30_000 });
+
 
 const NGUONC_BASE = process.env.NGUONC_API_BASE || 'https://phim.nguonc.com/api';
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
@@ -121,31 +126,34 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
     });
   }
 
-  // ── 3. Fetch from NguonC upstream ─────────────────────────────────────────
+  // ── 3. Fetch from NguonC upstream (via circuit breaker) ────────────────────
   try {
-    const res = await fetch(upstreamUrl, {
-      headers: {
-        Accept: 'application/json',
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      },
+    const rawData = await nguoncCB.execute(async () => {
+      const res = await fetch(upstreamUrl, {
+        headers: {
+          Accept: 'application/json',
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
+        signal: AbortSignal.timeout(8000), // 8s hard timeout
+      });
+
+      if (!res.ok) {
+        throw new Error(`Upstream returned ${res.status}`);
+      }
+
+      return res.json();
     });
 
-    if (!res.ok) {
-      throw new Error(`Upstream returned ${res.status}`);
-    }
-
-    const raw = await res.json();
-
     // ── Normalize fields to match KKPhim/OPhim schema ─────────────────
-    const data = normalizeNguonC(raw, path);
+    const data = normalizeNguonC(rawData, path);
 
-    // ── 4. Save to Redis (non-blocking) ───────────────────────────────
+    // ── 4. Save to Redis (non-blocking) ───────────────────────────
     if (client && client.status === 'ready') {
       client.set(cacheKey, JSON.stringify(data), 'EX', ttlSeconds).catch(() => {});
     }
 
-    // ── 5. Save to in-memory ──────────────────────────────────────────
+    // ── 5. Save to in-memory ────────────────────────────────────
     memCache.set(cacheKey, { data, expiry: Date.now() + MEM_TTL_MS });
 
     // Evict stale entries
@@ -160,6 +168,16 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
       headers: { 'X-Cache': 'MISS', 'X-Source': 'NguonC' },
     });
   } catch (err: unknown) {
+    if (err instanceof CircuitOpenError) {
+      if (memEntry) {
+        return NextResponse.json(memEntry.data, { headers: { 'X-Cache': 'STALE-CB-OPEN', 'X-Source': 'NguonC' } });
+      }
+      return NextResponse.json(
+        { error: 'Nguồn NguonC tạm thời gián đoạn, vui lòng thử lại sau.', circuitOpen: true },
+        { status: 503 },
+      );
+    }
+
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[nguonc-proxy] fetch error:', msg);
 

@@ -94,6 +94,60 @@
     --max-width: 1400px;
   }
 
+  /* Light Theme Variables - Soft, comfortable off-white style (not too bright) */
+  html.light, html[data-theme='light'] {
+    --background: #f1f3f7; /* Very soft light gray-navy blend, easy on the eyes */
+    --foreground: #0d111b; /* Deep slate navy for soft high contrast */
+    
+    --card: #ffffff;
+    --card-foreground: #0d111b;
+    
+    --popover: #ffffff;
+    --popover-foreground: #0d111b;
+    
+    --primary: #524cf8;
+    --primary-foreground: #ffffff;
+    
+    --secondary: #e2e8f0;
+    --secondary-foreground: #0d111b;
+    
+    --muted: #e9ecef;
+    --muted-foreground: #475569;
+    
+    --accent: #524cf8;
+    --accent-foreground: #ffffff;
+    
+    --destructive: #ff3a44;
+    --destructive-foreground: #ffffff;
+    
+    --border: #cbd5e1;
+    --input: #cbd5e1;
+    --ring: #524cf8;
+    
+    /* Legacy Bindings Overwrite for Light Mode */
+    --bg-primary: #f1f3f7;
+    --bg-secondary: #ffffff;
+    --bg-card: #ffffff;
+    --bg-card-hover: #e2e8f0;
+    --bg-overlay: rgba(241, 243, 247, 0.98);
+    --bg-glass: rgba(241, 243, 247, 0.85);
+
+    --text-primary: #0d111b;
+    --text-secondary: #334155;
+    --text-muted: #475569;
+    --text-inverse: #ffffff;
+
+    --border: rgba(0, 0, 0, 0.08);
+    --border-hover: rgba(0, 0, 0, 0.14);
+
+    --star-color: #524cf8;
+    --rating-bg: rgba(82, 76, 248, 0.08);
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.10);
+    --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.12);
+  }
 }
 
 @layer base {
@@ -101,7 +155,8 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
 }

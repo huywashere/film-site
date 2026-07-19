@@ -106,13 +106,39 @@ export const kkphimApi = {
     fetchKKPhim(`/nam-phat-hanh/${year}?page=${page}&limit=${limit}`),
 };
 
+// ── Ophim & NguonC Proxies ──────────────────────────────────────
+const fetchOphim = async (endpoint: string) => {
+  const response = await fetch(`/api/ophim${endpoint}`);
+  const json = await response.json();
+  
+  if (json?.data?.items) {
+    const cdnDomain = json.data.APP_DOMAIN_CDN_IMAGE || 'https://img.ophim.live';
+    const cdnUrl = json.data.pathImage || `${cdnDomain}/uploads/movies/`;
+    const finalCdn = cdnUrl.endsWith('/') ? cdnUrl : `${cdnUrl}/`;
+    json.data.items = json.data.items.map((item: any) => ({
+      ...item,
+      thumb_url: item.thumb_url?.startsWith('http') ? item.thumb_url : `${finalCdn}${item.thumb_url}`,
+      poster_url: item.poster_url?.startsWith('http') ? item.poster_url : `${finalCdn}${item.poster_url}`,
+    }));
+  }
+  
+  return json;
+};
+
+const fetchNguonc = async (endpoint: string) => {
+  const response = await fetch(`/api/nguonc${endpoint}`);
+  const json = await response.json();
+  console.log('NguonC Response:', endpoint, json);
+  return json;
+};
+
 // ── movieApi (alias for component compatibility) ──────────────────
 export const movieApi = {
   getLatest: (page = 1) => kkphimApi.getLatest(page).then((data) => ({ data })),
-  getSeries: (page = 1) => kkphimApi.getSeries(page).then((data) => ({ data })),
-  getSingle: (page = 1) => kkphimApi.getSingle(page).then((data) => ({ data })),
-  getAnime: (page = 1) => kkphimApi.getAnime(page).then((data) => ({ data })),
-  getTvShows: (page = 1) => kkphimApi.getTvShows(page).then((data) => ({ data })),
+  getSeries: (page = 1) => fetchOphim(`/v1/api/danh-sach/phim-bo?page=${page}&limit=24`).then((data) => ({ data })),
+  getSingle: (page = 1) => fetchNguonc(`/films/danh-sach/phim-le?page=${page}`).then((data) => ({ data })),
+  getAnime: (page = 1) => fetchOphim(`/v1/api/danh-sach/hoat-hinh?page=${page}&limit=24`).then((data) => ({ data })),
+  getTvShows: (page = 1) => fetchNguonc(`/films/danh-sach/tv-shows?page=${page}`).then((data) => ({ data })),
   getDetail: (slug: string) => kkphimApi.getDetail(slug).then((data) => ({ data })),
   getDetailV1: (slug: string) => kkphimApi.getDetailV1(slug).then((data) => ({ data })),
   search: (keyword: string, page = 1) => kkphimApi.search(keyword, page).then((data) => ({ data })),
@@ -136,14 +162,8 @@ export const api = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor — attach auth token
+// Request interceptor — attach auth token (removed local storage logic, handled by cookies)
 api.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
   return config;
 });
 
@@ -155,17 +175,16 @@ api.interceptors.response.use(
     if (err.response?.status === 401 && !original._retry) {
       original._retry = true;
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) throw new Error('No refresh token');
-        const { data } = await axios.post(`${API_BASE}/auth/refresh`, { refreshToken });
-        localStorage.setItem('accessToken', data.accessToken);
-        localStorage.setItem('refreshToken', data.refreshToken);
-        original.headers.Authorization = `Bearer ${data.accessToken}`;
+        // Because withCredentials is true, this post will automatically send the refreshToken cookie
+        await axios.post(`${API_BASE}/auth/refresh`, {}, { withCredentials: true });
+        
+        // Retry original request (cookies are automatically sent)
         return api(original);
       } catch {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
+        // Redirect if refresh fails (token revoked or expired)
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(err);
@@ -178,6 +197,21 @@ export const authApi = {
     api.post('/auth/register', data),
   login: (data: { email: string; password: string }) => api.post('/auth/login', data),
   getMe: () => api.get('/auth/me'),
+  verifyEmail: (data: { token: string }) => api.post('/auth/verify-email', data),
+  forgotPassword: (data: { email: string }) => api.post('/auth/forgot-password', data),
+  resetPassword: (data: { token: string; newPassword: string }) => api.post('/auth/reset-password', data),
+  
+  // 2FA Endpoints
+  setup2FA: () => api.post('/auth/2fa/setup'),
+  verify2FA: (data: { code: string }) => api.post('/auth/2fa/verify', data),
+  disable2FA: (data: { code: string }) => api.post('/auth/2fa/disable', data),
+  loginVerify2FA: (data: { tempToken: string; code: string }) => api.post('/auth/2fa/login-verify', data),
+
+  // Session Management Endpoints
+  getSessions: () => api.get('/auth/sessions'),
+  revokeSession: (id: string) => api.post(`/auth/sessions/${id}/revoke`),
+  revokeAllSessions: () => api.post('/auth/sessions/revoke-all'),
+  logout: () => api.post('/auth/logout'),
 };
 
 // ── Watchlist API ──────────────────────────────────────────
@@ -204,3 +238,31 @@ export const ratingsApi = {
   getAverage: (movieId: string) => api.get(`/ratings/movie/${movieId}/average`),
   getMine: (movieId: string) => api.get(`/ratings/movie/${movieId}/mine`),
 };
+
+// ── Watch History API ──────────────────────────────────────
+export const watchHistoryApi = {
+  /** Upsert progress — call every 30s while watching */
+  upsert: (data: {
+    movieId: string;
+    episode?: string;
+    progress: number;
+    duration: number;
+    movieTitle: string;
+    movieThumb?: string;
+    serverName?: string;
+  }) => api.post('/watch-history', data),
+
+  /** Get paginated history list */
+  getHistory: (page = 1, limit = 20) =>
+    api.get(`/watch-history?page=${page}&limit=${limit}`),
+
+  /** Get resume data for a specific movie (returns all episodes) */
+  getResume: (movieId: string) => api.get(`/watch-history/resume/${movieId}`),
+
+  /** Delete a single history entry */
+  deleteEntry: (id: string) => api.delete(`/watch-history/${id}`),
+
+  /** Clear all history */
+  clearAll: () => api.delete('/watch-history'),
+};
+

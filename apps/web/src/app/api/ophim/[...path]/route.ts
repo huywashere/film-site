@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from 'ioredis';
+import { CircuitBreaker, CircuitOpenError } from '@/lib/circuit-breaker';
+
+// ── Circuit Breaker ───────────────────────────────────────────────────────────
+// Opens after 3 consecutive upstream failures, recovers after 30 seconds
+const ophimCB = new CircuitBreaker({ name: 'OPhim', failureThreshold: 3, recoveryTimeoutMs: 30_000 });
+
 
 const OPHIM_BASE = process.env.OPHIM_API_BASE || 'https://ophim1.com';
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
@@ -102,21 +108,24 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
     });
   }
 
-  // ── 3. Fetch from OPhim upstream ────────────────────────────────
+  // ── 3. Fetch from OPhim upstream (via circuit breaker) ─────────────────────
   try {
-    const res = await fetch(upstreamUrl, {
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      },
+    const data = await ophimCB.execute(async () => {
+      const res = await fetch(upstreamUrl, {
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
+        signal: AbortSignal.timeout(8000), // 8s hard timeout
+      });
+
+      if (!res.ok) {
+        throw new Error(`Upstream returned ${res.status}`);
+      }
+
+      return res.json();
     });
-
-    if (!res.ok) {
-      throw new Error(`Upstream returned ${res.status}`);
-    }
-
-    const data = await res.json();
 
     // ── 4. Save to Redis (non-blocking) ─────────────────────────
     if (client && client.status === 'ready') {
@@ -138,6 +147,17 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
 
     return NextResponse.json(data, { headers: { 'X-Cache': 'MISS' } });
   } catch (err: unknown) {
+    if (err instanceof CircuitOpenError) {
+      // Serve stale data when circuit is OPEN
+      if (memEntry) {
+        return NextResponse.json(memEntry.data, { headers: { 'X-Cache': 'STALE-CB-OPEN' } });
+      }
+      return NextResponse.json(
+        { error: 'Nguồn OPhim tạm thời gián đoạn, vui lòng thử lại sau.', circuitOpen: true },
+        { status: 503 },
+      );
+    }
+
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[ophim-proxy] fetch error:', msg);
 

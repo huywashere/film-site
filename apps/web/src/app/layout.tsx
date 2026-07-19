@@ -1,6 +1,6 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
-import { Navbar } from '@/components/layout/Navbar';
+import { ConditionalNavbar } from '@/components/layout/ConditionalNavbar';
 import { ConditionalFooter } from '@/components/layout/ConditionalFooter';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { ToastProvider } from '@/providers/ToastProvider';
@@ -54,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ToastProvider>
             <OfflineDetector />
             <ScrollProvider>
-              <Navbar />
+              <ConditionalNavbar />
               <main className="page-content">{children}</main>
               <ConditionalFooter />
             </ScrollProvider>

@@ -102,6 +102,12 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
   const [form, setForm] = useState({ email: '', username: '', password: '' });
   const [showPw, setShowPw] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  
+  // 2FA login states
+  const [require2FA, setRequire2FA] = useState(false);
+  const [tempToken, setTempToken] = useState('');
+  const [otp, setOtp] = useState('');
+  const [verifying2FA, setVerifying2FA] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -110,16 +116,46 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
     e.preventDefault();
     try {
       if (mode === 'login') {
-        await login(form.email, form.password);
-        toast('Đăng nhập thành công!', 'success');
-        router.push('/');
+        const result = await login(form.email, form.password);
+        if (result && result.require2FA) {
+          setRequire2FA(true);
+          setTempToken(result.tempToken);
+          toast('Vui lòng nhập mã OTP để tiếp tục đăng nhập', 'info');
+        } else {
+          toast('Đăng nhập thành công!', 'success');
+          router.push('/');
+        }
       } else {
         await register(form.email, form.username, form.password);
         toast('Đăng ký thành công!', 'success');
         router.push('/');
       }
     } catch (err: any) {
-      toast(err?.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại', 'error');
+      const msg = err?.response?.data?.message;
+      const finalMsg = Array.isArray(msg) ? msg.join(', ') : (msg || 'Có lỗi xảy ra, vui lòng thử lại');
+      toast(finalMsg, 'error');
+    }
+  };
+
+  const handleOTPSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp) return;
+    setVerifying2FA(true);
+    try {
+      const { authApi } = await import('@/lib/api');
+      await authApi.loginVerify2FA({ tempToken, code: otp });
+      toast('Xác thực OTP thành công!', 'success');
+      
+      const { fetchMe } = useAuthStore.getState();
+      await fetchMe();
+      
+      router.push('/');
+    } catch (err: any) {
+      const msg = err?.response?.data?.message;
+      const finalMsg = Array.isArray(msg) ? msg.join(', ') : (msg || 'Mã OTP không chính xác');
+      toast(finalMsg, 'error');
+    } finally {
+      setVerifying2FA(false);
     }
   };
 
@@ -137,8 +173,13 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
         >
           {/* Left Side: Branding & Background */}
           <div className="relative w-full lg:w-[45%] h-64 lg:h-full flex flex-col items-center justify-center p-8 overflow-hidden bg-black">
-            <div className="absolute inset-0 opacity-40 mix-blend-overlay">
-              <div className="w-full h-full bg-[url('https://assets.nflxext.com/ffe/siteui/vlv3/93da5c27-be66-427c-8b72-5cb39d275279/94eb5ad7-10d8-4cca-bf45-ac52e0a052c0/VN-en-20240226-popsignuptwoweeks-perspective_alpha_website_small.jpg')] bg-cover bg-center" />
+            <div className="absolute inset-0 opacity-60">
+              <div 
+                className="w-full h-full bg-cover bg-center transition-all duration-500" 
+                style={{ 
+                  backgroundImage: `url('${mode === 'login' ? '/images/wp4300709-avengers-4k-wallpapers.jpg' : '/images/wp3533664-avengers-infinity-war-4k-wallpapers.jpg'}')` 
+                }} 
+              />
             </div>
             
             <div className="relative z-10 flex flex-col items-center text-center space-y-6">
@@ -149,7 +190,7 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
                 className="flex items-center space-x-2"
               >
                 <span className="text-netflixRed text-5xl font-black">▶</span>
-                <span className="text-white font-black text-4xl tracking-tighter">CôBePhim</span>
+                <span className="text-white font-black text-4xl tracking-tighter lowercase font-sans">cineverse</span>
               </motion.div>
             </div>
             
@@ -196,100 +237,129 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex-1 flex flex-col space-y-5">
-              <AnimatePresence mode="popLayout">
-                {mode === 'register' && (
-                  <motion.div
-                    key="username"
-                    initial={{ opacity: 0, x: -20, height: 0 }}
-                    animate={{ opacity: 1, x: 0, height: 'auto' }}
-                    exit={{ opacity: 0, x: 20, height: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <StyledInputWrapper>
-                      <input
-                        name="username"
-                        type="text"
-                        value={form.username}
-                        onChange={handleChange}
-                        placeholder="Username"
-                        required={mode === 'register'}
-                        minLength={3}
-                      />
-                      <User size={18} className="icon" />
-                    </StyledInputWrapper>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <StyledInputWrapper>
-                <input
-                  name="email"
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  placeholder="Email"
-                  required
-                />
-                <User size={18} className="icon" />
-              </StyledInputWrapper>
-
-              <StyledInputWrapper>
-                <input
-                  name="password"
-                  type={showPw ? "text" : "password"}
-                  value={form.password}
-                  onChange={handleChange}
-                  placeholder="Password"
-                  required
-                  minLength={6}
-                />
-                <Lock size={18} className="icon" />
-                <button
-                  type="button"
-                  onClick={() => setShowPw(!showPw)}
-                  className="eye-btn"
-                >
-                  {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </StyledInputWrapper>
-
-              {/* Form Options */}
-              <div className="flex items-center justify-between text-sm mt-2 px-1">
-                <label className="flex items-center space-x-2 cursor-pointer group">
-                  <div className={cn(
-                    "w-[18px] h-[18px] border rounded flex items-center justify-center transition-colors",
-                    rememberMe ? "bg-transparent border-white" : "border-neutral-500 group-hover:border-white"
-                  )}>
-                    {rememberMe && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-[10px] h-[10px] bg-white rounded-sm" />}
-                  </div>
-                  <input 
-                    type="checkbox" 
-                    className="hidden" 
-                    checked={rememberMe} 
-                    onChange={() => setRememberMe(!rememberMe)} 
+            {require2FA ? (
+              <form onSubmit={handleOTPSubmit} className="flex-1 flex flex-col space-y-5 justify-center">
+                <div className="text-center space-y-2 mb-4">
+                  <h4 className="text-xl font-bold text-white">Xác Thực 2 Lớp (2FA)</h4>
+                  <p className="text-xs text-neutral-400">Nhập mã xác thực OTP 6 số hoặc mã dự phòng (backup code) của bạn.</p>
+                </div>
+                <StyledInputWrapper>
+                  <input
+                    type="text"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    placeholder="Mã OTP hoặc mã dự phòng"
+                    required
+                    className="text-center font-bold tracking-widest text-lg"
                   />
-                  <span className="text-neutral-400 group-hover:text-white transition-colors">Remember me</span>
-                </label>
+                  <Lock size={18} className="icon" />
+                </StyledInputWrapper>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  type="submit"
+                  disabled={verifying2FA}
+                  className="w-full bg-[#1DB954] text-black font-bold rounded-full py-3.5 transition-colors mt-6 flex justify-center items-center shadow-[0_0_15px_rgba(29,185,84,0.3)]"
+                >
+                  {verifying2FA ? 'Verifying...' : 'Xác nhận OTP'}
+                </motion.button>
+              </form>
+            ) : (
+              <form onSubmit={handleSubmit} className="flex-1 flex flex-col space-y-5">
+                <AnimatePresence mode="popLayout">
+                  {mode === 'register' && (
+                    <motion.div
+                      key="username"
+                      initial={{ opacity: 0, x: -20, height: 0 }}
+                      animate={{ opacity: 1, x: 0, height: 'auto' }}
+                      exit={{ opacity: 0, x: 20, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <StyledInputWrapper>
+                        <input
+                          name="username"
+                          type="text"
+                          value={form.username}
+                          onChange={handleChange}
+                          placeholder="Username"
+                          required={mode === 'register'}
+                          minLength={3}
+                        />
+                        <User size={18} className="icon" />
+                      </StyledInputWrapper>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-                {mode === 'login' && (
-                  <button type="button" className="text-neutral-400 hover:text-white transition-colors">
-                    Forgot Password?
+                <StyledInputWrapper>
+                  <input
+                    name="email"
+                    type="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder="Email"
+                    required
+                  />
+                  <User size={18} className="icon" />
+                </StyledInputWrapper>
+
+                <StyledInputWrapper>
+                  <input
+                    name="password"
+                    type={showPw ? "text" : "password"}
+                    value={form.password}
+                    onChange={handleChange}
+                    placeholder="Password"
+                    required
+                    minLength={6}
+                  />
+                  <Lock size={18} className="icon" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw(!showPw)}
+                    className="eye-btn"
+                  >
+                    {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
-                )}
-              </div>
+                </StyledInputWrapper>
 
-              {/* Submit Button */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-[#1DB954] text-black font-bold rounded-full py-3.5 transition-colors mt-6 flex justify-center items-center shadow-[0_0_15px_rgba(29,185,84,0.3)]"
-              >
-                {isLoading ? 'Processing...' : (mode === 'login' ? 'Sign in' : 'Sign up')}
-              </motion.button>
-            </form>
+                {/* Form Options */}
+                <div className="flex items-center justify-between text-sm mt-2 px-1">
+                  <label className="flex items-center space-x-2 cursor-pointer group">
+                    <div className={cn(
+                      "w-[18px] h-[18px] border rounded flex items-center justify-center transition-colors",
+                      rememberMe ? "bg-transparent border-white" : "border-neutral-500 group-hover:border-white"
+                    )}>
+                      {rememberMe && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-[10px] h-[10px] bg-white rounded-sm" />}
+                    </div>
+                    <input 
+                      type="checkbox" 
+                      className="hidden" 
+                      checked={rememberMe} 
+                      onChange={() => setRememberMe(!rememberMe)} 
+                    />
+                    <span className="text-neutral-400 group-hover:text-white transition-colors">Remember me</span>
+                  </label>
+
+                  {mode === 'login' && (
+                    <Link href="/forgot-password" className="text-neutral-400 hover:text-white transition-colors">
+                      Forgot Password?
+                    </Link>
+                  )}
+                </div>
+
+                {/* Submit Button */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-[#1DB954] text-black font-bold rounded-full py-3.5 transition-colors mt-6 flex justify-center items-center shadow-[0_0_15px_rgba(29,185,84,0.3)]"
+                >
+                  {isLoading ? 'Processing...' : (mode === 'login' ? 'Sign in' : 'Sign up')}
+                </motion.button>
+              </form>
+            )}
 
             {/* Divider */}
             <div className="relative my-8">

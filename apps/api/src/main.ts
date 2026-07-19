@@ -2,13 +2,30 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import helmet from 'helmet';
+import * as cookieParser from 'cookie-parser';
+import * as Sentry from '@sentry/node';
 import { AppModule } from './app.module';
+
+// ── Sentry – init BEFORE creating the NestJS app so all errors are captured
+// If SENTRY_DSN is not set, Sentry runs as a no-op (zero overhead)
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'development',
+    // Capture 10% of transactions for performance monitoring (cost-effective)
+    tracesSampleRate: 0.1,
+    // Don't send errors in test environment
+    enabled: process.env.NODE_ENV !== 'test',
+  });
+  console.log('🔍 Sentry error tracking enabled');
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // ── Security headers (Helmet) ──────────────────────────────────
   // Protects against well-known web vulnerabilities by setting HTTP headers
+  app.use(cookieParser());
   app.use(
     helmet({
       // Allow same-origin iframes (used by our own video player)

@@ -4,6 +4,8 @@ import Redis from 'ioredis';
 export interface ThrottlerStorageRecord {
   totalHits: number;
   timeToExpire: number;
+  isBlocked: boolean;
+  timeToBlockExpire: number;
 }
 
 export class RedisThrottlerStorage implements ThrottlerStorage {
@@ -35,7 +37,13 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
     }
   }
 
-  async increment(key: string, ttl: number): Promise<ThrottlerStorageRecord> {
+  async increment(
+    key: string,
+    ttl: number,
+    limit: number,
+    blockDuration: number,
+    throttlerName: string,
+  ): Promise<ThrottlerStorageRecord> {
     // Check if Redis is online/ready and not disabled
     if (!this.isRedisDisabled && this.redis && this.redis.status === 'ready') {
       try {
@@ -53,9 +61,15 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
             timeToExpireMs = ttl;
           }
 
+          const timeToExpire = Math.max(0, Math.ceil(timeToExpireMs / 1000));
+          const isBlocked = totalHits > limit;
+          const timeToBlockExpire = isBlocked ? Math.max(0, Math.ceil(blockDuration / 1000)) : 0;
+
           return {
             totalHits,
-            timeToExpire: Math.max(0, Math.ceil(timeToExpireMs / 1000)),
+            timeToExpire,
+            isBlocked,
+            timeToBlockExpire,
           };
         }
       } catch (err) {
@@ -73,13 +87,22 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
       return {
         totalHits: 1,
         timeToExpire: Math.max(0, Math.ceil(ttl / 1000)),
+        isBlocked: false,
+        timeToBlockExpire: 0,
       };
     }
 
     record.count += 1;
+    const totalHits = record.count;
+    const timeToExpire = Math.max(0, Math.ceil((record.expiresAt - now) / 1000));
+    const isBlocked = totalHits > limit;
+    const timeToBlockExpire = isBlocked ? Math.max(0, Math.ceil(blockDuration / 1000)) : 0;
+
     return {
-      totalHits: record.count,
-      timeToExpire: Math.max(0, Math.ceil((record.expiresAt - now) / 1000)),
+      totalHits,
+      timeToExpire,
+      isBlocked,
+      timeToBlockExpire,
     };
   }
 }

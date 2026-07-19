@@ -122,70 +122,70 @@ export function Navbar() {
       <header
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-16 flex items-center",
-          scrolled ? "bg-background/95 shadow-md border-b border-border backdrop-blur-md" : "bg-gradient-to-b from-black/80 to-transparent"
+          scrolled ? "bg-background/95 shadow-md backdrop-blur-md" : "bg-gradient-to-b from-background/80 via-background/20 to-transparent"
         )}
       >
         <div className="w-full px-4 md:px-8 flex items-center justify-between">
           {/* Left Block: Logo */}
           <div className="flex items-center w-auto lg:w-1/4">
             <Link href="/" className="flex items-center space-x-1.5 group">
-              <span className="text-white text-2xl font-black tracking-tighter lowercase font-sans">
+              <span className="text-foreground text-2xl font-black tracking-tighter lowercase font-sans">
                 cineverse
               </span>
             </Link>
           </div>
 
           {/* Center Block: Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center justify-center space-x-6 text-sm font-medium text-neutral-300 flex-1">
+          <nav className="hidden lg:flex items-center justify-center space-x-6 text-sm font-medium text-neutral-600 dark:text-neutral-300 flex-1">
             {/* Thể Loại Dropdown */}
             <div className="relative group py-5">
-              <button className="flex items-center space-x-1 hover:text-white transition-colors focus:outline-none">
+              <button className="flex items-center space-x-1 hover:text-neutral-900 dark:hover:text-white transition-colors focus:outline-none">
                 <span>{t('nav.genres')}</span>
                 <ChevronDown size={14} className="transition-transform duration-200 group-hover:rotate-180" />
               </button>
-              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[380px] p-2 bg-[#060814]/95 backdrop-blur-xl border border-white/10 shadow-2xl rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-3 gap-1 z-50">
-                <Link href="/genre/hanh-dong" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Hành Động</Link>
-                <Link href="/genre/phieu-luu" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Phiêu Lưu</Link>
-                <Link href="/genre/hoat-hinh" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Hoạt Hình</Link>
-                <Link href="/genre/hai-huoc" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Hài Hước</Link>
-                <Link href="/genre/hinh-su" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Hình Sự</Link>
-                <Link href="/genre/tai-lieu" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Tài Liệu</Link>
-                <Link href="/genre/chinh-kich" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Chính Kịch</Link>
-                <Link href="/genre/co-trang" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Cổ Trang</Link>
-                <Link href="/genre/kinh-di" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Kinh Dị</Link>
-                <Link href="/genre/tinh-cam" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Tình Cảm</Link>
-                <Link href="/genre/vien-tuong" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Viễn Tưởng</Link>
-                <Link href="/genre/phim-18" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Phim 18+</Link>
+              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[380px] p-2 bg-card/95 backdrop-blur-xl border border-border shadow-2xl rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-3 gap-1 z-50">
+                <Link href="/genre/hanh-dong" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Hành Động</Link>
+                <Link href="/genre/phieu-luu" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Phiêu Lưu</Link>
+                <Link href="/genre/hoat-hinh" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Hoạt Hình</Link>
+                <Link href="/genre/hai-huoc" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Hài Hước</Link>
+                <Link href="/genre/hinh-su" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Hình Sự</Link>
+                <Link href="/genre/tai-lieu" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Tài Liệu</Link>
+                <Link href="/genre/chinh-kich" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Chính Kịch</Link>
+                <Link href="/genre/co-trang" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Cổ Trang</Link>
+                <Link href="/genre/kinh-di" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Kinh Dị</Link>
+                <Link href="/genre/tinh-cam" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Tình Cảm</Link>
+                <Link href="/genre/vien-tuong" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Viễn Tưởng</Link>
+                <Link href="/genre/phim-18" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Phim 18+</Link>
               </div>
             </div>
 
             {/* Quốc Gia Dropdown */}
             <div className="relative group py-5">
-              <button className="flex items-center space-x-1 hover:text-white transition-colors focus:outline-none">
+              <button className="flex items-center space-x-1 hover:text-neutral-900 dark:hover:text-white transition-colors focus:outline-none">
                 <span>{t('nav.country')}</span>
                 <ChevronDown size={14} className="transition-transform duration-200 group-hover:rotate-180" />
               </button>
-              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[260px] p-2 bg-[#060814]/95 backdrop-blur-xl border border-white/10 shadow-2xl rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-2 gap-1 z-50">
-                <Link href="/country/trung-quoc" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Trung Quốc</Link>
-                <Link href="/country/han-quoc" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Hàn Quốc</Link>
-                <Link href="/country/nhat-ban" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Nhật Bản</Link>
-                <Link href="/country/thai-lan" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Thái Lan</Link>
-                <Link href="/country/viet-nam" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Việt Nam</Link>
-                <Link href="/country/au-my" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Âu Mỹ</Link>
+              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[260px] p-2 bg-card/95 backdrop-blur-xl border border-border shadow-2xl rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-2 gap-1 z-50">
+                <Link href="/country/trung-quoc" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Trung Quốc</Link>
+                <Link href="/country/han-quoc" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Hàn Quốc</Link>
+                <Link href="/country/nhat-ban" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Nhật Bản</Link>
+                <Link href="/country/thai-lan" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Thái Lan</Link>
+                <Link href="/country/viet-nam" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Việt Nam</Link>
+                <Link href="/country/au-my" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Âu Mỹ</Link>
               </div>
             </div>
 
             {/* Danh Sách Dropdown */}
             <div className="relative group py-5">
-              <button className="flex items-center space-x-1 hover:text-white transition-colors focus:outline-none">
+              <button className="flex items-center space-x-1 hover:text-neutral-900 dark:hover:text-white transition-colors focus:outline-none">
                 <span>{t('nav.list')}</span>
                 <ChevronDown size={14} className="transition-transform duration-200 group-hover:rotate-180" />
               </button>
-              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[180px] p-1.5 bg-[#060814]/95 backdrop-blur-xl border border-white/10 shadow-2xl rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <Link href="/films?sort=newest" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Phim Mới</Link>
-                <Link href="/films/series" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Phim Bộ</Link>
-                <Link href="/films/single" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Phim Lẻ</Link>
-                <Link href="/films/anime" className="hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-300 hover:text-white block">Hoạt Hình</Link>
+              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[180px] p-1.5 bg-card/95 backdrop-blur-xl border border-border shadow-2xl rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <Link href="/films?sort=newest" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Phim Mới</Link>
+                <Link href="/films/series" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Phim Bộ</Link>
+                <Link href="/films/single" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Phim Lẻ</Link>
+                <Link href="/films/anime" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Hoạt Hình</Link>
               </div>
             </div>
 
@@ -194,8 +194,10 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "hover:text-white transition-colors",
-                    pathname === link.href ? "text-white font-semibold" : ""
+                    "hover:text-neutral-900 dark:hover:text-white transition-colors",
+                    pathname === link.href 
+                      ? "text-neutral-900 dark:text-white font-black" 
+                      : "text-neutral-600 dark:text-neutral-300"
                   )}
                 >
                   {t(link.key)}
@@ -216,7 +218,7 @@ export function Navbar() {
                       placeholder="Tìm kiếm phim, diễn viên..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-48 md:w-64 bg-black/60 border border-white/20 rounded-full px-8 py-1.5 text-xs text-white focus:border-white transition-all duration-300 outline-none"
+                      className="w-48 md:w-64 bg-black/5 dark:bg-black/60 border border-black/10 dark:border-white/20 rounded-full px-8 py-1.5 text-xs text-neutral-800 dark:text-white focus:border-neutral-400 dark:focus:border-white transition-all duration-300 outline-none"
                       onBlur={() => {
                         if (!searchQuery) setSearchOpen(false);
                       }}
@@ -226,7 +228,7 @@ export function Navbar() {
                   <button
                     type="button"
                     onClick={() => setSearchOpen(true)}
-                    className="text-neutral-300 hover:text-white p-1.5 transition-colors focus:outline-none"
+                    className="text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white p-1.5 transition-colors focus:outline-none"
                     aria-label="Search button"
                   >
                     <Search size={18} />
@@ -285,29 +287,37 @@ export function Navbar() {
               )}
             </div>
 
+            {/* Theme Switch */}
+            <button
+              onClick={toggleTheme}
+              className="flex items-center justify-center text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white transition-colors p-1.5 focus:outline-none border-r border-neutral-300 dark:border-white/20 pr-3 mr-3"
+              title={theme === 'dark' ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
+            >
+              {mounted && theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+            </button>
+
             {/* Language Switch */}
             <button
               onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
-              className="hidden md:flex items-center space-x-1 text-xs text-neutral-300 hover:text-white transition-colors border-r border-white/20 pr-3 mr-3"
+              className="hidden md:flex items-center space-x-1 text-xs text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white transition-colors border-r border-neutral-300 dark:border-white/20 pr-3 mr-3"
             >
               <Languages size={14} />
-              <span>{lang.toUpperCase()}</span>
+              <span className="font-semibold">{lang.toUpperCase()}</span>
             </button>
 
             {/* PWA App Download (UI Only) */}
-            <button className="hidden xl:flex items-center space-x-2 text-left hover:opacity-80 transition-opacity border-r border-white/20 pr-3 mr-3">
-              <MonitorSmartphone size={24} className="text-[#f5c518]" />
+            <button className="hidden xl:flex items-center space-x-2 text-left hover:opacity-80 transition-opacity border-r border-neutral-300 dark:border-white/20 pr-3 mr-3">
+              <MonitorSmartphone size={22} className="text-[#f5c518]" />
               <div className="flex flex-col justify-center">
-                <span className="text-sm font-semibold text-white leading-tight">Tải ứng dụng</span>
+                <span className="text-xs font-bold text-neutral-700 dark:text-white leading-tight">Tải ứng dụng</span>
               </div>
             </button>
-
 
             {user ? (
               <>
                 {/* Notifications Dropdown via Radix */}
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="relative text-neutral-300 hover:text-white transition-colors focus:outline-none p-1">
+                  <DropdownMenuTrigger className="relative text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white transition-colors focus:outline-none p-1">
                     <Bell size={18} />
                     {unreadCount > 0 && (
                       <span className="absolute -top-1 -right-1 w-4 h-4 bg-netflixRed text-[9px] font-black rounded-full flex items-center justify-center text-white">

@@ -1,10 +1,7 @@
 {
   "name": "cineverse",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "packageManager": "pnpm@9.5.0",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
@@ -31,6 +28,5 @@
   },
   "engines": {
     "node": ">=18"
-  },
-  "packageManager": "npm@10.0.0"
+  }
 }

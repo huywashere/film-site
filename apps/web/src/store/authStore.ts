@@ -9,15 +9,17 @@ interface User {
   displayName?: string;
   avatarUrl?: string;
   bio?: string;
+  googleId?: string | null;
+  twoFactorEnabled?: boolean;
+  isLocked?: boolean;
 }
 
 interface AuthState {
   user: User | null;
-  accessToken: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<any>;
   register: (email: string, username: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   fetchMe: () => Promise<void>;
 }
 
@@ -25,19 +27,21 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      accessToken: null,
       isLoading: false,
 
       login: async (email, password) => {
         set({ isLoading: true });
         try {
           const { data } = await authApi.login({ email, password });
-          localStorage.setItem('accessToken', data.accessToken);
-          localStorage.setItem('refreshToken', data.refreshToken);
-          set({ accessToken: data.accessToken, isLoading: false });
+          if (data && data.require2FA) {
+            set({ isLoading: false });
+            return data; // { require2FA: true, tempToken: "..." }
+          }
+          set({ isLoading: false });
           // Fetch user data
           const { data: user } = await authApi.getMe();
           set({ user });
+          return { success: true };
         } catch (err) {
           set({ isLoading: false });
           throw err;
@@ -47,10 +51,8 @@ export const useAuthStore = create<AuthState>()(
       register: async (email, username, password) => {
         set({ isLoading: true });
         try {
-          const { data } = await authApi.register({ email, username, password });
-          localStorage.setItem('accessToken', data.accessToken);
-          localStorage.setItem('refreshToken', data.refreshToken);
-          set({ accessToken: data.accessToken, isLoading: false });
+          await authApi.register({ email, username, password });
+          set({ isLoading: false });
           const { data: user } = await authApi.getMe();
           set({ user });
         } catch (err) {
@@ -59,26 +61,28 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      logout: () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        set({ user: null, accessToken: null });
+      logout: async () => {
+        try {
+          await authApi.logout();
+        } catch (e) {
+          console.error('Logout failed on server', e);
+        }
+        set({ user: null });
       },
 
       fetchMe: async () => {
-        const token = localStorage.getItem('accessToken');
-        if (!token) return;
         try {
           const { data } = await authApi.getMe();
           set({ user: data });
         } catch {
-          // Token invalid
+          // Ignore, user is not logged in or token is invalid
+          set({ user: null });
         }
       },
     }),
     {
       name: 'cineverse-auth',
-      partialize: (state) => ({ user: state.user, accessToken: state.accessToken }),
+      partialize: (state) => ({ user: state.user }),
     },
   ),
 );
