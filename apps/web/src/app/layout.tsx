@@ -1,14 +1,13 @@
-import 'core-js/stable';
-import 'regenerator-runtime/runtime';
-import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import type { Metadata, Viewport } from 'next';
 import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
+import { ConditionalFooter } from '@/components/layout/ConditionalFooter';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { ToastProvider } from '@/providers/ToastProvider';
 import { RegisterSW } from '@/components/layout/RegisterSW';
 import { ThemeWatcher } from '@/components/layout/ThemeWatcher';
 import { ScrollProvider } from '@/providers/ScrollProvider';
+import { OfflineDetector } from '@/components/layout/OfflineDetector';
 
 export const viewport: Viewport = {
   themeColor: '#00c030',
@@ -45,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
       <body>
@@ -52,10 +52,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <RegisterSW />
         <QueryProvider>
           <ToastProvider>
+            <OfflineDetector />
             <ScrollProvider>
               <Navbar />
               <main className="page-content">{children}</main>
-              <Footer />
+              <ConditionalFooter />
             </ScrollProvider>
           </ToastProvider>
         </QueryProvider>

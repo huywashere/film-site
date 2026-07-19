@@ -12,182 +12,210 @@ import {
   Clock,
   Tv,
   Clapperboard,
-  Flame,
-  Ghost,
-  Heart,
-  Smile,
-  Rocket,
-  Swords,
-  Brain,
-  Palette,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import { movieApi } from '@/lib/api';
 import { FilmCard, FilmCardSkeleton, FilmItem, resolveImageUrl } from '@/components/film/FilmCard';
 import { useTranslation } from '@/store/langStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import styles from './page.module.css';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, FreeMode } from 'swiper/modules';
+import styled from '@emotion/styled';
 
-// ── Hero Carousel ───────────────────────────────────────────
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/free-mode';
+
+// ── Emotion Styled Components ─────────────────────────────────────
+const StyledSwiperContainer = styled.div`
+  position: relative;
+  
+  .swiper {
+    padding: 12px 4px;
+  }
+  
+  .swiper-button-prev,
+  .swiper-button-next {
+    color: white !important;
+    width: 5vw !important;
+    max-width: 60px;
+    height: 100% !important;
+    top: 0 !important;
+    margin-top: 0 !important;
+    transition: all 0.3s ease;
+    opacity: 0;
+  }
+
+  /* Left gradient fade */
+  .swiper-button-prev { 
+    left: 0 !important; 
+    background: linear-gradient(to right, rgba(6,8,20,0.95) 0%, rgba(6,8,20,0.5) 60%, transparent 100%);
+  }
+  
+  /* Right gradient fade */
+  .swiper-button-next { 
+    right: 0 !important; 
+    background: linear-gradient(to left, rgba(6,8,20,0.95) 0%, rgba(6,8,20,0.5) 60%, transparent 100%);
+  }
+
+  &:hover .swiper-button-prev,
+  &:hover .swiper-button-next {
+    opacity: 1;
+  }
+
+  .swiper-button-prev:hover,
+  .swiper-button-next:hover {
+    color: #E50914 !important;
+  }
+
+  .swiper-button-prev::after,
+  .swiper-button-next::after {
+    font-size: 28px !important;
+    font-weight: 900 !important;
+    transition: transform 0.2s ease;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+  }
+
+  .swiper-button-prev:hover::after,
+  .swiper-button-next:hover::after {
+    transform: scale(1.3);
+  }
+`;
+
+// ── Netflix Hero Banner ───────────────────────────────────────────
 function HeroBanner({ films }: { films: FilmItem[] }) {
   const [current, setCurrent] = useState(0);
   const { t } = useTranslation();
   const featured = films.slice(0, 5);
 
   useEffect(() => {
-    const t = setInterval(() => setCurrent((c) => (c + 1) % featured.length), 6000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setCurrent((c) => (c + 1) % featured.length), 8000);
+    return () => clearInterval(timer);
   }, [featured.length]);
 
   const film = featured[current];
   if (!film) return null;
 
-  const poster = resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url);
+  const backdrop = resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url);
 
   return (
-    <div className={styles.hero}>
-      {/* Background */}
-      {poster && (
-        <NextImage
-          key={film.slug}
-          src={poster}
-          alt={film.name}
-          fill
-          priority
-          sizes="100vw"
-          className={styles.heroBg}
-          style={{ objectFit: 'cover', objectPosition: 'center top' }}
-          unoptimized
-        />
+    <div className="relative h-[90vh] md:h-screen w-full overflow-hidden bg-[#060814]">
+      {/* Background Poster Image */}
+      {backdrop && (
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={film.slug}
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.5, ease: 'easeOut' }}
+            className="absolute inset-0 w-full h-full"
+          >
+            <NextImage
+              src={backdrop}
+              alt={film.name}
+              fill
+              priority
+              quality={100}
+              sizes="100vw"
+              className="object-cover object-center brightness-[0.7]"
+              unoptimized
+            />
+          </motion.div>
+        </AnimatePresence>
       )}
 
-      {/* Gradient overlays */}
-      <div className={styles.heroGradientLeft} />
-      <div className={styles.heroGradientBottom} />
-      <div className={styles.heroGradientRight} />
+      {/* Cinematic Gradient Masks */}
+      {/* Left Mask for text readability */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[#060814] via-[#060814]/60 to-transparent w-full md:w-[65%] z-10" />
+      {/* Bottom Mask for page integration */}
+      <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#060814] via-[#060814]/80 to-transparent z-10" />
+      {/* Overall Overlay */}
+      <div className="absolute inset-0 bg-black/10 z-0" />
 
-      {/* Content */}
-      <div className={`container ${styles.heroContent}`}>
-        <div className={styles.heroInfo}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={current}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-            >
-              {/* Badges */}
-              <div className={styles.heroBadges}>
-                {film.type && (
-                  <span className="badge badge-accent">
-                    {film.type === 'series'
-                      ? t('nav.series')
-                      : film.type === 'single'
-                        ? t('nav.single')
-                        : film.type === 'hoathinh'
-                          ? t('nav.anime')
-                          : t('nav.tvshows')}
+      {/* Content Container */}
+      <div className="absolute inset-0 z-20 flex items-center">
+        <div className="container mx-auto px-4 md:px-8 max-w-7xl">
+          <div className="max-w-2xl flex flex-col space-y-4 md:space-y-6">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={current}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+                className="flex flex-col space-y-4 md:space-y-5"
+              >
+                {/* Badges */}
+                <div className="flex items-center space-x-3">
+                  <span className="bg-white text-black text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-sm shadow">
+                    NEW
                   </span>
+                  <span className="border border-white/40 text-white text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center">
+                    12
+                  </span>
+                  {film.year && (
+                    <span className="text-white/60 text-xs font-semibold">
+                      {film.year}
+                    </span>
+                  )}
+                </div>
+
+                {/* Title */}
+                <h1 className="text-4xl md:text-7xl font-extrabold text-white tracking-wide leading-none drop-shadow-md uppercase font-sans">
+                  {film.name}
+                </h1>
+                {film.origin_name && (
+                  <p className="text-base md:text-xl text-white/70 font-semibold tracking-wide -mt-2">
+                    {film.origin_name}
+                  </p>
                 )}
-                {film.year && <span className="badge badge-muted">{film.year}</span>}
-              </div>
 
-              {/* Title */}
-              <h1 className={styles.heroTitle}>{film.name}</h1>
-              {film.origin_name && <p className={styles.heroSubtitle}>{film.origin_name}</p>}
+                {/* Tagline / Mini Description */}
+                <p className="text-xs md:text-sm text-white/80 max-w-xl leading-relaxed line-clamp-3">
+                  {t('home.heroDesc')}
+                </p>
 
-              {/* Actions */}
-              <div className={styles.heroActions}>
-                <Link href={`/watch/${film.slug}`} className="btn btn-primary btn-lg">
-                  <Play size={18} fill="currentColor" /> {t('home.watchNow')}
-                </Link>
-                <Link href={`/film/${film.slug}`} className="btn btn-secondary btn-lg">
-                  <Info size={18} /> {t('home.details')}
-                </Link>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        {/* Slide indicators */}
-        <div className={styles.heroIndicators}>
-          {featured.map((_, i) => (
-            <button
-              key={i}
-              className={`${styles.indicator} ${i === current ? styles.indicatorActive : ''}`}
-              onClick={() => setCurrent(i)}
-            />
-          ))}
+                {/* Action Buttons */}
+                <div className="flex items-center space-x-3 pt-2">
+                  <Link
+                    href={`/watch/${film.slug}`}
+                    className="flex items-center space-x-2 bg-[#232733] hover:bg-[#2d3242] text-white px-7 py-3 rounded-full text-xs font-black tracking-wider uppercase transition-colors shadow-md border border-white/5"
+                  >
+                    <Play size={14} fill="currentColor" />
+                    <span>Go to Movie</span>
+                  </Link>
+                  <Link
+                    href={`/film/${film.slug}`}
+                    className="flex items-center space-x-2 bg-white/10 hover:bg-white/25 text-white px-7 py-3 rounded-full text-xs font-black tracking-wider uppercase transition-colors backdrop-blur-sm border border-white/10"
+                  >
+                    <Info size={14} />
+                    <span>{t('home.details')}</span>
+                  </Link>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
-      {/* Arrow controls */}
-      <button
-        className={`${styles.heroArrow} ${styles.heroArrowLeft}`}
-        onClick={() => setCurrent((c) => (c - 1 + featured.length) % featured.length)}
-        aria-label="Trước"
-      >
-        <ChevronLeft size={20} />
-      </button>
-      <button
-        className={`${styles.heroArrow} ${styles.heroArrowRight}`}
-        onClick={() => setCurrent((c) => (c + 1) % featured.length)}
-        aria-label="Tiếp"
-      >
-        <ChevronRight size={20} />
-      </button>
-
-      {/* Film strip thumbnails */}
-      <div className={styles.heroStrip}>
-        {featured.map((f, i) => {
-          const thumb = resolveImageUrl(f.thumb_url) || resolveImageUrl(f.poster_url);
-          return (
-            <button
-              key={f.slug || i}
-              className={`${styles.stripItem} ${i === current ? styles.stripItemActive : ''}`}
-              onClick={() => setCurrent(i)}
-              type="button"
-            >
-              {thumb && (
-                <NextImage
-                  src={thumb}
-                  alt={f.name}
-                  fill
-                  sizes="150px"
-                  style={{ objectFit: 'cover' }}
-                  unoptimized
-                />
-              )}
-            </button>
-          );
-        })}
+      {/* Slide Indicators - Bottom Center */}
+      <div className="absolute left-1/2 -translate-x-1/2 bottom-8 z-20 flex space-x-2.5">
+        {featured.map((_, i) => (
+          <button
+            key={i}
+            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${i === current ? 'bg-white scale-125' : 'bg-white/30 hover:bg-white/60'}`}
+            onClick={() => setCurrent(i)}
+            aria-label={`Slide ${i + 1}`}
+          />
+        ))}
       </div>
     </div>
   );
 }
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.04,
-    },
-  },
-};
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 12, scale: 0.98 },
-  show: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { duration: 0.35, ease: [0.25, 0.8, 0.25, 1] },
-  },
-};
-
-// ── Film Row Section ────────────────────────────────────────
+// ── Netflix Film Row ────────────────────────────────────────
 function FilmSection({
   title,
   icon: Icon,
@@ -202,126 +230,57 @@ function FilmSection({
   href: string;
 }) {
   const { t } = useTranslation();
+
   return (
-    <section className={styles.section}>
-      <div className="section-header">
-        <h2 className="section-title">
-          <Icon size={14} /> {title}
+    <motion.section
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.6, ease: 'easeOut' }}
+      className="relative mb-10 md:mb-14"
+    >
+      <div className="flex items-center justify-between mb-4 px-1">
+        <h2 className="text-xl md:text-2xl font-bold text-foreground flex items-center space-x-2 font-sans tracking-wide">
+          <Icon size={18} className="text-netflixRed" />
+          <span>{title}</span>
         </h2>
-        <Link href={href} className="section-link">
-          {t('home.viewAll')} <ChevronRight size={14} />
+        <Link href={href} className="text-xs text-neutral-400 hover:text-foreground font-bold uppercase tracking-wider flex items-center space-x-1 transition-colors">
+          <span>{t('home.viewAll')}</span>
+          <ChevronRight size={14} />
         </Link>
       </div>
 
-      <motion.div
-        className={`scroll-row ${styles.filmRow}`}
-        style={{ alignItems: 'flex-start' }}
-        variants={containerVariants}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, margin: '-40px' }}
-      >
-        {isLoading
-          ? Array.from({ length: 8 }).map((_, i) => <FilmCardSkeleton key={i} width={200} />)
-          : films.slice(0, 10).map((film) => (
-              <motion.div key={film.slug} variants={cardVariants} style={{ flexShrink: 0 }}>
-                <FilmCard film={film} width={200} variant="standard" />
-              </motion.div>
-            ))}
-      </motion.div>
-    </section>
+      {/* Netflix Horizontal Row Slider using Swiper & Emotion */}
+      <StyledSwiperContainer>
+        <Swiper
+          modules={[Navigation, FreeMode]}
+          spaceBetween={16}
+          slidesPerView="auto"
+          navigation
+          freeMode={true}
+          className="mySwiper"
+        >
+          {isLoading
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <SwiperSlide key={`skeleton-${i}`} style={{ width: '200px' }}>
+                  <FilmCardSkeleton width={200} hideDetails={true} />
+                </SwiperSlide>
+              ))
+            : films.slice(0, 12).map((film) => (
+                <SwiperSlide key={film.slug} style={{ width: '200px' }}>
+                  <FilmCard film={film} width={200} variant="standard" hideDetails={true} />
+                </SwiperSlide>
+              ))}
+        </Swiper>
+      </StyledSwiperContainer>
+    </motion.section>
   );
 }
 
-// ── Recently Reviewed Mini Feed ─────────────────────────────
-function ReviewFeed({ reviews }: { reviews: any[] }) {
-  if (!reviews?.length) return null;
-  return (
-    <section className={styles.section}>
-      <div className="section-header">
-        <h2 className="section-title">Đánh Giá Gần Đây</h2>
-        <Link href="/reviews" className="section-link">
-          Xem thêm <ChevronRight size={14} />
-        </Link>
-      </div>
-      <div className={styles.reviewFeed}>
-        {reviews.slice(0, 6).map((r: any) => (
-          <Link key={r.id} href={`/film/${r.movieId}`} className={styles.reviewCard}>
-            <div className={styles.reviewMeta}>
-              <img
-                src={
-                  r.user?.avatarUrl ||
-                  `https://ui-avatars.com/api/?name=${r.user?.username}&background=14181c&color=00c030&size=32`
-                }
-                alt=""
-                className="avatar avatar-sm"
-              />
-              <div>
-                <p className={styles.reviewUser}>{r.user?.displayName || r.user?.username}</p>
-                <p className="text-xs text-muted">{r.movie?.title || r.movieId}</p>
-              </div>
-              {r.rating && (
-                <span
-                  style={{
-                    marginLeft: 'auto',
-                    color: 'var(--star-color)',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                  }}
-                >
-                  {'★'.repeat(Math.round(r.rating))}
-                </span>
-              )}
-            </div>
-            <p className={`${styles.reviewContent} line-clamp-3`}>{r.content}</p>
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ── Genre Highlight Bar ─────────────────────────────────────
-const GENRE_HIGHLIGHTS = [
-  { label: 'Hành Động', slug: 'hanh-dong', icon: Flame },
-  { label: 'Kinh Dị', slug: 'kinh-di', icon: Ghost },
-  { label: 'Tình Cảm', slug: 'tinh-cam', icon: Heart },
-  { label: 'Hài Hước', slug: 'hai-huoc', icon: Smile },
-  { label: 'Viễn Tưởng', slug: 'khoa-hoc-vien-tuong', icon: Rocket },
-  { label: 'Cổ Trang', slug: 'co-trang', icon: Swords },
-  { label: 'Tâm Lý', slug: 'tam-ly', icon: Brain },
-  { label: 'Hoạt Hình', slug: 'hoat-hinh', icon: Palette },
-];
-
-function GenreBar() {
-  return (
-    <section className={styles.genreBar}>
-      <div className="container">
-        <div className={styles.genreList}>
-          {GENRE_HIGHLIGHTS.map((g) => {
-            const Icon = g.icon;
-            return (
-              <Link
-                key={g.slug}
-                href={`/genre/${g.slug}`}
-                className={styles.genreChip}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-              >
-                <Icon size={14} />
-                <span>{g.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 // ── Main Home Page ──────────────────────────────────────────
 export default function HomePage() {
   const { t } = useTranslation();
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const {
     data: latestData,
@@ -347,105 +306,47 @@ export default function HomePage() {
     queryFn: () => movieApi.getAnime(1).then((r) => r.data),
   });
 
-  // KKPhim latest: { items: [] }, v1/api: { data: { items: [] } }
   const latestFilms: FilmItem[] = latestData?.items || latestData?.data?.items || [];
   const seriesFilms: FilmItem[] = seriesData?.data?.items || seriesData?.items || [];
   const singleFilms: FilmItem[] = singleData?.data?.items || singleData?.items || [];
   const animeFilms: FilmItem[] = animeData?.data?.items || animeData?.items || [];
 
-  useEffect(() => {
-    if (typeof window === 'undefined' || !containerRef.current) return;
-
-    // Dynamically import GSAP to prevent SSR window issues
-    const initGsap = async () => {
-      const { gsap } = await import('gsap');
-      const { ScrollTrigger } = await import('gsap/ScrollTrigger');
-      gsap.registerPlugin(ScrollTrigger);
-
-      // Animate Hero content
-      const hero = containerRef.current?.querySelector('[class*="hero"]');
-      if (hero) {
-        gsap.fromTo(hero, { opacity: 0 }, { opacity: 1, duration: 1.2, ease: 'power2.out' });
-      }
-
-      // Animate sections on scroll
-      const sections = containerRef.current?.querySelectorAll('section');
-      if (sections) {
-        sections.forEach((section) => {
-          gsap.fromTo(
-            section,
-            { opacity: 0, y: 40 },
-            {
-              opacity: 1,
-              y: 0,
-              duration: 0.8,
-              ease: 'power2.out',
-              scrollTrigger: {
-                trigger: section,
-                start: 'top 85%',
-                toggleActions: 'play none none none',
-              },
-            },
-          );
-        });
-      }
-    };
-
-    initGsap();
-  }, [latestFilms, seriesFilms, singleFilms, animeFilms]);
-
-  // Debug logging
-  if (typeof window !== 'undefined') {
-    console.log('🎬 Latest Data:', latestData);
-    console.log('🎬 Latest Films:', latestFilms);
-    console.log('🎬 Latest Error:', latestError);
-    console.log('🎬 Loading states:', {
-      latestLoading,
-      seriesLoading,
-      singleLoading,
-      animeLoading,
-    });
-  }
-
-  // Show error if loading failed
   if (latestError) {
     return (
-      <div className="container" style={{ padding: '4rem 1rem', textAlign: 'center' }}>
-        <h2
-          style={{
-            color: 'var(--error)',
-            marginBottom: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-          }}
-        >
-          <AlertTriangle size={24} />
-          <span>{t('home.latestError', 'Không thể tải dữ liệu phim')}</span>
-        </h2>
-        <p style={{ color: 'var(--text-muted)' }}>
-          {t('home.networkError', 'Vui lòng thử lại sau hoặc kiểm tra kết nối mạng.')}
-        </p>
-        <button
-          onClick={() => window.location.reload()}
-          className="btn btn-primary"
-          style={{ marginTop: '1rem' }}
-        >
-          {t('common.retry')}
-        </button>
+      <div className="container mx-auto px-4 py-24 text-center max-w-xl">
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <AlertTriangle size={48} className="text-netflixRed" />
+          <h2 className="text-2xl font-bold text-white">
+            {t('home.latestError', 'Không thể tải dữ liệu phim')}
+          </h2>
+          <p className="text-neutral-400 text-sm">
+            {t('home.networkError', 'Vui lòng thử lại sau hoặc kiểm tra kết nối mạng.')}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-netflixRed text-white font-bold px-6 py-2.5 rounded hover:bg-[#C11119] transition-colors"
+          >
+            {t('common.retry')}
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div ref={containerRef}>
-      {/* Hero */}
-      {latestLoading ? <div className={styles.heroSkeleton} /> : <HeroBanner films={latestFilms} />}
+    <div className="bg-background min-h-screen text-foreground overflow-hidden pb-12 -mt-[100px]">
+      {/* Hero Banner with slider */}
+      {latestLoading ? (
+        <div className="w-full h-[80vh] md:h-[88vh] bg-neutral-900 animate-pulse flex items-center justify-center">
+          <Loader2 className="animate-spin text-netflixRed" size={32} />
+        </div>
+      ) : (
+        <HeroBanner films={latestFilms} />
+      )}
 
-      <div className="container" style={{ paddingTop: 'var(--space-3xl)' }}>
-        {/* Genre Bar */}
-        <GenreBar />
+      {/* Main Row Content */}
+      <div className="container mx-auto px-4 md:px-8 max-w-7xl relative pt-6 md:pt-10 z-30">
+        {/* Removed Genre Quick Links as per request */}
 
         {/* Phim Mới Cập Nhật */}
         <FilmSection
@@ -474,7 +375,7 @@ export default function HomePage() {
           href="/films/single"
         />
 
-        {/* Hoạt Hình */}
+        {/* Hoạt Hinh */}
         <FilmSection
           title={t('home.anime')}
           icon={TrendingUp}

@@ -46,7 +46,7 @@ export default function CountryPage() {
   const totalPages = data?.data?.params?.pagination?.totalPages || 1;
 
   return (
-    <div className="container">
+    <div className="container pt-24 pb-16">
       <div className="section-header" style={{ marginBottom: 'var(--space-xl)' }}>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem' }}>Quốc Gia: {label}</h1>
         <p className="text-muted text-sm">Trang {page}</p>

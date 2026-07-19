@@ -11,6 +11,7 @@ export interface ArtPlayerProps {
   subtitle?: string;
   autoplay?: boolean;
   onReady?: (player: Artplayer) => void;
+  onError?: (error: any) => void;
 }
 
 export default function ArtPlayer({
@@ -21,6 +22,7 @@ export default function ArtPlayer({
   subtitle,
   autoplay = false,
   onReady,
+  onError,
 }: ArtPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Artplayer | null>(null);
@@ -97,6 +99,9 @@ export default function ArtPlayer({
                         default:
                           console.log('💥 Cannot recover, destroying HLS');
                           hls.destroy();
+                          if (onError) {
+                            onError({ type: 'HLS_FATAL_ERROR', details: data });
+                          }
                           break;
                       }
                     }
@@ -181,6 +186,14 @@ export default function ArtPlayer({
       }
     });
 
+    // Error event listener
+    player.on('video:error', (err) => {
+      console.error('❌ Artplayer native video error:', err);
+      if (onError) {
+        onError({ type: 'NATIVE_ERROR', details: err });
+      }
+    });
+
     // Restore progress
     const savedTime = localStorage.getItem(`artplayer_progress_${url}`);
     if (savedTime) {
@@ -193,7 +206,6 @@ export default function ArtPlayer({
       });
     }
 
-    // Cleanup
     return () => {
       if (playerRef.current) {
         // Cleanup HLS
@@ -206,7 +218,7 @@ export default function ArtPlayer({
         playerRef.current = null;
       }
     };
-  }, [url, poster, title, subtitle, type, autoplay, onReady]);
+  }, [url, poster, title, subtitle, type, autoplay, onReady, onError]);
 
   return (
     <>

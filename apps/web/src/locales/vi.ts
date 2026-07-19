@@ -4,7 +4,9 @@ export const vi = {
     lists: 'DANH SÁCH',
     members: 'THÀNH VIÊN',
     reviews: 'ĐÁNH GIÁ',
-    genres: 'THỂ LOẠI',
+    genres: 'Thể Loại',
+    country: 'Quốc Gia',
+    list: 'Danh Sách',
     browseBy: 'DUYỆT THEO',
     newest: 'Mới nhất',
     popular: 'Phổ biến',
@@ -37,6 +39,7 @@ export const vi = {
     recentReviews: 'Đánh Giá Gần Đây',
     viewAll: 'Xem tất cả',
     tvshows: 'TV Shows Phổ Biến',
+    heroDesc: 'Chào mừng bạn đến với phiên bản đặc biệt của CineVerse. Xem phim trực tuyến chất lượng cao, cập nhật liên tục các nguồn phim KKPhim, OPhim và NguồnC nhanh nhất hiện nay.',
   },
   common: {
     retry: 'Thử lại',
@@ -45,5 +48,15 @@ export const vi = {
     offlineTitle: 'Mất Kết Nối Internet',
     offlineDesc:
       'Ứng dụng CineVerse hiện không thể kết nối tới máy chủ. Vui lòng kiểm tra lại kết nối Wifi hoặc dữ liệu di động của bạn.',
+  },
+  genres_list: {
+    'hanh-dong': 'Hành Động',
+    'kinh-di': 'Kinh Dị',
+    'tinh-cam': 'Tình Cảm',
+    'hai-huoc': 'Hài Hước',
+    'khoa-hoc-vien-tuong': 'Viễn Tưởng',
+    'co-trang': 'Cổ Trang',
+    'tam-ly': 'Tâm Lý',
+    'hoat-hinh': 'Hoạt Hình',
   },
 };

@@ -16,109 +16,38 @@ export default function Error({
   }, [error]);
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '75vh',
-        textAlign: 'center',
-        padding: '2rem',
-        backgroundColor: '#0a0e13',
-        color: '#ffffff',
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-          padding: '1.5rem',
-          borderRadius: '50%',
-          marginBottom: '1.5rem',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: '1px solid rgba(239, 68, 68, 0.2)',
-        }}
-      >
-        <ServerCrash size={48} color="#ef4444" />
+    <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-6 py-12 bg-background text-foreground transition-colors duration-300">
+      <div className="bg-red-500/10 border border-red-500/20 p-5 rounded-full mb-6 inline-flex items-center justify-center">
+        <ServerCrash size={48} className="text-red-500 animate-pulse" />
       </div>
-      <h1
-        style={{
-          fontSize: '4.5rem',
-          fontWeight: 'bold',
-          color: '#ef4444',
-          margin: 0,
-          lineHeight: 1.1,
-          letterSpacing: '-2px',
-        }}
-      >
+      
+      <h1 className="text-7xl font-black text-red-500 tracking-tighter leading-none mb-2">
         500
       </h1>
-      <h2
-        style={{
-          fontSize: '1.5rem',
-          margin: '0.75rem 0 1rem 0',
-          fontWeight: 600,
-          color: '#ffffff',
-        }}
-      >
+      
+      <h2 className="text-xl md:text-2xl font-bold mb-3">
         Đã Xảy Ra Lỗi Hệ Thống
       </h2>
-      <p
-        style={{
-          color: '#9e9e9e',
-          maxWidth: '450px',
-          margin: '0 auto 2rem auto',
-          lineHeight: '1.6',
-          fontSize: '0.95rem',
-        }}
-      >
-        Máy chủ đã gặp sự cố không mong muốn hoặc HMR dev-cache bị quá tải. Hãy nhấn thử lại hoặc
-        quay lại trang chủ.
+      
+      <p className="text-sm text-muted-foreground max-w-md mx-auto mb-8 leading-relaxed">
+        Máy chủ đã gặp sự cố không mong muốn hoặc HMR dev-cache bị quá tải. Hãy nhấn nút thử lại bên dưới hoặc quay về trang chủ.
       </p>
-      <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+      
+      <div className="flex items-center justify-center gap-3 flex-wrap">
         <button
           onClick={() => reset()}
-          className="btn btn-primary"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            backgroundColor: '#e5a93b',
-            color: '#000000',
-            fontWeight: 'bold',
-            border: 'none',
-            padding: '0.75rem 1.5rem',
-            borderRadius: '8px',
-            textDecoration: 'none',
-            transition: 'all 0.2s ease',
-            cursor: 'pointer',
-          }}
+          className="inline-flex items-center justify-center gap-2 bg-netflixRed hover:bg-[#C11119] text-white font-bold text-sm px-6 py-3 rounded shadow transition-all cursor-pointer"
         >
-          <RefreshCw size={16} />
-          Thử Lại
+          <RefreshCw size={15} />
+          <span>Thử Lại</span>
         </button>
+        
         <Link
           href="/"
-          className="btn btn-secondary"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            color: '#ffffff',
-            fontWeight: 'bold',
-            border: 'none',
-            padding: '0.75rem 1.5rem',
-            borderRadius: '8px',
-            textDecoration: 'none',
-            transition: 'all 0.2s ease',
-            cursor: 'pointer',
-          }}
+          className="inline-flex items-center justify-center gap-2 bg-secondary hover:bg-secondary/80 text-foreground border border-border font-bold text-sm px-6 py-3 rounded shadow transition-all"
         >
-          <Home size={16} />
-          Về Trang Chủ
+          <Home size={15} />
+          <span>Về Trang Chủ</span>
         </Link>
       </div>
     </div>

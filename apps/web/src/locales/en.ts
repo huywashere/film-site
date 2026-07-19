@@ -4,7 +4,9 @@ export const en = {
     lists: 'LISTS',
     members: 'MEMBERS',
     reviews: 'REVIEWS',
-    genres: 'GENRES',
+    genres: 'Genres',
+    country: 'Countries',
+    list: 'Lists',
     browseBy: 'BROWSE BY',
     newest: 'Newest',
     popular: 'Popular',
@@ -37,6 +39,7 @@ export const en = {
     recentReviews: 'Recent Reviews',
     viewAll: 'View all',
     tvshows: 'Popular TV Shows',
+    heroDesc: 'Welcome to the CineVerse special edition. Watch high-quality movies online, instantly updated from KKPhim, OPhim and NguonC servers.',
   },
   common: {
     retry: 'Retry',
@@ -45,5 +48,15 @@ export const en = {
     offlineTitle: 'Offline Mode',
     offlineDesc:
       'CineVerse is currently unable to connect to the server. Please check your Wifi or mobile data connection.',
+  },
+  genres_list: {
+    'hanh-dong': 'Action',
+    'kinh-di': 'Horror',
+    'tinh-cam': 'Romance',
+    'hai-huoc': 'Comedy',
+    'khoa-hoc-vien-tuong': 'Sci-Fi',
+    'co-trang': 'Historical',
+    'tam-ly': 'Drama',
+    'hoat-hinh': 'Anime',
   },
 };

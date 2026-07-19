@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from 'ioredis';
 
+export const dynamic = 'force-dynamic';
+
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 let redis: Redis | null = null;
 let isRedisDisabled = false;

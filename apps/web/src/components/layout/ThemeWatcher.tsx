@@ -3,13 +3,16 @@ import { useEffect } from 'react';
 import { useThemeStore } from '@/store/themeStore';
 
 export function ThemeWatcher() {
-  const { theme } = useThemeStore();
+  const { setTheme } = useThemeStore();
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      document.documentElement.setAttribute('data-theme', theme);
+      const root = document.documentElement;
+      root.setAttribute('data-theme', 'dark');
+      root.classList.add('dark');
+      setTheme('dark'); // Force store to be dark
     }
-  }, [theme]);
+  }, [setTheme]);
 
   return null;
 }

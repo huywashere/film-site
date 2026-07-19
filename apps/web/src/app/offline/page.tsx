@@ -8,110 +8,35 @@ export default function OfflinePage() {
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '70vh',
-        color: '#fff',
-        textAlign: 'center',
-        padding: '2rem',
-      }}
-    >
-      <div
-        style={{
-          background: 'rgba(255, 255, 255, 0.03)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: '24px',
-          padding: '3rem',
-          maxWidth: '480px',
-          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-          backdropFilter: 'blur(8px)',
-        }}
-      >
-        <div
-          style={{
-            background: 'rgba(255, 75, 75, 0.1)',
-            borderRadius: '50%',
-            width: '80px',
-            height: '80px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 1.5rem',
-            color: '#ff4b4b',
-          }}
-        >
-          <WifiOff size={40} />
+    <div className="flex flex-col items-center justify-center min-h-[75vh] px-4 py-16 text-center bg-background text-foreground transition-colors duration-300">
+      <div className="bg-card border border-border backdrop-blur-md shadow-2xl p-8 md:p-12 rounded-xl max-w-md w-full flex flex-col items-center">
+        <div className="bg-red-500/10 border border-red-500/20 p-5 rounded-full mb-6 inline-flex items-center justify-center">
+          <WifiOff size={44} className="text-red-500 animate-bounce duration-2000" />
         </div>
 
-        <h1
-          style={{
-            fontSize: '1.75rem',
-            fontWeight: 700,
-            marginBottom: '1rem',
-            color: '#fff',
-          }}
-        >
+        <h1 className="text-xl md:text-2xl font-black mb-3">
           Mất Kết Nối Internet
         </h1>
 
-        <p
-          style={{
-            color: '#94a3b8',
-            fontSize: '0.95rem',
-            lineHeight: '1.6',
-            marginBottom: '2rem',
-          }}
-        >
-          Ứng dụng CineVerse hiện không thể kết nối tới máy chủ. Vui lòng kiểm tra lại kết nối Wifi
-          hoặc dữ liệu di động của bạn.
+        <p className="text-xs text-muted-foreground leading-relaxed mb-8 max-w-sm">
+          Ứng dụng CineVerse hiện không thể kết nối tới máy chủ. Vui lòng kiểm tra lại kết nối Wifi hoặc mạng dữ liệu di động của bạn để tiếp tục thưởng thức phim.
         </p>
 
-        <div
-          style={{
-            display: 'flex',
-            gap: '12px',
-            justifyContent: 'center',
-          }}
-        >
+        <div className="flex items-center justify-center gap-3 w-full flex-wrap sm:flex-nowrap">
           <button
             onClick={handleReload}
-            className="btn"
-            style={{
-              background: '#00c030',
-              color: '#0a0f14',
-              border: 'none',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 20px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-            }}
+            className="flex-1 inline-flex items-center justify-center gap-2 bg-netflixRed hover:bg-[#C11119] text-white font-bold text-xs px-5 py-3 rounded shadow transition-all cursor-pointer"
           >
-            <RefreshCw size={16} /> Thử lại
+            <RefreshCw size={15} />
+            <span>Thử Lại</span>
           </button>
+          
           <Link
             href="/"
-            className="btn"
-            style={{
-              background: 'rgba(255, 255, 255, 0.08)',
-              color: '#fff',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 20px',
-              borderRadius: '8px',
-              textDecoration: 'none',
-            }}
+            className="flex-1 inline-flex items-center justify-center gap-2 bg-secondary hover:bg-secondary/80 text-foreground border border-border font-bold text-xs px-5 py-3 rounded shadow transition-all"
           >
-            <Home size={16} /> Trang chủ
+            <Home size={15} />
+            <span>Trang Chủ</span>
           </Link>
         </div>
       </div>

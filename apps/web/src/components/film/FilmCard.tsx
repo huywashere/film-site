@@ -1,11 +1,12 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Bookmark, Play, Clapperboard } from 'lucide-react';
+import { Bookmark, Play, Clapperboard, Star } from 'lucide-react';
 import { watchlistApi, movieApi } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/providers/ToastProvider';
 import { useQueryClient } from '@tanstack/react-query';
+import { cn } from '@/lib/utils';
 
 export interface FilmItem {
   _id?: string;
@@ -27,9 +28,10 @@ interface FilmCardProps {
   width?: number;
   showActions?: boolean;
   variant?: 'standard' | 'landscape';
+  hideDetails?: boolean;
 }
 
-// Helper: resolve KKPhim image URL
+// Helper: resolve KKPhim/OPhim/NguonC image URL
 export function resolveImageUrl(url?: string): string | null {
   if (!url) return null;
   const resolved = url.startsWith('http') ? url : `https://img.phimapi.com/${url}`;
@@ -41,6 +43,7 @@ export function FilmCard({
   width = 200,
   showActions = true,
   variant = 'standard',
+  hideDetails = false,
 }: FilmCardProps) {
   const { user } = useAuthStore();
   const { toast } = useToast();
@@ -75,6 +78,7 @@ export function FilmCard({
 
   const handleWatchlist = async (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!user) {
       toast('Bạn cần đăng nhập để thêm vào watchlist', 'error');
       return;
@@ -102,79 +106,100 @@ export function FilmCard({
   return (
     <Link
       href={`/film/${slug}`}
-      className="film-card"
+      className="group relative flex flex-col space-y-2 cursor-pointer transition-transform duration-300 hover:scale-105"
       style={{ width }}
       onMouseEnter={prefetchFilmDetail}
     >
-      {/* Poster Wrapper */}
+      {/* Poster Wrapper with subtle rounding & border shadow */}
       <div
-        className={`film-card__poster-wrapper ${variant === 'landscape' ? 'film-card__poster-wrapper--landscape' : ''}`}
+        className={cn(
+          "relative w-full overflow-hidden rounded bg-neutral-900 border border-white/5 shadow-lg aspect-[2/3]",
+          variant === 'landscape' ? "aspect-video" : ""
+        )}
       >
         {posterUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={posterUrl} alt={title} className="film-card__poster" loading="lazy" />
+          <img
+            src={posterUrl}
+            alt={title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            loading="lazy"
+          />
         ) : (
-          <div className="film-card__no-poster">
-            <Clapperboard size={32} style={{ opacity: 0.4 }} />
+          <div className="absolute inset-0 flex items-center justify-center bg-neutral-800 text-neutral-500">
+            <Clapperboard size={36} className="opacity-40" />
           </div>
         )}
 
         {/* Hover Overlay */}
-        <div className="film-card__overlay">
-          {/* Watchlist Bookmark */}
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10">
+          {/* Watchlist Add/Remove */}
           {showActions && (
             <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleWatchlist(e);
-              }}
-              className={`film-card__watchlist-btn ${saved ? 'film-card__watchlist-btn--saved' : ''}`}
+              onClick={handleWatchlist}
+              className={cn(
+                "absolute top-3 right-3 w-8 h-8 rounded-full bg-black/70 border border-white/20 flex items-center justify-center text-white hover:bg-netflixRed hover:border-netflixRed hover:scale-110 transition-all",
+                saved ? "bg-netflixRed border-netflixRed" : ""
+              )}
               title={saved ? 'Xóa khỏi Watchlist' : 'Thêm vào Watchlist'}
             >
               <Bookmark size={14} fill={saved ? 'currentColor' : 'none'} />
             </button>
           )}
 
-          {/* Centered Play Button */}
-          <div className="film-card__play-btn">
-            <Play size={20} fill="currentColor" />
+          {/* Play Button Overlay */}
+          <div className="w-12 h-12 rounded-full bg-netflixRed text-white flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 hover:scale-115 transition-all duration-300">
+            <Play size={20} fill="currentColor" className="ml-0.5" />
           </div>
         </div>
+
+        {/* Top-left type tag */}
+        {typeLabel && (
+          <div className="absolute top-2.5 left-2.5 bg-white text-black font-black text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded shadow z-10">
+            {typeLabel === 'Bộ' ? 'New Episodes' : typeLabel === 'Lẻ' ? 'New Movie' : typeLabel}
+          </div>
+        )}
+
+        {/* Bottom-right quality tag */}
+        {film.quality && (
+          <div className="absolute bottom-2.5 right-2.5 bg-netflixRed text-white font-extrabold text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded z-10">
+            {film.quality}
+          </div>
+        )}
       </div>
 
-      {/* Info details under the poster wrapper */}
-      <div className="film-card__info">
-        <h4 className="film-card__title" title={title}>
-          {title}
-        </h4>
-        <div className="film-card__meta">
-          {film.year && <span className="film-card__year">{film.year}</span>}
-          {film.year && (typeLabel || film.lang || film.episode_current) && (
-            <span className="film-card__meta-separator">•</span>
-          )}
-          {typeLabel && <span className="film-card__type">{typeLabel}</span>}
-          {(film.episode_current || film.lang) && (
-            <>
-              <span className="film-card__meta-separator">•</span>
-              <span className="film-card__episode">{film.episode_current || film.lang}</span>
-            </>
-          )}
+      {/* Title Detail info */}
+      {!hideDetails && (
+        <div className="flex flex-col text-left">
+          <h4 className="font-semibold text-sm text-neutral-100 truncate group-hover:text-netflixRed transition-colors pt-1">
+            {title}
+          </h4>
+          <div className="flex items-center space-x-1.5 text-xs text-neutral-400 mt-0.5">
+            {film.year && <span>{film.year}</span>}
+            {film.year && (film.episode_current || film.lang) && <span className="opacity-40">•</span>}
+            {(film.episode_current || film.lang) && (
+              <span className="text-netflixRed truncate max-w-[120px] font-medium">
+                {film.episode_current || film.lang}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </Link>
   );
 }
 
 // Skeleton
-export function FilmCardSkeleton({ width = 200 }: { width?: number }) {
+export function FilmCardSkeleton({ width = 200, hideDetails = false }: { width?: number; hideDetails?: boolean }) {
   return (
-    <div style={{ width, flexShrink: 0 }}>
-      <div
-        className="skeleton"
-        style={{ width: '100%', paddingTop: '150%', borderRadius: 'var(--radius-md)' }}
-      />
-      <div className="skeleton" style={{ height: 12, marginTop: 8, borderRadius: 4 }} />
+    <div style={{ width, flexShrink: 0 }} className="flex flex-col space-y-2">
+      <div className="w-full aspect-[2/3] bg-neutral-800 animate-pulse rounded border border-white/5" />
+      {!hideDetails && (
+        <>
+          <div className="h-4 bg-neutral-800 animate-pulse rounded w-4/5" />
+          <div className="h-3 bg-neutral-800 animate-pulse rounded w-2/5" />
+        </>
+      )}
     </div>
   );
 }
