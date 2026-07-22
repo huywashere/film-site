@@ -325,6 +325,16 @@ export default function WatchPage() {
         duration,
       });
 
+      // ── Smart Next Episode Pre-buffer (0ms instant transition) ──
+      if (duration > 60 && (currentTime / duration > 0.85 || duration - currentTime < 60)) {
+        if (currentEpIndex >= 0 && currentEpIndex < serverData.length - 1) {
+          const nextEp = serverData[currentEpIndex + 1];
+          if (nextEp?.link_m3u8) {
+            fetch(nextEp.link_m3u8, { mode: 'no-cors' }).catch(() => {});
+          }
+        }
+      }
+
       if (!user) return;
       const now = Date.now();
       if (now - lastSyncRef.current < 15_000) return;
@@ -339,7 +349,7 @@ export default function WatchPage() {
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user, slug, epName, film?.name, posterUrl, currentEpData],
+    [user, slug, epName, film?.name, posterUrl, currentEpData, currentEpIndex, serverData],
   );
 
   // ── Player error handler ──────────────────────────────────────────

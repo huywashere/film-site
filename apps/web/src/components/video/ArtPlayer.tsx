@@ -41,8 +41,12 @@ export default function ArtPlayer({
   onTheaterModeToggle,
 }: ArtPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playerRef = useRef<Artplayer | null>(null);
+
+  const [isFloating, setIsFloating] = useState(false);
+  const [showSkipIntro, setShowSkipIntro] = useState(false);
 
   const isTheaterModeRef = useRef(isTheaterMode);
   const onTheaterModeToggleRef = useRef(onTheaterModeToggle);
@@ -56,6 +60,27 @@ export default function ArtPlayer({
   onEndedRef.current = onEnded;
   onProgressRef.current = onProgress;
   onErrorRef.current = onError;
+
+  // ── Scroll Observer for Floating Mini-Player ──────────────────────
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Auto-dock into Floating Mini-Player when main player scrolls out of view
+        if (!entry.isIntersecting && entry.boundingClientRect.top < 0) {
+          setIsFloating(true);
+        } else {
+          setIsFloating(false);
+        }
+      },
+      { threshold: 0.25 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current || !url) return;
@@ -95,7 +120,7 @@ export default function ArtPlayer({
       lang: 'vi',
       moreVideoAttr: { crossOrigin: 'anonymous' },
 
-      // -- HLS support with quality selector --
+      // -- HLS support with ABR & quality selector --
       ...(isHls
         ? {
             customType: {
@@ -105,8 +130,9 @@ export default function ArtPlayer({
                     enableWorker: true,
                     lowLatencyMode: true,
                     backBufferLength: 90,
-                    // ABR tuning for faster start
-                    startLevel: -1,    // auto ABR
+                    maxBufferLength: 60,
+                    capLevelToPlayerSize: true, // Auto ABR tuning
+                    startLevel: -1,             // Auto level selection based on bandwidth
                     abrEwmaFastLive: 3,
                     abrEwmaSlowLive: 9,
                   });
@@ -125,7 +151,7 @@ export default function ArtPlayer({
                         level: i,
                       }));
                       // Add Auto option
-                      qualityLevels.unshift({ default: hls.currentLevel === -1, html: 'Auto', url: streamUrl, level: -1 } as typeof qualityLevels[number]);
+                      qualityLevels.unshift({ default: hls.currentLevel === -1, html: 'Tự động (ABR)', url: streamUrl, level: -1 } as typeof qualityLevels[number]);
                       built.forEach(q => qualityLevels.push(q as typeof qualityLevels[number]));
 
                       player.setting.update({
@@ -174,20 +200,77 @@ export default function ArtPlayer({
       // Hotkey settings
       hotkey: true,
 
-      // Subtitle
+      // Subtitle with style customization & Subtitle Offset Sync
       ...(subtitle
         ? {
             subtitle: {
               url: subtitle,
               type: 'vtt',
-              style: { color: '#fff', fontSize: '20px' },
+              style: { color: '#ffffff', fontSize: '22px', textShadow: '0 2px 4px rgba(0,0,0,0.8)' },
             },
           }
         : {}),
 
+      // Settings menu additions: Subtitle Sync Offset (+/- 0.5s) and Custom Subtitle Colors
+      settings: [
+        {
+          html: 'Độ lệch phụ đề (Sync)',
+          tooltip: '0.0s',
+          selector: [
+            { html: '-2.0s', offset: -2 },
+            { html: '-1.0s', offset: -1 },
+            { html: '-0.5s', offset: -0.5 },
+            { default: true, html: '0.0s (Chuẩn)', offset: 0 },
+            { html: '+0.5s', offset: 0.5 },
+            { html: '+1.0s', offset: 1 },
+            { html: '+2.0s', offset: 2 },
+          ],
+          onSelect(item: { offset: number; html: string }) {
+            if (player.subtitle) {
+              player.subtitle.offset = item.offset;
+              player.notice.show = `Phụ đề: ${item.html}`;
+            }
+            return item.html;
+          },
+        },
+        {
+          html: 'Màu phụ đề',
+          tooltip: 'Trắng',
+          selector: [
+            { default: true, html: 'Trắng', color: '#ffffff' },
+            { html: 'Vàng', color: '#ffea00' },
+            { html: 'Xanh Lá', color: '#00e054' },
+            { html: 'Xanh Lam', color: '#00e5ff' },
+          ],
+          onSelect(item: { color: string; html: string }) {
+            if (player.subtitle) {
+              player.subtitle.style('color', item.color);
+              player.notice.show = `Màu phụ đề: ${item.html}`;
+            }
+            return item.html;
+          },
+        },
+      ],
+
       layers: [],
 
       controls: [
+        {
+          name: 'skip-intro-btn',
+          position: 'right',
+          html: `
+            <button class="art-control-skip-intro bg-white/10 hover:bg-white/20 text-white border border-white/20 px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 style="cursor: pointer;">
+              ⏩ Bỏ qua 90s
+            </button>
+          `,
+          tooltip: 'Bỏ qua 90 giây mở đầu (Skip Intro)',
+          click: function () {
+            if (playerRef.current) {
+              playerRef.current.currentTime += 90;
+              playerRef.current.notice.show = 'Đã bỏ qua 90 giây mở đầu!';
+            }
+          },
+        },
         {
           name: 'theater-mode',
           position: 'right',
@@ -442,7 +525,29 @@ export default function ArtPlayer({
         .art-video-player .art-loading { color: #e5a93b; }
       `}</style>
 
-      <div className="relative w-full h-full min-h-[400px]">
+      <div ref={wrapperRef} className={cn("relative w-full h-full min-h-[400px]", isFloating ? "fixed bottom-6 right-6 z-50 w-80 md:w-[380px] h-[215px] min-h-0 rounded-2xl shadow-2xl border border-white/20 overflow-hidden backdrop-blur-xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-5" : "")}>
+        {/* Floating Mini-player Header Bar */}
+        {isFloating && (
+          <div className="absolute top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md px-3 py-1.5 flex items-center justify-between text-white text-xs border-b border-white/10">
+            <span className="font-bold truncate max-w-[200px]">{title || 'Đang phát'}</span>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="hover:text-amber-400 text-neutral-300 transition-colors p-1 font-bold"
+                title="Quay lại trình phát chính"
+              >
+                ↑
+              </button>
+              <button 
+                onClick={() => setIsFloating(false)}
+                className="hover:text-red-400 text-neutral-300 transition-colors p-1 font-bold"
+                title="Đóng mini player"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
         {/* Dynamic ambient backglow canvas */}
         <canvas
           ref={canvasRef}
