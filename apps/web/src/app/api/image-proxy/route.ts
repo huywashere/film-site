@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { checkImageProxyRateLimit } from '@/lib/rate-limiter';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+  const rateCheck = checkImageProxyRateLimit(ip);
+  if (!rateCheck.allowed) {
+    return new NextResponse('Too many image requests. Please slow down.', {
+      status: 429,
+      headers: { 'Retry-After': String(rateCheck.retryAfterSeconds) },
+    });
+  }
+
   const { searchParams } = new URL(request.url);
   const imageUrl = searchParams.get('url');
 

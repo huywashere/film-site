@@ -3,11 +3,12 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import {
-  Search, Film, Bookmark, ChevronDown,
+  Search, Film, Bookmark, ChevronDown, ChevronRight,
   LogOut, User, Menu, X, Star, Sun, Moon,
   Play, Languages, Loader2, Bell, Settings, History, MonitorSmartphone
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import { useAuthModalStore } from '@/store/authModalStore';
 import { useTranslation } from '@/store/langStore';
 import { useThemeStore } from '@/store/themeStore';
 import { movieApi } from '@/lib/api';
@@ -25,6 +26,7 @@ const NAV_LINKS = [
   { href: '/films/series', key: 'nav.series' },
   { href: '/films/single', key: 'nav.single' },
   { href: '/films/anime', key: 'nav.anime' },
+  { href: '/lists', label: 'Bộ Sưu Tập' },
   { href: '/watchlist', key: 'nav.watchlist' },
 ];
 
@@ -115,6 +117,7 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
+  const openAuthModal = useAuthModalStore((state) => state.openModal);
   const { t, lang, setLang, isTransitioning } = useTranslation();
   const { theme, toggleTheme } = useThemeStore();
   const [mounted, setMounted] = useState(false);
@@ -201,11 +204,11 @@ export function Navbar() {
           scrolled ? "bg-background/95 shadow-md backdrop-blur-md" : "bg-gradient-to-b from-background/80 via-background/20 to-transparent"
         )}
       >
-        <div className="w-full px-4 md:px-8 flex items-center justify-between">
-          {/* Left Block: Logo */}
-          <div className="flex items-center w-auto lg:w-1/4">
+        <div className="w-full px-4 md:px-8 flex items-center justify-between gap-3 md:gap-6">
+          {/* Left Block: Logo (shrink-0 ensures it NEVER gets overlapped) */}
+          <div className="flex items-center shrink-0">
             <Link href="/" className="flex items-center space-x-1.5 group">
-              <span className="text-foreground text-2xl font-black tracking-tighter lowercase font-sans">
+              <span className="text-foreground text-xl sm:text-2xl font-black tracking-tighter lowercase font-sans">
                 cineverse
               </span>
             </Link>
@@ -281,38 +284,41 @@ export function Navbar() {
                     : "text-neutral-600 dark:text-neutral-300"
                 )}
               >
-                {t(link.key)}
+                {link.label || t(link.key!)}
               </Link>
             ))}
           </nav>
           {/* Right Block: Search & Actions & Profile */}
-          <div className="flex items-center justify-end space-x-3 w-auto min-w-0">
+          <div className="flex items-center justify-end space-x-2 sm:space-x-3 shrink-0">
             {/* Search Input inline */}
-            <div className="relative flex items-center min-w-0">
-              <form onSubmit={handleSearchSubmit} className="flex items-center relative min-w-0">
-                <div className="relative min-w-0">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+            <div className="relative flex items-center">
+              <form onSubmit={handleSearchSubmit} className="flex items-center relative">
+                <div className="relative flex items-center">
+                  <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-300 pointer-events-none z-10" />
                   <input
                     ref={searchRef}
                     type="text"
-                    placeholder="Tìm kiếm phim, diễn viên..."
+                    placeholder="Tìm kiếm..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full max-w-[16rem] sm:max-w-[18rem] md:max-w-[20rem] bg-black/5 dark:bg-black/60 border border-black/10 dark:border-white/20 rounded-full pl-10 pr-4 py-2 text-sm text-neutral-800 dark:text-white focus:border-neutral-400 dark:focus:border-white transition-all duration-300 outline-none"
+                    className="w-36 xs:w-44 sm:w-56 md:w-64 lg:w-72 focus:w-44 focus:xs:w-52 focus:sm:w-64 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder-neutral-400 focus:border-white/40 focus:bg-white/[0.1] focus:ring-1 focus:ring-white/20 transition-all duration-300 outline-none shadow-lg shadow-black/40"
                   />
                 </div>
               </form>
 
-              {/* Instant Search Results Dropdown */}
+              {/* Instant Search Results Dropdown (Glassmorphism design with clean neutral colors) */}
               {searchQuery.trim() && (
-                <div className="absolute right-0 top-11 w-80 md:w-96 bg-[#141414] border border-white/10 rounded shadow-xl overflow-hidden z-50 text-xs">
+                <div className="absolute right-0 top-12 w-80 md:w-[420px] bg-[#181c22]/85 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl shadow-black/90 overflow-hidden z-50 text-xs p-2">
                   {isSearching ? (
-                    <div className="p-4 flex items-center justify-center space-x-2 text-neutral-400">
-                      <Loader2 size={16} className="animate-spin text-netflixRed" />
-                      <span>Đang tìm kiếm...</span>
+                    <div className="p-5 flex items-center justify-center space-x-2 text-neutral-400">
+                      <Loader2 size={16} className="animate-spin text-white" />
+                      <span className="font-semibold text-xs text-neutral-300">Đang tìm kiếm phim...</span>
                     </div>
                   ) : searchResults.length > 0 ? (
-                    <div className="max-h-[60vh] overflow-y-auto divide-y divide-white/5">
+                    <div
+                      onWheel={(e) => e.stopPropagation()}
+                      className="max-h-[60vh] overflow-y-auto overscroll-contain scrollbar-thin divide-y divide-white/5 space-y-1"
+                    >
                       {searchResults.map((film) => {
                         const poster = resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url);
                         return (
@@ -320,9 +326,9 @@ export function Navbar() {
                             key={film._id || film.slug}
                             href={`/film/${film.slug}`}
                             onClick={() => setSearchQuery('')}
-                            className="flex items-center space-x-3 p-2.5 hover:bg-white/10 transition-colors group"
+                            className="flex items-center space-x-3.5 p-2.5 rounded-2xl hover:bg-white/10 transition-all duration-200 group"
                           >
-                            <div className="w-10 h-14 bg-neutral-800 rounded overflow-hidden flex-shrink-0 relative">
+                            <div className="w-11 h-16 bg-neutral-900 rounded-xl overflow-hidden flex-shrink-0 relative shadow-md border border-white/10 group-hover:scale-105 transition-transform duration-200">
                               {poster ? (
                                 <img src={poster} alt={film.name} className="w-full h-full object-cover" />
                               ) : (
@@ -332,15 +338,19 @@ export function Navbar() {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-bold text-white group-hover:text-netflixRed transition-colors truncate">
+                              <p className="font-extrabold text-xs text-white group-hover:text-neutral-300 transition-colors truncate">
                                 {film.name}
                               </p>
-                              <p className="text-[11px] text-neutral-400 truncate mt-0.5">
-                                {film.origin_name} ({film.year})
+                              <p className="text-[11px] text-neutral-400 truncate mt-0.5 font-medium">
+                                {film.origin_name} ({film.year || '2024'})
                               </p>
-                              <div className="flex items-center space-x-2 text-[10px] text-neutral-500 mt-1">
-                                <span className="bg-white/10 px-1.5 py-0.5 rounded text-white">{film.quality || 'FHD'}</span>
-                                <span>{film.lang || 'Vietsub'}</span>
+                              <div className="flex items-center space-x-2 mt-1.5">
+                                <span className="bg-white/10 text-white border border-white/20 text-[9px] font-bold px-2 py-0.5 rounded-md">
+                                  {film.quality || 'FHD'}
+                                </span>
+                                <span className="text-[10px] text-neutral-400 font-semibold">
+                                  {film.lang || 'Vietsub'}
+                                </span>
                               </div>
                             </div>
                           </Link>
@@ -357,99 +367,177 @@ export function Navbar() {
             </div>
 
             {/* Profile / Actions */}
-            {user ? (
-              <>
-                {/* Notifications Bell Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger className="relative p-2 text-neutral-300 hover:text-white transition-colors focus:outline-none">
-                    <Bell size={18} />
+            <div className="flex items-center space-x-3">
+              {/* Notifications Bell Dropdown (Visible next to Avatar/User button) */}
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger className="relative p-1.5 text-neutral-300 hover:text-white transition-colors focus:outline-none cursor-pointer">
+                  <Bell size={20} className="stroke-[2.2]" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  )}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" alignOffset={-32} sideOffset={10} collisionPadding={{ right: 32 }} className="w-80 sm:w-88 -translate-x-6 sm:-translate-x-8 p-2 bg-[#14181c] border border-[#2c3440] text-neutral-300 text-xs shadow-2xl z-50 rounded-2xl">
+                  <div className="flex items-center justify-between px-2 py-1.5 border-b border-white/10 mb-1">
+                    <span className="font-bold text-white text-sm">Thông báo</span>
                     {unreadCount > 0 && (
-                      <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-netflixRed animate-pulse" />
+                      <button
+                        onClick={markAllRead}
+                        className="text-[10px] text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                      >
+                        Đánh dấu đã đọc
+                      </button>
                     )}
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-80 p-2 bg-[#141414] border border-white/10 text-neutral-300 text-xs shadow-2xl z-50">
-                    <div className="flex items-center justify-between px-2 py-1.5 border-b border-white/10 mb-1">
-                      <span className="font-bold text-white text-sm">Thông báo</span>
-                      {unreadCount > 0 && (
-                        <button
-                          onClick={markAllRead}
-                          className="text-[10px] text-neutral-400 hover:text-white transition-colors"
-                        >
-                          Đánh dấu đã đọc
-                        </button>
-                      )}
-                    </div>
-                    <div className="max-h-60 overflow-y-auto space-y-1">
-                      {notifications.map((n) => (
-                        <div
-                          key={n.id}
-                          onClick={() => markAsRead(n.id)}
-                          className={cn(
-                            "p-2 rounded text-[11px] cursor-pointer hover:bg-white/5 transition-all flex items-start space-x-2",
-                            n.read ? "opacity-60" : "bg-white/[0.02]"
-                          )}
-                        >
-                          <span className={cn("w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0", n.read ? "bg-neutral-600" : "bg-netflixRed")} />
-                          <div>
-                            <p className="text-foreground leading-normal">{n.message}</p>
-                            <span className="text-[9px] text-neutral-400">{n.time}</span>
-                          </div>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto space-y-1 scrollbar-thin">
+                    {notifications.map((n) => (
+                      <div
+                        key={n.id}
+                        onClick={() => markAsRead(n.id)}
+                        className={cn(
+                          "p-2.5 rounded-xl text-[11px] cursor-pointer hover:bg-white/5 transition-all flex items-start space-x-2.5",
+                          n.read ? "opacity-60" : "bg-white/[0.03]"
+                        )}
+                      >
+                        <span className={cn("w-2 h-2 rounded-full mt-1 flex-shrink-0", n.read ? "bg-neutral-600" : "bg-red-500")} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white leading-snug break-words">{n.message}</p>
+                          <span className="text-[9px] text-neutral-400 font-semibold block mt-0.5">{n.time}</span>
                         </div>
-                      ))}
+                      </div>
+                    ))}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {user ? (
+                /* YouTube-style Profile menu dropdown */
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger className="flex items-center space-x-1 focus:outline-none cursor-pointer group">
+                    <img
+                      src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.username}&background=2c3440&color=ffffff&size=36`}
+                      alt={user.displayName || user.username}
+                      className="w-8 h-8 rounded-full object-cover border border-white/20 group-hover:border-white transition-all shadow-md"
+                    />
+                    <ChevronDown size={13} className="text-neutral-400 group-hover:text-white transition-colors" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" alignOffset={-32} sideOffset={10} collisionPadding={{ right: 32 }} className="w-72 -translate-x-6 sm:-translate-x-8 p-2 bg-[#1f2328] border border-white/15 text-neutral-200 rounded-2xl shadow-2xl z-50 divide-y divide-white/10">
+                    
+                    {/* Top User Profile Header */}
+                    <div className="p-2 flex items-center space-x-3 pb-3">
+                      <img
+                        src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.username}&background=2c3440&color=ffffff&size=40`}
+                        alt={user.displayName || user.username}
+                        className="w-10 h-10 rounded-full object-cover border border-white/20 shadow"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm text-white truncate">
+                          {user.displayName || user.username}
+                        </p>
+                        <p className="text-xs text-neutral-400 truncate">
+                          @{user.username}
+                        </p>
+                        <button
+                          onClick={() => router.push(`/profile/${encodeURIComponent(user.username)}`)}
+                          className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold hover:underline mt-0.5 block cursor-pointer"
+                        >
+                          Xem trang cá nhân
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Section 1: Main Features */}
+                    <div className="py-1.5 space-y-0.5">
+                      <DropdownMenuItem
+                        onClick={() => router.push(`/profile/${encodeURIComponent(user.username)}`)}
+                        className="hover:bg-white/10 hover:text-white rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
+                      >
+                        <User size={16} className="mr-3 text-neutral-400" />
+                        <span>Tài khoản CineVerse</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => router.push('/watchlist')}
+                        className="hover:bg-white/10 hover:text-white rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
+                      >
+                        <Bookmark size={16} className="mr-3 text-neutral-400" />
+                        <span>Danh sách xem (Watchlist)</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => router.push('/reviews')}
+                        className="hover:bg-white/10 hover:text-white rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
+                      >
+                        <Star size={16} className="mr-3 text-neutral-400" />
+                        <span>Đánh giá của tôi</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => router.push('/history')}
+                        className="hover:bg-white/10 hover:text-white rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
+                      >
+                        <History size={16} className="mr-3 text-neutral-400" />
+                        <span>Lịch sử xem phim</span>
+                      </DropdownMenuItem>
+                    </div>
+
+                    {/* Section 2: Preferences & Settings */}
+                    <div className="py-1.5 space-y-0.5">
+                      <DropdownMenuItem
+                        onClick={toggleTheme}
+                        className="hover:bg-white/10 hover:text-white rounded-xl cursor-pointer flex items-center justify-between py-2.5 px-3 text-xs font-semibold"
+                      >
+                        <div className="flex items-center">
+                          {mounted && theme === 'light' ? <Moon size={16} className="mr-3 text-neutral-400" /> : <Sun size={16} className="mr-3 text-neutral-400" />}
+                          <span>Giao diện: {theme === 'light' ? 'Sáng' : 'Tối'}</span>
+                        </div>
+                        <ChevronRight size={14} className="text-neutral-500" />
+                      </DropdownMenuItem>
+
+                      {/* Language Switcher Modal Item */}
+                      <DropdownMenuItem
+                        onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
+                        className="hover:bg-white/10 hover:text-white rounded-xl cursor-pointer flex items-center justify-between py-2.5 px-3 text-xs font-semibold"
+                      >
+                        <div className="flex items-center">
+                          <Languages size={16} className="mr-3 text-neutral-400" />
+                          <span>Ngôn ngữ: {lang === 'vi' ? 'Tiếng Việt' : lang === 'en' ? 'English' : lang.toUpperCase()}</span>
+                        </div>
+                        <ChevronRight size={14} className="text-neutral-500" />
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        onClick={() => router.push('/settings/security')}
+                        className="hover:bg-white/10 hover:text-white rounded-xl cursor-pointer flex items-center justify-between py-2.5 px-3 text-xs font-semibold"
+                      >
+                        <div className="flex items-center">
+                          <Settings size={16} className="mr-3 text-neutral-400" />
+                          <span>Cài đặt tài khoản</span>
+                        </div>
+                      </DropdownMenuItem>
+                    </div>
+
+                    {/* Section 3: Logout Session */}
+                    <div className="pt-1.5">
+                      <DropdownMenuItem
+                        onClick={() => { logout(); router.push('/'); }}
+                        className="hover:bg-red-500/10 text-red-400 hover:text-red-300 rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-bold"
+                      >
+                        <LogOut size={16} className="mr-3 text-red-400" />
+                        <span>Đăng xuất</span>
+                      </DropdownMenuItem>
                     </div>
                   </DropdownMenuContent>
                 </DropdownMenu>
-
-                {/* Profile menu dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger className="flex items-center space-x-1 focus:outline-none">
-                    <img
-                      src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.username}&background=E50914&color=ffffff&size=32`}
-                      alt=""
-                      className="w-7 h-7 rounded object-cover border border-white/10"
-                    />
-                    <ChevronDown size={14} className="text-neutral-400 group-hover:text-white" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-[180px] p-1.5 bg-card border-border text-neutral-300">
-                    <DropdownMenuItem className="hover:bg-white/10"><User size={14} className="mr-2" /><Link href={`/profile/${user.username}`} className="w-full">{t('nav.profile')}</Link></DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-white/10"><Bookmark size={14} className="mr-2" /><Link href="/watchlist" className="w-full">{t('nav.watchlist')}</Link></DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-white/10"><Star size={14} className="mr-2" /><Link href="/reviews" className="w-full">Đánh giá của tôi</Link></DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-white/10"><History size={14} className="mr-2" /><Link href="/history" className="w-full">Lịch sử xem</Link></DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-white/10"><Settings size={14} className="mr-2" /><Link href="/settings" className="w-full">{t('nav.settings')}</Link></DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="hover:bg-white/10"
-                      onClick={toggleTheme}
-                    >
-                      {mounted && theme === 'light' ? <Moon size={14} className="mr-2" /> : <Sun size={14} className="mr-2" />}
-                      <span>{theme === 'light' ? 'Chế độ tối' : 'Chế độ sáng'}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="hover:bg-white/10"
-                      onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
-                    >
-                      <Languages size={14} className="mr-2" />
-                      <span>{lang === 'vi' ? 'English' : 'Tiếng Việt'}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator className="bg-border" />
-                    <DropdownMenuItem
-                      onClick={() => { logout(); router.push('/'); }}
-                      className="text-netflixRed focus:bg-netflixRed/10 focus:text-netflixRed"
-                    >
-                      <LogOut size={14} className="mr-2" />
-                      <span>{t('nav.logout')}</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            ) : (
-              <Link
-                href="/login"
-                className="hidden sm:flex items-center space-x-1.5 bg-[#e2e2e2] text-black px-4 py-1.5 rounded-full hover:bg-white transition-colors"
-              >
-                <User size={14} />
-                <span className="text-xs font-semibold">Thành viên</span>
-              </Link>
-            )}
+              ) : (
+                /* Minimalist Sleek User Icon Button with Glassmorphism */
+                <button
+                  type="button"
+                  onClick={() => openAuthModal('login')}
+                  aria-label="Đăng nhập tài khoản"
+                  title="Đăng nhập / Tài khoản thành viên"
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-white/[0.06] backdrop-blur-xl border border-white/15 text-neutral-300 hover:text-white hover:border-white/40 hover:bg-white/[0.12] transition-all duration-300 shadow-lg shadow-black/40 active:scale-95 cursor-pointer"
+                >
+                  <User size={16} />
+                </button>
+              )}
+            </div>
 
             {/* Mobile menu trigger */}
             <button

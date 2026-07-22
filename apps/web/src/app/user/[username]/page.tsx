@@ -77,10 +77,17 @@ export default function UserProfilePage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
-  const username = params.username as string;
+  const rawUsername = params.username as string;
+  const username = rawUsername ? decodeURIComponent(rawUsername) : '';
 
   const user = useAuthStore((s) => s.user);
-  const isOwnProfile = user?.username === username || user?.email === username;
+  const isOwnProfile = !!(
+    user &&
+    (user.username === username ||
+     user.email === username ||
+     user.id === username ||
+     (user.username && encodeURIComponent(user.username) === rawUsername))
+  );
 
   // Retrieve current language (en / vi) from langStore
   const { lang } = useTranslation();
@@ -89,31 +96,44 @@ export default function UserProfilePage() {
 
   const [activeTab, setActiveTab] = useState<'profile' | 'activity' | 'films' | 'diary' | 'reviews' | 'watchlist' | 'network' | 'stats'>('profile');
 
-  // Queries
-  const { data: profile, isLoading: profileLoading } = useQuery({
+  // Queries with fallback support
+  const { data: apiProfile, isLoading: profileLoading } = useQuery({
     queryKey: ['user-profile', username],
-    queryFn: () => api.get(`/users/${username}`).then((r) => r.data),
+    queryFn: () => api.get(`/users/${encodeURIComponent(username)}`).then((r) => r.data).catch(() => null),
+    retry: false,
   });
+
+  const profile = apiProfile || (isOwnProfile && user ? {
+    id: user.id,
+    username: user.username,
+    displayName: user.displayName || user.username,
+    avatarUrl: user.avatarUrl,
+    bio: user.bio || '',
+    _count: { watchlist: 0, reviews: 0, followers: 0, following: 0 },
+  } : null);
 
   const { data: activity } = useQuery({
     queryKey: ['user-activity', username],
-    queryFn: () => api.get(`/users/${username}/activity`).then((r) => r.data),
-    enabled: !!profile,
+    queryFn: () => api.get(`/users/${encodeURIComponent(username)}/activity`).then((r) => r.data).catch(() => []),
+    enabled: !!apiProfile,
+    retry: false,
   });
 
   const { data: historyData } = useQuery({
     queryKey: ['user-history', username],
-    queryFn: () => watchHistoryApi.getHistory(1, 24).then((r) => r.data),
-    enabled: !!profile,
+    queryFn: () => watchHistoryApi.getHistory(1, 24).then((r) => r.data).catch(() => ({ items: [], total: 0 })),
+    enabled: isOwnProfile,
+    retry: false,
   });
 
   const { data: watchlistData } = useQuery({
     queryKey: ['user-watchlist', username],
-    queryFn: () => watchlistApi.get(1).then((r) => r.data),
-    enabled: !!profile,
+    queryFn: () => watchlistApi.get(1).then((r) => r.data).catch(() => ({ items: [], total: 0 })),
+    enabled: isOwnProfile,
+    retry: false,
   });
 
-  if (profileLoading) {
+  if (profileLoading && !profile) {
     return <UserProfileSkeleton />;
   }
 
@@ -134,20 +154,9 @@ export default function UserProfilePage() {
   const totalWatchHours = Math.round(totalWatchMinutes / 3600);
 
   return (
-    <div className="bg-[#14181c] min-h-screen text-neutral-300 pb-16 font-sans relative">
+    <div className="bg-[#14181c] min-h-screen text-neutral-300 pt-20 md:pt-24 pb-16 font-sans relative">
       
-      {/* ── Banner cover ── */}
-      <div className="h-64 md:h-80 w-full relative overflow-hidden bg-neutral-950">
-        <div 
-          className="absolute inset-0 bg-cover bg-center brightness-[0.4] filter blur-sm scale-105"
-          style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1200&auto=format&fit=crop')`,
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#14181c] via-[#14181c]/30 to-transparent" />
-      </div>
-
-      <div className="container mx-auto px-4 md:px-8 max-w-5xl relative -mt-20 z-20">
+      <div className="container mx-auto px-4 md:px-8 max-w-5xl relative z-20">
         
         {/* ── Header overlapping the banner ── */}
         <div className="flex flex-col md:flex-row items-center md:items-end justify-between gap-6 pb-8 border-b border-neutral-800">
@@ -160,7 +169,7 @@ export default function UserProfilePage() {
                   `https://ui-avatars.com/api/?name=${profile.username}&background=182027&color=00e054&size=120`
                 }
                 alt={profile.username}
-                className="w-28 h-28 md:w-36 h-36 rounded-full object-cover border-4 border-[#14181c] shadow-2xl bg-[#182027]"
+                className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover border-4 border-[#14181c] shadow-2xl bg-[#182027]"
               />
             </div>
             

@@ -2,13 +2,14 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authApi } from '@/lib/api';
 
-interface User {
+export interface User {
   id: string;
   email: string;
   username: string;
   displayName?: string;
   avatarUrl?: string;
   bio?: string;
+  role?: 'ADMIN' | 'USER' | 'MODERATOR';
   googleId?: string | null;
   twoFactorEnabled?: boolean;
   isLocked?: boolean;
@@ -17,6 +18,7 @@ interface User {
 interface AuthState {
   user: User | null;
   isLoading: boolean;
+  setUser: (user: User | null) => void;
   login: (email: string, password: string) => Promise<any>;
   register: (email: string, username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -29,16 +31,26 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isLoading: false,
 
+      setUser: (user) => {
+        if (typeof window !== 'undefined') {
+          if (user) {
+            document.cookie = 'cineverse-auth=true; path=/; max-age=31536000';
+          } else {
+            document.cookie = 'cineverse-auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          }
+        }
+        set({ user });
+      },
+
       login: async (email, password) => {
         set({ isLoading: true });
         try {
           const { data } = await authApi.login({ email, password });
           if (data && data.require2FA) {
             set({ isLoading: false });
-            return data; // { require2FA: true, tempToken: "..." }
+            return data;
           }
           set({ isLoading: false });
-          // Fetch user data
           const { data: user } = await authApi.getMe();
           set({ user });
           return { success: true };
@@ -63,9 +75,11 @@ export const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         try {
+          const { signOut, firebaseAuth } = await import('@/lib/firebase');
+          await signOut(firebaseAuth);
           await authApi.logout();
         } catch (e) {
-          console.error('Logout failed on server', e);
+          console.error('Logout error:', e);
         }
         set({ user: null });
       },
@@ -75,8 +89,7 @@ export const useAuthStore = create<AuthState>()(
           const { data } = await authApi.getMe();
           set({ user: data });
         } catch {
-          // Ignore, user is not logged in or token is invalid
-          set({ user: null });
+          // Keep persisted user if offline
         }
       },
     }),

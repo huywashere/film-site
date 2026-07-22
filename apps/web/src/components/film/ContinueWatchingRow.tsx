@@ -27,7 +27,7 @@ export function ContinueWatchingRow() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 rounded-xl bg-netflixRed/15 border border-netflixRed/30 flex items-center justify-center text-netflixRed shadow-sm">
+          <div className="w-8 h-8 rounded-xl bg-[#00e054]/15 border border-[#00e054]/30 flex items-center justify-center text-[#00e054] shadow-sm">
             <Clock size={16} />
           </div>
           <div>
@@ -48,12 +48,13 @@ export function ContinueWatchingRow() {
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {entries.map((item) => {
           const percent = Math.min(100, Math.max(0, Math.round((item.currentTime / item.duration) * 100)));
-          const cleanEpName = item.epName.replace(/^tập\s*/i, '').trim();
+          const cleanEpNumber = item.epName.replace(/^(tập|tap)\s*-?\s*/i, '').trim();
+          const epLabel = cleanEpNumber ? `Tập ${cleanEpNumber}` : 'Tập 1';
 
           return (
             <div
               key={`${item.slug}-${item.epSlug}`}
-              className="group relative bg-[#0f121d] border border-white/10 rounded-2xl overflow-hidden shadow-xl hover:border-netflixRed/50 transition-all duration-300 flex flex-col"
+              className="group relative bg-[#1c2228] border border-[#2c3440] rounded-2xl overflow-hidden shadow-xl hover:border-[#00e054]/50 transition-all duration-300 flex flex-col"
             >
               {/* Thumbnail Container */}
               <Link href={`/watch/${item.slug}?ep=${item.epSlug}`} className="relative aspect-[16/9] w-full bg-neutral-900 overflow-hidden block">
@@ -71,7 +72,7 @@ export function ContinueWatchingRow() {
 
                 {/* Play Icon Overlay */}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                  <div className="w-11 h-11 rounded-full bg-netflixRed text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                  <div className="w-11 h-11 rounded-full bg-[#00e054] text-black flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
                     <Play size={18} className="fill-current ml-0.5" />
                   </div>
                 </div>
@@ -79,7 +80,7 @@ export function ContinueWatchingRow() {
                 {/* Remove Button */}
                 <button
                   onClick={(e) => handleRemove(e, item.slug, item.epSlug)}
-                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-netflixRed text-neutral-300 hover:text-white flex items-center justify-center backdrop-blur-sm border border-white/10 transition-colors z-20"
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-[#00e054] text-neutral-300 hover:text-black flex items-center justify-center backdrop-blur-sm border border-white/10 transition-colors z-20"
                   title="Xóa khỏi danh sách"
                 >
                   <X size={14} />
@@ -89,7 +90,7 @@ export function ContinueWatchingRow() {
                 <div className="absolute bottom-0 inset-x-0 h-1.5 bg-black/60">
                   <div
                     style={{ width: `${percent}%` }}
-                    className="h-full bg-netflixRed rounded-r-full shadow-[0_0_8px_rgba(229,9,20,0.8)]"
+                    className="h-full bg-[#00e054] rounded-r-full shadow-[0_0_8px_rgba(0,224,84,0.8)]"
                   />
                 </div>
               </Link>
@@ -98,13 +99,13 @@ export function ContinueWatchingRow() {
               <div className="p-3 flex flex-col justify-between flex-1">
                 <div>
                   <Link href={`/watch/${item.slug}?ep=${item.epSlug}`}>
-                    <h3 className="font-extrabold text-xs text-white truncate group-hover:text-netflixRed transition-colors">
+                    <h3 className="font-extrabold text-xs text-white truncate group-hover:text-[#00e054] transition-colors">
                       {item.title}
                     </h3>
                   </Link>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <span className="bg-white/10 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded">
-                      TẬP {cleanEpName || '01'}
+                  <div className="flex items-center space-x-2 mt-1.5">
+                    <span className="bg-[#00e054]/15 text-[#00e054] border border-[#00e054]/30 text-[10px] font-black px-2 py-0.5 rounded-md">
+                      {epLabel}
                     </span>
                     <span className="text-[10px] text-neutral-400 font-semibold truncate">
                       {formatTime(item.currentTime)} / {formatTime(item.duration)}
@@ -118,7 +119,7 @@ export function ContinueWatchingRow() {
                   </span>
                   <Link
                     href={`/watch/${item.slug}?ep=${item.epSlug}`}
-                    className="flex items-center space-x-1 text-[11px] font-extrabold text-netflixRed hover:underline"
+                    className="flex items-center space-x-1 text-[11px] font-extrabold text-[#00e054] hover:underline"
                   >
                     <span>Xem tiếp</span>
                     <Play size={10} className="fill-current" />

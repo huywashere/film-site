@@ -150,6 +150,11 @@
   }
 }
 
+html {
+  scrollbar-gutter: stable;
+  overflow-x: hidden;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -159,24 +164,41 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     background-color: #14181c;
-    background-image:
-      radial-gradient(ellipse at 50% 0%, #1e242b 0%, #14181c 65%, #0e1114 100%),
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23noise)' opacity='0.038'/%3E%3C/svg%3E");
-    background-repeat: no-repeat, repeat;
-    background-size: cover, auto;
-    background-position: center top, center top;
-    background-attachment: fixed;
     position: relative;
+    overflow-x: hidden;
   }
 
+  /* GPU-Accelerated Hardware Canvas for Letterboxd dot grid (0% CPU load on scroll) */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
     pointer-events: none;
-    background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.25) 75%, rgba(0, 0, 0, 0.55) 100%);
-    z-index: 1;
+    z-index: -1;
+    background-image: 
+      radial-gradient(ellipse at 50% 0%, #1e242c 0%, #14181c 75%),
+      radial-gradient(rgba(255, 255, 255, 0.12) 1.25px, transparent 1.25px);
+    background-size: 100% 600px, 14px 14px;
+    background-position: center top, 0 0;
+    transform: translateZ(0);
+    will-change: transform;
   }
+}
+
+/* Prevent layout shift when modals or dropdowns open */
+body[data-scroll-locked],
+html[data-scroll-locked],
+body[style*="overflow: hidden"] {
+  padding-right: 0px !important;
+  margin-right: 0px !important;
+}
+
+/* Ensure fixed header stays completely still */
+header {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  padding-right: 0px !important;
+  margin-right: 0px !important;
 }
 
 
@@ -365,4 +387,54 @@ html.lang-switching *:not(video):not(img):not(canvas):not(iframe) {
 .lang-pill:hover {
   background: rgba(255,255,255,0.10);
   border-color: rgba(255,255,255,0.22);
+}
+
+/* Custom Sleek Dark Scrollbar to fix native Windows scrollbar arrows */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #00e054;
+}
+
+/* Global Browser Main Scrollbar */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: #2c3440 #14181c;
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #14181c;
+}
+::-webkit-scrollbar-thumb {
+  background: #2c3440;
+  border-radius: 9999px;
+  border: 2px solid #14181c;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #00e054;
+}
+
+@keyframes marquee-rtl {
+  0% {
+    transform: translate3d(0%, 0, 0);
+  }
+  100% {
+    transform: translate3d(-33.333333%, 0, 0);
+  }
 }

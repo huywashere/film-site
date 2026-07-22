@@ -52,6 +52,7 @@ export function FilmCard({
 
   const slug = film.slug;
   const title = film.name || film.title || 'Chưa có tên';
+  const subtitle = film.origin_name || (film.year ? `${film.year}` : '');
   const posterUrl =
     variant === 'landscape'
       ? resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url)
@@ -65,16 +66,30 @@ export function FilmCard({
     });
   };
 
-  const typeLabel =
-    film.type === 'series'
-      ? 'Bộ'
-      : film.type === 'single'
-        ? 'Lẻ'
-        : film.type === 'hoathinh'
-          ? 'Anime'
-          : film.type === 'tvshows'
-            ? 'TV'
-            : null;
+  // Extract top-left badge (Thuyết Minh / Vietsub / Lồng Tiếng)
+  const langBadge = film.lang
+    ? film.lang.includes('Thuyết Minh')
+      ? 'Thuyết Minh'
+      : film.lang.includes('Lồng Tiếng')
+      ? 'Lồng Tiếng'
+      : film.lang.includes('Vietsub')
+      ? 'Vietsub'
+      : film.lang
+    : 'Vietsub';
+
+  // Extract top-right quality badge (HD / FHD / 4K)
+  const qualityBadge = (film.quality || 'HD').toUpperCase().replace('FULL HD', 'FHD');
+
+  // Extract bottom-left episode status badge
+  const episodeBadge = film.episode_current
+    ? film.episode_current.toLowerCase().includes('hoàn tất') || film.episode_current.toLowerCase().includes('full')
+      ? film.episode_current
+      : film.episode_current.includes('Tập')
+      ? film.episode_current
+      : `Tập ${film.episode_current}`
+    : film.type === 'single'
+    ? 'Phim Lẻ'
+    : null;
 
   const handleWatchlist = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -106,14 +121,14 @@ export function FilmCard({
   return (
     <Link
       href={`/film/${slug}`}
-      className="group relative flex flex-col space-y-2 cursor-pointer transition-transform duration-300 hover:scale-105"
+      className="group relative flex flex-col cursor-pointer transition-transform duration-300 hover:scale-[1.03]"
       style={{ width }}
       onMouseEnter={prefetchFilmDetail}
     >
-      {/* Poster Wrapper with subtle rounding & border shadow */}
+      {/* Poster Container */}
       <div
         className={cn(
-          "relative w-full overflow-hidden rounded bg-neutral-900 border border-white/5 shadow-lg aspect-[2/3]",
+          "relative w-full overflow-hidden rounded-2xl bg-neutral-900 border border-white/10 shadow-xl aspect-[2/3]",
           variant === 'landscape' ? "aspect-video" : ""
         )}
       >
@@ -122,7 +137,7 @@ export function FilmCard({
           <img
             src={posterUrl}
             alt={title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />
         ) : (
@@ -131,67 +146,55 @@ export function FilmCard({
           </div>
         )}
 
-        {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-black/75 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-3 z-10 text-center">
-          {/* Top Row: Watchlist Add/Remove */}
-          <div className="flex justify-end w-full">
-            {showActions && (
-              <button
-                onClick={handleWatchlist}
-                className={cn(
-                  "w-7 h-7 rounded-full bg-black/70 border border-white/20 flex items-center justify-center text-white hover:bg-netflixRed hover:border-netflixRed hover:scale-110 transition-all",
-                  saved ? "bg-netflixRed border-netflixRed" : ""
-                )}
-                title={saved ? 'Xóa khỏi Watchlist' : 'Thêm vào Watchlist'}
-              >
-                <Bookmark size={12} fill={saved ? 'currentColor' : 'none'} />
-              </button>
-            )}
+        {/* ── TOP-LEFT AUDIO BADGE (Thuyết Minh / Vietsub) ── */}
+        {langBadge && (
+          <div className="absolute top-2.5 left-2.5 bg-black/70 backdrop-blur-md border border-white/20 text-white font-extrabold text-[11px] px-2.5 py-1 rounded-xl shadow-lg z-10">
+            {langBadge}
           </div>
+        )}
 
-          {/* Play Button Overlay */}
-          <div className="mx-auto w-10 h-10 rounded-full bg-netflixRed text-white flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 hover:scale-110 transition-all duration-300">
-            <Play size={16} fill="currentColor" className="ml-0.5" />
-          </div>
-
-          {/* Title & Metadata at the bottom */}
-          <div className="w-full pt-1">
-            <p className="text-white font-extrabold text-[11px] leading-tight line-clamp-2">
-              {title}
-            </p>
-          </div>
+        {/* ── TOP-RIGHT QUALITY BADGE (HD / FHD / 4K) ── */}
+        <div className="absolute top-2.5 right-2.5 bg-[#ff8800] text-black font-black text-[11px] px-2 py-0.5 rounded-lg uppercase tracking-wide shadow-lg shadow-orange-500/20 z-10">
+          {qualityBadge}
         </div>
 
-        {/* Top-left type tag */}
-        {typeLabel && (
-          <div className="absolute top-2.5 left-2.5 bg-white text-black font-black text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded shadow z-10">
-            {typeLabel === 'Bộ' ? 'New Episodes' : typeLabel === 'Lẻ' ? 'New Movie' : typeLabel}
+        {/* ── BOTTOM-LEFT EPISODE STATUS BADGE ── */}
+        {episodeBadge && (
+          <div className="absolute bottom-2.5 left-2.5 bg-black/80 backdrop-blur-md border border-white/20 text-white font-extrabold text-[11px] px-2.5 py-1 rounded-xl shadow-lg z-10">
+            {episodeBadge}
           </div>
         )}
 
-        {/* Bottom-right quality tag */}
-        {film.quality && (
-          <div className="absolute bottom-2.5 right-2.5 bg-netflixRed text-white font-extrabold text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded z-10">
-            {film.quality}
+        {/* Hover Overlay with Play Button & Watchlist */}
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-20">
+          {showActions && (
+            <button
+              onClick={handleWatchlist}
+              className={cn(
+                "absolute top-2.5 right-14 w-8 h-8 rounded-full bg-black/70 border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-black hover:scale-110 transition-all",
+                saved ? "bg-white text-black border-white" : ""
+              )}
+              title={saved ? 'Xóa khỏi Watchlist' : 'Thêm vào Watchlist'}
+            >
+              <Bookmark size={14} fill={saved ? 'currentColor' : 'none'} />
+            </button>
+          )}
+
+          <div className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-xl shadow-white/20 transform scale-90 group-hover:scale-105 transition-all duration-300">
+            <Play size={20} fill="currentColor" className="ml-0.5" />
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Title Detail info */}
+      {/* Title & Subtitle Below Poster */}
       {!hideDetails && (
-        <div className="flex flex-col text-left">
-          <h4 className="font-semibold text-sm text-neutral-100 truncate group-hover:text-netflixRed transition-colors pt-1">
+        <div className="flex flex-col text-left mt-2.5 px-0.5">
+          <h4 className="font-bold text-sm md:text-[15px] text-white line-clamp-1 leading-snug group-hover:text-neutral-300 transition-colors">
             {title}
           </h4>
-          <div className="flex items-center space-x-1.5 text-xs text-neutral-400 mt-0.5">
-            {film.year && <span>{film.year}</span>}
-            {film.year && (film.episode_current || film.lang) && <span className="opacity-40">•</span>}
-            {(film.episode_current || film.lang) && (
-              <span className="text-netflixRed truncate max-w-[120px] font-medium">
-                {film.episode_current || film.lang}
-              </span>
-            )}
-          </div>
+          <p className="font-normal text-xs text-neutral-400 line-clamp-1 mt-0.5">
+            {film.origin_name || (film.year ? `${film.year}` : title)}
+          </p>
         </div>
       )}
     </Link>
