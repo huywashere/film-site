@@ -3,30 +3,45 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { movieApi } from '@/lib/api';
 import { FilmCard, FilmItem, FilmCardSkeleton } from '@/components/film/FilmCard';
+import { Pagination } from '@/components/film/Pagination';
 
 const COUNTRY_NAMES: Record<string, string> = {
-  'trung-quoc': 'Trung Quốc',
-  'han-quoc': 'Hàn Quốc',
-  'nhat-ban': 'Nhật Bản',
-  'thai-lan': 'Thái Lan',
-  'au-my': 'Âu Mỹ',
-  'viet-nam': 'Việt Nam',
-  'hong-kong': 'Hồng Kông',
-  'dai-loan': 'Đài Loan',
-  'an-do': 'Ấn Độ',
   anh: 'Anh',
-  phap: 'Pháp',
-  duc: 'Đức',
-  'tay-ban-nha': 'Tây Ban Nha',
-  y: 'Ý',
-  canada: 'Canada',
-  uc: 'Úc',
-  nga: 'Nga',
-  mexico: 'Mexico',
+  'ba-lan': 'Ba Lan',
   brazil: 'Brazil',
-  philippines: 'Philippines',
+  'bo-dao-nha': 'Bồ Đào Nha',
+  canada: 'Canada',
+  'chau-phi': 'Châu Phi',
+  'ha-lan': 'Hà Lan',
+  'han-quoc': 'Hàn Quốc',
+  'hong-kong': 'Hồng Kông',
   indonesia: 'Indonesia',
   malaysia: 'Malaysia',
+  mexico: 'Mexico',
+  'na-uy': 'Na Uy',
+  'nam-phi': 'Nam Phi',
+  nga: 'Nga',
+  'nhat-ban': 'Nhật Bản',
+  philippines: 'Philippines',
+  phap: 'Pháp',
+  'quoc-gia-khac': 'Quốc Gia Khác',
+  'thai-lan': 'Thái Lan',
+  'tho-nhi-ky': 'Thổ Nhĩ Kỳ',
+  'thuy-si': 'Thụy Sĩ',
+  'thuy-dien': 'Thụy Điển',
+  'trung-quoc': 'Trung Quốc',
+  'tay-ban-nha': 'Tây Ban Nha',
+  uae: 'UAE',
+  ukraina: 'Ukraina',
+  'viet-nam': 'Việt Nam',
+  'au-my': 'Âu Mỹ',
+  uc: 'Úc',
+  y: 'Ý',
+  'dan-mach': 'Đan Mạch',
+  'dai-loan': 'Đài Loan',
+  duc: 'Đức',
+  'a-rap-xe-ut': 'Ả Rập Xê Út',
+  'an-do': 'Ấn Độ',
 };
 
 export default function CountryPage() {
@@ -42,74 +57,68 @@ export default function CountryPage() {
     queryFn: () => movieApi.getByCountry(slug, page).then((r) => r.data),
   });
 
-  const films: FilmItem[] = data?.data?.items || [];
-  const totalPages = data?.data?.params?.pagination?.totalPages || 1;
+  const films: FilmItem[] = data?.data?.items || data?.items || [];
+
+  const rawTotal =
+    data?.data?.params?.pagination?.totalPages ||
+    data?.params?.pagination?.totalPages ||
+    data?.pagination?.totalPages ||
+    data?.paginate?.total_page ||
+    data?.data?.paginate?.total_page ||
+    (data?.data?.params?.pagination?.totalItems
+      ? Math.ceil(data.data.params.pagination.totalItems / (data.data.params.pagination.totalItemsPerPage || 24))
+      : undefined);
+
+  const totalPages = rawTotal && rawTotal > 1 ? rawTotal : (films.length > 0 ? 50 : 1);
+  const totalItems = data?.data?.params?.pagination?.totalItems || data?.pagination?.totalItems;
+
+  const handlePageChange = (newPage: number) => {
+    router.push(`/country/${slug}?page=${newPage}`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
-    <div className="container pt-24 pb-16">
-      <div className="section-header" style={{ marginBottom: 'var(--space-xl)' }}>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem' }}>Quốc Gia: {label}</h1>
-        <p className="text-muted text-sm">Trang {page}</p>
+    <div className="container mx-auto px-4 md:px-8 max-w-7xl pt-24 pb-16">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-4 border-b border-white/10 gap-2">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-black text-white tracking-wide uppercase font-sans">
+            Quốc Gia: {label}
+          </h1>
+          <p className="text-xs text-neutral-400 font-semibold mt-1">
+            Danh sách phim sản xuất tại {label} chọn lọc hay nhất
+          </p>
+        </div>
+        <div className="text-xs font-bold text-neutral-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 self-start md:self-auto">
+          Trang <span className="text-white font-extrabold">{page}</span> / {totalPages}
+        </div>
       </div>
 
       {isLoading ? (
-        <div className="grid-films-lg">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
           {Array.from({ length: 24 }).map((_, i) => (
             <FilmCardSkeleton key={i} />
           ))}
         </div>
+      ) : films.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
+          {films.map((f) => (
+            <FilmCard key={f.slug} film={f} />
+          ))}
+        </div>
       ) : (
-        <div className="grid-films-lg">
-          {films.length > 0 ? (
-            films.map((f) => <FilmCard key={f.slug} film={f} />)
-          ) : (
-            <div
-              style={{
-                padding: '4rem 1rem',
-                textAlign: 'center',
-                gridColumn: '1 / -1',
-                color: 'var(--text-muted)',
-              }}
-            >
-              Không có bộ phim nào thuộc quốc gia này.
-            </div>
-          )}
+        <div className="py-20 text-center text-neutral-500 font-semibold text-sm">
+          Chưa có bộ phim nào thuộc quốc gia này.
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="pagination">
-          {page > 1 && (
-            <button
-              className="page-btn"
-              onClick={() => router.push(`/country/${slug}?page=${page - 1}`)}
-            >
-              ‹
-            </button>
-          )}
-          {Array.from({ length: Math.min(totalPages, 8) }, (_, i) => {
-            const p = Math.max(1, page - 3) + i;
-            if (p > totalPages) return null;
-            return (
-              <button
-                key={p}
-                className={`page-btn ${p === page ? 'active' : ''}`}
-                onClick={() => router.push(`/country/${slug}?page=${p}`)}
-              >
-                {p}
-              </button>
-            );
-          })}
-          {page < totalPages && (
-            <button
-              className="page-btn"
-              onClick={() => router.push(`/country/${slug}?page=${page + 1}`)}
-            >
-              ›
-            </button>
-          )}
-        </div>
-      )}
+      {/* Pagination Controls */}
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 }

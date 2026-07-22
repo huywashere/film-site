@@ -1,4 +1,11 @@
 import axios from 'axios';
+import {
+  dedupeFilmsBySource,
+  extractFilmItems,
+  isUsableMovieDetail,
+  tagMovieDetailSource,
+  type MovieSource,
+} from '@/lib/movie-normalizer';
 
 // ── KKPhim API Configuration ──────────────────────────────────────
 const KKPHIM_PROXY = '/api/kkphim';
@@ -110,38 +117,167 @@ export const kkphimApi = {
 const fetchOphim = async (endpoint: string) => {
   const response = await fetch(`/api/ophim${endpoint}`);
   const json = await response.json();
-  
+
   if (json?.data?.items) {
     const cdnDomain = json.data.APP_DOMAIN_CDN_IMAGE || 'https://img.ophim.live';
     const cdnUrl = json.data.pathImage || `${cdnDomain}/uploads/movies/`;
     const finalCdn = cdnUrl.endsWith('/') ? cdnUrl : `${cdnUrl}/`;
     json.data.items = json.data.items.map((item: any) => ({
       ...item,
-      thumb_url: item.thumb_url?.startsWith('http') ? item.thumb_url : `${finalCdn}${item.thumb_url}`,
-      poster_url: item.poster_url?.startsWith('http') ? item.poster_url : `${finalCdn}${item.poster_url}`,
+      thumb_url: item.thumb_url?.startsWith('http')
+        ? item.thumb_url
+        : `${finalCdn}${item.thumb_url}`,
+      poster_url: item.poster_url?.startsWith('http')
+        ? item.poster_url
+        : `${finalCdn}${item.poster_url}`,
     }));
   }
-  
+
+  if (json?.movie) {
+    const finalCdn = 'https://img.ophim.live/uploads/movies/';
+    json.movie = {
+      ...json.movie,
+      thumb_url:
+        json.movie.thumb_url?.startsWith('http') || !json.movie.thumb_url
+          ? json.movie.thumb_url
+          : `${finalCdn}${json.movie.thumb_url}`,
+      poster_url:
+        json.movie.poster_url?.startsWith('http') || !json.movie.poster_url
+          ? json.movie.poster_url
+          : `${finalCdn}${json.movie.poster_url}`,
+    };
+  }
+
   return json;
 };
 
 const fetchNguonc = async (endpoint: string) => {
   const response = await fetch(`/api/nguonc${endpoint}`);
   const json = await response.json();
-  console.log('NguonC Response:', endpoint, json);
   return json;
 };
+
+function asRecord(value: unknown): Record<string, any> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, any>)
+    : {};
+}
+
+function readNumber(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
+function getTotalPages(data: unknown): number | undefined {
+  const root = asRecord(data);
+  const dataRecord = asRecord(root.data);
+  const params = asRecord(dataRecord.params);
+  const pagination = asRecord(params.pagination);
+  const paginate = asRecord(root.paginate);
+
+  return readNumber(pagination.totalPages) || readNumber(paginate.total_page);
+}
+
+async function searchAllSources(keyword: string, page = 1, limit = 24) {
+  const encodedKeyword = encodeURIComponent(keyword);
+  const requests: Array<{ source: MovieSource; request: () => Promise<unknown> }> = [
+    {
+      source: 'kkphim',
+      request: () => kkphimApi.search(keyword, page, limit),
+    },
+    {
+      source: 'ophim',
+      request: () =>
+        fetchOphim(`/v1/api/tim-kiem?keyword=${encodedKeyword}&page=${page}&limit=${limit}`),
+    },
+    {
+      source: 'nguonc',
+      request: () => fetchNguonc(`/films/search?keyword=${encodedKeyword}&page=${page}`),
+    },
+  ];
+
+  const settled = await Promise.allSettled(requests.map((entry) => entry.request()));
+  const groups = settled.map((result, index) => ({
+    source: requests[index].source,
+    items: result.status === 'fulfilled' ? extractFilmItems(result.value) : [],
+  }));
+
+  const items = dedupeFilmsBySource(groups).slice(0, limit);
+  const totalPages = Math.max(
+    1,
+    ...settled.map((result) =>
+      result.status === 'fulfilled' ? getTotalPages(result.value) || 1 : 1,
+    ),
+  );
+
+  return {
+    status: 'success',
+    data: {
+      items,
+      params: {
+        pagination: {
+          currentPage: page,
+          totalItems: items.length,
+          totalItemsPerPage: limit,
+          totalPages,
+        },
+      },
+    },
+    _sources: groups.map((group) => ({
+      source: group.source,
+      count: group.items.length,
+    })),
+  };
+}
+
+async function getDetailFromAnySource(slug: string): Promise<any> {
+  const requests: Array<{ source: MovieSource; request: () => Promise<unknown> }> = [
+    {
+      source: 'kkphim',
+      request: () => kkphimApi.getDetail(slug),
+    },
+    {
+      source: 'ophim',
+      request: () => fetchOphim(`/phim/${slug}`),
+    },
+    {
+      source: 'nguonc',
+      request: () => fetchNguonc(`/film/${slug}`),
+    },
+  ];
+
+  for (const entry of requests) {
+    try {
+      const data = await entry.request();
+      if (isUsableMovieDetail(data)) {
+        return tagMovieDetailSource(data, entry.source) as any;
+      }
+    } catch {
+      // Try the next movie source.
+    }
+  }
+
+  throw new Error(`Không tìm thấy phim: ${slug}`);
+}
 
 // ── movieApi (alias for component compatibility) ──────────────────
 export const movieApi = {
   getLatest: (page = 1) => kkphimApi.getLatest(page).then((data) => ({ data })),
-  getSeries: (page = 1) => fetchOphim(`/v1/api/danh-sach/phim-bo?page=${page}&limit=24`).then((data) => ({ data })),
-  getSingle: (page = 1) => fetchNguonc(`/films/danh-sach/phim-le?page=${page}`).then((data) => ({ data })),
-  getAnime: (page = 1) => fetchOphim(`/v1/api/danh-sach/hoat-hinh?page=${page}&limit=24`).then((data) => ({ data })),
-  getTvShows: (page = 1) => fetchNguonc(`/films/danh-sach/tv-shows?page=${page}`).then((data) => ({ data })),
-  getDetail: (slug: string) => kkphimApi.getDetail(slug).then((data) => ({ data })),
+  getSeries: (page = 1) =>
+    fetchOphim(`/v1/api/danh-sach/phim-bo?page=${page}&limit=24`).then((data) => ({ data })),
+  getSingle: (page = 1) =>
+    fetchNguonc(`/films/danh-sach/phim-le?page=${page}`).then((data) => ({ data })),
+  getAnime: (page = 1) =>
+    fetchOphim(`/v1/api/danh-sach/hoat-hinh?page=${page}&limit=24`).then((data) => ({ data })),
+  getTvShows: (page = 1) =>
+    fetchNguonc(`/films/danh-sach/tv-shows?page=${page}`).then((data) => ({ data })),
+  getDetail: (slug: string) => getDetailFromAnySource(slug).then((data) => ({ data })),
   getDetailV1: (slug: string) => kkphimApi.getDetailV1(slug).then((data) => ({ data })),
-  search: (keyword: string, page = 1) => kkphimApi.search(keyword, page).then((data) => ({ data })),
+  search: (keyword: string, page = 1, limit = 24) => searchAllSources(keyword, page, limit).then((data) => ({ data })),
   getByGenre: (slug: string, page = 1) =>
     kkphimApi.getByGenre(slug, page).then((data) => ({ data })),
   getByCountry: (slug: string, page = 1) =>
@@ -177,7 +313,7 @@ api.interceptors.response.use(
       try {
         // Because withCredentials is true, this post will automatically send the refreshToken cookie
         await axios.post(`${API_BASE}/auth/refresh`, {}, { withCredentials: true });
-        
+
         // Retry original request (cookies are automatically sent)
         return api(original);
       } catch {
@@ -199,13 +335,15 @@ export const authApi = {
   getMe: () => api.get('/auth/me'),
   verifyEmail: (data: { token: string }) => api.post('/auth/verify-email', data),
   forgotPassword: (data: { email: string }) => api.post('/auth/forgot-password', data),
-  resetPassword: (data: { token: string; newPassword: string }) => api.post('/auth/reset-password', data),
-  
+  resetPassword: (data: { token: string; newPassword: string }) =>
+    api.post('/auth/reset-password', data),
+
   // 2FA Endpoints
   setup2FA: () => api.post('/auth/2fa/setup'),
   verify2FA: (data: { code: string }) => api.post('/auth/2fa/verify', data),
   disable2FA: (data: { code: string }) => api.post('/auth/2fa/disable', data),
-  loginVerify2FA: (data: { tempToken: string; code: string }) => api.post('/auth/2fa/login-verify', data),
+  loginVerify2FA: (data: { tempToken: string; code: string }) =>
+    api.post('/auth/2fa/login-verify', data),
 
   // Session Management Endpoints
   getSessions: () => api.get('/auth/sessions'),
@@ -253,8 +391,7 @@ export const watchHistoryApi = {
   }) => api.post('/watch-history', data),
 
   /** Get paginated history list */
-  getHistory: (page = 1, limit = 20) =>
-    api.get(`/watch-history?page=${page}&limit=${limit}`),
+  getHistory: (page = 1, limit = 20) => api.get(`/watch-history?page=${page}&limit=${limit}`),
 
   /** Get resume data for a specific movie (returns all episodes) */
   getResume: (movieId: string) => api.get(`/watch-history/resume/${movieId}`),
@@ -265,4 +402,3 @@ export const watchHistoryApi = {
   /** Clear all history */
   clearAll: () => api.delete('/watch-history'),
 };
-

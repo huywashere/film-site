@@ -1,0 +1,232 @@
+export type MovieSource = 'kkphim' | 'ophim' | 'nguonc';
+
+export interface NormalizedFilmItem extends Record<string, unknown> {
+  slug: string;
+  name: string;
+  origin_name?: string;
+  year?: number;
+  _source: MovieSource;
+  _sources: MovieSource[];
+  _sourceSlugs: Partial<Record<MovieSource, string>>;
+  _canonicalKey: string;
+  _duplicateCount: number;
+  _rank: number;
+}
+
+const SOURCE_PRIORITY: MovieSource[] = ['kkphim', 'ophim', 'nguonc'];
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return isRecord(value) ? value : {};
+}
+
+function readString(value: unknown): string | undefined {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed || undefined;
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+  return undefined;
+}
+
+function readNumber(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
+function readNestedString(record: Record<string, unknown>, key: string, nestedKey: string) {
+  return readString(asRecord(record[key])[nestedKey]);
+}
+
+export function normalizeText(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'd')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+function slugify(value: string): string {
+  return normalizeText(value).replace(/\s+/g, '-');
+}
+
+function getFilmName(record: Record<string, unknown>): string {
+  return (
+    readString(record.name) ||
+    readString(record.title) ||
+    readString(record.original_name) ||
+    readString(record.origin_name) ||
+    readString(record.slug) ||
+    'unknown'
+  );
+}
+
+function getOriginName(record: Record<string, unknown>): string | undefined {
+  return readString(record.origin_name) || readString(record.original_name);
+}
+
+function getYear(record: Record<string, unknown>): number | undefined {
+  return readNumber(record.year);
+}
+
+function getCanonicalKey(record: Record<string, unknown>): string {
+  const tmdbId = readNestedString(record, 'tmdb', 'id');
+  const tmdbType = readNestedString(record, 'tmdb', 'type') || 'movie';
+  if (tmdbId && tmdbId !== '0') return `tmdb:${tmdbType}:${tmdbId}`;
+
+  const imdbId = readNestedString(record, 'imdb', 'id');
+  if (imdbId && imdbId !== '0') return `imdb:${imdbId.toLowerCase()}`;
+
+  const year = getYear(record);
+  const title = getOriginName(record) || getFilmName(record);
+  const normalizedTitle = normalizeText(title);
+  if (year && normalizedTitle) return `title-year:${normalizedTitle}:${year}`;
+
+  const slug = readString(record.slug);
+  if (slug) return `slug:${normalizeText(slug)}`;
+
+  return `title:${normalizedTitle || 'unknown'}`;
+}
+
+function sourcePriority(source: MovieSource): number {
+  const index = SOURCE_PRIORITY.indexOf(source);
+  return index === -1 ? SOURCE_PRIORITY.length : index;
+}
+
+function hasUsefulValue(value: unknown): boolean {
+  return value !== undefined && value !== null && value !== '';
+}
+
+export function extractFilmItems(data: unknown): unknown[] {
+  const root = asRecord(data);
+  if (Array.isArray(root.items)) return root.items;
+
+  const dataRecord = asRecord(root.data);
+  if (Array.isArray(dataRecord.items)) return dataRecord.items;
+
+  const nestedDataRecord = asRecord(dataRecord.data);
+  if (Array.isArray(nestedDataRecord.items)) return nestedDataRecord.items;
+
+  return [];
+}
+
+export function normalizeFilmItem(
+  item: unknown,
+  source: MovieSource,
+  rank: number,
+): NormalizedFilmItem {
+  const record = asRecord(item);
+  const name = getFilmName(record);
+  const originName = getOriginName(record);
+  const year = getYear(record);
+  const slug = readString(record.slug) || slugify(originName || name);
+  const canonicalKey = getCanonicalKey({ ...record, slug, name, origin_name: originName, year });
+
+  return {
+    ...record,
+    slug,
+    name,
+    origin_name: originName,
+    year,
+    _source: source,
+    _sources: [source],
+    _sourceSlugs: { [source]: slug },
+    _canonicalKey: canonicalKey,
+    _duplicateCount: 1,
+    _rank: rank,
+  };
+}
+
+function mergeFilm(existing: NormalizedFilmItem, incoming: NormalizedFilmItem): NormalizedFilmItem {
+  const existingPriority = sourcePriority(existing._source);
+  const incomingPriority = sourcePriority(incoming._source);
+  const primary = incomingPriority < existingPriority ? incoming : existing;
+  const secondary = primary === existing ? incoming : existing;
+  const merged: Record<string, unknown> = { ...secondary };
+
+  Object.entries(primary).forEach(([key, value]) => {
+    if (hasUsefulValue(value)) merged[key] = value;
+  });
+
+  const sources = Array.from(new Set([...existing._sources, ...incoming._sources])).sort(
+    (a, b) => sourcePriority(a) - sourcePriority(b),
+  );
+
+  return {
+    ...merged,
+    _source: primary._source,
+    _sources: sources,
+    _sourceSlugs: {
+      ...existing._sourceSlugs,
+      ...incoming._sourceSlugs,
+    },
+    _canonicalKey: existing._canonicalKey,
+    _duplicateCount: sources.length,
+    _rank: Math.min(existing._rank, incoming._rank),
+  } as NormalizedFilmItem;
+}
+
+export function dedupeFilmsBySource(
+  groups: Array<{ source: MovieSource; items: unknown[] }>,
+): NormalizedFilmItem[] {
+  const byKey = new Map<string, NormalizedFilmItem>();
+  let rank = 0;
+
+  groups.forEach(({ source, items }) => {
+    items.forEach((item) => {
+      const normalized = normalizeFilmItem(item, source, rank++);
+      const existing = byKey.get(normalized._canonicalKey);
+      byKey.set(normalized._canonicalKey, existing ? mergeFilm(existing, normalized) : normalized);
+    });
+  });
+
+  return Array.from(byKey.values()).sort((a, b) => {
+    const sourceDelta = sourcePriority(a._source) - sourcePriority(b._source);
+    return sourceDelta || a._rank - b._rank;
+  });
+}
+
+export function isUsableMovieDetail(data: unknown): boolean {
+  const root = asRecord(data);
+  if (root.error) return false;
+
+  const movie = asRecord(root.movie);
+  if (readString(movie.slug) || readString(movie.name) || readString(movie.title)) return true;
+  if (readString(root.slug) || readString(root.name) || readString(root.title)) return true;
+
+  return false;
+}
+
+export function tagMovieDetailSource(data: unknown, source: MovieSource): unknown {
+  const root = asRecord(data);
+  const movie = asRecord(root.movie);
+
+  if (Object.keys(movie).length > 0) {
+    return {
+      ...root,
+      _source: source,
+      movie: {
+        ...movie,
+        _source: source,
+      },
+    };
+  }
+
+  return {
+    ...root,
+    _source: source,
+  };
+}

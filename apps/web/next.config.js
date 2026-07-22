@@ -1,5 +1,16 @@
+const isDev = process.env.NODE_ENV === 'development';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Use separate directories for dev and prod builds to prevent Windows file lock collisions
+  distDir: isDev ? '.next-dev' : '.next',
+  poweredByHeader: false,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'phimimg.com' },

@@ -4,64 +4,64 @@
 
 @layer base {
   :root {
-    --background: #060814; /* HBO Max Deep Navy #060814 */
-    --foreground: #fafafa;
+    --background: #14181c; /* Signature Letterboxd dark charcoal slate */
+    --foreground: #f2f4f8;
     
-    --card: #0a0c16; /* Lighter deep navy card #0a0c16 */
-    --card-foreground: #f2f2f2;
+    --card: #1c2228; /* Letterboxd card container shade */
+    --card-foreground: #e7eaf0;
     
-    --popover: #060814;
-    --popover-foreground: #fafafa;
+    --popover: #1c2228;
+    --popover-foreground: #f2f4f8;
     
-    --primary: #524cf8; /* HBO Max Royal Blue #524cf8 */
-    --primary-foreground: #fafafa;
+    --primary: #00e054; /* Letterboxd signature electric green */
+    --primary-foreground: #ffffff;
     
-    --secondary: #141726;
-    --secondary-foreground: #fafafa;
+    --secondary: #242c34;
+    --secondary-foreground: #eceff4;
     
-    --muted: #111320;
+    --muted: #374151;
     --muted-foreground: #9ca3af;
     
-    --accent: #524cf8;
+    --accent: #00e054;
     --accent-foreground: #fafafa;
     
     --destructive: #ff3a44;
     --destructive-foreground: #fafafa;
     
-    --border: #1a1d2e;
-    --input: #1a1d2e;
-    --ring: #524cf8;
+    --border: #2c3440;
+    --input: #2c3440;
+    --ring: #00e054;
     
-    --accent-color: #524cf8; /* Dynamic netflixRed binding for Tailwind */
-    --accent-color-hover: #3b30e1;
-    --radius: 8px; /* Slightly softer borders like Max */
+    --accent-color: #00e054; /* Letterboxd green binding */
+    --accent-color-hover: #00c749;
+    --radius: 8px;
 
-    /* Legacy CSS Variable bindings so older components still render properly */
-    --bg-primary: #060814;
-    --bg-secondary: #0a0c16;
-    --bg-card: #0a0c16;
-    --bg-card-hover: #161932;
-    --bg-overlay: rgba(6, 8, 20, 0.98);
-    --bg-glass: rgba(6, 8, 20, 0.85);
+    /* Legacy CSS Variable bindings */
+    --bg-primary: #14181c;
+    --bg-secondary: #181c22;
+    --bg-card: #1c2228;
+    --bg-card-hover: #242c34;
+    --bg-overlay: rgba(20, 24, 28, 0.98);
+    --bg-glass: rgba(20, 24, 28, 0.85);
 
-    --accent: #524cf8;
-    --accent-hover: #3b30e1;
-    --accent-dim: rgba(82, 76, 248, 0.15);
+    --accent: #00e054;
+    --accent-hover: #00c749;
+    --accent-dim: rgba(0, 224, 84, 0.15);
 
     --red: #ff3a44;
     --red-hover: #ff6068;
-    --gold: #524cf8;
+    --gold: #00e054;
 
     --text-primary: #ffffff;
     --text-secondary: #a3a3a3;
     --text-muted: #737373;
     --text-inverse: #ffffff;
 
-    --border: rgba(255, 255, 255, 0.08);
-    --border-hover: rgba(255, 255, 255, 0.15);
+    --border: rgba(255, 255, 255, 0.1);
+    --border-hover: rgba(255, 255, 255, 0.2);
 
-    --star-color: #524cf8;
-    --rating-bg: rgba(82, 76, 248, 0.1);
+    --star-color: #00e054;
+    --rating-bg: rgba(0, 224, 84, 0.12);
 
     --space-xs: 0.25rem;
     --space-sm: 0.5rem;
@@ -96,23 +96,23 @@
 
   /* Light Theme Variables - Soft, comfortable off-white style (not too bright) */
   html.light, html[data-theme='light'] {
-    --background: #f1f3f7; /* Very soft light gray-navy blend, easy on the eyes */
-    --foreground: #0d111b; /* Deep slate navy for soft high contrast */
+    --background: #e8ecf3; /* Softer, slightly darker blue-gray, easy on the eyes */
+    --foreground: #1e293b; /* Softer slate black instead of harsh pure black */
     
-    --card: #ffffff;
-    --card-foreground: #0d111b;
+    --card: #f4f6fa; /* Soft card background instead of pure white */
+    --card-foreground: #1e293b;
     
-    --popover: #ffffff;
-    --popover-foreground: #0d111b;
+    --popover: #f4f6fa;
+    --popover-foreground: #1e293b;
     
     --primary: #524cf8;
     --primary-foreground: #ffffff;
     
-    --secondary: #e2e8f0;
-    --secondary-foreground: #0d111b;
+    --secondary: #cbd5e1;
+    --secondary-foreground: #1e293b;
     
-    --muted: #e9ecef;
-    --muted-foreground: #475569;
+    --muted: #cbd5e1;
+    --muted-foreground: #64748b;
     
     --accent: #524cf8;
     --accent-foreground: #ffffff;
@@ -120,21 +120,21 @@
     --destructive: #ff3a44;
     --destructive-foreground: #ffffff;
     
-    --border: #cbd5e1;
-    --input: #cbd5e1;
+    --border: rgba(0, 0, 0, 0.08);
+    --input: rgba(0, 0, 0, 0.08);
     --ring: #524cf8;
     
     /* Legacy Bindings Overwrite for Light Mode */
-    --bg-primary: #f1f3f7;
-    --bg-secondary: #ffffff;
-    --bg-card: #ffffff;
+    --bg-primary: #e8ecf3;
+    --bg-secondary: #f4f6fa;
+    --bg-card: #f4f6fa;
     --bg-card-hover: #e2e8f0;
-    --bg-overlay: rgba(241, 243, 247, 0.98);
-    --bg-glass: rgba(241, 243, 247, 0.85);
+    --bg-overlay: rgba(232, 236, 243, 0.98);
+    --bg-glass: rgba(232, 236, 243, 0.85);
 
-    --text-primary: #0d111b;
-    --text-secondary: #334155;
-    --text-muted: #475569;
+    --text-primary: #1e293b;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
     --text-inverse: #ffffff;
 
     --border: rgba(0, 0, 0, 0.08);
@@ -144,9 +144,9 @@
     --rating-bg: rgba(82, 76, 248, 0.08);
 
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.10);
-    --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.12);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
+    --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.10);
   }
 }
 
@@ -155,9 +155,27 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    background-color: #14181c;
+    background-image:
+      radial-gradient(ellipse at 50% 0%, #1e242b 0%, #14181c 65%, #0e1114 100%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23noise)' opacity='0.038'/%3E%3C/svg%3E");
+    background-repeat: no-repeat, repeat;
+    background-size: cover, auto;
+    background-position: center top, center top;
+    background-attachment: fixed;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.25) 75%, rgba(0, 0, 0, 0.55) 100%);
+    z-index: 1;
   }
 }
 
@@ -189,6 +207,36 @@
   flex-shrink: 0;
 }
 
+/* Custom Scrollbar Utilities */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(82, 76, 248, 0.8);
+}
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
 /* Next.js Image transitions */
 .image-transition {
   transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
@@ -211,4 +259,110 @@ input, textarea, select {
   .grid-films-lg {
     @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6;
   }
+}
+
+/* Premium Shimmer Loading effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(255, 255, 255, 0.09) 37%,
+    rgba(255, 255, 255, 0.03) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+html.light .shimmer, html[data-theme='light'] .shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.04) 25%,
+    rgba(0, 0, 0, 0.10) 37%,
+    rgba(0, 0, 0, 0.04) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+/* ── Language switch transition ─────────────────────────── */
+/* subtle fade only on text elements that use t() */
+html.lang-switching *:not(video):not(img):not(canvas):not(iframe) {
+  transition: opacity 0.12s ease;
+}
+
+/* iOS-style pill toggle for lang button */
+.lang-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 52px;
+  height: 24px;
+  border-radius: 100px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  overflow: hidden;
+  user-select: none;
+}
+
+.lang-pill-thumb {
+  position: absolute;
+  width: 22px;
+  height: 18px;
+  border-radius: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease;
+  pointer-events: none;
+}
+
+.lang-pill[data-lang="vi"] .lang-pill-thumb {
+  transform: translateX(2px);
+  background: linear-gradient(135deg, #e53e3e, #c53030);
+  color: white;
+}
+
+.lang-pill[data-lang="en"] .lang-pill-thumb {
+  transform: translateX(28px);
+  background: linear-gradient(135deg, #3182ce, #2b6cb0);
+  color: white;
+}
+
+.lang-pill-track {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5px;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.lang-pill[data-lang="vi"] .lang-pill-track-vi { opacity: 0; }
+.lang-pill[data-lang="vi"] .lang-pill-track-en { opacity: 0.5; color: rgba(255,255,255,0.5); }
+.lang-pill[data-lang="en"] .lang-pill-track-vi { opacity: 0.5; color: rgba(255,255,255,0.5); }
+.lang-pill[data-lang="en"] .lang-pill-track-en { opacity: 0; }
+
+.lang-pill:hover {
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(255,255,255,0.22);
 }

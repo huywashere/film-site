@@ -1,6 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { Redis } from 'ioredis';
-import { CircuitBreaker, CircuitOpenError } from '@/lib/circuit-breaker';
+import { createMovieProxyHandler } from '@/lib/movie-proxy';
 
 /**
  * NguonC API Proxy — Source C (https://phim.nguonc.com)
@@ -22,174 +20,31 @@ import { CircuitBreaker, CircuitOpenError } from '@/lib/circuit-breaker';
  *   casts        → actor (array vs comma-string) ⚠️ different format
  */
 
-// ── Circuit Breaker ───────────────────────────────────────────────────────────
-const nguoncCB = new CircuitBreaker({ name: 'NguonC', failureThreshold: 3, recoveryTimeoutMs: 30_000 });
-
-
 const NGUONC_BASE = process.env.NGUONC_API_BASE || 'https://phim.nguonc.com/api';
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
-
-// ── Redis client ─────────────────────────────────────────────────────────────
-let redis: Redis | null = null;
-let isRedisDisabled = false;
-
-function getRedisClient(): Redis | null {
-  if (isRedisDisabled) return null;
-  if (redis && redis.status === 'ready') return redis;
-  if (redis) return redis;
-
-  try {
-    redis = new Redis(REDIS_URL, {
-      maxRetriesPerRequest: 1,
-      connectTimeout: 500,
-    });
-    redis.on('error', () => {
-      if (!isRedisDisabled) {
-        console.warn('[nguonc-proxy] Redis offline – falling back to in-memory cache');
-        isRedisDisabled = true;
-        redis?.disconnect();
-        redis = null;
-      }
-    });
-  } catch {
-    isRedisDisabled = true;
-    redis = null;
-  }
-  return redis;
-}
-
-// ── In-memory fallback cache ─────────────────────────────────────────────────
-const memCache = new Map<string, { data: unknown; expiry: number }>();
-const MEM_TTL_MS = 10 * 60 * 1000;
 
 /** Path-aware TTL in seconds */
 function getTtl(path: string): number {
-  if (path === 'films/phim-moi-cap-nhat') return 120; // Latest: 2 min
-  if (path.startsWith('film/')) return 600; // Detail: 10 min
-  if (path === 'categories') return 3600; // Taxonomy: 1 hr
-  if (path.includes('search')) return 60; // Search: 1 min
-  return 300; // Default: 5 min
+  if (path === 'films/phim-moi-cap-nhat') return 120;
+  if (path.startsWith('film/')) return 600;
+  if (path === 'categories') return 3600;
+  if (path.includes('search')) return 60;
+  return 300;
 }
 
-// ── Origin validation ─────────────────────────────────────────────────────────
-function isRequestAllowed(request: NextRequest): boolean {
-  const referer = request.headers.get('referer');
-  const origin = request.headers.get('origin');
-  const host = request.headers.get('host') || 'localhost:3000';
-
-  if (!referer && !origin) return false;
-
-  try {
-    if (referer && new URL(referer).host === host) return true;
-    if (origin && new URL(origin).host === host) return true;
-  } catch {
-    // URL parsing failed
-  }
-  return false;
-}
-
-// ── Route handler ─────────────────────────────────────────────────────────────
-export async function GET(request: NextRequest, { params }: { params: { path: string[] } }) {
-  if (!isRequestAllowed(request)) {
-    return NextResponse.json(
-      { error: 'Truy cập bị chặn (403) – Yêu cầu không hợp lệ' },
-      { status: 403 },
-    );
-  }
-
-  const path = params.path.join('/');
-  const searchParams = request.nextUrl.searchParams.toString();
-  const upstreamUrl = `${NGUONC_BASE}/${path}${searchParams ? `?${searchParams}` : ''}`;
-  const cacheKey = `nguonc:${upstreamUrl}`;
-  const ttlSeconds = getTtl(path);
-  const client = getRedisClient();
-
-  // ── 1. Redis cache ────────────────────────────────────────────────────────
-  if (client && client.status === 'ready') {
-    try {
-      const raw = await client.get(cacheKey);
-      if (raw) {
-        return NextResponse.json(JSON.parse(raw), {
-          headers: { 'X-Cache': 'HIT-REDIS', 'X-Source': 'NguonC' },
-        });
-      }
-    } catch {
-      // fall through to in-memory
-    }
-  }
-
-  // ── 2. In-memory cache ────────────────────────────────────────────────────
-  const memEntry = memCache.get(cacheKey);
-  if (memEntry && memEntry.expiry > Date.now()) {
-    return NextResponse.json(memEntry.data, {
-      headers: { 'X-Cache': 'HIT-MEMORY', 'X-Source': 'NguonC' },
-    });
-  }
-
-  // ── 3. Fetch from NguonC upstream (via circuit breaker) ────────────────────
-  try {
-    const rawData = await nguoncCB.execute(async () => {
-      const res = await fetch(upstreamUrl, {
-        headers: {
-          Accept: 'application/json',
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        },
-        signal: AbortSignal.timeout(8000), // 8s hard timeout
-      });
-
-      if (!res.ok) {
-        throw new Error(`Upstream returned ${res.status}`);
-      }
-
-      return res.json();
-    });
-
-    // ── Normalize fields to match KKPhim/OPhim schema ─────────────────
-    const data = normalizeNguonC(rawData, path);
-
-    // ── 4. Save to Redis (non-blocking) ───────────────────────────
-    if (client && client.status === 'ready') {
-      client.set(cacheKey, JSON.stringify(data), 'EX', ttlSeconds).catch(() => {});
-    }
-
-    // ── 5. Save to in-memory ────────────────────────────────────
-    memCache.set(cacheKey, { data, expiry: Date.now() + MEM_TTL_MS });
-
-    // Evict stale entries
-    if (memCache.size > 150) {
-      const now = Date.now();
-      memCache.forEach((v, k) => {
-        if (v.expiry <= now) memCache.delete(k);
-      });
-    }
-
-    return NextResponse.json(data, {
-      headers: { 'X-Cache': 'MISS', 'X-Source': 'NguonC' },
-    });
-  } catch (err: unknown) {
-    if (err instanceof CircuitOpenError) {
-      if (memEntry) {
-        return NextResponse.json(memEntry.data, { headers: { 'X-Cache': 'STALE-CB-OPEN', 'X-Source': 'NguonC' } });
-      }
-      return NextResponse.json(
-        { error: 'Nguồn NguonC tạm thời gián đoạn, vui lòng thử lại sau.', circuitOpen: true },
-        { status: 503 },
-      );
-    }
-
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error('[nguonc-proxy] fetch error:', msg);
-
-    if (memEntry) {
-      return NextResponse.json(memEntry.data, {
-        headers: { 'X-Cache': 'STALE-MEMORY', 'X-Source': 'NguonC' },
-      });
-    }
-
-    return NextResponse.json({ error: 'Lỗi kết nối NguonC API' }, { status: 500 });
-  }
-}
+export const GET = createMovieProxyHandler({
+  sourceName: 'NguonC',
+  cachePrefix: 'nguonc',
+  baseUrl: NGUONC_BASE,
+  getTtl,
+  headers: {
+    Accept: 'application/json',
+    'User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  },
+  transform: normalizeNguonC,
+  forbiddenMessage: 'Truy cập bị chặn (403) - Yêu cầu không hợp lệ',
+  upstreamErrorMessage: 'Lỗi kết nối NguonC API',
+});
 
 /**
  * Normalize NguonC response to match KKPhim/OPhim schema.
@@ -208,7 +63,7 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
  *   casts (comma string) → actor (array)
  *   category → category (normalize slug → {id, name, slug})
  */
-function normalizeNguonC(raw: any, path: string): any {
+function normalizeNguonC(raw: any, _path: string): any {
   if (!raw) return raw;
 
   // ── Film list response: { status, paginate, items }

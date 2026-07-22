@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Bookmark, FolderOpen, Loader2 } from 'lucide-react';
 import { watchlistApi } from '@/lib/api';
-import { FilmCard, FilmItem } from '@/components/film/FilmCard';
+import { FilmCard, FilmItem, FilmCardSkeleton } from '@/components/film/FilmCard';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
 import { Suspense } from 'react';
@@ -54,7 +54,7 @@ function WatchlistContent() {
       {isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 md:gap-6">
           {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="w-full aspect-[2/3] bg-card border border-border/50 animate-pulse rounded" />
+            <FilmCardSkeleton key={i} hideDetails={true} />
           ))}
         </div>
       ) : items.length === 0 ? (

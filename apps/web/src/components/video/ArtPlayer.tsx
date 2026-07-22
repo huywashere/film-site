@@ -20,6 +20,8 @@ export interface ArtPlayerProps {
   onProgress?: (currentTime: number, duration: number) => void;
   onReady?: (player: Artplayer) => void;
   onError?: (error: unknown) => void;
+  isTheaterMode?: boolean;
+  onTheaterModeToggle?: (active: boolean) => void;
 }
 
 export default function ArtPlayer({
@@ -35,9 +37,18 @@ export default function ArtPlayer({
   onProgress,
   onReady,
   onError,
+  isTheaterMode = false,
+  onTheaterModeToggle,
 }: ArtPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const playerRef = useRef<Artplayer | null>(null);
+
+  const isTheaterModeRef = useRef(isTheaterMode);
+  const onTheaterModeToggleRef = useRef(onTheaterModeToggle);
+  isTheaterModeRef.current = isTheaterMode;
+  onTheaterModeToggleRef.current = onTheaterModeToggle;
+
   // Keep latest callbacks in ref to avoid stale closures in event handlers
   const onEndedRef = useRef(onEnded);
   const onProgressRef = useRef(onProgress);
@@ -64,7 +75,7 @@ export default function ArtPlayer({
       volume: 0.8,
       autoplay,
       autoSize: false,
-      autoMini: true,
+      autoMini: false,
       screenshot: true,
       setting: true,
       loop: false,
@@ -176,6 +187,24 @@ export default function ArtPlayer({
 
       layers: [],
 
+      controls: [
+        {
+          name: 'theater-mode',
+          position: 'right',
+          html: `
+            <svg class="art-icon art-icon-theater" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="cursor: pointer; display: flex; align-items: center; justify-content: center; height: 100%;">
+              <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+              <line x1="7" y1="4" x2="7" y2="20"></line>
+              <line x1="17" y1="4" x2="17" y2="20"></line>
+            </svg>
+          `,
+          tooltip: isTheaterModeRef.current ? 'Chế độ mặc định' : 'Chế độ rạp chiếu',
+          click: function () {
+            onTheaterModeToggleRef.current?.(!isTheaterModeRef.current);
+          }
+        }
+      ],
+
       icons: {
         loading:
           '<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"><animate attributeName="stroke-dasharray" dur="1.5s" repeatCount="indefinite" values="1,200;89,200;89,200" /><animate attributeName="stroke-dashoffset" dur="1.5s" repeatCount="indefinite" values="0;-35;-124" /></circle></svg>',
@@ -187,10 +216,103 @@ export default function ArtPlayer({
 
     playerRef.current = player;
 
-    // -- Ready callback --
-    if (onReady) {
-      player.on('ready', () => onReady(player));
-    }
+    const handlePlayerHotkeys = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const ignoreTags = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'];
+      if (ignoreTags.includes(target.tagName) || target.isContentEditable) return;
+
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        const el = containerRef.current;
+        if (!el) return;
+
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        } else if (el.requestFullscreen) {
+          el.requestFullscreen().catch(() => {});
+        } else if ((el as any).webkitRequestFullscreen) {
+          (el as any).webkitRequestFullscreen();
+        }
+      }
+
+      if (e.code === 'Space' || e.key === ' ') {
+        const video = player.video;
+        if (!video) return;
+        e.preventDefault();
+        if (video.paused) {
+          video.play().catch(() => {});
+        } else {
+          video.pause();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handlePlayerHotkeys, true);
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        const video = player.video;
+        if (video && !video.paused) {
+          video.pause();
+        }
+      }
+    };
+
+    const handleWindowBlur = () => {
+      const video = player.video;
+      if (video && !video.paused) {
+        video.pause();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleWindowBlur);
+
+    // -- Ready callback & Ambilight canvas draw loop --
+    let drawInterval: NodeJS.Timeout | null = null;
+
+    player.on('ready', () => {
+      if (onReady) onReady(player);
+
+      const video = player.video;
+      const canvas = canvasRef.current;
+      if (canvas && video) {
+        const ctx = canvas.getContext('2d');
+        canvas.width = 24;
+        canvas.height = 14;
+
+        const updateCanvas = () => {
+          if (video.readyState >= 2 && !video.paused && !video.ended) {
+            try {
+              ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+            } catch (e) {
+              // Ignore tainted canvas errors
+            }
+          }
+        };
+
+        const startLoop = () => {
+          if (drawInterval) clearInterval(drawInterval);
+          drawInterval = setInterval(updateCanvas, 100); // 10 fps
+        };
+
+        const stopLoop = () => {
+          if (drawInterval) {
+            clearInterval(drawInterval);
+            drawInterval = null;
+          }
+        };
+
+        player.on('video:play', startLoop);
+        player.on('video:pause', stopLoop);
+        player.on('destroy', stopLoop);
+
+        if (!video.paused) {
+          startLoop();
+        }
+      }
+    });
 
     // -- Resume: restore saved position using progressKey (slug+ep) or dbProgress --
     const savedKey = progressKey ? `wp_${progressKey}` : null;
@@ -243,6 +365,9 @@ export default function ArtPlayer({
     });
 
     return () => {
+      window.removeEventListener('keydown', handlePlayerHotkeys, true);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleWindowBlur);
       if (playerRef.current) {
         const video = playerRef.current.video;
         if (video && (video as any).hls) {
@@ -252,10 +377,33 @@ export default function ArtPlayer({
         playerRef.current = null;
       }
       hlsInstance?.destroy();
+      if (drawInterval) {
+        clearInterval(drawInterval);
+      }
     };
   // Only re-run when url changes (the source). Other props use refs.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, progressKey]);
+
+  // Dynamically update the Theater Mode button UI in the player controls
+  useEffect(() => {
+    if (playerRef.current) {
+      const btn = playerRef.current.template.$controls.querySelector('.art-control-theater-mode');
+      if (btn) {
+        btn.setAttribute('data-tip', isTheaterMode ? 'Chế độ mặc định' : 'Chế độ rạp chiếu');
+        const svg = btn.querySelector('svg');
+        if (svg) {
+          if (isTheaterMode) {
+            svg.style.color = '#e5a93b';
+            svg.style.filter = 'drop-shadow(0 0 4px rgba(229,169,59,0.5))';
+          } else {
+            svg.style.color = '';
+            svg.style.filter = '';
+          }
+        }
+      }
+    }
+  }, [isTheaterMode]);
 
   return (
     <>
@@ -266,7 +414,8 @@ export default function ArtPlayer({
         }
         .art-video-player .art-control-progress-inner { background: #e5a93b; }
         .art-video-player .art-icon:hover,
-        .art-video-player .art-control:hover { color: #e5a93b; }
+        .art-video-player .art-control:hover,
+        .art-video-player .art-control-theater-mode:hover { color: #e5a93b; }
         .art-video-player .art-bottom {
           background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
         }
@@ -293,7 +442,15 @@ export default function ArtPlayer({
         .art-video-player .art-loading { color: #e5a93b; }
       `}</style>
 
-      <div ref={containerRef} style={{ width: '100%', height: '100%', minHeight: '400px' }} />
+      <div className="relative w-full h-full min-h-[400px]">
+        {/* Dynamic ambient backglow canvas */}
+        <canvas
+          ref={canvasRef}
+          className="absolute -inset-4 w-[calc(100%+32px)] h-[calc(100%+32px)] -z-10 opacity-70 blur-[60px] pointer-events-none scale-[1.03] transition-all duration-700 ease-out"
+          style={{ mixBlendMode: 'normal' }}
+        />
+        <div ref={containerRef} className="w-full h-full" />
+      </div>
     </>
   );
 }

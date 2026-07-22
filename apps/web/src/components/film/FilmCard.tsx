@@ -132,24 +132,33 @@ export function FilmCard({
         )}
 
         {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10">
-          {/* Watchlist Add/Remove */}
-          {showActions && (
-            <button
-              onClick={handleWatchlist}
-              className={cn(
-                "absolute top-3 right-3 w-8 h-8 rounded-full bg-black/70 border border-white/20 flex items-center justify-center text-white hover:bg-netflixRed hover:border-netflixRed hover:scale-110 transition-all",
-                saved ? "bg-netflixRed border-netflixRed" : ""
-              )}
-              title={saved ? 'Xóa khỏi Watchlist' : 'Thêm vào Watchlist'}
-            >
-              <Bookmark size={14} fill={saved ? 'currentColor' : 'none'} />
-            </button>
-          )}
+        <div className="absolute inset-0 bg-black/75 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-3 z-10 text-center">
+          {/* Top Row: Watchlist Add/Remove */}
+          <div className="flex justify-end w-full">
+            {showActions && (
+              <button
+                onClick={handleWatchlist}
+                className={cn(
+                  "w-7 h-7 rounded-full bg-black/70 border border-white/20 flex items-center justify-center text-white hover:bg-netflixRed hover:border-netflixRed hover:scale-110 transition-all",
+                  saved ? "bg-netflixRed border-netflixRed" : ""
+                )}
+                title={saved ? 'Xóa khỏi Watchlist' : 'Thêm vào Watchlist'}
+              >
+                <Bookmark size={12} fill={saved ? 'currentColor' : 'none'} />
+              </button>
+            )}
+          </div>
 
           {/* Play Button Overlay */}
-          <div className="w-12 h-12 rounded-full bg-netflixRed text-white flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 hover:scale-115 transition-all duration-300">
-            <Play size={20} fill="currentColor" className="ml-0.5" />
+          <div className="mx-auto w-10 h-10 rounded-full bg-netflixRed text-white flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 hover:scale-110 transition-all duration-300">
+            <Play size={16} fill="currentColor" className="ml-0.5" />
+          </div>
+
+          {/* Title & Metadata at the bottom */}
+          <div className="w-full pt-1">
+            <p className="text-white font-extrabold text-[11px] leading-tight line-clamp-2">
+              {title}
+            </p>
           </div>
         </div>
 
@@ -193,11 +202,11 @@ export function FilmCard({
 export function FilmCardSkeleton({ width = 200, hideDetails = false }: { width?: number; hideDetails?: boolean }) {
   return (
     <div style={{ width, flexShrink: 0 }} className="flex flex-col space-y-2">
-      <div className="w-full aspect-[2/3] bg-neutral-800 animate-pulse rounded border border-white/5" />
+      <div className="w-full aspect-[2/3] bg-black/[0.04] dark:bg-white/[0.03] shimmer rounded-xl border border-black/5 dark:border-white/5" />
       {!hideDetails && (
         <>
-          <div className="h-4 bg-neutral-800 animate-pulse rounded w-4/5" />
-          <div className="h-3 bg-neutral-800 animate-pulse rounded w-2/5" />
+          <div className="h-4 bg-black/[0.04] dark:bg-white/[0.03] shimmer rounded w-4/5" />
+          <div className="h-3 bg-black/[0.04] dark:bg-white/[0.03] shimmer rounded w-2/5" />
         </>
       )}
     </div>

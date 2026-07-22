@@ -23,7 +23,25 @@ export function StarRating({
 
   return (
     <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-      <div className="star-rating" style={{ gap: 2 }}>
+      <style>{`
+        @keyframes star-shake {
+          0% { transform: rotate(0deg) scale(1.1); }
+          25% { transform: rotate(-8deg) scale(1.1); }
+          75% { transform: rotate(8deg) scale(1.1); }
+          100% { transform: rotate(0deg) scale(1.1); }
+        }
+        .star-rating-btn {
+          transition: all 0.15s ease;
+        }
+        .star-rating-btn:hover {
+          animation: star-shake 0.3s ease-in-out infinite;
+        }
+        .star-rating-btn:hover svg path {
+          fill: #fbbf24 !important;
+          filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.8));
+        }
+      `}</style>
+      <div className="star-rating" style={{ display: 'inline-flex', gap: 2 }}>
         {stars.map((star) => {
           const filled = displayValue >= star;
           const halfFilled = displayValue >= star - 0.5 && displayValue < star;
@@ -35,6 +53,7 @@ export function StarRating({
               onClick={() => !readonly && onChange?.(star)}
               onMouseEnter={() => !readonly && setHovered(star)}
               onMouseLeave={() => !readonly && setHovered(null)}
+              className={!readonly ? "star-rating-btn" : ""}
               style={{
                 background: 'none',
                 border: 'none',

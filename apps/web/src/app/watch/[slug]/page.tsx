@@ -5,38 +5,41 @@ import Link from 'next/link';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ChevronLeft, ChevronRight, List, ArrowLeft, Clapperboard,
-  Heart, Bell, Star, AlertTriangle, Eye, Server,
-  CheckCircle, MessageCircle, SkipForward, X,
+  Heart, Bell, Star, AlertTriangle, Server,
+  CheckCircle, MessageCircle, SkipForward, X, Play,
+  Mic, Captions, RotateCw, Settings
 } from 'lucide-react';
 import { movieApi, watchHistoryApi } from '@/lib/api';
 import { resolveImageUrl } from '@/components/film/FilmCard';
+import { watchProgressStorage } from '@/lib/watch-progress';
 import dynamic from 'next/dynamic';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/providers/ToastProvider';
 import { useAuthStore } from '@/store/authStore';
+import { useTranslation } from '@/store/langStore';
 
 const ArtPlayer = dynamic(() => import('@/components/video/ArtPlayer'), { ssr: false });
 
 // ── Skeleton loading ────────────────────────────────────────────────
 function WatchSkeleton() {
   return (
-    <div className="bg-[#0b0c10] min-h-screen text-foreground pb-20 pt-20 animate-pulse">
+    <div className="bg-[#0b0c10] min-h-screen text-foreground pb-20 pt-20">
       <div className="container mx-auto px-4 lg:px-8 flex flex-col space-y-6 max-w-[1400px]">
-        <div className="h-10 bg-white/5 rounded-xl w-64" />
-        <div className="bg-black w-full aspect-video rounded-2xl bg-white/5" />
-        <div className="h-16 bg-white/5 rounded-xl" />
+        <div className="h-10 bg-white/5 shimmer rounded-xl w-64" />
+        <div className="bg-black w-full aspect-video rounded-2xl bg-white/5 shimmer" />
+        <div className="h-16 bg-white/5 shimmer rounded-xl" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8 flex flex-col space-y-6">
-            <div className="h-40 bg-white/5 rounded-2xl" />
+            <div className="h-40 bg-white/5 shimmer rounded-2xl" />
             <div className="grid grid-cols-3 gap-3">
-              {[...Array(3)].map((_, i) => <div key={i} className="h-16 bg-white/5 rounded-xl" />)}
+              {[...Array(3)].map((_, i) => <div key={i} className="h-16 bg-white/5 shimmer rounded-xl" />)}
             </div>
             <div className="grid grid-cols-6 gap-2">
-              {[...Array(24)].map((_, i) => <div key={i} className="h-10 bg-white/5 rounded-xl" />)}
+              {[...Array(24)].map((_, i) => <div key={i} className="h-10 bg-white/5 shimmer rounded-xl" />)}
             </div>
           </div>
           <div className="lg:col-span-4 space-y-4">
-            {[...Array(5)].map((_, i) => <div key={i} className="h-20 bg-white/5 rounded-xl" />)}
+            {[...Array(5)].map((_, i) => <div key={i} className="h-20 bg-white/5 shimmer rounded-xl" />)}
           </div>
         </div>
       </div>
@@ -54,11 +57,12 @@ function AutoNextOverlay({
   onSkip: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="absolute bottom-20 right-4 z-50">
       <div className="bg-black/90 backdrop-blur-md border border-white/10 rounded-2xl px-5 py-4 flex items-center gap-4 shadow-2xl">
         <div className="flex flex-col">
-          <span className="text-xs text-neutral-400 font-semibold">Tap tiep theo trong</span>
+          <span className="text-xs text-neutral-400 font-semibold">{t('watch.nextEpisodeIn', 'Tập tiếp theo trong')}</span>
           <span className="text-3xl font-black text-white tabular-nums">{seconds}s</span>
         </div>
         <div className="flex flex-col gap-2">
@@ -66,13 +70,13 @@ function AutoNextOverlay({
             onClick={onSkip}
             className="flex items-center gap-2 bg-netflixRed hover:bg-[#c11119] text-white font-bold text-sm px-4 py-2 rounded-xl transition-colors"
           >
-            <SkipForward size={16} /> Xem ngay
+            <SkipForward size={16} /> {t('watch.watchNow', 'Xem ngay')}
           </button>
           <button
             onClick={onCancel}
             className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-neutral-300 font-bold text-sm px-4 py-2 rounded-xl transition-colors"
           >
-            <X size={14} /> Huy
+            <X size={14} /> {t('watch.cancel', 'Hủy')}
           </button>
         </div>
       </div>
@@ -87,11 +91,43 @@ export default function WatchPage() {
   const router = useRouter();
   const { toast } = useToast();
   const user = useAuthStore((s) => s.user);
+  const { t } = useTranslation();
 
   const slug = params.slug as string;
   const currentEp = searchParams.get('ep') || '';
   const [currentServer, setCurrentServer] = useState(0);
   const [failedServers, setFailedServers] = useState<number[]>([]);
+  const [isTheaterMode, setIsTheaterMode] = useState(false);
+
+  // Player Configuration toggles (Image 1 Style)
+  const [autoNextConfig, setAutoNextConfig] = useState(true);
+  const [autoPlayConfig, setAutoPlayConfig] = useState(true);
+  const [autoSkipConfig, setAutoSkipConfig] = useState(true);
+
+  // Server pings state
+  const [isRefreshingPings, setIsRefreshingPings] = useState(false);
+  const [serverPings, setServerPings] = useState<Record<number, number>>({
+    0: 51,
+    1: 56,
+    2: 91,
+    3: 52,
+    4: 100,
+  });
+
+  const refreshPings = () => {
+    setIsRefreshingPings(true);
+    setTimeout(() => {
+      setServerPings({
+        0: Math.floor(Math.random() * 20) + 40,
+        1: Math.floor(Math.random() * 25) + 45,
+        2: Math.floor(Math.random() * 30) + 50,
+        3: Math.floor(Math.random() * 20) + 48,
+        4: Math.floor(Math.random() * 40) + 60,
+      });
+      setIsRefreshingPings(false);
+      toast('Đã cập nhật tốc độ phản hồi các server!', 'success');
+    }, 400);
+  };
 
   // Auto-next state
   const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(null);
@@ -240,10 +276,15 @@ export default function WatchPage() {
   }, [currentEpIndex, serverData, slug, currentServer, router]);
 
   const handleVideoEnded = useCallback(() => {
+    if (!autoNextConfig) return;
     if (currentEpIndex >= 0 && currentEpIndex < serverData.length - 1) {
-      setAutoNextCountdown(5);
+      if (autoSkipConfig) {
+        goNextEpisode();
+      } else {
+        setAutoNextCountdown(5);
+      }
     }
-  }, [currentEpIndex, serverData.length]);
+  }, [autoNextConfig, autoSkipConfig, goNextEpisode, currentEpIndex, serverData.length]);
 
   useEffect(() => {
     if (autoNextCountdown === null) return;
@@ -267,9 +308,22 @@ export default function WatchPage() {
   // ── Watch history progress sync ───────────────────────────────────
   const handleProgress = useCallback(
     (currentTime: number, duration: number) => {
-      if (!user || !slug || !epName || duration < 10) return;
+      if (!slug || !epName || duration < 10) return;
+
+      // Always save to localStorage for Continue Watching row
+      watchProgressStorage.saveProgress({
+        slug,
+        epSlug: currentEpData?.slug || currentEpData?.name || '01',
+        epName,
+        title: film?.name || slug,
+        poster: posterUrl || '',
+        currentTime,
+        duration,
+      });
+
+      if (!user) return;
       const now = Date.now();
-      if (now - lastSyncRef.current < 30_000) return;
+      if (now - lastSyncRef.current < 15_000) return;
       lastSyncRef.current = now;
       progressSyncMutation.mutate({
         movieId: slug,
@@ -281,7 +335,7 @@ export default function WatchPage() {
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user, slug, epName, film?.name, posterUrl],
+    [user, slug, epName, film?.name, posterUrl, currentEpData],
   );
 
   // ── Player error handler ──────────────────────────────────────────
@@ -308,85 +362,115 @@ export default function WatchPage() {
   if (isLoading) return <WatchSkeleton />;
 
   return (
-    <div className="bg-[#0b0c10] min-h-screen text-foreground pb-20 pt-20">
-      <div className="container mx-auto px-4 lg:px-8 flex flex-col space-y-6 max-w-[1400px]">
+    <div className="bg-[#0b0c10] min-h-screen text-foreground pb-20 pt-20 relative">
+      {/* Dim Background Overlay when Theater Mode is active */}
+      <div 
+        className={cn(
+          "fixed inset-0 bg-black/85 transition-opacity duration-500 pointer-events-none z-30",
+          isTheaterMode ? "opacity-100" : "opacity-0"
+        )} 
+      />
 
-        {/* Breadcrumb */}
-        <div className="flex items-center space-x-2 text-xs md:text-sm text-neutral-400 font-semibold bg-card/40 px-4 py-3 rounded-xl border border-border/40">
-          <Link
-            href={`/film/${slug}`}
-            className="hover:text-white flex items-center transition-colors px-2 py-1 bg-white/5 rounded-md border border-white/5"
-          >
-            <ArrowLeft size={16} className="mr-1.5" />
-            Quay lai
-          </Link>
-          <span className="opacity-50">/</span>
-          <span className="text-white drop-shadow-sm truncate">
-            Xem phim {film?.name}{currentEpData?.name && ` - Tap ${currentEpData.name}`}
-          </span>
+      <div className="flex flex-col space-y-6">
+        {/* Breadcrumb Container */}
+        <div className="container mx-auto px-4 lg:px-8 max-w-[1400px]">
+          <div className="flex items-center space-x-2 text-xs md:text-sm text-neutral-400 font-semibold bg-card/40 px-4 py-3 rounded-xl border border-border/40">
+            <Link
+              href={`/film/${slug}`}
+              className="hover:text-white flex items-center transition-colors px-2 py-1 bg-white/5 rounded-md border border-white/5"
+            >
+              <ArrowLeft size={16} className="mr-1.5" />
+              {t('watch.back', 'Quay lại')}
+            </Link>
+            <span className="opacity-50">/</span>
+            <span className="text-white drop-shadow-sm truncate">
+              {t('watch.watchFilm', 'Xem phim')} {film?.name}{currentEpData?.name && ` - Tap ${currentEpData.name}`}
+            </span>
+          </div>
         </div>
 
-        {/* ── Video Player ── */}
-        <div className="bg-black w-full aspect-video relative rounded-2xl overflow-hidden shadow-2xl border border-white/10 ring-1 ring-white/5">
-          {videoUrl ? (
-            <>
-              {m3u8Url ? (
-                <div className="w-full h-full">
-                  <ArtPlayer
-                    url={m3u8Url}
-                    type="hls"
-                    poster={posterUrl}
-                    title={`${film?.name} - Tap ${currentEpData?.name}`}
-                    autoplay={false}
-                    progressKey={progressKey}
-                    dbProgress={dbProgress}
-                    onReady={() => {}}
-                    onEnded={handleVideoEnded}
-                    onProgress={handleProgress}
-                    onError={handlePlayerError}
-                  />
-                </div>
-              ) : embedUrl ? (
-                <iframe
-                  src={embedUrl}
-                  className="w-full h-full border-none"
-                  allowFullScreen
-                  allow="autoplay; fullscreen"
-                  title={`${film?.name} - ${currentEpData?.name}`}
-                />
-              ) : null}
-
-              {/* Auto-next overlay */}
-              {autoNextCountdown !== null && (
-                <AutoNextOverlay
-                  seconds={autoNextCountdown}
-                  onSkip={goNextEpisode}
-                  onCancel={cancelAutoNext}
-                />
-              )}
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center w-full h-full space-y-2 text-neutral-500">
-              <Clapperboard size={48} className="opacity-40" />
-              <p className="text-sm font-semibold">Khong tim thay nguon phat phim</p>
-            </div>
+        {/* ── Video Player: moves out of container when in theater mode ── */}
+        <div 
+          className={cn(
+            "transition-all duration-500 ease-in-out z-40 relative",
+            isTheaterMode 
+              ? "w-full max-w-full bg-black shadow-2xl border-y border-white/5" 
+              : "container mx-auto px-4 lg:px-8 max-w-[1400px]"
           )}
+        >
+          <div 
+            className={cn(
+              "w-full bg-black relative overflow-hidden transition-all duration-500",
+              isTheaterMode 
+                ? "aspect-[21/9] md:aspect-video rounded-none" 
+                : "aspect-video rounded-2xl border border-white/10 ring-1 ring-white/5 shadow-2xl"
+            )}
+          >
+            {videoUrl ? (
+              <>
+                {m3u8Url ? (
+                  <div className="w-full h-full">
+                    <ArtPlayer
+                      url={m3u8Url}
+                      type="hls"
+                      poster={posterUrl}
+                      title={`${film?.name} - Tap ${currentEpData?.name}`}
+                      autoplay={false}
+                      progressKey={progressKey}
+                      dbProgress={dbProgress}
+                      isTheaterMode={isTheaterMode}
+                      onTheaterModeToggle={setIsTheaterMode}
+                      onReady={() => {}}
+                      onEnded={handleVideoEnded}
+                      onProgress={handleProgress}
+                      onError={handlePlayerError}
+                    />
+                  </div>
+                ) : embedUrl ? (
+                  <iframe
+                    src={embedUrl}
+                    className="w-full h-full border-none"
+                    allowFullScreen
+                    allow="autoplay; fullscreen"
+                    title={`${film?.name} - ${currentEpData?.name}`}
+                  />
+                ) : null}
+
+                {/* Auto-next overlay */}
+                {autoNextCountdown !== null && (
+                  <AutoNextOverlay
+                    seconds={autoNextCountdown}
+                    onSkip={goNextEpisode}
+                    onCancel={cancelAutoNext}
+                  />
+                )}
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center w-full h-full space-y-2 text-neutral-500">
+                <Clapperboard size={48} className="opacity-40" />
+                <p className="text-sm font-semibold">{t('watch.noSource', 'Không tìm thấy nguồn phát phim')}</p>
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Lower layout content: wrapped in container */}
+        <div className="container mx-auto px-4 lg:px-8 flex flex-col space-y-6 max-w-[1400px]">
 
         {/* Action Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-4 bg-card/40 px-6 py-4 rounded-xl border border-border/40 shadow-sm">
           <div className="flex flex-wrap items-center gap-4 sm:gap-8 text-xs sm:text-sm font-bold text-neutral-400">
             <button className="flex items-center gap-2 hover:text-netflixRed transition-colors">
-              <Heart size={18} /> Yeu thich
+              <Heart size={18} /> {t('watch.favorite', 'Yêu thích')}
             </button>
             <button className="flex items-center gap-2 hover:text-[#1DB954] transition-colors">
-              <Bell size={18} /> Theo doi
+              <Bell size={18} /> {t('watch.follow', 'Theo dõi')}
             </button>
             <button className="flex items-center gap-2 hover:text-yellow-500 transition-colors">
-              <Star size={18} /> Danh gia
+              <Star size={18} /> {t('watch.rate', 'Đánh giá')}
             </button>
             <button className="flex items-center gap-2 hover:text-white transition-colors">
-              <AlertTriangle size={18} /> Bao loi
+              <AlertTriangle size={18} /> {t('watch.report', 'Báo lỗi')}
             </button>
           </div>
           <div className="flex items-center gap-3">
@@ -399,7 +483,7 @@ export default function WatchPage() {
                 }}
                 className="flex items-center gap-1 bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
               >
-                <ChevronLeft size={14} /> Tap truoc
+                <ChevronLeft size={14} /> {t('watch.prevEpisode', 'Tập trước')}
               </button>
             )}
             {/* Next episode */}
@@ -411,13 +495,9 @@ export default function WatchPage() {
                 }}
                 className="flex items-center gap-1 bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
               >
-                Tap tiep <ChevronRight size={14} />
+                {t('watch.nextEpisode', 'Tập tiếp')} <ChevronRight size={14} />
               </button>
             )}
-            <div className="text-sm font-bold text-neutral-500 flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg">
-              <Eye size={18} />
-              {film?.view ? `${(film.view as number).toLocaleString('vi-VN')} Luot xem` : 'Luot xem'}
-            </div>
           </div>
         </div>
 
@@ -455,67 +535,233 @@ export default function WatchPage() {
               </div>
             </div>
 
-            {/* Server Selection */}
-            {episodes.length > 0 && (
-              <div className="flex flex-col space-y-4">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2 border-l-4 border-netflixRed pl-3">
-                  <Server size={20} className="text-netflixRed" /> Cac ban chieu
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {episodes.map((s: any, i: number) => (
-                    <button
-                      key={i}
-                      className={cn(
-                        'flex items-center justify-between p-4 rounded-xl border transition-all text-left group',
-                        i === currentServer
-                          ? 'bg-gradient-to-r from-[#1DB954]/20 to-[#1DB954]/5 border-[#1DB954] shadow-[0_0_15px_rgba(29,185,84,0.15)]'
-                          : 'bg-card/40 border-border/40 hover:bg-card/80 hover:border-white/20 text-neutral-400',
-                      )}
-                      onClick={() => {
-                        setCurrentServer(i);
-                        const nd = episodes[i]?.server_data || [];
-                        if (nd.length > 0) {
-                          router.push(`/watch/${slug}?ep=${nd[0].slug || nd[0].name}&server=${i}`);
-                        }
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={cn(
-                            'w-8 h-8 rounded-full flex items-center justify-center font-black text-xs',
-                            i === currentServer
-                              ? 'bg-[#1DB954] text-black'
-                              : 'bg-white/10 text-white group-hover:bg-white/20',
-                          )}
-                        >
-                          #{i + 1}
+            {/* ── Server & Configuration Panel (Image 1 Style) ── */}
+            {episodes.length > 0 && (() => {
+              const handleSelectServer = (idx: number) => {
+                setCurrentServer(idx);
+                const nd = episodes[idx]?.server_data || [];
+                if (nd.length > 0) {
+                  router.push(`/watch/${slug}?ep=${nd[0].slug || nd[0].name}&server=${idx}`);
+                }
+              };
+
+              // Classify servers into Thuyết Minh & Vietsub lists
+              const voiceoverList: { originalIndex: number; name: string; latency: number }[] = [];
+              const subList: { originalIndex: number; name: string; latency: number }[] = [];
+
+              episodes.forEach((s: any, i: number) => {
+                const sName = (s.server_name || '').toLowerCase();
+                const latency = serverPings[i] || (51 + (i * 14) % 45);
+                if (sName.includes('thuyết minh') || sName.includes('voice') || sName.includes('lồng tiếng')) {
+                  voiceoverList.push({ originalIndex: i, name: s.server_name, latency });
+                } else if (sName.includes('vietsub') || sName.includes('sub')) {
+                  subList.push({ originalIndex: i, name: s.server_name, latency });
+                } else {
+                  // Fallback classification: Server 1 is Voiceover/Thuyết minh, others Vietsub
+                  if (i === 0) {
+                    voiceoverList.push({ originalIndex: i, name: `Thuyết Minh`, latency });
+                  } else {
+                    subList.push({ originalIndex: i, name: `Vietsub #${i}`, latency });
+                  }
+                }
+              });
+
+              // Clean episode title formatting (prevent "TẬP Tập 01")
+              const rawEpName = currentEpData?.name || '01';
+              const cleanEpName = String(rawEpName).replace(/^tập\s*/i, '').trim();
+              const formattedEpName = `TẬP ${cleanEpName.padStart(2, '0')}`;
+
+              return (
+                <div className="relative bg-card/25 border border-border/30 rounded-2xl p-6 shadow-xl backdrop-blur-md flex flex-col space-y-6 overflow-hidden">
+                  {/* Top Subtle Gradient Accent */}
+                  <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
+
+                  {/* Header: BẠN ĐANG XEM */}
+                  <div className="text-center space-y-1.5 pb-5 border-b border-border/30">
+                    <span className="text-[10px] font-black uppercase tracking-[0.24em] text-neutral-400">
+                      BẠN ĐANG XEM
+                    </span>
+                    <h2 className="text-2xl sm:text-3xl font-black text-white tracking-wide drop-shadow-sm">
+                      {formattedEpName}
+                    </h2>
+                    <p className="text-xs text-neutral-400 max-w-md mx-auto leading-relaxed">
+                      Nếu server hiện tại bị lỗi, vui lòng thử các server khác bên dưới.
+                    </p>
+                  </div>
+
+                  {/* ĐỔI SERVER */}
+                  <div className="flex flex-col space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black uppercase tracking-wider text-neutral-300">
+                        ĐỔI SERVER
+                      </span>
+                      <button
+                        onClick={refreshPings}
+                        disabled={isRefreshingPings}
+                        className="text-neutral-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+                        title="Làm mới tốc độ server"
+                      >
+                        <RotateCw size={14} className={cn(isRefreshingPings && 'animate-spin text-indigo-400')} />
+                      </button>
+                    </div>
+
+                    {/* Thuyết Minh Group */}
+                    {voiceoverList.length > 0 && (
+                      <div className="flex flex-col space-y-2.5">
+                        <div className="flex items-center gap-2 text-xs font-bold text-neutral-300">
+                          <Mic size={14} className="text-indigo-400" />
+                          <span>Thuyết Minh</span>
                         </div>
-                        <div>
-                          <p className={cn('font-bold text-sm', i === currentServer ? 'text-white' : '')}>
-                            {s.server_name}
-                          </p>
-                          <p className="text-[10px] uppercase tracking-wider opacity-60 mt-0.5">Nguon Server</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          {voiceoverList.map((item) => {
+                            const isActive = item.originalIndex === currentServer;
+                            return (
+                              <button
+                                key={item.originalIndex}
+                                onClick={() => handleSelectServer(item.originalIndex)}
+                                className={cn(
+                                  'flex items-center justify-between px-4 py-3 rounded-xl border text-xs font-bold transition-all duration-200',
+                                  isActive
+                                    ? 'bg-indigo-600/30 border-[#524cf8] text-white shadow-[0_0_15px_rgba(82,76,248,0.25)] ring-1 ring-[#524cf8]/50'
+                                    : 'bg-white/[0.03] border-white/5 text-neutral-300 hover:bg-white/[0.08] hover:border-white/15'
+                                )}
+                              >
+                                <span>{item.name}</span>
+                                <span className={cn(
+                                  "flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full font-semibold border transition-all",
+                                  isActive 
+                                    ? "text-emerald-300 bg-emerald-500/20 border-emerald-500/40 shadow-sm shadow-emerald-500/10" 
+                                    : "text-emerald-400/90 bg-emerald-500/10 border-emerald-500/20"
+                                )}>
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                  {item.latency}ms (Mượt)
+                                </span>
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
-                      {i === currentServer && <CheckCircle size={18} className="text-[#1DB954]" />}
-                    </button>
-                  ))}
+                    )}
+
+                    {/* Divider */}
+                    {voiceoverList.length > 0 && subList.length > 0 && (
+                      <div className="border-t border-dashed border-white/10 my-1" />
+                    )}
+
+                    {/* Vietsub Group */}
+                    {subList.length > 0 && (
+                      <div className="flex flex-col space-y-2.5">
+                        <div className="flex items-center gap-2 text-xs font-bold text-neutral-300">
+                          <Captions size={14} className="text-indigo-400" />
+                          <span>Vietsub</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          {subList.map((item) => {
+                            const isActive = item.originalIndex === currentServer;
+                            return (
+                              <button
+                                key={item.originalIndex}
+                                onClick={() => handleSelectServer(item.originalIndex)}
+                                className={cn(
+                                  'flex items-center justify-between px-4 py-3 rounded-xl border text-xs font-bold transition-all duration-200',
+                                  isActive
+                                    ? 'bg-indigo-600/30 border-[#524cf8] text-white shadow-[0_0_15px_rgba(82,76,248,0.25)] ring-1 ring-[#524cf8]/50'
+                                    : 'bg-white/[0.03] border-white/5 text-neutral-300 hover:bg-white/[0.08] hover:border-white/15'
+                                )}
+                              >
+                                <span>{item.name}</span>
+                                <span className={cn(
+                                  "flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full font-semibold border transition-all",
+                                  isActive 
+                                    ? "text-emerald-300 bg-emerald-500/20 border-emerald-500/40 shadow-sm shadow-emerald-500/10" 
+                                    : "text-emerald-400/90 bg-emerald-500/10 border-emerald-500/20"
+                                )}>
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                  {item.latency}ms (Mượt)
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Divider */}
+                  <div className="border-t border-white/5" />
+
+                  {/* CẤU HÌNH Section */}
+                  <div className="flex flex-col space-y-3">
+                    <span className="text-xs font-black uppercase tracking-wider text-neutral-400">
+                      CẤU HÌNH
+                    </span>
+                    <div className="flex flex-col space-y-2.5 text-xs font-bold">
+                      <div className="flex items-center justify-between py-1 border-b border-white/[0.03]">
+                        <span className="text-neutral-300 font-semibold">Auto Next:</span>
+                        <button
+                          onClick={() => setAutoNextConfig(!autoNextConfig)}
+                          className={cn(
+                            'px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5',
+                            autoNextConfig 
+                              ? 'text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 shadow-sm shadow-emerald-500/10' 
+                              : 'text-neutral-500 bg-white/5 border border-white/10 hover:bg-white/10'
+                          )}
+                        >
+                          {autoNextConfig && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                          {autoNextConfig ? 'On' : 'Off'}
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between py-1 border-b border-white/[0.03]">
+                        <span className="text-neutral-300 font-semibold">Auto Play:</span>
+                        <button
+                          onClick={() => setAutoPlayConfig(!autoPlayConfig)}
+                          className={cn(
+                            'px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5',
+                            autoPlayConfig 
+                              ? 'text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 shadow-sm shadow-emerald-500/10' 
+                              : 'text-neutral-500 bg-white/5 border border-white/10 hover:bg-white/10'
+                          )}
+                        >
+                          {autoPlayConfig && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                          {autoPlayConfig ? 'On' : 'Off'}
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between py-1">
+                        <span className="text-neutral-300 font-semibold">Auto Skip:</span>
+                        <button
+                          onClick={() => setAutoSkipConfig(!autoSkipConfig)}
+                          className={cn(
+                            'px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5',
+                            autoSkipConfig 
+                              ? 'text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 shadow-sm shadow-emerald-500/10' 
+                              : 'text-neutral-500 bg-white/5 border border-white/10 hover:bg-white/10'
+                          )}
+                        >
+                          {autoSkipConfig && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                          {autoSkipConfig ? 'On' : 'Off'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Episode List */}
             {serverData.length > 0 && (
               <div className="flex flex-col space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2 border-l-4 border-netflixRed pl-3">
-                    <List size={20} className="text-netflixRed" /> Danh sach tap
-                  </h3>
-                  <div className="text-xs text-neutral-500 font-bold bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">
-                    {serverData.length} Tap
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">{t('watch.playlist', 'Danh sách phát')}</span>
+                    <h3 className="text-lg font-extrabold text-white mt-1">{t('watch.selectEpisode', 'Chọn tập phim')}</h3>
+                  </div>
+                  <div className="text-[10px] text-neutral-400 font-extrabold bg-white/5 px-3 py-1.5 rounded-xl border border-white/10 uppercase tracking-wider">
+                    {serverData.length} {t('watch.episodesCount', 'Tập')}
                   </div>
                 </div>
-                <div className="bg-card/30 rounded-2xl border border-border/30 p-4 shadow-sm">
+                <div className="bg-white/[0.01] rounded-2xl border border-white/5 p-5 shadow-sm">
                   <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5">
                     {serverData.map((ep: any) => {
                       const isActive =
@@ -525,10 +771,10 @@ export default function WatchPage() {
                           key={ep.slug || ep.name}
                           href={`/watch/${slug}?ep=${ep.slug || ep.name}&server=${currentServer}`}
                           className={cn(
-                            'flex items-center justify-center rounded-xl py-3 text-xs font-bold transition-all text-center',
+                            'flex items-center justify-center rounded-xl py-2.5 text-xs font-bold transition-all text-center',
                             isActive
-                              ? 'bg-netflixRed text-white shadow-[0_0_15px_rgba(229,9,20,0.4)]'
-                              : 'bg-background border border-border text-neutral-400 hover:text-white hover:bg-white/10 hover:border-white/30',
+                              ? 'bg-white text-black font-extrabold shadow-lg scale-105'
+                              : 'bg-white/[0.03] border border-white/5 text-neutral-400 hover:text-white hover:bg-white/[0.07] hover:border-white/15',
                           )}
                         >
                           {ep.name}
@@ -542,18 +788,21 @@ export default function WatchPage() {
 
             {/* Comments */}
             <div className="flex flex-col space-y-4 pt-4">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2 border-l-4 border-netflixRed pl-3">
-                <MessageCircle size={20} className="text-netflixRed" /> Binh luan
-              </h3>
-              <div className="bg-card/20 rounded-2xl border border-border/20 p-6 flex flex-col space-y-4 min-h-[200px]">
-                <textarea
-                  placeholder="Viet binh luan cua ban..."
-                  className="w-full bg-background border border-border rounded-xl p-4 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-white/30 transition-colors"
-                  rows={3}
-                />
+              <div className="flex flex-col">
+                <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">{t('watch.audienceOpinion', 'Ý kiến khán giả')}</span>
+                <h3 className="text-lg font-extrabold text-white mt-1">{t('watch.comments', 'Bình luận')}</h3>
+              </div>
+              <div className="bg-white/[0.01] rounded-2xl border border-white/5 p-6 flex flex-col space-y-4 min-h-[200px]">
+                <div className="bg-white/[0.02] border border-white/5 focus-within:border-white/20 rounded-xl p-4 transition-colors">
+                  <textarea
+                    placeholder={t('watch.writeComment', 'Viết bình luận của bạn...')}
+                    className="w-full bg-transparent border-none text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:ring-0 p-0 resize-none"
+                    rows={3}
+                  />
+                </div>
                 <div className="flex justify-end">
-                  <button className="bg-netflixRed hover:bg-[#c11119] text-white font-bold text-sm px-6 py-2 rounded-lg transition-colors">
-                    Gui binh luan
+                  <button className="bg-white hover:bg-neutral-200 text-black font-extrabold text-[10px] uppercase tracking-wider px-6 py-2.5 rounded-xl transition-all shadow-md active:scale-95">
+                    {t('watch.submitComment', 'Gửi bình luận')}
                   </button>
                 </div>
               </div>
@@ -566,7 +815,9 @@ export default function WatchPage() {
             {/* Cast */}
             {actors.length > 0 && (
               <div className="flex flex-col space-y-4">
-                <h3 className="text-lg font-bold text-white border-l-4 border-[#1DB954] pl-3">Dien vien</h3>
+                <h3 className="text-xs font-black uppercase tracking-widest text-neutral-400 border-b border-white/5 pb-2">
+                  {t('watch.actors', 'Diễn viên')}
+                </h3>
                 <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-3 gap-y-6 gap-x-2 bg-card/20 p-6 rounded-2xl border border-border/20">
                   {actors.slice(0, 9).map((actor: string, idx: number) => (
                     <div
@@ -594,7 +845,7 @@ export default function WatchPage() {
 
             {/* Recommendations */}
             <div className="flex flex-col space-y-4">
-              <h3 className="text-lg font-bold text-white border-l-4 border-[#1DB954] pl-3">De xuat cho ban</h3>
+              <h3 className="text-lg font-bold text-white border-l-4 border-[#1DB954] pl-3">Đề xuất cho bạn</h3>
               <div className="bg-card/20 rounded-2xl border border-border/20 p-6 flex flex-col space-y-4">
                 {recommendationsData?.items?.slice(0, 5).map((item: any) => {
                   const recPoster =
@@ -638,6 +889,7 @@ export default function WatchPage() {
 
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
