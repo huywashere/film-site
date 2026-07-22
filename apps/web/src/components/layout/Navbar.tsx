@@ -28,14 +28,96 @@ const NAV_LINKS = [
   { href: '/watchlist', key: 'nav.watchlist' },
 ];
 
+export const GENRES_LIST = [
+  { label: 'Bí Ẩn', slug: 'bi-an' },
+  { label: 'Chiến Tranh', slug: 'chien-tranh' },
+  { label: 'Chính Kịch', slug: 'chinh-kich' },
+  { label: 'Cổ Trang', slug: 'co-trang' },
+  { label: 'Gia Đình', slug: 'gia-dinh' },
+  { label: 'Hài Hước', slug: 'hai-huoc' },
+  { label: 'Hành Động', slug: 'hanh-dong' },
+  { label: 'Hình Sự', slug: 'hinh-su' },
+  { label: 'Học Đường', slug: 'hoc-duong' },
+  { label: 'Khoa Học', slug: 'khoa-hoc' },
+  { label: 'Kinh Dị', slug: 'kinh-di' },
+  { label: 'Kinh Điển', slug: 'kinh-dien' },
+  { label: 'Lịch Sử', slug: 'lich-su' },
+  { label: 'Miền Tây', slug: 'mien-tay' },
+  { label: 'Phim 18+', slug: 'phim-18' },
+  { label: 'Phim Ngắn', slug: 'phim-ngan' },
+  { label: 'Phiêu Lưu', slug: 'phieu-luu' },
+  { label: 'Thần Thoại', slug: 'than-thoai' },
+  { label: 'Thể Thao', slug: 'the-thao' },
+  { label: 'Trẻ Em', slug: 'tre-em' },
+  { label: 'Tài Liệu', slug: 'tai-lieu' },
+  { label: 'Tâm Lý', slug: 'tam-ly' },
+  { label: 'Tình Cảm', slug: 'tinh-cam' },
+  { label: 'Viễn Tưởng', slug: 'vien-tuong' },
+  { label: 'Võ Thuật', slug: 'vo-thuat' },
+  { label: 'Âm Nhạc', slug: 'am-nhac' },
+];
+
+export const COUNTRIES_LIST = [
+  { label: 'Anh', slug: 'anh' },
+  { label: 'Ba Lan', slug: 'ba-lan' },
+  { label: 'Brazil', slug: 'brazil' },
+  { label: 'Bồ Đào Nha', slug: 'bo-dao-nha' },
+  { label: 'Canada', slug: 'canada' },
+  { label: 'Châu Phi', slug: 'chau-phi' },
+  { label: 'Hà Lan', slug: 'ha-lan' },
+  { label: 'Hàn Quốc', slug: 'han-quoc' },
+  { label: 'Hồng Kông', slug: 'hong-kong' },
+  { label: 'Indonesia', slug: 'indonesia' },
+  { label: 'Malaysia', slug: 'malaysia' },
+  { label: 'Mexico', slug: 'mexico' },
+  { label: 'Na Uy', slug: 'na-uy' },
+  { label: 'Nam Phi', slug: 'nam-phi' },
+  { label: 'Nga', slug: 'nga' },
+  { label: 'Nhật Bản', slug: 'nhat-ban' },
+  { label: 'Philippines', slug: 'philippines' },
+  { label: 'Pháp', slug: 'phap' },
+  { label: 'Quốc Gia Khác', slug: 'quoc-gia-khac' },
+  { label: 'Thái Lan', slug: 'thai-lan' },
+  { label: 'Thổ Nhĩ Kỳ', slug: 'tho-nhi-ky' },
+  { label: 'Thụy Sĩ', slug: 'thuy-si' },
+  { label: 'Thụy Điển', slug: 'thuy-dien' },
+  { label: 'Trung Quốc', slug: 'trung-quoc' },
+  { label: 'Tây Ban Nha', slug: 'tay-ban-nha' },
+  { label: 'UAE', slug: 'uae' },
+  { label: 'Ukraina', slug: 'ukraina' },
+  { label: 'Việt Nam', slug: 'viet-nam' },
+  { label: 'Âu Mỹ', slug: 'au-my' },
+  { label: 'Úc', slug: 'uc' },
+  { label: 'Ý', slug: 'y' },
+  { label: 'Đan Mạch', slug: 'dan-mach' },
+  { label: 'Đài Loan', slug: 'dai-loan' },
+  { label: 'Đức', slug: 'duc' },
+  { label: 'Ả Rập Xê Út', slug: 'a-rap-xe-ut' },
+  { label: 'Ấn Độ', slug: 'an-do' },
+];
+
+const LISTS_CATALOG = [
+  { label: 'Phim Mới', href: '/search?sort=modified.time%20desc' },
+  { label: 'Phim Bộ', href: '/films/series' },
+  { label: 'Phim Lẻ', href: '/films/single' },
+  { label: 'Shows', href: '/films/tvshows' },
+  { label: 'Hoạt Hình', href: '/films/anime' },
+  { label: 'Phim Vietsub', href: '/search?q=vietsub' },
+  { label: 'Phim Thuyết Minh', href: '/search?q=thuyet%20minh' },
+  { label: 'Phim Lồng Tiếng', href: '/search?q=long%20tieng' },
+  { label: 'Phim Bộ Đang Chiếu', href: '/search?status=ongoing' },
+  { label: 'Phim Bộ Đã Hoàn Thành', href: '/search?status=completed' },
+  { label: 'Subteam', href: '/search?q=subteam' },
+  { label: 'Phim Chiếu Rạp', href: '/search?q=chieu%20rap' },
+];
+
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
-  const { t, lang, setLang } = useTranslation();
+  const { t, lang, setLang, isTransitioning } = useTranslation();
   const { theme, toggleTheme } = useThemeStore();
   const [mounted, setMounted] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -77,13 +159,8 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
-    if (searchOpen) {
-      searchRef.current?.focus();
-    } else {
-      setSearchQuery('');
-      setSearchResults([]);
-    }
-  }, [searchOpen]);
+    searchRef.current?.focus();
+  }, []);
 
   // Debounced live search
   useEffect(() => {
@@ -95,9 +172,9 @@ export function Navbar() {
     const delayDebounceFn = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await movieApi.search(searchQuery.trim(), 1);
+        const res = await movieApi.search(searchQuery.trim(), 1, 12);
         const items = res.data?.data?.items || [];
-        setSearchResults(items.slice(0, 5));
+        setSearchResults(items.slice(0, 12));
       } catch (err) {
         console.error('Instant search failed:', err);
       } finally {
@@ -112,7 +189,6 @@ export function Navbar() {
     e.preventDefault();
     if (searchQuery.trim()) {
       router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchOpen(false);
       setSearchQuery('');
     }
   };
@@ -139,200 +215,171 @@ export function Navbar() {
           <nav className="hidden lg:flex items-center justify-center space-x-6 text-sm font-medium text-neutral-600 dark:text-neutral-300 flex-1">
             {/* Thể Loại Dropdown */}
             <div className="relative group py-5">
-              <button className="flex items-center space-x-1 hover:text-neutral-900 dark:hover:text-white transition-colors focus:outline-none">
+              <button className="flex items-center space-x-1 hover:text-neutral-900 dark:hover:text-white transition-colors focus:outline-none font-semibold">
                 <span>{t('nav.genres')}</span>
                 <ChevronDown size={14} className="transition-transform duration-200 group-hover:rotate-180" />
               </button>
-              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[380px] p-2 bg-card/95 backdrop-blur-xl border border-border shadow-2xl rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-3 gap-1 z-50">
-                <Link href="/genre/hanh-dong" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Hành Động</Link>
-                <Link href="/genre/phieu-luu" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Phiêu Lưu</Link>
-                <Link href="/genre/hoat-hinh" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Hoạt Hình</Link>
-                <Link href="/genre/hai-huoc" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Hài Hước</Link>
-                <Link href="/genre/hinh-su" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Hình Sự</Link>
-                <Link href="/genre/tai-lieu" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Tài Liệu</Link>
-                <Link href="/genre/chinh-kich" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Chính Kịch</Link>
-                <Link href="/genre/co-trang" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Cổ Trang</Link>
-                <Link href="/genre/kinh-di" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Kinh Dị</Link>
-                <Link href="/genre/tinh-cam" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Tình Cảm</Link>
-                <Link href="/genre/vien-tuong" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Viễn Tưởng</Link>
-                <Link href="/genre/phim-18" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Phim 18+</Link>
+              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[520px] p-4 bg-[#090c15]/65 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.6)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-3 gap-y-1.5 gap-x-2 z-50">
+                {GENRES_LIST.map((item) => (
+                  <Link
+                    key={item.slug}
+                    href={`/genre/${item.slug}`}
+                    className="px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 block truncate"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
               </div>
             </div>
 
             {/* Quốc Gia Dropdown */}
             <div className="relative group py-5">
-              <button className="flex items-center space-x-1 hover:text-neutral-900 dark:hover:text-white transition-colors focus:outline-none">
+              <button className="flex items-center space-x-1 hover:text-neutral-900 dark:hover:text-white transition-colors focus:outline-none font-semibold">
                 <span>{t('nav.country')}</span>
                 <ChevronDown size={14} className="transition-transform duration-200 group-hover:rotate-180" />
               </button>
-              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[260px] p-2 bg-card/95 backdrop-blur-xl border border-border shadow-2xl rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-2 gap-1 z-50">
-                <Link href="/country/trung-quoc" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Trung Quốc</Link>
-                <Link href="/country/han-quoc" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Hàn Quốc</Link>
-                <Link href="/country/nhat-ban" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Nhật Bản</Link>
-                <Link href="/country/thai-lan" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Thái Lan</Link>
-                <Link href="/country/viet-nam" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Việt Nam</Link>
-                <Link href="/country/au-my" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Âu Mỹ</Link>
+              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[640px] p-4 bg-[#090c15]/65 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.6)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-4 gap-y-1.5 gap-x-2 z-50 max-h-[75vh] overflow-y-auto scrollbar-thin">
+                {COUNTRIES_LIST.map((item) => (
+                  <Link
+                    key={item.slug}
+                    href={`/country/${item.slug}`}
+                    className="px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 block truncate"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
               </div>
             </div>
 
             {/* Danh Sách Dropdown */}
             <div className="relative group py-5">
-              <button className="flex items-center space-x-1 hover:text-neutral-900 dark:hover:text-white transition-colors focus:outline-none">
+              <button className="flex items-center space-x-1 hover:text-neutral-900 dark:hover:text-white transition-colors focus:outline-none font-semibold">
                 <span>{t('nav.list')}</span>
                 <ChevronDown size={14} className="transition-transform duration-200 group-hover:rotate-180" />
               </button>
-              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[180px] p-1.5 bg-card/95 backdrop-blur-xl border border-border shadow-2xl rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <Link href="/films?sort=newest" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Phim Mới</Link>
-                <Link href="/films/series" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Phim Bộ</Link>
-                <Link href="/films/single" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Phim Lẻ</Link>
-                <Link href="/films/anime" className="hover:bg-neutral-100 dark:hover:bg-white/10 px-3 py-2 rounded text-sm transition-colors text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white block">Hoạt Hình</Link>
+              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[500px] p-4 bg-[#090c15]/65 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.6)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-3 gap-y-1.5 gap-x-2 z-50">
+                {LISTS_CATALOG.map((item) => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className="px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 block truncate"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
               </div>
             </div>
 
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "hover:text-neutral-900 dark:hover:text-white transition-colors",
-                    pathname === link.href 
-                      ? "text-neutral-900 dark:text-white font-black" 
-                      : "text-neutral-600 dark:text-neutral-300"
-                  )}
-                >
-                  {t(link.key)}
-                </Link>
-              ))}
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "hover:text-neutral-900 dark:hover:text-white transition-colors font-semibold",
+                  pathname === link.href 
+                    ? "text-neutral-900 dark:text-white font-black" 
+                    : "text-neutral-600 dark:text-neutral-300"
+                )}
+              >
+                {t(link.key)}
+              </Link>
+            ))}
           </nav>
           {/* Right Block: Search & Actions & Profile */}
-          <div className="flex items-center justify-end space-x-3 w-auto lg:w-1/4">
-            {/* Search Input inline-Netflix transition */}
-            <div className="relative flex items-center">
-              <form onSubmit={handleSearchSubmit} className="flex items-center relative">
-                {searchOpen ? (
-                  <div className="relative">
-                    <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400" />
-                    <input
-                      ref={searchRef}
-                      type="text"
-                      placeholder="Tìm kiếm phim, diễn viên..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-48 md:w-64 bg-black/5 dark:bg-black/60 border border-black/10 dark:border-white/20 rounded-full px-8 py-1.5 text-xs text-neutral-800 dark:text-white focus:border-neutral-400 dark:focus:border-white transition-all duration-300 outline-none"
-                      onBlur={() => {
-                        if (!searchQuery) setSearchOpen(false);
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setSearchOpen(true)}
-                    className="text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white p-1.5 transition-colors focus:outline-none"
-                    aria-label="Search button"
-                  >
-                    <Search size={18} />
-                  </button>
-                )}
+          <div className="flex items-center justify-end space-x-3 w-auto min-w-0">
+            {/* Search Input inline */}
+            <div className="relative flex items-center min-w-0">
+              <form onSubmit={handleSearchSubmit} className="flex items-center relative min-w-0">
+                <div className="relative min-w-0">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+                  <input
+                    ref={searchRef}
+                    type="text"
+                    placeholder="Tìm kiếm phim, diễn viên..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full max-w-[16rem] sm:max-w-[18rem] md:max-w-[20rem] bg-black/5 dark:bg-black/60 border border-black/10 dark:border-white/20 rounded-full pl-10 pr-4 py-2 text-sm text-neutral-800 dark:text-white focus:border-neutral-400 dark:focus:border-white transition-all duration-300 outline-none"
+                  />
+                </div>
               </form>
 
               {/* Instant Search Results Dropdown */}
               {searchQuery.trim() && (
-                <div className="absolute right-0 top-11 w-72 md:w-80 bg-[#141414] border border-white/10 rounded shadow-xl overflow-hidden z-50 text-xs">
+                <div className="absolute right-0 top-11 w-80 md:w-96 bg-[#141414] border border-white/10 rounded shadow-xl overflow-hidden z-50 text-xs">
                   {isSearching ? (
-                    <div className="flex items-center justify-center p-4 space-x-2 text-neutral-400">
-                      <Loader2 size={14} className="animate-spin" />
+                    <div className="p-4 flex items-center justify-center space-x-2 text-neutral-400">
+                      <Loader2 size={16} className="animate-spin text-netflixRed" />
                       <span>Đang tìm kiếm...</span>
                     </div>
                   ) : searchResults.length > 0 ? (
-                    <div className="flex flex-col">
-                      {searchResults.map((item: any) => {
-                        const poster = resolveImageUrl(item.thumb_url) || resolveImageUrl(item.poster_url);
+                    <div className="max-h-[60vh] overflow-y-auto divide-y divide-white/5">
+                      {searchResults.map((film) => {
+                        const poster = resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url);
                         return (
                           <Link
-                            key={item.slug}
-                            href={`/film/${item.slug}`}
-                            className="flex items-center space-x-2 p-2 hover:bg-white/10 transition-colors"
-                            onClick={() => {
-                              setSearchOpen(false);
-                              setSearchQuery('');
-                            }}
+                            key={film._id || film.slug}
+                            href={`/film/${film.slug}`}
+                            onClick={() => setSearchQuery('')}
+                            className="flex items-center space-x-3 p-2.5 hover:bg-white/10 transition-colors group"
                           >
-                            <div className="relative w-9 h-12 flex-shrink-0 bg-neutral-900 overflow-hidden rounded">
+                            <div className="w-10 h-14 bg-neutral-800 rounded overflow-hidden flex-shrink-0 relative">
                               {poster ? (
-                                <img src={poster} alt="" className="object-cover w-full h-full" />
+                                <img src={poster} alt={film.name} className="w-full h-full object-cover" />
                               ) : (
-                                <div className="flex items-center justify-center h-full"><Film size={12} /></div>
+                                <div className="w-full h-full flex items-center justify-center text-neutral-600">
+                                  <Film size={16} />
+                                </div>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-white truncate">{item.name}</p>
-                              <p className="text-neutral-400 truncate">{item.origin_name}</p>
+                              <p className="font-bold text-white group-hover:text-netflixRed transition-colors truncate">
+                                {film.name}
+                              </p>
+                              <p className="text-[11px] text-neutral-400 truncate mt-0.5">
+                                {film.origin_name} ({film.year})
+                              </p>
+                              <div className="flex items-center space-x-2 text-[10px] text-neutral-500 mt-1">
+                                <span className="bg-white/10 px-1.5 py-0.5 rounded text-white">{film.quality || 'FHD'}</span>
+                                <span>{film.lang || 'Vietsub'}</span>
+                              </div>
                             </div>
                           </Link>
                         );
                       })}
-                      <button
-                        type="submit"
-                        onClick={handleSearchSubmit}
-                        className="w-full text-center py-2 bg-white/5 hover:bg-white/10 font-bold border-t border-white/5 transition-colors text-netflixRed"
-                      >
-                        Xem tất cả kết quả
-                      </button>
                     </div>
                   ) : (
-                    <div className="p-4 text-center text-neutral-400">Không tìm thấy phim</div>
+                    <div className="p-4 text-center text-neutral-400">
+                      Không tìm thấy kết quả nào cho "{searchQuery}"
+                    </div>
                   )}
                 </div>
               )}
             </div>
 
-            {/* Theme Switch */}
-            <button
-              onClick={toggleTheme}
-              className="flex items-center justify-center text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white transition-colors p-1.5 focus:outline-none border-r border-neutral-300 dark:border-white/20 pr-3 mr-3"
-              title={theme === 'dark' ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
-            >
-              {mounted && theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-            </button>
-
-            {/* Language Switch */}
-            <button
-              onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
-              className="hidden md:flex items-center space-x-1 text-xs text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white transition-colors border-r border-neutral-300 dark:border-white/20 pr-3 mr-3"
-            >
-              <Languages size={14} />
-              <span className="font-semibold">{lang.toUpperCase()}</span>
-            </button>
-
-            {/* PWA App Download (UI Only) */}
-            <button className="hidden xl:flex items-center space-x-2 text-left hover:opacity-80 transition-opacity border-r border-neutral-300 dark:border-white/20 pr-3 mr-3">
-              <MonitorSmartphone size={22} className="text-[#f5c518]" />
-              <div className="flex flex-col justify-center">
-                <span className="text-xs font-bold text-neutral-700 dark:text-white leading-tight">Tải ứng dụng</span>
-              </div>
-            </button>
-
+            {/* Profile / Actions */}
             {user ? (
               <>
-                {/* Notifications Dropdown via Radix */}
+                {/* Notifications Bell Dropdown */}
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="relative text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white transition-colors focus:outline-none p-1">
+                  <DropdownMenuTrigger className="relative p-2 text-neutral-300 hover:text-white transition-colors focus:outline-none">
                     <Bell size={18} />
                     {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-netflixRed text-[9px] font-black rounded-full flex items-center justify-center text-white">
-                        {unreadCount}
-                      </span>
+                      <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-netflixRed animate-pulse" />
                     )}
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-80 bg-card border-border text-neutral-300 p-2 shadow-2xl">
-                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-border text-xs">
-                      <span className="font-bold text-foreground">Thông báo</span>
+                  <DropdownMenuContent className="w-80 p-2 bg-[#141414] border border-white/10 text-neutral-300 text-xs shadow-2xl z-50">
+                    <div className="flex items-center justify-between px-2 py-1.5 border-b border-white/10 mb-1">
+                      <span className="font-bold text-white text-sm">Thông báo</span>
                       {unreadCount > 0 && (
-                        <button onClick={markAllRead} className="text-netflixRed font-semibold">Đọc tất cả</button>
+                        <button
+                          onClick={markAllRead}
+                          className="text-[10px] text-neutral-400 hover:text-white transition-colors"
+                        >
+                          Đánh dấu đã đọc
+                        </button>
                       )}
                     </div>
-                    <div className="flex flex-col space-y-1 max-h-60 overflow-y-auto">
+                    <div className="max-h-60 overflow-y-auto space-y-1">
                       {notifications.map((n) => (
                         <div
                           key={n.id}
@@ -369,6 +416,20 @@ export function Navbar() {
                     <DropdownMenuItem className="hover:bg-white/10"><Star size={14} className="mr-2" /><Link href="/reviews" className="w-full">Đánh giá của tôi</Link></DropdownMenuItem>
                     <DropdownMenuItem className="hover:bg-white/10"><History size={14} className="mr-2" /><Link href="/history" className="w-full">Lịch sử xem</Link></DropdownMenuItem>
                     <DropdownMenuItem className="hover:bg-white/10"><Settings size={14} className="mr-2" /><Link href="/settings" className="w-full">{t('nav.settings')}</Link></DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="hover:bg-white/10"
+                      onClick={toggleTheme}
+                    >
+                      {mounted && theme === 'light' ? <Moon size={14} className="mr-2" /> : <Sun size={14} className="mr-2" />}
+                      <span>{theme === 'light' ? 'Chế độ tối' : 'Chế độ sáng'}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="hover:bg-white/10"
+                      onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
+                    >
+                      <Languages size={14} className="mr-2" />
+                      <span>{lang === 'vi' ? 'English' : 'Tiếng Việt'}</span>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator className="bg-border" />
                     <DropdownMenuItem
                       onClick={() => { logout(); router.push('/'); }}
@@ -403,7 +464,7 @@ export function Navbar() {
 
       {/* Mobile Drawer menu */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-background pt-20 flex flex-col p-6 space-y-4 text-neutral-300 text-base font-semibold animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="fixed inset-0 z-40 bg-background pt-20 flex flex-col p-6 space-y-4 text-neutral-300 text-base font-semibold animate-in fade-in slide-in-from-top-4 duration-300 overflow-y-auto">
           <Link href="/films/series" className="py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>Phim Bộ</Link>
           <Link href="/films/single" className="py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>Phim Lẻ</Link>
           <Link href="/films/anime" className="py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>Hoạt Hình</Link>

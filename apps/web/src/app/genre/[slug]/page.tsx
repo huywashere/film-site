@@ -3,19 +3,34 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { movieApi } from '@/lib/api';
 import { FilmCard, FilmItem, FilmCardSkeleton } from '@/components/film/FilmCard';
+import { Pagination } from '@/components/film/Pagination';
 
 const GENRE_NAMES: Record<string, string> = {
-  'hanh-dong': 'Hành Động',
-  'kinh-di': 'Kinh Dị',
-  'tinh-cam': 'Tình Cảm',
-  'hai-huoc': 'Hài Hước',
-  'khoa-hoc-vien-tuong': 'Khoa Học Viễn Tưởng',
-  'hoat-hinh': 'Hoạt Hình',
-  'co-trang': 'Cổ Trang',
-  'tam-ly': 'Tâm Lý',
-  'vien-tuong': 'Viễn Tưởng',
+  'bi-an': 'Bí Ẩn',
   'chien-tranh': 'Chiến Tranh',
+  'chinh-kich': 'Chính Kịch',
+  'co-trang': 'Cổ Trang',
+  'gia-dinh': 'Gia Đình',
+  'hai-huoc': 'Hài Hước',
+  'hanh-dong': 'Hành Động',
+  'hinh-su': 'Hình Sự',
+  'hoc-duong': 'Học Đường',
+  'khoa-hoc': 'Khoa Học',
+  'kinh-di': 'Kinh Dị',
+  'kinh-dien': 'Kinh Điển',
+  'lich-su': 'Lịch Sử',
+  'mien-tay': 'Miền Tây',
+  'phim-18': 'Phim 18+',
+  'phim-ngan': 'Phim Ngắn',
+  'phieu-luu': 'Phiêu Lưu',
+  'than-thoai': 'Thần Thoại',
   'the-thao': 'Thể Thao',
+  'tre-em': 'Trẻ Em',
+  'tai-lieu': 'Tài Liệu',
+  'tam-ly': 'Tâm Lý',
+  'tinh-cam': 'Tình Cảm',
+  'vien-tuong': 'Viễn Tưởng',
+  'vo-thuat': 'Võ Thuật',
   'am-nhac': 'Âm Nhạc',
 };
 
@@ -32,63 +47,68 @@ export default function GenrePage() {
     queryFn: () => movieApi.getByGenre(slug, page).then((r) => r.data),
   });
 
-  const films: FilmItem[] = data?.data?.items || [];
-  const totalPages = data?.data?.params?.pagination?.totalPages || 1;
+  const films: FilmItem[] = data?.data?.items || data?.items || [];
+
+  const rawTotal =
+    data?.data?.params?.pagination?.totalPages ||
+    data?.params?.pagination?.totalPages ||
+    data?.pagination?.totalPages ||
+    data?.paginate?.total_page ||
+    data?.data?.paginate?.total_page ||
+    (data?.data?.params?.pagination?.totalItems
+      ? Math.ceil(data.data.params.pagination.totalItems / (data.data.params.pagination.totalItemsPerPage || 24))
+      : undefined);
+
+  const totalPages = rawTotal && rawTotal > 1 ? rawTotal : (films.length > 0 ? 50 : 1);
+  const totalItems = data?.data?.params?.pagination?.totalItems || data?.pagination?.totalItems;
+
+  const handlePageChange = (newPage: number) => {
+    router.push(`/genre/${slug}?page=${newPage}`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
-    <div className="container pt-24 pb-16">
-      <div className="section-header" style={{ marginBottom: 'var(--space-xl)' }}>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem' }}>Thể Loại: {label}</h1>
-        <p className="text-muted text-sm">Trang {page}</p>
+    <div className="container mx-auto px-4 md:px-8 max-w-7xl pt-24 pb-16">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-4 border-b border-white/10 gap-2">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-black text-white tracking-wide uppercase font-sans">
+            Thể Loại: {label}
+          </h1>
+          <p className="text-xs text-neutral-400 font-semibold mt-1">
+            Tổng hợp danh sách các bộ phim thuộc thể loại {label} hay nhất
+          </p>
+        </div>
+        <div className="text-xs font-bold text-neutral-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 self-start md:self-auto">
+          Trang <span className="text-white font-extrabold">{page}</span> / {totalPages}
+        </div>
       </div>
 
       {isLoading ? (
-        <div className="grid-films-lg">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
           {Array.from({ length: 24 }).map((_, i) => (
             <FilmCardSkeleton key={i} />
           ))}
         </div>
-      ) : (
-        <div className="grid-films-lg">
+      ) : films.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
           {films.map((f) => (
             <FilmCard key={f.slug} film={f} />
           ))}
         </div>
-      )}
-
-      {totalPages > 1 && (
-        <div className="pagination">
-          {page > 1 && (
-            <button
-              className="page-btn"
-              onClick={() => router.push(`/genre/${slug}?page=${page - 1}`)}
-            >
-              ‹
-            </button>
-          )}
-          {Array.from({ length: Math.min(totalPages, 8) }, (_, i) => {
-            const p = Math.max(1, page - 3) + i;
-            if (p > totalPages) return null;
-            return (
-              <button
-                key={p}
-                className={`page-btn ${p === page ? 'active' : ''}`}
-                onClick={() => router.push(`/genre/${slug}?page=${p}`)}
-              >
-                {p}
-              </button>
-            );
-          })}
-          {page < totalPages && (
-            <button
-              className="page-btn"
-              onClick={() => router.push(`/genre/${slug}?page=${page + 1}`)}
-            >
-              ›
-            </button>
-          )}
+      ) : (
+        <div className="py-20 text-center text-neutral-500 font-semibold text-sm">
+          Chưa tìm thấy bộ phim nào thuộc thể loại này.
         </div>
       )}
+
+      {/* Pagination Controls */}
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 }

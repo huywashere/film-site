@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import NextImage from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Play,
   ChevronRight,
@@ -24,6 +24,8 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, FreeMode } from 'swiper/modules';
 import styled from '@emotion/styled';
 import { cn } from '@/lib/utils';
+import { SpotlightSearchModal } from '@/components/search/SpotlightSearchModal';
+import { ContinueWatchingRow } from '@/components/film/ContinueWatchingRow';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -90,7 +92,7 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
   const [current, setCurrent] = useState(0);
   const [scrollY, setScrollY] = useState(0);
   const { t } = useTranslation();
-  const featured = films.slice(0, 10);
+  const featured = films.slice(0, 15);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrent((c) => (c + 1) % featured.length), 8000);
@@ -120,18 +122,18 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
         : 'text-4xl md:text-7xl';
 
   return (
-    <div className="relative h-[calc(100vh+100px)] w-full overflow-hidden bg-background">
+    <div className="relative h-[calc(100vh+100px)] min-h-[700px] w-full overflow-hidden bg-background">
       {/* Background Poster Image */}
       {backdrop && (
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           <motion.div
             key={film.slug}
             initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 1.5, ease: 'easeOut' }}
+            transition={{ duration: 1.2, ease: 'easeOut' }}
             style={{
-              transform: `translateY(${scrollY * 0.4}px) scale(${1 + scrollY * 0.0002})`,
+              transform: `translateY(${scrollY * 0.3}px) scale(${1 + scrollY * 0.00015})`,
               opacity: Math.max(0, 1 - scrollY / 800),
             }}
             className="absolute inset-0 w-full h-full"
@@ -152,11 +154,11 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
 
       {/* Cinematic Gradient Masks */}
       {/* Left Mask for text readability */}
-      <div className="absolute inset-0 bg-gradient-to-r from-background via-background/60 to-transparent w-full md:w-[65%] z-10" />
-      {/* Bottom Mask for page integration */}
-      <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background via-background/80 to-transparent z-10" />
+      <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-transparent w-full md:w-[65%] z-10 pointer-events-none" />
+      {/* Bottom Mask for 100% seamless page integration (no bottom gap seam) */}
+      <div className="absolute -bottom-2 inset-x-0 h-64 md:h-80 bg-gradient-to-t from-background via-background/95 via-background/60 to-transparent z-20 pointer-events-none" />
       {/* Overall Overlay */}
-      <div className="absolute inset-0 bg-black/5 dark:bg-black/10 z-0" />
+      <div className="absolute inset-0 bg-black/5 dark:bg-black/10 z-0 pointer-events-none" />
 
       {/* Content Container */}
       <div 
@@ -167,16 +169,17 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
         className="absolute inset-0 z-20 flex items-center"
       >
         <div className="container mx-auto px-4 md:px-8 max-w-7xl">
-          <div className="max-w-2xl flex flex-col space-y-4 md:space-y-6">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={current}
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -16 }}
-                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-col space-y-4 md:space-y-5"
-              >
+          <div className="max-w-2xl">
+            <div className="grid grid-cols-1 grid-rows-1">
+              <AnimatePresence>
+                <motion.div
+                  key={current}
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -16 }}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  className="col-start-1 row-start-1 flex flex-col space-y-4 md:space-y-5"
+                >
                 {/* Badges */}
                 <div className="flex items-center space-x-3">
                   <span className="bg-neutral-800 text-white dark:bg-white dark:text-black text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-sm shadow">
@@ -232,6 +235,7 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
               </motion.div>
             </AnimatePresence>
           </div>
+        </div>
         </div>
       </div>
 
@@ -345,133 +349,17 @@ function KeyboardSearchBanner({ onClick }: { onClick: () => void }) {
   return (
     <div
       onClick={onClick}
-      className="fixed bottom-6 left-6 z-50 hidden sm:flex items-center space-x-1.5 bg-white/[0.03] hover:bg-white/[0.08] backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 text-neutral-400 text-[11px] font-medium select-none shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
+      className="fixed bottom-6 left-6 z-50 hidden sm:flex items-center space-x-2 bg-white/[0.03] hover:bg-white/[0.08] backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 text-neutral-300 text-[11px] select-none shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
     >
-      <span className="opacity-75">Press</span>
-      <kbd className="bg-white/[0.05] border border-white/10 px-1.5 py-0.5 rounded-md text-[10px] text-neutral-200 font-mono font-bold flex items-center justify-center gap-0.5">
-        <span className="text-[11px] font-sans">⌘</span>K
+      <span className="font-semibold text-neutral-200">Press</span>
+      <kbd className="bg-white/15 border border-white/25 px-2 py-0.5 rounded-md text-[11px] text-white font-mono font-black flex items-center justify-center gap-1 shadow-inner">
+        <span className="text-[12px] font-sans leading-none">⌘</span>K
       </kbd>
-      <span className="opacity-75">to search</span>
+      <span className="font-semibold text-neutral-200">to search</span>
     </div>
   );
 }
 
-// ── Spotlight Search Modal Component ──────────────────────
-function SpotlightSearchModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const [query, setQuery] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const { data: searchData, isLoading } = useQuery({
-    queryKey: ['spotlight-search', query],
-    queryFn: () => movieApi.search(query, 1).then((r) => r.data),
-    enabled: query.trim().length >= 2,
-  });
-
-  const results = searchData?.data?.items || [];
-
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 50);
-    } else {
-      setQuery('');
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
-
-  if (!isOpen) return null;
-
-  return (
-    <div
-      className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-start justify-center pt-[15vh] px-4"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: -20, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -20, scale: 0.98 }}
-        transition={{ duration: 0.2 }}
-        className="bg-[#0b0c10]/95 border border-white/10 w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl flex flex-col backdrop-blur-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Input Bar */}
-        <div className="flex items-center px-4 py-3.5 bg-[#0f1118]/80">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-neutral-400 mr-2 flex-shrink-0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Tìm kiếm phim Marvel, DC, người nhện..."
-            className="w-full bg-transparent border-none text-white text-sm placeholder:text-neutral-500 focus:outline-none focus:ring-0"
-          />
-          {isLoading ? (
-            <Loader2 className="animate-spin text-netflixRed flex-shrink-0" size={16} />
-          ) : (
-            <button
-              onClick={onClose}
-              className="text-[10px] text-neutral-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded hover:bg-white/10 transition-colors"
-            >
-              ESC
-            </button>
-          )}
-        </div>
-
-        {/* Divider */}
-        <div className="h-[1px] bg-white/5" />
-
-        {/* Results Container */}
-        <div className="max-h-[45vh] overflow-y-auto p-4 flex flex-col gap-1.5 bg-[#060814]/40">
-          {query.trim().length < 2 ? (
-            <div className="text-center py-8 text-neutral-500 text-xs">
-              Nhập tối thiểu 2 ký tự để tìm kiếm tức thì
-            </div>
-          ) : results.length > 0 ? (
-            results.map((item: any) => {
-              const poster = resolveImageUrl(item.thumb_url) || resolveImageUrl(item.poster_url);
-              return (
-                <Link
-                  href={`/film/${item.slug}`}
-                  key={item._id || item.slug}
-                  onClick={onClose}
-                  className="flex gap-4 p-2 rounded-xl hover:bg-white/5 transition-colors group text-left"
-                >
-                  <div className="w-10 h-14 rounded bg-white/5 overflow-hidden flex-shrink-0 relative border border-white/5 group-hover:border-white/10">
-                    {poster ? (
-                      <img src={poster} alt={item.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Loader2 size={12} />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col justify-center gap-0.5">
-                    <span className="font-bold text-xs text-white group-hover:text-netflixRed transition-colors line-clamp-1">
-                      {item.name}
-                    </span>
-                    <span className="text-[10px] text-neutral-500 font-medium">
-                      {item.origin_name} ({item.year})
-                    </span>
-                  </div>
-                </Link>
-              );
-            })
-          ) : (
-            <div className="text-center py-8 text-neutral-500 text-xs flex flex-col items-center gap-2">
-              <span>Không tìm thấy phim phù hợp</span>
-            </div>
-          )}
-        </div>
-      </motion.div>
-    </div>
-  );
-}
 
 // ── Scroll To Top Button Component ──────────────────────────
 function ScrollToTopButton() {
@@ -490,25 +378,38 @@ function ScrollToTopButton() {
   return (
     <button
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-      className="fixed bottom-6 right-6 z-50 p-3 bg-[#060814]/90 hover:bg-netflixRed hover:text-white text-white rounded-full border border-netflixRed/30 hover:border-netflixRed/60 shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center backdrop-blur-md"
+      className="fixed bottom-6 right-6 z-50 h-12 w-12 rounded-2xl bg-card/90 text-primary border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-card hover:text-white focus:outline-none focus:ring-2 focus:ring-primary/30 active:scale-95 flex items-center justify-center"
       aria-label="Cuộn lên đầu trang"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        width="18"
-        height="18"
+        width="20"
+        height="20"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="3.5"
+        strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
+        className="text-primary"
       >
-        <path d="m18 15-6-6-6 6" />
+        <path d="M12 19V5" />
+        <path d="M6 11l6-6 6 6" />
       </svg>
     </button>
   );
 }
+
+// Helper to deduplicate films by slug
+const deduplicate = (films: FilmItem[]) => {
+  const seen = new Set();
+  return (films || []).filter(film => {
+    if (!film || !film.slug) return false;
+    const isDuplicate = seen.has(film.slug);
+    seen.add(film.slug);
+    return !isDuplicate;
+  });
+};
 
 // ── Main Home Page ──────────────────────────────────────────
 export default function HomePage() {
@@ -553,7 +454,7 @@ export default function HomePage() {
     queryFn: () => movieApi.getAnime(1).then((r) => r.data),
   });
 
-  // Query Marvel and DC blockbusters specifically for the HeroBanner
+  // Query Marvel, DC, and US-UK films specifically for the HeroBanner
   const { data: marvelSearchData, isLoading: marvelSearchLoading } = useQuery({
     queryKey: ['hero-marvel'],
     queryFn: () => movieApi.search('marvel', 1).then((r) => r.data),
@@ -564,31 +465,46 @@ export default function HomePage() {
     queryFn: () => movieApi.search('dc', 1).then((r) => r.data),
   });
 
-  const deduplicate = (films: FilmItem[]) => {
-    const seen = new Set();
-    return films.filter(film => {
-      if (!film || !film.slug) return false;
-      const isDuplicate = seen.has(film.slug);
-      seen.add(film.slug);
-      return !isDuplicate;
-    });
-  };
+  const { data: usukData, isLoading: usukLoading } = useQuery({
+    queryKey: ['hero-usuk'],
+    queryFn: () => movieApi.getByCountry('au-my', 1).then((r) => r.data),
+  });
 
-  const latestFilms: FilmItem[] = deduplicate(latestData?.items || latestData?.data?.items || []);
-  const seriesFilms: FilmItem[] = deduplicate(seriesData?.data?.items || seriesData?.items || []);
-  const singleFilms: FilmItem[] = deduplicate(singleData?.data?.items || singleData?.items || []);
-  const animeFilms: FilmItem[] = deduplicate(animeData?.data?.items || animeData?.items || []);
+  const latestFilms = useMemo(() => deduplicate(latestData?.items || latestData?.data?.items || []), [latestData]);
+  const seriesFilms = useMemo(() => deduplicate(seriesData?.data?.items || seriesData?.items || []), [seriesData]);
+  const singleFilms = useMemo(() => deduplicate(singleData?.data?.items || singleData?.items || []), [singleData]);
+  const animeFilms = useMemo(() => deduplicate(animeData?.data?.items || animeData?.items || []), [animeData]);
 
-  const marvelFilms: FilmItem[] = deduplicate(marvelSearchData?.data?.items || []);
-  const dcFilms: FilmItem[] = deduplicate(dcSearchData?.data?.items || []);
+  const marvelFilms = useMemo(() => deduplicate(marvelSearchData?.data?.items || []), [marvelSearchData]);
+  const dcFilms = useMemo(() => deduplicate(dcSearchData?.data?.items || []), [dcSearchData]);
+  const usukFilms = useMemo(() => deduplicate(usukData?.data?.items || usukData?.items || []), [usukData]);
   
-  // Combine Marvel and DC movies for US/UK Superhero theme banner
-  const bannerFilms = [...marvelFilms, ...dcFilms].filter(
-    (f) => f && (f.thumb_url || f.poster_url)
-  );
+  // Combine Marvel, DC, and US/UK movies for a random-themed immersive banner (up to 15)
+  const combinedBannerPool = useMemo(() => {
+    const combined = [...marvelFilms, ...dcFilms, ...usukFilms].filter(
+      (f) => f && (f.thumb_url || f.poster_url)
+    );
+    return combined.length > 0 ? combined : latestFilms;
+  }, [marvelFilms, dcFilms, usukFilms, latestFilms]);
 
-  const bannerFilmsToShow = bannerFilms.length > 0 ? bannerFilms : latestFilms;
-  const isBannerLoading = latestLoading || marvelSearchLoading || dcSearchLoading;
+  const [shuffledFilms, setShuffledFilms] = useState<FilmItem[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    if (combinedBannerPool.length > 0) {
+      const arr = [...combinedBannerPool];
+      // Fisher-Yates Shuffle for true randomness
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      setShuffledFilms(arr);
+    }
+  }, [combinedBannerPool]);
+
+  const isBannerLoading = latestLoading || marvelSearchLoading || dcSearchLoading || usukLoading;
+  const showBannerSkeleton = isBannerLoading || !isMounted || shuffledFilms.length === 0;
 
   if (latestError) {
     return (
@@ -615,14 +531,17 @@ export default function HomePage() {
   return (
     <div className="bg-background min-h-screen text-foreground overflow-hidden pb-12 -mt-[100px]">
       {/* Hero Banner with slider */}
-      {isBannerLoading ? (
-        <div className="w-full h-[80vh] md:h-[88vh] bg-gradient-to-br from-neutral-950 via-[#10141a] to-neutral-900 animate-pulse" />
+      {showBannerSkeleton ? (
+        <div className="w-full h-[calc(100vh+100px)] min-h-[700px] bg-gradient-to-br from-neutral-950 via-[#10141a] to-neutral-900 animate-pulse" />
       ) : (
-        <HeroBanner films={bannerFilmsToShow} />
+        <HeroBanner films={shuffledFilms} />
       )}
 
       {/* Main Row Content — stretched out to fit wider layouts next to widgets */}
       <div className="w-full max-w-[1680px] mx-auto px-4 md:px-12 relative pt-6 md:pt-10 z-30">
+        {/* Continue Watching Row */}
+        <ContinueWatchingRow />
+
         {/* Topic Banners Section */}
         <TopicBannersSection />        {/* Phim Mới Cập Nhật */}
         <FilmSection
@@ -674,7 +593,11 @@ export default function HomePage() {
       {/* Instant Spotlight Search Modal */}
       <AnimatePresence>
         {isSearchOpen && (
-          <SpotlightSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+          <SpotlightSearchModal 
+            isOpen={isSearchOpen} 
+            onClose={() => setIsSearchOpen(false)} 
+            suggestions={latestFilms}
+          />
         )}
       </AnimatePresence>
     </div>
@@ -1112,34 +1035,40 @@ function HomepageWidgetsGrid({ latestFilms }: { latestFilms: FilmItem[] }) {
 function TopicBannersSection() {
   const topics = [
     {
-      title: 'Chữa lành',
-      href: '/genre/tam-ly',
-      bg: 'from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 shadow-pink-950/20',
+      title: 'DC',
+      href: '/search?q=dc',
+      image: '/images/zack-snyders-justice-league-dc-superheroes-dc-comics-2021-3840x2160-4980.jpg',
+      description: 'Khám phá thế giới siêu anh hùng DC nổi tiếng.',
     },
     {
       title: 'Marvel',
       href: '/search?q=marvel',
-      bg: 'from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-950/20',
+      image: '/images/wp3533664-avengers-infinity-war-4k-wallpapers.jpg',
+      description: 'Khám phá bộ phim Marvel nổi bật.',
     },
     {
-      title: 'Kho Tàng Anime Mới...',
+      title: 'One Piece',
       href: '/films/anime',
-      bg: 'from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 shadow-purple-950/20',
+      image: '/images/one-piece-season-15-3840x2160-22064.jpg',
+      description: 'Khám phá One Piece và những hành trình hải tặc kỳ ảo.',
     },
     {
-      title: 'Top 10 phim lẻ hôm nay',
-      href: '/films/single',
-      bg: 'from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 shadow-amber-950/20',
+      title: 'Phim đang hot',
+      href: '/search?q=hot',
+      image: '/images/MV5BN2MyYjk2MWMtODMyZS00MDUyLW-8113-3732-1766460989.webp',
+      description: 'Xem những bộ phim đang gây sốt ngay lúc này.',
     },
     {
       title: 'Cổ Trang',
       href: '/genre/co-trang',
-      bg: 'from-red-700 to-rose-800 hover:from-red-600 hover:to-rose-700 shadow-red-950/20',
+      image: '/images/phim_co_trang_trung_quoc_50_573c11fea1.jpg',
+      description: 'Khám phá những siêu phẩm cổ trang Trung Quốc đầy kịch tính.',
     },
     {
-      title: 'Phim Điện Ảnh Mới...',
-      href: '/films/single',
-      bg: 'from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 shadow-green-950/20',
+      title: 'Cày Phim Cuối Tuần',
+      href: '/search?q=weekend',
+      image: '/images/cinema-hall-with-red-seat-wide-white-screen.jpg',
+      description: 'Lên lịch xem phim cuối tuần với những suất chiếu đáng chú ý.',
     },
   ];
 
@@ -1153,14 +1082,28 @@ function TopicBannersSection() {
           <Link
             key={i}
             href={topic.href}
-            className={`h-24 md:h-28 rounded-2xl bg-gradient-to-br ${topic.bg} p-4 flex flex-col justify-between shadow-lg transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] group cursor-pointer`}
+            className={`relative overflow-hidden rounded-[28px] p-4 flex flex-col justify-between shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-3xl group cursor-pointer min-h-[220px] md:min-h-[260px] ${
+              topic.image ? 'bg-slate-900 shadow-slate-950/30 border border-white/10' : 'bg-gradient-to-br from-slate-900 to-indigo-950 border border-white/10'
+            }`}
+            style={topic.image ? { backgroundImage: `url('${topic.image}')`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
           >
-            <h4 className="text-xs md:text-sm font-black text-white leading-snug drop-shadow-sm select-none break-words">
-              {topic.title}
-            </h4>
-            <div className="flex items-center space-x-1 text-[9px] font-black text-white/90 group-hover:text-white transition-colors uppercase tracking-wider">
-              <span>Xem chủ đề</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="mt-0.5"><path d="m9 18 6-6-6-6"/></svg>
+            {topic.image && (
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/35 to-transparent group-hover:from-slate-950/80 group-hover:via-slate-950/25 transition-colors duration-300" />
+            )}
+            <div className="absolute inset-x-4 top-4 h-16 rounded-3xl bg-white/10 blur-sm" />
+            <div className="relative z-10">
+              <h4 className="text-base md:text-xl font-extrabold text-white leading-tight drop-shadow-[0_10px_30px_rgba(0,0,0,0.35)] select-none break-words">
+                {topic.title}
+              </h4>
+            </div>
+            <div className="relative z-10 flex flex-col gap-2 text-[10px] uppercase tracking-[0.28em] transition-colors duration-300 md:text-[11px]">
+              <span className="inline-flex items-center gap-2 font-semibold text-white/90 group-hover:text-white">
+                <span className="inline-block w-2 h-2 rounded-full bg-primary" />
+                Xem chủ đề
+              </span>
+              <span className="text-xs text-white/70 max-w-[80%] leading-snug">
+                {topic.description || 'Khám phá bộ phim nổi bật.'}
+              </span>
             </div>
           </Link>
         ))}

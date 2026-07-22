@@ -12,6 +12,7 @@ import { resolveImageUrl } from '@/components/film/FilmCard';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/providers/ToastProvider';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/store/langStore';
 import { Button } from '@/components/ui/button';
 
 // ── Cast Card (Plex Circle Style) ──────────────────────────
@@ -109,6 +110,80 @@ function EpisodeList({ episodes, slug }: { episodes: any[]; slug: string }) {
 
 // ── Review Item (Plex Card Style) ────────────────────────────
 function ReviewItem({ review }: { review: any }) {
+  const { t } = useTranslation();
+
+  // Deterministic seed based on review id to make reaction counts look realistic
+  const seed = review.id ? review.id.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) : 12;
+  const initLikes = (seed % 12) + 2;
+  const initLoves = (seed % 6) + 1;
+  const initAgrees = (seed % 8);
+
+  const [reactions, setReactions] = useState<{
+    like: number;
+    love: number;
+    agree: number;
+    userReacted: 'like' | 'love' | 'agree' | null;
+  }>(() => {
+    if (typeof window === 'undefined') {
+      return { like: initLikes, love: initLoves, agree: initAgrees, userReacted: null };
+    }
+    try {
+      const saved = localStorage.getItem(`review-react-${review.id}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          like: initLikes + (parsed.userReacted === 'like' ? 1 : 0),
+          love: initLoves + (parsed.userReacted === 'love' ? 1 : 0),
+          agree: initAgrees + (parsed.userReacted === 'agree' ? 1 : 0),
+          userReacted: parsed.userReacted,
+        };
+      }
+    } catch (_e) { /* ignore localStorage errors */ }
+    return { like: initLikes, love: initLoves, agree: initAgrees, userReacted: null };
+  });
+
+  const handleReact = (type: 'like' | 'love' | 'agree') => {
+    setReactions(prev => {
+      let newUserReacted: 'like' | 'love' | 'agree' | null = type;
+      let diffLike = 0;
+      let diffLove = 0;
+      let diffAgree = 0;
+
+      if (prev.userReacted === type) {
+        // Toggle off
+        newUserReacted = null;
+        if (type === 'like') diffLike = -1;
+        if (type === 'love') diffLove = -1;
+        if (type === 'agree') diffAgree = -1;
+      } else {
+        // Switch reaction or add new
+        if (prev.userReacted === 'like') diffLike = -1;
+        if (prev.userReacted === 'love') diffLove = -1;
+        if (prev.userReacted === 'agree') diffAgree = -1;
+
+        if (type === 'like') diffLike = 1;
+        if (type === 'love') diffLove = 1;
+        if (type === 'agree') diffAgree = 1;
+      }
+
+      const updated = {
+        like: prev.like + diffLike,
+        love: prev.love + diffLove,
+        agree: prev.agree + diffAgree,
+        userReacted: newUserReacted,
+      };
+
+      try {
+        localStorage.setItem(
+          `review-react-${review.id}`,
+          JSON.stringify({ userReacted: newUserReacted })
+        );
+      } catch (_e) { /* ignore localStorage errors */ }
+
+      return updated;
+    });
+  };
+
   return (
     <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl flex flex-col space-y-3 hover:border-white/10 transition-colors shadow-lg">
       <div className="flex items-center justify-between">
@@ -138,6 +213,49 @@ function ReviewItem({ review }: { review: any }) {
         )}
       </div>
       <p className="text-xs text-neutral-400 leading-relaxed font-medium pl-11">{review.content}</p>
+
+      {/* Quick Reactions Bar */}
+      <div className="flex items-center gap-2 pl-11 pt-2 border-t border-white/[0.02]">
+        <button
+          onClick={() => handleReact('like')}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all border",
+            reactions.userReacted === 'like'
+              ? "bg-white text-black border-white scale-105"
+              : "bg-white/[0.02] border-white/5 text-neutral-400 hover:text-white hover:bg-white/[0.05]"
+          )}
+        >
+          <span>👍</span>
+          <span>{t('film.like', 'Thích')}</span>
+          <span className="opacity-60">{reactions.like}</span>
+        </button>
+        <button
+          onClick={() => handleReact('love')}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all border",
+            reactions.userReacted === 'love'
+              ? "bg-red-500/10 border-red-500/30 text-red-500 scale-105"
+              : "bg-white/[0.02] border-white/5 text-neutral-400 hover:text-white hover:bg-white/[0.05]"
+          )}
+        >
+          <span>❤️</span>
+          <span>{t('film.love', 'Yêu thích')}</span>
+          <span className="opacity-60">{reactions.love}</span>
+        </button>
+        <button
+          onClick={() => handleReact('agree')}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all border",
+            reactions.userReacted === 'agree'
+              ? "bg-amber-550/10 border-amber-500/30 text-amber-500 scale-105"
+              : "bg-white/[0.02] border-white/5 text-neutral-400 hover:text-white hover:bg-white/[0.05]"
+          )}
+        >
+          <span>💡</span>
+          <span>{t('film.agree', 'Đồng ý')}</span>
+          <span className="opacity-60">{reactions.agree}</span>
+        </button>
+      </div>
     </div>
   );
 }
@@ -152,9 +270,9 @@ function WriteReview({ movieId }: { movieId: string }) {
 
   if (!user) {
     return (
-      <div className="p-5 bg-white/[0.02] border border-white/5 rounded-xl flex flex-col items-center justify-center space-y-3">
-        <span className="text-neutral-400 text-xs font-medium">Đăng nhập để viết bình luận của bạn</span>
-        <Link href="/login" className="bg-netflixRed hover:bg-[#C11119] text-white font-extrabold text-[11px] px-6 py-2 rounded-md transition-all shadow-md">
+      <div className="p-6 bg-[#151920]/50 border border-white/5 rounded-2xl shadow-xl h-full flex flex-col items-center justify-center space-y-4 text-center min-h-[160px]">
+        <span className="text-neutral-400 text-xs font-semibold">Đăng nhập để viết bình luận của bạn</span>
+        <Link href="/login" className="bg-netflixRed hover:bg-[#C11119] text-white font-extrabold text-[11px] px-6 py-2.5 rounded-lg transition-all shadow-md">
           ĐĂNG NHẬP
         </Link>
       </div>
@@ -178,7 +296,7 @@ function WriteReview({ movieId }: { movieId: string }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col space-y-4 p-5 bg-white/[0.02] border border-white/5 rounded-xl shadow-lg">
+    <form onSubmit={handleSubmit} className="flex flex-col justify-between space-y-4 p-6 bg-[#151920]/50 border border-white/5 rounded-2xl shadow-xl h-full min-h-[160px]">
       <div className="flex items-center justify-between pb-1">
         <div className="flex items-center space-x-2">
           <img
@@ -197,7 +315,7 @@ function WriteReview({ movieId }: { movieId: string }) {
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="Chia sẻ cảm nhận của bạn về bộ phim này..."
-        className="w-full bg-white/[0.01] border border-white/5 rounded-xl p-3 text-xs text-foreground placeholder:text-neutral-500 focus:border-netflixRed transition-colors focus:outline-none"
+        className="w-full bg-black/20 border border-white/5 rounded-xl p-3 text-xs text-foreground placeholder:text-neutral-500 focus:border-netflixRed transition-colors focus:outline-none"
         rows={3}
       />
       <div className="flex justify-end">
@@ -219,6 +337,7 @@ export default function FilmDetailPage() {
   const slug = params.slug as string;
   const { user } = useAuthStore();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [inWatchlist, setInWatchlist] = useState(false);
   const [myRating, setMyRating] = useState(0);
@@ -422,14 +541,14 @@ export default function FilmDetailPage() {
                 onMouseEnter={prefetchWatchData}
               >
                 <Play size={14} fill="currentColor" />
-                <span>Xem Phim</span>
+                <span>{t('watch.watchFilm', 'Xem phim')}</span>
               </Link>
               
               <button 
-                onClick={() => toast('Tính năng trailer đang tải!', 'info')}
+                onClick={() => toast(t('film.trailerLoading', 'Tính năng trailer đang tải!'), 'info')}
                 className="bg-white/5 hover:bg-white/10 text-white px-6 py-3 rounded-full font-black tracking-wider uppercase text-xs border border-white/10 backdrop-blur-md transition-colors"
               >
-                Trailer
+                {t('film.trailer', 'Trailer')}
               </button>
 
               {/* Plex Circle Indicator Buttons */}
@@ -446,7 +565,7 @@ export default function FilmDetailPage() {
                   >
                     {inWatchlist ? <Check size={16} className="stroke-[3]" /> : <Plus size={16} />}
                   </button>
-                  <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider group-hover:text-neutral-300 transition-colors">Watchlist</span>
+                  <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider group-hover:text-neutral-300 transition-colors">{t('nav.watchlist', 'Watchlist')}</span>
                 </div>
 
                 {/* Rating Button */}
@@ -457,7 +576,7 @@ export default function FilmDetailPage() {
                   >
                     <Star size={16} fill={myRating ? "currentColor" : "none"} className={cn(myRating ? "text-amber-500" : "")} />
                   </button>
-                  <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider group-hover:text-neutral-300 transition-colors">Đánh giá</span>
+                  <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider group-hover:text-neutral-300 transition-colors">{t('watch.rate', 'Đánh giá')}</span>
                 </div>
 
                 {/* Share Button */}
@@ -465,13 +584,13 @@ export default function FilmDetailPage() {
                   <button 
                     onClick={() => {
                       navigator.clipboard.writeText(window.location.href);
-                      toast('Đã sao chép liên kết phim vào bộ nhớ tạm!', 'success');
+                      toast(t('film.copiedLink', 'Đã sao chép liên kết phim vào bộ nhớ tạm!'), 'success');
                     }}
                     className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 backdrop-blur-md transition-all text-neutral-300 hover:text-white"
                   >
                     <Share2 size={16} />
                   </button>
-                  <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider group-hover:text-neutral-300 transition-colors">Chia sẻ</span>
+                  <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider group-hover:text-neutral-300 transition-colors">{t('film.share', 'Chia sẻ')}</span>
                 </div>
               </div>
 
@@ -488,18 +607,18 @@ export default function FilmDetailPage() {
             <div className="pt-4 border-t border-white/5 flex flex-col gap-2.5 text-xs text-neutral-400 max-w-xl">
               {directors.length > 0 && (
                 <p>
-                  <span className="font-bold text-neutral-500 mr-2 uppercase tracking-wide">Đạo diễn:</span>
+                  <span className="font-bold text-neutral-500 mr-2 uppercase tracking-wide">{t('film.director', 'Đạo diễn')}:</span>
                   <span className="text-neutral-300 font-semibold">{directors.join(', ')}</span>
                 </p>
               )}
               {film.origin_name && (
                 <p>
-                  <span className="font-bold text-neutral-500 mr-2 uppercase tracking-wide">Tên gốc:</span>
+                  <span className="font-bold text-neutral-500 mr-2 uppercase tracking-wide">{t('film.originName', 'Tên gốc')}:</span>
                   <span className="text-neutral-300 font-semibold italic">{film.origin_name}</span>
                 </p>
               )}
               <p>
-                <span className="font-bold text-neutral-500 mr-2 uppercase tracking-wide">Độ tuổi:</span>
+                <span className="font-bold text-neutral-500 mr-2 uppercase tracking-wide">{t('film.ageRating', 'Độ tuổi')}:</span>
                 <span className="inline-block border border-white/20 bg-white/5 px-2 py-0.5 rounded text-[10px] font-bold text-white tracking-wider">
                   {film.type === 'series' ? 'TV-MA' : 'PG-13'}
                 </span>
@@ -537,9 +656,9 @@ export default function FilmDetailPage() {
           {actors.length > 0 && (
             <div className="space-y-4">
               <h3 className="text-xs font-black uppercase tracking-widest text-neutral-500 border-b border-white/5 pb-2">
-                Diễn Viên Tham Gia
+                {t('film.cast', 'Diễn Viên Tham Gia')}
               </h3>
-              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none">
+              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin">
                 {actors.map((actor, idx) => (
                   <CastCard key={idx} name={actor} />
                 ))}
@@ -548,45 +667,50 @@ export default function FilmDetailPage() {
           )}
 
           {/* Reviews & Average Rating */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-4">
-            
-            {/* Reviews List */}
-            <div className="lg:col-span-8 space-y-6">
+          <div className="space-y-8 pt-4">
+            {/* Top Row: Write Review Box & Average Rating Box (Equal Height side-by-side) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              {/* Write Review Column */}
+              <div className="lg:col-span-8">
+                <WriteReview movieId={slug} />
+              </div>
+
+              {/* Average Rating Stats */}
+              <div className="lg:col-span-4 bg-[#151920]/50 border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center text-center shadow-lg h-full min-h-[160px]">
+                <h3 className="text-xs font-black text-neutral-500 uppercase tracking-widest mb-3">{t('film.averageRating', 'Đánh giá chung')}</h3>
+                <StarRating value={myRating || avgRating} onChange={handleRate} size={28} />
+                {avgRating > 0 && (
+                  <p className="text-xs text-neutral-400 mt-2.5">
+                    <span className="text-white font-extrabold text-xl">{avgRating.toFixed(1)} ★</span> <br /> 
+                    <span className="text-neutral-500 font-medium">({ratingCount} {t('film.ratingCountSuffix', 'lượt đánh giá')})</span>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Bottom Row: User Reviews List */}
+            <div className="space-y-4 pt-2">
               <h3 className="text-xs font-black uppercase tracking-widest text-neutral-500 border-b border-white/5 pb-2">
-                Bình luận người dùng
+                {t('film.reviewsTitle', 'Bình luận người dùng')} ({reviews.length})
               </h3>
-              <WriteReview movieId={slug} />
               <div className="flex flex-col gap-3.5">
                 {reviews.map((r: any) => (
                   <ReviewItem key={r.id} review={r} />
                 ))}
                 {reviews.length === 0 && (
-                  <div className="text-neutral-500 text-xs py-4">Chưa có bình luận nào cho phim này.</div>
+                  <div className="text-neutral-500 text-xs py-4 italic">{t('film.noReviews', 'Chưa có bình luận nào cho phim này. Hãy là người đầu tiên bình luận!')}</div>
                 )}
               </div>
             </div>
-
-            {/* Average Rating Stats */}
-            <div className="lg:col-span-4 bg-[#151920]/50 border border-white/5 rounded-2xl p-6 h-fit flex flex-col items-center text-center shadow-lg">
-              <h3 className="text-xs font-black text-neutral-500 uppercase tracking-widest mb-4">Đánh giá chung</h3>
-              <StarRating value={myRating || avgRating} onChange={handleRate} size={32} />
-              {avgRating > 0 && (
-                <p className="text-xs text-neutral-400 mt-3.5">
-                  <span className="text-white font-extrabold text-2xl">{avgRating.toFixed(1)} ★</span> <br /> 
-                  <span className="text-neutral-500 font-medium">({ratingCount} lượt đánh giá)</span>
-                </p>
-              )}
-            </div>
-
           </div>
 
           {/* Similar recommendations row (Phim tương tự) */}
           {similarFilms.length > 0 && (
             <div className="space-y-4 pt-4">
               <h3 className="text-xs font-black uppercase tracking-widest text-neutral-500 border-b border-white/5 pb-2">
-                Có Thể Bạn Cũng Thích
+                {t('film.similarFilms', 'Có Thể Bạn Cũng Thích')}
               </h3>
-              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none">
+              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin">
                 {similarFilms.map((item: any) => {
                   const thumb = resolveImageUrl(item.thumb_url) || resolveImageUrl(item.poster_url);
                   return (

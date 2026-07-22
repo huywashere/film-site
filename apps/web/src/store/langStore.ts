@@ -22,13 +22,14 @@ export const useLangStore = create<LangState>()(
   ),
 );
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 const dictionaries: Record<Lang, any> = { vi, en };
 
 export function useTranslation() {
-  const { lang, setLang } = useLangStore();
+  const { lang, setLang: _setLang } = useLangStore();
   const [mounted, setMounted] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -48,5 +49,12 @@ export function useTranslation() {
     return typeof value === 'string' ? value : fallback || key;
   };
 
-  return { t, lang: mounted ? lang : 'vi', setLang, mounted };
+  const setLang = useCallback((newLang: Lang) => {
+    if (newLang === lang || isTransitioning) return;
+    setIsTransitioning(true);
+    _setLang(newLang);
+    setTimeout(() => setIsTransitioning(false), 300);
+  }, [lang, _setLang, isTransitioning]);
+
+  return { t, lang: mounted ? lang : 'vi', setLang, mounted, isTransitioning };
 }
