@@ -1,34 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { authApi } from '@/lib/api';
 import Link from 'next/link';
 import { Loader2, Mail, ArrowLeft } from 'lucide-react';
-import { useToast } from '@/providers/ToastProvider';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
-  const { toast } = useToast();
+  const { resetPassword } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
 
     setStatus('loading');
-    try {
-      const res = await authApi.forgotPassword({ email });
-      toast(res.data?.message || 'Email khôi phục đã được gửi!', 'success');
-      setStatus('success');
-    } catch (err: any) {
-      // Dù lỗi hay không cũng nên báo thành công để tránh dò email
-      // Nhưng nếu lỗi network/validation thì báo lỗi
-      const msg = err?.response?.data?.message;
-      const finalMsg = Array.isArray(msg) ? msg.join(', ') : (msg || 'Đã gửi yêu cầu');
-      toast(finalMsg, 'info');
-      setStatus('success');
-    }
+    await resetPassword(email);
+    setStatus('success');
   };
 
   return (
@@ -37,25 +25,25 @@ export default function ForgotPasswordPage() {
         
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/5 mb-4">
-            <Mail className="h-8 w-8 text-primary" />
+            <Mail className="h-8 w-8 text-white" />
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">Quên Mật Khẩu?</h2>
-          <p className="text-zinc-400">
-            Nhập email của bạn và chúng tôi sẽ gửi cho bạn một liên kết để đặt lại mật khẩu.
+          <p className="text-zinc-400 text-sm">
+            Nhập email của bạn và chúng tôi sẽ gửi cho bạn một liên kết qua Firebase Auth để đặt lại mật khẩu.
           </p>
         </div>
 
         {status === 'success' ? (
           <div className="text-center animate-in fade-in zoom-in duration-300">
-            <div className="bg-green-500/10 text-green-400 p-4 rounded-lg mb-6 border border-green-500/20">
-              Kiểm tra hộp thư đến của bạn (bao gồm cả thư mục Spam) để nhận liên kết đặt lại mật khẩu.
+            <div className="bg-emerald-500/10 text-emerald-400 p-4 rounded-xl mb-6 border border-emerald-500/20 text-xs leading-relaxed">
+              Nếu địa chỉ email tồn tại trong hệ thống, hướng dẫn đặt lại mật khẩu đã được gửi tới hộp thư của bạn (bao gồm cả thư mục Spam).
             </div>
             <Link 
-              href="/login"
-              className="inline-flex items-center text-zinc-400 hover:text-white transition-colors"
+              href="/"
+              className="inline-flex items-center text-zinc-400 hover:text-white transition-colors text-sm font-semibold"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Quay lại Đăng Nhập
+              Quay lại Trang chủ
             </Link>
           </div>
         ) : (
@@ -65,8 +53,8 @@ export default function ForgotPasswordPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Nhập email của bạn..."
-                className="w-full bg-black/50 border border-white/10 text-white rounded-xl px-4 py-3 outline-none focus:border-primary/50 transition-colors"
+                placeholder="Nhập email của bạn (vd: name@example.com)..."
+                className="w-full bg-black/50 border border-white/10 text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-white/40 transition-colors"
                 required
               />
             </div>
@@ -74,25 +62,25 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={status === 'loading'}
-              className="w-full bg-primary hover:bg-primary/90 text-black font-bold py-3.5 rounded-xl transition-all flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-white hover:bg-neutral-200 text-black font-extrabold py-3.5 rounded-xl transition-all flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm"
             >
               {status === 'loading' ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                  Đang gửi...
+                  Đang gửi liên kết...
                 </>
               ) : (
-                'Gửi Liên Kết Đặt Lại'
+                'Gửi Liên Kết Khôi Phục Mật Khẩu'
               )}
             </button>
 
             <div className="text-center">
               <Link 
-                href="/login"
+                href="/"
                 className="inline-flex items-center text-zinc-400 hover:text-white text-sm transition-colors"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Quay lại Đăng Nhập
+                Quay lại Trang chủ
               </Link>
             </div>
           </form>

@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useTranslation } from '@/store/langStore';
-import { Play, Film, Tv2, Star, Github, Twitter, Facebook, Youtube, Mail, Shield, Zap, Users } from 'lucide-react';
+import { Film, Tv2, Star, Github, Twitter, Facebook, Youtube, Heart, Sparkles } from 'lucide-react';
 import { ScrollingFilmBanner } from './ScrollingFilmBanner';
 
 const NAV_COLS = [
@@ -10,12 +10,12 @@ const NAV_COLS = [
     links: [
       { href: '/films/series', label: 'Phim Bộ' },
       { href: '/films/single', label: 'Phim Lẻ' },
-      { href: '/films/anime', label: 'Hoạt Hình' },
+      { href: '/films/hoathinh', label: 'Hoạt Hình / Anime' },
       { href: '/films/tvshows', label: 'TV Shows' },
     ],
   },
   {
-    title: 'Thể Loại',
+    title: 'Thể Loại Nổi Bật',
     links: [
       { href: '/genre/hanh-dong', label: 'Hành Động' },
       { href: '/genre/kinh-di', label: 'Kinh Dị' },
@@ -25,126 +25,106 @@ const NAV_COLS = [
     ],
   },
   {
-    title: 'Nền Tảng',
+    title: 'Tiện Ích Cá Nhân',
     links: [
-      { href: '/watchlist', label: 'Watchlist' },
-      { href: '/search', label: 'Tìm Kiếm' },
-      { href: '/settings/security', label: 'Cài Đặt' },
-      { href: '/register', label: 'Đăng Ký' },
+      { href: '/search', label: 'Tìm Kiếm Phim' },
+      { href: '/watchlist', label: 'Danh Sách Theo Dõi' },
+      { href: '/settings/security', label: 'Cài Đặt Tài Khoản' },
     ],
   },
 ];
 
-const STATS = [
-  { icon: Film, value: '50,000+', label: 'Bộ phim' },
-  { icon: Tv2, value: '1,200+', label: 'TV Series' },
-  { icon: Users, value: '500K+', label: 'Thành viên' },
-  { icon: Star, value: '4.8 ★', label: 'Đánh giá' },
-];
-
 const SOCIALS = [
-  { icon: Facebook, href: '#', label: 'Facebook' },
-  { icon: Youtube, href: '#', label: 'YouTube' },
-  { icon: Twitter, href: '#', label: 'Twitter / X' },
-  { icon: Github, href: '#', label: 'GitHub' },
+  { icon: Facebook, href: 'https://facebook.com', label: 'Facebook' },
+  { icon: Youtube, href: 'https://youtube.com', label: 'YouTube' },
+  { icon: Twitter, href: 'https://twitter.com', label: 'Twitter' },
+  { icon: Github, href: 'https://github.com', label: 'GitHub' },
 ];
 
 export function Footer() {
   const { lang, setLang } = useTranslation();
 
   return (
-    <footer className="bg-[#050810] text-neutral-300 mt-24 border-t border-white/10">
+    <footer className="bg-[#14181c] text-neutral-300 border-t border-[#2c3440] mt-0 font-sans">
+      {/* ── Marquee Film Banner ── */}
       <ScrollingFilmBanner />
-      <div className="max-w-7xl mx-auto px-6 py-16">
-        <div className="grid gap-10 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-white text-[#060a16] flex items-center justify-center font-black text-lg shadow-[0_20px_60px_rgba(255,255,255,0.05)]">
-                P
+
+      {/* ── Main Footer Body ── */}
+      <div className="max-w-7xl mx-auto px-6 pt-12 pb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+          
+          {/* Brand Column */}
+          <div className="lg:col-span-2 space-y-4">
+            <Link href="/" className="inline-flex items-center gap-2.5 group">
+              <div className="w-10 h-10 rounded-2xl bg-[#00e054] text-black flex items-center justify-center font-black text-xl shadow-lg shadow-[#00e054]/20 group-hover:scale-105 transition-transform">
+                C
               </div>
-              <div>
-                <p className="text-2xl font-semibold text-white">Plex</p>
-                <p className="text-xs uppercase tracking-[0.24em] text-neutral-500">Phim & Series</p>
+              <div className="flex flex-col">
+                <span className="text-2xl font-black tracking-tight text-white group-hover:text-[#00e054] transition-colors">
+                  CineVerse
+                </span>
+                <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#00e054]">
+                  Cinema Experience
+                </span>
               </div>
-            </div>
-            <p className="max-w-sm text-sm leading-7 text-neutral-400">
-              Giao diện tối ưu cho trải nghiệm phim trực tuyến: tối giản, rõ ràng và sang trọng.
+            </Link>
+
+            <p className="text-xs text-neutral-400 leading-relaxed max-w-sm font-normal">
+              Nền tảng xem phim trực tuyến hiện đại với tốc độ phát cực nhanh, kho phim bom tấn đa dạng và giao diện thiết kế chuẩn điện ảnh.
             </p>
-            <div className="grid gap-4 sm:grid-cols-[auto_1fr] sm:items-center">
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] uppercase tracking-[0.3em] text-neutral-500">Kết nối</span>
-                <div className="flex gap-2">
-                  {SOCIALS.map(({ icon: Icon, href, label }) => (
-                    <a
-                      key={label}
-                      href={href}
-                      aria-label={label}
-                      className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-neutral-300 hover:bg-white/10 transition"
-                    >
-                      <Icon size={16} />
-                    </a>
-                  ))}
-                </div>
-              </div>
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                <p className="text-[10px] uppercase tracking-[0.24em] text-neutral-400 mb-3">Ngôn ngữ</p>
-                <div className="inline-flex rounded-full border border-white/10 bg-[#0d1320] p-1">
-                  <button
-                    onClick={() => setLang('vi')}
-                    className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${lang === 'vi' ? 'bg-white text-[#060a16]' : 'text-neutral-300 hover:bg-white/10'}`}
-                  >
-                    VI
-                  </button>
-                  <button
-                    onClick={() => setLang('en')}
-                    className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${lang === 'en' ? 'bg-white text-[#060a16]' : 'text-neutral-300 hover:bg-white/10'}`}
-                  >
-                    EN
-                  </button>
-                </div>
-              </div>
+
+            {/* Social Buttons */}
+            <div className="flex items-center gap-2.5 pt-2">
+              {SOCIALS.map(({ icon: Icon, href, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={label}
+                  className="w-9 h-9 rounded-xl bg-[#1c2228] border border-[#2c3440] flex items-center justify-center text-neutral-400 hover:text-[#00e054] hover:border-[#00e054]/40 hover:bg-[#242c34] transition-all duration-200"
+                >
+                  <Icon size={15} />
+                </a>
+              ))}
             </div>
           </div>
 
-          <div>
-            <h5 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-500 mb-5">Công ty</h5>
-            <ul className="space-y-3 text-sm text-neutral-400">
-              <li><Link href="/about" className="hover:text-white transition">Giới thiệu</Link></li>
-              <li><Link href="/careers" className="hover:text-white transition">Tuyển dụng</Link></li>
-              <li><Link href="/partners" className="hover:text-white transition">Đối tác</Link></li>
-              <li><Link href="/contact" className="hover:text-white transition">Liên hệ</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h5 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-500 mb-5">Dịch vụ</h5>
-            <ul className="space-y-3 text-sm text-neutral-400">
-              <li><Link href="/watch" className="hover:text-white transition">Phim mới</Link></li>
-              <li><Link href="/genres" className="hover:text-white transition">Thể loại</Link></li>
-              <li><Link href="/collections" className="hover:text-white transition">Bộ sưu tập</Link></li>
-              <li><Link href="/watchlist" className="hover:text-white transition">Watchlist</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h5 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-500 mb-5">Hỗ trợ</h5>
-            <ul className="space-y-3 text-sm text-neutral-400">
-              <li><Link href="/help" className="hover:text-white transition">Trợ giúp</Link></li>
-              <li><Link href="/terms" className="hover:text-white transition">Điều khoản</Link></li>
-              <li><Link href="/privacy" className="hover:text-white transition">Chính sách</Link></li>
-              <li><Link href="/status" className="hover:text-white transition">Trạng thái</Link></li>
-            </ul>
-          </div>
+          {/* Nav Columns */}
+          {NAV_COLS.map((col) => (
+            <div key={col.title} className="space-y-3.5">
+              <h4 className="text-xs font-black uppercase tracking-wider text-white border-l-2 border-[#00e054] pl-2.5">
+                {col.title}
+              </h4>
+              <ul className="space-y-2 text-xs font-medium text-neutral-400">
+                {col.links.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="hover:text-[#00e054] transition-colors inline-block py-0.5"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
 
-      <div className="border-t border-white/10 py-5">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-[11px] text-neutral-500">
-          <p>© {new Date().getFullYear()} Plex-style Movie Site. Bảo lưu mọi quyền.</p>
-          <div className="flex flex-wrap items-center gap-4">
-            <Link href="/privacy" className="hover:text-white transition">Chính sách bảo mật</Link>
-            <Link href="/cookies" className="hover:text-white transition">Cookie</Link>
-            <Link href="/info" className="hover:text-white transition">Thông tin pháp lý</Link>
+      {/* ── Bottom Bar ── */}
+      <div className="border-t border-[#2c3440]/60 py-5 bg-[#0e1114]">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-500 font-medium">
+          <p>© {new Date().getFullYear()} CineVerse Platform. Tất cả quyền được bảo lưu.</p>
+          <div className="flex items-center space-x-6 text-neutral-400">
+            <Link href="/privacy" className="hover:text-[#00e054] transition-colors">
+              Chính sách bảo mật
+            </Link>
+            <span className="text-neutral-700">•</span>
+            <Link href="/terms" className="hover:text-[#00e054] transition-colors">
+              Điều khoản dịch vụ
+            </Link>
           </div>
         </div>
       </div>

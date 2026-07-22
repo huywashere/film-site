@@ -345,12 +345,12 @@ export function SpotlightSearchModal({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -16, scale: 0.97 }}
         transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-        className="bg-[#0d1117]/90 border border-white/10 w-full max-w-3xl rounded-2xl overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.7)] flex flex-col backdrop-blur-2xl"
+        className="bg-[#14181c]/95 border border-white/15 w-full max-w-3xl rounded-3xl overflow-hidden shadow-[0_30px_90px_rgba(0,0,0,0.85)] flex flex-col backdrop-blur-3xl ring-1 ring-white/10"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Input Bar ── */}
-        <div className="flex items-center px-5 py-3.5 border-b border-white/[0.06] gap-3">
-          <Search size={16} className="text-neutral-500 flex-shrink-0" />
+        <div className="flex items-center px-5 py-3.5 border-b border-white/[0.08] gap-3 bg-white/[0.02]">
+          <Search size={18} className="text-[#00e054] flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -358,22 +358,22 @@ export function SpotlightSearchModal({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Tìm kiếm phim, thể loại, diễn viên..."
-            className="flex-1 bg-transparent border-none text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:ring-0"
+            className="flex-1 bg-transparent border-none text-white text-base font-semibold placeholder:text-neutral-500 focus:outline-none focus:ring-0"
           />
           <div className="flex items-center gap-2 flex-shrink-0">
             <VoiceSearchButton onResult={(text) => setQuery(text)} />
-            {isFetching && <Loader2 size={14} className="animate-spin text-[#524cf8]" />}
+            {isFetching && <Loader2 size={16} className="animate-spin text-[#00e054]" />}
             {query && (
               <button
                 onClick={() => { setQuery(''); inputRef.current?.focus(); }}
-                className="text-neutral-600 hover:text-neutral-300 transition-colors p-0.5"
+                className="text-neutral-500 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
               >
                 <X size={14} />
               </button>
             )}
             <button
               onClick={onClose}
-              className="text-[10px] font-bold text-neutral-500 bg-white/5 border border-white/10 px-2 py-0.5 rounded-md hover:bg-white/10 transition-colors"
+              className="text-[10px] font-extrabold text-neutral-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded-md hover:bg-white/10 transition-colors"
             >
               ESC
             </button>
@@ -381,12 +381,13 @@ export function SpotlightSearchModal({
         </div>
 
         {/* ── Body Grid ── */}
-        <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-white/[0.05] min-h-[380px]">
+        <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-white/[0.08] min-h-[380px]">
 
           {/* Left Column */}
           <div
             ref={listRef}
-            className="md:col-span-7 max-h-[55vh] overflow-y-auto p-4 flex flex-col gap-1 scrollbar-thin"
+            onWheel={(e) => e.stopPropagation()}
+            className="md:col-span-7 max-h-[55vh] overflow-y-auto overscroll-contain p-4 flex flex-col gap-1 scrollbar-thin"
           >
             {/* ── IDLE STATE (empty query) ── */}
             {!isTyping && (
@@ -527,8 +528,8 @@ export function SpotlightSearchModal({
                         className={cn(
                           'flex gap-3 p-2 rounded-xl transition-all group border-l-[3px]',
                           isActive
-                            ? 'bg-white/[0.06] border-l-[#524cf8] border-r border-r-transparent border-y-transparent'
-                            : 'border-l-transparent border border-transparent hover:bg-white/[0.03]'
+                            ? 'bg-white/[0.08] border-l-[#00e054] border-r border-r-transparent border-y-transparent shadow-sm'
+                            : 'border-l-transparent border border-transparent hover:bg-white/[0.04]'
                         )}
                       >
                         <div className="w-9 h-12 rounded-lg bg-white/5 overflow-hidden flex-shrink-0 border border-white/5 group-hover:border-white/10 shadow-sm">

@@ -8,13 +8,15 @@ import { RegisterSW } from '@/components/layout/RegisterSW';
 import { ThemeWatcher } from '@/components/layout/ThemeWatcher';
 import { ScrollProvider } from '@/providers/ScrollProvider';
 import { OfflineDetector } from '@/components/layout/OfflineDetector';
+import { AuthModal } from '@/components/auth/AuthModal';
 
 export const viewport: Viewport = {
-  themeColor: '#00c030',
+  themeColor: '#14181c',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: 'cover',
 };
 
 export const metadata: Metadata = {
@@ -38,6 +40,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi">
@@ -53,9 +57,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <QueryProvider>
           <ToastProvider>
             <OfflineDetector />
+            <AuthModal />
             <ScrollProvider>
               <ConditionalNavbar />
-              <main className="page-content">{children}</main>
+              <main className="page-content pb-16 lg:pb-0">{children}</main>
+              <MobileBottomNav />
               <ConditionalFooter />
             </ScrollProvider>
           </ToastProvider>

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { RefreshCw, Home, ServerCrash } from 'lucide-react';
+import { RefreshCw, ChevronLeft } from 'lucide-react';
 
 export default function Error({
   error,
@@ -11,43 +11,42 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log the error to console
     console.error('System Error:', error);
   }, [error]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-6 py-12 bg-background text-foreground transition-colors duration-300">
-      <div className="bg-red-500/10 border border-red-500/20 p-5 rounded-full mb-6 inline-flex items-center justify-center">
-        <ServerCrash size={48} className="text-red-500 animate-pulse" />
-      </div>
-      
-      <h1 className="text-7xl font-black text-red-500 tracking-tighter leading-none mb-2">
+    <div className="min-h-[75vh] bg-[#14181c] text-white flex flex-col items-center justify-center px-6 py-16 text-center select-none font-sans">
+      {/* Big Metallic Gradient 500 */}
+      <h1 className="text-8xl sm:text-9xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-red-400 via-neutral-200 to-neutral-600 leading-none mb-4">
         500
       </h1>
-      
-      <h2 className="text-xl md:text-2xl font-bold mb-3">
-        Đã Xảy Ra Lỗi Hệ Thống
+
+      {/* Subtitle */}
+      <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 tracking-tight">
+        Đã xảy ra lỗi hệ thống
       </h2>
-      
-      <p className="text-sm text-muted-foreground max-w-md mx-auto mb-8 leading-relaxed">
-        Máy chủ đã gặp sự cố không mong muốn hoặc HMR dev-cache bị quá tải. Hãy nhấn nút thử lại bên dưới hoặc quay về trang chủ.
+
+      {/* Description */}
+      <p className="text-xs sm:text-sm text-neutral-400 max-w-sm mx-auto mb-8 leading-relaxed">
+        Oops! Máy chủ tạm thời gặp sự cố. Bạn vui lòng thử lại hoặc quay về trang chủ.
       </p>
-      
-      <div className="flex items-center justify-center gap-3 flex-wrap">
+
+      {/* Buttons */}
+      <div className="flex items-center justify-center gap-3">
         <button
           onClick={() => reset()}
-          className="inline-flex items-center justify-center gap-2 bg-netflixRed hover:bg-[#C11119] text-white font-bold text-sm px-6 py-3 rounded shadow transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 bg-[#00e054] hover:bg-[#00c749] text-black font-bold text-xs px-5 py-2.5 rounded-full transition-all duration-200 shadow-md active:scale-95 cursor-pointer"
         >
-          <RefreshCw size={15} />
-          <span>Thử Lại</span>
+          <RefreshCw size={13} />
+          <span>Thử lại</span>
         </button>
-        
+
         <Link
           href="/"
-          className="inline-flex items-center justify-center gap-2 bg-secondary hover:bg-secondary/80 text-foreground border border-border font-bold text-sm px-6 py-3 rounded shadow transition-all"
+          className="inline-flex items-center gap-1.5 bg-[#242c34] hover:bg-[#2c3440] text-neutral-200 hover:text-white border border-[#2c3440] font-semibold text-xs px-5 py-2.5 rounded-full transition-all duration-200 shadow-md active:scale-95"
         >
-          <Home size={15} />
-          <span>Về Trang Chủ</span>
+          <ChevronLeft size={14} />
+          <span>Về trang chủ</span>
         </Link>
       </div>
     </div>

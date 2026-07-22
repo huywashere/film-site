@@ -261,7 +261,7 @@ async function getDetailFromAnySource(slug: string): Promise<any> {
     }
   }
 
-  throw new Error(`Không tìm thấy phim: ${slug}`);
+  return { status: false, error: true, message: `Không tìm thấy phim: ${slug}` };
 }
 
 // ── movieApi (alias for component compatibility) ──────────────────

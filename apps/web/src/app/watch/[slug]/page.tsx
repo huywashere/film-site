@@ -7,7 +7,7 @@ import {
   ChevronLeft, ChevronRight, List, ArrowLeft, Clapperboard,
   Heart, Bell, Star, AlertTriangle, Server,
   CheckCircle, MessageCircle, SkipForward, X, Play,
-  Mic, Captions, RotateCw, Settings
+  Mic, Captions, RotateCw, Settings, Sparkles
 } from 'lucide-react';
 import { movieApi, watchHistoryApi } from '@/lib/api';
 import { resolveImageUrl } from '@/components/film/FilmCard';
@@ -17,6 +17,9 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/providers/ToastProvider';
 import { useAuthStore } from '@/store/authStore';
 import { useTranslation } from '@/store/langStore';
+import { useWatchParty } from '@/hooks/useWatchParty';
+import { WatchPartyPanel } from '@/components/watch/WatchPartyPanel';
+import { AdvancedCommentSection } from '@/components/comments/AdvancedCommentSection';
 
 const ArtPlayer = dynamic(() => import('@/components/video/ArtPlayer'), { ssr: false });
 
@@ -95,6 +98,7 @@ export default function WatchPage() {
 
   const slug = params.slug as string;
   const currentEp = searchParams.get('ep') || '';
+  const wp = useWatchParty(slug, currentEp);
   const [currentServer, setCurrentServer] = useState(0);
   const [failedServers, setFailedServers] = useState<number[]>([]);
   const [isTheaterMode, setIsTheaterMode] = useState(false);
@@ -392,7 +396,7 @@ export default function WatchPage() {
         {/* ── Video Player: moves out of container when in theater mode ── */}
         <div 
           className={cn(
-            "transition-all duration-500 ease-in-out z-40 relative",
+            "transition-all duration-500 ease-in-out z-40 relative flex flex-col lg:flex-row gap-4 items-stretch",
             isTheaterMode 
               ? "w-full max-w-full bg-black shadow-2xl border-y border-white/5" 
               : "container mx-auto px-4 lg:px-8 max-w-[1400px]"
@@ -400,7 +404,7 @@ export default function WatchPage() {
         >
           <div 
             className={cn(
-              "w-full bg-black relative overflow-hidden transition-all duration-500",
+              "w-full bg-black relative overflow-hidden transition-all duration-500 flex-1",
               isTheaterMode 
                 ? "aspect-[21/9] md:aspect-video rounded-none" 
                 : "aspect-video rounded-2xl border border-white/10 ring-1 ring-white/5 shadow-2xl"
@@ -436,6 +440,22 @@ export default function WatchPage() {
                   />
                 ) : null}
 
+                {/* Floating Reactions Overlay */}
+                <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
+                  {wp.floatingReactions.map((r) => (
+                    <div
+                      key={r.id}
+                      style={{ left: `${r.left}%` }}
+                      className="absolute bottom-10 text-4xl animate-bounce transition-all opacity-90 drop-shadow-lg flex flex-col items-center"
+                    >
+                      <span>{r.emoji}</span>
+                      <span className="text-[9px] bg-black/80 text-white px-1.5 py-0.5 rounded-full mt-1 border border-white/10 font-bold">
+                        {r.senderName}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
                 {/* Auto-next overlay */}
                 {autoNextCountdown !== null && (
                   <AutoNextOverlay
@@ -452,6 +472,23 @@ export default function WatchPage() {
               </div>
             )}
           </div>
+
+          {/* Watch Party Panel Sidebar */}
+          {wp.roomId && wp.isOpen && (
+            <div className="h-[450px] lg:h-auto rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+              <WatchPartyPanel
+                roomId={wp.roomId}
+                isHost={wp.isHost}
+                participants={wp.participants}
+                messages={wp.messages}
+                floatingReactions={wp.floatingReactions}
+                onSendMessage={wp.sendMessage}
+                onSendReaction={wp.sendReaction}
+                onLeaveRoom={wp.leaveRoom}
+                onClose={() => wp.setIsOpen(false)}
+              />
+            </div>
+          )}
         </div>
 
         {/* Lower layout content: wrapped in container */}
@@ -460,6 +497,16 @@ export default function WatchPage() {
         {/* Action Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-4 bg-card/40 px-6 py-4 rounded-xl border border-border/40 shadow-sm">
           <div className="flex flex-wrap items-center gap-4 sm:gap-8 text-xs sm:text-sm font-bold text-neutral-400">
+            <button
+              onClick={() => {
+                if (!wp.roomId) wp.createRoom();
+                else wp.setIsOpen(!wp.isOpen);
+              }}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-extrabold hover:bg-emerald-500/20 transition-all cursor-pointer text-xs"
+            >
+              <Sparkles size={16} />
+              {wp.roomId ? `Phòng Xem #${wp.roomId}` : 'Tạo Phòng Xem Chung'}
+            </button>
             <button className="flex items-center gap-2 hover:text-netflixRed transition-colors">
               <Heart size={18} /> {t('watch.favorite', 'Yêu thích')}
             </button>
@@ -567,8 +614,16 @@ export default function WatchPage() {
               });
 
               // Clean episode title formatting (prevent "TẬP Tập 01")
-              const rawEpName = currentEpData?.name || '01';
-              const cleanEpName = String(rawEpName).replace(/^tập\s*/i, '').trim();
+              const epName = currentEpData?.name || '01';
+  const wp = useWatchParty(slug, epName);
+
+  useEffect(() => {
+    const roomParam = searchParams.get('room');
+    if (roomParam && roomParam !== wp.roomId) {
+      wp.joinRoom(roomParam);
+    }
+  }, [searchParams]);
+              const cleanEpName = String(epName).replace(/^tập\s*/i, '').trim();
               const formattedEpName = `TẬP ${cleanEpName.padStart(2, '0')}`;
 
               return (
@@ -786,26 +841,12 @@ export default function WatchPage() {
               </div>
             )}
 
-            {/* Comments */}
-            <div className="flex flex-col space-y-4 pt-4">
-              <div className="flex flex-col">
-                <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">{t('watch.audienceOpinion', 'Ý kiến khán giả')}</span>
-                <h3 className="text-lg font-extrabold text-white mt-1">{t('watch.comments', 'Bình luận')}</h3>
-              </div>
-              <div className="bg-white/[0.01] rounded-2xl border border-white/5 p-6 flex flex-col space-y-4 min-h-[200px]">
-                <div className="bg-white/[0.02] border border-white/5 focus-within:border-white/20 rounded-xl p-4 transition-colors">
-                  <textarea
-                    placeholder={t('watch.writeComment', 'Viết bình luận của bạn...')}
-                    className="w-full bg-transparent border-none text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:ring-0 p-0 resize-none"
-                    rows={3}
-                  />
-                </div>
-                <div className="flex justify-end">
-                  <button className="bg-white hover:bg-neutral-200 text-black font-extrabold text-[10px] uppercase tracking-wider px-6 py-2.5 rounded-xl transition-all shadow-md active:scale-95">
-                    {t('watch.submitComment', 'Gửi bình luận')}
-                  </button>
-                </div>
-              </div>
+            {/* Advanced Comments & 5-Star Rating System */}
+            <div className="pt-4">
+              <AdvancedCommentSection
+                movieSlug={slug}
+                episodeName={currentEpData?.name ? `Tập ${currentEpData.name}` : undefined}
+              />
             </div>
           </div>
 

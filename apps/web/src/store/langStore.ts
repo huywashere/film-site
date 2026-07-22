@@ -2,8 +2,10 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { vi } from '@/locales/vi';
 import { en } from '@/locales/en';
+import { fr } from '@/locales/fr';
+import { it } from '@/locales/it';
 
-type Lang = 'vi' | 'en';
+export type Lang = 'vi' | 'en' | 'fr' | 'it';
 
 interface LangState {
   lang: Lang;
@@ -24,7 +26,7 @@ export const useLangStore = create<LangState>()(
 
 import { useEffect, useState, useCallback } from 'react';
 
-const dictionaries: Record<Lang, any> = { vi, en };
+const dictionaries: Record<Lang, any> = { vi, en, fr, it };
 
 export function useTranslation() {
   const { lang, setLang: _setLang } = useLangStore();

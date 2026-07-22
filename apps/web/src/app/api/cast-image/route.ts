@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from 'ioredis';
+import { checkImageProxyRateLimit } from '@/lib/rate-limiter';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +41,12 @@ function getRedisClient(): Redis | null {
 }
 
 export async function GET(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+  const rateCheck = checkImageProxyRateLimit(ip);
+  if (!rateCheck.allowed) {
+    return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 });
+  }
+
   const { searchParams } = new URL(request.url);
   const name = searchParams.get('name');
 

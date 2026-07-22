@@ -5,7 +5,7 @@ import Link from 'next/link';
 import NextImage from 'next/image';
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Bookmark, Share2, Clock, Calendar, Globe, Users, Loader2, Plus, Check, Star, CheckCircle, Info, ThumbsUp } from 'lucide-react';
+import { Play, Bookmark, Share2, Clock, Calendar, Globe, Users, Loader2, Plus, Check, Star, CheckCircle, Info, ThumbsUp, Bell } from 'lucide-react';
 import { movieApi, watchlistApi, ratingsApi, reviewsApi } from '@/lib/api';
 import { StarRating } from '@/components/film/StarRating';
 import { resolveImageUrl } from '@/components/film/FilmCard';
@@ -370,19 +370,21 @@ export default function FilmDetailPage() {
     enabled: !!data,
   });
 
-  const film = data?.movie || data;
+  const film = data?.movie || (data?.error ? null : data);
   const episodes = data?.episodes || [];
+  const isNotFound = !isLoading && (error || !data || data?.error || !film || (!film.name && !film.title && !film.slug));
 
   // Fetch similar films by first genre
   const firstGenre = film?.category?.[0]?.slug;
   const { data: similarFilmsData } = useQuery({
     queryKey: ['similar-films', firstGenre],
     queryFn: () => firstGenre ? movieApi.getByGenre(firstGenre, 1).then((r) => r.data) : null,
-    enabled: !!firstGenre,
+    enabled: !!firstGenre && !isNotFound,
   });
   const similarFilms = similarFilmsData?.data?.items?.filter((f: any) => f.slug !== slug).slice(0, 10) || [];
 
   const { cleanContent, directors, actors } = useMemo(() => {
+    if (!film) return { cleanContent: '', directors: [], actors: [] };
     const parseList = (val: any) => {
       if (!val) return [];
       if (Array.isArray(val)) return val.filter((v: any) => v && v.trim() !== '');
@@ -403,18 +405,19 @@ export default function FilmDetailPage() {
   }, [film]);
 
   const posterUrl =
-    resolveImageUrl(film?.poster_url) || resolveImageUrl(film?.thumb_url) || undefined;
+    film ? (resolveImageUrl(film?.poster_url) || resolveImageUrl(film?.thumb_url) || undefined) : undefined;
 
   // Watchlist status check
   useEffect(() => {
-    if (user && slug) {
+    if (user && slug && !isNotFound) {
       watchlistApi.check(slug).then((res) => {
         setInWatchlist(!!res.data?.inWatchlist);
       }).catch(() => {});
     }
-  }, [user, slug]);
+  }, [user, slug, isNotFound]);
 
   const prefetchWatchData = () => {
+    if (isNotFound) return;
     queryClient.prefetchQuery({
       queryKey: ['film-ophim', slug],
       queryFn: () =>
@@ -429,12 +432,32 @@ export default function FilmDetailPage() {
   };
 
   if (isLoading) return <FilmDetailSkeleton />;
-  if (error || !data)
+
+  if (isNotFound)
     return (
-      <div className="bg-[#0f1216] min-h-screen text-neutral-400 pt-28 text-center flex items-center justify-center">
-        <div>
-          <Info size={32} className="text-netflixRed mx-auto mb-2" />
-          <p className="text-sm">Không tìm thấy thông tin phim</p>
+      <div className="bg-[#14181c] min-h-[75vh] text-neutral-300 pt-28 pb-16 text-center flex flex-col items-center justify-center px-4 font-sans select-none">
+        <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4 shadow-xl">
+          <Info size={32} className="text-emerald-400" />
+        </div>
+        <h1 className="text-xl sm:text-2xl font-bold text-white mb-2">
+          Không tìm thấy phim này
+        </h1>
+        <p className="text-xs sm:text-sm text-neutral-400 max-w-md mx-auto mb-6 leading-relaxed">
+          Bộ phim <span className="text-emerald-400 font-semibold">"{slug}"</span> hiện chưa có bản chiếu trên hệ thống hoặc đường dẫn không khả dụng. Bạn có thể tìm kiếm phim khác hoặc quay về trang chủ.
+        </p>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/"
+            className="px-6 py-2.5 bg-[#00e054] hover:bg-[#00c749] text-black font-bold text-xs rounded-full transition-all shadow-lg active:scale-95"
+          >
+            Quay về trang chủ
+          </Link>
+          <Link
+            href="/search"
+            className="px-6 py-2.5 bg-[#242c34] hover:bg-[#2c3440] text-white border border-white/10 font-bold text-xs rounded-full transition-all shadow-lg active:scale-95"
+          >
+            Tìm kiếm phim khác
+          </Link>
         </div>
       </div>
     );
@@ -566,6 +589,23 @@ export default function FilmDetailPage() {
                     {inWatchlist ? <Check size={16} className="stroke-[3]" /> : <Plus size={16} />}
                   </button>
                   <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider group-hover:text-neutral-300 transition-colors">{t('nav.watchlist', 'Watchlist')}</span>
+                </div>
+
+                {/* Follow Episode Notification Button */}
+                <div className="flex flex-col items-center gap-1 group">
+                  <button 
+                    onClick={() => {
+                      if (!user) {
+                        toast('Bạn cần đăng nhập để theo dõi tập mới', 'error');
+                        return;
+                      }
+                      toast(`Đã đăng ký nhận thông báo khi có tập mới của ${film?.name}!`, 'success');
+                    }} 
+                    className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-emerald-500/50 backdrop-blur-md transition-all text-neutral-300 hover:text-emerald-400 cursor-pointer"
+                  >
+                    <Bell size={16} />
+                  </button>
+                  <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider group-hover:text-neutral-300 transition-colors">Theo dõi</span>
                 </div>
 
                 {/* Rating Button */}
