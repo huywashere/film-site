@@ -1,7 +1,8 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Artplayer from 'artplayer';
 import Hls from 'hls.js';
+import { cn } from '@/lib/utils';
 
 export interface ArtPlayerProps {
   url: string;

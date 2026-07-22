@@ -99,6 +99,13 @@ export default function WatchPage() {
   const slug = params.slug as string;
   const currentEp = searchParams.get('ep') || '';
   const wp = useWatchParty(slug, currentEp);
+
+  useEffect(() => {
+    const roomParam = searchParams.get('room');
+    if (roomParam && roomParam !== wp.roomId) {
+      wp.joinRoom(roomParam);
+    }
+  }, [searchParams, wp]);
   const [currentServer, setCurrentServer] = useState(0);
   const [failedServers, setFailedServers] = useState<number[]>([]);
   const [isTheaterMode, setIsTheaterMode] = useState(false);
@@ -375,6 +382,24 @@ export default function WatchPage() {
 
   if (isLoading) return <WatchSkeleton />;
 
+  if (!isLoading && !film) {
+    return (
+      <div className="bg-[#0b0c10] min-h-screen text-foreground flex flex-col items-center justify-center p-6 text-center">
+        <Clapperboard size={64} className="text-neutral-600 mb-4 animate-pulse" />
+        <h1 className="text-2xl font-bold text-white mb-2">Không tìm thấy phim này</h1>
+        <p className="text-neutral-400 text-sm max-w-md mb-6">
+          Bộ phim bạn đang tìm kiếm có thể tạm thời không khả dụng hoặc đường dẫn không tồn tại.
+        </p>
+        <Link
+          href="/"
+          className="bg-netflixRed hover:bg-red-700 text-white font-bold px-6 py-2.5 rounded-full text-sm transition-all"
+        >
+          Trở về trang chủ
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-[#0b0c10] min-h-screen text-foreground pb-20 pt-20 relative">
       {/* Dim Background Overlay when Theater Mode is active */}
@@ -625,14 +650,6 @@ export default function WatchPage() {
 
               // Clean episode title formatting (prevent "TẬP Tập 01")
               const epName = currentEpData?.name || '01';
-  const wp = useWatchParty(slug, epName);
-
-  useEffect(() => {
-    const roomParam = searchParams.get('room');
-    if (roomParam && roomParam !== wp.roomId) {
-      wp.joinRoom(roomParam);
-    }
-  }, [searchParams]);
               const cleanEpName = String(epName).replace(/^tập\s*/i, '').trim();
               const formattedEpName = `TẬP ${cleanEpName.padStart(2, '0')}`;
 
