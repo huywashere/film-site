@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/providers/ToastProvider';
 import { checkWatchPartyReactionRateLimit } from '@/lib/rate-limiter';
@@ -39,9 +39,11 @@ export function useWatchParty(movieSlug: string, episodeName: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [floatingReactions, setFloatingReactions] = useState<FloatingReaction[]>([]);
   const [isOpen, setIsOpen] = useState<boolean>(false);
-
-  // Sync state broadcast channel (using BroadcastChannel API for multi-tab sync + simulated live network)
   const [channel, setChannel] = useState<BroadcastChannel | null>(null);
+
+  const userId = user?.id;
+  const userIdRef = useRef(userId);
+  userIdRef.current = userId;
 
   useEffect(() => {
     if (!roomId) return;
@@ -66,7 +68,7 @@ export function useWatchParty(movieSlug: string, episodeName: string) {
         triggerFloatingReaction(payload.emoji, payload.senderName);
       } else if (type === 'PLAYER_SYNC') {
         // Broadcasted playback sync event
-        if (payload.senderId !== user?.id) {
+        if (payload.senderId !== userIdRef.current) {
           addSystemMessage(`${payload.senderName} vừa ${payload.action === 'play' ? 'phát' : payload.action === 'pause' ? 'tạm dừng' : 'chuyển thời gian'} video.`);
         }
       }
@@ -75,9 +77,9 @@ export function useWatchParty(movieSlug: string, episodeName: string) {
     return () => {
       bc.close();
     };
-  }, [roomId, user?.id]);
+  }, [roomId]);
 
-  const addSystemMessage = (text: string) => {
+  const addSystemMessage = useCallback((text: string) => {
     setMessages((prev) => [
       ...prev,
       {
@@ -90,9 +92,9 @@ export function useWatchParty(movieSlug: string, episodeName: string) {
         isSystem: true,
       },
     ]);
-  };
+  }, []);
 
-  const triggerFloatingReaction = (emoji: string, senderName: string) => {
+  const triggerFloatingReaction = useCallback((emoji: string, senderName: string) => {
     const newReaction: FloatingReaction = {
       id: Math.random().toString(),
       emoji,
@@ -103,7 +105,7 @@ export function useWatchParty(movieSlug: string, episodeName: string) {
     setTimeout(() => {
       setFloatingReactions((prev) => prev.filter((r) => r.id !== newReaction.id));
     }, 2500);
-  };
+  }, []);
 
   const createRoom = () => {
     const newRoomId = 'WP-' + Math.random().toString(36).substring(2, 7).toUpperCase();

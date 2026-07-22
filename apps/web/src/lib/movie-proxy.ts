@@ -173,15 +173,17 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
 
         return NextResponse.json(
           {
-            error: `Nguồn ${config.sourceName} tạm thời gián đoạn, vui lòng thử lại sau.`,
+            status: false,
+            error: true,
+            message: `Nguồn ${config.sourceName} tạm thời gián đoạn, vui lòng thử lại sau.`,
             circuitOpen: true,
           },
-          { status: 503 },
+          { status: 200 },
         );
       }
 
       const message = error instanceof Error ? error.message : String(error);
-      console.error(`[${config.cachePrefix}-proxy] fetch error:`, message);
+      console.warn(`[${config.cachePrefix}-proxy] upstream note:`, message);
 
       if (memoryEntry) {
         return NextResponse.json(memoryEntry.data, {
@@ -191,9 +193,11 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
 
       return NextResponse.json(
         {
-          error: config.upstreamErrorMessage || `Lỗi kết nối ${config.sourceName} API`,
+          status: false,
+          error: true,
+          message: config.upstreamErrorMessage || `Lỗi kết nối ${config.sourceName} API`,
         },
-        { status: 500 },
+        { status: 200 },
       );
     }
   };
