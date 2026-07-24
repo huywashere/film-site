@@ -2,10 +2,10 @@
 nixPkgs = ["nodejs-18_x"]
 
 [phases.install]
-cmds = ["npm install"]
+cmds = ["corepack enable && corepack prepare pnpm@9.5.0 --activate && pnpm install --frozen-lockfile"]
 
 [phases.build]
-cmds = ["npx prisma generate", "npm run build"]
+cmds = ["pnpm exec prisma generate --schema=prisma/schema.prisma", "pnpm build"]
 
 [start]
 cmd = "node dist/main.js"
