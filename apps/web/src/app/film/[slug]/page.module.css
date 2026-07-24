@@ -70,9 +70,13 @@
 }
 
 /* Film Info */
-.infoCol { padding-bottom: var(--space-3xl); }
+.infoCol {
+  padding-bottom: var(--space-3xl);
+}
 
-.filmTitleBlock { margin-bottom: var(--space-lg); }
+.filmTitleBlock {
+  margin-bottom: var(--space-lg);
+}
 
 .filmTitle {
   font-family: var(--font-serif);
@@ -127,7 +131,9 @@
   border-bottom: 1px solid var(--border);
   gap: var(--space-md);
 }
-.metaRow:last-child { border-bottom: none; }
+.metaRow:last-child {
+  border-bottom: none;
+}
 
 .metaKey {
   font-size: 0.78rem;
@@ -158,7 +164,10 @@
   text-decoration: none;
   transition: all var(--transition-fast);
 }
-.metaTag:hover { color: var(--accent); border-color: var(--accent); }
+.metaTag:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
 
 /* Cast Section */
 .castSection {
@@ -232,7 +241,11 @@
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--text-secondary);
-  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-card-hover) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--bg-card) 0%,
+    var(--bg-card-hover) 100%
+  );
 }
 
 .castName {
@@ -281,7 +294,8 @@
   transition: all var(--transition-fast);
 }
 
-.serverTabActive, .serverTab:hover {
+.serverTabActive,
+.serverTab:hover {
   background: var(--accent-dim);
   border-color: var(--accent);
   color: var(--accent);
@@ -318,7 +332,9 @@
 }
 
 /* Reviews */
-.reviewsSection { margin-top: var(--space-2xl); }
+.reviewsSection {
+  margin-top: var(--space-2xl);
+}
 
 .writeReview {
   background: var(--bg-card);
@@ -383,17 +399,31 @@
 
 /* Responsive */
 @media (max-width: 900px) {
-  .filmLayout { grid-template-columns: 1fr; }
+  .filmLayout {
+    grid-template-columns: 1fr;
+  }
   .posterCol {
     position: static;
     flex-direction: row;
     align-items: flex-start;
   }
-  .posterWrapper { width: 160px; height: 240px; flex-shrink: 0; }
-  .ratingBox, .sideActions { flex: 1; }
+  .posterWrapper {
+    width: 160px;
+    height: 240px;
+    flex-shrink: 0;
+  }
+  .ratingBox,
+  .sideActions {
+    flex: 1;
+  }
 }
 
 @media (max-width: 600px) {
-  .posterCol { flex-direction: column; align-items: center; }
-  .posterWrapper { width: 200px; }
+  .posterCol {
+    flex-direction: column;
+    align-items: center;
+  }
+  .posterWrapper {
+    width: 200px;
+  }
 }

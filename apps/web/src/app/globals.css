@@ -6,32 +6,32 @@
   :root {
     --background: #14181c; /* Signature Letterboxd dark charcoal slate */
     --foreground: #f2f4f8;
-    
+
     --card: #1c2228; /* Letterboxd card container shade */
     --card-foreground: #e7eaf0;
-    
+
     --popover: #1c2228;
     --popover-foreground: #f2f4f8;
-    
+
     --primary: #00e054; /* Letterboxd signature electric green */
     --primary-foreground: #ffffff;
-    
+
     --secondary: #242c34;
     --secondary-foreground: #eceff4;
-    
+
     --muted: #374151;
     --muted-foreground: #9ca3af;
-    
+
     --accent: #00e054;
     --accent-foreground: #fafafa;
-    
+
     --destructive: #ff3a44;
     --destructive-foreground: #fafafa;
-    
+
     --border: #2c3440;
     --input: #2c3440;
     --ring: #00e054;
-    
+
     --accent-color: #00e054; /* Letterboxd green binding */
     --accent-color-hover: #00c749;
     --radius: 8px;
@@ -77,8 +77,8 @@
     --radius-xl: 8px;
     --radius-full: 9999px;
 
-    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-    --font-serif: 'Playfair Display', 'Merriweather', Georgia, serif;
+    --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+    --font-serif: "Playfair Display", "Merriweather", Georgia, serif;
 
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
@@ -95,35 +95,36 @@
   }
 
   /* Light Theme Variables - Soft, comfortable off-white style (not too bright) */
-  html.light, html[data-theme='light'] {
+  html.light,
+  html[data-theme="light"] {
     --background: #e8ecf3; /* Softer, slightly darker blue-gray, easy on the eyes */
     --foreground: #1e293b; /* Softer slate black instead of harsh pure black */
-    
+
     --card: #f4f6fa; /* Soft card background instead of pure white */
     --card-foreground: #1e293b;
-    
+
     --popover: #f4f6fa;
     --popover-foreground: #1e293b;
-    
+
     --primary: #524cf8;
     --primary-foreground: #ffffff;
-    
+
     --secondary: #cbd5e1;
     --secondary-foreground: #1e293b;
-    
+
     --muted: #cbd5e1;
     --muted-foreground: #64748b;
-    
+
     --accent: #524cf8;
     --accent-foreground: #ffffff;
-    
+
     --destructive: #ff3a44;
     --destructive-foreground: #ffffff;
-    
+
     --border: rgba(0, 0, 0, 0.08);
     --input: rgba(0, 0, 0, 0.08);
     --ring: #524cf8;
-    
+
     /* Legacy Bindings Overwrite for Light Mode */
     --bg-primary: #e8ecf3;
     --bg-secondary: #f4f6fa;
@@ -146,7 +147,7 @@
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
     --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
-    --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.10);
+    --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.1);
   }
 }
 
@@ -170,16 +171,20 @@ html {
 
   /* GPU-Accelerated Hardware Canvas for Letterboxd dot grid (0% CPU load on scroll) */
   body::before {
-    content: '';
+    content: "";
     position: fixed;
     inset: 0;
     pointer-events: none;
     z-index: -1;
-    background-image: 
+    background-image:
       radial-gradient(ellipse at 50% 0%, #1e242c 0%, #14181c 75%),
       radial-gradient(rgba(255, 255, 255, 0.12) 1.25px, transparent 1.25px);
-    background-size: 100% 600px, 14px 14px;
-    background-position: center top, 0 0;
+    background-size:
+      100% 600px,
+      14px 14px;
+    background-position:
+      center top,
+      0 0;
     transform: translateZ(0);
     will-change: transform;
   }
@@ -200,7 +205,6 @@ header {
   padding-right: 0px !important;
   margin-right: 0px !important;
 }
-
 
 /* Swiper global styles removed in favor of Emotion StyledSwiperContainer in page.tsx */
 
@@ -268,11 +272,13 @@ header {
 .star-rating {
   display: inline-flex;
   gap: 2px;
-  color: #E50914;
+  color: #e50914;
 }
 
 /* Form controls reset */
-input, textarea, select {
+input,
+textarea,
+select {
   outline: none;
 }
 
@@ -304,11 +310,12 @@ input, textarea, select {
   animation: shimmer 1.4s infinite linear;
 }
 
-html.light .shimmer, html[data-theme='light'] .shimmer {
+html.light .shimmer,
+html[data-theme="light"] .shimmer {
   background: linear-gradient(
     90deg,
     rgba(0, 0, 0, 0.04) 25%,
-    rgba(0, 0, 0, 0.10) 37%,
+    rgba(0, 0, 0, 0.1) 37%,
     rgba(0, 0, 0, 0.04) 63%
   );
   background-size: 200% 100%;
@@ -329,10 +336,12 @@ html.lang-switching *:not(video):not(img):not(canvas):not(iframe) {
   width: 52px;
   height: 24px;
   border-radius: 100px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
   overflow: hidden;
   user-select: none;
 }
@@ -349,7 +358,9 @@ html.lang-switching *:not(video):not(img):not(canvas):not(iframe) {
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease;
+  transition:
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 0.2s ease;
   pointer-events: none;
 }
 
@@ -379,14 +390,24 @@ html.lang-switching *:not(video):not(img):not(canvas):not(iframe) {
   pointer-events: none;
 }
 
-.lang-pill[data-lang="vi"] .lang-pill-track-vi { opacity: 0; }
-.lang-pill[data-lang="vi"] .lang-pill-track-en { opacity: 0.5; color: rgba(255,255,255,0.5); }
-.lang-pill[data-lang="en"] .lang-pill-track-vi { opacity: 0.5; color: rgba(255,255,255,0.5); }
-.lang-pill[data-lang="en"] .lang-pill-track-en { opacity: 0; }
+.lang-pill[data-lang="vi"] .lang-pill-track-vi {
+  opacity: 0;
+}
+.lang-pill[data-lang="vi"] .lang-pill-track-en {
+  opacity: 0.5;
+  color: rgba(255, 255, 255, 0.5);
+}
+.lang-pill[data-lang="en"] .lang-pill-track-vi {
+  opacity: 0.5;
+  color: rgba(255, 255, 255, 0.5);
+}
+.lang-pill[data-lang="en"] .lang-pill-track-en {
+  opacity: 0;
+}
 
 .lang-pill:hover {
-  background: rgba(255,255,255,0.10);
-  border-color: rgba(255,255,255,0.22);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 /* Custom Sleek Dark Scrollbar to fix native Windows scrollbar arrows */

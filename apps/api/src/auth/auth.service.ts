@@ -1,14 +1,33 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import * as bcrypt from 'bcrypt';
-import { randomBytes, createCipheriv, createDecipheriv, createHash } from 'crypto';
-import { PrismaService } from '../prisma/prisma.service';
-import { RegisterDto, LoginDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto, TwoFactorVerifyDto, TwoFactorLoginVerifyDto } from './dto/auth.dto';
-import { MailService } from '../mail/mail.service';
-import { UAParser } from 'ua-parser-js';
-import { generateSecret, verify, generateURI } from 'otplib';
-import * as QRCode from 'qrcode';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  BadRequestException,
+  Logger,
+} from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
+import * as bcrypt from "bcrypt";
+import {
+  randomBytes,
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+} from "crypto";
+import { PrismaService } from "../prisma/prisma.service";
+import {
+  RegisterDto,
+  LoginDto,
+  VerifyEmailDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  TwoFactorVerifyDto,
+  TwoFactorLoginVerifyDto,
+} from "./dto/auth.dto";
+import { MailService } from "../mail/mail.service";
+import { UAParser } from "ua-parser-js";
+import { generateSecret, verify, generateURI } from "otplib";
+import * as QRCode from "qrcode";
 
 @Injectable()
 export class AuthService {
@@ -22,33 +41,36 @@ export class AuthService {
   ) {}
 
   private getCryptoKey(secret: string): Buffer {
-    return createHash('sha256').update(secret).digest();
+    return createHash("sha256").update(secret).digest();
   }
 
   private encrypt(text: string): string {
-    const keyString = this.config.get('JWT_SECRET') || 'default_crypto_secret';
+    const keyString = this.config.get("JWT_SECRET") || "default_crypto_secret";
     const iv = randomBytes(16);
     const key = this.getCryptoKey(keyString);
-    const cipher = createCipheriv('aes-256-cbc', key, iv);
+    const cipher = createCipheriv("aes-256-cbc", key, iv);
     let encrypted = cipher.update(text);
     encrypted = Buffer.concat([encrypted, cipher.final()]);
-    return iv.toString('hex') + ':' + encrypted.toString('hex');
+    return iv.toString("hex") + ":" + encrypted.toString("hex");
   }
 
   private decrypt(text: string): string {
-    const keyString = this.config.get('JWT_SECRET') || 'default_crypto_secret';
-    const textParts = text.split(':');
-    const iv = Buffer.from(textParts.shift()!, 'hex');
-    const encryptedText = Buffer.from(textParts.join(':'), 'hex');
+    const keyString = this.config.get("JWT_SECRET") || "default_crypto_secret";
+    const textParts = text.split(":");
+    const iv = Buffer.from(textParts.shift()!, "hex");
+    const encryptedText = Buffer.from(textParts.join(":"), "hex");
     const key = this.getCryptoKey(keyString);
-    const decipher = createDecipheriv('aes-256-cbc', key, iv);
+    const decipher = createDecipheriv("aes-256-cbc", key, iv);
     let decrypted = decipher.update(encryptedText);
     decrypted = Buffer.concat([decrypted, decipher.final()]);
     return decrypted.toString();
   }
 
-  private generateSecureToken(id: string): { plainToken: string; tokenHash: Promise<string> } {
-    const randomString = randomBytes(32).toString('hex');
+  private generateSecureToken(id: string): {
+    plainToken: string;
+    tokenHash: Promise<string>;
+  } {
+    const randomString = randomBytes(32).toString("hex");
     const plainToken = `${id}.${randomString}`;
     const tokenHash = bcrypt.hash(randomString, 10);
     return { plainToken, tokenHash };
@@ -60,7 +82,9 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new ConflictException('Thông tin đăng ký không hợp lệ hoặc đã tồn tại');
+      throw new ConflictException(
+        "Thông tin đăng ký không hợp lệ hoặc đã tồn tại",
+      );
     }
 
     const hash = await bcrypt.hash(dto.password, 12);
@@ -77,7 +101,7 @@ export class AuthService {
     const verifyRecord = await this.prisma.verificationToken.create({
       data: {
         userId: user.id,
-        tokenHash: 'pending', // placeholder
+        tokenHash: "pending", // placeholder
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
       },
     });
@@ -89,27 +113,40 @@ export class AuthService {
     });
 
     // Send email asynchronously
-    this.mailService.sendVerificationEmail(user.email, plainToken).catch(err => {
-      this.logger.error(`Error sending verification email to ${user.email}`, err);
-    });
+    this.mailService
+      .sendVerificationEmail(user.email, plainToken)
+      .catch((err) => {
+        this.logger.error(
+          `Error sending verification email to ${user.email}`,
+          err,
+        );
+      });
 
-    return this.signTokens(user.id, user.email, user.username, userAgent, ipAddress);
+    return this.signTokens(
+      user.id,
+      user.email,
+      user.username,
+      userAgent,
+      ipAddress,
+    );
   }
 
   async verifyEmail(dto: VerifyEmailDto) {
-    const parts = dto.token.split('.');
-    if (parts.length !== 2) throw new BadRequestException('Token không hợp lệ');
+    const parts = dto.token.split(".");
+    if (parts.length !== 2) throw new BadRequestException("Token không hợp lệ");
     const [tokenId, randomString] = parts;
 
     const record = await this.prisma.verificationToken.findUnique({
       where: { id: tokenId },
     });
 
-    if (!record) throw new BadRequestException('Token không tồn tại hoặc đã được sử dụng');
-    if (new Date() > record.expiresAt) throw new BadRequestException('Token đã hết hạn');
+    if (!record)
+      throw new BadRequestException("Token không tồn tại hoặc đã được sử dụng");
+    if (new Date() > record.expiresAt)
+      throw new BadRequestException("Token đã hết hạn");
 
     const isValid = await bcrypt.compare(randomString, record.tokenHash);
-    if (!isValid) throw new BadRequestException('Token không hợp lệ');
+    if (!isValid) throw new BadRequestException("Token không hợp lệ");
 
     // Update user
     await this.prisma.user.update({
@@ -120,7 +157,7 @@ export class AuthService {
     // Delete token
     await this.prisma.verificationToken.delete({ where: { id: tokenId } });
 
-    return { success: true, message: 'Xác thực email thành công' };
+    return { success: true, message: "Xác thực email thành công" };
   }
 
   async login(dto: LoginDto, userAgent?: string, ipAddress?: string) {
@@ -128,34 +165,50 @@ export class AuthService {
       where: { OR: [{ email: dto.email }, { username: dto.email }] },
     });
 
-    if (!user) throw new UnauthorizedException('Thông tin đăng nhập không hợp lệ');
+    if (!user)
+      throw new UnauthorizedException("Thông tin đăng nhập không hợp lệ");
 
     if (user.isLocked) {
-      throw new UnauthorizedException('Tài khoản đã bị khóa do có hoạt động bất thường. Vui lòng liên hệ hỗ trợ.');
+      throw new UnauthorizedException(
+        "Tài khoản đã bị khóa do có hoạt động bất thường. Vui lòng liên hệ hỗ trợ.",
+      );
     }
 
     const match = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!match) throw new UnauthorizedException('Thông tin đăng nhập không hợp lệ');
+    if (!match)
+      throw new UnauthorizedException("Thông tin đăng nhập không hợp lệ");
 
     if (user.twoFactorEnabled) {
       const tempToken = await this.jwt.signAsync(
-        { sub: user.id, type: '2fa_temp' },
-        { secret: this.config.get('JWT_SECRET'), expiresIn: '5m' },
+        { sub: user.id, type: "2fa_temp" },
+        { secret: this.config.get("JWT_SECRET"), expiresIn: "5m" },
       );
       return { require2FA: true, tempToken };
     }
 
-    return this.signTokens(user.id, user.email, user.username, userAgent, ipAddress);
+    return this.signTokens(
+      user.id,
+      user.email,
+      user.username,
+      userAgent,
+      ipAddress,
+    );
   }
 
-  async signTokens(userId: string, email: string, username: string, userAgent?: string, ipAddress?: string) {
+  async signTokens(
+    userId: string,
+    email: string,
+    username: string,
+    userAgent?: string,
+    ipAddress?: string,
+  ) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
     const tokenRecord = await this.prisma.refreshToken.create({
       data: {
         userId,
-        tokenHash: 'pending',
+        tokenHash: "pending",
         expiresAt,
         userAgent,
         ipAddress,
@@ -166,12 +219,12 @@ export class AuthService {
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwt.signAsync(payload, {
-        expiresIn: '15m',
-        secret: this.config.get('JWT_SECRET'),
+        expiresIn: "15m",
+        secret: this.config.get("JWT_SECRET"),
       }),
       this.jwt.signAsync(payload, {
-        expiresIn: '7d',
-        secret: this.config.get('JWT_REFRESH_SECRET'),
+        expiresIn: "7d",
+        secret: this.config.get("JWT_REFRESH_SECRET"),
       }),
     ]);
 
@@ -182,17 +235,26 @@ export class AuthService {
     });
 
     // Alert logic from Mục 4: check for new device warning asynchronously
-    this.checkNewDeviceAndWarn(userId, email, userAgent, ipAddress).catch(err => {
-      this.logger.error(`Error checking new device warning for ${email}: ${err.message}`, err);
-    });
+    this.checkNewDeviceAndWarn(userId, email, userAgent, ipAddress).catch(
+      (err) => {
+        this.logger.error(
+          `Error checking new device warning for ${email}: ${err.message}`,
+          err,
+        );
+      },
+    );
 
     return { accessToken, refreshToken };
   }
 
-  async refreshTokens(refreshToken: string, userAgent?: string, ipAddress?: string) {
+  async refreshTokens(
+    refreshToken: string,
+    userAgent?: string,
+    ipAddress?: string,
+  ) {
     try {
       const payload = await this.jwt.verifyAsync(refreshToken, {
-        secret: this.config.get('JWT_REFRESH_SECRET'),
+        secret: this.config.get("JWT_REFRESH_SECRET"),
       });
 
       const tokenId = payload.jti;
@@ -202,22 +264,26 @@ export class AuthService {
         where: { id: tokenId },
       });
 
-      if (!record) throw new UnauthorizedException('Refresh token không tồn tại');
+      if (!record)
+        throw new UnauthorizedException("Refresh token không tồn tại");
 
       if (record.isRevoked) {
         await this.prisma.refreshToken.updateMany({
           where: { userId },
           data: { isRevoked: true },
         });
-        throw new UnauthorizedException('Phát hiện hành vi bất thường, vui lòng đăng nhập lại');
+        throw new UnauthorizedException(
+          "Phát hiện hành vi bất thường, vui lòng đăng nhập lại",
+        );
       }
 
       if (new Date() > record.expiresAt) {
-        throw new UnauthorizedException('Refresh token đã hết hạn');
+        throw new UnauthorizedException("Refresh token đã hết hạn");
       }
 
       const isMatch = await bcrypt.compare(refreshToken, record.tokenHash);
-      if (!isMatch) throw new UnauthorizedException('Refresh token không hợp lệ');
+      if (!isMatch)
+        throw new UnauthorizedException("Refresh token không hợp lệ");
 
       await this.prisma.refreshToken.update({
         where: { id: record.id },
@@ -233,7 +299,9 @@ export class AuthService {
       );
     } catch (err) {
       if (err instanceof UnauthorizedException) throw err;
-      throw new UnauthorizedException('Refresh token không hợp lệ hoặc đã hết hạn');
+      throw new UnauthorizedException(
+        "Refresh token không hợp lệ hoặc đã hết hạn",
+      );
     }
   }
 
@@ -256,7 +324,10 @@ export class AuthService {
       where: { email: dto.email },
     });
 
-    const successMessage = { success: true, message: 'Nếu email tồn tại, một đường link khôi phục đã được gửi' };
+    const successMessage = {
+      success: true,
+      message: "Nếu email tồn tại, một đường link khôi phục đã được gửi",
+    };
 
     if (!user) return successMessage;
 
@@ -267,7 +338,7 @@ export class AuthService {
     const resetRecord = await this.prisma.resetPasswordToken.create({
       data: {
         userId: user.id,
-        tokenHash: 'pending',
+        tokenHash: "pending",
         expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
       },
     });
@@ -278,23 +349,25 @@ export class AuthService {
       data: { tokenHash: await tokenHash },
     });
 
-    this.mailService.sendPasswordResetEmail(user.email, plainToken).catch(err => {
-      this.logger.error(`Error sending password reset to ${user.email}`, err);
-    });
+    this.mailService
+      .sendPasswordResetEmail(user.email, plainToken)
+      .catch((err) => {
+        this.logger.error(`Error sending password reset to ${user.email}`, err);
+      });
 
     return successMessage;
   }
 
   async resetPassword(dto: ResetPasswordDto) {
-    const parts = dto.token.split('.');
-    if (parts.length !== 2) throw new BadRequestException('Token không hợp lệ');
+    const parts = dto.token.split(".");
+    if (parts.length !== 2) throw new BadRequestException("Token không hợp lệ");
     const [tokenId, randomString] = parts;
 
     const record = await this.prisma.resetPasswordToken.findUnique({
       where: { id: tokenId },
     });
 
-    const errorMsg = 'Token không hợp lệ hoặc đã hết hạn';
+    const errorMsg = "Token không hợp lệ hoặc đã hết hạn";
 
     if (!record) throw new BadRequestException(errorMsg);
     if (new Date() > record.expiresAt) throw new BadRequestException(errorMsg);
@@ -316,10 +389,18 @@ export class AuthService {
 
     await this.prisma.resetPasswordToken.delete({ where: { id: tokenId } });
 
-    return { success: true, message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại trên các thiết bị.' };
+    return {
+      success: true,
+      message:
+        "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại trên các thiết bị.",
+    };
   }
 
-  async validateGoogleUser(profile: any, userAgent?: string, ipAddress?: string) {
+  async validateGoogleUser(
+    profile: any,
+    userAgent?: string,
+    ipAddress?: string,
+  ) {
     const { googleId, email, firstName, lastName, picture } = profile;
 
     let user = await this.prisma.user.findUnique({
@@ -327,7 +408,13 @@ export class AuthService {
     });
 
     if (user) {
-      return this.signTokens(user.id, user.email, user.username, userAgent, ipAddress);
+      return this.signTokens(
+        user.id,
+        user.email,
+        user.username,
+        userAgent,
+        ipAddress,
+      );
     }
 
     user = await this.prisma.user.findUnique({
@@ -342,41 +429,53 @@ export class AuthService {
           isEmailVerified: true,
         },
       });
-      return this.signTokens(user.id, user.email, user.username, userAgent, ipAddress);
+      return this.signTokens(
+        user.id,
+        user.email,
+        user.username,
+        userAgent,
+        ipAddress,
+      );
     }
 
-    const randomPass = 'google_oauth_' + randomBytes(16).toString('hex');
+    const randomPass = "google_oauth_" + randomBytes(16).toString("hex");
     const hash = await bcrypt.hash(randomPass, 12);
-    const suffix = randomBytes(4).toString('hex');
-    const username = `${email.split('@')[0]}_${suffix}`;
+    const suffix = randomBytes(4).toString("hex");
+    const username = `${email.split("@")[0]}_${suffix}`;
 
     user = await this.prisma.user.create({
       data: {
         email,
         username,
         passwordHash: hash,
-        displayName: `${firstName || ''} ${lastName || ''}`.trim() || username,
+        displayName: `${firstName || ""} ${lastName || ""}`.trim() || username,
         avatarUrl: picture || null,
         isEmailVerified: true,
         googleId,
       },
     });
 
-    return this.signTokens(user.id, user.email, user.username, userAgent, ipAddress);
+    return this.signTokens(
+      user.id,
+      user.email,
+      user.username,
+      userAgent,
+      ipAddress,
+    );
   }
 
   async setup2FA(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new BadRequestException('User không tồn tại');
+    if (!user) throw new BadRequestException("User không tồn tại");
 
     const secret = generateSecret();
     const encryptedSecret = this.encrypt(secret);
-    
+
     const plainBackupCodes: string[] = [];
     const hashedBackupCodes: string[] = [];
 
     for (let i = 0; i < 10; i++) {
-      const code = randomBytes(4).toString('hex');
+      const code = randomBytes(4).toString("hex");
       plainBackupCodes.push(code);
       hashedBackupCodes.push(await bcrypt.hash(code, 10));
     }
@@ -394,7 +493,11 @@ export class AuthService {
       },
     });
 
-    const otpauth = generateURI({ secret, label: user.email, issuer: 'CineVerse' });
+    const otpauth = generateURI({
+      secret,
+      label: user.email,
+      issuer: "CineVerse",
+    });
     const qrCode = await QRCode.toDataURL(otpauth);
 
     return {
@@ -409,7 +512,7 @@ export class AuthService {
       where: { userId },
     });
 
-    if (!record) throw new BadRequestException('Chưa thiết lập 2FA');
+    if (!record) throw new BadRequestException("Chưa thiết lập 2FA");
 
     const decryptedSecret = this.decrypt(record.secret);
     const isValid = await verify({
@@ -417,14 +520,14 @@ export class AuthService {
       secret: decryptedSecret,
     });
 
-    if (!isValid) throw new BadRequestException('Mã xác thực OTP không đúng');
+    if (!isValid) throw new BadRequestException("Mã xác thực OTP không đúng");
 
     await this.prisma.user.update({
       where: { id: userId },
       data: { twoFactorEnabled: true },
     });
 
-    return { success: true, message: 'Đã bật xác thực 2 lớp thành công' };
+    return { success: true, message: "Đã bật xác thực 2 lớp thành công" };
   }
 
   async disable2FA(userId: string, dto: TwoFactorVerifyDto) {
@@ -432,7 +535,7 @@ export class AuthService {
       where: { userId },
     });
 
-    if (!record) throw new BadRequestException('Chưa thiết lập 2FA');
+    if (!record) throw new BadRequestException("Chưa thiết lập 2FA");
 
     const decryptedSecret = this.decrypt(record.secret);
     const isValid = await verify({
@@ -440,7 +543,7 @@ export class AuthService {
       secret: decryptedSecret,
     });
 
-    if (!isValid) throw new BadRequestException('Mã xác thực OTP không đúng');
+    if (!isValid) throw new BadRequestException("Mã xác thực OTP không đúng");
 
     await this.prisma.user.update({
       where: { id: userId },
@@ -451,28 +554,32 @@ export class AuthService {
       where: { userId },
     });
 
-    return { success: true, message: 'Đã tắt xác thực 2 lớp thành công' };
+    return { success: true, message: "Đã tắt xác thực 2 lớp thành công" };
   }
 
-  async loginVerify2FA(dto: TwoFactorLoginVerifyDto, userAgent?: string, ipAddress?: string) {
+  async loginVerify2FA(
+    dto: TwoFactorLoginVerifyDto,
+    userAgent?: string,
+    ipAddress?: string,
+  ) {
     try {
       const payload = await this.jwt.verifyAsync(dto.tempToken, {
-        secret: this.config.get('JWT_SECRET'),
+        secret: this.config.get("JWT_SECRET"),
       });
 
-      if (payload.type !== '2fa_temp') {
-        throw new UnauthorizedException('Token không hợp lệ');
+      if (payload.type !== "2fa_temp") {
+        throw new UnauthorizedException("Token không hợp lệ");
       }
 
       const userId = payload.sub;
       const user = await this.prisma.user.findUnique({ where: { id: userId } });
-      if (!user) throw new UnauthorizedException('User không tồn tại');
+      if (!user) throw new UnauthorizedException("User không tồn tại");
 
       const record = await this.prisma.twoFactorAuth.findUnique({
         where: { userId },
       });
 
-      if (!record) throw new UnauthorizedException('Chưa thiết lập 2FA');
+      if (!record) throw new UnauthorizedException("Chưa thiết lập 2FA");
 
       const decryptedSecret = this.decrypt(record.secret);
       let isValid = (await verify({
@@ -483,7 +590,7 @@ export class AuthService {
       if (!isValid) {
         const backupCodes = record.backupCodes;
         let matchedIndex = -1;
-        
+
         for (let i = 0; i < backupCodes.length; i++) {
           const match = await bcrypt.compare(dto.code, backupCodes[i]);
           if (match) {
@@ -494,7 +601,7 @@ export class AuthService {
 
         if (matchedIndex !== -1) {
           isValid = true;
-          
+
           const updatedBackupCodes = [...backupCodes];
           updatedBackupCodes.splice(matchedIndex, 1);
           await this.prisma.twoFactorAuth.update({
@@ -505,13 +612,19 @@ export class AuthService {
       }
 
       if (!isValid) {
-        throw new UnauthorizedException('Mã OTP hoặc mã dự phòng không đúng');
+        throw new UnauthorizedException("Mã OTP hoặc mã dự phòng không đúng");
       }
 
-      return this.signTokens(user.id, user.email, user.username, userAgent, ipAddress);
+      return this.signTokens(
+        user.id,
+        user.email,
+        user.username,
+        userAgent,
+        ipAddress,
+      );
     } catch (e) {
       if (e instanceof UnauthorizedException) throw e;
-      throw new UnauthorizedException('Mã xác thực hoặc token hết hạn');
+      throw new UnauthorizedException("Mã xác thực hoặc token hết hạn");
     }
   }
 
@@ -522,22 +635,26 @@ export class AuthService {
         isRevoked: false,
         expiresAt: { gt: new Date() },
       },
-      orderBy: { lastUsedAt: 'desc' },
+      orderBy: { lastUsedAt: "desc" },
     });
 
-    return tokens.map(t => {
-      const parser = new UAParser(t.userAgent || '');
+    return tokens.map((t) => {
+      const parser = new UAParser(t.userAgent || "");
       const browser = parser.getBrowser();
       const os = parser.getOS();
       const device = parser.getDevice();
 
-      const browserName = browser.name ? `${browser.name} ${browser.version || ''}` : 'Unknown Browser';
-      const osName = os.name ? `${os.name} ${os.version || ''}` : 'Unknown OS';
-      const deviceName = device.model ? `${device.vendor || ''} ${device.model}` : '';
+      const browserName = browser.name
+        ? `${browser.name} ${browser.version || ""}`
+        : "Unknown Browser";
+      const osName = os.name ? `${os.name} ${os.version || ""}` : "Unknown OS";
+      const deviceName = device.model
+        ? `${device.vendor || ""} ${device.model}`
+        : "";
 
       return {
         id: t.id,
-        ipAddress: t.ipAddress || 'Unknown IP',
+        ipAddress: t.ipAddress || "Unknown IP",
         userAgent: t.userAgent,
         browser: browserName.trim(),
         os: osName.trim(),
@@ -555,7 +672,9 @@ export class AuthService {
     });
 
     if (!record || record.userId !== userId) {
-      throw new BadRequestException('Session không tồn tại hoặc không thuộc về tài khoản này');
+      throw new BadRequestException(
+        "Session không tồn tại hoặc không thuộc về tài khoản này",
+      );
     }
 
     await this.prisma.refreshToken.update({
@@ -563,7 +682,7 @@ export class AuthService {
       data: { isRevoked: true },
     });
 
-    return { success: true, message: 'Đã đăng xuất thiết bị thành công' };
+    return { success: true, message: "Đã đăng xuất thiết bị thành công" };
   }
 
   async revokeAllSessions(userId: string, excludeSessionId?: string) {
@@ -576,10 +695,18 @@ export class AuthService {
       data: { isRevoked: true },
     });
 
-    return { success: true, message: 'Đã đăng xuất toàn bộ thiết bị khác thành công' };
+    return {
+      success: true,
+      message: "Đã đăng xuất toàn bộ thiết bị khác thành công",
+    };
   }
 
-  async checkNewDeviceAndWarn(userId: string, email: string, userAgent?: string, ipAddress?: string) {
+  async checkNewDeviceAndWarn(
+    userId: string,
+    email: string,
+    userAgent?: string,
+    ipAddress?: string,
+  ) {
     if (!userAgent) return;
 
     const thirtyDaysAgo = new Date();
@@ -594,25 +721,27 @@ export class AuthService {
 
     const currentSession = await this.prisma.refreshToken.findFirst({
       where: { userId, userAgent, ipAddress, isRevoked: false },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
-    const sessionsToCheck = pastSessions.filter(s => s.id !== currentSession?.id);
+    const sessionsToCheck = pastSessions.filter(
+      (s) => s.id !== currentSession?.id,
+    );
 
     if (sessionsToCheck.length === 0) {
       return;
     }
 
     const parser = new UAParser(userAgent);
-    const currentBrowser = parser.getBrowser().name || 'Unknown';
-    const currentOS = parser.getOS().name || 'Unknown';
+    const currentBrowser = parser.getBrowser().name || "Unknown";
+    const currentOS = parser.getOS().name || "Unknown";
 
     let isNewDevice = true;
     for (const sess of sessionsToCheck) {
       if (!sess.userAgent) continue;
       const pastParser = new UAParser(sess.userAgent);
-      const pastBrowser = pastParser.getBrowser().name || 'Unknown';
-      const pastOS = pastParser.getOS().name || 'Unknown';
+      const pastBrowser = pastParser.getBrowser().name || "Unknown";
+      const pastOS = pastParser.getOS().name || "Unknown";
 
       if (currentBrowser === pastBrowser && currentOS === pastOS) {
         isNewDevice = false;
@@ -621,9 +750,11 @@ export class AuthService {
     }
 
     if (isNewDevice) {
-      this.logger.log(`Suspicious login detected for user ${email}. Generating suspiciousToken.`);
-      const suspiciousToken = randomBytes(32).toString('hex');
-      
+      this.logger.log(
+        `Suspicious login detected for user ${email}. Generating suspiciousToken.`,
+      );
+      const suspiciousToken = randomBytes(32).toString("hex");
+
       await this.prisma.user.update({
         where: { id: userId },
         data: { suspiciousToken },
@@ -632,7 +763,7 @@ export class AuthService {
       await this.mailService.sendNewDeviceAlertEmail(email, {
         browser: currentBrowser,
         os: currentOS,
-        ipAddress: ipAddress || 'Unknown IP',
+        ipAddress: ipAddress || "Unknown IP",
         token: suspiciousToken,
       });
     }
@@ -644,7 +775,9 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new BadRequestException('Mã xác thực khóa tài khoản không hợp lệ hoặc đã được sử dụng.');
+      throw new BadRequestException(
+        "Mã xác thực khóa tài khoản không hợp lệ hoặc đã được sử dụng.",
+      );
     }
 
     await this.prisma.user.update({
@@ -662,7 +795,8 @@ export class AuthService {
 
     return {
       success: true,
-      message: 'Tài khoản của bạn đã được khóa để bảo mật. Tất cả các phiên đăng nhập đã bị hủy.',
+      message:
+        "Tài khoản của bạn đã được khóa để bảo mật. Tất cả các phiên đăng nhập đã bị hủy.",
     };
   }
 
@@ -682,7 +816,12 @@ export class AuthService {
         twoFactorEnabled: true,
         isLocked: true,
         _count: {
-          select: { watchlist: true, reviews: true, followers: true, following: true },
+          select: {
+            watchlist: true,
+            reviews: true,
+            followers: true,
+            following: true,
+          },
         },
       },
     });

@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
 export class RatingsService {
@@ -8,7 +8,7 @@ export class RatingsService {
   async rate(userId: string, movieId: string, score: number) {
     await this.prisma.movie.upsert({
       where: { id: movieId },
-      create: { id: movieId, title: movieId, type: 'unknown' },
+      create: { id: movieId, title: movieId, type: "unknown" },
       update: {},
     });
 

@@ -23,12 +23,14 @@ A modern full-stack movie application with NestJS API and Next.js frontend.
 ### Cách 1: Development Mode (Dễ nhất cho Windows)
 
 Chỉ cần double-click vào file:
+
 1. `setup-dev.bat` - Cài đặt lần đầu
 2. `start-dev.bat` - Khởi chạy dự án
 
 ### Cách 2: Docker Mode (Đơn giản, không cần cài PostgreSQL/Redis)
 
 Double-click vào file:
+
 - `start-docker.bat` - Tự động build và chạy tất cả
 
 ### Cách 3: Manual (Theo từng bước)
@@ -67,6 +69,7 @@ npm run dev
 ```
 
 This will start:
+
 - API on http://localhost:3001
 - Web on http://localhost:3000
 
@@ -89,6 +92,7 @@ npm run docker:down
 ```
 
 Services available:
+
 - Web App: http://localhost
 - API: http://localhost/api
 - PostgreSQL: localhost:5432
@@ -148,6 +152,7 @@ movie_demo/
 ## 🌐 Nginx Configuration
 
 The Nginx configuration includes:
+
 - Reverse proxy for API and Web
 - Gzip compression
 - Rate limiting

@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
 
 export interface UpsertHistoryDto {
   movieId: string;
@@ -24,7 +24,7 @@ export class WatchHistoryService {
         id: dto.movieId,
         title: dto.movieTitle,
         thumbUrl: dto.movieThumb,
-        type: 'unknown',
+        type: "unknown",
       },
       update: {
         title: dto.movieTitle,
@@ -66,7 +66,7 @@ export class WatchHistoryService {
     const [items, total] = await Promise.all([
       this.prisma.watchHistory.findMany({
         where: { userId },
-        orderBy: { watchedAt: 'desc' },
+        orderBy: { watchedAt: "desc" },
         skip,
         take: limit,
       }),
@@ -79,7 +79,7 @@ export class WatchHistoryService {
   async getResumeData(userId: string, movieId: string) {
     return this.prisma.watchHistory.findMany({
       where: { userId, movieId },
-      orderBy: { watchedAt: 'desc' },
+      orderBy: { watchedAt: "desc" },
     });
   }
 

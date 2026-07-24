@@ -98,7 +98,9 @@
   text-decoration: none;
   transition: color var(--transition-fast);
 }
-.authLink:hover { color: var(--accent-hover); }
+.authLink:hover {
+  color: var(--accent-hover);
+}
 
 /* Background decoration */
 .authBg {
@@ -119,7 +121,15 @@
 }
 
 @keyframes float {
-  0% { transform: translateY(0) rotate(0deg); opacity: 0.04; }
-  50% { opacity: 0.08; }
-  100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0.04;
+  }
+  50% {
+    opacity: 0.08;
+  }
+  100% {
+    transform: translateY(-100vh) rotate(360deg);
+    opacity: 0;
+  }
 }

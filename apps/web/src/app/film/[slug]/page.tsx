@@ -496,20 +496,26 @@ export default function FilmDetailPage() {
           const res = await movieApi.search(matchedKeyword, 1, 15);
           const items = res?.data?.items || res?.data?.data?.items || [];
           recItems.push(...items);
-        } catch {}
+        } catch {
+          // Ignore search errors
+        }
       }
       if (firstGenre) {
         try {
           const res = await movieApi.getByGenre(firstGenre, 1);
           const items = res?.data?.data?.items || res?.data?.items || [];
           recItems.push(...items);
-        } catch {}
+        } catch {
+          // Ignore genre errors
+        }
       }
       try {
         const res = await movieApi.getLatest(1);
         const items = res?.data?.items || res?.data?.data?.items || [];
         recItems.push(...items);
-      } catch {}
+      } catch {
+        // Ignore latest fetch errors
+      }
 
       const seen = new Set<string>();
       return recItems

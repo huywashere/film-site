@@ -1,13 +1,13 @@
-import { MetadataRoute } from 'next';
+import { MetadataRoute } from "next";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
-      userAgent: '*',
-      allow: '/',
-      disallow: ['/profile/', '/watch/'], // Save crawler budget by blocking player/user routes
+      userAgent: "*",
+      allow: "/",
+      disallow: ["/profile/", "/watch/"], // Save crawler budget by blocking player/user routes
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

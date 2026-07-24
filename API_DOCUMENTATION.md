@@ -13,12 +13,15 @@ Tài liệu API đầy đủ cho hệ thống xem phim.
 ## 📋 Danh Sách Phim
 
 ### GET /danh-sach/phim-moi-cap-nhat
+
 Lấy danh sách phim mới cập nhật
 
 **Query Parameters:**
+
 - `page` (number, optional): Trang hiện tại (default: 1)
 
 **Response:**
+
 ```json
 {
   "status": true,
@@ -35,9 +38,11 @@ Lấy danh sách phim mới cập nhật
 ---
 
 ### GET /v1/api/danh-sach/phim-bo
+
 Danh sách phim bộ
 
 **Query Parameters:**
+
 - `page` (number): Trang
 - `limit` (number): Số phim mỗi trang (default: 24)
 - `sort_field` (string): Trường sắp xếp (modified.time, year, _id)
@@ -46,24 +51,29 @@ Danh sách phim bộ
 ---
 
 ### GET /v1/api/danh-sach/phim-le
+
 Danh sách phim lẻ
 
 ---
 
 ### GET /v1/api/danh-sach/hoat-hinh
+
 Danh sách hoạt hình
 
 ---
 
 ### GET /v1/api/danh-sach/tv-shows
+
 Danh sách TV Shows
 
 ---
 
 ### GET /v1/api/danh-sach (Lọc nâng cao)
+
 Lọc phim theo nhiều tiêu chí
 
 **Query Parameters:**
+
 - `type` (string): phim-le, phim-bo, hoat-hinh, tv-shows
 - `status` (string): trailer, ongoing, completed
 - `category` (string): Slug thể loại
@@ -75,6 +85,7 @@ Lọc phim theo nhiều tiêu chí
 - `sort_type` (string): desc/asc
 
 **Example:**
+
 ```
 /v1/api/danh-sach?type=phim-bo&country=han-quoc&year=2026&page=1&limit=24
 ```
@@ -84,6 +95,7 @@ Lọc phim theo nhiều tiêu chí
 ## 🎬 Chi Tiết Phim
 
 ### GET /phim/:slug
+
 Lấy thông tin chi tiết phim (Old API)
 
 **Example:** `/phim/tuoc-cot`
@@ -91,9 +103,11 @@ Lấy thông tin chi tiết phim (Old API)
 ---
 
 ### GET /v1/api/phim/:slug
+
 Lấy thông tin chi tiết phim (New API)
 
 **Response:**
+
 ```json
 {
   "status": true,
@@ -125,14 +139,17 @@ Lấy thông tin chi tiết phim (New API)
 ---
 
 ### GET /phim/id/:id
+
 Lấy phim theo ID
 
 ---
 
 ### GET /phim/tmdb
+
 Lấy phim theo TMDB ID
 
 **Query Parameters:**
+
 - `tmdb_id` (string, required)
 - `type` (string, required): tv hoặc movie
 - `season` (number, optional): Số season
@@ -142,9 +159,11 @@ Lấy phim theo TMDB ID
 ---
 
 ### GET /phim/imdb
+
 Lấy phim theo IMDB ID
 
 **Query Parameters:**
+
 - `imdb_id` (string, required)
 
 **Example:** `/phim/imdb?imdb_id=tt38973414`
@@ -154,20 +173,24 @@ Lấy phim theo IMDB ID
 ## 📸 Thông Tin Bổ Sung
 
 ### GET /phim/images
+
 Lấy hình ảnh từ TMDB
 
 **Query Parameters:**
+
 - `tmdb_type` (string): tv hoặc movie
 - `tmdb_id` (string)
 
 ---
 
 ### GET /phim/cast
+
 Lấy thông tin diễn viên
 
 ---
 
 ### GET /phim/keywords
+
 Lấy từ khóa phim
 
 ---
@@ -175,9 +198,11 @@ Lấy từ khóa phim
 ## 🔍 Tìm Kiếm & Lọc
 
 ### GET /v1/api/tim-kiem
+
 Tìm kiếm phim
 
 **Query Parameters:**
+
 - `keyword` (string, required)
 - `page` (number)
 - `limit` (number)
@@ -189,9 +214,11 @@ Tìm kiếm phim
 ## 🎭 Thể Loại
 
 ### GET /the-loai
+
 Lấy danh sách tất cả thể loại
 
 **Response:**
+
 ```json
 [
   {
@@ -208,6 +235,7 @@ Lấy danh sách tất cả thể loại
 ---
 
 ### GET /v1/api/the-loai/:slug
+
 Lấy phim theo thể loại
 
 **Example:** `/v1/api/the-loai/hanh-dong?page=1&limit=24`
@@ -217,11 +245,13 @@ Lấy phim theo thể loại
 ## 🌍 Quốc Gia
 
 ### GET /quoc-gia
+
 Lấy danh sách tất cả quốc gia
 
 ---
 
 ### GET /v1/api/quoc-gia/:slug
+
 Lấy phim theo quốc gia
 
 **Example:** `/v1/api/quoc-gia/han-quoc?page=1&limit=24`
@@ -231,11 +261,13 @@ Lấy phim theo quốc gia
 ## 📅 Năm Phát Hành
 
 ### GET /nam-phat-hanh
+
 Lấy danh sách các năm
 
 ---
 
 ### GET /nam-phat-hanh/:year
+
 Lấy phim theo năm
 
 **Example:** `/nam-phat-hanh/2026?page=1&limit=24`
@@ -245,9 +277,11 @@ Lấy phim theo năm
 ## 🔐 Authentication Endpoints (Backend Only)
 
 ### POST /api/v1/auth/register
+
 Đăng ký tài khoản
 
 **Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -259,9 +293,11 @@ Lấy phim theo năm
 ---
 
 ### POST /api/v1/auth/login
+
 Đăng nhập
 
 **Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -270,6 +306,7 @@ Lấy phim theo năm
 ```
 
 **Response:**
+
 ```json
 {
   "accessToken": "...",
@@ -281,6 +318,7 @@ Lấy phim theo năm
 ---
 
 ### GET /api/v1/auth/me
+
 Lấy thông tin user hiện tại (cần token)
 
 ---
@@ -288,14 +326,17 @@ Lấy thông tin user hiện tại (cần token)
 ## 📝 Reviews & Ratings
 
 ### GET /api/v1/reviews/movie/:movieId
+
 Lấy reviews của một phim
 
 ---
 
 ### POST /api/v1/reviews
+
 Tạo review mới (cần đăng nhập)
 
 **Body:**
+
 ```json
 {
   "movieId": "tuoc-cot",
@@ -307,9 +348,11 @@ Tạo review mới (cần đăng nhập)
 ---
 
 ### POST /api/v1/ratings
+
 Đánh giá phim (cần đăng nhập)
 
 **Body:**
+
 ```json
 {
   "movieId": "tuoc-cot",
@@ -320,6 +363,7 @@ Tạo review mới (cần đăng nhập)
 ---
 
 ### GET /api/v1/ratings/movie/:movieId/average
+
 Lấy rating trung bình của phim
 
 ---
@@ -327,14 +371,17 @@ Lấy rating trung bình của phim
 ## 📌 Watchlist
 
 ### GET /api/v1/watchlist
+
 Lấy danh sách watchlist (cần đăng nhập)
 
 ---
 
 ### POST /api/v1/watchlist
+
 Thêm phim vào watchlist
 
 **Body:**
+
 ```json
 {
   "movieId": "tuoc-cot",
@@ -345,11 +392,13 @@ Thêm phim vào watchlist
 ---
 
 ### DELETE /api/v1/watchlist/:movieId
+
 Xóa phim khỏi watchlist
 
 ---
 
 ### GET /api/v1/watchlist/check/:movieId
+
 Kiểm tra phim có trong watchlist không
 
 ---
@@ -357,6 +406,7 @@ Kiểm tra phim có trong watchlist không
 ## 📊 Response Format
 
 ### Success Response
+
 ```json
 {
   "status": true,
@@ -366,6 +416,7 @@ Kiểm tra phim có trong watchlist không
 ```
 
 ### Error Response
+
 ```json
 {
   "status": false,
@@ -381,23 +432,23 @@ Kiểm tra phim có trong watchlist không
 ### Frontend (React/Next.js)
 
 ```typescript
-import { movieApi, kkphimApi } from '@/lib/api';
+import { movieApi, kkphimApi } from "@/lib/api";
 
 // Lấy phim mới nhất
 const { data } = await movieApi.getLatest(1);
 
 // Tìm kiếm phim
-const results = await kkphimApi.search('spider man', 1);
+const results = await kkphimApi.search("spider man", 1);
 
 // Chi tiết phim
-const movie = await kkphimApi.getDetail('tuoc-cot');
+const movie = await kkphimApi.getDetail("tuoc-cot");
 
 // Lọc phim
 const filtered = await kkphimApi.getFiltered({
-  type: 'phim-bo',
-  country: 'han-quoc',
+  type: "phim-bo",
+  country: "han-quoc",
   year: 2026,
-  page: 1
+  page: 1,
 });
 ```
 

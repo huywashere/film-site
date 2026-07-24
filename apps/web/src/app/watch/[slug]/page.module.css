@@ -75,7 +75,9 @@
   color: var(--text-muted);
   font-size: 3rem;
 }
-.noVideo p:last-child { font-size: 1rem; }
+.noVideo p:last-child {
+  font-size: 1rem;
+}
 
 /* Player Toggle Button */
 .playerToggle {
@@ -190,8 +192,14 @@
 }
 
 @media (max-width: 900px) {
-  .watchLayout { flex-direction: column; height: auto; }
-  .playerWrapper { aspect-ratio: 16/9; flex: none; }
+  .watchLayout {
+    flex-direction: column;
+    height: auto;
+  }
+  .playerWrapper {
+    aspect-ratio: 16/9;
+    flex: none;
+  }
   .epSidebar {
     width: 100%;
     border-left: none;
@@ -199,5 +207,7 @@
     max-height: 300px;
     display: none;
   }
-  .epSidebarOpen { display: flex; }
+  .epSidebarOpen {
+    display: flex;
+  }
 }

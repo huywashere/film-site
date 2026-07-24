@@ -8,18 +8,21 @@ import {
   Query,
   UseGuards,
   Request,
-} from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { WatchHistoryService, UpsertHistoryDto } from './watch-history.service';
+} from "@nestjs/common";
+import { AuthGuard } from "@nestjs/passport";
+import { WatchHistoryService, UpsertHistoryDto } from "./watch-history.service";
 
-@Controller('watch-history')
-@UseGuards(AuthGuard('jwt'))
+@Controller("watch-history")
+@UseGuards(AuthGuard("jwt"))
 export class WatchHistoryController {
   constructor(private readonly watchHistoryService: WatchHistoryService) {}
 
   /** Upsert progress — called every 30s from the player */
   @Post()
-  upsert(@Request() req: { user: { id: string } }, @Body() dto: UpsertHistoryDto) {
+  upsert(
+    @Request() req: { user: { id: string } },
+    @Body() dto: UpsertHistoryDto,
+  ) {
     return this.watchHistoryService.upsert(req.user.id, dto);
   }
 
@@ -27,8 +30,8 @@ export class WatchHistoryController {
   @Get()
   getHistory(
     @Request() req: { user: { id: string } },
-    @Query('page') page = '1',
-    @Query('limit') limit = '20',
+    @Query("page") page = "1",
+    @Query("limit") limit = "20",
   ) {
     return this.watchHistoryService.getHistory(
       req.user.id,
@@ -38,17 +41,20 @@ export class WatchHistoryController {
   }
 
   /** Get resume data for a specific movie */
-  @Get('resume/:movieId')
+  @Get("resume/:movieId")
   getResume(
     @Request() req: { user: { id: string } },
-    @Param('movieId') movieId: string,
+    @Param("movieId") movieId: string,
   ) {
     return this.watchHistoryService.getResumeData(req.user.id, movieId);
   }
 
   /** Delete a single entry */
-  @Delete(':id')
-  deleteEntry(@Request() req: { user: { id: string } }, @Param('id') id: string) {
+  @Delete(":id")
+  deleteEntry(
+    @Request() req: { user: { id: string } },
+    @Param("id") id: string,
+  ) {
     return this.watchHistoryService.deleteEntry(req.user.id, id);
   }
 

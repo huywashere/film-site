@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
 export class WatchlistService {
@@ -10,7 +10,7 @@ export class WatchlistService {
       this.prisma.watchlist.findMany({
         where: { userId },
         include: { movie: true },
-        orderBy: { addedAt: 'desc' },
+        orderBy: { addedAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -31,7 +31,7 @@ export class WatchlistService {
           posterUrl: movieData.posterUrl,
           thumbUrl: movieData.thumbUrl,
           year: movieData.year,
-          type: movieData.type || 'unknown',
+          type: movieData.type || "unknown",
         },
         update: {
           title: movieData.title,
@@ -42,7 +42,7 @@ export class WatchlistService {
     } else {
       await this.prisma.movie.upsert({
         where: { id: movieId },
-        create: { id: movieId, title: movieId, type: 'unknown' },
+        create: { id: movieId, title: movieId, type: "unknown" },
         update: {},
       });
     }

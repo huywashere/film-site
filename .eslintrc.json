@@ -26,5 +26,12 @@
     "node": true,
     "es2022": true
   },
-  "ignorePatterns": ["node_modules", "dist", "build", ".next", "out", "coverage"]
+  "ignorePatterns": [
+    "node_modules",
+    "dist",
+    "build",
+    ".next",
+    "out",
+    "coverage"
+  ]
 }

@@ -278,7 +278,9 @@ export default function WatchPage() {
           const res = await movieApi.search(matchedKeyword, 1, 15);
           const searchItems = res?.data?.items || res?.data?.data?.items || [];
           recItems.push(...searchItems);
-        } catch {}
+        } catch {
+          // Ignore search errors
+        }
       }
 
       // 2. Category / Genre matching
@@ -287,7 +289,9 @@ export default function WatchPage() {
           const res = await movieApi.getByGenre(filmCategory, 1);
           const genreItems = res?.data?.data?.items || res?.data?.items || [];
           recItems.push(...genreItems);
-        } catch {}
+        } catch {
+          // Ignore genre errors
+        }
       }
 
       // 3. Fallback to Latest items
@@ -295,7 +299,9 @@ export default function WatchPage() {
         const res = await movieApi.getLatest(1);
         const latestItems = res?.data?.items || res?.data?.data?.items || [];
         recItems.push(...latestItems);
-      } catch {}
+      } catch {
+        // Ignore latest fetch errors
+      }
 
       // Deduplicate & filter out current film
       const seen = new Set<string>();

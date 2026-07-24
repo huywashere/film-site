@@ -1,6 +1,6 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import Redis from 'ioredis';
+import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import Redis from "ioredis";
 
 @Injectable()
 export class RedisCacheService implements OnModuleDestroy {
@@ -9,10 +9,16 @@ export class RedisCacheService implements OnModuleDestroy {
   private isDisabled = false;
 
   /** In-memory fallback when Redis is offline */
-  private readonly mem = new Map<string, { value: string; expiresAt: number }>();
+  private readonly mem = new Map<
+    string,
+    { value: string; expiresAt: number }
+  >();
 
   constructor(private readonly config: ConfigService) {
-    const redisUrl = this.config.get<string>('REDIS_URL', 'redis://localhost:6379');
+    const redisUrl = this.config.get<string>(
+      "REDIS_URL",
+      "redis://localhost:6379",
+    );
     this.connect(redisUrl);
   }
 
@@ -24,28 +30,34 @@ export class RedisCacheService implements OnModuleDestroy {
         lazyConnect: false,
       });
 
-      this.client.on('connect', () => {
-        this.logger.log('✅ Redis connected – caching active');
+      this.client.on("connect", () => {
+        this.logger.log("✅ Redis connected – caching active");
         this.isDisabled = false;
       });
 
-      this.client.on('error', (err) => {
+      this.client.on("error", (err) => {
         if (!this.isDisabled) {
-          this.logger.warn(`⚠️  Redis offline (${err.message}) – falling back to in-memory cache`);
+          this.logger.warn(
+            `⚠️  Redis offline (${err.message}) – falling back to in-memory cache`,
+          );
           this.isDisabled = true;
           this.client?.disconnect();
           this.client = null;
         }
       });
     } catch {
-      this.logger.warn('⚠️  Redis init failed – using in-memory cache fallback');
+      this.logger.warn(
+        "⚠️  Redis init failed – using in-memory cache fallback",
+      );
       this.isDisabled = true;
       this.client = null;
     }
   }
 
   private get isReady(): boolean {
-    return !this.isDisabled && this.client !== null && this.client.status === 'ready';
+    return (
+      !this.isDisabled && this.client !== null && this.client.status === "ready"
+    );
   }
 
   /** Get a cached value. Returns null on miss or Redis offline. */
@@ -69,7 +81,7 @@ export class RedisCacheService implements OnModuleDestroy {
   async set(key: string, value: string, ttlSeconds: number): Promise<void> {
     if (this.isReady) {
       try {
-        await this.client!.set(key, value, 'EX', ttlSeconds);
+        await this.client!.set(key, value, "EX", ttlSeconds);
         return;
       } catch {
         // fall through to memory

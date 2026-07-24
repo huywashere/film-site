@@ -1,5 +1,5 @@
-import { ThrottlerStorage } from '@nestjs/throttler';
-import Redis from 'ioredis';
+import { ThrottlerStorage } from "@nestjs/throttler";
+import Redis from "ioredis";
 
 export interface ThrottlerStorageRecord {
   totalHits: number;
@@ -11,7 +11,10 @@ export interface ThrottlerStorageRecord {
 export class RedisThrottlerStorage implements ThrottlerStorage {
   private redis: Redis | null = null;
   private isRedisDisabled = false;
-  private readonly memoryFallback = new Map<string, { count: number; expiresAt: number }>();
+  private readonly memoryFallback = new Map<
+    string,
+    { count: number; expiresAt: number }
+  >();
 
   constructor(redisUrl: string) {
     try {
@@ -19,8 +22,10 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
         maxRetriesPerRequest: 1,
         connectTimeout: 500, // Fail fast if Redis server is down
       });
-      this.redis.on('error', (_err) => {
-        console.warn('Redis connection failed on backend, disabling Redis throttler storage.');
+      this.redis.on("error", (_err) => {
+        console.warn(
+          "Redis connection failed on backend, disabling Redis throttler storage.",
+        );
         this.isRedisDisabled = true;
         if (this.redis) {
           try {
@@ -45,7 +50,7 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
     throttlerName: string,
   ): Promise<ThrottlerStorageRecord> {
     // Check if Redis is online/ready and not disabled
-    if (!this.isRedisDisabled && this.redis && this.redis.status === 'ready') {
+    if (!this.isRedisDisabled && this.redis && this.redis.status === "ready") {
       try {
         const multi = this.redis.multi();
         multi.incr(key);
@@ -63,7 +68,9 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
 
           const timeToExpire = Math.max(0, Math.ceil(timeToExpireMs / 1000));
           const isBlocked = totalHits > limit;
-          const timeToBlockExpire = isBlocked ? Math.max(0, Math.ceil(blockDuration / 1000)) : 0;
+          const timeToBlockExpire = isBlocked
+            ? Math.max(0, Math.ceil(blockDuration / 1000))
+            : 0;
 
           return {
             totalHits,
@@ -94,9 +101,14 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
 
     record.count += 1;
     const totalHits = record.count;
-    const timeToExpire = Math.max(0, Math.ceil((record.expiresAt - now) / 1000));
+    const timeToExpire = Math.max(
+      0,
+      Math.ceil((record.expiresAt - now) / 1000),
+    );
     const isBlocked = totalHits > limit;
-    const timeToBlockExpire = isBlocked ? Math.max(0, Math.ceil(blockDuration / 1000)) : 0;
+    const timeToBlockExpire = isBlocked
+      ? Math.max(0, Math.ceil(blockDuration / 1000))
+      : 0;
 
     return {
       totalHits,

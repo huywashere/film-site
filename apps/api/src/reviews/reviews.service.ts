@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
 export class ReviewsService {
@@ -10,8 +10,12 @@ export class ReviewsService {
     const [reviews, total] = await Promise.all([
       this.prisma.review.findMany({
         where: { movieId },
-        include: { user: { select: { username: true, displayName: true, avatarUrl: true } } },
-        orderBy: { createdAt: 'desc' },
+        include: {
+          user: {
+            select: { username: true, displayName: true, avatarUrl: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
@@ -20,11 +24,14 @@ export class ReviewsService {
     return { reviews, total, page, pages: Math.ceil(total / limit) };
   }
 
-  async create(userId: string, dto: { movieId: string; content: string; rating?: number }) {
+  async create(
+    userId: string,
+    dto: { movieId: string; content: string; rating?: number },
+  ) {
     // Upsert movie record if not exists
     await this.prisma.movie.upsert({
       where: { id: dto.movieId },
-      create: { id: dto.movieId, title: dto.movieId, type: 'unknown' },
+      create: { id: dto.movieId, title: dto.movieId, type: "unknown" },
       update: {},
     });
 
@@ -35,7 +42,11 @@ export class ReviewsService {
         content: dto.content,
         rating: dto.rating,
       },
-      include: { user: { select: { username: true, displayName: true, avatarUrl: true } } },
+      include: {
+        user: {
+          select: { username: true, displayName: true, avatarUrl: true },
+        },
+      },
     });
   }
 
@@ -72,10 +83,12 @@ export class ReviewsService {
   async getRecent(page = 1, limit = 20) {
     return this.prisma.review.findMany({
       include: {
-        user: { select: { username: true, displayName: true, avatarUrl: true } },
+        user: {
+          select: { username: true, displayName: true, avatarUrl: true },
+        },
         movie: true,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
       take: limit,
     });

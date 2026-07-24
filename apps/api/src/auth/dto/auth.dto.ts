@@ -1,4 +1,10 @@
-import { IsEmail, IsString, MinLength, MaxLength, Matches } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  MaxLength,
+  Matches,
+} from "class-validator";
 
 export class RegisterDto {
   @IsEmail()
@@ -10,9 +16,9 @@ export class RegisterDto {
   username: string;
 
   @IsString()
-  @MinLength(8, { message: 'Mật khẩu phải chứa ít nhất 8 ký tự' })
+  @MinLength(8, { message: "Mật khẩu phải chứa ít nhất 8 ký tự" })
   @Matches(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
-    message: 'Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 chữ số',
+    message: "Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 chữ số",
   })
   password: string;
 }
@@ -31,7 +37,7 @@ export class VerifyEmailDto {
 }
 
 export class ForgotPasswordDto {
-  @IsEmail({}, { message: 'Email không hợp lệ' })
+  @IsEmail({}, { message: "Email không hợp lệ" })
   email: string;
 }
 
@@ -40,9 +46,9 @@ export class ResetPasswordDto {
   token: string;
 
   @IsString()
-  @MinLength(8, { message: 'Mật khẩu phải chứa ít nhất 8 ký tự' })
+  @MinLength(8, { message: "Mật khẩu phải chứa ít nhất 8 ký tự" })
   @Matches(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
-    message: 'Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 chữ số',
+    message: "Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 chữ số",
   })
   newPassword: string;
 }

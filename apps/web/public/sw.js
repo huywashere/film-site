@@ -1,22 +1,18 @@
-const CACHE_NAME = 'cineverse-cache-v1';
-const OFFLINE_URL = '/offline';
+const CACHE_NAME = "cineverse-cache-v1";
+const OFFLINE_URL = "/offline";
 
-const ASSETS_TO_CACHE = [
-  '/',
-  '/offline',
-  '/manifest.json',
-];
+const ASSETS_TO_CACHE = ["/", "/offline", "/manifest.json"];
 
-self.addEventListener('install', (event) => {
+self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE);
-    })
+    }),
   );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
+self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -24,33 +20,33 @@ self.addEventListener('activate', (event) => {
           if (cache !== CACHE_NAME) {
             return caches.delete(cache);
           }
-        })
+        }),
       );
-    })
+    }),
   );
   self.clients.claim();
 });
 
-self.addEventListener('fetch', (event) => {
+self.addEventListener("fetch", (event) => {
   // Disable service worker intercept during local development to prevent breaking Next.js dev assets / CSS HMR
   if (
-    self.location.hostname === 'localhost' ||
-    self.location.hostname === '127.0.0.1' ||
-    self.location.hostname.startsWith('192.168.')
+    self.location.hostname === "localhost" ||
+    self.location.hostname === "127.0.0.1" ||
+    self.location.hostname.startsWith("192.168.")
   ) {
     return;
   }
 
   // We only cache GET requests
-  if (event.request.method !== 'GET') return;
+  if (event.request.method !== "GET") return;
 
   const url = new URL(event.request.url);
 
   // Exclude hot-reloading dev urls and auth api calls
   if (
-    url.pathname.startsWith('/_next/webpack-hmr') ||
-    url.pathname.startsWith('/api/v1/auth') ||
-    url.pathname.startsWith('/api/kkphim')
+    url.pathname.startsWith("/_next/webpack-hmr") ||
+    url.pathname.startsWith("/api/v1/auth") ||
+    url.pathname.startsWith("/api/kkphim")
   ) {
     return;
   }
@@ -59,14 +55,21 @@ self.addEventListener('fetch', (event) => {
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
         // Fetch new version in background (Stale-While-Revalidate) for same-origin pages
-        if (!url.pathname.includes('/_next/static/') && url.origin === self.location.origin) {
+        if (
+          !url.pathname.includes("/_next/static/") &&
+          url.origin === self.location.origin
+        ) {
           fetch(event.request)
             .then((networkResponse) => {
               if (networkResponse.status === 200) {
-                caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
+                caches
+                  .open(CACHE_NAME)
+                  .then((cache) => cache.put(event.request, networkResponse));
               }
             })
-            .catch(() => {/* Ignore network errors */});
+            .catch(() => {
+              /* Ignore network errors */
+            });
         }
         return cachedResponse;
       }
@@ -76,7 +79,8 @@ self.addEventListener('fetch', (event) => {
           // Cache static JS/CSS assets
           if (
             networkResponse.status === 200 &&
-            (url.pathname.includes('/_next/static/') || url.pathname.includes('/fonts/'))
+            (url.pathname.includes("/_next/static/") ||
+              url.pathname.includes("/fonts/"))
           ) {
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
@@ -87,11 +91,11 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() => {
           // If offline and navigating to a page, serve the offline page
-          if (event.request.mode === 'navigate') {
+          if (event.request.mode === "navigate") {
             return caches.match(OFFLINE_URL);
           }
-          return Promise.reject('Offline');
+          return Promise.reject("Offline");
         });
-    })
+    }),
   );
 });

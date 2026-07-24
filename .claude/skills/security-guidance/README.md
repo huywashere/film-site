@@ -43,13 +43,13 @@ SECURITY_REVIEW_MODEL=claude-opus-4-7@20260218
 
 ### Enabling/disabling layers
 
-| Variable | Default | What it does |
-|---|---|---|
-| `SECURITY_GUIDANCE_DISABLE=1` | unset | Kill switch — disables the entire plugin |
-| `ENABLE_PATTERN_RULES=0` | on | Disable layer 1 (regex pattern warnings) |
-| `ENABLE_CODE_SECURITY_REVIEW=0` | on | Disable all LLM reviews (Stop hook + commit/push) |
-| `ENABLE_STOP_REVIEW=0` | on | Disable only the Stop-hook diff review, keeping commit/push reviews. Useful for multi-agent / shared-worktree setups where another agent can move HEAD between a worker's turns |
-| `ENABLE_COMMIT_REVIEW=0` | on | Disable layer 3 (agentic commit review) |
+| Variable                        | Default | What it does                                                                                                                                                                    |
+| ------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SECURITY_GUIDANCE_DISABLE=1`   | unset   | Kill switch — disables the entire plugin                                                                                                                                        |
+| `ENABLE_PATTERN_RULES=0`        | on      | Disable layer 1 (regex pattern warnings)                                                                                                                                        |
+| `ENABLE_CODE_SECURITY_REVIEW=0` | on      | Disable all LLM reviews (Stop hook + commit/push)                                                                                                                               |
+| `ENABLE_STOP_REVIEW=0`          | on      | Disable only the Stop-hook diff review, keeping commit/push reviews. Useful for multi-agent / shared-worktree setups where another agent can move HEAD between a worker's turns |
+| `ENABLE_COMMIT_REVIEW=0`        | on      | Disable layer 3 (agentic commit review)                                                                                                                                         |
 
 ### Higher-recall mode
 
@@ -87,6 +87,7 @@ Built-in rules cover common web-vulnerability classes without it — `claude-sec
 The plugin sends data to a model endpoint to perform its reviews. Specifically, each Stop-hook diff review transmits the changed file paths, the diff hunks, and the relevant file contents in the diff; each agentic commit review additionally transmits any files the reviewer pulls in via `Read`/`Grep`/`Glob` while tracing data flow. Your `claude-security-guidance.md` contents (user, project, and local) are appended to the prompt on every review, so don't put secrets in it.
 
 Where that data goes depends on your Claude Code configuration:
+
 - **Default (Anthropic API / subscription):** sent to `api.anthropic.com` and handled under Anthropic's [Commercial Terms](https://www.anthropic.com/legal/commercial-terms) and [Privacy Policy](https://www.anthropic.com/legal/privacy).
 - **LLM gateway** (`ANTHROPIC_BASE_URL` set): sent to your gateway URL instead. The gateway operator's terms apply.
 - **3rd-party providers** (Bedrock / Vertex / Foundry / Mantle): sent to your configured provider endpoint. The provider's data-handling terms apply (e.g., AWS / GCP / Azure).
@@ -110,6 +111,7 @@ This is a best-effort assistive tool, not a guarantee. Treat findings as suggest
 ## Reporting issues
 
 Open an issue on the [security-guidance plugin repo](https://github.com/anthropics/claude-code/issues) with:
+
 - The Claude Code CLI version (`claude --version`)
 - Provider setup (1P / Bedrock / Vertex / LLM gateway / etc.)
 - A minimal repro diff

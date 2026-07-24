@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { RedisCacheService } from '../redis/redis.service';
-import axios, { AxiosInstance } from 'axios';
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { RedisCacheService } from "../redis/redis.service";
+import axios, { AxiosInstance } from "axios";
 
 @Injectable()
 export class MoviesService {
@@ -13,11 +13,11 @@ export class MoviesService {
     private readonly config: ConfigService,
     private readonly cache: RedisCacheService,
   ) {
-    this.baseUrl = config.get('KKPHIM_BASE_URL') || 'https://phimapi.com';
+    this.baseUrl = config.get("KKPHIM_BASE_URL") || "https://phimapi.com";
     this.http = axios.create({
       baseURL: this.baseUrl,
       timeout: 10000,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 
@@ -25,7 +25,11 @@ export class MoviesService {
    * Generic cached GET helper.
    * Checks Redis (or in-memory fallback) before hitting KKPhim upstream.
    */
-  private async cachedGet<T>(key: string, url: string, ttlSeconds = 300): Promise<T> {
+  private async cachedGet<T>(
+    key: string,
+    url: string,
+    ttlSeconds = 300,
+  ): Promise<T> {
     // 1. Check cache
     const cached = await this.cache.getJson<T>(`movies:${key}`);
     if (cached !== null) {
@@ -49,7 +53,11 @@ export class MoviesService {
 
   // GET /danh-sach/phim-moi-cap-nhat?page=1
   async getLatest(page = 1) {
-    return this.cachedGet(`latest:${page}`, `/danh-sach/phim-moi-cap-nhat?page=${page}`, 120);
+    return this.cachedGet(
+      `latest:${page}`,
+      `/danh-sach/phim-moi-cap-nhat?page=${page}`,
+      120,
+    );
   }
 
   // GET /v1/api/danh-sach/phim-bo?page=1
@@ -107,7 +115,11 @@ export class MoviesService {
       }
     });
     const queryString = query.toString();
-    return this.cachedGet(`filtered:${queryString}`, `/v1/api/danh-sach?${queryString}`, 300);
+    return this.cachedGet(
+      `filtered:${queryString}`,
+      `/v1/api/danh-sach?${queryString}`,
+      300,
+    );
   }
 
   // ── Chi tiết phim ───────────────────────────────────────────────
@@ -128,10 +140,10 @@ export class MoviesService {
   }
 
   // GET /phim/tmdb?tmdb_id=xxx&type=tv&season=1
-  async getByTmdb(tmdbId: string, type: 'tv' | 'movie', season?: number) {
-    const seasonParam = season ? `&season=${season}` : '';
+  async getByTmdb(tmdbId: string, type: "tv" | "movie", season?: number) {
+    const seasonParam = season ? `&season=${season}` : "";
     return this.cachedGet(
-      `tmdb:${tmdbId}:${type}:${season || 'none'}`,
+      `tmdb:${tmdbId}:${type}:${season || "none"}`,
       `/phim/tmdb?tmdb_id=${tmdbId}&type=${type}${seasonParam}`,
       600,
     );
@@ -139,13 +151,17 @@ export class MoviesService {
 
   // GET /phim/imdb?imdb_id=xxx
   async getByImdb(imdbId: string) {
-    return this.cachedGet(`imdb:${imdbId}`, `/phim/imdb?imdb_id=${imdbId}`, 600);
+    return this.cachedGet(
+      `imdb:${imdbId}`,
+      `/phim/imdb?imdb_id=${imdbId}`,
+      600,
+    );
   }
 
   // ── Thông tin bổ sung ───────────────────────────────────────────
 
   // GET /phim/images?tmdb_type=tv&tmdb_id=xxx
-  async getImages(tmdbType: 'tv' | 'movie', tmdbId: string) {
+  async getImages(tmdbType: "tv" | "movie", tmdbId: string) {
     return this.cachedGet(
       `images:${tmdbType}:${tmdbId}`,
       `/phim/images?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`,
@@ -154,7 +170,7 @@ export class MoviesService {
   }
 
   // GET /phim/cast?tmdb_type=tv&tmdb_id=xxx
-  async getCast(tmdbType: 'tv' | 'movie', tmdbId: string) {
+  async getCast(tmdbType: "tv" | "movie", tmdbId: string) {
     return this.cachedGet(
       `cast:${tmdbType}:${tmdbId}`,
       `/phim/cast?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`,
@@ -163,7 +179,7 @@ export class MoviesService {
   }
 
   // GET /phim/keywords?tmdb_type=tv&tmdb_id=xxx
-  async getKeywords(tmdbType: 'tv' | 'movie', tmdbId: string) {
+  async getKeywords(tmdbType: "tv" | "movie", tmdbId: string) {
     return this.cachedGet(
       `keywords:${tmdbType}:${tmdbId}`,
       `/phim/keywords?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`,
@@ -186,7 +202,7 @@ export class MoviesService {
 
   // GET /the-loai (genres list)
   async getGenres() {
-    return this.cachedGet('genres', '/the-loai', 3600);
+    return this.cachedGet("genres", "/the-loai", 3600);
   }
 
   // GET /v1/api/the-loai/:slug?page=1
@@ -202,7 +218,7 @@ export class MoviesService {
 
   // GET /quoc-gia (countries list)
   async getCountries() {
-    return this.cachedGet('countries', '/quoc-gia', 3600);
+    return this.cachedGet("countries", "/quoc-gia", 3600);
   }
 
   // GET /v1/api/quoc-gia/:slug?page=1
@@ -218,7 +234,7 @@ export class MoviesService {
 
   // GET /nam-phat-hanh (years list)
   async getYears() {
-    return this.cachedGet('years', '/nam-phat-hanh', 3600);
+    return this.cachedGet("years", "/nam-phat-hanh", 3600);
   }
 
   // GET /nam-phat-hanh/:year?page=1
