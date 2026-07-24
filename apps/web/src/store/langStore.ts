@@ -1,11 +1,11 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { vi } from '@/locales/vi';
-import { en } from '@/locales/en';
-import { fr } from '@/locales/fr';
-import { it } from '@/locales/it';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { vi } from "@/locales/vi";
+import { en } from "@/locales/en";
+import { fr } from "@/locales/fr";
+import { it } from "@/locales/it";
 
-export type Lang = 'vi' | 'en' | 'fr' | 'it';
+export type Lang = "vi" | "en" | "fr" | "it";
 
 interface LangState {
   lang: Lang;
@@ -15,16 +15,16 @@ interface LangState {
 export const useLangStore = create<LangState>()(
   persist(
     (set) => ({
-      lang: 'vi',
+      lang: "vi",
       setLang: (lang) => set({ lang }),
     }),
     {
-      name: 'cineverse-lang',
+      name: "cineverse-lang",
     },
   ),
 );
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from "react";
 
 const dictionaries: Record<Lang, any> = { vi, en, fr, it };
 
@@ -38,8 +38,8 @@ export function useTranslation() {
   }, []);
 
   const t = (key: string, fallback?: string): string => {
-    const currentLang = mounted ? lang : 'vi';
-    const keys = key.split('.');
+    const currentLang = mounted ? lang : "vi";
+    const keys = key.split(".");
     let value = dictionaries[currentLang];
     for (const k of keys) {
       if (value && k in value) {
@@ -48,15 +48,18 @@ export function useTranslation() {
         return fallback || key;
       }
     }
-    return typeof value === 'string' ? value : fallback || key;
+    return typeof value === "string" ? value : fallback || key;
   };
 
-  const setLang = useCallback((newLang: Lang) => {
-    if (newLang === lang || isTransitioning) return;
-    setIsTransitioning(true);
-    _setLang(newLang);
-    setTimeout(() => setIsTransitioning(false), 300);
-  }, [lang, _setLang, isTransitioning]);
+  const setLang = useCallback(
+    (newLang: Lang) => {
+      if (newLang === lang || isTransitioning) return;
+      setIsTransitioning(true);
+      _setLang(newLang);
+      setTimeout(() => setIsTransitioning(false), 300);
+    },
+    [lang, _setLang, isTransitioning],
+  );
 
-  return { t, lang: mounted ? lang : 'vi', setLang, mounted, isTransitioning };
+  return { t, lang: mounted ? lang : "vi", setLang, mounted, isTransitioning };
 }

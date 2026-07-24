@@ -1,14 +1,14 @@
-'use client';
-import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Lock, User, Check, EyeOff, Eye } from 'lucide-react';
-import { useAuthStore } from '@/store/authStore';
-import { useToast } from '@/providers/ToastProvider';
-import { motion, AnimatePresence } from 'framer-motion';
-import styled from '@emotion/styled';
-import { cn } from '@/lib/utils';
-import { TurnstileWidget } from '@/components/auth/TurnstileWidget';
+"use client";
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Lock, User, Check, EyeOff, Eye } from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
+import { useToast } from "@/providers/ToastProvider";
+import { motion, AnimatePresence } from "framer-motion";
+import styled from "@emotion/styled";
+import { cn } from "@/lib/utils";
+import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
 
 // --- EMOTION STYLED COMPONENTS ---
 
@@ -41,12 +41,15 @@ const StyledInputWrapper = styled.div`
       color: #888;
     }
 
-    &:focus, &:hover {
+    &:focus,
+    &:hover {
       background: rgba(255, 255, 255, 0.08);
       border-color: rgba(255, 255, 255, 0.5);
     }
 
-    &:focus ~ .icon, &:hover ~ .icon, &:focus-within ~ .icon {
+    &:focus ~ .icon,
+    &:hover ~ .icon,
+    &:focus-within ~ .icon {
       color: white;
     }
   }
@@ -90,25 +93,25 @@ const StyledAuthCard = styled(motion.div)`
 `;
 
 interface AuthFormProps {
-  initialMode?: 'login' | 'register';
+  initialMode?: "login" | "register";
 }
 
-export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
+export function AuthForm({ initialMode = "login" }: AuthFormProps) {
   const router = useRouter();
   const { login, register, isLoading } = useAuthStore();
   const { toast } = useToast();
-  
-  const [mode, setMode] = useState<'login' | 'register'>(initialMode);
-  
-  const [form, setForm] = useState({ email: '', username: '', password: '' });
+
+  const [mode, setMode] = useState<"login" | "register">(initialMode);
+
+  const [form, setForm] = useState({ email: "", username: "", password: "" });
   const [showPw, setShowPw] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState('');
-  
+  const [turnstileToken, setTurnstileToken] = useState("");
+
   // 2FA login states
   const [require2FA, setRequire2FA] = useState(false);
-  const [tempToken, setTempToken] = useState('');
-  const [otp, setOtp] = useState('');
+  const [tempToken, setTempToken] = useState("");
+  const [otp, setOtp] = useState("");
   const [verifying2FA, setVerifying2FA] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -118,31 +121,36 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
     e.preventDefault();
 
     if (!turnstileToken) {
-      toast('Vui lòng hoàn thành xác minh Cloudflare Turnstile bảo mật trước khi tiếp tục.', 'error');
+      toast(
+        "Vui lòng hoàn thành xác minh Cloudflare Turnstile bảo mật trước khi tiếp tục.",
+        "error",
+      );
       return;
     }
     try {
-      if (mode === 'login') {
+      if (mode === "login") {
         const result = await login(form.email, form.password);
         if (result && result.require2FA) {
           setRequire2FA(true);
           setTempToken(result.tempToken);
-          toast('Vui lòng nhập mã OTP để tiếp tục đăng nhập', 'info');
+          toast("Vui lòng nhập mã OTP để tiếp tục đăng nhập", "info");
         } else {
-          toast('Đăng nhập thành công!', 'success');
+          toast("Đăng nhập thành công!", "success");
           const loggedUser = useAuthStore.getState().user;
-          const uname = loggedUser?.username || form.email.split('@')[0];
+          const uname = loggedUser?.username || form.email.split("@")[0];
           router.push(`/profile/${encodeURIComponent(uname)}`);
         }
       } else {
         await register(form.email, form.username, form.password);
-        toast('Đăng ký thành công!', 'success');
+        toast("Đăng ký thành công!", "success");
         router.push(`/profile/${encodeURIComponent(form.username)}`);
       }
     } catch (err: any) {
       const msg = err?.response?.data?.message;
-      const finalMsg = Array.isArray(msg) ? msg.join(', ') : (msg || 'Có lỗi xảy ra, vui lòng thử lại');
-      toast(finalMsg, 'error');
+      const finalMsg = Array.isArray(msg)
+        ? msg.join(", ")
+        : msg || "Có lỗi xảy ra, vui lòng thử lại";
+      toast(finalMsg, "error");
     }
   };
 
@@ -151,19 +159,23 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
     if (!otp) return;
     setVerifying2FA(true);
     try {
-      const { authApi } = await import('@/lib/api');
+      const { authApi } = await import("@/lib/api");
       await authApi.loginVerify2FA({ tempToken, code: otp });
-      toast('Xác thực OTP thành công!', 'success');
-      
+      toast("Xác thực OTP thành công!", "success");
+
       const { fetchMe } = useAuthStore.getState();
       await fetchMe();
-      
+
       const loggedUser = useAuthStore.getState().user;
-      router.push(`/profile/${encodeURIComponent(loggedUser?.username || 'User')}`);
+      router.push(
+        `/profile/${encodeURIComponent(loggedUser?.username || "User")}`,
+      );
     } catch (err: any) {
       const msg = err?.response?.data?.message;
-      const finalMsg = Array.isArray(msg) ? msg.join(', ') : (msg || 'Mã OTP không chính xác');
-      toast(finalMsg, 'error');
+      const finalMsg = Array.isArray(msg)
+        ? msg.join(", ")
+        : msg || "Mã OTP không chính xác";
+      toast(finalMsg, "error");
     } finally {
       setVerifying2FA(false);
     }
@@ -171,62 +183,92 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
 
   const handleGoogleLogin = async () => {
     try {
-      const { firebaseAuth, googleProvider, signInWithPopup, signInWithRedirect } = await import('@/lib/firebase');
+      const {
+        firebaseAuth,
+        googleProvider,
+        signInWithPopup,
+        signInWithRedirect,
+      } = await import("@/lib/firebase");
       try {
         const res = await signInWithPopup(firebaseAuth, googleProvider);
         if (res?.user) {
-          const name = res.user.displayName || res.user.email?.split('@')[0] || 'User';
+          const name =
+            res.user.displayName || res.user.email?.split("@")[0] || "User";
           const email = res.user.email || `${res.user.uid}@cineverse.app`;
-          const role = email.toLowerCase().includes('admin') ? 'ADMIN' : 'USER';
+          const role = email.toLowerCase().includes("admin") ? "ADMIN" : "USER";
           useAuthStore.getState().setUser({
             id: res.user.uid,
             email,
             username: name,
             displayName: name,
-            avatarUrl: res.user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2c3440&color=ffffff&size=100`,
+            avatarUrl:
+              res.user.photoURL ||
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2c3440&color=ffffff&size=100`,
             role,
           });
-          toast(`Đăng nhập thành công với Google! Chào mừng ${name}.`, 'success');
+          toast(
+            `Đăng nhập thành công với Google! Chào mừng ${name}.`,
+            "success",
+          );
           router.push(`/profile/${encodeURIComponent(name)}`);
           return;
         }
       } catch (popupErr: any) {
-        if (popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/cancelled-popup-request') return;
+        if (
+          popupErr.code === "auth/popup-closed-by-user" ||
+          popupErr.code === "auth/cancelled-popup-request"
+        )
+          return;
         // Fallback to redirect
         await signInWithRedirect(firebaseAuth, googleProvider);
       }
     } catch (err: any) {
-      toast(err.message || 'Lỗi đăng nhập Google', 'error');
+      toast(err.message || "Lỗi đăng nhập Google", "error");
     }
   };
 
   const handleFacebookLogin = async () => {
     try {
-      const { firebaseAuth, facebookProvider, signInWithPopup, signInWithRedirect } = await import('@/lib/firebase');
+      const {
+        firebaseAuth,
+        facebookProvider,
+        signInWithPopup,
+        signInWithRedirect,
+      } = await import("@/lib/firebase");
       try {
         const res = await signInWithPopup(firebaseAuth, facebookProvider);
         if (res?.user) {
-          const name = res.user.displayName || res.user.email?.split('@')[0] || 'User';
+          const name =
+            res.user.displayName || res.user.email?.split("@")[0] || "User";
           const email = res.user.email || `${res.user.uid}@cineverse.app`;
-          const role = email.toLowerCase().includes('admin') ? 'ADMIN' : 'USER';
+          const role = email.toLowerCase().includes("admin") ? "ADMIN" : "USER";
           useAuthStore.getState().setUser({
             id: res.user.uid,
             email,
             username: name,
             displayName: name,
-            avatarUrl: res.user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2c3440&color=ffffff&size=100`,
+            avatarUrl:
+              res.user.photoURL ||
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2c3440&color=ffffff&size=100`,
             role,
           });
-          toast(`Đăng nhập thành công với Facebook! Chào mừng ${name}.`, 'success');
+          toast(
+            `Đăng nhập thành công với Facebook! Chào mừng ${name}.`,
+            "success",
+          );
           router.push(`/profile/${encodeURIComponent(name)}`);
           return;
         }
       } catch (popupErr: any) {
-        if (popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/cancelled-popup-request') return;
+        if (
+          popupErr.code === "auth/popup-closed-by-user" ||
+          popupErr.code === "auth/cancelled-popup-request"
+        )
+          return;
         await signInWithRedirect(firebaseAuth, facebookProvider);
       }
     } catch (err: any) {
-      toast(err.message || 'Lỗi đăng nhập Facebook', 'error');
+      toast(err.message || "Lỗi đăng nhập Facebook", "error");
     }
   };
 
@@ -236,31 +278,33 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
         <StyledAuthCard
           initial={{ opacity: 0, y: 50, rotateX: -10 }}
           animate={{ opacity: 1, y: 0, rotateX: 0 }}
-          transition={{ duration: 0.8, type: 'spring', bounce: 0.4 }}
+          transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
         >
           {/* Left Side: Branding & Background */}
           <div className="relative w-full lg:w-[45%] h-64 lg:h-full flex flex-col items-center justify-center p-8 overflow-hidden bg-black">
             <div className="absolute inset-0 opacity-60">
-              <div 
-                className="w-full h-full bg-cover bg-center transition-all duration-500" 
-                style={{ 
-                  backgroundImage: `url('${mode === 'login' ? '/images/wp4300709-avengers-4k-wallpapers.jpg' : '/images/wp3533664-avengers-infinity-war-4k-wallpapers.jpg'}')` 
-                }} 
+              <div
+                className="w-full h-full bg-cover bg-center transition-all duration-500"
+                style={{
+                  backgroundImage: `url('${mode === "login" ? "/images/wp4300709-avengers-4k-wallpapers.jpg" : "/images/wp3533664-avengers-infinity-war-4k-wallpapers.jpg"}')`,
+                }}
               />
             </div>
-            
+
             <div className="relative z-10 flex flex-col items-center text-center space-y-6">
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.3, duration: 0.5 }}
                 className="flex items-center space-x-2"
               >
                 <span className="text-netflixRed text-5xl font-black">▶</span>
-                <span className="text-white font-black text-4xl tracking-tighter lowercase font-sans">cineverse</span>
+                <span className="text-white font-black text-4xl tracking-tighter lowercase font-sans">
+                  cineverse
+                </span>
               </motion.div>
             </div>
-            
+
             <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-[#0a0a0a] via-black/80 to-transparent pointer-events-none" />
           </div>
 
@@ -270,45 +314,57 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
             <div className="flex justify-center space-x-10 mb-10 border-b border-white/5">
               <button
                 type="button"
-                onClick={() => setMode('login')}
+                onClick={() => setMode("login")}
                 className={cn(
                   "pb-3 text-lg font-semibold transition-colors relative outline-none",
-                  mode === 'login' ? "text-white" : "text-neutral-500 hover:text-white"
+                  mode === "login"
+                    ? "text-white"
+                    : "text-neutral-500 hover:text-white",
                 )}
               >
                 Sign in
-                {mode === 'login' && (
-                  <motion.div 
+                {mode === "login" && (
+                  <motion.div
                     layoutId="auth-tab-indicator"
-                    className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-green-400 via-blue-500 to-red-500" 
-                    transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                    className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-green-400 via-blue-500 to-red-500"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   />
                 )}
               </button>
               <button
                 type="button"
-                onClick={() => setMode('register')}
+                onClick={() => setMode("register")}
                 className={cn(
                   "pb-3 text-lg font-semibold transition-colors relative outline-none",
-                  mode === 'register' ? "text-white" : "text-neutral-500 hover:text-white"
+                  mode === "register"
+                    ? "text-white"
+                    : "text-neutral-500 hover:text-white",
                 )}
               >
                 Sign up
-                {mode === 'register' && (
-                  <motion.div 
+                {mode === "register" && (
+                  <motion.div
                     layoutId="auth-tab-indicator"
-                    className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-green-400 via-blue-500 to-red-500" 
-                    transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                    className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-green-400 via-blue-500 to-red-500"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   />
                 )}
               </button>
             </div>
 
             {require2FA ? (
-              <form onSubmit={handleOTPSubmit} className="flex-1 flex flex-col space-y-5 justify-center">
+              <form
+                onSubmit={handleOTPSubmit}
+                className="flex-1 flex flex-col space-y-5 justify-center"
+              >
                 <div className="text-center space-y-2 mb-4">
-                  <h4 className="text-xl font-bold text-white">Xác Thực 2 Lớp (2FA)</h4>
-                  <p className="text-xs text-neutral-400">Nhập mã xác thực OTP 6 số hoặc mã dự phòng (backup code) của bạn.</p>
+                  <h4 className="text-xl font-bold text-white">
+                    Xác Thực 2 Lớp (2FA)
+                  </h4>
+                  <p className="text-xs text-neutral-400">
+                    Nhập mã xác thực OTP 6 số hoặc mã dự phòng (backup code) của
+                    bạn.
+                  </p>
                 </div>
                 <StyledInputWrapper>
                   <input
@@ -328,17 +384,20 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
                   disabled={verifying2FA}
                   className="w-full bg-[#1DB954] text-black font-bold rounded-full py-3.5 transition-colors mt-6 flex justify-center items-center shadow-[0_0_15px_rgba(29,185,84,0.3)]"
                 >
-                  {verifying2FA ? 'Verifying...' : 'Xác nhận OTP'}
+                  {verifying2FA ? "Verifying..." : "Xác nhận OTP"}
                 </motion.button>
               </form>
             ) : (
-              <form onSubmit={handleSubmit} className="flex-1 flex flex-col space-y-5">
+              <form
+                onSubmit={handleSubmit}
+                className="flex-1 flex flex-col space-y-5"
+              >
                 <AnimatePresence mode="popLayout">
-                  {mode === 'register' && (
+                  {mode === "register" && (
                     <motion.div
                       key="username"
                       initial={{ opacity: 0, x: -20, height: 0 }}
-                      animate={{ opacity: 1, x: 0, height: 'auto' }}
+                      animate={{ opacity: 1, x: 0, height: "auto" }}
                       exit={{ opacity: 0, x: 20, height: 0 }}
                       transition={{ duration: 0.3 }}
                     >
@@ -349,7 +408,7 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
                           value={form.username}
                           onChange={handleChange}
                           placeholder="Username"
-                          required={mode === 'register'}
+                          required={mode === "register"}
                           minLength={3}
                         />
                         <User size={18} className="icon" />
@@ -393,23 +452,38 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
                 {/* Form Options */}
                 <div className="flex items-center justify-between text-sm mt-2 px-1">
                   <label className="flex items-center space-x-2 cursor-pointer group">
-                    <div className={cn(
-                      "w-[18px] h-[18px] border rounded flex items-center justify-center transition-colors",
-                      rememberMe ? "bg-transparent border-white" : "border-neutral-500 group-hover:border-white"
-                    )}>
-                      {rememberMe && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-[10px] h-[10px] bg-white rounded-sm" />}
+                    <div
+                      className={cn(
+                        "w-[18px] h-[18px] border rounded flex items-center justify-center transition-colors",
+                        rememberMe
+                          ? "bg-transparent border-white"
+                          : "border-neutral-500 group-hover:border-white",
+                      )}
+                    >
+                      {rememberMe && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="w-[10px] h-[10px] bg-white rounded-sm"
+                        />
+                      )}
                     </div>
-                    <input 
-                      type="checkbox" 
-                      className="hidden" 
-                      checked={rememberMe} 
-                      onChange={() => setRememberMe(!rememberMe)} 
+                    <input
+                      type="checkbox"
+                      className="hidden"
+                      checked={rememberMe}
+                      onChange={() => setRememberMe(!rememberMe)}
                     />
-                    <span className="text-neutral-400 group-hover:text-white transition-colors">Remember me</span>
+                    <span className="text-neutral-400 group-hover:text-white transition-colors">
+                      Remember me
+                    </span>
                   </label>
 
-                  {mode === 'login' && (
-                    <Link href="/forgot-password" className="text-neutral-400 hover:text-white transition-colors">
+                  {mode === "login" && (
+                    <Link
+                      href="/forgot-password"
+                      className="text-neutral-400 hover:text-white transition-colors"
+                    >
                       Forgot Password?
                     </Link>
                   )}
@@ -418,8 +492,8 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
                 {/* Cloudflare Turnstile CAPTCHA Widget */}
                 <TurnstileWidget
                   onVerify={(token) => setTurnstileToken(token)}
-                  onExpire={() => setTurnstileToken('')}
-                  onError={() => setTurnstileToken('')}
+                  onExpire={() => setTurnstileToken("")}
+                  onError={() => setTurnstileToken("")}
                   theme="dark"
                 />
 
@@ -431,7 +505,11 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
                   disabled={isLoading}
                   className="w-full bg-[#1DB954] text-black font-bold rounded-full py-3.5 transition-colors mt-6 flex justify-center items-center shadow-[0_0_15px_rgba(29,185,84,0.3)]"
                 >
-                  {isLoading ? 'Processing...' : (mode === 'login' ? 'Sign in' : 'Sign up')}
+                  {isLoading
+                    ? "Processing..."
+                    : mode === "login"
+                      ? "Sign in"
+                      : "Sign up"}
                 </motion.button>
               </form>
             )}
@@ -457,7 +535,9 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
                 onClick={handleFacebookLogin}
                 className="flex-1 bg-[#1877F2] text-white rounded-full py-3 px-4 flex items-center justify-center space-x-2 text-sm font-semibold cursor-pointer"
               >
-                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
                 <span>Login with Facebook</span>
               </motion.button>
               <motion.button
@@ -467,7 +547,29 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
                 onClick={handleGoogleLogin}
                 className="flex-1 bg-[#EA4335] text-white rounded-full py-3 px-4 flex items-center justify-center space-x-2 text-sm font-semibold cursor-pointer"
               >
-                <svg className="w-5 h-5 bg-white rounded-full p-1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/><path d="M1 1h22v22H1z" fill="none"/></svg>
+                <svg
+                  className="w-5 h-5 bg-white rounded-full p-1"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    fill="#4285F4"
+                  />
+                  <path
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    fill="#34A853"
+                  />
+                  <path
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    fill="#FBBC05"
+                  />
+                  <path
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    fill="#EA4335"
+                  />
+                  <path d="M1 1h22v22H1z" fill="none" />
+                </svg>
                 <span>Login with Google</span>
               </motion.button>
             </div>

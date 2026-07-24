@@ -1,8 +1,12 @@
-'use client';
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Play, X, Clock, RotateCcw } from 'lucide-react';
-import { watchProgressStorage, WatchProgressEntry, formatTime } from '@/lib/watch-progress';
+"use client";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Play, X, Clock, RotateCcw } from "lucide-react";
+import {
+  watchProgressStorage,
+  WatchProgressEntry,
+  formatTime,
+} from "@/lib/watch-progress";
 
 export function ContinueWatchingRow() {
   const [entries, setEntries] = useState<WatchProgressEntry[]>([]);
@@ -47,9 +51,14 @@ export function ContinueWatchingRow() {
       {/* Grid Row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {entries.map((item) => {
-          const percent = Math.min(100, Math.max(0, Math.round((item.currentTime / item.duration) * 100)));
-          const cleanEpNumber = item.epName.replace(/^(tập|tap)\s*-?\s*/i, '').trim();
-          const epLabel = cleanEpNumber ? `Tập ${cleanEpNumber}` : 'Tập 1';
+          const percent = Math.min(
+            100,
+            Math.max(0, Math.round((item.currentTime / item.duration) * 100)),
+          );
+          const cleanEpNumber = item.epName
+            .replace(/^(tập|tap)\s*-?\s*/i, "")
+            .trim();
+          const epLabel = cleanEpNumber ? `Tập ${cleanEpNumber}` : "Tập 1";
 
           return (
             <div
@@ -57,7 +66,10 @@ export function ContinueWatchingRow() {
               className="group relative bg-[#1c2228] border border-[#2c3440] rounded-2xl overflow-hidden shadow-xl hover:border-[#00e054]/50 transition-all duration-300 flex flex-col"
             >
               {/* Thumbnail Container */}
-              <Link href={`/watch/${item.slug}?ep=${item.epSlug}`} className="relative aspect-[16/9] w-full bg-neutral-900 overflow-hidden block">
+              <Link
+                href={`/watch/${item.slug}?ep=${item.epSlug}`}
+                className="relative aspect-[16/9] w-full bg-neutral-900 overflow-hidden block"
+              >
                 {item.poster ? (
                   <img
                     src={item.poster}
@@ -108,7 +120,8 @@ export function ContinueWatchingRow() {
                       {epLabel}
                     </span>
                     <span className="text-[10px] text-neutral-400 font-semibold truncate">
-                      {formatTime(item.currentTime)} / {formatTime(item.duration)}
+                      {formatTime(item.currentTime)} /{" "}
+                      {formatTime(item.duration)}
                     </span>
                   </div>
                 </div>

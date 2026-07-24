@@ -1,7 +1,7 @@
-'use client';
-import { useEffect } from 'react';
-import Link from 'next/link';
-import { RefreshCw, ChevronLeft } from 'lucide-react';
+"use client";
+import { useEffect } from "react";
+import Link from "next/link";
+import { RefreshCw, ChevronLeft } from "lucide-react";
 
 export default function Error({
   error,
@@ -11,7 +11,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('System Error:', error);
+    console.error("System Error:", error);
   }, [error]);
 
   return (
@@ -28,7 +28,8 @@ export default function Error({
 
       {/* Description */}
       <p className="text-xs sm:text-sm text-neutral-400 max-w-sm mx-auto mb-8 leading-relaxed">
-        Oops! Máy chủ tạm thời gặp sự cố. Bạn vui lòng thử lại hoặc quay về trang chủ.
+        Oops! Máy chủ tạm thời gặp sự cố. Bạn vui lòng thử lại hoặc quay về
+        trang chủ.
       </p>
 
       {/* Buttons */}

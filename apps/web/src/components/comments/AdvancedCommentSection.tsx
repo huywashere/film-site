@@ -1,11 +1,20 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Star, MessageSquare, ThumbsUp, AlertTriangle, Eye, EyeOff, Send, Sparkles } from 'lucide-react';
-import { useAuthStore } from '@/store/authStore';
-import { useToast } from '@/providers/ToastProvider';
-import { cn } from '@/lib/utils';
-import { checkCommentRateLimit } from '@/lib/rate-limiter';
+import { useState } from "react";
+import {
+  Star,
+  MessageSquare,
+  ThumbsUp,
+  AlertTriangle,
+  Eye,
+  EyeOff,
+  Send,
+  Sparkles,
+} from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
+import { useToast } from "@/providers/ToastProvider";
+import { cn } from "@/lib/utils";
+import { checkCommentRateLimit } from "@/lib/rate-limiter";
 
 export interface CommentItem {
   id: string;
@@ -26,43 +35,52 @@ interface AdvancedCommentSectionProps {
   episodeName?: string;
 }
 
-export function AdvancedCommentSection({ movieSlug, episodeName }: AdvancedCommentSectionProps) {
+export function AdvancedCommentSection({
+  movieSlug,
+  episodeName,
+}: AdvancedCommentSectionProps) {
   const currentUser = useAuthStore((s) => s.user);
   const { toast } = useToast();
 
   const [rating, setRating] = useState<number>(5);
   const [hoverRating, setHoverRating] = useState<number>(0);
-  const [content, setContent] = useState<string>('');
+  const [content, setContent] = useState<string>("");
   const [isSpoiler, setIsSpoiler] = useState<boolean>(false);
-  const [revealedSpoilers, setRevealedSpoilers] = useState<Record<string, boolean>>({});
+  const [revealedSpoilers, setRevealedSpoilers] = useState<
+    Record<string, boolean>
+  >({});
 
   // Mock comments state initialized with rich initial comments
   const [comments, setComments] = useState<CommentItem[]>([
     {
-      id: 'c1',
+      id: "c1",
       user: {
-        name: 'Phú Huy Nguyễn',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+        name: "Phú Huy Nguyễn",
+        avatar:
+          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
       },
-      content: 'Phim đỉnh thực sự, đoạn kết tập này cú quay xe không thể lường trước được!',
+      content:
+        "Phim đỉnh thực sự, đoạn kết tập này cú quay xe không thể lường trước được!",
       rating: 5,
       isSpoiler: true,
       likes: 24,
-      timestamp: '2 giờ trước',
-      episode: episodeName || 'Tập 01',
+      timestamp: "2 giờ trước",
+      episode: episodeName || "Tập 01",
     },
     {
-      id: 'c2',
+      id: "c2",
       user: {
-        name: 'Minh Anh',
-        avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80',
+        name: "Minh Anh",
+        avatar:
+          "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80",
       },
-      content: 'Âm nhạc và góc quay quá ấn tượng, xứng đáng 5 sao chất lượng CineVerse.',
+      content:
+        "Âm nhạc và góc quay quá ấn tượng, xứng đáng 5 sao chất lượng CineVerse.",
       rating: 5,
       isSpoiler: false,
       likes: 12,
-      timestamp: '5 giờ trước',
-      episode: episodeName || 'Tập 01',
+      timestamp: "5 giờ trước",
+      episode: episodeName || "Tập 01",
     },
   ]);
 
@@ -72,44 +90,51 @@ export function AdvancedCommentSection({ movieSlug, episodeName }: AdvancedComme
 
   const handleLike = (id: string) => {
     setComments((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, likes: c.likes + 1 } : c))
+      prev.map((c) => (c.id === id ? { ...c, likes: c.likes + 1 } : c)),
     );
-    toast('Đã thích bình luận!', 'info');
+    toast("Đã thích bình luận!", "info");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
 
-    const rateCheck = checkCommentRateLimit(currentUser?.id || 'guest');
+    const rateCheck = checkCommentRateLimit(currentUser?.id || "guest");
     if (!rateCheck.allowed) {
-      toast(`Bạn đang gửi bình luận quá nhanh. Vui lòng thử lại sau ${rateCheck.retryAfterSeconds} giây.`, 'error');
+      toast(
+        `Bạn đang gửi bình luận quá nhanh. Vui lòng thử lại sau ${rateCheck.retryAfterSeconds} giây.`,
+        "error",
+      );
       return;
     }
 
     const newComment: CommentItem = {
       id: Math.random().toString(),
       user: {
-        name: currentUser?.displayName || currentUser?.username || 'Thành viên CineVerse',
-        avatar: currentUser?.avatarUrl || `https://ui-avatars.com/api/?name=User&background=2c3440&color=fff`,
+        name:
+          currentUser?.displayName ||
+          currentUser?.username ||
+          "Thành viên CineVerse",
+        avatar:
+          currentUser?.avatarUrl ||
+          `https://ui-avatars.com/api/?name=User&background=2c3440&color=fff`,
       },
       content: content.trim(),
       rating,
       isSpoiler,
       likes: 0,
-      timestamp: 'Vừa xong',
-      episode: episodeName || 'Tập 01',
+      timestamp: "Vừa xong",
+      episode: episodeName || "Tập 01",
     };
 
     setComments([newComment, ...comments]);
-    setContent('');
+    setContent("");
     setIsSpoiler(false);
-    toast('Đã đăng bình luận & đánh giá thành công!', 'success');
+    toast("Đã đăng bình luận & đánh giá thành công!", "success");
   };
 
   return (
     <div className="bg-card/20 p-6 md:p-8 rounded-2xl border border-border/20 space-y-6">
-      
       {/* ── Header ── */}
       <div className="flex items-center justify-between border-b border-white/10 pb-4">
         <h3 className="text-xl font-black text-white flex items-center gap-2">
@@ -122,12 +147,16 @@ export function AdvancedCommentSection({ movieSlug, episodeName }: AdvancedComme
       </div>
 
       {/* ── Form Đánh giá & Bình luận ── */}
-      <form onSubmit={handleSubmit} className="space-y-4 bg-black/40 p-4 rounded-xl border border-white/10">
-        
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4 bg-black/40 p-4 rounded-xl border border-white/10"
+      >
         {/* Rating Star Selection */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 pb-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-neutral-300">Đánh giá của bạn:</span>
+            <span className="text-xs font-bold text-neutral-300">
+              Đánh giá của bạn:
+            </span>
             <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
@@ -141,13 +170,17 @@ export function AdvancedCommentSection({ movieSlug, episodeName }: AdvancedComme
                   <Star
                     size={18}
                     className={cn(
-                      (hoverRating || rating) >= star ? 'fill-amber-400 text-amber-400' : 'text-neutral-600'
+                      (hoverRating || rating) >= star
+                        ? "fill-amber-400 text-amber-400"
+                        : "text-neutral-600",
                     )}
                   />
                 </button>
               ))}
             </div>
-            <span className="text-xs font-black text-amber-400 ml-1">{rating}/5 sao</span>
+            <span className="text-xs font-black text-amber-400 ml-1">
+              {rating}/5 sao
+            </span>
           </div>
 
           {/* Spoiler Warning Toggle Switch */}
@@ -158,11 +191,11 @@ export function AdvancedCommentSection({ movieSlug, episodeName }: AdvancedComme
               "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border",
               isSpoiler
                 ? "bg-amber-500/20 text-amber-400 border-amber-500/40"
-                : "bg-white/5 text-neutral-400 border-white/10 hover:text-white"
+                : "bg-white/5 text-neutral-400 border-white/10 hover:text-white",
             )}
           >
             <AlertTriangle size={14} />
-            {isSpoiler ? 'Có chứa Spoiler' : 'Không Spoiler'}
+            {isSpoiler ? "Có chứa Spoiler" : "Không Spoiler"}
           </button>
         </div>
 
@@ -214,14 +247,18 @@ export function AdvancedCommentSection({ movieSlug, episodeName }: AdvancedComme
                         </span>
                       )}
                     </h4>
-                    <span className="text-[10px] text-neutral-500">{comment.timestamp}</span>
+                    <span className="text-[10px] text-neutral-500">
+                      {comment.timestamp}
+                    </span>
                   </div>
                 </div>
 
                 {comment.rating && (
                   <div className="flex items-center gap-1 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
                     <Star size={12} className="fill-amber-400 text-amber-400" />
-                    <span className="text-xs font-bold text-amber-400">{comment.rating}.0</span>
+                    <span className="text-xs font-bold text-amber-400">
+                      {comment.rating}.0
+                    </span>
                   </div>
                 )}
               </div>
@@ -235,7 +272,9 @@ export function AdvancedCommentSection({ movieSlug, episodeName }: AdvancedComme
                   >
                     <div className="flex items-center gap-2 text-xs font-bold">
                       <AlertTriangle size={16} />
-                      <span>Bình luận này chứa Spoiler nội dung. Bấm để tiết lộ!</span>
+                      <span>
+                        Bình luận này chứa Spoiler nội dung. Bấm để tiết lộ!
+                      </span>
                     </div>
                     <Eye size={16} />
                   </div>

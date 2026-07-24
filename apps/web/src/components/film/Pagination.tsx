@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useMemo } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useMemo } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface PaginationProps {
   currentPage: number;
@@ -18,7 +18,7 @@ export function Pagination({
   totalItems,
   pageSize = 24,
   onPageChange,
-  className = '',
+  className = "",
 }: PaginationProps) {
   // Recompute total pages if totalItems is provided, ensuring safe positive integer
   const totalPages = useMemo(() => {
@@ -33,24 +33,24 @@ export function Pagination({
 
   // Generate page range with ellipsis (...) standing in for collapsed range
   const pageRange = useMemo(() => {
-    const pages: (number | 'ellipsis')[] = [];
+    const pages: (number | "ellipsis")[] = [];
 
     if (totalPages <= 5) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       if (currentPageClamped <= 3) {
-        pages.push(1, 2, 3, 'ellipsis', totalPages);
+        pages.push(1, 2, 3, "ellipsis", totalPages);
       } else if (currentPageClamped >= totalPages - 2) {
-        pages.push(1, 'ellipsis', totalPages - 2, totalPages - 1, totalPages);
+        pages.push(1, "ellipsis", totalPages - 2, totalPages - 1, totalPages);
       } else {
         pages.push(
           1,
-          'ellipsis',
+          "ellipsis",
           currentPageClamped - 1,
           currentPageClamped,
           currentPageClamped + 1,
-          'ellipsis',
-          totalPages
+          "ellipsis",
+          totalPages,
         );
       }
     }
@@ -63,7 +63,10 @@ export function Pagination({
     if (totalPages <= 1) return 0;
     if (totalPages <= 5) return currentPageClamped - 1;
     const ratio = (currentPageClamped - 1) / (totalPages - 1);
-    return Math.min(numDots - 1, Math.max(0, Math.round(ratio * (numDots - 1))));
+    return Math.min(
+      numDots - 1,
+      Math.max(0, Math.round(ratio * (numDots - 1))),
+    );
   }, [currentPageClamped, totalPages, numDots]);
 
   if (totalPages <= 1) return null;
@@ -76,7 +79,10 @@ export function Pagination({
 
   return (
     <div className={`w-full flex justify-center py-6 ${className}`}>
-      <nav aria-label="pagination" className="flex items-center space-x-1 sm:space-x-1.5">
+      <nav
+        aria-label="pagination"
+        className="flex items-center space-x-1 sm:space-x-1.5"
+      >
         {/* Previous Page Link */}
         <button
           onClick={() => handlePageClick(currentPageClamped - 1)}
@@ -90,7 +96,7 @@ export function Pagination({
 
         {/* Page Numbers & Ellipsis */}
         {pageRange.map((item, idx) => {
-          if (item === 'ellipsis') {
+          if (item === "ellipsis") {
             return (
               <span
                 key={`ellipsis-${idx}`}
@@ -107,11 +113,11 @@ export function Pagination({
             <button
               key={item}
               onClick={() => handlePageClick(item)}
-              aria-current={isCurrent ? 'page' : undefined}
+              aria-current={isCurrent ? "page" : undefined}
               className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer flex items-center justify-center ${
                 isCurrent
-                  ? 'bg-white/15 text-white border border-white/20 shadow-md font-extrabold'
-                  : 'text-neutral-400 hover:text-white hover:bg-white/10'
+                  ? "bg-white/15 text-white border border-white/20 shadow-md font-extrabold"
+                  : "text-neutral-400 hover:text-white hover:bg-white/10"
               }`}
             >
               {item}

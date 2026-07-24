@@ -1,4 +1,4 @@
-import { createMovieProxyHandler } from '@/lib/movie-proxy';
+import { createMovieProxyHandler } from "@/lib/movie-proxy";
 
 /**
  * NguonC API Proxy — Source C (https://phim.nguonc.com)
@@ -20,30 +20,31 @@ import { createMovieProxyHandler } from '@/lib/movie-proxy';
  *   casts        → actor (array vs comma-string) ⚠️ different format
  */
 
-const NGUONC_BASE = process.env.NGUONC_API_BASE || 'https://phim.nguonc.com/api';
+const NGUONC_BASE =
+  process.env.NGUONC_API_BASE || "https://phim.nguonc.com/api";
 
 /** Path-aware TTL in seconds */
 function getTtl(path: string): number {
-  if (path === 'films/phim-moi-cap-nhat') return 120;
-  if (path.startsWith('film/')) return 600;
-  if (path === 'categories') return 3600;
-  if (path.includes('search')) return 60;
+  if (path === "films/phim-moi-cap-nhat") return 120;
+  if (path.startsWith("film/")) return 600;
+  if (path === "categories") return 3600;
+  if (path.includes("search")) return 60;
   return 300;
 }
 
 export const GET = createMovieProxyHandler({
-  sourceName: 'NguonC',
-  cachePrefix: 'nguonc',
+  sourceName: "NguonC",
+  cachePrefix: "nguonc",
   baseUrl: NGUONC_BASE,
   getTtl,
   headers: {
-    Accept: 'application/json',
-    'User-Agent':
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    Accept: "application/json",
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
   },
   transform: normalizeNguonC,
-  forbiddenMessage: 'Truy cập bị chặn (403) - Yêu cầu không hợp lệ',
-  upstreamErrorMessage: 'Lỗi kết nối NguonC API',
+  forbiddenMessage: "Truy cập bị chặn (403) - Yêu cầu không hợp lệ",
+  upstreamErrorMessage: "Lỗi kết nối NguonC API",
 });
 
 /**
@@ -94,24 +95,26 @@ function normalizeFilmItem(film: any): any {
   if (!film) return film;
 
   // Normalize category array: NguonC may return [{id, name, slug}] or strings
-  const rawCategories: any[] = Array.isArray(film.category) ? film.category : [];
+  const rawCategories: any[] = Array.isArray(film.category)
+    ? film.category
+    : [];
   const category = rawCategories.map((c: any, idx: number) =>
-    typeof c === 'string'
-      ? { id: String(idx), name: c, slug: c.toLowerCase().replace(/\s+/g, '-') }
-      : { id: String(c.id ?? idx), name: c.name ?? c, slug: c.slug ?? '' },
+    typeof c === "string"
+      ? { id: String(idx), name: c, slug: c.toLowerCase().replace(/\s+/g, "-") }
+      : { id: String(c.id ?? idx), name: c.name ?? c, slug: c.slug ?? "" },
   );
 
   return {
     ...film,
     // Field name normalization
-    origin_name: film.original_name ?? film.origin_name ?? '',
-    episode_current: film.current_episode ?? film.episode_current ?? '',
-    lang: film.language ?? film.lang ?? '',
+    origin_name: film.original_name ?? film.origin_name ?? "",
+    episode_current: film.current_episode ?? film.episode_current ?? "",
+    lang: film.language ?? film.lang ?? "",
     // Convert comma-string casts to array
     actor:
-      typeof film.casts === 'string'
+      typeof film.casts === "string"
         ? film.casts
-            .split(',')
+            .split(",")
             .map((s: string) => s.trim())
             .filter(Boolean)
         : Array.isArray(film.actor)
@@ -119,9 +122,9 @@ function normalizeFilmItem(film: any): any {
           : [],
     // Director as array
     director: film.director
-      ? typeof film.director === 'string'
+      ? typeof film.director === "string"
         ? film.director
-            .split(',')
+            .split(",")
             .map((s: string) => s.trim())
             .filter(Boolean)
         : film.director
@@ -129,7 +132,7 @@ function normalizeFilmItem(film: any): any {
     // Normalized category
     category,
     // Mark source
-    _source: 'NguonC',
+    _source: "NguonC",
   };
 }
 
@@ -137,16 +140,16 @@ function normalizeEpisodes(episodes: any[]): any[] {
   if (!Array.isArray(episodes)) return [];
 
   return episodes.map((server: any) => ({
-    server_name: server.server_name ?? 'NguonC',
+    server_name: server.server_name ?? "NguonC",
     // NguonC uses 'items', KKPhim/OPhim use 'server_data'
     server_data: Array.isArray(server.items)
       ? server.items.map((ep: any) => ({
           name: ep.name,
           slug: ep.slug,
           // NguonC uses 'embed', map to link_embed
-          link_embed: ep.embed ?? ep.link_embed ?? '',
+          link_embed: ep.embed ?? ep.link_embed ?? "",
           // NguonC doesn't provide m3u8 streams directly
-          link_m3u8: ep.link_m3u8 ?? '',
+          link_m3u8: ep.link_m3u8 ?? "",
         }))
       : [],
   }));

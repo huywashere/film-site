@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { checkImageProxyRateLimit } from '@/lib/rate-limiter';
+import { NextRequest, NextResponse } from "next/server";
+import { checkImageProxyRateLimit } from "@/lib/rate-limiter";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 // Fallback dark cinematic poster SVG when all CDNs fail
 const PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450" fill="none">
@@ -13,65 +13,70 @@ const PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="300" hei
 </svg>`;
 
 export async function GET(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+  const ip = request.headers.get("x-forwarded-for") || "anonymous";
   const rateCheck = checkImageProxyRateLimit(ip);
   if (!rateCheck.allowed) {
     return new NextResponse(PLACEHOLDER_SVG, {
       status: 200,
-      headers: { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'no-cache' },
+      headers: { "Content-Type": "image/svg+xml", "Cache-Control": "no-cache" },
     });
   }
 
   const { searchParams } = new URL(request.url);
-  const rawUrl = searchParams.get('url');
+  const rawUrl = searchParams.get("url");
 
   if (!rawUrl) {
-    return new NextResponse('Missing url parameter', { status: 400 });
+    return new NextResponse("Missing url parameter", { status: 400 });
   }
 
   let imageUrl = rawUrl.trim();
-  if (imageUrl.startsWith('//')) {
+  if (imageUrl.startsWith("//")) {
     imageUrl = `https:${imageUrl}`;
   }
 
-  if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
-    const cleanPath = imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl;
+  if (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) {
+    const cleanPath = imageUrl.startsWith("/") ? imageUrl.slice(1) : imageUrl;
     imageUrl = `https://img.phimapi.com/${cleanPath}`;
   }
 
   // Generate fallback candidate URLs across KKPhim, OPhim, and NguonC CDNs
   const candidateUrls: string[] = [imageUrl];
 
-  if (imageUrl.includes('img.phimapi.com')) {
-    candidateUrls.push(imageUrl.replace('img.phimapi.com', 'phimimg.com'));
-    candidateUrls.push(imageUrl.replace('img.phimapi.com', 'images.nguonc.com'));
-  } else if (imageUrl.includes('phimimg.com')) {
-    candidateUrls.push(imageUrl.replace('phimimg.com', 'img.phimapi.com'));
-    candidateUrls.push(imageUrl.replace('phimimg.com', 'images.nguonc.com'));
-  } else if (imageUrl.includes('images.nguonc.com')) {
-    candidateUrls.push(imageUrl.replace('images.nguonc.com', 'phimimg.com'));
-    candidateUrls.push(imageUrl.replace('images.nguonc.com', 'img.phimapi.com'));
+  if (imageUrl.includes("img.phimapi.com")) {
+    candidateUrls.push(imageUrl.replace("img.phimapi.com", "phimimg.com"));
+    candidateUrls.push(
+      imageUrl.replace("img.phimapi.com", "images.nguonc.com"),
+    );
+  } else if (imageUrl.includes("phimimg.com")) {
+    candidateUrls.push(imageUrl.replace("phimimg.com", "img.phimapi.com"));
+    candidateUrls.push(imageUrl.replace("phimimg.com", "images.nguonc.com"));
+  } else if (imageUrl.includes("images.nguonc.com")) {
+    candidateUrls.push(imageUrl.replace("images.nguonc.com", "phimimg.com"));
+    candidateUrls.push(
+      imageUrl.replace("images.nguonc.com", "img.phimapi.com"),
+    );
   }
 
   for (const urlToFetch of candidateUrls) {
     try {
       const res = await fetch(urlToFetch, {
         headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'image/avif,image/webkit-image,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          Accept:
+            "image/avif,image/webkit-image,image/apng,image/svg+xml,image/*,*/*;q=0.8",
         },
         next: { revalidate: 86400 }, // Cache on Next.js edge for 24 hours
       });
 
       if (res.ok) {
-        const contentType = res.headers.get('content-type') || 'image/jpeg';
+        const contentType = res.headers.get("content-type") || "image/jpeg";
         const buffer = await res.arrayBuffer();
 
         return new NextResponse(buffer, {
           headers: {
-            'Content-Type': contentType,
-            'Cache-Control': 'public, max-age=31536000, immutable',
+            "Content-Type": contentType,
+            "Cache-Control": "public, max-age=31536000, immutable",
           },
         });
       }
@@ -84,8 +89,8 @@ export async function GET(request: NextRequest) {
   return new NextResponse(PLACEHOLDER_SVG, {
     status: 200,
     headers: {
-      'Content-Type': 'image/svg+xml',
-      'Cache-Control': 'public, max-age=86400',
+      "Content-Type": "image/svg+xml",
+      "Cache-Control": "public, max-age=86400",
     },
   });
 }

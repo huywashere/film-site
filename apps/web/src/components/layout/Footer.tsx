@@ -1,44 +1,54 @@
-'use client';
-import Link from 'next/link';
-import { useTranslation } from '@/store/langStore';
-import { Film, Tv2, Star, Github, Twitter, Facebook, Youtube, Heart, Sparkles } from 'lucide-react';
-import { ScrollingFilmBanner } from './ScrollingFilmBanner';
+"use client";
+import Link from "next/link";
+import { useTranslation } from "@/store/langStore";
+import {
+  Film,
+  Tv2,
+  Star,
+  Github,
+  Twitter,
+  Facebook,
+  Youtube,
+  Heart,
+  Sparkles,
+} from "lucide-react";
+import { ScrollingFilmBanner } from "./ScrollingFilmBanner";
 
 const NAV_COLS = [
   {
-    title: 'Duyệt Phim',
+    title: "Duyệt Phim",
     links: [
-      { href: '/films/series', label: 'Phim Bộ' },
-      { href: '/films/single', label: 'Phim Lẻ' },
-      { href: '/films/hoathinh', label: 'Hoạt Hình / Anime' },
-      { href: '/films/tvshows', label: 'TV Shows' },
+      { href: "/films/series", label: "Phim Bộ" },
+      { href: "/films/single", label: "Phim Lẻ" },
+      { href: "/films/hoathinh", label: "Hoạt Hình / Anime" },
+      { href: "/films/tvshows", label: "TV Shows" },
     ],
   },
   {
-    title: 'Thể Loại Nổi Bật',
+    title: "Thể Loại Nổi Bật",
     links: [
-      { href: '/genre/hanh-dong', label: 'Hành Động' },
-      { href: '/genre/kinh-di', label: 'Kinh Dị' },
-      { href: '/genre/tinh-cam', label: 'Tình Cảm' },
-      { href: '/genre/hai-huoc', label: 'Hài Hước' },
-      { href: '/genre/vien-tuong', label: 'Viễn Tưởng' },
+      { href: "/genre/hanh-dong", label: "Hành Động" },
+      { href: "/genre/kinh-di", label: "Kinh Dị" },
+      { href: "/genre/tinh-cam", label: "Tình Cảm" },
+      { href: "/genre/hai-huoc", label: "Hài Hước" },
+      { href: "/genre/vien-tuong", label: "Viễn Tưởng" },
     ],
   },
   {
-    title: 'Tiện Ích Cá Nhân',
+    title: "Tiện Ích Cá Nhân",
     links: [
-      { href: '/search', label: 'Tìm Kiếm Phim' },
-      { href: '/watchlist', label: 'Danh Sách Theo Dõi' },
-      { href: '/settings/security', label: 'Cài Đặt Tài Khoản' },
+      { href: "/search", label: "Tìm Kiếm Phim" },
+      { href: "/watchlist", label: "Danh Sách Theo Dõi" },
+      { href: "/settings/security", label: "Cài Đặt Tài Khoản" },
     ],
   },
 ];
 
 const SOCIALS = [
-  { icon: Facebook, href: 'https://facebook.com', label: 'Facebook' },
-  { icon: Youtube, href: 'https://youtube.com', label: 'YouTube' },
-  { icon: Twitter, href: 'https://twitter.com', label: 'Twitter' },
-  { icon: Github, href: 'https://github.com', label: 'GitHub' },
+  { icon: Facebook, href: "https://facebook.com", label: "Facebook" },
+  { icon: Youtube, href: "https://youtube.com", label: "YouTube" },
+  { icon: Twitter, href: "https://twitter.com", label: "Twitter" },
+  { icon: Github, href: "https://github.com", label: "GitHub" },
 ];
 
 export function Footer() {
@@ -52,7 +62,6 @@ export function Footer() {
       {/* ── Main Footer Body ── */}
       <div className="max-w-7xl mx-auto px-6 pt-10 pb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-10">
-          
           {/* Brand Column */}
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="inline-flex items-center gap-2.5 group">
@@ -70,7 +79,8 @@ export function Footer() {
             </Link>
 
             <p className="text-xs text-neutral-400 leading-relaxed max-w-sm font-normal">
-              Nền tảng xem phim trực tuyến hiện đại với tốc độ phát cực nhanh, kho phim bom tấn đa dạng và giao diện thiết kế chuẩn điện ảnh.
+              Nền tảng xem phim trực tuyến hiện đại với tốc độ phát cực nhanh,
+              kho phim bom tấn đa dạng và giao diện thiết kế chuẩn điện ảnh.
             </p>
 
             {/* Social Buttons */}
@@ -116,9 +126,15 @@ export function Footer() {
       {/* ── Bottom Bar ── */}
       <div className="border-t border-white/10 py-4 bg-[#0b0e11]">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-500 font-medium">
-          <p>© {new Date().getFullYear()} CineVerse Platform. Tất cả quyền được bảo lưu.</p>
+          <p>
+            © {new Date().getFullYear()} CineVerse Platform. Tất cả quyền được
+            bảo lưu.
+          </p>
           <div className="flex items-center space-x-5 text-neutral-400 text-xs">
-            <Link href="/privacy" className="hover:text-white transition-colors">
+            <Link
+              href="/privacy"
+              className="hover:text-white transition-colors"
+            >
               Chính sách bảo mật
             </Link>
             <span className="text-neutral-700">•</span>

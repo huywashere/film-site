@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { Check, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState } from "react";
+import { Check, Loader2 } from "lucide-react";
 
 interface TurnstileWidgetProps {
   onVerify: (token: string) => void;
   onExpire?: () => void;
   onError?: () => void;
-  theme?: 'dark' | 'light' | 'auto';
+  theme?: "dark" | "light" | "auto";
 }
 
 declare global {
@@ -19,9 +19,9 @@ declare global {
           sitekey: string;
           theme?: string;
           callback?: (token: string) => void;
-          'expired-callback'?: () => void;
-          'error-callback'?: () => void;
-        }
+          "expired-callback"?: () => void;
+          "error-callback"?: () => void;
+        },
       ) => string;
       reset: (widgetId?: string) => void;
       remove?: (widgetId?: string) => void;
@@ -34,11 +34,13 @@ export function TurnstileWidget({
   onVerify,
   onExpire,
   onError,
-  theme = 'dark',
+  theme = "dark",
 }: TurnstileWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
-  const [status, setStatus] = useState<'idle' | 'verifying' | 'success'>('idle');
+  const [status, setStatus] = useState<"idle" | "verifying" | "success">(
+    "idle",
+  );
 
   const onVerifyRef = useRef(onVerify);
   const onExpireRef = useRef(onExpire);
@@ -51,18 +53,18 @@ export function TurnstileWidget({
   });
 
   const handleManualClick = () => {
-    if (status !== 'idle') return;
-    setStatus('verifying');
+    if (status !== "idle") return;
+    setStatus("verifying");
     setTimeout(() => {
-      setStatus('success');
-      onVerifyRef.current('cf-turnstile-verified-token');
+      setStatus("success");
+      onVerifyRef.current("cf-turnstile-verified-token");
     }, 750);
   };
 
   useEffect(() => {
     let isMounted = true;
     const envKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-    const activeSiteKey = envKey || '1x00000000000000000000AA';
+    const activeSiteKey = envKey || "1x00000000000000000000AA";
 
     const renderTurnstile = () => {
       if (!isMounted || !containerRef.current || !window.turnstile) return;
@@ -74,29 +76,29 @@ export function TurnstileWidget({
           theme,
           callback: (token: string) => {
             if (isMounted) {
-              setStatus('verifying');
+              setStatus("verifying");
               setTimeout(() => {
                 if (isMounted) {
-                  setStatus('success');
+                  setStatus("success");
                   onVerifyRef.current(token);
                 }
               }, 600);
             }
           },
-          'expired-callback': () => {
+          "expired-callback": () => {
             if (isMounted) {
-              setStatus('idle');
+              setStatus("idle");
               onExpireRef.current?.();
             }
           },
-          'error-callback': () => {
+          "error-callback": () => {
             if (!isMounted) return;
-            setStatus('success');
-            onVerifyRef.current('cf-turnstile-verified-token');
+            setStatus("success");
+            onVerifyRef.current("cf-turnstile-verified-token");
           },
         });
       } catch (err) {
-        console.warn('Turnstile render exception:', err);
+        console.warn("Turnstile render exception:", err);
       }
     };
 
@@ -104,13 +106,14 @@ export function TurnstileWidget({
       if (isMounted) renderTurnstile();
     };
 
-    const scriptId = 'cf-turnstile-script';
+    const scriptId = "cf-turnstile-script";
     let script = document.getElementById(scriptId) as HTMLScriptElement;
 
     if (!script) {
-      script = document.createElement('script');
+      script = document.createElement("script");
       script.id = scriptId;
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback';
+      script.src =
+        "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback";
       script.async = true;
       script.defer = true;
       document.head.appendChild(script);
@@ -142,26 +145,26 @@ export function TurnstileWidget({
           onClick={handleManualClick}
           className="flex items-center gap-2.5 cursor-pointer group"
         >
-          {status === 'idle' && (
+          {status === "idle" && (
             <div className="w-5 h-5 rounded border border-[#666666] bg-[#222222] group-hover:border-[#aaaaaa] transition-colors flex items-center justify-center flex-shrink-0" />
           )}
 
-          {status === 'verifying' && (
+          {status === "verifying" && (
             <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
               <Loader2 size={18} className="animate-spin text-[#F48120]" />
             </div>
           )}
 
-          {status === 'success' && (
+          {status === "success" && (
             <div className="w-6 h-6 rounded-full bg-[#22c55e] flex items-center justify-center text-white shadow-sm flex-shrink-0">
               <Check size={16} strokeWidth={3} />
             </div>
           )}
 
           <span className="text-sm font-normal text-[#e6e6e6] tracking-tight">
-            {status === 'idle' && 'Xác thực bạn là con người'}
-            {status === 'verifying' && 'Đang xác thực...'}
-            {status === 'success' && 'Thành công!'}
+            {status === "idle" && "Xác thực bạn là con người"}
+            {status === "verifying" && "Đang xác thực..."}
+            {status === "success" && "Thành công!"}
           </span>
         </div>
 
@@ -169,8 +172,17 @@ export function TurnstileWidget({
         <div className="flex flex-col items-end gap-0.5">
           <div className="flex items-center gap-1">
             {/* Orange Cloudflare Cloud Logo */}
-            <svg width="20" height="13" viewBox="0 0 48 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M38.5 13.5C37.8 8.8 33.8 5.2 29 5.2C27.9 5.2 26.9 5.4 25.9 5.8C24.3 2.3 20.8 0 16.7 0C11.1 0 6.5 4.3 6.0 9.8C2.5 10.8 0 14.0 0 17.8C0 22.3 3.7 26 8.2 26H37.8C42.3 26 46 22.3 46 17.8C46 13.7 42.7 10.3 38.5 13.5Z" fill="#F48120" />
+            <svg
+              width="20"
+              height="13"
+              viewBox="0 0 48 30"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M38.5 13.5C37.8 8.8 33.8 5.2 29 5.2C27.9 5.2 26.9 5.4 25.9 5.8C24.3 2.3 20.8 0 16.7 0C11.1 0 6.5 4.3 6.0 9.8C2.5 10.8 0 14.0 0 17.8C0 22.3 3.7 26 8.2 26H37.8C42.3 26 46 22.3 46 17.8C46 13.7 42.7 10.3 38.5 13.5Z"
+                fill="#F48120"
+              />
             </svg>
             <span className="text-[9px] font-black tracking-widest text-white uppercase font-sans">
               CLOUDFLARE

@@ -1,9 +1,9 @@
-'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
+"use client";
+import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   Loader2,
@@ -13,20 +13,20 @@ import {
   X,
   Play,
   ChevronRight,
-} from 'lucide-react';
-import { movieApi } from '@/lib/api';
-import { resolveImageUrl, FilmItem } from '@/components/film/FilmCard';
-import { VoiceSearchButton } from '@/components/search/VoiceSearchButton';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { movieApi } from "@/lib/api";
+import { resolveImageUrl, FilmItem } from "@/components/film/FilmCard";
+import { VoiceSearchButton } from "@/components/search/VoiceSearchButton";
+import { cn } from "@/lib/utils";
 
 // ── Local storage helpers ─────────────────────────────────────────
-const HISTORY_KEY = 'cineverse-search-history';
+const HISTORY_KEY = "cineverse-search-history";
 const MAX_HISTORY = 8;
 
 function getHistory(): string[] {
-  if (typeof window === 'undefined') return [];
+  if (typeof window === "undefined") return [];
   try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
   } catch {
     return [];
   }
@@ -46,7 +46,10 @@ function removeFromHistory(query: string) {
 // ── Highlight matching text ──────────────────────────────────────
 function HighlightMatch({ text, query }: { text: string; query: string }) {
   if (!query.trim()) return <span>{text}</span>;
-  const regex = new RegExp(`(${query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const regex = new RegExp(
+    `(${query.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+    "gi",
+  );
   const parts = text.split(regex);
   return (
     <span>
@@ -60,7 +63,7 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
           </mark>
         ) : (
           <span key={i}>{part}</span>
-        )
+        ),
       )}
     </span>
   );
@@ -162,7 +165,7 @@ function PreviewPanel({
               )}
               {film.type && (
                 <span className="bg-white/5 border border-white/10 text-[9px] font-bold text-neutral-300 px-2 py-0.5 rounded-md">
-                  {film.type === 'series' ? 'Phim Bộ' : 'Phim Lẻ'}
+                  {film.type === "series" ? "Phim Bộ" : "Phim Lẻ"}
                 </span>
               )}
             </div>
@@ -173,7 +176,10 @@ function PreviewPanel({
               onClick={onClose}
               className="group/btn flex items-center justify-center gap-2 bg-[#0d1117] hover:bg-[#524cf8] border border-[#524cf8]/40 hover:border-[#524cf8] text-[#7c77ff] hover:text-white font-extrabold text-[10px] uppercase tracking-wider px-6 py-2.5 rounded-xl transition-all shadow-md shadow-[#524cf8]/10 hover:shadow-[#524cf8]/30 active:scale-95 mt-2 w-full max-w-[180px]"
             >
-              <ChevronRight size={12} className="group-hover/btn:translate-x-0.5 transition-transform" />
+              <ChevronRight
+                size={12}
+                className="group-hover/btn:translate-x-0.5 transition-transform"
+              />
               Xem Chi Tiết
             </Link>
           </motion.div>
@@ -187,7 +193,9 @@ function PreviewPanel({
             <div className="w-14 h-14 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-center">
               <Clapperboard size={24} className="opacity-20" />
             </div>
-            <span className="text-neutral-600 text-[11px]">Chọn phim để xem trước</span>
+            <span className="text-neutral-600 text-[11px]">
+              Chọn phim để xem trước
+            </span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -206,8 +214,8 @@ export function SpotlightSearchModal({
   suggestions?: FilmItem[];
 }) {
   const router = useRouter();
-  const [query, setQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [history, setHistory] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -217,8 +225,8 @@ export function SpotlightSearchModal({
   useEffect(() => {
     if (isOpen) {
       setHistory(getHistory());
-      setQuery('');
-      setDebouncedQuery('');
+      setQuery("");
+      setDebouncedQuery("");
       setSelectedIndex(0);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
@@ -237,7 +245,7 @@ export function SpotlightSearchModal({
 
   // Search API
   const { data: searchData, isFetching } = useQuery({
-    queryKey: ['spotlight-search', debouncedQuery],
+    queryKey: ["spotlight-search", debouncedQuery],
     queryFn: () => movieApi.search(debouncedQuery, 1).then((r) => r.data),
     enabled: debouncedQuery.trim().length >= 2,
     staleTime: 1000 * 30,
@@ -245,7 +253,7 @@ export function SpotlightSearchModal({
 
   // Genres for quick tags
   const { data: genresData } = useQuery({
-    queryKey: ['spotlight-genres'],
+    queryKey: ["spotlight-genres"],
     queryFn: () => movieApi.getGenres().then((r) => r.data),
     staleTime: 1000 * 60 * 10,
     enabled: isOpen,
@@ -259,61 +267,65 @@ export function SpotlightSearchModal({
   const quickGenres: { label: string; slug: string }[] = (() => {
     const genres = (genresData as any)?.data || [];
     if (genres.length > 0) {
-      return genres.slice(0, 6).map((g: any) => ({ label: g.name, slug: g.slug }));
+      return genres
+        .slice(0, 6)
+        .map((g: any) => ({ label: g.name, slug: g.slug }));
     }
     return [
-      { label: 'Hành Động', slug: 'hanh-dong' },
-      { label: 'Kinh Dị', slug: 'kinh-di' },
-      { label: 'Tình Cảm', slug: 'tinh-cam' },
-      { label: 'Hài Hước', slug: 'hai-huoc' },
-      { label: 'Viễn Tưởng', slug: 'vien-tuong' },
-      { label: 'Hoạt Hình', slug: 'hoat-hinh' },
+      { label: "Hành Động", slug: "hanh-dong" },
+      { label: "Kinh Dị", slug: "kinh-di" },
+      { label: "Tình Cảm", slug: "tinh-cam" },
+      { label: "Hài Hước", slug: "hai-huoc" },
+      { label: "Viễn Tưởng", slug: "vien-tuong" },
+      { label: "Hoạt Hình", slug: "hoat-hinh" },
     ];
   })();
 
   // Active film for preview panel
   const activeFilm: FilmItem | null = isSearching
-    ? results[selectedIndex] ?? null
-    : suggestions[0] ?? null;
+    ? (results[selectedIndex] ?? null)
+    : (suggestions[0] ?? null);
 
-  const navSourceRef = useRef<'key' | 'mouse'>('mouse');
+  const navSourceRef = useRef<"key" | "mouse">("mouse");
 
   // Keyboard navigation
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (!isSearching) return;
-      if (e.key === 'ArrowDown') {
+      if (e.key === "ArrowDown") {
         e.preventDefault();
-        navSourceRef.current = 'key';
+        navSourceRef.current = "key";
         setSelectedIndex((i) => Math.min(i + 1, results.length - 1));
-      } else if (e.key === 'ArrowUp') {
+      } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        navSourceRef.current = 'key';
+        navSourceRef.current = "key";
         setSelectedIndex((i) => Math.max(i - 1, 0));
-      } else if (e.key === 'Enter' && results[selectedIndex]) {
+      } else if (e.key === "Enter" && results[selectedIndex]) {
         const film = results[selectedIndex];
         saveHistory(query.trim());
         onClose();
         router.push(`/film/${film.slug}`);
       }
     },
-    [isSearching, results, selectedIndex, query, onClose, router]
+    [isSearching, results, selectedIndex, query, onClose, router],
   );
 
   // Global ESC
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
   // Scroll active item into view ONLY when navigating via keyboard
   useEffect(() => {
-    if (navSourceRef.current === 'key') {
-      const el = listRef.current?.querySelector(`[data-index="${selectedIndex}"]`);
-      el?.scrollIntoView({ block: 'nearest' });
+    if (navSourceRef.current === "key") {
+      const el = listRef.current?.querySelector(
+        `[data-index="${selectedIndex}"]`,
+      );
+      el?.scrollIntoView({ block: "nearest" });
     }
   }, [selectedIndex]);
 
@@ -362,10 +374,15 @@ export function SpotlightSearchModal({
           />
           <div className="flex items-center gap-2 flex-shrink-0">
             <VoiceSearchButton onResult={(text) => setQuery(text)} />
-            {isFetching && <Loader2 size={16} className="animate-spin text-[#00e054]" />}
+            {isFetching && (
+              <Loader2 size={16} className="animate-spin text-[#00e054]" />
+            )}
             {query && (
               <button
-                onClick={() => { setQuery(''); inputRef.current?.focus(); }}
+                onClick={() => {
+                  setQuery("");
+                  inputRef.current?.focus();
+                }}
                 className="text-neutral-500 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
               >
                 <X size={14} />
@@ -382,7 +399,6 @@ export function SpotlightSearchModal({
 
         {/* ── Body Grid ── */}
         <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-white/[0.08] min-h-[380px]">
-
           {/* Left Column */}
           <div
             ref={listRef}
@@ -401,7 +417,10 @@ export function SpotlightSearchModal({
                         Tìm kiếm gần đây
                       </span>
                       <button
-                        onClick={() => { localStorage.removeItem(HISTORY_KEY); setHistory([]); }}
+                        onClick={() => {
+                          localStorage.removeItem(HISTORY_KEY);
+                          setHistory([]);
+                        }}
                         className="text-[10px] text-neutral-600 hover:text-neutral-400 transition-colors"
                       >
                         Xóa tất cả
@@ -459,7 +478,9 @@ export function SpotlightSearchModal({
                     </span>
                     <div className="flex flex-col gap-1">
                       {suggestions.slice(0, 5).map((item) => {
-                        const poster = resolveImageUrl(item.thumb_url) || resolveImageUrl(item.poster_url);
+                        const poster =
+                          resolveImageUrl(item.thumb_url) ||
+                          resolveImageUrl(item.poster_url);
                         return (
                           <Link
                             key={item.slug}
@@ -469,16 +490,28 @@ export function SpotlightSearchModal({
                           >
                             <div className="w-9 h-12 rounded-lg bg-white/5 overflow-hidden flex-shrink-0 border border-white/5">
                               {poster ? (
-                                <img src={poster} alt={item.name} className="w-full h-full object-cover" />
+                                <img
+                                  src={poster}
+                                  alt={item.name}
+                                  className="w-full h-full object-cover"
+                                />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
-                                  <Clapperboard size={12} className="opacity-20" />
+                                  <Clapperboard
+                                    size={12}
+                                    className="opacity-20"
+                                  />
                                 </div>
                               )}
                             </div>
                             <div className="flex flex-col justify-center gap-0.5 min-w-0">
-                              <span className="font-bold text-xs text-neutral-300 group-hover:text-white transition-colors line-clamp-1">{item.name}</span>
-                              <span className="text-[10px] text-neutral-600 line-clamp-1">{item.origin_name} {item.year ? `(${item.year})` : ''}</span>
+                              <span className="font-bold text-xs text-neutral-300 group-hover:text-white transition-colors line-clamp-1">
+                                {item.name}
+                              </span>
+                              <span className="text-[10px] text-neutral-600 line-clamp-1">
+                                {item.origin_name}{" "}
+                                {item.year ? `(${item.year})` : ""}
+                              </span>
                             </div>
                           </Link>
                         );
@@ -490,11 +523,13 @@ export function SpotlightSearchModal({
             )}
 
             {/* ── TOO SHORT ── */}
-            {isTyping && debouncedQuery.trim().length < 2 && query.trim().length < 2 && (
-              <div className="flex items-center justify-center flex-1 py-16 text-neutral-600 text-xs">
-                Nhập tối thiểu 2 ký tự...
-              </div>
-            )}
+            {isTyping &&
+              debouncedQuery.trim().length < 2 &&
+              query.trim().length < 2 && (
+                <div className="flex items-center justify-center flex-1 py-16 text-neutral-600 text-xs">
+                  Nhập tối thiểu 2 ký tự...
+                </div>
+              )}
 
             {/* ── LOADING SKELETON ── */}
             {isSearching && isFetching && results.length === 0 && (
@@ -513,7 +548,9 @@ export function SpotlightSearchModal({
                     {results.length} kết quả cho "{debouncedQuery}"
                   </span>
                   {results.map((item, i) => {
-                    const poster = resolveImageUrl(item.thumb_url) || resolveImageUrl(item.poster_url);
+                    const poster =
+                      resolveImageUrl(item.thumb_url) ||
+                      resolveImageUrl(item.poster_url);
                     const isActive = i === selectedIndex;
                     return (
                       <Link
@@ -522,19 +559,23 @@ export function SpotlightSearchModal({
                         data-index={i}
                         onClick={() => handleResultClick(item)}
                         onMouseEnter={() => {
-                          navSourceRef.current = 'mouse';
+                          navSourceRef.current = "mouse";
                           setSelectedIndex(i);
                         }}
                         className={cn(
-                          'flex gap-3 p-2 rounded-xl transition-all group border-l-[3px]',
+                          "flex gap-3 p-2 rounded-xl transition-all group border-l-[3px]",
                           isActive
-                            ? 'bg-white/[0.08] border-l-[#00e054] border-r border-r-transparent border-y-transparent shadow-sm'
-                            : 'border-l-transparent border border-transparent hover:bg-white/[0.04]'
+                            ? "bg-white/[0.08] border-l-[#00e054] border-r border-r-transparent border-y-transparent shadow-sm"
+                            : "border-l-transparent border border-transparent hover:bg-white/[0.04]",
                         )}
                       >
                         <div className="w-9 h-12 rounded-lg bg-white/5 overflow-hidden flex-shrink-0 border border-white/5 group-hover:border-white/10 shadow-sm">
                           {poster ? (
-                            <img src={poster} alt={item.name} className="w-full h-full object-cover" />
+                            <img
+                              src={poster}
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
                               <Clapperboard size={12} className="opacity-20" />
@@ -542,11 +583,22 @@ export function SpotlightSearchModal({
                           )}
                         </div>
                         <div className="flex flex-col justify-center gap-0.5 min-w-0">
-                          <span className={cn('font-bold text-xs line-clamp-1 transition-colors', isActive ? 'text-white' : 'text-neutral-300 group-hover:text-white')}>
-                            <HighlightMatch text={item.name} query={debouncedQuery} />
+                          <span
+                            className={cn(
+                              "font-bold text-xs line-clamp-1 transition-colors",
+                              isActive
+                                ? "text-white"
+                                : "text-neutral-300 group-hover:text-white",
+                            )}
+                          >
+                            <HighlightMatch
+                              text={item.name}
+                              query={debouncedQuery}
+                            />
                           </span>
                           <span className="text-[10px] text-neutral-600 line-clamp-1">
-                            {item.origin_name} {item.year ? `(${item.year})` : ''}
+                            {item.origin_name}{" "}
+                            {item.year ? `(${item.year})` : ""}
                           </span>
                         </div>
                       </Link>
@@ -567,11 +619,15 @@ export function SpotlightSearchModal({
                     Không tìm thấy phim nào
                   </p>
                   <p className="text-xs text-neutral-600 mb-4">
-                    cho từ khóa &ldquo;<span className="text-neutral-400">{debouncedQuery}</span>&rdquo;
+                    cho từ khóa &ldquo;
+                    <span className="text-neutral-400">{debouncedQuery}</span>
+                    &rdquo;
                   </p>
                 </div>
                 <div className="flex flex-col items-center gap-2">
-                  <span className="text-[10px] text-neutral-600 font-bold uppercase tracking-wider">Thử xem thể loại:</span>
+                  <span className="text-[10px] text-neutral-600 font-bold uppercase tracking-wider">
+                    Thử xem thể loại:
+                  </span>
                   <div className="flex flex-wrap justify-center gap-1.5">
                     {quickGenres.slice(0, 4).map((g) => (
                       <Link
@@ -596,15 +652,21 @@ export function SpotlightSearchModal({
         {/* ── Footer hint ── */}
         <div className="px-5 py-2.5 border-t border-white/[0.04] flex items-center gap-4 text-[10px] text-neutral-700">
           <span className="flex items-center gap-1">
-            <kbd className="bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-[9px] font-mono">↑↓</kbd>
+            <kbd className="bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-[9px] font-mono">
+              ↑↓
+            </kbd>
             Điều hướng
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-[9px] font-mono">↵</kbd>
+            <kbd className="bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-[9px] font-mono">
+              ↵
+            </kbd>
             Mở phim
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-[9px] font-mono">ESC</kbd>
+            <kbd className="bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-[9px] font-mono">
+              ESC
+            </kbd>
             Đóng
           </span>
         </div>

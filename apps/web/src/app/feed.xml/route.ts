@@ -1,20 +1,23 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
-const KKPHIM_BASE = process.env.KKPHIM_API_BASE || 'https://phimapi.com';
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+const KKPHIM_BASE = process.env.KKPHIM_API_BASE || "https://phimapi.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export async function GET() {
   try {
     // Fetch directly from upstream API server-side
-    const res = await fetch(`${KKPHIM_BASE}/danh-sach/phim-moi-cap-nhat?page=1`, {
-      next: { revalidate: 600 },
-    });
+    const res = await fetch(
+      `${KKPHIM_BASE}/danh-sach/phim-moi-cap-nhat?page=1`,
+      {
+        next: { revalidate: 600 },
+      },
+    );
     const data = await res.json();
     const films = data?.items || [];
 
     const feedItems = films
       .map((film: any) => {
-        const title = film.name || film.title || '';
+        const title = film.name || film.title || "";
         const link = `${SITE_URL}/film/${film.slug}`;
 
         let pubDate = new Date().toUTCString();
@@ -36,7 +39,7 @@ export async function GET() {
       <description><![CDATA[${description}]]></description>
     </item>`;
       })
-      .join('\n');
+      .join("\n");
 
     const rssFeed = `<?xml version="1.0" encoding="UTF-8" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
@@ -53,15 +56,15 @@ export async function GET() {
 
     return new Response(rssFeed, {
       headers: {
-        'Content-Type': 'application/xml; charset=utf-8',
-        'Cache-Control': 'public, s-maxage=1200, stale-while-revalidate=600',
+        "Content-Type": "application/xml; charset=utf-8",
+        "Cache-Control": "public, s-maxage=1200, stale-while-revalidate=600",
       },
     });
   } catch (err) {
-    console.error('Failed to generate RSS feed:', err);
-    return new Response('<error>Failed to generate RSS feed</error>', {
+    console.error("Failed to generate RSS feed:", err);
+    return new Response("<error>Failed to generate RSS feed</error>", {
       status: 500,
-      headers: { 'Content-Type': 'application/xml' },
+      headers: { "Content-Type": "application/xml" },
     });
   }
 }

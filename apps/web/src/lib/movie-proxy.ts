@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { Redis } from 'ioredis';
-import { CircuitBreaker, CircuitOpenError } from '@/lib/circuit-breaker';
+import { NextRequest, NextResponse } from "next/server";
+import { Redis } from "ioredis";
+import { CircuitBreaker, CircuitOpenError } from "@/lib/circuit-breaker";
 
 type CacheEntry = { data: unknown; expiry: number };
 
@@ -26,7 +26,8 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
     recoveryTimeoutMs: 30_000,
   });
   const memoryCache = new Map<string, CacheEntry>();
-  const redisUrl = config.redisUrl || process.env.REDIS_URL || 'redis://localhost:6379';
+  const redisUrl =
+    config.redisUrl || process.env.REDIS_URL || "redis://localhost:6379";
   const memoryTtlMs = config.memoryTtlMs ?? 10 * 60 * 1000;
   const maxMemoryEntries = config.maxMemoryEntries ?? 150;
   const timeoutMs = config.timeoutMs ?? 8000;
@@ -36,7 +37,7 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
 
   function getRedisClient(): Redis | null {
     if (isRedisDisabled) return null;
-    if (redis && redis.status === 'ready') return redis;
+    if (redis && redis.status === "ready") return redis;
     if (redis) return redis;
 
     try {
@@ -44,7 +45,7 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
         maxRetriesPerRequest: 1,
         connectTimeout: 500,
       });
-      redis.on('error', () => {
+      redis.on("error", () => {
         if (!isRedisDisabled) {
           console.warn(
             `[${config.cachePrefix}-proxy] Redis offline - falling back to in-memory cache`,
@@ -63,9 +64,9 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
   }
 
   function isRequestAllowed(request: NextRequest): boolean {
-    const referer = request.headers.get('referer');
-    const origin = request.headers.get('origin');
-    const host = request.headers.get('host') || '';
+    const referer = request.headers.get("referer");
+    const origin = request.headers.get("origin");
+    const host = request.headers.get("host") || "";
 
     // Always allow server-side fetches or same-app requests
     if (!referer && !origin) return true;
@@ -73,11 +74,21 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
     try {
       if (referer) {
         const refHost = new URL(referer).host;
-        if (refHost === host || refHost.includes('localhost') || refHost.includes('127.0.0.1')) return true;
+        if (
+          refHost === host ||
+          refHost.includes("localhost") ||
+          refHost.includes("127.0.0.1")
+        )
+          return true;
       }
       if (origin) {
         const origHost = new URL(origin).host;
-        if (origHost === host || origHost.includes('localhost') || origHost.includes('127.0.0.1')) return true;
+        if (
+          origHost === host ||
+          origHost.includes("localhost") ||
+          origHost.includes("127.0.0.1")
+        )
+          return true;
       }
     } catch {
       // URL parsing failed.
@@ -88,8 +99,8 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
 
   function headers(cacheStatus: string): HeadersInit {
     return {
-      'X-Cache': cacheStatus,
-      'X-Source': config.sourceName,
+      "X-Cache": cacheStatus,
+      "X-Source": config.sourceName,
     };
   }
 
@@ -102,30 +113,34 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
     });
   }
 
-  return async function GET(request: NextRequest, { params }: { params: { path: string[] } }) {
+  return async function GET(
+    request: NextRequest,
+    { params }: { params: { path: string[] } },
+  ) {
     if (!isRequestAllowed(request)) {
       return NextResponse.json(
         {
           error:
-            config.forbiddenMessage || 'Truy cập bị chặn (403 Forbidden) - Yêu cầu không hợp lệ',
+            config.forbiddenMessage ||
+            "Truy cập bị chặn (403 Forbidden) - Yêu cầu không hợp lệ",
         },
         { status: 403 },
       );
     }
 
-    const path = params.path.join('/');
+    const path = params.path.join("/");
     const searchParams = request.nextUrl.searchParams.toString();
-    const upstreamUrl = `${config.baseUrl}/${path}${searchParams ? `?${searchParams}` : ''}`;
+    const upstreamUrl = `${config.baseUrl}/${path}${searchParams ? `?${searchParams}` : ""}`;
     const cacheKey = `${config.cachePrefix}:${upstreamUrl}`;
     const ttlSeconds = config.getTtl(path);
     const client = getRedisClient();
 
-    if (client && client.status === 'ready') {
+    if (client && client.status === "ready") {
       try {
         const raw = await client.get(cacheKey);
         if (raw) {
           return NextResponse.json(JSON.parse(raw), {
-            headers: headers('HIT-REDIS'),
+            headers: headers("HIT-REDIS"),
           });
         }
       } catch {
@@ -136,14 +151,14 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
     const memoryEntry = memoryCache.get(cacheKey);
     if (memoryEntry && memoryEntry.expiry > Date.now()) {
       return NextResponse.json(memoryEntry.data, {
-        headers: headers('HIT-MEMORY'),
+        headers: headers("HIT-MEMORY"),
       });
     }
 
     try {
       const data = await breaker.execute(async () => {
         const response = await fetch(upstreamUrl, {
-          headers: config.headers || { 'Content-Type': 'application/json' },
+          headers: config.headers || { "Content-Type": "application/json" },
           signal: AbortSignal.timeout(timeoutMs),
         });
 
@@ -155,19 +170,21 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
         return config.transform ? config.transform(rawData, path) : rawData;
       });
 
-      if (client && client.status === 'ready') {
-        client.set(cacheKey, JSON.stringify(data), 'EX', ttlSeconds).catch(() => {});
+      if (client && client.status === "ready") {
+        client
+          .set(cacheKey, JSON.stringify(data), "EX", ttlSeconds)
+          .catch(() => {});
       }
 
       memoryCache.set(cacheKey, { data, expiry: Date.now() + memoryTtlMs });
       evictStaleMemoryEntries();
 
-      return NextResponse.json(data, { headers: headers('MISS') });
+      return NextResponse.json(data, { headers: headers("MISS") });
     } catch (error: unknown) {
       if (error instanceof CircuitOpenError) {
         if (memoryEntry) {
           return NextResponse.json(memoryEntry.data, {
-            headers: headers('STALE-CB-OPEN'),
+            headers: headers("STALE-CB-OPEN"),
           });
         }
 
@@ -187,7 +204,7 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
 
       if (memoryEntry) {
         return NextResponse.json(memoryEntry.data, {
-          headers: headers('STALE-MEMORY'),
+          headers: headers("STALE-MEMORY"),
         });
       }
 
@@ -195,7 +212,9 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
         {
           status: false,
           error: true,
-          message: config.upstreamErrorMessage || `Lỗi kết nối ${config.sourceName} API`,
+          message:
+            config.upstreamErrorMessage ||
+            `Lỗi kết nối ${config.sourceName} API`,
         },
         { status: 200 },
       );

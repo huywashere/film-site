@@ -1,6 +1,11 @@
-import { normalizeTitle, matchMovies, mergeMovieRecords, UnifiedMovieRecord } from './dedupe';
+import {
+  normalizeTitle,
+  matchMovies,
+  mergeMovieRecords,
+  UnifiedMovieRecord,
+} from "./dedupe";
 
-const CATALOG_CACHE_KEY = 'cineverse_unified_catalog_v1';
+const CATALOG_CACHE_KEY = "cineverse_unified_catalog_v1";
 
 export class IngestPipelineService {
   private static catalog: UnifiedMovieRecord[] = [];
@@ -16,45 +21,61 @@ export class IngestPipelineService {
     this.isIngesting = true;
 
     try {
-      console.log('🔄 [IngestPipeline] Starting multi-source API ingestion & deduplication...');
+      console.log(
+        "🔄 [IngestPipeline] Starting multi-source API ingestion & deduplication...",
+      );
       const startTime = Date.now();
 
       const [kkphimRes, ophimRes, nguoncRes] = await Promise.allSettled([
-        fetch('https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=1', { headers: { 'User-Agent': 'Mozilla/5.0' } }),
-        fetch('https://ophim1.com/danh-sach/phim-moi-cap-nhat?page=1', { headers: { 'User-Agent': 'Mozilla/5.0' } }),
-        fetch('https://phim.nguonc.com/api/films/phim-moi-cap-nhat?page=1', { headers: { 'User-Agent': 'Mozilla/5.0' } }),
+        fetch("https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=1", {
+          headers: { "User-Agent": "Mozilla/5.0" },
+        }),
+        fetch("https://ophim1.com/danh-sach/phim-moi-cap-nhat?page=1", {
+          headers: { "User-Agent": "Mozilla/5.0" },
+        }),
+        fetch("https://phim.nguonc.com/api/films/phim-moi-cap-nhat?page=1", {
+          headers: { "User-Agent": "Mozilla/5.0" },
+        }),
       ]);
 
       const rawItems: Array<{ item: any; provider: string }> = [];
 
       // Extract KKPhim
-      if (kkphimRes.status === 'fulfilled' && kkphimRes.value.ok) {
+      if (kkphimRes.status === "fulfilled" && kkphimRes.value.ok) {
         const data = await kkphimRes.value.json();
         const items = data.items || [];
-        items.forEach((item: any) => rawItems.push({ item, provider: 'kkphim' }));
+        items.forEach((item: any) =>
+          rawItems.push({ item, provider: "kkphim" }),
+        );
       }
 
       // Extract OPhim
-      if (ophimRes.status === 'fulfilled' && ophimRes.value.ok) {
+      if (ophimRes.status === "fulfilled" && ophimRes.value.ok) {
         const data = await ophimRes.value.json();
         const items = data.items || [];
-        items.forEach((item: any) => rawItems.push({ item, provider: 'ophim' }));
+        items.forEach((item: any) =>
+          rawItems.push({ item, provider: "ophim" }),
+        );
       }
 
       // Extract NguonC
-      if (nguoncRes.status === 'fulfilled' && nguoncRes.value.ok) {
+      if (nguoncRes.status === "fulfilled" && nguoncRes.value.ok) {
         const data = await nguoncRes.value.json();
         const items = data.items || data.data?.items || [];
-        items.forEach((item: any) => rawItems.push({ item, provider: 'nguonc' }));
+        items.forEach((item: any) =>
+          rawItems.push({ item, provider: "nguonc" }),
+        );
       }
 
-      console.log(`📥 [IngestPipeline] Raw items collected from 3 sources: ${rawItems.length}`);
+      console.log(
+        `📥 [IngestPipeline] Raw items collected from 3 sources: ${rawItems.length}`,
+      );
 
       // Transform raw items to UnifiedMovieRecord
       const unifiedMap = new Map<string, UnifiedMovieRecord>();
 
       for (const { item, provider } of rawItems) {
-        const title = item.name || item.title || '';
+        const title = item.name || item.title || "";
         const norm = normalizeTitle(title);
         if (!norm) continue;
 
@@ -65,7 +86,7 @@ export class IngestPipelineService {
           originTitle: item.origin_name || item.original_name,
           normalizedTitle: norm,
           year: item.year ? Number(item.year) : undefined,
-          type: item.type || 'single',
+          type: item.type || "single",
           status: item.status,
           posterUrl: item.poster_url || item.thumb_url,
           thumbUrl: item.thumb_url || item.poster_url,
@@ -74,7 +95,10 @@ export class IngestPipelineService {
             {
               provider,
               sourceId: item._id || item.slug,
-              url: provider === 'kkphim' ? `https://phimapi.com/phim/${item.slug}` : undefined,
+              url:
+                provider === "kkphim"
+                  ? `https://phimapi.com/phim/${item.slug}`
+                  : undefined,
             },
           ],
           updatedAt: Date.now(),
@@ -101,12 +125,12 @@ export class IngestPipelineService {
       console.log(
         `✅ [IngestPipeline] Deduplication complete! Merged into ${this.catalog.length} unified records in ${
           Date.now() - startTime
-        }ms`
+        }ms`,
       );
 
       return this.catalog;
     } catch (err) {
-      console.error('❌ [IngestPipeline] Ingestion failed:', err);
+      console.error("❌ [IngestPipeline] Ingestion failed:", err);
       return this.catalog;
     } finally {
       this.isIngesting = false;

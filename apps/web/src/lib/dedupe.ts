@@ -4,7 +4,7 @@
  */
 
 export interface MovieSourceReference {
-  provider: 'kkphim' | 'ophim' | 'nguonc' | string;
+  provider: "kkphim" | "ophim" | "nguonc" | string;
   sourceId: string;
   url?: string;
   episodes?: Array<{
@@ -37,22 +37,25 @@ export interface UnifiedMovieRecord {
  * Strips Vietnamese accents, lowercase, removes noise tokens and extra spaces.
  */
 export function normalizeTitle(title: string): string {
-  if (!title) return '';
+  if (!title) return "";
 
   let str = title.toLowerCase().trim();
 
   // Remove Vietnamese accents
   str = str
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'd');
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "d");
 
   // Strip quality & season tags like (phần 1), season 1, - full hd, vietsub
   str = str
-    .replace(/\b(phan\s*\d+|season\s*\d+|ss\d+|full\s*hd|vietsub|thuyet\s*minh|long\s*tieng)\b/gi, '')
-    .replace(/[^\w\s]/gi, ' ') // Replace punctuation with space
-    .replace(/\s+/g, ' ') // Collapse multiple spaces
+    .replace(
+      /\b(phan\s*\d+|season\s*\d+|ss\d+|full\s*hd|vietsub|thuyet\s*minh|long\s*tieng)\b/gi,
+      "",
+    )
+    .replace(/[^\w\s]/gi, " ") // Replace punctuation with space
+    .replace(/\s+/g, " ") // Collapse multiple spaces
     .trim();
 
   return str;
@@ -63,7 +66,7 @@ export function normalizeTitle(title: string): string {
  */
 export function matchMovies(
   movieA: { title: string; year?: number; originTitle?: string },
-  movieB: { title: string; year?: number; originTitle?: string }
+  movieB: { title: string; year?: number; originTitle?: string },
 ): boolean {
   const normA = normalizeTitle(movieA.title);
   const normB = normalizeTitle(movieB.title);
@@ -82,7 +85,11 @@ export function matchMovies(
     const normOriginA = normalizeTitle(movieA.originTitle);
     const normOriginB = normalizeTitle(movieB.originTitle);
     if (normOriginA && normOriginB && normOriginA === normOriginB) {
-      if (movieA.year && movieB.year && Math.abs(movieA.year - movieB.year) > 1) {
+      if (
+        movieA.year &&
+        movieB.year &&
+        Math.abs(movieA.year - movieB.year) > 1
+      ) {
         return false;
       }
       return true;
@@ -97,14 +104,19 @@ export function matchMovies(
  */
 export function mergeMovieRecords(
   existing: UnifiedMovieRecord,
-  incoming: UnifiedMovieRecord
+  incoming: UnifiedMovieRecord,
 ): UnifiedMovieRecord {
   const mergedSources = [...existing.sources];
 
   for (const src of incoming.sources) {
-    const existingSrcIndex = mergedSources.findIndex((s) => s.provider === src.provider);
+    const existingSrcIndex = mergedSources.findIndex(
+      (s) => s.provider === src.provider,
+    );
     if (existingSrcIndex >= 0) {
-      mergedSources[existingSrcIndex] = { ...mergedSources[existingSrcIndex], ...src };
+      mergedSources[existingSrcIndex] = {
+        ...mergedSources[existingSrcIndex],
+        ...src,
+      };
     } else {
       mergedSources.push(src);
     }
@@ -118,8 +130,12 @@ export function mergeMovieRecords(
     thumbUrl: existing.thumbUrl || incoming.thumbUrl,
     description: existing.description || incoming.description,
     year: existing.year || incoming.year,
-    genres: Array.from(new Set([...(existing.genres || []), ...(incoming.genres || [])])),
-    countries: Array.from(new Set([...(existing.countries || []), ...(incoming.countries || [])])),
+    genres: Array.from(
+      new Set([...(existing.genres || []), ...(incoming.genres || [])]),
+    ),
+    countries: Array.from(
+      new Set([...(existing.countries || []), ...(incoming.countries || [])]),
+    ),
     sources: mergedSources,
     updatedAt: Date.now(),
   };

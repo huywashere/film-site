@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { usePathname } from 'next/navigation';
-import { Footer } from './Footer';
+import { usePathname } from "next/navigation";
+import { Footer } from "./Footer";
 
 export function ConditionalFooter() {
   const pathname = usePathname();
-  
+
   // Only render the Footer on the home page ('/')
-  if (pathname !== '/') {
+  if (pathname !== "/") {
     return null;
   }
-  
+
   return <Footer />;
 }

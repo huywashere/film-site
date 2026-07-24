@@ -1,23 +1,23 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { Clock, X, Trash2, TrendingUp } from 'lucide-react';
+"use client";
+import { useState, useEffect } from "react";
+import { Clock, X, Trash2, TrendingUp } from "lucide-react";
 
-const STORAGE_KEY = 'cineverse_search_history';
+const STORAGE_KEY = "cineverse_search_history";
 
 const HOT_KEYWORDS = [
-  'Biệt Đội Marvel',
-  'One Piece',
-  'Conan',
-  'Naruto',
-  'Dragon Ball',
-  'Phim Hàn Quốc',
-  'Anime 2024',
-  'Chuyến Tàu Sinh Tử',
+  "Biệt Đội Marvel",
+  "One Piece",
+  "Conan",
+  "Naruto",
+  "Dragon Ball",
+  "Phim Hàn Quốc",
+  "Anime 2024",
+  "Chuyến Tàu Sinh Tử",
 ];
 
 export const searchHistoryStorage = {
   get: (): string[] => {
-    if (typeof window === 'undefined') return [];
+    if (typeof window === "undefined") return [];
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       return raw ? JSON.parse(raw) : [];
@@ -27,31 +27,33 @@ export const searchHistoryStorage = {
   },
 
   add: (query: string) => {
-    if (typeof window === 'undefined' || !query.trim()) return;
+    if (typeof window === "undefined" || !query.trim()) return;
     try {
       const clean = query.trim();
       const current = searchHistoryStorage.get();
-      const filtered = current.filter((q) => q.toLowerCase() !== clean.toLowerCase());
+      const filtered = current.filter(
+        (q) => q.toLowerCase() !== clean.toLowerCase(),
+      );
       filtered.unshift(clean);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered.slice(0, 10)));
     } catch (e) {
-      console.error('Failed to save search query:', e);
+      console.error("Failed to save search query:", e);
     }
   },
 
   remove: (query: string) => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     try {
       const current = searchHistoryStorage.get();
       const filtered = current.filter((q) => q !== query);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
     } catch (e) {
-      console.error('Failed to remove search query:', e);
+      console.error("Failed to remove search query:", e);
     }
   },
 
   clear: () => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     localStorage.removeItem(STORAGE_KEY);
   },
 };

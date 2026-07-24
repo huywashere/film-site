@@ -1,22 +1,26 @@
-'use client';
-import { useQuery } from '@tanstack/react-query';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Bookmark, FolderOpen, Loader2 } from 'lucide-react';
-import { watchlistApi } from '@/lib/api';
-import { FilmCard, FilmItem, FilmCardSkeleton } from '@/components/film/FilmCard';
-import { useAuthStore } from '@/store/authStore';
-import Link from 'next/link';
-import { Suspense } from 'react';
-import { cn } from '@/lib/utils';
+"use client";
+import { useQuery } from "@tanstack/react-query";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Bookmark, FolderOpen, Loader2 } from "lucide-react";
+import { watchlistApi } from "@/lib/api";
+import {
+  FilmCard,
+  FilmItem,
+  FilmCardSkeleton,
+} from "@/components/film/FilmCard";
+import { useAuthStore } from "@/store/authStore";
+import Link from "next/link";
+import { Suspense } from "react";
+import { cn } from "@/lib/utils";
 
 function WatchlistContent() {
   const { user } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const page = Number(searchParams.get('page') || 1);
+  const page = Number(searchParams.get("page") || 1);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['watchlist', page],
+    queryKey: ["watchlist", page],
     queryFn: () => watchlistApi.get(page).then((r) => r.data),
     enabled: !!user,
   });
@@ -24,10 +28,21 @@ function WatchlistContent() {
   if (!user) {
     return (
       <div className="container mx-auto px-4 py-24 text-center max-w-md flex flex-col items-center justify-center space-y-4">
-        <Bookmark size={48} className="text-neutral-500 opacity-40 animate-pulse" />
-        <h2 className="text-xl font-bold text-foreground">Bạn chưa đăng nhập</h2>
-        <p className="text-xs text-muted-foreground">Vui lòng đăng nhập tài khoản để xem danh sách phim yêu thích cá nhân của bạn.</p>
-        <Link href="/login" className="bg-netflixRed hover:bg-[#C11119] text-white font-bold text-xs px-6 py-2.5 rounded transition-all">
+        <Bookmark
+          size={48}
+          className="text-neutral-500 opacity-40 animate-pulse"
+        />
+        <h2 className="text-xl font-bold text-foreground">
+          Bạn chưa đăng nhập
+        </h2>
+        <p className="text-xs text-muted-foreground">
+          Vui lòng đăng nhập tài khoản để xem danh sách phim yêu thích cá nhân
+          của bạn.
+        </p>
+        <Link
+          href="/login"
+          className="bg-netflixRed hover:bg-[#C11119] text-white font-bold text-xs px-6 py-2.5 rounded transition-all"
+        >
           Đăng nhập ngay
         </Link>
       </div>
@@ -60,9 +75,13 @@ function WatchlistContent() {
       ) : items.length === 0 ? (
         <div className="text-center py-24 max-w-md mx-auto flex flex-col items-center justify-center space-y-4">
           <FolderOpen size={54} className="text-neutral-500 opacity-30" />
-          <h3 className="text-lg font-bold">Chưa có phim nào trong Watchlist</h3>
+          <h3 className="text-lg font-bold">
+            Chưa có phim nào trong Watchlist
+          </h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Danh sách lưu trữ phim yêu thích của bạn hiện đang trống. Hãy khám phá kho phim khổng lồ của chúng tôi để thêm những bộ phim bạn yêu thích vào đây nhé!
+            Danh sách lưu trữ phim yêu thích của bạn hiện đang trống. Hãy khám
+            phá kho phim khổng lồ của chúng tôi để thêm những bộ phim bạn yêu
+            thích vào đây nhé!
           </p>
           <Link
             href="/"
@@ -96,7 +115,7 @@ function WatchlistContent() {
                     "w-9 h-9 rounded text-xs font-bold border transition-colors flex items-center justify-center",
                     p === page
                       ? "bg-netflixRed border-netflixRed text-white"
-                      : "bg-card border-border text-muted-foreground hover:text-foreground"
+                      : "bg-card border-border text-muted-foreground hover:text-foreground",
                   )}
                   onClick={() => router.push(`/watchlist?page=${p}`)}
                 >
@@ -116,7 +135,10 @@ export default function WatchlistPage() {
     <Suspense
       fallback={
         <div className="container mx-auto px-4 py-24 text-center">
-          <Loader2 className="animate-spin text-netflixRed mx-auto mb-2" size={32} />
+          <Loader2
+            className="animate-spin text-netflixRed mx-auto mb-2"
+            size={32}
+          />
           <p className="text-neutral-400 text-sm">Đang tải watchlist...</p>
         </div>
       }

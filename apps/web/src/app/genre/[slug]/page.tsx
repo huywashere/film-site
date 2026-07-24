@@ -1,37 +1,41 @@
-'use client';
-import { useQuery } from '@tanstack/react-query';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { movieApi } from '@/lib/api';
-import { FilmCard, FilmItem, FilmCardSkeleton } from '@/components/film/FilmCard';
-import { Pagination } from '@/components/film/Pagination';
+"use client";
+import { useQuery } from "@tanstack/react-query";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { movieApi } from "@/lib/api";
+import {
+  FilmCard,
+  FilmItem,
+  FilmCardSkeleton,
+} from "@/components/film/FilmCard";
+import { Pagination } from "@/components/film/Pagination";
 
 const GENRE_NAMES: Record<string, string> = {
-  'bi-an': 'Bí Ẩn',
-  'chien-tranh': 'Chiến Tranh',
-  'chinh-kich': 'Chính Kịch',
-  'co-trang': 'Cổ Trang',
-  'gia-dinh': 'Gia Đình',
-  'hai-huoc': 'Hài Hước',
-  'hanh-dong': 'Hành Động',
-  'hinh-su': 'Hình Sự',
-  'hoc-duong': 'Học Đường',
-  'khoa-hoc': 'Khoa Học',
-  'kinh-di': 'Kinh Dị',
-  'kinh-dien': 'Kinh Điển',
-  'lich-su': 'Lịch Sử',
-  'mien-tay': 'Miền Tây',
-  'phim-18': 'Phim 18+',
-  'phim-ngan': 'Phim Ngắn',
-  'phieu-luu': 'Phiêu Lưu',
-  'than-thoai': 'Thần Thoại',
-  'the-thao': 'Thể Thao',
-  'tre-em': 'Trẻ Em',
-  'tai-lieu': 'Tài Liệu',
-  'tam-ly': 'Tâm Lý',
-  'tinh-cam': 'Tình Cảm',
-  'vien-tuong': 'Viễn Tưởng',
-  'vo-thuat': 'Võ Thuật',
-  'am-nhac': 'Âm Nhạc',
+  "bi-an": "Bí Ẩn",
+  "chien-tranh": "Chiến Tranh",
+  "chinh-kich": "Chính Kịch",
+  "co-trang": "Cổ Trang",
+  "gia-dinh": "Gia Đình",
+  "hai-huoc": "Hài Hước",
+  "hanh-dong": "Hành Động",
+  "hinh-su": "Hình Sự",
+  "hoc-duong": "Học Đường",
+  "khoa-hoc": "Khoa Học",
+  "kinh-di": "Kinh Dị",
+  "kinh-dien": "Kinh Điển",
+  "lich-su": "Lịch Sử",
+  "mien-tay": "Miền Tây",
+  "phim-18": "Phim 18+",
+  "phim-ngan": "Phim Ngắn",
+  "phieu-luu": "Phiêu Lưu",
+  "than-thoai": "Thần Thoại",
+  "the-thao": "Thể Thao",
+  "tre-em": "Trẻ Em",
+  "tai-lieu": "Tài Liệu",
+  "tam-ly": "Tâm Lý",
+  "tinh-cam": "Tình Cảm",
+  "vien-tuong": "Viễn Tưởng",
+  "vo-thuat": "Võ Thuật",
+  "am-nhac": "Âm Nhạc",
 };
 
 export default function GenrePage() {
@@ -39,11 +43,11 @@ export default function GenrePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const slug = params.slug as string;
-  const page = Number(searchParams.get('page') || 1);
+  const page = Number(searchParams.get("page") || 1);
   const label = GENRE_NAMES[slug] || slug;
 
   const { data, isLoading } = useQuery({
-    queryKey: ['genre', slug, page],
+    queryKey: ["genre", slug, page],
     queryFn: () => movieApi.getByGenre(slug, page).then((r) => r.data),
   });
 
@@ -56,15 +60,20 @@ export default function GenrePage() {
     data?.paginate?.total_page ||
     data?.data?.paginate?.total_page ||
     (data?.data?.params?.pagination?.totalItems
-      ? Math.ceil(data.data.params.pagination.totalItems / (data.data.params.pagination.totalItemsPerPage || 24))
+      ? Math.ceil(
+          data.data.params.pagination.totalItems /
+            (data.data.params.pagination.totalItemsPerPage || 24),
+        )
       : undefined);
 
-  const totalPages = rawTotal && rawTotal > 1 ? rawTotal : (films.length > 0 ? 50 : 1);
-  const totalItems = data?.data?.params?.pagination?.totalItems || data?.pagination?.totalItems;
+  const totalPages =
+    rawTotal && rawTotal > 1 ? rawTotal : films.length > 0 ? 50 : 1;
+  const totalItems =
+    data?.data?.params?.pagination?.totalItems || data?.pagination?.totalItems;
 
   const handlePageChange = (newPage: number) => {
     router.push(`/genre/${slug}?page=${newPage}`);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -80,7 +89,8 @@ export default function GenrePage() {
           </p>
         </div>
         <div className="text-xs font-bold text-neutral-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 self-start md:self-auto">
-          Trang <span className="text-white font-extrabold">{page}</span> / {totalPages}
+          Trang <span className="text-white font-extrabold">{page}</span> /{" "}
+          {totalPages}
         </div>
       </div>
 

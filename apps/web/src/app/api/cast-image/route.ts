@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { Redis } from 'ioredis';
-import { checkImageProxyRateLimit } from '@/lib/rate-limiter';
+import { NextRequest, NextResponse } from "next/server";
+import { Redis } from "ioredis";
+import { checkImageProxyRateLimit } from "@/lib/rate-limiter";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 let redis: Redis | null = null;
 let isRedisDisabled = false;
 
@@ -18,9 +18,9 @@ function getRedisClient(): Redis | null {
       connectTimeout: 500, // Fail fast in 0.5s
     });
 
-    redis.on('error', (err) => {
+    redis.on("error", (err) => {
       console.warn(
-        'Redis connection failed on frontend, disabling Redis cache to prevent request hangs.',
+        "Redis connection failed on frontend, disabling Redis cache to prevent request hangs.",
       );
       isRedisDisabled = true;
       if (redis) {
@@ -41,36 +41,46 @@ function getRedisClient(): Redis | null {
 }
 
 export async function GET(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+  const ip = request.headers.get("x-forwarded-for") || "anonymous";
   const rateCheck = checkImageProxyRateLimit(ip);
   if (!rateCheck.allowed) {
-    return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 });
+    return NextResponse.json(
+      { error: "Too many requests. Please slow down." },
+      { status: 429 },
+    );
   }
 
   const { searchParams } = new URL(request.url);
-  const name = searchParams.get('name');
+  const name = searchParams.get("name");
 
   if (!name) {
-    return NextResponse.json({ error: 'Name parameter required' }, { status: 400 });
+    return NextResponse.json(
+      { error: "Name parameter required" },
+      { status: 400 },
+    );
   }
 
   const cacheKey = `cast-image:${name.toLowerCase().trim()}`;
   const client = getRedisClient();
 
   // 1. Check Redis Cache (only if online and ready)
-  if (client && client.status === 'ready') {
+  if (client && client.status === "ready") {
     try {
       const cached = await client.get(cacheKey);
       if (cached) {
-        return NextResponse.json({ url: cached === 'placeholder' ? null : cached });
+        return NextResponse.json({
+          url: cached === "placeholder" ? null : cached,
+        });
       }
     } catch (e) {
-      console.warn('Redis cache read error, falling back to direct Wikipedia query.');
+      console.warn(
+        "Redis cache read error, falling back to direct Wikipedia query.",
+      );
     }
   }
 
   // 2. Fetch from Wikipedia API
-  let imageUrl = '';
+  let imageUrl = "";
   try {
     // Try Vietnamese Wikipedia first
     const viRes = await fetch(
@@ -81,8 +91,8 @@ export async function GET(request: NextRequest) {
     const viPages = viData?.query?.pages;
     if (viPages) {
       const pageId = Object.keys(viPages)[0];
-      if (pageId && pageId !== '-1') {
-        imageUrl = viPages[pageId]?.thumbnail?.source || '';
+      if (pageId && pageId !== "-1") {
+        imageUrl = viPages[pageId]?.thumbnail?.source || "";
       }
     }
 
@@ -96,19 +106,24 @@ export async function GET(request: NextRequest) {
       const enPages = enData?.query?.pages;
       if (enPages) {
         const pageId = Object.keys(enPages)[0];
-        if (pageId && pageId !== '-1') {
-          imageUrl = enPages[pageId]?.thumbnail?.source || '';
+        if (pageId && pageId !== "-1") {
+          imageUrl = enPages[pageId]?.thumbnail?.source || "";
         }
       }
     }
   } catch (err) {
-    console.error('Wikipedia cast image query failed:', err);
+    console.error("Wikipedia cast image query failed:", err);
   }
 
   // 3. Save to Redis Cache (only if online and ready)
-  if (client && client.status === 'ready') {
+  if (client && client.status === "ready") {
     try {
-      await client.set(cacheKey, imageUrl || 'placeholder', 'EX', 7 * 24 * 60 * 60); // Cache for 7 days
+      await client.set(
+        cacheKey,
+        imageUrl || "placeholder",
+        "EX",
+        7 * 24 * 60 * 60,
+      ); // Cache for 7 days
     } catch (e) {
       // Ignore cache write error
     }

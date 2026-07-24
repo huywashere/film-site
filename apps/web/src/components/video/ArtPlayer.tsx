@@ -1,12 +1,12 @@
-'use client';
-import { useState, useEffect, useRef } from 'react';
-import Artplayer from 'artplayer';
-import Hls from 'hls.js';
-import { cn } from '@/lib/utils';
+"use client";
+import { useState, useEffect, useRef } from "react";
+import Artplayer from "artplayer";
+import Hls from "hls.js";
+import { cn } from "@/lib/utils";
 
 export interface ArtPlayerProps {
   url: string;
-  type?: 'hls' | 'mp4' | 'auto';
+  type?: "hls" | "mp4" | "auto";
   poster?: string;
   title?: string;
   subtitle?: string;
@@ -27,7 +27,7 @@ export interface ArtPlayerProps {
 
 export default function ArtPlayer({
   url,
-  type = 'auto',
+  type = "auto",
   poster,
   title,
   subtitle,
@@ -76,7 +76,7 @@ export default function ArtPlayer({
           setIsFloating(false);
         }
       },
-      { threshold: 0.25 }
+      { threshold: 0.25 },
     );
 
     observer.observe(el);
@@ -87,7 +87,9 @@ export default function ArtPlayer({
     if (!containerRef.current || !url) return;
 
     const isHls =
-      type === 'hls' || url.includes('.m3u8') || (type === 'auto' && url.includes('.m3u8'));
+      type === "hls" ||
+      url.includes(".m3u8") ||
+      (type === "auto" && url.includes(".m3u8"));
 
     // -- HLS quality levels (populated after manifest load) --
     let hlsInstance: Hls | null = null;
@@ -117,8 +119,8 @@ export default function ArtPlayer({
       playsInline: true,
       autoPlayback: true,
       airplay: true,
-      theme: '#e5a93b',
-      lang: 'vi',
+      theme: "#e5a93b",
+      lang: "vi",
 
       // -- HLS support with ABR & quality selector --
       ...(isHls
@@ -131,7 +133,7 @@ export default function ArtPlayer({
                     backBufferLength: 90,
                     maxBufferLength: 60,
                     capLevelToPlayerSize: true, // Auto ABR tuning
-                    startLevel: -1,             // Auto level selection based on bandwidth
+                    startLevel: -1, // Auto level selection based on bandwidth
                   });
                   hlsInstance = hls;
                   hls.loadSource(streamUrl);
@@ -142,20 +144,31 @@ export default function ArtPlayer({
                     const levels = data.levels ?? [];
                     if (levels.length > 1) {
                       const built = levels.map((level, i) => ({
-                        default: i === hls.currentLevel || (hls.currentLevel === -1 && i === 0),
-                        html: level.height ? `${level.height}p` : `Level ${i + 1}`,
+                        default:
+                          i === hls.currentLevel ||
+                          (hls.currentLevel === -1 && i === 0),
+                        html: level.height
+                          ? `${level.height}p`
+                          : `Level ${i + 1}`,
                         url: streamUrl,
                         level: i,
                       }));
                       // Add Auto option
-                      qualityLevels.unshift({ default: hls.currentLevel === -1, html: 'Tự động (ABR)', url: streamUrl, level: -1 } as typeof qualityLevels[number]);
-                      built.forEach(q => qualityLevels.push(q as typeof qualityLevels[number]));
+                      qualityLevels.unshift({
+                        default: hls.currentLevel === -1,
+                        html: "Tự động (ABR)",
+                        url: streamUrl,
+                        level: -1,
+                      } as (typeof qualityLevels)[number]);
+                      built.forEach((q) =>
+                        qualityLevels.push(q as (typeof qualityLevels)[number]),
+                      );
 
                       player.setting.update({
-                        name: 'quality',
-                        html: 'Chất lượng',
-                        tooltip: built.find(q => q.default)?.html ?? 'Auto',
-                        selector: qualityLevels.map(q => ({
+                        name: "quality",
+                        html: "Chất lượng",
+                        tooltip: built.find((q) => q.default)?.html ?? "Auto",
+                        selector: qualityLevels.map((q) => ({
                           default: q.default,
                           html: q.html,
                           url: q.url,
@@ -180,13 +193,16 @@ export default function ArtPlayer({
                           break;
                         default:
                           hls.destroy();
-                          onErrorRef.current?.({ type: 'HLS_FATAL_ERROR', details: data });
+                          onErrorRef.current?.({
+                            type: "HLS_FATAL_ERROR",
+                            details: data,
+                          });
                       }
                     }
                   });
 
                   (video as HTMLMediaElement & { hls: Hls }).hls = hls;
-                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
                   video.src = streamUrl;
                 }
               },
@@ -202,8 +218,12 @@ export default function ArtPlayer({
         ? {
             subtitle: {
               url: subtitle,
-              type: 'vtt',
-              style: { color: '#ffffff', fontSize: '22px', textShadow: '0 2px 4px rgba(0,0,0,0.8)' },
+              type: "vtt",
+              style: {
+                color: "#ffffff",
+                fontSize: "22px",
+                textShadow: "0 2px 4px rgba(0,0,0,0.8)",
+              },
             },
           }
         : {}),
@@ -211,16 +231,16 @@ export default function ArtPlayer({
       // Settings menu additions: Subtitle Sync Offset (+/- 0.5s) and Custom Subtitle Colors
       settings: [
         {
-          html: 'Độ lệch phụ đề (Sync)',
-          tooltip: '0.0s',
+          html: "Độ lệch phụ đề (Sync)",
+          tooltip: "0.0s",
           selector: [
-            { html: '-2.0s', offset: -2 },
-            { html: '-1.0s', offset: -1 },
-            { html: '-0.5s', offset: -0.5 },
-            { default: true, html: '0.0s (Chuẩn)', offset: 0 },
-            { html: '+0.5s', offset: 0.5 },
-            { html: '+1.0s', offset: 1 },
-            { html: '+2.0s', offset: 2 },
+            { html: "-2.0s", offset: -2 },
+            { html: "-1.0s", offset: -1 },
+            { html: "-0.5s", offset: -0.5 },
+            { default: true, html: "0.0s (Chuẩn)", offset: 0 },
+            { html: "+0.5s", offset: 0.5 },
+            { html: "+1.0s", offset: 1 },
+            { html: "+2.0s", offset: 2 },
           ],
           onSelect(item: { offset: number; html: string }) {
             if (player.subtitle) {
@@ -231,17 +251,17 @@ export default function ArtPlayer({
           },
         },
         {
-          html: 'Màu phụ đề',
-          tooltip: 'Trắng',
+          html: "Màu phụ đề",
+          tooltip: "Trắng",
           selector: [
-            { default: true, html: 'Trắng', color: '#ffffff' },
-            { html: 'Vàng', color: '#ffea00' },
-            { html: 'Xanh Lá', color: '#00e054' },
-            { html: 'Xanh Lam', color: '#00e5ff' },
+            { default: true, html: "Trắng", color: "#ffffff" },
+            { html: "Vàng", color: "#ffea00" },
+            { html: "Xanh Lá", color: "#00e054" },
+            { html: "Xanh Lam", color: "#00e5ff" },
           ],
           onSelect(item: { color: string; html: string }) {
             if (player.subtitle) {
-              player.subtitle.style('color', item.color);
+              player.subtitle.style("color", item.color);
               player.notice.show = `Màu phụ đề: ${item.html}`;
             }
             return item.html;
@@ -253,24 +273,24 @@ export default function ArtPlayer({
 
       controls: [
         {
-          name: 'skip-intro-btn',
-          position: 'right',
+          name: "skip-intro-btn",
+          position: "right",
           html: `
             <button class="art-control-skip-intro bg-white/10 hover:bg-white/20 text-white border border-white/20 px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 style="cursor: pointer;">
               ⏩ Bỏ qua 90s
             </button>
           `,
-          tooltip: 'Bỏ qua 90 giây mở đầu (Skip Intro)',
+          tooltip: "Bỏ qua 90 giây mở đầu (Skip Intro)",
           click: function () {
             if (playerRef.current) {
               playerRef.current.currentTime += 90;
-              playerRef.current.notice.show = 'Đã bỏ qua 90 giây mở đầu!';
+              playerRef.current.notice.show = "Đã bỏ qua 90 giây mở đầu!";
             }
           },
         },
         {
-          name: 'theater-mode',
-          position: 'right',
+          name: "theater-mode",
+          position: "right",
           html: `
             <svg class="art-icon art-icon-theater" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="cursor: pointer; display: flex; align-items: center; justify-content: center; height: 100%;">
               <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
@@ -278,11 +298,13 @@ export default function ArtPlayer({
               <line x1="17" y1="4" x2="17" y2="20"></line>
             </svg>
           `,
-          tooltip: isTheaterModeRef.current ? 'Chế độ mặc định' : 'Chế độ rạp chiếu',
+          tooltip: isTheaterModeRef.current
+            ? "Chế độ mặc định"
+            : "Chế độ rạp chiếu",
           click: function () {
             onTheaterModeToggleRef.current?.(!isTheaterModeRef.current);
-          }
-        }
+          },
+        },
       ],
 
       icons: {
@@ -299,10 +321,11 @@ export default function ArtPlayer({
     const handlePlayerHotkeys = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       if (!target) return;
-      const ignoreTags = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'];
-      if (ignoreTags.includes(target.tagName) || target.isContentEditable) return;
+      const ignoreTags = ["INPUT", "TEXTAREA", "SELECT", "BUTTON"];
+      if (ignoreTags.includes(target.tagName) || target.isContentEditable)
+        return;
 
-      if (e.key === 'f' || e.key === 'F') {
+      if (e.key === "f" || e.key === "F") {
         e.preventDefault();
         const el = containerRef.current;
         if (!el) return;
@@ -316,7 +339,7 @@ export default function ArtPlayer({
         }
       }
 
-      if (e.code === 'Space' || e.key === ' ') {
+      if (e.code === "Space" || e.key === " ") {
         const video = player.video;
         if (!video) return;
         e.preventDefault();
@@ -328,7 +351,7 @@ export default function ArtPlayer({
       }
     };
 
-    window.addEventListener('keydown', handlePlayerHotkeys, true);
+    window.addEventListener("keydown", handlePlayerHotkeys, true);
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -346,19 +369,19 @@ export default function ArtPlayer({
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('blur', handleWindowBlur);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleWindowBlur);
 
     // -- Ready callback & Ambilight canvas draw loop --
     let drawInterval: NodeJS.Timeout | null = null;
 
-    player.on('ready', () => {
+    player.on("ready", () => {
       if (onReady) onReady(player);
 
       const video = player.video;
       const canvas = canvasRef.current;
       if (canvas && video) {
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext("2d");
         canvas.width = 24;
         canvas.height = 14;
 
@@ -384,9 +407,9 @@ export default function ArtPlayer({
           }
         };
 
-        player.on('video:play', startLoop);
-        player.on('video:pause', stopLoop);
-        player.on('destroy', stopLoop);
+        player.on("video:play", startLoop);
+        player.on("video:pause", stopLoop);
+        player.on("destroy", stopLoop);
 
         if (!video.paused) {
           startLoop();
@@ -408,7 +431,7 @@ export default function ArtPlayer({
     }
 
     if (startTime > 5) {
-      player.on('ready', () => {
+      player.on("ready", () => {
         if (startTime < player.duration - 10) {
           player.currentTime = startTime;
           player.notice.show = `Tiếp tục từ ${formatTime(startTime)}`;
@@ -418,7 +441,7 @@ export default function ArtPlayer({
 
     // -- Save progress to localStorage (every timeupdate, throttled) --
     let lastSave = 0;
-    player.on('video:timeupdate', () => {
+    player.on("video:timeupdate", () => {
       const now = Date.now();
       const ct = player.currentTime;
       const dur = player.duration;
@@ -434,20 +457,20 @@ export default function ArtPlayer({
     });
 
     // -- Video ended → clear saved progress, fire callback --
-    player.on('video:ended', () => {
+    player.on("video:ended", () => {
       if (savedKey) localStorage.removeItem(savedKey);
       onEndedRef.current?.();
     });
 
     // -- Native error --
-    player.on('video:error', (err) => {
-      onErrorRef.current?.({ type: 'NATIVE_ERROR', details: err });
+    player.on("video:error", (err) => {
+      onErrorRef.current?.({ type: "NATIVE_ERROR", details: err });
     });
 
     return () => {
-      window.removeEventListener('keydown', handlePlayerHotkeys, true);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('blur', handleWindowBlur);
+      window.removeEventListener("keydown", handlePlayerHotkeys, true);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleWindowBlur);
       if (playerRef.current) {
         const video = playerRef.current.video;
         if (video && (video as any).hls) {
@@ -461,24 +484,29 @@ export default function ArtPlayer({
         clearInterval(drawInterval);
       }
     };
-  // Only re-run when url changes (the source). Other props use refs.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Only re-run when url changes (the source). Other props use refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, progressKey]);
 
   // Dynamically update the Theater Mode button UI in the player controls
   useEffect(() => {
     if (playerRef.current) {
-      const btn = playerRef.current.template.$controls.querySelector('.art-control-theater-mode');
+      const btn = playerRef.current.template.$controls.querySelector(
+        ".art-control-theater-mode",
+      );
       if (btn) {
-        btn.setAttribute('data-tip', isTheaterMode ? 'Chế độ mặc định' : 'Chế độ rạp chiếu');
-        const svg = btn.querySelector('svg');
+        btn.setAttribute(
+          "data-tip",
+          isTheaterMode ? "Chế độ mặc định" : "Chế độ rạp chiếu",
+        );
+        const svg = btn.querySelector("svg");
         if (svg) {
           if (isTheaterMode) {
-            svg.style.color = '#e5a93b';
-            svg.style.filter = 'drop-shadow(0 0 4px rgba(229,169,59,0.5))';
+            svg.style.color = "#e5a93b";
+            svg.style.filter = "drop-shadow(0 0 4px rgba(229,169,59,0.5))";
           } else {
-            svg.style.color = '';
-            svg.style.filter = '';
+            svg.style.color = "";
+            svg.style.filter = "";
           }
         }
       }
@@ -490,52 +518,72 @@ export default function ArtPlayer({
       <style jsx global>{`
         .art-video-player {
           --art-theme: #e5a93b;
-          font-family: 'Inter', system-ui, sans-serif;
+          font-family: "Inter", system-ui, sans-serif;
         }
-        .art-video-player .art-control-progress-inner { background: #e5a93b; }
+        .art-video-player .art-control-progress-inner {
+          background: #e5a93b;
+        }
         .art-video-player .art-icon:hover,
         .art-video-player .art-control:hover,
-        .art-video-player .art-control-theater-mode:hover { color: #e5a93b; }
+        .art-video-player .art-control-theater-mode:hover {
+          color: #e5a93b;
+        }
         .art-video-player .art-bottom {
-          background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+          background: linear-gradient(
+            to top,
+            rgba(0, 0, 0, 0.9) 0%,
+            transparent 100%
+          );
         }
         .art-video-player .art-setting,
         .art-video-player .art-contextmenu {
-          background: rgba(20,24,28,0.95);
+          background: rgba(20, 24, 28, 0.95);
           backdrop-filter: blur(12px);
-          border: 1px solid rgba(255,255,255,0.08);
+          border: 1px solid rgba(255, 255, 255, 0.08);
           border-radius: 12px;
         }
         .art-video-player .art-setting-item:hover,
         .art-video-player .art-contextmenu-item:hover {
-          background: rgba(229,169,59,0.15);
+          background: rgba(229, 169, 59, 0.15);
           color: #e5a93b;
         }
         .art-video-player .art-notice {
-          background: rgba(20,24,28,0.9);
+          background: rgba(20, 24, 28, 0.9);
           backdrop-filter: blur(8px);
           border-radius: 8px;
-          border: 1px solid rgba(255,255,255,0.08);
+          border: 1px solid rgba(255, 255, 255, 0.08);
           padding: 0.75rem 1.25rem;
           font-size: 0.875rem;
         }
-        .art-video-player .art-loading { color: #e5a93b; }
+        .art-video-player .art-loading {
+          color: #e5a93b;
+        }
       `}</style>
 
-      <div ref={wrapperRef} className={cn("relative w-full h-full min-h-[400px]", isFloating ? "fixed bottom-6 right-6 z-50 w-80 md:w-[380px] h-[215px] min-h-0 rounded-2xl shadow-2xl border border-white/20 overflow-hidden backdrop-blur-xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-5" : "")}>
+      <div
+        ref={wrapperRef}
+        className={cn(
+          "relative w-full h-full min-h-[400px]",
+          isFloating
+            ? "fixed bottom-6 right-6 z-50 w-80 md:w-[380px] h-[215px] min-h-0 rounded-2xl shadow-2xl border border-white/20 overflow-hidden backdrop-blur-xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-5"
+            : "",
+        )}
+      >
         {/* Floating Mini-player Header Bar */}
         {isFloating && (
           <div className="absolute top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md px-3 py-1.5 flex items-center justify-between text-white text-xs border-b border-white/10">
-            <span className="font-bold truncate max-w-[200px]">{title || 'Đang phát'}</span>
+            <span className="font-bold truncate max-w-[200px]">
+              {title || "Đang phát"}
+            </span>
             <div className="flex items-center gap-2">
-              <button 
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
                 className="hover:text-amber-400 text-neutral-300 transition-colors p-1 font-bold"
                 title="Quay lại trình phát chính"
               >
                 ↑
               </button>
-              <button 
+              <button
                 onClick={() => setIsFloating(false)}
                 className="hover:text-red-400 text-neutral-300 transition-colors p-1 font-bold"
                 title="Đóng mini player"
@@ -549,7 +597,7 @@ export default function ArtPlayer({
         <canvas
           ref={canvasRef}
           className="absolute -inset-4 w-[calc(100%+32px)] h-[calc(100%+32px)] -z-10 opacity-70 blur-[60px] pointer-events-none scale-[1.03] transition-all duration-700 ease-out"
-          style={{ mixBlendMode: 'normal' }}
+          style={{ mixBlendMode: "normal" }}
         />
         <div ref={containerRef} className="w-full h-full" />
       </div>
@@ -561,6 +609,7 @@ function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
-  if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  return `${m}:${s.toString().padStart(2, '0')}`;
+  if (h > 0)
+    return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }

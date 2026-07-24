@@ -1,2 +1,1 @@
-export { default } from '@/app/user/[username]/page';
-
+export { default } from "@/app/user/[username]/page";

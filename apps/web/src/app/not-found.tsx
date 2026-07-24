@@ -1,6 +1,6 @@
-'use client';
-import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
+"use client";
+import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 
 export default function NotFound() {
   return (
@@ -17,7 +17,8 @@ export default function NotFound() {
 
       {/* Description */}
       <p className="text-xs sm:text-sm text-neutral-400 max-w-sm mx-auto mb-8 leading-relaxed">
-        Oops! Có vẻ như trang bạn đang tìm kiếm không tồn tại hoặc đã bị di chuyển.
+        Oops! Có vẻ như trang bạn đang tìm kiếm không tồn tại hoặc đã bị di
+        chuyển.
       </p>
 
       {/* Clean Pill Action Button */}

@@ -1,10 +1,24 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { Users, Send, Copy, Check, LogOut, MessageSquare, Sparkles, Crown, Smile } from 'lucide-react';
-import { ChatMessage, Participant, FloatingReaction } from '@/hooks/useWatchParty';
-import { useToast } from '@/providers/ToastProvider';
-import { cn } from '@/lib/utils';
+import { useState, useRef, useEffect } from "react";
+import {
+  Users,
+  Send,
+  Copy,
+  Check,
+  LogOut,
+  MessageSquare,
+  Sparkles,
+  Crown,
+  Smile,
+} from "lucide-react";
+import {
+  ChatMessage,
+  Participant,
+  FloatingReaction,
+} from "@/hooks/useWatchParty";
+import { useToast } from "@/providers/ToastProvider";
+import { cn } from "@/lib/utils";
 
 interface WatchPartyPanelProps {
   roomId: string;
@@ -29,20 +43,20 @@ export function WatchPartyPanel({
   onLeaveRoom,
   onClose,
 }: WatchPartyPanelProps) {
-  const [inputText, setInputText] = useState('');
+  const [inputText, setInputText] = useState("");
   const [copied, setCopied] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const handleCopyLink = () => {
     const url = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
-    toast('Đã sao chép liên kết phòng xem chung!', 'success');
+    toast("Đã sao chép liên kết phòng xem chung!", "success");
     setTimeout(() => setCopied(false), 2500);
   };
 
@@ -50,15 +64,14 @@ export function WatchPartyPanel({
     e.preventDefault();
     if (inputText.trim()) {
       onSendMessage(inputText.trim());
-      setInputText('');
+      setInputText("");
     }
   };
 
-  const EMOJIS = ['❤️', '🔥', '😂', '😱', '👏', '🎉'];
+  const EMOJIS = ["❤️", "🔥", "😂", "😱", "👏", "🎉"];
 
   return (
     <div className="flex flex-col h-full bg-[#101418] border-l border-white/10 text-neutral-200 w-full lg:w-80 flex-shrink-0 shadow-2xl relative">
-      
       {/* ── Header ── */}
       <div className="p-4 border-b border-white/10 bg-black/40 backdrop-blur-md flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -78,7 +91,11 @@ export function WatchPartyPanel({
             title="Sao chép link mời"
             className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white transition-all cursor-pointer"
           >
-            {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+            {copied ? (
+              <Check size={14} className="text-emerald-400" />
+            ) : (
+              <Copy size={14} />
+            )}
           </button>
           <button
             onClick={onLeaveRoom}
@@ -105,7 +122,10 @@ export function WatchPartyPanel({
                 className="w-6 h-6 rounded-full object-cover border-2 border-[#101418] shadow-sm"
               />
               {p.isHost && (
-                <Crown size={9} className="absolute -top-1 -right-1 text-amber-400 fill-amber-400" />
+                <Crown
+                  size={9}
+                  className="absolute -top-1 -right-1 text-amber-400 fill-amber-400"
+                />
               )}
             </div>
           ))}
@@ -134,8 +154,12 @@ export function WatchPartyPanel({
               />
               <div className="flex flex-col max-w-[85%]">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-neutral-300">{msg.senderName}</span>
-                  <span className="text-[9px] text-neutral-500">{msg.timestamp}</span>
+                  <span className="text-xs font-bold text-neutral-300">
+                    {msg.senderName}
+                  </span>
+                  <span className="text-[9px] text-neutral-500">
+                    {msg.timestamp}
+                  </span>
                 </div>
                 <div className="mt-0.5 bg-white/5 border border-white/5 text-neutral-200 text-xs px-3 py-2 rounded-2xl rounded-tl-sm break-words leading-relaxed">
                   {msg.text}
@@ -162,7 +186,10 @@ export function WatchPartyPanel({
       </div>
 
       {/* ── Chat Input ── */}
-      <form onSubmit={handleSend} className="p-3 border-t border-white/10 bg-black/40 flex items-center gap-2">
+      <form
+        onSubmit={handleSend}
+        className="p-3 border-t border-white/10 bg-black/40 flex items-center gap-2"
+      >
         <input
           type="text"
           value={inputText}

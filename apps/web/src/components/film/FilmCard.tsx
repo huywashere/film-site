@@ -1,12 +1,12 @@
-'use client';
-import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { Bookmark, Play, Clapperboard, Star } from 'lucide-react';
-import { watchlistApi, movieApi } from '@/lib/api';
-import { useAuthStore } from '@/store/authStore';
-import { useToast } from '@/providers/ToastProvider';
-import { useQueryClient } from '@tanstack/react-query';
-import { cn } from '@/lib/utils';
+"use client";
+import Link from "next/link";
+import { useState, useEffect } from "react";
+import { Bookmark, Play, Clapperboard, Star } from "lucide-react";
+import { watchlistApi, movieApi } from "@/lib/api";
+import { useAuthStore } from "@/store/authStore";
+import { useToast } from "@/providers/ToastProvider";
+import { useQueryClient } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 
 export interface FilmItem {
   _id?: string;
@@ -27,7 +27,7 @@ interface FilmCardProps {
   film: FilmItem;
   width?: number;
   showActions?: boolean;
-  variant?: 'standard' | 'landscape';
+  variant?: "standard" | "landscape";
   hideDetails?: boolean;
 }
 
@@ -45,10 +45,13 @@ export function resolveImageUrl(url?: string): string | null {
   let resolved = url.trim();
   if (!resolved) return null;
 
-  if (resolved.startsWith('//')) {
+  if (resolved.startsWith("//")) {
     resolved = `https:${resolved}`;
-  } else if (!resolved.startsWith('http://') && !resolved.startsWith('https://')) {
-    const cleanPath = resolved.startsWith('/') ? resolved.slice(1) : resolved;
+  } else if (
+    !resolved.startsWith("http://") &&
+    !resolved.startsWith("https://")
+  ) {
+    const cleanPath = resolved.startsWith("/") ? resolved.slice(1) : resolved;
     resolved = `https://img.phimapi.com/${cleanPath}`;
   }
   return `/api/image-proxy?url=${encodeURIComponent(resolved)}`;
@@ -58,7 +61,7 @@ export function FilmCard({
   film,
   width = 200,
   showActions = true,
-  variant = 'standard',
+  variant = "standard",
   hideDetails = false,
 }: FilmCardProps) {
   const { user } = useAuthStore();
@@ -67,10 +70,10 @@ export function FilmCard({
   const [saved, setSaved] = useState(false);
 
   const slug = film.slug;
-  const title = film.name || film.title || 'Chưa có tên';
-  const subtitle = film.origin_name || (film.year ? `${film.year}` : '');
+  const title = film.name || film.title || "Chưa có tên";
+  const subtitle = film.origin_name || (film.year ? `${film.year}` : "");
   const initialPosterUrl =
-    variant === 'landscape'
+    variant === "landscape"
       ? resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url)
       : resolveImageUrl(film.poster_url) || resolveImageUrl(film.thumb_url);
 
@@ -78,19 +81,21 @@ export function FilmCard({
 
   useEffect(() => {
     const url =
-      variant === 'landscape'
+      variant === "landscape"
         ? resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url)
         : resolveImageUrl(film.poster_url) || resolveImageUrl(film.thumb_url);
     setImageSrc(url);
   }, [film.poster_url, film.thumb_url, variant]);
 
   const handleImageError = () => {
-    setImageSrc(`data:image/svg+xml;utf8,${encodeURIComponent(PLACEHOLDER_SVG)}`);
+    setImageSrc(
+      `data:image/svg+xml;utf8,${encodeURIComponent(PLACEHOLDER_SVG)}`,
+    );
   };
 
   const prefetchFilmDetail = () => {
     queryClient.prefetchQuery({
-      queryKey: ['film', slug],
+      queryKey: ["film", slug],
       queryFn: () => movieApi.getDetail(slug).then((r) => r.data),
       staleTime: 5 * 60 * 1000,
     });
@@ -98,41 +103,44 @@ export function FilmCard({
 
   // Extract top-left badge (Thuyết Minh / Vietsub / Lồng Tiếng)
   const langBadge = film.lang
-    ? film.lang.includes('Thuyết Minh')
-      ? 'Thuyết Minh'
-      : film.lang.includes('Lồng Tiếng')
-      ? 'Lồng Tiếng'
-      : film.lang.includes('Vietsub')
-      ? 'Vietsub'
-      : film.lang
-    : 'Vietsub';
+    ? film.lang.includes("Thuyết Minh")
+      ? "Thuyết Minh"
+      : film.lang.includes("Lồng Tiếng")
+        ? "Lồng Tiếng"
+        : film.lang.includes("Vietsub")
+          ? "Vietsub"
+          : film.lang
+    : "Vietsub";
 
   // Extract top-right quality badge (HD / FHD / 4K)
-  const qualityBadge = (film.quality || 'HD').toUpperCase().replace('FULL HD', 'FHD');
+  const qualityBadge = (film.quality || "HD")
+    .toUpperCase()
+    .replace("FULL HD", "FHD");
 
   // Extract bottom-left episode status badge
   const episodeBadge = film.episode_current
-    ? film.episode_current.toLowerCase().includes('hoàn tất') || film.episode_current.toLowerCase().includes('full')
+    ? film.episode_current.toLowerCase().includes("hoàn tất") ||
+      film.episode_current.toLowerCase().includes("full")
       ? film.episode_current
-      : film.episode_current.includes('Tập')
-      ? film.episode_current
-      : `Tập ${film.episode_current}`
-    : film.type === 'single'
-    ? 'Phim Lẻ'
-    : null;
+      : film.episode_current.includes("Tập")
+        ? film.episode_current
+        : `Tập ${film.episode_current}`
+    : film.type === "single"
+      ? "Phim Lẻ"
+      : null;
 
   const handleWatchlist = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      toast('Bạn cần đăng nhập để thêm vào watchlist', 'error');
+      toast("Bạn cần đăng nhập để thêm vào watchlist", "error");
       return;
     }
     try {
       if (saved) {
         await watchlistApi.remove(slug);
         setSaved(false);
-        toast('Đã xóa khỏi watchlist');
+        toast("Đã xóa khỏi watchlist");
       } else {
         await watchlistApi.add(slug, {
           title,
@@ -141,10 +149,10 @@ export function FilmCard({
           year: film.year,
         });
         setSaved(true);
-        toast('Đã thêm vào watchlist!', 'success');
+        toast("Đã thêm vào watchlist!", "success");
       }
     } catch {
-      toast('Có lỗi xảy ra', 'error');
+      toast("Có lỗi xảy ra", "error");
     }
   };
 
@@ -159,7 +167,7 @@ export function FilmCard({
       <div
         className={cn(
           "relative w-full overflow-hidden rounded-2xl bg-neutral-900 border border-white/10 shadow-xl aspect-[2/3]",
-          variant === 'landscape' ? "aspect-video" : ""
+          variant === "landscape" ? "aspect-video" : "",
         )}
       >
         {imageSrc ? (
@@ -203,11 +211,11 @@ export function FilmCard({
               onClick={handleWatchlist}
               className={cn(
                 "absolute top-2.5 right-14 w-8 h-8 rounded-full bg-black/70 border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-black hover:scale-110 transition-all",
-                saved ? "bg-white text-black border-white" : ""
+                saved ? "bg-white text-black border-white" : "",
               )}
-              title={saved ? 'Xóa khỏi Watchlist' : 'Thêm vào Watchlist'}
+              title={saved ? "Xóa khỏi Watchlist" : "Thêm vào Watchlist"}
             >
-              <Bookmark size={14} fill={saved ? 'currentColor' : 'none'} />
+              <Bookmark size={14} fill={saved ? "currentColor" : "none"} />
             </button>
           )}
 
@@ -233,9 +241,18 @@ export function FilmCard({
 }
 
 // Skeleton
-export function FilmCardSkeleton({ width, hideDetails = false }: { width?: number | string; hideDetails?: boolean }) {
+export function FilmCardSkeleton({
+  width,
+  hideDetails = false,
+}: {
+  width?: number | string;
+  hideDetails?: boolean;
+}) {
   return (
-    <div style={width ? { width, flexShrink: 0 } : undefined} className="w-full flex flex-col space-y-2.5 animate-pulse">
+    <div
+      style={width ? { width, flexShrink: 0 } : undefined}
+      className="w-full flex flex-col space-y-2.5 animate-pulse"
+    >
       <div className="w-full aspect-[2/3] bg-white/5 rounded-2xl border border-white/10 relative overflow-hidden" />
       {!hideDetails && (
         <div className="flex flex-col space-y-1.5 px-0.5">

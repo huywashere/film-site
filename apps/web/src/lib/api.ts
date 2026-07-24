@@ -1,14 +1,14 @@
-import axios from 'axios';
+import axios from "axios";
 import {
   dedupeFilmsBySource,
   extractFilmItems,
   isUsableMovieDetail,
   tagMovieDetailSource,
   type MovieSource,
-} from '@/lib/movie-normalizer';
+} from "@/lib/movie-normalizer";
 
 // ── KKPhim API Configuration ──────────────────────────────────────
-const KKPHIM_PROXY = '/api/kkphim';
+const KKPHIM_PROXY = "/api/kkphim";
 
 // Helper function to handle API calls
 const fetchKKPhim = async (endpoint: string) => {
@@ -19,7 +19,7 @@ const fetchKKPhim = async (endpoint: string) => {
     }
     return await response.json();
   } catch (error) {
-    console.error('KKPhim API Error:', error);
+    console.error("KKPhim API Error:", error);
     throw error;
   }
 };
@@ -27,7 +27,8 @@ const fetchKKPhim = async (endpoint: string) => {
 // ── KKPhim Direct API (qua Next.js proxy) ──────────────────────────
 export const kkphimApi = {
   // Phim mới cập nhật
-  getLatest: (page = 1) => fetchKKPhim(`/danh-sach/phim-moi-cap-nhat?page=${page}`),
+  getLatest: (page = 1) =>
+    fetchKKPhim(`/danh-sach/phim-moi-cap-nhat?page=${page}`),
 
   // Danh sách theo loại (v1 API)
   getSeries: (page = 1, limit = 24) =>
@@ -71,21 +72,23 @@ export const kkphimApi = {
   // Thông tin phim theo ID
   getById: (id: string) => fetchKKPhim(`/phim/id/${id}`),
 
-  getByTmdb: (tmdbId: string, type: 'tv' | 'movie', season?: number) => {
-    const seasonParam = season ? `&season=${season}` : '';
-    return fetchKKPhim(`/phim/tmdb?tmdb_id=${tmdbId}&type=${type}${seasonParam}`);
+  getByTmdb: (tmdbId: string, type: "tv" | "movie", season?: number) => {
+    const seasonParam = season ? `&season=${season}` : "";
+    return fetchKKPhim(
+      `/phim/tmdb?tmdb_id=${tmdbId}&type=${type}${seasonParam}`,
+    );
   },
 
   getByImdb: (imdbId: string) => fetchKKPhim(`/phim/imdb?imdb_id=${imdbId}`),
 
   // Hình ảnh, diễn viên, từ khóa
-  getImages: (tmdbType: 'tv' | 'movie', tmdbId: string) =>
+  getImages: (tmdbType: "tv" | "movie", tmdbId: string) =>
     fetchKKPhim(`/phim/images?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`),
 
-  getCast: (tmdbType: 'tv' | 'movie', tmdbId: string) =>
+  getCast: (tmdbType: "tv" | "movie", tmdbId: string) =>
     fetchKKPhim(`/phim/cast?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`),
 
-  getKeywords: (tmdbType: 'tv' | 'movie', tmdbId: string) =>
+  getKeywords: (tmdbType: "tv" | "movie", tmdbId: string) =>
     fetchKKPhim(`/phim/keywords?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`),
 
   // Tìm kiếm
@@ -119,30 +122,31 @@ const fetchOphim = async (endpoint: string) => {
   const json = await response.json();
 
   if (json?.data?.items) {
-    const cdnDomain = json.data.APP_DOMAIN_CDN_IMAGE || 'https://img.ophim.live';
+    const cdnDomain =
+      json.data.APP_DOMAIN_CDN_IMAGE || "https://img.ophim.live";
     const cdnUrl = json.data.pathImage || `${cdnDomain}/uploads/movies/`;
-    const finalCdn = cdnUrl.endsWith('/') ? cdnUrl : `${cdnUrl}/`;
+    const finalCdn = cdnUrl.endsWith("/") ? cdnUrl : `${cdnUrl}/`;
     json.data.items = json.data.items.map((item: any) => ({
       ...item,
-      thumb_url: item.thumb_url?.startsWith('http')
+      thumb_url: item.thumb_url?.startsWith("http")
         ? item.thumb_url
         : `${finalCdn}${item.thumb_url}`,
-      poster_url: item.poster_url?.startsWith('http')
+      poster_url: item.poster_url?.startsWith("http")
         ? item.poster_url
         : `${finalCdn}${item.poster_url}`,
     }));
   }
 
   if (json?.movie) {
-    const finalCdn = 'https://img.ophim.live/uploads/movies/';
+    const finalCdn = "https://img.ophim.live/uploads/movies/";
     json.movie = {
       ...json.movie,
       thumb_url:
-        json.movie.thumb_url?.startsWith('http') || !json.movie.thumb_url
+        json.movie.thumb_url?.startsWith("http") || !json.movie.thumb_url
           ? json.movie.thumb_url
           : `${finalCdn}${json.movie.thumb_url}`,
       poster_url:
-        json.movie.poster_url?.startsWith('http') || !json.movie.poster_url
+        json.movie.poster_url?.startsWith("http") || !json.movie.poster_url
           ? json.movie.poster_url
           : `${finalCdn}${json.movie.poster_url}`,
     };
@@ -158,14 +162,14 @@ const fetchNguonc = async (endpoint: string) => {
 };
 
 function asRecord(value: unknown): Record<string, any> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
+  return typeof value === "object" && value !== null && !Array.isArray(value)
     ? (value as Record<string, any>)
     : {};
 }
 
 function readNumber(value: unknown): number | undefined {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string') {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
     const parsed = Number.parseInt(value, 10);
     return Number.isFinite(parsed) ? parsed : undefined;
   }
@@ -184,38 +188,46 @@ function getTotalPages(data: unknown): number | undefined {
 
 async function searchAllSources(keyword: string, page = 1, limit = 24) {
   const encodedKeyword = encodeURIComponent(keyword);
-  const requests: Array<{ source: MovieSource; request: () => Promise<unknown> }> = [
+  const requests: Array<{
+    source: MovieSource;
+    request: () => Promise<unknown>;
+  }> = [
     {
-      source: 'kkphim',
+      source: "kkphim",
       request: () => kkphimApi.search(keyword, page, limit),
     },
     {
-      source: 'ophim',
+      source: "ophim",
       request: () =>
-        fetchOphim(`/v1/api/tim-kiem?keyword=${encodedKeyword}&page=${page}&limit=${limit}`),
+        fetchOphim(
+          `/v1/api/tim-kiem?keyword=${encodedKeyword}&page=${page}&limit=${limit}`,
+        ),
     },
     {
-      source: 'nguonc',
-      request: () => fetchNguonc(`/films/search?keyword=${encodedKeyword}&page=${page}`),
+      source: "nguonc",
+      request: () =>
+        fetchNguonc(`/films/search?keyword=${encodedKeyword}&page=${page}`),
     },
   ];
 
-  const settled = await Promise.allSettled(requests.map((entry) => entry.request()));
+  const settled = await Promise.allSettled(
+    requests.map((entry) => entry.request()),
+  );
   const groups = settled.map((result, index) => ({
     source: requests[index].source,
-    items: result.status === 'fulfilled' ? extractFilmItems(result.value) : [],
+    items: result.status === "fulfilled" ? extractFilmItems(result.value) : [],
   }));
 
   const items = dedupeFilmsBySource(groups).slice(0, limit);
   const totalPages = Math.max(
     1,
     ...settled.map((result) =>
-      result.status === 'fulfilled' ? getTotalPages(result.value) || 1 : 1,
+      result.status === "fulfilled" ? getTotalPages(result.value) || 1 : 1,
     ),
   );
 
   return {
-    status: 'success',
+    status: "success",
     data: {
       items,
       params: {
@@ -235,17 +247,20 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
 }
 
 async function getDetailFromAnySource(slug: string): Promise<any> {
-  const requests: Array<{ source: MovieSource; request: () => Promise<unknown> }> = [
+  const requests: Array<{
+    source: MovieSource;
+    request: () => Promise<unknown>;
+  }> = [
     {
-      source: 'kkphim',
+      source: "kkphim",
       request: () => kkphimApi.getDetail(slug),
     },
     {
-      source: 'ophim',
+      source: "ophim",
       request: () => fetchOphim(`/phim/${slug}`),
     },
     {
-      source: 'nguonc',
+      source: "nguonc",
       request: () => fetchNguonc(`/film/${slug}`),
     },
   ];
@@ -261,7 +276,11 @@ async function getDetailFromAnySource(slug: string): Promise<any> {
     }
   }
 
-  return { status: false, error: true, message: `Không tìm thấy phim: ${slug}` };
+  return {
+    status: false,
+    error: true,
+    message: `Không tìm thấy phim: ${slug}`,
+  };
 }
 
 // ── movieApi (alias for component compatibility) ──────────────────
@@ -275,14 +294,18 @@ export const movieApi = {
     kkphimApi.getAnime(page, 24).then((data) => ({ data })),
   getTvShows: (page = 1) =>
     kkphimApi.getTvShows(page, 24).then((data) => ({ data })),
-  getDetail: (slug: string) => getDetailFromAnySource(slug).then((data) => ({ data })),
-  getDetailV1: (slug: string) => kkphimApi.getDetailV1(slug).then((data) => ({ data })),
-  search: (keyword: string, page = 1, limit = 24) => searchAllSources(keyword, page, limit).then((data) => ({ data })),
+  getDetail: (slug: string) =>
+    getDetailFromAnySource(slug).then((data) => ({ data })),
+  getDetailV1: (slug: string) =>
+    kkphimApi.getDetailV1(slug).then((data) => ({ data })),
+  search: (keyword: string, page = 1, limit = 24) =>
+    searchAllSources(keyword, page, limit).then((data) => ({ data })),
   getByGenre: (slug: string, page = 1) =>
     kkphimApi.getByGenre(slug, page).then((data) => ({ data })),
   getByCountry: (slug: string, page = 1) =>
     kkphimApi.getByCountry(slug, page).then((data) => ({ data })),
-  getByYear: (year: number, page = 1) => kkphimApi.getByYear(year, page).then((data) => ({ data })),
+  getByYear: (year: number, page = 1) =>
+    kkphimApi.getByYear(year, page).then((data) => ({ data })),
   getGenres: () => kkphimApi.getGenres().then((data) => ({ data })),
   getCountries: () => kkphimApi.getCountries().then((data) => ({ data })),
   getYears: () => kkphimApi.getYears().then((data) => ({ data })),
@@ -291,7 +314,8 @@ export const movieApi = {
 };
 
 // ── NestJS Backend API (cần backend chạy) ───────────────────────────
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
 
 export const api = axios.create({
   baseURL: API_BASE,
@@ -312,14 +336,18 @@ api.interceptors.response.use(
       original._retry = true;
       try {
         // Because withCredentials is true, this post will automatically send the refreshToken cookie
-        await axios.post(`${API_BASE}/auth/refresh`, {}, { withCredentials: true });
+        await axios.post(
+          `${API_BASE}/auth/refresh`,
+          {},
+          { withCredentials: true },
+        );
 
         // Retry original request (cookies are automatically sent)
         return api(original);
       } catch {
         // Redirect if refresh fails (token revoked or expired)
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
         }
       }
     }
@@ -330,49 +358,55 @@ api.interceptors.response.use(
 // ── Auth API ───────────────────────────────────────────────
 export const authApi = {
   register: (data: { email: string; username: string; password: string }) =>
-    api.post('/auth/register', data),
-  login: (data: { email: string; password: string }) => api.post('/auth/login', data),
-  getMe: () => api.get('/auth/me'),
-  verifyEmail: (data: { token: string }) => api.post('/auth/verify-email', data),
-  forgotPassword: (data: { email: string }) => api.post('/auth/forgot-password', data),
+    api.post("/auth/register", data),
+  login: (data: { email: string; password: string }) =>
+    api.post("/auth/login", data),
+  getMe: () => api.get("/auth/me"),
+  verifyEmail: (data: { token: string }) =>
+    api.post("/auth/verify-email", data),
+  forgotPassword: (data: { email: string }) =>
+    api.post("/auth/forgot-password", data),
   resetPassword: (data: { token: string; newPassword: string }) =>
-    api.post('/auth/reset-password', data),
+    api.post("/auth/reset-password", data),
 
   // 2FA Endpoints
-  setup2FA: () => api.post('/auth/2fa/setup'),
-  verify2FA: (data: { code: string }) => api.post('/auth/2fa/verify', data),
-  disable2FA: (data: { code: string }) => api.post('/auth/2fa/disable', data),
+  setup2FA: () => api.post("/auth/2fa/setup"),
+  verify2FA: (data: { code: string }) => api.post("/auth/2fa/verify", data),
+  disable2FA: (data: { code: string }) => api.post("/auth/2fa/disable", data),
   loginVerify2FA: (data: { tempToken: string; code: string }) =>
-    api.post('/auth/2fa/login-verify', data),
+    api.post("/auth/2fa/login-verify", data),
 
   // Session Management Endpoints
-  getSessions: () => api.get('/auth/sessions'),
+  getSessions: () => api.get("/auth/sessions"),
   revokeSession: (id: string) => api.post(`/auth/sessions/${id}/revoke`),
-  revokeAllSessions: () => api.post('/auth/sessions/revoke-all'),
-  logout: () => api.post('/auth/logout'),
+  revokeAllSessions: () => api.post("/auth/sessions/revoke-all"),
+  logout: () => api.post("/auth/logout"),
 };
 
 // ── Watchlist API ──────────────────────────────────────────
 export const watchlistApi = {
   get: (page = 1) => api.get(`/watchlist?page=${page}`),
-  add: (movieId: string, movieData?: any) => api.post('/watchlist', { movieId, movieData }),
+  add: (movieId: string, movieData?: any) =>
+    api.post("/watchlist", { movieId, movieData }),
   remove: (movieId: string) => api.delete(`/watchlist/${movieId}`),
   check: (movieId: string) => api.get(`/watchlist/check/${movieId}`),
 };
 
 // ── Reviews API ────────────────────────────────────────────
 export const reviewsApi = {
-  getByMovie: (movieId: string, page = 1) => api.get(`/reviews/movie/${movieId}?page=${page}`),
+  getByMovie: (movieId: string, page = 1) =>
+    api.get(`/reviews/movie/${movieId}?page=${page}`),
   getRecent: (page = 1) => api.get(`/reviews?page=${page}`),
   create: (data: { movieId: string; content: string; rating?: number }) =>
-    api.post('/reviews', data),
+    api.post("/reviews", data),
   delete: (id: string) => api.delete(`/reviews/${id}`),
   like: (id: string) => api.post(`/reviews/${id}/like`),
 };
 
 // ── Ratings API ────────────────────────────────────────────
 export const ratingsApi = {
-  rate: (movieId: string, score: number) => api.post('/ratings', { movieId, score }),
+  rate: (movieId: string, score: number) =>
+    api.post("/ratings", { movieId, score }),
   getAverage: (movieId: string) => api.get(`/ratings/movie/${movieId}/average`),
   getMine: (movieId: string) => api.get(`/ratings/movie/${movieId}/mine`),
 };
@@ -388,10 +422,11 @@ export const watchHistoryApi = {
     movieTitle: string;
     movieThumb?: string;
     serverName?: string;
-  }) => api.post('/watch-history', data),
+  }) => api.post("/watch-history", data),
 
   /** Get paginated history list */
-  getHistory: (page = 1, limit = 20) => api.get(`/watch-history?page=${page}&limit=${limit}`),
+  getHistory: (page = 1, limit = 20) =>
+    api.get(`/watch-history?page=${page}&limit=${limit}`),
 
   /** Get resume data for a specific movie (returns all episodes) */
   getResume: (movieId: string) => api.get(`/watch-history/resume/${movieId}`),
@@ -400,5 +435,5 @@ export const watchHistoryApi = {
   deleteEntry: (id: string) => api.delete(`/watch-history/${id}`),
 
   /** Clear all history */
-  clearAll: () => api.delete('/watch-history'),
+  clearAll: () => api.delete("/watch-history"),
 };

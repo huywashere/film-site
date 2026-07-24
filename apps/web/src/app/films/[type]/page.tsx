@@ -1,15 +1,19 @@
-'use client';
-import { useQuery } from '@tanstack/react-query';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { movieApi } from '@/lib/api';
-import { FilmCard, FilmItem, FilmCardSkeleton } from '@/components/film/FilmCard';
-import { Pagination } from '@/components/film/Pagination';
+"use client";
+import { useQuery } from "@tanstack/react-query";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { movieApi } from "@/lib/api";
+import {
+  FilmCard,
+  FilmItem,
+  FilmCardSkeleton,
+} from "@/components/film/FilmCard";
+import { Pagination } from "@/components/film/Pagination";
 
 const TYPE_LABELS: Record<string, string> = {
-  series: 'Phim Bộ',
-  single: 'Phim Lẻ',
-  anime: 'Hoạt Hình',
-  tvshows: 'TV Shows',
+  series: "Phim Bộ",
+  single: "Phim Lẻ",
+  anime: "Hoạt Hình",
+  tvshows: "TV Shows",
 };
 
 const TYPE_APIS: Record<string, (page: number) => Promise<any>> = {
@@ -24,13 +28,13 @@ export default function FilmsTypePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const type = params.type as string;
-  const page = Number(searchParams.get('page') || 1);
+  const page = Number(searchParams.get("page") || 1);
 
-  const label = TYPE_LABELS[type] || 'Danh Sách Phim';
+  const label = TYPE_LABELS[type] || "Danh Sách Phim";
   const apiFn = TYPE_APIS[type] || movieApi.getLatest;
 
   const { data, isLoading } = useQuery({
-    queryKey: ['films-type', type, page],
+    queryKey: ["films-type", type, page],
     queryFn: () => apiFn(page).then((r) => r.data),
   });
 
@@ -44,15 +48,20 @@ export default function FilmsTypePage() {
     data?.paginate?.total_page ||
     data?.data?.paginate?.total_page ||
     (data?.data?.params?.pagination?.totalItems
-      ? Math.ceil(data.data.params.pagination.totalItems / (data.data.params.pagination.totalItemsPerPage || 24))
+      ? Math.ceil(
+          data.data.params.pagination.totalItems /
+            (data.data.params.pagination.totalItemsPerPage || 24),
+        )
       : undefined);
 
-  const totalPages = rawTotal && rawTotal > 1 ? rawTotal : (films.length > 0 ? 50 : 1);
-  const totalItems = data?.data?.params?.pagination?.totalItems || data?.pagination?.totalItems;
+  const totalPages =
+    rawTotal && rawTotal > 1 ? rawTotal : films.length > 0 ? 50 : 1;
+  const totalItems =
+    data?.data?.params?.pagination?.totalItems || data?.pagination?.totalItems;
 
   const handlePageChange = (newPage: number) => {
     router.push(`/films/${type}?page=${newPage}`);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -68,7 +77,8 @@ export default function FilmsTypePage() {
           </p>
         </div>
         <div className="text-xs font-bold text-neutral-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 self-start md:self-auto">
-          Trang <span className="text-white font-extrabold">{page}</span> / {totalPages}
+          Trang <span className="text-white font-extrabold">{page}</span> /{" "}
+          {totalPages}
         </div>
       </div>
 
