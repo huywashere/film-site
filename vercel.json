@@ -1,7 +1,0 @@
-{
-  "version": 2,
-  "buildCommand": "cd apps/web && pnpm install && pnpm build",
-  "outputDirectory": "apps/web/.next",
-  "framework": "nextjs",
-  "installCommand": "echo 'Skipping install'"
-}
