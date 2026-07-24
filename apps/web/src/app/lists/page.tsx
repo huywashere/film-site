@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ListPlus, Heart, Sparkles, Film, Plus, Share2, User } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/providers/ToastProvider';
-import { cn } from '@/lib/utils';
+import { resolveImageUrl } from '@/components/film/FilmCard';
 
 export interface CustomList {
   id: string;
@@ -159,15 +159,31 @@ export default function CustomListsPage() {
 
                 {/* Posters Overlap Card Grid */}
                 <div className="flex items-center -space-x-4 pt-2">
-                  {item.posters.map((imgUrl, i) => (
-                    <div
-                      key={i}
-                      className="w-20 aspect-[2/3] rounded-lg overflow-hidden border-2 border-[#1c2228] shadow-lg transform group-hover:translate-y-1 transition-transform"
-                      style={{ zIndex: item.posters.length - i }}
-                    >
-                      <img src={imgUrl} alt="" className="w-full h-full object-cover" />
-                    </div>
-                  ))}
+                  {item.posters.map((imgUrl, i) => {
+                    const posterSrc = resolveImageUrl(imgUrl) || imgUrl;
+                    return (
+                      <div
+                        key={i}
+                        className="w-20 aspect-[2/3] rounded-lg overflow-hidden border-2 border-[#1c2228] shadow-lg transform group-hover:translate-y-1 transition-transform bg-black/40"
+                        style={{ zIndex: item.posters.length - i }}
+                      >
+                        <img
+                          src={posterSrc}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const fallbacks = [
+                              'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&auto=format&fit=crop&q=80',
+                              'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=300&auto=format&fit=crop&q=80',
+                              'https://images.unsplash.com/photo-1518676599602-2170e3d75992?w=300&auto=format&fit=crop&q=80',
+                              'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=300&auto=format&fit=crop&q=80',
+                            ];
+                            e.currentTarget.src = fallbacks[i % fallbacks.length];
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
                   <div className="w-12 h-20 rounded-lg bg-black/60 border border-white/10 flex flex-col items-center justify-center text-[10px] font-bold text-emerald-400 z-0">
                     +{item.filmCount}
                   </div>

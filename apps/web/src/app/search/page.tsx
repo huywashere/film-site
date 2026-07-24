@@ -2,7 +2,100 @@
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, Suspense } from 'react';
-import { Search, X, Loader2, RotateCcw, Filter } from 'lucide-react';
+import { Search, X, Loader2, RotateCcw, Filter, ChevronDown, Check } from 'lucide-react';
+import { useRef, useEffect } from 'react';
+
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
+function CustomSelect({
+  value,
+  options,
+  placeholder,
+  onChange,
+}: {
+  value: string;
+  options: SelectOption[];
+  placeholder: string;
+  onChange: (val: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((o) => String(o.value) === String(value));
+
+  return (
+    <div ref={ref} className="relative w-full">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full bg-[#0b0e11] border border-white/10 hover:border-white/20 rounded-xl px-2.5 py-1.5 text-xs text-neutral-200 flex items-center justify-between cursor-pointer focus:outline-none transition-colors select-none"
+      >
+        <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
+        <ChevronDown size={13} className={`ml-1 text-neutral-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-[#12161a] border border-white/15 rounded-xl py-1 shadow-2xl max-h-60 overflow-y-auto scrollbar-none">
+          <div
+            onClick={() => {
+              onChange('');
+              setOpen(false);
+            }}
+            className={`px-3 py-1.5 text-xs cursor-pointer transition-colors flex items-center justify-between ${
+              !value ? 'bg-white/15 text-white font-bold' : 'text-neutral-400 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <span>{placeholder}</span>
+            {!value && <Check size={12} className="text-white shrink-0 ml-1" />}
+          </div>
+          {options.map((opt) => {
+            const isSelected = String(opt.value) === String(value);
+            return (
+              <div
+                key={opt.value}
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                className={`px-3 py-1.5 text-xs cursor-pointer transition-colors flex items-center justify-between ${
+                  isSelected ? 'bg-white/15 text-white font-bold' : 'text-neutral-300 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <span className="truncate">{opt.label}</span>
+                {isSelected && <Check size={12} className="text-white shrink-0 ml-1" />}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const TYPE_OPTIONS = [
+  { value: 'single', label: 'Phim Lẻ' },
+  { value: 'series', label: 'Phim Bộ' },
+  { value: 'anime', label: 'Hoạt Hình' },
+  { value: 'tvshows', label: 'TV Shows' },
+];
+
+const YEAR_OPTIONS = Array.from({ length: 15 }, (_, i) => 2024 - i).map((y) => ({
+  value: String(y),
+  label: `Năm ${y}`,
+}));
 import { movieApi } from '@/lib/api';
 import { FilmCard, FilmItem, FilmCardSkeleton } from '@/components/film/FilmCard';
 import { Pagination } from '@/components/film/Pagination';
@@ -79,161 +172,140 @@ function SearchContent() {
 
   return (
     <div className="container mx-auto px-4 md:px-8 max-w-7xl pt-24 pb-16">
-      {/* Search Header */}
-      <div className="max-w-4xl mx-auto mb-10 md:mb-14">
-        <h1 className="text-3xl md:text-5xl font-black text-white text-center mb-4 tracking-wide">
-          Khám phá Phim Thông Minh
+      {/* Search Header & Form Container (Centered & Minimalist) */}
+      <div className="max-w-3xl mx-auto mb-8 md:mb-12">
+        <h1 className="text-2xl md:text-4xl font-extrabold text-white text-center mb-2 tracking-tight">
+          Khám phá Phim
         </h1>
-        <p className="text-center text-neutral-400 max-w-2xl mx-auto mb-8 text-sm">
-          Tìm phim theo tên, diễn viên, giọng nói hoặc sử dụng bộ lọc đa năng để tìm nhanh nhất.
+        <p className="text-center text-neutral-400 max-w-xl mx-auto mb-6 text-xs sm:text-sm">
+          Tìm phim theo tên, diễn viên hoặc bộ lọc nâng cao
         </p>
 
-        {/* Input Form with Voice Button */}
-        <form onSubmit={handleFormSubmit} className="relative flex items-center mb-6">
-          <div className="relative flex-1">
+        {/* Compact Unified Search Input Bar */}
+        <form onSubmit={handleFormSubmit} className="relative mb-5 max-w-2xl mx-auto">
+          <div className="relative flex items-center bg-[#12161a] border border-white/10 hover:border-white/20 focus-within:border-white/30 rounded-2xl p-1.5 shadow-xl transition-all">
             <Search
-              size={20}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none"
+              size={18}
+              className="ml-3 text-neutral-400 shrink-0"
             />
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Nhập tên phim, diễn viên, đạo diễn..."
-              className="w-full h-14 bg-[#14181c] border border-white/15 rounded-3xl pl-12 pr-28 text-base text-white placeholder:text-neutral-500 focus:border-netflixRed focus:ring-1 focus:ring-netflixRed shadow-2xl transition-all"
+              placeholder="Tìm phim, diễn viên..."
+              className="w-full bg-transparent px-3 py-2 text-sm text-white placeholder:text-neutral-500 focus:outline-none"
             />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1">
+            <div className="flex items-center space-x-1.5 pr-1 shrink-0">
               <VoiceSearchButton onResult={handleVoiceResult} />
               {input && (
                 <button
                   type="button"
                   onClick={() => setInput('')}
-                  className="p-1.5 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
+                  className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
                 >
-                  <X size={16} />
+                  <X size={15} />
                 </button>
               )}
+              <button
+                type="submit"
+                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
+              >
+                <Search size={14} />
+                <span>Tìm kiếm</span>
+              </button>
             </div>
           </div>
-          <button
-            type="submit"
-            className="ml-3 h-14 px-7 bg-netflixRed hover:bg-[#C11119] text-white font-extrabold text-sm rounded-3xl transition-colors flex items-center justify-center space-x-2 shadow-lg"
-          >
-            <Search size={16} />
-            <span className="hidden sm:inline">Tìm kiếm</span>
-          </button>
         </form>
 
-        {/* Multi-Facet Filter Bar */}
-        <div className="bg-[#1c2228]/80 border border-white/10 rounded-2xl p-4 backdrop-blur-md space-y-4">
-          <div className="flex items-center justify-between border-b border-white/10 pb-3">
-            <div className="flex items-center space-x-2 text-xs font-bold text-neutral-300 uppercase tracking-wider">
-              <Filter size={14} className="text-netflixRed" />
-              <span>Bộ lọc tìm kiếm nâng cao</span>
+        {/* Centered Minimalist Multi-Facet Filter Bar */}
+        <div className="bg-[#12161a]/80 border border-white/10 rounded-2xl p-3.5 backdrop-blur-md max-w-2xl mx-auto shadow-lg">
+          <div className="flex items-center justify-between border-b border-white/10 pb-2.5 mb-3">
+            <div className="flex items-center space-x-2 text-xs font-bold text-neutral-300">
+              <Filter size={13} className="text-neutral-400" />
+              <span>Bộ lọc tìm kiếm</span>
             </div>
             <button
               type="button"
               onClick={handleResetFilters}
-              className="text-xs font-semibold text-neutral-400 hover:text-netflixRed transition-colors flex items-center space-x-1"
+              className="text-[11px] font-semibold text-neutral-400 hover:text-white transition-colors flex items-center space-x-1 cursor-pointer"
             >
-              <RotateCcw size={12} />
+              <RotateCcw size={11} />
               <span>Xóa bộ lọc</span>
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {/* Loại Phim */}
             <div>
-              <label className="block text-[11px] font-bold text-neutral-400 uppercase mb-1">Loại Phim</label>
-              <select
+              <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">Loại Phim</label>
+              <CustomSelect
                 value={type}
-                onChange={(e) => {
+                placeholder="Tất cả loại phim"
+                options={TYPE_OPTIONS}
+                onChange={(newVal) => {
                   const params = new URLSearchParams(searchParams.toString());
-                  if (e.target.value) params.set('type', e.target.value);
+                  if (newVal) params.set('type', newVal);
                   else params.delete('type');
                   router.push(`/search?${params.toString()}`);
                 }}
-                className="w-full bg-[#14181c] border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:border-netflixRed"
-              >
-                <option value="">Tất cả loại phim</option>
-                <option value="single">Phim Lẻ</option>
-                <option value="series">Phim Bộ</option>
-                <option value="anime">Hoạt Hình</option>
-                <option value="tvshows">TV Shows</option>
-              </select>
+              />
             </div>
 
             {/* Thể Loại */}
             <div>
-              <label className="block text-[11px] font-bold text-neutral-400 uppercase mb-1">Thể Loại</label>
-              <select
+              <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">Thể Loại</label>
+              <CustomSelect
                 value={genre}
-                onChange={(e) => {
+                placeholder="Tất cả thể loại"
+                options={GENRES_LIST.map((g) => ({ value: g.slug, label: g.label }))}
+                onChange={(newVal) => {
                   const params = new URLSearchParams(searchParams.toString());
-                  if (e.target.value) params.set('genre', e.target.value);
+                  if (newVal) params.set('genre', newVal);
                   else params.delete('genre');
                   router.push(`/search?${params.toString()}`);
                 }}
-                className="w-full bg-[#14181c] border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:border-netflixRed"
-              >
-                <option value="">Tất cả thể loại</option>
-                {GENRES_LIST.map((g) => (
-                  <option key={g.slug} value={g.slug}>
-                    {g.label}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             {/* Quốc Gia */}
             <div>
-              <label className="block text-[11px] font-bold text-neutral-400 uppercase mb-1">Quốc Gia</label>
-              <select
+              <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">Quốc Gia</label>
+              <CustomSelect
                 value={country}
-                onChange={(e) => {
+                placeholder="Tất cả quốc gia"
+                options={COUNTRIES_LIST.map((c) => ({ value: c.slug, label: c.label }))}
+                onChange={(newVal) => {
                   const params = new URLSearchParams(searchParams.toString());
-                  if (e.target.value) params.set('country', e.target.value);
+                  if (newVal) params.set('country', newVal);
                   else params.delete('country');
                   router.push(`/search?${params.toString()}`);
                 }}
-                className="w-full bg-[#14181c] border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:border-netflixRed"
-              >
-                <option value="">Tất cả quốc gia</option>
-                {COUNTRIES_LIST.map((c) => (
-                  <option key={c.slug} value={c.slug}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             {/* Năm Phát Hành */}
             <div>
-              <label className="block text-[11px] font-bold text-neutral-400 uppercase mb-1">Năm Phát Hành</label>
-              <select
+              <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">Năm Phát Hành</label>
+              <CustomSelect
                 value={year}
-                onChange={(e) => {
+                placeholder="Tất cả các năm"
+                options={YEAR_OPTIONS}
+                onChange={(newVal) => {
                   const params = new URLSearchParams(searchParams.toString());
-                  if (e.target.value) params.set('year', e.target.value);
+                  if (newVal) params.set('year', newVal);
                   else params.delete('year');
                   router.push(`/search?${params.toString()}`);
                 }}
-                className="w-full bg-[#14181c] border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:border-netflixRed"
-              >
-                <option value="">Tất cả các năm</option>
-                {Array.from({ length: 15 }, (_, i) => 2024 - i).map((y) => (
-                  <option key={y} value={y}>
-                    Năm {y}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
           </div>
         </div>
 
         {/* Search History & Hot Keywords when no query */}
         {!query && !isFilterOnly && (
-          <SearchHistory onSelectQuery={handleSearchSubmit} />
+          <div className="mt-4">
+            <SearchHistory onSelectQuery={handleSearchSubmit} />
+          </div>
         )}
       </div>
 
@@ -278,7 +350,7 @@ function SearchContent() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 md:gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 md:gap-6 animate-in fade-in duration-300">
                 {films.map((film) => (
                   <FilmCard key={film.slug} film={film} />
                 ))}

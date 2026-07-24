@@ -60,7 +60,7 @@ export default function FilmsTypePage() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-4 border-b border-white/10 gap-2">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black text-white tracking-wide uppercase font-sans">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
             {label}
           </h1>
           <p className="text-xs text-neutral-400 font-semibold mt-1">

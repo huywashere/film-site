@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bookmark, Play, Clapperboard, Star } from 'lucide-react';
 import { watchlistApi, movieApi } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
@@ -31,10 +31,26 @@ interface FilmCardProps {
   hideDetails?: boolean;
 }
 
+const PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450" fill="none">
+  <rect width="300" height="450" fill="#16181d"/>
+  <rect x="15" y="15" width="270" height="420" rx="16" stroke="#2b2f38" stroke-width="2" stroke-dasharray="6 6"/>
+  <path d="M150 190C161.046 190 170 181.046 170 170C170 158.954 161.046 150 150 150C138.954 150 130 158.954 130 170C130 181.046 138.954 190 150 190Z" fill="#3a4454"/>
+  <path d="M95 275L135 220L160 250L185 210L205 275H95Z" fill="#3a4454"/>
+  <text x="150" y="320" fill="#6b7280" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle">CineVerse Poster</text>
+</svg>`;
+
 // Helper: resolve KKPhim/OPhim/NguonC image URL
 export function resolveImageUrl(url?: string): string | null {
   if (!url) return null;
-  const resolved = url.startsWith('http') ? url : `https://img.phimapi.com/${url}`;
+  let resolved = url.trim();
+  if (!resolved) return null;
+
+  if (resolved.startsWith('//')) {
+    resolved = `https:${resolved}`;
+  } else if (!resolved.startsWith('http://') && !resolved.startsWith('https://')) {
+    const cleanPath = resolved.startsWith('/') ? resolved.slice(1) : resolved;
+    resolved = `https://img.phimapi.com/${cleanPath}`;
+  }
   return `/api/image-proxy?url=${encodeURIComponent(resolved)}`;
 }
 
@@ -53,10 +69,24 @@ export function FilmCard({
   const slug = film.slug;
   const title = film.name || film.title || 'Chưa có tên';
   const subtitle = film.origin_name || (film.year ? `${film.year}` : '');
-  const posterUrl =
+  const initialPosterUrl =
     variant === 'landscape'
       ? resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url)
       : resolveImageUrl(film.poster_url) || resolveImageUrl(film.thumb_url);
+
+  const [imageSrc, setImageSrc] = useState<string | null>(initialPosterUrl);
+
+  useEffect(() => {
+    const url =
+      variant === 'landscape'
+        ? resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url)
+        : resolveImageUrl(film.poster_url) || resolveImageUrl(film.thumb_url);
+    setImageSrc(url);
+  }, [film.poster_url, film.thumb_url, variant]);
+
+  const handleImageError = () => {
+    setImageSrc(`data:image/svg+xml;utf8,${encodeURIComponent(PLACEHOLDER_SVG)}`);
+  };
 
   const prefetchFilmDetail = () => {
     queryClient.prefetchQuery({
@@ -106,7 +136,7 @@ export function FilmCard({
       } else {
         await watchlistApi.add(slug, {
           title,
-          thumbUrl: posterUrl,
+          thumbUrl: imageSrc || initialPosterUrl,
           type: film.type,
           year: film.year,
         });
@@ -121,8 +151,8 @@ export function FilmCard({
   return (
     <Link
       href={`/film/${slug}`}
-      className="group relative flex flex-col cursor-pointer transition-transform duration-300 hover:scale-[1.03]"
-      style={{ width }}
+      className="group relative flex flex-col cursor-pointer transition-transform duration-300 hover:scale-[1.03] animate-in fade-in duration-300"
+      style={width ? { width, flexShrink: 0 } : undefined}
       onMouseEnter={prefetchFilmDetail}
     >
       {/* Poster Container */}
@@ -132,13 +162,14 @@ export function FilmCard({
           variant === 'landscape' ? "aspect-video" : ""
         )}
       >
-        {posterUrl ? (
+        {imageSrc ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={posterUrl}
-            alt={title}
+            src={imageSrc}
+            alt=""
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
+            onError={handleImageError}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-neutral-800 text-neutral-500">
@@ -202,15 +233,15 @@ export function FilmCard({
 }
 
 // Skeleton
-export function FilmCardSkeleton({ width = 200, hideDetails = false }: { width?: number; hideDetails?: boolean }) {
+export function FilmCardSkeleton({ width, hideDetails = false }: { width?: number | string; hideDetails?: boolean }) {
   return (
-    <div style={{ width, flexShrink: 0 }} className="flex flex-col space-y-2">
-      <div className="w-full aspect-[2/3] bg-black/[0.04] dark:bg-white/[0.03] shimmer rounded-xl border border-black/5 dark:border-white/5" />
+    <div style={width ? { width, flexShrink: 0 } : undefined} className="w-full flex flex-col space-y-2.5 animate-pulse">
+      <div className="w-full aspect-[2/3] bg-white/5 rounded-2xl border border-white/10 relative overflow-hidden" />
       {!hideDetails && (
-        <>
-          <div className="h-4 bg-black/[0.04] dark:bg-white/[0.03] shimmer rounded w-4/5" />
-          <div className="h-3 bg-black/[0.04] dark:bg-white/[0.03] shimmer rounded w-2/5" />
-        </>
+        <div className="flex flex-col space-y-1.5 px-0.5">
+          <div className="h-4 bg-white/10 rounded-lg w-4/5" />
+          <div className="h-3 bg-white/5 rounded-md w-2/5" />
+        </div>
       )}
     </div>
   );

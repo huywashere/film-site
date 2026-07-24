@@ -374,14 +374,55 @@ export default function FilmDetailPage() {
   const episodes = data?.episodes || [];
   const isNotFound = !isLoading && (error || !data || data?.error || !film || (!film.name && !film.title && !film.slug));
 
-  // Fetch similar films by first genre
+  // ── Smart Recommendation Query ─────────────────────────────────────
+  const rawTitle = (film?.name || film?.origin_name || slug || '').toLowerCase();
   const firstGenre = film?.category?.[0]?.slug;
-  const { data: similarFilmsData } = useQuery({
-    queryKey: ['similar-films', firstGenre],
-    queryFn: () => firstGenre ? movieApi.getByGenre(firstGenre, 1).then((r) => r.data) : null,
-    enabled: !!firstGenre && !isNotFound,
+
+  const matchedKeyword = useMemo(() => {
+    const keywords = [
+      'marvel', 'dc', 'superman', 'batman', 'spider-man', 'spiderman', 'avengers',
+      'doraemon', 'naruto', 'one piece', 'conan', 'dragon ball', 'harry potter',
+      'star wars', 'pokemon', 'godzilla', 'x-men', 'transformers', 'fast & furious',
+      'john wick', 'jurassic', 'matrix', 'avatar'
+    ];
+    return keywords.find((kw) => rawTitle.includes(kw));
+  }, [rawTitle]);
+
+  const { data: smartSimilarData } = useQuery({
+    queryKey: ['smart-similar-films', slug, firstGenre, matchedKeyword],
+    queryFn: async () => {
+      const recItems: any[] = [];
+      if (matchedKeyword) {
+        try {
+          const res = await movieApi.search(matchedKeyword, 1, 15);
+          const items = res?.data?.items || res?.data?.data?.items || [];
+          recItems.push(...items);
+        } catch {}
+      }
+      if (firstGenre) {
+        try {
+          const res = await movieApi.getByGenre(firstGenre, 1);
+          const items = res?.data?.data?.items || res?.data?.items || [];
+          recItems.push(...items);
+        } catch {}
+      }
+      try {
+        const res = await movieApi.getLatest(1);
+        const items = res?.data?.items || res?.data?.data?.items || [];
+        recItems.push(...items);
+      } catch {}
+
+      const seen = new Set<string>();
+      return recItems.filter((item: any) => {
+        if (!item || !item.slug || item.slug === slug || seen.has(item.slug)) return false;
+        seen.add(item.slug);
+        return true;
+      }).slice(0, 12);
+    },
+    enabled: !!slug && !isNotFound,
   });
-  const similarFilms = similarFilmsData?.data?.items?.filter((f: any) => f.slug !== slug).slice(0, 10) || [];
+
+  const similarFilms = smartSimilarData || [];
 
   const { cleanContent, directors, actors } = useMemo(() => {
     if (!film) return { cleanContent: '', directors: [], actors: [] };

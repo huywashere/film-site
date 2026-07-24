@@ -45,25 +45,25 @@ export function Footer() {
   const { lang, setLang } = useTranslation();
 
   return (
-    <footer className="bg-[#14181c] text-neutral-300 border-t border-[#2c3440] mt-0 font-sans">
+    <footer className="bg-[#101418] text-neutral-400 border-t border-white/10 mt-0 font-sans">
       {/* ── Marquee Film Banner ── */}
       <ScrollingFilmBanner />
 
       {/* ── Main Footer Body ── */}
-      <div className="max-w-7xl mx-auto px-6 pt-12 pb-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+      <div className="max-w-7xl mx-auto px-6 pt-10 pb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-10">
           
           {/* Brand Column */}
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="inline-flex items-center gap-2.5 group">
-              <div className="w-10 h-10 rounded-2xl bg-[#00e054] text-black flex items-center justify-center font-black text-xl shadow-lg shadow-[#00e054]/20 group-hover:scale-105 transition-transform">
+              <div className="w-9 h-9 rounded-xl bg-white/10 text-white flex items-center justify-center font-black text-lg group-hover:bg-white/20 transition-all">
                 C
               </div>
               <div className="flex flex-col">
-                <span className="text-2xl font-black tracking-tight text-white group-hover:text-[#00e054] transition-colors">
+                <span className="text-xl font-extrabold tracking-tight text-white group-hover:text-neutral-200 transition-colors">
                   CineVerse
                 </span>
-                <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#00e054]">
+                <span className="text-[9px] uppercase font-bold tracking-[0.2em] text-neutral-500">
                   Cinema Experience
                 </span>
               </div>
@@ -74,7 +74,7 @@ export function Footer() {
             </p>
 
             {/* Social Buttons */}
-            <div className="flex items-center gap-2.5 pt-2">
+            <div className="flex items-center gap-2 pt-1">
               {SOCIALS.map(({ icon: Icon, href, label }) => (
                 <a
                   key={label}
@@ -82,9 +82,9 @@ export function Footer() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label={label}
-                  className="w-9 h-9 rounded-xl bg-[#1c2228] border border-[#2c3440] flex items-center justify-center text-neutral-400 hover:text-[#00e054] hover:border-[#00e054]/40 hover:bg-[#242c34] transition-all duration-200"
+                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-neutral-400 hover:text-white hover:border-white/20 hover:bg-white/10 transition-all duration-200"
                 >
-                  <Icon size={15} />
+                  <Icon size={14} />
                 </a>
               ))}
             </div>
@@ -92,8 +92,8 @@ export function Footer() {
 
           {/* Nav Columns */}
           {NAV_COLS.map((col) => (
-            <div key={col.title} className="space-y-3.5">
-              <h4 className="text-xs font-black uppercase tracking-wider text-white border-l-2 border-[#00e054] pl-2.5">
+            <div key={col.title} className="space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-300">
                 {col.title}
               </h4>
               <ul className="space-y-2 text-xs font-medium text-neutral-400">
@@ -101,7 +101,7 @@ export function Footer() {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="hover:text-[#00e054] transition-colors inline-block py-0.5"
+                      className="hover:text-white transition-colors inline-block py-0.5"
                     >
                       {link.label}
                     </Link>
@@ -114,15 +114,15 @@ export function Footer() {
       </div>
 
       {/* ── Bottom Bar ── */}
-      <div className="border-t border-[#2c3440]/60 py-5 bg-[#0e1114]">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-500 font-medium">
+      <div className="border-t border-white/10 py-4 bg-[#0b0e11]">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-500 font-medium">
           <p>© {new Date().getFullYear()} CineVerse Platform. Tất cả quyền được bảo lưu.</p>
-          <div className="flex items-center space-x-6 text-neutral-400">
-            <Link href="/privacy" className="hover:text-[#00e054] transition-colors">
+          <div className="flex items-center space-x-5 text-neutral-400 text-xs">
+            <Link href="/privacy" className="hover:text-white transition-colors">
               Chính sách bảo mật
             </Link>
             <span className="text-neutral-700">•</span>
-            <Link href="/terms" className="hover:text-[#00e054] transition-colors">
+            <Link href="/terms" className="hover:text-white transition-colors">
               Điều khoản dịch vụ
             </Link>
           </div>

@@ -268,13 +268,13 @@ async function getDetailFromAnySource(slug: string): Promise<any> {
 export const movieApi = {
   getLatest: (page = 1) => kkphimApi.getLatest(page).then((data) => ({ data })),
   getSeries: (page = 1) =>
-    fetchOphim(`/v1/api/danh-sach/phim-bo?page=${page}&limit=24`).then((data) => ({ data })),
+    kkphimApi.getSeries(page, 24).then((data) => ({ data })),
   getSingle: (page = 1) =>
-    fetchNguonc(`/films/danh-sach/phim-le?page=${page}`).then((data) => ({ data })),
+    kkphimApi.getSingle(page, 24).then((data) => ({ data })),
   getAnime: (page = 1) =>
-    fetchOphim(`/v1/api/danh-sach/hoat-hinh?page=${page}&limit=24`).then((data) => ({ data })),
+    kkphimApi.getAnime(page, 24).then((data) => ({ data })),
   getTvShows: (page = 1) =>
-    fetchNguonc(`/films/danh-sach/tv-shows?page=${page}`).then((data) => ({ data })),
+    kkphimApi.getTvShows(page, 24).then((data) => ({ data })),
   getDetail: (slug: string) => getDetailFromAnySource(slug).then((data) => ({ data })),
   getDetailV1: (slug: string) => kkphimApi.getDetailV1(slug).then((data) => ({ data })),
   search: (keyword: string, page = 1, limit = 24) => searchAllSources(keyword, page, limit).then((data) => ({ data })),

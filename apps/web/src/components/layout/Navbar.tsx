@@ -1,10 +1,11 @@
 'use client';
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import {
   Search, Film, Bookmark, ChevronDown, ChevronRight,
-  LogOut, User, Menu, X, Star, Sun, Moon,
+  LogOut, User, Menu, X, Star, Sun, Moon, List,
   Play, Languages, Loader2, Bell, Settings, History, MonitorSmartphone
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
@@ -26,8 +27,7 @@ const NAV_LINKS = [
   { href: '/films/series', key: 'nav.series' },
   { href: '/films/single', key: 'nav.single' },
   { href: '/films/anime', key: 'nav.anime' },
-  { href: '/lists', label: 'Bộ Sưu Tập' },
-  { href: '/watchlist', key: 'nav.watchlist' },
+  { href: '/actors', label: 'Diễn Viên' },
 ];
 
 export const GENRES_LIST = [
@@ -99,6 +99,7 @@ export const COUNTRIES_LIST = [
 ];
 
 const LISTS_CATALOG = [
+  { label: 'Bộ Sưu Tập Phim', href: '/lists' },
   { label: 'Phim Mới', href: '/search?sort=modified.time%20desc' },
   { label: 'Phim Bộ', href: '/films/series' },
   { label: 'Phim Lẻ', href: '/films/single' },
@@ -128,20 +129,44 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // Notifications State & References
-  const [notifications, setNotifications] = useState([
-    { id: 1, message: 'Phim "Thanh Khâu Kỳ Duyên" vừa cập nhật tập mới (Tập 12)!', time: '10 phút trước', read: false },
-    { id: 2, message: 'Chào mừng bạn đến với phiên bản CineVerse mới!', time: '1 ngày trước', read: false },
-    { id: 3, message: 'Watchlist của bạn có 1 phim sắp phát sóng tập cuối.', time: '2 ngày trước', read: true },
+  // Notifications State & References (Live Auto-Fetched from Third-Party APIs)
+  const [notifications, setNotifications] = useState<Array<{ id: string | number; message: string; time: string; slug?: string; read: boolean }>>([
+    { id: 'default-1', message: 'Hệ thống tự động đồng bộ phim mới nhất từ các nhà cung cấp.', time: 'Hệ thống', read: false },
   ]);
+
+  // Fetch live updated movies from providers every 5 minutes to generate real notifications
+  const { data: latestNotificationRes } = useQuery({
+    queryKey: ['navbar-latest-notifications'],
+    queryFn: () => movieApi.getLatest(1).then((r) => r.data),
+    staleTime: 1000 * 60 * 5,
+    refetchInterval: 1000 * 60 * 5, // Auto-check for new updates every 5 minutes
+  });
+
+  useEffect(() => {
+    const rawItems = latestNotificationRes?.items || latestNotificationRes?.data?.items || [];
+    if (rawItems.length > 0) {
+      const liveItems = rawItems.slice(0, 5).map((item: any, idx: number) => ({
+        id: item.slug || `live-${idx}`,
+        message: `Phim "${item.name}" vừa cập nhật (${item.episode_current || item.quality || 'Tập mới'})`,
+        time: 'Vừa cập nhật',
+        slug: item.slug,
+        read: false,
+      }));
+      setNotifications(liveItems);
+    }
+  }, [latestNotificationRes]);
+
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const markAllRead = () => {
     setNotifications(notifications.map((n) => ({ ...n, read: true })));
   };
 
-  const markAsRead = (id: number) => {
-    setNotifications(notifications.map((n) => n.id === id ? { ...n, read: true } : n));
+  const markAsRead = (id: string | number, slug?: string) => {
+    setNotifications(notifications.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    if (slug) {
+      router.push(`/film/${slug}`);
+    }
   };
 
   // Scroll detection to update header background
@@ -159,10 +184,6 @@ export function Navbar() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    searchRef.current?.focus();
   }, []);
 
   // Debounced live search
@@ -204,7 +225,7 @@ export function Navbar() {
           scrolled ? "bg-background/95 shadow-md backdrop-blur-md" : "bg-gradient-to-b from-background/80 via-background/20 to-transparent"
         )}
       >
-        <div className="w-full px-4 md:px-8 flex items-center justify-between gap-3 md:gap-6">
+        <div className="w-full px-4 md:px-8 flex items-center justify-between gap-3 md:gap-6 relative">
           {/* Left Block: Logo (shrink-0 ensures it NEVER gets overlapped) */}
           <div className="flex items-center shrink-0">
             <Link href="/" className="flex items-center space-x-1.5 group">
@@ -214,8 +235,8 @@ export function Navbar() {
             </Link>
           </div>
 
-          {/* Center Block: Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center justify-center space-x-6 text-sm font-medium text-neutral-600 dark:text-neutral-300 flex-1">
+          {/* Center Block: Desktop Navigation Links (Absolute 100% Centered in Header) */}
+          <nav className="hidden lg:flex items-center justify-center space-x-4 xl:space-x-6 text-sm font-medium text-neutral-600 dark:text-neutral-300 absolute left-1/2 -translate-x-1/2 z-10">
             {/* Thể Loại Dropdown */}
             <div className="relative group py-5">
               <button className="flex items-center space-x-1 hover:text-neutral-900 dark:hover:text-white transition-colors focus:outline-none font-semibold">
@@ -288,9 +309,10 @@ export function Navbar() {
               </Link>
             ))}
           </nav>
+
           {/* Right Block: Search & Actions & Profile */}
           <div className="flex items-center justify-end space-x-2 sm:space-x-3 shrink-0">
-            {/* Search Input inline */}
+            {/* Search Input inline (Fixed width, no focus stretching) */}
             <div className="relative flex items-center">
               <form onSubmit={handleSearchSubmit} className="flex items-center relative">
                 <div className="relative flex items-center">
@@ -298,21 +320,28 @@ export function Navbar() {
                   <input
                     ref={searchRef}
                     type="text"
-                    placeholder="Tìm kiếm..."
+                    placeholder="Tìm phim, diễn viên..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-36 xs:w-44 sm:w-56 md:w-64 lg:w-72 focus:w-44 focus:xs:w-52 focus:sm:w-64 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder-neutral-400 focus:border-white/40 focus:bg-white/[0.1] focus:ring-1 focus:ring-white/20 transition-all duration-300 outline-none shadow-lg shadow-black/40"
+                    className="w-44 sm:w-52 md:w-56 lg:w-60 bg-[#0d1117]/85 hover:bg-[#0d1117]/95 focus:bg-[#0d1117] backdrop-blur-2xl border border-white/20 hover:border-white/40 focus:border-white/60 ring-1 ring-white/10 rounded-full pl-9 pr-3.5 py-1.5 text-xs font-medium text-white placeholder-neutral-300 transition-all duration-200 outline-none shadow-lg shadow-black/80"
                   />
                 </div>
               </form>
 
-              {/* Instant Search Results Dropdown (Glassmorphism design with clean neutral colors) */}
+              {/* Instant Search Results Dropdown (Glassmorphism design with smooth animations) */}
               {searchQuery.trim() && (
-                <div className="absolute right-0 top-12 w-80 md:w-[420px] bg-[#181c22]/85 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl shadow-black/90 overflow-hidden z-50 text-xs p-2">
+                <div className="absolute right-0 top-12 w-80 md:w-[420px] bg-[#14181f]/95 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl shadow-black/90 overflow-hidden z-50 text-xs p-2 animate-in fade-in slide-in-from-top-2 duration-200">
                   {isSearching ? (
-                    <div className="p-5 flex items-center justify-center space-x-2 text-neutral-400">
-                      <Loader2 size={16} className="animate-spin text-white" />
-                      <span className="font-semibold text-xs text-neutral-300">Đang tìm kiếm phim...</span>
+                    <div className="p-2 space-y-2">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="flex items-center space-x-3.5 p-2 rounded-2xl animate-pulse">
+                          <div className="w-11 h-16 bg-white/10 rounded-xl shrink-0" />
+                          <div className="flex-1 space-y-2">
+                            <div className="h-3.5 bg-white/15 rounded-md w-3/4" />
+                            <div className="h-2.5 bg-white/10 rounded-md w-1/2" />
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ) : searchResults.length > 0 ? (
                     <div
@@ -326,7 +355,7 @@ export function Navbar() {
                             key={film._id || film.slug}
                             href={`/film/${film.slug}`}
                             onClick={() => setSearchQuery('')}
-                            className="flex items-center space-x-3.5 p-2.5 rounded-2xl hover:bg-white/10 transition-all duration-200 group"
+                            className="flex items-center space-x-3.5 p-2.5 rounded-2xl hover:bg-white/10 transition-all duration-200 group animate-in fade-in duration-200"
                           >
                             <div className="w-11 h-16 bg-neutral-900 rounded-xl overflow-hidden flex-shrink-0 relative shadow-md border border-white/10 group-hover:scale-105 transition-transform duration-200">
                               {poster ? (
@@ -392,7 +421,7 @@ export function Navbar() {
                     {notifications.map((n) => (
                       <div
                         key={n.id}
-                        onClick={() => markAsRead(n.id)}
+                        onClick={() => markAsRead(n.id, n.slug)}
                         className={cn(
                           "p-2.5 rounded-xl text-[11px] cursor-pointer hover:bg-white/5 transition-all flex items-start space-x-2.5",
                           n.read ? "opacity-60" : "bg-white/[0.03]"
@@ -460,6 +489,13 @@ export function Navbar() {
                       >
                         <Bookmark size={16} className="mr-3 text-neutral-400" />
                         <span>Danh sách xem (Watchlist)</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => router.push('/lists')}
+                        className="hover:bg-white/10 hover:text-white rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
+                      >
+                        <List size={16} className="mr-3 text-neutral-400" />
+                        <span>Bộ sưu tập phim (Collections)</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => router.push('/reviews')}

@@ -272,10 +272,11 @@ export function AuthModal() {
       />
 
       {/* Modal Card */}
-      <div className="relative z-10 w-full max-w-md bg-[#181c22] border border-[#2c3440] rounded-3xl p-7 shadow-2xl shadow-black/90 text-white font-sans animate-in zoom-in-95 duration-200">
+      <div className="relative z-10 w-full max-w-md bg-[#16181d] border border-white/10 rounded-3xl p-7 shadow-2xl shadow-black/90 text-white font-sans animate-in zoom-in-95 duration-200">
         
         {/* Close Button */}
         <button
+          type="button"
           onClick={closeModal}
           className="absolute top-5 right-5 text-neutral-400 hover:text-white p-1.5 rounded-full hover:bg-white/10 transition-all cursor-pointer"
           aria-label="Đóng modal"
@@ -290,7 +291,7 @@ export function AuthModal() {
             onClick={() => { setMode('login'); setErrorMsg(''); }}
             className={`text-base font-bold pb-1 transition-all border-b-2 ${
               mode === 'login'
-                ? 'text-white border-white'
+                ? 'text-white border-blue-500'
                 : 'text-neutral-500 border-transparent hover:text-neutral-300'
             }`}
           >
@@ -301,7 +302,7 @@ export function AuthModal() {
             onClick={() => { setMode('register'); setErrorMsg(''); }}
             className={`text-base font-bold pb-1 transition-all border-b-2 ${
               mode === 'register'
-                ? 'text-white border-white'
+                ? 'text-white border-blue-500'
                 : 'text-neutral-500 border-transparent hover:text-neutral-300'
             }`}
           >
@@ -309,14 +310,14 @@ export function AuthModal() {
           </button>
         </div>
 
-        {/* Social Logins */}
-        <div className="space-y-2.5 mb-5">
+        {/* Federated Social Logins (Above Divider) */}
+        <div className="space-y-2.5 mb-4">
           {/* Google Button */}
           <button
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 bg-white text-black font-semibold text-xs py-3 px-4 rounded-2xl hover:bg-neutral-200 transition-all shadow-md active:scale-98 cursor-pointer disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-3 bg-[#22252c] border border-white/10 text-white font-semibold text-xs sm:text-sm py-3 px-4 rounded-xl hover:bg-[#2b2f38] hover:border-white/20 transition-all shadow-md active:scale-98 cursor-pointer disabled:opacity-50"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -332,26 +333,23 @@ export function AuthModal() {
             type="button"
             onClick={handleFacebookLogin}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 bg-[#1877F2] text-white font-semibold text-xs py-3 px-4 rounded-2xl hover:bg-[#166fe5] transition-all shadow-md active:scale-98 cursor-pointer disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-3 bg-[#22252c] border border-white/10 text-white font-semibold text-xs sm:text-sm py-3 px-4 rounded-xl hover:bg-[#2b2f38] hover:border-white/20 transition-all shadow-md active:scale-98 cursor-pointer disabled:opacity-50"
           >
-            <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 fill-[#1877F2]" viewBox="0 0 24 24">
               <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
             </svg>
             <span>Tiếp tục với Facebook</span>
           </button>
         </div>
 
-        {/* Legal Disclaimer */}
-        <p className="text-[11px] text-neutral-400 text-center leading-relaxed mb-5">
-          Bằng cách đăng ký sử dụng CineVerse, bạn xác nhận rằng bạn đã đọc và chấp nhận{' '}
-          <Link href="/terms" className="text-neutral-300 underline hover:text-white">
-            Điều khoản sử dụng
-          </Link>{' '}
-          và{' '}
-          <Link href="/privacy" className="text-neutral-300 underline hover:text-white">
-            Chính sách bảo mật
-          </Link>.
-        </p>
+        {/* Sign-in Method Divider */}
+        <div className="relative flex items-center justify-center my-4">
+          <div className="flex-grow border-t border-white/10" />
+          <span className="px-3 text-xs font-semibold text-neutral-400 uppercase tracking-wider bg-[#16181d]">
+            hoặc
+          </span>
+          <div className="flex-grow border-t border-white/10" />
+        </div>
 
         {/* Error Alert */}
         {errorMsg && (
@@ -360,87 +358,120 @@ export function AuthModal() {
           </div>
         )}
 
-        {/* Form Inputs */}
+        {/* Native Form with Load-Bearing Autocomplete Attributes */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Email / Username field */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-neutral-300 block">
+          <div className="space-y-1.5">
+            <label htmlFor="email" className="text-xs font-bold text-neutral-300 block">
               {mode === 'login' ? 'Email hoặc tên người dùng' : 'Địa chỉ Email'}
             </label>
             <div className="relative">
-              <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+              <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
               <input
+                id="email"
+                name="email"
                 type={mode === 'login' ? 'text' : 'email'}
+                autoComplete="username"
                 required
                 value={emailOrUsername}
                 onChange={(e) => setEmailOrUsername(e.target.value)}
-                placeholder={mode === 'login' ? 'Nhập email hoặc tên tài khoản...' : 'nhap-email@example.com'}
-                className="w-full bg-[#1c2228] border border-[#2c3440] rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white/40 transition-all"
+                placeholder={mode === 'login' ? 'you@studio.com' : 'nhap-email@example.com'}
+                className="w-full bg-[#22252c] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-all"
               />
             </div>
           </div>
 
           {/* Username field (Only for Register) */}
           {mode === 'register' && (
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-neutral-300 block">Tên người dùng (Username)</label>
+            <div className="space-y-1.5">
+              <label htmlFor="username" className="text-xs font-bold text-neutral-300 block">
+                Tên người dùng (Username)
+              </label>
               <div className="relative">
-                <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+                <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
                 <input
+                  id="username"
+                  name="username"
                   type="text"
+                  autoComplete="username"
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="nhaptendaidien"
-                  className="w-full bg-[#1c2228] border border-[#2c3440] rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white/40 transition-all"
+                  className="w-full bg-[#22252c] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-all"
                 />
               </div>
             </div>
           )}
 
           {/* Password field */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-neutral-300 block">Mật khẩu</label>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label htmlFor="password" className="text-xs font-bold text-neutral-300 block">
+                Mật khẩu
+              </label>
+              {mode === 'login' && (
+                <Link
+                  href="/forgot-password"
+                  onClick={closeModal}
+                  className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  Bạn quên mật khẩu?
+                </Link>
+              )}
+            </div>
             <div className="relative">
-              <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+              <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
               <input
+                id="password"
+                name="password"
                 type={showPassword ? 'text' : 'password'}
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-[#1c2228] border border-[#2c3440] rounded-xl pl-10 pr-10 py-2.5 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white/40 transition-all"
+                placeholder="••••••••••••"
+                className="w-full bg-[#22252c] border border-white/10 rounded-xl pl-10 pr-11 py-3 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-all"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1 rounded-md transition-colors cursor-pointer"
               >
-                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
 
           {/* Confirm Password field (Only for Register) */}
           {mode === 'register' && (
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-neutral-300 block">Xác nhận mật khẩu</label>
+            <div className="space-y-1.5">
+              <label htmlFor="confirmPassword" className="text-xs font-bold text-neutral-300 block">
+                Xác nhận mật khẩu
+              </label>
               <div className="relative">
-                <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
                 <input
+                  id="confirmPassword"
+                  name="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-[#1c2228] border border-[#2c3440] rounded-xl pl-10 pr-10 py-2.5 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white/40 transition-all"
+                  placeholder="••••••••••••"
+                  className="w-full bg-[#22252c] border border-white/10 rounded-xl pl-10 pr-11 py-3 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+                  aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  title={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1 rounded-md transition-colors cursor-pointer"
                 >
-                  {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
@@ -458,11 +489,11 @@ export function AuthModal() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-white hover:bg-neutral-200 text-black font-extrabold text-xs uppercase tracking-wider py-3 rounded-2xl transition-all shadow-md active:scale-98 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 mt-2"
+            className="w-full bg-[#0066ff] hover:bg-blue-600 text-white font-bold text-sm py-3.5 rounded-xl transition-all shadow-lg shadow-blue-600/30 active:scale-98 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 mt-2"
           >
             {loading ? (
               <>
-                <Loader2 size={16} className="animate-spin" />
+                <Loader2 size={18} className="animate-spin" />
                 <span>Đang xử lý...</span>
               </>
             ) : (
@@ -471,18 +502,17 @@ export function AuthModal() {
           </button>
         </form>
 
-        {/* Forgot Password Link */}
-        {mode === 'login' && (
-          <div className="mt-4 text-center">
-            <Link
-              href="/forgot-password"
-              onClick={closeModal}
-              className="text-xs font-bold text-neutral-400 hover:text-white transition-colors underline"
-            >
-              Bạn quên mật khẩu?
-            </Link>
-          </div>
-        )}
+        {/* Legal Disclaimer */}
+        <p className="text-[11px] text-neutral-400 text-center leading-relaxed mt-5">
+          Bằng cách tiếp tục, bạn đồng ý với{' '}
+          <Link href="/terms" className="text-neutral-300 underline hover:text-white">
+            Điều khoản sử dụng
+          </Link>{' '}
+          và{' '}
+          <Link href="/privacy" className="text-neutral-300 underline hover:text-white">
+            Chính sách bảo mật
+          </Link>.
+        </p>
       </div>
     </div>
   );

@@ -41,6 +41,7 @@ export const metadata: Metadata = {
 };
 
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
+import { ScrollToTopButton } from '@/components/layout/ScrollToTop';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <ConditionalNavbar />
               <main className="page-content pb-16 lg:pb-0">{children}</main>
               <MobileBottomNav />
+              <ScrollToTopButton />
               <ConditionalFooter />
             </ScrollProvider>
           </ToastProvider>

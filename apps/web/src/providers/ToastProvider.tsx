@@ -1,8 +1,8 @@
 'use client';
 import { createContext, useContext, useState, useCallback } from 'react';
-import { CheckCircle, XCircle, Info, X } from 'lucide-react';
+import { CheckCircle, XCircle, Info, AlertTriangle, X } from 'lucide-react';
 
-type ToastType = 'success' | 'error' | 'info';
+type ToastType = 'success' | 'error' | 'info' | 'warning';
 interface Toast {
   id: number;
   message: string;
@@ -26,18 +26,19 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const remove = (id: number) => setToasts((prev) => prev.filter((t) => t.id !== id));
 
-  const icons = { success: CheckCircle, error: XCircle, info: Info };
-  const colors = { success: 'var(--accent)', error: 'var(--red)', info: 'var(--text-secondary)' };
+  const icons = { success: CheckCircle, error: XCircle, info: Info, warning: AlertTriangle };
+  const colors = { success: 'var(--accent)', error: 'var(--red)', info: 'var(--text-secondary)', warning: '#f59e0b' };
 
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
       <div className="toast-container">
         {toasts.map((t) => {
-          const Icon = icons[t.type];
+          const Icon = icons[t.type] || Info;
+          const color = colors[t.type] || 'var(--text-secondary)';
           return (
             <div key={t.id} className="toast animate-slide-up">
-              <Icon size={16} style={{ color: colors[t.type], flexShrink: 0 }} />
+              <Icon size={16} style={{ color, flexShrink: 0 }} />
               <span style={{ flex: 1, fontSize: '0.875rem' }}>{t.message}</span>
               <button
                 onClick={() => remove(t.id)}

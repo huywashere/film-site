@@ -119,7 +119,6 @@ export default function ArtPlayer({
       airplay: true,
       theme: '#e5a93b',
       lang: 'vi',
-      moreVideoAttr: { crossOrigin: 'anonymous' },
 
       // -- HLS support with ABR & quality selector --
       ...(isHls
@@ -129,13 +128,10 @@ export default function ArtPlayer({
                 if (Hls.isSupported()) {
                   const hls = new Hls({
                     enableWorker: true,
-                    lowLatencyMode: true,
                     backBufferLength: 90,
                     maxBufferLength: 60,
                     capLevelToPlayerSize: true, // Auto ABR tuning
                     startLevel: -1,             // Auto level selection based on bandwidth
-                    abrEwmaFastLive: 3,
-                    abrEwmaSlowLive: 9,
                   });
                   hlsInstance = hls;
                   hls.loadSource(streamUrl);

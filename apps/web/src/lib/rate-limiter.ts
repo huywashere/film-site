@@ -19,6 +19,11 @@ export function checkRateLimit(
   limit: number,
   windowMs: number
 ): RateLimitResult {
+  // Always allow unrestricted requests in development / local testing mode
+  if (process.env.NODE_ENV === 'development' || key.includes('localhost') || key.includes('127.0.0.1')) {
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+
   const now = Date.now();
   const record = storage.get(key) || { timestamps: [] };
 
@@ -44,39 +49,39 @@ export function checkRateLimit(
   };
 }
 
-// ── Specific Feature Rate Limiters ─────────────────────────────────
+// ── Specific Feature Rate Limiters (Generous & Smooth Limits) ───────
 
 /**
- * 1. Search Rate Limit: Max 20 requests per 10 seconds
+ * 1. Search Rate Limit: Max 200 requests per 10 seconds (smooth live search typing)
  */
 export function checkSearchRateLimit(identifier: string = 'global'): RateLimitResult {
-  return checkRateLimit(`search:${identifier}`, 20, 10_000);
+  return checkRateLimit(`search:${identifier}`, 200, 10_000);
 }
 
 /**
- * 2. Comment & Review Rate Limit: Max 3 submissions per 60 seconds
+ * 2. Comment & Review Rate Limit: Max 20 submissions per 60 seconds
  */
 export function checkCommentRateLimit(identifier: string = 'global'): RateLimitResult {
-  return checkRateLimit(`comment:${identifier}`, 3, 60_000);
+  return checkRateLimit(`comment:${identifier}`, 20, 60_000);
 }
 
 /**
- * 3. Password Reset & Verification Email Rate Limit: Max 3 requests per 15 minutes
+ * 3. Password Reset & Verification Email Rate Limit: Max 10 requests per 15 minutes
  */
 export function checkPasswordResetRateLimit(identifier: string = 'global'): RateLimitResult {
-  return checkRateLimit(`pw_reset:${identifier}`, 3, 15 * 60_000);
+  return checkRateLimit(`pw_reset:${identifier}`, 10, 15 * 60_000);
 }
 
 /**
- * 4. Watch Party Reaction & Chat Spam Rate Limit: Max 5 reactions per 3 seconds
+ * 4. Watch Party Reaction & Chat Spam Rate Limit: Max 30 reactions per 3 seconds
  */
 export function checkWatchPartyReactionRateLimit(identifier: string = 'global'): RateLimitResult {
-  return checkRateLimit(`wp_reaction:${identifier}`, 5, 3_000);
+  return checkRateLimit(`wp_reaction:${identifier}`, 30, 3_000);
 }
 
 /**
- * 5. Image Proxy & Cast Image Rate Limit: Max 60 requests per 60 seconds
+ * 5. Image Proxy & Cast Image Rate Limit: Max 10,000 requests per 60 seconds (unrestricted gallery loading)
  */
 export function checkImageProxyRateLimit(identifier: string = 'global'): RateLimitResult {
-  return checkRateLimit(`img_proxy:${identifier}`, 60, 60_000);
+  return checkRateLimit(`img_proxy:${identifier}`, 10000, 60_000);
 }

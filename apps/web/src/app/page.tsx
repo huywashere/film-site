@@ -102,22 +102,13 @@ const StyledSwiperContainer = styled.div`
 // ── Netflix Hero Banner ───────────────────────────────────────────
 function HeroBanner({ films }: { films: FilmItem[] }) {
   const [current, setCurrent] = useState(0);
-  const [scrollY, setScrollY] = useState(0);
   const { t } = useTranslation();
-  const featured = films.slice(0, 15);
+  const featured = films.slice(0, 6);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrent((c) => (c + 1) % featured.length), 8000);
     return () => clearInterval(timer);
   }, [featured.length]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const film = featured[current];
   if (!film) return null;
@@ -135,27 +126,23 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
 
   return (
     <div className="relative h-[calc(100vh+100px)] min-h-[700px] w-full overflow-hidden bg-background">
-      {/* Background Poster Image */}
+      {/* Background Poster Image (Smooth GPU accelerated transition, zero layout jitter) */}
       {backdrop && (
-        <AnimatePresence>
+        <AnimatePresence mode="popLayout">
           <motion.div
-            key={film.slug}
+            key={film.slug || current}
             initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 1.2, ease: 'easeOut' }}
-            style={{
-              transform: `translateY(${scrollY * 0.3}px) scale(${1 + scrollY * 0.00015})`,
-              opacity: Math.max(0, 1 - scrollY / 800),
-            }}
-            className="absolute inset-0 w-full h-full"
+            transition={{ duration: 0.8, ease: 'easeInOut' }}
+            className="absolute inset-0 w-full h-full will-change-transform"
           >
             <NextImage
               src={backdrop}
               alt={film.name}
               fill
               priority
-              quality={100}
+              quality={90}
               sizes="100vw"
               className="object-cover object-center brightness-[0.7] dark:brightness-[0.7]"
               unoptimized
@@ -173,13 +160,7 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
       <div className="absolute inset-0 bg-black/5 dark:bg-black/10 z-0 pointer-events-none" />
 
       {/* Content Container */}
-      <div 
-        style={{
-          transform: `translateY(${scrollY * 0.2}px)`,
-          opacity: Math.max(0, 1 - scrollY / 600),
-        }}
-        className="absolute inset-0 z-20 flex items-center"
-      >
+      <div className="absolute inset-0 z-20 flex items-center">
         <div className="container mx-auto px-4 md:px-8 max-w-7xl">
           <div className="max-w-2xl">
             <div className="grid grid-cols-1 grid-rows-1">
@@ -251,40 +232,66 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
         </div>
       </div>
 
-
-
-      {/* Slide Indicators - Bottom Center Left/Right aligned */}
-      <div className="absolute left-1/2 -translate-x-1/2 bottom-8 z-20 flex space-x-2">
-        {featured.map((_, i) => (
-          <button
-            key={i}
-            className={`h-1.5 rounded-full transition-all duration-500 ${
-              i === current
-                ? 'w-8 bg-white'
-                : 'w-3 bg-white/20 hover:bg-white/40'
-            }`}
-            onClick={() => setCurrent(i)}
-            aria-label={`Slide ${i + 1}`}
-          />
-        ))}
+      {/* Running Thumbnail Indicators (Right Aligned, 6 Items, Sleek Thin Border & Sharp HD Images) */}
+      <div className="absolute right-4 sm:right-8 md:right-12 bottom-6 sm:bottom-8 z-30 flex items-center gap-1.5 sm:gap-2">
+        {featured.map((item, i) => {
+          const thumbImg = resolveImageUrl(item.thumb_url) || resolveImageUrl(item.poster_url) || '';
+          const isActive = i === current;
+          return (
+            <button
+              key={item.slug || i}
+              onClick={() => setCurrent(i)}
+              aria-label={`Switch to ${item.name}`}
+              className={cn(
+                'relative w-14 sm:w-16 md:w-20 lg:w-22 aspect-[16/9] rounded-md sm:rounded-lg overflow-hidden cursor-pointer transition-all duration-300 flex-shrink-0 group',
+                isActive
+                  ? 'border-2 border-white scale-105 shadow-xl shadow-black/90 z-10'
+                  : 'border border-white/20 opacity-50 hover:opacity-100 hover:border-white/60 scale-95 hover:scale-100'
+              )}
+            >
+              {thumbImg ? (
+                <NextImage
+                  src={thumbImg}
+                  alt={item.name}
+                  fill
+                  quality={95}
+                  sizes="200px"
+                  className="object-cover object-center"
+                  unoptimized
+                />
+              ) : (
+                <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-[10px] text-neutral-400 font-bold px-1 text-center truncate">
+                  {item.name}
+                </div>
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Scroll Down Indicator - Center Bottom */}
+      {/* Scroll Down Indicator with Medium Soft Mouse Cursor Icon - Center Bottom */}
       <div
-        className="absolute left-1/2 -translate-x-1/2 bottom-14 z-20 flex flex-col items-center animate-bounce cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
+        className="absolute left-1/2 -translate-x-1/2 bottom-5 z-20 flex flex-col items-center gap-1.5 cursor-pointer group opacity-65 hover:opacity-100 transition-all duration-300"
         onClick={() => window.scrollTo({ top: window.innerHeight * 0.85, behavior: 'smooth' })}
+        title="Cuộn xuống để xem phim"
       >
+        {/* Animated Mouse Icon (Perfect mouse proportions: 22px x 34px) */}
+        <div className="w-[22px] h-[34px] rounded-full border-2 border-white/60 flex justify-center pt-1.5 backdrop-blur-md bg-black/40 group-hover:border-white/90 group-hover:bg-black/60 transition-all">
+          <div className="w-1 h-2 bg-white/80 group-hover:bg-white rounded-full animate-bounce" />
+        </div>
+
+        {/* Scroll Chevron Arrow */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
+          width="16"
+          height="16"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2.5"
+          strokeWidth="2.2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="text-white"
+          className="text-white/70 group-hover:text-white transform group-hover:translate-y-0.5 transition-all"
         >
           <path d="m6 9 6 6 6-6" />
         </svg>
@@ -369,46 +376,6 @@ function KeyboardSearchBanner({ onClick }: { onClick: () => void }) {
       </kbd>
       <span className="font-semibold text-neutral-200">to search</span>
     </div>
-  );
-}
-
-
-// ── Scroll To Top Button Component ──────────────────────────
-function ScrollToTopButton() {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setVisible(window.scrollY > 400);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  if (!visible) return null;
-
-  return (
-    <button
-      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-      className="fixed bottom-6 right-6 z-50 h-12 w-12 rounded-2xl bg-card/90 text-primary border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-card hover:text-white focus:outline-none focus:ring-2 focus:ring-primary/30 active:scale-95 flex items-center justify-center"
-      aria-label="Cuộn lên đầu trang"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="text-primary"
-      >
-        <path d="M12 19V5" />
-        <path d="M6 11l6-6 6 6" />
-      </svg>
-    </button>
   );
 }
 
@@ -598,7 +565,6 @@ export default function HomePage() {
 
       {/* Float components */}
       <KeyboardSearchBanner onClick={() => setIsSearchOpen(true)} />
-      <ScrollToTopButton />
 
       {/* Instant Spotlight Search Modal */}
       <AnimatePresence>
