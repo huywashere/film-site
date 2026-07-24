@@ -1,8 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "pnpm install && pnpm --filter web build",
+  "buildCommand": "cd apps/web && pnpm install && pnpm build",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
-  "installCommand": "pnpm install --no-frozen-lockfile",
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./apps/web"
+  "installCommand": "echo 'Skipping install'"
 }
