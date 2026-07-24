@@ -41,7 +41,7 @@ jobs:
         continue-on-error: true
 
       - name: Generate Prisma Client
-        run: pnpm exec prisma generate --schema=apps/api/prisma/schema.prisma
+        run: cd apps/api && npx prisma generate
 
       - name: Run Lint
         run: pnpm run lint
