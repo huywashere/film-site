@@ -1,0 +1,18 @@
+# Ignore API backend
+apps/api
+
+# Ignore config files
+.turbo
+.vscode
+.agents
+.claude
+
+# Ignore local files
+*.log
+.env.local
+.env*.local
+
+# Ignore test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
