@@ -459,3 +459,25 @@ html {
     transform: translate3d(-33.333333%, 0, 0);
   }
 }
+
+/* Hero Banner fade-in animation for smooth transitions */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Optimize image transitions with GPU acceleration */
+.next-image-container {
+  will-change: opacity;
+  transform: translate3d(0, 0, 0);
+}

@@ -107,22 +107,30 @@ const StyledSwiperContainer = styled.div`
 // ── Netflix Hero Banner ───────────────────────────────────────────
 function HeroBanner({ films }: { films: FilmItem[] }) {
   const [current, setCurrent] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const { t } = useTranslation();
-  const featured = films.slice(0, 6);
+  const featured = useMemo(() => films.slice(0, 6), [films]);
 
   useEffect(() => {
-    const timer = setInterval(
-      () => setCurrent((c) => (c + 1) % featured.length),
-      8000,
-    );
+    const timer = setInterval(() => {
+      setIsTransitioning(true);
+      setCurrent((c) => (c + 1) % featured.length);
+      setTimeout(() => setIsTransitioning(false), 800);
+    }, 8000);
     return () => clearInterval(timer);
   }, [featured.length]);
 
   const film = featured[current];
+  const prevFilm = featured[current === 0 ? featured.length - 1 : current - 1];
+
   if (!film) return null;
 
   const backdrop =
     resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url);
+  const prevBackdrop = prevFilm
+    ? resolveImageUrl(prevFilm.thumb_url) ||
+      resolveImageUrl(prevFilm.poster_url)
+    : null;
 
   // Dynamically scale down font sizes and add clean line-height for extremely long film names
   const nameLen = film.name.length;
@@ -135,107 +143,134 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
 
   return (
     <div className="relative h-[calc(100vh+100px)] min-h-[700px] w-full overflow-hidden bg-background">
-      {/* Background Poster Image (Smooth GPU accelerated transition, zero layout jitter) */}
-      {backdrop && (
-        <AnimatePresence mode="popLayout">
-          <motion.div
-            key={film.slug || current}
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: "easeInOut" }}
-            className="absolute inset-0 w-full h-full will-change-transform"
+      {/* Background Poster Image (Optimized CSS transitions, no JS animation library) */}
+      <div className="absolute inset-0 w-full h-full">
+        {/* Previous image layer for smooth crossfade */}
+        {prevBackdrop && (
+          <div
+            className="absolute inset-0 w-full h-full will-change-opacity transition-opacity duration-700 ease-in-out"
+            style={{
+              opacity: isTransitioning ? 0 : 1,
+              transform: "translate3d(0, 0, 0)", // Force GPU acceleration
+            }}
+          >
+            <NextImage
+              src={prevBackdrop}
+              alt={prevFilm?.name || ""}
+              fill
+              quality={85}
+              sizes="100vw"
+              className="object-cover object-center brightness-[0.7] dark:brightness-[0.7]"
+              loading="eager"
+            />
+          </div>
+        )}
+
+        {/* Current image layer */}
+        {backdrop && (
+          <div
+            className="absolute inset-0 w-full h-full will-change-opacity transition-opacity duration-700 ease-in-out"
+            style={{
+              opacity: isTransitioning ? 0 : 1,
+              transform: "translate3d(0, 0, 0)", // Force GPU acceleration
+            }}
           >
             <NextImage
               src={backdrop}
               alt={film.name}
               fill
               priority
-              quality={90}
+              quality={85}
               sizes="100vw"
               className="object-cover object-center brightness-[0.7] dark:brightness-[0.7]"
-              unoptimized
+              loading="eager"
             />
-          </motion.div>
-        </AnimatePresence>
-      )}
+          </div>
+        )}
+      </div>
 
-      {/* Cinematic Gradient Masks */}
-      {/* Left Mask for text readability */}
-      <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-transparent w-full md:w-[65%] z-10 pointer-events-none" />
-      {/* Bottom Mask for 100% seamless page integration (no bottom gap seam) */}
-      <div className="absolute -bottom-2 inset-x-0 h-64 md:h-80 bg-gradient-to-t from-background via-background/95 via-background/60 to-transparent z-20 pointer-events-none" />
-      {/* Overall Overlay */}
-      <div className="absolute inset-0 bg-black/5 dark:bg-black/10 z-0 pointer-events-none" />
+      {/* Cinematic Gradient Masks - Combined into single layer for better performance */}
+      <div
+        className="absolute inset-0 z-10 pointer-events-none"
+        style={{
+          background: `
+            linear-gradient(to right, var(--background) 0%, rgba(var(--background-rgb), 0.7) 35%, transparent 65%),
+            linear-gradient(to top, var(--background) 0%, rgba(var(--background-rgb), 0.95) 15%, rgba(var(--background-rgb), 0.6) 40%, transparent 100%),
+            rgba(0, 0, 0, 0.05)
+          `,
+          willChange: "transform",
+          transform: "translate3d(0, 0, 0)",
+        }}
+      />
 
       {/* Content Container */}
-      <div className="absolute inset-0 z-20 flex items-center">
+      <div
+        className="absolute inset-0 z-20 flex items-center"
+        style={{ willChange: "contents" }}
+      >
         <div className="container mx-auto px-4 md:px-8 max-w-7xl">
           <div className="max-w-2xl">
-            <div className="grid grid-cols-1 grid-rows-1">
-              <AnimatePresence>
-                <motion.div
-                  key={current}
-                  initial={{ opacity: 0, y: 24 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -16 }}
-                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                  className="col-start-1 row-start-1 flex flex-col space-y-4 md:space-y-5"
+            {/* Use CSS transitions instead of Framer Motion for text content */}
+            <div
+              key={current}
+              className="flex flex-col space-y-4 md:space-y-5 animate-fade-in-up"
+              style={{
+                animation:
+                  "fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+              }}
+            >
+              {/* Badges */}
+              <div className="flex items-center space-x-3">
+                <span className="bg-neutral-800 text-white dark:bg-white dark:text-black text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-sm shadow">
+                  NEW
+                </span>
+                <span className="border border-foreground/40 text-foreground text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center">
+                  12
+                </span>
+                {film.year && (
+                  <span className="text-foreground/60 text-xs font-semibold">
+                    {film.year}
+                  </span>
+                )}
+              </div>
+
+              {/* Title */}
+              <h1
+                className={cn(
+                  "font-extrabold text-foreground tracking-wide leading-tight drop-shadow-sm uppercase font-sans",
+                  titleFontSizeClass,
+                )}
+              >
+                {film.name}
+              </h1>
+              {film.origin_name && (
+                <p className="text-base md:text-xl text-foreground/75 font-semibold tracking-wide -mt-2">
+                  {film.origin_name}
+                </p>
+              )}
+
+              {/* Tagline / Mini Description */}
+              <p className="text-xs md:text-sm text-foreground/80 max-w-xl leading-relaxed line-clamp-3">
+                {t("home.heroDesc")}
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex items-center space-x-3 pt-2">
+                <Link
+                  href={`/watch/${film.slug}`}
+                  className="flex items-center space-x-2 bg-neutral-800 hover:bg-neutral-900 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-black px-7 py-3 rounded-full text-xs font-black tracking-wider uppercase transition-colors shadow-md border border-neutral-700 dark:border-white/5"
                 >
-                  {/* Badges */}
-                  <div className="flex items-center space-x-3">
-                    <span className="bg-neutral-800 text-white dark:bg-white dark:text-black text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-sm shadow">
-                      NEW
-                    </span>
-                    <span className="border border-foreground/40 text-foreground text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center">
-                      12
-                    </span>
-                    {film.year && (
-                      <span className="text-foreground/60 text-xs font-semibold">
-                        {film.year}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Title */}
-                  <h1
-                    className={cn(
-                      "font-extrabold text-foreground tracking-wide leading-tight drop-shadow-sm uppercase font-sans",
-                      titleFontSizeClass,
-                    )}
-                  >
-                    {film.name}
-                  </h1>
-                  {film.origin_name && (
-                    <p className="text-base md:text-xl text-foreground/75 font-semibold tracking-wide -mt-2">
-                      {film.origin_name}
-                    </p>
-                  )}
-
-                  {/* Tagline / Mini Description */}
-                  <p className="text-xs md:text-sm text-foreground/80 max-w-xl leading-relaxed line-clamp-3">
-                    {t("home.heroDesc")}
-                  </p>
-
-                  {/* Action Buttons */}
-                  <div className="flex items-center space-x-3 pt-2">
-                    <Link
-                      href={`/watch/${film.slug}`}
-                      className="flex items-center space-x-2 bg-neutral-800 hover:bg-neutral-900 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-black px-7 py-3 rounded-full text-xs font-black tracking-wider uppercase transition-colors shadow-md border border-neutral-700 dark:border-white/5"
-                    >
-                      <Play size={14} fill="currentColor" />
-                      <span>Go to Movie</span>
-                    </Link>
-                    <Link
-                      href={`/film/${film.slug}`}
-                      className="flex items-center space-x-2 bg-black/5 hover:bg-black/10 text-neutral-800 border border-black/10 dark:bg-white/10 dark:hover:bg-white/25 dark:text-white px-7 py-3 rounded-full text-xs font-black tracking-wider uppercase transition-colors backdrop-blur-sm dark:border dark:border-white/10"
-                    >
-                      <Info size={14} />
-                      <span>{t("home.details")}</span>
-                    </Link>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
+                  <Play size={14} fill="currentColor" />
+                  <span>Go to Movie</span>
+                </Link>
+                <Link
+                  href={`/film/${film.slug}`}
+                  className="flex items-center space-x-2 bg-black/5 hover:bg-black/10 text-neutral-800 border border-black/10 dark:bg-white/10 dark:hover:bg-white/25 dark:text-white px-7 py-3 rounded-full text-xs font-black tracking-wider uppercase transition-colors backdrop-blur-sm dark:border dark:border-white/10"
+                >
+                  <Info size={14} />
+                  <span>{t("home.details")}</span>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -252,24 +287,34 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
           return (
             <button
               key={item.slug || i}
-              onClick={() => setCurrent(i)}
+              onClick={() => {
+                setIsTransitioning(true);
+                setCurrent(i);
+                setTimeout(() => setIsTransitioning(false), 800);
+              }}
               aria-label={`Switch to ${item.name}`}
               className={cn(
-                "relative w-14 sm:w-16 md:w-20 lg:w-22 aspect-[16/9] rounded-md sm:rounded-lg overflow-hidden cursor-pointer transition-all duration-300 flex-shrink-0 group",
+                "relative w-14 sm:w-16 md:w-20 lg:w-22 aspect-[16/9] rounded-md sm:rounded-lg overflow-hidden cursor-pointer flex-shrink-0 group",
+                "transition-all duration-300 will-change-transform",
                 isActive
                   ? "border-2 border-white scale-105 shadow-xl shadow-black/90 z-10"
                   : "border border-white/20 opacity-50 hover:opacity-100 hover:border-white/60 scale-95 hover:scale-100",
               )}
+              style={{
+                transform: isActive
+                  ? "translate3d(0, 0, 0) scale(1.05)"
+                  : "translate3d(0, 0, 0) scale(0.95)",
+              }}
             >
               {thumbImg ? (
                 <NextImage
                   src={thumbImg}
                   alt={item.name}
                   fill
-                  quality={95}
-                  sizes="200px"
+                  quality={80}
+                  sizes="(max-width: 640px) 56px, (max-width: 768px) 64px, 88px"
                   className="object-cover object-center"
-                  unoptimized
+                  loading="lazy"
                 />
               ) : (
                 <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-[10px] text-neutral-400 font-bold px-1 text-center truncate">
@@ -291,6 +336,7 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
           })
         }
         title="Cuộn xuống để xem phim"
+        style={{ willChange: "opacity" }}
       >
         {/* Animated Mouse Icon (Perfect mouse proportions: 22px x 34px) */}
         <div className="w-[22px] h-[34px] rounded-full border-2 border-white/60 flex justify-center pt-1.5 backdrop-blur-md bg-black/40 group-hover:border-white/90 group-hover:bg-black/60 transition-all">
