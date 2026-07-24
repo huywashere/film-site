@@ -1,38 +1,33 @@
 # Build stage
 FROM node:18-alpine AS builder
 
-# Install pnpm
-RUN npm install -g pnpm
-
 WORKDIR /app
 
-# Copy package files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/api/package.json ./apps/api/
+# Copy only API package files
+COPY apps/api/package*.json ./
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN npm install
 
-# Copy source code
-COPY apps/api ./apps/api
-COPY turbo.json ./
+# Copy API source code
+COPY apps/api ./
 
 # Generate Prisma Client
-RUN cd apps/api && npx prisma generate
+RUN npx prisma generate
 
 # Build application
-RUN pnpm --filter api build
+RUN npm run build
 
 # Production stage
 FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy built application
-COPY --from=builder /app/apps/api/dist ./dist
-COPY --from=builder /app/apps/api/node_modules ./node_modules
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/apps/api/prisma ./prisma
+# Copy built application and dependencies
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/package*.json ./
 
 # Expose port
 EXPOSE 3001
