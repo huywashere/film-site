@@ -81,7 +81,9 @@ export default function RootLayout({
             <ScrollProvider>
               <ConditionalNavbar />
               <Sidebar />
-              <main className="page-content pb-16 lg:pb-0 lg:ml-20">{children}</main>
+              <main className="page-content pb-16 lg:pb-0 lg:ml-20">
+                {children}
+              </main>
               <MobileBottomNav />
               <ScrollToTopButton />
               <ConditionalFooter />

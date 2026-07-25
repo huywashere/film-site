@@ -1,13 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Star,
-  ThumbsUp,
-  AlertTriangle,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { Star, ThumbsUp, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/providers/ToastProvider";
 import { cn } from "@/lib/utils";

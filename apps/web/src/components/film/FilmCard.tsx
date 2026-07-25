@@ -21,16 +21,16 @@ export interface FilmItem {
   episode_current?: string;
   quality?: string;
   lang?: string;
-  rating?: number;              // ← Generic rating
-  vote_average?: number;        // ← TMDB vote average
-  imdb_rating?: number;         // ← IMDb rating
+  rating?: number; // ← Generic rating
+  vote_average?: number; // ← TMDB vote average
+  imdb_rating?: number; // ← IMDb rating
   tmdb?: {
     type?: string;
     id?: string;
     season?: number | null;
-    vote_average?: number;      // ← TMDB rating
+    vote_average?: number; // ← TMDB rating
     vote_count?: number;
-    rating?: number;            // ← Alternative rating field
+    rating?: number; // ← Alternative rating field
   };
 }
 
@@ -106,7 +106,7 @@ export function FilmCard({
 
   const prefetchFilmDetail = () => {
     // Only prefetch on desktop (better performance on mobile)
-    if (typeof window !== 'undefined' && window.innerWidth > 768) {
+    if (typeof window !== "undefined" && window.innerWidth > 768) {
       queryClient.prefetchQuery({
         queryKey: ["film", slug],
         queryFn: () => movieApi.getDetail(slug).then((r) => r.data),
@@ -243,32 +243,45 @@ export function FilmCard({
       {!hideDetails && (
         <div className="flex flex-col text-left mt-2.5 px-0.5">
           {/* Film Title - Bebas Neue Font */}
-          <h4 
+          <h4
             className="text-base md:text-lg font-bold text-white line-clamp-1 leading-tight group-hover:text-neutral-200 transition-colors tracking-wider uppercase"
-            style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.03em' }}
+            style={{
+              fontFamily: "'Bebas Neue', sans-serif",
+              letterSpacing: "0.03em",
+            }}
           >
             {title}
           </h4>
-          
+
           {/* Subtitle Row with Year/Origin & Rating */}
           <div className="flex items-center justify-between mt-1.5 gap-2">
             <p className="font-normal text-xs text-neutral-400 line-clamp-1 flex-1">
               {film.origin_name || (film.year ? `${film.year}` : "")}
             </p>
-            
+
             {/* IMDb/TMDB Rating Badge */}
             {(() => {
               // Try multiple rating sources
-              const rating = film.tmdb?.vote_average || 
-                           film.vote_average || 
-                           film.rating || 
-                           film.imdb_rating ||
-                           (film.tmdb && typeof film.tmdb === 'object' && 'rating' in film.tmdb ? film.tmdb.rating : null);
-              
+              const rating =
+                film.tmdb?.vote_average ||
+                film.vote_average ||
+                film.rating ||
+                film.imdb_rating ||
+                (film.tmdb &&
+                typeof film.tmdb === "object" &&
+                "rating" in film.tmdb
+                  ? film.tmdb.rating
+                  : null);
+
               if (rating && rating > 0) {
                 return (
                   <div className="flex items-center gap-1.5 bg-gradient-to-r from-amber-400/25 to-yellow-400/25 border-2 border-amber-400/50 rounded-lg px-2.5 py-1 flex-shrink-0 backdrop-blur-sm shadow-lg shadow-amber-500/30">
-                    <Star size={14} fill="#f59e0b" className="text-amber-400 drop-shadow-md filter brightness-110" strokeWidth={0} />
+                    <Star
+                      size={14}
+                      fill="#f59e0b"
+                      className="text-amber-400 drop-shadow-md filter brightness-110"
+                      strokeWidth={0}
+                    />
                     <span className="text-[13px] font-black text-amber-50 tracking-wide drop-shadow-md filter brightness-110">
                       {Number(rating).toFixed(1)}
                     </span>

@@ -12,15 +12,25 @@
 }
 
 /* ── Font Family ────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 }
 
 /* Headings sử dụng Inter với font-weight bold hơn thay vì Bebas Neue */
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Inter', sans-serif;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Inter", sans-serif;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
@@ -57,8 +67,10 @@ html {
 
 body {
   @apply bg-background text-foreground;
-  font-feature-settings: "rlig" 1, "calt" 1;
-  font-family: 'Inter', sans-serif;
+  font-feature-settings:
+    "rlig" 1,
+    "calt" 1;
+  font-family: "Inter", sans-serif;
 }
 
 /* ── Animation Keyframes ───────────────────────────────────────── */

@@ -13,7 +13,7 @@ export async function HeroBannerServer() {
       {
         next: { revalidate: 300 }, // ISR: revalidate every 5 minutes
         signal: controller.signal,
-      }
+      },
     ).then((res) => res.json());
 
     clearTimeout(timeoutId);

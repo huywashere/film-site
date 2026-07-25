@@ -7,19 +7,19 @@ import { FilmItem } from "@/components/film/FilmCard";
 import dynamic from "next/dynamic";
 
 // Optimized Hero Banner with fallback
-const HeroBannerOptimized = dynamic(() => import("./HeroBannerOptimized"), { 
+const HeroBannerOptimized = dynamic(() => import("./HeroBannerOptimized"), {
   ssr: false,
   loading: () => (
     <div className="w-full h-[calc(100vh+100px)] min-h-[700px] bg-gradient-to-br from-neutral-950 via-[#10141a] to-neutral-900 animate-pulse" />
-  )
+  ),
 });
 
-const FilmSection = dynamic(() => import("./FilmSection"), { 
-  ssr: false 
+const FilmSection = dynamic(() => import("./FilmSection"), {
+  ssr: false,
 });
 
-const TopicBanners = dynamic(() => import("./TopicBanners"), { 
-  ssr: false 
+const TopicBanners = dynamic(() => import("./TopicBanners"), {
+  ssr: false,
 });
 
 // Deduplication helper
@@ -36,7 +36,7 @@ const deduplicate = (films: FilmItem[]) => {
 // ── Hero Banner Wrapper với Instant Render ───────────────────
 export function HeroBannerWrapper() {
   const [shuffledFilms, setShuffledFilms] = useState<FilmItem[]>([]);
-  
+
   // Fetch data nhưng KHÔNG block render
   const { data: latestData } = useQuery({
     queryKey: ["latest-hero"],

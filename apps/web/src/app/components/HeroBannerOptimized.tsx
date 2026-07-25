@@ -18,8 +18,10 @@ const FALLBACK_FILMS: FilmItem[] = [
     slug: "bien-xanh-sau-tham-2",
     name: "BIỂN XANH SÂU THẲM 2",
     origin_name: "Deep Blue Sea 2",
-    thumb_url: "https://img.phimapi.com/upload/vod/20240813-1/fdff73c2b4c7e27f2f1c2c5eb9c4edec.jpg",
-    poster_url: "https://img.phimapi.com/upload/vod/20240813-1/fdff73c2b4c7e27f2f1c2c5eb9c4edec.jpg",
+    thumb_url:
+      "https://img.phimapi.com/upload/vod/20240813-1/fdff73c2b4c7e27f2f1c2c5eb9c4edec.jpg",
+    poster_url:
+      "https://img.phimapi.com/upload/vod/20240813-1/fdff73c2b4c7e27f2f1c2c5eb9c4edec.jpg",
     year: 2018,
     type: "single",
   },
@@ -27,8 +29,10 @@ const FALLBACK_FILMS: FilmItem[] = [
     slug: "spiderman-no-way-home",
     name: "SPIDER-MAN: NO WAY HOME",
     origin_name: "Spider-Man: No Way Home",
-    thumb_url: "https://img.phimapi.com/upload/vod/20211224-1/8c7e8e45c5f5c8e8c5f5c8e8c5f5c8e8.jpg",
-    poster_url: "https://img.phimapi.com/upload/vod/20211224-1/8c7e8e45c5f5c8e8c5f5c8e8c5f5c8e8.jpg",
+    thumb_url:
+      "https://img.phimapi.com/upload/vod/20211224-1/8c7e8e45c5f5c8e8c5f5c8e8c5f5c8e8.jpg",
+    poster_url:
+      "https://img.phimapi.com/upload/vod/20211224-1/8c7e8e45c5f5c8e8c5f5c8e8c5f5c8e8.jpg",
     year: 2021,
     type: "single",
   },
@@ -36,8 +40,10 @@ const FALLBACK_FILMS: FilmItem[] = [
     slug: "avengers-endgame",
     name: "AVENGERS: ENDGAME",
     origin_name: "Avengers: Endgame",
-    thumb_url: "https://img.phimapi.com/upload/vod/20190426-1/avengers-endgame-poster.jpg",
-    poster_url: "https://img.phimapi.com/upload/vod/20190426-1/avengers-endgame-poster.jpg",
+    thumb_url:
+      "https://img.phimapi.com/upload/vod/20190426-1/avengers-endgame-poster.jpg",
+    poster_url:
+      "https://img.phimapi.com/upload/vod/20190426-1/avengers-endgame-poster.jpg",
     year: 2019,
     type: "single",
   },
@@ -88,7 +94,7 @@ export default function HeroBannerOptimized({ films }: HeroBannerProps) {
           <div
             className={cn(
               "absolute inset-0 w-full h-full transition-opacity duration-700",
-              isImageLoaded ? "opacity-100" : "opacity-0"
+              isImageLoaded ? "opacity-100" : "opacity-0",
             )}
           >
             <Image
@@ -132,7 +138,8 @@ export default function HeroBannerOptimized({ films }: HeroBannerProps) {
               key={current}
               className="flex flex-col space-y-4 md:space-y-5"
               style={{
-                animation: "fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+                animation:
+                  "fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards",
               }}
             >
               {/* ── Badges ─────────────────────────────────────── */}
@@ -168,7 +175,8 @@ export default function HeroBannerOptimized({ films }: HeroBannerProps) {
 
               {/* ── Description ────────────────────────────────── */}
               <p className="text-xs md:text-sm text-foreground/80 max-w-xl leading-relaxed line-clamp-3">
-                {t("home.heroDesc") || "Khám phá bộ sưu tập phim hay nhất từ các nguồn uy tín. Xem phim lẻ, phim bộ, hoạt hình và nhiều hơn thế nữa."}
+                {t("home.heroDesc") ||
+                  "Khám phá bộ sưu tập phim hay nhất từ các nguồn uy tín. Xem phim lẻ, phim bộ, hoạt hình và nhiều hơn thế nữa."}
               </p>
 
               {/* ── Action Buttons ─────────────────────────────── */}

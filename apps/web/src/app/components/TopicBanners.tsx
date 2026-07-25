@@ -6,7 +6,8 @@ const topics = [
   {
     title: "DC",
     href: "/search?q=dc",
-    image: "/images/zack-snyders-justice-league-dc-superheroes-dc-comics-2021-3840x2160-4980.jpg",
+    image:
+      "/images/zack-snyders-justice-league-dc-superheroes-dc-comics-2021-3840x2160-4980.jpg",
     description: "Khám phá thế giới siêu anh hùng DC nổi tiếng.",
   },
   {

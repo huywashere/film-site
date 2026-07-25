@@ -11,23 +11,27 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  
+
   // ── PERFORMANCE OPTIMIZATIONS ──────────────────────────────────
   reactStrictMode: true,
   swcMinify: true,
-  
+
   // Optimize bundle splitting
   modularizeImports: {
-    'lucide-react': {
-      transform: 'lucide-react/dist/esm/icons/{{kebabCase member}}',
+    "lucide-react": {
+      transform: "lucide-react/dist/esm/icons/{{kebabCase member}}",
     },
   },
-  
+
   // Enable experimental features for better performance
   experimental: {
-    optimizePackageImports: ['framer-motion', 'swiper', '@tanstack/react-query'],
+    optimizePackageImports: [
+      "framer-motion",
+      "swiper",
+      "@tanstack/react-query",
+    ],
   },
-  
+
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "phimimg.com" },
@@ -39,7 +43,7 @@ const nextConfig = {
       { protocol: "https", hostname: "motphim.net" },
       { protocol: "https", hostname: "**.motphim.net" },
     ],
-    formats: ['image/avif', 'image/webp'],
+    formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     minimumCacheTTL: 60,

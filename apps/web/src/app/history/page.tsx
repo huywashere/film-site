@@ -38,6 +38,34 @@ export default function HistoryPage() {
   const { toast } = useToast();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Fetch history - must be called unconditionally (Rules of Hooks)
+  const { data: historyData, isLoading } = useQuery({
+    queryKey: ["watch-history", user?.id],
+    queryFn: () => watchHistoryApi.getHistory(1, 50).then((r) => r.data),
+    enabled: !!user, // Only fetch when user is logged in
+  });
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => watchHistoryApi.deleteEntry(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["watch-history"] });
+      toast("Đã xóa khỏi lịch sử", "success");
+    },
+    onError: () => {
+      toast("Không thể xóa", "error");
+    },
+  });
+
+  // Clear all mutation
+  const clearAllMutation = useMutation({
+    mutationFn: () => watchHistoryApi.clearAll(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["watch-history"] });
+      toast("Đã xóa toàn bộ lịch sử", "success");
+    },
+  });
+
   // Redirect if not logged in
   if (!user) {
     return (
@@ -61,34 +89,7 @@ export default function HistoryPage() {
     );
   }
 
-  // Fetch history
-  const { data: historyData, isLoading } = useQuery({
-    queryKey: ["watch-history", user.id],
-    queryFn: () => watchHistoryApi.getHistory(1, 50).then((r) => r.data),
-  });
-
   const historyItems: HistoryItem[] = historyData?.items || [];
-
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => watchHistoryApi.deleteEntry(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["watch-history"] });
-      toast("Đã xóa khỏi lịch sử", "success");
-    },
-    onError: () => {
-      toast("Không thể xóa", "error");
-    },
-  });
-
-  // Clear all mutation
-  const clearAllMutation = useMutation({
-    mutationFn: () => watchHistoryApi.clearAll(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["watch-history"] });
-      toast("Đã xóa toàn bộ lịch sử", "success");
-    },
-  });
 
   const handleDelete = (id: string) => {
     setDeletingId(id);
@@ -106,11 +107,11 @@ export default function HistoryPage() {
     const date = new Date(dateString);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
-    
+
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
-    
+
     if (minutes < 60) return `${minutes} phút trước`;
     if (hours < 24) return `${hours} giờ trước`;
     return `${days} ngày trước`;
@@ -172,7 +173,7 @@ export default function HistoryPage() {
             {historyItems.map((item) => {
               const progress = formatProgress(item.progress, item.duration);
               const posterUrl = resolveImageUrl(item.movieThumb);
-              
+
               return (
                 <div
                   key={item.id}
@@ -206,7 +207,7 @@ export default function HistoryPage() {
                           <Play size={32} className="text-neutral-600" />
                         </div>
                       )}
-                      
+
                       {/* Progress Bar Overlay */}
                       <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/50">
                         <div
@@ -218,7 +219,11 @@ export default function HistoryPage() {
                       {/* Play Overlay */}
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
-                          <Play size={20} fill="black" className="text-black ml-1" />
+                          <Play
+                            size={20}
+                            fill="black"
+                            className="text-black ml-1"
+                          />
                         </div>
                       </div>
                     </div>
@@ -229,7 +234,7 @@ export default function HistoryPage() {
                         <h3 className="font-bold text-white text-sm md:text-base line-clamp-2 mb-2">
                           {item.movieTitle}
                         </h3>
-                        
+
                         {item.episode && (
                           <p className="text-xs text-blue-400 font-semibold mb-2">
                             {item.episode}
@@ -245,7 +250,9 @@ export default function HistoryPage() {
                       <div className="mt-3">
                         <div className="flex items-center justify-between text-xs mb-1">
                           <span className="text-neutral-400">Đã xem</span>
-                          <span className="text-white font-semibold">{progress}%</span>
+                          <span className="text-white font-semibold">
+                            {progress}%
+                          </span>
                         </div>
                         <div className="h-1.5 bg-neutral-700 rounded-full overflow-hidden">
                           <div

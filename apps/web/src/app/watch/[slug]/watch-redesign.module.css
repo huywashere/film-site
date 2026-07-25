@@ -52,15 +52,17 @@
   background: #000;
   border-radius: 1rem;
   overflow: hidden;
-  box-shadow: 
+  box-shadow:
     0 10px 40px rgba(0, 0, 0, 0.6),
     0 0 0 1px rgba(255, 255, 255, 0.05);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .playerWrapper:hover {
   transform: scale(1.005);
-  box-shadow: 
+  box-shadow:
     0 20px 60px rgba(0, 0, 0, 0.8),
     0 0 0 1px rgba(255, 255, 255, 0.1);
 }
@@ -213,7 +215,11 @@
 }
 
 .tabButton.active {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15));
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.15),
+    rgba(5, 150, 105, 0.15)
+  );
   color: rgb(52, 211, 153);
   border: 1px solid rgba(16, 185, 129, 0.3);
   box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
@@ -265,7 +271,7 @@
 }
 
 .episodeCard::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent);
@@ -286,10 +292,14 @@
 }
 
 .episodeCard.active {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.2));
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.25),
+    rgba(5, 150, 105, 0.2)
+  );
   border-color: rgb(16, 185, 129);
   color: rgb(255, 255, 255);
-  box-shadow: 
+  box-shadow:
     0 0 24px rgba(16, 185, 129, 0.4),
     0 8px 16px rgba(0, 0, 0, 0.3);
 }
@@ -320,7 +330,11 @@
 }
 
 .serverCard.active {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(37, 99, 235, 0.1));
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.15),
+    rgba(37, 99, 235, 0.1)
+  );
   border-color: rgb(59, 130, 246);
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.25);
 }
@@ -401,12 +415,12 @@
     grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
     gap: 0.5rem;
   }
-  
+
   .actionToolbar {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .actionGroup {
     justify-content: center;
   }
@@ -416,11 +430,11 @@
   .episodeGrid {
     grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
   }
-  
+
   .sidebarTabs {
     flex-direction: column;
   }
-  
+
   .tabButton {
     justify-content: flex-start;
   }

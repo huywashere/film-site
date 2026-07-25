@@ -1,8 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Clock, Tv, Clapperboard, TrendingUp } from "lucide-react";
-import { FilmCard, FilmCardSkeleton, FilmItem } from "@/components/film/FilmCard";
+import {
+  ChevronRight,
+  Clock,
+  Tv,
+  Clapperboard,
+  TrendingUp,
+} from "lucide-react";
+import {
+  FilmCard,
+  FilmCardSkeleton,
+  FilmItem,
+} from "@/components/film/FilmCard";
 import { useTranslation } from "@/store/langStore";
 import dynamic from "next/dynamic";
 
@@ -10,9 +20,12 @@ import dynamic from "next/dynamic";
 const Swiper = dynamic(() => import("swiper/react").then((mod) => mod.Swiper), {
   ssr: false,
 });
-const SwiperSlide = dynamic(() => import("swiper/react").then((mod) => mod.SwiperSlide), {
-  ssr: false,
-});
+const SwiperSlide = dynamic(
+  () => import("swiper/react").then((mod) => mod.SwiperSlide),
+  {
+    ssr: false,
+  },
+);
 
 const icons = {
   Clock,
@@ -60,7 +73,10 @@ export default function FilmSection({
         <div className="flex gap-4 px-1">
           {isLoading
             ? Array.from({ length: 6 }).map((_, i) => (
-                <div key={`skeleton-${i}`} style={{ width: "200px", flexShrink: 0 }}>
+                <div
+                  key={`skeleton-${i}`}
+                  style={{ width: "200px", flexShrink: 0 }}
+                >
                   <FilmCardSkeleton width={200} hideDetails={false} />
                 </div>
               ))

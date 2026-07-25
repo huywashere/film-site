@@ -4,11 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  Bookmark,
-  ChevronLeft,
-  Loader2,
-} from "lucide-react";
+import { Bookmark, ChevronLeft, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { watchlistApi } from "@/lib/api";
 import { FilmCard } from "@/components/film/FilmCard";
@@ -16,6 +12,13 @@ import { FilmCard } from "@/components/film/FilmCard";
 export default function WatchlistPage() {
   const { user } = useAuthStore();
   const router = useRouter();
+
+  // Fetch watchlist data - must be called unconditionally (Rules of Hooks)
+  const { data: watchlistData, isLoading } = useQuery({
+    queryKey: ["watchlist", user?.id],
+    queryFn: () => watchlistApi.get(1).then((r) => r.data),
+    enabled: !!user, // Only fetch when user is logged in
+  });
 
   // Redirect if not logged in
   if (!user) {
@@ -39,12 +42,6 @@ export default function WatchlistPage() {
       </div>
     );
   }
-
-  // Fetch watchlist data
-  const { data: watchlistData, isLoading } = useQuery({
-    queryKey: ["watchlist", user.id],
-    queryFn: () => watchlistApi.get(1).then((r) => r.data),
-  });
 
   const watchlistItems = watchlistData?.items || [];
 

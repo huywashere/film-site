@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  BookOpen,
-  Star,
-  Users,
-  ChevronLeft,
-  Film,
-} from "lucide-react";
+import { BookOpen, Star, Users, ChevronLeft, Film } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 
@@ -75,7 +69,7 @@ export default function LibraryPage() {
             {LIBRARY_TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
-              
+
               return (
                 <button
                   key={tab.id}
@@ -84,7 +78,7 @@ export default function LibraryPage() {
                     "flex items-center space-x-2 px-4 md:px-6 py-2.5 rounded-lg font-semibold text-sm whitespace-nowrap transition-all",
                     isActive
                       ? "bg-blue-500 text-white"
-                      : "text-neutral-400 hover:text-white hover:bg-white/5"
+                      : "text-neutral-400 hover:text-white hover:bg-white/5",
                   )}
                 >
                   <Icon size={18} />
@@ -101,14 +95,18 @@ export default function LibraryPage() {
         {/* All Tabs - Coming Soon */}
         <div className="text-center py-20">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/5 mb-4">
-            {activeTab === "favorites" && <Star size={40} className="text-neutral-600" />}
-            {activeTab === "reviews" && <Film size={40} className="text-neutral-600" />}
-            {activeTab === "following" && <Users size={40} className="text-neutral-600" />}
+            {activeTab === "favorites" && (
+              <Star size={40} className="text-neutral-600" />
+            )}
+            {activeTab === "reviews" && (
+              <Film size={40} className="text-neutral-600" />
+            )}
+            {activeTab === "following" && (
+              <Users size={40} className="text-neutral-600" />
+            )}
           </div>
           <h3 className="text-xl font-bold text-white mb-2">Sắp ra mắt</h3>
-          <p className="text-neutral-400">
-            Tính năng này đang được phát triển
-          </p>
+          <p className="text-neutral-400">Tính năng này đang được phát triển</p>
         </div>
       </div>
     </div>

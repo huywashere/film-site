@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { HeroBannerServer } from "./components/HeroBannerServer";
-import { 
+import {
   FilmSectionsWrapper,
-  TopicBannersWrapper 
+  TopicBannersWrapper,
 } from "./components/homepage-sections";
 import { ContinueWatchingRow } from "@/components/film/ContinueWatchingRow";
 import { SmartRecommendationSection } from "@/components/film/SmartRecommendationSection";
@@ -21,7 +21,10 @@ function SectionSkeleton() {
       <div className="h-8 w-48 bg-white/10 rounded mb-4" />
       <div className="flex gap-4 overflow-hidden">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="w-[200px] h-[300px] bg-white/5 rounded-2xl flex-shrink-0" />
+          <div
+            key={i}
+            className="w-[200px] h-[300px] bg-white/5 rounded-2xl flex-shrink-0"
+          />
         ))}
       </div>
     </div>
@@ -39,7 +42,6 @@ export default function HomePage() {
 
       {/* Main Content */}
       <div className="w-full max-w-[1680px] mx-auto px-4 md:px-12 relative pt-6 md:pt-10 z-30">
-        
         {/* Continue Watching - Load after hero */}
         <Suspense fallback={null}>
           <ContinueWatchingRow />

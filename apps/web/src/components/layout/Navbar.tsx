@@ -266,7 +266,13 @@ export function Navbar() {
           {/* Left Block: Logo (shrink-0 ensures it NEVER gets overlapped) */}
           <div className="flex items-center shrink-0">
             <Link href="/" className="flex items-center space-x-1.5 group">
-              <span className="text-foreground text-xl sm:text-2xl font-black tracking-tighter lowercase" style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '-0.02em' }}>
+              <span
+                className="text-foreground text-xl sm:text-2xl font-black tracking-tighter lowercase"
+                style={{
+                  fontFamily: "'Bebas Neue', sans-serif",
+                  letterSpacing: "-0.02em",
+                }}
+              >
                 cineverse
               </span>
             </Link>

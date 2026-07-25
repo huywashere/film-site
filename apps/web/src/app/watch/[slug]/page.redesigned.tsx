@@ -102,12 +102,16 @@ export default function WatchPageRedesigned() {
   const [currentServer, setCurrentServer] = useState(0);
   const [failedServers, setFailedServers] = useState<number[]>([]);
   const [isTheaterMode, setIsTheaterMode] = useState(false);
-  const [sidebarTab, setSidebarTab] = useState<"episodes" | "servers" | "info">("episodes");
+  const [sidebarTab, setSidebarTab] = useState<"episodes" | "servers" | "info">(
+    "episodes",
+  );
   const [episodeSearch, setEpisodeSearch] = useState("");
   const [autoNextConfig, setAutoNextConfig] = useState(true);
   const [autoPlayConfig, setAutoPlayConfig] = useState(true);
   const [autoSkipConfig, setAutoSkipConfig] = useState(true);
-  const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(null);
+  const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(
+    null,
+  );
   const [useEmbedPlayer, setUseEmbedPlayer] = useState(false);
   const autoNextTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSyncRef = useRef(0);
@@ -147,11 +151,27 @@ export default function WatchPageRedesigned() {
     enabled: !!slug,
   });
   // ── Smart recommendations ──
-  const rawTitle = (data?.movie?.name || data?.name || data?.movie?.origin_name || slug || "").toLowerCase();
-  const filmCategory = data?.movie?.category?.[0]?.slug || data?.category?.[0]?.slug;
-  
+  const rawTitle = (
+    data?.movie?.name ||
+    data?.name ||
+    data?.movie?.origin_name ||
+    slug ||
+    ""
+  ).toLowerCase();
+  const filmCategory =
+    data?.movie?.category?.[0]?.slug || data?.category?.[0]?.slug;
+
   const matchedKeyword = useMemo(() => {
-    const keywords = ["marvel", "dc", "superman", "batman", "spider-man", "avengers", "doraemon", "naruto"];
+    const keywords = [
+      "marvel",
+      "dc",
+      "superman",
+      "batman",
+      "spider-man",
+      "avengers",
+      "doraemon",
+      "naruto",
+    ];
     return keywords.find((kw) => rawTitle.includes(kw));
   }, [rawTitle]);
 
@@ -164,24 +184,31 @@ export default function WatchPageRedesigned() {
           const res = await movieApi.search(matchedKeyword, 1, 15);
           const searchItems = res?.data?.items || res?.data?.data?.items || [];
           recItems.push(...searchItems);
-        } catch {}
+        } catch {
+          // Ignore search errors
+        }
       }
       if (filmCategory) {
         try {
           const res = await movieApi.getByGenre(filmCategory, 1);
           const genreItems = res?.data?.data?.items || res?.data?.items || [];
           recItems.push(...genreItems);
-        } catch {}
+        } catch {
+          // Ignore genre fetch errors
+        }
       }
       try {
         const res = await movieApi.getLatest(1);
         const latestItems = res?.data?.items || res?.data?.data?.items || [];
         recItems.push(...latestItems);
-      } catch {}
-      
+      } catch {
+        // Ignore latest fetch errors
+      }
+
       const seen = new Set<string>();
       const filtered = recItems.filter((item: any) => {
-        if (!item || !item.slug || item.slug === slug || seen.has(item.slug)) return false;
+        if (!item || !item.slug || item.slug === slug || seen.has(item.slug))
+          return false;
         seen.add(item.slug);
         return true;
       });
@@ -201,40 +228,57 @@ export default function WatchPageRedesigned() {
   const kkphimEpisodes: any[] = data?.episodes || [];
   const ophimEpisodes: any[] = ophimData?.episodes || [];
   const nguoncEpisodes: any[] = nguoncData?.episodes || [];
-  
+
   const mappedKKPhim = kkphimEpisodes.map((s: any, idx: number) => ({
     ...s,
-    server_name: kkphimEpisodes.length > 1 ? `Server 1 (#${idx + 1})` : "Server 1",
+    server_name:
+      kkphimEpisodes.length > 1 ? `Server 1 (#${idx + 1})` : "Server 1",
   }));
   const mappedOphim = ophimEpisodes.map((s: any, idx: number) => ({
     ...s,
-    server_name: ophimEpisodes.length > 1 ? `Server 2 (#${idx + 1})` : "Server 2",
+    server_name:
+      ophimEpisodes.length > 1 ? `Server 2 (#${idx + 1})` : "Server 2",
   }));
   const mappedNguonC = nguoncEpisodes.map((s: any, idx: number) => ({
     ...s,
-    server_name: nguoncEpisodes.length > 1 ? `Server 3 (#${idx + 1})` : "Server 3",
+    server_name:
+      nguoncEpisodes.length > 1 ? `Server 3 (#${idx + 1})` : "Server 3",
   }));
 
   const episodes: any[] = [...mappedKKPhim, ...mappedOphim, ...mappedNguonC];
   const server = episodes[currentServer];
   const serverData: any[] = server?.server_data || [];
-  const currentEpData: any = serverData.find((e: any) => (e.slug || e.name) === currentEp) || serverData[0];
-  
+  const currentEpData: any =
+    serverData.find((e: any) => (e.slug || e.name) === currentEp) ||
+    serverData[0];
+
   const m3u8Url: string = currentEpData?.link_m3u8 || "";
   const embedUrl: string = currentEpData?.link_embed || "";
   const videoUrl = m3u8Url || embedUrl;
-  
+
   const currentEpIndex = serverData.findIndex(
-    (e: any) => (e.slug || e.name) === (currentEp || currentEpData?.slug || currentEpData?.name),
+    (e: any) =>
+      (e.slug || e.name) ===
+      (currentEp || currentEpData?.slug || currentEpData?.name),
   );
-  
-  const posterUrl = resolveImageUrl(film?.thumb_url) || resolveImageUrl(film?.poster_url) || undefined;
-  const actors: string[] = typeof film?.actor === "string" ? 
-    film.actor.split(",").map((a: string) => a.trim()).filter(Boolean) : [];
+
+  const posterUrl =
+    resolveImageUrl(film?.thumb_url) ||
+    resolveImageUrl(film?.poster_url) ||
+    undefined;
+  const actors: string[] =
+    typeof film?.actor === "string"
+      ? film.actor
+          .split(",")
+          .map((a: string) => a.trim())
+          .filter(Boolean)
+      : [];
 
   const epName: string = currentEpData?.slug || currentEpData?.name || "";
   const progressKey = slug && epName ? `${slug}_${epName}` : undefined;
-  const currentResumeEntry = resumeData?.find((item: any) => item.episode === epName);
+  const currentResumeEntry = resumeData?.find(
+    (item: any) => item.episode === epName,
+  );
   const dbProgress = currentResumeEntry?.progress || 0;
   // ── Auto-next logic (unchanged) ──
   const goNextEpisode = useCallback(() => {
@@ -242,7 +286,9 @@ export default function WatchPageRedesigned() {
     setAutoNextCountdown(null);
     if (currentEpIndex >= 0 && currentEpIndex < serverData.length - 1) {
       const nextEp = serverData[currentEpIndex + 1];
-      router.push(`/watch/${slug}?ep=${nextEp.slug || nextEp.name}&server=${currentServer}`);
+      router.push(
+        `/watch/${slug}?ep=${nextEp.slug || nextEp.name}&server=${currentServer}`,
+      );
     }
   }, [currentEpIndex, serverData, slug, currentServer, router]);
 
@@ -255,7 +301,13 @@ export default function WatchPageRedesigned() {
         setAutoNextCountdown(5);
       }
     }
-  }, [autoNextConfig, autoSkipConfig, goNextEpisode, currentEpIndex, serverData.length]);
+  }, [
+    autoNextConfig,
+    autoSkipConfig,
+    goNextEpisode,
+    currentEpIndex,
+    serverData.length,
+  ]);
 
   const cancelAutoNext = () => {
     if (autoNextTimerRef.current) clearInterval(autoNextTimerRef.current);
@@ -266,7 +318,7 @@ export default function WatchPageRedesigned() {
   const handleProgress = useCallback(
     (currentTime: number, duration: number) => {
       if (!slug || !epName || duration < 10) return;
-      
+
       watchProgressStorage.saveProgress({
         slug,
         epSlug: currentEpData?.slug || currentEpData?.name || "01",
@@ -281,7 +333,7 @@ export default function WatchPageRedesigned() {
       const now = Date.now();
       if (now - lastSyncRef.current < 15_000) return;
       lastSyncRef.current = now;
-      
+
       progressSyncMutation.mutate({
         movieId: slug,
         episode: epName,
@@ -291,7 +343,7 @@ export default function WatchPageRedesigned() {
         movieThumb: posterUrl,
       });
     },
-    [user, slug, epName, film?.name, posterUrl, currentEpData]
+    [user, slug, epName, film?.name, posterUrl, currentEpData],
   );
 
   // ── Error handler (unchanged) ──
@@ -312,7 +364,9 @@ export default function WatchPageRedesigned() {
         setCurrentServer(nextIdx);
         const nd = episodes[nextIdx]?.server_data || [];
         if (nd.length > 0) {
-          router.push(`/watch/${slug}?ep=${nd[0].slug || nd[0].name}&server=${nextIdx}`);
+          router.push(
+            `/watch/${slug}?ep=${nd[0].slug || nd[0].name}&server=${nextIdx}`,
+          );
         }
       } else {
         toast("All servers are currently unavailable!", "error");
@@ -338,7 +392,10 @@ export default function WatchPageRedesigned() {
         <p className="text-white/60 text-sm mb-6 max-w-md text-center">
           The film you're looking for may be temporarily unavailable.
         </p>
-        <Link href="/" className="bg-[#3b82f6] text-white px-6 py-2 text-sm font-medium hover:bg-[#2563eb] transition-colors">
+        <Link
+          href="/"
+          className="bg-[#3b82f6] text-white px-6 py-2 text-sm font-medium hover:bg-[#2563eb] transition-colors"
+        >
           Back to home
         </Link>
       </div>
@@ -351,7 +408,10 @@ export default function WatchPageRedesigned() {
       <header className="border-b border-white/10 bg-[#0d1117]/95 backdrop-blur sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <nav className="flex items-center space-x-3 text-sm text-white/60">
-            <Link href="/" className="hover:text-white transition-colors flex items-center gap-2">
+            <Link
+              href="/"
+              className="hover:text-white transition-colors flex items-center gap-2"
+            >
               <ArrowLeft size={16} />
               <span>Home</span>
             </Link>
@@ -362,7 +422,9 @@ export default function WatchPageRedesigned() {
             {currentEpData?.name && (
               <>
                 <ChevronRight size={14} className="text-white/30" />
-                <span className="text-white">Episode {currentEpData.name.replace(/^tập\s*/i, "")}</span>
+                <span className="text-white">
+                  Episode {currentEpData.name.replace(/^tập\s*/i, "")}
+                </span>
               </>
             )}
           </nav>
@@ -372,10 +434,8 @@ export default function WatchPageRedesigned() {
       {/* ── MAIN CONTENT: Letterboxd grid layout ── */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
           {/* ── LEFT COLUMN: Player + Actions ── */}
           <div className="lg:col-span-2 space-y-6">
-            
             {/* 1. VIDEO PLAYER - Clean, minimal frame */}
             <div className="bg-black aspect-video relative group">
               {videoUrl ? (
@@ -429,7 +489,6 @@ export default function WatchPageRedesigned() {
             </div>
             {/* 2. ACTION TOOLBAR - Letterboxd-inspired, minimal grouping */}
             <div className="flex items-center justify-between py-4 border-t border-b border-white/10">
-              
               {/* Left: Secondary actions - ghost style */}
               <div className="flex items-center space-x-6 text-sm text-white/60">
                 <button
@@ -439,7 +498,7 @@ export default function WatchPageRedesigned() {
                   <Camera size={16} />
                   <span>Subtitles</span>
                 </button>
-                
+
                 <button
                   onClick={() => {
                     if (!wp.roomId) wp.createRoom();
@@ -450,7 +509,7 @@ export default function WatchPageRedesigned() {
                   <Sparkles size={16} />
                   <span>{wp.roomId ? `Room ${wp.roomId}` : "Watch Party"}</span>
                 </button>
-                
+
                 <button
                   onClick={() => toast("Added to favorites", "success")}
                   className="flex items-center space-x-2 hover:text-white transition-colors"
@@ -458,7 +517,7 @@ export default function WatchPageRedesigned() {
                   <Heart size={16} />
                   <span>Like</span>
                 </button>
-                
+
                 <button
                   onClick={() => toast("Added to watchlist", "success")}
                   className="flex items-center space-x-2 hover:text-white transition-colors"
@@ -466,7 +525,7 @@ export default function WatchPageRedesigned() {
                   <Bookmark size={16} />
                   <span>Watchlist</span>
                 </button>
-                
+
                 <button
                   onClick={() => {
                     if (typeof window !== "undefined") {
@@ -479,7 +538,7 @@ export default function WatchPageRedesigned() {
                   <Share2 size={16} />
                   <span>Share</span>
                 </button>
-                
+
                 <button
                   onClick={() => toast("Please rate in comments below", "info")}
                   className="flex items-center space-x-2 hover:text-white transition-colors"
@@ -487,7 +546,7 @@ export default function WatchPageRedesigned() {
                   <Star size={16} />
                   <span>Rate</span>
                 </button>
-                
+
                 <button
                   onClick={() => toast("Issue reported", "success")}
                   className="flex items-center space-x-2 hover:text-white transition-colors"
@@ -503,7 +562,9 @@ export default function WatchPageRedesigned() {
                   <button
                     onClick={() => {
                       const prev = serverData[currentEpIndex - 1];
-                      router.push(`/watch/${slug}?ep=${prev.slug || prev.name}&server=${currentServer}`);
+                      router.push(
+                        `/watch/${slug}?ep=${prev.slug || prev.name}&server=${currentServer}`,
+                      );
                     }}
                     className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white/60 border border-white/20 hover:text-white hover:border-white/40 transition-colors"
                   >
@@ -511,12 +572,14 @@ export default function WatchPageRedesigned() {
                     <span>Previous</span>
                   </button>
                 )}
-                
+
                 {currentEpIndex < serverData.length - 1 && (
                   <button
                     onClick={() => {
                       const next = serverData[currentEpIndex + 1];
-                      router.push(`/watch/${slug}?ep=${next.slug || next.name}&server=${currentServer}`);
+                      router.push(
+                        `/watch/${slug}?ep=${next.slug || next.name}&server=${currentServer}`,
+                      );
                     }}
                     className="flex items-center space-x-2 px-4 py-2 text-sm font-medium bg-[#3b82f6] text-white hover:bg-[#2563eb] transition-colors"
                   >
@@ -530,13 +593,18 @@ export default function WatchPageRedesigned() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold text-white">Episodes</h2>
-                <span className="text-sm text-white/40">{serverData.length} episodes</span>
+                <span className="text-sm text-white/40">
+                  {serverData.length} episodes
+                </span>
               </div>
-              
+
               {/* Search episodes if many */}
               {serverData.length > 12 && (
                 <div className="relative max-w-sm">
-                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+                  <Search
+                    size={16}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40"
+                  />
                   <input
                     type="text"
                     placeholder="Find episode..."
@@ -546,27 +614,35 @@ export default function WatchPageRedesigned() {
                   />
                 </div>
               )}
-              
+
               {/* Episode grid - Clean, minimal */}
               <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-8 xl:grid-cols-10 gap-2">
                 {serverData
-                  .filter((ep: any) =>
-                    !episodeSearch ||
-                    ep.name.toLowerCase().includes(episodeSearch.toLowerCase())
+                  .filter(
+                    (ep: any) =>
+                      !episodeSearch ||
+                      ep.name
+                        .toLowerCase()
+                        .includes(episodeSearch.toLowerCase()),
                   )
                   .map((ep: any, index: number) => {
-                    const active = ep.slug === currentEp || ep.name === currentEp || index === currentEpIndex;
+                    const active =
+                      ep.slug === currentEp ||
+                      ep.name === currentEp ||
+                      index === currentEpIndex;
                     return (
                       <button
                         key={ep.slug || ep.name || index}
                         onClick={() =>
-                          router.push(`/watch/${slug}?ep=${ep.slug || ep.name}&server=${currentServer}`)
+                          router.push(
+                            `/watch/${slug}?ep=${ep.slug || ep.name}&server=${currentServer}`,
+                          )
                         }
                         className={cn(
                           "aspect-square flex items-center justify-center text-sm font-medium transition-colors border",
                           active
                             ? "bg-[#3b82f6] text-white border-[#3b82f6]"
-                            : "bg-[#12161c] text-white/60 border-white/20 hover:text-white hover:border-white/40"
+                            : "bg-[#12161c] text-white/60 border-white/20 hover:text-white hover:border-white/40",
                         )}
                       >
                         {ep.name.replace(/^tập\s*/i, "")}
@@ -580,13 +656,16 @@ export default function WatchPageRedesigned() {
             <div className="pt-8 border-t border-white/10">
               <AdvancedCommentSection
                 movieSlug={slug}
-                episodeName={currentEpData?.name ? `Episode ${currentEpData.name}` : undefined}
+                episodeName={
+                  currentEpData?.name
+                    ? `Episode ${currentEpData.name}`
+                    : undefined
+                }
               />
             </div>
           </div>
           {/* ── RIGHT SIDEBAR: Letterboxd-style info + recommendations ── */}
           <div className="space-y-8">
-            
             {/* Film Info Card - Clean poster + typography */}
             <div className="space-y-4">
               <div className="flex gap-4">
@@ -609,7 +688,7 @@ export default function WatchPageRedesigned() {
                     )}
                     <span>{film?.year}</span>
                   </p>
-                  
+
                   {/* Quality & Lang badges - minimal */}
                   <div className="flex flex-wrap gap-2 text-xs">
                     <span className="bg-white/10 text-white px-2 py-1 border border-white/20">
@@ -626,7 +705,7 @@ export default function WatchPageRedesigned() {
               {film?.content && (
                 <div className="space-y-2 pt-4 border-t border-white/10">
                   <h3 className="text-sm font-bold text-white">Synopsis</h3>
-                  <div 
+                  <div
                     className="text-sm text-white/70 leading-relaxed max-h-32 overflow-y-auto"
                     dangerouslySetInnerHTML={{ __html: film.content }}
                   />
@@ -639,7 +718,9 @@ export default function WatchPageRedesigned() {
                   <h3 className="text-sm font-bold text-white">Cast</h3>
                   <div className="text-sm text-white/60 space-y-1">
                     {actors.slice(0, 6).map((actor, idx) => (
-                      <div key={idx} className="truncate">{actor}</div>
+                      <div key={idx} className="truncate">
+                        {actor}
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -659,14 +740,16 @@ export default function WatchPageRedesigned() {
                         setCurrentServer(i);
                         const nd = s?.server_data || [];
                         if (nd.length > 0) {
-                          router.push(`/watch/${slug}?ep=${nd[0].slug || nd[0].name}&server=${i}`);
+                          router.push(
+                            `/watch/${slug}?ep=${nd[0].slug || nd[0].name}&server=${i}`,
+                          );
                         }
                       }}
                       className={cn(
                         "w-full text-left px-3 py-2 text-sm transition-colors border",
-                        active 
-                          ? "bg-[#3b82f6] text-white border-[#3b82f6]" 
-                          : "bg-[#12161c] text-white/60 border-white/20 hover:text-white hover:border-white/40"
+                        active
+                          ? "bg-[#3b82f6] text-white border-[#3b82f6]"
+                          : "bg-[#12161c] text-white/60 border-white/20 hover:text-white hover:border-white/40",
                       )}
                     >
                       {s.server_name || `Server ${i + 1}`}
@@ -680,10 +763,12 @@ export default function WatchPageRedesigned() {
               <h3 className="text-sm font-bold text-white">
                 {matchedKeyword ? `More ${matchedKeyword}` : "More like this"}
               </h3>
-              
+
               <div className="space-y-3">
                 {recommendationsData?.items?.slice(0, 8).map((item: any) => {
-                  const recPoster = resolveImageUrl(item.thumb_url) || resolveImageUrl(item.poster_url);
+                  const recPoster =
+                    resolveImageUrl(item.thumb_url) ||
+                    resolveImageUrl(item.poster_url);
                   return (
                     <Link
                       href={`/film/${item.slug}`}
@@ -703,7 +788,7 @@ export default function WatchPageRedesigned() {
                           </div>
                         )}
                       </div>
-                      
+
                       <div className="space-y-1 min-w-0 flex-1">
                         <h4 className="text-sm font-medium text-white group-hover:text-white/80 line-clamp-2 leading-snug">
                           {item.name}
@@ -725,7 +810,7 @@ export default function WatchPageRedesigned() {
             {/* Player Settings */}
             <div className="space-y-3 pt-6 border-t border-white/10">
               <h3 className="text-sm font-bold text-white">Settings</h3>
-              
+
               <div className="space-y-2 text-sm">
                 <label className="flex items-center justify-between">
                   <span className="text-white/60">Auto Next</span>
@@ -733,20 +818,24 @@ export default function WatchPageRedesigned() {
                     onClick={() => setAutoNextConfig(!autoNextConfig)}
                     className={cn(
                       "w-10 h-5 rounded-full flex items-center transition-colors p-1",
-                      autoNextConfig ? "bg-[#3b82f6] justify-end" : "bg-white/20 justify-start"
+                      autoNextConfig
+                        ? "bg-[#3b82f6] justify-end"
+                        : "bg-white/20 justify-start",
                     )}
                   >
                     <div className="w-4 h-4 bg-white rounded-full shadow" />
                   </button>
                 </label>
-                
+
                 <label className="flex items-center justify-between">
                   <span className="text-white/60">Auto Play</span>
                   <button
                     onClick={() => setAutoPlayConfig(!autoPlayConfig)}
                     className={cn(
                       "w-10 h-5 rounded-full flex items-center transition-colors p-1",
-                      autoPlayConfig ? "bg-[#3b82f6] justify-end" : "bg-white/20 justify-start"
+                      autoPlayConfig
+                        ? "bg-[#3b82f6] justify-end"
+                        : "bg-white/20 justify-start",
                     )}
                   >
                     <div className="w-4 h-4 bg-white rounded-full shadow" />

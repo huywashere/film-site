@@ -4,8 +4,11 @@ import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 
 const SpotlightSearchModal = dynamic(
-  () => import("@/components/search/SpotlightSearchModal").then(mod => mod.SpotlightSearchModal),
-  { ssr: false }
+  () =>
+    import("@/components/search/SpotlightSearchModal").then(
+      (mod) => mod.SpotlightSearchModal,
+    ),
+  { ssr: false },
 );
 
 export function KeyboardSearchBanner() {

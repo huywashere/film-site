@@ -516,8 +516,8 @@ export default function HomePage() {
       try {
         // Search multiple diverse keywords for VFX-heavy movies
         const keywords = [
-          "marvel", 
-          "avengers", 
+          "marvel",
+          "avengers",
           "spider",
           "iron",
           "thor",
@@ -527,33 +527,36 @@ export default function HomePage() {
           "godzilla",
           "jurassic",
           "avatar",
-          "dune"
+          "dune",
         ];
-        
+
         // Fetch results from each keyword
         const results = await Promise.allSettled(
-          keywords.map(keyword => 
-            movieApi.search(keyword, 1, 5)
-              .then(r => {
+          keywords.map((keyword) =>
+            movieApi
+              .search(keyword, 1, 5)
+              .then((r) => {
                 const items = r?.data?.items || r?.items || [];
                 return items.slice(0, 5);
               })
-              .catch(() => [])
-          )
+              .catch(() => []),
+          ),
         );
-        
+
         // Get successful results only
         const combined = results
-          .filter((r): r is PromiseFulfilledResult<any[]> => r.status === 'fulfilled')
-          .flatMap(r => r.value)
-          .filter(item => item && item.slug);
-        
+          .filter(
+            (r): r is PromiseFulfilledResult<any[]> => r.status === "fulfilled",
+          )
+          .flatMap((r) => r.value)
+          .filter((item) => item && item.slug);
+
         // Shuffle for randomness
         const shuffled = combined.sort(() => Math.random() - 0.5);
-        
+
         return { items: shuffled };
       } catch (error) {
-        console.error('VFX movies query error:', error);
+        console.error("VFX movies query error:", error);
         // Return empty on error
         return { items: [] };
       }
@@ -587,7 +590,14 @@ export default function HomePage() {
 
   // Query random genres for diverse HeroBanner instead of just Marvel/DC
   const randomGenres = useMemo(() => {
-    const genres = ["hanh-dong", "vien-tuong", "phieu-luu", "kinh-di", "hai-huoc", "tinh-cam"];
+    const genres = [
+      "hanh-dong",
+      "vien-tuong",
+      "phieu-luu",
+      "kinh-di",
+      "hai-huoc",
+      "tinh-cam",
+    ];
     // Shuffle and pick 3 random genres
     const shuffled = [...genres].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, 3);
@@ -627,15 +637,12 @@ export default function HomePage() {
     () => deduplicate(animeData?.data?.items || animeData?.items || []),
     [animeData],
   );
-  
-  const vfxFilms = useMemo(
-    () => {
-      const vfx = deduplicate(vfxData?.items || []);
-      // Fallback to latest films if VFX query fails or returns empty
-      return vfx.length > 0 ? vfx : latestFilms;
-    },
-    [vfxData, latestFilms],
-  );
+
+  const vfxFilms = useMemo(() => {
+    const vfx = deduplicate(vfxData?.items || []);
+    // Fallback to latest films if VFX query fails or returns empty
+    return vfx.length > 0 ? vfx : latestFilms;
+  }, [vfxData, latestFilms]);
 
   const actionFilms = useMemo(
     () => deduplicate(actionData?.data?.items || actionData?.items || []),
@@ -741,7 +748,7 @@ export default function HomePage() {
         <SmartRecommendationSection />
         {/* Topic Banners Section */}
         <TopicBannersSection />
-        
+
         {/* Phim Kỹ Xảo Mãn Nhãn */}
         <FilmSection
           title="Phim Kỹ Xảo Mãn Nhãn"
@@ -750,7 +757,7 @@ export default function HomePage() {
           isLoading={vfxLoading}
           href="/search?q=marvel"
         />
-        
+
         {/* Phim Mới Cập Nhật */}
         <FilmSection
           title={t("home.latest")}

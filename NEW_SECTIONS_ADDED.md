@@ -3,24 +3,28 @@
 ## Đã thêm 4 sections phim với chủ đề khác nhau vào trang chủ
 
 ### 1. Phim Hành Động Kịch Tính ⚡
+
 - **Icon**: Zap (tia chớp)
 - **Genre**: hanh-dong
 - **Link**: `/genre/hanh-dong`
 - **Mô tả**: Phim hành động gay cấn, kịch tính cao
 
 ### 2. Phim Kinh Dị Rùng Rợn 👻
+
 - **Icon**: Ghost (ma)
 - **Genre**: kinh-di
 - **Link**: `/genre/kinh-di`
 - **Mô tả**: Phim kinh dị, thriller, rùng rợn
 
 ### 3. Phim Tình Cảm Lãng Mạn ❤️
+
 - **Icon**: Heart (trái tim)
 - **Genre**: tinh-cam
 - **Link**: `/genre/tinh-cam`
 - **Mô tả**: Phim tình cảm, lãng mạn, drama
 
 ### 4. Phim Hài Hước Vui Nhộn 😂
+
 - **Icon**: Laugh (cười)
 - **Genre**: hai-huoc
 - **Link**: `/genre/hai-huoc`
@@ -44,17 +48,19 @@
 ## Technical Details
 
 ### Icons Added
+
 ```typescript
 import {
-  Sparkles,  // VFX - Kỹ xảo
-  Zap,       // Action - Hành động
-  Ghost,     // Horror - Kinh dị
-  Heart,     // Romance - Tình cảm
-  Laugh,     // Comedy - Hài hước
+  Sparkles, // VFX - Kỹ xảo
+  Zap, // Action - Hành động
+  Ghost, // Horror - Kinh dị
+  Heart, // Romance - Tình cảm
+  Laugh, // Comedy - Hài hước
 } from "lucide-react";
 ```
 
 ### Queries Added
+
 ```typescript
 // Action Movies
 const { data: actionData, isLoading: actionLoading } = useQuery({
@@ -82,6 +88,7 @@ const { data: comedyData, isLoading: comedyLoading } = useQuery({
 ```
 
 ### Memoized Data
+
 ```typescript
 const actionFilms = useMemo(
   () => deduplicate(actionData?.data?.items || actionData?.items || []),
@@ -107,6 +114,7 @@ const comedyFilms = useMemo(
 ## Features
 
 ### Each Section Has:
+
 - ✅ Horizontal slider với navigation buttons
 - ✅ Loading skeleton khi fetch data
 - ✅ 12 phim mỗi section
@@ -116,12 +124,14 @@ const comedyFilms = useMemo(
 - ✅ Deduplicate để tránh phim trùng
 
 ### User Experience:
+
 1. **Nhiều lựa chọn hơn**: 12 sections thay vì 8
 2. **Đa dạng thể loại**: Action, Horror, Romance, Comedy
 3. **Icons phù hợp**: Mỗi section có icon riêng dễ nhận biết
 4. **Navigation tốt hơn**: Link trực tiếp đến genre page
 
 ### Performance:
+
 - Home page: 40.7 kB (tăng 0.7 kB)
 - First Load JS: 245 kB (tăng 1 kB)
 - Total: 12 sections với 144 phim (12 × 12)
@@ -134,6 +144,7 @@ npm run build
 ```
 
 **Result:** ✅ Build successful
+
 - No TypeScript errors
 - No syntax errors
 - All routes compiled correctly
@@ -141,6 +152,7 @@ npm run build
 ## Genre Slugs Available
 
 Nếu muốn thay đổi hoặc thêm genre khác:
+
 - `hanh-dong` - Hành động
 - `kinh-di` - Kinh dị
 - `tinh-cam` - Tình cảm
@@ -155,6 +167,7 @@ Nếu muốn thay đổi hoặc thêm genre khác:
 ## Next Steps
 
 Có thể thêm thêm sections nếu muốn:
+
 - Phim Phiêu Lưu Mạo Hiểm (Adventure)
 - Phim Tâm Lý Tội Phạm (Thriller/Crime)
 - Phim Cổ Trang Trung Quốc
