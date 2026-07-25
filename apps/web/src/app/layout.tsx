@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { ConditionalNavbar } from "@/components/layout/ConditionalNavbar";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
+import { Sidebar } from "@/components/layout/Sidebar";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { ToastProvider } from "@/providers/ToastProvider";
 import { RegisterSW } from "@/components/layout/RegisterSW";
@@ -65,7 +66,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;500;600;700;800;900&display=swap"
           rel="stylesheet"
         />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
@@ -79,7 +80,8 @@ export default function RootLayout({
             <AuthModal />
             <ScrollProvider>
               <ConditionalNavbar />
-              <main className="page-content pb-16 lg:pb-0">{children}</main>
+              <Sidebar />
+              <main className="page-content pb-16 lg:pb-0 lg:ml-20">{children}</main>
               <MobileBottomNav />
               <ScrollToTopButton />
               <ConditionalFooter />

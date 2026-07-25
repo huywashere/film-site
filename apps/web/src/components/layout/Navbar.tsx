@@ -39,6 +39,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { MobileSidebar } from "./MobileSidebar";
 
 const NAV_LINKS = [
   { href: "/films/series", key: "nav.series" },
@@ -143,6 +144,7 @@ export function Navbar() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -264,7 +266,7 @@ export function Navbar() {
           {/* Left Block: Logo (shrink-0 ensures it NEVER gets overlapped) */}
           <div className="flex items-center shrink-0">
             <Link href="/" className="flex items-center space-x-1.5 group">
-              <span className="text-foreground text-xl sm:text-2xl font-black tracking-tighter lowercase font-sans">
+              <span className="text-foreground text-xl sm:text-2xl font-black tracking-tighter lowercase" style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '-0.02em' }}>
                 cineverse
               </span>
             </Link>

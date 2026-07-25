@@ -1,0 +1,427 @@
+/* ========================================
+   REDESIGNED WATCH PAGE - NETFLIX STYLE
+   Clean, modern, professional layout
+   ======================================== */
+
+/* Main Container */
+.watchContainer {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #0a0e17 0%, #0d1117 50%, #0a0e17 100%);
+  position: relative;
+}
+
+/* Header Navigation */
+.watchNav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.breadcrumb a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.2s ease;
+}
+
+.breadcrumb a:hover {
+  color: rgba(255, 255, 255, 1);
+}
+
+/* Video Player Section */
+.playerSection {
+  margin-bottom: 2rem;
+}
+
+.playerWrapper {
+  position: relative;
+  aspect-ratio: 16/9;
+  background: #000;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.playerWrapper:hover {
+  transform: scale(1.005);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Action Toolbar */
+.actionToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: rgba(20, 24, 30, 0.85);
+  backdrop-filter: blur(16px);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 1rem;
+}
+
+.actionGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(30, 34, 40, 0.9);
+  color: rgba(255, 255, 255, 0.9);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.actionButton:hover {
+  background: rgba(40, 44, 52, 1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.actionButtonGroup {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(24, 26, 32, 0.95);
+}
+
+.actionButtonGroup button {
+  padding: 0.625rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.actionButtonGroup button:last-child {
+  border-right: none;
+}
+
+.actionButtonGroup button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 1);
+}
+
+/* Episode Navigation */
+.navButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.625rem 1.125rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  border: 1px solid;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.navButton.prev {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: rgb(96, 165, 250);
+}
+
+.navButton.prev:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.navButton.next {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: rgb(52, 211, 153);
+}
+
+.navButton.next:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+/* Sidebar Tabs */
+.sidebarTabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(15, 18, 24, 0.6);
+  border-radius: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 1.5rem;
+}
+
+.tabButton {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 0.625rem;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.tabButton:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tabButton.active {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15));
+  color: rgb(52, 211, 153);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+}
+
+/* Episode Grid */
+.episodeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 0.625rem;
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.episodeGrid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.episodeGrid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+}
+
+.episodeGrid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+}
+
+.episodeGrid::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.6);
+}
+
+.episodeCard {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  border-radius: 0.625rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  background: rgba(20, 24, 30, 0.6);
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.episodeCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.episodeCard:hover::before {
+  opacity: 1;
+}
+
+.episodeCard:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(30, 34, 42, 0.8);
+  color: rgba(255, 255, 255, 1);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.episodeCard.active {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.2));
+  border-color: rgb(16, 185, 129);
+  color: rgb(255, 255, 255);
+  box-shadow: 
+    0 0 24px rgba(16, 185, 129, 0.4),
+    0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Server List */
+.serverList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.serverCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-radius: 0.875rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  background: rgba(20, 24, 30, 0.6);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.serverCard:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(30, 34, 42, 0.8);
+  transform: translateX(4px);
+}
+
+.serverCard.active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(37, 99, 235, 0.1));
+  border-color: rgb(59, 130, 246);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.25);
+}
+
+.serverInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.serverName {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.serverPing {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.serverPing.good {
+  color: rgb(52, 211, 153);
+}
+
+.serverPing.medium {
+  color: rgb(251, 191, 36);
+}
+
+.serverPing.bad {
+  color: rgb(248, 113, 113);
+}
+
+/* Film Info Section */
+.filmInfo {
+  padding: 1.5rem;
+  background: rgba(20, 24, 30, 0.5);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.filmTitle {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: rgb(255, 255, 255);
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+
+.filmMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.8125rem;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+}
+
+.filmDescription {
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .episodeGrid {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 0.5rem;
+  }
+  
+  .actionToolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .actionGroup {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .episodeGrid {
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+  }
+  
+  .sidebarTabs {
+    flex-direction: column;
+  }
+  
+  .tabButton {
+    justify-content: flex-start;
+  }
+}

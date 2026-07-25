@@ -1,0 +1,202 @@
+"use client";
+
+import Link from "next/link";
+import NextImage from "next/image";
+import { useState, useEffect, useMemo } from "react";
+import { Play, Info } from "lucide-react";
+import { FilmItem, resolveImageUrl } from "@/components/film/FilmCard";
+import { useTranslation } from "@/store/langStore";
+import { cn } from "@/lib/utils";
+
+interface HeroBannerProps {
+  films: FilmItem[];
+}
+
+export default function HeroBanner({ films }: HeroBannerProps) {
+  const [current, setCurrent] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const { t } = useTranslation();
+  const featured = useMemo(() => films.slice(0, 6), [films]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIsTransitioning(true);
+      setCurrent((c) => (c + 1) % featured.length);
+      setTimeout(() => setIsTransitioning(false), 800);
+    }, 8000);
+    return () => clearInterval(timer);
+  }, [featured.length]);
+
+  const film = featured[current];
+  if (!film) return null;
+
+  const backdrop =
+    resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url);
+
+  // Dynamic font size
+  const nameLen = film.name.length;
+  const titleFontSizeClass =
+    nameLen > 60
+      ? "text-2xl md:text-4xl lg:text-5xl"
+      : nameLen > 40
+        ? "text-3xl md:text-5xl lg:text-6xl"
+        : "text-4xl md:text-7xl";
+
+  return (
+    <div className="relative h-[calc(100vh+100px)] min-h-[700px] w-full overflow-hidden bg-background">
+      {/* Background Image */}
+      <div className="absolute inset-0 w-full h-full">
+        {backdrop && (
+          <div
+            className="absolute inset-0 w-full h-full will-change-opacity transition-opacity duration-700 ease-in-out"
+            style={{
+              opacity: isTransitioning ? 0 : 1,
+              transform: "translate3d(0, 0, 0)",
+            }}
+          >
+            <NextImage
+              src={backdrop}
+              alt={film.name}
+              fill
+              priority
+              quality={75}
+              sizes="100vw"
+              className="object-cover object-center brightness-[0.7]"
+              loading="eager"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Gradient Overlay */}
+      <div
+        className="absolute inset-0 z-10 pointer-events-none"
+        style={{
+          background: `
+            linear-gradient(to right, var(--background) 0%, rgba(var(--background-rgb), 0.7) 35%, transparent 65%),
+            linear-gradient(to top, var(--background) 0%, rgba(var(--background-rgb), 0.95) 15%, rgba(var(--background-rgb), 0.6) 40%, transparent 100%),
+            rgba(0, 0, 0, 0.05)
+          `,
+        }}
+      />
+
+      {/* Content */}
+      <div className="absolute inset-0 z-20 flex items-center">
+        <div className="w-full pl-24 pr-4 md:pl-28 md:pr-8">
+          <div className="max-w-2xl">
+            <div
+              key={current}
+              className="flex flex-col space-y-4 md:space-y-5 animate-fade-in-up"
+            >
+              {/* Badges */}
+              <div className="flex items-center space-x-3">
+                <span className="bg-neutral-800 text-white dark:bg-white dark:text-black text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-sm shadow">
+                  NEW
+                </span>
+                {film.year && (
+                  <span className="text-foreground/60 text-xs font-semibold">
+                    {film.year}
+                  </span>
+                )}
+              </div>
+
+              {/* Title */}
+              <h1
+                className={cn(
+                  "font-extrabold text-foreground tracking-wide leading-tight drop-shadow-2xl uppercase",
+                  titleFontSizeClass,
+                )}
+                style={{ fontFamily: "'Bebas Neue', sans-serif" }}
+              >
+                {film.name}
+              </h1>
+              {film.origin_name && (
+                <p className="text-base md:text-xl text-foreground/75 font-semibold tracking-wide -mt-2">
+                  {film.origin_name}
+                </p>
+              )}
+
+              {/* Description */}
+              <p className="text-xs md:text-sm text-foreground/80 max-w-xl leading-relaxed line-clamp-3">
+                {t("home.heroDesc")}
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex items-center space-x-3 pt-2">
+                <Link
+                  href={`/watch/${film.slug}`}
+                  className="flex items-center space-x-2 bg-neutral-800 hover:bg-neutral-900 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-black px-7 py-3 rounded-full text-xs font-black tracking-wider uppercase transition-colors shadow-md"
+                >
+                  <Play size={14} fill="currentColor" />
+                  <span>Xem Phim</span>
+                </Link>
+                <Link
+                  href={`/film/${film.slug}`}
+                  className="flex items-center space-x-2 bg-black/5 hover:bg-black/10 text-neutral-800 border border-black/10 dark:bg-white/10 dark:hover:bg-white/25 dark:text-white px-7 py-3 rounded-full text-xs font-black tracking-wider uppercase transition-colors backdrop-blur-sm"
+                >
+                  <Info size={14} />
+                  <span>{t("home.details")}</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Thumbnail Indicators */}
+      <div className="absolute right-4 sm:right-8 md:right-12 bottom-6 sm:bottom-8 z-30 flex items-center gap-1.5 sm:gap-2">
+        {featured.map((item, i) => {
+          const thumbImg =
+            resolveImageUrl(item.thumb_url) ||
+            resolveImageUrl(item.poster_url) ||
+            "";
+          const isActive = i === current;
+          return (
+            <button
+              key={item.slug || i}
+              onClick={() => {
+                setIsTransitioning(true);
+                setCurrent(i);
+                setTimeout(() => setIsTransitioning(false), 800);
+              }}
+              aria-label={`Switch to ${item.name}`}
+              className={cn(
+                "relative w-14 sm:w-16 md:w-20 aspect-[16/9] rounded-md overflow-hidden cursor-pointer flex-shrink-0 transition-all duration-300",
+                isActive
+                  ? "border-2 border-white scale-105 shadow-xl opacity-100"
+                  : "border border-white/20 opacity-50 hover:opacity-100 scale-95",
+              )}
+            >
+              {thumbImg && (
+                <NextImage
+                  src={thumbImg}
+                  alt={item.name}
+                  fill
+                  quality={60}
+                  sizes="88px"
+                  className="object-cover object-center"
+                  loading="lazy"
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Scroll Indicator */}
+      <div
+        className="absolute left-1/2 -translate-x-1/2 bottom-5 z-20 flex flex-col items-center gap-1.5 cursor-pointer group opacity-65 hover:opacity-100 transition-opacity"
+        onClick={() =>
+          window.scrollTo({
+            top: window.innerHeight * 0.85,
+            behavior: "smooth",
+          })
+        }
+      >
+        <div className="w-[22px] h-[34px] rounded-full border-2 border-white/60 flex justify-center pt-1.5 backdrop-blur-md bg-black/40">
+          <div className="w-1 h-2 bg-white/80 rounded-full animate-bounce" />
+        </div>
+      </div>
+    </div>
+  );
+}

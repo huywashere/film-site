@@ -2,473 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: #14181c; /* Signature Letterboxd dark charcoal slate */
-    --foreground: #f2f4f8;
-
-    --card: #1c2228; /* Letterboxd card container shade */
-    --card-foreground: #e7eaf0;
-
-    --popover: #1c2228;
-    --popover-foreground: #f2f4f8;
-
-    --primary: #00e054; /* Letterboxd signature electric green */
-    --primary-foreground: #ffffff;
-
-    --secondary: #242c34;
-    --secondary-foreground: #eceff4;
-
-    --muted: #374151;
-    --muted-foreground: #9ca3af;
-
-    --accent: #00e054;
-    --accent-foreground: #fafafa;
-
-    --destructive: #ff3a44;
-    --destructive-foreground: #fafafa;
-
-    --border: #2c3440;
-    --input: #2c3440;
-    --ring: #00e054;
-
-    --accent-color: #00e054; /* Letterboxd green binding */
-    --accent-color-hover: #00c749;
-    --radius: 8px;
-
-    /* Legacy CSS Variable bindings */
-    --bg-primary: #14181c;
-    --bg-secondary: #181c22;
-    --bg-card: #1c2228;
-    --bg-card-hover: #242c34;
-    --bg-overlay: rgba(20, 24, 28, 0.98);
-    --bg-glass: rgba(20, 24, 28, 0.85);
-
-    --accent: #00e054;
-    --accent-hover: #00c749;
-    --accent-dim: rgba(0, 224, 84, 0.15);
-
-    --red: #ff3a44;
-    --red-hover: #ff6068;
-    --gold: #00e054;
-
-    --text-primary: #ffffff;
-    --text-secondary: #a3a3a3;
-    --text-muted: #737373;
-    --text-inverse: #ffffff;
-
-    --border: rgba(255, 255, 255, 0.1);
-    --border-hover: rgba(255, 255, 255, 0.2);
-
-    --star-color: #00e054;
-    --rating-bg: rgba(0, 224, 84, 0.12);
-
-    --space-xs: 0.25rem;
-    --space-sm: 0.5rem;
-    --space-md: 1rem;
-    --space-lg: 1.5rem;
-    --space-xl: 2rem;
-    --space-2xl: 3rem;
-    --space-3xl: 4rem;
-
-    --radius-sm: 2px;
-    --radius-md: 4px;
-    --radius-lg: 6px;
-    --radius-xl: 8px;
-    --radius-full: 9999px;
-
-    --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-    --font-serif: "Playfair Display", "Merriweather", Georgia, serif;
-
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
-    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.7);
-    --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.8);
-    --shadow-accent: 0 0 20px rgba(225, 9, 20, 0.3);
-
-    --transition-fast: 150ms ease;
-    --transition: 250ms ease;
-    --transition-slow: 400ms ease;
-
-    --nav-height: 68px;
-    --max-width: 1400px;
-  }
-
-  /* Light Theme Variables - Soft, comfortable off-white style (not too bright) */
-  html.light,
-  html[data-theme="light"] {
-    --background: #e8ecf3; /* Softer, slightly darker blue-gray, easy on the eyes */
-    --foreground: #1e293b; /* Softer slate black instead of harsh pure black */
-
-    --card: #f4f6fa; /* Soft card background instead of pure white */
-    --card-foreground: #1e293b;
-
-    --popover: #f4f6fa;
-    --popover-foreground: #1e293b;
-
-    --primary: #524cf8;
-    --primary-foreground: #ffffff;
-
-    --secondary: #cbd5e1;
-    --secondary-foreground: #1e293b;
-
-    --muted: #cbd5e1;
-    --muted-foreground: #64748b;
-
-    --accent: #524cf8;
-    --accent-foreground: #ffffff;
-
-    --destructive: #ff3a44;
-    --destructive-foreground: #ffffff;
-
-    --border: rgba(0, 0, 0, 0.08);
-    --input: rgba(0, 0, 0, 0.08);
-    --ring: #524cf8;
-
-    /* Legacy Bindings Overwrite for Light Mode */
-    --bg-primary: #e8ecf3;
-    --bg-secondary: #f4f6fa;
-    --bg-card: #f4f6fa;
-    --bg-card-hover: #e2e8f0;
-    --bg-overlay: rgba(232, 236, 243, 0.98);
-    --bg-glass: rgba(232, 236, 243, 0.85);
-
-    --text-primary: #1e293b;
-    --text-secondary: #475569;
-    --text-muted: #64748b;
-    --text-inverse: #ffffff;
-
-    --border: rgba(0, 0, 0, 0.08);
-    --border-hover: rgba(0, 0, 0, 0.14);
-
-    --star-color: #524cf8;
-    --rating-bg: rgba(82, 76, 248, 0.08);
-
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
-    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
-    --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.1);
-  }
+/* ── CSS Variables ──────────────────────────────────────────── */
+:root {
+  --background: #14181c;
+  --background-rgb: 20, 24, 28;
+  --foreground: #ffffff;
+  --netflixRed: #e50914;
+  --primary: #e50914;
 }
 
-html {
-  scrollbar-gutter: stable;
-  overflow-x: hidden;
+/* ── Font Family ────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply text-foreground;
-    font-family: var(--font-sans);
-    -webkit-font-smoothing: antialiased;
-    background-color: #14181c;
-    position: relative;
-    overflow-x: hidden;
-  }
-
-  /* GPU-Accelerated Hardware Canvas for Letterboxd dot grid (0% CPU load on scroll) */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: -1;
-    background-image:
-      radial-gradient(ellipse at 50% 0%, #1e242c 0%, #14181c 75%),
-      radial-gradient(rgba(255, 255, 255, 0.12) 1.25px, transparent 1.25px);
-    background-size:
-      100% 600px,
-      14px 14px;
-    background-position:
-      center top,
-      0 0;
-    transform: translateZ(0);
-    will-change: transform;
-  }
+/* Headings sử dụng Inter với font-weight bold hơn thay vì Bebas Neue */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
-/* Prevent layout shift when modals or dropdowns open */
-body[data-scroll-locked],
-html[data-scroll-locked],
-body[style*="overflow: hidden"] {
-  padding-right: 0px !important;
-  margin-right: 0px !important;
+/* ── Performance Optimizations ────────────────────────────────── */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Ensure fixed header stays completely still */
-header {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  padding-right: 0px !important;
-  margin-right: 0px !important;
+/* Hardware acceleration for animations */
+.will-change-transform {
+  will-change: transform;
 }
 
-/* Swiper global styles removed in favor of Emotion StyledSwiperContainer in page.tsx */
-
-/* Custom utility for glassmorphism */
-.glassmorphism {
-  background-color: rgba(20, 20, 20, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+.will-change-opacity {
+  will-change: opacity;
 }
 
-/* Custom scroll row styles */
-.scroll-row {
-  display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  padding: 10px 0 20px 0;
-  scrollbar-width: none;
-}
-.scroll-row::-webkit-scrollbar {
-  display: none;
-}
-.scroll-row > * {
-  scroll-snap-align: start;
-  flex-shrink: 0;
-}
-
-/* Custom Scrollbar Utilities */
-.scrollbar-none::-webkit-scrollbar {
-  display: none;
-}
-.scrollbar-none {
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-.scrollbar-thin::-webkit-scrollbar {
-  height: 6px;
-  width: 6px;
-}
-.scrollbar-thin::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 10px;
-}
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  transition: background 0.2s ease;
-}
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(82, 76, 248, 0.8);
-}
-.scrollbar-thin {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
-/* Next.js Image transitions */
-.image-transition {
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Accents and Ratings */
-.star-rating {
-  display: inline-flex;
-  gap: 2px;
-  color: #e50914;
-}
-
-/* Form controls reset */
-input,
-textarea,
-select {
-  outline: none;
-}
-
-/* Custom Grid for Film Cards */
-@layer components {
-  .grid-films-lg {
-    @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6;
-  }
-}
-
-/* Premium Shimmer Loading effect */
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.03) 25%,
-    rgba(255, 255, 255, 0.09) 37%,
-    rgba(255, 255, 255, 0.03) 63%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.4s infinite linear;
-}
-
-html.light .shimmer,
-html[data-theme="light"] .shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(0, 0, 0, 0.04) 25%,
-    rgba(0, 0, 0, 0.1) 37%,
-    rgba(0, 0, 0, 0.04) 63%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.4s infinite linear;
-}
-
-/* ── Language switch transition ─────────────────────────── */
-/* subtle fade only on text elements that use t() */
-html.lang-switching *:not(video):not(img):not(canvas):not(iframe) {
-  transition: opacity 0.12s ease;
-}
-
-/* iOS-style pill toggle for lang button */
-.lang-pill {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  width: 52px;
-  height: 24px;
-  border-radius: 100px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  cursor: pointer;
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease;
-  overflow: hidden;
-  user-select: none;
-}
-
-.lang-pill-thumb {
-  position: absolute;
-  width: 22px;
-  height: 18px;
-  border-radius: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  transition:
-    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
-    background 0.2s ease;
-  pointer-events: none;
-}
-
-.lang-pill[data-lang="vi"] .lang-pill-thumb {
-  transform: translateX(2px);
-  background: linear-gradient(135deg, #e53e3e, #c53030);
-  color: white;
-}
-
-.lang-pill[data-lang="en"] .lang-pill-thumb {
-  transform: translateX(28px);
-  background: linear-gradient(135deg, #3182ce, #2b6cb0);
-  color: white;
-}
-
-.lang-pill-track {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 5px;
-  font-size: 8px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  pointer-events: none;
-}
-
-.lang-pill[data-lang="vi"] .lang-pill-track-vi {
-  opacity: 0;
-}
-.lang-pill[data-lang="vi"] .lang-pill-track-en {
-  opacity: 0.5;
-  color: rgba(255, 255, 255, 0.5);
-}
-.lang-pill[data-lang="en"] .lang-pill-track-vi {
-  opacity: 0.5;
-  color: rgba(255, 255, 255, 0.5);
-}
-.lang-pill[data-lang="en"] .lang-pill-track-en {
-  opacity: 0;
-}
-
-.lang-pill:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.22);
-}
-
-/* Custom Sleek Dark Scrollbar to fix native Windows scrollbar arrows */
-.scrollbar-thin {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-}
-.scrollbar-thin::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-.scrollbar-thin::-webkit-scrollbar-track {
-  background: transparent;
-}
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 9999px;
-}
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: #00e054;
-}
-
-/* Global Browser Main Scrollbar */
+/* Smooth scroll behavior */
 html {
-  scrollbar-width: thin;
-  scrollbar-color: #2c3440 #14181c;
-}
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #14181c;
-}
-::-webkit-scrollbar-thumb {
-  background: #2c3440;
-  border-radius: 9999px;
-  border: 2px solid #14181c;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #00e054;
+  scroll-behavior: smooth;
 }
 
-@keyframes marquee-rtl {
-  0% {
-    transform: translate3d(0%, 0, 0);
-  }
-  100% {
-    transform: translate3d(-33.333333%, 0, 0);
-  }
+body {
+  @apply bg-background text-foreground;
+  font-feature-settings: "rlig" 1, "calt" 1;
+  font-family: 'Inter', sans-serif;
 }
 
-/* Hero Banner fade-in animation for smooth transitions */
+/* ── Animation Keyframes ───────────────────────────────────────── */
 @keyframes fadeInUp {
-  0% {
+  from {
     opacity: 0;
-    transform: translate3d(0, 24px, 0);
+    transform: translateY(30px);
   }
-  100% {
+  to {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
+    transform: translateY(0);
   }
 }
 
@@ -476,8 +77,57 @@ html {
   animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Optimize image transitions with GPU acceleration */
-.next-image-container {
-  will-change: opacity;
+/* ── Radix UI Overrides ────────────────────────────────────────── */
+@layer components {
+  .page-content {
+    min-height: calc(100vh - 80px);
+  }
+}
+
+/* ── Utility Classes ───────────────────────────────────────────── */
+.text-balance {
+  text-wrap: balance;
+}
+
+.gpu-accelerated {
   transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* ── Sidebar Override (Force Transparent) ──────────────────── */
+aside.sidebar-transparent,
+aside[class*="fixed"][class*="left-0"][class*="z-40"] {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+aside.sidebar-transparent::before,
+aside.sidebar-transparent::after,
+aside[class*="fixed"][class*="left-0"][class*="z-40"]::before,
+aside[class*="fixed"][class*="left-0"][class*="z-40"]::after {
+  content: none !important;
+  display: none !important;
+  background: transparent !important;
+}
+
+/* ── Loading States ────────────────────────────────────────────── */
+.skeleton {
+  @apply animate-pulse bg-white/5;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -1,149 +1,118 @@
 "use client";
-import { useQuery } from "@tanstack/react-query";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Bookmark, FolderOpen, Loader2 } from "lucide-react";
-import { watchlistApi } from "@/lib/api";
-import {
-  FilmCard,
-  FilmItem,
-  FilmCardSkeleton,
-} from "@/components/film/FilmCard";
-import { useAuthStore } from "@/store/authStore";
-import Link from "next/link";
-import { Suspense } from "react";
-import { cn } from "@/lib/utils";
 
-function WatchlistContent() {
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  Bookmark,
+  ChevronLeft,
+  Loader2,
+} from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
+import { watchlistApi } from "@/lib/api";
+import { FilmCard } from "@/components/film/FilmCard";
+
+export default function WatchlistPage() {
   const { user } = useAuthStore();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const page = Number(searchParams.get("page") || 1);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["watchlist", page],
-    queryFn: () => watchlistApi.get(page).then((r) => r.data),
-    enabled: !!user,
-  });
-
+  // Redirect if not logged in
   if (!user) {
     return (
-      <div className="container mx-auto px-4 py-24 text-center max-w-md flex flex-col items-center justify-center space-y-4">
-        <Bookmark
-          size={48}
-          className="text-neutral-500 opacity-40 animate-pulse"
-        />
-        <h2 className="text-xl font-bold text-foreground">
-          Bạn chưa đăng nhập
-        </h2>
-        <p className="text-xs text-muted-foreground">
-          Vui lòng đăng nhập tài khoản để xem danh sách phim yêu thích cá nhân
-          của bạn.
-        </p>
-        <Link
-          href="/login"
-          className="bg-netflixRed hover:bg-[#C11119] text-white font-bold text-xs px-6 py-2.5 rounded transition-all"
-        >
-          Đăng nhập ngay
-        </Link>
+      <div className="min-h-screen bg-background pt-24 pb-16 flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <Bookmark size={64} className="mx-auto mb-4 text-neutral-600" />
+          <h1 className="text-2xl font-bold text-white mb-2">
+            Đăng nhập để xem danh sách
+          </h1>
+          <p className="text-neutral-400 mb-6">
+            Bạn cần đăng nhập để truy cập danh sách xem sau
+          </p>
+          <button
+            onClick={() => router.push("/login")}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-full font-semibold transition-colors"
+          >
+            Đăng nhập ngay
+          </button>
+        </div>
       </div>
     );
   }
 
-  const items = data?.items || [];
-  const totalPages = data?.pages || 1;
+  // Fetch watchlist data
+  const { data: watchlistData, isLoading } = useQuery({
+    queryKey: ["watchlist", user.id],
+    queryFn: () => watchlistApi.get(1).then((r) => r.data),
+  });
+
+  const watchlistItems = watchlistData?.items || [];
 
   return (
-    <div className="container mx-auto px-4 md:px-8 max-w-7xl pt-24 pb-16">
-      <div className="flex items-center justify-between border-b border-border pb-4 mb-8">
-        <h1 className="text-2xl md:text-3xl font-black text-foreground flex items-center space-x-2 tracking-wide">
-          <Bookmark size={28} className="text-netflixRed fill-netflixRed/10" />
-          <span>Watchlist của tôi</span>
-        </h1>
-        {data?.total > 0 && (
-          <span className="bg-secondary text-secondary-foreground text-xs font-bold px-3 py-1 rounded-full border border-border">
-            {data.total} phim
-          </span>
-        )}
+    <div className="min-h-screen bg-background pt-20 pb-16 lg:ml-20">
+      {/* Header */}
+      <div className="border-b border-white/10 bg-transparent sticky top-16 z-30">
+        <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6">
+          {/* Back Button & Title */}
+          <div className="flex items-center space-x-4 mb-4">
+            <button
+              onClick={() => router.back()}
+              className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+            >
+              <ChevronLeft size={24} className="text-neutral-400" />
+            </button>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight">
+                Xem sau
+              </h1>
+              <p className="text-sm text-neutral-400 mt-1 normal-case font-normal tracking-normal">
+                {watchlistItems.length} phim đã lưu
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 md:gap-6">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <FilmCardSkeleton key={i} hideDetails={false} />
-          ))}
-        </div>
-      ) : items.length === 0 ? (
-        <div className="text-center py-24 max-w-md mx-auto flex flex-col items-center justify-center space-y-4">
-          <FolderOpen size={54} className="text-neutral-500 opacity-30" />
-          <h3 className="text-lg font-bold">
-            Chưa có phim nào trong Watchlist
-          </h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Danh sách lưu trữ phim yêu thích của bạn hiện đang trống. Hãy khám
-            phá kho phim khổng lồ của chúng tôi để thêm những bộ phim bạn yêu
-            thích vào đây nhé!
-          </p>
-          <Link
-            href="/"
-            className="inline-flex bg-netflixRed hover:bg-[#C11119] text-white font-bold text-xs px-6 py-3 rounded shadow transition-all pt-2.5"
-          >
-            Khám phá phim ngay
-          </Link>
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 md:gap-6">
-            {items.map((item: any) => {
-              const film: FilmItem = {
-                slug: item.movie.id,
-                name: item.movie.title,
-                thumb_url: item.movie.thumbUrl || item.movie.posterUrl,
-                year: item.movie.year,
-                type: item.movie.type,
-              };
-              return <FilmCard key={item.id} film={film} />;
-            })}
+      {/* Content */}
+      <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-8">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 size={40} className="animate-spin text-blue-500" />
           </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center space-x-1.5 pt-10">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <button
-                  key={p}
-                  className={cn(
-                    "w-9 h-9 rounded text-xs font-bold border transition-colors flex items-center justify-center",
-                    p === page
-                      ? "bg-netflixRed border-netflixRed text-white"
-                      : "bg-card border-border text-muted-foreground hover:text-foreground",
-                  )}
-                  onClick={() => router.push(`/watchlist?page=${p}`)}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          )}
-        </>
-      )}
+        ) : watchlistItems.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+            {watchlistItems.map((item: any) => (
+              <FilmCard
+                key={item.id}
+                film={{
+                  slug: item.movieId,
+                  name: item.movieData?.title || "Untitled",
+                  poster_url: item.movieData?.thumbUrl,
+                  type: item.movieData?.type,
+                  year: item.movieData?.year,
+                }}
+                showActions={true}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20">
+            <Bookmark size={64} className="mx-auto mb-4 text-neutral-700" />
+            <p className="text-xl font-semibold text-neutral-400">
+              Chưa có phim nào trong danh sách
+            </p>
+            <p className="text-sm text-neutral-500 mt-2">
+              Thêm phim bạn muốn xem sau vào đây
+            </p>
+            <Link
+              href="/"
+              className="inline-block mt-6 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2.5 rounded-full font-semibold transition-colors"
+            >
+              Khám phá phim
+            </Link>
+          </div>
+        )}
+      </div>
     </div>
-  );
-}
-
-export default function WatchlistPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="container mx-auto px-4 py-24 text-center">
-          <Loader2
-            className="animate-spin text-netflixRed mx-auto mb-2"
-            size={32}
-          />
-          <p className="text-neutral-400 text-sm">Đang tải watchlist...</p>
-        </div>
-      }
-    >
-      <WatchlistContent />
-    </Suspense>
   );
 }

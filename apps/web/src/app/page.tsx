@@ -15,6 +15,11 @@ import {
   Clapperboard,
   AlertTriangle,
   Loader2,
+  Sparkles,
+  Zap,
+  Ghost,
+  Heart,
+  Laugh,
 } from "lucide-react";
 import { movieApi, reviewsApi } from "@/lib/api";
 import {
@@ -208,7 +213,7 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
         className="absolute inset-0 z-20 flex items-center"
         style={{ willChange: "contents" }}
       >
-        <div className="container mx-auto px-4 md:px-8 max-w-7xl">
+        <div className="w-full pl-24 pr-4 md:pl-28 md:pr-8">
           <div className="max-w-2xl">
             {/* Use CSS transitions instead of Framer Motion for text content */}
             <div
@@ -237,9 +242,10 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
               {/* Title */}
               <h1
                 className={cn(
-                  "font-extrabold text-foreground tracking-wide leading-tight drop-shadow-sm uppercase font-sans",
+                  "font-extrabold text-foreground tracking-wide leading-tight drop-shadow-2xl uppercase",
                   titleFontSizeClass,
                 )}
+                style={{ fontFamily: "'Bebas Neue', sans-serif" }}
               >
                 {film.name}
               </h1>
@@ -261,7 +267,7 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
                   className="flex items-center space-x-2 bg-neutral-800 hover:bg-neutral-900 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-black px-7 py-3 rounded-full text-xs font-black tracking-wider uppercase transition-colors shadow-md border border-neutral-700 dark:border-white/5"
                 >
                   <Play size={14} fill="currentColor" />
-                  <span>Go to Movie</span>
+                  <span>Xem Phim</span>
                 </Link>
                 <Link
                   href={`/film/${film.slug}`}
@@ -503,20 +509,106 @@ export default function HomePage() {
     queryFn: () => movieApi.getAnime(1).then((r) => r.data),
   });
 
-  // Query Marvel, DC, and US-UK films specifically for the HeroBanner
-  const { data: marvelSearchData, isLoading: marvelSearchLoading } = useQuery({
-    queryKey: ["hero-marvel"],
-    queryFn: () => movieApi.search("marvel", 1).then((r) => r.data),
+  // Phim Kỹ Xảo Mãn Nhãn - Diverse VFX heavy movies with better error handling
+  const { data: vfxData, isLoading: vfxLoading } = useQuery({
+    queryKey: ["vfx-movies"],
+    queryFn: async () => {
+      try {
+        // Search multiple diverse keywords for VFX-heavy movies
+        const keywords = [
+          "marvel", 
+          "avengers", 
+          "spider",
+          "iron",
+          "thor",
+          "captain",
+          "guardians",
+          "transformers",
+          "godzilla",
+          "jurassic",
+          "avatar",
+          "dune"
+        ];
+        
+        // Fetch results from each keyword
+        const results = await Promise.allSettled(
+          keywords.map(keyword => 
+            movieApi.search(keyword, 1, 5)
+              .then(r => {
+                const items = r?.data?.items || r?.items || [];
+                return items.slice(0, 5);
+              })
+              .catch(() => [])
+          )
+        );
+        
+        // Get successful results only
+        const combined = results
+          .filter((r): r is PromiseFulfilledResult<any[]> => r.status === 'fulfilled')
+          .flatMap(r => r.value)
+          .filter(item => item && item.slug);
+        
+        // Shuffle for randomness
+        const shuffled = combined.sort(() => Math.random() - 0.5);
+        
+        return { items: shuffled };
+      } catch (error) {
+        console.error('VFX movies query error:', error);
+        // Return empty on error
+        return { items: [] };
+      }
+    },
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
-  const { data: dcSearchData, isLoading: dcSearchLoading } = useQuery({
-    queryKey: ["hero-dc"],
-    queryFn: () => movieApi.search("dc", 1).then((r) => r.data),
+  // Phim Hành Động Kịch Tính
+  const { data: actionData, isLoading: actionLoading } = useQuery({
+    queryKey: ["action-movies"],
+    queryFn: () => movieApi.getByGenre("hanh-dong", 1).then((r) => r.data),
   });
 
-  const { data: usukData, isLoading: usukLoading } = useQuery({
-    queryKey: ["hero-usuk"],
-    queryFn: () => movieApi.getByCountry("au-my", 1).then((r) => r.data),
+  // Phim Kinh Dị Rùng Rợn
+  const { data: horrorData, isLoading: horrorLoading } = useQuery({
+    queryKey: ["horror-movies"],
+    queryFn: () => movieApi.getByGenre("kinh-di", 1).then((r) => r.data),
+  });
+
+  // Phim Tình Cảm Lãng Mạn
+  const { data: romanceData, isLoading: romanceLoading } = useQuery({
+    queryKey: ["romance-movies"],
+    queryFn: () => movieApi.getByGenre("tinh-cam", 1).then((r) => r.data),
+  });
+
+  // Phim Hài Hước Vui Nhộn
+  const { data: comedyData, isLoading: comedyLoading } = useQuery({
+    queryKey: ["comedy-movies"],
+    queryFn: () => movieApi.getByGenre("hai-huoc", 1).then((r) => r.data),
+  });
+
+  // Query random genres for diverse HeroBanner instead of just Marvel/DC
+  const randomGenres = useMemo(() => {
+    const genres = ["hanh-dong", "vien-tuong", "phieu-luu", "kinh-di", "hai-huoc", "tinh-cam"];
+    // Shuffle and pick 3 random genres
+    const shuffled = [...genres].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 3);
+  }, []);
+
+  const { data: genre1Data, isLoading: genre1Loading } = useQuery({
+    queryKey: ["hero-genre-1", randomGenres[0]],
+    queryFn: () => movieApi.getByGenre(randomGenres[0], 1).then((r) => r.data),
+    enabled: !!randomGenres[0],
+  });
+
+  const { data: genre2Data, isLoading: genre2Loading } = useQuery({
+    queryKey: ["hero-genre-2", randomGenres[1]],
+    queryFn: () => movieApi.getByGenre(randomGenres[1], 1).then((r) => r.data),
+    enabled: !!randomGenres[1],
+  });
+
+  const { data: genre3Data, isLoading: genre3Loading } = useQuery({
+    queryKey: ["hero-genre-3", randomGenres[2]],
+    queryFn: () => movieApi.getByGenre(randomGenres[2], 1).then((r) => r.data),
+    enabled: !!randomGenres[2],
   });
 
   const latestFilms = useMemo(
@@ -535,27 +627,56 @@ export default function HomePage() {
     () => deduplicate(animeData?.data?.items || animeData?.items || []),
     [animeData],
   );
-
-  const marvelFilms = useMemo(
-    () => deduplicate(marvelSearchData?.data?.items || []),
-    [marvelSearchData],
-  );
-  const dcFilms = useMemo(
-    () => deduplicate(dcSearchData?.data?.items || []),
-    [dcSearchData],
-  );
-  const usukFilms = useMemo(
-    () => deduplicate(usukData?.data?.items || usukData?.items || []),
-    [usukData],
+  
+  const vfxFilms = useMemo(
+    () => {
+      const vfx = deduplicate(vfxData?.items || []);
+      // Fallback to latest films if VFX query fails or returns empty
+      return vfx.length > 0 ? vfx : latestFilms;
+    },
+    [vfxData, latestFilms],
   );
 
-  // Combine Marvel, DC, and US/UK movies for a random-themed immersive banner (up to 15)
+  const actionFilms = useMemo(
+    () => deduplicate(actionData?.data?.items || actionData?.items || []),
+    [actionData],
+  );
+
+  const horrorFilms = useMemo(
+    () => deduplicate(horrorData?.data?.items || horrorData?.items || []),
+    [horrorData],
+  );
+
+  const romanceFilms = useMemo(
+    () => deduplicate(romanceData?.data?.items || romanceData?.items || []),
+    [romanceData],
+  );
+
+  const comedyFilms = useMemo(
+    () => deduplicate(comedyData?.data?.items || comedyData?.items || []),
+    [comedyData],
+  );
+
+  const genre1Films = useMemo(
+    () => deduplicate(genre1Data?.data?.items || genre1Data?.items || []),
+    [genre1Data],
+  );
+  const genre2Films = useMemo(
+    () => deduplicate(genre2Data?.data?.items || genre2Data?.items || []),
+    [genre2Data],
+  );
+  const genre3Films = useMemo(
+    () => deduplicate(genre3Data?.data?.items || genre3Data?.items || []),
+    [genre3Data],
+  );
+
+  // Combine random genre movies for a diverse banner pool
   const combinedBannerPool = useMemo(() => {
-    const combined = [...marvelFilms, ...dcFilms, ...usukFilms].filter(
+    const combined = [...genre1Films, ...genre2Films, ...genre3Films].filter(
       (f) => f && (f.thumb_url || f.poster_url),
     );
     return combined.length > 0 ? combined : latestFilms;
-  }, [marvelFilms, dcFilms, usukFilms, latestFilms]);
+  }, [genre1Films, genre2Films, genre3Films, latestFilms]);
 
   const [shuffledFilms, setShuffledFilms] = useState<FilmItem[]>([]);
   const [isMounted, setIsMounted] = useState(false);
@@ -574,7 +695,7 @@ export default function HomePage() {
   }, [combinedBannerPool]);
 
   const isBannerLoading =
-    latestLoading || marvelSearchLoading || dcSearchLoading || usukLoading;
+    latestLoading || genre1Loading || genre2Loading || genre3Loading;
   const showBannerSkeleton =
     isBannerLoading || !isMounted || shuffledFilms.length === 0;
 
@@ -619,7 +740,18 @@ export default function HomePage() {
         {/* AI Smart Recommendation Engine */}
         <SmartRecommendationSection />
         {/* Topic Banners Section */}
-        <TopicBannersSection /> {/* Phim Mới Cập Nhật */}
+        <TopicBannersSection />
+        
+        {/* Phim Kỹ Xảo Mãn Nhãn */}
+        <FilmSection
+          title="Phim Kỹ Xảo Mãn Nhãn"
+          icon={Sparkles}
+          films={vfxFilms}
+          isLoading={vfxLoading}
+          href="/search?q=marvel"
+        />
+        
+        {/* Phim Mới Cập Nhật */}
         <FilmSection
           title={t("home.latest")}
           icon={Clock}
@@ -627,6 +759,16 @@ export default function HomePage() {
           isLoading={latestLoading}
           href="/films"
         />
+
+        {/* Phim Hành Động Kịch Tính */}
+        <FilmSection
+          title="Phim Hành Động Kịch Tính"
+          icon={Zap}
+          films={actionFilms}
+          isLoading={actionLoading}
+          href="/genre/hanh-dong"
+        />
+
         {/* Phim Bộ */}
         <FilmSection
           title={t("home.series")}
@@ -635,6 +777,16 @@ export default function HomePage() {
           isLoading={seriesLoading}
           href="/films/series"
         />
+
+        {/* Phim Kinh Dị Rùng Rợn */}
+        <FilmSection
+          title="Phim Kinh Dị Rùng Rợn"
+          icon={Ghost}
+          films={horrorFilms}
+          isLoading={horrorLoading}
+          href="/genre/kinh-di"
+        />
+
         {/* Phim Lẻ */}
         <FilmSection
           title={t("home.single")}
@@ -643,7 +795,26 @@ export default function HomePage() {
           isLoading={singleLoading}
           href="/films/single"
         />
-        {/* Hoạt Hinh */}
+
+        {/* Phim Tình Cảm Lãng Mạn */}
+        <FilmSection
+          title="Phim Tình Cảm Lãng Mạn"
+          icon={Heart}
+          films={romanceFilms}
+          isLoading={romanceLoading}
+          href="/genre/tinh-cam"
+        />
+
+        {/* Phim Hài Hước Vui Nhộn */}
+        <FilmSection
+          title="Phim Hài Hước Vui Nhộn"
+          icon={Laugh}
+          films={comedyFilms}
+          isLoading={comedyLoading}
+          href="/genre/hai-huoc"
+        />
+
+        {/* Hoạt Hình */}
         <FilmSection
           title={t("home.anime")}
           icon={TrendingUp}

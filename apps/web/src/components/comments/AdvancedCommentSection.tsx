@@ -3,13 +3,10 @@
 import { useState } from "react";
 import {
   Star,
-  MessageSquare,
   ThumbsUp,
   AlertTriangle,
   Eye,
   EyeOff,
-  Send,
-  Sparkles,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/providers/ToastProvider";
@@ -134,30 +131,28 @@ export function AdvancedCommentSection({
   };
 
   return (
-    <div className="bg-card/20 p-6 md:p-8 rounded-2xl border border-border/20 space-y-6">
+    <div className="space-y-6">
       {/* ── Header ── */}
-      <div className="flex items-center justify-between border-b border-white/10 pb-4">
-        <h3 className="text-xl font-black text-white flex items-center gap-2">
-          <MessageSquare size={20} className="text-emerald-400" />
-          Bình Luận & Đánh Giá {episodeName && `(${episodeName})`}
+      <div className="flex items-center justify-between pb-4 border-b border-white/10">
+        <h3 className="text-lg font-bold text-white">
+          Comments {episodeName && `· ${episodeName}`}
         </h3>
-        <span className="text-xs text-neutral-400 font-bold bg-white/5 px-3 py-1 rounded-full border border-white/5">
-          {comments.length} bình luận
+        <span className="text-sm text-white/40">
+          {comments.length} comments
         </span>
       </div>
 
-      {/* ── Form Đánh giá & Bình luận ── */}
+      {/* ── Form Đánh giá & Bình luận - MINIMAL REDESIGN ── */}
       <form
         onSubmit={handleSubmit}
-        className="space-y-4 bg-black/40 p-4 rounded-xl border border-white/10"
+        className="space-y-4 bg-[#12161c] border border-white/10 p-5"
       >
-        {/* Rating Star Selection */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 pb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-neutral-300">
-              Đánh giá của bạn:
-            </span>
-            <div className="flex items-center gap-1">
+        {/* Rating & Spoiler in one clean row */}
+        <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/10">
+          {/* Rating Stars */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-white/60">Rate:</span>
+            <div className="flex items-center gap-0.5">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   type="button"
@@ -165,143 +160,157 @@ export function AdvancedCommentSection({
                   onClick={() => setRating(star)}
                   onMouseEnter={() => setHoverRating(star)}
                   onMouseLeave={() => setHoverRating(0)}
-                  className="p-1 text-amber-400 hover:scale-125 transition-transform cursor-pointer"
+                  className="p-0.5 hover:scale-110 transition-transform"
                 >
                   <Star
-                    size={18}
+                    size={20}
                     className={cn(
+                      "transition-colors",
                       (hoverRating || rating) >= star
                         ? "fill-amber-400 text-amber-400"
-                        : "text-neutral-600",
+                        : "text-white/20 hover:text-white/40",
                     )}
                   />
                 </button>
               ))}
             </div>
-            <span className="text-xs font-black text-amber-400 ml-1">
-              {rating}/5 sao
+            <span className="text-sm font-medium text-amber-400">
+              {rating}.0
             </span>
           </div>
 
-          {/* Spoiler Warning Toggle Switch */}
-          <button
-            type="button"
-            onClick={() => setIsSpoiler(!isSpoiler)}
-            className={cn(
-              "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border",
-              isSpoiler
-                ? "bg-amber-500/20 text-amber-400 border-amber-500/40"
-                : "bg-white/5 text-neutral-400 border-white/10 hover:text-white",
-            )}
-          >
-            <AlertTriangle size={14} />
-            {isSpoiler ? "Có chứa Spoiler" : "Không Spoiler"}
-          </button>
+          {/* Spoiler Toggle - Minimal checkbox style */}
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={isSpoiler}
+              onChange={(e) => setIsSpoiler(e.target.checked)}
+              className="w-4 h-4 rounded border-white/20 bg-transparent checked:bg-amber-500 checked:border-amber-500 cursor-pointer"
+            />
+            <span className="text-sm text-white/60 group-hover:text-white transition-colors">
+              Contains spoilers
+            </span>
+          </label>
         </div>
 
-        {/* Text Input */}
-        <div className="relative">
+        {/* Text Input - Clean textarea */}
+        <div>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Chia sẻ cảm nghĩ của bạn về bộ phim / tập phim này..."
-            rows={3}
-            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder-neutral-500 outline-none focus:border-emerald-500/50 transition-colors resize-none"
+            placeholder="Share your thoughts..."
+            rows={4}
+            className="w-full bg-[#0d1117] border border-white/10 p-3 text-sm text-white placeholder-white/30 outline-none focus:border-[#3b82f6] transition-colors resize-none"
           />
         </div>
 
-        <div className="flex justify-end">
+        {/* Submit button - Minimal style */}
+        <div className="flex justify-end gap-2">
+          {content.trim() && (
+            <button
+              type="button"
+              onClick={() => setContent("")}
+              className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+          )}
           <button
             type="submit"
             disabled={!content.trim()}
-            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 text-black font-extrabold text-xs px-5 py-2.5 rounded-xl transition-all cursor-pointer"
+            className="px-5 py-2 bg-[#3b82f6] hover:bg-[#2563eb] disabled:bg-white/10 disabled:text-white/30 text-white text-sm font-medium transition-colors"
           >
-            <Send size={14} /> Gửi Bình Luận
+            Post Comment
           </button>
         </div>
       </form>
 
-      {/* ── Feed Bình Luận ── */}
-      <div className="space-y-4 pt-2">
+      {/* ── Feed Bình Luận - MINIMAL REDESIGN ── */}
+      <div className="space-y-4">
         {comments.map((comment) => {
           const isRevealed = revealedSpoilers[comment.id];
 
           return (
             <div
               key={comment.id}
-              className="p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition-all space-y-3"
+              className="border-b border-white/5 pb-4 last:border-0 last:pb-0 space-y-3"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+              {/* User Info & Rating */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
                   <img
                     src={comment.user.avatar}
                     alt={comment.user.name}
-                    className="w-9 h-9 rounded-full object-cover border border-white/10"
+                    className="w-10 h-10 rounded-full object-cover border border-white/10 flex-shrink-0"
                   />
-                  <div>
-                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                      {comment.user.name}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <h4 className="text-sm font-medium text-white">
+                        {comment.user.name}
+                      </h4>
                       {comment.episode && (
-                        <span className="text-[10px] bg-white/10 text-neutral-300 font-mono px-2 py-0.5 rounded-md">
-                          {comment.episode}
+                        <span className="text-xs text-white/40">
+                          · {comment.episode}
                         </span>
                       )}
-                    </h4>
-                    <span className="text-[10px] text-neutral-500">
-                      {comment.timestamp}
-                    </span>
+                      <span className="text-xs text-white/40">
+                        · {comment.timestamp}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
+                {/* Rating Badge - Minimal */}
                 {comment.rating && (
-                  <div className="flex items-center gap-1 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
-                    <Star size={12} className="fill-amber-400 text-amber-400" />
-                    <span className="text-xs font-bold text-amber-400">
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <Star size={14} className="fill-amber-400 text-amber-400" />
+                    <span className="text-sm font-medium text-amber-400">
                       {comment.rating}.0
                     </span>
                   </div>
                 )}
               </div>
 
-              {/* Comment Content with Spoiler Blur */}
-              <div className="relative">
+              {/* Comment Content - Clean styling */}
+              <div className="ml-[52px]">
                 {comment.isSpoiler && !isRevealed ? (
-                  <div
+                  <button
                     onClick={() => toggleSpoilerReveal(comment.id)}
-                    className="p-3 bg-amber-950/30 border border-amber-500/30 rounded-xl cursor-pointer flex items-center justify-between text-amber-400 hover:bg-amber-950/50 transition-all"
+                    className="w-full text-left p-3 bg-amber-950/20 border border-amber-500/20 hover:bg-amber-950/30 transition-colors flex items-center justify-between"
                   >
-                    <div className="flex items-center gap-2 text-xs font-bold">
+                    <div className="flex items-center gap-2 text-sm text-amber-400">
                       <AlertTriangle size={16} />
-                      <span>
-                        Bình luận này chứa Spoiler nội dung. Bấm để tiết lộ!
-                      </span>
+                      <span>This review may contain spoilers</span>
                     </div>
-                    <Eye size={16} />
-                  </div>
+                    <Eye size={16} className="text-amber-400" />
+                  </button>
                 ) : (
-                  <p className="text-sm text-neutral-300 leading-relaxed break-words">
-                    {comment.content}
-                  </p>
+                  <div className="space-y-2">
+                    <p className="text-sm text-white/80 leading-relaxed">
+                      {comment.content}
+                    </p>
+                    {comment.isSpoiler && isRevealed && (
+                      <button
+                        onClick={() => toggleSpoilerReveal(comment.id)}
+                        className="text-xs text-white/40 hover:text-white/60 flex items-center gap-1 transition-colors"
+                      >
+                        <EyeOff size={12} />
+                        Hide spoiler
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
 
-              {/* Actions Footer */}
-              <div className="flex items-center justify-between pt-2 border-t border-white/5 text-xs text-neutral-400">
+              {/* Actions - Minimal */}
+              <div className="ml-[52px] flex items-center gap-4 text-xs text-white/40">
                 <button
                   onClick={() => handleLike(comment.id)}
-                  className="flex items-center gap-1.5 hover:text-emerald-400 transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 hover:text-white transition-colors"
                 >
                   <ThumbsUp size={13} />
-                  <span>Hữu ích ({comment.likes})</span>
+                  <span>Like {comment.likes > 0 && `(${comment.likes})`}</span>
                 </button>
-                {comment.isSpoiler && isRevealed && (
-                  <button
-                    onClick={() => toggleSpoilerReveal(comment.id)}
-                    className="flex items-center gap-1 text-[11px] hover:text-white transition-colors cursor-pointer"
-                  >
-                    <EyeOff size={12} /> Ẩn Spoiler
-                  </button>
-                )}
               </div>
             </div>
           );
