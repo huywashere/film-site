@@ -8,16 +8,18 @@ import {
   ChevronRight,
   ArrowLeft,
   Clapperboard,
-  Heart,
   Star,
   AlertTriangle,
   Search,
-  SkipForward,
-  X,
-  Camera,
-  Bookmark,
   Share2,
   Sparkles,
+  Play,
+  Settings,
+  Subtitles,
+  Mic,
+  Monitor,
+  Server,
+  Info,
 } from "lucide-react";
 import { movieApi, watchHistoryApi } from "@/lib/api";
 import { resolveImageUrl } from "@/components/film/FilmCard";
@@ -35,20 +37,59 @@ const ArtPlayer = dynamic(() => import("@/components/video/ArtPlayer"), {
   ssr: false,
 });
 
-// ── Letterboxd-inspired Skeleton ──
-function WatchSkeleton() {
-  return (
-    <div className="min-h-screen bg-[#0d1117] text-white">
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        <div className="h-4 bg-white/5 rounded w-96 animate-pulse" />
-        <div className="aspect-video bg-black rounded-sm animate-pulse" />
-        <div className="h-12 bg-white/5 rounded w-full animate-pulse" />
-      </div>
-    </div>
-  );
+// ── Server type detection ──────────────────────────────────────
+type ServerType = "vietsub" | "thuyet-minh" | "raw";
+
+function detectServerType(serverName: string, lang?: string): ServerType {
+  const name = (serverName || "").toLowerCase();
+  const l = (lang || "").toLowerCase();
+  if (
+    name.includes("thuyet minh") ||
+    name.includes("thuyết minh") ||
+    name.includes("tm") ||
+    l.includes("thuyet minh") ||
+    l.includes("thuyết minh") ||
+    l.includes("lồng tiếng")
+  )
+    return "thuyet-minh";
+  if (
+    name.includes("vietsub") ||
+    name.includes("viet sub") ||
+    l.includes("vietsub") ||
+    l.includes("sub")
+  )
+    return "vietsub";
+  return "vietsub";
 }
 
-// ── Auto-next overlay (minimal) ──
+const TYPE_CFG: Record<
+  ServerType,
+  { label: string; Icon: any; active: string; inactive: string }
+> = {
+  vietsub: {
+    label: "Vietsub",
+    Icon: Subtitles,
+    active: "bg-emerald-500/15 border-emerald-500/50 text-emerald-300",
+    inactive:
+      "bg-white/[0.04] border-white/[0.08] text-white/50 hover:text-white/80 hover:border-white/20",
+  },
+  "thuyet-minh": {
+    label: "Thuyết Minh",
+    Icon: Mic,
+    active: "bg-amber-500/15 border-amber-500/50 text-amber-300",
+    inactive:
+      "bg-white/[0.04] border-white/[0.08] text-white/50 hover:text-white/80 hover:border-white/20",
+  },
+  raw: {
+    label: "Bản Gốc",
+    Icon: Monitor,
+    active: "bg-sky-500/15 border-sky-500/50 text-sky-300",
+    inactive:
+      "bg-white/[0.04] border-white/[0.08] text-white/50 hover:text-white/80 hover:border-white/20",
+  },
+};
+
+// ── Auto-next countdown overlay ────────────────────────────────
 function AutoNextOverlay({
   seconds,
   onSkip,
@@ -59,24 +100,28 @@ function AutoNextOverlay({
   onCancel: () => void;
 }) {
   return (
-    <div className="absolute bottom-6 right-6 z-50">
-      <div className="bg-black/95 border border-white/20 px-4 py-3 flex items-center gap-4">
-        <div className="text-sm">
-          <div className="text-white/60 text-xs">Next episode in</div>
-          <div className="text-white font-bold tabular-nums">{seconds}s</div>
+    <div className="absolute bottom-14 right-5 z-50">
+      <div className="bg-black/85 border border-white/10 rounded-xl px-4 py-3 flex items-center gap-4 backdrop-blur-md shadow-xl">
+        <div>
+          <p className="text-[10px] text-white/40 mb-0.5">
+            Tập tiếp theo trong
+          </p>
+          <p className="text-white font-bold text-2xl tabular-nums leading-none">
+            {seconds}s
+          </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={onSkip}
-            className="bg-[#3b82f6] text-white px-3 py-1 text-sm font-medium hover:bg-[#2563eb] transition-colors"
+            className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-white px-3 py-1.5 text-xs font-bold rounded-lg transition-colors"
           >
-            Watch now
+            <Play size={11} fill="currentColor" /> Xem ngay
           </button>
           <button
             onClick={onCancel}
-            className="text-white/60 hover:text-white px-2 py-1 text-sm transition-colors"
+            className="px-3 py-1.5 text-xs text-white/40 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
           >
-            Cancel
+            Hủy
           </button>
         </div>
       </div>
@@ -84,7 +129,20 @@ function AutoNextOverlay({
   );
 }
 
-// ── Main Watch Page (Letterboxd Style) ──
+// ── Skeleton ──────────────────────────────────────────────────
+function WatchSkeleton() {
+  return (
+    <div className="min-h-screen bg-[#0d1117] pt-16">
+      <div className="bg-black aspect-video animate-pulse" />
+      <div className="max-w-screen-2xl mx-auto px-4 py-6 space-y-4">
+        <div className="h-5 bg-white/5 rounded w-48 animate-pulse" />
+        <div className="h-4 bg-white/5 rounded w-32 animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN PAGE ─────────────────────────────────────────────────
 export default function WatchPage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -97,72 +155,62 @@ export default function WatchPage() {
   const currentEp = searchParams.get("ep") || "";
   const wp = useWatchParty(slug, currentEp);
 
-  // ── State management ──
+  // State
   const [currentServer, setCurrentServer] = useState(0);
   const [failedServers, setFailedServers] = useState<number[]>([]);
-  const [isTheaterMode, setIsTheaterMode] = useState(false);
-  const [sidebarTab, setSidebarTab] = useState<"episodes" | "servers" | "info">(
-    "episodes",
-  );
   const [episodeSearch, setEpisodeSearch] = useState("");
   const [autoNextConfig, setAutoNextConfig] = useState(true);
   const [autoPlayConfig, setAutoPlayConfig] = useState(true);
-  const [autoSkipConfig, setAutoSkipConfig] = useState(true);
   const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(
     null,
   );
   const [useEmbedPlayer, setUseEmbedPlayer] = useState(false);
+  const [activeServerType, setActiveServerType] =
+    useState<ServerType>("vietsub");
+  const [currentTypeServer, setCurrentTypeServer] = useState(0);
   const autoNextTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSyncRef = useRef(0);
 
   const progressSyncMutation = useMutation({
-    mutationFn: (data: {
-      movieId: string;
-      episode: string;
-      progress: number;
-      duration: number;
-      movieTitle: string;
-      movieThumb?: string;
-    }) => watchHistoryApi.upsert(data),
+    mutationFn: (data: any) => watchHistoryApi.upsert(data),
   });
 
-  // ── Data queries ──
+  // Data
   const { data, isLoading } = useQuery({
     queryKey: ["film", slug],
     queryFn: () => movieApi.getDetail(slug).then((r) => r.data),
   });
-
   const { data: ophimData } = useQuery({
     queryKey: ["film-ophim", slug],
     queryFn: () =>
       fetch(`/api/ophim/phim/${slug}`)
-        .then((res) => (res.ok ? res.json() : null))
+        .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
     enabled: !!slug,
   });
-
   const { data: nguoncData } = useQuery({
     queryKey: ["film-nguonc", slug],
     queryFn: () =>
       fetch(`/api/nguonc/film/${slug}`)
-        .then((res) => (res.ok ? res.json() : null))
+        .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
     enabled: !!slug,
   });
 
-  // ── Smart recommendations ──
+  // Recommendations
+  const film = data?.movie || data;
+  const filmLang: string = film?.lang || "";
+  const filmCategory =
+    data?.movie?.category?.[0]?.slug || data?.category?.[0]?.slug;
   const rawTitle = (
-    data?.movie?.name ||
-    data?.name ||
-    data?.movie?.origin_name ||
+    film?.name ||
+    film?.origin_name ||
     slug ||
     ""
   ).toLowerCase();
-  const filmCategory =
-    data?.movie?.category?.[0]?.slug || data?.category?.[0]?.slug;
 
   const matchedKeyword = useMemo(() => {
-    const keywords = [
+    const kws = [
       "marvel",
       "dc",
       "superman",
@@ -172,47 +220,41 @@ export default function WatchPage() {
       "doraemon",
       "naruto",
     ];
-    return keywords.find((kw) => rawTitle.includes(kw));
+    return kws.find((kw) => rawTitle.includes(kw));
   }, [rawTitle]);
 
-  const { data: recommendationsData } = useQuery({
-    queryKey: ["smart-recommendations", slug, filmCategory, matchedKeyword],
+  const { data: recsData } = useQuery({
+    queryKey: ["recs", slug, filmCategory, matchedKeyword],
     queryFn: async () => {
-      const recItems: any[] = [];
+      const items: any[] = [];
       if (matchedKeyword) {
         try {
-          const res = await movieApi.search(matchedKeyword, 1, 15);
-          const searchItems = res?.data?.items || res?.data?.data?.items || [];
-          recItems.push(...searchItems);
-        } catch {
-          // Ignore search errors
-        }
+          const r = await movieApi.search(matchedKeyword, 1, 15);
+          items.push(...(r?.data?.items || r?.data?.data?.items || []));
+        } catch {}
       }
       if (filmCategory) {
         try {
-          const res = await movieApi.getByGenre(filmCategory, 1);
-          const genreItems = res?.data?.data?.items || res?.data?.items || [];
-          recItems.push(...genreItems);
-        } catch {
-          // Ignore genre fetch errors
-        }
+          const r = await movieApi.getByGenre(filmCategory, 1);
+          items.push(...(r?.data?.data?.items || r?.data?.items || []));
+        } catch {}
       }
       try {
-        const res = await movieApi.getLatest(1);
-        const latestItems = res?.data?.items || res?.data?.data?.items || [];
-        recItems.push(...latestItems);
-      } catch {
-        // Ignore latest fetch errors
-      }
-
+        const r = await movieApi.getLatest(1);
+        items.push(...(r?.data?.items || r?.data?.data?.items || []));
+      } catch {}
       const seen = new Set<string>();
-      const filtered = recItems.filter((item: any) => {
-        if (!item || !item.slug || item.slug === slug || seen.has(item.slug))
-          return false;
-        seen.add(item.slug);
-        return true;
-      });
-      return { items: filtered.slice(0, 10) };
+      return {
+        items: items
+          .filter(
+            (i: any) =>
+              i?.slug &&
+              i.slug !== slug &&
+              !seen.has(i.slug) &&
+              seen.add(i.slug),
+          )
+          .slice(0, 10),
+      };
     },
     enabled: !!slug,
   });
@@ -223,30 +265,50 @@ export default function WatchPage() {
     enabled: !!user && !!slug,
   });
 
-  // ── Episode processing ──
-  const film = data?.movie || data;
-  const kkphimEpisodes: any[] = data?.episodes || [];
-  const ophimEpisodes: any[] = ophimData?.episodes || [];
-  const nguoncEpisodes: any[] = nguoncData?.episodes || [];
+  // Episode processing
+  const kkphimEps: any[] = data?.episodes || [];
+  const ophimEps: any[] = ophimData?.episodes || [];
+  const nguoncEps: any[] = nguoncData?.episodes || [];
 
-  const mappedKKPhim = kkphimEpisodes.map((s: any, idx: number) => ({
-    ...s,
-    server_name:
-      kkphimEpisodes.length > 1 ? `Server 1 (#${idx + 1})` : "Server 1",
-  }));
-  const mappedOphim = ophimEpisodes.map((s: any, idx: number) => ({
-    ...s,
-    server_name:
-      ophimEpisodes.length > 1 ? `Server 2 (#${idx + 1})` : "Server 2",
-  }));
-  const mappedNguonC = nguoncEpisodes.map((s: any, idx: number) => ({
-    ...s,
-    server_name:
-      nguoncEpisodes.length > 1 ? `Server 3 (#${idx + 1})` : "Server 3",
-  }));
+  const tagged = (arr: any[], prefix: string) =>
+    arr.map((s, i) => ({
+      ...s,
+      server_name: arr.length > 1 ? `${prefix} ${i + 1}` : prefix,
+      _type: detectServerType(s.server_name || prefix, filmLang),
+    }));
 
-  const episodes: any[] = [...mappedKKPhim, ...mappedOphim, ...mappedNguonC];
-  const server = episodes[currentServer];
+  const episodes = [
+    ...tagged(kkphimEps, "Server"),
+    ...tagged(ophimEps, "OPhim"),
+    ...tagged(nguoncEps, "NguonC"),
+  ];
+
+  const serversByType = useMemo(() => {
+    const g: Record<ServerType, any[]> = {
+      vietsub: [],
+      "thuyet-minh": [],
+      raw: [],
+    };
+    episodes.forEach((ep) => g[ep._type as ServerType].push(ep));
+    return g;
+  }, [episodes]);
+
+  const availableTypes = useMemo(
+    () =>
+      (["vietsub", "thuyet-minh", "raw"] as ServerType[]).filter(
+        (t) => serversByType[t].length > 0,
+      ),
+    [serversByType],
+  );
+
+  useEffect(() => {
+    if (availableTypes.length > 0 && !availableTypes.includes(activeServerType))
+      setActiveServerType(availableTypes[0]);
+  }, [availableTypes]);
+
+  const currentTypeServers = serversByType[activeServerType] || [];
+  const server =
+    currentTypeServers[currentTypeServer] || episodes[currentServer];
   const serverData: any[] = server?.server_data || [];
   const currentEpData: any =
     serverData.find((e: any) => (e.slug || e.name) === currentEp) ||
@@ -266,14 +328,6 @@ export default function WatchPage() {
     resolveImageUrl(film?.thumb_url) ||
     resolveImageUrl(film?.poster_url) ||
     undefined;
-  const actors: string[] =
-    typeof film?.actor === "string"
-      ? film.actor
-          .split(",")
-          .map((a: string) => a.trim())
-          .filter(Boolean)
-      : [];
-
   const epName: string = currentEpData?.slug || currentEpData?.name || "";
   const progressKey = slug && epName ? `${slug}_${epName}` : undefined;
   const currentResumeEntry = resumeData?.find(
@@ -281,60 +335,51 @@ export default function WatchPage() {
   );
   const dbProgress = currentResumeEntry?.progress || 0;
 
-  // ── Auto-next logic ──
+  // Navigation
   const goNextEpisode = useCallback(() => {
-    if (autoNextTimerRef.current) clearInterval(autoNextTimerRef.current);
     setAutoNextCountdown(null);
     if (currentEpIndex >= 0 && currentEpIndex < serverData.length - 1) {
-      const nextEp = serverData[currentEpIndex + 1];
-      router.push(
-        `/watch/${slug}?ep=${nextEp.slug || nextEp.name}&server=${currentServer}`,
-      );
+      const next = serverData[currentEpIndex + 1];
+      router.push(`/watch/${slug}?ep=${next.slug || next.name}`);
     }
-  }, [currentEpIndex, serverData, slug, currentServer, router]);
+  }, [currentEpIndex, serverData, slug, router]);
 
   const handleVideoEnded = useCallback(() => {
     if (!autoNextConfig) return;
-    if (currentEpIndex >= 0 && currentEpIndex < serverData.length - 1) {
-      if (autoSkipConfig) {
-        goNextEpisode();
-      } else {
-        setAutoNextCountdown(5);
-      }
+    if (currentEpIndex >= 0 && currentEpIndex < serverData.length - 1)
+      setAutoNextCountdown(5);
+  }, [autoNextConfig, currentEpIndex, serverData.length]);
+
+  useEffect(() => {
+    if (autoNextCountdown === null) return;
+    if (autoNextCountdown <= 0) {
+      goNextEpisode();
+      return;
     }
-  }, [
-    autoNextConfig,
-    autoSkipConfig,
-    goNextEpisode,
-    currentEpIndex,
-    serverData.length,
-  ]);
+    const t = setTimeout(
+      () => setAutoNextCountdown((c) => (c !== null ? c - 1 : null)),
+      1000,
+    );
+    return () => clearTimeout(t);
+  }, [autoNextCountdown, goNextEpisode]);
 
-  const cancelAutoNext = () => {
-    if (autoNextTimerRef.current) clearInterval(autoNextTimerRef.current);
-    setAutoNextCountdown(null);
-  };
-
-  // ── Progress tracking ──
+  // Progress
   const handleProgress = useCallback(
     (currentTime: number, duration: number) => {
       if (!slug || !epName || duration < 10) return;
-
       watchProgressStorage.saveProgress({
         slug,
-        epSlug: currentEpData?.slug || currentEpData?.name || "01",
+        epSlug: currentEpData?.slug || "01",
         epName,
         title: film?.name || slug,
         poster: posterUrl || "",
         currentTime,
         duration,
       });
-
       if (!user) return;
       const now = Date.now();
-      if (now - lastSyncRef.current < 15_000) return;
+      if (now - lastSyncRef.current < 15000) return;
       lastSyncRef.current = now;
-
       progressSyncMutation.mutate({
         movieId: slug,
         episode: epName,
@@ -355,99 +400,85 @@ export default function WatchPage() {
     ],
   );
 
-  // ── Error handler ──
+  // Error
   const handlePlayerError = (err: any) => {
-    console.warn("Player error:", err);
     if (embedUrl && !useEmbedPlayer) {
-      toast("Switching to backup iframe player...", "warning");
+      toast("Chuyển player dự phòng...", "warning");
       setUseEmbedPlayer(true);
       return;
     }
-
-    if (!failedServers.includes(currentServer)) {
-      const updated = [...failedServers, currentServer];
-      setFailedServers(updated);
-      const nextIdx = episodes.findIndex((_, idx) => !updated.includes(idx));
-      if (nextIdx !== -1) {
-        toast(`Switching to Server #${nextIdx + 1}...`, "error");
-        setCurrentServer(nextIdx);
-        const nd = episodes[nextIdx]?.server_data || [];
-        if (nd.length > 0) {
-          router.push(
-            `/watch/${slug}?ep=${nd[0].slug || nd[0].name}&server=${nextIdx}`,
-          );
-        }
-      } else {
-        toast("All servers are currently unavailable!", "error");
-      }
+    const gIdx = episodes.indexOf(server);
+    if (!failedServers.includes(gIdx)) {
+      const upd = [...failedServers, gIdx];
+      setFailedServers(upd);
+      const next = currentTypeServers.find(
+        (s) => !upd.includes(episodes.indexOf(s)),
+      );
+      if (next) {
+        setCurrentTypeServer(currentTypeServers.indexOf(next) + 1);
+        const nd = next?.server_data || [];
+        if (nd.length > 0)
+          router.push(`/watch/${slug}?ep=${nd[0].slug || nd[0].name}`);
+      } else toast("Tất cả server không khả dụng!", "error");
     }
   };
 
   useEffect(() => {
-    const serverParam = searchParams.get("server");
-    if (serverParam !== null) setCurrentServer(Number(serverParam) || 0);
+    const sp = searchParams.get("server");
+    if (sp !== null) {
+      const idx = Number(sp) || 0;
+      setCurrentServer(idx);
+      const ep = episodes[idx];
+      if (ep?._type) setActiveServerType(ep._type as ServerType);
+    }
   }, [searchParams]);
 
   useEffect(() => {
     setUseEmbedPlayer(false);
   }, [currentEp, currentServer]);
 
+  useEffect(() => {
+    setCurrentTypeServer(0);
+    const first = serversByType[activeServerType]?.[0];
+    if (first) {
+      const gIdx = episodes.indexOf(first);
+      setCurrentServer(gIdx >= 0 ? gIdx : 0);
+    }
+  }, [activeServerType]);
+
   if (isLoading) return <WatchSkeleton />;
 
   if (!isLoading && !film) {
     return (
-      <div className="min-h-screen bg-[#0d1117] text-white flex flex-col items-center justify-center p-6">
-        <Clapperboard size={48} className="text-white/30 mb-4" />
-        <h1 className="text-xl font-bold mb-2">Film not found</h1>
-        <p className="text-white/60 text-sm mb-6 max-w-md text-center">
-          The film you're looking for may be temporarily unavailable.
-        </p>
+      <div className="min-h-screen bg-[#0d1117] text-white flex flex-col items-center justify-center">
+        <Clapperboard size={40} className="text-white/20 mb-3" />
+        <h1 className="text-lg font-bold mb-1">Không tìm thấy phim</h1>
         <Link
           href="/"
-          className="bg-[#3b82f6] text-white px-6 py-2 text-sm font-medium hover:bg-[#2563eb] transition-colors"
+          className="text-sm text-white/50 hover:text-white mt-4 underline"
         >
-          Back to home
+          Về trang chủ
         </Link>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[#0d1117] text-white pt-16">
-      {/* ── LETTERBOXD-STYLE HEADER: Simple breadcrumb ── */}
-      <header className="border-b border-white/10 bg-[#0d1117]/95 backdrop-blur sticky top-16 z-20">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-          <nav className="flex items-center space-x-3 text-sm text-white/60">
-            <button
-              onClick={() => router.back()}
-              className="hover:text-white transition-colors flex items-center gap-2"
-            >
-              <ArrowLeft size={18} />
-              <span>Back</span>
-            </button>
-            <ChevronRight size={14} className="text-white/30" />
-            <span className="text-white font-medium truncate max-w-sm">
-              {film?.name}
-            </span>
-            {currentEpData?.name && (
-              <>
-                <ChevronRight size={14} className="text-white/30" />
-                <span className="text-white">
-                  Episode {currentEpData.name.replace(/^tập\s*/i, "")}
-                </span>
-              </>
-            )}
-          </nav>
-        </div>
-      </header>
+  const categories = film?.category?.map((c: any) => c.name).join(", ") || "";
+  const filteredEps = serverData.filter(
+    (ep: any) =>
+      !episodeSearch ||
+      ep.name.toLowerCase().includes(episodeSearch.toLowerCase()),
+  );
 
-      {/* ── MAIN CONTENT: Letterboxd grid layout ── */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* ── LEFT COLUMN: Player + Actions ── */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* 1. VIDEO PLAYER - Clean, minimal frame */}
-            <div className="bg-black aspect-video relative group">
+  return (
+    <div className="min-h-screen bg-[#0d1117] text-white">
+      {/* ── MAIN — padded top for navbar (64px) + margin ── */}
+      <main className="pt-20 max-w-screen-2xl mx-auto px-3 md:px-5 pb-10">
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-5">
+          {/* ───── LEFT COLUMN ───── */}
+          <div className="space-y-4 min-w-0">
+            {/* 1. PLAYER */}
+            <div className="bg-black aspect-video rounded-xl overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06]">
               {videoUrl ? (
                 <>
                   {!useEmbedPlayer && m3u8Url ? (
@@ -455,12 +486,10 @@ export default function WatchPage() {
                       url={m3u8Url}
                       type="hls"
                       poster={posterUrl}
-                      title={`${film?.name} - Episode ${currentEpData?.name}`}
+                      title={`${film?.name} - Tập ${currentEpData?.name}`}
                       autoplay={false}
                       progressKey={progressKey}
                       dbProgress={dbProgress}
-                      isTheaterMode={isTheaterMode}
-                      onTheaterModeToggle={setIsTheaterMode}
                       onReady={() => {}}
                       onEnded={handleVideoEnded}
                       onProgress={handleProgress}
@@ -475,208 +504,261 @@ export default function WatchPage() {
                       title={`${film?.name} - ${currentEpData?.name}`}
                     />
                   ) : (
-                    <div className="flex flex-col items-center justify-center w-full h-full bg-black/50 text-white/60">
-                      <AlertTriangle size={32} className="mb-2" />
-                      <p className="text-sm">No video source available</p>
+                    <div className="flex flex-col items-center justify-center w-full h-full text-white/30">
+                      <AlertTriangle size={28} className="mb-2" />
+                      <p className="text-xs">Không có nguồn video</p>
                     </div>
                   )}
-
-                  {/* Auto-next overlay */}
                   {autoNextCountdown !== null && (
                     <AutoNextOverlay
                       seconds={autoNextCountdown}
                       onSkip={goNextEpisode}
-                      onCancel={cancelAutoNext}
+                      onCancel={() => setAutoNextCountdown(null)}
                     />
                   )}
                 </>
               ) : (
-                <div className="flex flex-col items-center justify-center w-full h-full text-white/40">
-                  <Clapperboard size={32} className="mb-2" />
-                  <p className="text-sm">No video source found</p>
+                <div className="flex flex-col items-center justify-center w-full h-full text-white/20">
+                  <Clapperboard size={36} className="mb-2" />
+                  <p className="text-xs">Không tìm thấy nguồn phim</p>
                 </div>
               )}
             </div>
 
-            {/* 2. ACTION TOOLBAR - Letterboxd-inspired, minimal grouping */}
-            <div className="flex items-center justify-between py-4 border-t border-b border-white/10">
-              {/* Left: Secondary actions - ghost style */}
-              <div className="flex items-center space-x-6 text-sm text-white/60">
+            {/* ── BREADCRUMB & BACK BUTTON BAR — Below Video ── */}
+            <div className="flex items-center justify-between gap-2 py-1.5 px-3 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-white/50">
+              <div className="flex items-center gap-2 min-w-0">
                 <button
-                  onClick={() => toast("Subtitles enabled", "success")}
-                  className="flex items-center space-x-2 hover:text-white transition-colors"
+                  onClick={() => router.back()}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/[0.06] hover:bg-white/10 hover:text-white transition-colors font-medium shrink-0 text-white/80"
                 >
-                  <Camera size={16} />
-                  <span>Subtitles</span>
+                  <ArrowLeft size={13} /> Quay lại
                 </button>
-
+                <ChevronRight size={11} className="text-white/20 shrink-0" />
+                <Link
+                  href={`/film/${slug}`}
+                  className="hover:text-white/80 transition-colors truncate max-w-[180px] sm:max-w-xs text-white/60"
+                >
+                  {film?.name}
+                </Link>
+                {currentEpData?.name && (
+                  <>
+                    <ChevronRight
+                      size={11}
+                      className="text-white/20 shrink-0"
+                    />
+                    <span className="text-white/80 font-semibold shrink-0">
+                      Tập {currentEpData.name.replace(/^tập\s*/i, "")}
+                    </span>
+                  </>
+                )}
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
                 <button
                   onClick={() => {
                     if (!wp.roomId) wp.createRoom();
                     else wp.setIsOpen(!wp.isOpen);
                   }}
-                  className="flex items-center space-x-2 hover:text-white transition-colors"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] hover:text-white/80 transition-colors text-white/50"
                 >
-                  <Sparkles size={16} />
-                  <span>{wp.roomId ? `Room ${wp.roomId}` : "Watch Party"}</span>
+                  <Sparkles size={12} />
+                  <span className="hidden sm:inline">
+                    {wp.roomId ? `Phòng ${wp.roomId}` : "Party"}
+                  </span>
                 </button>
-
-                <button
-                  onClick={() => toast("Added to favorites", "success")}
-                  className="flex items-center space-x-2 hover:text-white transition-colors"
-                >
-                  <Heart size={16} />
-                  <span>Like</span>
-                </button>
-
-                <button
-                  onClick={() => toast("Added to watchlist", "success")}
-                  className="flex items-center space-x-2 hover:text-white transition-colors"
-                >
-                  <Bookmark size={16} />
-                  <span>Watchlist</span>
-                </button>
-
                 <button
                   onClick={() => {
-                    if (typeof window !== "undefined") {
-                      navigator.clipboard.writeText(window.location.href);
-                      toast("Link copied to clipboard", "success");
-                    }
+                    navigator.clipboard.writeText(window.location.href);
+                    toast("Đã sao chép!", "success");
                   }}
-                  className="flex items-center space-x-2 hover:text-white transition-colors"
+                  className="flex items-center gap-1 p-1 rounded-lg hover:bg-white/[0.08] hover:text-white/80 transition-colors text-white/50"
                 >
-                  <Share2 size={16} />
-                  <span>Share</span>
-                </button>
-
-                <button
-                  onClick={() => toast("Please rate in comments below", "info")}
-                  className="flex items-center space-x-2 hover:text-white transition-colors"
-                >
-                  <Star size={16} />
-                  <span>Rate</span>
-                </button>
-
-                <button
-                  onClick={() => toast("Issue reported", "success")}
-                  className="flex items-center space-x-2 hover:text-white transition-colors"
-                >
-                  <AlertTriangle size={16} />
-                  <span>Report</span>
+                  <Share2 size={13} />
                 </button>
               </div>
+            </div>
 
-              {/* Right: Primary navigation - ONLY next episode gets accent color */}
-              <div className="flex items-center space-x-3">
+            {/* 2. TITLE + PREV/NEXT */}
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-base md:text-lg font-bold text-white leading-snug truncate">
+                  {film?.name}
+                  {currentEpData?.name && (
+                    <span className="text-white/35 font-normal ml-2 text-sm">
+                      · Tập {currentEpData.name.replace(/^tập\s*/i, "")}
+                    </span>
+                  )}
+                </h1>
+                {categories && (
+                  <p className="text-[11px] text-white/30 mt-0.5">
+                    {categories}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
                 {currentEpIndex > 0 && (
                   <button
                     onClick={() => {
-                      const prev = serverData[currentEpIndex - 1];
-                      router.push(
-                        `/watch/${slug}?ep=${prev.slug || prev.name}&server=${currentServer}`,
-                      );
+                      const p = serverData[currentEpIndex - 1];
+                      router.push(`/watch/${slug}?ep=${p.slug || p.name}`);
                     }}
-                    className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white/60 border border-white/20 hover:text-white hover:border-white/40 transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white/50 bg-white/[0.04] border border-white/[0.08] rounded-lg hover:text-white hover:bg-white/[0.08] transition-colors"
                   >
-                    <ChevronLeft size={16} />
-                    <span>Previous</span>
+                    <ChevronLeft size={13} /> Trước
                   </button>
                 )}
-
-                {currentEpIndex < serverData.length - 1 && (
-                  <button
-                    onClick={() => {
-                      const next = serverData[currentEpIndex + 1];
-                      router.push(
-                        `/watch/${slug}?ep=${next.slug || next.name}&server=${currentServer}`,
-                      );
-                    }}
-                    className="flex items-center space-x-2 px-4 py-2 text-sm font-medium bg-[#3b82f6] text-white hover:bg-[#2563eb] transition-colors"
-                  >
-                    <span>Next Episode</span>
-                    <ChevronRight size={16} />
-                  </button>
-                )}
+                {currentEpIndex >= 0 &&
+                  currentEpIndex < serverData.length - 1 && (
+                    <button
+                      onClick={() => {
+                        const n = serverData[currentEpIndex + 1];
+                        router.push(`/watch/${slug}?ep=${n.slug || n.name}`);
+                      }}
+                      className="flex items-center gap-1 px-4 py-1.5 text-xs font-semibold bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors"
+                    >
+                      Tập tiếp <ChevronRight size={13} />
+                    </button>
+                  )}
               </div>
             </div>
 
-            {/* 3. EPISODE GRID - Minimal, focus on active state */}
-            <div className="space-y-4">
-              {/* Search episodes if many */}
-              {serverData.length > 12 && (
-                <div className="relative max-w-sm">
-                  <Search
-                    size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Find episode..."
-                    value={episodeSearch}
-                    onChange={(e) => setEpisodeSearch(e.target.value)}
-                    className="w-full bg-[#12161c] border border-white/20 px-10 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:border-[#3b82f6] transition-colors"
-                  />
-                </div>
-              )}
-
-              {/* Episode grid - Clean, minimal */}
-              <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-8 xl:grid-cols-10 gap-2">
-                {serverData
-                  .filter(
-                    (ep: any) =>
-                      !episodeSearch ||
-                      ep.name
-                        .toLowerCase()
-                        .includes(episodeSearch.toLowerCase()),
-                  )
-                  .map((ep: any, index: number) => {
-                    const active =
-                      ep.slug === currentEp ||
-                      ep.name === currentEp ||
-                      index === currentEpIndex;
+            {/* 3. SERVER TYPE TABS */}
+            {availableTypes.length > 0 && (
+              <div className="space-y-2.5">
+                <p className="text-[10px] font-semibold text-white/30 uppercase tracking-widest flex items-center gap-1.5">
+                  <Server size={11} /> Chọn nguồn phim
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {availableTypes.map((type) => {
+                    const cfg = TYPE_CFG[type];
+                    const isActive = activeServerType === type;
+                    const count = serversByType[type].length;
                     return (
                       <button
-                        key={ep.slug || ep.name || index}
-                        onClick={() =>
-                          router.push(
-                            `/watch/${slug}?ep=${ep.slug || ep.name}&server=${currentServer}`,
-                          )
-                        }
+                        key={type}
+                        onClick={() => setActiveServerType(type)}
                         className={cn(
-                          "aspect-square flex items-center justify-center text-sm font-medium transition-colors border",
-                          active
-                            ? "bg-[#3b82f6] text-white border-[#3b82f6]"
-                            : "bg-[#12161c] text-white/60 border-white/20 hover:text-white hover:border-white/40",
+                          "inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-medium transition-all",
+                          isActive ? cfg.active : cfg.inactive,
                         )}
                       >
-                        {ep.name.replace(/^tập\s*/i, "")}
+                        <cfg.Icon size={13} />
+                        {cfg.label}
+                        {count > 1 && (
+                          <span className="text-[9px] font-bold bg-white/10 rounded-full px-1.5 py-0.5">
+                            {count}
+                          </span>
+                        )}
                       </button>
                     );
                   })}
+                </div>
+                {currentTypeServers.length > 1 && (
+                  <div className="flex gap-1.5 flex-wrap">
+                    {currentTypeServers.map((s, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          setCurrentTypeServer(i);
+                          const gIdx = episodes.indexOf(s);
+                          setCurrentServer(gIdx >= 0 ? gIdx : 0);
+                          const nd = s?.server_data || [];
+                          if (nd.length > 0)
+                            router.push(
+                              `/watch/${slug}?ep=${nd[0].slug || nd[0].name}`,
+                            );
+                        }}
+                        className={cn(
+                          "px-3 py-1 rounded-lg border text-[10px] font-medium transition-all",
+                          i === currentTypeServer
+                            ? "bg-white/10 border-white/20 text-white"
+                            : "bg-white/[0.03] border-white/[0.06] text-white/40 hover:text-white/70",
+                        )}
+                      >
+                        Server {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 4. EPISODE LIST — list style, not tiny squares */}
+            <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.05]">
+                <span className="text-xs font-semibold text-white/60">
+                  Danh sách tập{" "}
+                  <span className="text-white/30">({serverData.length})</span>
+                </span>
+                {serverData.length > 16 && (
+                  <div className="relative">
+                    <Search
+                      size={12}
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/25"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Tìm tập..."
+                      value={episodeSearch}
+                      onChange={(e) => setEpisodeSearch(e.target.value)}
+                      className="bg-white/[0.04] border border-white/[0.06] pl-7 pr-3 py-1 text-[11px] text-white placeholder-white/25 rounded-lg focus:outline-none focus:border-white/20 w-28 transition-colors"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Episodes grid — comfortable size */}
+              <div className="p-3">
+                <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-8 xl:grid-cols-10 gap-1.5 max-h-52 overflow-y-auto scrollbar-hide">
+                  {filteredEps.map((ep: any, i: number) => {
+                    const isActive =
+                      ep.slug === currentEp ||
+                      ep.name === currentEp ||
+                      i === currentEpIndex;
+                    const epNum = ep.name.replace(/^tập\s*/i, "");
+                    return (
+                      <button
+                        key={ep.slug || ep.name || i}
+                        onClick={() =>
+                          router.push(`/watch/${slug}?ep=${ep.slug || ep.name}`)
+                        }
+                        className={cn(
+                          "flex flex-col items-center justify-center rounded-lg py-2.5 px-1 transition-all",
+                          "text-[11px] font-semibold leading-tight",
+                          isActive
+                            ? "bg-red-600 text-white shadow-lg shadow-red-500/25"
+                            : "bg-white/[0.04] text-white/50 hover:bg-white/[0.08] hover:text-white/90",
+                        )}
+                      >
+                        <span className="text-xs font-bold">{epNum}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
-            {/* 4. COMMENTS SECTION */}
-            <div className="pt-8 border-t border-white/10">
+            {/* 5. COMMENTS */}
+            <div className="border-t border-white/[0.05] pt-5">
               <AdvancedCommentSection
                 movieSlug={slug}
                 episodeName={
                   currentEpData?.name
-                    ? `Episode ${currentEpData.name}`
+                    ? `Tập ${currentEpData.name.replace(/^tập\s*/i, "")}`
                     : undefined
                 }
               />
             </div>
           </div>
 
-          {/* ── RIGHT SIDEBAR: Letterboxd-style info + recommendations ── */}
-          <div className="space-y-8">
-            {/* Film Info Card - Clean poster + typography */}
-            <div className="space-y-4">
-              <div className="flex gap-4">
+          {/* ───── RIGHT SIDEBAR ───── */}
+          <div className="space-y-4 min-w-0">
+            {/* Film Info */}
+            <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 space-y-3">
+              <div className="flex gap-3">
                 {posterUrl && (
-                  <div className="w-24 h-36 bg-[#12161c] border border-white/10 overflow-hidden flex-shrink-0">
+                  <div className="w-16 h-24 rounded-lg overflow-hidden flex-shrink-0 ring-1 ring-white/[0.08]">
                     <img
                       src={posterUrl}
                       alt={film?.name}
@@ -684,172 +766,134 @@ export default function WatchPage() {
                     />
                   </div>
                 )}
-                <div className="space-y-2 min-w-0 flex-1">
-                  <h1 className="text-lg font-bold text-white leading-tight">
+                <div className="space-y-1 min-w-0 flex-1">
+                  <h2 className="text-xs font-bold text-white leading-snug line-clamp-2">
                     {film?.name}
-                  </h1>
-                  <p className="text-sm text-white/60">
-                    {film?.origin_name && film.origin_name !== film.name && (
-                      <span className="block">{film.origin_name}</span>
+                  </h2>
+                  {film?.origin_name && film.origin_name !== film.name && (
+                    <p className="text-[10px] text-white/30 line-clamp-1">
+                      {film.origin_name}
+                    </p>
+                  )}
+                  <p className="text-[10px] text-white/30">{film?.year}</p>
+                  <div className="flex flex-wrap gap-1 pt-0.5">
+                    {film?.quality && (
+                      <span className="text-[9px] font-bold bg-white/8 text-white/60 px-1.5 py-0.5 rounded border border-white/[0.08]">
+                        {film.quality}
+                      </span>
                     )}
-                    <span>{film?.year}</span>
-                  </p>
-
-                  {/* Quality & Lang badges - minimal */}
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    <span className="bg-white/10 text-white px-2 py-1 border border-white/20">
-                      {film?.quality || "HD"}
-                    </span>
-                    <span className="bg-white/10 text-white px-2 py-1 border border-white/20">
-                      {film?.lang || "Subtitled"}
-                    </span>
+                    {film?.lang && (
+                      <span className="text-[9px] font-bold bg-emerald-500/10 text-emerald-400/80 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                        {film.lang}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
-
-              {/* Description - clean typography */}
-              {film?.content && (
-                <div className="space-y-2 pt-4 border-t border-white/10">
-                  <h3 className="text-sm font-bold text-white">Synopsis</h3>
-                  <div
-                    className="text-sm text-white/70 leading-relaxed max-h-32 overflow-y-auto"
-                    dangerouslySetInnerHTML={{ __html: film.content }}
-                  />
-                </div>
-              )}
-
-              {/* Cast - minimal list */}
-              {actors.length > 0 && (
-                <div className="space-y-2 pt-4 border-t border-white/10">
-                  <h3 className="text-sm font-bold text-white">Cast</h3>
-                  <div className="text-sm text-white/60 space-y-1">
-                    {actors.slice(0, 6).map((actor, idx) => (
-                      <div key={idx} className="truncate">
-                        {actor}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <Link
+                href={`/film/${slug}`}
+                className="flex items-center justify-center gap-1.5 w-full py-1.5 text-[11px] font-medium text-white/40 bg-white/[0.03] border border-white/[0.06] rounded-lg hover:text-white/70 hover:bg-white/[0.06] transition-colors"
+              >
+                <Info size={11} /> Chi tiết phim
+              </Link>
             </div>
 
-            {/* Server Selection - Clean tabs */}
-            <div className="space-y-3 pt-6 border-t border-white/10">
-              <h3 className="text-sm font-bold text-white">Servers</h3>
-              <div className="space-y-1">
-                {episodes.map((s: any, i: number) => {
-                  const active = currentServer === i;
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        setCurrentServer(i);
-                        const nd = s?.server_data || [];
-                        if (nd.length > 0) {
-                          router.push(
-                            `/watch/${slug}?ep=${nd[0].slug || nd[0].name}&server=${i}`,
-                          );
-                        }
-                      }}
-                      className={cn(
-                        "w-full text-left px-3 py-2 text-sm transition-colors border",
-                        active
-                          ? "bg-[#3b82f6] text-white border-[#3b82f6]"
-                          : "bg-[#12161c] text-white/60 border-white/20 hover:text-white hover:border-white/40",
-                      )}
-                    >
-                      {s.server_name || `Server ${i + 1}`}
-                    </button>
-                  );
-                })}
-              </div>
+            {/* Settings */}
+            <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 space-y-2.5">
+              <p className="text-[10px] font-semibold text-white/30 uppercase tracking-widest flex items-center gap-1.5 mb-1">
+                <Settings size={10} /> Cài đặt
+              </p>
+              {[
+                {
+                  label: "Tự phát tập tiếp",
+                  value: autoNextConfig,
+                  set: setAutoNextConfig,
+                },
+                {
+                  label: "Tự động phát",
+                  value: autoPlayConfig,
+                  set: setAutoPlayConfig,
+                },
+              ].map(({ label, value, set }) => (
+                <label
+                  key={label}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <span className="text-xs text-white/50">{label}</span>
+                  <button
+                    onClick={() => set(!value)}
+                    className={cn(
+                      "w-9 h-[18px] rounded-full flex items-center transition-colors p-0.5",
+                      value
+                        ? "bg-emerald-500 justify-end"
+                        : "bg-white/10 justify-start",
+                    )}
+                  >
+                    <div className="w-[14px] h-[14px] bg-white rounded-full shadow-sm" />
+                  </button>
+                </label>
+              ))}
             </div>
 
-            {/* Recommendations - Letterboxd list style */}
-            <div className="space-y-4 pt-6 border-t border-white/10">
-              <h3 className="text-sm font-bold text-white">
-                {matchedKeyword ? `More ${matchedKeyword}` : "More like this"}
-              </h3>
-
-              <div className="space-y-3">
-                {recommendationsData?.items?.slice(0, 8).map((item: any) => {
-                  const recPoster =
-                    resolveImageUrl(item.thumb_url) ||
-                    resolveImageUrl(item.poster_url);
-                  return (
-                    <Link
-                      href={`/film/${item.slug}`}
-                      key={item._id || item.slug}
-                      className="flex gap-3 group hover:bg-white/5 -mx-2 px-2 py-1 transition-colors"
-                    >
-                      <div className="w-12 h-18 bg-[#12161c] border border-white/10 flex-shrink-0 overflow-hidden">
-                        {recPoster ? (
-                          <img
-                            src={recPoster}
-                            className="w-full h-full object-cover"
-                            alt={item.name}
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Clapperboard size={16} className="text-white/20" />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-1 min-w-0 flex-1">
-                        <h4 className="text-sm font-medium text-white group-hover:text-white/80 line-clamp-2 leading-snug">
-                          {item.name}
-                        </h4>
-                        <div className="text-xs text-white/40 space-y-0.5">
-                          <div>{item.year}</div>
-                          <div className="flex items-center space-x-1">
-                            <Star size={10} className="text-white/40" />
-                            <span>{item.tmdb?.vote_average || "8.0"}</span>
+            {/* Recommendations */}
+            {recsData?.items && recsData.items.length > 0 && (
+              <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 space-y-3">
+                <p className="text-[10px] font-semibold text-white/30 uppercase tracking-widest">
+                  {matchedKeyword
+                    ? `Thêm về "${matchedKeyword}"`
+                    : "Phim tương tự"}
+                </p>
+                <div className="space-y-2.5">
+                  {recsData.items.slice(0, 8).map((item: any) => {
+                    const thumb =
+                      resolveImageUrl(item.thumb_url) ||
+                      resolveImageUrl(item.poster_url);
+                    return (
+                      <Link
+                        href={`/film/${item.slug}`}
+                        key={item._id || item.slug}
+                        className="flex gap-2.5 group hover:bg-white/[0.03] -mx-1 px-1 py-1 rounded-lg transition-colors"
+                      >
+                        <div className="w-12 h-[68px] rounded-lg bg-white/5 flex-shrink-0 overflow-hidden">
+                          {thumb ? (
+                            <img
+                              src={thumb}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              alt={item.name}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Clapperboard
+                                size={14}
+                                className="text-white/15"
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 py-0.5 space-y-0.5">
+                          <p className="text-[11px] font-semibold text-white/70 group-hover:text-white line-clamp-2 leading-snug transition-colors">
+                            {item.name}
+                          </p>
+                          {/* Minimal rating: just the number */}
+                          <div className="flex items-center gap-1.5 text-[10px] text-white/25">
+                            <span>{item.year}</span>
+                            {item.tmdb?.vote_average > 0 && (
+                              <>
+                                <span>·</span>
+                                <span className="flex items-center gap-0.5 text-amber-400/60">
+                                  <Star size={9} fill="currentColor" />
+                                  {Number(item.tmdb.vote_average).toFixed(1)}
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    </Link>
-                  );
-                })}
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-
-            {/* Player Settings */}
-            <div className="space-y-3 pt-6 border-t border-white/10">
-              <h3 className="text-sm font-bold text-white">Settings</h3>
-
-              <div className="space-y-2 text-sm">
-                <label className="flex items-center justify-between">
-                  <span className="text-white/60">Auto Next</span>
-                  <button
-                    onClick={() => setAutoNextConfig(!autoNextConfig)}
-                    className={cn(
-                      "w-10 h-5 rounded-full flex items-center transition-colors p-1",
-                      autoNextConfig
-                        ? "bg-[#3b82f6] justify-end"
-                        : "bg-white/20 justify-start",
-                    )}
-                  >
-                    <div className="w-4 h-4 bg-white rounded-full shadow" />
-                  </button>
-                </label>
-
-                <label className="flex items-center justify-between">
-                  <span className="text-white/60">Auto Play</span>
-                  <button
-                    onClick={() => setAutoPlayConfig(!autoPlayConfig)}
-                    className={cn(
-                      "w-10 h-5 rounded-full flex items-center transition-colors p-1",
-                      autoPlayConfig
-                        ? "bg-[#3b82f6] justify-end"
-                        : "bg-white/20 justify-start",
-                    )}
-                  >
-                    <div className="w-4 h-4 bg-white rounded-full shadow" />
-                  </button>
-                </label>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </main>
@@ -858,9 +902,13 @@ export default function WatchPage() {
       {wp.isOpen && wp.roomId && (
         <WatchPartyPanel
           roomId={wp.roomId}
+          isHost={wp.isHost}
+          participants={wp.participants}
           messages={wp.messages}
+          floatingReactions={wp.floatingReactions}
           onSendMessage={wp.sendMessage}
           onSendReaction={wp.sendReaction}
+          onLeaveRoom={wp.leaveRoom}
           onClose={() => wp.setIsOpen(false)}
         />
       )}

@@ -1,3 +1,6 @@
+/* ── Google Fonts (MUST be first before all other CSS) ─────── */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Bebas+Neue&family=Outfit:wght@400;500;600;700;800;900&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -12,8 +15,6 @@
 }
 
 /* ── Font Family ────────────────────────────────────────────── */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
-
 body {
   font-family:
     "Inter",
@@ -23,16 +24,26 @@ body {
     sans-serif;
 }
 
-/* Headings sử dụng Inter với font-weight bold hơn thay vì Bebas Neue */
+/* Headings sử dụng Outfit — hiện đại, phù hợp nền tảng phim */
 h1,
 h2,
 h3,
 h4,
 h5,
 h6 {
-  font-family: "Inter", sans-serif;
+  font-family: "Outfit", "Inter", sans-serif;
   font-weight: 700;
   letter-spacing: -0.01em;
+}
+
+/* ── Font Utility Classes ───────────────────────────────────── */
+.font-bebas {
+  font-family: "Bebas Neue", sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.font-outfit {
+  font-family: "Outfit", sans-serif;
 }
 
 /* ── Performance Optimizations ────────────────────────────────── */
@@ -107,25 +118,7 @@ body {
   perspective: 1000px;
 }
 
-/* ── Sidebar Override (Force Transparent) ──────────────────── */
-aside.sidebar-transparent,
-aside[class*="fixed"][class*="left-0"][class*="z-40"] {
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  box-shadow: none !important;
-}
-
-aside.sidebar-transparent::before,
-aside.sidebar-transparent::after,
-aside[class*="fixed"][class*="left-0"][class*="z-40"]::before,
-aside[class*="fixed"][class*="left-0"][class*="z-40"]::after {
-  content: none !important;
-  display: none !important;
-  background: transparent !important;
-}
+/* ── Sidebar transparent — handled via inline style directly ──── */
 
 /* ── Loading States ────────────────────────────────────────────── */
 .skeleton {

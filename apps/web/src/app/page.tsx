@@ -239,13 +239,16 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
                 )}
               </div>
 
-              {/* Title */}
+              {/* Title — Bebas Neue for cinematic drama */}
               <h1
                 className={cn(
                   "font-extrabold text-foreground tracking-wide leading-tight drop-shadow-2xl uppercase",
                   titleFontSizeClass,
                 )}
-                style={{ fontFamily: "'Bebas Neue', sans-serif" }}
+                style={{
+                  fontFamily: "'Bebas Neue', sans-serif",
+                  letterSpacing: "0.04em",
+                }}
               >
                 {film.name}
               </h1>
@@ -394,7 +397,10 @@ function FilmSection({
       className="relative mb-10 md:mb-14"
     >
       <div className="flex items-center justify-between mb-4 px-1">
-        <h2 className="text-xl md:text-2xl font-bold text-foreground flex items-center space-x-2 font-sans tracking-wide">
+        <h2
+          className="text-xl md:text-2xl font-bold text-foreground flex items-center space-x-2 tracking-wide"
+          style={{ fontFamily: "'Outfit', sans-serif" }}
+        >
           <Icon size={18} className="text-netflixRed" />
           <span>{title}</span>
         </h2>
@@ -464,6 +470,24 @@ const deduplicate = (films: FilmItem[]) => {
     seen.add(film.slug);
     return !isDuplicate;
   });
+};
+
+// Helper to filter out slugs used in previous sections (cross-section dedup)
+const excludeSlugs = (
+  films: FilmItem[],
+  usedSlugs: Set<string>,
+): FilmItem[] => {
+  return films.filter((f) => !usedSlugs.has(f.slug));
+};
+
+// Stable shuffle using a seed (changes each page load but stable within)
+const shuffleArray = <T,>(arr: T[]): T[] => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 };
 
 // ── Main Home Page ──────────────────────────────────────────
@@ -749,86 +773,115 @@ export default function HomePage() {
         {/* Topic Banners Section */}
         <TopicBannersSection />
 
-        {/* Phim Kỹ Xảo Mãn Nhãn */}
-        <FilmSection
-          title="Phim Kỹ Xảo Mãn Nhãn"
-          icon={Sparkles}
-          films={vfxFilms}
-          isLoading={vfxLoading}
-          href="/search?q=marvel"
-        />
+        {/* Cross-section deduplication: each section shows unique films */}
+        {(() => {
+          const usedSlugs = new Set<string>();
 
-        {/* Phim Mới Cập Nhật */}
-        <FilmSection
-          title={t("home.latest")}
-          icon={Clock}
-          films={latestFilms}
-          isLoading={latestLoading}
-          href="/films"
-        />
+          // Helper: take up to N films from list, excluding already-used slugs, then register them
+          const takeFresh = (films: FilmItem[], n = 12): FilmItem[] => {
+            const fresh = shuffleArray(excludeSlugs(films, usedSlugs)).slice(
+              0,
+              n,
+            );
+            fresh.forEach((f) => usedSlugs.add(f.slug));
+            return fresh;
+          };
 
-        {/* Phim Hành Động Kịch Tính */}
-        <FilmSection
-          title="Phim Hành Động Kịch Tính"
-          icon={Zap}
-          films={actionFilms}
-          isLoading={actionLoading}
-          href="/genre/hanh-dong"
-        />
+          const vfxFresh = takeFresh(vfxFilms);
+          const latestFresh = takeFresh(latestFilms);
+          const actionFresh = takeFresh(actionFilms);
+          const seriesFresh = takeFresh(seriesFilms);
+          const horrorFresh = takeFresh(horrorFilms);
+          const singleFresh = takeFresh(singleFilms);
+          const romanceFresh = takeFresh(romanceFilms);
+          const comedyFresh = takeFresh(comedyFilms);
+          const animeFresh = takeFresh(animeFilms);
 
-        {/* Phim Bộ */}
-        <FilmSection
-          title={t("home.series")}
-          icon={Tv}
-          films={seriesFilms}
-          isLoading={seriesLoading}
-          href="/films/series"
-        />
+          return (
+            <>
+              {/* Phim Kỹ Xảo Mãn Nhãn */}
+              <FilmSection
+                title="Phim Kỹ Xảo Mãn Nhãn"
+                icon={Sparkles}
+                films={vfxFresh}
+                isLoading={vfxLoading}
+                href="/search?q=marvel"
+              />
 
-        {/* Phim Kinh Dị Rùng Rợn */}
-        <FilmSection
-          title="Phim Kinh Dị Rùng Rợn"
-          icon={Ghost}
-          films={horrorFilms}
-          isLoading={horrorLoading}
-          href="/genre/kinh-di"
-        />
+              {/* Phim Mới Cập Nhật */}
+              <FilmSection
+                title={t("home.latest")}
+                icon={Clock}
+                films={latestFresh}
+                isLoading={latestLoading}
+                href="/films"
+              />
 
-        {/* Phim Lẻ */}
-        <FilmSection
-          title={t("home.single")}
-          icon={Clapperboard}
-          films={singleFilms}
-          isLoading={singleLoading}
-          href="/films/single"
-        />
+              {/* Phim Hành Động */}
+              <FilmSection
+                title="Phim Hành Động Kịch Tính"
+                icon={Zap}
+                films={actionFresh}
+                isLoading={actionLoading}
+                href="/genre/hanh-dong"
+              />
 
-        {/* Phim Tình Cảm Lãng Mạn */}
-        <FilmSection
-          title="Phim Tình Cảm Lãng Mạn"
-          icon={Heart}
-          films={romanceFilms}
-          isLoading={romanceLoading}
-          href="/genre/tinh-cam"
-        />
+              {/* Phim Bộ */}
+              <FilmSection
+                title={t("home.series")}
+                icon={Tv}
+                films={seriesFresh}
+                isLoading={seriesLoading}
+                href="/films/series"
+              />
 
-        {/* Phim Hài Hước Vui Nhộn */}
-        <FilmSection
-          title="Phim Hài Hước Vui Nhộn"
-          icon={Laugh}
-          films={comedyFilms}
-          isLoading={comedyLoading}
-          href="/genre/hai-huoc"
-        />
+              {/* Phim Kinh Dị */}
+              <FilmSection
+                title="Phim Kinh Dị Rùng Rợn"
+                icon={Ghost}
+                films={horrorFresh}
+                isLoading={horrorLoading}
+                href="/genre/kinh-di"
+              />
 
-        {/* Hoạt Hình */}
-        <FilmSection
-          title={t("home.anime")}
-          icon={TrendingUp}
-          films={animeFilms}
-          isLoading={animeLoading}
-          href="/films/anime"
-        />
+              {/* Phim Lẻ */}
+              <FilmSection
+                title={t("home.single")}
+                icon={Clapperboard}
+                films={singleFresh}
+                isLoading={singleLoading}
+                href="/films/single"
+              />
+
+              {/* Phim Tình Cảm */}
+              <FilmSection
+                title="Phim Tình Cảm Lãng Mạn"
+                icon={Heart}
+                films={romanceFresh}
+                isLoading={romanceLoading}
+                href="/genre/tinh-cam"
+              />
+
+              {/* Phim Hài Hước */}
+              <FilmSection
+                title="Phim Hài Hước Vui Nhộn"
+                icon={Laugh}
+                films={comedyFresh}
+                isLoading={comedyLoading}
+                href="/genre/hai-huoc"
+              />
+
+              {/* Hoạt Hình */}
+              <FilmSection
+                title={t("home.anime")}
+                icon={TrendingUp}
+                films={animeFresh}
+                isLoading={animeLoading}
+                href="/films/anime"
+              />
+            </>
+          );
+        })()}
       </div>
 
       {/* Float components */}

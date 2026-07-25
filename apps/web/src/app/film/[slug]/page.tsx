@@ -21,6 +21,10 @@ import {
   Info,
   ThumbsUp,
   Bell,
+  Subtitles,
+  Mic,
+  Monitor,
+  ChevronRight as ChevronRightIcon,
 } from "lucide-react";
 import { movieApi, watchlistApi, ratingsApi, reviewsApi } from "@/lib/api";
 import { StarRating } from "@/components/film/StarRating";
@@ -87,50 +91,160 @@ function CastCard({ name }: { name: string }) {
   );
 }
 
-// ── Episode List (Plex Grid Style) ───────────────────────────
-function EpisodeList({ episodes, slug }: { episodes: any[]; slug: string }) {
+// ── Server type detection (same logic as watch page) ──
+type EpServerType = "vietsub" | "thuyet-minh" | "raw";
+function detectEpServerType(serverName: string, lang?: string): EpServerType {
+  const name = (serverName || "").toLowerCase();
+  const langStr = (lang || "").toLowerCase();
+  if (
+    name.includes("thuyet minh") ||
+    name.includes("thuyết minh") ||
+    name.includes("tm") ||
+    langStr.includes("thuyet minh") ||
+    langStr.includes("thuyết minh") ||
+    langStr.includes("lồng tiếng")
+  )
+    return "thuyet-minh";
+  return "vietsub";
+}
+
+const EP_TYPE_CONFIG: Record<
+  EpServerType,
+  { label: string; icon: any; activeCls: string; inactiveCls: string }
+> = {
+  vietsub: {
+    label: "Vietsub",
+    icon: Subtitles,
+    activeCls: "bg-emerald-500/20 border-emerald-500/60 text-emerald-300",
+    inactiveCls: "bg-white/5 border-white/10 text-white/50 hover:text-white",
+  },
+  "thuyet-minh": {
+    label: "Thuyết Minh",
+    icon: Mic,
+    activeCls: "bg-amber-500/20 border-amber-500/60 text-amber-300",
+    inactiveCls: "bg-white/5 border-white/10 text-white/50 hover:text-white",
+  },
+  raw: {
+    label: "Bản Gốc",
+    icon: Monitor,
+    activeCls: "bg-blue-500/20 border-blue-500/60 text-blue-300",
+    inactiveCls: "bg-white/5 border-white/10 text-white/50 hover:text-white",
+  },
+};
+
+// ── Episode List (Redesigned with server type tabs) ───────────────────────────
+function EpisodeList({
+  episodes,
+  slug,
+  filmLang,
+}: {
+  episodes: any[];
+  slug: string;
+  filmLang?: string;
+}) {
+  const [activeType, setActiveType] = useState<EpServerType>("vietsub");
   const [serverIdx, setServerIdx] = useState(0);
+
   if (!episodes?.length) return null;
 
-  const server = episodes[serverIdx];
-  const items = server?.server_data || [];
+  // Group by server type
+  const byType: Record<EpServerType, any[]> = {
+    vietsub: [],
+    "thuyet-minh": [],
+    raw: [],
+  };
+  episodes.forEach((ep) => {
+    const t = detectEpServerType(ep.server_name || "", filmLang || "");
+    byType[t].push(ep);
+  });
+  const availableTypes = (
+    ["vietsub", "thuyet-minh", "raw"] as EpServerType[]
+  ).filter((t) => byType[t].length > 0);
+
+  const currentTypeServers = byType[activeType] || [];
+  const activeServer = currentTypeServers[serverIdx] || episodes[0];
+  const items = activeServer?.server_data || [];
+
+  const firstEpLink = (ep: any) => `/watch/${slug}?ep=${ep.slug || ep.name}`;
 
   return (
     <div className="flex flex-col space-y-4">
-      <div className="flex items-center justify-between border-b border-white/5 pb-3">
-        <h3 className="text-sm font-black uppercase tracking-wider text-neutral-400">
-          Danh Sách Tập Phim
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3
+          className="text-sm font-bold text-white"
+          style={{ fontFamily: "'Outfit', sans-serif" }}
+        >
+          Danh sách tập ({items.length})
         </h3>
-        {/* Server selection tabs */}
-        {episodes.length > 1 && (
-          <div className="flex gap-2">
-            {episodes.map((s: any, i: number) => (
-              <button
-                key={i}
-                className={cn(
-                  "px-3 py-1 rounded-full text-[10px] font-bold border transition-all",
-                  i === serverIdx
-                    ? "bg-netflixRed border-netflixRed text-white"
-                    : "bg-white/5 border-white/10 text-neutral-400 hover:text-white",
-                )}
-                onClick={() => setServerIdx(i)}
-              >
-                {s.server_name}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
+      {/* Server Type Tabs */}
+      {availableTypes.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {availableTypes.map((type) => {
+            const cfg = EP_TYPE_CONFIG[type];
+            const CfgIcon = cfg.icon;
+            const isActive = activeType === type;
+            return (
+              <button
+                key={type}
+                onClick={() => {
+                  setActiveType(type);
+                  setServerIdx(0);
+                }}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all",
+                  isActive ? cfg.activeCls : cfg.inactiveCls,
+                )}
+              >
+                <CfgIcon size={13} />
+                {cfg.label}
+                {byType[type].length > 1 && (
+                  <span className="text-[10px] font-black bg-white/10 px-1.5 py-0.5 rounded-full">
+                    {byType[type].length}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Server selection within type */}
+      {currentTypeServers.length > 1 && (
+        <div className="flex flex-wrap gap-1.5">
+          {currentTypeServers.map((s: any, i: number) => (
+            <button
+              key={i}
+              onClick={() => setServerIdx(i)}
+              className={cn(
+                "px-3 py-1.5 rounded-lg border text-[10px] font-bold transition-all",
+                i === serverIdx
+                  ? "bg-white/15 border-white/30 text-white"
+                  : "bg-white/5 border-white/10 text-white/40 hover:text-white",
+              )}
+            >
+              Server {i + 1}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Episode grid */}
-      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 max-h-60 overflow-y-auto pr-1 scrollbar-thin">
+      <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 lg:grid-cols-10 gap-1.5 max-h-64 overflow-y-auto pr-1 scrollbar-hide">
         {items.map((ep: any, i: number) => (
           <Link
             key={ep.slug || i}
-            href={`/watch/${slug}?ep=${ep.slug || ep.name}`}
-            className="flex items-center justify-center bg-white/5 hover:bg-netflixRed border border-white/5 hover:border-netflixRed text-neutral-350 hover:text-white rounded-lg py-2.5 text-xs font-bold transition-all shadow-sm"
+            href={firstEpLink(ep)}
+            className={cn(
+              "flex items-center justify-center aspect-square rounded-lg",
+              "text-xs font-bold transition-all",
+              "bg-white/5 text-white/60 border border-white/[0.06]",
+              "hover:bg-emerald-500 hover:text-white hover:border-emerald-500 hover:scale-105 hover:shadow-lg hover:shadow-emerald-500/20",
+            )}
           >
-            Tập {ep.name}
+            {ep.name.replace(/^tập\s*/i, "")}
           </Link>
         ))}
       </div>
@@ -705,29 +819,42 @@ export default function FilmDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Hero Title & Info Section */}
           <div className="lg:col-span-8 flex flex-col space-y-4 md:space-y-6">
-            <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-wider drop-shadow-2xl">
+            <h1
+              className="text-3xl md:text-5xl lg:text-6xl font-black text-white uppercase tracking-wide drop-shadow-2xl leading-tight"
+              style={{ fontFamily: "'Outfit', sans-serif" }}
+            >
               {film.name}
             </h1>
 
             {/* Metadata Tags Row */}
-            <div className="flex flex-wrap items-center gap-3.5 text-xs md:text-sm font-bold text-neutral-300">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-neutral-300">
               {film.quality && (
-                <span className="bg-white/10 px-2.5 py-0.5 rounded text-[10px] uppercase font-extrabold tracking-wide backdrop-blur-md border border-white/5">
+                <span className="bg-white/10 px-2.5 py-1 rounded-lg text-[10px] uppercase font-extrabold tracking-wide backdrop-blur-md border border-white/10">
                   {film.quality}
                 </span>
               )}
               {film.lang && (
-                <span className="border border-white/20 bg-black/10 px-2 py-0.5 rounded text-[10px] font-semibold">
+                <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2.5 py-1 rounded-lg text-[10px] font-bold">
                   {film.lang}
                 </span>
               )}
-              <span className="text-neutral-300">{film.year}</span>
-              <span className="text-neutral-400">&bull;</span>
-              <span className="text-neutral-350">{film.time}</span>
-              <span className="text-neutral-400">&bull;</span>
-              <span className="text-neutral-350 font-semibold">
-                {film.category?.map((c: any) => c.name).join(", ")}
-              </span>
+              {film.year && (
+                <span className="text-neutral-400 text-xs">{film.year}</span>
+              )}
+              {film.time && (
+                <>
+                  <span className="text-neutral-600">•</span>
+                  <span className="text-neutral-400 text-xs">{film.time}</span>
+                </>
+              )}
+              {film.category?.length > 0 && (
+                <>
+                  <span className="text-neutral-600">•</span>
+                  <span className="text-neutral-400 text-xs">
+                    {film.category.map((c: any) => c.name).join(", ")}
+                  </span>
+                </>
+              )}
             </div>
 
             {/* Play and Action Widgets */}
@@ -898,8 +1025,12 @@ export default function FilmDetailPage() {
         <div className="mt-16 space-y-12">
           {/* Series Episode Grid */}
           {film.type === "series" && episodes.length > 0 && (
-            <div className="bg-[#151920]/80 border border-white/5 rounded-2xl p-6 shadow-xl backdrop-blur-md">
-              <EpisodeList episodes={episodes} slug={slug} />
+            <div className="bg-[#151920]/80 border border-white/[0.06] rounded-2xl p-6 shadow-xl backdrop-blur-md">
+              <EpisodeList
+                episodes={episodes}
+                slug={slug}
+                filmLang={film?.lang}
+              />
             </div>
           )}
 
