@@ -33,6 +33,9 @@ const nextConfig = {
   },
 
   images: {
+    // Poster URLs are served through the app's guarded image proxy and always
+    // include a dynamic `url` query parameter.
+    localPatterns: [{ pathname: "/api/image-proxy" }],
     remotePatterns: [
       { protocol: "https", hostname: "phimimg.com" },
       { protocol: "https", hostname: "img.phimapi.com" },

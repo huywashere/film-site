@@ -115,7 +115,11 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
 
   return async function GET(
     request: NextRequest,
-    { params }: { params: { path: string[] } },
+    {
+      params,
+    }: {
+      params: Promise<{ path: string[] }>;
+    },
   ) {
     if (!isRequestAllowed(request)) {
       return NextResponse.json(
@@ -128,7 +132,10 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
       );
     }
 
-    const path = params.path.join("/");
+    // Next 15+ makes dynamic route params asynchronous, while Next 14 passes
+    // the object directly. Await handles both forms.
+    const { path: pathSegments } = await params;
+    const path = pathSegments.join("/");
     const searchParams = request.nextUrl.searchParams.toString();
     const upstreamUrl = `${config.baseUrl}/${path}${searchParams ? `?${searchParams}` : ""}`;
     const cacheKey = `${config.cachePrefix}:${upstreamUrl}`;

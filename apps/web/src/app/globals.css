@@ -1,5 +1,5 @@
 /* ── Google Fonts (MUST be first before all other CSS) ─────── */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Bebas+Neue&family=Outfit:wght@400;500;600;700;800;900&display=swap");
+/* Be Vietnam Pro, Inter, Manrope — loaded via layout.tsx <link> tags */
 
 @tailwind base;
 @tailwind components;
@@ -12,38 +12,71 @@
   --foreground: #ffffff;
   --netflixRed: #e50914;
   --primary: #e50914;
+
+  /* Font tokens */
+  --font-primary: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-ui: "Inter", "Be Vietnam Pro", sans-serif;
+  --font-display: "Manrope", "Be Vietnam Pro", sans-serif;
 }
 
 /* ── Font Family ────────────────────────────────────────────── */
+/* Be Vietnam Pro — font chính, hỗ trợ tiếng Việt hoàn hảo */
 body {
-  font-family:
-    "Inter",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--font-primary);
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  font-optical-sizing: auto;
 }
 
-/* Headings sử dụng Outfit — hiện đại, phù hợp nền tảng phim */
+/* Manrope — cinematic, premium cho headings */
 h1,
 h2,
 h3,
 h4,
 h5,
 h6 {
-  font-family: "Outfit", "Inter", sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+/* Inter — cho số, code, UI elements nhỏ */
+.font-ui,
+code,
+kbd,
+samp,
+pre,
+[data-ui] {
+  font-family: var(--font-ui);
 }
 
 /* ── Font Utility Classes ───────────────────────────────────── */
+.font-primary {
+  font-family: var(--font-primary);
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.font-manrope {
+  font-family: "Manrope", sans-serif;
+}
+
+.font-inter {
+  font-family: "Inter", sans-serif;
+}
+
+/* Legacy classes — giữ lại để tránh breaking change */
 .font-bebas {
-  font-family: "Bebas Neue", sans-serif;
-  letter-spacing: 0.04em;
+  font-family: "Manrope", sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.02em;
 }
 
 .font-outfit {
-  font-family: "Outfit", sans-serif;
+  font-family: "Be Vietnam Pro", sans-serif;
 }
 
 /* ── Performance Optimizations ────────────────────────────────── */
@@ -78,10 +111,8 @@ html {
 
 body {
   @apply bg-background text-foreground;
-  font-feature-settings:
-    "rlig" 1,
-    "calt" 1;
-  font-family: "Inter", sans-serif;
+  font-family: var(--font-primary);
+  font-feature-settings: "rlig" 1, "calt" 1, "kern" 1;
 }
 
 /* ── Animation Keyframes ───────────────────────────────────────── */
