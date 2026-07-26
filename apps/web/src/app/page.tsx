@@ -368,6 +368,24 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
           <path d="m6 9 6 6 6-6" />
         </svg>
       </div>
+
+      {/* ── Search Shortcut pill — pinned in bottom-left corner of hero ── */}
+      <div
+        className="absolute bottom-8 left-6 z-30 hidden sm:flex items-center space-x-2 bg-black/30 hover:bg-black/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/15 text-neutral-200 text-[11px] select-none shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
+        onClick={() => {
+          // dispatch a synthetic Ctrl+K so the existing listener in HomePage picks it up
+          window.dispatchEvent(
+            new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true })
+          );
+        }}
+        title="Tìm kiếm phim (Ctrl + K)"
+      >
+        <span className="font-semibold text-white/80">Press</span>
+        <kbd className="bg-white/15 border border-white/30 px-2 py-0.5 rounded-md text-[11px] text-white font-mono font-black flex items-center justify-center gap-1 shadow-inner">
+          <span className="text-[12px] font-sans leading-none">⌘</span>K
+        </kbd>
+        <span className="font-semibold text-white/80">to search</span>
+      </div>
     </div>
   );
 }
@@ -883,9 +901,6 @@ export default function HomePage() {
           );
         })()}
       </div>
-
-      {/* Float components */}
-      <KeyboardSearchBanner onClick={() => setIsSearchOpen(true)} />
 
       {/* Instant Spotlight Search Modal */}
       <AnimatePresence>

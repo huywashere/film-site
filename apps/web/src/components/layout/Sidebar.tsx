@@ -67,7 +67,7 @@ export function Sidebar() {
         }}
       >
         <nav
-          className="flex flex-col items-center justify-center gap-0.5 scrollbar-hide h-full pointer-events-auto"
+          className="flex flex-col items-center justify-center gap-2 scrollbar-hide h-full pointer-events-auto"
           style={{ width: W }}
         >
           {SIDEBAR_ITEMS.map((item) => {
@@ -81,7 +81,7 @@ export function Sidebar() {
                 href={item.href}
                 title={item.title}
                 className={cn(
-                  "relative flex flex-col items-center justify-center rounded-xl py-2.5 transition-all duration-150 group",
+                  "relative flex flex-col items-center justify-center rounded-xl py-3.5 transition-all duration-150 group",
                   isActive ? "text-white" : "text-white/40 hover:text-white/80",
                 )}
                 style={{ width: W - 12 }}
@@ -105,11 +105,11 @@ export function Sidebar() {
                 />
 
                 <item.icon
-                  size={20}
+                  size={21}
                   strokeWidth={isActive ? 2.25 : 1.75}
                   className="relative z-10"
                 />
-                <span className="relative z-10 text-[9.5px] font-medium leading-none text-center mt-[3px]">
+                <span className="relative z-10 text-[10px] font-medium leading-none text-center mt-[5px]">
                   {item.title}
                 </span>
               </Link>
@@ -128,7 +128,7 @@ export function Sidebar() {
           transform: "translateY(-50%)",
           left: collapsed ? 0 : W,
           width: 14,
-          height: 44,
+          height: 64,
           transition: "left 0.25s ease",
           background: "transparent",
           backgroundColor: "transparent",
