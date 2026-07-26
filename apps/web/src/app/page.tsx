@@ -34,7 +34,6 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, FreeMode } from "swiper/modules";
 import styled from "@emotion/styled";
 import { cn } from "@/lib/utils";
-import { SpotlightSearchModal } from "@/components/search/SpotlightSearchModal";
 import { ContinueWatchingRow } from "@/components/film/ContinueWatchingRow";
 import { SmartRecommendationSection } from "@/components/film/SmartRecommendationSection";
 
@@ -463,22 +462,6 @@ function FilmSection({
   );
 }
 
-// ── Keyboard Search Banner Component ──────────────────────
-function KeyboardSearchBanner({ onClick }: { onClick: () => void }) {
-  return (
-    <div
-      onClick={onClick}
-      className="fixed bottom-6 left-6 z-50 hidden sm:flex items-center space-x-2 bg-white/[0.03] hover:bg-white/[0.08] backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 text-neutral-300 text-[11px] select-none shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
-    >
-      <span className="font-semibold text-neutral-200">Press</span>
-      <kbd className="bg-white/15 border border-white/25 px-2 py-0.5 rounded-md text-[11px] text-white font-mono font-black flex items-center justify-center gap-1 shadow-inner">
-        <span className="text-[12px] font-sans leading-none">⌘</span>K
-      </kbd>
-      <span className="font-semibold text-neutral-200">to search</span>
-    </div>
-  );
-}
-
 // Helper to deduplicate films by slug
 const deduplicate = (films: FilmItem[]) => {
   const seen = new Set();
@@ -512,20 +495,6 @@ const shuffleArray = <T,>(arr: T[]): T[] => {
 export default function HomePage() {
   const { t } = useTranslation();
   const router = useRouter();
-
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-
-  // Listen globally for Ctrl K / Cmd K shortcut to toggle homepage search modal
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-        e.preventDefault();
-        setIsSearchOpen((prev) => !prev);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
 
   const {
     data: latestData,
@@ -901,17 +870,6 @@ export default function HomePage() {
           );
         })()}
       </div>
-
-      {/* Instant Spotlight Search Modal */}
-      <AnimatePresence>
-        {isSearchOpen && (
-          <SpotlightSearchModal
-            isOpen={isSearchOpen}
-            onClose={() => setIsSearchOpen(false)}
-            suggestions={latestFilms}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
+import dynamic from "next/dynamic";
 import {
   Search,
   Film,
@@ -40,6 +41,16 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { MobileSidebar } from "./MobileSidebar";
+import { AnimatePresence } from "framer-motion";
+
+// Lazy-load SpotlightSearchModal to avoid server-side issues
+const SpotlightSearchModal = dynamic(
+  () =>
+    import("@/components/search/SpotlightSearchModal").then(
+      (mod) => mod.SpotlightSearchModal,
+    ),
+  { ssr: false },
+);
 
 const NAV_LINKS = [
   { href: "/films/series", key: "nav.series" },
@@ -140,13 +151,10 @@ export function Navbar() {
   const { t, lang, setLang, isTransitioning } = useTranslation();
   const { theme, toggleTheme } = useThemeStore();
   const [mounted, setMounted] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
 
   // Notifications State & References (Live Auto-Fetched from Third-Party APIs)
   const [notifications, setNotifications] = useState<
@@ -221,36 +229,17 @@ export function Navbar() {
     setMounted(true);
   }, []);
 
-  // Debounced live search
+  // Global Ctrl/Cmd+K shortcut to open Spotlight search from anywhere
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    const delayDebounceFn = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const res = await movieApi.search(searchQuery.trim(), 1, 12);
-        const items = res.data?.data?.items || [];
-        setSearchResults(items.slice(0, 12));
-      } catch (err) {
-        console.error("Instant search failed:", err);
-      } finally {
-        setIsSearching(false);
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setIsSpotlightOpen((v) => !v);
       }
-    }, 300);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery("");
-    }
-  };
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   return (
     <>
@@ -364,103 +353,28 @@ export function Navbar() {
 
           {/* Right Block: Search & Actions & Profile */}
           <div className="flex items-center justify-end space-x-2 sm:space-x-3 shrink-0">
-            {/* Search Input inline (Fixed width, no focus stretching) */}
-            <div className="relative flex items-center">
-              <form
-                onSubmit={handleSearchSubmit}
-                className="flex items-center relative"
-              >
-                <div className="relative flex items-center">
-                  <Search
-                    size={15}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-300 pointer-events-none z-10"
-                  />
-                  <input
-                    ref={searchRef}
-                    type="text"
-                    placeholder="Tìm phim, diễn viên..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-44 sm:w-52 md:w-56 lg:w-60 bg-[#0d1117]/85 hover:bg-[#0d1117]/95 focus:bg-[#0d1117] backdrop-blur-2xl border border-white/20 hover:border-white/40 focus:border-white/60 ring-1 ring-white/10 rounded-full pl-9 pr-3.5 py-1.5 text-xs font-medium text-white placeholder-neutral-300 transition-all duration-200 outline-none shadow-lg shadow-black/80"
-                  />
-                </div>
-              </form>
-
-              {/* Instant Search Results Dropdown (Glassmorphism design with smooth animations) */}
-              {searchQuery.trim() && (
-                <div className="absolute right-0 top-12 w-80 md:w-[420px] bg-[#14181f]/95 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl shadow-black/90 overflow-hidden z-50 text-xs p-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                  {isSearching ? (
-                    <div className="p-2 space-y-2">
-                      {[1, 2, 3].map((i) => (
-                        <div
-                          key={i}
-                          className="flex items-center space-x-3.5 p-2 rounded-2xl animate-pulse"
-                        >
-                          <div className="w-11 h-16 bg-white/10 rounded-xl shrink-0" />
-                          <div className="flex-1 space-y-2">
-                            <div className="h-3.5 bg-white/15 rounded-md w-3/4" />
-                            <div className="h-2.5 bg-white/10 rounded-md w-1/2" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : searchResults.length > 0 ? (
-                    <div
-                      onWheel={(e) => e.stopPropagation()}
-                      className="max-h-[60vh] overflow-y-auto overscroll-contain scrollbar-thin divide-y divide-white/5 space-y-1"
-                    >
-                      {searchResults.map((film) => {
-                        const poster =
-                          resolveImageUrl(film.thumb_url) ||
-                          resolveImageUrl(film.poster_url);
-                        return (
-                          <Link
-                            key={film._id || film.slug}
-                            href={`/film/${film.slug}`}
-                            onClick={() => setSearchQuery("")}
-                            className="flex items-center space-x-3.5 p-2.5 rounded-2xl hover:bg-white/10 transition-all duration-200 group animate-in fade-in duration-200"
-                          >
-                            <div className="w-11 h-16 bg-neutral-900 rounded-xl overflow-hidden flex-shrink-0 relative shadow-md border border-white/10 group-hover:scale-105 transition-transform duration-200">
-                              {poster ? (
-                                <img
-                                  src={poster}
-                                  alt={film.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-neutral-600">
-                                  <Film size={16} />
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-extrabold text-xs text-white group-hover:text-neutral-300 transition-colors truncate">
-                                {film.name}
-                              </p>
-                              <p className="text-[11px] text-neutral-400 truncate mt-0.5 font-medium">
-                                {film.origin_name} ({film.year || "2024"})
-                              </p>
-                              <div className="flex items-center space-x-2 mt-1.5">
-                                <span className="bg-white/10 text-white border border-white/20 text-[9px] font-bold px-2 py-0.5 rounded-md">
-                                  {film.quality || "FHD"}
-                                </span>
-                                <span className="text-[10px] text-neutral-400 font-semibold">
-                                  {film.lang || "Vietsub"}
-                                </span>
-                              </div>
-                            </div>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="p-4 text-center text-neutral-400">
-                      Không tìm thấy kết quả nào cho "{searchQuery}"
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            {/* ── Search Button — opens SpotlightSearchModal (single unified search UX) ── */}
+            <button
+              id="navbar-search-btn"
+              onClick={() => setIsSpotlightOpen(true)}
+              aria-label="Tìm kiếm phim"
+              title="Tìm kiếm (Ctrl + K)"
+              className="hidden sm:flex items-center gap-2 bg-white/[0.05] hover:bg-white/[0.1] border border-white/15 rounded-full pl-3 pr-3.5 py-1.5 text-xs text-neutral-400 hover:text-white transition-all duration-200 cursor-pointer group"
+            >
+              <Search size={14} className="text-neutral-400 group-hover:text-white transition-colors" />
+              <span className="hidden md:inline font-medium">Tìm kiếm...</span>
+              <kbd className="hidden lg:flex items-center gap-0.5 bg-white/10 border border-white/20 rounded px-1.5 py-0.5 text-[10px] font-mono text-neutral-400 ml-1">
+                <span className="text-[11px]">⌘</span>K
+              </kbd>
+            </button>
+            {/* Mobile search icon only */}
+            <button
+              onClick={() => setIsSpotlightOpen(true)}
+              aria-label="Tìm kiếm"
+              className="sm:hidden p-1.5 text-neutral-400 hover:text-white transition-colors"
+            >
+              <Search size={20} />
+            </button>
 
             {/* Profile / Actions */}
             <div className="flex items-center space-x-3">
@@ -765,6 +679,17 @@ export function Navbar() {
           )}
         </div>
       )}
+
+      {/* ── Spotlight Search Modal — single unified search UI ── */}
+      <AnimatePresence>
+        {isSpotlightOpen && (
+          <SpotlightSearchModal
+            isOpen={isSpotlightOpen}
+            onClose={() => setIsSpotlightOpen(false)}
+            suggestions={[]}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

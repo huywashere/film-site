@@ -291,7 +291,6 @@ export function SpotlightSearchModal({
   // Keyboard navigation
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (!isSearching) return;
       if (e.key === "ArrowDown") {
         e.preventDefault();
         navSourceRef.current = "key";
@@ -300,11 +299,20 @@ export function SpotlightSearchModal({
         e.preventDefault();
         navSourceRef.current = "key";
         setSelectedIndex((i) => Math.max(i - 1, 0));
-      } else if (e.key === "Enter" && results[selectedIndex]) {
-        const film = results[selectedIndex];
-        saveHistory(query.trim());
-        onClose();
-        router.push(`/film/${film.slug}`);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (isSearching && results[selectedIndex]) {
+          // Has highlighted result → go to film detail
+          const film = results[selectedIndex];
+          saveHistory(query.trim());
+          onClose();
+          router.push(`/film/${film.slug}`);
+        } else if (query.trim().length >= 1) {
+          // No highlighted result → go to full search page
+          saveHistory(query.trim());
+          onClose();
+          router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+        }
       }
     },
     [isSearching, results, selectedIndex, query, onClose, router],
