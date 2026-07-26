@@ -359,13 +359,13 @@ export function Navbar() {
               onClick={() => setIsSpotlightOpen(true)}
               aria-label="Tìm kiếm phim"
               title="Tìm kiếm (Ctrl + K)"
-              className="hidden sm:flex items-center gap-2.5 bg-white/[0.06] hover:bg-white/[0.12] border border-white/20 hover:border-white/35 rounded-full pl-3.5 pr-3 py-2 text-xs text-neutral-400 hover:text-white transition-all duration-200 cursor-pointer group min-w-[200px] lg:min-w-[260px]"
+              className="hidden sm:flex items-center gap-2.5 bg-black/40 hover:bg-black/60 border border-white/10 hover:border-white/25 rounded-full pl-3.5 pr-3 py-2 text-xs transition-all duration-200 cursor-pointer group min-w-[200px] lg:min-w-[260px] backdrop-blur-sm"
             >
-              <Search size={14} className="text-neutral-500 group-hover:text-white transition-colors flex-shrink-0" />
-              <span className="flex-1 text-left font-medium text-neutral-500 group-hover:text-neutral-300 transition-colors">
+              <Search size={14} className="text-neutral-400 group-hover:text-white transition-colors flex-shrink-0" />
+              <span className="flex-1 text-left font-medium text-neutral-400 group-hover:text-neutral-200 transition-colors">
                 Tìm kiếm phim, diễn viên...
               </span>
-              <kbd className="flex items-center gap-0.5 bg-white/8 border border-white/15 rounded-md px-1.5 py-0.5 text-[10px] font-mono text-neutral-500 group-hover:text-neutral-400 flex-shrink-0">
+              <kbd className="flex items-center gap-0.5 bg-white/[0.06] border border-white/10 rounded-md px-1.5 py-0.5 text-[10px] font-mono text-neutral-500 group-hover:text-neutral-400 flex-shrink-0">
                 <span className="text-[11px]">⌘</span>K
               </kbd>
             </button>
