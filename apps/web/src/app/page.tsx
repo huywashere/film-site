@@ -367,23 +367,6 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
           <path d="m6 9 6 6 6-6" />
         </svg>
       </div>
-
-      {/* ── Search Shortcut pill — pinned in bottom-left corner of hero — style like Chi tiết button ── */}
-      <div
-        className="absolute bottom-8 left-8 z-30 hidden sm:flex items-center space-x-2 bg-white/10 hover:bg-white/20 dark:bg-white/10 dark:hover:bg-white/20 backdrop-blur-sm px-5 py-2.5 rounded-full border border-white/10 text-white text-[11px] select-none transition-colors duration-200 cursor-pointer"
-        onClick={() => {
-          window.dispatchEvent(
-            new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true })
-          );
-        }}
-        title="Tìm kiếm phim (Ctrl + K)"
-      >
-        <span className="font-bold tracking-wider uppercase opacity-80">Press</span>
-        <kbd className="bg-white/10 border border-white/20 px-2 py-0.5 rounded-md text-[11px] text-white font-mono font-bold flex items-center justify-center gap-1 shadow-inner">
-          <span className="text-[12px] font-sans leading-none">⌘</span>K
-        </kbd>
-        <span className="font-bold tracking-wider uppercase opacity-80">to search</span>
-      </div>
     </div>
   );
 }
@@ -548,59 +531,11 @@ export default function HomePage() {
     queryFn: () => movieApi.getAnime(1).then((r) => r.data),
   });
 
-  // Phim Kỹ Xảo Mãn Nhãn - Diverse VFX heavy movies with better error handling
-  const { data: vfxData, isLoading: vfxLoading } = useQuery({
-    queryKey: ["vfx-movies"],
-    queryFn: async () => {
-      try {
-        // Search multiple diverse keywords for VFX-heavy movies
-        const keywords = [
-          "marvel",
-          "avengers",
-          "spider",
-          "iron",
-          "thor",
-          "captain",
-          "guardians",
-          "transformers",
-          "godzilla",
-          "jurassic",
-          "avatar",
-          "dune",
-        ];
-
-        // Fetch results from each keyword
-        const results = await Promise.allSettled(
-          keywords.map((keyword) =>
-            movieApi
-              .search(keyword, 1, 5)
-              .then((r) => {
-                const items = r?.data?.items || r?.items || [];
-                return items.slice(0, 5);
-              })
-              .catch(() => []),
-          ),
-        );
-
-        // Get successful results only
-        const combined = results
-          .filter(
-            (r): r is PromiseFulfilledResult<any[]> => r.status === "fulfilled",
-          )
-          .flatMap((r) => r.value)
-          .filter((item) => item && item.slug);
-
-        // Shuffle for randomness
-        const shuffled = combined.sort(() => Math.random() - 0.5);
-
-        return { items: shuffled };
-      } catch (error) {
-        console.error("VFX movies query error:", error);
-        // Return empty on error
-        return { items: [] };
-      }
-    },
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  // Phim Chiếu Rạp / Hot - uses search for 'vietsub' with latest filter
+  const { data: hotData, isLoading: hotLoading } = useQuery({
+    queryKey: ["hot-movies"],
+    queryFn: () => movieApi.getLatest(2).then((r) => r.data),
+    staleTime: 1000 * 60 * 5,
   });
 
   // Phim Hành Động Kịch Tính
@@ -677,11 +612,10 @@ export default function HomePage() {
     [animeData],
   );
 
-  const vfxFilms = useMemo(() => {
-    const vfx = deduplicate(vfxData?.items || []);
-    // Fallback to latest films if VFX query fails or returns empty
-    return vfx.length > 0 ? vfx : latestFilms;
-  }, [vfxData, latestFilms]);
+  const hotFilms = useMemo(
+    () => deduplicate(hotData?.items || hotData?.data?.items || []),
+    [hotData],
+  );
 
   const actionFilms = useMemo(
     () => deduplicate(actionData?.data?.items || actionData?.items || []),
@@ -802,7 +736,7 @@ export default function HomePage() {
             return fresh;
           };
 
-          const vfxFresh = takeFresh(vfxFilms);
+          const hotFresh = takeFresh(hotFilms);
           const latestFresh = takeFresh(latestFilms);
           const actionFresh = takeFresh(actionFilms);
           const seriesFresh = takeFresh(seriesFilms);
@@ -814,22 +748,22 @@ export default function HomePage() {
 
           return (
             <>
-              {/* Phim Kỹ Xảo Mãn Nhãn */}
+              {/* Phim Mới Cập Nhật Hôm Nay */}
               <LazySection>
                 <FilmSection
-                  title="Phim Kỹ Xảo Mãn Nhãn"
-                  icon={Sparkles}
-                  films={vfxFresh}
-                  isLoading={vfxLoading}
-                  href="/search?q=marvel"
+                  title="Phim Mới Cập Nhật"
+                  icon={Clock}
+                  films={hotFresh}
+                  isLoading={hotLoading}
+                  href="/films"
                 />
               </LazySection>
 
-              {/* Phim Mới Cập Nhật */}
+              {/* Phim Mới Nhất */}
               <LazySection>
                 <FilmSection
                   title={t("home.latest")}
-                  icon={Clock}
+                  icon={TrendingUp}
                   films={latestFresh}
                   isLoading={latestLoading}
                   href="/films"
@@ -902,11 +836,11 @@ export default function HomePage() {
                 />
               </LazySection>
 
-              {/* Hoạt Hình */}
+              {/* Hoạt Hình / Anime */}
               <LazySection>
                 <FilmSection
                   title={t("home.anime")}
-                  icon={TrendingUp}
+                  icon={Sparkles}
                   films={animeFresh}
                   isLoading={animeLoading}
                   href="/films/anime"

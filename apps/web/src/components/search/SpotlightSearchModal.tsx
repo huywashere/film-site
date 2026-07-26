@@ -357,20 +357,20 @@ export function SpotlightSearchModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-xl z-[100] flex items-start justify-center pt-[12vh] px-4"
+      className="fixed inset-0 bg-black/70 backdrop-blur-2xl z-[100] flex items-start justify-center pt-[10vh] px-4"
       onClick={onClose}
     >
       <motion.div
-        initial={{ opacity: 0, y: -16, scale: 0.97 }}
+        initial={{ opacity: 0, y: -20, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -16, scale: 0.97 }}
-        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-        className="bg-[#14181c]/95 border border-white/15 w-full max-w-3xl rounded-3xl overflow-hidden shadow-[0_30px_90px_rgba(0,0,0,0.85)] flex flex-col backdrop-blur-3xl ring-1 ring-white/10"
+        exit={{ opacity: 0, y: -20, scale: 0.96 }}
+        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        className="bg-[#0d1117]/98 border border-white/10 w-full max-w-3xl rounded-2xl overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.9)] flex flex-col backdrop-blur-3xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Input Bar ── */}
-        <div className="flex items-center px-5 py-3.5 border-b border-white/[0.08] gap-3 bg-white/[0.02]">
-          <Search size={18} className="text-[#00e054] flex-shrink-0" />
+        <div className="flex items-center px-5 py-4 gap-3 border-b border-white/[0.06]">
+          <Search size={18} className="text-neutral-400 flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -378,12 +378,12 @@ export function SpotlightSearchModal({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Tìm kiếm phim, thể loại, diễn viên..."
-            className="flex-1 bg-transparent border-none text-white text-base font-semibold placeholder:text-neutral-500 focus:outline-none focus:ring-0"
+            className="flex-1 bg-transparent border-none text-white text-sm font-medium placeholder:text-neutral-600 focus:outline-none focus:ring-0 tracking-wide"
           />
           <div className="flex items-center gap-2 flex-shrink-0">
             <VoiceSearchButton onResult={(text) => setQuery(text)} />
             {isFetching && (
-              <Loader2 size={16} className="animate-spin text-[#00e054]" />
+              <Loader2 size={15} className="animate-spin text-neutral-500" />
             )}
             {query && (
               <button
@@ -391,14 +391,14 @@ export function SpotlightSearchModal({
                   setQuery("");
                   inputRef.current?.focus();
                 }}
-                className="text-neutral-500 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
+                className="text-neutral-600 hover:text-white transition-colors p-1 rounded-full hover:bg-white/8"
               >
                 <X size={14} />
               </button>
             )}
             <button
               onClick={onClose}
-              className="text-[10px] font-extrabold text-neutral-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded-md hover:bg-white/10 transition-colors"
+              className="text-[10px] font-bold text-neutral-600 bg-white/[0.04] border border-white/10 px-2 py-0.5 rounded-md hover:bg-white/8 hover:text-neutral-400 transition-colors"
             >
               ESC
             </button>
@@ -406,22 +406,22 @@ export function SpotlightSearchModal({
         </div>
 
         {/* ── Body Grid ── */}
-        <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-white/[0.08] min-h-[380px]">
+        <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-white/[0.05] min-h-[360px] max-h-[60vh]">
           {/* Left Column */}
           <div
             ref={listRef}
             onWheel={(e) => e.stopPropagation()}
-            className="md:col-span-7 max-h-[55vh] overflow-y-auto overscroll-contain p-4 flex flex-col gap-1 scrollbar-thin"
+            className="md:col-span-7 overflow-y-auto overscroll-contain p-3 flex flex-col gap-0.5 scrollbar-thin"
           >
             {/* ── IDLE STATE (empty query) ── */}
             {!isTyping && (
-              <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-5 p-1">
                 {/* Recent searches */}
                 {history.length > 0 && (
                   <div>
-                    <div className="flex items-center justify-between mb-2.5">
-                      <span className="flex items-center gap-1.5 text-[10px] text-neutral-500 font-bold uppercase tracking-wider">
-                        <Clock size={10} />
+                    <div className="flex items-center justify-between mb-2 px-1">
+                      <span className="flex items-center gap-1.5 text-[10px] text-neutral-600 font-bold uppercase tracking-widest">
+                        <Clock size={9} />
                         Tìm kiếm gần đây
                       </span>
                       <button
@@ -429,25 +429,25 @@ export function SpotlightSearchModal({
                           localStorage.removeItem(HISTORY_KEY);
                           setHistory([]);
                         }}
-                        className="text-[10px] text-neutral-600 hover:text-neutral-400 transition-colors"
+                        className="text-[10px] text-neutral-700 hover:text-neutral-400 transition-colors"
                       >
                         Xóa tất cả
                       </button>
                     </div>
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-0.5">
                       {history.map((term) => (
                         <button
                           key={term}
                           onClick={() => handleHistoryClick(term)}
-                          className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-left hover:bg-white/[0.04] group transition-colors"
+                          className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-left hover:bg-white/[0.04] group transition-colors"
                         >
-                          <span className="text-xs text-neutral-400 group-hover:text-white transition-colors flex items-center gap-2">
-                            <Clock size={11} className="text-neutral-600" />
+                          <span className="text-xs text-neutral-500 group-hover:text-white transition-colors flex items-center gap-2.5">
+                            <Clock size={11} className="text-neutral-700" />
                             {term}
                           </span>
                           <button
                             onClick={(e) => handleRemoveHistory(e, term)}
-                            className="opacity-0 group-hover:opacity-100 text-neutral-600 hover:text-neutral-300 transition-all p-1"
+                            className="opacity-0 group-hover:opacity-100 text-neutral-700 hover:text-neutral-400 transition-all p-1"
                           >
                             <X size={11} />
                           </button>
@@ -459,17 +459,17 @@ export function SpotlightSearchModal({
 
                 {/* Trending genres */}
                 <div>
-                  <span className="flex items-center gap-1.5 text-[10px] text-neutral-500 font-bold uppercase tracking-wider mb-2.5">
-                    <TrendingUp size={10} />
+                  <span className="flex items-center gap-1.5 text-[10px] text-neutral-600 font-bold uppercase tracking-widest mb-2.5 px-1">
+                    <TrendingUp size={9} />
                     Đang thịnh hành
                   </span>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-1.5 px-1">
                     {quickGenres.map((g) => (
                       <Link
                         key={g.slug}
                         href={`/genre/${g.slug}`}
                         onClick={onClose}
-                        className="bg-white/[0.04] hover:bg-[#524cf8]/15 hover:border-[#524cf8]/30 border border-white/8 px-2.5 py-1 rounded-lg text-[10px] font-bold text-neutral-400 hover:text-[#7c77ff] transition-all active:scale-95"
+                        className="bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.07] hover:border-white/20 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-neutral-500 hover:text-white transition-all active:scale-95"
                       >
                         #{g.label}
                       </Link>
@@ -477,14 +477,14 @@ export function SpotlightSearchModal({
                   </div>
                 </div>
 
-                {/* Suggestions header */}
+                {/* Suggestions */}
                 {suggestions.length > 0 && (
                   <div>
-                    <span className="flex items-center gap-1.5 text-[10px] text-neutral-500 font-bold uppercase tracking-wider mb-2.5">
-                      <TrendingUp size={10} />
+                    <span className="flex items-center gap-1.5 text-[10px] text-neutral-600 font-bold uppercase tracking-widest mb-2.5 px-1">
+                      <TrendingUp size={9} />
                       Gợi ý cho bạn
                     </span>
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-0.5">
                       {suggestions.slice(0, 5).map((item) => {
                         const poster =
                           resolveImageUrl(item.thumb_url) ||
@@ -494,9 +494,9 @@ export function SpotlightSearchModal({
                             key={item.slug}
                             href={`/film/${item.slug}`}
                             onClick={onClose}
-                            className="flex gap-3 p-2 rounded-xl hover:bg-white/[0.04] border border-transparent hover:border-white/8 group transition-all"
+                            className="flex gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.04] border border-transparent hover:border-white/[0.06] group transition-all"
                           >
-                            <div className="w-9 h-12 rounded-lg bg-white/5 overflow-hidden flex-shrink-0 border border-white/5">
+                            <div className="w-9 h-12 rounded-md bg-white/5 overflow-hidden flex-shrink-0 border border-white/5">
                               {poster ? (
                                 <img
                                   src={poster}
@@ -505,18 +505,15 @@ export function SpotlightSearchModal({
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
-                                  <Clapperboard
-                                    size={12}
-                                    className="opacity-20"
-                                  />
+                                  <Clapperboard size={12} className="opacity-20" />
                                 </div>
                               )}
                             </div>
                             <div className="flex flex-col justify-center gap-0.5 min-w-0">
-                              <span className="font-bold text-xs text-neutral-300 group-hover:text-white transition-colors line-clamp-1">
+                              <span className="font-semibold text-xs text-neutral-400 group-hover:text-white transition-colors line-clamp-1">
                                 {item.name}
                               </span>
-                              <span className="text-[10px] text-neutral-600 line-clamp-1">
+                              <span className="text-[10px] text-neutral-700 line-clamp-1">
                                 {item.origin_name}{" "}
                                 {item.year ? `(${item.year})` : ""}
                               </span>
@@ -534,7 +531,7 @@ export function SpotlightSearchModal({
             {isTyping &&
               debouncedQuery.trim().length < 2 &&
               query.trim().length < 2 && (
-                <div className="flex items-center justify-center flex-1 py-16 text-neutral-600 text-xs">
+                <div className="flex items-center justify-center flex-1 py-16 text-neutral-700 text-xs">
                   Nhập tối thiểu 2 ký tự...
                 </div>
               )}
@@ -550,10 +547,10 @@ export function SpotlightSearchModal({
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="flex flex-col gap-1"
+                  className="flex flex-col gap-0.5"
                 >
-                  <span className="text-[10px] text-neutral-600 font-bold uppercase tracking-wider mb-1.5 px-1">
-                    {results.length} kết quả cho "{debouncedQuery}"
+                  <span className="text-[10px] text-neutral-700 font-bold uppercase tracking-widest mb-2 px-3">
+                    {results.length} kết quả cho &ldquo;{debouncedQuery}&rdquo;
                   </span>
                   {results.map((item, i) => {
                     const poster =
@@ -571,13 +568,13 @@ export function SpotlightSearchModal({
                           setSelectedIndex(i);
                         }}
                         className={cn(
-                          "flex gap-3 p-2 rounded-xl transition-all group border-l-[3px]",
+                          "flex gap-3 px-3 py-2.5 rounded-lg transition-all group",
                           isActive
-                            ? "bg-white/[0.08] border-l-[#00e054] border-r border-r-transparent border-y-transparent shadow-sm"
-                            : "border-l-transparent border border-transparent hover:bg-white/[0.04]",
+                            ? "bg-white/[0.07] border border-white/10"
+                            : "border border-transparent hover:bg-white/[0.04] hover:border-white/[0.05]",
                         )}
                       >
-                        <div className="w-9 h-12 rounded-lg bg-white/5 overflow-hidden flex-shrink-0 border border-white/5 group-hover:border-white/10 shadow-sm">
+                        <div className="w-9 h-12 rounded-md bg-white/5 overflow-hidden flex-shrink-0 border border-white/5 group-hover:border-white/10">
                           {poster ? (
                             <img
                               src={poster}
@@ -593,10 +590,10 @@ export function SpotlightSearchModal({
                         <div className="flex flex-col justify-center gap-0.5 min-w-0">
                           <span
                             className={cn(
-                              "font-bold text-xs line-clamp-1 transition-colors",
+                              "font-semibold text-xs line-clamp-1 transition-colors",
                               isActive
                                 ? "text-white"
-                                : "text-neutral-300 group-hover:text-white",
+                                : "text-neutral-400 group-hover:text-white",
                             )}
                           >
                             <HighlightMatch
@@ -604,11 +601,16 @@ export function SpotlightSearchModal({
                               query={debouncedQuery}
                             />
                           </span>
-                          <span className="text-[10px] text-neutral-600 line-clamp-1">
+                          <span className="text-[10px] text-neutral-700 line-clamp-1">
                             {item.origin_name}{" "}
                             {item.year ? `(${item.year})` : ""}
                           </span>
                         </div>
+                        {isActive && (
+                          <div className="ml-auto flex items-center flex-shrink-0">
+                            <ChevronRight size={13} className="text-neutral-600" />
+                          </div>
+                        )}
                       </Link>
                     );
                   })}
@@ -619,21 +621,21 @@ export function SpotlightSearchModal({
             {/* ── EMPTY STATE ── */}
             {isSearching && !isFetching && results.length === 0 && (
               <div className="flex flex-col items-center justify-center flex-1 py-12 gap-4 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-center">
-                  <Clapperboard size={24} className="opacity-20" />
+                <div className="w-12 h-12 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center">
+                  <Clapperboard size={20} className="opacity-15" />
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-400 font-semibold mb-1">
-                    Không tìm thấy phim nào
+                  <p className="text-sm text-neutral-500 font-semibold mb-1">
+                    Không tìm thấy kết quả
                   </p>
-                  <p className="text-xs text-neutral-600 mb-4">
+                  <p className="text-xs text-neutral-700">
                     cho từ khóa &ldquo;
-                    <span className="text-neutral-400">{debouncedQuery}</span>
+                    <span className="text-neutral-500">{debouncedQuery}</span>
                     &rdquo;
                   </p>
                 </div>
                 <div className="flex flex-col items-center gap-2">
-                  <span className="text-[10px] text-neutral-600 font-bold uppercase tracking-wider">
+                  <span className="text-[10px] text-neutral-700 font-bold uppercase tracking-widest">
                     Thử xem thể loại:
                   </span>
                   <div className="flex flex-wrap justify-center gap-1.5">
@@ -642,7 +644,7 @@ export function SpotlightSearchModal({
                         key={g.slug}
                         href={`/genre/${g.slug}`}
                         onClick={onClose}
-                        className="bg-white/[0.04] hover:bg-[#524cf8]/15 border border-white/8 hover:border-[#524cf8]/30 px-2.5 py-1 rounded-lg text-[10px] font-bold text-neutral-500 hover:text-[#7c77ff] transition-all"
+                        className="bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] hover:border-white/15 px-2.5 py-1 rounded-lg text-[10px] font-semibold text-neutral-600 hover:text-white transition-all"
                       >
                         #{g.label}
                       </Link>
@@ -658,24 +660,27 @@ export function SpotlightSearchModal({
         </div>
 
         {/* ── Footer hint ── */}
-        <div className="px-5 py-2.5 border-t border-white/[0.04] flex items-center gap-4 text-[10px] text-neutral-700">
-          <span className="flex items-center gap-1">
-            <kbd className="bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-[9px] font-mono">
+        <div className="px-5 py-2 border-t border-white/[0.04] flex items-center gap-4 text-[10px] text-neutral-700">
+          <span className="flex items-center gap-1.5">
+            <kbd className="bg-white/[0.04] border border-white/8 px-1.5 py-0.5 rounded text-[9px] font-mono">
               ↑↓
             </kbd>
             Điều hướng
           </span>
-          <span className="flex items-center gap-1">
-            <kbd className="bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-[9px] font-mono">
+          <span className="flex items-center gap-1.5">
+            <kbd className="bg-white/[0.04] border border-white/8 px-1.5 py-0.5 rounded text-[9px] font-mono">
               ↵
             </kbd>
             Mở phim
           </span>
-          <span className="flex items-center gap-1">
-            <kbd className="bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-[9px] font-mono">
+          <span className="flex items-center gap-1.5">
+            <kbd className="bg-white/[0.04] border border-white/8 px-1.5 py-0.5 rounded text-[9px] font-mono">
               ESC
             </kbd>
             Đóng
+          </span>
+          <span className="ml-auto text-neutral-800">
+            Cineverse Search
           </span>
         </div>
       </motion.div>
