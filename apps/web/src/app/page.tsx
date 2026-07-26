@@ -368,23 +368,50 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
         </svg>
       </div>
 
-      {/* ── Search Shortcut pill — pinned in bottom-left corner of hero ── */}
+      {/* ── Search Shortcut pill — pinned in bottom-left corner of hero — style like Chi tiết button ── */}
       <div
-        className="absolute bottom-8 left-6 z-30 hidden sm:flex items-center space-x-2 bg-black/30 hover:bg-black/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/15 text-neutral-200 text-[11px] select-none shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
+        className="absolute bottom-8 left-8 z-30 hidden sm:flex items-center space-x-2 bg-white/10 hover:bg-white/20 dark:bg-white/10 dark:hover:bg-white/20 backdrop-blur-sm px-5 py-2.5 rounded-full border border-white/10 text-white text-[11px] select-none transition-colors duration-200 cursor-pointer"
         onClick={() => {
-          // dispatch a synthetic Ctrl+K so the existing listener in HomePage picks it up
           window.dispatchEvent(
             new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true })
           );
         }}
         title="Tìm kiếm phim (Ctrl + K)"
       >
-        <span className="font-semibold text-white/80">Press</span>
-        <kbd className="bg-white/15 border border-white/30 px-2 py-0.5 rounded-md text-[11px] text-white font-mono font-black flex items-center justify-center gap-1 shadow-inner">
+        <span className="font-bold tracking-wider uppercase opacity-80">Press</span>
+        <kbd className="bg-white/10 border border-white/20 px-2 py-0.5 rounded-md text-[11px] text-white font-mono font-bold flex items-center justify-center gap-1 shadow-inner">
           <span className="text-[12px] font-sans leading-none">⌘</span>K
         </kbd>
-        <span className="font-semibold text-white/80">to search</span>
+        <span className="font-bold tracking-wider uppercase opacity-80">to search</span>
       </div>
+    </div>
+  );
+}
+
+// ── Lazy-render wrapper — only mounts children when visible in viewport ──
+function LazySection({ children, height = 320 }: { children: React.ReactNode; height?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px 0px" }, // pre-load 200px before visible
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref}>
+      {visible ? children : <div style={{ minHeight: height }} />}
     </div>
   );
 }
@@ -407,16 +434,16 @@ function FilmSection({
 
   return (
     <motion.section
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
       className="relative mb-10 md:mb-14"
     >
       <div className="flex items-center justify-between mb-4 px-1">
         <h2
           className="text-xl md:text-2xl font-bold text-foreground flex items-center space-x-2 tracking-wide"
-          style={{ fontFamily: "'Outfit', sans-serif" }}
+          style={{ fontFamily: "'Be Vietnam Pro', sans-serif" }}
         >
           <Icon size={18} className="text-netflixRed" />
           <span>{title}</span>
@@ -439,6 +466,7 @@ function FilmSection({
           navigation
           freeMode={true}
           className="mySwiper"
+          lazy={{ loadPrevNext: true }}
         >
           {isLoading
             ? Array.from({ length: 6 }).map((_, i) => (
@@ -787,85 +815,103 @@ export default function HomePage() {
           return (
             <>
               {/* Phim Kỹ Xảo Mãn Nhãn */}
-              <FilmSection
-                title="Phim Kỹ Xảo Mãn Nhãn"
-                icon={Sparkles}
-                films={vfxFresh}
-                isLoading={vfxLoading}
-                href="/search?q=marvel"
-              />
+              <LazySection>
+                <FilmSection
+                  title="Phim Kỹ Xảo Mãn Nhãn"
+                  icon={Sparkles}
+                  films={vfxFresh}
+                  isLoading={vfxLoading}
+                  href="/search?q=marvel"
+                />
+              </LazySection>
 
               {/* Phim Mới Cập Nhật */}
-              <FilmSection
-                title={t("home.latest")}
-                icon={Clock}
-                films={latestFresh}
-                isLoading={latestLoading}
-                href="/films"
-              />
+              <LazySection>
+                <FilmSection
+                  title={t("home.latest")}
+                  icon={Clock}
+                  films={latestFresh}
+                  isLoading={latestLoading}
+                  href="/films"
+                />
+              </LazySection>
 
               {/* Phim Hành Động */}
-              <FilmSection
-                title="Phim Hành Động Kịch Tính"
-                icon={Zap}
-                films={actionFresh}
-                isLoading={actionLoading}
-                href="/genre/hanh-dong"
-              />
+              <LazySection>
+                <FilmSection
+                  title="Phim Hành Động Kịch Tính"
+                  icon={Zap}
+                  films={actionFresh}
+                  isLoading={actionLoading}
+                  href="/genre/hanh-dong"
+                />
+              </LazySection>
 
               {/* Phim Bộ */}
-              <FilmSection
-                title={t("home.series")}
-                icon={Tv}
-                films={seriesFresh}
-                isLoading={seriesLoading}
-                href="/films/series"
-              />
+              <LazySection>
+                <FilmSection
+                  title={t("home.series")}
+                  icon={Tv}
+                  films={seriesFresh}
+                  isLoading={seriesLoading}
+                  href="/films/series"
+                />
+              </LazySection>
 
               {/* Phim Kinh Dị */}
-              <FilmSection
-                title="Phim Kinh Dị Rùng Rợn"
-                icon={Ghost}
-                films={horrorFresh}
-                isLoading={horrorLoading}
-                href="/genre/kinh-di"
-              />
+              <LazySection>
+                <FilmSection
+                  title="Phim Kinh Dị Rùng Rợn"
+                  icon={Ghost}
+                  films={horrorFresh}
+                  isLoading={horrorLoading}
+                  href="/genre/kinh-di"
+                />
+              </LazySection>
 
               {/* Phim Lẻ */}
-              <FilmSection
-                title={t("home.single")}
-                icon={Clapperboard}
-                films={singleFresh}
-                isLoading={singleLoading}
-                href="/films/single"
-              />
+              <LazySection>
+                <FilmSection
+                  title={t("home.single")}
+                  icon={Clapperboard}
+                  films={singleFresh}
+                  isLoading={singleLoading}
+                  href="/films/single"
+                />
+              </LazySection>
 
               {/* Phim Tình Cảm */}
-              <FilmSection
-                title="Phim Tình Cảm Lãng Mạn"
-                icon={Heart}
-                films={romanceFresh}
-                isLoading={romanceLoading}
-                href="/genre/tinh-cam"
-              />
+              <LazySection>
+                <FilmSection
+                  title="Phim Tình Cảm Lãng Mạn"
+                  icon={Heart}
+                  films={romanceFresh}
+                  isLoading={romanceLoading}
+                  href="/genre/tinh-cam"
+                />
+              </LazySection>
 
               {/* Phim Hài Hước */}
-              <FilmSection
-                title="Phim Hài Hước Vui Nhộn"
-                icon={Laugh}
-                films={comedyFresh}
-                isLoading={comedyLoading}
-                href="/genre/hai-huoc"
-              />
+              <LazySection>
+                <FilmSection
+                  title="Phim Hài Hước Vui Nhộn"
+                  icon={Laugh}
+                  films={comedyFresh}
+                  isLoading={comedyLoading}
+                  href="/genre/hai-huoc"
+                />
+              </LazySection>
 
               {/* Hoạt Hình */}
-              <FilmSection
-                title={t("home.anime")}
-                icon={TrendingUp}
-                films={animeFresh}
-                isLoading={animeLoading}
-                href="/films/anime"
-              />
+              <LazySection>
+                <FilmSection
+                  title={t("home.anime")}
+                  icon={TrendingUp}
+                  films={animeFresh}
+                  isLoading={animeLoading}
+                  href="/films/anime"
+                />
+              </LazySection>
             </>
           );
         })()}
