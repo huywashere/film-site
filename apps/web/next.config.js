@@ -5,16 +5,15 @@ const nextConfig = {
   // Use separate directories for dev and prod builds to prevent Windows file lock collisions
   distDir: isDev ? ".next-dev" : ".next",
   poweredByHeader: false,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+
+  // eslint is no longer configured here in Next.js 16 — use eslint.config.js instead
   typescript: {
     ignoreBuildErrors: true,
   },
 
   // ── PERFORMANCE OPTIMIZATIONS ──────────────────────────────────
   reactStrictMode: true,
-  swcMinify: true,
+  // swcMinify removed — enabled by default in Next.js 16
 
   // Optimize bundle splitting
   modularizeImports: {
@@ -31,6 +30,10 @@ const nextConfig = {
       "@tanstack/react-query",
     ],
   },
+
+  // Turbopack config (required in Next.js 16 when not using webpack)
+  // Empty object silences the "webpack config with no turbopack config" error
+  turbopack: {},
 
   images: {
     // Poster URLs are served through the app's guarded image proxy and always
@@ -89,13 +92,6 @@ const nextConfig = {
         headers: [{ key: "Access-Control-Allow-Origin", value: "*" }],
       },
     ];
-  },
-  // Prevent Windows file sync cache lockups
-  webpack: (config, { dev }) => {
-    if (dev) {
-      config.cache = false;
-    }
-    return config;
   },
 };
 
