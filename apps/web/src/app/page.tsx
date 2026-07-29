@@ -9,6 +9,7 @@ import {
   VolumeX,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   Info,
   TrendingUp,
   Clock,
@@ -21,6 +22,8 @@ import {
   Ghost,
   Heart,
   Laugh,
+  Film,
+  X,
 } from "lucide-react";
 import { movieApi, reviewsApi } from "@/lib/api";
 import { useTmdb } from "@/hooks/useTmdb";
@@ -108,10 +111,25 @@ const StyledSwiperContainer = styled.div`
 
 // ── Netflix Hero Banner ───────────────────────────────────────────
 function HeroBanner({ films }: { films: FilmItem[] }) {
+  const { t } = useTranslation();
+  // Strictly deduplicate input films
+  const featured = useMemo(() => {
+    return deduplicate(films).slice(0, 6);
+  }, [films]);
+
   const [current, setCurrent] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const { t } = useTranslation();
-  const featured = useMemo(() => films.slice(0, 6), [films]);
+  const [showTrailer, setShowTrailer] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+
+  // Parallax scroll listener
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     if (featured.length < 2) return;
@@ -141,13 +159,12 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
     staleTime: 10 * 60 * 1000,
   });
 
-  // TMDB backdrop 1280px cho hero
   const filmDetail = detailData?.movie || detailData;
-  const { bestBackdrop } = useTmdb({
+  const { bestBackdrop, tmdbData } = useTmdb({
     film: filmDetail,
     enabled: !!filmDetail,
     fetchCredits: false,
-    fetchVideos: false,
+    fetchVideos: true,
   });
   const tmdbBackdropUrl = bestBackdrop
     ? tmdbBackdrop(bestBackdrop.file_path, "w1280")
@@ -168,7 +185,6 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
     .replace(/&nbsp;/g, " ")
     .trim();
 
-  // Ưu tiên TMDB backdrop 1280px, fallback về KKPhim thumb
   const backdrop =
     tmdbBackdropUrl ||
     resolveImageUrl(film.thumb_url) ||
@@ -178,7 +194,18 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
       resolveImageUrl(prevFilm.poster_url)
     : null;
 
-  // Keep Vietnamese titles readable instead of forcing a condensed display face.
+  // Calculate parallax opacity and scale based on scroll position
+  const heroOpacity = Math.max(0, 1 - scrollY / 600);
+  const heroScale = 1 + scrollY * 0.0003;
+
+  // Search trailer key from TMDB or YouTube query
+  const trailerVideo = tmdbData?.videos?.results?.find(
+    (v: any) => v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser")
+  );
+  const youtubeTrailerUrl = trailerVideo?.key
+    ? `https://www.youtube.com/embed/${trailerVideo.key}?autoplay=1&mute=0`
+    : `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(film.name + " trailer vietsub")}&autoplay=1`;
+
   const nameLen = film.name.length;
   const titleFontSizeClass =
     nameLen > 55
@@ -189,15 +216,20 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
 
   return (
     <div className="relative h-[calc(100vh+100px)] min-h-[700px] w-full overflow-hidden bg-background">
-      {/* Background Poster Image (Optimized CSS transitions, no JS animation library) */}
-      <div className="absolute inset-0 w-full h-full">
-        {/* Previous image layer for smooth crossfade */}
+      {/* Background Poster Image with Parallax & Scroll Fade Effect */}
+      <div
+        className="absolute inset-0 w-full h-full transition-transform duration-100 ease-out"
+        style={{
+          transform: `scale(${heroScale})`,
+          opacity: heroOpacity,
+        }}
+      >
+        {/* Previous image layer */}
         {prevBackdrop && (
           <div
             className="absolute inset-0 w-full h-full will-change-opacity transition-opacity duration-700 ease-in-out"
             style={{
               opacity: isTransitioning ? 0 : 1,
-              transform: "translate3d(0, 0, 0)", // Force GPU acceleration
             }}
           >
             <NextImage
@@ -206,7 +238,7 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
               fill
               quality={90}
               sizes="100vw"
-              className="object-cover object-center brightness-[0.7] dark:brightness-[0.7]"
+              className="object-cover object-center brightness-[0.7]"
               loading="lazy"
             />
           </div>
@@ -218,7 +250,6 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
             className="absolute inset-0 w-full h-full will-change-opacity transition-opacity duration-700 ease-in-out"
             style={{
               opacity: isTransitioning ? 0 : 1,
-              transform: "translate3d(0, 0, 0)", // Force GPU acceleration
             }}
           >
             <NextImage
@@ -229,7 +260,7 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
               fetchPriority={current === 0 ? "high" : "auto"}
               quality={95}
               sizes="100vw"
-              className="object-cover object-center brightness-[0.7] dark:brightness-[0.7]"
+              className="object-cover object-center brightness-[0.7]"
               placeholder="blur"
               blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iOSIgdmlld0JveD0iMCAwIDE2IDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE2IiBoZWlnaHQ9IjkiIGZpbGw9IiMxMDE0MWEiLz48L3N2Zz4="
             />
@@ -237,49 +268,49 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
         )}
       </div>
 
-      {/* Cinematic Gradient Masks - Combined into single layer for better performance */}
+      {/* Cinematic Gradient Masks with Ambient Blue Lighting */}
       <div
         className="absolute inset-0 z-10 pointer-events-none"
         style={{
           background: `
-            linear-gradient(to right, var(--background) 0%, rgba(var(--background-rgb), 0.7) 35%, transparent 65%),
-            linear-gradient(to top, var(--background) 0%, rgba(var(--background-rgb), 0.95) 15%, rgba(var(--background-rgb), 0.6) 40%, transparent 100%),
-            rgba(0, 0, 0, 0.05)
+            radial-gradient(circle at 20% 50%, rgba(37, 99, 235, 0.18) 0%, transparent 55%),
+            linear-gradient(to right, var(--background) 0%, rgba(var(--background-rgb), 0.75) 35%, transparent 65%),
+            linear-gradient(to top, var(--background) 0%, rgba(var(--background-rgb), 0.95) 15%, rgba(var(--background-rgb), 0.6) 40%, transparent 100%)
           `,
-          willChange: "transform",
-          transform: "translate3d(0, 0, 0)",
         }}
       />
 
       {/* Content Container */}
-      <div className="absolute inset-0 z-20 flex items-end sm:items-center pb-36 sm:pb-0">
+      <div
+        className="absolute inset-0 z-20 flex items-end sm:items-center pb-36 sm:pb-0 transition-opacity duration-300"
+        style={{ opacity: heroOpacity }}
+      >
         <div className="w-full px-4 sm:pl-16 sm:pr-8 md:pl-24 md:pr-12">
           <div className="max-w-3xl">
-            {/* Use CSS transitions instead of Framer Motion for text content */}
             <div
               key={current}
-              className="flex flex-col space-y-4 md:space-y-5 animate-fade-in-up motion-reduce:animate-none"
+              className="flex flex-col space-y-4 md:space-y-5 animate-fade-in-up"
               style={{
                 animationDuration: "450ms",
                 animationTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
               }}
             >
-              {/* Clear release metadata */}
-              <div className="flex flex-wrap items-center gap-2.5 text-xs font-bold text-white/75 md:text-sm">
-                <span className="rounded-md bg-emerald-500 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-black shadow-lg shadow-emerald-500/20">
-                  Nổi bật
+              {/* Release Metadata with All Blue Palette */}
+              <div className="flex flex-wrap items-center gap-2.5 text-xs font-bold text-blue-100/80 md:text-sm">
+                <span className="rounded-md bg-blue-600 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-lg shadow-blue-500/40 border border-blue-400/40">
+                  NỔI BẬT
                 </span>
-                {film.year && <span>{film.year}</span>}
+                {film.year && <span className="text-blue-200">{film.year}</span>}
                 {country && (
                   <>
-                    <span className="text-white/30">|</span>
-                    <span>{country}</span>
+                    <span className="text-blue-400/40">|</span>
+                    <span className="text-blue-200">{country}</span>
                   </>
                 )}
                 {episode && (
                   <>
-                    <span className="text-white/30">|</span>
-                    <span>{episode}</span>
+                    <span className="text-blue-400/40">|</span>
+                    <span className="text-blue-200">{episode}</span>
                   </>
                 )}
               </div>
@@ -287,25 +318,26 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
               {/* Vietnamese-friendly title treatment */}
               <h1
                 className={cn(
-                  "max-w-3xl font-be-vietnam font-extrabold leading-[1.12] tracking-[-0.025em] text-white drop-shadow-2xl",
+                  "max-w-3xl font-be-vietnam font-extrabold leading-[1.12] tracking-[-0.025em] text-white drop-shadow-[0_10px_35px_rgba(37,99,235,0.3)]",
                   titleFontSizeClass,
                 )}
               >
                 {film.name}
               </h1>
               {film.origin_name && (
-                <p className="-mt-2 text-sm font-semibold tracking-wide text-white/55 md:text-lg">
+                <p className="-mt-2 text-sm font-semibold tracking-wide text-blue-200/70 md:text-lg">
                   {film.origin_name}
                 </p>
               )}
 
+              {/* Genre Pills with Blue Styling */}
               {genres.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {genres.map((genre: any) => (
                     <Link
                       key={genre.slug || genre.name}
                       href={genre.slug ? `/genre/${genre.slug}` : "#"}
-                      className="rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold text-white/90 backdrop-blur-md transition-colors hover:bg-white/20"
+                      className="rounded-full border border-blue-400/30 bg-blue-950/40 px-3.5 py-1.5 text-[11px] font-bold text-blue-200 backdrop-blur-md transition-colors hover:bg-blue-900/60 hover:border-blue-400 hover:text-white"
                     >
                       {genre.name}
                     </Link>
@@ -313,47 +345,48 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
                 </div>
               )}
 
-              {/* Use the selected film's real synopsis when available. */}
-              <p className="max-w-2xl text-sm font-medium leading-7 text-white/75 line-clamp-3 md:text-base">
-                {description ||
-                  t(
-                    "home.heroDesc",
-                    "Khám phá nội dung và bắt đầu xem bộ phim ngay hôm nay.",
-                  )}
+              {/* Synopsis */}
+              <p className="max-w-2xl text-sm font-medium leading-7 text-neutral-300 line-clamp-3 md:text-base">
+                {description || "Khám phá nội dung và bắt đầu xem bộ phim ngay hôm nay."}
               </p>
 
-              {/* Action Buttons */}
+              {/* All Blue Action Buttons */}
               <div className="flex flex-wrap items-center gap-3 pt-2">
+                {/* Watch Now - Neon Blue Button */}
                 <Link
                   href={`/watch/${film.slug}`}
-                  className="flex items-center gap-2 rounded-full bg-blue-600 px-7 py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-blue-600/25 transition-all hover:bg-blue-500 hover:scale-[1.02]"
+                  className="flex items-center gap-2 rounded-full bg-blue-600 px-7 py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-xl shadow-blue-600/40 border border-blue-400/50 transition-all hover:bg-blue-500 hover:scale-[1.03] active:scale-95"
                 >
-                  <Play size={15} fill="currentColor" />
-                  <span>Xem ngay</span>
+                  <Play size={16} fill="currentColor" />
+                  <span>XEM NGAY</span>
                 </Link>
-                <Link
-                  href={`/film/${film.slug}`}
-                  className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-6 py-3.5 text-xs font-black uppercase tracking-wider text-white backdrop-blur-md transition-colors hover:bg-white/20"
-                >
-                  <Info size={15} />
-                  <span>{t("home.details", "Chi tiết")}</span>
-                </Link>
+
+                {/* Watch Video / Trailer Button */}
                 <button
                   type="button"
-                  aria-label="Tắt âm thanh"
-                  title="Tắt âm thanh"
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-black/20 text-white/80 backdrop-blur-md transition-colors hover:bg-white/15 hover:text-white"
+                  onClick={() => setShowTrailer(true)}
+                  className="flex items-center gap-2 rounded-full border border-blue-400/40 bg-blue-950/60 px-6 py-3.5 text-xs font-black uppercase tracking-wider text-blue-300 backdrop-blur-md transition-all hover:bg-blue-900/80 hover:border-blue-300 hover:text-white shadow-lg shadow-blue-950/50 hover:scale-[1.02] active:scale-95 cursor-pointer"
                 >
-                  <VolumeX size={18} />
+                  <Film size={16} className="text-blue-400" />
+                  <span>XEM TRAILER</span>
                 </button>
+
+                {/* Details Button */}
+                <Link
+                  href={`/film/${film.slug}`}
+                  className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-6 py-3.5 text-xs font-black uppercase tracking-wider text-white backdrop-blur-md transition-all hover:bg-white/20 hover:scale-[1.02]"
+                >
+                  <Info size={16} />
+                  <span>{t("home.details", "Chi tiết")}</span>
+                </Link>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Running Thumbnail Indicators (Right Aligned, 6 Items, Sleek Thin Border & Sharp HD Images) */}
-      <div className="absolute right-4 sm:right-8 md:right-12 bottom-6 sm:bottom-8 z-30 hidden sm:flex items-center gap-1.5 sm:gap-2">
+      {/* Running Thumbnail Indicators (Blue Active Border & Glow) */}
+      <div className="absolute right-4 sm:right-8 md:right-12 bottom-8 z-30 hidden sm:flex items-center gap-2">
         {featured.map((item, i) => {
           const thumbImg =
             resolveImageUrl(item.thumb_url) ||
@@ -370,25 +403,20 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
               }}
               aria-label={`Switch to ${item.name}`}
               className={cn(
-                "relative w-14 sm:w-16 md:w-20 lg:w-22 aspect-[16/9] rounded-md sm:rounded-lg overflow-hidden cursor-pointer flex-shrink-0 group",
+                "relative w-16 sm:w-20 md:w-24 aspect-[16/9] rounded-lg overflow-hidden cursor-pointer flex-shrink-0 group",
                 "transition-all duration-300 will-change-transform",
                 isActive
-                  ? "border-2 border-white scale-105 shadow-xl shadow-black/90 z-10"
-                  : "border border-white/20 opacity-50 hover:opacity-100 hover:border-white/60 scale-95 hover:scale-100",
+                  ? "border-2 border-blue-500 shadow-xl shadow-blue-500/60 scale-105 z-10"
+                  : "border border-white/20 opacity-50 hover:opacity-100 hover:border-blue-400/80 scale-95 hover:scale-100",
               )}
-              style={{
-                transform: isActive
-                  ? "translate3d(0, 0, 0) scale(1.05)"
-                  : "translate3d(0, 0, 0) scale(0.95)",
-              }}
             >
               {thumbImg ? (
                 <NextImage
                   src={thumbImg}
                   alt={item.name}
                   fill
-                  quality={55}
-                  sizes="(max-width: 640px) 56px, (max-width: 768px) 64px, 88px"
+                  quality={65}
+                  sizes="(max-width: 640px) 64px, (max-width: 768px) 80px, 96px"
                   className="object-cover object-center"
                   loading="lazy"
                 />
@@ -402,7 +430,7 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
         })}
       </div>
 
-      {/* Mobile dot indicators — shown only on small screens */}
+      {/* Mobile dot indicators */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex sm:hidden items-center gap-1.5">
         {featured.map((_, i) => (
           <button
@@ -416,46 +444,50 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
             className={cn(
               "rounded-full transition-all duration-300",
               i === current
-                ? "w-5 h-1.5 bg-white"
+                ? "w-6 h-1.5 bg-blue-500 shadow-sm shadow-blue-500"
                 : "w-1.5 h-1.5 bg-white/40 hover:bg-white/70",
             )}
           />
         ))}
       </div>
 
-      {/* Scroll Down Indicator with Medium Soft Mouse Cursor Icon - Center Bottom */}
+      {/* Scroll Down Indicator with Blue Glow & Smooth Parallax Downward Transition */}
       <div
-        className="absolute left-1/2 -translate-x-1/2 bottom-5 z-20 hidden sm:flex flex-col items-center gap-1.5 cursor-pointer group opacity-65 hover:opacity-100 transition-all duration-300"
+        className="absolute left-1/2 -translate-x-1/2 bottom-5 z-20 hidden sm:flex flex-col items-center gap-1.5 cursor-pointer group transition-all duration-300"
         onClick={() =>
           window.scrollTo({
-            top: window.innerHeight * 0.85,
+            top: window.innerHeight * 0.88,
             behavior: "smooth",
           })
         }
         title="Cuộn xuống để xem phim"
-        style={{ willChange: "opacity" }}
       >
-        {/* Animated Mouse Icon (Perfect mouse proportions: 22px x 34px) */}
-        <div className="w-[22px] h-[34px] rounded-full border-2 border-white/60 flex justify-center pt-1.5 backdrop-blur-md bg-black/40 group-hover:border-white/90 group-hover:bg-black/60 transition-all">
-          <div className="w-1 h-2 bg-white/80 group-hover:bg-white rounded-full animate-bounce" />
+        <div className="w-[24px] h-[36px] rounded-full border-2 border-blue-400/80 flex justify-center pt-1.5 backdrop-blur-md bg-blue-950/50 shadow-[0_0_15px_rgba(59,130,246,0.5)] group-hover:border-blue-300 group-hover:bg-blue-900/70 transition-all">
+          <div className="w-1.5 h-2.5 bg-blue-400 group-hover:bg-white rounded-full animate-bounce" />
         </div>
-
-        {/* Scroll Chevron Arrow */}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="text-white/70 group-hover:text-white transform group-hover:translate-y-0.5 transition-all"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
+        <ChevronDown size={18} className="text-blue-400 group-hover:text-blue-200 transform group-hover:translate-y-1 transition-all" />
       </div>
+
+      {/* Trailer Video Modal Popup */}
+      {showTrailer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl p-4 sm:p-8 animate-fade-in">
+          <div className="relative w-full max-w-4xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-blue-500/40">
+            <button
+              onClick={() => setShowTrailer(false)}
+              className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/70 hover:bg-blue-600 text-white flex items-center justify-center border border-white/20 transition-all cursor-pointer shadow-lg"
+            >
+              <X size={20} />
+            </button>
+            <iframe
+              src={youtubeTrailerUrl}
+              title={`Trailer ${film.name}`}
+              className="w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -739,12 +771,11 @@ export default function HomePage() {
     [genre3Data],
   );
 
-  // Combine random genre movies for a diverse banner pool
+  // Combine random genre & latest movies for a diverse, strictly deduplicated banner pool
   const combinedBannerPool = useMemo(() => {
-    const combined = [...genre1Films, ...genre2Films, ...genre3Films].filter(
-      (f) => f && (f.thumb_url || f.poster_url),
-    );
-    return combined.length > 0 ? combined : latestFilms;
+    const raw = [...genre1Films, ...genre2Films, ...genre3Films, ...latestFilms];
+    const unique = deduplicate(raw.filter((f) => f && (f.thumb_url || f.poster_url)));
+    return unique.slice(0, 6);
   }, [genre1Films, genre2Films, genre3Films, latestFilms]);
 
   // Show the hero as soon as the first usable response arrives instead of
