@@ -135,13 +135,13 @@ function getBaseUrl(url: string): string {
   }
 }
 
-// ── Filter HLS manifest, bỏ segment quảng cáo ────────────────────
+// ── Filter HLS manifest, bỏ triệt để cả khối segment quảng cáo ────
 function filterM3u8(content: string, originalUrl: string): string {
   const baseUrl = getBaseUrl(originalUrl);
   const proxyBase = "/api/hls-proxy?url=";
   const lines = content.split("\n");
   const filtered: string[] = [];
-  let skipNext = false;
+  let inAdBlock = false;
   let removedAds = 0;
 
   for (let i = 0; i < lines.length; i++) {
@@ -149,34 +149,51 @@ function filterM3u8(content: string, originalUrl: string): string {
 
     // Bỏ qua dòng trống
     if (!line) {
-      filtered.push("");
+      if (!inAdBlock) filtered.push("");
       continue;
     }
 
-    // Xử lý EXT-X-DISCONTINUITY (dấu hiệu chèn quảng cáo)
+    // Detect #EXT-X-DISCONTINUITY (dấu hiệu chèn khối quảng cáo)
     if (line === "#EXT-X-DISCONTINUITY") {
-      // Kiểm tra segment tiếp theo có phải quảng cáo không
-      const nextSegment = lines
-        .slice(i + 1)
-        .find((l) => !l.startsWith("#") && l.trim());
-      if (nextSegment && isAdUrl(resolveUrl(baseUrl, nextSegment.trim()))) {
-        skipNext = true;
-        removedAds++;
-        continue; // bỏ DISCONTINUITY tag
+      if (inAdBlock) {
+        // Kết thúc khối quảng cáo
+        inAdBlock = false;
+        continue;
       }
+
+      // Kiểm tra 15 dòng tiếp theo xem có chứa URL quảng cáo/nhà cái không
+      const sliceLines = lines.slice(i + 1, i + 16);
+      const isAdBlock = sliceLines.some((l) => {
+        const trimmed = l.trim();
+        if (!trimmed.startsWith("#") && trimmed) {
+          const abs = resolveUrl(baseUrl, trimmed);
+          return isAdUrl(abs);
+        }
+        return false;
+      });
+
+      if (isAdBlock) {
+        inAdBlock = true;
+        removedAds++;
+        continue; // bỏ tag DISCONTINUITY mở đầu khối quảng cáo
+      }
+    }
+
+    // Nếu đang trong khối quảng cáo → bỏ tất cả các dòng tới khi hết khối
+    if (inAdBlock) {
+      removedAds++;
+      continue;
     }
 
     // Xử lý dòng segment (.ts, .m4s, .aac...)
     if (!line.startsWith("#")) {
       const absoluteUrl = resolveUrl(baseUrl, line);
 
-      if (skipNext || isAdUrl(absoluteUrl)) {
-        skipNext = false;
+      if (isAdUrl(absoluteUrl)) {
         removedAds++;
-        continue; // bỏ segment quảng cáo
+        continue; // bỏ segment quảng cáo lẻ
       }
 
-      skipNext = false;
       // Proxy segment qua server để tránh CORS
       filtered.push(`${proxyBase}${encodeURIComponent(absoluteUrl)}`);
       continue;
@@ -224,7 +241,7 @@ function filterM3u8(content: string, originalUrl: string): string {
   }
 
   if (removedAds > 0) {
-    console.log(`[hls-proxy] Đã block ${removedAds} segment quảng cáo`);
+    console.log(`[hls-proxy] Đã gỡ triệt để ${removedAds} dòng/segment quảng cáo`);
   }
 
   return filtered.join("\n");
