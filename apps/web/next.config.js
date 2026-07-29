@@ -48,6 +48,8 @@ const nextConfig = {
       { protocol: "https", hostname: "ui-avatars.com" },
       { protocol: "https", hostname: "motphim.net" },
       { protocol: "https", hostname: "**.motphim.net" },
+      // TMDB
+      { protocol: "https", hostname: "image.tmdb.org" },
     ],
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],

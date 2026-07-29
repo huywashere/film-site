@@ -30,6 +30,8 @@ import { useToast } from "@/providers/ToastProvider";
 import { useAuthStore } from "@/store/authStore";
 import { useTranslation } from "@/store/langStore";
 import { useWatchParty } from "@/hooks/useWatchParty";
+import { useTmdb } from "@/hooks/useTmdb";
+import { tmdbBackdrop } from "@/lib/tmdb";
 import { WatchPartyPanel } from "@/components/watch/WatchPartyPanel";
 import { AdvancedCommentSection } from "@/components/comments/AdvancedCommentSection";
 
@@ -161,13 +163,16 @@ export default function WatchPage() {
   const [episodeSearch, setEpisodeSearch] = useState("");
   const [autoNextConfig, setAutoNextConfig] = useState(true);
   const [autoPlayConfig, setAutoPlayConfig] = useState(true);
-  const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(
-    null,
-  );
+  const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(null);
   const [useEmbedPlayer, setUseEmbedPlayer] = useState(false);
-  const [activeServerType, setActiveServerType] =
-    useState<ServerType>("vietsub");
+  const [activeServerType, setActiveServerType] = useState<ServerType>("vietsub");
   const [currentTypeServer, setCurrentTypeServer] = useState(0);
+
+  // Fallback state
+  const [isFallbacking, setIsFallbacking] = useState(false);
+  const [fallbackMessage, setFallbackMessage] = useState("");
+  const [loadTimeout, setLoadTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const fallbackAttemptRef = useRef(0);
   const autoNextTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSyncRef = useRef(0);
 
@@ -192,6 +197,14 @@ export default function WatchPage() {
     queryKey: ["film-nguonc", slug],
     queryFn: () =>
       fetch(`/api/nguonc/film/${slug}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
+    enabled: !!slug,
+  });
+  const { data: vsmovData } = useQuery({
+    queryKey: ["film-vsmov", slug],
+    queryFn: () =>
+      fetch(`/api/vsmov/phim/${slug}`)
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
     enabled: !!slug,
@@ -265,22 +278,31 @@ export default function WatchPage() {
     enabled: !!user && !!slug,
   });
 
-  // Episode processing
+  // Episode processing — gom từ tất cả nguồn, gán nhãn rõ ràng
   const kkphimEps: any[] = data?.episodes || [];
   const ophimEps: any[] = ophimData?.episodes || [];
   const nguoncEps: any[] = nguoncData?.episodes || [];
+  const vsmovEps: any[] = vsmovData?.episodes || [];
 
-  const tagged = (arr: any[], prefix: string) =>
+  // Mỗi nguồn được tag với tên nguồn + index server trong nguồn đó
+  const tagSource = (arr: any[], sourceName: string, sourceKey: string) =>
     arr.map((s, i) => ({
       ...s,
-      server_name: arr.length > 1 ? `${prefix} ${i + 1}` : prefix,
-      _type: detectServerType(s.server_name || prefix, filmLang),
+      server_name:
+        s.server_name && s.server_name !== "Vietsub"
+          ? `[${sourceName}] ${s.server_name}`
+          : arr.length > 1
+            ? `${sourceName} #${i + 1}`
+            : sourceName,
+      _source: sourceKey,
+      _type: detectServerType(s.server_name || sourceName, filmLang),
     }));
 
   const episodes = [
-    ...tagged(kkphimEps, "Server"),
-    ...tagged(ophimEps, "OPhim"),
-    ...tagged(nguoncEps, "NguonC"),
+    ...tagSource(kkphimEps, "KKPhim", "kkphim"),
+    ...tagSource(ophimEps, "OPhim", "ophim"),
+    ...tagSource(nguoncEps, "NguonC", "nguonc"),
+    ...tagSource(vsmovEps, "VSMov", "vsmov"),
   ];
 
   const serversByType = useMemo(() => {
@@ -307,8 +329,7 @@ export default function WatchPage() {
   }, [availableTypes]);
 
   const currentTypeServers = serversByType[activeServerType] || [];
-  const server =
-    currentTypeServers[currentTypeServer] || episodes[currentServer];
+  const server = episodes[currentServer] || episodes[0];
   const serverData: any[] = server?.server_data || [];
   const currentEpData: any =
     serverData.find((e: any) => (e.slug || e.name) === currentEp) ||
@@ -316,7 +337,13 @@ export default function WatchPage() {
 
   const m3u8Url: string = currentEpData?.link_m3u8 || "";
   const embedUrl: string = currentEpData?.link_embed || "";
-  const videoUrl = m3u8Url || embedUrl;
+
+  // Proxy m3u8 qua server để filter quảng cáo + fix CORS
+  const proxiedM3u8 = m3u8Url
+    ? `/api/hls-proxy?url=${encodeURIComponent(m3u8Url)}`
+    : "";
+
+  const videoUrl = proxiedM3u8 || embedUrl;
 
   const currentEpIndex = serverData.findIndex(
     (e: any) =>
@@ -328,6 +355,10 @@ export default function WatchPage() {
     resolveImageUrl(film?.thumb_url) ||
     resolveImageUrl(film?.poster_url) ||
     undefined;
+
+  // TMDB backdrop cho hero phia tren player
+  const { bestBackdrop } = useTmdb({ film, enabled: !!film, fetchCredits: false, fetchVideos: false });
+  const tmdbBackdropUrl = bestBackdrop ? tmdbBackdrop(bestBackdrop.file_path, "w1280") : null;
   const epName: string = currentEpData?.slug || currentEpData?.name || "";
   const progressKey = slug && epName ? `${slug}_${epName}` : undefined;
   const currentResumeEntry = resumeData?.find(
@@ -400,28 +431,100 @@ export default function WatchPage() {
     ],
   );
 
-  // Error
-  const handlePlayerError = (err: any) => {
+  // ── Smart Fallback Engine ─────────────────────────────────────
+  const tryNextServer = useCallback((reason: string) => {
+    const currentIdx = currentServer;
+    const upd = [...failedServers, currentIdx];
+    setFailedServers(upd);
+    setIsFallbacking(true);
+
+    // Tìm server tiếp theo chưa fail trong cùng type
+    const sameTypeServers = episodes.filter(
+      (ep) => ep._type === activeServerType,
+    );
+    const nextSameType = sameTypeServers.find(
+      (ep) => !upd.includes(episodes.indexOf(ep)),
+    );
+
+    // Nếu không còn server cùng type → thử type khác
+    const nextAnyType = !nextSameType
+      ? episodes.find((ep) => !upd.includes(episodes.indexOf(ep)))
+      : null;
+
+    const nextEp = nextSameType || nextAnyType;
+
+    if (!nextEp) {
+      setIsFallbacking(false);
+      setFallbackMessage("");
+      toast("Tất cả server không khả dụng!", "error");
+      return;
+    }
+
+    const nextIdx = episodes.indexOf(nextEp);
+    const isSwitchingType = nextEp._type !== activeServerType;
+
+    setFallbackMessage(
+      isSwitchingType
+        ? `Chuyển sang ${nextEp._type === "thuyet-minh" ? "Thuyết minh" : "Phụ đề"}...`
+        : `Thử server ${nextEp.server_name}...`,
+    );
+
+    // Delay nhỏ để UX mượt, không flash
+    setTimeout(() => {
+      if (isSwitchingType) setActiveServerType(nextEp._type as ServerType);
+      setCurrentServer(nextIdx);
+      setCurrentTypeServer(nextIdx);
+      setUseEmbedPlayer(false);
+      setIsFallbacking(false);
+      setFallbackMessage("");
+      fallbackAttemptRef.current += 1;
+
+      // Cập nhật URL episode nếu server mới có tập khác
+      const nd = nextEp?.server_data || [];
+      const sameEp = nd.find(
+        (e: any) => (e.slug || e.name) === currentEp,
+      );
+      const targetEp = sameEp || nd[0];
+      if (targetEp) {
+        router.replace(
+          `/watch/${slug}?ep=${targetEp.slug || targetEp.name}`,
+          { scroll: false },
+        );
+      }
+    }, 600);
+  }, [currentServer, failedServers, episodes, activeServerType, currentEp, slug, router, toast]);
+
+  // Timeout 12s nếu video không load được
+  const startLoadTimeout = useCallback(() => {
+    if (loadTimeout) clearTimeout(loadTimeout);
+    const t = setTimeout(() => {
+      tryNextServer("timeout");
+    }, 12000);
+    setLoadTimeout(t);
+  }, [loadTimeout, tryNextServer]);
+
+  const clearLoadTimeout = useCallback(() => {
+    if (loadTimeout) {
+      clearTimeout(loadTimeout);
+      setLoadTimeout(null);
+    }
+  }, [loadTimeout]);
+
+  const handlePlayerError = useCallback((err: any) => {
+    clearLoadTimeout();
+    // Thử embed trước nếu đang dùng m3u8
     if (embedUrl && !useEmbedPlayer) {
-      toast("Chuyển player dự phòng...", "warning");
       setUseEmbedPlayer(true);
       return;
     }
-    const gIdx = episodes.indexOf(server);
-    if (!failedServers.includes(gIdx)) {
-      const upd = [...failedServers, gIdx];
-      setFailedServers(upd);
-      const next = currentTypeServers.find(
-        (s) => !upd.includes(episodes.indexOf(s)),
-      );
-      if (next) {
-        setCurrentTypeServer(currentTypeServers.indexOf(next) + 1);
-        const nd = next?.server_data || [];
-        if (nd.length > 0)
-          router.push(`/watch/${slug}?ep=${nd[0].slug || nd[0].name}`);
-      } else toast("Tất cả server không khả dụng!", "error");
-    }
-  };
+    tryNextServer("error");
+  }, [clearLoadTimeout, embedUrl, useEmbedPlayer, tryNextServer]);
+
+  const handlePlayerReady = useCallback(() => {
+    clearLoadTimeout();
+    setIsFallbacking(false);
+    setFallbackMessage("");
+  }, [clearLoadTimeout]);
 
   useEffect(() => {
     const sp = searchParams.get("server");
@@ -435,7 +538,21 @@ export default function WatchPage() {
 
   useEffect(() => {
     setUseEmbedPlayer(false);
+    setFailedServers([]);
+    setIsFallbacking(false);
+    setFallbackMessage("");
+    fallbackAttemptRef.current = 0;
+    clearLoadTimeout();
   }, [currentEp, currentServer]);
+
+  // Bắt đầu timeout khi URL video thay đổi
+  useEffect(() => {
+    if (!proxiedM3u8 && !embedUrl) return;
+    if (isFallbacking) return;
+    startLoadTimeout();
+    return () => clearLoadTimeout();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proxiedM3u8, embedUrl, currentServer]);
 
   useEffect(() => {
     setCurrentTypeServer(0);
@@ -472,6 +589,35 @@ export default function WatchPage() {
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-white">
+      {/* ── TMDB Backdrop Hero phia tren player ── */}
+      {tmdbBackdropUrl && (
+        <div className="relative w-full h-32 md:h-48 overflow-hidden">
+          <img
+            src={tmdbBackdropUrl}
+            alt={film?.name || ""}
+            className="w-full h-full object-cover object-top brightness-50"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0d1117]/60 to-[#0d1117]" />
+          <div className="absolute bottom-4 left-4 md:left-6 flex items-end gap-3">
+            {posterUrl && (
+              <img
+                src={posterUrl}
+                alt={film?.name}
+                className="w-12 h-16 md:w-16 md:h-22 rounded-lg object-cover border border-white/20 shadow-xl hidden md:block"
+              />
+            )}
+            <div>
+              <h1 className="text-white font-bold text-sm md:text-lg leading-tight drop-shadow-lg">
+                {film?.name}
+              </h1>
+              {film?.year && (
+                <p className="text-white/50 text-xs mt-0.5">{film.year}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── MAIN — padded top for navbar (64px) + margin ── */}
       <main className="pt-20 max-w-screen-2xl mx-auto px-3 md:px-5 pb-10">
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-5">
@@ -479,20 +625,38 @@ export default function WatchPage() {
           <div className="space-y-4 min-w-0">
             {/* 1. PLAYER */}
             <div className="bg-black aspect-video rounded-xl overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06]">
+              {/* Fallback overlay */}
+              {isFallbacking && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm gap-3">
+                  <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  <p className="text-white/70 text-sm font-medium">
+                    {fallbackMessage || "Đang chuyển server..."}
+                  </p>
+                  {fallbackAttemptRef.current > 0 && (
+                    <p className="text-white/30 text-xs">
+                      Lần thử {fallbackAttemptRef.current + 1}
+                    </p>
+                  )}
+                </div>
+              )}
               {videoUrl ? (
                 <>
-                  {!useEmbedPlayer && m3u8Url ? (
+                  {!useEmbedPlayer && proxiedM3u8 ? (
                     <ArtPlayer
-                      url={m3u8Url}
+                      url={proxiedM3u8}
                       type="hls"
                       poster={posterUrl}
                       title={`${film?.name} - Tập ${currentEpData?.name}`}
                       autoplay={false}
                       progressKey={progressKey}
                       dbProgress={dbProgress}
-                      onReady={() => {}}
+                      onReady={handlePlayerReady}
                       onEnded={handleVideoEnded}
-                      onProgress={handleProgress}
+                      onProgress={(ct, dur) => {
+                        // Clear timeout ngay khi video bắt đầu phát được
+                        if (ct > 0) clearLoadTimeout();
+                        handleProgress(ct, dur);
+                      }}
                       onError={handlePlayerError}
                     />
                   ) : embedUrl ? (
@@ -502,6 +666,8 @@ export default function WatchPage() {
                       allowFullScreen
                       allow="autoplay; fullscreen"
                       title={`${film?.name} - ${currentEpData?.name}`}
+                      onLoad={() => clearLoadTimeout()}
+                      onError={() => tryNextServer("iframe-error")}
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center w-full h-full text-white/30">
@@ -622,66 +788,143 @@ export default function WatchPage() {
               </div>
             </div>
 
-            {/* 3. SERVER TYPE TABS */}
-            {availableTypes.length > 0 && (
-              <div className="space-y-2.5">
-                <p className="text-[10px] font-semibold text-white/30 uppercase tracking-widest flex items-center gap-1.5">
-                  <Server size={11} /> Chọn nguồn phim
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {availableTypes.map((type) => {
-                    const cfg = TYPE_CFG[type];
-                    const isActive = activeServerType === type;
-                    const count = serversByType[type].length;
-                    return (
+            {/* 3. SERVER TABS — 2 nhóm: Phụ đề & Thuyết minh */}
+            {episodes.length > 0 && (() => {
+              // Nhóm theo type
+              const subEps = episodes.filter((ep) => ep._type === "vietsub");
+              const dubEps = episodes.filter((ep) => ep._type === "thuyet-minh");
+              const hasSubtitle = subEps.length > 0;
+              const hasDub = dubEps.length > 0;
+              const activeGroup = activeServerType === "thuyet-minh" ? dubEps : subEps;
+
+              return (
+                <div className="space-y-3">
+                  {/* ── Tab chọn dạng: Phụ đề / Thuyết minh ── */}
+                  <div className="flex items-center gap-2">
+                    {hasSubtitle && (
                       <button
-                        key={type}
-                        onClick={() => setActiveServerType(type)}
-                        className={cn(
-                          "inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-medium transition-all",
-                          isActive ? cfg.active : cfg.inactive,
-                        )}
-                      >
-                        <cfg.Icon size={13} />
-                        {cfg.label}
-                        {count > 1 && (
-                          <span className="text-[9px] font-bold bg-white/10 rounded-full px-1.5 py-0.5">
-                            {count}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                {currentTypeServers.length > 1 && (
-                  <div className="flex gap-1.5 flex-wrap">
-                    {currentTypeServers.map((s, i) => (
-                      <button
-                        key={i}
                         onClick={() => {
-                          setCurrentTypeServer(i);
-                          const gIdx = episodes.indexOf(s);
-                          setCurrentServer(gIdx >= 0 ? gIdx : 0);
-                          const nd = s?.server_data || [];
-                          if (nd.length > 0)
-                            router.push(
-                              `/watch/${slug}?ep=${nd[0].slug || nd[0].name}`,
-                            );
+                          setActiveServerType("vietsub");
+                          const first = subEps[0];
+                          if (first) {
+                            const idx = episodes.indexOf(first);
+                            setCurrentServer(idx >= 0 ? idx : 0);
+                            setUseEmbedPlayer(false);
+                            const nd = first?.server_data || [];
+                            if (nd.length > 0)
+                              router.push(`/watch/${slug}?ep=${nd[0].slug || nd[0].name}`);
+                          }
                         }}
                         className={cn(
-                          "px-3 py-1 rounded-lg border text-[10px] font-medium transition-all",
-                          i === currentTypeServer
-                            ? "bg-white/10 border-white/20 text-white"
-                            : "bg-white/[0.03] border-white/[0.06] text-white/40 hover:text-white/70",
+                          "flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all",
+                          activeServerType !== "thuyet-minh"
+                            ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-300"
+                            : "bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/70 hover:border-white/20",
                         )}
                       >
-                        Server {i + 1}
+                        <Subtitles size={13} />
+                        Phụ đề
+                        <span className="text-[9px] font-bold bg-white/10 rounded-full px-1.5 py-0.5">
+                          {subEps.length}
+                        </span>
                       </button>
-                    ))}
+                    )}
+                    {hasDub && (
+                      <button
+                        onClick={() => {
+                          setActiveServerType("thuyet-minh");
+                          const first = dubEps[0];
+                          if (first) {
+                            const idx = episodes.indexOf(first);
+                            setCurrentServer(idx >= 0 ? idx : 0);
+                            setUseEmbedPlayer(false);
+                            const nd = first?.server_data || [];
+                            if (nd.length > 0)
+                              router.push(`/watch/${slug}?ep=${nd[0].slug || nd[0].name}`);
+                          }
+                        }}
+                        className={cn(
+                          "flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all",
+                          activeServerType === "thuyet-minh"
+                            ? "bg-amber-500/15 border-amber-500/50 text-amber-300"
+                            : "bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/70 hover:border-white/20",
+                        )}
+                      >
+                        <Mic size={13} />
+                        Thuyết minh
+                        <span className="text-[9px] font-bold bg-white/10 rounded-full px-1.5 py-0.5">
+                          {dubEps.length}
+                        </span>
+                      </button>
+                    )}
                   </div>
-                )}
-              </div>
-            )}
+
+                  {/* ── Server trong nhóm đang chọn ── */}
+                  {activeGroup.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {activeGroup.map((ep) => {
+                        const i = episodes.indexOf(ep);
+                        const isActive = i === currentServer;
+                        const hasFailed = failedServers.includes(i);
+                        const sourceColors: Record<string, string> = {
+                          kkphim: isActive
+                            ? "bg-blue-500/15 border-blue-500/50 text-blue-300"
+                            : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-blue-500/30 hover:text-blue-300/70",
+                          ophim: isActive
+                            ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-300"
+                            : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-emerald-500/30 hover:text-emerald-300/70",
+                          nguonc: isActive
+                            ? "bg-amber-500/15 border-amber-500/50 text-amber-300"
+                            : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-amber-500/30 hover:text-amber-300/70",
+                          vsmov: isActive
+                            ? "bg-purple-500/15 border-purple-500/50 text-purple-300"
+                            : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-purple-500/30 hover:text-purple-300/70",
+                        };
+                        const colorClass = sourceColors[ep._source] || sourceColors.kkphim;
+
+                        return (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              setCurrentServer(i);
+                              setCurrentTypeServer(i);
+                              setUseEmbedPlayer(false);
+                              const nd = ep?.server_data || [];
+                              if (nd.length > 0)
+                                router.push(`/watch/${slug}?ep=${nd[0].slug || nd[0].name}`);
+                            }}
+                            disabled={hasFailed}
+                            className={cn(
+                              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-medium transition-all",
+                              hasFailed
+                                ? "opacity-30 cursor-not-allowed line-through bg-white/[0.02] border-white/[0.05] text-white/30"
+                                : colorClass,
+                            )}
+                          >
+                            <Server size={11} />
+                            {ep.server_name}
+                            {/* Đang fallback sang server này */}
+                            {isActive && isFallbacking && (
+                              <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+                            )}
+                            {/* Đang active và load bình thường */}
+                            {isActive && !isFallbacking && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
+                            )}
+                            {ep.server_data?.length > 0 && (
+                              <span className="text-[9px] bg-white/10 rounded-full px-1.5 py-0.5">
+                                {ep.server_data.length} tập
+                              </span>
+                            )}
+                            {hasFailed && <AlertTriangle size={9} className="text-red-400" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* 4. EPISODE LIST — list style, not tiny squares */}
             <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl overflow-hidden">
@@ -739,7 +982,39 @@ export default function WatchPage() {
               </div>
             </div>
 
-            {/* 5. COMMENTS */}
+            {/* 5. KEYBOARD SHORTCUTS */}
+            <details className="group bg-white/[0.02] border border-white/[0.05] rounded-xl overflow-hidden">
+              <summary className="flex items-center justify-between px-4 py-3 cursor-pointer text-xs font-semibold text-white/40 hover:text-white/70 transition-colors select-none list-none">
+                <span className="flex items-center gap-2">
+                  <kbd className="bg-white/8 border border-white/10 px-1.5 py-0.5 rounded text-[9px] font-mono">⌨</kbd>
+                  Phím tắt
+                </span>
+                <span className="text-[10px] group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 grid grid-cols-2 gap-x-6 gap-y-2 text-[11px]">
+                {[
+                  ["Space / K", "Phát / Tạm dừng"],
+                  ["← / J", "Tua lùi 10 giây"],
+                  ["→ / L", "Tua tới 10 giây"],
+                  ["↑ / ↓", "Âm lượng +/- 10%"],
+                  ["M", "Tắt / Bật tiếng"],
+                  ["F", "Toàn màn hình"],
+                  ["P", "Picture-in-Picture"],
+                  ["D", "Tắt / Bật đèn"],
+                  [", / .", "Giảm / Tăng tốc độ"],
+                  ["0 – 9", "Nhảy đến 0%–90%"],
+                ].map(([key, desc]) => (
+                  <div key={key} className="flex items-center gap-2 py-0.5">
+                    <kbd className="bg-white/8 border border-white/10 px-1.5 py-0.5 rounded text-[9px] font-mono text-white/60 shrink-0 min-w-[52px] text-center">
+                      {key}
+                    </kbd>
+                    <span className="text-white/40">{desc}</span>
+                  </div>
+                ))}
+              </div>
+            </details>
+
+            {/* 6. COMMENTS */}
             <div className="border-t border-white/[0.05] pt-5">
               <AdvancedCommentSection
                 movieSlug={slug}

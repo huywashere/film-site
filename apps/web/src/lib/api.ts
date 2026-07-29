@@ -6,6 +6,7 @@ import {
   tagMovieDetailSource,
   type MovieSource,
 } from "@/lib/movie-normalizer";
+import { rankSearchResults, expandQuery } from "@/lib/search-engine";
 
 // ── KKPhim API Configuration ──────────────────────────────────────
 const KKPHIM_PROXY = "/api/kkphim";
@@ -116,7 +117,7 @@ export const kkphimApi = {
     fetchKKPhim(`/nam-phat-hanh/${year}?page=${page}&limit=${limit}`),
 };
 
-// ── Ophim & NguonC Proxies ──────────────────────────────────────
+// ── OPhim, NguonC & VSMOV Proxies ──────────────────────────────
 const fetchOphim = async (endpoint: string) => {
   const response = await fetch(`/api/ophim${endpoint}`);
   const json = await response.json();
@@ -157,8 +158,28 @@ const fetchOphim = async (endpoint: string) => {
 
 const fetchNguonc = async (endpoint: string) => {
   const response = await fetch(`/api/nguonc${endpoint}`);
-  const json = await response.json();
-  return json;
+  if (!response.ok) throw new Error(`NguonC API Error: ${response.status}`);
+  return response.json();
+};
+
+const fetchVsmov = async (endpoint: string) => {
+  const response = await fetch(`/api/vsmov${endpoint}`);
+  if (!response.ok) throw new Error(`VSMOV API Error: ${response.status}`);
+  return response.json();
+};
+
+export const vsmovApi = {
+  getLatest: (page = 1, limit = 24) =>
+    fetchVsmov(`/danh-sach/phim-moi-cap-nhat?page=${page}&limit=${limit}`),
+  search: (keyword: string, page = 1, limit = 24) =>
+    fetchVsmov(
+      `/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`,
+    ),
+  getDetail: (slug: string) => fetchVsmov(`/phim/${slug}`),
+  getByGenre: (slug: string, page = 1, limit = 24) =>
+    fetchVsmov(`/the-loai/${slug}?page=${page}&limit=${limit}`),
+  getByCountry: (slug: string, page = 1, limit = 24) =>
+    fetchVsmov(`/quoc-gia/${slug}?page=${page}&limit=${limit}`),
 };
 
 function asRecord(value: unknown): Record<string, any> {
@@ -181,47 +202,92 @@ function getTotalPages(data: unknown): number | undefined {
   const dataRecord = asRecord(root.data);
   const params = asRecord(dataRecord.params);
   const pagination = asRecord(params.pagination);
+  const rootPagination = asRecord(root.pagination);
   const paginate = asRecord(root.paginate);
 
-  return readNumber(pagination.totalPages) || readNumber(paginate.total_page);
+  return (
+    readNumber(pagination.totalPages) ||
+    readNumber(rootPagination.totalPages) ||
+    readNumber(paginate.total_page)
+  );
 }
 
 async function searchAllSources(keyword: string, page = 1, limit = 24) {
-  const encodedKeyword = encodeURIComponent(keyword);
-  const requests: Array<{
-    source: MovieSource;
-    request: () => Promise<unknown>;
-  }> = [
-    {
-      source: "kkphim",
-      request: () => kkphimApi.search(keyword, page, limit),
-    },
+  const trimmed = keyword.trim();
+  if (!trimmed) {
+    return {
+      status: "success",
+      data: { items: [], params: { pagination: { currentPage: 1, totalItems: 0, totalItemsPerPage: limit, totalPages: 1 } } },
+      _sources: [],
+    };
+  }
+
+  // Expand query thành nhiều biến thể để tăng recall
+  const variants = expandQuery(trimmed);
+  const primaryKeyword = variants[0];
+  const encodedKeyword = encodeURIComponent(primaryKeyword);
+
+  // Gọi song song tất cả nguồn với primary keyword
+  const requests: Array<{ source: MovieSource; request: () => Promise<unknown> }> = [
+    { source: "kkphim", request: () => kkphimApi.search(primaryKeyword, page, limit) },
     {
       source: "ophim",
-      request: () =>
-        fetchOphim(
-          `/v1/api/tim-kiem?keyword=${encodedKeyword}&page=${page}&limit=${limit}`,
-        ),
+      request: () => fetchOphim(`/v1/api/tim-kiem?keyword=${encodedKeyword}&page=${page}&limit=${limit}`),
     },
     {
       source: "nguonc",
-      request: () =>
-        fetchNguonc(`/films/search?keyword=${encodedKeyword}&page=${page}`),
+      request: () => fetchNguonc(`/films/search?keyword=${encodedKeyword}&page=${page}`),
     },
+    { source: "vsmov", request: () => vsmovApi.search(primaryKeyword, page, limit) },
   ];
 
-  const settled = await Promise.allSettled(
-    requests.map((entry) => entry.request()),
-  );
-  const groups = settled.map((result, index) => ({
-    source: requests[index].source,
+  // Nếu query có biến thể khác (bỏ dấu), gọi thêm với variant thứ 2
+  const extraRequests: Array<{ source: MovieSource; request: () => Promise<unknown> }> = [];
+  if (variants.length > 1 && variants[1] !== primaryKeyword) {
+    const encodedVariant = encodeURIComponent(variants[1]);
+    extraRequests.push(
+      { source: "kkphim", request: () => kkphimApi.search(variants[1], page, limit) },
+      {
+        source: "ophim",
+        request: () => fetchOphim(`/v1/api/tim-kiem?keyword=${encodedVariant}&page=${page}&limit=${limit}`),
+      },
+    );
+  }
+
+  const [primarySettled, extraSettled] = await Promise.all([
+    Promise.allSettled(requests.map((e) => e.request())),
+    extraRequests.length > 0
+      ? Promise.allSettled(extraRequests.map((e) => e.request()))
+      : Promise.resolve([] as PromiseSettledResult<unknown>[]),
+  ]);
+
+  // Gom kết quả từ primary requests
+  const groups = primarySettled.map((result, i) => ({
+    source: requests[i].source,
     items: result.status === "fulfilled" ? extractFilmItems(result.value) : [],
   }));
 
-  const items = dedupeFilmsBySource(groups).slice(0, limit);
+  // Gom kết quả từ extra requests (variant query)
+  const extraGroups = extraSettled.map((result, i) => ({
+    source: extraRequests[i].source,
+    items: result.status === "fulfilled" ? extractFilmItems(result.value) : [],
+  }));
+
+  // Merge tất cả groups (primary + extra)
+  const allGroups = [...groups, ...extraGroups];
+  const merged = dedupeFilmsBySource(allGroups);
+
+  // ── Smart re-ranking với search engine ──
+  const ranked = rankSearchResults(merged, trimmed);
+
+  // Paginate sau khi rank
+  const startIndex = (page - 1) * limit;
+  const items = ranked.slice(startIndex, startIndex + limit);
+
   const totalPages = Math.max(
     1,
-    ...settled.map((result) =>
+    Math.ceil(ranked.length / limit),
+    ...primarySettled.map((result) =>
       result.status === "fulfilled" ? getTotalPages(result.value) || 1 : 1,
     ),
   );
@@ -233,16 +299,15 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
       params: {
         pagination: {
           currentPage: page,
-          totalItems: items.length,
+          totalItems: ranked.length,
           totalItemsPerPage: limit,
           totalPages,
         },
       },
     },
-    _sources: groups.map((group) => ({
-      source: group.source,
-      count: group.items.length,
-    })),
+    _sources: groups.map((g) => ({ source: g.source, count: g.items.length })),
+    _totalMerged: merged.length,
+    _query: { original: trimmed, variants },
   };
 }
 
@@ -262,6 +327,10 @@ async function getDetailFromAnySource(slug: string): Promise<any> {
     {
       source: "nguonc",
       request: () => fetchNguonc(`/film/${slug}`),
+    },
+    {
+      source: "vsmov",
+      request: () => vsmovApi.getDetail(slug),
     },
   ];
 

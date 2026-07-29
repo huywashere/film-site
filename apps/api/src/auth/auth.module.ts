@@ -6,6 +6,8 @@ import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { GoogleStrategy } from "./strategies/google.strategy";
+import { FirebaseTokenVerifier } from "./firebase-token-verifier.service";
+import { FirebaseAuthGuard } from "./guards/firebase-auth.guard";
 
 @Module({
   imports: [
@@ -20,7 +22,13 @@ import { GoogleStrategy } from "./strategies/google.strategy";
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, GoogleStrategy],
-  exports: [AuthService, JwtModule],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    GoogleStrategy,
+    FirebaseTokenVerifier,
+    FirebaseAuthGuard,
+  ],
+  exports: [AuthService, JwtModule, FirebaseTokenVerifier, FirebaseAuthGuard],
 })
 export class AuthModule {}

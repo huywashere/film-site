@@ -3,10 +3,19 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
+  Logger,
 } from "@nestjs/common";
+import {
+  FirebaseTokenVerifier,
+  FirebaseTokenError,
+} from "../firebase-token-verifier.service";
 
 @Injectable()
 export class FirebaseAuthGuard implements CanActivate {
+  private readonly logger = new Logger(FirebaseAuthGuard.name);
+
+  constructor(private readonly verifier: FirebaseTokenVerifier) {}
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const authHeader = request.headers.authorization;
@@ -17,24 +26,36 @@ export class FirebaseAuthGuard implements CanActivate {
       );
     }
 
-    const token = authHeader.split("Bearer ")[1];
+    const token = authHeader.slice("Bearer ".length).trim();
+    if (!token) {
+      throw new UnauthorizedException("Thiếu token xác thực Firebase");
+    }
 
     try {
-      const parts = token.split(".");
-      if (parts.length === 3) {
-        const payload = JSON.parse(
-          Buffer.from(parts[1], "base64").toString("utf-8"),
-        );
-        request.user = {
-          uid: payload.user_id || payload.sub || payload.uid,
-          email: payload.email,
-          name: payload.name || payload.email?.split("@")[0],
-          picture: payload.picture,
-          email_verified: payload.email_verified,
-        };
-      }
+      // Verifies the RS256 signature against Google's published certificates and
+      // checks iss/aud/exp. Decoding the payload without this is not authentication:
+      // anyone can craft a JWT body claiming any uid.
+      const claims = await this.verifier.verify(token);
+
+      request.user = {
+        uid: claims.uid,
+        email: claims.email,
+        name: claims.name,
+        picture: claims.picture,
+        email_verified: claims.emailVerified,
+        // Roles must come from Firebase custom claims set server-side via the
+        // Admin SDK — never from anything the client can influence.
+        role: claims.raw.role === "ADMIN" ? "ADMIN" : "USER",
+      };
+
       return true;
-    } catch (err) {
+    } catch (error) {
+      const reason =
+        error instanceof FirebaseTokenError || error instanceof Error
+          ? error.message
+          : String(error);
+      this.logger.warn(`Rejected Firebase ID token: ${reason}`);
+
       throw new UnauthorizedException(
         "Token Firebase không hợp lệ hoặc đã hết hạn.",
       );

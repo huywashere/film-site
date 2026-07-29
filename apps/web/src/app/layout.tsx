@@ -72,7 +72,7 @@ export default function RootLayout({
         />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <ThemeWatcher />
         <RegisterSW />
         <QueryProvider>

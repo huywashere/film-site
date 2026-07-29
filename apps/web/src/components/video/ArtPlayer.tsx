@@ -11,18 +11,18 @@ export interface ArtPlayerProps {
   title?: string;
   subtitle?: string;
   autoplay?: boolean;
-  /** slug + episode name combination — used as localStorage key for resume */
   progressKey?: string;
-  /** Server-side progress fallback if localStorage is empty */
   dbProgress?: number;
-  /** Called when video ends naturally — use for auto-next episode logic */
   onEnded?: () => void;
-  /** Called periodically with progress — use for server-side watch history sync */
   onProgress?: (currentTime: number, duration: number) => void;
   onReady?: (player: Artplayer) => void;
   onError?: (error: unknown) => void;
   isTheaterMode?: boolean;
   onTheaterModeToggle?: (active: boolean) => void;
+  // Skip intro/outro timestamps (giây)
+  skipIntroStart?: number;
+  skipIntroEnd?: number;
+  skipOutroStart?: number;
 }
 
 export default function ArtPlayer({
@@ -40,6 +40,9 @@ export default function ArtPlayer({
   onError,
   isTheaterMode = false,
   onTheaterModeToggle,
+  skipIntroStart,
+  skipIntroEnd,
+  skipOutroStart,
 }: ArtPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -48,6 +51,9 @@ export default function ArtPlayer({
 
   const [isFloating, setIsFloating] = useState(false);
   const [showSkipIntro, setShowSkipIntro] = useState(false);
+  const [showSkipOutro, setShowSkipOutro] = useState(false);
+  const [isDimmed, setIsDimmed] = useState(false); // Chế độ rạp tắt đèn
+  const [pipActive, setPipActive] = useState(false); // Picture-in-Picture
 
   const isTheaterModeRef = useRef(isTheaterMode);
   const onTheaterModeToggleRef = useRef(onTheaterModeToggle);
@@ -231,6 +237,25 @@ export default function ArtPlayer({
       // Settings menu additions: Subtitle Sync Offset (+/- 0.5s) and Custom Subtitle Colors
       settings: [
         {
+          html: "Tốc độ phát",
+          tooltip: "1x",
+          selector: [
+            { html: "0.25x", value: 0.25 },
+            { html: "0.5x", value: 0.5 },
+            { html: "0.75x", value: 0.75 },
+            { default: true, html: "1x (Bình thường)", value: 1 },
+            { html: "1.25x", value: 1.25 },
+            { html: "1.5x", value: 1.5 },
+            { html: "1.75x", value: 1.75 },
+            { html: "2x", value: 2 },
+          ],
+          onSelect(item: { value: number; html: string }) {
+            player.playbackRate = item.value;
+            player.notice.show = `Tốc độ: ${item.html}`;
+            return item.html;
+          },
+        },
+        {
           html: "Độ lệch phụ đề (Sync)",
           tooltip: "0.0s",
           selector: [
@@ -273,18 +298,20 @@ export default function ArtPlayer({
 
       controls: [
         {
-          name: "skip-intro-btn",
+          name: "pip-btn",
           position: "right",
-          html: `
-            <button class="art-control-skip-intro bg-white/10 hover:bg-white/20 text-white border border-white/20 px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 style="cursor: pointer;">
-              ⏩ Bỏ qua 90s
-            </button>
-          `,
-          tooltip: "Bỏ qua 90 giây mở đầu (Skip Intro)",
+          html: `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="cursor:pointer"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="12" y="10" width="9" height="7" rx="1" fill="currentColor" stroke="none"/></svg>`,
+          tooltip: "Picture-in-Picture (P)",
           click: function () {
-            if (playerRef.current) {
-              playerRef.current.currentTime += 90;
-              playerRef.current.notice.show = "Đã bỏ qua 90 giây mở đầu!";
+            const video = player.video;
+            if (!video) return;
+            if (document.pictureInPictureElement) {
+              document.exitPictureInPicture().catch(() => {});
+              setPipActive(false);
+            } else if (video.requestPictureInPicture) {
+              video.requestPictureInPicture().then(() => setPipActive(true)).catch(() => {
+                player.notice.show = "Trình duyệt không hỗ trợ PiP";
+              });
             }
           },
         },
@@ -322,32 +349,122 @@ export default function ArtPlayer({
       const target = e.target as HTMLElement | null;
       if (!target) return;
       const ignoreTags = ["INPUT", "TEXTAREA", "SELECT", "BUTTON"];
-      if (ignoreTags.includes(target.tagName) || target.isContentEditable)
-        return;
+      if (ignoreTags.includes(target.tagName) || target.isContentEditable) return;
 
-      if (e.key === "f" || e.key === "F") {
-        e.preventDefault();
-        const el = containerRef.current;
-        if (!el) return;
+      const video = player.video;
+      if (!video) return;
 
-        if (document.fullscreenElement) {
-          document.exitFullscreen().catch(() => {});
-        } else if (el.requestFullscreen) {
-          el.requestFullscreen().catch(() => {});
-        } else if ((el as any).webkitRequestFullscreen) {
-          (el as any).webkitRequestFullscreen();
+      switch (e.key) {
+        // Space / K — Play/Pause
+        case " ":
+        case "k":
+        case "K":
+          e.preventDefault();
+          video.paused ? video.play().catch(() => {}) : video.pause();
+          player.notice.show = video.paused ? "▶ Phát" : "⏸ Tạm dừng";
+          break;
+
+        // ← / J — Tua lùi 10s
+        case "ArrowLeft":
+        case "j":
+        case "J":
+          e.preventDefault();
+          player.currentTime = Math.max(0, player.currentTime - 10);
+          player.notice.show = "⏪ -10 giây";
+          break;
+
+        // → / L — Tua tới 10s
+        case "ArrowRight":
+        case "l":
+        case "L":
+          e.preventDefault();
+          player.currentTime = Math.min(player.duration, player.currentTime + 10);
+          player.notice.show = "⏩ +10 giây";
+          break;
+
+        // ↑ — Tăng âm lượng
+        case "ArrowUp":
+          e.preventDefault();
+          player.volume = Math.min(1, player.volume + 0.1);
+          player.notice.show = `🔊 ${Math.round(player.volume * 100)}%`;
+          break;
+
+        // ↓ — Giảm âm lượng
+        case "ArrowDown":
+          e.preventDefault();
+          player.volume = Math.max(0, player.volume - 0.1);
+          player.notice.show = `🔉 ${Math.round(player.volume * 100)}%`;
+          break;
+
+        // M — Mute/Unmute
+        case "m":
+        case "M":
+          e.preventDefault();
+          player.muted = !player.muted;
+          player.notice.show = player.muted ? "🔇 Tắt tiếng" : "🔊 Bật tiếng";
+          break;
+
+        // F — Fullscreen
+        case "f":
+        case "F": {
+          e.preventDefault();
+          const el = containerRef.current;
+          if (!el) break;
+          if (document.fullscreenElement) {
+            document.exitFullscreen().catch(() => {});
+          } else {
+            el.requestFullscreen?.().catch(() => {});
+          }
+          break;
         }
-      }
 
-      if (e.code === "Space" || e.key === " ") {
-        const video = player.video;
-        if (!video) return;
-        e.preventDefault();
-        if (video.paused) {
-          video.play().catch(() => {});
-        } else {
-          video.pause();
-        }
+        // P — Picture-in-Picture
+        case "p":
+        case "P":
+          e.preventDefault();
+          if (document.pictureInPictureElement) {
+            document.exitPictureInPicture().catch(() => {});
+            setPipActive(false);
+          } else if (video.requestPictureInPicture) {
+            video.requestPictureInPicture().then(() => setPipActive(true)).catch(() => {});
+          }
+          break;
+
+        // D — Dimming (tắt đèn)
+        case "d":
+        case "D":
+          e.preventDefault();
+          setIsDimmed((prev) => {
+            player.notice.show = !prev ? "🌙 Đã tắt đèn" : "💡 Đã bật đèn";
+            return !prev;
+          });
+          break;
+
+        // 0-9 — Seek theo %
+        default:
+          if (e.key >= "0" && e.key <= "9") {
+            e.preventDefault();
+            const pct = parseInt(e.key) / 10;
+            player.currentTime = player.duration * pct;
+            player.notice.show = `⏱ ${e.key}0%`;
+          }
+          // , / . — Tốc độ phát
+          if (e.key === ",") {
+            e.preventDefault();
+            const rates = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+            const cur = rates.indexOf(player.playbackRate);
+            const next = rates[Math.max(0, cur - 1)];
+            player.playbackRate = next;
+            player.notice.show = `🐢 ${next}x`;
+          }
+          if (e.key === ".") {
+            e.preventDefault();
+            const rates = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+            const cur = rates.indexOf(player.playbackRate);
+            const next = rates[Math.min(rates.length - 1, cur + 1)];
+            player.playbackRate = next;
+            player.notice.show = `🐇 ${next}x`;
+          }
       }
     };
 
@@ -439,20 +556,29 @@ export default function ArtPlayer({
       });
     }
 
-    // -- Save progress to localStorage (every timeupdate, throttled) --
+    // -- Save progress + Skip Intro/Outro detection --
     let lastSave = 0;
     player.on("video:timeupdate", () => {
       const now = Date.now();
       const ct = player.currentTime;
       const dur = player.duration;
       if (dur > 0) {
-        // Throttle localStorage write to once per 5s
         if (now - lastSave > 5000) {
           lastSave = now;
           if (savedKey) localStorage.setItem(savedKey, ct.toString());
         }
-        // Throttle onProgress callback to once per 30s for server sync
         onProgressRef.current?.(ct, dur);
+
+        // Skip Intro detection
+        if (skipIntroStart !== undefined && skipIntroEnd !== undefined) {
+          setShowSkipIntro(ct >= skipIntroStart && ct < skipIntroEnd);
+        }
+        // Skip Outro detection (30s cuối)
+        if (skipOutroStart !== undefined) {
+          setShowSkipOutro(ct >= skipOutroStart);
+        } else if (dur > 60) {
+          setShowSkipOutro(ct >= dur - 90 && ct < dur - 5);
+        }
       }
     });
 
@@ -515,6 +641,14 @@ export default function ArtPlayer({
 
   return (
     <>
+      {/* ── Dimming overlay (tắt đèn) ── */}
+      {isDimmed && (
+        <div
+          className="fixed inset-0 bg-black/80 z-40 pointer-events-none"
+          style={{ backdropFilter: "none" }}
+        />
+      )}
+
       <style jsx global>{`
         .art-video-player {
           --art-theme: #e5a93b;
@@ -593,6 +727,64 @@ export default function ArtPlayer({
             </div>
           </div>
         )}
+        {/* ── Skip Intro button ── */}
+        {showSkipIntro && (
+          <button
+            onClick={() => {
+              if (playerRef.current && skipIntroEnd !== undefined) {
+                playerRef.current.currentTime = skipIntroEnd;
+                playerRef.current.notice.show = "⏩ Đã bỏ qua intro";
+                setShowSkipIntro(false);
+              }
+            }}
+            className="absolute bottom-16 right-4 z-30 flex items-center gap-2 bg-black/80 hover:bg-black/95 text-white border border-white/30 hover:border-white/60 px-4 py-2 rounded-xl text-xs font-bold transition-all backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-300"
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M5.5 5C5.5 4.17 6.42 3.68 7.1 4.15l10.5 7c.6.4.6 1.3 0 1.7l-10.5 7C6.42 20.32 5.5 19.83 5.5 19V5z"/>
+              <rect x="17" y="4" width="2" height="16" rx="1"/>
+            </svg>
+            Bỏ qua intro
+          </button>
+        )}
+
+        {/* ── Skip Outro button ── */}
+        {showSkipOutro && (
+          <button
+            onClick={() => {
+              if (playerRef.current) {
+                playerRef.current.currentTime = playerRef.current.duration - 2;
+                setShowSkipOutro(false);
+              }
+            }}
+            className="absolute bottom-16 right-4 z-30 flex items-center gap-2 bg-black/80 hover:bg-black/95 text-white border border-white/30 hover:border-white/60 px-4 py-2 rounded-xl text-xs font-bold transition-all backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-300"
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M5.5 5C5.5 4.17 6.42 3.68 7.1 4.15l10.5 7c.6.4.6 1.3 0 1.7l-10.5 7C6.42 20.32 5.5 19.83 5.5 19V5z"/>
+              <rect x="17" y="4" width="2" height="16" rx="1"/>
+            </svg>
+            Bỏ qua outro
+          </button>
+        )}
+
+        {/* ── PiP active indicator ── */}
+        {pipActive && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="text-center text-white">
+              <div className="text-4xl mb-2">📺</div>
+              <p className="text-sm font-bold">Đang phát Picture-in-Picture</p>
+              <button
+                onClick={() => {
+                  document.exitPictureInPicture().catch(() => {});
+                  setPipActive(false);
+                }}
+                className="mt-3 px-4 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-xs font-bold transition-colors"
+              >
+                Quay lại
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Dynamic ambient backglow canvas */}
         <canvas
           ref={canvasRef}

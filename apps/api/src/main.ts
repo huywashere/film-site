@@ -1,6 +1,6 @@
-import { NestFactory, Reflector } from "@nestjs/core";
+import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
-import { ThrottlerGuard } from "@nestjs/throttler";
+import type { NestExpressApplication } from "@nestjs/platform-express";
 import helmet from "helmet";
 import * as cookieParser from "cookie-parser";
 import * as Sentry from "@sentry/node";
@@ -21,7 +21,16 @@ if (process.env.SENTRY_DSN) {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // ── Proxy trust ───────────────────────────────────────────────
+  // Railway/Vercel/nginx terminate TLS and forward the real client IP in
+  // X-Forwarded-For. Without this, req.ip is always the proxy address, so every
+  // visitor shares one rate-limit bucket and @Ip() logs a useless value.
+  // Count the hops your platform actually adds — do NOT use `true`, which
+  // trusts the left-most (client-supplied, spoofable) XFF entry.
+  const trustedProxyHops = Number(process.env.TRUSTED_PROXY_HOPS ?? 1);
+  app.set("trust proxy", Number.isFinite(trustedProxyHops) ? trustedProxyHops : 1);
 
   // ── Security headers (Helmet) ──────────────────────────────────
   // Protects against well-known web vulnerabilities by setting HTTP headers
@@ -30,8 +39,25 @@ async function bootstrap() {
     helmet({
       // Allow same-origin iframes (used by our own video player)
       frameguard: { action: "sameorigin" },
-      // Disable strict CSP — Next.js frontend handles its own CSP
-      contentSecurityPolicy: false,
+      // This is a JSON API: no HTML is served, so lock scripting down entirely
+      // rather than disabling CSP. The Next.js frontend sets its own policy.
+      contentSecurityPolicy: {
+        useDefaults: false,
+        directives: {
+          "default-src": ["'none'"],
+          "frame-ancestors": ["'none'"],
+          "base-uri": ["'none'"],
+          "form-action": ["'none'"],
+        },
+      },
+      // Don't leak API URLs to third parties via the Referer header.
+      referrerPolicy: { policy: "no-referrer" },
+      crossOriginResourcePolicy: { policy: "same-site" },
+      hsts: {
+        maxAge: 31_536_000,
+        includeSubDomains: true,
+        preload: true,
+      },
     }),
   );
 
@@ -40,7 +66,9 @@ async function bootstrap() {
 
   // ── CORS – restrict to trusted frontend origins ───────────────
   const origins = process.env.FRONTEND_URL
-    ? process.env.FRONTEND_URL.split(",").map((o) => o.trim())
+    ? process.env.FRONTEND_URL.split(",")
+        .map((o) => o.trim())
+        .filter(Boolean)
     : ["http://localhost:3000"];
 
   app.enableCors({
@@ -48,17 +76,15 @@ async function bootstrap() {
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    maxAge: 600,
   });
 
-  // ── Global rate limiting via DI container ─────────────────────
-  // ThrottlerGuard is applied globally; per-controller @Throttle() overrides defaults
-  const reflector = app.get(Reflector);
-  const throttlerStorage = app.get("THROTTLER:MODULE_OPTIONS", {
-    strict: false,
-  });
-  app.useGlobalGuards(
-    new ThrottlerGuard(throttlerStorage ?? {}, {} as any, reflector),
-  );
+  // ── Request body size cap ─────────────────────────────────────
+  // Default 100kb is plenty for this API's JSON payloads and keeps oversized
+  // bodies from being parsed at all.
+  const { json, urlencoded } = await import("express");
+  app.use(json({ limit: "100kb" }));
+  app.use(urlencoded({ extended: true, limit: "100kb" }));
 
   // ── Global input validation ───────────────────────────────────
   app.useGlobalPipes(
@@ -68,6 +94,9 @@ async function bootstrap() {
       forbidNonWhitelisted: true, // reject requests with unknown fields (400)
     }),
   );
+
+  // Rate limiting is wired as an APP_GUARD in AppModule so it receives the
+  // Redis-backed storage through DI.
 
   const port = process.env.PORT || 3001;
   await app.listen(port);

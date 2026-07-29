@@ -34,12 +34,27 @@ import { useToast } from "@/providers/ToastProvider";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/store/langStore";
 import { Button } from "@/components/ui/button";
+import { useTmdb, useTmdbPerson } from "@/hooks/useTmdb";
+import { tmdbBackdrop, tmdbProfile, tmdbPoster } from "@/lib/tmdb";
 
 // ── Cast Card (Plex Circle Style) ──────────────────────────
-function CastCard({ name }: { name: string }) {
+function CastCard({
+  name,
+  role = "Diễn viên",
+  profilePath,
+  personId,
+}: {
+  name: string;
+  role?: string;
+  profilePath?: string | null;
+  personId?: number;
+}) {
+  const directTmdbUrl = profilePath ? tmdbProfile(profilePath, "w185") : null;
+
   const { data, isLoading } = useQuery({
     queryKey: ["cast-image", name],
     queryFn: async () => {
+      if (directTmdbUrl) return directTmdbUrl;
       const res = await fetch(
         `/api/cast-image?name=${encodeURIComponent(name)}`,
       );
@@ -47,6 +62,7 @@ function CastCard({ name }: { name: string }) {
       const json = await res.json();
       return json.url;
     },
+    enabled: !directTmdbUrl,
     staleTime: 24 * 60 * 60 * 1000,
   });
 
@@ -58,12 +74,12 @@ function CastCard({ name }: { name: string }) {
     .join("")
     .toUpperCase();
 
-  const imageUrl = data && data !== "placeholder" ? data : null;
+  const imageUrl = directTmdbUrl || (data && data !== "placeholder" ? data : null);
 
-  return (
+  const cardContent = (
     <div
       className="flex flex-col items-center text-center space-y-2 p-1.5 w-24 md:w-28 flex-shrink-0 group cursor-pointer"
-      title={name}
+      title={`${name}${role ? ` (${role})` : ""}`}
     >
       <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden border border-white/10 group-hover:border-netflixRed/80 group-hover:scale-105 bg-neutral-900/60 flex items-center justify-center shadow-lg transition-all duration-300">
         {isLoading ? (
@@ -85,10 +101,16 @@ function CastCard({ name }: { name: string }) {
         <p className="text-[11px] font-bold text-white group-hover:text-netflixRed transition-colors truncate">
           {name}
         </p>
-        <p className="text-[9px] text-neutral-500 truncate mt-0.5">Actor</p>
+        <p className="text-[9px] text-neutral-500 truncate mt-0.5">{role}</p>
       </div>
     </div>
   );
+
+  if (personId) {
+    return <Link href={`/actors/${personId}`}>{cardContent}</Link>;
+  }
+
+  return cardContent;
 }
 
 // ── Server type detection (same logic as watch page) ──
@@ -531,28 +553,6 @@ export default function FilmDetailPage() {
     queryFn: () => movieApi.getDetail(slug).then((r) => r.data),
   });
 
-  // Fetch reviews
-  const { data: reviewsData } = useQuery({
-    queryKey: ["reviews", slug],
-    queryFn: () =>
-      reviewsApi
-        .getByMovie(slug)
-        .then((r) => r.data)
-        .catch(() => ({ reviews: [], total: 0 })),
-    enabled: !!data,
-  });
-
-  // Fetch rating
-  const { data: ratingData } = useQuery({
-    queryKey: ["rating", slug],
-    queryFn: () =>
-      ratingsApi
-        .getAverage(slug)
-        .then((r) => r.data)
-        .catch(() => ({ average: 0, count: 0 })),
-    enabled: !!data,
-  });
-
   const film = data?.movie || (data?.error ? null : data);
   const episodes = data?.episodes || [];
   const isNotFound =
@@ -562,89 +562,6 @@ export default function FilmDetailPage() {
       data?.error ||
       !film ||
       (!film.name && !film.title && !film.slug));
-
-  // ── Smart Recommendation Query ─────────────────────────────────────
-  const rawTitle = (
-    film?.name ||
-    film?.origin_name ||
-    slug ||
-    ""
-  ).toLowerCase();
-  const firstGenre = film?.category?.[0]?.slug;
-
-  const matchedKeyword = useMemo(() => {
-    const keywords = [
-      "marvel",
-      "dc",
-      "superman",
-      "batman",
-      "spider-man",
-      "spiderman",
-      "avengers",
-      "doraemon",
-      "naruto",
-      "one piece",
-      "conan",
-      "dragon ball",
-      "harry potter",
-      "star wars",
-      "pokemon",
-      "godzilla",
-      "x-men",
-      "transformers",
-      "fast & furious",
-      "john wick",
-      "jurassic",
-      "matrix",
-      "avatar",
-    ];
-    return keywords.find((kw) => rawTitle.includes(kw));
-  }, [rawTitle]);
-
-  const { data: smartSimilarData } = useQuery({
-    queryKey: ["smart-similar-films", slug, firstGenre, matchedKeyword],
-    queryFn: async () => {
-      const recItems: any[] = [];
-      if (matchedKeyword) {
-        try {
-          const res = await movieApi.search(matchedKeyword, 1, 15);
-          const items = res?.data?.items || res?.data?.data?.items || [];
-          recItems.push(...items);
-        } catch {
-          // Ignore search errors
-        }
-      }
-      if (firstGenre) {
-        try {
-          const res = await movieApi.getByGenre(firstGenre, 1);
-          const items = res?.data?.data?.items || res?.data?.items || [];
-          recItems.push(...items);
-        } catch {
-          // Ignore genre errors
-        }
-      }
-      try {
-        const res = await movieApi.getLatest(1);
-        const items = res?.data?.items || res?.data?.data?.items || [];
-        recItems.push(...items);
-      } catch {
-        // Ignore latest fetch errors
-      }
-
-      const seen = new Set<string>();
-      return recItems
-        .filter((item: any) => {
-          if (!item || !item.slug || item.slug === slug || seen.has(item.slug))
-            return false;
-          seen.add(item.slug);
-          return true;
-        })
-        .slice(0, 12);
-    },
-    enabled: !!slug && !isNotFound,
-  });
-
-  const similarFilms = smartSimilarData || [];
 
   const { cleanContent, directors, actors } = useMemo(() => {
     if (!film) return { cleanContent: "", directors: [], actors: [] };
@@ -676,11 +593,22 @@ export default function FilmDetailPage() {
     return { cleanContent: content, directors: d, actors: a };
   }, [film]);
 
+  // TMDB data
+  const { backdrops, bestBackdrop, bestPoster, cast: tmdbCast, trailer, hasData: hasTmdb } = useTmdb({
+    film,
+    enabled: !!film,
+  });
+
   const posterUrl = film
-    ? resolveImageUrl(film?.poster_url) ||
+    ? (bestPoster ? tmdbPoster(bestPoster.file_path, "w500") : null) ||
+      resolveImageUrl(film?.poster_url) ||
       resolveImageUrl(film?.thumb_url) ||
       undefined
     : undefined;
+
+  const backdropUrl = bestBackdrop
+    ? tmdbBackdrop(bestBackdrop.file_path, "w1280")
+    : resolveImageUrl(film?.thumb_url) || resolveImageUrl(film?.poster_url) || undefined;
 
   // Watchlist status check
   useEffect(() => {
@@ -782,27 +710,43 @@ export default function FilmDetailPage() {
     }
   };
 
-  const reviews = reviewsData?.reviews || [];
-  const avgRating = ratingData?.average || 0;
-  const ratingCount = ratingData?.count || 0;
-
   const firstEp = episodes?.[0]?.server_data?.[0];
   const watchLink = firstEp
     ? `/watch/${slug}?ep=${firstEp.slug || firstEp.name}`
     : `/watch/${slug}`;
 
+  const genres = Array.isArray(film.category) ? film.category : [];
+  const countries = Array.isArray(film.country) ? film.country : [];
+  const episodeCount = episodes.reduce(
+    (total: number, server: any) =>
+      Math.max(total, server?.server_data?.length || 0),
+    0,
+  );
+  const tmdbRating = Number(
+    film.tmdb?.vote_average || film.vote_average || film.rating || 0,
+  );
+  const statusLabel =
+    film.status === "completed" ||
+    String(film.episode_current || "")
+      .toLowerCase()
+      .includes("full")
+      ? "Đã hoàn thành"
+      : film.episode_current || "Đang cập nhật";
+  const typeLabel = film.type === "series" ? "Phim bộ" : "Phim lẻ";
+
   return (
     <div className="bg-[#0f1216] min-h-screen text-foreground pb-24 font-sans relative">
       {/* ── Giant Backdrop Banner (Plex Style Left-to-Right Blended Layout) ── */}
-      {posterUrl && (
+      {(backdropUrl || posterUrl) && (
         <div className="absolute top-0 left-0 right-0 h-[65vh] md:h-[82vh] w-full z-0 overflow-hidden select-none">
           <NextImage
-            src={posterUrl}
+            src={backdropUrl || posterUrl || ""}
             alt=""
             fill
             sizes="100vw"
-            className="object-cover object-top opacity-50 scale-105 filter blur-[1px]"
+            className="object-cover object-top opacity-60 scale-105"
             unoptimized
+            priority
           />
           {/* Subtle color overlay */}
           <div className="absolute inset-0 bg-[#0f1216]/60 backdrop-blur-[2px]" />
@@ -1021,132 +965,144 @@ export default function FilmDetailPage() {
           </div>
         </div>
 
-        {/* ── Grid Sections (Cast, Episodes, Reviews) ── */}
-        <div className="mt-16 space-y-12">
-          {/* Series Episode Grid */}
-          {film.type === "series" && episodes.length > 0 && (
-            <div className="bg-[#151920]/80 border border-white/[0.06] rounded-2xl p-6 shadow-xl backdrop-blur-md">
-              <EpisodeList
-                episodes={episodes}
-                slug={slug}
-                filmLang={film?.lang}
-              />
-            </div>
-          )}
-
-          {/* Cast Members (Diễn viên) */}
-          {actors.length > 0 && (
-            <div className="space-y-4">
-              <h3 className="text-xs font-black uppercase tracking-widest text-neutral-500 border-b border-white/5 pb-2">
-                {t("film.cast", "Diễn Viên Tham Gia")}
-              </h3>
-              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin">
-                {actors.map((actor, idx) => (
-                  <CastCard key={idx} name={actor} />
-                ))}
+        {/* ── Structured film facts and credits ── */}
+        <div className="mt-16 space-y-8">
+          <section
+            aria-label="Thông tin phim"
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
+          >
+            <div className="rounded-2xl border border-sky-400/15 bg-[#151920]/80 p-4 shadow-xl backdrop-blur-md">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-xs font-black uppercase tracking-widest text-sky-300">
+                  Thể loại
+                </h2>
+                <span className="rounded-full bg-sky-400/10 px-2 py-0.5 text-[10px] font-bold text-sky-300">
+                  {genres.length}
+                </span>
               </div>
-            </div>
-          )}
-
-          {/* Reviews & Average Rating */}
-          <div className="space-y-8 pt-4">
-            {/* Top Row: Write Review Box & Average Rating Box (Equal Height side-by-side) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-              {/* Write Review Column */}
-              <div className="lg:col-span-8">
-                <WriteReview movieId={slug} />
-              </div>
-
-              {/* Average Rating Stats */}
-              <div className="lg:col-span-4 bg-[#151920]/50 border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center text-center shadow-lg h-full min-h-[160px]">
-                <h3 className="text-xs font-black text-neutral-500 uppercase tracking-widest mb-3">
-                  {t("film.averageRating", "Đánh giá chung")}
-                </h3>
-                <StarRating
-                  value={myRating || avgRating}
-                  onChange={handleRate}
-                  size={28}
-                />
-                {avgRating > 0 && (
-                  <p className="text-xs text-neutral-400 mt-2.5">
-                    <span className="text-white font-extrabold text-xl">
-                      {avgRating.toFixed(1)} ★
-                    </span>{" "}
-                    <br />
-                    <span className="text-neutral-500 font-medium">
-                      ({ratingCount}{" "}
-                      {t("film.ratingCountSuffix", "lượt đánh giá")})
-                    </span>
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Bottom Row: User Reviews List */}
-            <div className="space-y-4 pt-2">
-              <h3 className="text-xs font-black uppercase tracking-widest text-neutral-500 border-b border-white/5 pb-2">
-                {t("film.reviewsTitle", "Bình luận người dùng")} (
-                {reviews.length})
-              </h3>
-              <div className="flex flex-col gap-3.5">
-                {reviews.map((r: any) => (
-                  <ReviewItem key={r.id} review={r} />
-                ))}
-                {reviews.length === 0 && (
-                  <div className="text-neutral-500 text-xs py-4 italic">
-                    {t(
-                      "film.noReviews",
-                      "Chưa có bình luận nào cho phim này. Hãy là người đầu tiên bình luận!",
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Similar recommendations row (Phim tương tự) */}
-          {similarFilms.length > 0 && (
-            <div className="space-y-4 pt-4">
-              <h3 className="text-xs font-black uppercase tracking-widest text-neutral-500 border-b border-white/5 pb-2">
-                {t("film.similarFilms", "Có Thể Bạn Cũng Thích")}
-              </h3>
-              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin">
-                {similarFilms.map((item: any) => {
-                  const thumb =
-                    resolveImageUrl(item.thumb_url) ||
-                    resolveImageUrl(item.poster_url);
-                  return (
+              <div className="flex flex-wrap gap-2">
+                {genres.length > 0 ? (
+                  genres.map((genre: any) => (
                     <Link
-                      key={item.slug}
-                      href={`/film/${item.slug}`}
-                      className="w-32 md:w-36 flex-shrink-0 flex flex-col bg-[#151920]/40 border border-white/5 rounded-xl overflow-hidden group hover:border-white/20 transition-all shadow-md"
+                      key={genre.slug || genre.name}
+                      href={genre.slug ? `/genre/${genre.slug}` : "#"}
+                      className="rounded-lg border border-sky-400/20 bg-sky-400/[0.06] px-2.5 py-1 text-[11px] font-semibold text-sky-200 transition-colors hover:bg-sky-400/15"
                     >
-                      <div className="aspect-[2/3] bg-neutral-900 overflow-hidden relative">
-                        {thumb ? (
-                          <img
-                            src={thumb}
-                            alt={item.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xs text-neutral-700">
-                            No Image
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-2 text-center min-w-0">
-                        <p className="font-bold text-[10px] text-white line-clamp-1 group-hover:text-netflixRed transition-colors">
-                          {item.name}
-                        </p>
-                        <p className="text-[8px] text-neutral-500 mt-0.5">
-                          {item.year}
-                        </p>
-                      </div>
+                      {genre.name}
                     </Link>
-                  );
-                })}
+                  ))
+                ) : (
+                  <span className="text-xs text-neutral-500">Đang cập nhật</span>
+                )}
               </div>
             </div>
+
+            <div className="rounded-2xl border border-violet-400/15 bg-[#151920]/80 p-4 shadow-xl backdrop-blur-md">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-xs font-black uppercase tracking-widest text-violet-300">
+                  Quốc gia
+                </h2>
+                <Globe size={14} className="text-violet-300" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {countries.length > 0 ? (
+                  countries.map((country: any) => (
+                    <Link
+                      key={country.slug || country.name}
+                      href={country.slug ? `/country/${country.slug}` : "#"}
+                      className="rounded-lg border border-violet-400/20 bg-violet-400/[0.06] px-2.5 py-1 text-[11px] font-semibold text-violet-200 transition-colors hover:bg-violet-400/15"
+                    >
+                      {country.name}
+                    </Link>
+                  ))
+                ) : (
+                  <span className="text-xs text-neutral-500">Đang cập nhật</span>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-400/15 bg-[#151920]/80 p-4 shadow-xl backdrop-blur-md">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-xs font-black uppercase tracking-widest text-emerald-300">
+                  Thông tin
+                </h2>
+                <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                  {statusLabel}
+                </span>
+              </div>
+              <dl className="space-y-2 text-xs">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-neutral-500">Thời lượng</dt>
+                  <dd className="font-bold text-white">{film.time || "N/A"}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-neutral-500">Tập hiện tại</dt>
+                  <dd className="font-bold text-emerald-300">
+                    {film.episode_current || (episodeCount ? `${episodeCount} tập` : "N/A")}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="rounded-2xl border border-cyan-400/15 bg-[#151920]/80 p-4 shadow-xl backdrop-blur-md">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-xs font-black uppercase tracking-widest text-cyan-300">
+                  TMDB
+                </h2>
+                <span className="rounded-full bg-cyan-400/10 px-2 py-0.5 text-[10px] font-bold text-cyan-300">
+                  {typeLabel}
+                </span>
+              </div>
+              <dl className="space-y-2 text-xs">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-neutral-500">ID</dt>
+                  <dd className="font-bold text-white">{film.tmdb?.id || "N/A"}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-neutral-500">Điểm</dt>
+                  <dd className="font-black text-cyan-300">
+                    {tmdbRating > 0 ? `${tmdbRating.toFixed(1)}/10` : "N/A"}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </section>
+
+          {(directors.length > 0 || actors.length > 0 || (tmdbCast && tmdbCast.length > 0)) && (
+            <section className="space-y-4" aria-labelledby="film-credits-title">
+              <h2
+                id="film-credits-title"
+                className="border-b border-white/5 pb-2 text-xs font-black uppercase tracking-widest text-neutral-500"
+              >
+                Đạo diễn và diễn viên
+              </h2>
+              <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-thin">
+                {directors.map((director, idx) => (
+                  <CastCard
+                    key={`director-${director}-${idx}`}
+                    name={director}
+                    role="Đạo diễn"
+                  />
+                ))}
+                {tmdbCast && tmdbCast.length > 0
+                  ? tmdbCast.map((c) => (
+                      <CastCard
+                        key={`tmdb-cast-${c.id}`}
+                        name={c.name}
+                        role={c.character || "Diễn viên"}
+                        profilePath={c.profile_path}
+                        personId={c.id}
+                      />
+                    ))
+                  : actors.map((actor, idx) => (
+                      <CastCard
+                        key={`actor-${actor}-${idx}`}
+                        name={actor}
+                        role="Diễn viên"
+                      />
+                    ))}
+              </div>
+            </section>
           )}
         </div>
       </div>

@@ -9,6 +9,45 @@ interface RateLimitRecord {
 
 const storage = new Map<string, RateLimitRecord>();
 
+/** Hard cap on tracked keys so a spray of unique keys can't exhaust memory. */
+const MAX_TRACKED_KEYS = 20_000;
+/** Sweep expired keys at most this often. */
+const SWEEP_INTERVAL_MS = 60_000;
+/** Longest window any limiter below uses — keys older than this are dead. */
+const MAX_WINDOW_MS = 15 * 60_000;
+
+let lastSweepAt = 0;
+
+/**
+ * Drop keys whose newest timestamp fell out of the longest window.
+ *
+ * Without this the Map grows forever: every distinct client IP that ever hit
+ * the app stays resident, which is a slow memory-exhaustion vector on a
+ * long-lived server process.
+ */
+function sweepExpiredKeys(now: number) {
+  if (now - lastSweepAt < SWEEP_INTERVAL_MS && storage.size < MAX_TRACKED_KEYS) {
+    return;
+  }
+  lastSweepAt = now;
+
+  storage.forEach((record, key) => {
+    const newest = record.timestamps[record.timestamps.length - 1] ?? 0;
+    if (now - newest > MAX_WINDOW_MS) storage.delete(key);
+  });
+
+  // Still oversized after sweeping (sustained distributed abuse): evict the
+  // oldest insertions. Map preserves insertion order, so this is FIFO.
+  if (storage.size > MAX_TRACKED_KEYS) {
+    const excess = storage.size - MAX_TRACKED_KEYS;
+    let removed = 0;
+    for (const key of storage.keys()) {
+      storage.delete(key);
+      if (++removed >= excess) break;
+    }
+  }
+}
+
 export interface RateLimitResult {
   allowed: boolean;
   retryAfterSeconds: number;
@@ -19,22 +58,24 @@ export function checkRateLimit(
   limit: number,
   windowMs: number,
 ): RateLimitResult {
-  // Always allow unrestricted requests in development / local testing mode
-  if (
-    process.env.NODE_ENV === "development" ||
-    key.includes("localhost") ||
-    key.includes("127.0.0.1")
-  ) {
+  // Skip limiting only for genuine local development. This must never key off
+  // the caller-supplied identifier — a request carrying
+  // `X-Forwarded-For: localhost` would otherwise bypass every limit.
+  if (process.env.NODE_ENV === "development") {
     return { allowed: true, retryAfterSeconds: 0 };
   }
 
   const now = Date.now();
+  sweepExpiredKeys(now);
+
   const record = storage.get(key) || { timestamps: [] };
 
   // Filter out timestamps outside the sliding window
   const validTimestamps = record.timestamps.filter((ts) => now - ts < windowMs);
 
   if (validTimestamps.length >= limit) {
+    // Persist the pruned list so a blocked key doesn't retain stale entries.
+    storage.set(key, { timestamps: validTimestamps });
     const oldest = validTimestamps[0];
     const retryAfterSeconds = Math.ceil((oldest + windowMs - now) / 1000);
     return {
@@ -92,10 +133,13 @@ export function checkWatchPartyReactionRateLimit(
 }
 
 /**
- * 5. Image Proxy & Cast Image Rate Limit: Max 10,000 requests per 60 seconds (unrestricted gallery loading)
+ * 5. Image Proxy & Cast Image Rate Limit: Max 2,000 requests per 60 seconds.
+ *
+ * Generous enough for a full poster grid plus scrolling, but no longer an
+ * effectively-unlimited bandwidth relay.
  */
 export function checkImageProxyRateLimit(
   identifier: string = "global",
 ): RateLimitResult {
-  return checkRateLimit(`img_proxy:${identifier}`, 10000, 60_000);
+  return checkRateLimit(`img_proxy:${identifier}`, 2000, 60_000);
 }

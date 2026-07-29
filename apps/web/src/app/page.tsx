@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Play,
+  VolumeX,
   ChevronRight,
   ChevronLeft,
   Info,
@@ -22,6 +23,8 @@ import {
   Laugh,
 } from "lucide-react";
 import { movieApi, reviewsApi } from "@/lib/api";
+import { useTmdb } from "@/hooks/useTmdb";
+import { tmdbBackdrop } from "@/lib/tmdb";
 import {
   FilmCard,
   FilmCardSkeleton,
@@ -36,6 +39,7 @@ import styled from "@emotion/styled";
 import { cn } from "@/lib/utils";
 import { ContinueWatchingRow } from "@/components/film/ContinueWatchingRow";
 import { SmartRecommendationSection } from "@/components/film/SmartRecommendationSection";
+import { Top10RankedRow } from "@/components/film/Top10RankedRow";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -46,65 +50,64 @@ const StyledSwiperContainer = styled.div`
   position: relative;
 
   .swiper {
-    padding: 12px 54px 12px 4px;
+    padding: 12px 12px 12px 4px;
   }
 
   .swiper-button-prev,
   .swiper-button-next {
-    color: #9ca3af !important;
-    background: #202430 !important;
-    border: 1px solid #2e3444 !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7) !important;
-    width: 42px !important;
-    height: 100px !important;
-    border-radius: 14px !important;
+    color: #ffffff !important;
+    background: rgba(15, 18, 22, 0.8) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8) !important;
+    width: 44px !important;
+    height: 90px !important;
     margin-top: 0 !important;
-    transition: all 0.2s ease !important;
-    opacity: 0.85 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    opacity: 0 !important;
     z-index: 30 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    right: 4px !important;
-    left: auto !important;
   }
 
-  /* Top button: Next (>) */
-  .swiper-button-next {
-    top: calc(50% - 56px) !important;
-    transform: translateY(-50%) !important;
+  &:hover .swiper-button-prev,
+  &:hover .swiper-button-next {
+    opacity: 1 !important;
   }
 
-  /* Bottom button: Prev (<) */
   .swiper-button-prev {
-    top: calc(50% + 56px) !important;
-    transform: translateY(-50%) !important;
+    left: 0 !important;
+    right: auto !important;
+    border-radius: 0 16px 16px 0 !important;
+  }
+
+  .swiper-button-next {
+    right: 0 !important;
+    left: auto !important;
+    border-radius: 16px 0 0 16px !important;
   }
 
   .swiper-button-prev:hover,
   .swiper-button-next:hover {
     color: #ffffff !important;
-    background: #2a3040 !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-    opacity: 1 !important;
-    transform: translateY(-50%) scale(1.04) !important;
+    background: #e50914 !important;
+    border-color: #e50914 !important;
+    transform: translateY(-50%) scale(1.06) !important;
   }
 
   .swiper-button-disabled {
-    opacity: 0.35 !important;
-    cursor: not-allowed !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
   }
 
   .swiper-button-prev::after,
   .swiper-button-next::after {
-    font-size: 14px !important;
-    font-weight: 800 !important;
-    transition: transform 0.2s ease;
-  }
-
-  .swiper-button-prev:hover::after,
-  .swiper-button-next:hover::after {
-    transform: scale(1.15);
+    font-size: 16px !important;
+    font-weight: 900 !important;
   }
 `;
 
@@ -116,34 +119,78 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
   const featured = useMemo(() => films.slice(0, 6), [films]);
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    if (featured.length < 2) return;
+
+    let transitionTimer: ReturnType<typeof setTimeout> | undefined;
+    const rotationTimer = setInterval(() => {
       setIsTransitioning(true);
-      setCurrent((c) => (c + 1) % featured.length);
-      setTimeout(() => setIsTransitioning(false), 800);
+      transitionTimer = setTimeout(() => {
+        setCurrent((index) => (index + 1) % featured.length);
+        setIsTransitioning(false);
+      }, 300);
     }, 8000);
-    return () => clearInterval(timer);
+
+    return () => {
+      clearInterval(rotationTimer);
+      if (transitionTimer) clearTimeout(transitionTimer);
+    };
   }, [featured.length]);
 
   const film = featured[current];
   const prevFilm = featured[current === 0 ? featured.length - 1 : current - 1];
 
+  const { data: detailData } = useQuery({
+    queryKey: ["hero-film-detail", film?.slug],
+    queryFn: () => movieApi.getDetail(film!.slug).then((response) => response.data),
+    enabled: !!film?.slug,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // TMDB backdrop 1280px cho hero
+  const filmDetail = detailData?.movie || detailData;
+  const { bestBackdrop } = useTmdb({
+    film: filmDetail,
+    enabled: !!filmDetail,
+    fetchCredits: false,
+    fetchVideos: false,
+  });
+  const tmdbBackdropUrl = bestBackdrop
+    ? tmdbBackdrop(bestBackdrop.file_path, "w1280")
+    : null;
+
   if (!film) return null;
 
+  const detail = detailData?.movie || detailData || {};
+  const genres = Array.isArray(detail.category)
+    ? detail.category.slice(0, 3)
+    : [];
+  const country = Array.isArray(detail.country)
+    ? detail.country[0]?.name
+    : undefined;
+  const episode = detail.episode_current || film.episode_current;
+  const description = String(detail.content || "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .trim();
+
+  // Ưu tiên TMDB backdrop 1280px, fallback về KKPhim thumb
   const backdrop =
-    resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url);
+    tmdbBackdropUrl ||
+    resolveImageUrl(film.thumb_url) ||
+    resolveImageUrl(film.poster_url);
   const prevBackdrop = prevFilm
     ? resolveImageUrl(prevFilm.thumb_url) ||
       resolveImageUrl(prevFilm.poster_url)
     : null;
 
-  // Dynamically scale down font sizes and add clean line-height for extremely long film names
+  // Keep Vietnamese titles readable instead of forcing a condensed display face.
   const nameLen = film.name.length;
   const titleFontSizeClass =
-    nameLen > 60
-      ? "text-2xl md:text-4xl lg:text-5xl"
-      : nameLen > 40
-        ? "text-3xl md:text-5xl lg:text-6xl"
-        : "text-4xl md:text-7xl";
+    nameLen > 55
+      ? "text-2xl md:text-3xl lg:text-4xl"
+      : nameLen > 32
+        ? "text-3xl md:text-4xl lg:text-5xl"
+        : "text-3xl md:text-5xl lg:text-6xl";
 
   return (
     <div className="relative h-[calc(100vh+100px)] min-h-[700px] w-full overflow-hidden bg-background">
@@ -162,10 +209,10 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
               src={prevBackdrop}
               alt={prevFilm?.name || ""}
               fill
-              quality={85}
+              quality={90}
               sizes="100vw"
               className="object-cover object-center brightness-[0.7] dark:brightness-[0.7]"
-              loading="eager"
+              loading="lazy"
             />
           </div>
         )}
@@ -183,11 +230,13 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
               src={backdrop}
               alt={film.name}
               fill
-              priority
-              quality={85}
+              priority={current === 0}
+              fetchPriority={current === 0 ? "high" : "auto"}
+              quality={95}
               sizes="100vw"
               className="object-cover object-center brightness-[0.7] dark:brightness-[0.7]"
-              loading="eager"
+              placeholder="blur"
+              blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iOSIgdmlld0JveD0iMCAwIDE2IDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE2IiBoZWlnaHQ9IjkiIGZpbGw9IiMxMDE0MWEiLz48L3N2Zz4="
             />
           </div>
         )}
@@ -208,76 +257,100 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
       />
 
       {/* Content Container */}
-      <div
-        className="absolute inset-0 z-20 flex items-center"
-        style={{ willChange: "contents" }}
-      >
-        <div className="w-full pl-24 pr-4 md:pl-28 md:pr-8">
-          <div className="max-w-2xl">
+      <div className="absolute inset-0 z-20 flex items-end sm:items-center pb-36 sm:pb-0">
+        <div className="w-full px-4 sm:pl-16 sm:pr-8 md:pl-24 md:pr-12">
+          <div className="max-w-3xl">
             {/* Use CSS transitions instead of Framer Motion for text content */}
             <div
               key={current}
-              className="flex flex-col space-y-4 md:space-y-5 animate-fade-in-up"
+              className="flex flex-col space-y-4 md:space-y-5 animate-fade-in-up motion-reduce:animate-none"
               style={{
-                animation:
-                  "fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+                animationDuration: "450ms",
+                animationTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
               }}
             >
-              {/* Badges */}
-              <div className="flex items-center space-x-3">
-                <span className="bg-neutral-800 text-white dark:bg-white dark:text-black text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-sm shadow">
-                  NEW
+              {/* Clear release metadata */}
+              <div className="flex flex-wrap items-center gap-2.5 text-xs font-bold text-white/75 md:text-sm">
+                <span className="rounded-md bg-emerald-500 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-black shadow-lg shadow-emerald-500/20">
+                  Nổi bật
                 </span>
-                <span className="border border-foreground/40 text-foreground text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center">
-                  12
-                </span>
-                {film.year && (
-                  <span className="text-foreground/60 text-xs font-semibold">
-                    {film.year}
-                  </span>
+                {film.year && <span>{film.year}</span>}
+                {country && (
+                  <>
+                    <span className="text-white/30">|</span>
+                    <span>{country}</span>
+                  </>
+                )}
+                {episode && (
+                  <>
+                    <span className="text-white/30">|</span>
+                    <span>{episode}</span>
+                  </>
                 )}
               </div>
 
-              {/* Title — Bebas Neue for cinematic drama */}
+              {/* Vietnamese-friendly title treatment */}
               <h1
                 className={cn(
-                  "font-extrabold text-foreground tracking-wide leading-tight drop-shadow-2xl uppercase",
+                  "max-w-3xl font-be-vietnam font-extrabold leading-[1.12] tracking-[-0.025em] text-white drop-shadow-2xl",
                   titleFontSizeClass,
                 )}
-                style={{
-                  fontFamily: "'Bebas Neue', sans-serif",
-                  letterSpacing: "0.04em",
-                }}
               >
                 {film.name}
               </h1>
               {film.origin_name && (
-                <p className="text-base md:text-xl text-foreground/75 font-semibold tracking-wide -mt-2">
+                <p className="-mt-2 text-sm font-semibold tracking-wide text-white/55 md:text-lg">
                   {film.origin_name}
                 </p>
               )}
 
-              {/* Tagline / Mini Description */}
-              <p className="text-xs md:text-sm text-foreground/80 max-w-xl leading-relaxed line-clamp-3">
-                {t("home.heroDesc")}
+              {genres.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {genres.map((genre: any) => (
+                    <Link
+                      key={genre.slug || genre.name}
+                      href={genre.slug ? `/genre/${genre.slug}` : "#"}
+                      className="rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold text-white/90 backdrop-blur-md transition-colors hover:bg-white/20"
+                    >
+                      {genre.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {/* Use the selected film's real synopsis when available. */}
+              <p className="max-w-2xl text-sm font-medium leading-7 text-white/75 line-clamp-3 md:text-base">
+                {description ||
+                  t(
+                    "home.heroDesc",
+                    "Khám phá nội dung và bắt đầu xem bộ phim ngay hôm nay.",
+                  )}
               </p>
 
               {/* Action Buttons */}
-              <div className="flex items-center space-x-3 pt-2">
+              <div className="flex flex-wrap items-center gap-3 pt-2">
                 <Link
                   href={`/watch/${film.slug}`}
-                  className="flex items-center space-x-2 bg-neutral-800 hover:bg-neutral-900 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-black px-7 py-3 rounded-full text-xs font-black tracking-wider uppercase transition-colors shadow-md border border-neutral-700 dark:border-white/5"
+                  className="flex items-center gap-2 rounded-full bg-blue-600 px-7 py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-blue-600/25 transition-all hover:bg-blue-500 hover:scale-[1.02]"
                 >
-                  <Play size={14} fill="currentColor" />
-                  <span>Xem Phim</span>
+                  <Play size={15} fill="currentColor" />
+                  <span>Xem ngay</span>
                 </Link>
                 <Link
                   href={`/film/${film.slug}`}
-                  className="flex items-center space-x-2 bg-black/5 hover:bg-black/10 text-neutral-800 border border-black/10 dark:bg-white/10 dark:hover:bg-white/25 dark:text-white px-7 py-3 rounded-full text-xs font-black tracking-wider uppercase transition-colors backdrop-blur-sm dark:border dark:border-white/10"
+                  className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-6 py-3.5 text-xs font-black uppercase tracking-wider text-white backdrop-blur-md transition-colors hover:bg-white/20"
                 >
-                  <Info size={14} />
-                  <span>{t("home.details")}</span>
+                  <Info size={15} />
+                  <span>{t("home.details", "Chi tiết")}</span>
                 </Link>
+                <button
+                  type="button"
+                  aria-label="Tắt âm thanh"
+                  title="Tắt âm thanh"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-black/20 text-white/80 backdrop-blur-md transition-colors hover:bg-white/15 hover:text-white"
+                >
+                  <VolumeX size={18} />
+                </button>
               </div>
             </div>
           </div>
@@ -285,7 +358,7 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
       </div>
 
       {/* Running Thumbnail Indicators (Right Aligned, 6 Items, Sleek Thin Border & Sharp HD Images) */}
-      <div className="absolute right-4 sm:right-8 md:right-12 bottom-6 sm:bottom-8 z-30 flex items-center gap-1.5 sm:gap-2">
+      <div className="absolute right-4 sm:right-8 md:right-12 bottom-6 sm:bottom-8 z-30 hidden sm:flex items-center gap-1.5 sm:gap-2">
         {featured.map((item, i) => {
           const thumbImg =
             resolveImageUrl(item.thumb_url) ||
@@ -319,7 +392,7 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
                   src={thumbImg}
                   alt={item.name}
                   fill
-                  quality={80}
+                  quality={55}
                   sizes="(max-width: 640px) 56px, (max-width: 768px) 64px, 88px"
                   className="object-cover object-center"
                   loading="lazy"
@@ -334,9 +407,30 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
         })}
       </div>
 
+      {/* Mobile dot indicators — shown only on small screens */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex sm:hidden items-center gap-1.5">
+        {featured.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => {
+              setIsTransitioning(true);
+              setCurrent(i);
+              setTimeout(() => setIsTransitioning(false), 800);
+            }}
+            aria-label={`Slide ${i + 1}`}
+            className={cn(
+              "rounded-full transition-all duration-300",
+              i === current
+                ? "w-5 h-1.5 bg-white"
+                : "w-1.5 h-1.5 bg-white/40 hover:bg-white/70",
+            )}
+          />
+        ))}
+      </div>
+
       {/* Scroll Down Indicator with Medium Soft Mouse Cursor Icon - Center Bottom */}
       <div
-        className="absolute left-1/2 -translate-x-1/2 bottom-5 z-20 flex flex-col items-center gap-1.5 cursor-pointer group opacity-65 hover:opacity-100 transition-all duration-300"
+        className="absolute left-1/2 -translate-x-1/2 bottom-5 z-20 hidden sm:flex flex-col items-center gap-1.5 cursor-pointer group opacity-65 hover:opacity-100 transition-all duration-300"
         onClick={() =>
           window.scrollTo({
             top: window.innerHeight * 0.85,
@@ -658,26 +752,10 @@ export default function HomePage() {
     return combined.length > 0 ? combined : latestFilms;
   }, [genre1Films, genre2Films, genre3Films, latestFilms]);
 
-  const [shuffledFilms, setShuffledFilms] = useState<FilmItem[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-    if (combinedBannerPool.length > 0) {
-      const arr = [...combinedBannerPool];
-      // Fisher-Yates Shuffle for true randomness
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      setShuffledFilms(arr);
-    }
-  }, [combinedBannerPool]);
-
-  const isBannerLoading =
-    latestLoading || genre1Loading || genre2Loading || genre3Loading;
-  const showBannerSkeleton =
-    isBannerLoading || !isMounted || shuffledFilms.length === 0;
+  // Show the hero as soon as the first usable response arrives instead of
+  // waiting for every genre request and an additional client-side shuffle.
+  const bannerFilms = combinedBannerPool;
+  const showBannerSkeleton = bannerFilms.length === 0;
 
   if (latestError) {
     return (
@@ -710,145 +788,112 @@ export default function HomePage() {
       {showBannerSkeleton ? (
         <div className="w-full h-[calc(100vh+100px)] min-h-[700px] bg-gradient-to-br from-neutral-950 via-[#10141a] to-neutral-900 animate-pulse" />
       ) : (
-        <HeroBanner films={shuffledFilms} />
+        <HeroBanner films={bannerFilms} />
       )}
 
-      {/* Main Row Content — stretched out to fit wider layouts next to widgets */}
-      <div className="w-full max-w-[1680px] mx-auto px-4 md:px-12 relative pt-6 md:pt-10 z-30">
+      {/* Main Row Content — full layout spanning across available screen space */}
+      <div className="w-full px-4 md:px-8 relative pt-6 md:pt-10 z-30">
         {/* Continue Watching Row */}
         <ContinueWatchingRow />
+        {/* TOP 10 RANKED MOVIES (Metallic Numbers Netflix Style) */}
+        <Top10RankedRow films={latestFilms} />
         {/* AI Smart Recommendation Engine */}
         <SmartRecommendationSection />
         {/* Topic Banners Section */}
         <TopicBannersSection />
 
-        {/* Cross-section deduplication: each section shows unique films */}
-        {(() => {
-          const usedSlugs = new Set<string>();
+        {/* Film sections — mỗi section dùng đúng nguồn data của nó */}
+        <>
+          <LazySection>
+            <FilmSection
+              title="Phim Mới Cập Nhật"
+              icon={Clock}
+              films={hotFilms.slice(0, 12)}
+              isLoading={hotLoading}
+              href="/films"
+            />
+          </LazySection>
 
-          // Helper: take up to N films from list, excluding already-used slugs, then register them
-          const takeFresh = (films: FilmItem[], n = 12): FilmItem[] => {
-            const fresh = shuffleArray(excludeSlugs(films, usedSlugs)).slice(
-              0,
-              n,
-            );
-            fresh.forEach((f) => usedSlugs.add(f.slug));
-            return fresh;
-          };
+          <LazySection>
+            <FilmSection
+              title={t("home.latest")}
+              icon={TrendingUp}
+              films={latestFilms.slice(0, 12)}
+              isLoading={latestLoading}
+              href="/films"
+            />
+          </LazySection>
 
-          const hotFresh = takeFresh(hotFilms);
-          const latestFresh = takeFresh(latestFilms);
-          const actionFresh = takeFresh(actionFilms);
-          const seriesFresh = takeFresh(seriesFilms);
-          const horrorFresh = takeFresh(horrorFilms);
-          const singleFresh = takeFresh(singleFilms);
-          const romanceFresh = takeFresh(romanceFilms);
-          const comedyFresh = takeFresh(comedyFilms);
-          const animeFresh = takeFresh(animeFilms);
+          <LazySection>
+            <FilmSection
+              title="Phim Hành Động"
+              icon={Zap}
+              films={actionFilms.slice(0, 12)}
+              isLoading={actionLoading}
+              href="/genre/hanh-dong"
+            />
+          </LazySection>
 
-          return (
-            <>
-              {/* Phim Mới Cập Nhật Hôm Nay */}
-              <LazySection>
-                <FilmSection
-                  title="Phim Mới Cập Nhật"
-                  icon={Clock}
-                  films={hotFresh}
-                  isLoading={hotLoading}
-                  href="/films"
-                />
-              </LazySection>
+          <LazySection>
+            <FilmSection
+              title={t("home.series")}
+              icon={Tv}
+              films={seriesFilms.slice(0, 12)}
+              isLoading={seriesLoading}
+              href="/films/series"
+            />
+          </LazySection>
 
-              {/* Phim Mới Nhất */}
-              <LazySection>
-                <FilmSection
-                  title={t("home.latest")}
-                  icon={TrendingUp}
-                  films={latestFresh}
-                  isLoading={latestLoading}
-                  href="/films"
-                />
-              </LazySection>
+          <LazySection>
+            <FilmSection
+              title="Phim Kinh Dị"
+              icon={Ghost}
+              films={horrorFilms.slice(0, 12)}
+              isLoading={horrorLoading}
+              href="/genre/kinh-di"
+            />
+          </LazySection>
 
-              {/* Phim Hành Động */}
-              <LazySection>
-                <FilmSection
-                  title="Phim Hành Động Kịch Tính"
-                  icon={Zap}
-                  films={actionFresh}
-                  isLoading={actionLoading}
-                  href="/genre/hanh-dong"
-                />
-              </LazySection>
+          <LazySection>
+            <FilmSection
+              title={t("home.single")}
+              icon={Clapperboard}
+              films={singleFilms.slice(0, 12)}
+              isLoading={singleLoading}
+              href="/films/single"
+            />
+          </LazySection>
 
-              {/* Phim Bộ */}
-              <LazySection>
-                <FilmSection
-                  title={t("home.series")}
-                  icon={Tv}
-                  films={seriesFresh}
-                  isLoading={seriesLoading}
-                  href="/films/series"
-                />
-              </LazySection>
+          <LazySection>
+            <FilmSection
+              title="Phim Tình Cảm"
+              icon={Heart}
+              films={romanceFilms.slice(0, 12)}
+              isLoading={romanceLoading}
+              href="/genre/tinh-cam"
+            />
+          </LazySection>
 
-              {/* Phim Kinh Dị */}
-              <LazySection>
-                <FilmSection
-                  title="Phim Kinh Dị Rùng Rợn"
-                  icon={Ghost}
-                  films={horrorFresh}
-                  isLoading={horrorLoading}
-                  href="/genre/kinh-di"
-                />
-              </LazySection>
+          <LazySection>
+            <FilmSection
+              title="Phim Hài Hước"
+              icon={Laugh}
+              films={comedyFilms.slice(0, 12)}
+              isLoading={comedyLoading}
+              href="/genre/hai-huoc"
+            />
+          </LazySection>
 
-              {/* Phim Lẻ */}
-              <LazySection>
-                <FilmSection
-                  title={t("home.single")}
-                  icon={Clapperboard}
-                  films={singleFresh}
-                  isLoading={singleLoading}
-                  href="/films/single"
-                />
-              </LazySection>
-
-              {/* Phim Tình Cảm */}
-              <LazySection>
-                <FilmSection
-                  title="Phim Tình Cảm Lãng Mạn"
-                  icon={Heart}
-                  films={romanceFresh}
-                  isLoading={romanceLoading}
-                  href="/genre/tinh-cam"
-                />
-              </LazySection>
-
-              {/* Phim Hài Hước */}
-              <LazySection>
-                <FilmSection
-                  title="Phim Hài Hước Vui Nhộn"
-                  icon={Laugh}
-                  films={comedyFresh}
-                  isLoading={comedyLoading}
-                  href="/genre/hai-huoc"
-                />
-              </LazySection>
-
-              {/* Hoạt Hình / Anime */}
-              <LazySection>
-                <FilmSection
-                  title={t("home.anime")}
-                  icon={Sparkles}
-                  films={animeFresh}
-                  isLoading={animeLoading}
-                  href="/films/anime"
-                />
-              </LazySection>
-            </>
-          );
-        })()}
+          <LazySection>
+            <FilmSection
+              title={t("home.anime")}
+              icon={Sparkles}
+              films={animeFilms.slice(0, 12)}
+              isLoading={animeLoading}
+              href="/films/anime"
+            />
+          </LazySection>
+        </>
       </div>
     </div>
   );

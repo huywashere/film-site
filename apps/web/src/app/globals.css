@@ -104,6 +104,26 @@ pre,
   display: none;
 }
 
+/* ── Custom Theme Scrollbar ───────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f1216;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #232936;
+  border-radius: 9999px;
+  border: 2px solid #0f1216;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3b4458;
+}
+
 /* Smooth scroll behavior */
 html {
   scroll-behavior: smooth;

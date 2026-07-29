@@ -43,30 +43,54 @@ function removeFromHistory(query: string) {
   localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
 }
 
+// ── Match type badge ─────────────────────────────────────────────
+function MatchBadge({ type }: { type?: string }) {
+  if (type === "exact")
+    return (
+      <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 shrink-0">
+        Chính xác
+      </span>
+    );
+  if (type === "prefix")
+    return (
+      <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/20 shrink-0">
+        Khớp
+      </span>
+    );
+  if (type === "fuzzy")
+    return (
+      <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/20 shrink-0">
+        Gần đúng
+      </span>
+    );
+  return null;
+}
+
 // ── Highlight matching text ──────────────────────────────────────
 function HighlightMatch({ text, query }: { text: string; query: string }) {
   if (!query.trim()) return <span>{text}</span>;
-  const regex = new RegExp(
-    `(${query.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-    "gi",
-  );
-  const parts = text.split(regex);
-  return (
-    <span>
-      {parts.map((part, i) =>
-        regex.test(part) ? (
-          <mark
-            key={i}
-            className="bg-transparent text-[#524cf8] font-extrabold not-italic"
-          >
-            {part}
-          </mark>
-        ) : (
-          <span key={i}>{part}</span>
-        ),
-      )}
-    </span>
-  );
+  try {
+    const regex = new RegExp(
+      `(${query.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+      "gi",
+    );
+    const parts = text.split(regex);
+    return (
+      <span>
+        {parts.map((part, i) =>
+          regex.test(part) ? (
+            <mark key={i} className="bg-transparent text-blue-400 font-extrabold not-italic">
+              {part}
+            </mark>
+          ) : (
+            <span key={i}>{part}</span>
+          ),
+        )}
+      </span>
+    );
+  } catch {
+    return <span>{text}</span>;
+  }
 }
 
 // ── Skeleton loader ──────────────────────────────────────────────
@@ -232,9 +256,9 @@ export function SpotlightSearchModal({
     }
   }, [isOpen]);
 
-  // Debounce query 300ms
+  // Debounce query 250ms
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQuery(query), 300);
+    const t = setTimeout(() => setDebouncedQuery(query), 250);
     return () => clearTimeout(t);
   }, [query]);
 
@@ -246,9 +270,10 @@ export function SpotlightSearchModal({
   // Search API
   const { data: searchData, isFetching } = useQuery({
     queryKey: ["spotlight-search", debouncedQuery],
-    queryFn: () => movieApi.search(debouncedQuery, 1).then((r) => r.data),
-    enabled: debouncedQuery.trim().length >= 2,
-    staleTime: 1000 * 30,
+    queryFn: () => movieApi.search(debouncedQuery, 1, 20).then((r) => r.data),
+    enabled: debouncedQuery.trim().length >= 1,
+    staleTime: 1000 * 60,
+    placeholderData: (prev) => prev, // giữ kết quả cũ khi đang fetch mới
   });
 
   // Genres for quick tags
@@ -260,7 +285,7 @@ export function SpotlightSearchModal({
   });
 
   const results: FilmItem[] = searchData?.data?.items || [];
-  const isSearching = debouncedQuery.trim().length >= 2;
+  const isSearching = debouncedQuery.trim().length >= 1;
   const isTyping = query.trim().length > 0;
 
   // Genre quick tags — pick 6 from real data, fallback static
@@ -527,14 +552,12 @@ export function SpotlightSearchModal({
               </div>
             )}
 
-            {/* ── TOO SHORT ── */}
-            {isTyping &&
-              debouncedQuery.trim().length < 2 &&
-              query.trim().length < 2 && (
-                <div className="flex items-center justify-center flex-1 py-16 text-neutral-700 text-xs">
-                  Nhập tối thiểu 2 ký tự...
-                </div>
-              )}
+            {/* ── TOO SHORT (chỉ hiện khi query rỗng hoàn toàn) ── */}
+            {isTyping && debouncedQuery.trim().length === 0 && (
+              <div className="flex items-center justify-center flex-1 py-16 text-neutral-700 text-xs">
+                Đang tìm kiếm...
+              </div>
+            )}
 
             {/* ── LOADING SKELETON ── */}
             {isSearching && isFetching && results.length === 0 && (
@@ -587,23 +610,28 @@ export function SpotlightSearchModal({
                             </div>
                           )}
                         </div>
-                        <div className="flex flex-col justify-center gap-0.5 min-w-0">
-                          <span
-                            className={cn(
-                              "font-semibold text-xs line-clamp-1 transition-colors",
-                              isActive
-                                ? "text-white"
-                                : "text-neutral-400 group-hover:text-white",
-                            )}
-                          >
-                            <HighlightMatch
-                              text={item.name}
-                              query={debouncedQuery}
-                            />
-                          </span>
+                        <div className="flex flex-col justify-center gap-0.5 min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span
+                              className={cn(
+                                "font-semibold text-xs line-clamp-1 transition-colors flex-1 min-w-0",
+                                isActive
+                                  ? "text-white"
+                                  : "text-neutral-400 group-hover:text-white",
+                              )}
+                            >
+                              <HighlightMatch text={item.name} query={debouncedQuery} />
+                            </span>
+                            <MatchBadge type={(item as any)._matchType} />
+                          </div>
                           <span className="text-[10px] text-neutral-700 line-clamp-1">
                             {item.origin_name}{" "}
                             {item.year ? `(${item.year})` : ""}
+                            {(item as any)._duplicateCount > 1 && (
+                              <span className="ml-1 text-neutral-600">
+                                · {(item as any)._duplicateCount} nguồn
+                              </span>
+                            )}
                           </span>
                         </div>
                         {isActive && (

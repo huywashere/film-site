@@ -1,4 +1,4 @@
-export type MovieSource = "kkphim" | "ophim" | "nguonc";
+export type MovieSource = "kkphim" | "ophim" | "nguonc" | "vsmov";
 
 export interface NormalizedFilmItem extends Record<string, unknown> {
   slug: string;
@@ -13,7 +13,7 @@ export interface NormalizedFilmItem extends Record<string, unknown> {
   _rank: number;
 }
 
-const SOURCE_PRIORITY: MovieSource[] = ["kkphim", "ophim", "nguonc"];
+const SOURCE_PRIORITY: MovieSource[] = ["kkphim", "ophim", "nguonc", "vsmov"];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
