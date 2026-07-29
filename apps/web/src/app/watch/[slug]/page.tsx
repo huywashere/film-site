@@ -197,6 +197,98 @@ export default function WatchPage() {
   const autoNextTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSyncRef = useRef(0);
 
+  // Universal Player Container & Gestures (for ALL video players & iframe sources)
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+  const [isOuterSpeedBoosted, setIsOuterSpeedBoosted] = useState(false);
+  const [outerDoubleTapHud, setOuterDoubleTapHud] = useState<"rewind" | "forward" | null>(null);
+  const outerPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const outerLastTapRef = useRef<number>(0);
+
+  // Global Fullscreen & Hotkey listener for F key (works for all players and outside player form)
+  useEffect(() => {
+    const handleGlobalHotkeys = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.key === "f" || e.key === "F") {
+        e.preventDefault();
+        const container = playerContainerRef.current;
+        if (!container) return;
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        } else {
+          container.requestFullscreen?.().catch(() => {});
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalHotkeys, true);
+    return () => window.removeEventListener("keydown", handleGlobalHotkeys, true);
+  }, []);
+
+  const handleOuterPointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (
+      target.closest(".art-controls") ||
+      target.closest(".art-setting") ||
+      target.closest("button")
+    ) {
+      return;
+    }
+
+    const now = Date.now();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const width = rect.width;
+
+    if (now - outerLastTapRef.current < 300) {
+      if (outerPressTimerRef.current) {
+        clearTimeout(outerPressTimerRef.current);
+        outerPressTimerRef.current = null;
+      }
+      const videoEl = playerContainerRef.current?.querySelector("video");
+      if (clickX < width * 0.45) {
+        if (videoEl) videoEl.currentTime = Math.max(0, videoEl.currentTime - 10);
+        setOuterDoubleTapHud("rewind");
+        setTimeout(() => setOuterDoubleTapHud(null), 800);
+      } else if (clickX > width * 0.55) {
+        if (videoEl) videoEl.currentTime = Math.min(videoEl.duration || 0, videoEl.currentTime + 10);
+        setOuterDoubleTapHud("forward");
+        setTimeout(() => setOuterDoubleTapHud(null), 800);
+      }
+      outerLastTapRef.current = 0;
+      return;
+    }
+    outerLastTapRef.current = now;
+
+    outerPressTimerRef.current = setTimeout(() => {
+      const videoEl = playerContainerRef.current?.querySelector("video");
+      if (videoEl) videoEl.playbackRate = 2.0;
+      setIsOuterSpeedBoosted(true);
+    }, 280);
+  };
+
+  const handleOuterPointerUp = () => {
+    if (outerPressTimerRef.current) {
+      clearTimeout(outerPressTimerRef.current);
+      outerPressTimerRef.current = null;
+    }
+    const videoEl = playerContainerRef.current?.querySelector("video");
+    if (videoEl) videoEl.playbackRate = 1.0;
+    if (isOuterSpeedBoosted) {
+      setIsOuterSpeedBoosted(false);
+    }
+  };
+
   const progressSyncMutation = useMutation({
     mutationFn: (data: any) => watchHistoryApi.upsert(data),
   });
@@ -665,7 +757,35 @@ export default function WatchPage() {
           {/* ───── LEFT COLUMN ───── */}
           <div className="space-y-4 min-w-0">
             {/* 1. PLAYER */}
-            <div className="bg-black aspect-video rounded-xl overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06]">
+            <div
+              ref={playerContainerRef}
+              onPointerDown={handleOuterPointerDown}
+              onPointerUp={handleOuterPointerUp}
+              onPointerLeave={handleOuterPointerUp}
+              className="bg-black aspect-video rounded-xl overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none"
+            >
+              {/* ── Universal 2x Speed Hold Top HUD Banner ── */}
+              {isOuterSpeedBoosted && (
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-black/90 border border-amber-500/50 text-amber-400 font-extrabold text-xs px-4 py-1.5 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-2 animate-pulse pointer-events-none">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                  <span>⏩ Tua Nhanh 2X (Đang Giữ)</span>
+                </div>
+              )}
+
+              {/* ── Universal Double Tap Rewind HUD (-10s) ── */}
+              {outerDoubleTapHud === "rewind" && (
+                <div className="absolute left-10 top-1/2 -translate-y-1/2 z-50 bg-black/85 text-white font-black text-sm px-5 py-3 rounded-full border border-white/20 backdrop-blur-md animate-in zoom-in-50 duration-200 flex items-center gap-2 pointer-events-none">
+                  <span>⏪</span> -10s
+                </div>
+              )}
+
+              {/* ── Universal Double Tap Fast-Forward HUD (+10s) ── */}
+              {outerDoubleTapHud === "forward" && (
+                <div className="absolute right-10 top-1/2 -translate-y-1/2 z-50 bg-black/85 text-white font-black text-sm px-5 py-3 rounded-full border border-white/20 backdrop-blur-md animate-in zoom-in-50 duration-200 flex items-center gap-2 pointer-events-none">
+                  +10s <span>⏩</span>
+                </div>
+              )}
+
               {/* Fallback overlay */}
               {isFallbacking && (
                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm gap-3">
