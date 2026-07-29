@@ -254,6 +254,26 @@ export function SpotlightSearchModal({
     selectedGenreSlug,
   ]);
 
+  const uniqueSearchResults = useMemo(() => {
+    const seen = new Set<string>();
+    return sortedAndFilteredResults.filter((film) => {
+      if (!film || !film.slug) return false;
+      if (seen.has(film.slug)) return false;
+      seen.add(film.slug);
+      return true;
+    });
+  }, [sortedAndFilteredResults]);
+
+  const uniqueSuggestions = useMemo(() => {
+    const seen = new Set<string>();
+    return (suggestions || []).filter((film) => {
+      if (!film || !film.slug) return false;
+      if (seen.has(film.slug)) return false;
+      seen.add(film.slug);
+      return true;
+    });
+  }, [suggestions]);
+
   const isSearching = debouncedQuery.trim().length >= 1;
 
   // Type counts for badges
@@ -323,22 +343,32 @@ export function SpotlightSearchModal({
     }
   };
 
-  // Global ESC handler
+  // Global ESC handler & Body Scroll Lock when modal is active
   useEffect(() => {
+    if (!isOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handler);
+    };
+  }, [isOpen, onClose]);
 
   if (!mounted || !isOpen) return null;
 
   return (
     <div
       suppressHydrationWarning
-      className="fixed inset-0 bg-black/80 backdrop-blur-2xl z-[100] flex items-start justify-center pt-[4vh] sm:pt-[6vh] px-3 sm:px-6 md:px-8 animate-fade-in"
+      className="fixed inset-0 bg-black/85 backdrop-blur-2xl z-[100] flex items-start sm:items-center justify-center p-0 sm:p-6 md:p-8 animate-fade-in overscroll-contain"
       onClick={onClose}
+      onWheel={(e) => e.stopPropagation()}
     >
       <motion.div
         suppressHydrationWarning
@@ -346,15 +376,15 @@ export function SpotlightSearchModal({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -20, scale: 0.98 }}
         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-        className="bg-[#0b0e13]/98 border border-white/12 w-full max-w-6xl rounded-3xl overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.95)] flex flex-col backdrop-blur-3xl h-[88vh] max-h-[850px] my-auto"
+        className="bg-[#0b0e13]/98 border-0 sm:border border-white/12 w-full max-w-6xl rounded-none sm:rounded-3xl overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.95)] flex flex-col backdrop-blur-3xl h-full sm:h-[88vh] max-h-none sm:max-h-[850px] my-0 sm:my-auto pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Top Search Input Bar (Fixed Header) ── */}
         <div
           suppressHydrationWarning
-          className="flex items-center px-6 py-4 md:py-5 gap-4 border-b border-white/10 bg-white/[0.02] shrink-0"
+          className="flex items-center px-4 sm:px-6 py-3.5 sm:py-5 gap-3 sm:gap-4 border-b border-white/10 bg-white/[0.02] shrink-0"
         >
-          <Search size={22} className="text-emerald-400 shrink-0" />
+          <Search size={20} className="text-emerald-400 shrink-0" />
           <input
             suppressHydrationWarning
             ref={inputRef}
@@ -363,9 +393,9 @@ export function SpotlightSearchModal({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Tìm kiếm phim, đạo diễn, diễn viên..."
-            className="flex-1 bg-transparent border-none text-white text-base md:text-lg font-bold placeholder:text-neutral-500 focus:outline-none focus:ring-0 tracking-wide"
+            className="flex-1 bg-transparent border-none text-white text-sm sm:text-lg font-bold placeholder:text-neutral-500 focus:outline-none focus:ring-0 tracking-wide"
           />
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <VoiceSearchButton onResult={(text) => setQuery(text)} />
             {isFetching && (
               <Loader2 size={18} className="animate-spin text-emerald-400" />
@@ -383,17 +413,17 @@ export function SpotlightSearchModal({
             )}
             <button
               onClick={onClose}
-              className="text-xs font-bold text-neutral-400 bg-white/10 hover:bg-white/20 border border-white/15 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+              className="text-xs font-bold text-neutral-400 bg-white/10 hover:bg-white/20 border border-white/15 px-2.5 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer"
             >
-              Đóng (ESC)
+              Đóng
             </button>
           </div>
         </div>
 
         {/* ── YouTube/Netflix Smart Filter Bar (Fixed Header) ── */}
-        <div className="px-6 py-3 border-b border-white/10 bg-black/40 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
+        <div className="px-4 sm:px-6 py-2.5 sm:py-3 border-b border-white/10 bg-black/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs shrink-0 overflow-x-auto scrollbar-hide">
           {/* Type Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-0.5 shrink-0">
             <span className="text-neutral-500 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1 shrink-0 mr-1">
               <Filter size={12} className="text-emerald-400" />
               Lọc theo:
@@ -410,7 +440,7 @@ export function SpotlightSearchModal({
                 <button
                   key={tab.id}
                   onClick={() => setActiveTypeFilter(tab.id as any)}
-                  className={`px-3.5 py-1.5 rounded-full font-extrabold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                  className={`px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full font-extrabold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 text-xs ${
                     active
                       ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/25"
                       : "bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border border-white/10"
@@ -434,7 +464,7 @@ export function SpotlightSearchModal({
           </div>
 
           {/* Audio Language Filter */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto scrollbar-hide pb-0.5 sm:pb-0">
             {[
               { id: "all", label: "Tất cả Audio" },
               { id: "vietsub", label: "Vietsub" },
@@ -445,7 +475,7 @@ export function SpotlightSearchModal({
                 <button
                   key={lang.id}
                   onClick={() => setActiveLangFilter(lang.id as any)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer shrink-0 ${
                     active
                       ? "bg-white/20 text-white border border-white/30"
                       : "text-neutral-500 hover:text-neutral-300"
@@ -459,7 +489,10 @@ export function SpotlightSearchModal({
         </div>
 
         {/* ── Main Scrollable View Area (Smooth Touch & Mouse Scrollable Container) ── */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-4 md:p-6 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-white/5">
+        <div
+          onWheel={(e) => e.stopPropagation()}
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-3 sm:p-6 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-white/5 pointer-events-auto"
+        >
           {/* ── SEARCH MODE ── */}
           {isSearching ? (
             <div className="space-y-4">
@@ -516,17 +549,17 @@ export function SpotlightSearchModal({
                     />
                   ))}
                 </div>
-              ) : sortedAndFilteredResults.length > 0 ? (
+              ) : uniqueSearchResults.length > 0 ? (
                 /* Rich Scrollable Cards Grid */
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pb-4">
-                  {sortedAndFilteredResults.map((film) => {
+                  {uniqueSearchResults.map((film, idx) => {
                     const poster =
                       resolveImageUrl(film.poster_url) ||
                       resolveImageUrl(film.thumb_url);
 
                     return (
                       <div
-                        key={film.slug}
+                        key={`${film.slug}-${idx}`}
                         onClick={() => handleSelectMovie(film.slug)}
                         className="group relative rounded-2xl bg-[#12161f] border border-white/10 hover:border-emerald-500/60 overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer hover:-translate-y-1"
                       >
@@ -675,7 +708,7 @@ export function SpotlightSearchModal({
               </div>
 
               {/* Popular Movie Suggestions Grid */}
-              {suggestions.length > 0 && (
+              {uniqueSuggestions.length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between px-1">
                     <span className="flex items-center gap-1.5 text-xs text-neutral-400 font-bold uppercase tracking-wider">
@@ -685,14 +718,14 @@ export function SpotlightSearchModal({
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    {suggestions.slice(0, 12).map((film) => {
+                    {uniqueSuggestions.slice(0, 12).map((film, idx) => {
                       const poster =
                         resolveImageUrl(film.poster_url) ||
                         resolveImageUrl(film.thumb_url);
 
                       return (
                         <div
-                          key={film.slug}
+                          key={`${film.slug}-${idx}`}
                           onClick={() => handleSelectMovie(film.slug)}
                           className="group relative rounded-2xl bg-[#12161f] border border-white/10 hover:border-emerald-500/60 overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer hover:-translate-y-1"
                         >

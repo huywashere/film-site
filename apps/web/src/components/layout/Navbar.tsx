@@ -393,10 +393,11 @@ export function Navbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  alignOffset={-32}
-                  sideOffset={10}
-                  collisionPadding={{ right: 32 }}
-                  className="w-80 sm:w-88 -translate-x-6 sm:-translate-x-8 p-2 bg-[#14181c] border border-[#2c3440] text-neutral-300 text-xs shadow-2xl z-50 rounded-2xl"
+                  alignOffset={-12}
+                  sideOffset={8}
+                  collisionPadding={{ right: 12, left: 12 }}
+                  onWheel={(e) => e.stopPropagation()}
+                  className="w-[calc(100vw-24px)] max-w-[360px] sm:w-88 p-3 bg-[#14181c] border border-white/15 text-neutral-300 text-xs shadow-2xl z-50 rounded-2xl pointer-events-auto"
                 >
                   <div className="flex items-center justify-between px-2 py-1.5 border-b border-white/10 mb-1">
                     <span className="font-bold text-white text-sm">
@@ -411,7 +412,10 @@ export function Navbar() {
                       </button>
                     )}
                   </div>
-                  <div className="max-h-60 overflow-y-auto space-y-1 scrollbar-thin">
+                  <div
+                    onWheel={(e) => e.stopPropagation()}
+                    className="max-h-[60vh] sm:max-h-72 overflow-y-auto overscroll-contain touch-pan-y space-y-1 pr-1 scrollbar-thin pointer-events-auto"
+                  >
                     {notifications.map((n) => (
                       <div
                         key={n.id}

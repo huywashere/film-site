@@ -79,6 +79,24 @@ export default function HeroBanner({ films }: HeroBannerProps) {
 
   return (
     <div className="relative h-[78vh] min-h-[500px] md:h-[calc(100vh+80px)] md:min-h-[680px] w-full overflow-hidden bg-background">
+      {/* Hidden pre-warmer for all featured slide backdrops (parallel background fetch) */}
+      <div className="hidden pointer-events-none">
+        {featured.map((f, idx) => {
+          const img =
+            resolveImageUrl(f.thumb_url) || resolveImageUrl(f.poster_url);
+          if (!img || idx === current) return null;
+          return (
+            <img
+              key={f.slug || idx}
+              src={img}
+              alt=""
+              loading="eager"
+              decoding="async"
+            />
+          );
+        })}
+      </div>
+
       {/* Background Image */}
       <div className="absolute inset-0 w-full h-full">
         {backdrop && (
@@ -94,7 +112,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
               alt={film.name}
               fill
               priority
-              quality={75}
+              quality={80}
               sizes="100vw"
               className="object-cover object-center brightness-[0.7]"
               loading="eager"

@@ -71,7 +71,7 @@ export function resolveImageUrl(url?: unknown): string | null {
 
 export function FilmCard({
   film,
-  width = 200,
+  width,
   showActions = true,
   variant = "standard",
   hideDetails = false,

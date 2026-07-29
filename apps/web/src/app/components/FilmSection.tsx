@@ -68,14 +68,14 @@ export default function FilmSection({
         </Link>
       </div>
 
-      {/* Horizontal scroll tuned for 4 movies per view on mobile */}
+      {/* Horizontal scroll tuned for 4 movies per view on mobile without overlap */}
       <div className="overflow-x-auto pb-4 scrollbar-hide">
-        <div className="flex gap-2 sm:gap-4 px-1">
+        <div className="flex gap-3 sm:gap-4 px-1">
           {isLoading
             ? Array.from({ length: 8 }).map((_, i) => (
                 <div
                   key={`skeleton-${i}`}
-                  className="w-[calc(25%-7px)] min-w-[85px] max-w-[200px] sm:w-[150px] md:w-[190px] lg:w-[210px] flex-shrink-0"
+                  className="w-[calc(25%-9px)] min-w-[78px] sm:w-[160px] md:w-[190px] lg:w-[210px] flex-shrink-0"
                 >
                   <FilmCardSkeleton hideDetails={false} />
                 </div>
@@ -83,7 +83,7 @@ export default function FilmSection({
             : films.slice(0, 16).map((film) => (
                 <div
                   key={film.slug}
-                  className="w-[calc(25%-7px)] min-w-[85px] max-w-[200px] sm:w-[150px] md:w-[190px] lg:w-[210px] flex-shrink-0"
+                  className="w-[calc(25%-9px)] min-w-[78px] sm:w-[160px] md:w-[190px] lg:w-[210px] flex-shrink-0"
                 >
                   <FilmCard
                     film={film}

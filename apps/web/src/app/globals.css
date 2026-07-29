@@ -1,5 +1,5 @@
-/* ── Google Fonts (MUST be first before all other CSS) ─────── */
-/* Be Vietnam Pro, Inter, Manrope — loaded via layout.tsx <link> tags */
+/* ── Google Fonts (display=swap for FOUT prevention & 60FPS rendering) ── */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;

@@ -556,23 +556,35 @@ function FilmSection({
               nextEl: nextRef.current,
             }}
             speed={600}
-            slidesPerGroup={3}
-            spaceBetween={16}
-            slidesPerView="auto"
+            slidesPerView={4}
+            spaceBetween={10}
+            breakpoints={{
+              640: {
+                slidesPerView: 5,
+                spaceBetween: 14,
+              },
+              1024: {
+                slidesPerView: 6,
+                spaceBetween: 16,
+              },
+              1280: {
+                slidesPerView: 7,
+                spaceBetween: 18,
+              },
+            }}
             freeMode={{ enabled: true, momentumRatio: 0.8 }}
             className="!py-2 !px-1"
           >
             {isLoading
-              ? Array.from({ length: 6 }).map((_, i) => (
-                  <SwiperSlide key={`skeleton-${i}`} style={{ width: "200px" }}>
-                    <FilmCardSkeleton width={200} hideDetails={false} />
+              ? Array.from({ length: 8 }).map((_, i) => (
+                  <SwiperSlide key={`skeleton-${i}`}>
+                    <FilmCardSkeleton hideDetails={false} />
                   </SwiperSlide>
                 ))
-              : films.slice(0, 12).map((film) => (
-                  <SwiperSlide key={film.slug} style={{ width: "200px" }}>
+              : films.slice(0, 16).map((film) => (
+                  <SwiperSlide key={film.slug}>
                     <FilmCard
                       film={film}
-                      width={200}
                       variant="standard"
                       hideDetails={false}
                     />

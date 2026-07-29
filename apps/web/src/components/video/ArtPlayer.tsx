@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Artplayer from "artplayer";
 import Hls from "hls.js";
 import { cn } from "@/lib/utils";
+import { useSettingsStore } from "@/store/settingsStore";
 
 export interface ArtPlayerProps {
   url: string;
@@ -156,6 +157,16 @@ export default function ArtPlayer({
                     // Build quality options from HLS levels
                     const levels = data.levels ?? [];
                     if (levels.length > 1) {
+                      // Apply user default quality setting if not "auto"
+                      const prefQuality = useSettingsStore.getState().defaultQuality;
+                      if (prefQuality !== "auto") {
+                        const targetIdx = levels.findIndex(
+                          (l) => l.height && `${l.height}p`.toLowerCase() === prefQuality.toLowerCase(),
+                        );
+                        if (targetIdx !== -1) {
+                          hls.currentLevel = targetIdx;
+                        }
+                      }
                       const built = levels.map((level, i) => ({
                         default:
                           i === hls.currentLevel ||

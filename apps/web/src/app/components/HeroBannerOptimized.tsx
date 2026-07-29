@@ -87,27 +87,37 @@ export default function HeroBannerOptimized({ films }: HeroBannerProps) {
         : "text-4xl md:text-7xl";
 
   return (
-    <div className="relative h-[calc(100vh+100px)] min-h-[700px] w-full overflow-hidden bg-background">
-      {/* ── Background Image với Blur Placeholder ──────────────── */}
+    <div className="relative h-[78vh] min-h-[500px] md:h-[calc(100vh+80px)] md:min-h-[680px] w-full overflow-hidden bg-background">
+      {/* Hidden pre-warmer for all featured slide backdrops (parallel background fetch) */}
+      <div className="hidden pointer-events-none">
+        {featured.map((f, idx) => {
+          const img =
+            resolveImageUrl(f.thumb_url) || resolveImageUrl(f.poster_url);
+          if (!img || idx === current) return null;
+          return (
+            <img
+              key={f.slug || idx}
+              src={img}
+              alt=""
+              loading="eager"
+              decoding="async"
+            />
+          );
+        })}
+      </div>
+
+      {/* ── Background Image với Instant Initial Render ──────────────── */}
       <div className="absolute inset-0 w-full h-full">
         {backdrop ? (
-          <div
-            className={cn(
-              "absolute inset-0 w-full h-full transition-opacity duration-700",
-              isImageLoaded ? "opacity-100" : "opacity-0",
-            )}
-          >
+          <div className="absolute inset-0 w-full h-full">
             <Image
               src={backdrop}
               alt={film.name}
               fill
               priority
-              quality={85}
+              quality={80}
               sizes="100vw"
               className="object-cover object-center brightness-[0.7]"
-              placeholder="blur"
-              blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMTQxODFjIi8+Cjwvc3ZnPg=="
-              onLoadingComplete={() => setIsImageLoaded(true)}
               loading="eager"
             />
           </div>
@@ -131,7 +141,7 @@ export default function HeroBannerOptimized({ films }: HeroBannerProps) {
 
       {/* ── Content Container ────────────────────────────────────── */}
       <div className="absolute inset-0 z-20 flex items-center">
-        <div className="w-full pl-24 pr-4 md:pl-28 md:pr-8">
+        <div className="w-full px-4 sm:pl-16 md:pl-28 md:pr-8 pt-8 md:pt-0">
           <div className="max-w-2xl">
             {/* Content with fade-in animation */}
             <div
