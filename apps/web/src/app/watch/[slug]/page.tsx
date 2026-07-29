@@ -200,13 +200,41 @@ export default function WatchPage() {
   // Universal Player Container & Gestures (for ALL video players & iframe sources)
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const [isOuterSpeedBoosted, setIsOuterSpeedBoosted] = useState(false);
-  const [outerDoubleTapHud, setOuterDoubleTapHud] = useState<"rewind" | "forward" | null>(null);
+  const [outerDoubleTapHud, setOuterDoubleTapHud] = useState<
+    "rewind" | "forward" | null
+  >(null);
   const outerPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const outerLastTapRef = useRef<number>(0);
 
-  // Global Fullscreen & Hotkey listener for F key (works for all players and outside player form)
+  // Cinema Mode & Player Enhancement States
+  const [lightOff, setLightOff] = useState(false);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
+  const [showEpThumbnails, setShowEpThumbnails] = useState(false);
+  const [artInstance, setArtInstance] = useState<any>(null);
+  const hasSkippedIntroRef = useRef(false);
+
+  const [autoSkipIntro, setAutoSkipIntro] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("auto-skip-intro") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleAutoSkipIntro = (val: boolean) => {
+    setAutoSkipIntro(val);
+    try {
+      localStorage.setItem("auto-skip-intro", String(val));
+    } catch {}
+  };
+
   useEffect(() => {
-    const handleGlobalHotkeys = (e: KeyboardEvent) => {
+    hasSkippedIntroRef.current = false;
+  }, [currentEp, slug]);
+
+  // Keyboard Shortcuts (Space: Play/Pause, F: Fullscreen, M: Mute, Arrows: Seek/Volume)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (
         target &&
@@ -218,21 +246,32 @@ export default function WatchPage() {
         return;
       }
 
-      if (e.key === "f" || e.key === "F") {
+      if (!artInstance) return;
+
+      if (e.code === "Space" || e.code === "KeyK") {
         e.preventDefault();
-        const container = playerContainerRef.current;
-        if (!container) return;
-        if (document.fullscreenElement) {
-          document.exitFullscreen().catch(() => {});
-        } else {
-          container.requestFullscreen?.().catch(() => {});
-        }
+        artInstance.toggle();
+      } else if (e.code === "KeyF") {
+        e.preventDefault();
+        artInstance.fullscreen = !artInstance.fullscreen;
+      } else if (e.code === "KeyM") {
+        e.preventDefault();
+        artInstance.volume = artInstance.volume === 0 ? 0.8 : 0;
+      } else if (e.code === "ArrowLeft") {
+        e.preventDefault();
+        artInstance.seek = Math.max(0, artInstance.currentTime - 5);
+      } else if (e.code === "ArrowRight") {
+        e.preventDefault();
+        artInstance.seek = Math.min(
+          artInstance.duration || 9999,
+          artInstance.currentTime + 5,
+        );
       }
     };
 
-    window.addEventListener("keydown", handleGlobalHotkeys, true);
-    return () => window.removeEventListener("keydown", handleGlobalHotkeys, true);
-  }, []);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [artInstance]);
 
   const handleOuterPointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return;
@@ -257,11 +296,16 @@ export default function WatchPage() {
       }
       const videoEl = playerContainerRef.current?.querySelector("video");
       if (clickX < width * 0.45) {
-        if (videoEl) videoEl.currentTime = Math.max(0, videoEl.currentTime - 10);
+        if (videoEl)
+          videoEl.currentTime = Math.max(0, videoEl.currentTime - 10);
         setOuterDoubleTapHud("rewind");
         setTimeout(() => setOuterDoubleTapHud(null), 800);
       } else if (clickX > width * 0.55) {
-        if (videoEl) videoEl.currentTime = Math.min(videoEl.duration || 0, videoEl.currentTime + 10);
+        if (videoEl)
+          videoEl.currentTime = Math.min(
+            videoEl.duration || 0,
+            videoEl.currentTime + 10,
+          );
         setOuterDoubleTapHud("forward");
         setTimeout(() => setOuterDoubleTapHud(null), 800);
       }
@@ -518,6 +562,21 @@ export default function WatchPage() {
   const handleProgress = useCallback(
     (currentTime: number, duration: number) => {
       if (!slug || !epName || duration < 10) return;
+
+      // Auto-skip Intro (+85s) when autoSkipIntro setting is ON
+      if (
+        autoSkipIntro &&
+        !hasSkippedIntroRef.current &&
+        currentTime >= 2 &&
+        currentTime <= 15
+      ) {
+        hasSkippedIntroRef.current = true;
+        if (artInstance) {
+          artInstance.seek = currentTime + 85;
+          toast("Đã tự động bỏ qua Intro (+85s)", "info");
+        }
+      }
+
       watchProgressStorage.saveProgress({
         slug,
         epSlug: currentEpData?.slug || "01",
@@ -548,6 +607,9 @@ export default function WatchPage() {
       posterUrl,
       currentEpData,
       progressSyncMutation,
+      autoSkipIntro,
+      artInstance,
+      toast,
     ],
   );
 
@@ -624,12 +686,13 @@ export default function WatchPage() {
     ],
   );
 
-  // Timeout 12s nếu video không load được
+  // Timeout 25s nếu video bị treo không load được hẳn
   const startLoadTimeout = useCallback(() => {
     if (loadTimeout) clearTimeout(loadTimeout);
     const t = setTimeout(() => {
+      // Chỉ auto-fallback nếu player thực sự chưa sẵn sàng
       tryNextServer("timeout");
-    }, 12000);
+    }, 25000);
     setLoadTimeout(t);
   }, [loadTimeout, tryNextServer]);
 
@@ -653,11 +716,23 @@ export default function WatchPage() {
     [clearLoadTimeout, embedUrl, useEmbedPlayer, tryNextServer],
   );
 
-  const handlePlayerReady = useCallback(() => {
-    clearLoadTimeout();
-    setIsFallbacking(false);
-    setFallbackMessage("");
-  }, [clearLoadTimeout]);
+  const handlePlayerReady = useCallback(
+    (art: any) => {
+      clearLoadTimeout();
+      setIsFallbacking(false);
+      setFallbackMessage("");
+      if (art) {
+        setArtInstance(art);
+        try {
+          art.on("play", () => clearLoadTimeout());
+          art.on("pause", () => clearLoadTimeout());
+          art.on("video:canplay", () => clearLoadTimeout());
+          art.on("video:loadedmetadata", () => clearLoadTimeout());
+        } catch {}
+      }
+    },
+    [clearLoadTimeout],
+  );
 
   useEffect(() => {
     const sp = searchParams.get("server");
@@ -700,7 +775,7 @@ export default function WatchPage() {
 
   if (!isLoading && !film) {
     return (
-      <div className="min-h-screen bg-[#0d1117] text-white flex flex-col items-center justify-center">
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center">
         <Clapperboard size={40} className="text-white/20 mb-3" />
         <h1 className="text-lg font-bold mb-1">Không tìm thấy phim</h1>
         <Link
@@ -721,38 +796,21 @@ export default function WatchPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white">
-      {/* ── TMDB Backdrop Hero phia tren player ── */}
-      {tmdbBackdropUrl && (
-        <div className="relative w-full h-32 md:h-48 overflow-hidden">
-          <img
-            src={tmdbBackdropUrl}
-            alt={film?.name || ""}
-            className="w-full h-full object-cover object-top brightness-50"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0d1117]/60 to-[#0d1117]" />
-          <div className="absolute bottom-4 left-4 md:left-6 flex items-end gap-3">
-            {posterUrl && (
-              <img
-                src={posterUrl}
-                alt={film?.name}
-                className="w-12 h-16 md:w-16 md:h-22 rounded-lg object-cover border border-white/20 shadow-xl hidden md:block"
-              />
-            )}
-            <div>
-              <h1 className="text-white font-bold text-sm md:text-lg leading-tight drop-shadow-lg">
-                {film?.name}
-              </h1>
-              {film?.year && (
-                <p className="text-white/50 text-xs mt-0.5">{film.year}</p>
-              )}
-            </div>
+    <div className="min-h-screen bg-black text-white relative">
+      {/* ── CINEMA LIGHTS-OFF OVERLAY ── */}
+      {lightOff && (
+        <div
+          onClick={() => setLightOff(false)}
+          className="fixed inset-0 bg-black/95 z-40 transition-opacity duration-300 cursor-pointer flex items-start justify-center pt-8 pointer-events-auto"
+        >
+          <div className="bg-white/10 text-white text-xs font-bold px-4 py-2 rounded-full border border-white/20 backdrop-blur-md animate-bounce shadow-2xl">
+            💡 Đang bật chế độ Tắt Đèn Xem Phim (Nhấn bất kỳ đâu để tắt)
           </div>
         </div>
       )}
 
-      {/* ── MAIN — padded top for navbar (64px) + margin ── */}
-      <main className="pt-20 max-w-screen-2xl mx-auto px-3 md:px-5 pb-10">
+      {/* ── MAIN — padded top for navbar (64px) + safe left padding for sidebar (96px) ── */}
+      <main className="pt-20 lg:pt-22 max-w-screen-2xl mx-auto px-3 md:px-5 lg:pl-24 pb-10">
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-5">
           {/* ───── LEFT COLUMN ───── */}
           <div className="space-y-4 min-w-0">
@@ -762,7 +820,12 @@ export default function WatchPage() {
               onPointerDown={handleOuterPointerDown}
               onPointerUp={handleOuterPointerUp}
               onPointerLeave={handleOuterPointerUp}
-              className="bg-black aspect-video rounded-xl overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none"
+              className={cn(
+                "bg-black aspect-video rounded-xl overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none transition-all duration-300",
+                lightOff
+                  ? "z-50 ring-2 ring-netflixRed/50 shadow-[0_0_50px_rgba(229,9,20,0.4)]"
+                  : "",
+              )}
             >
               {/* ── Universal 2x Speed Hold Top HUD Banner ── */}
               {isOuterSpeedBoosted && (
@@ -785,6 +848,23 @@ export default function WatchPage() {
                   +10s <span>⏩</span>
                 </div>
               )}
+
+              {/* Floating Skip Intro (+85s) Overlay */}
+              {artInstance &&
+                artInstance.currentTime > 5 &&
+                artInstance.currentTime < 150 && (
+                  <button
+                    onClick={() => {
+                      if (artInstance) {
+                        artInstance.seek = artInstance.currentTime + 85;
+                        toast("Đã bỏ qua Intro (+85s)", "info");
+                      }
+                    }}
+                    className="absolute bottom-16 right-5 z-40 bg-black/85 hover:bg-netflixRed text-white text-xs font-bold px-3.5 py-2 rounded-lg border border-white/20 backdrop-blur-md shadow-xl transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 animate-pulse"
+                  >
+                    <span>⏩ Bỏ qua Intro (+85s)</span>
+                  </button>
+                )}
 
               {/* Fallback overlay */}
               {isFallbacking && (
@@ -821,16 +901,27 @@ export default function WatchPage() {
                       onError={handlePlayerError}
                     />
                   ) : embedUrl ? (
-                    <iframe
-                      src={embedUrl}
-                      className="w-full h-full"
-                      allowFullScreen
-                      allow="autoplay; fullscreen"
-                      sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
-                      title={`${film?.name} - ${currentEpData?.name}`}
-                      onLoad={() => clearLoadTimeout()}
-                      onError={() => tryNextServer("iframe-error")}
-                    />
+                    <div className="relative w-full h-full">
+                      <iframe
+                        src={embedUrl}
+                        className="w-full h-full"
+                        allowFullScreen
+                        allow="autoplay; fullscreen"
+                        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+                        title={`${film?.name} - ${currentEpData?.name}`}
+                        onLoad={() => clearLoadTimeout()}
+                        onError={() => tryNextServer("iframe-error")}
+                      />
+                      {episodes.length > 1 && (
+                        <button
+                          onClick={() => tryNextServer("user-retry")}
+                          className="absolute top-3 right-3 z-30 bg-black/80 hover:bg-emerald-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg border border-white/20 shadow-lg backdrop-blur-md transition-all cursor-pointer flex items-center gap-1.5"
+                          title="Bấm nếu server hiện tại bị lỗi 504 hoặc chậm"
+                        >
+                          <span>🔄 Đổi Server Phim</span>
+                        </button>
+                      )}
+                    </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center w-full h-full text-white/30">
                       <AlertTriangle size={28} className="mb-2" />
@@ -853,7 +944,7 @@ export default function WatchPage() {
               )}
             </div>
 
-            {/* ── BREADCRUMB & BACK BUTTON BAR — Below Video ── */}
+            {/* ── BREADCRUMB & QUICK CONTROLS BAR — Below Video ── */}
             <div className="flex items-center justify-between gap-2 py-1.5 px-3 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-white/50">
               <div className="flex items-center gap-2 min-w-0">
                 <button
@@ -881,7 +972,24 @@ export default function WatchPage() {
                   </>
                 )}
               </div>
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Cinema Light-Off Button */}
+                <button
+                  onClick={() => setLightOff(!lightOff)}
+                  className={cn(
+                    "flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors font-medium text-xs cursor-pointer",
+                    lightOff
+                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                      : "bg-white/[0.04] hover:bg-white/[0.08] text-white/60 hover:text-white",
+                  )}
+                  title="Tắt đèn làm mờ xung quanh"
+                >
+                  <span>💡</span>
+                  <span className="hidden sm:inline">
+                    {lightOff ? "Bật Đèn" : "Tắt Đèn"}
+                  </span>
+                </button>
+
                 <button
                   onClick={() => {
                     if (!wp.roomId) wp.createRoom();
@@ -1104,59 +1212,165 @@ export default function WatchPage() {
                 );
               })()}
 
-            {/* 4. EPISODE LIST — list style, not tiny squares */}
-            <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl overflow-hidden">
-              {/* Header */}
+            {/* 4. EPISODE LIST — matching exact reference images with toggle switch */}
+            <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl overflow-hidden">
+              {/* Header: Danh sách tập ( X / Y ) + Toggle Switch */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.05]">
-                <span className="text-xs font-semibold text-white/60">
-                  Danh sách tập{" "}
-                  <span className="text-white/30">({serverData.length})</span>
-                </span>
-                {serverData.length > 16 && (
-                  <div className="relative">
-                    <Search
-                      size={12}
-                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/25"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Tìm tập..."
-                      value={episodeSearch}
-                      onChange={(e) => setEpisodeSearch(e.target.value)}
-                      className="bg-white/[0.04] border border-white/[0.06] pl-7 pr-3 py-1 text-[11px] text-white placeholder-white/25 rounded-lg focus:outline-none focus:border-white/20 w-28 transition-colors"
-                    />
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-white/80">
+                    Danh sách tập{" "}
+                    <span className="text-white/40">
+                      ({" "}
+                      <span className="text-emerald-400 font-extrabold">
+                        {currentEpIndex >= 0 ? currentEpIndex + 1 : 1}
+                      </span>{" "}
+                      /{" "}
+                      <span className="text-emerald-400/80">
+                        {serverData.length}
+                      </span>{" "}
+                      )
+                    </span>
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {serverData.length > 16 && (
+                    <div className="relative hidden sm:block">
+                      <Search
+                        size={12}
+                        className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/25"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Tìm tập..."
+                        value={episodeSearch}
+                        onChange={(e) => setEpisodeSearch(e.target.value)}
+                        className="bg-white/[0.04] border border-white/[0.06] pl-7 pr-3 py-1 text-[11px] text-white placeholder-white/25 rounded-lg focus:outline-none focus:border-white/20 w-28 transition-colors"
+                      />
+                    </div>
+                  )}
+
+                  {/* Toggle Switch: Hiện ảnh / Ẩn ảnh */}
+                  <label className="flex items-center gap-2 text-xs text-white/60 cursor-pointer select-none">
+                    <span>{showEpThumbnails ? "Ẩn ảnh" : "Hiện ảnh"}</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowEpThumbnails(!showEpThumbnails)}
+                      className={cn(
+                        "w-9 h-5 rounded-full p-0.5 transition-colors cursor-pointer flex items-center",
+                        showEpThumbnails
+                          ? "bg-emerald-500 justify-end"
+                          : "bg-white/20 justify-start",
+                      )}
+                    >
+                      <span className="w-4 h-4 rounded-full bg-white shadow-md block" />
+                    </button>
+                  </label>
+                </div>
               </div>
 
-              {/* Episodes grid — comfortable size */}
+              {/* Episodes Container */}
               <div className="p-3">
-                <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-8 xl:grid-cols-10 gap-1.5 max-h-52 overflow-y-auto scrollbar-hide">
-                  {filteredEps.map((ep: any, i: number) => {
-                    const isActive =
-                      ep.slug === currentEp ||
-                      ep.name === currentEp ||
-                      i === currentEpIndex;
-                    const epNum = ep.name.replace(/^tập\s*/i, "");
-                    return (
-                      <button
-                        key={ep.slug || ep.name || i}
-                        onClick={() =>
-                          router.push(`/watch/${slug}?ep=${ep.slug || ep.name}`)
-                        }
-                        className={cn(
-                          "flex flex-col items-center justify-center rounded-lg py-2.5 px-1 transition-all",
-                          "text-[11px] font-semibold leading-tight",
-                          isActive
-                            ? "bg-red-600 text-white shadow-lg shadow-red-500/25"
-                            : "bg-white/[0.04] text-white/50 hover:bg-white/[0.08] hover:text-white/90",
-                        )}
-                      >
-                        <span className="text-xs font-bold">{epNum}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                {!showEpThumbnails ? (
+                  /* ── MODE 1: Pill Grid Mode (Matching Screenshot 1) ── */
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2 max-h-64 overflow-y-auto scrollbar-hide">
+                    {filteredEps.map((ep: any, i: number) => {
+                      const isActive =
+                        ep.slug === currentEp ||
+                        ep.name === currentEp ||
+                        i === currentEpIndex;
+                      const epNum = ep.name.replace(/^tập\s*/i, "");
+                      return (
+                        <button
+                          key={ep.slug || ep.name || i}
+                          onClick={() =>
+                            router.push(
+                              `/watch/${slug}?ep=${ep.slug || ep.name}`,
+                            )
+                          }
+                          className={cn(
+                            "flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-3 transition-all cursor-pointer border text-xs font-bold",
+                            isActive
+                              ? "bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-600/30"
+                              : "bg-[#14181f]/80 hover:bg-white/[0.08] border-white/10 text-white/70 hover:text-white",
+                          )}
+                        >
+                          <Play
+                            size={10}
+                            fill="currentColor"
+                            className="shrink-0"
+                          />
+                          <span>Tập {epNum}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  /* ── MODE 2: Landscape Still Grid Mode (Matching Screenshot 2) ── */
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-96 overflow-y-auto scrollbar-hide">
+                    {filteredEps.map((ep: any, i: number) => {
+                      const isActive =
+                        ep.slug === currentEp ||
+                        ep.name === currentEp ||
+                        i === currentEpIndex;
+                      const epNum = ep.name.replace(/^tập\s*/i, "");
+                      const stillImage = posterUrl || tmdbBackdropUrl;
+
+                      return (
+                        <button
+                          key={ep.slug || ep.name || i}
+                          onClick={() =>
+                            router.push(
+                              `/watch/${slug}?ep=${ep.slug || ep.name}`,
+                            )
+                          }
+                          className={cn(
+                            "group/ep relative aspect-video rounded-xl overflow-hidden border transition-all cursor-pointer text-left bg-neutral-900",
+                            isActive
+                              ? "border-2 border-emerald-500 ring-2 ring-emerald-500/30 shadow-xl"
+                              : "border-white/10 hover:border-white/30 hover:scale-[1.02]",
+                          )}
+                        >
+                          {stillImage ? (
+                            <img
+                              src={stillImage}
+                              alt={`Tập ${epNum}`}
+                              className="w-full h-full object-cover brightness-75 group-hover/ep:brightness-100 transition-all duration-300"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-white/20">
+                              <Clapperboard size={20} />
+                            </div>
+                          )}
+
+                          {/* Gradient Overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+
+                          {/* ĐANG XEM Badge */}
+                          {isActive && (
+                            <div className="absolute top-2 right-2 z-10 bg-emerald-500 text-white font-extrabold text-[9px] px-2 py-0.5 rounded shadow-lg uppercase tracking-wider">
+                              Đang xem
+                            </div>
+                          )}
+
+                          {/* Episode Title */}
+                          <div className="absolute bottom-2 left-2.5 z-10">
+                            <span
+                              className={cn(
+                                "text-xs font-black drop-shadow-md",
+                                isActive
+                                  ? "text-emerald-400"
+                                  : "text-white group-hover/ep:text-emerald-300",
+                              )}
+                            >
+                              Tập {epNum}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1271,6 +1485,11 @@ export default function WatchPage() {
                   value: autoPlayConfig,
                   set: setAutoPlayConfig,
                 },
+                {
+                  label: "Tự bỏ qua Intro",
+                  value: autoSkipIntro,
+                  set: toggleAutoSkipIntro,
+                },
               ].map(({ label, value, set }) => (
                 <label
                   key={label}
@@ -1368,6 +1587,65 @@ export default function WatchPage() {
           onLeaveRoom={wp.leaveRoom}
           onClose={() => wp.setIsOpen(false)}
         />
+      )}
+
+      {/* Keyboard Shortcuts Modal */}
+      {showShortcutsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="bg-[#14181f] border border-white/10 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl text-white">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <h3 className="font-bold text-sm flex items-center gap-2">
+                <span>⌨️</span> Phím Tắt Xem Phim
+              </h3>
+              <button
+                onClick={() => setShowShortcutsModal(false)}
+                className="text-white/40 hover:text-white text-lg font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-2.5 text-xs">
+              <div className="flex justify-between items-center py-1 border-b border-white/[0.04]">
+                <span className="text-white/60">Phát / Tạm dừng</span>
+                <kbd className="bg-white/10 px-2 py-0.5 rounded font-mono text-[11px] text-amber-300">
+                  Space / K
+                </kbd>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-white/[0.04]">
+                <span className="text-white/60">
+                  Toàn màn hình (Fullscreen)
+                </span>
+                <kbd className="bg-white/10 px-2 py-0.5 rounded font-mono text-[11px] text-amber-300">
+                  F
+                </kbd>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-white/[0.04]">
+                <span className="text-white/60">Tắt / Mở tiếng (Mute)</span>
+                <kbd className="bg-white/10 px-2 py-0.5 rounded font-mono text-[11px] text-amber-300">
+                  M
+                </kbd>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-white/[0.04]">
+                <span className="text-white/60">Tua lùi / Tua tới 5s</span>
+                <kbd className="bg-white/10 px-2 py-0.5 rounded font-mono text-[11px] text-amber-300">
+                  ← / →
+                </kbd>
+              </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="text-white/60">Tua nhanh 2X</span>
+                <kbd className="bg-white/10 px-2 py-0.5 rounded font-mono text-[11px] text-amber-300">
+                  Nhấp giữ Player
+                </kbd>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowShortcutsModal(false)}
+              className="w-full py-2.5 rounded-xl bg-netflixRed hover:bg-red-600 font-bold text-xs transition-colors cursor-pointer shadow-lg"
+            >
+              Đã hiểu
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

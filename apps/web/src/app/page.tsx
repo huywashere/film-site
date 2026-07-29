@@ -148,15 +148,16 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
     staleTime: 10 * 60 * 1000,
   });
 
-  const filmDetail = detailData?.movie || detailData;
+  const filmDetail = detailData?.movie || detailData || film;
   const { bestBackdrop, tmdbData } = useTmdb({
-    film: filmDetail,
-    enabled: !!filmDetail,
+    film: filmDetail || film,
+    enabled: !!film,
     fetchCredits: false,
     fetchVideos: true,
   });
+
   const tmdbBackdropUrl = bestBackdrop
-    ? tmdbBackdrop(bestBackdrop.file_path, "w1280")
+    ? tmdbBackdrop(bestBackdrop.file_path, "original")
     : null;
 
   if (!film) return null;
@@ -658,6 +659,8 @@ export default function HomePage() {
     queryFn: () => movieApi.getLatest(1).then((r) => r.data),
   });
 
+  const [showMoreSections, setShowMoreSections] = useState(false);
+
   const { data: seriesData, isLoading: seriesLoading } = useQuery({
     queryKey: ["series-v2", 1],
     queryFn: () => movieApi.getSeries(1).then((r) => r.data),
@@ -666,11 +669,13 @@ export default function HomePage() {
   const { data: singleData, isLoading: singleLoading } = useQuery({
     queryKey: ["single-v2", 1],
     queryFn: () => movieApi.getSingle(1).then((r) => r.data),
+    enabled: showMoreSections,
   });
 
   const { data: animeData, isLoading: animeLoading } = useQuery({
     queryKey: ["anime-v2", 1],
     queryFn: () => movieApi.getAnime(1).then((r) => r.data),
+    enabled: showMoreSections,
   });
 
   // Phim Chiếu Rạp / Hot - uses search for 'vietsub' with latest filter
@@ -690,18 +695,21 @@ export default function HomePage() {
   const { data: horrorData, isLoading: horrorLoading } = useQuery({
     queryKey: ["horror-movies"],
     queryFn: () => movieApi.getByGenre("kinh-di", 1).then((r) => r.data),
+    enabled: showMoreSections,
   });
 
   // Phim Tình Cảm Lãng Mạn
   const { data: romanceData, isLoading: romanceLoading } = useQuery({
     queryKey: ["romance-movies"],
     queryFn: () => movieApi.getByGenre("tinh-cam", 1).then((r) => r.data),
+    enabled: showMoreSections,
   });
 
   // Phim Hài Hước Vui Nhộn
   const { data: comedyData, isLoading: comedyLoading } = useQuery({
     queryKey: ["comedy-movies"],
     queryFn: () => movieApi.getByGenre("hai-huoc", 1).then((r) => r.data),
+    enabled: showMoreSections,
   });
 
   // Query random genres for diverse HeroBanner instead of just Marvel/DC
@@ -780,14 +788,26 @@ export default function HomePage() {
   );
 
   const { data: usUkData } = useQuery({
-    queryKey: ["hero-us-uk-blockbusters"],
+    queryKey: ["hero-us-uk-blockbusters-p1"],
     queryFn: () => movieApi.getByCountry("au-my", 1).then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const { data: usUkData2 } = useQuery({
+    queryKey: ["hero-us-uk-blockbusters-p2"],
+    queryFn: () => movieApi.getByCountry("au-my", 2).then((r) => r.data),
     staleTime: 1000 * 60 * 10,
   });
 
   const { data: marvelHeroData } = useQuery({
     queryKey: ["hero-marvel-blockbusters"],
     queryFn: () => movieApi.search("Marvel", 1).then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const { data: dcHeroData } = useQuery({
+    queryKey: ["hero-dc-blockbusters"],
+    queryFn: () => movieApi.search("DC", 1).then((r) => r.data),
     staleTime: 1000 * 60 * 10,
   });
 
@@ -804,49 +824,61 @@ export default function HomePage() {
     [genre3Data],
   );
 
-  // US/UK Blockbuster Hero Banner Pool (prioritizing Âu Mỹ & High-Res posters, strictly zero duplicates)
+  // US/UK Hollywood Blockbuster Hero Banner Pool (strictly zero duplicate films / thumbnails)
   const combinedBannerPool = useMemo(() => {
-    const usUkList = deduplicate(
-      usUkData?.data?.items || usUkData?.items || [],
-    );
-    const marvelList = deduplicate(
-      marvelHeroData?.data?.items || marvelHeroData?.items || [],
-    );
-    const singleList = deduplicate(
-      singleData?.data?.items || singleData?.items || [],
-    );
+    const list1 = usUkData?.data?.items || usUkData?.items || [];
+    const list2 = usUkData2?.data?.items || usUkData2?.items || [];
+    const list3 = marvelHeroData?.data?.items || marvelHeroData?.items || [];
+    const list4 = dcHeroData?.data?.items || dcHeroData?.items || [];
 
-    const rawPool = [
-      ...usUkList,
-      ...marvelList,
-      ...singleList.filter(
-        (f) =>
-          f &&
-          !f.slug?.includes("trung-quoc") &&
-          !f.slug?.includes("han-quoc") &&
-          !f.slug?.includes("co-trang"),
-      ),
-    ];
+    const raw = [...list1, ...list2, ...list3, ...list4];
+    const seenSlugs = new Set<string>();
+    const seenNames = new Set<string>();
 
-    const validBlockbusters = deduplicate(
-      rawPool.filter(
-        (f) =>
-          f &&
-          (f.poster_url || f.thumb_url) &&
-          !f.slug?.includes("trung-quoc") &&
-          !f.slug?.includes("han-quoc") &&
-          !f.slug?.includes("co-trang"),
-      ),
-    );
+    const filtered = raw.filter((f) => {
+      if (!f || !f.slug || !f.name) return false;
+      const cleanSlug = f.slug.toLowerCase();
+      const cleanName = f.name.toLowerCase();
+      if (seenSlugs.has(cleanSlug) || seenNames.has(cleanName)) return false;
+      if (
+        cleanSlug.includes("trung-quoc") ||
+        cleanSlug.includes("han-quoc") ||
+        cleanSlug.includes("co-trang") ||
+        cleanSlug.includes("nhat-ban")
+      ) {
+        return false;
+      }
+      seenSlugs.add(cleanSlug);
+      seenNames.add(cleanName);
+      return true;
+    });
 
-    return validBlockbusters.length > 0
-      ? validBlockbusters.slice(0, 6)
-      : latestFilms.slice(0, 6);
-  }, [usUkData, marvelHeroData, singleData, latestFilms]);
+    return filtered;
+  }, [usUkData, usUkData2, marvelHeroData, dcHeroData]);
 
-  // Show the hero as soon as the first usable response arrives instead of
-  // waiting for every genre request and an additional client-side shuffle.
-  const bannerFilms = combinedBannerPool;
+  // Randomize 6 DISTINCT Hollywood blockbusters freshly on EVERY page visit
+  const [shuffledBannerFilms, setShuffledBannerFilms] = useState<FilmItem[]>(
+    [],
+  );
+
+  useEffect(() => {
+    if (combinedBannerPool.length > 0) {
+      const arr = [...combinedBannerPool];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      setShuffledBannerFilms(arr.slice(0, 6));
+    }
+  }, [combinedBannerPool]);
+
+  const bannerFilms =
+    shuffledBannerFilms.length > 0
+      ? shuffledBannerFilms
+      : combinedBannerPool.length > 0
+        ? combinedBannerPool.slice(0, 6)
+        : latestFilms.slice(0, 6);
+
   const showBannerSkeleton = bannerFilms.length === 0;
 
   if (latestError) {
@@ -936,55 +968,72 @@ export default function HomePage() {
             />
           </LazySection>
 
-          <LazySection>
-            <FilmSection
-              title="Phim Kinh Dị"
-              icon={Ghost}
-              films={horrorFilms.slice(0, 12)}
-              isLoading={horrorLoading}
-              href="/genre/kinh-di"
-            />
-          </LazySection>
+          {/* Minimalist Show More Sections Button */}
+          {!showMoreSections ? (
+            <div className="w-full my-4 flex justify-center px-1">
+              <button
+                onClick={() => setShowMoreSections(true)}
+                className="w-full max-w-md py-3 px-6 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-white/80 hover:text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-98"
+              >
+                <span>
+                  {t("home.showMoreSections", "Xem Thêm Danh Mục Phim")}
+                </span>
+                <ChevronDown size={16} />
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <LazySection>
+                <FilmSection
+                  title="Phim Kinh Dị"
+                  icon={Ghost}
+                  films={horrorFilms.slice(0, 12)}
+                  isLoading={horrorLoading}
+                  href="/genre/kinh-di"
+                />
+              </LazySection>
 
-          <LazySection>
-            <FilmSection
-              title={t("home.single")}
-              icon={Clapperboard}
-              films={singleFilms.slice(0, 12)}
-              isLoading={singleLoading}
-              href="/films/single"
-            />
-          </LazySection>
+              <LazySection>
+                <FilmSection
+                  title={t("home.single")}
+                  icon={Clapperboard}
+                  films={singleFilms.slice(0, 12)}
+                  isLoading={singleLoading}
+                  href="/films/single"
+                />
+              </LazySection>
 
-          <LazySection>
-            <FilmSection
-              title="Phim Tình Cảm"
-              icon={Heart}
-              films={romanceFilms.slice(0, 12)}
-              isLoading={romanceLoading}
-              href="/genre/tinh-cam"
-            />
-          </LazySection>
+              <LazySection>
+                <FilmSection
+                  title="Phim Tình Cảm"
+                  icon={Heart}
+                  films={romanceFilms.slice(0, 12)}
+                  isLoading={romanceLoading}
+                  href="/genre/tinh-cam"
+                />
+              </LazySection>
 
-          <LazySection>
-            <FilmSection
-              title="Phim Hài Hước"
-              icon={Laugh}
-              films={comedyFilms.slice(0, 12)}
-              isLoading={comedyLoading}
-              href="/genre/hai-huoc"
-            />
-          </LazySection>
+              <LazySection>
+                <FilmSection
+                  title="Phim Hài Hước"
+                  icon={Laugh}
+                  films={comedyFilms.slice(0, 12)}
+                  isLoading={comedyLoading}
+                  href="/genre/hai-huoc"
+                />
+              </LazySection>
 
-          <LazySection>
-            <FilmSection
-              title={t("home.anime")}
-              icon={Sparkles}
-              films={animeFilms.slice(0, 12)}
-              isLoading={animeLoading}
-              href="/films/anime"
-            />
-          </LazySection>
+              <LazySection>
+                <FilmSection
+                  title={t("home.anime")}
+                  icon={Sparkles}
+                  films={animeFilms.slice(0, 12)}
+                  isLoading={animeLoading}
+                  href="/films/anime"
+                />
+              </LazySection>
+            </div>
+          )}
         </>
       </div>
     </div>

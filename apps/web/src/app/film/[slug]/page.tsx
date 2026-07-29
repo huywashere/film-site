@@ -71,7 +71,8 @@ function CastCard({
     staleTime: 24 * 60 * 60 * 1000,
   });
 
-  const realPhotoUrl = directTmdbUrl || (data && data !== "placeholder" ? data : null);
+  const realPhotoUrl =
+    directTmdbUrl || (data && data !== "placeholder" ? data : null);
 
   // If loading, show skeleton pulse
   if (isLoading && !directTmdbUrl) {
@@ -748,7 +749,7 @@ export default function FilmDetailPage() {
   const typeLabel = film.type === "series" ? "Phim bộ" : "Phim lẻ";
 
   return (
-    <div className="bg-[#0f1216] min-h-screen text-foreground pb-24 font-sans relative select-none">
+    <div className="bg-black min-h-screen text-foreground pb-24 font-sans relative select-none">
       {/* ── Giant Backdrop Banner (Plex Style Left-to-Right Blended Layout) ── */}
       {(backdropUrl || posterUrl) && (
         <div className="absolute top-0 left-0 right-0 h-[65vh] md:h-[82vh] w-full z-0 overflow-hidden select-none">
@@ -761,9 +762,9 @@ export default function FilmDetailPage() {
             unoptimized
             priority
           />
-          <div className="absolute inset-0 bg-[#0f1216]/60 backdrop-blur-[2px]" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0f1216] via-[#0f1216]/90 to-transparent w-full md:w-[65%]" />
-          <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#0f1216] to-transparent" />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-transparent w-full md:w-[65%]" />
+          <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black to-transparent" />
         </div>
       )}
 
@@ -771,13 +772,19 @@ export default function FilmDetailPage() {
       <div className="relative z-10 container mx-auto px-4 md:px-12 pt-24 sm:pt-28">
         {/* ── 1. Breadcrumb Bar (Matching Reference Image 1) ── */}
         <div className="flex items-center gap-2 text-xs font-semibold text-neutral-400 mb-5 flex-wrap">
-          <Link href="/" className="hover:text-white transition-colors flex items-center gap-1">
+          <Link
+            href="/"
+            className="hover:text-white transition-colors flex items-center gap-1"
+          >
             Trang chủ
           </Link>
           <ChevronRightIcon size={12} className="text-neutral-600" />
           {genres[0]?.name && (
             <>
-              <Link href={`/genre/${genres[0].slug}`} className="hover:text-white transition-colors">
+              <Link
+                href={`/genre/${genres[0].slug}`}
+                className="hover:text-white transition-colors"
+              >
                 {genres[0].name}
               </Link>
               <ChevronRightIcon size={12} className="text-neutral-600" />
@@ -791,13 +798,18 @@ export default function FilmDetailPage() {
           )}
           {countries[0]?.name && (
             <>
-              <Link href={`/country/${countries[0].slug}`} className="hover:text-white transition-colors">
+              <Link
+                href={`/country/${countries[0].slug}`}
+                className="hover:text-white transition-colors"
+              >
                 {countries[0].name}
               </Link>
               <ChevronRightIcon size={12} className="text-neutral-600" />
             </>
           )}
-          <span className="text-red-500 font-bold truncate max-w-xs">{film.name}</span>
+          <span className="text-red-500 font-bold truncate max-w-xs">
+            {film.name}
+          </span>
         </div>
 
         {/* ── Top Hero Area ── */}
@@ -837,7 +849,8 @@ export default function FilmDetailPage() {
               {/* External Provider Badges */}
               {film.tmdb?.id && (
                 <span className="bg-sky-600/30 border border-sky-500/40 text-sky-300 text-[11px] px-2.5 py-0.5 rounded-md font-bold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-sky-400" /> TMDB #{film.tmdb.id}
+                  <span className="w-1.5 h-1.5 rounded-full bg-sky-400" /> TMDB
+                  #{film.tmdb.id}
                 </span>
               )}
               {film.imdb?.id && (
@@ -1045,7 +1058,9 @@ export default function FilmDetailPage() {
               <dl className="space-y-1.5 text-xs">
                 <div className="flex justify-between gap-4">
                   <dt className="text-neutral-400">Thời lượng</dt>
-                  <dd className="font-semibold text-white">{film.time || "22 phút/tập"}</dd>
+                  <dd className="font-semibold text-white">
+                    {film.time || "22 phút/tập"}
+                  </dd>
                 </div>
                 <div className="flex justify-between gap-4">
                   <dt className="text-neutral-400">Tập hiện tại</dt>

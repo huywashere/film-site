@@ -58,7 +58,9 @@ export default function ArtPlayer({
 
   // Gestures state
   const [isSpeedBoosted, setIsSpeedBoosted] = useState(false);
-  const [doubleTapHud, setDoubleTapHud] = useState<"rewind" | "forward" | null>(null);
+  const [doubleTapHud, setDoubleTapHud] = useState<"rewind" | "forward" | null>(
+    null,
+  );
   const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTapRef = useRef<number>(0);
   const previousSpeedRef = useRef<number>(1);
@@ -158,10 +160,14 @@ export default function ArtPlayer({
                     const levels = data.levels ?? [];
                     if (levels.length > 1) {
                       // Apply user default quality setting if not "auto"
-                      const prefQuality = useSettingsStore.getState().defaultQuality;
+                      const prefQuality =
+                        useSettingsStore.getState().defaultQuality;
                       if (prefQuality !== "auto") {
                         const targetIdx = levels.findIndex(
-                          (l) => l.height && `${l.height}p`.toLowerCase() === prefQuality.toLowerCase(),
+                          (l) =>
+                            l.height &&
+                            `${l.height}p`.toLowerCase() ===
+                              prefQuality.toLowerCase(),
                         );
                         if (targetIdx !== -1) {
                           hls.currentLevel = targetIdx;
@@ -700,10 +706,7 @@ export default function ArtPlayer({
         player.notice.show = "⏪ -10 giây";
         setTimeout(() => setDoubleTapHud(null), 800);
       } else if (clickX > width * 0.55) {
-        player.currentTime = Math.min(
-          player.duration,
-          player.currentTime + 10,
-        );
+        player.currentTime = Math.min(player.duration, player.currentTime + 10);
         setDoubleTapHud("forward");
         player.notice.show = "⏩ +10 giây";
         setTimeout(() => setDoubleTapHud(null), 800);

@@ -314,7 +314,10 @@ export default function SecuritySettingsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-6">
           <div>
             <div className="flex items-center space-x-2 text-xs text-neutral-400 mb-2">
-              <Link href="/" className="hover:text-white transition-colors flex items-center gap-1">
+              <Link
+                href="/"
+                className="hover:text-white transition-colors flex items-center gap-1"
+              >
                 <ArrowLeft size={13} /> Trang chủ
               </Link>
               <span>/</span>
@@ -324,7 +327,8 @@ export default function SecuritySettingsPage() {
               Cài Đặt Bảo Mật
             </h1>
             <p className="text-xs sm:text-sm text-neutral-400 mt-1">
-              Quản lý xác thực hai yếu tố, theo dõi thiết bị hoạt động và liên kết mạng xã hội.
+              Quản lý xác thực hai yếu tố, theo dõi thiết bị hoạt động và liên
+              kết mạng xã hội.
             </p>
           </div>
 
@@ -497,7 +501,11 @@ export default function SecuritySettingsPage() {
                   }}
                   className="text-neutral-400 hover:text-white p-1"
                 >
-                  {copiedSecret ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                  {copiedSecret ? (
+                    <Check size={14} className="text-emerald-400" />
+                  ) : (
+                    <Copy size={14} />
+                  )}
                 </button>
               </div>
 
@@ -508,7 +516,10 @@ export default function SecuritySettingsPage() {
                 </p>
                 <div className="grid grid-cols-2 gap-1.5 bg-black/40 p-3 rounded-xl border border-white/10 font-mono text-center text-xs text-neutral-300">
                   {twoFactorData.backupCodes.map((code, index) => (
-                    <div key={index} className="py-0.5 select-all font-semibold">
+                    <div
+                      key={index}
+                      className="py-0.5 select-all font-semibold"
+                    >
                       {code}
                     </div>
                   ))}

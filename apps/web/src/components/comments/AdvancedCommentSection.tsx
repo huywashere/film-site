@@ -141,15 +141,6 @@ export function AdvancedCommentSection({
           <span className="text-xs text-amber-400/80 font-medium">
             {rating}.0
           </span>
-          <label className="ml-auto flex items-center gap-1.5 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isSpoiler}
-              onChange={(e) => setIsSpoiler(e.target.checked)}
-              className="w-3.5 h-3.5 rounded border-white/20 bg-transparent cursor-pointer accent-amber-500"
-            />
-            <span className="text-xs text-white/40">Spoiler</span>
-          </label>
         </div>
 
         {/* Textarea */}

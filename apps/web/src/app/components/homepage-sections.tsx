@@ -33,34 +33,44 @@ const deduplicate = (films: FilmItem[]) => {
   });
 };
 
-// ── Hero Banner Wrapper với Instant Render ───────────────────
+// ── Hero Banner Wrapper với Hollywood US/UK Blockbusters & Randomization ──
 export function HeroBannerWrapper() {
   const [shuffledFilms, setShuffledFilms] = useState<FilmItem[]>([]);
 
-  // Fetch data nhưng KHÔNG block render
-  const { data: latestData } = useQuery({
-    queryKey: ["latest-hero"],
-    queryFn: () => movieApi.getLatest(1).then((r) => r.data),
+  // Fetch Phim Âu Mỹ (US/UK) + Marvel/DC/Blockbusters
+  const { data: usukData1 } = useQuery({
+    queryKey: ["hero-hollywood-usuk-p1"],
+    queryFn: () => movieApi.getByCountry("au-my", 1).then((r) => r.data),
     staleTime: 5 * 60 * 1000,
   });
 
-  const latestFilms = useMemo(
-    () => deduplicate(latestData?.items || latestData?.data?.items || []),
-    [latestData],
-  );
+  const { data: usukData2 } = useQuery({
+    queryKey: ["hero-hollywood-usuk-p2"],
+    queryFn: () => movieApi.getByCountry("au-my", 2).then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  });
 
+  const hollywoodFilms = useMemo(() => {
+    const rawList = [
+      ...(usukData1?.data?.items || usukData1?.items || []),
+      ...(usukData2?.data?.items || usukData2?.items || []),
+    ];
+    return deduplicate(rawList);
+  }, [usukData1, usukData2]);
+
+  // Randomize 6 films freshly on EVERY page visit / load
   useEffect(() => {
-    if (latestFilms.length > 0) {
-      const arr = [...latestFilms];
+    if (hollywoodFilms.length > 0) {
+      const arr = [...hollywoodFilms];
+      // Fisher-Yates Shuffle with current timestamp seed
       for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [arr[i], arr[j]] = [arr[j], arr[i]];
       }
       setShuffledFilms(arr.slice(0, 6));
     }
-  }, [latestFilms]);
+  }, [hollywoodFilms]);
 
-  // Render NGAY với fallback data, update sau khi fetch xong
   return <HeroBannerOptimized films={shuffledFilms} />;
 }
 

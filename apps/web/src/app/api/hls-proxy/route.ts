@@ -241,7 +241,9 @@ function filterM3u8(content: string, originalUrl: string): string {
   }
 
   if (removedAds > 0) {
-    console.log(`[hls-proxy] Đã gỡ triệt để ${removedAds} dòng/segment quảng cáo`);
+    console.log(
+      `[hls-proxy] Đã gỡ triệt để ${removedAds} dòng/segment quảng cáo`,
+    );
   }
 
   return filtered.join("\n");

@@ -4,6 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useMemo } from "react";
 import { Play, Info } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { movieApi } from "@/lib/api";
+import { useTmdb } from "@/hooks/useTmdb";
+import { tmdbBackdrop } from "@/lib/tmdb";
 import { FilmItem, resolveImageUrl } from "@/components/film/FilmCard";
 import { useTranslation } from "@/store/langStore";
 import { cn } from "@/lib/utils";
@@ -12,21 +16,32 @@ interface HeroBannerProps {
   films: FilmItem[];
 }
 
-// ── Fallback Static Films (hiển thị ngay lập tức) ──────────────
-const FALLBACK_FILMS: FilmItem[] = [
+// ── Curated US/UK Hollywood Blockbusters Fallback ──────────────
+const HOLLYWOOD_FALLBACKS: FilmItem[] = [
   {
-    slug: "bien-xanh-sau-tham-2",
-    name: "BIỂN XANH SÂU THẲM 2",
-    origin_name: "Deep Blue Sea 2",
+    slug: "bi-an-gia-toc-rong",
+    name: "GIA TỘC RỒNG (PHẦN 3)",
+    origin_name: "House of the Dragon (Season 3)",
     thumb_url:
-      "https://img.phimapi.com/upload/vod/20240813-1/fdff73c2b4c7e27f2f1c2c5eb9c4edec.jpg",
+      "https://img.phimapi.com/upload/vod/20240617-1/fdff73c2b4c7e27f2f1c2c5eb9c4edec.jpg",
     poster_url:
-      "https://img.phimapi.com/upload/vod/20240813-1/fdff73c2b4c7e27f2f1c2c5eb9c4edec.jpg",
-    year: 2018,
+      "https://img.phimapi.com/upload/vod/20240617-1/fdff73c2b4c7e27f2f1c2c5eb9c4edec.jpg",
+    year: 2024,
+    type: "series",
+  },
+  {
+    slug: "biet-doi-sieu-anh-hung-4-tan-cuoc",
+    name: "AVENGERS: ENDGAME",
+    origin_name: "Avengers: Endgame",
+    thumb_url:
+      "https://img.phimapi.com/upload/vod/20190426-1/avengers-endgame-poster.jpg",
+    poster_url:
+      "https://img.phimapi.com/upload/vod/20190426-1/avengers-endgame-poster.jpg",
+    year: 2019,
     type: "single",
   },
   {
-    slug: "spiderman-no-way-home",
+    slug: "spider-man-no-way-home",
     name: "SPIDER-MAN: NO WAY HOME",
     origin_name: "Spider-Man: No Way Home",
     thumb_url:
@@ -37,14 +52,30 @@ const FALLBACK_FILMS: FilmItem[] = [
     type: "single",
   },
   {
-    slug: "avengers-endgame",
-    name: "AVENGERS: ENDGAME",
-    origin_name: "Avengers: Endgame",
-    thumb_url:
-      "https://img.phimapi.com/upload/vod/20190426-1/avengers-endgame-poster.jpg",
-    poster_url:
-      "https://img.phimapi.com/upload/vod/20190426-1/avengers-endgame-poster.jpg",
-    year: 2019,
+    slug: "avatar-dong-chay-cua-nuoc",
+    name: "AVATAR: DÒNG CHẢY CỦA NƯỚC",
+    origin_name: "Avatar: The Way of Water",
+    thumb_url: "https://img.phimapi.com/upload/vod/20221216-1/avatar-2.jpg",
+    poster_url: "https://img.phimapi.com/upload/vod/20221216-1/avatar-2.jpg",
+    year: 2022,
+    type: "single",
+  },
+  {
+    slug: "oppenheimer",
+    name: "OPPENHEIMER",
+    origin_name: "Oppenheimer",
+    thumb_url: "https://img.phimapi.com/upload/vod/20230721-1/oppenheimer.jpg",
+    poster_url: "https://img.phimapi.com/upload/vod/20230721-1/oppenheimer.jpg",
+    year: 2023,
+    type: "single",
+  },
+  {
+    slug: "the-dark-knight",
+    name: "THE DARK KNIGHT (HIỆP SĨ BÓNG ĐÊM)",
+    origin_name: "The Dark Knight",
+    thumb_url: "https://img.phimapi.com/upload/vod/20080718-1/dark-knight.jpg",
+    poster_url: "https://img.phimapi.com/upload/vod/20080718-1/dark-knight.jpg",
+    year: 2008,
     type: "single",
   },
 ];
@@ -52,12 +83,11 @@ const FALLBACK_FILMS: FilmItem[] = [
 export default function HeroBannerOptimized({ films }: HeroBannerProps) {
   const [current, setCurrent] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
   const { t } = useTranslation();
 
-  // Use fallback nếu films rỗng (instant render)
+  // Curated Hollywood list fallback if films prop is empty
   const featured = useMemo(() => {
-    const validFilms = films && films.length > 0 ? films : FALLBACK_FILMS;
+    const validFilms = films && films.length > 0 ? films : HOLLYWOOD_FALLBACKS;
     return validFilms.slice(0, 6);
   }, [films]);
 
@@ -72,10 +102,34 @@ export default function HeroBannerOptimized({ films }: HeroBannerProps) {
   }, [featured.length]);
 
   const film = featured[current];
+
+  // Fetch TMDB detail for ultra high-resolution backdrop (w1280)
+  const { data: detailData } = useQuery({
+    queryKey: ["hero-film-detail-w1280", film?.slug],
+    queryFn: () =>
+      movieApi.getDetail(film!.slug).then((response) => response.data),
+    enabled: !!film?.slug,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const filmDetail = detailData?.movie || detailData || film;
+  const { bestBackdrop } = useTmdb({
+    film: filmDetail,
+    enabled: !!filmDetail,
+    fetchCredits: false,
+    fetchVideos: false,
+  });
+
+  const tmdbBackdropUrl = bestBackdrop
+    ? tmdbBackdrop(bestBackdrop.file_path, "w1280")
+    : null;
+
   if (!film) return null;
 
   const backdrop =
-    resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url);
+    tmdbBackdropUrl ||
+    resolveImageUrl(film.poster_url) ||
+    resolveImageUrl(film.thumb_url);
 
   // Dynamic font size
   const nameLen = film.name.length;

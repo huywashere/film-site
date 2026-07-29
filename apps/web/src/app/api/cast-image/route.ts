@@ -95,9 +95,9 @@ export async function GET(request: NextRequest) {
       );
       if (tmdbRes.ok) {
         const tmdbData = await tmdbRes.json();
-        const person = tmdbData?.results?.find(
-          (p: any) => p && p.profile_path,
-        ) || tmdbData?.results?.[0];
+        const person =
+          tmdbData?.results?.find((p: any) => p && p.profile_path) ||
+          tmdbData?.results?.[0];
 
         if (person?.profile_path) {
           imageUrl = `https://image.tmdb.org/t/p/w185${person.profile_path}`;

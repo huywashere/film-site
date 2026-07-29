@@ -4,14 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home,
-  Tv,
-  Grid3x3,
-  Hash,
-  Users,
-  BookOpen,
+  Heart,
+  Film,
+  Clapperboard,
+  Sparkles,
+  BookmarkCheck,
+  Popcorn,
+  Library,
   History,
-  Bookmark,
-  ChevronRight,
   ChevronLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,13 +19,13 @@ import { useState, useEffect } from "react";
 
 const SIDEBAR_ITEMS = [
   { title: "Trang chủ", href: "/", icon: Home },
-  { title: "Phim Hàn", href: "/country/han-quoc", icon: Tv },
-  { title: "Phim Trung", href: "/country/trung-quoc", icon: Tv },
-  { title: "Duyệt Tìm", href: "/films", icon: Grid3x3 },
-  { title: "Chủ đề", href: "/genres", icon: Hash },
-  { title: "Xem sau", href: "/watchlist", icon: Bookmark },
-  { title: "Xem Chung", href: "/watch-party", icon: Users },
-  { title: "Thư viện", href: "/library", icon: BookOpen },
+  { title: "Phim Hàn", href: "/country/han-quoc", icon: Heart },
+  { title: "Phim Trung", href: "/country/trung-quoc", icon: Film },
+  { title: "Duyệt Tìm", href: "/films", icon: Clapperboard },
+  { title: "Chủ đề", href: "/genres", icon: Sparkles },
+  { title: "Xem sau", href: "/watchlist", icon: BookmarkCheck },
+  { title: "Xem Chung", href: "/watch-party", icon: Popcorn },
+  { title: "Thư viện", href: "/library", icon: Library },
   { title: "Lịch sử", href: "/history", icon: History },
 ];
 
@@ -122,27 +122,32 @@ export function Sidebar() {
         </nav>
       </aside>
 
-      {/* ── TOGGLE — Prominent Top Button ── */}
+      {/* ── TOGGLE — Sleek Dark Floating Capsule Button ── */}
       <button
         onClick={toggle}
         aria-label={collapsed ? "Mở menu" : "Đóng menu"}
         title={
           collapsed ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng"
         }
-        className="hidden lg:flex fixed z-50 items-center justify-center rounded-full bg-[#14181f]/95 hover:bg-blue-600 border border-white/20 text-white/80 hover:text-white shadow-xl transition-all duration-200 cursor-pointer active:scale-95"
+        className={cn(
+          "hidden lg:flex fixed z-50 items-center justify-center transition-all duration-300 cursor-pointer active:scale-90 group",
+          "w-8 h-8 rounded-full bg-[#181c24] hover:bg-[#282e3d] text-white/70 hover:text-white border border-white/10 hover:border-white/30 shadow-2xl backdrop-blur-md",
+        )}
         style={{
-          top: "80px",
-          left: collapsed ? "12px" : `${W - 14}px`,
-          width: 28,
-          height: 28,
-          transition: "left 0.25s ease, background-color 0.2s ease",
+          top: "84px",
+          left: collapsed ? "14px" : `${W - 14}px`,
+          transition:
+            "left 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease, border-color 0.2s ease",
         }}
       >
-        {collapsed ? (
-          <ChevronRight size={15} strokeWidth={2.5} />
-        ) : (
-          <ChevronLeft size={15} strokeWidth={2.5} />
-        )}
+        <span
+          className={cn(
+            "transition-transform duration-300 flex items-center justify-center",
+            collapsed ? "rotate-180" : "rotate-0",
+          )}
+        >
+          <ChevronLeft size={16} strokeWidth={2.2} />
+        </span>
       </button>
     </>
   );

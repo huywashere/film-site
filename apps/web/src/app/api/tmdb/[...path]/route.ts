@@ -47,8 +47,8 @@ export async function GET(
   }
 
   const qs = searchParams.toString();
-  const upstreamUrl = TMDB_BASE + "/" + path + (qs ? "?" + qs : "");
-  const cacheKey = upstreamUrl;
+  const hosts = ["https://api.tmdb.org/3", "https://api.themoviedb.org/3"];
+  const cacheKey = hosts[0] + "/" + path + (qs ? "?" + qs : "");
 
   const cached = cache.get(cacheKey);
   if (cached && cached.expiry > Date.now()) {
@@ -57,48 +57,50 @@ export async function GET(
     });
   }
 
-  try {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
 
-    if (isValidToken) {
-      headers["Authorization"] = "Bearer " + TMDB_TOKEN;
-    }
-
-    const response = await fetch(upstreamUrl, {
-      headers,
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: "TMDB tra ve loi " + response.status },
-        { status: response.status },
-      );
-    }
-
-    const data = await response.json();
-    const ttl = getTtl(path);
-    cache.set(cacheKey, { data, expiry: Date.now() + ttl * 1000 });
-
-    if (cache.size > 500) {
-      const now = Date.now();
-      cache.forEach((v, k) => {
-        if (v.expiry <= now) cache.delete(k);
-      });
-    }
-
-    return NextResponse.json(data, {
-      headers: { "X-Cache": "MISS", "X-Source": "TMDB" },
-    });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.warn("[tmdb-proxy] error:", msg);
-    return NextResponse.json(
-      { error: "Khong the ket noi TMDB API" },
-      { status: 200 },
-    );
+  if (isValidToken) {
+    headers["Authorization"] = "Bearer " + TMDB_TOKEN;
   }
+
+  let lastError: any = null;
+  for (const host of hosts) {
+    const upstreamUrl = host + "/" + path + (qs ? "?" + qs : "");
+    try {
+      const response = await fetch(upstreamUrl, {
+        headers,
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const ttl = getTtl(path);
+        cache.set(cacheKey, { data, expiry: Date.now() + ttl * 1000 });
+
+        if (cache.size > 500) {
+          const now = Date.now();
+          cache.forEach((v, k) => {
+            if (v.expiry <= now) cache.delete(k);
+          });
+        }
+
+        return NextResponse.json(data, {
+          headers: { "X-Cache": "MISS", "X-Source": "TMDB" },
+        });
+      }
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  const msg =
+    lastError instanceof Error ? lastError.message : String(lastError);
+  console.warn("[tmdb-proxy] error:", msg);
+  return NextResponse.json(
+    { error: "Khong the ket noi TMDB API" },
+    { status: 200 },
+  );
 }

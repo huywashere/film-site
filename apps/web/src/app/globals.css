@@ -1,5 +1,5 @@
 /* ── Google Fonts (display=swap for FOUT prevention & 60FPS rendering) ── */
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Russo+One&family=Barlow+Semi+Condensed:wght@900&family=Outfit:wght@900&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;

@@ -63,10 +63,10 @@ export default function UserDashboardPage() {
 
   const isOwnProfile = Boolean(
     user &&
-      (user.username === username ||
-        user.email === username ||
-        user.id === username ||
-        (user.username && encodeURIComponent(user.username) === rawUsername)),
+    (user.username === username ||
+      user.email === username ||
+      user.id === username ||
+      (user.username && encodeURIComponent(user.username) === rawUsername)),
   );
 
   type TabType =
@@ -738,7 +738,9 @@ export default function UserDashboardPage() {
               <div className="border-b border-white/5 pb-4">
                 <h2 className="text-xl font-extrabold text-white flex items-center space-x-2">
                   <Bookmark size={20} className="text-emerald-400" />
-                  <span>Danh sách xem (Watchlist) ({watchlistItems.length})</span>
+                  <span>
+                    Danh sách xem (Watchlist) ({watchlistItems.length})
+                  </span>
                 </h2>
               </div>
 

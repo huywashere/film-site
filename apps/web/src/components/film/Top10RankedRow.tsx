@@ -33,19 +33,12 @@ export function Top10RankedRow({
 
   return (
     <div className="w-full my-8 relative">
-      {/* Section Header */}
-      <div className="flex items-center justify-between mb-4 px-2">
-        <div className="flex items-center space-x-2">
-          <div className="p-1.5 rounded-lg bg-netflixRed/10 border border-netflixRed/30 text-netflixRed">
-            <TrendingUp size={18} />
-          </div>
-          <h2
-            className="text-lg md:text-xl font-black text-white uppercase tracking-wider"
-            style={{ fontFamily: "'Outfit', sans-serif" }}
-          >
-            {title}
-          </h2>
-        </div>
+      {/* Section Header matching standard film sections */}
+      <div className="flex items-center justify-between mb-4 px-1">
+        <h2 className="text-xl md:text-2xl font-bold text-white flex items-center space-x-2">
+          <TrendingUp size={18} className="text-netflixRed" />
+          <span style={{ fontFamily: "var(--font-primary)" }}>{title}</span>
+        </h2>
       </div>
 
       {/* Main Row: Swiper on left, Navigation Buttons Column OUTSIDE on right */}
@@ -79,40 +72,42 @@ export function Top10RankedRow({
                 resolveImageUrl(film.poster_url) ||
                 resolveImageUrl(film.thumb_url);
 
-              const gradientClass =
-                NUMBER_GRADIENTS[rank] ||
-                "from-neutral-300 via-neutral-500 to-neutral-700";
-
               return (
                 <SwiperSlide key={film.slug || index} className="!w-auto">
                   <Link
                     href={`/film/${film.slug}`}
-                    className="flex items-end group/item relative select-none cursor-pointer"
+                    className="flex flex-col group/item relative select-none cursor-pointer pt-4 pb-2 pr-2"
                   >
-                    {/* Big Metallic Rank Number (Netflix Style) */}
-                    <div className="relative z-0 -mr-6 md:-mr-10 flex items-end">
+                    {/* Big Montserrat 900 Rank Number peeking from BEHIND the TOP-LEFT of the card */}
+                    <div className="absolute -top-4 left-0 z-0 pointer-events-none select-none">
                       <span
-                        className={cn(
-                          "text-[100px] sm:text-[130px] md:text-[160px] font-black leading-none tracking-tighter select-none transition-transform duration-300 group-hover/item:scale-105",
-                          "bg-gradient-to-b bg-clip-text text-transparent drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)]",
-                          gradientClass,
-                        )}
+                        className="text-[95px] sm:text-[125px] md:text-[155px] font-black leading-none tracking-tighter transition-transform duration-300 group-hover/item:scale-105 block drop-shadow-2xl"
                         style={{
-                          WebkitTextStroke: "1.5px rgba(255,255,255,0.15)",
-                          fontFamily: "'Outfit', sans-serif",
+                          color: "transparent",
+                          WebkitTextStroke:
+                            rank === 1
+                              ? "4px #3b82f6"
+                              : rank === 2
+                                ? "4px #ec4899"
+                                : rank === 3
+                                  ? "4px #eab308"
+                                  : "3.5px #64748b",
+                          fontFamily:
+                            "'Montserrat', 'Russo One', 'Barlow Semi Condensed', sans-serif",
+                          fontWeight: 900,
                         }}
                       >
                         {rank}
                       </span>
                     </div>
 
-                    {/* Vertical Poster Card */}
-                    <div className="relative z-10 w-[120px] sm:w-[145px] md:w-[165px] aspect-[2/3] rounded-xl overflow-hidden border border-white/10 group-hover/item:border-netflixRed/80 group-hover/item:scale-105 shadow-2xl bg-neutral-900 transition-all duration-300">
+                    {/* Vertical Poster Card (Foreground z-10) */}
+                    <div className="relative z-10 w-[130px] sm:w-[155px] md:w-[180px] h-[195px] sm:h-[232px] md:h-[270px] rounded-2xl overflow-hidden border border-white/10 group-hover/item:border-white/50 group-hover/item:scale-[1.03] shadow-2xl bg-neutral-900 transition-all duration-300 mt-9 sm:mt-11 md:mt-13 ml-7 sm:ml-9 md:ml-11">
                       {posterUrl ? (
                         <img
                           src={posterUrl}
                           alt={film.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105"
                           loading="lazy"
                         />
                       ) : (
@@ -122,10 +117,10 @@ export function Top10RankedRow({
                       )}
 
                       {/* Gradient Overlay & Badges */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover/item:opacity-40 transition-opacity" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-80 group-hover/item:opacity-40 transition-opacity" />
 
                       {/* Quality / Ep Badge */}
-                      <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                      <div className="absolute top-2 right-2 flex flex-col items-end gap-1 z-10">
                         {film.quality && (
                           <span className="bg-netflixRed text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">
                             {film.quality}
@@ -133,8 +128,8 @@ export function Top10RankedRow({
                         )}
                       </div>
 
-                      {/* Title overlay at bottom */}
-                      <div className="absolute bottom-0 left-0 right-0 p-2.5 space-y-0.5">
+                      {/* Title overlay at bottom of card */}
+                      <div className="absolute bottom-0 left-0 right-0 p-2.5 space-y-0.5 z-10">
                         <p className="text-xs font-extrabold text-white truncate group-hover/item:text-netflixRed transition-colors">
                           {film.name}
                         </p>
@@ -146,7 +141,7 @@ export function Top10RankedRow({
                       </div>
 
                       {/* Play Button Icon on Hover */}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity">
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity z-20">
                         <div className="w-10 h-10 rounded-full bg-netflixRed text-white flex items-center justify-center shadow-lg transform scale-75 group-hover/item:scale-100 transition-transform">
                           <Play
                             size={18}
