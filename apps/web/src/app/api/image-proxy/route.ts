@@ -27,7 +27,8 @@ function placeholderResponse(maxAge: number) {
       "Cache-Control":
         maxAge > 0 ? `public, max-age=${maxAge}` : "no-store, max-age=0",
       // The placeholder is static markup we control, but be explicit anyway.
-      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'",
+      "Content-Security-Policy":
+        "default-src 'none'; style-src 'unsafe-inline'",
     },
   });
 }
@@ -130,7 +131,8 @@ export async function GET(request: NextRequest) {
           "Cache-Control": "public, max-age=31536000, immutable",
           "X-Content-Type-Options": "nosniff",
           // An allowlisted CDN could still serve a scriptable SVG; sandbox it.
-          "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'",
+          "Content-Security-Policy":
+            "default-src 'none'; style-src 'unsafe-inline'",
         },
       });
     } catch (err: any) {

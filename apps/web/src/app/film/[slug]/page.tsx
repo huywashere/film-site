@@ -74,7 +74,8 @@ function CastCard({
     .join("")
     .toUpperCase();
 
-  const imageUrl = directTmdbUrl || (data && data !== "placeholder" ? data : null);
+  const imageUrl =
+    directTmdbUrl || (data && data !== "placeholder" ? data : null);
 
   const cardContent = (
     <div
@@ -594,7 +595,14 @@ export default function FilmDetailPage() {
   }, [film]);
 
   // TMDB data
-  const { backdrops, bestBackdrop, bestPoster, cast: tmdbCast, trailer, hasData: hasTmdb } = useTmdb({
+  const {
+    backdrops,
+    bestBackdrop,
+    bestPoster,
+    cast: tmdbCast,
+    trailer,
+    hasData: hasTmdb,
+  } = useTmdb({
     film,
     enabled: !!film,
   });
@@ -608,7 +616,9 @@ export default function FilmDetailPage() {
 
   const backdropUrl = bestBackdrop
     ? tmdbBackdrop(bestBackdrop.file_path, "w1280")
-    : resolveImageUrl(film?.thumb_url) || resolveImageUrl(film?.poster_url) || undefined;
+    : resolveImageUrl(film?.thumb_url) ||
+      resolveImageUrl(film?.poster_url) ||
+      undefined;
 
   // Watchlist status check
   useEffect(() => {
@@ -992,7 +1002,9 @@ export default function FilmDetailPage() {
                     </Link>
                   ))
                 ) : (
-                  <span className="text-xs text-neutral-500">Đang cập nhật</span>
+                  <span className="text-xs text-neutral-500">
+                    Đang cập nhật
+                  </span>
                 )}
               </div>
             </div>
@@ -1016,7 +1028,9 @@ export default function FilmDetailPage() {
                     </Link>
                   ))
                 ) : (
-                  <span className="text-xs text-neutral-500">Đang cập nhật</span>
+                  <span className="text-xs text-neutral-500">
+                    Đang cập nhật
+                  </span>
                 )}
               </div>
             </div>
@@ -1038,7 +1052,8 @@ export default function FilmDetailPage() {
                 <div className="flex justify-between gap-4">
                   <dt className="text-neutral-500">Tập hiện tại</dt>
                   <dd className="font-bold text-emerald-300">
-                    {film.episode_current || (episodeCount ? `${episodeCount} tập` : "N/A")}
+                    {film.episode_current ||
+                      (episodeCount ? `${episodeCount} tập` : "N/A")}
                   </dd>
                 </div>
               </dl>
@@ -1056,7 +1071,9 @@ export default function FilmDetailPage() {
               <dl className="space-y-2 text-xs">
                 <div className="flex justify-between gap-4">
                   <dt className="text-neutral-500">ID</dt>
-                  <dd className="font-bold text-white">{film.tmdb?.id || "N/A"}</dd>
+                  <dd className="font-bold text-white">
+                    {film.tmdb?.id || "N/A"}
+                  </dd>
                 </div>
                 <div className="flex justify-between gap-4">
                   <dt className="text-neutral-500">Điểm</dt>
@@ -1068,7 +1085,9 @@ export default function FilmDetailPage() {
             </div>
           </section>
 
-          {(directors.length > 0 || actors.length > 0 || (tmdbCast && tmdbCast.length > 0)) && (
+          {(directors.length > 0 ||
+            actors.length > 0 ||
+            (tmdbCast && tmdbCast.length > 0)) && (
             <section className="space-y-4" aria-labelledby="film-credits-title">
               <h2
                 id="film-credits-title"

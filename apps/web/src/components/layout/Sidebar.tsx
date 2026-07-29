@@ -39,7 +39,9 @@ export function Sidebar() {
     try {
       const v = localStorage.getItem("sidebar-collapsed");
       if (v !== null) setCollapsed(v === "true");
-    } catch {}
+    } catch (_e) {
+      // ignore localStorage errors
+    }
   }, []);
 
   const toggle = () => {
@@ -47,7 +49,9 @@ export function Sidebar() {
     setCollapsed(next);
     try {
       localStorage.setItem("sidebar-collapsed", String(next));
-    } catch {}
+    } catch (_e) {
+      // ignore localStorage errors
+    }
   };
 
   return (
@@ -118,29 +122,26 @@ export function Sidebar() {
         </nav>
       </aside>
 
-      {/* ── TOGGLE — thin vertical tab, glued to right edge of sidebar ── */}
+      {/* ── TOGGLE — Prominent Top Button ── */}
       <button
         onClick={toggle}
         aria-label={collapsed ? "Mở menu" : "Đóng menu"}
-        className="hidden lg:flex fixed z-50 items-center justify-center rounded-r-md transition-all duration-200 text-white/30 hover:text-white/80"
+        title={
+          collapsed ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng"
+        }
+        className="hidden lg:flex fixed z-50 items-center justify-center rounded-full bg-[#14181f]/95 hover:bg-blue-600 border border-white/20 text-white/80 hover:text-white shadow-xl transition-all duration-200 cursor-pointer active:scale-95"
         style={{
-          top: "50vh",
-          transform: "translateY(-50%)",
-          left: collapsed ? 0 : W,
-          width: 14,
-          height: 64,
-          transition: "left 0.25s ease",
-          background: "transparent",
-          backgroundColor: "transparent",
-          backdropFilter: "none",
-          WebkitBackdropFilter: "none",
-          border: "none",
+          top: "80px",
+          left: collapsed ? "12px" : `${W - 14}px`,
+          width: 28,
+          height: 28,
+          transition: "left 0.25s ease, background-color 0.2s ease",
         }}
       >
         {collapsed ? (
-          <ChevronRight size={9} strokeWidth={2.5} />
+          <ChevronRight size={15} strokeWidth={2.5} />
         ) : (
-          <ChevronLeft size={9} strokeWidth={2.5} />
+          <ChevronLeft size={15} strokeWidth={2.5} />
         )}
       </button>
     </>

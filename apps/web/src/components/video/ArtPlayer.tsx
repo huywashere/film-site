@@ -309,9 +309,12 @@ export default function ArtPlayer({
               document.exitPictureInPicture().catch(() => {});
               setPipActive(false);
             } else if (video.requestPictureInPicture) {
-              video.requestPictureInPicture().then(() => setPipActive(true)).catch(() => {
-                player.notice.show = "Trình duyệt không hỗ trợ PiP";
-              });
+              video
+                .requestPictureInPicture()
+                .then(() => setPipActive(true))
+                .catch(() => {
+                  player.notice.show = "Trình duyệt không hỗ trợ PiP";
+                });
             }
           },
         },
@@ -349,7 +352,8 @@ export default function ArtPlayer({
       const target = e.target as HTMLElement | null;
       if (!target) return;
       const ignoreTags = ["INPUT", "TEXTAREA", "SELECT", "BUTTON"];
-      if (ignoreTags.includes(target.tagName) || target.isContentEditable) return;
+      if (ignoreTags.includes(target.tagName) || target.isContentEditable)
+        return;
 
       const video = player.video;
       if (!video) return;
@@ -378,7 +382,10 @@ export default function ArtPlayer({
         case "l":
         case "L":
           e.preventDefault();
-          player.currentTime = Math.min(player.duration, player.currentTime + 10);
+          player.currentTime = Math.min(
+            player.duration,
+            player.currentTime + 10,
+          );
           player.notice.show = "⏩ +10 giây";
           break;
 
@@ -426,7 +433,10 @@ export default function ArtPlayer({
             document.exitPictureInPicture().catch(() => {});
             setPipActive(false);
           } else if (video.requestPictureInPicture) {
-            video.requestPictureInPicture().then(() => setPipActive(true)).catch(() => {});
+            video
+              .requestPictureInPicture()
+              .then(() => setPipActive(true))
+              .catch(() => {});
           }
           break;
 
@@ -740,8 +750,8 @@ export default function ArtPlayer({
             className="absolute bottom-16 right-4 z-30 flex items-center gap-2 bg-black/80 hover:bg-black/95 text-white border border-white/30 hover:border-white/60 px-4 py-2 rounded-xl text-xs font-bold transition-all backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-300"
           >
             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <path d="M5.5 5C5.5 4.17 6.42 3.68 7.1 4.15l10.5 7c.6.4.6 1.3 0 1.7l-10.5 7C6.42 20.32 5.5 19.83 5.5 19V5z"/>
-              <rect x="17" y="4" width="2" height="16" rx="1"/>
+              <path d="M5.5 5C5.5 4.17 6.42 3.68 7.1 4.15l10.5 7c.6.4.6 1.3 0 1.7l-10.5 7C6.42 20.32 5.5 19.83 5.5 19V5z" />
+              <rect x="17" y="4" width="2" height="16" rx="1" />
             </svg>
             Bỏ qua intro
           </button>
@@ -759,8 +769,8 @@ export default function ArtPlayer({
             className="absolute bottom-16 right-4 z-30 flex items-center gap-2 bg-black/80 hover:bg-black/95 text-white border border-white/30 hover:border-white/60 px-4 py-2 rounded-xl text-xs font-bold transition-all backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-300"
           >
             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <path d="M5.5 5C5.5 4.17 6.42 3.68 7.1 4.15l10.5 7c.6.4.6 1.3 0 1.7l-10.5 7C6.42 20.32 5.5 19.83 5.5 19V5z"/>
-              <rect x="17" y="4" width="2" height="16" rx="1"/>
+              <path d="M5.5 5C5.5 4.17 6.42 3.68 7.1 4.15l10.5 7c.6.4.6 1.3 0 1.7l-10.5 7C6.42 20.32 5.5 19.83 5.5 19V5z" />
+              <rect x="17" y="4" width="2" height="16" rx="1" />
             </svg>
             Bỏ qua outro
           </button>

@@ -92,7 +92,8 @@ export async function GET(request: NextRequest) {
 
   // 2. Fetch from TMDB API first, then Wikipedia fallback
   let imageUrl = "";
-  const TMDB_API_KEY = process.env.TMDB_API_KEY || "f85dbd29011db19e75f5d29028fd096d";
+  const TMDB_API_KEY =
+    process.env.TMDB_API_KEY || "f85dbd29011db19e75f5d29028fd096d";
 
   try {
     if (TMDB_API_KEY) {

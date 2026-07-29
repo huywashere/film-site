@@ -8,29 +8,42 @@ const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
 
 // ── Image URL helpers ─────────────────────────────────────────────
 
-export type PosterSize = "w92" | "w154" | "w185" | "w342" | "w500" | "w780" | "original";
+export type PosterSize =
+  "w92" | "w154" | "w185" | "w342" | "w500" | "w780" | "original";
 export type BackdropSize = "w300" | "w780" | "w1280" | "original";
 export type ProfileSize = "w45" | "w185" | "h632" | "original";
 export type StillSize = "w92" | "w185" | "w300" | "original";
 
-export function tmdbPoster(path: string | null | undefined, size: PosterSize = "w342"): string | null {
+export function tmdbPoster(
+  path: string | null | undefined,
+  size: PosterSize = "w342",
+): string | null {
   if (!path) return null;
   return `${TMDB_IMAGE_BASE}/${size}${path}`;
 }
 
-export function tmdbBackdrop(path: string | null | undefined, size: BackdropSize = "w1280"): string | null {
+export function tmdbBackdrop(
+  path: string | null | undefined,
+  size: BackdropSize = "w1280",
+): string | null {
   if (!path) return null;
   return `${TMDB_IMAGE_BASE}/${size}${path}`;
 }
 
-export function tmdbProfile(path: string | null | undefined, size: ProfileSize = "w185"): string | null {
+export function tmdbProfile(
+  path: string | null | undefined,
+  size: ProfileSize = "w185",
+): string | null {
   if (!path) return null;
   return `${TMDB_IMAGE_BASE}/${size}${path}`;
 }
 
 // ── Fetch helper ──────────────────────────────────────────────────
 
-async function fetchTmdb<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
+async function fetchTmdb<T>(
+  endpoint: string,
+  params?: Record<string, string>,
+): Promise<T> {
   const url = new URL(`${TMDB_PROXY}/${endpoint}`, window.location.origin);
   url.searchParams.set("language", "vi-VN");
   if (params) {
@@ -144,18 +157,20 @@ export const tmdbApi = {
     fetchTmdb<TmdbMovie>(`${type}/${tmdbId}`),
 
   // ── Chi tiết phim ──
-  getMovieDetail: (tmdbId: number) =>
-    fetchTmdb<TmdbMovie>(`movie/${tmdbId}`),
+  getMovieDetail: (tmdbId: number) => fetchTmdb<TmdbMovie>(`movie/${tmdbId}`),
 
-  getTvDetail: (tmdbId: number) =>
-    fetchTmdb<TmdbMovie>(`tv/${tmdbId}`),
+  getTvDetail: (tmdbId: number) => fetchTmdb<TmdbMovie>(`tv/${tmdbId}`),
 
   // ── Hình ảnh ──
   getMovieImages: (tmdbId: number) =>
-    fetchTmdb<TmdbImages>(`movie/${tmdbId}/images`, { include_image_language: "vi,en,null" }),
+    fetchTmdb<TmdbImages>(`movie/${tmdbId}/images`, {
+      include_image_language: "vi,en,null",
+    }),
 
   getTvImages: (tmdbId: number) =>
-    fetchTmdb<TmdbImages>(`tv/${tmdbId}/images`, { include_image_language: "vi,en,null" }),
+    fetchTmdb<TmdbImages>(`tv/${tmdbId}/images`, {
+      include_image_language: "vi,en,null",
+    }),
 
   // ── Diễn viên & Đoàn phim ──
   getMovieCredits: (tmdbId: number) =>
@@ -166,10 +181,14 @@ export const tmdbApi = {
 
   // ── Trailer / Video ──
   getMovieVideos: (tmdbId: number) =>
-    fetchTmdb<{ results: TmdbVideo[] }>(`movie/${tmdbId}/videos`, { include_video_language: "vi,en" }),
+    fetchTmdb<{ results: TmdbVideo[] }>(`movie/${tmdbId}/videos`, {
+      include_video_language: "vi,en",
+    }),
 
   getTvVideos: (tmdbId: number) =>
-    fetchTmdb<{ results: TmdbVideo[] }>(`tv/${tmdbId}/videos`, { include_video_language: "vi,en" }),
+    fetchTmdb<{ results: TmdbVideo[] }>(`tv/${tmdbId}/videos`, {
+      include_video_language: "vi,en",
+    }),
 
   // ── Diễn viên chi tiết ──
   getPersonDetail: (personId: number) =>
@@ -195,19 +214,25 @@ export const tmdbApi = {
     }),
 
   searchMulti: (query: string, page = 1) =>
-    fetchTmdb<{ results: (TmdbMovie & { media_type: string })[]; total_pages: number }>(
-      "search/multi",
-      { query, page: String(page) },
-    ),
+    fetchTmdb<{
+      results: (TmdbMovie & { media_type: string })[];
+      total_pages: number;
+    }>("search/multi", { query, page: String(page) }),
 
   // ── Trending ──
-  getTrending: (type: "movie" | "tv" | "all" = "all", window: "day" | "week" = "week") =>
-    fetchTmdb<{ results: TmdbMovie[] }>(`trending/${type}/${window}`),
+  getTrending: (
+    type: "movie" | "tv" | "all" = "all",
+    window: "day" | "week" = "week",
+  ) => fetchTmdb<{ results: TmdbMovie[] }>(`trending/${type}/${window}`),
 };
 
 // ── Helper: lấy TMDB ID từ film data của KKPhim/OPhim ────────────
 
-export function extractTmdbInfo(film: any): { tmdbId: number | null; type: "movie" | "tv"; imdbId: string | null } {
+export function extractTmdbInfo(film: any): {
+  tmdbId: number | null;
+  type: "movie" | "tv";
+  imdbId: string | null;
+} {
   const tmdbId =
     film?.tmdb?.id && film.tmdb.id !== "0"
       ? Number(film.tmdb.id)
@@ -216,9 +241,7 @@ export function extractTmdbInfo(film: any): { tmdbId: number | null; type: "movi
         : null;
 
   const type: "movie" | "tv" =
-    film?.tmdb?.type === "tv" ||
-    film?.type === "series" ||
-    film?.type === "tv"
+    film?.tmdb?.type === "tv" || film?.type === "series" || film?.type === "tv"
       ? "tv"
       : "movie";
 

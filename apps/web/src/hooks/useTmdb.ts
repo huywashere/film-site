@@ -74,7 +74,9 @@ export function useTmdb({
 
   const resolvedType: "movie" | "tv" =
     type ||
-    (findData?.tv_results?.length || searchResult?.media_type === "tv" ? "tv" : "movie");
+    (findData?.tv_results?.length || searchResult?.media_type === "tv"
+      ? "tv"
+      : "movie");
 
   // Images
   const { data: images, isLoading: imagesLoading } = useQuery({

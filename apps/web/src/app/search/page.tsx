@@ -1,7 +1,8 @@
 "use client";
+
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import {
   Search,
   X,
@@ -11,7 +12,81 @@ import {
   ChevronDown,
   Check,
 } from "lucide-react";
-import { useRef, useEffect } from "react";
+import { movieApi } from "@/lib/api";
+import {
+  FilmCard,
+  FilmItem,
+  FilmCardSkeleton,
+} from "@/components/film/FilmCard";
+import { Pagination } from "@/components/film/Pagination";
+import { VoiceSearchButton } from "@/components/search/VoiceSearchButton";
+import {
+  SearchHistory,
+  searchHistoryStorage,
+} from "@/components/search/SearchHistory";
+import { cn } from "@/lib/utils";
+
+// ── Shared Lists ──────────────────────────────────────────────────
+const GENRES_LIST = [
+  { label: "Bí Ẩn", slug: "bi-an" },
+  { label: "Chiến Tranh", slug: "chien-tranh" },
+  { label: "Chính Kịch", slug: "chinh-kich" },
+  { label: "Cổ Trang", slug: "co-trang" },
+  { label: "Gia Đình", slug: "gia-dinh" },
+  { label: "Hài Hước", slug: "hai-huoc" },
+  { label: "Hành Động", slug: "hanh-dong" },
+  { label: "Hình Sự", slug: "hinh-su" },
+  { label: "Học Đường", slug: "hoc-duong" },
+  { label: "Khoa Học", slug: "khoa-hoc" },
+  { label: "Kinh Dị", slug: "kinh-di" },
+  { label: "Kinh Điển", slug: "kinh-dien" },
+  { label: "Lịch Sử", slug: "lich-su" },
+  { label: "Miền Tây", slug: "mien-tay" },
+  { label: "Phim 18+", slug: "phim-18" },
+  { label: "Phim Ngắn", slug: "phim-ngan" },
+  { label: "Phiêu Lưu", slug: "phieu-luu" },
+  { label: "Thần Thoại", slug: "than-thoai" },
+  { label: "Thể Thao", slug: "the-thao" },
+  { label: "Trẻ Em", slug: "tre-em" },
+  { label: "Tài Liệu", slug: "tai-lieu" },
+  { label: "Tâm Lý", slug: "tam-ly" },
+  { label: "Tình Cảm", slug: "tinh-cam" },
+  { label: "Viễn Tưởng", slug: "vien-tuong" },
+  { label: "Võ Thuật", slug: "vo-thuat" },
+  { label: "Âm Nhạc", slug: "am-nhac" },
+];
+
+const COUNTRIES_LIST = [
+  { label: "Anh", slug: "anh" },
+  { label: "Ba Lan", slug: "ba-lan" },
+  { label: "Brazil", slug: "brazil" },
+  { label: "Bồ Đào Nha", slug: "bo-dao-nha" },
+  { label: "Canada", slug: "canada" },
+  { label: "Châu Phi", slug: "chau-phi" },
+  { label: "Hà Lan", slug: "ha-lan" },
+  { label: "Hàn Quốc", slug: "han-quoc" },
+  { label: "Hồng Kông", slug: "hong-kong" },
+  { label: "Indonesia", slug: "indonesia" },
+  { label: "Malaysia", slug: "malaysia" },
+  { label: "Mexico", slug: "mexico" },
+  { label: "Na Uy", slug: "na-uy" },
+  { label: "Nam Phi", slug: "nam-phi" },
+  { label: "Nga", slug: "nga" },
+  { label: "Nhật Bản", slug: "nhat-ban" },
+  { label: "Philippines", slug: "philippines" },
+  { label: "Pháp", slug: "phap" },
+  { label: "Quốc Gia Khác", slug: "quoc-gia-khac" },
+  { label: "Thái Lan", slug: "thai-lan" },
+  { label: "Thổ Nhĩ Kỳ", slug: "tho-nhi-ky" },
+  { label: "Thụy Sĩ", slug: "thuy-si" },
+  { label: "Thụy Điển", slug: "thuy-dien" },
+  { label: "Trung Quốc", slug: "trung-quoc" },
+  { label: "Tây Ban Nha", slug: "tay-ban-nha" },
+  { label: "UAE", slug: "uae" },
+  { label: "Ukraina", slug: "ukraina" },
+  { label: "Việt Nam", slug: "viet-nam" },
+  { label: "Âu Mỹ", slug: "au-my" },
+];
 
 interface SelectOption {
   value: string;
@@ -117,25 +192,14 @@ const YEAR_OPTIONS = Array.from({ length: 15 }, (_, i) => 2024 - i).map(
     label: `Năm ${y}`,
   }),
 );
-import { movieApi } from "@/lib/api";
-import {
-  FilmCard,
-  FilmItem,
-  FilmCardSkeleton,
-} from "@/components/film/FilmCard";
-import { Pagination } from "@/components/film/Pagination";
-import { VoiceSearchButton } from "@/components/search/VoiceSearchButton";
-import {
-  SearchHistory,
-  searchHistoryStorage,
-} from "@/components/search/SearchHistory";
-import { GENRES_LIST, COUNTRIES_LIST } from "@/components/layout/Navbar";
-import { cn } from "@/lib/utils";
 
 function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [input, setInput] = useState(searchParams.get("q") || "");
+
+  const [mounted, setMounted] = useState(false);
+  const [input, setInput] = useState("");
+
   const query = searchParams.get("q") || "";
   const page = Number(searchParams.get("page") || 1);
   const type = searchParams.get("type") || "";
@@ -143,6 +207,11 @@ function SearchContent() {
   const genre = searchParams.get("genre") || "";
   const country = searchParams.get("country") || "";
   const sort = searchParams.get("sort") || "modified.time desc";
+
+  useEffect(() => {
+    setMounted(true);
+    setInput(query);
+  }, [query]);
 
   const isFilterOnly =
     !query &&
@@ -166,7 +235,8 @@ function SearchContent() {
       }
       return movieApi.search(query, page, 36).then((r) => r.data);
     },
-    enabled: Boolean(query) || isFilterOnly,
+    enabled: mounted && (Boolean(query) || isFilterOnly),
+    staleTime: 1000 * 60 * 5,
   });
 
   const films: FilmItem[] = data?.data?.items || data?.items || [];
@@ -208,7 +278,7 @@ function SearchContent() {
 
   return (
     <div className="container mx-auto px-4 md:px-8 max-w-7xl pt-24 pb-16">
-      {/* Search Header & Form Container (Centered & Minimalist) */}
+      {/* Search Header & Form Container */}
       <div className="max-w-3xl mx-auto mb-8 md:mb-12">
         <h1 className="text-2xl md:text-4xl font-extrabold text-white text-center mb-2 tracking-tight">
           Khám phá Phim
@@ -217,7 +287,7 @@ function SearchContent() {
           Tìm phim theo tên, diễn viên hoặc bộ lọc nâng cao
         </p>
 
-        {/* Compact Unified Search Input Bar */}
+        {/* Compact Search Bar */}
         <form
           onSubmit={handleFormSubmit}
           className="relative mb-5 max-w-2xl mx-auto"
@@ -244,7 +314,7 @@ function SearchContent() {
               )}
               <button
                 type="submit"
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer shadow-md"
               >
                 <Search size={14} />
                 <span>Tìm kiếm</span>
@@ -253,11 +323,11 @@ function SearchContent() {
           </div>
         </form>
 
-        {/* Centered Minimalist Multi-Facet Filter Bar */}
+        {/* Filter Bar */}
         <div className="bg-[#12161a]/80 border border-white/10 rounded-2xl p-3.5 backdrop-blur-md max-w-2xl mx-auto shadow-lg">
           <div className="flex items-center justify-between border-b border-white/10 pb-2.5 mb-3">
             <div className="flex items-center space-x-2 text-xs font-bold text-neutral-300">
-              <Filter size={13} className="text-neutral-400" />
+              <Filter size={13} className="text-emerald-400" />
               <span>Bộ lọc tìm kiếm</span>
             </div>
             <button
@@ -351,8 +421,8 @@ function SearchContent() {
           </div>
         </div>
 
-        {/* Search History & Hot Keywords when no query */}
-        {!query && !isFilterOnly && (
+        {/* Search History */}
+        {!query && !isFilterOnly && mounted && (
           <div className="mt-4">
             <SearchHistory onSelectQuery={handleSearchSubmit} />
           </div>
@@ -364,9 +434,12 @@ function SearchContent() {
         <div className="flex flex-col space-y-6">
           <div className="border-b border-white/10 pb-3 flex items-center justify-between">
             <p className="text-xs text-neutral-400 font-bold uppercase tracking-wider">
-              {isLoading ? (
+              {isLoading || !mounted ? (
                 <span className="flex items-center space-x-1.5">
-                  <Loader2 size={12} className="animate-spin text-netflixRed" />
+                  <Loader2
+                    size={12}
+                    className="animate-spin text-emerald-400"
+                  />
                   <span>Đang tải kết quả tìm kiếm...</span>
                 </span>
               ) : query ? (
@@ -377,14 +450,14 @@ function SearchContent() {
             </p>
           </div>
 
-          {isLoading ? (
+          {isLoading || !mounted ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 md:gap-6">
               {Array.from({ length: 12 }).map((_, i) => (
                 <FilmCardSkeleton key={i} />
               ))}
             </div>
           ) : films.length === 0 ? (
-            <div className="text-center py-20 flex flex-col items-center justify-center space-y-3 bg-[#1c2228]/40 border border-white/5 rounded-3xl">
+            <div className="text-center py-20 flex flex-col items-center justify-center space-y-3 bg-[#12161a]/60 border border-white/5 rounded-3xl">
               <span className="text-6xl">🎬</span>
               <p className="text-white font-bold">
                 Không tìm thấy kết quả nào phù hợp
@@ -396,7 +469,7 @@ function SearchContent() {
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="mt-2 px-5 py-2 bg-netflixRed text-white text-xs font-bold rounded-xl hover:bg-[#C11119] transition-colors"
+                className="mt-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
               >
                 Đặt lại bộ lọc
               </button>

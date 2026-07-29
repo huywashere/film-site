@@ -361,7 +361,10 @@ export function Navbar() {
               title="Tìm kiếm (Ctrl + K)"
               className="hidden sm:flex items-center gap-2.5 bg-black/40 hover:bg-black/60 border border-white/10 hover:border-white/25 rounded-full pl-3.5 pr-3 py-2 text-xs transition-all duration-200 cursor-pointer group min-w-[200px] lg:min-w-[260px] backdrop-blur-sm"
             >
-              <Search size={14} className="text-neutral-400 group-hover:text-white transition-colors flex-shrink-0" />
+              <Search
+                size={14}
+                className="text-neutral-400 group-hover:text-white transition-colors flex-shrink-0"
+              />
               <span className="flex-1 text-left font-medium text-neutral-400 group-hover:text-neutral-200 transition-colors">
                 Tìm kiếm phim, diễn viên...
               </span>

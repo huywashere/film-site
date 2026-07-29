@@ -36,7 +36,9 @@ function levenshtein(a: string, b: string): number {
   if (a.length > 20 || b.length > 20) return Math.abs(a.length - b.length) + 1;
 
   const dp: number[][] = Array.from({ length: a.length + 1 }, (_, i) =>
-    Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0)),
+    Array.from({ length: b.length + 1 }, (_, j) =>
+      i === 0 ? j : j === 0 ? i : 0,
+    ),
   );
 
   for (let i = 1; i <= a.length; i++) {
@@ -65,16 +67,20 @@ export interface ScoredFilm extends NormalizedFilmItem {
 }
 
 const WEIGHTS = {
-  exact: 1000,       // "avengers endgame" === "avengers endgame"
-  prefix: 600,       // starts with query
+  exact: 1000, // "avengers endgame" === "avengers endgame"
+  prefix: 600, // starts with query
   tokenAllMatch: 400, // tất cả token đều match
-  tokenPartial: 200,  // một số token match
-  fuzzy: 100,        // gần giống
-  multiSource: 80,   // xuất hiện ở nhiều nguồn
-  yearBoost: 20,     // phim mới hơn được ưu tiên nhẹ
+  tokenPartial: 200, // một số token match
+  fuzzy: 100, // gần giống
+  multiSource: 80, // xuất hiện ở nhiều nguồn
+  yearBoost: 20, // phim mới hơn được ưu tiên nhẹ
 };
 
-function scoreFilm(film: NormalizedFilmItem, normQuery: string, queryTokens: string[]): ScoredFilm {
+function scoreFilm(
+  film: NormalizedFilmItem,
+  normQuery: string,
+  queryTokens: string[],
+): ScoredFilm {
   const normName = normalize(film.name || "");
   const normOrigin = normalize(film.origin_name || "");
   const normSlug = normalize(film.slug || "");
@@ -136,8 +142,14 @@ function scoreFilm(film: NormalizedFilmItem, normQuery: string, queryTokens: str
 
   // ── 5. Fuzzy fallback ──
   if (matchType === "none" || score < WEIGHTS.tokenPartial) {
-    const fuzzName = fuzzyScore(normQuery, normName.slice(0, normQuery.length + 4));
-    const fuzzOrigin = fuzzyScore(normQuery, normOrigin.slice(0, normQuery.length + 4));
+    const fuzzName = fuzzyScore(
+      normQuery,
+      normName.slice(0, normQuery.length + 4),
+    );
+    const fuzzOrigin = fuzzyScore(
+      normQuery,
+      normOrigin.slice(0, normQuery.length + 4),
+    );
     const bestFuzz = Math.max(fuzzName, fuzzOrigin);
     if (bestFuzz > 0.6) {
       score += WEIGHTS.fuzzy * bestFuzz;
@@ -166,7 +178,12 @@ export function rankSearchResults(
   films: NormalizedFilmItem[],
   query: string,
 ): ScoredFilm[] {
-  if (!query.trim()) return films.map((f) => ({ ...f, _searchScore: 0, _matchType: "none" as const }));
+  if (!query.trim())
+    return films.map((f) => ({
+      ...f,
+      _searchScore: 0,
+      _matchType: "none" as const,
+    }));
 
   const normQuery = normalize(query);
   const queryTokens = tokenize(query);
@@ -193,14 +210,27 @@ export function expandQuery(query: string): string[] {
   variants.add(normalize(trimmed));
 
   // Bỏ stopwords tiếng Việt và tiếng Anh
-  const stopwords = ["phim", "the", "a", "an", "of", "and", "va", "cua", "bo", "le"];
+  const stopwords = [
+    "phim",
+    "the",
+    "a",
+    "an",
+    "of",
+    "and",
+    "va",
+    "cua",
+    "bo",
+    "le",
+  ];
   const tokens = tokenize(trimmed).filter((t) => !stopwords.includes(t));
   if (tokens.length > 0 && tokens.join(" ") !== normalize(trimmed)) {
     variants.add(tokens.join(" "));
   }
 
   // Nếu query có số ở cuối, thêm variant không có số
-  const withoutTrailingNumber = normalize(trimmed).replace(/\s+\d+$/, "").trim();
+  const withoutTrailingNumber = normalize(trimmed)
+    .replace(/\s+\d+$/, "")
+    .trim();
   if (withoutTrailingNumber && withoutTrailingNumber !== normalize(trimmed)) {
     variants.add(withoutTrailingNumber);
   }

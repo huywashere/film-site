@@ -36,7 +36,9 @@ function ActorCard({ person }: { person: any }) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <span className="text-lg font-bold text-neutral-400">{initials}</span>
+            <span className="text-lg font-bold text-neutral-400">
+              {initials}
+            </span>
           </div>
         )}
       </div>
@@ -98,7 +100,8 @@ export default function ActorsPage() {
     (p: any) => p.media_type === "person",
   );
   const searchPeople = searchData?.results || [];
-  const displayPeople = searchQuery.trim().length >= 2 ? searchPeople : trendingPeople;
+  const displayPeople =
+    searchQuery.trim().length >= 2 ? searchPeople : trendingPeople;
   const isLoading = trendingLoading || searchLoading;
 
   const handleSearch = (e: React.FormEvent) => {

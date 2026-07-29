@@ -16,7 +16,42 @@ export default function HeroBanner({ films }: HeroBannerProps) {
   const [current, setCurrent] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const { t } = useTranslation();
-  const featured = useMemo(() => films.slice(0, 6), [films]);
+  const featured = useMemo(() => {
+    const seenSlugs = new Set<string>();
+    const seenThumbs = new Set<string>();
+    const seenBaseNames = new Set<string>();
+    const result: FilmItem[] = [];
+
+    for (const f of films) {
+      if (!f || (!f.poster_url && !f.thumb_url)) continue;
+
+      const slug = (f.slug || "").toLowerCase().trim();
+      const thumb = (f.thumb_url || f.poster_url || "").toLowerCase().trim();
+      // Normalize root title (e.g. "Ma Cà Rồng Nguyên Thủy (Phần 3)" -> "ma ca rong nguyen thuy")
+      const baseName = (f.name || f.title || "")
+        .toLowerCase()
+        .replace(/\(phần\s*\d+\)/gi, "")
+        .replace(/\(season\s*\d+\)/gi, "")
+        .replace(/phần\s*\d+/gi, "")
+        .trim();
+
+      if (
+        (slug && seenSlugs.has(slug)) ||
+        (thumb && seenThumbs.has(thumb)) ||
+        (baseName && seenBaseNames.has(baseName))
+      ) {
+        continue;
+      }
+
+      if (slug) seenSlugs.add(slug);
+      if (thumb) seenThumbs.add(thumb);
+      if (baseName) seenBaseNames.add(baseName);
+      result.push(f);
+
+      if (result.length >= 6) break;
+    }
+    return result;
+  }, [films]);
 
   useEffect(() => {
     const timer = setInterval(() => {

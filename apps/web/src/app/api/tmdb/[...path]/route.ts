@@ -85,7 +85,9 @@ export async function GET(
 
     if (cache.size > 500) {
       const now = Date.now();
-      cache.forEach((v, k) => { if (v.expiry <= now) cache.delete(k); });
+      cache.forEach((v, k) => {
+        if (v.expiry <= now) cache.delete(k);
+      });
     }
 
     return NextResponse.json(data, {

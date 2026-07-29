@@ -112,13 +112,11 @@ const StyledSwiperContainer = styled.div`
 // ── Netflix Hero Banner ───────────────────────────────────────────
 function HeroBanner({ films }: { films: FilmItem[] }) {
   const { t } = useTranslation();
-  // Strictly deduplicate input films
   const featured = useMemo(() => {
     return deduplicate(films).slice(0, 6);
   }, [films]);
 
   const [current, setCurrent] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
   const [scrollY, setScrollY] = useState(0);
 
@@ -133,28 +131,19 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
 
   useEffect(() => {
     if (featured.length < 2) return;
-
-    let transitionTimer: ReturnType<typeof setTimeout> | undefined;
     const rotationTimer = setInterval(() => {
-      setIsTransitioning(true);
-      transitionTimer = setTimeout(() => {
-        setCurrent((index) => (index + 1) % featured.length);
-        setIsTransitioning(false);
-      }, 300);
+      setCurrent((index) => (index + 1) % featured.length);
     }, 8000);
-
-    return () => {
-      clearInterval(rotationTimer);
-      if (transitionTimer) clearTimeout(transitionTimer);
-    };
+    return () => clearInterval(rotationTimer);
   }, [featured.length]);
 
   const film = featured[current];
-  const prevFilm = featured[current === 0 ? featured.length - 1 : current - 1];
 
+  // Fetch detail data with high staleTime so slide switching has 0ms delay
   const { data: detailData } = useQuery({
     queryKey: ["hero-film-detail", film?.slug],
-    queryFn: () => movieApi.getDetail(film!.slug).then((response) => response.data),
+    queryFn: () =>
+      movieApi.getDetail(film!.slug).then((response) => response.data),
     enabled: !!film?.slug,
     staleTime: 10 * 60 * 1000,
   });
@@ -189,10 +178,6 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
     tmdbBackdropUrl ||
     resolveImageUrl(film.thumb_url) ||
     resolveImageUrl(film.poster_url);
-  const prevBackdrop = prevFilm
-    ? resolveImageUrl(prevFilm.thumb_url) ||
-      resolveImageUrl(prevFilm.poster_url)
-    : null;
 
   // Calculate parallax opacity and scale based on scroll position
   const heroOpacity = Math.max(0, 1 - scrollY / 600);
@@ -200,7 +185,8 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
 
   // Search trailer key from TMDB or YouTube query
   const trailerVideo = tmdbData?.videos?.results?.find(
-    (v: any) => v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser")
+    (v: any) =>
+      v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser"),
   );
   const youtubeTrailerUrl = trailerVideo?.key
     ? `https://www.youtube.com/embed/${trailerVideo.key}?autoplay=1&mute=0`
@@ -216,7 +202,7 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
 
   return (
     <div className="relative h-[calc(100vh+100px)] min-h-[700px] w-full overflow-hidden bg-background">
-      {/* Background Poster Image with Parallax & Scroll Fade Effect */}
+      {/* Background Poster Image with Parallax & Smooth Framer Motion Crossfade */}
       <div
         className="absolute inset-0 w-full h-full transition-transform duration-100 ease-out"
         style={{
@@ -224,168 +210,151 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
           opacity: heroOpacity,
         }}
       >
-        {/* Previous image layer */}
-        {prevBackdrop && (
-          <div
-            className="absolute inset-0 w-full h-full will-change-opacity transition-opacity duration-700 ease-in-out"
-            style={{
-              opacity: isTransitioning ? 0 : 1,
-            }}
+        <AnimatePresence mode="popLayout">
+          <motion.div
+            key={film.slug}
+            initial={{ opacity: 0, scale: 1.04 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute inset-0 w-full h-full"
           >
-            <NextImage
-              src={prevBackdrop}
-              alt={prevFilm?.name || ""}
-              fill
-              quality={90}
-              sizes="100vw"
-              className="object-cover object-center brightness-[0.7]"
-              loading="lazy"
-            />
-          </div>
-        )}
-
-        {/* Current image layer */}
-        {backdrop && (
-          <div
-            className="absolute inset-0 w-full h-full will-change-opacity transition-opacity duration-700 ease-in-out"
-            style={{
-              opacity: isTransitioning ? 0 : 1,
-            }}
-          >
-            <NextImage
-              src={backdrop}
-              alt={film.name}
-              fill
-              priority={current === 0}
-              fetchPriority={current === 0 ? "high" : "auto"}
-              quality={95}
-              sizes="100vw"
-              className="object-cover object-center brightness-[0.7]"
-              placeholder="blur"
-              blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iOSIgdmlld0JveD0iMCAwIDE2IDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE2IiBoZWlnaHQ9IjkiIGZpbGw9IiMxMDE0MWEiLz48L3N2Zz4="
-            />
-          </div>
-        )}
+            {backdrop && (
+              <NextImage
+                src={backdrop}
+                alt={film.name}
+                fill
+                priority={current === 0}
+                quality={90}
+                sizes="100vw"
+                className="object-cover object-center brightness-[0.75]"
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
-      {/* Cinematic Gradient Masks with Ambient Blue Lighting */}
+      {/* Cinematic Gradient Masks - Deep Dark Vignette */}
       <div
         className="absolute inset-0 z-10 pointer-events-none"
         style={{
           background: `
-            radial-gradient(circle at 20% 50%, rgba(37, 99, 235, 0.18) 0%, transparent 55%),
-            linear-gradient(to right, var(--background) 0%, rgba(var(--background-rgb), 0.75) 35%, transparent 65%),
-            linear-gradient(to top, var(--background) 0%, rgba(var(--background-rgb), 0.95) 15%, rgba(var(--background-rgb), 0.6) 40%, transparent 100%)
+            linear-gradient(to right, var(--background) 0%, rgba(var(--background-rgb), 0.8) 40%, transparent 70%),
+            linear-gradient(to top, var(--background) 0%, rgba(var(--background-rgb), 0.95) 20%, transparent 100%)
           `,
         }}
       />
 
-      {/* Content Container */}
+      {/* Content Container with Zero Layout Shift */}
       <div
         className="absolute inset-0 z-20 flex items-end sm:items-center pb-36 sm:pb-0 transition-opacity duration-300"
         style={{ opacity: heroOpacity }}
       >
         <div className="w-full px-4 sm:pl-16 sm:pr-8 md:pl-24 md:pr-12">
-          <div className="max-w-3xl">
-            <div
-              key={current}
-              className="flex flex-col space-y-4 md:space-y-5 animate-fade-in-up"
-              style={{
-                animationDuration: "450ms",
-                animationTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
-              }}
-            >
-              {/* Release Metadata with All Blue Palette */}
-              <div className="flex flex-wrap items-center gap-2.5 text-xs font-bold text-blue-100/80 md:text-sm">
-                <span className="rounded-md bg-blue-600 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-lg shadow-blue-500/40 border border-blue-400/40">
-                  NỔI BẬT
-                </span>
-                {film.year && <span className="text-blue-200">{film.year}</span>}
-                {country && (
-                  <>
-                    <span className="text-blue-400/40">|</span>
-                    <span className="text-blue-200">{country}</span>
-                  </>
-                )}
-                {episode && (
-                  <>
-                    <span className="text-blue-400/40">|</span>
-                    <span className="text-blue-200">{episode}</span>
-                  </>
-                )}
-              </div>
-
-              {/* Vietnamese-friendly title treatment */}
-              <h1
-                className={cn(
-                  "max-w-3xl font-be-vietnam font-extrabold leading-[1.12] tracking-[-0.025em] text-white drop-shadow-[0_10px_35px_rgba(37,99,235,0.3)]",
-                  titleFontSizeClass,
-                )}
+          <div className="max-w-3xl min-h-[380px] flex flex-col justify-end">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={film.slug}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                className="flex flex-col space-y-4 md:space-y-5"
               >
-                {film.name}
-              </h1>
-              {film.origin_name && (
-                <p className="-mt-2 text-sm font-semibold tracking-wide text-blue-200/70 md:text-lg">
-                  {film.origin_name}
-                </p>
-              )}
+                {/* Release Metadata */}
+                <div className="flex flex-wrap items-center gap-2.5 text-xs font-bold text-white/75 md:text-sm min-h-[28px]">
+                  <span className="rounded-md bg-white/15 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white border border-white/20 backdrop-blur-md">
+                    NỔI BẬT
+                  </span>
+                  {film.year && (
+                    <span className="text-white/80">{film.year}</span>
+                  )}
+                  {country && (
+                    <>
+                      <span className="text-white/30">|</span>
+                      <span className="text-white/80">{country}</span>
+                    </>
+                  )}
+                  {episode && (
+                    <>
+                      <span className="text-white/30">|</span>
+                      <span className="text-white/80">{episode}</span>
+                    </>
+                  )}
+                </div>
 
-              {/* Genre Pills with Blue Styling */}
-              {genres.length > 0 && (
-                <div className="flex flex-wrap gap-2">
+                {/* Title Container - Reserved Height Eliminates Jumping */}
+                <div className="min-h-[3.5rem] sm:min-h-[4.5rem] flex flex-col justify-center">
+                  <h1
+                    className={cn(
+                      "max-w-3xl font-be-vietnam font-extrabold leading-[1.12] tracking-[-0.025em] text-white drop-shadow-2xl",
+                      titleFontSizeClass,
+                    )}
+                  >
+                    {film.name}
+                  </h1>
+                  {film.origin_name && (
+                    <p className="mt-1 text-sm font-semibold tracking-wide text-white/60 md:text-lg">
+                      {film.origin_name}
+                    </p>
+                  )}
+                </div>
+
+                {/* Genre Pills Container */}
+                <div className="min-h-[28px] flex flex-wrap gap-2 items-center">
                   {genres.map((genre: any) => (
                     <Link
                       key={genre.slug || genre.name}
                       href={genre.slug ? `/genre/${genre.slug}` : "#"}
-                      className="rounded-full border border-blue-400/30 bg-blue-950/40 px-3.5 py-1.5 text-[11px] font-bold text-blue-200 backdrop-blur-md transition-colors hover:bg-blue-900/60 hover:border-blue-400 hover:text-white"
+                      className="rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-[11px] font-medium text-white/80 backdrop-blur-md transition-colors hover:bg-white/15 hover:text-white"
                     >
                       {genre.name}
                     </Link>
                   ))}
                 </div>
-              )}
 
-              {/* Synopsis */}
-              <p className="max-w-2xl text-sm font-medium leading-7 text-neutral-300 line-clamp-3 md:text-base">
-                {description || "Khám phá nội dung và bắt đầu xem bộ phim ngay hôm nay."}
-              </p>
+                {/* Synopsis Container with Line Clamp */}
+                <div className="min-h-[4.2rem] max-w-2xl">
+                  <p className="text-sm font-medium leading-7 text-neutral-300 line-clamp-3 md:text-base">
+                    {description ||
+                      "Khám phá nội dung và bắt đầu xem bộ phim ngay hôm nay."}
+                  </p>
+                </div>
 
-              {/* All Blue Action Buttons */}
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                {/* Watch Now - Neon Blue Button */}
-                <Link
-                  href={`/watch/${film.slug}`}
-                  className="flex items-center gap-2 rounded-full bg-blue-600 px-7 py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-xl shadow-blue-600/40 border border-blue-400/50 transition-all hover:bg-blue-500 hover:scale-[1.03] active:scale-95"
-                >
-                  <Play size={16} fill="currentColor" />
-                  <span>XEM NGAY</span>
-                </Link>
+                {/* Action Buttons */}
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <Link
+                    href={`/watch/${film.slug}`}
+                    className="flex items-center gap-2 rounded-full bg-white hover:bg-neutral-200 text-black font-black px-7 py-3.5 text-xs uppercase tracking-wider shadow-2xl transition-all hover:scale-[1.03] active:scale-95 cursor-pointer"
+                  >
+                    <Play size={16} fill="currentColor" />
+                    <span>XEM NGAY</span>
+                  </Link>
 
-                {/* Watch Video / Trailer Button */}
-                <button
-                  type="button"
-                  onClick={() => setShowTrailer(true)}
-                  className="flex items-center gap-2 rounded-full border border-blue-400/40 bg-blue-950/60 px-6 py-3.5 text-xs font-black uppercase tracking-wider text-blue-300 backdrop-blur-md transition-all hover:bg-blue-900/80 hover:border-blue-300 hover:text-white shadow-lg shadow-blue-950/50 hover:scale-[1.02] active:scale-95 cursor-pointer"
-                >
-                  <Film size={16} className="text-blue-400" />
-                  <span>XEM TRAILER</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowTrailer(true)}
+                    className="flex items-center gap-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-3.5 text-xs uppercase tracking-wider backdrop-blur-md transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
+                  >
+                    <Film size={16} className="text-white/80" />
+                    <span>XEM TRAILER</span>
+                  </button>
 
-                {/* Details Button */}
-                <Link
-                  href={`/film/${film.slug}`}
-                  className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-6 py-3.5 text-xs font-black uppercase tracking-wider text-white backdrop-blur-md transition-all hover:bg-white/20 hover:scale-[1.02]"
-                >
-                  <Info size={16} />
-                  <span>{t("home.details", "Chi tiết")}</span>
-                </Link>
-              </div>
-            </div>
+                  <Link
+                    href={`/film/${film.slug}`}
+                    className="flex items-center gap-2 rounded-full border border-white/10 bg-black/40 hover:bg-white/10 text-white/90 font-bold px-6 py-3.5 text-xs uppercase tracking-wider backdrop-blur-md transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
+                  >
+                    <Info size={16} className="text-white/70" />
+                    <span>{t("home.details", "Chi tiết")}</span>
+                  </Link>
+                </div>
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       </div>
 
-      {/* Running Thumbnail Indicators (Blue Active Border & Glow) */}
+      {/* Running Thumbnail Indicators */}
       <div className="absolute right-4 sm:right-8 md:right-12 bottom-8 z-30 hidden sm:flex items-center gap-2">
         {featured.map((item, i) => {
           const thumbImg =
@@ -396,18 +365,14 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
           return (
             <button
               key={item.slug || i}
-              onClick={() => {
-                setIsTransitioning(true);
-                setCurrent(i);
-                setTimeout(() => setIsTransitioning(false), 800);
-              }}
+              onClick={() => setCurrent(i)}
               aria-label={`Switch to ${item.name}`}
               className={cn(
                 "relative w-16 sm:w-20 md:w-24 aspect-[16/9] rounded-lg overflow-hidden cursor-pointer flex-shrink-0 group",
                 "transition-all duration-300 will-change-transform",
                 isActive
-                  ? "border-2 border-blue-500 shadow-xl shadow-blue-500/60 scale-105 z-10"
-                  : "border border-white/20 opacity-50 hover:opacity-100 hover:border-blue-400/80 scale-95 hover:scale-100",
+                  ? "border-2 border-white scale-105 shadow-2xl z-10"
+                  : "border border-white/20 opacity-50 hover:opacity-100 hover:border-white/60 scale-95 hover:scale-100",
               )}
             >
               {thumbImg ? (
@@ -444,16 +409,16 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
             className={cn(
               "rounded-full transition-all duration-300",
               i === current
-                ? "w-6 h-1.5 bg-blue-500 shadow-sm shadow-blue-500"
+                ? "w-6 h-1.5 bg-white shadow-sm"
                 : "w-1.5 h-1.5 bg-white/40 hover:bg-white/70",
             )}
           />
         ))}
       </div>
 
-      {/* Scroll Down Indicator with Blue Glow & Smooth Parallax Downward Transition */}
+      {/* Scroll Down Indicator - Minimalist Dark Outline */}
       <div
-        className="absolute left-1/2 -translate-x-1/2 bottom-5 z-20 hidden sm:flex flex-col items-center gap-1.5 cursor-pointer group transition-all duration-300"
+        className="absolute left-1/2 -translate-x-1/2 bottom-5 z-20 hidden sm:flex flex-col items-center gap-1.5 cursor-pointer group transition-all duration-300 opacity-60 hover:opacity-100"
         onClick={() =>
           window.scrollTo({
             top: window.innerHeight * 0.88,
@@ -462,19 +427,22 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
         }
         title="Cuộn xuống để xem phim"
       >
-        <div className="w-[24px] h-[36px] rounded-full border-2 border-blue-400/80 flex justify-center pt-1.5 backdrop-blur-md bg-blue-950/50 shadow-[0_0_15px_rgba(59,130,246,0.5)] group-hover:border-blue-300 group-hover:bg-blue-900/70 transition-all">
-          <div className="w-1.5 h-2.5 bg-blue-400 group-hover:bg-white rounded-full animate-bounce" />
+        <div className="w-[22px] h-[34px] rounded-full border-2 border-white/40 flex justify-center pt-1.5 backdrop-blur-md bg-black/40 group-hover:border-white/80 group-hover:bg-black/60 transition-all">
+          <div className="w-1 h-2 bg-white/70 group-hover:bg-white rounded-full animate-bounce" />
         </div>
-        <ChevronDown size={18} className="text-blue-400 group-hover:text-blue-200 transform group-hover:translate-y-1 transition-all" />
+        <ChevronDown
+          size={16}
+          className="text-white/60 group-hover:text-white transform group-hover:translate-y-0.5 transition-all"
+        />
       </div>
 
       {/* Trailer Video Modal Popup */}
       {showTrailer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl p-4 sm:p-8 animate-fade-in">
-          <div className="relative w-full max-w-4xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-blue-500/40">
+          <div className="relative w-full max-w-4xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10">
             <button
               onClick={() => setShowTrailer(false)}
-              className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/70 hover:bg-blue-600 text-white flex items-center justify-center border border-white/20 transition-all cursor-pointer shadow-lg"
+              className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/70 hover:bg-white/20 text-white flex items-center justify-center border border-white/20 transition-all cursor-pointer shadow-lg"
             >
               <X size={20} />
             </button>
@@ -493,7 +461,13 @@ function HeroBanner({ films }: { films: FilmItem[] }) {
 }
 
 // ── Lazy-render wrapper — only mounts children when visible in viewport ──
-function LazySection({ children, height = 320 }: { children: React.ReactNode; height?: number }) {
+function LazySection({
+  children,
+  height = 320,
+}: {
+  children: React.ReactNode;
+  height?: number;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -535,6 +509,8 @@ function FilmSection({
   href: string;
 }) {
   const { t } = useTranslation();
+  const prevRef = useRef<HTMLButtonElement>(null);
+  const nextRef = useRef<HTMLButtonElement>(null);
 
   return (
     <motion.section
@@ -561,35 +537,68 @@ function FilmSection({
         </Link>
       </div>
 
-      {/* Netflix Horizontal Row Slider using Swiper & Emotion */}
-      <StyledSwiperContainer>
-        <Swiper
-          modules={[Navigation, FreeMode]}
-          spaceBetween={16}
-          slidesPerView="auto"
-          navigation
-          freeMode={true}
-          className="mySwiper"
-          lazy={{ loadPrevNext: true }}
-        >
-          {isLoading
-            ? Array.from({ length: 6 }).map((_, i) => (
-                <SwiperSlide key={`skeleton-${i}`} style={{ width: "200px" }}>
-                  <FilmCardSkeleton width={200} hideDetails={false} />
-                </SwiperSlide>
-              ))
-            : films.slice(0, 12).map((film) => (
-                <SwiperSlide key={film.slug} style={{ width: "200px" }}>
-                  <FilmCard
-                    film={film}
-                    width={200}
-                    variant="standard"
-                    hideDetails={false}
-                  />
-                </SwiperSlide>
-              ))}
-        </Swiper>
-      </StyledSwiperContainer>
+      {/* Main Row: Swiper on left, Stacked Navigation Buttons Column OUTSIDE on right */}
+      <div className="flex items-stretch gap-3.5">
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <Swiper
+            modules={[Navigation, FreeMode]}
+            onBeforeInit={(swiper) => {
+              if (
+                swiper.params.navigation &&
+                typeof swiper.params.navigation !== "boolean"
+              ) {
+                swiper.params.navigation.prevEl = prevRef.current;
+                swiper.params.navigation.nextEl = nextRef.current;
+              }
+            }}
+            navigation={{
+              prevEl: prevRef.current,
+              nextEl: nextRef.current,
+            }}
+            speed={600}
+            slidesPerGroup={3}
+            spaceBetween={16}
+            slidesPerView="auto"
+            freeMode={{ enabled: true, momentumRatio: 0.8 }}
+            className="!py-2 !px-1"
+          >
+            {isLoading
+              ? Array.from({ length: 6 }).map((_, i) => (
+                  <SwiperSlide key={`skeleton-${i}`} style={{ width: "200px" }}>
+                    <FilmCardSkeleton width={200} hideDetails={false} />
+                  </SwiperSlide>
+                ))
+              : films.slice(0, 12).map((film) => (
+                  <SwiperSlide key={film.slug} style={{ width: "200px" }}>
+                    <FilmCard
+                      film={film}
+                      width={200}
+                      variant="standard"
+                      hideDetails={false}
+                    />
+                  </SwiperSlide>
+                ))}
+          </Swiper>
+        </div>
+
+        {/* Minimalist Navigation Buttons Column (Không màu, không bo viền) */}
+        <div className="hidden sm:flex flex-col justify-center gap-3 shrink-0 px-1">
+          <button
+            ref={nextRef}
+            aria-label="Next slide"
+            className="p-2 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-20 disabled:pointer-events-none"
+          >
+            <ChevronRight size={28} strokeWidth={2.5} />
+          </button>
+          <button
+            ref={prevRef}
+            aria-label="Previous slide"
+            className="p-2 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-20 disabled:pointer-events-none"
+          >
+            <ChevronLeft size={28} strokeWidth={2.5} />
+          </button>
+        </div>
+      </div>
     </motion.section>
   );
 }
@@ -758,6 +767,18 @@ export default function HomePage() {
     [comedyData],
   );
 
+  const { data: usUkData } = useQuery({
+    queryKey: ["hero-us-uk-blockbusters"],
+    queryFn: () => movieApi.getByCountry("au-my", 1).then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const { data: marvelHeroData } = useQuery({
+    queryKey: ["hero-marvel-blockbusters"],
+    queryFn: () => movieApi.search("Marvel", 1).then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+  });
+
   const genre1Films = useMemo(
     () => deduplicate(genre1Data?.data?.items || genre1Data?.items || []),
     [genre1Data],
@@ -771,12 +792,45 @@ export default function HomePage() {
     [genre3Data],
   );
 
-  // Combine random genre & latest movies for a diverse, strictly deduplicated banner pool
+  // US/UK Blockbuster Hero Banner Pool (prioritizing Âu Mỹ & High-Res posters, strictly zero duplicates)
   const combinedBannerPool = useMemo(() => {
-    const raw = [...genre1Films, ...genre2Films, ...genre3Films, ...latestFilms];
-    const unique = deduplicate(raw.filter((f) => f && (f.thumb_url || f.poster_url)));
-    return unique.slice(0, 6);
-  }, [genre1Films, genre2Films, genre3Films, latestFilms]);
+    const usUkList = deduplicate(
+      usUkData?.data?.items || usUkData?.items || [],
+    );
+    const marvelList = deduplicate(
+      marvelHeroData?.data?.items || marvelHeroData?.items || [],
+    );
+    const singleList = deduplicate(
+      singleData?.data?.items || singleData?.items || [],
+    );
+
+    const rawPool = [
+      ...usUkList,
+      ...marvelList,
+      ...singleList.filter(
+        (f) =>
+          f &&
+          !f.slug?.includes("trung-quoc") &&
+          !f.slug?.includes("han-quoc") &&
+          !f.slug?.includes("co-trang"),
+      ),
+    ];
+
+    const validBlockbusters = deduplicate(
+      rawPool.filter(
+        (f) =>
+          f &&
+          (f.poster_url || f.thumb_url) &&
+          !f.slug?.includes("trung-quoc") &&
+          !f.slug?.includes("han-quoc") &&
+          !f.slug?.includes("co-trang"),
+      ),
+    );
+
+    return validBlockbusters.length > 0
+      ? validBlockbusters.slice(0, 6)
+      : latestFilms.slice(0, 6);
+  }, [usUkData, marvelHeroData, singleData, latestFilms]);
 
   // Show the hero as soon as the first usable response arrives instead of
   // waiting for every genre request and an additional client-side shuffle.
@@ -819,10 +873,10 @@ export default function HomePage() {
 
       {/* Main Row Content — full layout with safe left padding for vertical sidebar */}
       <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 relative pt-6 md:pt-10 z-30">
-        {/* Continue Watching Row */}
-        <ContinueWatchingRow />
         {/* TOP 10 RANKED MOVIES (Metallic Numbers Netflix Style) */}
         <Top10RankedRow films={latestFilms} />
+        {/* Continue Watching / Watch History Row (positioned right below Top Movies) */}
+        <ContinueWatchingRow />
         {/* AI Smart Recommendation Engine */}
         <SmartRecommendationSection />
         {/* Topic Banners Section */}
@@ -927,43 +981,130 @@ export default function HomePage() {
 
 // ── Topic Banners Section ──────────────────────────
 function TopicBannersSection() {
+  // Query topic 1: DC
+  const { data: dcData } = useQuery({
+    queryKey: ["topic-dc-v2"],
+    queryFn: () => movieApi.search("DC", 1).then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+  });
+
+  // Query topic 2: Marvel
+  const { data: marvelData } = useQuery({
+    queryKey: ["topic-marvel-v2"],
+    queryFn: () => movieApi.search("Marvel", 1).then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+  });
+
+  // Query topic 3: One Piece
+  const { data: animeData } = useQuery({
+    queryKey: ["topic-onepiece-v2"],
+    queryFn: () => movieApi.search("One Piece", 1).then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+  });
+
+  // Query topic 4: Hot
+  const { data: hotData } = useQuery({
+    queryKey: ["topic-hot-v2"],
+    queryFn: () => movieApi.getLatest(1).then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+  });
+
+  // Query topic 5: Cổ Trang
+  const { data: coTrangData } = useQuery({
+    queryKey: ["topic-cotrang-v2"],
+    queryFn: () => movieApi.getByGenre("co-trang", 1).then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+  });
+
+  // Query topic 6: Weekend / Series
+  const { data: seriesData } = useQuery({
+    queryKey: ["topic-series-v2"],
+    queryFn: () => movieApi.getSeries(1).then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+  });
+
+  // Pick a random image from fetched items for each topic (randomized per page visit)
+  const topicImages = useMemo(() => {
+    const getRandomImage = (
+      items: FilmItem[] | undefined,
+      defaultFallback: string,
+    ) => {
+      const valid = (items || []).filter(
+        (f) => f && (f.poster_url || f.thumb_url),
+      );
+      if (!valid.length) return defaultFallback;
+      const randIdx = Math.floor(Math.random() * valid.length);
+      const chosen = valid[randIdx];
+      return (
+        resolveImageUrl(chosen.poster_url || chosen.thumb_url) ||
+        defaultFallback
+      );
+    };
+
+    return {
+      dc: getRandomImage(
+        dcData?.items || dcData?.data?.items,
+        "/images/zack-snyders-justice-league-dc-superheroes-dc-comics-2021-3840x2160-4980.jpg",
+      ),
+      marvel: getRandomImage(
+        marvelData?.items || marvelData?.data?.items,
+        "/images/wp3533664-avengers-infinity-war-4k-wallpapers.jpg",
+      ),
+      onepiece: getRandomImage(
+        animeData?.items || animeData?.data?.items,
+        "/images/one-piece-season-15-3840x2160-22064.jpg",
+      ),
+      hot: getRandomImage(
+        hotData?.items || hotData?.data?.items,
+        "/images/MV5BN2MyYjk2MWMtODMyZS00MDUyLW-8113-3732-1766460989.webp",
+      ),
+      cotrang: getRandomImage(
+        coTrangData?.items || coTrangData?.data?.items,
+        "/images/phim_co_trang_trung_quoc_50_573c11fea1.jpg",
+      ),
+      weekend: getRandomImage(
+        seriesData?.items || seriesData?.data?.items,
+        "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=800&q=80",
+      ),
+    };
+  }, [dcData, marvelData, animeData, hotData, coTrangData, seriesData]);
+
   const topics = [
     {
       title: "DC",
       href: "/search?q=dc",
-      image:
-        "/images/zack-snyders-justice-league-dc-superheroes-dc-comics-2021-3840x2160-4980.jpg",
+      image: topicImages.dc,
       description: "Khám phá thế giới siêu anh hùng DC nổi tiếng.",
     },
     {
       title: "Marvel",
       href: "/search?q=marvel",
-      image: "/images/wp3533664-avengers-infinity-war-4k-wallpapers.jpg",
+      image: topicImages.marvel,
       description: "Khám phá bộ phim Marvel nổi bật.",
     },
     {
       title: "One Piece",
       href: "/films/anime",
-      image: "/images/one-piece-season-15-3840x2160-22064.jpg",
+      image: topicImages.onepiece,
       description: "Khám phá One Piece và những hành trình hải tặc kỳ ảo.",
     },
     {
       title: "Phim đang hot",
       href: "/search?q=hot",
-      image: "/images/MV5BN2MyYjk2MWMtODMyZS00MDUyLW-8113-3732-1766460989.webp",
+      image: topicImages.hot,
       description: "Xem những bộ phim đang gây sốt ngay lúc này.",
     },
     {
       title: "Cổ Trang",
       href: "/genre/co-trang",
-      image: "/images/phim_co_trang_trung_quoc_50_573c11fea1.jpg",
+      image: topicImages.cotrang,
       description:
         "Khám phá những siêu phẩm cổ trang Trung Quốc đầy kịch tính.",
     },
     {
       title: "Cày Phim Cuối Tuần",
       href: "/search?q=weekend",
-      image: "/images/cinema-hall-with-red-seat-wide-white-screen.jpg",
+      image: topicImages.weekend,
       description:
         "Lên lịch xem phim cuối tuần với những suất chiếu đáng chú ý.",
     },
@@ -979,24 +1120,14 @@ function TopicBannersSection() {
           <Link
             key={i}
             href={topic.href}
-            className={`relative overflow-hidden rounded-[28px] p-4 flex flex-col justify-between shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-3xl group cursor-pointer min-h-[220px] md:min-h-[260px] ${
-              topic.image
-                ? "bg-slate-900 shadow-slate-950/30 border border-white/10"
-                : "bg-gradient-to-br from-slate-900 to-indigo-950 border border-white/10"
-            }`}
-            style={
-              topic.image
-                ? {
-                    backgroundImage: `url('${topic.image}')`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                  }
-                : undefined
-            }
+            className="relative overflow-hidden rounded-[28px] p-4 flex flex-col justify-between shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-3xl group cursor-pointer min-h-[220px] md:min-h-[260px] bg-slate-900 shadow-slate-950/30 border border-white/10"
+            style={{
+              backgroundImage: `url('${topic.image}')`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
           >
-            {topic.image && (
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/35 to-transparent group-hover:from-slate-950/80 group-hover:via-slate-950/25 transition-colors duration-300" />
-            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-transparent group-hover:from-slate-950/85 group-hover:via-slate-950/30 transition-colors duration-300" />
             <div className="absolute inset-x-4 top-4 h-16 rounded-3xl bg-white/10 blur-sm" />
             <div className="relative z-10">
               <h4 className="text-base md:text-xl font-extrabold text-white leading-tight drop-shadow-[0_10px_30px_rgba(0,0,0,0.35)] select-none break-words">
@@ -1005,7 +1136,7 @@ function TopicBannersSection() {
             </div>
             <div className="relative z-10 flex flex-col gap-2 text-[10px] uppercase tracking-[0.28em] transition-colors duration-300 md:text-[11px]">
               <span className="inline-flex items-center gap-2 font-semibold text-white/90 group-hover:text-white">
-                <span className="inline-block w-2 h-2 rounded-full bg-primary" />
+                <span className="inline-block w-2 h-2 rounded-full bg-netflixRed" />
                 Xem chủ đề
               </span>
               <span className="text-xs text-white/70 max-w-[80%] leading-snug">

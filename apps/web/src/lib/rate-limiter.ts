@@ -26,7 +26,10 @@ let lastSweepAt = 0;
  * long-lived server process.
  */
 function sweepExpiredKeys(now: number) {
-  if (now - lastSweepAt < SWEEP_INTERVAL_MS && storage.size < MAX_TRACKED_KEYS) {
+  if (
+    now - lastSweepAt < SWEEP_INTERVAL_MS &&
+    storage.size < MAX_TRACKED_KEYS
+  ) {
     return;
   }
   lastSweepAt = now;

@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Bookmark, Play, Clapperboard, Star } from "lucide-react";
@@ -21,16 +22,16 @@ export interface FilmItem {
   episode_current?: string;
   quality?: string;
   lang?: string;
-  rating?: number; // ← Generic rating
-  vote_average?: number; // ← TMDB vote average
-  imdb_rating?: number; // ← IMDb rating
+  rating?: number;
+  vote_average?: number;
+  imdb_rating?: number;
   tmdb?: {
     type?: string;
     id?: string;
     season?: number | null;
-    vote_average?: number; // ← TMDB rating
+    vote_average?: number;
     vote_count?: number;
-    rating?: number; // ← Alternative rating field
+    rating?: number;
   };
 }
 
@@ -43,16 +44,16 @@ interface FilmCardProps {
 }
 
 const PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450" fill="none">
-  <rect width="300" height="450" fill="#16181d"/>
-  <rect x="15" y="15" width="270" height="420" rx="16" stroke="#2b2f38" stroke-width="2" stroke-dasharray="6 6"/>
-  <path d="M150 190C161.046 190 170 181.046 170 170C170 158.954 161.046 150 150 150C138.954 150 130 158.954 130 170C130 181.046 138.954 190 150 190Z" fill="#3a4454"/>
-  <path d="M95 275L135 220L160 250L185 210L205 275H95Z" fill="#3a4454"/>
-  <text x="150" y="320" fill="#6b7280" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle">CineVerse Poster</text>
+  <rect width="300" height="450" fill="#11161d"/>
+  <rect x="15" y="15" width="270" height="420" rx="12" stroke="#222933" stroke-width="2" stroke-dasharray="6 6"/>
+  <path d="M150 190C161.046 190 170 181.046 170 170C170 158.954 161.046 150 150 150C138.954 150 130 158.954 130 170C130 181.046 138.954 190 150 190Z" fill="#2d3748"/>
+  <path d="M95 275L135 220L160 250L185 210L205 275H95Z" fill="#2d3748"/>
+  <text x="150" y="320" fill="#718096" font-family="sans-serif" font-size="13" font-weight="600" text-anchor="middle">CineVerse Poster</text>
 </svg>`;
 
-// Helper: resolve KKPhim/OPhim/NguonC image URL
-export function resolveImageUrl(url?: string): string | null {
-  if (!url) return null;
+// Helper: resolve image URL securely
+export function resolveImageUrl(url?: unknown): string | null {
+  if (!url || typeof url !== "string") return null;
   let resolved = url.trim();
   if (!resolved) return null;
 
@@ -82,7 +83,6 @@ export function FilmCard({
 
   const slug = film.slug;
   const title = film.name || film.title || "Chưa có tên";
-  const subtitle = film.origin_name || (film.year ? `${film.year}` : "");
   const initialPosterUrl =
     variant === "landscape"
       ? resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url)
@@ -105,7 +105,6 @@ export function FilmCard({
   };
 
   const prefetchFilmDetail = () => {
-    // Only prefetch on desktop (better performance on mobile)
     if (typeof window !== "undefined" && window.innerWidth > 768) {
       queryClient.prefetchQuery({
         queryKey: ["film", slug],
@@ -115,7 +114,7 @@ export function FilmCard({
     }
   };
 
-  // Extract top-left badge (Thuyết Minh / Vietsub / Lồng Tiếng)
+  // Extract top-left badge (Thuyết Minh / Vietsub)
   const langBadge = film.lang
     ? film.lang.includes("Thuyết Minh")
       ? "Thuyết Minh"
@@ -126,12 +125,12 @@ export function FilmCard({
           : film.lang
     : "Vietsub";
 
-  // Extract top-right quality badge (HD / FHD / 4K)
+  // Extract quality badge
   const qualityBadge = (film.quality || "HD")
     .toUpperCase()
     .replace("FULL HD", "FHD");
 
-  // Extract bottom-left episode status badge
+  // Extract episode status
   const episodeBadge = film.episode_current
     ? film.episode_current.toLowerCase().includes("hoàn tất") ||
       film.episode_current.toLowerCase().includes("full")
@@ -170,17 +169,27 @@ export function FilmCard({
     }
   };
 
+  // Rating value
+  const ratingVal =
+    film.tmdb?.vote_average ||
+    film.vote_average ||
+    film.rating ||
+    film.imdb_rating ||
+    (film.tmdb && typeof film.tmdb === "object" && "rating" in film.tmdb
+      ? (film.tmdb as any).rating
+      : null);
+
   return (
     <Link
       href={`/film/${slug}`}
-      className="group relative flex flex-col cursor-pointer transition-transform duration-300 hover:scale-[1.03] animate-in fade-in duration-300"
+      className="group relative flex flex-col cursor-pointer transition-transform duration-300 animate-in fade-in duration-300 select-none"
       style={width ? { width, flexShrink: 0 } : undefined}
       onMouseEnter={prefetchFilmDetail}
     >
-      {/* Poster Container */}
+      {/* ── Modern Premium Poster Frame ── */}
       <div
         className={cn(
-          "relative w-full overflow-hidden rounded-2xl bg-neutral-900 border border-white/10 shadow-xl aspect-[2/3]",
+          "relative w-full overflow-hidden rounded-xl bg-neutral-950 border border-white/10 shadow-md group-hover:shadow-2xl group-hover:border-blue-500/40 transition-all duration-300 aspect-[2/3]",
           variant === "landscape" ? "aspect-video" : "",
         )}
       >
@@ -188,44 +197,47 @@ export function FilmCard({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={imageSrc}
-            alt=""
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            alt={title}
+            className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
             onError={handleImageError}
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-neutral-800 text-neutral-500">
+          <div className="absolute inset-0 flex items-center justify-center bg-neutral-900 text-neutral-600">
             <Clapperboard size={36} className="opacity-40" />
           </div>
         )}
 
-        {/* ── TOP-LEFT AUDIO BADGE (Thuyết Minh / Vietsub) ── */}
+        {/* Bottom subtle gradient for image protection */}
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
+
+        {/* ── TOP-LEFT AUDIO BADGE ── */}
         {langBadge && (
-          <div className="absolute top-2.5 left-2.5 bg-black/70 backdrop-blur-md border border-white/20 text-white font-extrabold text-[11px] px-2.5 py-1 rounded-xl shadow-lg z-10">
+          <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-md border border-white/15 text-white font-semibold text-[10px] px-2 py-0.5 rounded-md shadow z-10">
             {langBadge}
           </div>
         )}
 
-        {/* ── TOP-RIGHT QUALITY BADGE (HD / FHD / 4K) ── */}
-        <div className="absolute top-2.5 right-2.5 bg-[#ff8800] text-black font-black text-[11px] px-2 py-0.5 rounded-lg uppercase tracking-wide shadow-lg shadow-orange-500/20 z-10">
+        {/* ── TOP-RIGHT QUALITY BADGE ── */}
+        <div className="absolute top-2 right-2 bg-blue-600 text-white font-black text-[10px] px-1.5 py-0.5 rounded-md uppercase tracking-wide shadow z-10">
           {qualityBadge}
         </div>
 
         {/* ── BOTTOM-LEFT EPISODE STATUS BADGE ── */}
         {episodeBadge && (
-          <div className="absolute bottom-2.5 left-2.5 bg-black/80 backdrop-blur-md border border-white/20 text-white font-extrabold text-[11px] px-2.5 py-1 rounded-xl shadow-lg z-10">
+          <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-md border border-white/15 text-neutral-200 font-medium text-[10px] px-2 py-0.5 rounded-md shadow z-10">
             {episodeBadge}
           </div>
         )}
 
         {/* Hover Overlay with Play Button & Watchlist */}
-        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-20">
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-20 backdrop-blur-[2px]">
           {showActions && (
             <button
               onClick={handleWatchlist}
               className={cn(
-                "absolute top-2.5 right-14 w-8 h-8 rounded-full bg-black/70 border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-black hover:scale-110 transition-all",
-                saved ? "bg-white text-black border-white" : "",
+                "absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/70 border border-white/20 flex items-center justify-center text-white hover:bg-blue-600 hover:border-blue-500 transition-all",
+                saved ? "bg-blue-600 text-white border-blue-500" : "",
               )}
               title={saved ? "Xóa khỏi Watchlist" : "Thêm vào Watchlist"}
             >
@@ -233,63 +245,32 @@ export function FilmCard({
             </button>
           )}
 
-          <div className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-xl shadow-white/20 transform scale-90 group-hover:scale-105 transition-all duration-300">
-            <Play size={20} fill="currentColor" className="ml-0.5" />
+          <div className="w-11 h-11 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/40 transform scale-90 group-hover:scale-100 transition-all duration-300">
+            <Play size={18} fill="currentColor" className="ml-0.5" />
           </div>
         </div>
       </div>
 
-      {/* Title & Subtitle Below Poster */}
+      {/* ── Clean Metadata Below Poster ── */}
       {!hideDetails && (
-        <div className="flex flex-col text-left mt-2.5 px-0.5">
-          {/* Film Title - Bebas Neue Font */}
-          <h4
-            className="text-base md:text-lg font-bold text-white line-clamp-1 leading-tight group-hover:text-neutral-200 transition-colors tracking-wider uppercase"
-            style={{
-              fontFamily: "'Bebas Neue', sans-serif",
-              letterSpacing: "0.03em",
-            }}
-          >
+        <div className="flex flex-col text-left mt-2 px-0.5 space-y-1">
+          {/* Title - Clean, non-forced case, max 2 lines */}
+          <h4 className="text-xs sm:text-sm font-semibold text-neutral-100 line-clamp-2 leading-snug group-hover:text-blue-400 transition-colors">
             {title}
           </h4>
 
-          {/* Subtitle Row with Year/Origin & Rating */}
-          <div className="flex items-center justify-between mt-1.5 gap-2">
-            <p className="font-normal text-xs text-neutral-400 line-clamp-1 flex-1">
+          {/* Subtitle Row with Origin/Year & Sleek Rating */}
+          <div className="flex items-center justify-between text-[11px] text-neutral-400 gap-2">
+            <span className="line-clamp-1 flex-1 font-normal text-neutral-400">
               {film.origin_name || (film.year ? `${film.year}` : "")}
-            </p>
+            </span>
 
-            {/* IMDb/TMDB Rating Badge */}
-            {(() => {
-              // Try multiple rating sources
-              const rating =
-                film.tmdb?.vote_average ||
-                film.vote_average ||
-                film.rating ||
-                film.imdb_rating ||
-                (film.tmdb &&
-                typeof film.tmdb === "object" &&
-                "rating" in film.tmdb
-                  ? film.tmdb.rating
-                  : null);
-
-              if (rating && rating > 0) {
-                return (
-                  <div className="flex items-center gap-1.5 bg-gradient-to-r from-amber-400/25 to-yellow-400/25 border-2 border-amber-400/50 rounded-lg px-2.5 py-1 flex-shrink-0 backdrop-blur-sm shadow-lg shadow-amber-500/30">
-                    <Star
-                      size={14}
-                      fill="#f59e0b"
-                      className="text-amber-400 drop-shadow-md filter brightness-110"
-                      strokeWidth={0}
-                    />
-                    <span className="text-[13px] font-black text-amber-50 tracking-wide drop-shadow-md filter brightness-110">
-                      {Number(rating).toFixed(1)}
-                    </span>
-                  </div>
-                );
-              }
-              return null;
-            })()}
+            {ratingVal && Number(ratingVal) > 0 && (
+              <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-md font-bold text-[10px] shrink-0">
+                <Star size={11} fill="currentColor" />
+                <span>{Number(ratingVal).toFixed(1)}</span>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -308,13 +289,13 @@ export function FilmCardSkeleton({
   return (
     <div
       style={width ? { width, flexShrink: 0 } : undefined}
-      className="w-full flex flex-col space-y-2.5 animate-pulse"
+      className="w-full flex flex-col space-y-2 animate-pulse"
     >
-      <div className="w-full aspect-[2/3] bg-white/5 rounded-2xl border border-white/10 relative overflow-hidden" />
+      <div className="w-full aspect-[2/3] bg-neutral-900 rounded-xl border border-white/5 relative overflow-hidden" />
       {!hideDetails && (
         <div className="flex flex-col space-y-1.5 px-0.5">
-          <div className="h-4 bg-white/10 rounded-lg w-4/5" />
-          <div className="h-3 bg-white/5 rounded-md w-2/5" />
+          <div className="h-3.5 bg-neutral-800 rounded w-4/5" />
+          <div className="h-3 bg-neutral-900 rounded w-2/5" />
         </div>
       )}
     </div>

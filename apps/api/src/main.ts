@@ -30,7 +30,10 @@ async function bootstrap() {
   // Count the hops your platform actually adds — do NOT use `true`, which
   // trusts the left-most (client-supplied, spoofable) XFF entry.
   const trustedProxyHops = Number(process.env.TRUSTED_PROXY_HOPS ?? 1);
-  app.set("trust proxy", Number.isFinite(trustedProxyHops) ? trustedProxyHops : 1);
+  app.set(
+    "trust proxy",
+    Number.isFinite(trustedProxyHops) ? trustedProxyHops : 1,
+  );
 
   // ── Security headers (Helmet) ──────────────────────────────────
   // Protects against well-known web vulnerabilities by setting HTTP headers

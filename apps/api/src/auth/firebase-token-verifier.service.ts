@@ -106,15 +106,13 @@ export class FirebaseTokenVerifier {
           : typeof payload.email === "string"
             ? payload.email.split("@")[0]
             : undefined,
-      picture: typeof payload.picture === "string" ? payload.picture : undefined,
+      picture:
+        typeof payload.picture === "string" ? payload.picture : undefined,
       raw: payload,
     };
   }
 
-  private assertClaims(
-    payload: Record<string, any>,
-    projectId: string,
-  ): void {
+  private assertClaims(payload: Record<string, any>, projectId: string): void {
     const nowSeconds = Math.floor(Date.now() / 1000);
 
     if (typeof payload.exp !== "number") {
@@ -203,9 +201,10 @@ export class FirebaseTokenVerifier {
 
         return certs;
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : String(error);
-        this.logger.error(`Failed to refresh Firebase certificates: ${message}`);
+        const message = error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          `Failed to refresh Firebase certificates: ${message}`,
+        );
 
         // Serve the previous certificate set if we still have one — a transient
         // network blip should not log every user out.

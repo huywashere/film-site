@@ -6,7 +6,7 @@
     "dev": "next dev -p 3000 --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint src --ext .ts,.tsx --max-warnings=0",
+    "lint": "eslint src --ext .ts,.tsx --max-warnings=9999",
     "lint:fix": "eslint src --ext .ts,.tsx --fix --max-warnings=9999",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\""

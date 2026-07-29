@@ -163,15 +163,20 @@ export default function WatchPage() {
   const [episodeSearch, setEpisodeSearch] = useState("");
   const [autoNextConfig, setAutoNextConfig] = useState(true);
   const [autoPlayConfig, setAutoPlayConfig] = useState(true);
-  const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(null);
+  const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(
+    null,
+  );
   const [useEmbedPlayer, setUseEmbedPlayer] = useState(false);
-  const [activeServerType, setActiveServerType] = useState<ServerType>("vietsub");
+  const [activeServerType, setActiveServerType] =
+    useState<ServerType>("vietsub");
   const [currentTypeServer, setCurrentTypeServer] = useState(0);
 
   // Fallback state
   const [isFallbacking, setIsFallbacking] = useState(false);
   const [fallbackMessage, setFallbackMessage] = useState("");
-  const [loadTimeout, setLoadTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [loadTimeout, setLoadTimeout] = useState<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const fallbackAttemptRef = useRef(0);
   const autoNextTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSyncRef = useRef(0);
@@ -357,8 +362,15 @@ export default function WatchPage() {
     undefined;
 
   // TMDB backdrop cho hero phia tren player
-  const { bestBackdrop } = useTmdb({ film, enabled: !!film, fetchCredits: false, fetchVideos: false });
-  const tmdbBackdropUrl = bestBackdrop ? tmdbBackdrop(bestBackdrop.file_path, "w1280") : null;
+  const { bestBackdrop } = useTmdb({
+    film,
+    enabled: !!film,
+    fetchCredits: false,
+    fetchVideos: false,
+  });
+  const tmdbBackdropUrl = bestBackdrop
+    ? tmdbBackdrop(bestBackdrop.file_path, "w1280")
+    : null;
   const epName: string = currentEpData?.slug || currentEpData?.name || "";
   const progressKey = slug && epName ? `${slug}_${epName}` : undefined;
   const currentResumeEntry = resumeData?.find(
@@ -432,67 +444,77 @@ export default function WatchPage() {
   );
 
   // ── Smart Fallback Engine ─────────────────────────────────────
-  const tryNextServer = useCallback((reason: string) => {
-    const currentIdx = currentServer;
-    const upd = [...failedServers, currentIdx];
-    setFailedServers(upd);
-    setIsFallbacking(true);
+  const tryNextServer = useCallback(
+    (reason: string) => {
+      const currentIdx = currentServer;
+      const upd = [...failedServers, currentIdx];
+      setFailedServers(upd);
+      setIsFallbacking(true);
 
-    // Tìm server tiếp theo chưa fail trong cùng type
-    const sameTypeServers = episodes.filter(
-      (ep) => ep._type === activeServerType,
-    );
-    const nextSameType = sameTypeServers.find(
-      (ep) => !upd.includes(episodes.indexOf(ep)),
-    );
-
-    // Nếu không còn server cùng type → thử type khác
-    const nextAnyType = !nextSameType
-      ? episodes.find((ep) => !upd.includes(episodes.indexOf(ep)))
-      : null;
-
-    const nextEp = nextSameType || nextAnyType;
-
-    if (!nextEp) {
-      setIsFallbacking(false);
-      setFallbackMessage("");
-      toast("Tất cả server không khả dụng!", "error");
-      return;
-    }
-
-    const nextIdx = episodes.indexOf(nextEp);
-    const isSwitchingType = nextEp._type !== activeServerType;
-
-    setFallbackMessage(
-      isSwitchingType
-        ? `Chuyển sang ${nextEp._type === "thuyet-minh" ? "Thuyết minh" : "Phụ đề"}...`
-        : `Thử server ${nextEp.server_name}...`,
-    );
-
-    // Delay nhỏ để UX mượt, không flash
-    setTimeout(() => {
-      if (isSwitchingType) setActiveServerType(nextEp._type as ServerType);
-      setCurrentServer(nextIdx);
-      setCurrentTypeServer(nextIdx);
-      setUseEmbedPlayer(false);
-      setIsFallbacking(false);
-      setFallbackMessage("");
-      fallbackAttemptRef.current += 1;
-
-      // Cập nhật URL episode nếu server mới có tập khác
-      const nd = nextEp?.server_data || [];
-      const sameEp = nd.find(
-        (e: any) => (e.slug || e.name) === currentEp,
+      // Tìm server tiếp theo chưa fail trong cùng type
+      const sameTypeServers = episodes.filter(
+        (ep) => ep._type === activeServerType,
       );
-      const targetEp = sameEp || nd[0];
-      if (targetEp) {
-        router.replace(
-          `/watch/${slug}?ep=${targetEp.slug || targetEp.name}`,
-          { scroll: false },
-        );
+      const nextSameType = sameTypeServers.find(
+        (ep) => !upd.includes(episodes.indexOf(ep)),
+      );
+
+      // Nếu không còn server cùng type → thử type khác
+      const nextAnyType = !nextSameType
+        ? episodes.find((ep) => !upd.includes(episodes.indexOf(ep)))
+        : null;
+
+      const nextEp = nextSameType || nextAnyType;
+
+      if (!nextEp) {
+        setIsFallbacking(false);
+        setFallbackMessage("");
+        toast("Tất cả server không khả dụng!", "error");
+        return;
       }
-    }, 600);
-  }, [currentServer, failedServers, episodes, activeServerType, currentEp, slug, router, toast]);
+
+      const nextIdx = episodes.indexOf(nextEp);
+      const isSwitchingType = nextEp._type !== activeServerType;
+
+      setFallbackMessage(
+        isSwitchingType
+          ? `Chuyển sang ${nextEp._type === "thuyet-minh" ? "Thuyết minh" : "Phụ đề"}...`
+          : `Thử server ${nextEp.server_name}...`,
+      );
+
+      // Delay nhỏ để UX mượt, không flash
+      setTimeout(() => {
+        if (isSwitchingType) setActiveServerType(nextEp._type as ServerType);
+        setCurrentServer(nextIdx);
+        setCurrentTypeServer(nextIdx);
+        setUseEmbedPlayer(false);
+        setIsFallbacking(false);
+        setFallbackMessage("");
+        fallbackAttemptRef.current += 1;
+
+        // Cập nhật URL episode nếu server mới có tập khác
+        const nd = nextEp?.server_data || [];
+        const sameEp = nd.find((e: any) => (e.slug || e.name) === currentEp);
+        const targetEp = sameEp || nd[0];
+        if (targetEp) {
+          router.replace(
+            `/watch/${slug}?ep=${targetEp.slug || targetEp.name}`,
+            { scroll: false },
+          );
+        }
+      }, 600);
+    },
+    [
+      currentServer,
+      failedServers,
+      episodes,
+      activeServerType,
+      currentEp,
+      slug,
+      router,
+      toast,
+    ],
+  );
 
   // Timeout 12s nếu video không load được
   const startLoadTimeout = useCallback(() => {
@@ -510,15 +532,18 @@ export default function WatchPage() {
     }
   }, [loadTimeout]);
 
-  const handlePlayerError = useCallback((err: any) => {
-    clearLoadTimeout();
-    // Thử embed trước nếu đang dùng m3u8
-    if (embedUrl && !useEmbedPlayer) {
-      setUseEmbedPlayer(true);
-      return;
-    }
-    tryNextServer("error");
-  }, [clearLoadTimeout, embedUrl, useEmbedPlayer, tryNextServer]);
+  const handlePlayerError = useCallback(
+    (err: any) => {
+      clearLoadTimeout();
+      // Thử embed trước nếu đang dùng m3u8
+      if (embedUrl && !useEmbedPlayer) {
+        setUseEmbedPlayer(true);
+        return;
+      }
+      tryNextServer("error");
+    },
+    [clearLoadTimeout, embedUrl, useEmbedPlayer, tryNextServer],
+  );
 
   const handlePlayerReady = useCallback(() => {
     clearLoadTimeout();
@@ -789,142 +814,158 @@ export default function WatchPage() {
             </div>
 
             {/* 3. SERVER TABS — 2 nhóm: Phụ đề & Thuyết minh */}
-            {episodes.length > 0 && (() => {
-              // Nhóm theo type
-              const subEps = episodes.filter((ep) => ep._type === "vietsub");
-              const dubEps = episodes.filter((ep) => ep._type === "thuyet-minh");
-              const hasSubtitle = subEps.length > 0;
-              const hasDub = dubEps.length > 0;
-              const activeGroup = activeServerType === "thuyet-minh" ? dubEps : subEps;
+            {episodes.length > 0 &&
+              (() => {
+                // Nhóm theo type
+                const subEps = episodes.filter((ep) => ep._type === "vietsub");
+                const dubEps = episodes.filter(
+                  (ep) => ep._type === "thuyet-minh",
+                );
+                const hasSubtitle = subEps.length > 0;
+                const hasDub = dubEps.length > 0;
+                const activeGroup =
+                  activeServerType === "thuyet-minh" ? dubEps : subEps;
 
-              return (
-                <div className="space-y-3">
-                  {/* ── Tab chọn dạng: Phụ đề / Thuyết minh ── */}
-                  <div className="flex items-center gap-2">
-                    {hasSubtitle && (
-                      <button
-                        onClick={() => {
-                          setActiveServerType("vietsub");
-                          const first = subEps[0];
-                          if (first) {
-                            const idx = episodes.indexOf(first);
-                            setCurrentServer(idx >= 0 ? idx : 0);
-                            setUseEmbedPlayer(false);
-                            const nd = first?.server_data || [];
-                            if (nd.length > 0)
-                              router.push(`/watch/${slug}?ep=${nd[0].slug || nd[0].name}`);
-                          }
-                        }}
-                        className={cn(
-                          "flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all",
-                          activeServerType !== "thuyet-minh"
-                            ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-300"
-                            : "bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/70 hover:border-white/20",
-                        )}
-                      >
-                        <Subtitles size={13} />
-                        Phụ đề
-                        <span className="text-[9px] font-bold bg-white/10 rounded-full px-1.5 py-0.5">
-                          {subEps.length}
-                        </span>
-                      </button>
-                    )}
-                    {hasDub && (
-                      <button
-                        onClick={() => {
-                          setActiveServerType("thuyet-minh");
-                          const first = dubEps[0];
-                          if (first) {
-                            const idx = episodes.indexOf(first);
-                            setCurrentServer(idx >= 0 ? idx : 0);
-                            setUseEmbedPlayer(false);
-                            const nd = first?.server_data || [];
-                            if (nd.length > 0)
-                              router.push(`/watch/${slug}?ep=${nd[0].slug || nd[0].name}`);
-                          }
-                        }}
-                        className={cn(
-                          "flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all",
-                          activeServerType === "thuyet-minh"
-                            ? "bg-amber-500/15 border-amber-500/50 text-amber-300"
-                            : "bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/70 hover:border-white/20",
-                        )}
-                      >
-                        <Mic size={13} />
-                        Thuyết minh
-                        <span className="text-[9px] font-bold bg-white/10 rounded-full px-1.5 py-0.5">
-                          {dubEps.length}
-                        </span>
-                      </button>
+                return (
+                  <div className="space-y-3">
+                    {/* ── Tab chọn dạng: Phụ đề / Thuyết minh ── */}
+                    <div className="flex items-center gap-2">
+                      {hasSubtitle && (
+                        <button
+                          onClick={() => {
+                            setActiveServerType("vietsub");
+                            const first = subEps[0];
+                            if (first) {
+                              const idx = episodes.indexOf(first);
+                              setCurrentServer(idx >= 0 ? idx : 0);
+                              setUseEmbedPlayer(false);
+                              const nd = first?.server_data || [];
+                              if (nd.length > 0)
+                                router.push(
+                                  `/watch/${slug}?ep=${nd[0].slug || nd[0].name}`,
+                                );
+                            }
+                          }}
+                          className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all",
+                            activeServerType !== "thuyet-minh"
+                              ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-300"
+                              : "bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/70 hover:border-white/20",
+                          )}
+                        >
+                          <Subtitles size={13} />
+                          Phụ đề
+                          <span className="text-[9px] font-bold bg-white/10 rounded-full px-1.5 py-0.5">
+                            {subEps.length}
+                          </span>
+                        </button>
+                      )}
+                      {hasDub && (
+                        <button
+                          onClick={() => {
+                            setActiveServerType("thuyet-minh");
+                            const first = dubEps[0];
+                            if (first) {
+                              const idx = episodes.indexOf(first);
+                              setCurrentServer(idx >= 0 ? idx : 0);
+                              setUseEmbedPlayer(false);
+                              const nd = first?.server_data || [];
+                              if (nd.length > 0)
+                                router.push(
+                                  `/watch/${slug}?ep=${nd[0].slug || nd[0].name}`,
+                                );
+                            }
+                          }}
+                          className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all",
+                            activeServerType === "thuyet-minh"
+                              ? "bg-amber-500/15 border-amber-500/50 text-amber-300"
+                              : "bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/70 hover:border-white/20",
+                          )}
+                        >
+                          <Mic size={13} />
+                          Thuyết minh
+                          <span className="text-[9px] font-bold bg-white/10 rounded-full px-1.5 py-0.5">
+                            {dubEps.length}
+                          </span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* ── Server trong nhóm đang chọn ── */}
+                    {activeGroup.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {activeGroup.map((ep) => {
+                          const i = episodes.indexOf(ep);
+                          const isActive = i === currentServer;
+                          const hasFailed = failedServers.includes(i);
+                          const sourceColors: Record<string, string> = {
+                            kkphim: isActive
+                              ? "bg-blue-500/15 border-blue-500/50 text-blue-300"
+                              : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-blue-500/30 hover:text-blue-300/70",
+                            ophim: isActive
+                              ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-300"
+                              : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-emerald-500/30 hover:text-emerald-300/70",
+                            nguonc: isActive
+                              ? "bg-amber-500/15 border-amber-500/50 text-amber-300"
+                              : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-amber-500/30 hover:text-amber-300/70",
+                            vsmov: isActive
+                              ? "bg-purple-500/15 border-purple-500/50 text-purple-300"
+                              : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-purple-500/30 hover:text-purple-300/70",
+                          };
+                          const colorClass =
+                            sourceColors[ep._source] || sourceColors.kkphim;
+
+                          return (
+                            <button
+                              key={i}
+                              onClick={() => {
+                                setCurrentServer(i);
+                                setCurrentTypeServer(i);
+                                setUseEmbedPlayer(false);
+                                const nd = ep?.server_data || [];
+                                if (nd.length > 0)
+                                  router.push(
+                                    `/watch/${slug}?ep=${nd[0].slug || nd[0].name}`,
+                                  );
+                              }}
+                              disabled={hasFailed}
+                              className={cn(
+                                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-medium transition-all",
+                                hasFailed
+                                  ? "opacity-30 cursor-not-allowed line-through bg-white/[0.02] border-white/[0.05] text-white/30"
+                                  : colorClass,
+                              )}
+                            >
+                              <Server size={11} />
+                              {ep.server_name}
+                              {/* Đang fallback sang server này */}
+                              {isActive && isFallbacking && (
+                                <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+                              )}
+                              {/* Đang active và load bình thường */}
+                              {isActive && !isFallbacking && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
+                              )}
+                              {ep.server_data?.length > 0 && (
+                                <span className="text-[9px] bg-white/10 rounded-full px-1.5 py-0.5">
+                                  {ep.server_data.length} tập
+                                </span>
+                              )}
+                              {hasFailed && (
+                                <AlertTriangle
+                                  size={9}
+                                  className="text-red-400"
+                                />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
-
-                  {/* ── Server trong nhóm đang chọn ── */}
-                  {activeGroup.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {activeGroup.map((ep) => {
-                        const i = episodes.indexOf(ep);
-                        const isActive = i === currentServer;
-                        const hasFailed = failedServers.includes(i);
-                        const sourceColors: Record<string, string> = {
-                          kkphim: isActive
-                            ? "bg-blue-500/15 border-blue-500/50 text-blue-300"
-                            : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-blue-500/30 hover:text-blue-300/70",
-                          ophim: isActive
-                            ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-300"
-                            : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-emerald-500/30 hover:text-emerald-300/70",
-                          nguonc: isActive
-                            ? "bg-amber-500/15 border-amber-500/50 text-amber-300"
-                            : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-amber-500/30 hover:text-amber-300/70",
-                          vsmov: isActive
-                            ? "bg-purple-500/15 border-purple-500/50 text-purple-300"
-                            : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-purple-500/30 hover:text-purple-300/70",
-                        };
-                        const colorClass = sourceColors[ep._source] || sourceColors.kkphim;
-
-                        return (
-                          <button
-                            key={i}
-                            onClick={() => {
-                              setCurrentServer(i);
-                              setCurrentTypeServer(i);
-                              setUseEmbedPlayer(false);
-                              const nd = ep?.server_data || [];
-                              if (nd.length > 0)
-                                router.push(`/watch/${slug}?ep=${nd[0].slug || nd[0].name}`);
-                            }}
-                            disabled={hasFailed}
-                            className={cn(
-                              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-medium transition-all",
-                              hasFailed
-                                ? "opacity-30 cursor-not-allowed line-through bg-white/[0.02] border-white/[0.05] text-white/30"
-                                : colorClass,
-                            )}
-                          >
-                            <Server size={11} />
-                            {ep.server_name}
-                            {/* Đang fallback sang server này */}
-                            {isActive && isFallbacking && (
-                              <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
-                            )}
-                            {/* Đang active và load bình thường */}
-                            {isActive && !isFallbacking && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
-                            )}
-                            {ep.server_data?.length > 0 && (
-                              <span className="text-[9px] bg-white/10 rounded-full px-1.5 py-0.5">
-                                {ep.server_data.length} tập
-                              </span>
-                            )}
-                            {hasFailed && <AlertTriangle size={9} className="text-red-400" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
+                );
+              })()}
 
             {/* 4. EPISODE LIST — list style, not tiny squares */}
             <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl overflow-hidden">
@@ -986,10 +1027,14 @@ export default function WatchPage() {
             <details className="group bg-white/[0.02] border border-white/[0.05] rounded-xl overflow-hidden">
               <summary className="flex items-center justify-between px-4 py-3 cursor-pointer text-xs font-semibold text-white/40 hover:text-white/70 transition-colors select-none list-none">
                 <span className="flex items-center gap-2">
-                  <kbd className="bg-white/8 border border-white/10 px-1.5 py-0.5 rounded text-[9px] font-mono">⌨</kbd>
+                  <kbd className="bg-white/8 border border-white/10 px-1.5 py-0.5 rounded text-[9px] font-mono">
+                    ⌨
+                  </kbd>
                   Phím tắt
                 </span>
-                <span className="text-[10px] group-open:rotate-180 transition-transform">▼</span>
+                <span className="text-[10px] group-open:rotate-180 transition-transform">
+                  ▼
+                </span>
               </summary>
               <div className="px-4 pb-4 grid grid-cols-2 gap-x-6 gap-y-2 text-[11px]">
                 {[

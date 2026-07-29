@@ -115,7 +115,9 @@ function filterM3u8(content: string, originalUrl: string): string {
     // Xử lý EXT-X-DISCONTINUITY (dấu hiệu chèn quảng cáo)
     if (line === "#EXT-X-DISCONTINUITY") {
       // Kiểm tra segment tiếp theo có phải quảng cáo không
-      const nextSegment = lines.slice(i + 1).find((l) => !l.startsWith("#") && l.trim());
+      const nextSegment = lines
+        .slice(i + 1)
+        .find((l) => !l.startsWith("#") && l.trim());
       if (nextSegment && isAdUrl(resolveUrl(baseUrl, nextSegment.trim()))) {
         skipNext = true;
         removedAds++;
@@ -160,7 +162,10 @@ function filterM3u8(content: string, originalUrl: string): string {
     }
 
     // Xử lý playlist con (master m3u8 → variant streams)
-    if (line.startsWith("#EXT-X-STREAM-INF") || line.startsWith("#EXT-X-MEDIA")) {
+    if (
+      line.startsWith("#EXT-X-STREAM-INF") ||
+      line.startsWith("#EXT-X-MEDIA")
+    ) {
       filtered.push(line);
       // Dòng tiếp theo là URL của variant
       const nextLine = lines[i + 1]?.trim();

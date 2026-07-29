@@ -18,6 +18,8 @@ model User {
   displayName  String?
   avatarUrl    String?
   bio          String?
+  role         String   @default("USER") // "ADMIN" | "USER"
+  isBanned     Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   isEmailVerified Boolean  @default(false)
@@ -37,6 +39,7 @@ model User {
   verificationTokens VerificationToken[]
   resetTokens        ResetPasswordToken[]
   watchHistories     WatchHistory[]
+  auditLogs          AuditLog[]     @relation("AdminAuditLogs")
 
   @@map("users")
 }
@@ -124,6 +127,8 @@ model Movie {
   language      String?
   runtime       Int?     // phút
   imdbId        String?
+  isHidden      Boolean  @default(false)
+  sources       String[] @default([])
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -134,6 +139,22 @@ model Movie {
   watchHistories WatchHistory[]
 
   @@map("movies")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  adminEmail String
+  action     String   // e.g. "LOCK_USER", "UNLOCK_USER", "HIDE_MOVIE", "UNHIDE_MOVIE", "EDIT_METADATA", "FORCE_CLOSE_PARTY"
+  targetId   String?
+  details    String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  admin User @relation("AdminAuditLogs", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
 }
 
 model Watchlist {

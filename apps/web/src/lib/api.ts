@@ -217,7 +217,17 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
   if (!trimmed) {
     return {
       status: "success",
-      data: { items: [], params: { pagination: { currentPage: 1, totalItems: 0, totalItemsPerPage: limit, totalPages: 1 } } },
+      data: {
+        items: [],
+        params: {
+          pagination: {
+            currentPage: 1,
+            totalItems: 0,
+            totalItemsPerPage: limit,
+            totalPages: 1,
+          },
+        },
+      },
       _sources: [],
     };
   }
@@ -228,28 +238,50 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
   const encodedKeyword = encodeURIComponent(primaryKeyword);
 
   // Gọi song song tất cả nguồn với primary keyword
-  const requests: Array<{ source: MovieSource; request: () => Promise<unknown> }> = [
-    { source: "kkphim", request: () => kkphimApi.search(primaryKeyword, page, limit) },
+  const requests: Array<{
+    source: MovieSource;
+    request: () => Promise<unknown>;
+  }> = [
+    {
+      source: "kkphim",
+      request: () => kkphimApi.search(primaryKeyword, page, limit),
+    },
     {
       source: "ophim",
-      request: () => fetchOphim(`/v1/api/tim-kiem?keyword=${encodedKeyword}&page=${page}&limit=${limit}`),
+      request: () =>
+        fetchOphim(
+          `/v1/api/tim-kiem?keyword=${encodedKeyword}&page=${page}&limit=${limit}`,
+        ),
     },
     {
       source: "nguonc",
-      request: () => fetchNguonc(`/films/search?keyword=${encodedKeyword}&page=${page}`),
+      request: () =>
+        fetchNguonc(`/films/search?keyword=${encodedKeyword}&page=${page}`),
     },
-    { source: "vsmov", request: () => vsmovApi.search(primaryKeyword, page, limit) },
+    {
+      source: "vsmov",
+      request: () => vsmovApi.search(primaryKeyword, page, limit),
+    },
   ];
 
   // Nếu query có biến thể khác (bỏ dấu), gọi thêm với variant thứ 2
-  const extraRequests: Array<{ source: MovieSource; request: () => Promise<unknown> }> = [];
+  const extraRequests: Array<{
+    source: MovieSource;
+    request: () => Promise<unknown>;
+  }> = [];
   if (variants.length > 1 && variants[1] !== primaryKeyword) {
     const encodedVariant = encodeURIComponent(variants[1]);
     extraRequests.push(
-      { source: "kkphim", request: () => kkphimApi.search(variants[1], page, limit) },
+      {
+        source: "kkphim",
+        request: () => kkphimApi.search(variants[1], page, limit),
+      },
       {
         source: "ophim",
-        request: () => fetchOphim(`/v1/api/tim-kiem?keyword=${encodedVariant}&page=${page}&limit=${limit}`),
+        request: () =>
+          fetchOphim(
+            `/v1/api/tim-kiem?keyword=${encodedVariant}&page=${page}&limit=${limit}`,
+          ),
       },
     );
   }
