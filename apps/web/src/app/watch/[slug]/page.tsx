@@ -44,23 +44,39 @@ type ServerType = "vietsub" | "thuyet-minh" | "raw";
 
 function detectServerType(serverName: string, lang?: string): ServerType {
   const name = (serverName || "").toLowerCase();
-  const l = (lang || "").toLowerCase();
-  if (
-    name.includes("thuyet minh") ||
-    name.includes("thuyết minh") ||
-    name.includes("tm") ||
-    l.includes("thuyet minh") ||
-    l.includes("thuyết minh") ||
-    l.includes("lồng tiếng")
-  )
-    return "thuyet-minh";
+
+  // 1. Prioritize explicit server_name FIRST so Vietsub servers are never incorrectly classified as Thuyết Minh
   if (
     name.includes("vietsub") ||
     name.includes("viet sub") ||
-    l.includes("vietsub") ||
-    l.includes("sub")
-  )
+    name.includes("sub")
+  ) {
     return "vietsub";
+  }
+
+  if (
+    name.includes("thuyet minh") ||
+    name.includes("thuyết minh") ||
+    name.includes("long tieng") ||
+    name.includes("lồng tiếng") ||
+    name.includes("thuyếtminh") ||
+    name.includes("lồngtiếng") ||
+    name.includes("tm")
+  ) {
+    return "thuyet-minh";
+  }
+
+  // 2. Fallback to film's default lang only when server_name is neutral (e.g. "KKPhim #1")
+  const l = (lang || "").toLowerCase();
+  if (
+    l.includes("thuyet minh") ||
+    l.includes("thuyết minh") ||
+    l.includes("long tieng") ||
+    l.includes("lồng tiếng")
+  ) {
+    return "thuyet-minh";
+  }
+
   return "vietsub";
 }
 
