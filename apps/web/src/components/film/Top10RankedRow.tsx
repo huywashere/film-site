@@ -144,13 +144,15 @@ export function Top10RankedRow({
           })}
         </Swiper>
 
-        {/* Custom Navigation Overlay Buttons */}
-        <button className="top10-prev absolute left-0 top-1/2 -translate-y-1/2 z-20 w-10 h-24 bg-black/70 hover:bg-netflixRed text-white rounded-r-2xl border-r border-y border-white/10 backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-2xl cursor-pointer">
-          <ChevronLeft size={24} />
-        </button>
-        <button className="top10-next absolute right-0 top-1/2 -translate-y-1/2 z-20 w-10 h-24 bg-black/70 hover:bg-netflixRed text-white rounded-l-2xl border-l border-y border-white/10 backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-2xl cursor-pointer">
-          <ChevronRight size={24} />
-        </button>
+        {/* Custom Navigation Overlay Buttons (Stacked Card Pair matching reference image) */}
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2">
+          <button className="top10-next w-10 h-16 bg-[#202430] hover:bg-[#2e3648] text-white/80 hover:text-white rounded-xl border border-white/10 backdrop-blur-md flex items-center justify-center transition-all duration-200 shadow-xl cursor-pointer hover:scale-105 active:scale-95">
+            <ChevronRight size={18} />
+          </button>
+          <button className="top10-prev w-10 h-16 bg-[#202430] hover:bg-[#2e3648] text-white/80 hover:text-white rounded-xl border border-white/10 backdrop-blur-md flex items-center justify-center transition-all duration-200 shadow-xl cursor-pointer hover:scale-105 active:scale-95">
+            <ChevronLeft size={18} />
+          </button>
+        </div>
       </div>
     </div>
   );

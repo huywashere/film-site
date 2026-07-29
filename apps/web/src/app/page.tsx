@@ -50,64 +50,59 @@ const StyledSwiperContainer = styled.div`
   position: relative;
 
   .swiper {
-    padding: 12px 12px 12px 4px;
+    padding: 12px 56px 12px 4px;
   }
 
   .swiper-button-prev,
   .swiper-button-next {
-    color: #ffffff !important;
-    background: rgba(15, 18, 22, 0.8) !important;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8) !important;
-    width: 44px !important;
-    height: 90px !important;
+    color: #9ca3af !important;
+    background: #202430 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7) !important;
+    width: 42px !important;
+    height: 72px !important;
+    border-radius: 14px !important;
     margin-top: 0 !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    opacity: 0 !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    opacity: 0.9 !important;
     z-index: 30 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-  }
-
-  &:hover .swiper-button-prev,
-  &:hover .swiper-button-next {
-    opacity: 1 !important;
-  }
-
-  .swiper-button-prev {
-    left: 0 !important;
-    right: auto !important;
-    border-radius: 0 16px 16px 0 !important;
-  }
-
-  .swiper-button-next {
-    right: 0 !important;
+    right: 4px !important;
     left: auto !important;
-    border-radius: 16px 0 0 16px !important;
+  }
+
+  /* Top button: Next (>) */
+  .swiper-button-next {
+    top: calc(50% - 40px) !important;
+    transform: translateY(-50%) !important;
+  }
+
+  /* Bottom button: Prev (<) */
+  .swiper-button-prev {
+    top: calc(50% + 40px) !important;
+    transform: translateY(-50%) !important;
   }
 
   .swiper-button-prev:hover,
   .swiper-button-next:hover {
     color: #ffffff !important;
-    background: #e50914 !important;
-    border-color: #e50914 !important;
-    transform: translateY(-50%) scale(1.06) !important;
+    background: #2e3648 !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    opacity: 1 !important;
+    transform: translateY(-50%) scale(1.05) !important;
   }
 
   .swiper-button-disabled {
-    opacity: 0 !important;
-    pointer-events: none !important;
+    opacity: 0.3 !important;
+    cursor: not-allowed !important;
   }
 
   .swiper-button-prev::after,
   .swiper-button-next::after {
-    font-size: 16px !important;
-    font-weight: 900 !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
   }
 `;
 
@@ -791,8 +786,8 @@ export default function HomePage() {
         <HeroBanner films={bannerFilms} />
       )}
 
-      {/* Main Row Content — full layout spanning across available screen space */}
-      <div className="w-full px-4 md:px-8 relative pt-6 md:pt-10 z-30">
+      {/* Main Row Content — full layout with safe left padding for vertical sidebar */}
+      <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 relative pt-6 md:pt-10 z-30">
         {/* Continue Watching Row */}
         <ContinueWatchingRow />
         {/* TOP 10 RANKED MOVIES (Metallic Numbers Netflix Style) */}
