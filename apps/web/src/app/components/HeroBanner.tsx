@@ -78,7 +78,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
         : "text-4xl md:text-7xl";
 
   return (
-    <div className="relative h-[calc(100vh+100px)] min-h-[700px] w-full overflow-hidden bg-background">
+    <div className="relative h-[78vh] min-h-[500px] md:h-[calc(100vh+80px)] md:min-h-[680px] w-full overflow-hidden bg-background">
       {/* Background Image */}
       <div className="absolute inset-0 w-full h-full">
         {backdrop && (
@@ -108,29 +108,34 @@ export default function HeroBanner({ films }: HeroBannerProps) {
         className="absolute inset-0 z-10 pointer-events-none"
         style={{
           background: `
-            linear-gradient(to right, var(--background) 0%, rgba(var(--background-rgb), 0.7) 35%, transparent 65%),
-            linear-gradient(to top, var(--background) 0%, rgba(var(--background-rgb), 0.95) 15%, rgba(var(--background-rgb), 0.6) 40%, transparent 100%),
-            rgba(0, 0, 0, 0.05)
+            linear-gradient(to right, var(--background) 0%, rgba(var(--background-rgb), 0.75) 45%, transparent 80%),
+            linear-gradient(to top, var(--background) 0%, rgba(var(--background-rgb), 0.95) 20%, rgba(var(--background-rgb), 0.5) 50%, transparent 100%),
+            rgba(0, 0, 0, 0.1)
           `,
         }}
       />
 
       {/* Content */}
       <div className="absolute inset-0 z-20 flex items-center">
-        <div className="w-full pl-24 pr-4 md:pl-28 md:pr-8">
+        <div className="w-full px-4 sm:pl-16 md:pl-28 md:pr-8 pt-8 md:pt-0">
           <div className="max-w-2xl">
             <div
               key={current}
-              className="flex flex-col space-y-4 md:space-y-5 animate-fade-in-up"
+              className="flex flex-col space-y-3 sm:space-y-4 md:space-y-5 animate-fade-in-up"
             >
               {/* Badges */}
-              <div className="flex items-center space-x-3">
-                <span className="bg-neutral-800 text-white dark:bg-white dark:text-black text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-sm shadow">
-                  NEW
+              <div className="flex items-center space-x-2.5">
+                <span className="bg-netflixRed text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-md">
+                  HOT
                 </span>
                 {film.year && (
-                  <span className="text-foreground/60 text-xs font-semibold">
+                  <span className="text-foreground/75 text-xs font-bold">
                     {film.year}
+                  </span>
+                )}
+                {film.quality && (
+                  <span className="bg-white/10 text-neutral-200 text-[10px] font-bold px-1.5 py-0.5 rounded border border-white/10">
+                    {film.quality}
                   </span>
                 )}
               </div>
@@ -146,28 +151,28 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                 {film.name}
               </h1>
               {film.origin_name && (
-                <p className="text-base md:text-xl text-foreground/75 font-semibold tracking-wide -mt-2">
+                <p className="text-sm sm:text-base md:text-xl text-foreground/75 font-semibold tracking-wide -mt-1 sm:-mt-2 line-clamp-1">
                   {film.origin_name}
                 </p>
               )}
 
               {/* Description */}
-              <p className="text-xs md:text-sm text-foreground/80 max-w-xl leading-relaxed line-clamp-3">
+              <p className="text-xs md:text-sm text-foreground/80 max-w-xl leading-relaxed line-clamp-2 sm:line-clamp-3">
                 {t("home.heroDesc")}
               </p>
 
               {/* Action Buttons */}
-              <div className="flex items-center space-x-3 pt-2">
+              <div className="flex items-center space-x-2.5 sm:space-x-3 pt-1 sm:pt-2">
                 <Link
                   href={`/watch/${film.slug}`}
-                  className="flex items-center space-x-2 bg-neutral-800 hover:bg-neutral-900 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-black px-7 py-3 rounded-full text-xs font-black tracking-wider uppercase transition-colors shadow-md"
+                  className="flex items-center space-x-2 bg-neutral-800 hover:bg-neutral-900 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-black px-5 py-2.5 sm:px-7 sm:py-3 rounded-full text-xs font-black tracking-wider uppercase transition-colors shadow-md shrink-0"
                 >
                   <Play size={14} fill="currentColor" />
                   <span>Xem Phim</span>
                 </Link>
                 <Link
                   href={`/film/${film.slug}`}
-                  className="flex items-center space-x-2 bg-black/5 hover:bg-black/10 text-neutral-800 border border-black/10 dark:bg-white/10 dark:hover:bg-white/25 dark:text-white px-7 py-3 rounded-full text-xs font-black tracking-wider uppercase transition-colors backdrop-blur-sm"
+                  className="flex items-center space-x-2 bg-black/5 hover:bg-black/10 text-neutral-800 border border-black/10 dark:bg-white/10 dark:hover:bg-white/25 dark:text-white px-5 py-2.5 sm:px-7 sm:py-3 rounded-full text-xs font-black tracking-wider uppercase transition-colors backdrop-blur-sm shrink-0"
                 >
                   <Info size={14} />
                   <span>{t("home.details")}</span>
@@ -179,7 +184,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
       </div>
 
       {/* Thumbnail Indicators */}
-      <div className="absolute right-4 sm:right-8 md:right-12 bottom-6 sm:bottom-8 z-30 flex items-center gap-1.5 sm:gap-2">
+      <div className="absolute right-3 sm:right-8 md:right-12 bottom-16 sm:bottom-8 z-30 flex items-center gap-1.5 sm:gap-2">
         {featured.map((item, i) => {
           const thumbImg =
             resolveImageUrl(item.thumb_url) ||

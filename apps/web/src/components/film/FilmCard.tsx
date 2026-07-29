@@ -213,19 +213,19 @@ export function FilmCard({
 
         {/* ── TOP-LEFT AUDIO BADGE ── */}
         {langBadge && (
-          <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-md border border-white/15 text-white font-semibold text-[10px] px-2 py-0.5 rounded-md shadow z-10">
+          <div className="absolute top-1 left-1 sm:top-2 sm:left-2 bg-black/75 backdrop-blur-md border border-white/15 text-white font-semibold text-[8px] sm:text-[10px] px-1 sm:px-2 py-0.5 rounded shadow z-10">
             {langBadge}
           </div>
         )}
 
         {/* ── TOP-RIGHT QUALITY BADGE ── */}
-        <div className="absolute top-2 right-2 bg-blue-600 text-white font-black text-[10px] px-1.5 py-0.5 rounded-md uppercase tracking-wide shadow z-10">
+        <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-blue-600 text-white font-black text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded uppercase tracking-wide shadow z-10">
           {qualityBadge}
         </div>
 
         {/* ── BOTTOM-LEFT EPISODE STATUS BADGE ── */}
         {episodeBadge && (
-          <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-md border border-white/15 text-neutral-200 font-medium text-[10px] px-2 py-0.5 rounded-md shadow z-10">
+          <div className="absolute bottom-1 left-1 sm:bottom-2 sm:left-2 bg-black/85 backdrop-blur-md border border-white/15 text-neutral-200 font-medium text-[8px] sm:text-[10px] px-1 sm:px-2 py-0.5 rounded shadow z-10 line-clamp-1 max-w-[85%]">
             {episodeBadge}
           </div>
         )}
@@ -236,38 +236,38 @@ export function FilmCard({
             <button
               onClick={handleWatchlist}
               className={cn(
-                "absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/70 border border-white/20 flex items-center justify-center text-white hover:bg-blue-600 hover:border-blue-500 transition-all",
+                "absolute top-2 right-2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/70 border border-white/20 flex items-center justify-center text-white hover:bg-blue-600 hover:border-blue-500 transition-all",
                 saved ? "bg-blue-600 text-white border-blue-500" : "",
               )}
               title={saved ? "Xóa khỏi Watchlist" : "Thêm vào Watchlist"}
             >
-              <Bookmark size={14} fill={saved ? "currentColor" : "none"} />
+              <Bookmark size={13} fill={saved ? "currentColor" : "none"} />
             </button>
           )}
 
-          <div className="w-11 h-11 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/40 transform scale-90 group-hover:scale-100 transition-all duration-300">
-            <Play size={18} fill="currentColor" className="ml-0.5" />
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/40 transform scale-90 group-hover:scale-100 transition-all duration-300">
+            <Play size={16} fill="currentColor" className="ml-0.5" />
           </div>
         </div>
       </div>
 
       {/* ── Clean Metadata Below Poster ── */}
       {!hideDetails && (
-        <div className="flex flex-col text-left mt-2 px-0.5 space-y-1">
+        <div className="flex flex-col text-left mt-1.5 sm:mt-2 px-0.5 space-y-0.5 sm:space-y-1">
           {/* Title - Clean, non-forced case, max 2 lines */}
-          <h4 className="text-xs sm:text-sm font-semibold text-neutral-100 line-clamp-2 leading-snug group-hover:text-blue-400 transition-colors">
+          <h4 className="text-[11px] sm:text-sm font-semibold text-neutral-100 line-clamp-2 leading-tight group-hover:text-blue-400 transition-colors">
             {title}
           </h4>
 
           {/* Subtitle Row with Origin/Year & Sleek Rating */}
-          <div className="flex items-center justify-between text-[11px] text-neutral-400 gap-2">
+          <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-neutral-400 gap-1 sm:gap-2">
             <span className="line-clamp-1 flex-1 font-normal text-neutral-400">
               {film.origin_name || (film.year ? `${film.year}` : "")}
             </span>
 
             {ratingVal && Number(ratingVal) > 0 && (
-              <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-md font-bold text-[10px] shrink-0">
-                <Star size={11} fill="currentColor" />
+              <div className="flex items-center gap-0.5 sm:gap-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 px-1 sm:px-1.5 py-0.5 rounded font-bold text-[9px] sm:text-[10px] shrink-0">
+                <Star size={10} fill="currentColor" />
                 <span>{Number(ratingVal).toFixed(1)}</span>
               </div>
             )}

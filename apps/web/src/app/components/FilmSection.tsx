@@ -68,23 +68,25 @@ export default function FilmSection({
         </Link>
       </div>
 
-      {/* Simple horizontal scroll instead of Swiper for better performance */}
+      {/* Horizontal scroll tuned for 4 movies per view on mobile */}
       <div className="overflow-x-auto pb-4 scrollbar-hide">
-        <div className="flex gap-4 px-1">
+        <div className="flex gap-2 sm:gap-4 px-1">
           {isLoading
-            ? Array.from({ length: 6 }).map((_, i) => (
+            ? Array.from({ length: 8 }).map((_, i) => (
                 <div
                   key={`skeleton-${i}`}
-                  style={{ width: "200px", flexShrink: 0 }}
+                  className="w-[calc(25%-7px)] min-w-[85px] max-w-[200px] sm:w-[150px] md:w-[190px] lg:w-[210px] flex-shrink-0"
                 >
-                  <FilmCardSkeleton width={200} hideDetails={false} />
+                  <FilmCardSkeleton hideDetails={false} />
                 </div>
               ))
-            : films.slice(0, 12).map((film) => (
-                <div key={film.slug} style={{ width: "200px", flexShrink: 0 }}>
+            : films.slice(0, 16).map((film) => (
+                <div
+                  key={film.slug}
+                  className="w-[calc(25%-7px)] min-w-[85px] max-w-[200px] sm:w-[150px] md:w-[190px] lg:w-[210px] flex-shrink-0"
+                >
                   <FilmCard
                     film={film}
-                    width={200}
                     variant="standard"
                     hideDetails={false}
                   />
