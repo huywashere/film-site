@@ -57,7 +57,7 @@ export function Top10RankedRow({
           freeMode={{ enabled: true, sticky: false }}
           spaceBetween={16}
           slidesPerView="auto"
-          className="!py-4 !px-1"
+          className="!py-4 !pl-1 !pr-20"
         >
           {top10.map((film, index) => {
             const rank = index + 1;
@@ -144,8 +144,8 @@ export function Top10RankedRow({
           })}
         </Swiper>
 
-        {/* Custom Navigation Overlay Buttons (Stacked Card Pair matching reference image) */}
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2">
+        {/* Custom Navigation Overlay Buttons (Stacked Card Pair placed outside movie cards) */}
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2">
           <button className="top10-next w-10 h-16 bg-[#202430] hover:bg-[#2e3648] text-white/80 hover:text-white rounded-xl border border-white/10 backdrop-blur-md flex items-center justify-center transition-all duration-200 shadow-xl cursor-pointer hover:scale-105 active:scale-95">
             <ChevronRight size={18} />
           </button>
