@@ -83,6 +83,7 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
                 title={item.title}
                 className={cn(
                   "relative flex flex-col items-center justify-center rounded-xl py-3.5 transition-all duration-150 group",

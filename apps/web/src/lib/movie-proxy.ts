@@ -97,10 +97,11 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
     return true; // Guarantee app movie fetches always work 100%
   }
 
-  function headers(cacheStatus: string): HeadersInit {
+  function headers(cacheStatus: string, ttlSeconds: number = 300): HeadersInit {
     return {
       "X-Cache": cacheStatus,
       "X-Source": config.sourceName,
+      "Cache-Control": `public, s-maxage=${ttlSeconds}, stale-while-revalidate=${ttlSeconds * 2}`,
     };
   }
 
@@ -147,7 +148,7 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
         const raw = await client.get(cacheKey);
         if (raw) {
           return NextResponse.json(JSON.parse(raw), {
-            headers: headers("HIT-REDIS"),
+            headers: headers("HIT-REDIS", ttlSeconds),
           });
         }
       } catch {
@@ -158,7 +159,7 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
     const memoryEntry = memoryCache.get(cacheKey);
     if (memoryEntry && memoryEntry.expiry > Date.now()) {
       return NextResponse.json(memoryEntry.data, {
-        headers: headers("HIT-MEMORY"),
+        headers: headers("HIT-MEMORY", ttlSeconds),
       });
     }
 
@@ -186,7 +187,7 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
       memoryCache.set(cacheKey, { data, expiry: Date.now() + memoryTtlMs });
       evictStaleMemoryEntries();
 
-      return NextResponse.json(data, { headers: headers("MISS") });
+      return NextResponse.json(data, { headers: headers("MISS", ttlSeconds) });
     } catch (error: unknown) {
       if (error instanceof CircuitOpenError) {
         if (memoryEntry) {
