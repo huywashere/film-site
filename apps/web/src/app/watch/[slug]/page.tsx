@@ -826,6 +826,7 @@ export default function WatchPage() {
                       className="w-full h-full"
                       allowFullScreen
                       allow="autoplay; fullscreen"
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
                       title={`${film?.name} - ${currentEpData?.name}`}
                       onLoad={() => clearLoadTimeout()}
                       onError={() => tryNextServer("iframe-error")}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// ── Danh sách domain quảng cáo cần block ─────────────────────────
+// ── Danh sách domain & keyword quảng cáo/cờ bạc cần block triệt để ──
 const AD_DOMAINS = [
   "googlesyndication",
   "doubleclick",
@@ -40,7 +40,6 @@ const AD_DOMAINS = [
   "adf.ly",
   "shorte.st",
   "ouo.io",
-  // Các domain quảng cáo phổ biến trong stream phim Việt
   "cdn-ads",
   "ad-cdn",
   "ads-cdn",
@@ -48,6 +47,42 @@ const AD_DOMAINS = [
   "preroll",
   "midroll",
   "postroll",
+  // Các domain nhà cái, cờ bạc, casino phổ biến trong stream API phim Việt
+  "9922",
+  "8877",
+  "789bet",
+  "shbet",
+  "jun88",
+  "hi88",
+  "f8bet",
+  "okvip",
+  "new88",
+  "bk8",
+  "w88",
+  "fun88",
+  "12bet",
+  "v9bet",
+  "fb88",
+  "m88",
+  "78win",
+  "kubet",
+  "ku11",
+  "kucasino",
+  "thabet",
+  "88online",
+  "choi88",
+  "win79",
+  "rikvip",
+  "go88",
+  "sunwin",
+  "b52",
+  "macao",
+  "tai-xiu",
+  "taixiu",
+  "nohu",
+  "quayhu",
+  "gamebai",
+  "baccarat",
 ];
 
 // ── Pattern nhận biết segment quảng cáo trong HLS ────────────────
@@ -57,9 +92,15 @@ const AD_SEGMENT_PATTERNS = [
   /\/preroll\//i,
   /\/midroll\//i,
   /\/postroll\//i,
-  /ad[_-]segment/i,
+  /ad[_-]?segment/i,
   /commercial/i,
   /sponsor/i,
+  /betting/i,
+  /casino/i,
+  /nha[_-]?cai/i,
+  /quang[_-]?cao/i,
+  /qc[_-]?/i,
+  /banner/i,
 ];
 
 // ── Kiểm tra URL có phải quảng cáo không ─────────────────────────
