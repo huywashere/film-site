@@ -5,9 +5,7 @@ import { clientIpFromRequest } from "@/lib/client-ip";
 
 export const dynamic = "force-dynamic";
 
-/** Wikipedia titles are short; cap the input so it can't be used as a cache-key bomb. */
 const MAX_NAME_LENGTH = 120;
-
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 let redis: Redis | null = null;
 let isRedisDisabled = false;
@@ -19,20 +17,15 @@ function getRedisClient(): Redis | null {
   try {
     redis = new Redis(REDIS_URL, {
       maxRetriesPerRequest: 1,
-      connectTimeout: 500, // Fail fast in 0.5s
+      connectTimeout: 500,
     });
 
-    redis.on("error", (err) => {
-      console.warn(
-        "Redis connection failed on frontend, disabling Redis cache to prevent request hangs.",
-      );
+    redis.on("error", () => {
       isRedisDisabled = true;
       if (redis) {
         try {
           redis.disconnect();
-        } catch (e) {
-          // ignore disconnect error
-        }
+        } catch (e) {}
         redis = null;
       }
     });
@@ -63,18 +56,21 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const name = rawName.trim().slice(0, MAX_NAME_LENGTH);
+  // Clean actor name: remove role suffixes like (voice), (lồng tiếng), etc.
+  const name = rawName
+    .replace(/\(.*?\)/g, "")
+    .replace(/[:\-–—].*/g, "")
+    .trim()
+    .slice(0, MAX_NAME_LENGTH);
+
   if (!name) {
-    return NextResponse.json(
-      { error: "Name parameter required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ url: null });
   }
 
-  const cacheKey = `cast-image:${name.toLowerCase()}`;
+  const cacheKey = `cast-image-v2:${name.toLowerCase()}`;
   const client = getRedisClient();
 
-  // 1. Check Redis Cache (only if online and ready)
+  // 1. Check Redis Cache
   if (client && client.status === "ready") {
     try {
       const cached = await client.get(cacheKey);
@@ -83,27 +79,26 @@ export async function GET(request: NextRequest) {
           url: cached === "placeholder" ? null : cached,
         });
       }
-    } catch (e) {
-      console.warn(
-        "Redis cache read error, falling back to direct Wikipedia query.",
-      );
-    }
+    } catch (e) {}
   }
 
-  // 2. Fetch from TMDB API first, then Wikipedia fallback
   let imageUrl = "";
   const TMDB_API_KEY =
     process.env.TMDB_API_KEY || "f85dbd29011db19e75f5d29028fd096d";
 
+  // 2. Query TMDB API (Global Search - No language restriction)
   try {
     if (TMDB_API_KEY) {
       const tmdbRes = await fetch(
-        `https://api.themoviedb.org/3/search/person?query=${encodeURIComponent(name)}&api_key=${TMDB_API_KEY}&language=vi-VN`,
+        `https://api.themoviedb.org/3/search/person?query=${encodeURIComponent(name)}&api_key=${TMDB_API_KEY}&include_adult=false`,
         { next: { revalidate: 86400 } },
       );
       if (tmdbRes.ok) {
         const tmdbData = await tmdbRes.json();
-        const person = tmdbData?.results?.[0];
+        const person = tmdbData?.results?.find(
+          (p: any) => p && p.profile_path,
+        ) || tmdbData?.results?.[0];
+
         if (person?.profile_path) {
           imageUrl = `https://image.tmdb.org/t/p/w185${person.profile_path}`;
         }
@@ -113,59 +108,42 @@ export async function GET(request: NextRequest) {
     console.warn("TMDB person search query failed:", err);
   }
 
-  try {
-    if (!imageUrl) {
-      // Try Vietnamese Wikipedia first
-      const viRes = await fetch(
-        `https://vi.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&piprop=thumbnail&pithumbsize=200&titles=${encodeURIComponent(name)}`,
-        { next: { revalidate: 86400 } }, // Cache fetch for 24 hours
-      );
-      const viData = await viRes.json();
-      const viPages = viData?.query?.pages;
-      if (viPages) {
-        const pageId = Object.keys(viPages)[0];
-        if (pageId && pageId !== "-1") {
-          imageUrl = viPages[pageId]?.thumbnail?.source || "";
-        }
-      }
-    }
-
-    // Try English Wikipedia if Vietnamese has no image
-    if (!imageUrl) {
-      const enRes = await fetch(
-        `https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&piprop=thumbnail&pithumbsize=200&titles=${encodeURIComponent(name)}`,
+  // 3. Fallback to Wikipedia search (generator=search for approximate matching)
+  if (!imageUrl) {
+    try {
+      const wikiRes = await fetch(
+        `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(name)}&gsrlimit=1&prop=pageimages&piprop=thumbnail&pithumbsize=300&format=json`,
         { next: { revalidate: 86400 } },
       );
-      const enData = await enRes.json();
-      const enPages = enData?.query?.pages;
-      if (enPages) {
-        const pageId = Object.keys(enPages)[0];
-        if (pageId && pageId !== "-1") {
-          imageUrl = enPages[pageId]?.thumbnail?.source || "";
+      if (wikiRes.ok) {
+        const wikiData = await wikiRes.json();
+        const pages = wikiData?.query?.pages;
+        if (pages) {
+          const pageId = Object.keys(pages)[0];
+          if (pageId && pages[pageId]?.thumbnail?.source) {
+            imageUrl = pages[pageId].thumbnail.source;
+          }
         }
       }
+    } catch (err) {
+      console.warn("Wikipedia search query failed:", err);
     }
-  } catch (err) {
-    console.error("Wikipedia cast image query failed:", err);
   }
 
-  // Never hand a non-https URL back to the client — it ends up in an <img src>.
   if (imageUrl && !/^https:\/\//i.test(imageUrl)) {
     imageUrl = "";
   }
 
-  // 3. Save to Redis Cache (only if online and ready)
+  // 4. Save to Redis Cache
   if (client && client.status === "ready") {
     try {
       await client.set(
         cacheKey,
         imageUrl || "placeholder",
         "EX",
-        7 * 24 * 60 * 60,
-      ); // Cache for 7 days
-    } catch (e) {
-      // Ignore cache write error
-    }
+        14 * 24 * 60 * 60,
+      );
+    } catch (e) {}
   }
 
   return NextResponse.json({ url: imageUrl || null });

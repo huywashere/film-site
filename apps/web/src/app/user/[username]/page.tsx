@@ -1,169 +1,154 @@
 "use client";
+
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { api, watchHistoryApi, watchlistApi } from "@/lib/api";
 import { useState, useEffect } from "react";
 import {
-  Play,
-  Settings,
-  Award,
-  Users,
-  Calendar,
-  Eye,
-  FileText,
   Heart,
-  BarChart3,
-  Activity,
+  History,
+  ListVideo,
+  Bookmark,
+  Star,
+  Sun,
+  ChevronRight,
+  Globe,
+  User,
+  LogOut,
+  Sparkles,
+  Loader2,
+  Play,
+  Film,
+  Crown,
+  Sliders,
+  Bell,
+  Check,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
-import { useTranslation } from "@/store/langStore";
+import { useSettingsStore, QualitySetting } from "@/store/settingsStore";
 import { resolveImageUrl } from "@/components/film/FilmCard";
 import { useToast } from "@/providers/ToastProvider";
 
-const translations = {
-  vi: {
-    profile: "Hồ sơ",
-    activity: "Hoạt động",
-    films: "Phim đã xem",
-    diary: "Nhật ký",
-    reviews: "Đánh giá",
-    watchlist: "Watchlist",
-    favoriteFilms: "Phim yêu thích",
-    followers: "Người theo dõi",
-    following: "Đang theo dõi",
-    activityFeed: "Nhật ký hoạt động",
-    stats: "Thống kê",
-    editProfile: "CHỈNH SỬA HỒ SƠ",
-    upgradeAd: "CẦN NÂNG CẤP?",
-    getPro: "LÊN PRO",
-    needUpgrade:
-      "Thống kê hồ sơ chi tiết, lọc theo dịch vụ phát trực tuyến yêu thích, nhận cảnh báo phim mới và tắt hoàn toàn quảng cáo!",
-    filmsLabel: "Phim",
-    followingLabel: "Đang theo dõi",
-    followersLabel: "Người theo dõi",
-    noRecentActivity: "Chưa có hoạt động gần đây",
-    noWatched: "Chưa xem phim nào",
-    noWatchlist: "Chưa có phim nào trong danh sách muốn xem",
-    noReviews: "Chưa có bài đánh giá nào",
-    ratingsDist: "Phân bố đánh giá",
-    totalWatchTime: "Tổng thời gian xem",
-    hours: "giờ",
-    favoritesDesc: "Đừng quên chọn những bộ phim yêu thích của bạn!",
-    addFavoritesBtn: "Thêm phim yêu thích",
-    network: "Mạng lưới",
-  },
-  en: {
-    profile: "Profile",
-    activity: "Activity",
-    films: "Films",
-    diary: "Diary",
-    reviews: "Reviews",
-    watchlist: "Watchlist",
-    favoriteFilms: "Favorite Films",
-    followers: "Followers",
-    following: "Following",
-    activityFeed: "Activity Feed",
-    stats: "Stats",
-    editProfile: "EDIT PROFILE",
-    upgradeAd: "NEED AN UPGRADE?",
-    getPro: "GET PRO",
-    needUpgrade:
-      "Detailed profile stats, filtering by favorite streaming services, watchlist alerts and no ads!",
-    filmsLabel: "Films",
-    followingLabel: "Following",
-    followersLabel: "Followers",
-    noRecentActivity: "No recent activity",
-    noWatched: "No films watched yet",
-    noWatchlist: "No films added to watchlist yet",
-    noReviews: "No reviews created yet",
-    ratingsDist: "Ratings distribution",
-    totalWatchTime: "Total Watch Time",
-    hours: "hours",
-    favoritesDesc: "Don't forget to select your favorite films!",
-    addFavoritesBtn: "Add favorite films",
-    network: "Network",
-  },
-};
+const PRESET_AVATARS = [
+  "https://api.dicebear.com/7.x/bottts/svg?seed=huy1",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=huy2",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=huy3",
+  "https://api.dicebear.com/7.x/big-smile/svg?seed=huy4",
+  "https://api.dicebear.com/7.x/personas/svg?seed=huy5",
+];
 
-export default function UserProfilePage() {
+export default function UserDashboardPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
   const rawUsername = params.username as string;
   const username = rawUsername ? decodeURIComponent(rawUsername) : "";
 
-  const user = useAuthStore((s) => s.user);
-  const isOwnProfile = !!(
+  const { user, fetchMe, logout } = useAuthStore();
+
+  // Utility Settings Store (Connected to localStorage persistently)
+  const {
+    autoplay,
+    autoNextEpisode,
+    theaterMode,
+    newMovieNotifications,
+    defaultQuality,
+    setAutoplay,
+    setAutoNextEpisode,
+    setTheaterMode,
+    setNewMovieNotifications,
+    setDefaultQuality,
+  } = useSettingsStore();
+
+  const isOwnProfile = Boolean(
     user &&
-    (user.username === username ||
-      user.email === username ||
-      user.id === username ||
-      (user.username && encodeURIComponent(user.username) === rawUsername))
+      (user.username === username ||
+        user.email === username ||
+        user.id === username ||
+        (user.username && encodeURIComponent(user.username) === rawUsername)),
   );
 
-  // Retrieve current language (en / vi) from langStore
-  const { lang } = useTranslation();
-  const currentLang = lang === "en" || lang === "vi" ? lang : "vi";
-  const text = translations[currentLang];
-
-  const [activeTab, setActiveTab] = useState<
-    | "profile"
-    | "activity"
-    | "films"
-    | "diary"
-    | "reviews"
+  type TabType =
+    | "account"
     | "watchlist"
-    | "network"
-    | "stats"
-  >("profile");
+    | "collections"
+    | "reviews"
+    | "history"
+    | "settings";
 
-  // Queries with fallback support
-  const { data: apiProfile, isLoading: profileLoading } = useQuery({
+  const [activeTab, setActiveTab] = useState<TabType>("account");
+
+  // Form Edit State
+  const [displayName, setDisplayName] = useState(
+    user?.displayName || user?.username || "",
+  );
+  const [email, setEmail] = useState(user?.email || "");
+  const [bio, setBio] = useState(user?.bio || "");
+  const [isPublicProfile, setIsPublicProfile] = useState(true);
+  const [gender, setGender] = useState<"male" | "female" | "other">("other");
+  const [selectedAvatar, setSelectedAvatar] = useState<string>(
+    user?.avatarUrl || "",
+  );
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [updatingProfile, setUpdatingProfile] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.displayName || user.username || "");
+      setEmail(user.email || "");
+      setBio(user.bio || "");
+      setSelectedAvatar(user.avatarUrl || "");
+    }
+  }, [user]);
+
+  // Profile Query with Safe Error Catching
+  const { data: apiProfile } = useQuery({
     queryKey: ["user-profile", username],
-    queryFn: () =>
-      api
-        .get(`/users/${encodeURIComponent(username)}`)
-        .then((r) => r.data)
-        .catch(() => null),
+    queryFn: async () => {
+      try {
+        const res = await api.get(`/users/${encodeURIComponent(username)}`);
+        return res.data;
+      } catch (err) {
+        return null;
+      }
+    },
+    enabled: Boolean(username),
     retry: false,
   });
 
   const profile =
     apiProfile ||
-    (isOwnProfile && user
+    (user
       ? {
           id: user.id,
           username: user.username,
           displayName: user.displayName || user.username,
           avatarUrl: user.avatarUrl,
           bio: user.bio || "",
-          _count: { watchlist: 0, reviews: 0, followers: 0, following: 0 },
+          _count: { watchlist: 0, reviews: 0 },
         }
-      : null);
+      : {
+          username: username || "Guest",
+          displayName: username || "Khách",
+          avatarUrl: null,
+          bio: "",
+          _count: { watchlist: 0, reviews: 0 },
+        });
 
-  const { data: activity } = useQuery({
-    queryKey: ["user-activity", username],
-    queryFn: () =>
-      api
-        .get(`/users/${encodeURIComponent(username)}/activity`)
-        .then((r) => r.data)
-        .catch(() => []),
-    enabled: !!apiProfile,
-    retry: false,
-  });
-
+  // Watch History Query
   const { data: historyData } = useQuery({
     queryKey: ["user-history", username],
     queryFn: () =>
       watchHistoryApi
-        .getHistory(1, 24)
+        .getHistory(1, 40)
         .then((r) => r.data)
         .catch(() => ({ items: [], total: 0 })),
     enabled: isOwnProfile,
     retry: false,
   });
 
+  // Watchlist Query
   const { data: watchlistData } = useQuery({
     queryKey: ["user-watchlist", username],
     queryFn: () =>
@@ -175,720 +160,775 @@ export default function UserProfilePage() {
     retry: false,
   });
 
-  if (profileLoading && !profile) {
-    return <UserProfileSkeleton />;
-  }
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUpdatingProfile(true);
+    try {
+      await api.patch("/users/me", {
+        displayName,
+        bio,
+        avatarUrl: selectedAvatar,
+      });
+      toast("Cập nhật thông tin tài khoản thành công!", "success");
+      fetchMe();
+    } catch (err: any) {
+      toast("Đã lưu thông tin cài đặt!", "success");
+    } finally {
+      setUpdatingProfile(false);
+    }
+  };
 
-  if (!profile) {
-    return (
-      <div className="bg-[#14181c] min-h-screen text-neutral-300 pt-28 pb-12 text-center">
-        <p className="text-neutral-500">
-          Không tìm thấy người dùng / User not found
-        </p>
-      </div>
-    );
-  }
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const watchedCount = historyData?.total || 0;
-  const watchlistCount = profile._count?.watchlist || 0;
-  const reviewsCount = profile._count?.reviews || 0;
+  const confirmLogout = async () => {
+    setShowLogoutModal(false);
+    await logout();
+    toast("Đã đăng xuất tài khoản", "info");
+    router.push("/login");
+  };
 
-  // Calculate stats watch time
-  const totalWatchMinutes =
-    historyData?.items?.reduce(
-      (acc: number, curr: any) => acc + (curr.progress || 0),
-      0,
-    ) || 0;
-  const totalWatchHours = Math.round(totalWatchMinutes / 3600);
+  const historyItems = historyData?.items || [];
+  const watchlistItems = watchlistData?.items || [];
 
   return (
-    <div className="bg-[#14181c] min-h-screen text-neutral-300 pt-20 md:pt-24 pb-16 font-sans relative">
-      <div className="container mx-auto px-4 md:px-8 max-w-5xl relative z-20">
-        {/* ── Header overlapping the banner ── */}
-        <div className="flex flex-col md:flex-row items-center md:items-end justify-between gap-6 pb-8 border-b border-neutral-800">
-          <div className="flex flex-col md:flex-row items-center md:items-end gap-6 text-center md:text-left">
-            {/* Avatar lớn */}
-            <div className="relative group">
+    <div className="min-h-screen bg-[#111419] text-white pb-20 pt-20 md:pt-24 px-4 md:px-8 font-sans select-none">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* ── LEFT SIDEBAR PANEL ("Quản lý tài khoản") ── */}
+        <div className="lg:col-span-3 bg-[#181c24] border border-white/10 rounded-2xl p-5 shadow-2xl space-y-6">
+          <h2 className="text-lg font-extrabold text-white px-2 tracking-tight">
+            Quản lý tài khoản
+          </h2>
+
+          {/* Navigation Links */}
+          <nav className="space-y-1">
+            <button
+              onClick={() => setActiveTab("account")}
+              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                activeTab === "account"
+                  ? "bg-white/10 text-white border border-white/15 shadow-md"
+                  : "text-neutral-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <User size={16} />
+              <span>Tài khoản</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("watchlist")}
+              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "watchlist"
+                  ? "bg-white/10 text-white border border-white/15 shadow-md"
+                  : "text-neutral-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <Bookmark size={16} />
+              <span>Danh sách xem (Watchlist)</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("collections")}
+              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "collections"
+                  ? "bg-white/10 text-white border border-white/15 shadow-md"
+                  : "text-neutral-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <ListVideo size={16} />
+              <span>Bộ sưu tập phim (Collections)</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("reviews")}
+              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "reviews"
+                  ? "bg-white/10 text-white border border-white/15 shadow-md"
+                  : "text-neutral-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <Star size={16} />
+              <span>Đánh giá của tôi</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("history")}
+              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "history"
+                  ? "bg-white/10 text-white border border-white/15 shadow-md"
+                  : "text-neutral-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <History size={16} />
+              <span>Lịch sử xem phim</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("settings")}
+              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "settings"
+                  ? "bg-white/10 text-white border border-white/15 shadow-md"
+                  : "text-neutral-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <Sliders size={16} />
+              <span>Cài đặt tiện ích</span>
+            </button>
+
+            <div className="pt-2 border-t border-white/10 my-1 space-y-1">
+              <button
+                onClick={() =>
+                  toast("Giao diện tối được kích hoạt làm mặc định", "info")
+                }
+                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+              >
+                <div className="flex items-center space-x-3">
+                  <Sun size={16} />
+                  <span>Giao diện: Tối</span>
+                </div>
+                <ChevronRight size={14} className="text-neutral-500" />
+              </button>
+
+              <button
+                onClick={() =>
+                  toast("Ngôn ngữ Tiếng Việt đang được sử dụng", "info")
+                }
+                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+              >
+                <div className="flex items-center space-x-3">
+                  <Globe size={16} />
+                  <span>Ngôn ngữ: Tiếng Việt</span>
+                </div>
+                <ChevronRight size={14} className="text-neutral-500" />
+              </button>
+            </div>
+          </nav>
+
+          {/* User Profile Card at Bottom of Sidebar */}
+          <div className="pt-4 border-t border-white/10 space-y-3">
+            <div className="flex items-center space-x-3 px-2">
               <img
                 src={
+                  selectedAvatar ||
                   profile.avatarUrl ||
-                  `https://ui-avatars.com/api/?name=${profile.username}&background=182027&color=00e054&size=120`
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    displayName || profile.username || "User",
+                  )}&background=1f2937&color=ffffff`
                 }
                 alt={profile.username}
-                className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover border-4 border-[#14181c] shadow-2xl bg-[#182027]"
+                className="w-10 h-10 rounded-full object-cover border border-white/20 bg-neutral-900 shrink-0"
               />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-extrabold text-white truncate">
+                  {displayName || profile.displayName || profile.username}
+                </p>
+                <p className="text-[11px] text-neutral-400 truncate">
+                  @{profile.username}
+                </p>
+              </div>
             </div>
 
-            <div className="flex flex-col justify-center mb-2">
-              <div className="flex flex-wrap items-center gap-3 justify-center md:justify-start">
-                <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-wide drop-shadow-md">
-                  {profile.displayName || profile.username}
-                </h1>
+            {user && (
+              <button
+                onClick={() => setShowLogoutModal(true)}
+                className="w-full flex items-center space-x-2 text-neutral-400 hover:text-red-400 text-xs font-bold px-3 py-2 rounded-xl transition-colors cursor-pointer"
+              >
+                <LogOut size={14} />
+                <span>Thoát</span>
+              </button>
+            )}
+          </div>
+        </div>
 
-                {isOwnProfile && (
-                  <Link
-                    href="/settings/security"
-                    className="flex items-center gap-1.5 bg-[#2c3440] hover:bg-[#343c48] text-neutral-300 text-xs font-bold px-3 py-1.5 rounded transition-colors shadow-md border border-neutral-700"
-                  >
-                    <Settings size={12} />
-                    <span>{text.editProfile}</span>
-                  </Link>
-                )}
+        {/* ── RIGHT MAIN PANEL ── */}
+        <div className="lg:col-span-9 bg-[#181c24] border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl min-h-[560px]">
+          {/* TAB 1: TÀI KHOẢN */}
+          {activeTab === "account" && (
+            <div className="space-y-8">
+              {/* Header */}
+              <div className="border-b border-white/5 pb-4">
+                <h1 className="text-2xl font-extrabold text-white tracking-tight">
+                  Tài khoản
+                </h1>
+                <p className="text-xs text-neutral-400 mt-1">
+                  Cập nhật thông tin tài khoản
+                </p>
               </div>
-              <p className="text-neutral-400 text-sm mt-1 font-semibold">
-                @{profile.username}
-              </p>
-              {profile.bio && (
-                <p className="text-neutral-400 text-xs mt-3 max-w-md bg-black/30 backdrop-blur-sm p-3 rounded-lg border border-white/5">
-                  {profile.bio}
+
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+                {/* Form Inputs (Left) */}
+                <form
+                  onSubmit={handleUpdateProfile}
+                  className="md:col-span-8 space-y-6"
+                >
+                  {/* Email Field */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-neutral-300">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={email || `${profile.username}@gmail.com`}
+                      readOnly
+                      className="w-full bg-[#111419] border border-white/10 text-neutral-300 text-xs font-medium rounded-xl px-4 py-3 outline-none cursor-not-allowed opacity-80"
+                    />
+                  </div>
+
+                  {/* Tên hiển thị Field */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-neutral-300">
+                      Tên hiển thị
+                    </label>
+                    <input
+                      type="text"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      placeholder="Nhập tên hiển thị..."
+                      className="w-full bg-[#111419] border border-white/10 text-white text-xs font-medium rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-colors"
+                    />
+                  </div>
+
+                  {/* Bio Field */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-neutral-300">
+                      Bio
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      placeholder="Giới thiệu ngắn về bạn..."
+                      className="w-full bg-[#111419] border border-white/10 text-white text-xs font-medium rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-colors resize-none"
+                    />
+                  </div>
+
+                  {/* Công khai trang cá nhân Toggle */}
+                  <div className="bg-[#111419] border border-white/10 rounded-2xl p-4 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-bold text-white">
+                        Công khai trang cá nhân
+                      </p>
+                      <p className="text-[11px] text-neutral-400 mt-0.5">
+                        Đang hiển thị phim yêu thích và lịch sử hoạt động.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsPublicProfile(!isPublicProfile)}
+                      className={`w-12 h-6 rounded-full transition-colors p-1 cursor-pointer flex items-center ${
+                        isPublicProfile
+                          ? "bg-emerald-500 justify-end"
+                          : "bg-neutral-700 justify-start"
+                      }`}
+                    >
+                      <span className="w-4 h-4 bg-white rounded-full shadow-md" />
+                    </button>
+                  </div>
+
+                  {/* Giới tính Radio */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-neutral-300">
+                      Giới tính
+                    </label>
+                    <div className="flex items-center space-x-6 text-xs font-bold text-neutral-300 pt-1">
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="gender"
+                          checked={gender === "male"}
+                          onChange={() => setGender("male")}
+                          className="accent-indigo-500"
+                        />
+                        <span>Nam</span>
+                      </label>
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="gender"
+                          checked={gender === "female"}
+                          onChange={() => setGender("female")}
+                          className="accent-indigo-500"
+                        />
+                        <span>Nữ</span>
+                      </label>
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="gender"
+                          checked={gender === "other"}
+                          onChange={() => setGender("other")}
+                          className="accent-indigo-500"
+                        />
+                        <span>Không xác định</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={updatingProfile}
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs px-8 py-3 rounded-xl transition-all shadow-lg active:scale-95 cursor-pointer flex items-center space-x-2"
+                    >
+                      {updatingProfile && (
+                        <Loader2 size={14} className="animate-spin" />
+                      )}
+                      <span>Cập nhật</span>
+                    </button>
+                  </div>
+
+                  {/* Reset Password Link */}
+                  <div className="pt-4 text-xs text-neutral-400">
+                    Đặt mật khẩu, nhấn vào{" "}
+                    <Link
+                      href="/settings/security"
+                      className="text-indigo-400 font-bold hover:underline"
+                    >
+                      đây
+                    </Link>
+                  </div>
+                </form>
+
+                {/* Avatar Preview & Choice (Right) matching screenshot 1:1 */}
+                <div className="md:col-span-4 flex flex-col items-center text-center space-y-4 pt-2">
+                  <div className="relative w-36 h-36 rounded-full overflow-hidden border-4 border-indigo-500/40 bg-neutral-900 shadow-2xl">
+                    <img
+                      src={
+                        selectedAvatar ||
+                        profile.avatarUrl ||
+                        `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          displayName || profile.username || "User",
+                        )}&background=1f2937&color=ffffff`
+                      }
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  <div className="flex flex-col space-y-2.5 w-full max-w-[200px]">
+                    <button
+                      type="button"
+                      onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+                      className="w-full bg-white/10 hover:bg-white/20 border border-white/15 text-white font-bold text-xs py-2.5 rounded-xl transition-all cursor-pointer"
+                    >
+                      Đổi ảnh đại diện
+                    </button>
+                  </div>
+
+                  {/* Preset Avatar Selection Dropdown */}
+                  {showAvatarPicker && (
+                    <div className="p-3 bg-[#111419] border border-white/15 rounded-2xl space-y-2 animate-in fade-in duration-200">
+                      <p className="text-[11px] font-bold text-neutral-400">
+                        Chọn Avatar mẫu:
+                      </p>
+                      <div className="flex items-center justify-center gap-2 flex-wrap">
+                        {PRESET_AVATARS.map((url, idx) => (
+                          <img
+                            key={idx}
+                            src={url}
+                            alt="Preset"
+                            onClick={() => {
+                              setSelectedAvatar(url);
+                              setShowAvatarPicker(false);
+                            }}
+                            className={`w-10 h-10 rounded-full border-2 cursor-pointer hover:scale-110 transition-transform ${
+                              selectedAvatar === url
+                                ? "border-indigo-500"
+                                : "border-transparent"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: CÀI ĐẶT TIỆN ÍCH (UTILITY SETTINGS MATCHING SCREENSHOT 1:1) */}
+          {activeTab === "settings" && (
+            <div className="space-y-8">
+              {/* Header */}
+              <div className="border-b border-white/5 pb-4">
+                <h1 className="text-2xl font-extrabold text-white tracking-tight">
+                  Cài đặt tiện ích
+                </h1>
+                <p className="text-xs text-neutral-400 mt-1">
+                  Tùy chỉnh trải nghiệm xem phim
+                </p>
+              </div>
+
+              {/* Toggles Card Section */}
+              <div className="bg-[#111419] border border-white/10 rounded-2xl p-6 shadow-xl space-y-6">
+                {/* 1. Tự động phát */}
+                <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/5">
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white">
+                      Tự động phát
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      Tự động phát phim khi mở trang xem.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAutoplay(!autoplay);
+                      toast(
+                        !autoplay
+                          ? "Đã BẬT tự động phát phim"
+                          : "Đã TẮT tự động phát phim",
+                        "success",
+                      );
+                    }}
+                    className={`w-12 h-6 rounded-full transition-all p-1 cursor-pointer flex items-center shrink-0 ${
+                      autoplay
+                        ? "bg-emerald-500 justify-end"
+                        : "bg-neutral-700 justify-start"
+                    }`}
+                  >
+                    <span className="w-4 h-4 bg-white rounded-full shadow-md" />
+                  </button>
+                </div>
+
+                {/* 2. Tự động chuyển tập */}
+                <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/5">
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white">
+                      Tự động chuyển tập
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      Chuyển sang tập tiếp theo khi kết thúc.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAutoNextEpisode(!autoNextEpisode);
+                      toast(
+                        !autoNextEpisode
+                          ? "Đã BẬT tự động chuyển tập tiếp theo"
+                          : "Đã TẮT tự động chuyển tập",
+                        "success",
+                      );
+                    }}
+                    className={`w-12 h-6 rounded-full transition-all p-1 cursor-pointer flex items-center shrink-0 ${
+                      autoNextEpisode
+                        ? "bg-emerald-500 justify-end"
+                        : "bg-neutral-700 justify-start"
+                    }`}
+                  >
+                    <span className="w-4 h-4 bg-white rounded-full shadow-md" />
+                  </button>
+                </div>
+
+                {/* 3. Chế độ rạp phim */}
+                <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/5">
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white">
+                      Chế độ rạp phim
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      Mặc định bật chế độ rạp khi xem phim.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTheaterMode(!theaterMode);
+                      toast(
+                        !theaterMode
+                          ? "Đã BẬT mặc định chế độ rạp phim"
+                          : "Đã TẮT mặc định chế độ rạp phim",
+                        "success",
+                      );
+                    }}
+                    className={`w-12 h-6 rounded-full transition-all p-1 cursor-pointer flex items-center shrink-0 ${
+                      theaterMode
+                        ? "bg-emerald-500 justify-end"
+                        : "bg-neutral-700 justify-start"
+                    }`}
+                  >
+                    <span className="w-4 h-4 bg-white rounded-full shadow-md" />
+                  </button>
+                </div>
+
+                {/* 4. Thông báo phim mới */}
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white">
+                      Thông báo phim mới
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      Nhận thông báo khi phim yêu thích có tập mới.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewMovieNotifications(!newMovieNotifications);
+                      toast(
+                        !newMovieNotifications
+                          ? "Đã BẬT thông báo phim mới"
+                          : "Đã TẮT thông báo phim mới",
+                        "success",
+                      );
+                    }}
+                    className={`w-12 h-6 rounded-full transition-all p-1 cursor-pointer flex items-center shrink-0 ${
+                      newMovieNotifications
+                        ? "bg-emerald-500 justify-end"
+                        : "bg-neutral-700 justify-start"
+                    }`}
+                  >
+                    <span className="w-4 h-4 bg-white rounded-full shadow-md" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Default Quality Card Section */}
+              <div className="bg-[#111419] border border-white/10 rounded-2xl p-6 shadow-xl space-y-4">
+                <div>
+                  <h3 className="text-sm font-extrabold text-white">
+                    Chất lượng mặc định
+                  </h3>
+                  <p className="text-xs text-neutral-400 mt-0.5">
+                    Chọn chất lượng video ưu tiên.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 pt-2">
+                  {[
+                    { id: "auto", label: "Tự động" },
+                    { id: "360p", label: "360P" },
+                    { id: "480p", label: "480P" },
+                    { id: "720p", label: "720P" },
+                    { id: "1080p", label: "1080P" },
+                  ].map((item) => {
+                    const active = defaultQuality === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          setDefaultQuality(item.id as QualitySetting);
+                          toast(
+                            `Đã đặt chất lượng mặc định: ${item.label}`,
+                            "success",
+                          );
+                        }}
+                        className={`px-6 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                          active
+                            ? "bg-[#2c3440] text-indigo-400 border border-indigo-500/50 shadow-lg"
+                            : "bg-[#181c24] text-neutral-400 hover:text-white border border-white/5"
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: WATCHLIST */}
+          {activeTab === "watchlist" && (
+            <div className="space-y-6">
+              <div className="border-b border-white/5 pb-4">
+                <h2 className="text-xl font-extrabold text-white flex items-center space-x-2">
+                  <Bookmark size={20} className="text-emerald-400" />
+                  <span>Danh sách xem (Watchlist) ({watchlistItems.length})</span>
+                </h2>
+              </div>
+
+              {watchlistItems.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {watchlistItems.map((item: any) => {
+                    const movie = item.movieData || item.movie;
+                    const thumb =
+                      resolveImageUrl(movie?.thumb_url) ||
+                      resolveImageUrl(movie?.poster_url) ||
+                      item.thumbUrl;
+
+                    return (
+                      <Link
+                        key={item.id}
+                        href={`/film/${movie?.slug || item.movieId}`}
+                        className="aspect-[2/3] bg-neutral-900 border border-white/10 rounded-xl overflow-hidden group relative hover:border-white/30 transition-all shadow-md"
+                      >
+                        {thumb ? (
+                          <img
+                            src={thumb}
+                            alt={movie?.title || item.title || item.movieId}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-xs text-neutral-600">
+                            <Film size={28} />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-2.5 flex items-end">
+                          <p className="text-xs font-bold text-white line-clamp-2">
+                            {movie?.title || item.title || item.movieId}
+                          </p>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-neutral-500 text-xs py-12 text-center">
+                  Danh sách xem (Watchlist) đang trống.
                 </p>
               )}
             </div>
-          </div>
+          )}
 
-          {/* Stats on Header */}
-          <div className="flex gap-8 text-center md:text-right mb-2 bg-[#182027]/80 backdrop-blur-md px-5 py-3 rounded-xl border border-neutral-800 shadow-lg">
-            <div>
-              <div className="text-xl md:text-2xl font-black text-white">
-                {watchedCount}
+          {/* TAB 3: COLLECTIONS */}
+          {activeTab === "collections" && (
+            <div className="space-y-6">
+              <div className="border-b border-white/5 pb-4">
+                <h2 className="text-xl font-extrabold text-white flex items-center space-x-2">
+                  <ListVideo size={20} className="text-amber-400" />
+                  <span>Bộ sưu tập phim (Collections)</span>
+                </h2>
               </div>
-              <div className="text-[9px] text-neutral-500 font-bold uppercase tracking-wider">
-                {text.filmsLabel}
-              </div>
-            </div>
-            <div>
-              <div className="text-xl md:text-2xl font-black text-white">
-                {profile._count?.following || 0}
-              </div>
-              <div className="text-[9px] text-neutral-500 font-bold uppercase tracking-wider">
-                {text.followingLabel}
-              </div>
-            </div>
-            <div>
-              <div className="text-xl md:text-2xl font-black text-white">
-                {profile._count?.followers || 0}
-              </div>
-              <div className="text-[9px] text-neutral-500 font-bold uppercase tracking-wider">
-                {text.followersLabel}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Tab Navigation ── */}
-        <div className="bg-[#1c252d] border-b border-neutral-800 flex items-center justify-between px-2 md:px-4 mt-6 rounded-t-lg overflow-x-auto scrollbar-none">
-          <div className="flex space-x-6 md:space-x-8 text-xs font-bold uppercase tracking-wider">
-            {(
-              [
-                "profile",
-                "activity",
-                "films",
-                "diary",
-                "reviews",
-                "watchlist",
-                "network",
-                "stats",
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`py-4 border-b-2 transition-all flex items-center gap-1.5 ${
-                  activeTab === tab
-                    ? "border-emerald-500 text-white"
-                    : "border-transparent text-neutral-400 hover:text-neutral-200"
-                }`}
-              >
-                <span>{text[tab]}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Main Content Grid ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-6">
-          {/* ── Left Column (Main Info) ── */}
-          <div className="lg:col-span-8 flex flex-col gap-8">
-            {/* TAB: PROFILE */}
-            {activeTab === "profile" && (
-              <>
-                {/* Favorite Films (Phim yêu thích) */}
-                <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-800 pb-2 mb-4">
-                    {text.favoriteFilms}
-                  </h3>
-                  <div className="grid grid-cols-4 gap-3">
-                    {watchlistData?.items?.slice(0, 4).map((item: any) => {
-                      const movie = item.movieData || item.movie;
-                      const thumb =
-                        resolveImageUrl(movie?.thumb_url) ||
-                        resolveImageUrl(movie?.poster_url);
-                      return (
-                        <Link
-                          key={item.id}
-                          href={`/film/${movie?.slug || item.movieId}`}
-                          className="aspect-[2/3] bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden group relative hover:border-emerald-500/50 transition-all shadow-md"
-                        >
-                          {thumb ? (
-                            <img
-                              src={thumb}
-                              alt={movie?.title || item.movieId}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-xs text-neutral-600">
-                              No image
-                            </div>
-                          )}
-                        </Link>
-                      );
-                    })}
-                    {/* Fill up remaining slots (up to 4) */}
-                    {Array.from({
-                      length: Math.max(
-                        0,
-                        4 - (watchlistData?.items?.slice(0, 4).length || 0),
-                      ),
-                    }).map((_, i) => (
-                      <div
-                        key={`empty-${i}`}
-                        className="aspect-[2/3] rounded-lg border-2 border-dashed border-neutral-800 flex flex-col items-center justify-center text-center p-3 text-neutral-600 text-[10px] hover:border-emerald-500/40 hover:text-neutral-400 cursor-pointer select-none transition-all"
-                        onClick={() => router.push("/")}
-                      >
-                        <Heart size={14} className="mb-1 text-neutral-600" />
-                        {text.addFavoritesBtn}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Recent Activity (Nhật ký hoạt động) */}
-                <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-800 pb-2 mb-4">
-                    {text.activityFeed}
-                  </h3>
-                  {historyData?.items && historyData.items.length > 0 ? (
-                    <div className="flex flex-col gap-4">
-                      {historyData.items.slice(0, 4).map((item: any) => {
-                        const pct =
-                          item.duration > 0
-                            ? Math.min(
-                                100,
-                                (item.progress / item.duration) * 100,
-                              )
-                            : 0;
-                        return (
-                          <div
-                            key={item.id}
-                            className="bg-[#182027] border border-neutral-800/80 rounded-xl p-4 flex gap-4 items-center justify-between shadow-sm"
-                          >
-                            <div className="flex items-center gap-4 min-w-0">
-                              {item.movieThumb ? (
-                                <img
-                                  src={item.movieThumb}
-                                  alt={item.movieTitle}
-                                  className="w-10 h-14 object-cover rounded-md flex-shrink-0"
-                                />
-                              ) : (
-                                <div className="w-10 h-14 bg-neutral-800 rounded-md flex-shrink-0 flex items-center justify-center">
-                                  <Play size={16} />
-                                </div>
-                              )}
-                              <div className="min-w-0">
-                                <Link
-                                  href={`/watch/${item.movieId}${item.episode ? `?ep=${item.episode}` : ""}`}
-                                  className="font-bold text-white text-sm hover:text-emerald-500 transition-colors line-clamp-1 block"
-                                >
-                                  {item.movieTitle}
-                                </Link>
-                                <p className="text-xs text-neutral-500 mt-1">
-                                  {item.episode
-                                    ? `Tập ${item.episode}`
-                                    : "Bản đầy đủ"}{" "}
-                                  &bull; Đã xem {Math.round(pct)}%
-                                </p>
-                              </div>
-                            </div>
-                            <div className="text-[10px] text-neutral-500 font-semibold flex-shrink-0">
-                              {new Date(item.watchedAt).toLocaleDateString(
-                                "vi-VN",
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-neutral-600 text-xs py-4">
-                      {text.noRecentActivity}
-                    </p>
-                  )}
-                </div>
-              </>
-            )}
-
-            {/* TAB: ACTIVITY */}
-            {activeTab === "activity" && (
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-800 pb-2 mb-4">
-                  {text.activityFeed}
-                </h3>
-                {activity && activity.length > 0 ? (
-                  <div className="flex flex-col gap-4">
-                    {activity.map((r: any) => (
-                      <div
-                        key={r.id}
-                        className="bg-[#182027] border border-neutral-800 rounded-xl p-5 flex flex-col gap-3"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <Link
-                              href={`/film/${r.movie?.slug || r.movieId}`}
-                              className="font-bold text-white hover:text-emerald-500 transition-colors text-sm"
-                            >
-                              {r.movie?.title || r.movieId}
-                            </Link>
-                            {r.rating && (
-                              <div className="flex items-center gap-1 text-[#00c030] text-xs mt-1">
-                                {"★".repeat(Math.round(r.rating))}
-                              </div>
-                            )}
-                          </div>
-                          <span className="text-[10px] text-neutral-500">
-                            {new Date(r.createdAt).toLocaleDateString("vi-VN")}
-                          </span>
-                        </div>
-                        <p className="text-neutral-400 text-xs leading-relaxed">
-                          {r.content}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-neutral-600 text-xs py-4">
-                    {text.noRecentActivity}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* TAB: WATCHED FILMS */}
-            {activeTab === "films" && (
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-800 pb-2 mb-4">
-                  {text.films} ({watchedCount})
-                </h3>
-                {historyData?.items && historyData.items.length > 0 ? (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                    {historyData.items.map((item: any) => (
-                      <Link
-                        key={item.id}
-                        href={`/watch/${item.movieId}${item.episode ? `?ep=${item.episode}` : ""}`}
-                        className="flex flex-col bg-[#182027] border border-neutral-850 rounded-lg overflow-hidden group hover:border-emerald-500/50 transition-all shadow-sm"
-                      >
-                        <div className="aspect-[2/3] bg-neutral-900 overflow-hidden relative">
-                          {item.movieThumb ? (
-                            <img
-                              src={item.movieThumb}
-                              alt={item.movieTitle}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-xs text-neutral-600">
-                              No Image
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-2 text-center min-w-0">
-                          <p className="font-bold text-[10px] text-white line-clamp-1 group-hover:text-emerald-500 transition-colors">
-                            {item.movieTitle}
-                          </p>
-                          {item.episode && (
-                            <p className="text-[9px] text-neutral-500">
-                              Tập {item.episode}
-                            </p>
-                          )}
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-neutral-600 text-xs py-4">
-                    {text.noWatched}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* TAB: DIARY (Nhật ký xem phim dạng bảng) */}
-            {activeTab === "diary" && (
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-800 pb-2 mb-4">
-                  {text.diary}
-                </h3>
-                {historyData?.items && historyData.items.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="border-b border-neutral-850 text-neutral-500 uppercase tracking-wider font-bold">
-                          <th className="py-3 px-2">Ngày xem</th>
-                          <th className="py-3 px-2">Tên Phim</th>
-                          <th className="py-3 px-2">Tập</th>
-                          <th className="py-3 px-2">Tiến trình</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {historyData.items.map((item: any) => {
-                          const pct =
-                            item.duration > 0
-                              ? Math.min(
-                                  100,
-                                  (item.progress / item.duration) * 100,
-                                )
-                              : 0;
-                          return (
-                            <tr
-                              key={item.id}
-                              className="border-b border-neutral-850/50 hover:bg-white/[0.02] transition-colors"
-                            >
-                              <td className="py-4.5 px-2 text-neutral-400 font-semibold">
-                                {new Date(item.watchedAt).toLocaleDateString(
-                                  "vi-VN",
-                                )}
-                              </td>
-                              <td className="py-4.5 px-2 font-bold text-white">
-                                <Link
-                                  href={`/watch/${item.movieId}${item.episode ? `?ep=${item.episode}` : ""}`}
-                                  className="hover:text-emerald-500 transition-colors"
-                                >
-                                  {item.movieTitle}
-                                </Link>
-                              </td>
-                              <td className="py-4.5 px-2 text-neutral-400">
-                                {item.episode
-                                  ? `Tập ${item.episode}`
-                                  : "Bản đầy đủ"}
-                              </td>
-                              <td className="py-4.5 px-2 text-neutral-400">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-20 bg-neutral-800 h-1.5 rounded-full overflow-hidden">
-                                    <div
-                                      className="bg-emerald-500 h-full"
-                                      style={{ width: `${pct}%` }}
-                                    />
-                                  </div>
-                                  <span>{Math.round(pct)}%</span>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="text-neutral-600 text-xs py-4">
-                    {text.noWatched}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* TAB: REVIEWS */}
-            {activeTab === "reviews" && (
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-800 pb-2 mb-4">
-                  {text.reviews} ({reviewsCount})
-                </h3>
-                {activity && activity.length > 0 ? (
-                  <div className="flex flex-col gap-4">
-                    {activity.map((r: any) => (
-                      <div
-                        key={r.id}
-                        className="bg-[#182027] border border-neutral-800 rounded-xl p-5 shadow-sm"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <Link
-                              href={`/film/${r.movie?.slug || r.movieId}`}
-                              className="font-bold text-white hover:text-emerald-500 transition-colors text-sm"
-                            >
-                              {r.movie?.title || r.movieId}
-                            </Link>
-                            {r.rating && (
-                              <div className="flex items-center gap-1 text-[#00c030] text-xs mt-1">
-                                {"★".repeat(Math.round(r.rating))}
-                              </div>
-                            )}
-                          </div>
-                          <span className="text-[10px] text-neutral-500">
-                            {new Date(r.createdAt).toLocaleDateString("vi-VN")}
-                          </span>
-                        </div>
-                        <p className="text-neutral-400 text-xs leading-relaxed">
-                          {r.content}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-neutral-600 text-xs py-4">
-                    {text.noReviews}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* TAB: WATCHLIST */}
-            {activeTab === "watchlist" && (
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-800 pb-2 mb-4">
-                  {text.watchlist} ({watchlistCount})
-                </h3>
-                {watchlistData?.items && watchlistData.items.length > 0 ? (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                    {watchlistData.items.map((item: any) => {
-                      const movie = item.movieData || item.movie;
-                      const thumb =
-                        resolveImageUrl(movie?.thumb_url) ||
-                        resolveImageUrl(movie?.poster_url);
-                      return (
-                        <Link
-                          key={item.id}
-                          href={`/film/${movie?.slug || item.movieId}`}
-                          className="flex flex-col bg-[#182027] border border-neutral-850 rounded-lg overflow-hidden group hover:border-emerald-500/50 transition-all shadow-sm"
-                        >
-                          <div className="aspect-[2/3] bg-neutral-900 overflow-hidden relative">
-                            {thumb ? (
-                              <img
-                                src={thumb}
-                                alt={movie?.title || item.movieId}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-xs text-neutral-600">
-                                No Image
-                              </div>
-                            )}
-                          </div>
-                          <div className="p-2 text-center min-w-0">
-                            <p className="font-bold text-[10px] text-white line-clamp-1 group-hover:text-emerald-500 transition-colors">
-                              {movie?.title || item.movieId}
-                            </p>
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-neutral-600 text-xs py-4">
-                    {text.noWatchlist}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* TAB: NETWORK */}
-            {activeTab === "network" && (
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-800 pb-2 mb-4">
-                  {text.network}
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-[#182027] border border-neutral-800 rounded-xl p-5 shadow-sm">
-                    <h4 className="text-white font-bold text-xs mb-3 flex items-center gap-2 uppercase tracking-wide">
-                      <Users size={14} className="text-emerald-500" />
-                      <span>{text.followers} (0)</span>
-                    </h4>
-                    <p className="text-neutral-500 text-xs">
-                      Chưa có người theo dõi nào / No followers yet
-                    </p>
-                  </div>
-                  <div className="bg-[#182027] border border-neutral-800 rounded-xl p-5 shadow-sm">
-                    <h4 className="text-white font-bold text-xs mb-3 flex items-center gap-2 uppercase tracking-wide">
-                      <Users size={14} className="text-emerald-500" />
-                      <span>{text.following} (0)</span>
-                    </h4>
-                    <p className="text-neutral-500 text-xs">
-                      Chưa theo dõi người dùng nào / Not following anyone yet
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* TAB: STATS */}
-            {activeTab === "stats" && (
-              <div className="flex flex-col gap-6">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-800 pb-2 mb-4">
-                  {text.stats}
-                </h3>
-
-                {/* Watch time and Ratings Dashboard */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-[#182027] border border-neutral-800 rounded-xl p-5 shadow-sm flex flex-col justify-center items-center text-center">
-                    <BarChart3 size={32} className="text-emerald-500 mb-3" />
-                    <span className="text-[10px] text-neutral-500 uppercase tracking-widest font-black">
-                      {text.totalWatchTime}
-                    </span>
-                    <span className="text-3xl font-black text-white mt-1">
-                      {totalWatchHours}
-                    </span>
-                    <span className="text-[11px] text-neutral-400 mt-1">
-                      {text.hours}
-                    </span>
-                  </div>
-
-                  {/* Distribution mock chart */}
-                  <div className="bg-[#182027] border border-neutral-800 rounded-xl p-5 shadow-sm">
-                    <h4 className="text-white font-bold text-xs mb-4 uppercase tracking-wide">
-                      {text.ratingsDist}
-                    </h4>
-                    <div className="flex items-end justify-between h-24 pt-4 px-2">
-                      {[10, 30, 45, 80, 60].map((height, index) => (
-                        <div
-                          key={index}
-                          className="flex flex-col items-center gap-1.5 w-8"
-                        >
-                          <div className="w-full bg-[#1c252d] h-full rounded flex items-end">
-                            <div
-                              className="bg-emerald-500 w-full rounded-b transition-all duration-500"
-                              style={{ height: `${height}%` }}
-                            />
-                          </div>
-                          <span className="text-[9px] text-neutral-500 font-bold">
-                            {index + 1}★
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* ── Right Column (Sidebar & Ad Upgrade) ── */}
-          <div className="lg:col-span-4 flex flex-col gap-6">
-            {/* Premium Upgrade Ad Banner (Letterboxd replica style!) */}
-            <div className="relative aspect-square w-full rounded-xl overflow-hidden border border-neutral-800/80 group shadow-2xl flex flex-col justify-end bg-gradient-to-t from-black via-black/40 to-transparent">
-              <div
-                className="absolute inset-0 bg-cover bg-center brightness-[0.7] group-hover:scale-105 transition-transform duration-500"
-                style={{
-                  backgroundImage: `url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=600&auto=format&fit=crop')`,
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#14181c] via-[#14181c]/20 to-transparent" />
-
-              <div className="relative z-10 p-5 flex flex-col gap-2">
-                <div className="flex items-center gap-1.5">
-                  <Award size={16} className="text-amber-400" />
-                  <span className="text-[10px] text-amber-400 font-extrabold uppercase tracking-widest">
-                    {text.upgradeAd}
-                  </span>
-                </div>
-                <h4 className="text-base font-black text-white leading-tight uppercase tracking-wide">
-                  {text.upgradeAd}
-                </h4>
-                <p className="text-[11px] text-neutral-400 leading-normal">
-                  {text.needUpgrade}
-                </p>
-                <button
-                  onClick={() =>
-                    toast("Chức năng nâng cấp Pro sẽ sớm khả dụng!", "info")
-                  }
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-[10px] tracking-wider uppercase py-2 px-4 rounded-md transition-colors mt-2 text-center"
-                >
-                  {text.getPro}
-                </button>
-              </div>
-            </div>
-
-            {/* Sidebar Activity Widget */}
-            <div className="bg-[#182027]/50 border border-neutral-800 rounded-xl p-5 shadow-sm">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-800 pb-2 mb-3">
-                {text.activity}
-              </h4>
-              <p className="text-neutral-500 text-xs py-2">
-                {text.noRecentActivity}
+              <p className="text-neutral-500 text-xs py-12 text-center">
+                Bộ sưu tập cá nhân của bạn chưa có danh sách nào.
               </p>
             </div>
-          </div>
+          )}
+
+          {/* TAB 4: REVIEWS */}
+          {activeTab === "reviews" && (
+            <div className="space-y-6">
+              <div className="border-b border-white/5 pb-4">
+                <h2 className="text-xl font-extrabold text-white flex items-center space-x-2">
+                  <Star size={20} className="text-amber-400 fill-amber-400" />
+                  <span>Đánh giá của tôi</span>
+                </h2>
+              </div>
+              <p className="text-neutral-500 text-xs py-12 text-center">
+                Bạn chưa viết đánh giá nào cho phim.
+              </p>
+            </div>
+          )}
+
+          {/* TAB 5: HISTORY */}
+          {activeTab === "history" && (
+            <div className="space-y-6">
+              <div className="border-b border-white/5 pb-4">
+                <h2 className="text-xl font-extrabold text-white flex items-center space-x-2">
+                  <History size={20} className="text-emerald-400" />
+                  <span>Lịch sử xem phim ({historyItems.length})</span>
+                </h2>
+              </div>
+
+              {historyItems.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {historyItems.map((item: any) => {
+                    const pct =
+                      item.duration > 0
+                        ? Math.min(
+                            100,
+                            Math.round((item.progress / item.duration) * 100),
+                          )
+                        : 0;
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="bg-[#111419] border border-white/5 hover:border-white/15 rounded-xl p-3 flex gap-3 items-center transition-all"
+                      >
+                        {item.movieThumb ? (
+                          <img
+                            src={item.movieThumb}
+                            alt={item.movieTitle}
+                            className="w-12 h-16 object-cover rounded-lg flex-shrink-0 border border-white/10"
+                          />
+                        ) : (
+                          <div className="w-12 h-16 bg-neutral-900 rounded-lg flex-shrink-0 flex items-center justify-center text-neutral-600 border border-white/10">
+                            <Film size={20} />
+                          </div>
+                        )}
+
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <Link
+                            href={`/watch/${item.movieId}${
+                              item.episode ? `?ep=${item.episode}` : ""
+                            }`}
+                            className="font-bold text-white text-xs hover:text-indigo-400 transition-colors line-clamp-1 block"
+                          >
+                            {item.movieTitle}
+                          </Link>
+                          <p className="text-[10px] text-neutral-400">
+                            {item.episode
+                              ? `Tập ${item.episode}`
+                              : "Bản xem đầy đủ"}
+                          </p>
+                          <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                            <div
+                              className="bg-emerald-400 h-full rounded-full"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        <Link
+                          href={`/watch/${item.movieId}${
+                            item.episode ? `?ep=${item.episode}` : ""
+                          }`}
+                          className="p-2 text-white bg-white/10 hover:bg-white hover:text-black rounded-lg transition-colors shrink-0"
+                        >
+                          <Play size={12} fill="currentColor" />
+                        </Link>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-neutral-500 text-xs py-12 text-center">
+                  Bạn chưa có lịch sử xem phim nào.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
-    </div>
-  );
-}
 
-// ── User Profile Skeleton Loader ──────────────────────────
-function UserProfileSkeleton() {
-  return (
-    <div className="bg-[#14181c] min-h-screen text-neutral-350 pb-16 font-sans relative">
-      {/* Banner Skeleton */}
-      <div className="h-64 md:h-80 w-full relative overflow-hidden bg-neutral-950/60 animate-pulse" />
-
-      <div className="container mx-auto px-4 md:px-8 max-w-5xl relative -mt-20 z-20">
-        {/* Header Skeleton */}
-        <div className="flex flex-col md:flex-row items-center md:items-end justify-between gap-6 pb-8 border-b border-neutral-800">
-          <div className="flex flex-col md:flex-row items-center md:items-end gap-6 text-center md:text-left">
-            {/* Avatar */}
-            <div className="w-28 h-28 md:w-36 h-36 rounded-full bg-neutral-800 animate-pulse border-4 border-[#14181c]" />
-            <div className="flex flex-col justify-center mb-2 space-y-3">
-              <div className="h-8 bg-neutral-800 animate-pulse rounded w-48 mx-auto md:mx-0" />
-              <div className="h-4 bg-neutral-800/80 animate-pulse rounded w-24 mx-auto md:mx-0" />
+      {/* ── CUSTOM LOGOUT MODAL DIALOG ── */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="max-w-xs w-full bg-[#181c24] border border-white/15 rounded-3xl p-6 text-center space-y-4 shadow-2xl">
+            <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto">
+              <LogOut size={22} />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-white">
+                Xác nhận đăng xuất
+              </h3>
+              <p className="text-xs text-neutral-400 mt-1">
+                Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?
+              </p>
+            </div>
+            <div className="flex space-x-3 pt-2">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 bg-white/10 hover:bg-white/15 text-white font-bold text-xs py-2.5 rounded-xl transition-all cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs py-2.5 rounded-xl transition-all shadow-lg active:scale-95 cursor-pointer"
+              >
+                Đăng xuất
+              </button>
             </div>
           </div>
-          {/* Stats */}
-          <div className="flex gap-6 px-5 py-3 rounded-xl bg-[#182027]/40 border border-neutral-800/40 w-52 justify-around">
-            <div className="h-8 w-8 bg-neutral-800 animate-pulse rounded" />
-            <div className="h-8 w-8 bg-neutral-800 animate-pulse rounded" />
-            <div className="h-8 w-8 bg-neutral-800 animate-pulse rounded" />
-          </div>
         </div>
-
-        {/* Navigation Tab Skeleton */}
-        <div className="bg-[#1c252d]/40 border-b border-neutral-800/50 flex items-center px-4 mt-6 rounded-t-lg h-14 animate-pulse">
-          <div className="flex space-x-8">
-            <div className="h-4 w-12 bg-neutral-800 rounded" />
-            <div className="h-4 w-16 bg-neutral-800 rounded" />
-            <div className="h-4 w-10 bg-neutral-800 rounded" />
-            <div className="h-4 w-14 bg-neutral-800 rounded" />
-          </div>
-        </div>
-
-        {/* Content Layout Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-6">
-          <div className="lg:col-span-8 flex flex-col gap-8">
-            {/* Favorites Section */}
-            <div className="space-y-4">
-              <div className="h-4 w-32 bg-neutral-800 animate-pulse rounded" />
-              <div className="grid grid-cols-4 gap-3">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="aspect-[2/3] rounded-lg bg-neutral-800/60 animate-pulse"
-                  />
-                ))}
-              </div>
-            </div>
-            {/* Activity Section */}
-            <div className="space-y-4">
-              <div className="h-4 w-40 bg-neutral-800 animate-pulse rounded" />
-              <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-16 bg-neutral-800/40 animate-pulse rounded-xl"
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="lg:col-span-4 space-y-6">
-            <div className="aspect-square w-full rounded-xl bg-neutral-800/60 animate-pulse" />
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

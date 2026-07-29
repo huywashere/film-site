@@ -92,11 +92,47 @@ export const kkphimApi = {
   getKeywords: (tmdbType: "tv" | "movie", tmdbId: string) =>
     fetchKKPhim(`/phim/keywords?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`),
 
-  // Tìm kiếm
-  search: (keyword: string, page = 1, limit = 24) =>
-    fetchKKPhim(
-      `/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`,
-    ),
+  // Tìm kiếm với cơ chế tự động Fallback không dấu & Multi-Provider
+  search: async (keyword: string, page = 1, limit = 24) => {
+    const cleanKw = (keyword || "").trim();
+    if (!cleanKw) return { data: { items: [] } };
+
+    // 1. Tìm theo từ khóa gốc trên KKPhim
+    try {
+      const res = await fetchKKPhim(
+        `/v1/api/tim-kiem?keyword=${encodeURIComponent(cleanKw)}&page=${page}&limit=${limit}`,
+      );
+      if (res?.data?.items?.length > 0 || res?.items?.length > 0) return res;
+    } catch {}
+
+    // 2. Tìm không dấu nếu từ khóa gốc có dấu (ví dụ: "bố già" -> "bo gia")
+    const unaccented = cleanKw
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D");
+
+    if (unaccented !== cleanKw.toLowerCase()) {
+      try {
+        const res = await fetchKKPhim(
+          `/v1/api/tim-kiem?keyword=${encodeURIComponent(unaccented)}&page=${page}&limit=${limit}`,
+        );
+        if (res?.data?.items?.length > 0 || res?.items?.length > 0) return res;
+      } catch {}
+    }
+
+    // 3. Fallback qua API OPhim nếu KKPhim không tìm thấy
+    try {
+      const ophimRes = await fetchOphim(
+        `/tim-kiem?keyword=${encodeURIComponent(cleanKw)}`,
+      );
+      if (ophimRes?.data?.items?.length > 0) return ophimRes;
+    } catch {}
+
+    return fetchKKPhim(
+      `/v1/api/tim-kiem?keyword=${encodeURIComponent(cleanKw)}&page=${page}&limit=${limit}`,
+    );
+  },
 
   // Thể loại
   getGenres: () => fetchKKPhim(`/the-loai`),

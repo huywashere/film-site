@@ -346,7 +346,7 @@ export function SpotlightSearchModal({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -20, scale: 0.98 }}
         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-        className="bg-[#0b0e13]/98 border border-white/12 w-full max-w-6xl rounded-3xl overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.95)] flex flex-col backdrop-blur-3xl h-[86vh] max-h-[840px]"
+        className="bg-[#0b0e13]/98 border border-white/12 w-full max-w-6xl rounded-3xl overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.95)] flex flex-col backdrop-blur-3xl h-[88vh] max-h-[850px] my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Top Search Input Bar (Fixed Header) ── */}
@@ -458,8 +458,8 @@ export function SpotlightSearchModal({
           </div>
         </div>
 
-        {/* ── Main Scrollable View Area (Smooth Scrollable Container) ── */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+        {/* ── Main Scrollable View Area (Smooth Touch & Mouse Scrollable Container) ── */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-4 md:p-6 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-white/5">
           {/* ── SEARCH MODE ── */}
           {isSearching ? (
             <div className="space-y-4">

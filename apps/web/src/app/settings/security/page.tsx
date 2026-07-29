@@ -9,10 +9,16 @@ import {
   Laptop,
   RefreshCw,
   LogOut,
-  CheckCircle,
+  CheckCircle2,
   ShieldAlert,
   KeyRound,
   Loader2,
+  Lock,
+  Copy,
+  Check,
+  User,
+  ArrowLeft,
+  Globe,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -27,6 +33,146 @@ interface Session {
   isCurrent: boolean;
 }
 
+// ── Sub-component: 2FA Card ──────────────────────────────────────────
+function TwoFactorSection({
+  user,
+  onSetup,
+  onDisable,
+  disabling,
+}: {
+  user: any;
+  onSetup: () => void;
+  onDisable: () => void;
+  disabling: boolean;
+}) {
+  return (
+    <div className="bg-[#14181f] border border-white/10 rounded-2xl p-6 shadow-xl space-y-5">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center space-x-4">
+          <div className="p-3 bg-white/5 border border-white/10 rounded-xl text-white">
+            <Shield className="h-6 w-6" />
+          </div>
+          <div>
+            <h3 className="text-base font-extrabold text-white">
+              Xác thực hai yếu tố (2FA)
+            </h3>
+            <p className="text-xs text-neutral-400 mt-0.5">
+              Yêu cầu mã xác thực OTP từ ứng dụng Authenticator khi đăng nhập.
+            </p>
+          </div>
+        </div>
+
+        <span
+          className={`px-3 py-1 rounded-full text-xs font-bold flex items-center space-x-1.5 shrink-0 ${
+            user.twoFactorEnabled
+              ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
+              : "bg-white/5 border border-white/10 text-neutral-400"
+          }`}
+        >
+          {user.twoFactorEnabled ? (
+            <>
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              <span>Đang bật</span>
+            </>
+          ) : (
+            <>
+              <ShieldAlert className="h-3.5 w-3.5 text-neutral-500" />
+              <span>Đang tắt</span>
+            </>
+          )}
+        </span>
+      </div>
+
+      <div className="border-t border-white/5 pt-4 flex items-center justify-between">
+        <p className="text-xs text-neutral-400">
+          {user.twoFactorEnabled
+            ? "Tài khoản của bạn đã được bảo vệ bằng 2FA."
+            : "Khuyên dùng để bảo vệ tài khoản khỏi truy cập trái phép."}
+        </p>
+
+        {user.twoFactorEnabled ? (
+          <button
+            onClick={onDisable}
+            disabled={disabling}
+            className="bg-white/5 border border-white/10 hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-400 text-neutral-300 font-bold text-xs px-5 py-2.5 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+          >
+            Tắt 2FA
+          </button>
+        ) : (
+          <button
+            onClick={onSetup}
+            className="bg-white hover:bg-neutral-200 text-black font-extrabold text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all shadow-lg active:scale-95 cursor-pointer"
+          >
+            Thiết lập 2FA
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Sub-component: Google Link Card ─────────────────────────────────
+function GoogleLinkSection({ user }: { user: any }) {
+  const apiBase =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+  const googleLinkUrl = `${apiBase.replace("/api/v1", "")}/api/v1/auth/google`;
+
+  return (
+    <div className="bg-[#14181f] border border-white/10 rounded-2xl p-6 shadow-xl space-y-5">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center space-x-4">
+          <div className="p-3 bg-white/5 border border-white/10 rounded-xl text-white">
+            <KeyRound className="h-6 w-6" />
+          </div>
+          <div>
+            <h3 className="text-base font-extrabold text-white">
+              Liên kết tài khoản Google
+            </h3>
+            <p className="text-xs text-neutral-400 mt-0.5">
+              Đăng nhập nhanh bằng Google mà không cần mật khẩu.
+            </p>
+          </div>
+        </div>
+
+        <span
+          className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 ${
+            user.googleId
+              ? "bg-white/10 border border-white/15 text-white"
+              : "bg-white/5 border border-white/10 text-neutral-400"
+          }`}
+        >
+          {user.googleId ? "Đã liên kết" : "Chưa liên kết"}
+        </span>
+      </div>
+
+      <div className="border-t border-white/5 pt-4 flex items-center justify-between">
+        <p className="text-xs text-neutral-400">
+          {user.googleId
+            ? "Tài khoản Google đã liên kết thành công."
+            : "Chưa kết nối tài khoản Google nào."}
+        </p>
+
+        {user.googleId ? (
+          <button
+            disabled
+            className="bg-white/5 border border-white/10 text-neutral-500 font-bold text-xs px-5 py-2.5 rounded-xl cursor-not-allowed"
+          >
+            Đã liên kết Google
+          </button>
+        ) : (
+          <a
+            href={googleLinkUrl}
+            className="bg-white/10 hover:bg-white/20 border border-white/15 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all flex items-center space-x-2"
+          >
+            <span>Liên kết Google</span>
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Main Page ────────────────────────────────────────────────────────
 export default function SecuritySettingsPage() {
   const { user, fetchMe } = useAuthStore();
   const { toast } = useToast();
@@ -45,6 +191,7 @@ export default function SecuritySettingsPage() {
   const [otpCode, setOtpCode] = useState("");
   const [verifying2FA, setVerifying2FA] = useState(false);
   const [disabling2FA, setDisabling2FA] = useState(false);
+  const [copiedSecret, setCopiedSecret] = useState(false);
 
   useEffect(() => {
     fetchMe();
@@ -129,7 +276,7 @@ export default function SecuritySettingsPage() {
   };
 
   const handleDisable2FA = async () => {
-    const code = prompt("Nhập mã OTP để xác nhận tắt 2FA:");
+    const code = prompt("Nhập mã OTP 6 số để xác nhận tắt 2FA:");
     if (!code) return;
     setDisabling2FA(true);
     try {
@@ -149,257 +296,219 @@ export default function SecuritySettingsPage() {
     }
   };
 
-  // Google link URL
-  const apiBase =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
-  const googleLinkUrl = `${apiBase.replace("/api/v1", "")}/api/v1/auth/google`;
-
   if (!user) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center text-white">
-        <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-        <p>Vui lòng đăng nhập để xem cài đặt bảo mật.</p>
+      <div className="min-h-[70vh] flex flex-col items-center justify-center text-white space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+        <p className="text-sm font-semibold text-neutral-400">
+          Vui lòng đăng nhập để xem cài đặt bảo mật.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white py-12 px-4 max-w-5xl mx-auto space-y-10">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-black tracking-tight mb-2">
-          Cài Đặt Bảo Mật
-        </h1>
-        <p className="text-zinc-400">
-          Quản lý xác thực hai yếu tố, phiên hoạt động và liên kết mạng xã hội.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Left Column: 2FA & Google Account */}
-        <div className="md:col-span-2 space-y-8">
-          {/* Card 1: 2FA / TOTP */}
-          <div className="bg-zinc-950 border border-white/5 rounded-2xl p-6 space-y-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-zinc-900 rounded-xl border border-white/5">
-                <Shield className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold">Xác thực hai yếu tố (2FA)</h3>
-                <p className="text-sm text-zinc-400">
-                  Bảo vệ tài khoản bằng cách yêu cầu mã OTP mỗi lần đăng nhập.
-                </p>
-              </div>
+    <div className="min-h-screen bg-[#0f1216] text-foreground pb-24 pt-24 px-4 md:px-12 select-none">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-6">
+          <div>
+            <div className="flex items-center space-x-2 text-xs text-neutral-400 mb-2">
+              <Link href="/" className="hover:text-white transition-colors flex items-center gap-1">
+                <ArrowLeft size={13} /> Trang chủ
+              </Link>
+              <span>/</span>
+              <span className="text-white font-bold">Cài đặt bảo mật</span>
             </div>
-
-            <div className="border-t border-white/5 pt-6 flex items-center justify-between">
-              <div>
-                <span className="text-sm text-zinc-400">Trạng thái: </span>
-                {user.twoFactorEnabled ? (
-                  <span className="text-green-500 font-semibold inline-flex items-center text-sm">
-                    <CheckCircle className="h-4 w-4 mr-1 inline" /> Đang bật
-                  </span>
-                ) : (
-                  <span className="text-zinc-500 font-semibold inline-flex items-center text-sm">
-                    <ShieldAlert className="h-4 w-4 mr-1 inline" /> Đang tắt
-                  </span>
-                )}
-              </div>
-
-              {user.twoFactorEnabled ? (
-                <button
-                  onClick={handleDisable2FA}
-                  disabled={disabling2FA}
-                  className="bg-red-500 hover:bg-red-600 text-white font-semibold text-sm px-5 py-2.5 rounded-full transition-colors disabled:opacity-50"
-                >
-                  Tắt 2FA
-                </button>
-              ) : (
-                <button
-                  onClick={handleSetup2FA}
-                  className="bg-primary hover:bg-primary/90 text-black font-semibold text-sm px-5 py-2.5 rounded-full transition-all"
-                >
-                  Thiết lập 2FA
-                </button>
-              )}
-            </div>
+            <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+              Cài Đặt Bảo Mật
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-400 mt-1">
+              Quản lý xác thực hai yếu tố, theo dõi thiết bị hoạt động và liên kết mạng xã hội.
+            </p>
           </div>
 
-          {/* Card 2: Google Link */}
-          <div className="bg-zinc-950 border border-white/5 rounded-2xl p-6 space-y-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-zinc-900 rounded-xl border border-white/5">
-                <KeyRound className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold">Liên kết tài khoản Google</h3>
-                <p className="text-sm text-zinc-400">
-                  Đăng nhập nhanh bằng tài khoản Google mà không cần mật khẩu.
-                </p>
-              </div>
-            </div>
-
-            <div className="border-t border-white/5 pt-6 flex items-center justify-between">
-              <div>
-                <span className="text-sm text-zinc-400">Trạng thái: </span>
-                {user.googleId ? (
-                  <span className="text-green-500 font-semibold text-sm">
-                    Đã liên kết
-                  </span>
-                ) : (
-                  <span className="text-zinc-500 font-semibold text-sm">
-                    Chưa liên kết
-                  </span>
-                )}
-              </div>
-
-              {user.googleId ? (
-                <button
-                  disabled
-                  className="bg-zinc-900 border border-white/5 text-zinc-500 font-semibold text-sm px-5 py-2.5 rounded-full cursor-not-allowed"
-                >
-                  Đã liên kết Google
-                </button>
-              ) : (
-                <a
-                  href={googleLinkUrl}
-                  className="bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-white font-semibold text-sm px-5 py-2.5 rounded-full transition-all flex items-center space-x-2"
-                >
-                  <span>Liên kết Google</span>
-                </a>
-              )}
-            </div>
+          {/* Quick Tab Switcher */}
+          <div className="flex items-center space-x-2 bg-white/5 border border-white/10 p-1 rounded-xl self-start md:self-auto">
+            <button className="px-4 py-2 rounded-lg bg-white/10 text-white font-extrabold text-xs flex items-center space-x-1.5 cursor-pointer">
+              <Lock size={13} />
+              <span>Bảo mật</span>
+            </button>
+            {user.username && (
+              <Link
+                href={`/profile/${user.username}`}
+                className="px-4 py-2 rounded-lg text-neutral-400 hover:text-white font-bold text-xs transition-colors flex items-center space-x-1.5"
+              >
+                <User size={13} />
+                <span>Hồ sơ</span>
+              </Link>
+            )}
           </div>
         </div>
 
-        {/* Right Column: Sessions (Device Tracking) */}
-        <div className="bg-zinc-950 border border-white/5 rounded-2xl p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Laptop className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-bold">Thiết Bị Hoạt Động</h3>
-            </div>
-            <button
-              onClick={loadSessions}
-              disabled={loadingSessions}
-              className="text-zinc-500 hover:text-white transition-colors"
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${loadingSessions ? "animate-spin" : ""}`}
-              />
-            </button>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Column: 2FA & Google Account */}
+          <div className="lg:col-span-7 space-y-6">
+            <TwoFactorSection
+              user={user}
+              onSetup={handleSetup2FA}
+              onDisable={handleDisable2FA}
+              disabling={disabling2FA}
+            />
+
+            <GoogleLinkSection user={user} />
           </div>
 
-          <p className="text-xs text-zinc-400">
-            Đây là các thiết bị đã đăng nhập gần đây. Bạn có thể đăng xuất khỏi
-            bất kỳ thiết bị lạ nào.
-          </p>
-
-          <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1">
-            {loadingSessions ? (
-              <div className="flex items-center justify-center py-10">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : (
-              sessions.map((session) => (
-                <div
-                  key={session.id}
-                  className={`p-4 rounded-xl border transition-all ${
-                    session.isCurrent
-                      ? "bg-primary/5 border-primary/20"
-                      : "bg-zinc-900/50 border-white/5"
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-semibold text-sm">{session.browser}</p>
-                      <p className="text-xs text-zinc-400">{session.os}</p>
-                      <p className="text-[11px] text-zinc-500 mt-1 font-mono">
-                        {session.ipAddress}
-                      </p>
-                    </div>
-
-                    {session.isCurrent ? (
-                      <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
-                        Hiện tại
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => handleRevokeSession(session.id)}
-                        disabled={revokingId === session.id}
-                        className="text-red-400 hover:text-red-500 transition-colors p-1"
-                        title="Đăng xuất thiết bị này"
-                      >
-                        {revokingId === session.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <LogOut className="h-4 w-4" />
-                        )}
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-zinc-500 mt-3">
-                    HĐ gần nhất:{" "}
-                    {new Date(session.lastUsedAt).toLocaleString("vi-VN")}
+          {/* Right Column: Sessions (Device Tracking) */}
+          <div className="lg:col-span-5 bg-[#14181f] border border-white/10 rounded-2xl p-6 shadow-xl space-y-5">
+            <div className="flex items-center justify-between border-b border-white/5 pb-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2.5 bg-white/5 border border-white/10 rounded-xl text-white">
+                  <Laptop className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-white">
+                    Thiết Bị Hoạt Động
+                  </h3>
+                  <p className="text-[11px] text-neutral-400">
+                    {sessions.length} thiết bị đã đăng nhập
                   </p>
                 </div>
-              ))
+              </div>
+
+              <button
+                onClick={loadSessions}
+                disabled={loadingSessions}
+                className="p-2 text-neutral-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                title="Làm mới danh sách thiết bị"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${loadingSessions ? "animate-spin" : ""}`}
+                />
+              </button>
+            </div>
+
+            <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/20">
+              {loadingSessions ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
+                </div>
+              ) : (
+                sessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className={`p-3.5 rounded-xl border transition-all ${
+                      session.isCurrent
+                        ? "bg-white/10 border-white/20"
+                        : "bg-white/[0.02] border-white/5 hover:border-white/10"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center space-x-2">
+                          <p className="font-bold text-xs text-white truncate">
+                            {session.browser}
+                          </p>
+                          {session.isCurrent && (
+                            <span className="text-[9px] bg-white/20 border border-white/30 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0">
+                              Thiết bị này
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-neutral-400 mt-0.5">
+                          {session.os}
+                        </p>
+                        <p className="text-[10px] text-neutral-500 mt-1 font-mono flex items-center space-x-1">
+                          <Globe size={10} />
+                          <span>{session.ipAddress}</span>
+                        </p>
+                      </div>
+
+                      {!session.isCurrent && (
+                        <button
+                          onClick={() => handleRevokeSession(session.id)}
+                          disabled={revokingId === session.id}
+                          className="p-1.5 text-neutral-400 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer shrink-0"
+                          title="Đăng xuất thiết bị này"
+                        >
+                          {revokingId === session.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-neutral-400" />
+                          ) : (
+                            <LogOut className="h-4 w-4" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {sessions.length > 1 && (
+              <button
+                onClick={handleRevokeAllOtherSessions}
+                disabled={revokingAll}
+                className="w-full bg-white/5 hover:bg-white/10 text-neutral-300 border border-white/10 font-bold text-xs py-3 rounded-xl transition-all flex justify-center items-center cursor-pointer active:scale-98"
+              >
+                {revokingAll ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <LogOut className="h-4 w-4 mr-2" />
+                )}
+                Đăng xuất tất cả thiết bị khác
+              </button>
             )}
           </div>
-
-          {sessions.length > 1 && (
-            <button
-              onClick={handleRevokeAllOtherSessions}
-              disabled={revokingAll}
-              className="w-full bg-zinc-900 hover:bg-red-950 hover:text-red-400 text-zinc-300 border border-white/5 font-semibold text-xs py-3 rounded-xl transition-all flex justify-center items-center"
-            >
-              {revokingAll ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <LogOut className="h-4 w-4 mr-2" />
-              )}
-              Đăng xuất các thiết bị khác
-            </button>
-          )}
         </div>
       </div>
 
       {/* 2FA SETUP MODAL */}
       {show2FAModal && twoFactorData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="max-w-md w-full bg-zinc-950 border border-white/10 rounded-2xl p-6 space-y-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold text-center">Thiết Lập 2FA</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="max-w-md w-full bg-[#14181f] border border-white/15 rounded-3xl p-6 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto scrollbar-thin">
+            <div className="text-center space-y-1">
+              <h3 className="text-xl font-extrabold text-white">
+                Thiết Lập Xác Thực 2FA
+              </h3>
+              <p className="text-xs text-neutral-400">
+                Quét mã QR bằng ứng dụng Authenticator của bạn.
+              </p>
+            </div>
 
             <div className="space-y-4">
-              <p className="text-sm text-zinc-400 text-center">
-                Quét mã QR Code dưới đây bằng ứng dụng xác thực (Google
-                Authenticator, Microsoft Authenticator hoặc Authy) của bạn:
-              </p>
-
-              <div className="flex justify-center">
+              <div className="flex justify-center p-3 bg-white rounded-2xl shadow-inner w-fit mx-auto">
                 <img
                   src={twoFactorData.qrCode}
                   alt="QR Code 2FA"
-                  className="w-48 h-48 border-4 border-white rounded-lg"
+                  className="w-44 h-44 rounded-lg object-contain"
                 />
               </div>
 
-              <div className="bg-zinc-900 p-3 rounded-lg border border-white/5 font-mono text-center text-xs select-all">
-                Mã bí mật:{" "}
-                <span className="text-primary font-bold">
+              <div className="bg-white/5 p-3 rounded-xl border border-white/10 font-mono text-center text-xs flex items-center justify-between">
+                <span className="text-neutral-400">Mã bí mật:</span>
+                <span className="text-white font-bold select-all">
                   {twoFactorData.secret}
                 </span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(twoFactorData.secret);
+                    setCopiedSecret(true);
+                    setTimeout(() => setCopiedSecret(false), 2000);
+                  }}
+                  className="text-neutral-400 hover:text-white p-1"
+                >
+                  {copiedSecret ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                </button>
               </div>
 
               {/* Backup Codes */}
               <div className="space-y-2">
-                <p className="text-xs font-bold text-red-400 text-center">
-                  ⚠️ VUI LÒNG LƯU LẠI 10 MÃ DỰ PHÒNG DƯỚI ĐÂY (CHỈ XUẤT HIỆN 1
-                  LẦN):
+                <p className="text-[11px] font-bold text-neutral-400 text-center">
+                  ⚠️ LƯU LẠI 10 MÃ DỰ PHÒNG DƯỚI ĐÂY (DÙNG KHI MẤT ĐIỆN THOẠI):
                 </p>
-                <div className="grid grid-cols-2 gap-1.5 bg-black/40 p-3 rounded-lg border border-white/5 font-mono text-center text-xs text-zinc-400">
+                <div className="grid grid-cols-2 gap-1.5 bg-black/40 p-3 rounded-xl border border-white/10 font-mono text-center text-xs text-neutral-300">
                   {twoFactorData.backupCodes.map((code, index) => (
-                    <div key={index} className="py-0.5 select-all">
+                    <div key={index} className="py-0.5 select-all font-semibold">
                       {code}
                     </div>
                   ))}
@@ -407,9 +516,9 @@ export default function SecuritySettingsPage() {
               </div>
 
               {/* Verify OTP field */}
-              <div className="space-y-2 pt-2 border-t border-white/5">
-                <label className="text-sm font-semibold">
-                  Nhập mã OTP 6 số để xác nhận:
+              <div className="space-y-2 pt-2 border-t border-white/10">
+                <label className="text-xs font-bold text-neutral-300">
+                  Nhập mã OTP 6 số từ ứng dụng:
                 </label>
                 <input
                   type="text"
@@ -418,8 +527,8 @@ export default function SecuritySettingsPage() {
                   onChange={(e) =>
                     setOtpCode(e.target.value.replace(/\D/g, ""))
                   }
-                  placeholder="Ví dụ: 123456"
-                  className="w-full bg-black/50 border border-white/10 text-white rounded-xl px-4 py-3 outline-none focus:border-primary/50 transition-colors text-center font-bold tracking-widest text-lg"
+                  placeholder="123456"
+                  className="w-full bg-black/60 border border-white/15 text-white rounded-xl px-4 py-3 outline-none focus:border-white/40 transition-colors text-center font-black tracking-widest text-xl"
                 />
               </div>
             </div>
@@ -431,19 +540,19 @@ export default function SecuritySettingsPage() {
                   setTwoFactorData(null);
                   setOtpCode("");
                 }}
-                className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white font-semibold py-3 rounded-xl transition-colors"
+                className="flex-1 bg-white/10 hover:bg-white/15 text-white font-bold text-xs py-3 rounded-xl transition-colors cursor-pointer"
               >
                 Hủy
               </button>
               <button
                 onClick={handleVerify2FA}
                 disabled={verifying2FA || otpCode.length !== 6}
-                className="flex-1 bg-primary hover:bg-primary/95 text-black font-bold py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
+                className="flex-1 bg-white hover:bg-neutral-200 text-black font-extrabold text-xs uppercase tracking-wider py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center shadow-lg active:scale-95 cursor-pointer"
               >
                 {verifying2FA ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin text-black" />
                 ) : (
-                  "Kích Hoạt"
+                  "Kích Hoạt 2FA"
                 )}
               </button>
             </div>

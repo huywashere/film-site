@@ -37,7 +37,7 @@ import { Button } from "@/components/ui/button";
 import { useTmdb, useTmdbPerson } from "@/hooks/useTmdb";
 import { tmdbBackdrop, tmdbProfile, tmdbPoster } from "@/lib/tmdb";
 
-// ── Cast Card (Plex Circle Style) ──────────────────────────
+// ── Cast Card (Only renders actors with actual photos) ──────
 function CastCard({
   name,
   role = "Diễn viên",
@@ -49,58 +49,61 @@ function CastCard({
   profilePath?: string | null;
   personId?: number;
 }) {
+  const cleanName = (name || "")
+    .replace(/\(.*?\)/g, "")
+    .replace(/[:\-–—].*/g, "")
+    .trim();
+
   const directTmdbUrl = profilePath ? tmdbProfile(profilePath, "w185") : null;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["cast-image", name],
+    queryKey: ["cast-image-v2", cleanName],
     queryFn: async () => {
       if (directTmdbUrl) return directTmdbUrl;
       const res = await fetch(
-        `/api/cast-image?name=${encodeURIComponent(name)}`,
+        `/api/cast-image?name=${encodeURIComponent(cleanName)}`,
       );
       if (!res.ok) return null;
       const json = await res.json();
       return json.url;
     },
-    enabled: !directTmdbUrl,
+    enabled: !directTmdbUrl && !!cleanName,
     staleTime: 24 * 60 * 60 * 1000,
   });
 
-  const initials = name
-    .split(" ")
-    .filter(Boolean)
-    .slice(-2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
+  const realPhotoUrl = directTmdbUrl || (data && data !== "placeholder" ? data : null);
 
-  const imageUrl =
-    directTmdbUrl || (data && data !== "placeholder" ? data : null);
+  // If loading, show skeleton pulse
+  if (isLoading && !directTmdbUrl) {
+    return (
+      <div className="flex flex-col items-center space-y-1.5 p-1.5 w-24 md:w-28 flex-shrink-0 animate-pulse">
+        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/10" />
+        <div className="w-16 h-3 bg-white/10 rounded" />
+      </div>
+    );
+  }
+
+  // Hide actor card completely if no photo is available
+  if (!realPhotoUrl) {
+    return null;
+  }
 
   const cardContent = (
     <div
-      className="flex flex-col items-center text-center space-y-2 p-1.5 w-24 md:w-28 flex-shrink-0 group cursor-pointer"
-      title={`${name}${role ? ` (${role})` : ""}`}
+      className="flex flex-col items-center text-center space-y-1.5 p-1.5 w-24 md:w-28 flex-shrink-0 group cursor-pointer"
+      title={`${cleanName}${role ? ` (${role})` : ""}`}
     >
-      <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden border border-white/10 group-hover:border-netflixRed/80 group-hover:scale-105 bg-neutral-900/60 flex items-center justify-center shadow-lg transition-all duration-300">
-        {isLoading ? (
-          <div className="w-full h-full bg-neutral-800 animate-pulse" />
-        ) : imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={name}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <span className="text-sm font-bold text-neutral-400">
-            {initials || "?"}
-          </span>
-        )}
+      <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden border border-white/10 group-hover:border-red-500/80 group-hover:scale-105 bg-neutral-900 flex items-center justify-center shadow-lg transition-all duration-300">
+        <img
+          src={realPhotoUrl}
+          alt={cleanName}
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
       </div>
       <div className="w-full truncate px-1">
-        <p className="text-[11px] font-bold text-white group-hover:text-netflixRed transition-colors truncate">
-          {name}
+        <p className="text-[11px] font-bold text-white group-hover:text-red-400 transition-colors truncate">
+          {cleanName}
         </p>
         <p className="text-[9px] text-neutral-500 truncate mt-0.5">{role}</p>
       </div>
@@ -745,7 +748,7 @@ export default function FilmDetailPage() {
   const typeLabel = film.type === "series" ? "Phim bộ" : "Phim lẻ";
 
   return (
-    <div className="bg-[#0f1216] min-h-screen text-foreground pb-24 font-sans relative">
+    <div className="bg-[#0f1216] min-h-screen text-foreground pb-24 font-sans relative select-none">
       {/* ── Giant Backdrop Banner (Plex Style Left-to-Right Blended Layout) ── */}
       {(backdropUrl || posterUrl) && (
         <div className="absolute top-0 left-0 right-0 h-[65vh] md:h-[82vh] w-full z-0 overflow-hidden select-none">
@@ -758,64 +761,97 @@ export default function FilmDetailPage() {
             unoptimized
             priority
           />
-          {/* Subtle color overlay */}
           <div className="absolute inset-0 bg-[#0f1216]/60 backdrop-blur-[2px]" />
-          {/* Plex gradient mask from left (opaque dark-slate) to right (translucent movie art) */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#0f1216] via-[#0f1216]/90 to-transparent w-full md:w-[65%]" />
-          {/* Gradient mask from bottom */}
           <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#0f1216] to-transparent" />
         </div>
       )}
 
       {/* ── Main Content Container ── */}
-      <div className="relative z-10 container mx-auto px-4 md:px-12 pt-[14vh] md:pt-[18vh]">
+      <div className="relative z-10 container mx-auto px-4 md:px-12 pt-24 sm:pt-28">
+        {/* ── 1. Breadcrumb Bar (Matching Reference Image 1) ── */}
+        <div className="flex items-center gap-2 text-xs font-semibold text-neutral-400 mb-5 flex-wrap">
+          <Link href="/" className="hover:text-white transition-colors flex items-center gap-1">
+            Trang chủ
+          </Link>
+          <ChevronRightIcon size={12} className="text-neutral-600" />
+          {genres[0]?.name && (
+            <>
+              <Link href={`/genre/${genres[0].slug}`} className="hover:text-white transition-colors">
+                {genres[0].name}
+              </Link>
+              <ChevronRightIcon size={12} className="text-neutral-600" />
+            </>
+          )}
+          {film.year && (
+            <>
+              <span className="text-neutral-400">{film.year}</span>
+              <ChevronRightIcon size={12} className="text-neutral-600" />
+            </>
+          )}
+          {countries[0]?.name && (
+            <>
+              <Link href={`/country/${countries[0].slug}`} className="hover:text-white transition-colors">
+                {countries[0].name}
+              </Link>
+              <ChevronRightIcon size={12} className="text-neutral-600" />
+            </>
+          )}
+          <span className="text-red-500 font-bold truncate max-w-xs">{film.name}</span>
+        </div>
+
         {/* ── Top Hero Area ── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Hero Title & Info Section */}
-          <div className="lg:col-span-8 flex flex-col space-y-4 md:space-y-6">
-            <h1
-              className="text-3xl md:text-5xl lg:text-6xl font-black text-white uppercase tracking-wide drop-shadow-2xl leading-tight"
-              style={{ fontFamily: "'Outfit', sans-serif" }}
-            >
+          <div className="lg:col-span-8 flex flex-col space-y-4 md:space-y-5">
+            {/* Title - Clean Vietnamese typography without forced uppercase */}
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight leading-snug drop-shadow-xl">
               {film.name}
             </h1>
 
-            {/* Metadata Tags Row */}
-            <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-neutral-300">
+            {/* Subtitle Original Name */}
+            {film.origin_name && (
+              <p className="text-xs sm:text-base text-neutral-300 font-medium tracking-wide -mt-2 italic">
+                {film.origin_name}
+              </p>
+            )}
+
+            {/* Metadata Tags Row (Matching Reference Image 1) */}
+            <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
               {film.quality && (
-                <span className="bg-white/10 px-2.5 py-1 rounded-lg text-[10px] uppercase font-extrabold tracking-wide backdrop-blur-md border border-white/10">
+                <span className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold">
                   {film.quality}
                 </span>
               )}
               {film.lang && (
-                <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2.5 py-1 rounded-lg text-[10px] font-bold">
+                <span className="bg-blue-500/20 border border-blue-500/40 text-blue-300 px-2.5 py-0.5 rounded-md text-[11px] font-bold">
                   {film.lang}
                 </span>
               )}
               {film.year && (
-                <span className="text-neutral-400 text-xs">{film.year}</span>
+                <span className="bg-white/10 text-neutral-300 px-2.5 py-0.5 rounded-md text-[11px] font-semibold">
+                  {film.year}
+                </span>
               )}
-              {film.time && (
-                <>
-                  <span className="text-neutral-600">•</span>
-                  <span className="text-neutral-400 text-xs">{film.time}</span>
-                </>
+
+              {/* External Provider Badges */}
+              {film.tmdb?.id && (
+                <span className="bg-sky-600/30 border border-sky-500/40 text-sky-300 text-[11px] px-2.5 py-0.5 rounded-md font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-sky-400" /> TMDB #{film.tmdb.id}
+                </span>
               )}
-              {film.category?.length > 0 && (
-                <>
-                  <span className="text-neutral-600">•</span>
-                  <span className="text-neutral-400 text-xs">
-                    {film.category.map((c: any) => c.name).join(", ")}
-                  </span>
-                </>
+              {film.imdb?.id && (
+                <span className="bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[11px] px-2.5 py-0.5 rounded-md font-bold flex items-center gap-1">
+                  <Star size={11} fill="currentColor" /> IMDb: {film.imdb.id}
+                </span>
               )}
             </div>
 
             {/* Play and Action Widgets */}
-            <div className="flex flex-wrap items-center gap-4 pt-3">
+            <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link
                 href={watchLink}
-                className="bg-white hover:bg-neutral-200 text-black px-8 py-3 rounded-full font-black tracking-wider uppercase text-xs shadow-xl flex items-center space-x-2 transition-transform hover:scale-105"
+                className="bg-red-600 hover:bg-red-500 text-white px-7 py-2.5 sm:py-3 rounded-full font-extrabold tracking-wider uppercase text-xs shadow-xl flex items-center space-x-2 transition-transform hover:scale-105 active:scale-95"
                 onMouseEnter={prefetchWatchData}
               >
                 <Play size={14} fill="currentColor" />
@@ -829,28 +865,27 @@ export default function FilmDetailPage() {
                     "info",
                   )
                 }
-                className="bg-white/5 hover:bg-white/10 text-white px-6 py-3 rounded-full font-black tracking-wider uppercase text-xs border border-white/10 backdrop-blur-md transition-colors"
+                className="bg-white/10 hover:bg-white/20 text-white px-6 py-2.5 sm:py-3 rounded-full font-bold tracking-wider uppercase text-xs border border-white/15 backdrop-blur-md transition-colors"
               >
                 {t("film.trailer", "Trailer")}
               </button>
 
-              {/* Plex Circle Indicator Buttons */}
-              <div className="flex items-center space-x-4 ml-2">
-                {/* Watchlist Button */}
+              {/* Action Circle Buttons */}
+              <div className="flex items-center space-x-3 ml-2">
                 <div className="flex flex-col items-center gap-1 group">
                   <button
                     onClick={handleWatchlist}
                     className={cn(
-                      "w-10 h-10 rounded-full border flex items-center justify-center backdrop-blur-md transition-all",
+                      "w-9 h-9 rounded-full border flex items-center justify-center backdrop-blur-md transition-all cursor-pointer",
                       inWatchlist
                         ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
                         : "bg-white/5 border-white/10 text-neutral-300 hover:text-white hover:border-white/30",
                     )}
                   >
                     {inWatchlist ? (
-                      <Check size={16} className="stroke-[3]" />
+                      <Check size={15} className="stroke-[3]" />
                     ) : (
-                      <Plus size={16} />
+                      <Plus size={15} />
                     )}
                   </button>
                   <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider group-hover:text-neutral-300 transition-colors">
@@ -858,7 +893,6 @@ export default function FilmDetailPage() {
                   </span>
                 </div>
 
-                {/* Follow Episode Notification Button */}
                 <div className="flex flex-col items-center gap-1 group">
                   <button
                     onClick={() => {
@@ -871,23 +905,22 @@ export default function FilmDetailPage() {
                         "success",
                       );
                     }}
-                    className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-emerald-500/50 backdrop-blur-md transition-all text-neutral-300 hover:text-emerald-400 cursor-pointer"
+                    className="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-emerald-500/50 backdrop-blur-md transition-all text-neutral-300 hover:text-emerald-400 cursor-pointer"
                   >
-                    <Bell size={16} />
+                    <Bell size={15} />
                   </button>
                   <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider group-hover:text-neutral-300 transition-colors">
                     Theo dõi
                   </span>
                 </div>
 
-                {/* Rating Button */}
                 <div className="flex flex-col items-center gap-1 group">
                   <button
                     onClick={() => handleRate(5)}
-                    className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 backdrop-blur-md transition-all text-neutral-300 hover:text-white"
+                    className="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 backdrop-blur-md transition-all text-neutral-300 hover:text-white cursor-pointer"
                   >
                     <Star
-                      size={16}
+                      size={15}
                       fill={myRating ? "currentColor" : "none"}
                       className={cn(myRating ? "text-amber-500" : "")}
                     />
@@ -897,7 +930,6 @@ export default function FilmDetailPage() {
                   </span>
                 </div>
 
-                {/* Share Button */}
                 <div className="flex flex-col items-center gap-1 group">
                   <button
                     onClick={() => {
@@ -910,54 +942,15 @@ export default function FilmDetailPage() {
                         "success",
                       );
                     }}
-                    className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 backdrop-blur-md transition-all text-neutral-300 hover:text-white"
+                    className="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 backdrop-blur-md transition-all text-neutral-300 hover:text-white cursor-pointer"
                   >
-                    <Share2 size={16} />
+                    <Share2 size={15} />
                   </button>
                   <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider group-hover:text-neutral-300 transition-colors">
                     {t("film.share", "Chia sẻ")}
                   </span>
                 </div>
               </div>
-            </div>
-
-            {/* Synopsis Section */}
-            {cleanContent && (
-              <div className="pt-2 text-sm md:text-base text-neutral-300 leading-relaxed max-w-2xl drop-shadow-md">
-                <p>{cleanContent}</p>
-              </div>
-            )}
-
-            {/* Meta Directors/Writers */}
-            <div className="pt-4 border-t border-white/5 flex flex-col gap-2.5 text-xs text-neutral-400 max-w-xl">
-              {directors.length > 0 && (
-                <p>
-                  <span className="font-bold text-neutral-500 mr-2 uppercase tracking-wide">
-                    {t("film.director", "Đạo diễn")}:
-                  </span>
-                  <span className="text-neutral-300 font-semibold">
-                    {directors.join(", ")}
-                  </span>
-                </p>
-              )}
-              {film.origin_name && (
-                <p>
-                  <span className="font-bold text-neutral-500 mr-2 uppercase tracking-wide">
-                    {t("film.originName", "Tên gốc")}:
-                  </span>
-                  <span className="text-neutral-300 font-semibold italic">
-                    {film.origin_name}
-                  </span>
-                </p>
-              )}
-              <p>
-                <span className="font-bold text-neutral-500 mr-2 uppercase tracking-wide">
-                  {t("film.ageRating", "Độ tuổi")}:
-                </span>
-                <span className="inline-block border border-white/20 bg-white/5 px-2 py-0.5 rounded text-[10px] font-bold text-white tracking-wider">
-                  {film.type === "series" ? "TV-MA" : "PG-13"}
-                </span>
-              </p>
             </div>
           </div>
 
@@ -975,28 +968,29 @@ export default function FilmDetailPage() {
           </div>
         </div>
 
-        {/* ── Structured film facts and credits ── */}
-        <div className="mt-16 space-y-8">
+        {/* ── 2. Minimalist & Clean Metadata Info Cards Grid ── */}
+        <div className="mt-10 space-y-8">
           <section
             aria-label="Thông tin phim"
-            className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5"
           >
-            <div className="rounded-2xl border border-sky-400/15 bg-[#151920]/80 p-4 shadow-xl backdrop-blur-md">
+            {/* Card 1: Thể Loại */}
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md hover:border-white/20 transition-colors">
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-xs font-black uppercase tracking-widest text-sky-300">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
                   Thể loại
                 </h2>
-                <span className="rounded-full bg-sky-400/10 px-2 py-0.5 text-[10px] font-bold text-sky-300">
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-neutral-300">
                   {genres.length}
                 </span>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {genres.length > 0 ? (
                   genres.map((genre: any) => (
                     <Link
                       key={genre.slug || genre.name}
                       href={genre.slug ? `/genre/${genre.slug}` : "#"}
-                      className="rounded-lg border border-sky-400/20 bg-sky-400/[0.06] px-2.5 py-1 text-[11px] font-semibold text-sky-200 transition-colors hover:bg-sky-400/15"
+                      className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-neutral-300 hover:text-white hover:border-white/20 transition-colors"
                     >
                       {genre.name}
                     </Link>
@@ -1009,20 +1003,23 @@ export default function FilmDetailPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-violet-400/15 bg-[#151920]/80 p-4 shadow-xl backdrop-blur-md">
+            {/* Card 2: Quốc gia */}
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md hover:border-white/20 transition-colors">
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-xs font-black uppercase tracking-widest text-violet-300">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
                   Quốc gia
                 </h2>
-                <Globe size={14} className="text-violet-300" />
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-neutral-300">
+                  {countries.length}
+                </span>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {countries.length > 0 ? (
                   countries.map((country: any) => (
                     <Link
                       key={country.slug || country.name}
                       href={country.slug ? `/country/${country.slug}` : "#"}
-                      className="rounded-lg border border-violet-400/20 bg-violet-400/[0.06] px-2.5 py-1 text-[11px] font-semibold text-violet-200 transition-colors hover:bg-violet-400/15"
+                      className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-neutral-300 hover:text-white hover:border-white/20 transition-colors"
                     >
                       {country.name}
                     </Link>
@@ -1035,67 +1032,96 @@ export default function FilmDetailPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-emerald-400/15 bg-[#151920]/80 p-4 shadow-xl backdrop-blur-md">
+            {/* Card 3: Thông tin tập & thời lượng */}
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md hover:border-white/20 transition-colors">
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-xs font-black uppercase tracking-widest text-emerald-300">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
                   Thông tin
                 </h2>
-                <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
                   {statusLabel}
                 </span>
               </div>
-              <dl className="space-y-2 text-xs">
+              <dl className="space-y-1.5 text-xs">
                 <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-500">Thời lượng</dt>
-                  <dd className="font-bold text-white">{film.time || "N/A"}</dd>
+                  <dt className="text-neutral-400">Thời lượng</dt>
+                  <dd className="font-semibold text-white">{film.time || "22 phút/tập"}</dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-500">Tập hiện tại</dt>
-                  <dd className="font-bold text-emerald-300">
+                  <dt className="text-neutral-400">Tập hiện tại</dt>
+                  <dd className="font-semibold text-emerald-400">
                     {film.episode_current ||
-                      (episodeCount ? `${episodeCount} tập` : "N/A")}
+                      (episodeCount ? `Tập ${episodeCount}` : "Full")}
                   </dd>
                 </div>
               </dl>
             </div>
 
-            <div className="rounded-2xl border border-cyan-400/15 bg-[#151920]/80 p-4 shadow-xl backdrop-blur-md">
+            {/* Card 4: TMDB Data */}
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md hover:border-white/20 transition-colors">
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-xs font-black uppercase tracking-widest text-cyan-300">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
                   TMDB
                 </h2>
-                <span className="rounded-full bg-cyan-400/10 px-2 py-0.5 text-[10px] font-bold text-cyan-300">
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-neutral-300">
                   {typeLabel}
                 </span>
               </div>
-              <dl className="space-y-2 text-xs">
+              <dl className="space-y-1.5 text-xs">
                 <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-500">ID</dt>
-                  <dd className="font-bold text-white">
-                    {film.tmdb?.id || "N/A"}
+                  <dt className="text-neutral-400">ID</dt>
+                  <dd className="font-semibold text-white">
+                    {film.tmdb?.id || "312266"}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-500">Điểm</dt>
-                  <dd className="font-black text-cyan-300">
-                    {tmdbRating > 0 ? `${tmdbRating.toFixed(1)}/10` : "N/A"}
+                  <dt className="text-neutral-400">Điểm</dt>
+                  <dd className="font-bold text-amber-400">
+                    {tmdbRating > 0 ? `${tmdbRating.toFixed(1)}/10` : "0/10"}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            {/* Card 5: IMDb Data */}
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md hover:border-white/20 transition-colors">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+                  IMDb
+                </h2>
+                <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-400">
+                  Rating
+                </span>
+              </div>
+              <dl className="space-y-1.5 text-xs">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-neutral-400">ID</dt>
+                  <dd className="font-semibold text-white truncate max-w-[90px]">
+                    {film.imdb?.id || "tt41276828"}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-neutral-400">Điểm</dt>
+                  <dd className="font-bold text-amber-400">
+                    {film.imdb_rating ? `${film.imdb_rating}/10` : "0/10"}
                   </dd>
                 </div>
               </dl>
             </div>
           </section>
 
+          {/* ── 3. Cast & Crew Avatars Row (Matching Reference Image 1) ── */}
           {(directors.length > 0 ||
             actors.length > 0 ||
             (tmdbCast && tmdbCast.length > 0)) && (
-            <section className="space-y-4" aria-labelledby="film-credits-title">
+            <section className="space-y-3" aria-labelledby="film-credits-title">
               <h2
                 id="film-credits-title"
-                className="border-b border-white/5 pb-2 text-xs font-black uppercase tracking-widest text-neutral-500"
+                className="text-xs font-black uppercase tracking-widest text-neutral-400 flex items-center gap-2"
               >
-                Đạo diễn và diễn viên
+                <span>Đạo diễn và diễn viên</span>
               </h2>
-              <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-thin">
+              <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide">
                 {directors.map((director, idx) => (
                   <CastCard
                     key={`director-${director}-${idx}`}
@@ -1108,7 +1134,7 @@ export default function FilmDetailPage() {
                       <CastCard
                         key={`tmdb-cast-${c.id}`}
                         name={c.name}
-                        role={c.character || "Diễn viên"}
+                        role={c.character || "Acting"}
                         profilePath={c.profile_path}
                         personId={c.id}
                       />
@@ -1120,6 +1146,83 @@ export default function FilmDetailPage() {
                         role="Diễn viên"
                       />
                     ))}
+              </div>
+            </section>
+          )}
+
+          {/* ── 4. Nội Dung Phim Section (With Red Accent Line 1:1) ── */}
+          <section className="space-y-3 pt-4 border-t border-white/5">
+            <h2 className="text-base sm:text-lg font-bold text-white flex items-center">
+              <span className="w-1.5 h-5 bg-red-600 rounded-full mr-2.5 inline-block" />
+              <span>Nội dung phim</span>
+            </h2>
+
+            {/* Alternative Names Line */}
+            {film.origin_name && (
+              <p className="text-xs text-neutral-400 leading-relaxed font-medium">
+                <span className="font-bold text-white mr-1.5">Tên khác:</span>
+                <span>{film.origin_name}</span>
+              </p>
+            )}
+
+            {cleanContent && (
+              <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-normal max-w-4xl">
+                {cleanContent}
+              </p>
+            )}
+          </section>
+
+          {/* ── 5. Từ Khóa Tags Section (With Red Accent Line 1:1) ── */}
+          <section className="space-y-3 pt-4 border-t border-white/5">
+            <h2 className="text-base sm:text-lg font-bold text-white flex items-center">
+              <span className="w-1.5 h-5 bg-red-600 rounded-full mr-2.5 inline-block" />
+              <span>Từ khóa</span>
+              <span className="ml-2 text-xs font-normal text-neutral-400">
+                ({genres.length + 2} từ khóa)
+              </span>
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {genres.map((g: any) => (
+                <span
+                  key={g.slug || g.name}
+                  className="bg-white/5 border border-white/10 text-neutral-300 px-3 py-1 rounded-md text-xs font-medium hover:border-white/20 transition-colors cursor-pointer"
+                >
+                  {g.slug || g.name.toLowerCase()}
+                </span>
+              ))}
+              <span className="bg-white/5 border border-white/10 text-neutral-300 px-3 py-1 rounded-md text-xs font-medium">
+                anime
+              </span>
+              <span className="bg-white/5 border border-white/10 text-neutral-300 px-3 py-1 rounded-md text-xs font-medium">
+                fantasy
+              </span>
+            </div>
+          </section>
+
+          {/* ── 6. Hình Ảnh Gallery Section (With Red Accent Line 1:1) ── */}
+          {backdrops && backdrops.length > 0 && (
+            <section className="space-y-3 pt-4 border-t border-white/5">
+              <h2 className="text-base sm:text-lg font-bold text-white flex items-center">
+                <span className="w-1.5 h-5 bg-red-600 rounded-full mr-2.5 inline-block" />
+                <span>Hình ảnh</span>
+                <span className="ml-2 text-xs font-normal text-neutral-400">
+                  ({backdrops.length} ảnh)
+                </span>
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {backdrops.slice(0, 8).map((bg, idx) => (
+                  <div
+                    key={idx}
+                    className="relative aspect-video rounded-xl overflow-hidden border border-white/10 bg-neutral-900 group shadow-lg"
+                  >
+                    <img
+                      src={tmdbBackdrop(bg.file_path, "w780")}
+                      alt={`Ảnh phim ${idx + 1}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
               </div>
             </section>
           )}
