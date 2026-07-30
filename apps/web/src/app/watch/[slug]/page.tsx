@@ -444,6 +444,7 @@ export default function WatchPage() {
 
   const { data: tmdbImages } = useQuery({
     queryKey: ["watch-tmdb-scenes", tmdbMediaType, tmdbShowId],
+    queryFn: () => tmdbApi.getImages(tmdbMediaType, String(tmdbShowId)),
     enabled:
       !!tmdbShowId && !isNaN(Number(tmdbShowId)) && Number(tmdbShowId) > 0,
     staleTime: 1000 * 60 * 60,

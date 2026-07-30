@@ -47,16 +47,11 @@ export function Sidebar() {
     }
   }, []);
 
-  // Track scroll position to hide sidebar over Hero Banner on Homepage
+  // Track scroll position to hide sidebar over top banner until scrolled down
   useEffect(() => {
-    if (!isHomePage) {
-      setScrolledPastBanner(true);
-      return;
-    }
-
     const handleScroll = () => {
-      // Show sidebar only after scrolling past Hero Banner (~420px)
-      if (window.scrollY > 420) {
+      // Show sidebar only after scrolling down past top banner (~350px)
+      if (window.scrollY > 350) {
         setScrolledPastBanner(true);
       } else {
         setScrolledPastBanner(false);
@@ -66,7 +61,7 @@ export function Sidebar() {
     handleScroll(); // Initial check
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isHomePage]);
+  }, []);
 
   const toggle = () => {
     const next = !collapsed;
@@ -78,7 +73,7 @@ export function Sidebar() {
     }
   };
 
-  const isVisible = !isHomePage || scrolledPastBanner;
+  const isVisible = scrolledPastBanner;
 
   return (
     <>
