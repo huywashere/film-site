@@ -109,34 +109,30 @@ function scoreFilmRelevance(film: FilmItem, rawQuery: string): number {
   return 1;
 }
 
-// ── Highlight matching text ──────────────────────────────────────
+// ── Highlight matching text (Ultra-Fast 60fps String Slicing) ───
 function HighlightMatch({ text, query }: { text: string; query: string }) {
-  if (!query.trim()) return <span>{text}</span>;
-  try {
-    const regex = new RegExp(
-      `(${query.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-      "gi",
-    );
-    const parts = text.split(regex);
-    return (
-      <span>
-        {parts.map((part, i) =>
-          regex.test(part) ? (
-            <mark
-              key={i}
-              className="bg-transparent text-netflixRed font-extrabold not-italic underline decoration-red-500/50"
-            >
-              {part}
-            </mark>
-          ) : (
-            <span key={i}>{part}</span>
-          ),
-        )}
-      </span>
-    );
-  } catch {
-    return <span>{text}</span>;
-  }
+  const trimmed = query.trim();
+  if (!trimmed || !text) return <span>{text}</span>;
+
+  const lowerText = text.toLowerCase();
+  const lowerQuery = trimmed.toLowerCase();
+  const index = lowerText.indexOf(lowerQuery);
+
+  if (index === -1) return <span>{text}</span>;
+
+  const before = text.slice(0, index);
+  const match = text.slice(index, index + trimmed.length);
+  const after = text.slice(index + trimmed.length);
+
+  return (
+    <span>
+      {before}
+      <mark className="bg-transparent text-netflixRed font-extrabold not-italic underline decoration-red-500/50">
+        {match}
+      </mark>
+      {after}
+    </span>
+  );
 }
 
 // ── Main SpotlightSearchModal ────────────────────────────────────
@@ -411,7 +407,7 @@ export function SpotlightSearchModal({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -12, scale: 0.98 }}
         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-        className="bg-[#0e1217]/95 border border-white/10 w-full max-w-2xl sm:max-w-3xl rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col h-full sm:h-[80vh] max-h-none sm:max-h-[680px] my-0 sm:my-auto pointer-events-auto"
+        className="bg-[#0e1217]/95 border border-white/10 w-full max-w-2xl sm:max-w-3xl rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col h-full sm:h-[80vh] max-h-none sm:max-h-[680px] my-0 sm:my-auto pointer-events-auto transform-gpu"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Top Search Input Bar (Fixed Header) ── */}
@@ -527,7 +523,7 @@ export function SpotlightSearchModal({
         {/* ── Main Scrollable View Area (Smooth Touch & Mouse Scrollable Container) ── */}
         <div
           onWheel={(e) => e.stopPropagation()}
-          className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-3 sm:p-6 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-white/5 pointer-events-auto"
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-3 sm:p-6 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-white/5 pointer-events-auto transform-gpu"
         >
           {/* ── SEARCH MODE ── */}
           {isSearching ? (
