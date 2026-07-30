@@ -748,6 +748,12 @@ export default function FilmDetailPage() {
       .includes("full")
       ? "Đã hoàn thành"
       : film?.episode_current || "Đang cập nhật";
+  const typeLabel =
+    film?.type === "series" || film?.type === "tv"
+      ? "Phim Bộ"
+      : film?.type === "hoat-hinh"
+        ? "Hoạt Hình"
+        : "Phim Lẻ";
 
   const filmName = film?.name || film?.title || slug;
   const originName = film?.origin_name || "";
@@ -758,7 +764,7 @@ export default function FilmDetailPage() {
     name: filmName,
     alternateName: originName,
     description:
-      description ||
+      cleanContent ||
       `Xem phim ${filmName} (${originName}) online chất lượng cao Vietsub Thuyết Minh HD full.`,
     image: posterUrl || backdropUrl,
     dateCreated: film?.year ? String(film.year) : undefined,
@@ -785,8 +791,8 @@ export default function FilmDetailPage() {
   };
 
   const seoTitle = `${filmName} ${originName ? `(${originName})` : ""} ${film?.year ? `- ${film.year}` : ""} Vietsub HD | CineVerse`;
-  const seoDescription = description
-    ? description.slice(0, 160)
+  const seoDescription = cleanContent
+    ? cleanContent.slice(0, 160)
     : `Xem phim ${filmName} (${originName}) chất lượng cao Vietsub Thuyết minh HD miễn phí trên CineVerse.`;
 
   return (
