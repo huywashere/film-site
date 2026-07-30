@@ -16,7 +16,7 @@ export function Pagination({
   currentPage,
   totalPages: propTotalPages,
   totalItems,
-  pageSize = 24,
+  pageSize = 36,
   onPageChange,
   className = "",
 }: PaginationProps) {

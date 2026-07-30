@@ -14,6 +14,7 @@ import {
   Clapperboard,
 } from "lucide-react";
 import { FilmCard, FilmItem } from "@/components/film/FilmCard";
+import { Pagination } from "@/components/film/Pagination";
 import { GENRES_LIST, COUNTRIES_LIST } from "@/components/layout/Navbar";
 import { movieApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -348,25 +349,11 @@ export default function BrowseFilmsPage() {
           </div>
 
           {/* ── Pagination ── */}
-          <div className="flex items-center justify-center gap-3 mt-12">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 text-xs font-bold text-white border border-white/10 transition-all"
-            >
-              Trang Trước
-            </button>
-            <span className="text-xs font-bold text-neutral-400 px-3">
-              Trang {page} / {totalPages}
-            </span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 text-xs font-bold text-white border border-white/10 transition-all"
-            >
-              Trang Sau
-            </button>
-          </div>
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={(p) => setPage(p)}
+          />
         </>
       )}
     </div>

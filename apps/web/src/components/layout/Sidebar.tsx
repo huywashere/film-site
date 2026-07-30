@@ -148,7 +148,7 @@ export function Sidebar() {
         </nav>
       </aside>
 
-      {/* ── TOGGLE — Sleek Dark Floating Capsule Button ── */}
+      {/* ── TOGGLE — Visible glassy circle button for collapsing/expanding sidebar ── */}
       <button
         onClick={toggle}
         aria-label={collapsed ? "Mở menu" : "Đóng menu"}
@@ -156,22 +156,22 @@ export function Sidebar() {
           collapsed ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng"
         }
         className={cn(
-          "hidden lg:flex fixed z-50 items-center justify-center transition-all duration-500 ease-out cursor-pointer active:scale-90 group",
-          "w-8 h-8 rounded-full bg-[#181c24] hover:bg-[#282e3d] text-white/70 hover:text-white border border-white/10 hover:border-white/30 shadow-2xl backdrop-blur-md",
+          "hidden lg:flex fixed z-50 items-center justify-center cursor-pointer active:scale-90 group transition-all duration-300",
+          "w-8 h-8 rounded-full bg-[#12141c]/90 text-white/90 hover:text-white border border-white/20 hover:border-white/40 shadow-xl backdrop-blur-md hover:bg-white/20",
           isVisible
-            ? "opacity-100 scale-100 pointer-events-auto"
+            ? "opacity-90 hover:opacity-100 scale-100 pointer-events-auto"
             : "opacity-0 scale-75 pointer-events-none",
         )}
         style={{
           top: "135px",
           left: collapsed ? "14px" : `${W - 14}px`,
           transition:
-            "left 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-out, transform 0.5s ease-out, background-color 0.2s ease, border-color 0.2s ease",
+            "left 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out, transform 0.3s ease-out, background-color 0.2s ease, border-color 0.2s ease",
         }}
       >
         <span
           className={cn(
-            "transition-transform duration-300 flex items-center justify-center",
+            "transition-transform duration-300 flex items-center justify-center text-white/90 group-hover:text-white",
             collapsed ? "rotate-180" : "rotate-0",
           )}
         >

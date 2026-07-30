@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useMemo } from "react";
-import { ChevronRight, ChevronLeft, ChevronDown } from "lucide-react";
+import { ChevronRight, ChevronLeft, ChevronDown, Loader2 } from "lucide-react";
 import { movieApi } from "@/lib/api";
 import {
   FilmCard,
@@ -14,6 +14,8 @@ import { useTranslation } from "@/store/langStore";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, FreeMode } from "swiper/modules";
 import { Top10RankedRow } from "@/components/film/Top10RankedRow";
+import { ContinueWatchingRow } from "@/components/film/ContinueWatchingRow";
+import { DashPagination } from "@/components/film/DashPagination";
 import HeroBanner from "@/app/components/HeroBanner";
 
 import "swiper/css";
@@ -29,6 +31,110 @@ function deduplicate(films: FilmItem[]): FilmItem[] {
     return true;
   });
 }
+
+// ── 5 Phim Hero Banner theo yêu cầu chính xác (TMDB 4K Backdrop Ảnh Gốc) ──
+const HERO_5_FILMS: FilmItem[] = [
+  {
+    _id: "ky-si-bong-dem",
+    name: "The Dark Knight",
+    origin_name: "The Dark Knight",
+    slug: "ky-si-bong-dem",
+    type: "single",
+    poster_url:
+      "https://phimimg.com/upload/vod/20240104-1/2cae46be24f514793c9e873f6de0fc32.jpg",
+    thumb_url:
+      "https://image.tmdb.org/t/p/original/dqK9Hag1054tghRQSqLSfrkvQnA.jpg",
+    time: "152 phút",
+    episode_current: "Full",
+    quality: "4K Ultra HD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2008,
+    vote_average: 9.0,
+    rating: 9.0,
+    content:
+      "Người dơi bước vào giai đoạn cam go nhất trong cuộc chiến chống lại cái ác khi tên tội phạm bậc thầy The Joker xuất hiện nhằm đe dọa biến Gotham thành đống đổ nát.",
+  },
+  {
+    _id: "nguoi-nhen-khong-con-nha",
+    name: "Spider-Man: No Way Home",
+    origin_name: "Spider-Man: No Way Home",
+    slug: "nguoi-nhen-khong-con-nha",
+    type: "single",
+    poster_url:
+      "https://phimimg.com/upload/vod/20250828-1/08fd0a68865ce452e959ae2bf58b7a8c.jpg",
+    thumb_url:
+      "https://image.tmdb.org/t/p/original/AeK2MPOpYrOOgZNfFnfwp0L8tNn.jpg",
+    time: "148 phút",
+    episode_current: "Full",
+    quality: "4K Ultra HD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2021,
+    vote_average: 8.3,
+    rating: 8.3,
+    content:
+      "Peter Parker đã bị lộ mặt và không còn có thể tách biệt cuộc sống bình thường. Khi anh yêu cầu sự giúp đỡ từ Doctor Strange, một phép thuật sai lầm đã xé rách đa vũ trụ.",
+  },
+  {
+    _id: "thoi-khac-cong-bo",
+    name: "Disclosure Day",
+    origin_name: "Disclosure Day",
+    slug: "thoi-khac-cong-bo",
+    type: "single",
+    poster_url:
+      "https://phimimg.com/uploads/movies/20260722/thoi-khac-cong-bo-poster.webp",
+    thumb_url:
+      "https://image.tmdb.org/t/p/original/flxau5Iu7bChQHsESqvGZ3FQRaI.jpg",
+    time: "146 phút",
+    episode_current: "Full",
+    quality: "4K Ultra HD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2026,
+    vote_average: 8.5,
+    rating: 8.5,
+    content:
+      "Nếu một ngày bạn nhận ra rằng chúng ta chưa bao giờ đơn độc trong vũ trụ. Mùa Hè 2026, sự thật vĩ đại vạch trần toàn thế giới trong Ngày Khai Tiết.",
+  },
+  {
+    _id: "star-wars-mandalorian-va-grogu",
+    name: "Star Wars: The Mandalorian & Grogu",
+    origin_name: "Star Wars: The Mandalorian and Grogu",
+    slug: "star-wars-mandalorian-va-grogu",
+    type: "single",
+    poster_url:
+      "https://phimimg.com/upload/vod/20260625-1/e43e9e9207618823fa3ca762e8fc274e.jpg",
+    thumb_url:
+      "https://image.tmdb.org/t/p/original/MJcERawyqGqJdPsOBc0C449hQ9.jpg",
+    time: "132 phút",
+    episode_current: "Full",
+    quality: "4K Ultra HD",
+    lang: "Vietsub",
+    year: 2026,
+    vote_average: 8.7,
+    rating: 8.7,
+    content:
+      "Đế Chế sụp đổ nhưng các lãnh chúa chiến tranh vẫn rải rác khắp thiên hà. Thợ săn tiền thưởng Din Djarin cùng chú bé Grogu phải bảo vệ hòa bình của Nền Cộng Hòa Mới.",
+  },
+  {
+    _id: "avatar-dong-chay-cua-nuoc",
+    name: "Avatar: The Way Of Water",
+    origin_name: "Avatar: The Way Of Water",
+    slug: "avatar-dong-chay-cua-nuoc",
+    type: "single",
+    poster_url:
+      "https://phimimg.com/upload/vod/20250513-1/59fc5ffe0025ca40c99d48b070b59320.jpg",
+    thumb_url:
+      "https://image.tmdb.org/t/p/original/kJsPVzdyBrYHLomuNv5SJDXUQ2f.jpg",
+    time: "192 phút",
+    episode_current: "Full",
+    quality: "4K Ultra HD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2022,
+    vote_average: 8.8,
+    rating: 8.8,
+    content:
+      "Phim lấy bối cảnh 10 năm sau sự kiện phần đầu. Jake Sully cùng gia đình Na'vi phải rời bỏ quê nhà để tới sinh sống tại vùng biển Pandora trước sự tấn công của con người.",
+  },
+];
 
 // Helper: Nhận diện phim Anime hoặc Hoạt hình 3D (Đấu La, Trảm Thần, Tiên Ni...)
 function isAnimationOrAnime(film: FilmItem): boolean {
@@ -84,6 +190,7 @@ function FilmSection({
   isLoading: boolean;
   href?: string;
 }) {
+  const [swiper, setSwiper] = useState<any>(null);
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
 
@@ -124,14 +231,8 @@ function FilmSection({
           )}
         </div>
 
-        {/* Right Side: Dash Line Pagination Indicators (— - - - -) */}
-        <div className="hidden sm:flex items-center gap-1.5 opacity-70">
-          <span className="w-5 h-0.5 rounded-full bg-white" />
-          <span className="w-2 h-0.5 rounded-full bg-white/30" />
-          <span className="w-2 h-0.5 rounded-full bg-white/30" />
-          <span className="w-2 h-0.5 rounded-full bg-white/30" />
-          <span className="w-2 h-0.5 rounded-full bg-white/30" />
-        </div>
+        {/* Right Side: Dynamic Dash Line Pagination Indicators (— - - - -) */}
+        <DashPagination swiper={swiper} />
       </div>
 
       {/* Row Container with Right Minimalist Vertical Stack Navigation */}
@@ -139,6 +240,7 @@ function FilmSection({
         <div className="flex-1 min-w-0">
           <Swiper
             modules={[Navigation, FreeMode]}
+            onSwiper={(s) => setSwiper(s)}
             navigation={{
               prevEl: prevRef.current,
               nextEl: nextRef.current,
@@ -152,15 +254,15 @@ function FilmSection({
                 swiper.params.navigation.nextEl = nextRef.current;
               }
             }}
-            spaceBetween={14}
-            slidesPerView={2.2}
+            spaceBetween={12}
+            slidesPerView={2.5}
             freeMode={{ enabled: true, momentumRatio: 0.8 }}
             breakpoints={{
-              480: { slidesPerView: 3.2, spaceBetween: 14 },
-              640: { slidesPerView: 3.8, spaceBetween: 16 },
-              768: { slidesPerView: 4.5, spaceBetween: 16 },
-              1024: { slidesPerView: 5.5, spaceBetween: 18 },
-              1280: { slidesPerView: 6.2, spaceBetween: 18 },
+              480: { slidesPerView: 3.6, spaceBetween: 12 },
+              640: { slidesPerView: 4.5, spaceBetween: 14 },
+              768: { slidesPerView: 5.5, spaceBetween: 14 },
+              1024: { slidesPerView: 6.8, spaceBetween: 16 },
+              1280: { slidesPerView: 7.5, spaceBetween: 16 },
             }}
             className="w-full !py-1"
           >
@@ -235,6 +337,17 @@ export default function HomePage() {
   const { t } = useTranslation();
   const router = useRouter();
 
+  const [showMoreSections, setShowMoreSections] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const handleShowMore = () => {
+    setIsLoadingMore(true);
+    setTimeout(() => {
+      setShowMoreSections(true);
+      setIsLoadingMore(false);
+    }, 450);
+  };
+
   // ── Initial 4 Sections Data (Prioritizing Hollywood/Western Live-Action Movies) ──
   // 1. Phim kỹ xảo (Hollywood VFX & Fantasy)
   const { data: vfxUsUkData } = useQuery({
@@ -304,7 +417,6 @@ export default function HomePage() {
   });
 
   // ── Lazy Loaded 10 Sections Data (Loaded after clicking Xem Thêm) ──
-  const [showMoreSections, setShowMoreSections] = useState(false);
 
   // 5. Xem gì tiếp theo (Hollywood Recommendations)
   const { data: usUkBlockbustersData, isLoading: nextWatchLoading } = useQuery({
@@ -505,45 +617,9 @@ export default function HomePage() {
     [latestData],
   );
 
-  // Hollywood Blockbuster Hero Banner Pool
-  const combinedBannerPool = useMemo(() => {
-    const list1 = usUkBannerData?.data?.items || usUkBannerData?.items || [];
-    const list2 = marvelHeroData?.data?.items || marvelHeroData?.items || [];
-    const raw = [...list1, ...list2];
-
-    const seen = new Set<string>();
-    return filterLiveActionOnly(raw).filter((f) => {
-      if (!f || !f.slug || !f.name) return false;
-      const key = f.slug.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [usUkBannerData, marvelHeroData]);
-
-  // Randomize 6 Hollywood blockbusters on page visit
-  const [shuffledBannerFilms, setShuffledBannerFilms] = useState<FilmItem[]>(
-    [],
-  );
-  useEffect(() => {
-    if (combinedBannerPool.length > 0) {
-      const arr = [...combinedBannerPool];
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      setShuffledBannerFilms(arr.slice(0, 6));
-    }
-  }, [combinedBannerPool]);
-
-  const bannerFilms =
-    shuffledBannerFilms.length > 0
-      ? shuffledBannerFilms
-      : combinedBannerPool.length > 0
-        ? combinedBannerPool.slice(0, 6)
-        : latestFilms.slice(0, 6);
-
-  const showBannerSkeleton = bannerFilms.length === 0;
+  // ── 5 Phim Hero Banner chuẩn xác theo yêu cầu người dùng ──
+  const bannerFilms = HERO_5_FILMS;
+  const showBannerSkeleton = false;
 
   // Deduplication registry & row limits
   const {
@@ -639,6 +715,9 @@ export default function HomePage() {
         {/* ONLY TOP 10 RANKED MOVIES KEPT AT TOP */}
         <Top10RankedRow films={top10List} />
 
+        {/* ── 16:9 LANDSCAPE WATCH HISTORY / RECENTLY WATCHED ROW ── */}
+        <ContinueWatchingRow fallbackFilms={top10List} />
+
         {/* ── Initial 4 Movie Sections ── */}
         <LazySection>
           <FilmSection
@@ -676,15 +755,23 @@ export default function HomePage() {
           />
         </LazySection>
 
-        {/* ── Minimalist Show More Sections Button ── */}
+        {/* ── Ultra-Minimal Show More Sections Button ── */}
         {!showMoreSections ? (
           <div className="w-full my-6 flex justify-center px-1">
             <button
-              onClick={() => setShowMoreSections(true)}
-              className="w-full max-w-md py-3.5 px-6 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-98 shadow-xl"
+              onClick={handleShowMore}
+              disabled={isLoadingMore}
+              className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium text-neutral-400 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 transition-all cursor-pointer active:scale-95"
             >
-              <span>Xem Thêm Danh Mục Phim</span>
-              <ChevronDown size={16} />
+              <span>Xem thêm danh mục</span>
+              {isLoadingMore ? (
+                <Loader2 size={13} className="animate-spin text-white" />
+              ) : (
+                <ChevronDown
+                  size={13}
+                  className="transition-transform duration-300 group-hover:translate-y-0.5 text-neutral-400 group-hover:text-white"
+                />
+              )}
             </button>
           </div>
         ) : (

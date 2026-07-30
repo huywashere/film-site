@@ -50,7 +50,7 @@ export default function FilmsTypePage() {
     (data?.data?.params?.pagination?.totalItems
       ? Math.ceil(
           data.data.params.pagination.totalItems /
-            (data.data.params.pagination.totalItemsPerPage || 24),
+            (data.data.params.pagination.totalItemsPerPage || 36),
         )
       : undefined);
 

@@ -32,16 +32,16 @@ export const kkphimApi = {
     fetchKKPhim(`/danh-sach/phim-moi-cap-nhat?page=${page}`),
 
   // Danh sách theo loại (v1 API)
-  getSeries: (page = 1, limit = 24) =>
+  getSeries: (page = 1, limit = 36) =>
     fetchKKPhim(`/v1/api/danh-sach/phim-bo?page=${page}&limit=${limit}`),
 
-  getSingle: (page = 1, limit = 24) =>
+  getSingle: (page = 1, limit = 36) =>
     fetchKKPhim(`/v1/api/danh-sach/phim-le?page=${page}&limit=${limit}`),
 
-  getAnime: (page = 1, limit = 24) =>
+  getAnime: (page = 1, limit = 36) =>
     fetchKKPhim(`/v1/api/danh-sach/hoat-hinh?page=${page}&limit=${limit}`),
 
-  getTvShows: (page = 1, limit = 24) =>
+  getTvShows: (page = 1, limit = 36) =>
     fetchKKPhim(`/v1/api/danh-sach/tv-shows?page=${page}&limit=${limit}`),
 
   // Lọc phim với nhiều tùy chọn
@@ -93,7 +93,7 @@ export const kkphimApi = {
     fetchKKPhim(`/phim/keywords?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`),
 
   // Tìm kiếm với cơ chế tự động Fallback không dấu & Multi-Provider
-  search: async (keyword: string, page = 1, limit = 24) => {
+  search: async (keyword: string, page = 1, limit = 36) => {
     const cleanKw = (keyword || "").trim();
     if (!cleanKw) return { data: { items: [] } };
 
@@ -143,19 +143,19 @@ export const kkphimApi = {
   // Thể loại
   getGenres: () => fetchKKPhim(`/the-loai`),
 
-  getByGenre: (slug: string, page = 1, limit = 24) =>
+  getByGenre: (slug: string, page = 1, limit = 36) =>
     fetchKKPhim(`/v1/api/the-loai/${slug}?page=${page}&limit=${limit}`),
 
   // Quốc gia
   getCountries: () => fetchKKPhim(`/quoc-gia`),
 
-  getByCountry: (slug: string, page = 1, limit = 24) =>
+  getByCountry: (slug: string, page = 1, limit = 36) =>
     fetchKKPhim(`/v1/api/quoc-gia/${slug}?page=${page}&limit=${limit}`),
 
   // Năm phát hành
   getYears: () => fetchKKPhim(`/nam-phat-hanh`),
 
-  getByYear: (year: number, page = 1, limit = 24) =>
+  getByYear: (year: number, page = 1, limit = 36) =>
     fetchKKPhim(`/nam-phat-hanh/${year}?page=${page}&limit=${limit}`),
 };
 
@@ -454,6 +454,16 @@ export const movieApi = {
   getYears: () => kkphimApi.getYears().then((data) => ({ data })),
   getFiltered: (params: Parameters<typeof kkphimApi.getFiltered>[0]) =>
     kkphimApi.getFiltered(params).then((data) => ({ data })),
+  getFilmsByType: (type?: string, page = 1, _limit = 24) => {
+    if (type === "phim-bo" || type === "series")
+      return movieApi.getSeries(page);
+    if (type === "phim-le" || type === "single")
+      return movieApi.getSingle(page);
+    if (type === "hoat-hinh" || type === "anime")
+      return movieApi.getAnime(page);
+    if (type === "tv-shows") return movieApi.getTvShows(page);
+    return movieApi.getLatest(page);
+  },
 };
 
 // ── NestJS Backend API (cần backend chạy) ───────────────────────────

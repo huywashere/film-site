@@ -75,10 +75,10 @@ export default function ActorsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchInput, setSearchInput] = useState("");
 
-  // Trending people từ TMDB
-  const { data: trendingData, isLoading: trendingLoading } = useQuery({
-    queryKey: ["tmdb-trending-people"],
-    queryFn: () => tmdbApi.getTrending("all", "week"),
+  // Popular / Trending actors từ TMDB
+  const { data: popularData, isLoading: popularLoading } = useQuery({
+    queryKey: ["tmdb-popular-people"],
+    queryFn: () => tmdbApi.getPopularPeople(1),
     staleTime: 1000 * 60 * 30,
     enabled: !searchQuery,
   });
@@ -96,13 +96,11 @@ export default function ActorsPage() {
     staleTime: 1000 * 60 * 5,
   });
 
-  const trendingPeople = (trendingData?.results || []).filter(
-    (p: any) => p.media_type === "person",
-  );
+  const popularPeople = popularData?.results || [];
   const searchPeople = searchData?.results || [];
   const displayPeople =
-    searchQuery.trim().length >= 2 ? searchPeople : trendingPeople;
-  const isLoading = trendingLoading || searchLoading;
+    searchQuery.trim().length >= 2 ? searchPeople : popularPeople;
+  const isLoading = popularLoading || searchLoading;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

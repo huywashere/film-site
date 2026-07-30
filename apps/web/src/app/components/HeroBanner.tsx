@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
-import { Play, Plus, Star, ChevronDown } from "lucide-react";
+import { Play, Plus, Star, ChevronDown, Film } from "lucide-react";
 import { FilmItem } from "@/components/film/FilmCard";
+import { TrailerModal } from "@/components/film/TrailerModal";
 import { useTranslation } from "@/store/langStore";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/providers/ToastProvider";
@@ -30,6 +31,9 @@ function resolveDirectImageUrl(url?: unknown): string | null {
 export default function HeroBanner({ films }: HeroBannerProps) {
   const [current, setCurrent] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [trailerModalFilm, setTrailerModalFilm] = useState<FilmItem | null>(
+    null,
+  );
   const { user } = useAuthStore();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -143,7 +147,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
               className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-wide uppercase leading-tight drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] max-w-2xl"
               style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }}
             >
-              {film.name}
+              {film.origin_name || film.name}
             </h1>
 
             {/* Badges Pill Row (Matching Cineplay Screenshot ⭐ Rating & Year) */}
@@ -172,11 +176,14 @@ export default function HeroBanner({ films }: HeroBannerProps) {
 
             {/* Centered Overview Text */}
             <p className="text-xs sm:text-sm text-neutral-300/90 max-w-xl mx-auto leading-relaxed line-clamp-2 font-normal drop-shadow-md">
-              {film.origin_name ? `${film.origin_name} — ` : ""}
-              {t("home.heroDesc")}
+              {film.content
+                ? film.content.replace(/<[^>]*>?/gm, "")
+                : film.origin_name
+                  ? `${film.origin_name} — ` + t("home.heroDesc")
+                  : t("home.heroDesc")}
             </p>
 
-            {/* Action Buttons (Watch Now + Circular Plus) */}
+            {/* Action Buttons (Watch Now + Trailer + Circular Plus) */}
             <div className="flex items-center justify-center gap-3 pt-1">
               <Link
                 href={`/watch/${film.slug}`}
@@ -185,6 +192,15 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                 <Play size={15} className="fill-black" />
                 <span>Watch Now</span>
               </Link>
+
+              <button
+                type="button"
+                onClick={() => setTrailerModalFilm(film)}
+                className="flex items-center gap-2 bg-[#181c24]/80 hover:bg-white/20 border border-white/15 text-neutral-200 hover:text-white px-5 py-3 rounded-full text-xs font-bold transition-all duration-200 backdrop-blur-md hover:scale-105 active:scale-95 cursor-pointer shadow-xl"
+              >
+                <Film size={14} className="text-neutral-300" />
+                <span>Trailer</span>
+              </button>
 
               <button
                 type="button"
@@ -210,9 +226,9 @@ export default function HeroBanner({ films }: HeroBannerProps) {
         </div>
       </div>
 
-      {/* ELEMENT 1: Animated Mouse Scroll Indicator (Bottom Center) */}
+      {/* ELEMENT 1: Animated Mouse Scroll Indicator (Desktop Only) */}
       <div
-        className="absolute left-1/2 -translate-x-1/2 bottom-4 z-30 flex flex-col items-center gap-1 cursor-pointer group transition-all duration-300 opacity-70 hover:opacity-100"
+        className="absolute left-1/2 -translate-x-1/2 bottom-4 z-30 hidden md:flex flex-col items-center gap-1 cursor-pointer group transition-all duration-300 opacity-70 hover:opacity-100"
         onClick={() =>
           window.scrollTo({
             top: window.innerHeight * 0.95,
@@ -271,6 +287,13 @@ export default function HeroBanner({ films }: HeroBannerProps) {
           );
         })}
       </div>
+
+      {/* Trailer Modal 4K */}
+      <TrailerModal
+        film={trailerModalFilm}
+        isOpen={!!trailerModalFilm}
+        onClose={() => setTrailerModalFilm(null)}
+      />
     </div>
   );
 }

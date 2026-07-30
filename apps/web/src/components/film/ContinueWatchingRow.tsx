@@ -1,148 +1,317 @@
 "use client";
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
-import { Play, X, Clock, RotateCcw } from "lucide-react";
-import {
-  watchProgressStorage,
-  WatchProgressEntry,
-  formatTime,
-} from "@/lib/watch-progress";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, FreeMode } from "swiper/modules";
+import { ChevronRight, ChevronLeft, Play, X } from "lucide-react";
+import { watchProgressStorage, WatchProgressEntry } from "@/lib/watch-progress";
+import { useAuthStore } from "@/store/authStore";
+import { useQuery } from "@tanstack/react-query";
+import { watchHistoryApi } from "@/lib/api";
+import { FilmItem, resolveImageUrl } from "./FilmCard";
+import { DashPagination } from "./DashPagination";
+import { cn } from "@/lib/utils";
 
-export function ContinueWatchingRow() {
-  const [entries, setEntries] = useState<WatchProgressEntry[]>([]);
-  const [mounted, setMounted] = useState(false);
+import "swiper/css";
+import "swiper/css/navigation";
 
+interface ContinueWatchingRowProps {
+  fallbackFilms?: FilmItem[];
+}
+
+export function ContinueWatchingRow({
+  fallbackFilms = [],
+}: ContinueWatchingRowProps) {
+  const { user } = useAuthStore();
+  const [localEntries, setLocalEntries] = useState<WatchProgressEntry[]>([]);
+  const [swiper, setSwiper] = useState<any>(null);
+  const prevRef = useRef<HTMLButtonElement>(null);
+  const nextRef = useRef<HTMLButtonElement>(null);
+
+  // Load localStorage entries for non-logged-in guest users or local progress
   useEffect(() => {
-    setMounted(true);
-    setEntries(watchProgressStorage.getEntries());
+    const entries = watchProgressStorage.getEntries();
+    setLocalEntries(entries);
   }, []);
 
-  if (!mounted || entries.length === 0) return null;
+  // Fetch logged-in user history from server
+  const { data: serverHistoryData } = useQuery({
+    queryKey: ["watch-history-row", user?.id],
+    queryFn: () => watchHistoryApi.getHistory(1, 20).then((r) => r.data),
+    enabled: !!user,
+  });
 
-  const handleRemove = (e: React.MouseEvent, slug: string, epSlug: string) => {
+  // Convert server history into unified items
+  const serverItems = useMemo(() => {
+    const items = serverHistoryData?.items || [];
+    return items.map((item: any) => ({
+      slug: item.movieId || item.movieSlug || item.slug,
+      epSlug: item.episode || "1",
+      epName: item.episode ? `Tập ${item.episode}` : "",
+      title: item.movieTitle || item.name || "Phim đã xem",
+      poster: item.movieThumb || item.poster || item.thumb,
+      currentTime: item.progress || 0,
+      duration: item.duration || 100,
+      updatedAt: item.updatedAt
+        ? new Date(item.updatedAt).getTime()
+        : Date.now(),
+    }));
+  }, [serverHistoryData]);
+
+  // Combine local & server items deduplicated by slug
+  const historyEntries = useMemo(() => {
+    const combined = [...localEntries, ...serverItems];
+    const seen = new Set<string>();
+    return combined.filter((item) => {
+      if (!item.slug || seen.has(item.slug)) return false;
+      seen.add(item.slug);
+      return true;
+    });
+  }, [localEntries, serverItems]);
+
+  const hasHistory = historyEntries.length > 0;
+  const sectionTitle = hasHistory
+    ? "Tiếp tục xem"
+    : "Lựa chọn hàng đầu hôm nay cho bạn";
+
+  // Remove single local item from watch progress
+  const handleRemoveItem = (
+    e: React.MouseEvent,
+    slug: string,
+    epSlug?: string,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     watchProgressStorage.removeEntry(slug, epSlug);
-    setEntries(watchProgressStorage.getEntries());
+    setLocalEntries((prev) => prev.filter((item) => item.slug !== slug));
   };
 
   return (
-    <section className="container mx-auto px-4 md:px-8 max-w-7xl my-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#00e054]/15 border border-[#00e054]/30 flex items-center justify-center text-[#00e054] shadow-sm">
-            <Clock size={16} />
-          </div>
-          <div>
-            <h2 className="text-xl md:text-2xl font-black text-white tracking-wide">
-              Tiếp Tục Xem
-            </h2>
-            <p className="text-xs text-neutral-400 font-semibold">
-              Các bộ phim bạn chưa xem xong
-            </p>
-          </div>
-        </div>
-        <span className="text-xs font-bold text-neutral-400 bg-white/5 px-2.5 py-1 rounded-full border border-white/10">
-          {entries.length} phim
-        </span>
-      </div>
-
-      {/* Grid Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {entries.map((item) => {
-          const percent = Math.min(
-            100,
-            Math.max(0, Math.round((item.currentTime / item.duration) * 100)),
-          );
-          const cleanEpNumber = item.epName
-            .replace(/^(tập|tap)\s*-?\s*/i, "")
-            .trim();
-          const epLabel = cleanEpNumber ? `Tập ${cleanEpNumber}` : "Tập 1";
-
-          return (
-            <div
-              key={`${item.slug}-${item.epSlug}`}
-              className="group relative bg-[#1c2228] border border-[#2c3440] rounded-2xl overflow-hidden shadow-xl hover:border-[#00e054]/50 transition-all duration-300 flex flex-col"
+    <div className="w-full mb-8 relative group/section">
+      {/* Header with Title + Inline Pill Button + Right Dash Line Indicators */}
+      <div className="flex items-center justify-between mb-3.5 px-1">
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-lg md:text-xl font-extrabold text-white tracking-tight">
+            {sectionTitle}
+          </h2>
+          {hasHistory && (
+            <Link
+              href="/history"
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.12] text-white/90 hover:text-white text-xs font-medium transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95 ml-1"
             >
-              {/* Thumbnail Container */}
-              <Link
-                href={`/watch/${item.slug}?ep=${item.epSlug}`}
-                className="relative aspect-[16/9] w-full bg-neutral-900 overflow-hidden block"
-              >
-                {item.poster ? (
-                  <img
-                    src={item.poster}
-                    alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 brightness-90 group-hover:brightness-100"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-neutral-600">
-                    <Play size={24} />
-                  </div>
-                )}
+              <span>Xem tất cả</span>
+              <ChevronRight size={12} strokeWidth={2.5} />
+            </Link>
+          )}
+        </div>
 
-                {/* Play Icon Overlay */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                  <div className="w-11 h-11 rounded-full bg-[#00e054] text-black flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
-                    <Play size={18} className="fill-current ml-0.5" />
-                  </div>
-                </div>
-
-                {/* Remove Button */}
-                <button
-                  onClick={(e) => handleRemove(e, item.slug, item.epSlug)}
-                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-[#00e054] text-neutral-300 hover:text-black flex items-center justify-center backdrop-blur-sm border border-white/10 transition-colors z-20"
-                  title="Xóa khỏi danh sách"
-                >
-                  <X size={14} />
-                </button>
-
-                {/* Progress Bar Container */}
-                <div className="absolute bottom-0 inset-x-0 h-1.5 bg-black/60">
-                  <div
-                    style={{ width: `${percent}%` }}
-                    className="h-full bg-[#00e054] rounded-r-full shadow-[0_0_8px_rgba(0,224,84,0.8)]"
-                  />
-                </div>
-              </Link>
-
-              {/* Info Container */}
-              <div className="p-3 flex flex-col justify-between flex-1">
-                <div>
-                  <Link href={`/watch/${item.slug}?ep=${item.epSlug}`}>
-                    <h3 className="font-extrabold text-xs text-white truncate group-hover:text-[#00e054] transition-colors">
-                      {item.title}
-                    </h3>
-                  </Link>
-                  <div className="flex items-center space-x-2 mt-1.5">
-                    <span className="bg-[#00e054]/15 text-[#00e054] border border-[#00e054]/30 text-[10px] font-black px-2 py-0.5 rounded-md">
-                      {epLabel}
-                    </span>
-                    <span className="text-[10px] text-neutral-400 font-semibold truncate">
-                      {formatTime(item.currentTime)} /{" "}
-                      {formatTime(item.duration)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between mt-3.5 pt-2 border-t border-white/5">
-                  <span className="text-[10px] text-neutral-400 font-bold">
-                    Đã xem {percent}%
-                  </span>
-                  <Link
-                    href={`/watch/${item.slug}?ep=${item.epSlug}`}
-                    className="flex items-center space-x-1 text-[11px] font-extrabold text-[#00e054] hover:underline"
-                  >
-                    <span>Xem tiếp</span>
-                    <Play size={10} className="fill-current" />
-                  </Link>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {/* Dynamic Dash Line Pagination Indicators (— - - - -) */}
+        <DashPagination swiper={swiper} />
       </div>
-    </section>
+
+      {/* Main Carousel Area with Right Minimalist Vertical Navigation */}
+      <div className="flex items-stretch gap-3">
+        <div className="flex-1 min-w-0">
+          <Swiper
+            modules={[Navigation, FreeMode]}
+            onSwiper={(s) => setSwiper(s)}
+            navigation={{
+              prevEl: prevRef.current,
+              nextEl: nextRef.current,
+            }}
+            onBeforeInit={(swiper: any) => {
+              if (
+                swiper.params.navigation &&
+                typeof swiper.params.navigation !== "boolean"
+              ) {
+                swiper.params.navigation.prevEl = prevRef.current;
+                swiper.params.navigation.nextEl = nextRef.current;
+              }
+            }}
+            spaceBetween={14}
+            slidesPerView={1.4}
+            freeMode={{ enabled: true, momentumRatio: 0.8 }}
+            breakpoints={{
+              480: { slidesPerView: 2.2, spaceBetween: 14 },
+              640: { slidesPerView: 2.8, spaceBetween: 16 },
+              768: { slidesPerView: 3.4, spaceBetween: 16 },
+              1024: { slidesPerView: 4.2, spaceBetween: 18 },
+              1280: { slidesPerView: 5.2, spaceBetween: 18 },
+            }}
+            className="w-full !py-1"
+          >
+            {hasHistory
+              ? historyEntries.map((item) => {
+                  const posterUrl = resolveImageUrl(item.poster);
+                  const percent =
+                    item.duration > 0
+                      ? Math.min(
+                          100,
+                          Math.max(
+                            5,
+                            Math.round(
+                              (item.currentTime / item.duration) * 100,
+                            ),
+                          ),
+                        )
+                      : 0;
+
+                  return (
+                    <SwiperSlide key={item.slug}>
+                      <Link
+                        href={`/watch/${item.slug}${
+                          item.epSlug ? `?ep=${item.epSlug}` : ""
+                        }`}
+                        className="group/card block relative select-none cursor-pointer"
+                      >
+                        {/* 16:9 Landscape Card (wide banner format) */}
+                        <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 group-hover/card:border-white/40 group-hover/card:scale-[1.02] shadow-2xl bg-neutral-900 transition-all duration-300 relative">
+                          {posterUrl ? (
+                            <img
+                              src={posterUrl}
+                              alt={item.title}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-xs text-neutral-400 font-bold p-2 text-center">
+                              {item.title}
+                            </div>
+                          )}
+
+                          {/* Gradient Bottom Overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-85 group-hover/card:opacity-60 transition-opacity" />
+
+                          {/* Remove Button on hover */}
+                          <button
+                            onClick={(e) =>
+                              handleRemoveItem(e, item.slug, item.epSlug)
+                            }
+                            title="Xóa khỏi lịch sử xem"
+                            className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-red-600 text-white/70 hover:text-white transition-all opacity-0 group-hover/card:opacity-100 z-30"
+                          >
+                            <X size={13} />
+                          </button>
+
+                          {/* Red Badge "Mới thêm" / "Tập X" at Bottom Left */}
+                          <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5 pointer-events-none">
+                            <span className="bg-netflixRed text-white text-[10px] font-extrabold px-2 py-0.5 rounded shadow-md tracking-wide uppercase">
+                              {item.epName || "Mới thêm"}
+                            </span>
+                          </div>
+
+                          {/* Play Button Icon on Hover */}
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/30 backdrop-blur-[1px]">
+                            <div className="w-10 h-10 rounded-full bg-netflixRed text-white flex items-center justify-center shadow-lg transform scale-75 group-hover/card:scale-100 transition-transform">
+                              <Play
+                                size={18}
+                                fill="currentColor"
+                                className="ml-0.5"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Progress Line Bar at Bottom Edge */}
+                          {percent > 0 && (
+                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-20">
+                              <div
+                                className="h-full bg-netflixRed transition-all duration-300"
+                                style={{ width: `${percent}%` }}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Title Underneath Card */}
+                        <div className="mt-2 space-y-0.5 px-0.5">
+                          <p className="text-xs sm:text-sm font-extrabold text-white truncate group-hover/card:text-netflixRed transition-colors">
+                            {item.title}
+                          </p>
+                        </div>
+                      </Link>
+                    </SwiperSlide>
+                  );
+                })
+              : fallbackFilms.slice(0, 10).map((film) => {
+                  const posterUrl =
+                    resolveImageUrl(film.thumb_url) ||
+                    resolveImageUrl(film.poster_url);
+
+                  return (
+                    <SwiperSlide key={film.slug}>
+                      <Link
+                        href={`/film/${film.slug}`}
+                        className="group/card block relative select-none cursor-pointer"
+                      >
+                        {/* 16:9 Landscape Card (wide banner format) */}
+                        <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 group-hover/card:border-white/40 group-hover/card:scale-[1.02] shadow-2xl bg-neutral-900 transition-all duration-300 relative">
+                          {posterUrl ? (
+                            <img
+                              src={posterUrl}
+                              alt={film.name}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-xs text-neutral-400 font-bold p-2 text-center">
+                              {film.name}
+                            </div>
+                          )}
+
+                          {/* Gradient Bottom Overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-85 group-hover/card:opacity-60 transition-opacity" />
+
+                          {/* Red Badge "Mới thêm" at Bottom Left (Matches Exact User Screenshot) */}
+                          <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5 pointer-events-none">
+                            <span className="bg-netflixRed text-white text-[10px] font-extrabold px-2 py-0.5 rounded shadow-md tracking-wide uppercase">
+                              Mới thêm
+                            </span>
+                          </div>
+
+                          {/* Play Button Icon on Hover */}
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/30 backdrop-blur-[1px]">
+                            <div className="w-10 h-10 rounded-full bg-netflixRed text-white flex items-center justify-center shadow-lg transform scale-75 group-hover/card:scale-100 transition-transform">
+                              <Play
+                                size={18}
+                                fill="currentColor"
+                                className="ml-0.5"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Title Underneath Card */}
+                        <div className="mt-2 space-y-0.5 px-0.5">
+                          <p className="text-xs sm:text-sm font-extrabold text-white truncate group-hover/card:text-netflixRed transition-colors">
+                            {film.name}
+                          </p>
+                        </div>
+                      </Link>
+                    </SwiperSlide>
+                  );
+                })}
+          </Swiper>
+        </div>
+
+        {/* Minimalist Navigation Buttons Column */}
+        <div className="hidden sm:flex flex-col justify-center gap-3 shrink-0 px-1 my-auto">
+          <button
+            ref={nextRef}
+            aria-label="Next slide"
+            className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
+          >
+            <ChevronRight size={22} strokeWidth={2.5} />
+          </button>
+          <button
+            ref={prevRef}
+            aria-label="Previous slide"
+            className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
+          >
+            <ChevronLeft size={22} strokeWidth={2.5} />
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

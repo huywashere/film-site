@@ -237,11 +237,19 @@ export const tmdbApi = {
       total_pages: number;
     }>("search/multi", { query, page: String(page) }),
 
-  // ── Trending ──
+  // ── Trending & Popular ──
   getTrending: (
-    type: "movie" | "tv" | "all" = "all",
+    type: "movie" | "tv" | "person" | "all" = "all",
     window: "day" | "week" = "week",
-  ) => fetchTmdb<{ results: TmdbMovie[] }>(`trending/${type}/${window}`),
+  ) => fetchTmdb<{ results: any[] }>(`trending/${type}/${window}`),
+
+  getPopularPeople: (page = 1) =>
+    fetchTmdb<{ results: TmdbCastMember[]; total_pages: number }>(
+      "person/popular",
+      {
+        page: String(page),
+      },
+    ),
 };
 
 // ── Helper: lấy TMDB ID từ film data của KKPhim/OPhim ────────────
@@ -275,12 +283,28 @@ export function extractTmdbInfo(film: any): {
 
 export function getYoutubeTrailer(videos: TmdbVideo[]): TmdbVideo | null {
   if (!videos?.length) return null;
-  const priority = ["Official Trailer", "Trailer", "Teaser"];
-  for (const keyword of priority) {
-    const found = videos.find(
-      (v) => v.site === "YouTube" && v.name.includes(keyword),
-    );
-    if (found) return found;
-  }
-  return videos.find((v) => v.site === "YouTube") || null;
+  const youtubeVideos = videos.filter((v) => v.site === "YouTube");
+  if (!youtubeVideos.length) return null;
+
+  // 1. Official Trailer (type === 'Trailer' and name has official)
+  const officialTrailer = youtubeVideos.find(
+    (v) => v.type === "Trailer" && /official trailer/i.test(v.name),
+  );
+  if (officialTrailer) return officialTrailer;
+
+  // 2. Any Trailer (type === 'Trailer')
+  const anyTypeTrailer = youtubeVideos.find((v) => v.type === "Trailer");
+  if (anyTypeTrailer) return anyTypeTrailer;
+
+  // 3. Name contains trailer
+  const nameTrailer = youtubeVideos.find((v) => /trailer/i.test(v.name));
+  if (nameTrailer) return nameTrailer;
+
+  // 4. Teaser
+  const teaser = youtubeVideos.find(
+    (v) => v.type === "Teaser" || /teaser/i.test(v.name),
+  );
+  if (teaser) return teaser;
+
+  return youtubeVideos[0];
 }

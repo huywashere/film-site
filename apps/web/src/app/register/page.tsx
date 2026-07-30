@@ -1,10 +1,11 @@
 import { RegisterForm } from "@/components/auth/RegisterForm";
+import { CinematicAuthBackground } from "@/components/auth/CinematicAuthBackground";
 
 export default function RegisterPage() {
   return (
-    <div className="pt-24 pb-16 min-h-screen bg-[#0a0c10] relative flex items-center justify-center px-4">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-950/20 via-[#0a0c10] to-[#0a0c10] pointer-events-none" />
-      <div className="relative z-10 w-full">
+    <div className="h-[100dvh] w-full bg-[#040508] relative flex items-center justify-center p-4 overflow-hidden">
+      <CinematicAuthBackground />
+      <div className="relative z-10 w-full flex justify-center items-center">
         <RegisterForm />
       </div>
     </div>

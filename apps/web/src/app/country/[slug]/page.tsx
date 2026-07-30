@@ -11,6 +11,7 @@ import {
   resolveImageUrl,
 } from "@/components/film/FilmCard";
 import { Pagination } from "@/components/film/Pagination";
+import { useTmdb } from "@/hooks/useTmdb";
 import {
   Play,
   Info,
@@ -258,8 +259,18 @@ function FeaturedActorsRow({ slug }: { slug: string }) {
 function CountryHeroBanner({ film }: { film?: FilmItem }) {
   if (!film) return null;
 
+  const { bestBackdrop } = useTmdb({
+    film,
+    fetchCredits: false,
+    fetchVideos: false,
+  });
+
   const backdrop =
-    resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url);
+    (bestBackdrop?.file_path
+      ? `https://image.tmdb.org/t/p/original${bestBackdrop.file_path}`
+      : null) ||
+    resolveImageUrl(film.thumb_url) ||
+    resolveImageUrl(film.poster_url);
 
   return (
     <div className="relative w-full h-[450px] md:h-[520px] rounded-3xl overflow-hidden mb-12 shadow-2xl bg-neutral-900 border border-white/10">

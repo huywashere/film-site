@@ -253,6 +253,30 @@ function filterM3u8(content: string, originalUrl: string): string {
   return filtered.join("\n");
 }
 
+// ── SSRF protection: Block private IPs & invalid protocols ────────
+function isPrivateHost(hostname: string): boolean {
+  const host = hostname.toLowerCase().trim();
+  if (
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host === "0.0.0.0" ||
+    host === "::1" ||
+    host === "169.254.169.254" ||
+    host.endsWith(".local") ||
+    host.endsWith(".internal")
+  ) {
+    return true;
+  }
+  if (
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host)
+  ) {
+    return true;
+  }
+  return false;
+}
+
 // ── Main handler ──────────────────────────────────────────────────
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get("url");
@@ -267,6 +291,29 @@ export async function GET(request: NextRequest) {
     targetUrl = decodeURIComponent(url);
   } catch {
     targetUrl = url;
+  }
+
+  // Validate URL structure & SSRF
+  let parsedTarget: URL;
+  try {
+    parsedTarget = new URL(targetUrl);
+    if (!["http:", "https:"].includes(parsedTarget.protocol)) {
+      return NextResponse.json(
+        { error: "Giao thức không hợp lệ" },
+        { status: 400 },
+      );
+    }
+    if (isPrivateHost(parsedTarget.hostname)) {
+      return NextResponse.json(
+        { error: "Truy cập host bị cấm" },
+        { status: 403 },
+      );
+    }
+  } catch {
+    return NextResponse.json(
+      { error: "URL không đúng định dạng" },
+      { status: 400 },
+    );
   }
 
   // Block nếu URL là quảng cáo

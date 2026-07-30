@@ -397,9 +397,9 @@ export function Navbar() {
                   sideOffset={8}
                   collisionPadding={{ right: 12, left: 12 }}
                   onWheel={(e) => e.stopPropagation()}
-                  className="w-[calc(100vw-24px)] max-w-[360px] sm:w-88 p-3 bg-[#14181c] border border-white/15 text-neutral-300 text-xs shadow-2xl z-50 rounded-2xl pointer-events-auto"
+                  className="w-[calc(100vw-24px)] max-w-[360px] sm:w-88 p-3.5 bg-[#090c15]/75 backdrop-blur-3xl border border-white/15 text-neutral-300 text-xs shadow-[0_25px_60px_rgba(0,0,0,0.7)] z-50 rounded-2xl pointer-events-auto ring-1 ring-white/10"
                 >
-                  <div className="flex items-center justify-between px-2 py-1.5 border-b border-white/10 mb-1">
+                  <div className="flex items-center justify-between px-2 py-1.5 border-b border-white/10 mb-1.5">
                     <span className="font-bold text-white text-sm">
                       Thông báo
                     </span>
@@ -414,25 +414,29 @@ export function Navbar() {
                   </div>
                   <div
                     onWheel={(e) => e.stopPropagation()}
-                    className="max-h-[60vh] sm:max-h-72 overflow-y-auto overscroll-contain touch-pan-y space-y-1 pr-1 scrollbar-thin pointer-events-auto"
+                    className="max-h-[60vh] sm:max-h-72 overflow-y-auto overscroll-contain touch-pan-y space-y-1.5 pr-1 scrollbar-thin pointer-events-auto"
                   >
                     {notifications.map((n) => (
                       <div
                         key={n.id}
                         onClick={() => markAsRead(n.id, n.slug)}
                         className={cn(
-                          "p-2.5 rounded-xl text-[11px] cursor-pointer hover:bg-white/5 transition-all flex items-start space-x-2.5",
-                          n.read ? "opacity-60" : "bg-white/[0.03]",
+                          "p-2.5 rounded-xl text-[11px] cursor-pointer hover:bg-white/15 hover:backdrop-blur-md transition-all flex items-start space-x-2.5 border border-white/5",
+                          n.read
+                            ? "opacity-60 bg-white/[0.02]"
+                            : "bg-white/[0.06] shadow-sm",
                         )}
                       >
                         <span
                           className={cn(
-                            "w-2 h-2 rounded-full mt-1 flex-shrink-0",
-                            n.read ? "bg-neutral-600" : "bg-red-500",
+                            "w-2 h-2 rounded-full mt-1 flex-shrink-0 shadow",
+                            n.read
+                              ? "bg-neutral-600"
+                              : "bg-red-500 shadow-red-500/50",
                           )}
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="text-white leading-snug break-words">
+                          <p className="text-white leading-snug break-words font-medium">
                             {n.message}
                           </p>
                           <span className="text-[9px] text-neutral-400 font-semibold block mt-0.5">
@@ -467,7 +471,7 @@ export function Navbar() {
                     alignOffset={-32}
                     sideOffset={10}
                     collisionPadding={{ right: 32 }}
-                    className="w-72 -translate-x-6 sm:-translate-x-8 p-2 bg-[#1f2328] border border-white/15 text-neutral-200 rounded-2xl shadow-2xl z-50 divide-y divide-white/10"
+                    className="w-72 -translate-x-6 sm:-translate-x-8 p-2.5 bg-[#090c15]/75 backdrop-blur-3xl border border-white/15 text-neutral-200 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.7)] z-50 divide-y divide-white/10 ring-1 ring-white/10"
                   >
                     {/* Top User Profile Header */}
                     <div className="p-2 flex items-center space-x-3 pb-3">
@@ -507,35 +511,35 @@ export function Navbar() {
                             `/profile/${encodeURIComponent(user.username)}`,
                           )
                         }
-                        className="hover:bg-white/10 hover:text-white rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
+                        className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
                       >
                         <User size={16} className="mr-3 text-neutral-400" />
                         <span>Tài khoản CineVerse</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => router.push("/watchlist")}
-                        className="hover:bg-white/10 hover:text-white rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
+                        className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
                       >
                         <Bookmark size={16} className="mr-3 text-neutral-400" />
                         <span>Danh sách xem (Watchlist)</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => router.push("/lists")}
-                        className="hover:bg-white/10 hover:text-white rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
+                        className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
                       >
                         <List size={16} className="mr-3 text-neutral-400" />
                         <span>Bộ sưu tập phim (Collections)</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => router.push("/reviews")}
-                        className="hover:bg-white/10 hover:text-white rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
+                        className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
                       >
                         <Star size={16} className="mr-3 text-neutral-400" />
                         <span>Đánh giá của tôi</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => router.push("/history")}
-                        className="hover:bg-white/10 hover:text-white rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
+                        className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
                       >
                         <History size={16} className="mr-3 text-neutral-400" />
                         <span>Lịch sử xem phim</span>
@@ -546,7 +550,7 @@ export function Navbar() {
                     <div className="py-1.5 space-y-0.5">
                       <DropdownMenuItem
                         onClick={toggleTheme}
-                        className="hover:bg-white/10 hover:text-white rounded-xl cursor-pointer flex items-center justify-between py-2.5 px-3 text-xs font-semibold"
+                        className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center justify-between py-2.5 px-3 text-xs font-semibold"
                       >
                         <div className="flex items-center">
                           {mounted && theme === "light" ? (
@@ -564,7 +568,7 @@ export function Navbar() {
                       {/* Language Switcher Modal Item */}
                       <DropdownMenuItem
                         onClick={() => setLang(lang === "vi" ? "en" : "vi")}
-                        className="hover:bg-white/10 hover:text-white rounded-xl cursor-pointer flex items-center justify-between py-2.5 px-3 text-xs font-semibold"
+                        className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center justify-between py-2.5 px-3 text-xs font-semibold"
                       >
                         <div className="flex items-center">
                           <Languages
@@ -585,7 +589,7 @@ export function Navbar() {
 
                       <DropdownMenuItem
                         onClick={() => router.push("/settings/security")}
-                        className="hover:bg-white/10 hover:text-white rounded-xl cursor-pointer flex items-center justify-between py-2.5 px-3 text-xs font-semibold"
+                        className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center justify-between py-2.5 px-3 text-xs font-semibold"
                       >
                         <div className="flex items-center">
                           <Settings

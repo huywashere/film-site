@@ -20,6 +20,8 @@ import {
   Monitor,
   Server,
   Info,
+  Lightbulb,
+  LightbulbOff,
 } from "lucide-react";
 import { movieApi, watchHistoryApi } from "@/lib/api";
 import { resolveImageUrl } from "@/components/film/FilmCard";
@@ -476,8 +478,8 @@ export default function WatchPage() {
 
   const episodes = [
     ...tagSource(kkphimEps, "KKPhim", "kkphim"),
-    ...tagSource(ophimEps, "OPhim", "ophim"),
     ...tagSource(nguoncEps, "NguonC", "nguonc"),
+    ...tagSource(ophimEps, "OPhim", "ophim"),
     ...tagSource(vsmovEps, "VSMov", "vsmov"),
   ];
 
@@ -676,7 +678,7 @@ export default function WatchPage() {
         if (isSwitchingType) setActiveServerType(nextEp._type as ServerType);
         setCurrentServer(nextIdx);
         setCurrentTypeServer(nextIdx);
-        setUseEmbedPlayer(false);
+        setUseEmbedPlayer(true);
         setIsFallbacking(false);
         setFallbackMessage("");
         fallbackAttemptRef.current += 1;
@@ -819,6 +821,12 @@ export default function WatchPage() {
   const watchSeoTitle = `Xem Phim ${film?.name || ""} ${currentEpData?.name ? `- Tập ${currentEpData.name}` : ""} Vietsub HD | CineVerse`;
   const watchSeoDescription = `Xem phim ${film?.name || ""} ${currentEpData?.name ? `Tập ${currentEpData.name}` : ""} Vietsub Thuyết minh HD online mượt mà không quảng cáo độc hại.`;
 
+  useEffect(() => {
+    if (watchSeoTitle && typeof document !== "undefined") {
+      document.title = watchSeoTitle;
+    }
+  }, [watchSeoTitle]);
+
   const watchJsonLd = {
     "@context": "https://schema.org",
     "@type": "Movie",
@@ -841,32 +849,17 @@ export default function WatchPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(watchJsonLd) }}
       />
 
-      {/* ── DYNAMIC HEAD META TAGS ── */}
-      <head>
-        <title>{watchSeoTitle}</title>
-        <meta name="description" content={watchSeoDescription} />
-        <meta property="og:title" content={watchSeoTitle} />
-        <meta property="og:description" content={watchSeoDescription} />
-        <meta
-          property="og:image"
-          content={posterUrl || tmdbBackdropUrl || undefined}
-        />
-        <meta property="og:type" content="video.other" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={watchSeoTitle} />
-        <meta
-          name="twitter:image"
-          content={posterUrl || tmdbBackdropUrl || undefined}
-        />
-      </head>
       {/* ── CINEMA LIGHTS-OFF OVERLAY ── */}
       {lightOff && (
         <div
           onClick={() => setLightOff(false)}
-          className="fixed inset-0 bg-black/95 z-40 transition-opacity duration-300 cursor-pointer flex items-start justify-center pt-8 pointer-events-auto"
+          className="fixed inset-0 bg-black/95 z-[60] transition-opacity duration-300 cursor-pointer flex items-start justify-center pt-24 pointer-events-auto"
         >
-          <div className="bg-white/10 text-white text-xs font-bold px-4 py-2 rounded-full border border-white/20 backdrop-blur-md animate-bounce shadow-2xl">
-            💡 Đang bật chế độ Tắt Đèn Xem Phim (Nhấn bất kỳ đâu để tắt)
+          <div className="bg-[#141820]/90 text-neutral-300 text-xs font-medium px-4 py-2 rounded-full border border-white/15 backdrop-blur-md shadow-2xl flex items-center gap-2">
+            <LightbulbOff size={14} className="text-neutral-400" />
+            <span>
+              Đang bật chế độ Tắt Đèn Xem Phim (Nhấn bất kỳ đâu để tắt)
+            </span>
           </div>
         </div>
       )}
@@ -876,6 +869,80 @@ export default function WatchPage() {
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-5">
           {/* ───── LEFT COLUMN ───── */}
           <div className="space-y-4 min-w-0">
+            {/* ── BREADCRUMB & QUICK CONTROLS BAR — Above Video ── */}
+            <div className="flex items-center justify-between gap-2 py-1.5 px-3 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-white/50">
+              <div className="flex items-center gap-2 min-w-0">
+                <button
+                  onClick={() => router.back()}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/[0.06] hover:bg-white/10 hover:text-white transition-colors font-medium shrink-0 text-white/80"
+                >
+                  <ArrowLeft size={13} /> Quay lại
+                </button>
+                <ChevronRight size={11} className="text-white/20 shrink-0" />
+                <Link
+                  href={`/film/${slug}`}
+                  className="hover:text-white/80 transition-colors truncate max-w-[180px] sm:max-w-xs text-white/60"
+                >
+                  {film?.name}
+                </Link>
+                {currentEpData?.name && (
+                  <>
+                    <ChevronRight
+                      size={11}
+                      className="text-white/20 shrink-0"
+                    />
+                    <span className="text-white/80 font-semibold shrink-0">
+                      Tập {currentEpData.name.replace(/^tập\s*/i, "")}
+                    </span>
+                  </>
+                )}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Cinema Light-Off Button */}
+                <button
+                  onClick={() => setLightOff(!lightOff)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border",
+                    lightOff
+                      ? "bg-white/10 text-white border-white/20 shadow-sm"
+                      : "bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-transparent",
+                  )}
+                  title="Tắt đèn làm mờ xung quanh"
+                >
+                  {lightOff ? (
+                    <LightbulbOff size={14} className="text-neutral-300" />
+                  ) : (
+                    <Lightbulb size={14} className="text-neutral-400" />
+                  )}
+                  <span className="hidden sm:inline">
+                    {lightOff ? "Bật Đèn" : "Tắt Đèn"}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (!wp.roomId) wp.createRoom();
+                    else wp.setIsOpen(!wp.isOpen);
+                  }}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] hover:text-white/80 transition-colors text-white/50"
+                >
+                  <Sparkles size={12} />
+                  <span className="hidden sm:inline">
+                    {wp.roomId ? `Phòng ${wp.roomId}` : "Party"}
+                  </span>
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    toast("Đã sao chép!", "success");
+                  }}
+                  className="flex items-center gap-1 p-1 rounded-lg hover:bg-white/[0.08] hover:text-white/80 transition-colors text-white/50"
+                >
+                  <Share2 size={13} />
+                </button>
+              </div>
+            </div>
+
             {/* 1. PLAYER */}
             <div
               ref={playerContainerRef}
@@ -944,28 +1011,10 @@ export default function WatchPage() {
               )}
               {videoUrl ? (
                 <>
-                  {!useEmbedPlayer && proxiedM3u8 ? (
-                    <ArtPlayer
-                      url={proxiedM3u8}
-                      type="hls"
-                      poster={posterUrl}
-                      title={`${film?.name} - Tập ${currentEpData?.name}`}
-                      autoplay={false}
-                      progressKey={progressKey}
-                      dbProgress={dbProgress}
-                      onReady={handlePlayerReady}
-                      onEnded={handleVideoEnded}
-                      onProgress={(ct, dur) => {
-                        // Clear timeout ngay khi video bắt đầu phát được
-                        if (ct > 0) clearLoadTimeout();
-                        handleProgress(ct, dur);
-                      }}
-                      onError={handlePlayerError}
-                    />
-                  ) : embedUrl ? (
+                  {embedUrl || videoUrl ? (
                     <div className="relative w-full h-full">
                       <iframe
-                        src={embedUrl}
+                        src={embedUrl || videoUrl}
                         className="w-full h-full"
                         allowFullScreen
                         allow="autoplay; fullscreen"
@@ -1004,76 +1053,6 @@ export default function WatchPage() {
                   <p className="text-xs">Không tìm thấy nguồn phim</p>
                 </div>
               )}
-            </div>
-
-            {/* ── BREADCRUMB & QUICK CONTROLS BAR — Below Video ── */}
-            <div className="flex items-center justify-between gap-2 py-1.5 px-3 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-white/50">
-              <div className="flex items-center gap-2 min-w-0">
-                <button
-                  onClick={() => router.back()}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/[0.06] hover:bg-white/10 hover:text-white transition-colors font-medium shrink-0 text-white/80"
-                >
-                  <ArrowLeft size={13} /> Quay lại
-                </button>
-                <ChevronRight size={11} className="text-white/20 shrink-0" />
-                <Link
-                  href={`/film/${slug}`}
-                  className="hover:text-white/80 transition-colors truncate max-w-[180px] sm:max-w-xs text-white/60"
-                >
-                  {film?.name}
-                </Link>
-                {currentEpData?.name && (
-                  <>
-                    <ChevronRight
-                      size={11}
-                      className="text-white/20 shrink-0"
-                    />
-                    <span className="text-white/80 font-semibold shrink-0">
-                      Tập {currentEpData.name.replace(/^tập\s*/i, "")}
-                    </span>
-                  </>
-                )}
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {/* Cinema Light-Off Button */}
-                <button
-                  onClick={() => setLightOff(!lightOff)}
-                  className={cn(
-                    "flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors font-medium text-xs cursor-pointer",
-                    lightOff
-                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                      : "bg-white/[0.04] hover:bg-white/[0.08] text-white/60 hover:text-white",
-                  )}
-                  title="Tắt đèn làm mờ xung quanh"
-                >
-                  <span>💡</span>
-                  <span className="hidden sm:inline">
-                    {lightOff ? "Bật Đèn" : "Tắt Đèn"}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    if (!wp.roomId) wp.createRoom();
-                    else wp.setIsOpen(!wp.isOpen);
-                  }}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] hover:text-white/80 transition-colors text-white/50"
-                >
-                  <Sparkles size={12} />
-                  <span className="hidden sm:inline">
-                    {wp.roomId ? `Phòng ${wp.roomId}` : "Party"}
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.href);
-                    toast("Đã sao chép!", "success");
-                  }}
-                  className="flex items-center gap-1 p-1 rounded-lg hover:bg-white/[0.08] hover:text-white/80 transition-colors text-white/50"
-                >
-                  <Share2 size={13} />
-                </button>
-              </div>
             </div>
 
             {/* 2. TITLE + PREV/NEXT */}
@@ -1281,29 +1260,6 @@ export default function WatchPage() {
                           </button>
                         );
                       })}
-
-                      {/* ✨ Server VIP ArtPlayer Button (Chặn QC, HLS Native Controls) */}
-                      {m3u8Url && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setUseEmbedPlayer(false);
-                          }}
-                          className={cn(
-                            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-bold transition-all cursor-pointer select-none",
-                            !useEmbedPlayer
-                              ? "bg-gradient-to-r from-red-600/30 to-amber-600/30 border-amber-500/60 text-amber-200 shadow-lg shadow-amber-500/10 ring-1 ring-amber-500/30"
-                              : "bg-white/[0.03] border-white/[0.08] text-amber-400/70 hover:text-amber-300 hover:border-amber-500/30",
-                          )}
-                          title="Phát qua trình phát ArtPlayer hỗ trợ lọc quảng cáo & chỉnh tốc độ"
-                        >
-                          <Sparkles size={12} className="text-amber-400" />
-                          <span>Server VIP (ArtPlayer - Chặn QC)</span>
-                          {!useEmbedPlayer && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 opacity-90 animate-pulse" />
-                          )}
-                        </button>
-                      )}
                     </div>
                   ) : (
                     <div className="p-3 bg-white/[0.02] border border-white/[0.05] rounded-xl text-xs text-white/50 flex items-center gap-2">

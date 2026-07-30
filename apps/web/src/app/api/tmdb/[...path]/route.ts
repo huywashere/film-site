@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const TMDB_TOKEN = process.env.TMDB_ACCESS_TOKEN || "";
-const TMDB_API_KEY = process.env.TMDB_API_KEY || "";
+const TMDB_API_KEY =
+  process.env.TMDB_API_KEY || "f85dbd29011db19e75f5d29028fd096d";
 
 function getTtl(path: string): number {
   if (path.includes("images")) return 86400;
@@ -46,6 +47,7 @@ export async function GET(
     searchParams.set("api_key", TMDB_API_KEY);
   }
 
+  const qs = searchParams.toString();
   const cfWorkerUrl = process.env.TMDB_CLOUDFLARE_WORKER_URL
     ? process.env.TMDB_CLOUDFLARE_WORKER_URL.replace(/\/$/, "")
     : "";

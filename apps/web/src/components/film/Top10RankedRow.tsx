@@ -1,10 +1,11 @@
 "use client";
 import Link from "next/link";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, FreeMode } from "swiper/modules";
 import { FilmItem, resolveImageUrl } from "./FilmCard";
 import { Play, ChevronLeft, ChevronRight } from "lucide-react";
+import { DashPagination } from "./DashPagination";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -19,6 +20,7 @@ export function Top10RankedRow({
   title = "TOP 10 Phim Nổi Bật Trong Tuần",
 }: Top10RankedRowProps) {
   const top10 = films.slice(0, 10);
+  const [swiper, setSwiper] = useState<any>(null);
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
 
@@ -33,13 +35,7 @@ export function Top10RankedRow({
         </h2>
 
         {/* Right Side: Dash Line Pagination Indicators (— - - - -) */}
-        <div className="hidden sm:flex items-center gap-1.5 opacity-70">
-          <span className="w-5 h-0.5 rounded-full bg-white" />
-          <span className="w-2 h-0.5 rounded-full bg-white/30" />
-          <span className="w-2 h-0.5 rounded-full bg-white/30" />
-          <span className="w-2 h-0.5 rounded-full bg-white/30" />
-          <span className="w-2 h-0.5 rounded-full bg-white/30" />
-        </div>
+        <DashPagination swiper={swiper} />
       </div>
 
       {/* Main Row: Swiper on left, Navigation Buttons Column OUTSIDE on right */}
@@ -47,6 +43,7 @@ export function Top10RankedRow({
         <div className="flex-1 min-w-0 overflow-hidden">
           <Swiper
             modules={[Navigation, FreeMode]}
+            onSwiper={(s) => setSwiper(s)}
             onBeforeInit={(swiper) => {
               if (
                 swiper.params.navigation &&
