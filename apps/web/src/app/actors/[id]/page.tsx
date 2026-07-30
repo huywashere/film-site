@@ -44,7 +44,7 @@ export default function ActorDetailPage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white pb-16">
+    <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 pt-20 sm:pt-24 pb-20 bg-background min-h-screen text-foreground relative">
       {knownFor[0]?.backdrop_path && (
         <div className="absolute top-0 left-0 right-0 h-72 overflow-hidden z-0">
           <img
@@ -52,11 +52,11 @@ export default function ActorDetailPage() {
             alt=""
             className="w-full h-full object-cover object-top brightness-30"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0d1117]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/80 to-background" />
         </div>
       )}
 
-      <div className="relative z-10 max-w-5xl mx-auto px-4 md:px-8 pt-20">
+      <div className="relative z-10 w-full pt-2">
         <button
           onClick={() => router.back()}
           className="flex items-center gap-2 text-xs text-neutral-400 hover:text-white transition-colors mb-8"

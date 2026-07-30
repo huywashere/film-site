@@ -111,7 +111,7 @@ const GENRE_ICONS: Record<string, any> = {
 
 export default function GenresTopicsPage() {
   return (
-    <div className="min-h-screen bg-[#07090e] text-white pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto select-none font-sans">
+    <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 pt-20 sm:pt-24 pb-20 bg-background min-h-screen text-foreground select-none font-sans">
       {/* ── Header ── */}
       <div className="mb-10 text-center max-w-2xl mx-auto">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-black uppercase tracking-widest mb-3">

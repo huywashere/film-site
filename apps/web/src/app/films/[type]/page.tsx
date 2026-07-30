@@ -65,7 +65,7 @@ export default function FilmsTypePage() {
   };
 
   return (
-    <div className="container mx-auto px-4 md:px-8 max-w-7xl pt-24 pb-16">
+    <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 pt-20 sm:pt-24 pb-20 bg-background min-h-screen text-foreground">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-4 border-b border-white/10 gap-2">
         <div>

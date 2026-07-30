@@ -145,7 +145,7 @@ export default function BrowseFilmsPage() {
   }, [rawItems, selectedYear]);
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-white pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto select-none font-sans">
+    <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 pt-20 sm:pt-24 pb-20 bg-background min-h-screen text-foreground select-none font-sans">
       {/* ── Page Title Header ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-white/5">
         <div>
