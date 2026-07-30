@@ -34,10 +34,9 @@ export function Top10RankedRow({
   return (
     <div className="w-full my-8 relative">
       {/* Section Header matching standard film sections */}
-      <div className="flex items-center justify-between mb-4 px-1">
-        <h2 className="text-xl md:text-2xl font-bold text-white flex items-center space-x-2">
-          <TrendingUp size={18} className="text-netflixRed" />
-          <span style={{ fontFamily: "var(--font-primary)" }}>{title}</span>
+      <div className="flex items-center justify-between mb-3 px-1">
+        <h2 className="text-lg md:text-xl font-extrabold text-white tracking-tight">
+          {title}
         </h2>
       </div>
 
