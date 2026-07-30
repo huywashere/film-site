@@ -26,11 +26,20 @@ export function Top10RankedRow({
 
   return (
     <div className="w-full my-8 relative">
-      {/* Section Header matching standard film sections (No icon, clean typography) */}
-      <div className="flex items-center justify-between mb-3 px-1">
+      {/* Section Header matching standard film sections (Clean typography + dash indicators) */}
+      <div className="flex items-center justify-between mb-3.5 px-1">
         <h2 className="text-lg md:text-xl font-extrabold text-white tracking-tight">
           {title}
         </h2>
+
+        {/* Right Side: Dash Line Pagination Indicators (— - - - -) */}
+        <div className="hidden sm:flex items-center gap-1.5 opacity-70">
+          <span className="w-5 h-0.5 rounded-full bg-white" />
+          <span className="w-2 h-0.5 rounded-full bg-white/30" />
+          <span className="w-2 h-0.5 rounded-full bg-white/30" />
+          <span className="w-2 h-0.5 rounded-full bg-white/30" />
+          <span className="w-2 h-0.5 rounded-full bg-white/30" />
+        </div>
       </div>
 
       {/* Main Row: Swiper on left, Navigation Buttons Column OUTSIDE on right */}
@@ -94,15 +103,10 @@ export function Top10RankedRow({
                     </div>
 
                     {/* Vertical Movie Title running along the left side of the poster card */}
-                    <div className="absolute bottom-3 left-0 sm:left-1 z-20 flex flex-col justify-end pointer-events-none max-h-[160px] sm:max-h-[190px] md:max-h-[220px]">
-                      <p className="[writing-mode:vertical-rl] rotate-180 text-xs sm:text-sm font-extrabold text-white group-hover/item:text-netflixRed transition-colors tracking-wide max-h-[140px] sm:max-h-[170px] truncate drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                    <div className="absolute bottom-3 left-0 sm:left-1 z-20 flex flex-col justify-end pointer-events-none max-h-[180px] sm:max-h-[210px] md:max-h-[240px]">
+                      <p className="[writing-mode:vertical-rl] rotate-180 text-xs sm:text-sm font-extrabold text-white group-hover/item:text-netflixRed transition-colors tracking-wide max-h-[170px] sm:max-h-[200px] truncate drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                         {film.name}
                       </p>
-                      {film.origin_name && (
-                        <p className="[writing-mode:vertical-rl] rotate-180 text-[10px] text-neutral-400 max-h-[90px] truncate mt-1 drop-shadow">
-                          {film.origin_name}
-                        </p>
-                      )}
                     </div>
 
                     {/* Vertical Poster Card (Foreground z-10) */}

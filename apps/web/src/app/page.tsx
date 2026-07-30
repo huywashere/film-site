@@ -1,30 +1,9 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import NextImage from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useMemo } from "react";
-import {
-  Play,
-  VolumeX,
-  ChevronRight,
-  ChevronLeft,
-  ChevronDown,
-  Info,
-  TrendingUp,
-  Clock,
-  Tv,
-  Clapperboard,
-  AlertTriangle,
-  Loader2,
-  Sparkles,
-  Zap,
-  Ghost,
-  Heart,
-  Laugh,
-  Film,
-  X,
-} from "lucide-react";
+import { ChevronRight, ChevronLeft, ChevronDown } from "lucide-react";
 import { movieApi } from "@/lib/api";
 import {
   FilmCard,
@@ -51,48 +30,46 @@ function deduplicate(films: FilmItem[]): FilmItem[] {
   });
 }
 
-// Extract base franchise name for deduplication
-function getFranchiseBaseName(name: string): string {
-  if (!name) return "";
-  return name
-    .toLowerCase()
-    .replace(/\s*(phần|season|ss|tập|part|chapter|movie)\s*\d+.*$/i, "")
-    .replace(/\s*\d+.*$/, "")
-    .trim();
+// Helper: Nhận diện phim Anime hoặc Hoạt hình 3D (Đấu La, Trảm Thần, Tiên Ni...)
+function isAnimationOrAnime(film: FilmItem): boolean {
+  if (!film || !film.name) return false;
+  const name = film.name.toLowerCase();
+  const slug = (film.slug || "").toLowerCase();
+  const type = (film.type || "").toLowerCase();
+
+  if (
+    type === "hoathinh" ||
+    slug.includes("hoat-hinh") ||
+    slug.includes("anime")
+  ) {
+    return true;
+  }
+
+  // Keywords for Chinese 3D Donghua / Anime
+  const animKeywords = [
+    "hoạt hình",
+    "anime",
+    "3d",
+    "phong thần",
+    "trảm thần",
+    "tiên nghịch",
+    "đẩu la",
+    "vạn cổ",
+    "thôn phệ",
+    "thế giới hoàn mỹ",
+    "già thiên",
+    "đại chủ tể",
+    "thần ấn",
+    "ngẫu nhiên",
+    "manga",
+  ];
+
+  return animKeywords.some((kw) => name.includes(kw) || slug.includes(kw));
 }
 
-// Deduplicate items within a single row
-function deduplicateRow(items: FilmItem[]): FilmItem[] {
-  const seenSlugs = new Set<string>();
-  const seenFranchises = new Set<string>();
-
-  return items.filter((f) => {
-    if (!f || !f.name) return false;
-    const slug = (f.slug || f.name).toLowerCase();
-    if (seenSlugs.has(slug)) return false;
-
-    const baseName = getFranchiseBaseName(f.name);
-    if (baseName.length > 3 && seenFranchises.has(baseName)) return false;
-
-    seenSlugs.add(slug);
-    if (baseName.length > 3) seenFranchises.add(baseName);
-    return true;
-  });
-}
-
-// Filter out films already used in earlier rows
-function excludeSlugs(items: FilmItem[], usedSlugs: Set<string>): FilmItem[] {
-  return items.filter((f) => {
-    if (!f || !f.name) return false;
-    const slug = (f.slug || f.name).toLowerCase();
-    if (usedSlugs.has(slug)) return false;
-
-    const baseName = getFranchiseBaseName(f.name);
-    if (baseName.length > 3 && usedSlugs.has(`franchise:${baseName}`)) {
-      return false;
-    }
-    return true;
-  });
+// Lọc CHỈ giữ lại phim người đóng thật (Live-Action), loại bỏ 3D/Anime cho các hàng phim thông thường
+function filterLiveActionOnly(films: FilmItem[]): FilmItem[] {
+  return films.filter((f) => !isAnimationOrAnime(f));
 }
 
 // Standard Film Carousel Section Component (With Sleek Right Vertical Pills Navigation)
@@ -129,23 +106,35 @@ function FilmSection({
 
   return (
     <div className="mb-8 group/section">
-      {/* Title Header — Pure Clean Text (Icons removed as requested) */}
-      <div className="flex items-center justify-between mb-3 px-1">
-        <h2 className="text-lg md:text-xl font-extrabold text-white tracking-tight">
-          {title}
-        </h2>
-        {href && (
-          <Link
-            href={href}
-            className="text-xs text-neutral-400 hover:text-white font-bold uppercase tracking-wider flex items-center space-x-1 transition-colors"
-          >
-            <span>Xem tất cả</span>
-            <ChevronRight size={14} />
-          </Link>
-        )}
+      {/* Title Header matching user's requested layout (Inline pill button + right dash line pagination) */}
+      <div className="flex items-center justify-between mb-3.5 px-1">
+        {/* Left Side: Title + Inline "Xem tất cả >" Pill Button */}
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-lg md:text-xl font-extrabold text-white tracking-tight">
+            {title}
+          </h2>
+          {href && (
+            <Link
+              href={href}
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.12] text-white/90 hover:text-white text-xs font-medium transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95 ml-1"
+            >
+              <span>Xem tất cả</span>
+              <ChevronRight size={12} strokeWidth={2.5} />
+            </Link>
+          )}
+        </div>
+
+        {/* Right Side: Dash Line Pagination Indicators (— - - - -) */}
+        <div className="hidden sm:flex items-center gap-1.5 opacity-70">
+          <span className="w-5 h-0.5 rounded-full bg-white" />
+          <span className="w-2 h-0.5 rounded-full bg-white/30" />
+          <span className="w-2 h-0.5 rounded-full bg-white/30" />
+          <span className="w-2 h-0.5 rounded-full bg-white/30" />
+          <span className="w-2 h-0.5 rounded-full bg-white/30" />
+        </div>
       </div>
 
-      {/* Row Container with Right Vertical Stack Pill Buttons */}
+      {/* Row Container with Right Minimalist Vertical Stack Navigation */}
       <div className="flex items-stretch gap-3">
         <div className="flex-1 min-w-0">
           <Swiper
@@ -246,29 +235,68 @@ export default function HomePage() {
   const { t } = useTranslation();
   const router = useRouter();
 
-  // ── Initial 4 Sections Data ────────────────────────────
-  // 1. Phim kỹ xảo (VFX & Fantasy)
+  // ── Initial 4 Sections Data (Prioritizing Hollywood/Western Live-Action Movies) ──
+  // 1. Phim kỹ xảo (Hollywood VFX & Fantasy)
+  const { data: vfxUsUkData } = useQuery({
+    queryKey: ["vfx-movies-us-uk"],
+    queryFn: () =>
+      movieApi
+        .getFiltered({
+          country: "au-my",
+          category: "than-thoai",
+          page: 1,
+          limit: 24,
+        })
+        .then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+  });
   const { data: vfxData, isLoading: vfxLoading } = useQuery({
     queryKey: ["vfx-movies"],
     queryFn: () => movieApi.getByGenre("than-thoai", 1).then((r) => r.data),
     staleTime: 1000 * 60 * 10,
   });
 
-  // 2. Series Âu-Mỹ (Western TV Series)
+  // 2. Series Âu-Mỹ (Hollywood TV Series)
   const { data: usUkSeriesData, isLoading: usUkSeriesLoading } = useQuery({
     queryKey: ["us-uk-series"],
     queryFn: () => movieApi.getByCountry("au-my", 1).then((r) => r.data),
     staleTime: 1000 * 60 * 10,
   });
 
-  // 3. Phim hành động (Action Movies)
+  // 3. Phim hành động (Hollywood Action Movies)
+  const { data: actionUsUkData } = useQuery({
+    queryKey: ["action-movies-us-uk"],
+    queryFn: () =>
+      movieApi
+        .getFiltered({
+          country: "au-my",
+          category: "hanh-dong",
+          page: 1,
+          limit: 24,
+        })
+        .then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+  });
   const { data: actionData, isLoading: actionLoading } = useQuery({
     queryKey: ["action-movies"],
     queryFn: () => movieApi.getByGenre("hanh-dong", 1).then((r) => r.data),
     staleTime: 1000 * 60 * 10,
   });
 
-  // 4. Phim khoa học viễn tưởng bom tấn (Sci-Fi Blockbusters)
+  // 4. Phim khoa học viễn tưởng bom tấn (Hollywood Sci-Fi Blockbusters)
+  const { data: scifiUsUkData } = useQuery({
+    queryKey: ["scifi-movies-us-uk"],
+    queryFn: () =>
+      movieApi
+        .getFiltered({
+          country: "au-my",
+          category: "vien-tuong",
+          page: 1,
+          limit: 24,
+        })
+        .then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+  });
   const { data: scifiData, isLoading: scifiLoading } = useQuery({
     queryKey: ["scifi-movies"],
     queryFn: () => movieApi.getByGenre("vien-tuong", 1).then((r) => r.data),
@@ -278,10 +306,10 @@ export default function HomePage() {
   // ── Lazy Loaded 10 Sections Data (Loaded after clicking Xem Thêm) ──
   const [showMoreSections, setShowMoreSections] = useState(false);
 
-  // 5. Xem gì tiếp theo (What to Watch Next)
-  const { data: nextWatchData, isLoading: nextWatchLoading } = useQuery({
-    queryKey: ["next-watch-movies"],
-    queryFn: () => movieApi.getLatest(2).then((r) => r.data),
+  // 5. Xem gì tiếp theo (Hollywood Recommendations)
+  const { data: usUkBlockbustersData, isLoading: nextWatchLoading } = useQuery({
+    queryKey: ["us-uk-blockbusters-next"],
+    queryFn: () => movieApi.getByCountry("au-my", 2).then((r) => r.data),
     enabled: showMoreSections,
   });
 
@@ -292,34 +320,42 @@ export default function HomePage() {
     enabled: showMoreSections,
   });
 
-  // 7. Anime lồng tiếng (Dubbed Anime - Fetching p1 + p2 for full row guarantee)
+  // 7. Anime & Hoạt hình lồng tiếng (ONLY place for Anime/3D Animation)
   const { data: animeData, isLoading: animeLoading } = useQuery({
     queryKey: ["anime-v2", 1],
     queryFn: () => movieApi.getAnime(1).then((r) => r.data),
     enabled: showMoreSections,
   });
-  const { data: animeData2 } = useQuery({
-    queryKey: ["anime-v2", 2],
-    queryFn: () => movieApi.getAnime(2).then((r) => r.data),
+  const { data: animeGenreData } = useQuery({
+    queryKey: ["anime-genre", 1],
+    queryFn: () => movieApi.getByGenre("hoat-hinh", 1).then((r) => r.data),
     enabled: showMoreSections,
   });
 
-  // 8. Phim phiêu lưu mạo hiểm (Adventure & Exploration - Fetching p1 + p2 for full row guarantee)
-  const { data: adventureData, isLoading: adventureLoading } = useQuery({
-    queryKey: ["adventure-movies", 1],
+  // 8. Phim phiêu lưu mạo hiểm (Hollywood Adventure Movies)
+  const { data: adventureUsUkData, isLoading: adventureLoading } = useQuery({
+    queryKey: ["adventure-movies-us-uk"],
+    queryFn: () =>
+      movieApi
+        .getFiltered({
+          country: "au-my",
+          category: "phieu-luu",
+          page: 1,
+          limit: 24,
+        })
+        .then((r) => r.data),
+    enabled: showMoreSections,
+  });
+  const { data: adventureData } = useQuery({
+    queryKey: ["adventure-movies"],
     queryFn: () => movieApi.getByGenre("phieu-luu", 1).then((r) => r.data),
     enabled: showMoreSections,
   });
-  const { data: adventureData2 } = useQuery({
-    queryKey: ["adventure-movies", 2],
-    queryFn: () => movieApi.getByGenre("phieu-luu", 2).then((r) => r.data),
-    enabled: showMoreSections,
-  });
 
-  // 9. Phim chất lượng 4K (4K Quality Movies)
+  // 9. Phim chất lượng 4K (Hollywood 4K Movies)
   const { data: singleData, isLoading: singleLoading } = useQuery({
     queryKey: ["single-v2", 1],
-    queryFn: () => movieApi.getSingle(1).then((r) => r.data),
+    queryFn: () => movieApi.getByCountry("au-my", 1).then((r) => r.data),
     enabled: showMoreSections,
   });
 
@@ -330,14 +366,22 @@ export default function HomePage() {
     enabled: showMoreSections,
   });
 
-  // 11. Phim kịch tính về thảm họa chết chóc (Disaster & Thriller)
-  const { data: disasterData, isLoading: disasterLoading } = useQuery({
-    queryKey: ["disaster-movies"],
-    queryFn: () => movieApi.getByGenre("kinh-di", 1).then((r) => r.data),
+  // 11. Phim kịch tính về thảm họa chết chóc (Hollywood Thriller & Disaster)
+  const { data: disasterUsUkData, isLoading: disasterLoading } = useQuery({
+    queryKey: ["disaster-movies-us-uk"],
+    queryFn: () =>
+      movieApi
+        .getFiltered({
+          country: "au-my",
+          category: "kinh-di",
+          page: 1,
+          limit: 24,
+        })
+        .then((r) => r.data),
     enabled: showMoreSections,
   });
 
-  // 12. Thể loại chiến tranh và gai góc (War & Gritty)
+  // 12. Thể loại chiến tranh và gai góc (War Movies)
   const { data: warData, isLoading: warLoading } = useQuery({
     queryKey: ["war-movies"],
     queryFn: () => movieApi.getByGenre("chien-tranh", 1).then((r) => r.data),
@@ -351,7 +395,7 @@ export default function HomePage() {
     enabled: showMoreSections,
   });
 
-  // 14. Bộ phim giải trí hoàn hảo (Feel-Good Entertainment Movies)
+  // 14. Bộ phim giải trí hoàn hảo (Romance & Feel-Good Movies)
   const { data: romanceData, isLoading: romanceLoading } = useQuery({
     queryKey: ["romance-movies"],
     queryFn: () => movieApi.getByGenre("tinh-cam", 1).then((r) => r.data),
@@ -377,76 +421,84 @@ export default function HomePage() {
     staleTime: 1000 * 60 * 10,
   });
 
-  // Process raw items into deduplicated film arrays
-  const vfxFilms = useMemo(
-    () => deduplicate(vfxData?.data?.items || vfxData?.items || []),
-    [vfxData],
-  );
-  const usUkSeriesFilms = useMemo(
-    () =>
-      deduplicate(usUkSeriesData?.data?.items || usUkSeriesData?.items || []),
-    [usUkSeriesData],
-  );
-  const actionFilms = useMemo(
-    () => deduplicate(actionData?.data?.items || actionData?.items || []),
-    [actionData],
-  );
-  const scifiFilms = useMemo(
-    () => deduplicate(scifiData?.data?.items || scifiData?.items || []),
-    [scifiData],
-  );
+  // ── Process arrays with STRICT Live-Action filtering for Hollywood rows ──
+  const vfxFilms = useMemo(() => {
+    const usUkList = vfxUsUkData?.data?.items || vfxUsUkData?.items || [];
+    const genList = vfxData?.data?.items || vfxData?.items || [];
+    return filterLiveActionOnly(deduplicate([...usUkList, ...genList]));
+  }, [vfxUsUkData, vfxData]);
 
-  const nextWatchFilms = useMemo(
-    () => deduplicate(nextWatchData?.items || nextWatchData?.data?.items || []),
-    [nextWatchData],
-  );
-  const seriesFilms = useMemo(
-    () => deduplicate(seriesData?.data?.items || seriesData?.items || []),
-    [seriesData],
-  );
+  const usUkSeriesFilms = useMemo(() => {
+    const list = usUkSeriesData?.data?.items || usUkSeriesData?.items || [];
+    return filterLiveActionOnly(deduplicate(list));
+  }, [usUkSeriesData]);
 
-  // Combine p1 + p2 for anime and adventure to ensure 12+ items
-  const animeFilms = useMemo(
-    () =>
-      deduplicate([
-        ...(animeData?.data?.items || animeData?.items || []),
-        ...(animeData2?.data?.items || animeData2?.items || []),
-      ]),
-    [animeData, animeData2],
-  );
-  const adventureFilms = useMemo(
-    () =>
-      deduplicate([
-        ...(adventureData?.data?.items || adventureData?.items || []),
-        ...(adventureData2?.data?.items || adventureData2?.items || []),
-      ]),
-    [adventureData, adventureData2],
-  );
+  const actionFilms = useMemo(() => {
+    const usUkList = actionUsUkData?.data?.items || actionUsUkData?.items || [];
+    const genList = actionData?.data?.items || actionData?.items || [];
+    return filterLiveActionOnly(deduplicate([...usUkList, ...genList]));
+  }, [actionUsUkData, actionData]);
 
-  const singleFilms = useMemo(
-    () => deduplicate(singleData?.data?.items || singleData?.items || []),
-    [singleData],
-  );
-  const dramaFilms = useMemo(
-    () => deduplicate(dramaData?.data?.items || dramaData?.items || []),
-    [dramaData],
-  );
-  const disasterFilms = useMemo(
-    () => deduplicate(disasterData?.data?.items || disasterData?.items || []),
-    [disasterData],
-  );
-  const warFilms = useMemo(
-    () => deduplicate(warData?.data?.items || warData?.items || []),
-    [warData],
-  );
-  const comedyFilms = useMemo(
-    () => deduplicate(comedyData?.data?.items || comedyData?.items || []),
-    [comedyData],
-  );
-  const romanceFilms = useMemo(
-    () => deduplicate(romanceData?.data?.items || romanceData?.items || []),
-    [romanceData],
-  );
+  const scifiFilms = useMemo(() => {
+    const usUkList = scifiUsUkData?.data?.items || scifiUsUkData?.items || [];
+    const genList = scifiData?.data?.items || scifiData?.items || [];
+    return filterLiveActionOnly(deduplicate([...usUkList, ...genList]));
+  }, [scifiUsUkData, scifiData]);
+
+  const nextWatchFilms = useMemo(() => {
+    const list =
+      usUkBlockbustersData?.data?.items || usUkBlockbustersData?.items || [];
+    return filterLiveActionOnly(deduplicate(list));
+  }, [usUkBlockbustersData]);
+
+  const seriesFilms = useMemo(() => {
+    const list = seriesData?.data?.items || seriesData?.items || [];
+    return filterLiveActionOnly(deduplicate(list));
+  }, [seriesData]);
+
+  // Anime & 3D Animation (ONLY row allowed to contain Animation)
+  const animeFilms = useMemo(() => {
+    const list1 = animeData?.data?.items || animeData?.items || [];
+    const list2 = animeGenreData?.data?.items || animeGenreData?.items || [];
+    return deduplicate([...list1, ...list2]);
+  }, [animeData, animeGenreData]);
+
+  const adventureFilms = useMemo(() => {
+    const usUkList =
+      adventureUsUkData?.data?.items || adventureUsUkData?.items || [];
+    const genList = adventureData?.data?.items || adventureData?.items || [];
+    return filterLiveActionOnly(deduplicate([...usUkList, ...genList]));
+  }, [adventureUsUkData, adventureData]);
+
+  const singleFilms = useMemo(() => {
+    const list = singleData?.data?.items || singleData?.items || [];
+    return filterLiveActionOnly(deduplicate(list));
+  }, [singleData]);
+
+  const dramaFilms = useMemo(() => {
+    const list = dramaData?.data?.items || dramaData?.items || [];
+    return filterLiveActionOnly(deduplicate(list));
+  }, [dramaData]);
+
+  const disasterFilms = useMemo(() => {
+    const list = disasterUsUkData?.data?.items || disasterUsUkData?.items || [];
+    return filterLiveActionOnly(deduplicate(list));
+  }, [disasterUsUkData]);
+
+  const warFilms = useMemo(() => {
+    const list = warData?.data?.items || warData?.items || [];
+    return filterLiveActionOnly(deduplicate(list));
+  }, [warData]);
+
+  const comedyFilms = useMemo(() => {
+    const list = comedyData?.data?.items || comedyData?.items || [];
+    return filterLiveActionOnly(deduplicate(list));
+  }, [comedyData]);
+
+  const romanceFilms = useMemo(() => {
+    const list = romanceData?.data?.items || romanceData?.items || [];
+    return filterLiveActionOnly(deduplicate(list));
+  }, [romanceData]);
 
   const latestFilms = useMemo(
     () => deduplicate(latestData?.items || latestData?.data?.items || []),
@@ -460,7 +512,7 @@ export default function HomePage() {
     const raw = [...list1, ...list2];
 
     const seen = new Set<string>();
-    return raw.filter((f) => {
+    return filterLiveActionOnly(raw).filter((f) => {
       if (!f || !f.slug || !f.name) return false;
       const key = f.slug.toLowerCase();
       if (seen.has(key)) return false;
@@ -493,7 +545,7 @@ export default function HomePage() {
 
   const showBannerSkeleton = bannerFilms.length === 0;
 
-  // Deduplication registry across all 14 rows with 12 items guaranteed per row
+  // Deduplication registry & row limits
   const {
     top10List,
     vfxRowList,
@@ -511,22 +563,14 @@ export default function HomePage() {
     comedyRowList,
     romanceRowList,
   } = useMemo(() => {
-    const usedSlugs = new Set<string>();
-
-    const trackUsed = (list: FilmItem[]) => {
-      list.forEach((f) => {
-        if (f.slug) usedSlugs.add(f.slug.toLowerCase());
-        const baseName = getFranchiseBaseName(f.name);
-        if (baseName.length > 3) usedSlugs.add(`franchise:${baseName}`);
-      });
-    };
-
     const buildRow = (rawFilms: FilmItem[], targetCount = 12): FilmItem[] => {
-      return deduplicateRow(rawFilms).slice(0, targetCount);
+      return deduplicate(rawFilms).slice(0, targetCount);
     };
 
-    const top10List = deduplicateRow(latestFilms).slice(0, 10);
-    trackUsed(top10List);
+    const top10List = filterLiveActionOnly(deduplicate(latestFilms)).slice(
+      0,
+      10,
+    );
 
     // Initial 4 Sections
     const vfxRowList = buildRow(vfxFilms);
@@ -666,7 +710,7 @@ export default function HomePage() {
 
             <LazySection>
               <FilmSection
-                title="Anime Lồng Tiếng"
+                title="Anime & Hoạt Hình Lồng Tiếng"
                 films={animeRowList}
                 isLoading={animeLoading}
                 href="/films/anime"
