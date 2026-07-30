@@ -183,13 +183,13 @@ function FilmSection({
           </Swiper>
         </div>
 
-        {/* ── Modern Vertical Stack Rounded Pill Navigation Buttons (From User Screenshot) ── */}
-        <div className="hidden sm:flex flex-col justify-center gap-2 shrink-0 my-auto">
+        {/* ── Minimalist Vertical Chevron Navigation (Pure icons without background box) ── */}
+        <div className="hidden sm:flex flex-col justify-center gap-3 shrink-0 my-auto px-1">
           <button
             ref={nextRef}
             aria-label="Next slide"
             title="Xem phim tiếp theo"
-            className="w-10 h-16 rounded-2xl bg-[#242834] hover:bg-[#343b4d] active:scale-95 text-white/70 hover:text-white border border-white/10 flex items-center justify-center transition-all cursor-pointer shadow-xl disabled:opacity-20 disabled:pointer-events-none"
+            className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
           >
             <ChevronRight size={22} strokeWidth={2.5} />
           </button>
@@ -198,7 +198,7 @@ function FilmSection({
             ref={prevRef}
             aria-label="Previous slide"
             title="Xem phim trước"
-            className="w-10 h-16 rounded-2xl bg-[#242834] hover:bg-[#343b4d] active:scale-95 text-white/70 hover:text-white border border-white/10 flex items-center justify-center transition-all cursor-pointer shadow-xl disabled:opacity-20 disabled:pointer-events-none"
+            className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
           >
             <ChevronLeft size={22} strokeWidth={2.5} />
           </button>
