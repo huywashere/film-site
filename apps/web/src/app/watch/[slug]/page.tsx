@@ -22,6 +22,7 @@ import {
   Info,
   Lightbulb,
   LightbulbOff,
+  RefreshCw,
 } from "lucide-react";
 import { movieApi, watchHistoryApi } from "@/lib/api";
 import { resolveImageUrl } from "@/components/film/FilmCard";
@@ -1023,15 +1024,6 @@ export default function WatchPage() {
                         onLoad={() => clearLoadTimeout()}
                         onError={() => tryNextServer("iframe-error")}
                       />
-                      {episodes.length > 1 && (
-                        <button
-                          onClick={() => tryNextServer("user-retry")}
-                          className="absolute top-3 right-3 z-30 bg-black/80 hover:bg-emerald-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg border border-white/20 shadow-lg backdrop-blur-md transition-all cursor-pointer flex items-center gap-1.5"
-                          title="Bấm nếu server hiện tại bị lỗi 504 hoặc chậm"
-                        >
-                          <span>🔄 Đổi Server Phim</span>
-                        </button>
-                      )}
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center w-full h-full text-white/30">
@@ -1392,10 +1384,10 @@ export default function WatchPage() {
                   {/* Episodes Container */}
                   <div className="p-3">
                     {!showEpThumbnails ? (
-                      /* ── MODE 1: Pill Grid Mode (Matching Reference Image 1) ── */
+                      /* ── MODE 1: Pill Grid Mode ── */
                       <div
                         ref={epGridRef}
-                        className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2 max-h-64 overflow-y-auto scrollbar-hide"
+                        className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2 max-h-72 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 hover:scrollbar-thumb-white/40 overscroll-contain touch-pan-y p-1"
                       >
                         {displayedEps.map((ep: any, i: number) => {
                           const isActive =
@@ -1429,10 +1421,10 @@ export default function WatchPage() {
                         })}
                       </div>
                     ) : (
-                      /* ── MODE 2: Landscape Still Grid Mode (Matching Reference Image 2) ── */
+                      /* ── MODE 2: Landscape Still Grid Mode (Hiện ảnh tập) ── */
                       <div
                         ref={epGridRef}
-                        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-96 overflow-y-auto scrollbar-hide"
+                        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-[520px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 hover:scrollbar-thumb-white/40 overscroll-contain touch-pan-y p-1"
                       >
                         {displayedEps.map((ep: any, i: number) => {
                           const isActive =
@@ -1609,10 +1601,29 @@ export default function WatchPage() {
             </div>
 
             {/* Settings */}
-            <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 space-y-2.5">
-              <p className="text-[10px] font-semibold text-white/30 uppercase tracking-widest flex items-center gap-1.5 mb-1">
-                <Settings size={10} /> Cài đặt
-              </p>
+            <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-white/[0.05] pb-2">
+                <p className="text-[10px] font-semibold text-white/30 uppercase tracking-widest flex items-center gap-1.5">
+                  <Settings size={10} /> Cài đặt
+                </p>
+              </div>
+
+              {/* Nút Đổi Server Phim (Chuyển sang server dự phòng nếu server hiện tại bị lag) */}
+              {episodes.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => tryNextServer("user-retry")}
+                  className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-bold text-white bg-[#161a22] hover:bg-emerald-600 border border-white/10 hover:border-emerald-500 rounded-xl transition-all cursor-pointer shadow-md hover:scale-[1.01] active:scale-98 group/srvBtn"
+                  title="Bấm để chuyển sang nguồn server dự phòng khác nếu phim bị đứng hoặc lag"
+                >
+                  <RefreshCw
+                    size={13}
+                    className="text-emerald-400 group-hover/srvBtn:rotate-180 transition-transform duration-500 shrink-0"
+                  />
+                  <span>Đổi Server Phim</span>
+                </button>
+              )}
+
               {[
                 {
                   label: "Tự phát tập tiếp",
