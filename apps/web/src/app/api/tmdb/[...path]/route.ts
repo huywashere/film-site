@@ -46,8 +46,16 @@ export async function GET(
     searchParams.set("api_key", TMDB_API_KEY);
   }
 
-  const qs = searchParams.toString();
-  const hosts = ["https://api.tmdb.org/3", "https://api.themoviedb.org/3"];
+  const cfWorkerUrl = process.env.TMDB_CLOUDFLARE_WORKER_URL
+    ? process.env.TMDB_CLOUDFLARE_WORKER_URL.replace(/\/$/, "")
+    : "";
+  const hosts = cfWorkerUrl
+    ? [
+        `${cfWorkerUrl}/3`,
+        "https://api.tmdb.org/3",
+        "https://api.themoviedb.org/3",
+      ]
+    : ["https://api.tmdb.org/3", "https://api.themoviedb.org/3"];
   const cacheKey = hosts[0] + "/" + path + (qs ? "?" + qs : "");
 
   const cached = cache.get(cacheKey);
