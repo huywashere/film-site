@@ -522,12 +522,7 @@ export default function HomePage() {
     };
 
     const buildRow = (rawFilms: FilmItem[], targetCount = 12): FilmItem[] => {
-      const filtered = excludeSlugs(rawFilms, usedSlugs);
-      const row = deduplicateRow(
-        filtered.length >= 6 ? filtered : rawFilms,
-      ).slice(0, targetCount);
-      trackUsed(row);
-      return row;
+      return deduplicateRow(rawFilms).slice(0, targetCount);
     };
 
     const top10List = deduplicateRow(latestFilms).slice(0, 10);
