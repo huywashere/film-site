@@ -4,8 +4,7 @@ import { useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, FreeMode } from "swiper/modules";
 import { FilmItem, resolveImageUrl } from "./FilmCard";
-import { TrendingUp, Play, ChevronLeft, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Play, ChevronLeft, ChevronRight } from "lucide-react";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -14,12 +13,6 @@ interface Top10RankedRowProps {
   films: FilmItem[];
   title?: string;
 }
-
-const NUMBER_GRADIENTS: Record<number, string> = {
-  1: "from-[#ffe89c] via-[#e5b839] to-[#8a6008]", // Gold
-  2: "from-[#ffffff] via-[#cbd5e1] to-[#64748b]", // Silver
-  3: "from-[#fed7aa] via-[#ea580c] to-[#7c2d12]", // Bronze
-};
 
 export function Top10RankedRow({
   films,
@@ -33,7 +26,7 @@ export function Top10RankedRow({
 
   return (
     <div className="w-full my-8 relative">
-      {/* Section Header matching standard film sections */}
+      {/* Section Header matching standard film sections (No icon, clean typography) */}
       <div className="flex items-center justify-between mb-3 px-1">
         <h2 className="text-lg md:text-xl font-extrabold text-white tracking-tight">
           {title}
@@ -75,12 +68,13 @@ export function Top10RankedRow({
                 <SwiperSlide key={film.slug || index} className="!w-auto">
                   <Link
                     href={`/film/${film.slug}`}
-                    className="flex flex-col group/item relative select-none cursor-pointer pt-4 pb-2 pr-2"
+                    className="flex items-start group/item relative select-none cursor-pointer pt-2 pb-2 pr-2"
                   >
-                    {/* Big Montserrat 900 Rank Number peeking from BEHIND the TOP-LEFT of the card */}
-                    <div className="absolute -top-4 left-0 z-0 pointer-events-none select-none">
+                    {/* Left Stack: Big Rank Number + Vertical Movie Title */}
+                    <div className="relative flex items-center shrink-0">
+                      {/* Big Montserrat 900 Rank Number */}
                       <span
-                        className="text-[95px] sm:text-[125px] md:text-[155px] font-black leading-none tracking-tighter transition-transform duration-300 group-hover/item:scale-105 block drop-shadow-2xl"
+                        className="text-[95px] sm:text-[125px] md:text-[155px] font-black leading-none tracking-tighter transition-transform duration-300 group-hover/item:scale-105 block drop-shadow-2xl select-none"
                         style={{
                           color: "transparent",
                           WebkitTextStroke:
@@ -98,10 +92,22 @@ export function Top10RankedRow({
                       >
                         {rank}
                       </span>
+
+                      {/* Vertical Movie Title running along the left side of the poster */}
+                      <div className="flex flex-col justify-end -ml-4 sm:-ml-6 z-20 pb-2 h-[195px] sm:h-[232px] md:h-[270px] mt-9 sm:mt-11 md:mt-13 pointer-events-none">
+                        <p className="[writing-mode:vertical-rl] rotate-180 text-xs sm:text-sm font-extrabold text-white/90 group-hover/item:text-white transition-colors tracking-wide max-h-[170px] sm:max-h-[200px] truncate drop-shadow-md">
+                          {film.name}
+                        </p>
+                        {film.origin_name && (
+                          <p className="[writing-mode:vertical-rl] rotate-180 text-[10px] text-neutral-400 max-h-[110px] truncate mt-1">
+                            {film.origin_name}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Vertical Poster Card (Foreground z-10) */}
-                    <div className="relative z-10 w-[130px] sm:w-[155px] md:w-[180px] h-[195px] sm:h-[232px] md:h-[270px] rounded-2xl overflow-hidden border border-white/10 group-hover/item:border-white/50 group-hover/item:scale-[1.03] shadow-2xl bg-neutral-900 transition-all duration-300 mt-9 sm:mt-11 md:mt-13 ml-7 sm:ml-9 md:ml-11">
+                    {/* Vertical Poster Card */}
+                    <div className="relative z-10 w-[130px] sm:w-[155px] md:w-[180px] h-[195px] sm:h-[232px] md:h-[270px] rounded-2xl overflow-hidden border border-white/10 group-hover/item:border-white/50 group-hover/item:scale-[1.03] shadow-2xl bg-neutral-900 transition-all duration-300 mt-9 sm:mt-11 md:mt-13 ml-2.5 sm:ml-3.5">
                       {posterUrl ? (
                         <img
                           src={posterUrl}
@@ -115,10 +121,7 @@ export function Top10RankedRow({
                         </div>
                       )}
 
-                      {/* Gradient Overlay & Badges */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-80 group-hover/item:opacity-40 transition-opacity" />
-
-                      {/* Quality / Ep Badge */}
+                      {/* Quality Badge */}
                       <div className="absolute top-2 right-2 flex flex-col items-end gap-1 z-10">
                         {film.quality && (
                           <span className="bg-netflixRed text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">
@@ -138,18 +141,6 @@ export function Top10RankedRow({
                         </div>
                       </div>
                     </div>
-
-                    {/* Movie Info Block — Positioned UNDERNEATH the poster card */}
-                    <div className="mt-2.5 ml-7 sm:ml-9 md:ml-11 w-[130px] sm:w-[155px] md:w-[180px] space-y-0.5">
-                      <p className="text-xs sm:text-sm font-extrabold text-white truncate group-hover/item:text-netflixRed transition-colors">
-                        {film.name}
-                      </p>
-                      {film.origin_name && (
-                        <p className="text-[10px] text-neutral-400 truncate">
-                          {film.origin_name}
-                        </p>
-                      )}
-                    </div>
                   </Link>
                 </SwiperSlide>
               );
@@ -162,16 +153,16 @@ export function Top10RankedRow({
           <button
             ref={nextRef}
             aria-label="Next slide"
-            className="p-2 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-20 disabled:pointer-events-none"
+            className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
           >
-            <ChevronRight size={28} strokeWidth={2.5} />
+            <ChevronRight size={22} strokeWidth={2.5} />
           </button>
           <button
             ref={prevRef}
             aria-label="Previous slide"
-            className="p-2 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-20 disabled:pointer-events-none"
+            className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
           >
-            <ChevronLeft size={28} strokeWidth={2.5} />
+            <ChevronLeft size={22} strokeWidth={2.5} />
           </button>
         </div>
       </div>
