@@ -55,7 +55,8 @@ export function RegisterForm() {
       return;
     }
 
-    if (!turnstileToken) {
+    const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+    if (siteKey && !turnstileToken) {
       toast(
         "Vui lòng hoàn thành xác minh Cloudflare Turnstile bảo mật.",
         "error",
