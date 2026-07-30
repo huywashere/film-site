@@ -52,68 +52,6 @@ import HeroBanner from "@/app/components/HeroBanner";
 import "swiper/css";
 import "swiper/css/navigation";
 
-// Styled Swiper container with modern controls
-const StyledSwiperContainer = styled.div`
-  position: relative;
-  .swiper {
-    overflow: visible !important;
-    padding: 10px 0 20px 0 !important;
-  }
-  .swiper-wrapper {
-    align-items: stretch;
-  }
-  .swiper-slide {
-    height: auto;
-  }
-  .swiper-button-prev,
-  .swiper-button-next {
-    color: #ffffff !important;
-    background: rgba(18, 24, 34, 0.85);
-    backdrop-filter: blur(12px);
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    top: 50% !important;
-    transform: translateY(-50%);
-    z-index: 40;
-    opacity: 0;
-
-    &:hover {
-      background: rgba(229, 9, 20, 0.95);
-      border-color: rgba(229, 9, 20, 1);
-      box-shadow: 0 0 20px rgba(229, 9, 20, 0.6);
-      scale: 1.1;
-    }
-
-    &::after {
-      font-size: 15px !important;
-      font-weight: 800 !important;
-    }
-  }
-
-  &:hover {
-    .swiper-button-prev,
-    .swiper-button-next {
-      opacity: 1;
-    }
-  }
-
-  .swiper-button-prev {
-    left: -20px !important;
-  }
-  .swiper-button-next {
-    right: -20px !important;
-  }
-
-  .swiper-button-disabled {
-    opacity: 0 !important;
-    cursor: default;
-  }
-`;
-
 // Helper: loại bỏ phim trùng lặp theo ID/slug
 function deduplicate(films: FilmItem[]): FilmItem[] {
   const seen = new Set<string>();
@@ -221,15 +159,22 @@ function FilmSection({
         )}
       </div>
 
-      <StyledSwiperContainer>
-        <div
+      <div className="relative group/swiper">
+        <button
           ref={prevRef}
-          className="swiper-button-prev flex items-center justify-center"
-        />
-        <div
+          aria-label="Previous slide"
+          className="absolute -left-3 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full bg-black/70 hover:bg-red-600 text-white/80 hover:text-white border border-white/10 flex items-center justify-center backdrop-blur-md shadow-2xl transition-all opacity-0 group-hover/swiper:opacity-100 disabled:opacity-0 cursor-pointer active:scale-90"
+        >
+          <ChevronLeft size={20} />
+        </button>
+
+        <button
           ref={nextRef}
-          className="swiper-button-next flex items-center justify-center"
-        />
+          aria-label="Next slide"
+          className="absolute -right-3 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full bg-black/70 hover:bg-red-600 text-white/80 hover:text-white border border-white/10 flex items-center justify-center backdrop-blur-md shadow-2xl transition-all opacity-0 group-hover/swiper:opacity-100 disabled:opacity-0 cursor-pointer active:scale-90"
+        >
+          <ChevronRight size={20} />
+        </button>
 
         <Swiper
           modules={[Navigation, FreeMode]}
@@ -238,8 +183,13 @@ function FilmSection({
             nextEl: nextRef.current,
           }}
           onBeforeInit={(swiper: any) => {
-            swiper.params.navigation.prevEl = prevRef.current;
-            swiper.params.navigation.nextEl = nextRef.current;
+            if (
+              swiper.params.navigation &&
+              typeof swiper.params.navigation !== "boolean"
+            ) {
+              swiper.params.navigation.prevEl = prevRef.current;
+              swiper.params.navigation.nextEl = nextRef.current;
+            }
           }}
           spaceBetween={14}
           slidesPerView={2.2}
@@ -251,7 +201,7 @@ function FilmSection({
             1024: { slidesPerView: 5.5, spaceBetween: 18 },
             1280: { slidesPerView: 6.2, spaceBetween: 18 },
           }}
-          className="w-full"
+          className="w-full !py-2"
         >
           {films.map((film, idx) => (
             <SwiperSlide key={film._id || film.slug || idx}>
@@ -259,7 +209,7 @@ function FilmSection({
             </SwiperSlide>
           ))}
         </Swiper>
-      </StyledSwiperContainer>
+      </div>
     </div>
   );
 }
