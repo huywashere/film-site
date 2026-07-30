@@ -35,20 +35,16 @@ export class RedisCacheService implements OnModuleDestroy {
         this.isDisabled = false;
       });
 
-      this.client.on("error", (err) => {
+      this.client.on("error", () => {
         if (!this.isDisabled) {
-          this.logger.warn(
-            `⚠️  Redis offline (${err.message}) – falling back to in-memory cache`,
-          );
+          this.logger.warn("⚡ Cache status: In-Memory active (Redis offline)");
           this.isDisabled = true;
           this.client?.disconnect();
           this.client = null;
         }
       });
     } catch {
-      this.logger.warn(
-        "⚠️  Redis init failed – using in-memory cache fallback",
-      );
+      this.logger.warn("⚡ Cache status: In-Memory active (Redis offline)");
       this.isDisabled = true;
       this.client = null;
     }
