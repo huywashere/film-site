@@ -1,73 +1,42 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 export function ScrollProvider({ children }: { children: React.ReactNode }) {
-  const lenisRef = useRef<Lenis | null>(null);
-
   useEffect(() => {
-    // Register GSAP ScrollTrigger plugin
-    if (typeof window !== "undefined") {
-      gsap.registerPlugin(ScrollTrigger);
-    }
+    if (typeof window === "undefined") return;
 
-    // Initialize Lenis smooth scroll engine
+    // Register GSAP ScrollTrigger
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Responsive 60FPS Lenis Smooth Scroll without wheel locking or freezes
     const lenis = new Lenis({
-      duration: 1.4,
+      duration: 0.7,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: "vertical",
       gestureOrientation: "vertical",
       smoothWheel: true,
-      wheelMultiplier: 1,
+      wheelMultiplier: 1.1,
       touchMultiplier: 1.5,
     });
 
-    lenisRef.current = lenis;
+    // Update GSAP ScrollTrigger on Lenis scroll
+    lenis.on("scroll", ScrollTrigger.update);
 
-    // Connect Lenis to GSAP ScrollTrigger
-    lenis.on("scroll", () => {
-      ScrollTrigger.update();
-    });
-
-    let isSmoothActive = true;
-
-    // Smart Threshold: Smooth scroll active ONLY inside Hero Banner (window.scrollY <= window.innerHeight - 100)
-    const handleScroll = () => {
-      const bannerHeight = window.innerHeight - 100;
-      const currentScroll = window.scrollY;
-
-      if (currentScroll <= bannerHeight) {
-        if (!isSmoothActive) {
-          isSmoothActive = true;
-          lenis.start();
-        }
-      } else {
-        if (isSmoothActive) {
-          isSmoothActive = false;
-          lenis.stop();
-        }
-      }
-    };
-
-    // RequestAnimationFrame loop for V-Sync smooth scrolling
+    // Keep Lenis RAF running smoothly on V-Sync loop
     let rafId: number;
-    function raf(time: number) {
+    function update(time: number) {
       lenis.raf(time);
-      rafId = requestAnimationFrame(raf);
+      rafId = requestAnimationFrame(update);
     }
-    rafId = requestAnimationFrame(raf);
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll(); // Initial check
+    rafId = requestAnimationFrame(update);
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
       cancelAnimationFrame(rafId);
       lenis.destroy();
-      lenisRef.current = null;
     };
   }, []);
 
