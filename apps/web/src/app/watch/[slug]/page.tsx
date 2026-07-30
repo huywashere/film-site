@@ -401,18 +401,18 @@ export default function WatchPage() {
       const items: any[] = [];
       if (matchedKeyword) {
         try {
-          const r = await movieApi.search(matchedKeyword, 1, 15);
+          const r: any = await movieApi.search(matchedKeyword, 1, 15);
           items.push(...(r?.data?.items || r?.data?.data?.items || []));
         } catch {}
       }
       if (filmCategory) {
         try {
-          const r = await movieApi.getByGenre(filmCategory, 1);
+          const r: any = await movieApi.getByGenre(filmCategory, 1);
           items.push(...(r?.data?.data?.items || r?.data?.items || []));
         } catch {}
       }
       try {
-        const r = await movieApi.getLatest(1);
+        const r: any = await movieApi.getLatest(1);
         items.push(...(r?.data?.items || r?.data?.data?.items || []));
       } catch {}
       const seen = new Set<string>();
@@ -444,8 +444,8 @@ export default function WatchPage() {
 
   const { data: tmdbImages } = useQuery({
     queryKey: ["watch-tmdb-scenes", tmdbMediaType, tmdbShowId],
-    queryFn: () => tmdbApi.getImages(tmdbMediaType, String(tmdbShowId)),
-    enabled: !!tmdbShowId,
+    enabled:
+      !!tmdbShowId && !isNaN(Number(tmdbShowId)) && Number(tmdbShowId) > 0,
     staleTime: 1000 * 60 * 60,
   });
 
@@ -846,11 +846,17 @@ export default function WatchPage() {
         <meta name="description" content={watchSeoDescription} />
         <meta property="og:title" content={watchSeoTitle} />
         <meta property="og:description" content={watchSeoDescription} />
-        <meta property="og:image" content={posterUrl || tmdbBackdropUrl} />
+        <meta
+          property="og:image"
+          content={posterUrl || tmdbBackdropUrl || undefined}
+        />
         <meta property="og:type" content="video.other" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={watchSeoTitle} />
-        <meta name="twitter:image" content={posterUrl || tmdbBackdropUrl} />
+        <meta
+          name="twitter:image"
+          content={posterUrl || tmdbBackdropUrl || undefined}
+        />
       </head>
       {/* ── CINEMA LIGHTS-OFF OVERLAY ── */}
       {lightOff && (

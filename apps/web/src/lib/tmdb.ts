@@ -46,15 +46,25 @@ export function tmdbProfile(
 async function fetchTmdb<T>(
   endpoint: string,
   params?: Record<string, string>,
-): Promise<T> {
-  const url = new URL(`${TMDB_PROXY}/${endpoint}`, window.location.origin);
-  url.searchParams.set("language", "vi-VN");
-  if (params) {
-    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+): Promise<T | null> {
+  try {
+    const url = new URL(
+      `${TMDB_PROXY}/${endpoint}`,
+      typeof window !== "undefined"
+        ? window.location.origin
+        : "http://localhost:3000",
+    );
+    url.searchParams.set("language", "vi-VN");
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+    }
+    const res = await fetch(url.toString());
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.warn(`TMDB fetch failed for ${endpoint}:`, err);
+    return null;
   }
-  const res = await fetch(url.toString());
-  if (!res.ok) throw new Error(`TMDB error: ${res.status}`);
-  return res.json();
 }
 
 // ── Types ─────────────────────────────────────────────────────────
@@ -174,6 +184,11 @@ export const tmdbApi = {
     fetchTmdb<TmdbImages>(`tv/${tmdbId}/images`, {
       include_image_language: "vi,en,null",
     }),
+
+  getImages: (type: "movie" | "tv", tmdbId: number | string) =>
+    type === "tv"
+      ? tmdbApi.getTvImages(Number(tmdbId))
+      : tmdbApi.getMovieImages(Number(tmdbId)),
 
   // ── Diễn viên & Đoàn phim ──
   getMovieCredits: (tmdbId: number) =>
