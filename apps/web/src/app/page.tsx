@@ -24,28 +24,16 @@ import {
   Laugh,
   Film,
   X,
-  Wand2,
-  Compass,
-  Flame,
-  Globe,
-  BookOpen,
-  Skull,
-  ShieldAlert,
-  Swords,
 } from "lucide-react";
 import { movieApi } from "@/lib/api";
 import {
   FilmCard,
   FilmCardSkeleton,
   FilmItem,
-  resolveImageUrl,
 } from "@/components/film/FilmCard";
 import { useTranslation } from "@/store/langStore";
-import { motion } from "framer-motion";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, FreeMode } from "swiper/modules";
-import styled from "@emotion/styled";
-import { cn } from "@/lib/utils";
 import { Top10RankedRow } from "@/components/film/Top10RankedRow";
 import HeroBanner from "@/app/components/HeroBanner";
 
@@ -107,27 +95,25 @@ function excludeSlugs(items: FilmItem[], usedSlugs: Set<string>): FilmItem[] {
   });
 }
 
-// Standard Film Carousel Section Component
+// Standard Film Carousel Section Component (With Sleek Right Vertical Pills Navigation)
 function FilmSection({
   title,
-  icon: Icon,
   films,
   isLoading,
   href,
 }: {
   title: string;
-  icon?: any;
   films: FilmItem[];
   isLoading: boolean;
   href?: string;
 }) {
-  const prevRef = useRef<HTMLDivElement>(null);
-  const nextRef = useRef<HTMLDivElement>(null);
+  const prevRef = useRef<HTMLButtonElement>(null);
+  const nextRef = useRef<HTMLButtonElement>(null);
 
   if (isLoading) {
     return (
-      <div className="mb-10">
-        <div className="flex items-center justify-between mb-4 px-1">
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-3 px-1">
           <div className="h-6 w-48 bg-white/10 rounded animate-pulse" />
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -142,11 +128,11 @@ function FilmSection({
   if (!films || films.length === 0) return null;
 
   return (
-    <div className="mb-10 group/section">
-      <div className="flex items-center justify-between mb-4 px-1">
-        <h2 className="text-lg md:text-xl font-extrabold text-white tracking-tight flex items-center space-x-2.5">
-          {Icon && <Icon size={20} className="text-red-500" />}
-          <span>{title}</span>
+    <div className="mb-8 group/section">
+      {/* Title Header — Pure Clean Text (Icons removed as requested) */}
+      <div className="flex items-center justify-between mb-3 px-1">
+        <h2 className="text-lg md:text-xl font-extrabold text-white tracking-tight">
+          {title}
         </h2>
         {href && (
           <Link
@@ -159,62 +145,70 @@ function FilmSection({
         )}
       </div>
 
-      <div className="relative group/swiper">
-        <button
-          ref={prevRef}
-          aria-label="Previous slide"
-          className="absolute -left-3 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full bg-black/70 hover:bg-red-600 text-white/80 hover:text-white border border-white/10 flex items-center justify-center backdrop-blur-md shadow-2xl transition-all opacity-0 group-hover/swiper:opacity-100 disabled:opacity-0 cursor-pointer active:scale-90"
-        >
-          <ChevronLeft size={20} />
-        </button>
+      {/* Row Container with Right Vertical Stack Pill Buttons */}
+      <div className="flex items-stretch gap-3">
+        <div className="flex-1 min-w-0">
+          <Swiper
+            modules={[Navigation, FreeMode]}
+            navigation={{
+              prevEl: prevRef.current,
+              nextEl: nextRef.current,
+            }}
+            onBeforeInit={(swiper: any) => {
+              if (
+                swiper.params.navigation &&
+                typeof swiper.params.navigation !== "boolean"
+              ) {
+                swiper.params.navigation.prevEl = prevRef.current;
+                swiper.params.navigation.nextEl = nextRef.current;
+              }
+            }}
+            spaceBetween={14}
+            slidesPerView={2.2}
+            freeMode={{ enabled: true, momentumRatio: 0.8 }}
+            breakpoints={{
+              480: { slidesPerView: 3.2, spaceBetween: 14 },
+              640: { slidesPerView: 3.8, spaceBetween: 16 },
+              768: { slidesPerView: 4.5, spaceBetween: 16 },
+              1024: { slidesPerView: 5.5, spaceBetween: 18 },
+              1280: { slidesPerView: 6.2, spaceBetween: 18 },
+            }}
+            className="w-full !py-1"
+          >
+            {films.map((film, idx) => (
+              <SwiperSlide key={film._id || film.slug || idx}>
+                <FilmCard film={film} />
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
 
-        <button
-          ref={nextRef}
-          aria-label="Next slide"
-          className="absolute -right-3 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full bg-black/70 hover:bg-red-600 text-white/80 hover:text-white border border-white/10 flex items-center justify-center backdrop-blur-md shadow-2xl transition-all opacity-0 group-hover/swiper:opacity-100 disabled:opacity-0 cursor-pointer active:scale-90"
-        >
-          <ChevronRight size={20} />
-        </button>
+        {/* ── Modern Vertical Stack Rounded Pill Navigation Buttons (From User Screenshot) ── */}
+        <div className="hidden sm:flex flex-col justify-center gap-2 shrink-0 my-auto">
+          <button
+            ref={nextRef}
+            aria-label="Next slide"
+            title="Xem phim tiếp theo"
+            className="w-10 h-16 rounded-2xl bg-[#242834] hover:bg-[#343b4d] active:scale-95 text-white/70 hover:text-white border border-white/10 flex items-center justify-center transition-all cursor-pointer shadow-xl disabled:opacity-20 disabled:pointer-events-none"
+          >
+            <ChevronRight size={22} strokeWidth={2.5} />
+          </button>
 
-        <Swiper
-          modules={[Navigation, FreeMode]}
-          navigation={{
-            prevEl: prevRef.current,
-            nextEl: nextRef.current,
-          }}
-          onBeforeInit={(swiper: any) => {
-            if (
-              swiper.params.navigation &&
-              typeof swiper.params.navigation !== "boolean"
-            ) {
-              swiper.params.navigation.prevEl = prevRef.current;
-              swiper.params.navigation.nextEl = nextRef.current;
-            }
-          }}
-          spaceBetween={14}
-          slidesPerView={2.2}
-          freeMode={true}
-          breakpoints={{
-            480: { slidesPerView: 3.2, spaceBetween: 14 },
-            640: { slidesPerView: 3.8, spaceBetween: 16 },
-            768: { slidesPerView: 4.5, spaceBetween: 16 },
-            1024: { slidesPerView: 5.5, spaceBetween: 18 },
-            1280: { slidesPerView: 6.2, spaceBetween: 18 },
-          }}
-          className="w-full !py-2"
-        >
-          {films.map((film, idx) => (
-            <SwiperSlide key={film._id || film.slug || idx}>
-              <FilmCard film={film} />
-            </SwiperSlide>
-          ))}
-        </Swiper>
+          <button
+            ref={prevRef}
+            aria-label="Previous slide"
+            title="Xem phim trước"
+            className="w-10 h-16 rounded-2xl bg-[#242834] hover:bg-[#343b4d] active:scale-95 text-white/70 hover:text-white border border-white/10 flex items-center justify-center transition-all cursor-pointer shadow-xl disabled:opacity-20 disabled:pointer-events-none"
+          >
+            <ChevronLeft size={22} strokeWidth={2.5} />
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-// Component Wrapper for Intersection Observer Lazy Load
+// Component Wrapper for Intersection Observer Lazy Load (No min-height gaps)
 function LazySection({ children }: { children: React.ReactNode }) {
   const [isVisible, setIsVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -238,11 +232,11 @@ function LazySection({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div ref={containerRef} className="min-h-[260px]">
+    <div ref={containerRef}>
       {isVisible ? (
         children
       ) : (
-        <div className="w-full h-48 animate-pulse bg-white/[0.02] rounded-2xl" />
+        <div className="w-full h-32 animate-pulse bg-white/[0.01] rounded-2xl mb-8" />
       )}
     </div>
   );
@@ -298,17 +292,27 @@ export default function HomePage() {
     enabled: showMoreSections,
   });
 
-  // 7. Anime lồng tiếng (Dubbed Anime)
+  // 7. Anime lồng tiếng (Dubbed Anime - Fetching p1 + p2 for full row guarantee)
   const { data: animeData, isLoading: animeLoading } = useQuery({
     queryKey: ["anime-v2", 1],
     queryFn: () => movieApi.getAnime(1).then((r) => r.data),
     enabled: showMoreSections,
   });
+  const { data: animeData2 } = useQuery({
+    queryKey: ["anime-v2", 2],
+    queryFn: () => movieApi.getAnime(2).then((r) => r.data),
+    enabled: showMoreSections,
+  });
 
-  // 8. Phim phiêu lưu mạo hiểm (Adventure & Exploration)
+  // 8. Phim phiêu lưu mạo hiểm (Adventure & Exploration - Fetching p1 + p2 for full row guarantee)
   const { data: adventureData, isLoading: adventureLoading } = useQuery({
-    queryKey: ["adventure-movies"],
+    queryKey: ["adventure-movies", 1],
     queryFn: () => movieApi.getByGenre("phieu-luu", 1).then((r) => r.data),
+    enabled: showMoreSections,
+  });
+  const { data: adventureData2 } = useQuery({
+    queryKey: ["adventure-movies", 2],
+    queryFn: () => movieApi.getByGenre("phieu-luu", 2).then((r) => r.data),
     enabled: showMoreSections,
   });
 
@@ -400,14 +404,25 @@ export default function HomePage() {
     () => deduplicate(seriesData?.data?.items || seriesData?.items || []),
     [seriesData],
   );
+
+  // Combine p1 + p2 for anime and adventure to ensure 12+ items
   const animeFilms = useMemo(
-    () => deduplicate(animeData?.data?.items || animeData?.items || []),
-    [animeData],
+    () =>
+      deduplicate([
+        ...(animeData?.data?.items || animeData?.items || []),
+        ...(animeData2?.data?.items || animeData2?.items || []),
+      ]),
+    [animeData, animeData2],
   );
   const adventureFilms = useMemo(
-    () => deduplicate(adventureData?.data?.items || adventureData?.items || []),
-    [adventureData],
+    () =>
+      deduplicate([
+        ...(adventureData?.data?.items || adventureData?.items || []),
+        ...(adventureData2?.data?.items || adventureData2?.items || []),
+      ]),
+    [adventureData, adventureData2],
   );
+
   const singleFilms = useMemo(
     () => deduplicate(singleData?.data?.items || singleData?.items || []),
     [singleData],
@@ -478,7 +493,7 @@ export default function HomePage() {
 
   const showBannerSkeleton = bannerFilms.length === 0;
 
-  // Deduplication registry across all 14 rows
+  // Deduplication registry across all 14 rows with 12 items guaranteed per row
   const {
     top10List,
     vfxRowList,
@@ -506,82 +521,35 @@ export default function HomePage() {
       });
     };
 
+    const buildRow = (rawFilms: FilmItem[], targetCount = 12): FilmItem[] => {
+      const filtered = excludeSlugs(rawFilms, usedSlugs);
+      const row = deduplicateRow(
+        filtered.length >= 6 ? filtered : rawFilms,
+      ).slice(0, targetCount);
+      trackUsed(row);
+      return row;
+    };
+
     const top10List = deduplicateRow(latestFilms).slice(0, 10);
     trackUsed(top10List);
 
     // Initial 4 Sections
-    const vfxRowList = deduplicateRow(excludeSlugs(vfxFilms, usedSlugs)).slice(
-      0,
-      12,
-    );
-    trackUsed(vfxRowList);
-
-    const usUkSeriesRowList = deduplicateRow(
-      excludeSlugs(usUkSeriesFilms, usedSlugs),
-    ).slice(0, 12);
-    trackUsed(usUkSeriesRowList);
-
-    const actionRowList = deduplicateRow(
-      excludeSlugs(actionFilms, usedSlugs),
-    ).slice(0, 12);
-    trackUsed(actionRowList);
-
-    const scifiRowList = deduplicateRow(
-      excludeSlugs(scifiFilms, usedSlugs),
-    ).slice(0, 12);
-    trackUsed(scifiRowList);
+    const vfxRowList = buildRow(vfxFilms);
+    const usUkSeriesRowList = buildRow(usUkSeriesFilms);
+    const actionRowList = buildRow(actionFilms);
+    const scifiRowList = buildRow(scifiFilms);
 
     // Lazy 10 Sections
-    const nextWatchRowList = deduplicateRow(
-      excludeSlugs(nextWatchFilms, usedSlugs),
-    ).slice(0, 12);
-    trackUsed(nextWatchRowList);
-
-    const seriesRowList = deduplicateRow(
-      excludeSlugs(seriesFilms, usedSlugs),
-    ).slice(0, 12);
-    trackUsed(seriesRowList);
-
-    const animeRowList = deduplicateRow(
-      excludeSlugs(animeFilms, usedSlugs),
-    ).slice(0, 12);
-    trackUsed(animeRowList);
-
-    const adventureRowList = deduplicateRow(
-      excludeSlugs(adventureFilms, usedSlugs),
-    ).slice(0, 12);
-    trackUsed(adventureRowList);
-
-    const singleRowList = deduplicateRow(
-      excludeSlugs(singleFilms, usedSlugs),
-    ).slice(0, 12);
-    trackUsed(singleRowList);
-
-    const dramaRowList = deduplicateRow(
-      excludeSlugs(dramaFilms, usedSlugs),
-    ).slice(0, 12);
-    trackUsed(dramaRowList);
-
-    const disasterRowList = deduplicateRow(
-      excludeSlugs(disasterFilms, usedSlugs),
-    ).slice(0, 12);
-    trackUsed(disasterRowList);
-
-    const warRowList = deduplicateRow(excludeSlugs(warFilms, usedSlugs)).slice(
-      0,
-      12,
-    );
-    trackUsed(warRowList);
-
-    const comedyRowList = deduplicateRow(
-      excludeSlugs(comedyFilms, usedSlugs),
-    ).slice(0, 12);
-    trackUsed(comedyRowList);
-
-    const romanceRowList = deduplicateRow(
-      excludeSlugs(romanceFilms, usedSlugs),
-    ).slice(0, 12);
-    trackUsed(romanceRowList);
+    const nextWatchRowList = buildRow(nextWatchFilms);
+    const seriesRowList = buildRow(seriesFilms);
+    const animeRowList = buildRow(animeFilms);
+    const adventureRowList = buildRow(adventureFilms);
+    const singleRowList = buildRow(singleFilms);
+    const dramaRowList = buildRow(dramaFilms);
+    const disasterRowList = buildRow(disasterFilms);
+    const warRowList = buildRow(warFilms);
+    const comedyRowList = buildRow(comedyFilms);
+    const romanceRowList = buildRow(romanceFilms);
 
     return {
       top10List,
@@ -636,7 +604,6 @@ export default function HomePage() {
         <LazySection>
           <FilmSection
             title="Phim Kỹ Xảo"
-            icon={Wand2}
             films={vfxRowList}
             isLoading={vfxLoading}
             href="/genre/than-thoai"
@@ -646,7 +613,6 @@ export default function HomePage() {
         <LazySection>
           <FilmSection
             title="Series Âu-Mỹ"
-            icon={Tv}
             films={usUkSeriesRowList}
             isLoading={usUkSeriesLoading}
             href="/country/au-my"
@@ -656,7 +622,6 @@ export default function HomePage() {
         <LazySection>
           <FilmSection
             title="Phim Hành Động"
-            icon={Zap}
             films={actionRowList}
             isLoading={actionLoading}
             href="/genre/hanh-dong"
@@ -666,7 +631,6 @@ export default function HomePage() {
         <LazySection>
           <FilmSection
             title="Phim Khoa Học Viễn Tưởng Bom Tấn"
-            icon={Compass}
             films={scifiRowList}
             isLoading={scifiLoading}
             href="/genre/vien-tuong"
@@ -675,7 +639,7 @@ export default function HomePage() {
 
         {/* ── Minimalist Show More Sections Button ── */}
         {!showMoreSections ? (
-          <div className="w-full my-8 flex justify-center px-1">
+          <div className="w-full my-6 flex justify-center px-1">
             <button
               onClick={() => setShowMoreSections(true)}
               className="w-full max-w-md py-3.5 px-6 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-98 shadow-xl"
@@ -685,12 +649,11 @@ export default function HomePage() {
             </button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-2">
             {/* ── 10 Lazy Loaded Sections ── */}
             <LazySection>
               <FilmSection
                 title="Xem Gì Tiếp Theo"
-                icon={Flame}
                 films={nextWatchRowList}
                 isLoading={nextWatchLoading}
                 href="/films"
@@ -700,7 +663,6 @@ export default function HomePage() {
             <LazySection>
               <FilmSection
                 title="Series Quốc Tế"
-                icon={Globe}
                 films={seriesRowList}
                 isLoading={seriesLoading}
                 href="/films/series"
@@ -710,7 +672,6 @@ export default function HomePage() {
             <LazySection>
               <FilmSection
                 title="Anime Lồng Tiếng"
-                icon={Sparkles}
                 films={animeRowList}
                 isLoading={animeLoading}
                 href="/films/anime"
@@ -720,7 +681,6 @@ export default function HomePage() {
             <LazySection>
               <FilmSection
                 title="Phim Phiêu Lưu Mạo Hiểm"
-                icon={Compass}
                 films={adventureRowList}
                 isLoading={adventureLoading}
                 href="/genre/phieu-luu"
@@ -730,7 +690,6 @@ export default function HomePage() {
             <LazySection>
               <FilmSection
                 title="Phim Chất Lượng 4K"
-                icon={Clapperboard}
                 films={singleRowList}
                 isLoading={singleLoading}
                 href="/films/single"
@@ -740,7 +699,6 @@ export default function HomePage() {
             <LazySection>
               <FilmSection
                 title="Phim Chính Kịch Chuyển Thể Từ Sách"
-                icon={BookOpen}
                 films={dramaRowList}
                 isLoading={dramaLoading}
                 href="/genre/chinh-kich"
@@ -750,7 +708,6 @@ export default function HomePage() {
             <LazySection>
               <FilmSection
                 title="Phim Kịch Tính Về Thảm Họa Chết Chóc"
-                icon={Skull}
                 films={disasterRowList}
                 isLoading={disasterLoading}
                 href="/genre/kinh-di"
@@ -760,7 +717,6 @@ export default function HomePage() {
             <LazySection>
               <FilmSection
                 title="Thể Loại Chiến Tranh Và Gai Góc"
-                icon={ShieldAlert}
                 films={warRowList}
                 isLoading={warLoading}
                 href="/genre/chien-tranh"
@@ -770,7 +726,6 @@ export default function HomePage() {
             <LazySection>
               <FilmSection
                 title="Phim Hài"
-                icon={Laugh}
                 films={comedyRowList}
                 isLoading={comedyLoading}
                 href="/genre/hai-huoc"
@@ -780,7 +735,6 @@ export default function HomePage() {
             <LazySection>
               <FilmSection
                 title="Bộ Phim Giải Trí Hoàn Hảo"
-                icon={Heart}
                 films={romanceRowList}
                 isLoading={romanceLoading}
                 href="/genre/tinh-cam"
