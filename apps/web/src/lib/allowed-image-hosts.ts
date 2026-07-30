@@ -26,6 +26,10 @@ const ALLOWED_IMAGE_HOSTS = [
   "*.vsmov.com",
   "nguon.vsphim.com",
   "*.vsphim.com",
+  // TMDB
+  "image.tmdb.org",
+  "*.tmdb.org",
+  "tmdb.org",
   // Misc
   "motphim.net",
   "*.motphim.net",

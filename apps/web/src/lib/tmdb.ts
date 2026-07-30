@@ -19,7 +19,8 @@ export function tmdbPoster(
   size: PosterSize = "w342",
 ): string | null {
   if (!path) return null;
-  return `${TMDB_IMAGE_BASE}/${size}${path}`;
+  const raw = `${TMDB_IMAGE_BASE}/${size}${path}`;
+  return `/api/image-proxy?url=${encodeURIComponent(raw)}`;
 }
 
 export function tmdbBackdrop(
@@ -27,7 +28,8 @@ export function tmdbBackdrop(
   size: BackdropSize = "w1280",
 ): string | null {
   if (!path) return null;
-  return `${TMDB_IMAGE_BASE}/${size}${path}`;
+  const raw = `${TMDB_IMAGE_BASE}/${size}${path}`;
+  return `/api/image-proxy?url=${encodeURIComponent(raw)}`;
 }
 
 export function tmdbProfile(
@@ -35,7 +37,8 @@ export function tmdbProfile(
   size: ProfileSize = "w185",
 ): string | null {
   if (!path) return null;
-  return `${TMDB_IMAGE_BASE}/${size}${path}`;
+  const raw = `${TMDB_IMAGE_BASE}/${size}${path}`;
+  return `/api/image-proxy?url=${encodeURIComponent(raw)}`;
 }
 
 // ── Fetch helper ──────────────────────────────────────────────────
