@@ -128,20 +128,8 @@ export function Top10RankedRow({
                         )}
                       </div>
 
-                      {/* Title overlay at bottom of card */}
-                      <div className="absolute bottom-0 left-0 right-0 p-2.5 space-y-0.5 z-10">
-                        <p className="text-xs font-extrabold text-white truncate group-hover/item:text-netflixRed transition-colors">
-                          {film.name}
-                        </p>
-                        {film.origin_name && (
-                          <p className="text-[10px] text-neutral-400 truncate">
-                            {film.origin_name}
-                          </p>
-                        )}
-                      </div>
-
                       {/* Play Button Icon on Hover */}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity z-20">
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity z-20 bg-black/40 backdrop-blur-[2px]">
                         <div className="w-10 h-10 rounded-full bg-netflixRed text-white flex items-center justify-center shadow-lg transform scale-75 group-hover/item:scale-100 transition-transform">
                           <Play
                             size={18}
@@ -150,6 +138,18 @@ export function Top10RankedRow({
                           />
                         </div>
                       </div>
+                    </div>
+
+                    {/* Movie Info Block — Positioned UNDERNEATH the poster card */}
+                    <div className="mt-2.5 ml-7 sm:ml-9 md:ml-11 w-[130px] sm:w-[155px] md:w-[180px] space-y-0.5">
+                      <p className="text-xs sm:text-sm font-extrabold text-white truncate group-hover/item:text-netflixRed transition-colors">
+                        {film.name}
+                      </p>
+                      {film.origin_name && (
+                        <p className="text-[10px] text-neutral-400 truncate">
+                          {film.origin_name}
+                        </p>
+                      )}
                     </div>
                   </Link>
                 </SwiperSlide>
