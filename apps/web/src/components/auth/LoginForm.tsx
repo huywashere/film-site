@@ -122,12 +122,12 @@ export function LoginForm() {
   return (
     <div className="w-full max-w-md mx-auto p-6 sm:p-8 bg-[#0f1319]/90 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
       {/* Decorative ambient neon circle background */}
-      <div className="absolute -top-24 -left-24 w-48 h-48 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-red-500/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-24 -left-24 w-48 h-48 bg-netflixRed/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-netflixRed/15 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header */}
       <div className="text-center mb-8 relative z-10">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 mb-4 shadow-lg shadow-emerald-500/10">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-netflixRed/10 text-netflixRed border border-netflixRed/25 mb-4 shadow-lg shadow-netflixRed/20">
           <LogIn size={26} />
         </div>
         <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
@@ -141,8 +141,8 @@ export function LoginForm() {
       {/* 2FA OTP Modal View */}
       {require2FA ? (
         <form onSubmit={handleOTPSubmit} className="space-y-5 relative z-10">
-          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-            <ShieldCheck size={32} className="mx-auto text-emerald-400 mb-2" />
+          <div className="p-4 rounded-2xl bg-netflixRed/10 border border-netflixRed/20 text-center">
+            <ShieldCheck size={32} className="mx-auto text-netflixRed mb-2" />
             <h3 className="text-sm font-bold text-white">
               Xác Thực 2 Lớp (2FA)
             </h3>
@@ -161,7 +161,7 @@ export function LoginForm() {
               value={otp}
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
               placeholder="123456"
-              className="w-full text-center text-2xl font-mono tracking-[0.5em] bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-all"
+              className="w-full text-center text-2xl font-mono tracking-[0.5em] bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-netflixRed transition-all"
               required
               autoFocus
             />
@@ -170,7 +170,7 @@ export function LoginForm() {
           <button
             type="submit"
             disabled={verifying2FA || otp.length !== 6}
-            className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-extrabold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg active:scale-95 disabled:opacity-50"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#e50914] to-[#b91c1c] hover:from-[#f43f5e] hover:to-[#e50914] text-white font-extrabold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg active:scale-95 disabled:opacity-50"
           >
             {verifying2FA ? "Đang xác thực..." : "Xác Nhận Đăng Nhập"}
           </button>
@@ -193,7 +193,7 @@ export function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
-                className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50 transition-all"
+                className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-netflixRed/50 transition-all"
                 required
               />
             </div>
@@ -207,7 +207,7 @@ export function LoginForm() {
               </label>
               <Link
                 href="/forgot-password"
-                className="text-[11px] font-semibold text-emerald-400 hover:underline"
+                className="text-[11px] font-semibold text-netflixRed hover:underline"
               >
                 Quên mật khẩu?
               </Link>
@@ -222,7 +222,7 @@ export function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-11 py-3 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50 transition-all"
+                className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-11 py-3 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-netflixRed/50 transition-all"
                 required
               />
               <button
@@ -242,7 +242,7 @@ export function LoginForm() {
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="rounded border-white/20 bg-white/5 text-emerald-500 focus:ring-0 cursor-pointer"
+                className="rounded border-white/20 bg-white/5 text-netflixRed focus:ring-0 cursor-pointer"
               />
               <span>Ghi nhớ đăng nhập</span>
             </label>
@@ -261,7 +261,7 @@ export function LoginForm() {
           <button
             type="submit"
             disabled={isLoading || !turnstileToken}
-            className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-extrabold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-xl hover:shadow-emerald-500/20 active:scale-95 disabled:opacity-50 mt-2"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#e50914] to-[#b91c1c] hover:from-[#f43f5e] hover:to-[#e50914] text-white font-extrabold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-xl hover:shadow-netflixRed/20 active:scale-95 disabled:opacity-50 mt-2"
           >
             {isLoading ? "Đang xử lý..." : "Đăng Nhập Ngay"}
           </button>
@@ -311,7 +311,7 @@ export function LoginForm() {
           Chưa có tài khoản?{" "}
           <Link
             href="/register"
-            className="font-bold text-emerald-400 hover:text-emerald-300 inline-flex items-center gap-1 hover:underline ml-1"
+            className="font-bold text-netflixRed hover:text-red-400 inline-flex items-center gap-1 hover:underline ml-1"
           >
             Tạo tài khoản mới <ArrowRight size={12} />
           </Link>

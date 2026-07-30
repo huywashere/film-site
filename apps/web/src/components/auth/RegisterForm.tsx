@@ -111,7 +111,7 @@ export function RegisterForm() {
 
       {/* Header */}
       <div className="text-center mb-8 relative z-10">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 mb-4 shadow-lg shadow-emerald-500/10">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-netflixRed/10 text-netflixRed border border-netflixRed/25 mb-4 shadow-lg shadow-netflixRed/20">
           <UserPlus size={26} />
         </div>
         <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
@@ -141,7 +141,7 @@ export function RegisterForm() {
               value={form.email}
               onChange={handleChange}
               placeholder="name@example.com"
-              className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50 transition-all"
+              className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-netflixRed/50 transition-all"
               required
             />
           </div>
@@ -163,7 +163,7 @@ export function RegisterForm() {
               value={form.username}
               onChange={handleChange}
               placeholder="biệt danh của bạn"
-              className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50 transition-all"
+              className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-netflixRed/50 transition-all"
               required
             />
           </div>
@@ -229,14 +229,14 @@ export function RegisterForm() {
             id="terms"
             checked={acceptTerms}
             onChange={(e) => setAcceptTerms(e.target.checked)}
-            className="rounded border-white/20 bg-white/5 text-emerald-500 focus:ring-0 cursor-pointer"
+            className="rounded border-white/20 bg-white/5 text-netflixRed focus:ring-0 cursor-pointer"
           />
           <label
             htmlFor="terms"
             className="text-xs text-neutral-400 cursor-pointer"
           >
             Tôi đồng ý với{" "}
-            <span className="text-emerald-400 underline font-semibold">
+            <span className="text-netflixRed underline font-semibold">
               Điều khoản & Chính sách
             </span>{" "}
             CineVerse
@@ -256,7 +256,7 @@ export function RegisterForm() {
         <button
           type="submit"
           disabled={isLoading || !turnstileToken || !acceptTerms}
-          className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-extrabold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-xl hover:shadow-emerald-500/20 active:scale-95 disabled:opacity-50 mt-2"
+          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#e50914] to-[#b91c1c] hover:from-[#f43f5e] hover:to-[#e50914] text-white font-extrabold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-xl hover:shadow-netflixRed/20 active:scale-95 disabled:opacity-50 mt-2"
         >
           {isLoading ? "Đang tạo tài khoản..." : "Tạo Tài Khoản Ngay"}
         </button>
@@ -305,7 +305,7 @@ export function RegisterForm() {
           Đã có tài khoản?{" "}
           <Link
             href="/login"
-            className="font-bold text-emerald-400 hover:text-emerald-300 inline-flex items-center gap-1 hover:underline ml-1"
+            className="font-bold text-netflixRed hover:text-red-400 inline-flex items-center gap-1 hover:underline ml-1"
           >
             Đăng nhập ngay <ArrowRight size={12} />
           </Link>

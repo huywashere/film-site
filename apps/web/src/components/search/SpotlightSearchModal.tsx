@@ -124,7 +124,7 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
           regex.test(part) ? (
             <mark
               key={i}
-              className="bg-transparent text-emerald-400 font-extrabold not-italic underline decoration-emerald-500/50"
+              className="bg-transparent text-netflixRed font-extrabold not-italic underline decoration-red-500/50"
             >
               {part}
             </mark>
@@ -448,7 +448,7 @@ export function SpotlightSearchModal({
             )}
             <button
               onClick={onClose}
-              className="text-xs font-medium text-white/60 bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+              className="text-xs font-semibold text-white bg-white/[0.08] hover:bg-white/[0.16] border border-white/10 px-3.5 py-1.5 rounded-full transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95"
             >
               Đóng
             </button>
@@ -456,11 +456,11 @@ export function SpotlightSearchModal({
         </div>
 
         {/* ── YouTube/Netflix Smart Filter Bar (Fixed Header) ── */}
-        <div className="px-4 py-2 border-b border-white/[0.06] bg-black/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs shrink-0 overflow-x-auto scrollbar-hide">
+        <div className="px-4 py-2.5 border-b border-white/[0.06] bg-black/40 backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs shrink-0 overflow-x-auto scrollbar-hide">
           {/* Type Filter Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5 shrink-0">
-            <span className="text-white/35 font-semibold text-[10px] uppercase tracking-wider flex items-center gap-1 shrink-0 mr-1">
-              <Filter size={11} className="text-white/40" />
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-0.5 shrink-0">
+            <span className="text-white/40 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1 shrink-0 mr-1">
+              <Filter size={11} className="text-white/50" />
               Lọc:
             </span>
 
@@ -476,10 +476,10 @@ export function SpotlightSearchModal({
                 <button
                   key={tab.id}
                   onClick={() => setActiveTypeFilter(tab.id as any)}
-                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 text-xs ${
+                  className={`px-3.5 py-1.5 rounded-full font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 text-xs ${
                     active
-                      ? "bg-white text-black font-bold shadow-sm"
-                      : "bg-white/[0.04] hover:bg-white/[0.08] text-white/60 hover:text-white border border-white/[0.06]"
+                      ? "bg-netflixRed text-white shadow-md shadow-red-600/30 scale-105"
+                      : "bg-white/[0.06] hover:bg-white/[0.12] text-neutral-300 hover:text-white border border-white/10"
                   }`}
                 >
                   <span>{tab.label}</span>
@@ -487,8 +487,8 @@ export function SpotlightSearchModal({
                     <span
                       className={`text-[10px] px-1.5 py-0.2 rounded-full ${
                         active
-                          ? "bg-black/20 text-black"
-                          : "bg-white/10 text-white/50"
+                          ? "bg-black/30 text-white"
+                          : "bg-white/10 text-white/60"
                       }`}
                     >
                       {tab.count}
@@ -500,7 +500,7 @@ export function SpotlightSearchModal({
           </div>
 
           {/* Audio Language Filter */}
-          <div className="flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto scrollbar-hide">
             {[
               { id: "all", label: "Tất cả Audio" },
               { id: "vietsub", label: "Vietsub" },
@@ -511,10 +511,10 @@ export function SpotlightSearchModal({
                 <button
                   key={lang.id}
                   onClick={() => setActiveLangFilter(lang.id as any)}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer shrink-0 ${
+                  className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer shrink-0 ${
                     active
-                      ? "bg-white/15 text-white border border-white/20"
-                      : "text-white/40 hover:text-white/70"
+                      ? "bg-white/20 text-white border border-white/30 shadow-sm"
+                      : "text-neutral-400 hover:text-white hover:bg-white/[0.06]"
                   }`}
                 >
                   {lang.label}
@@ -540,7 +540,9 @@ export function SpotlightSearchModal({
                     {sortedAndFilteredResults.length}
                   </strong>{" "}
                   kết quả cho &ldquo;
-                  <span className="text-emerald-400">{debouncedQuery}</span>
+                  <span className="text-netflixRed font-extrabold">
+                    {debouncedQuery}
+                  </span>
                   &rdquo;
                 </span>
 
