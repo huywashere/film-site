@@ -4,7 +4,7 @@ import { Play } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="relative w-full bg-[#07090e] border-t border-white/5 text-neutral-400 font-sans py-16 px-4 z-20">
+    <footer className="relative w-full bg-background text-neutral-400 font-sans py-16 px-4 z-20">
       <div className="max-w-4xl mx-auto flex flex-col items-center justify-center text-center space-y-6">
         {/* Brand Logo & Name */}
         <Link href="/" className="inline-flex items-center gap-3 group">

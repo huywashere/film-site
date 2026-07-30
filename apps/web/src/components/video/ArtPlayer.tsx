@@ -152,6 +152,24 @@ export default function ArtPlayer({
                     startLevel: -1, // Auto level selection based on bandwidth
                   });
                   hlsInstance = hls;
+
+                  hls.on(Hls.Events.ERROR, (_event, data) => {
+                    if (data.fatal) {
+                      switch (data.type) {
+                        case Hls.ErrorTypes.NETWORK_ERROR:
+                          hls.startLoad();
+                          break;
+                        case Hls.ErrorTypes.MEDIA_ERROR:
+                          hls.recoverMediaError();
+                          break;
+                        default:
+                          hls.destroy();
+                          if (onError) onError(data);
+                          break;
+                      }
+                    }
+                  });
+
                   hls.loadSource(streamUrl);
                   hls.attachMedia(video);
 

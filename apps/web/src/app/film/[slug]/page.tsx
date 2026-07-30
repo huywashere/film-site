@@ -36,6 +36,7 @@ import { useTranslation } from "@/store/langStore";
 import { Button } from "@/components/ui/button";
 import { useTmdb, useTmdbPerson } from "@/hooks/useTmdb";
 import { tmdbBackdrop, tmdbProfile, tmdbPoster } from "@/lib/tmdb";
+import { TrailerModal } from "@/components/film/TrailerModal";
 
 // ── Cast Card (Only renders actors with actual photos) ──────
 function CastCard({
@@ -551,6 +552,7 @@ export default function FilmDetailPage() {
   const queryClient = useQueryClient();
   const [inWatchlist, setInWatchlist] = useState(false);
   const [myRating, setMyRating] = useState(0);
+  const [showTrailer, setShowTrailer] = useState(false);
 
   // Fetch film detail
   const { data, isLoading, error } = useQuery({
@@ -637,7 +639,7 @@ export default function FilmDetailPage() {
   }, [user, slug, isNotFound]);
 
   const prefetchWatchData = () => {
-    if (isNotFound) return;
+    if (isNotFound || !film) return;
     queryClient.prefetchQuery({
       queryKey: ["film-ophim", slug],
       queryFn: () =>
@@ -653,7 +655,7 @@ export default function FilmDetailPage() {
 
   if (isLoading) return <FilmDetailSkeleton />;
 
-  if (isNotFound)
+  if (isNotFound || !film)
     return (
       <div className="bg-[#14181c] min-h-[75vh] text-neutral-300 pt-28 pb-16 text-center flex flex-col items-center justify-center px-4 font-sans select-none">
         <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4 shadow-xl">
@@ -697,10 +699,10 @@ export default function FilmDetailPage() {
         toast("Đã xóa khỏi watchlist");
       } else {
         await watchlistApi.add(slug, {
-          title: film.name,
+          title: film?.name || slug,
           thumbUrl: posterUrl,
-          type: film.type,
-          year: film.year,
+          type: film?.type,
+          year: film?.year,
         });
         setInWatchlist(true);
         toast("Đã thêm vào watchlist!", "success");
@@ -729,27 +731,85 @@ export default function FilmDetailPage() {
     ? `/watch/${slug}?ep=${firstEp.slug || firstEp.name}`
     : `/watch/${slug}`;
 
-  const genres = Array.isArray(film.category) ? film.category : [];
-  const countries = Array.isArray(film.country) ? film.country : [];
+  const genres = Array.isArray(film?.category) ? film.category : [];
+  const countries = Array.isArray(film?.country) ? film.country : [];
   const episodeCount = episodes.reduce(
     (total: number, server: any) =>
       Math.max(total, server?.server_data?.length || 0),
     0,
   );
   const tmdbRating = Number(
-    film.tmdb?.vote_average || film.vote_average || film.rating || 0,
+    film?.tmdb?.vote_average || film?.vote_average || film?.rating || 0,
   );
   const statusLabel =
-    film.status === "completed" ||
-    String(film.episode_current || "")
+    film?.status === "completed" ||
+    String(film?.episode_current || "")
       .toLowerCase()
       .includes("full")
       ? "Đã hoàn thành"
-      : film.episode_current || "Đang cập nhật";
-  const typeLabel = film.type === "series" ? "Phim bộ" : "Phim lẻ";
+      : film?.episode_current || "Đang cập nhật";
+
+  const filmName = film?.name || film?.title || slug;
+  const originName = film?.origin_name || "";
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": film?.type === "series" ? "TVSeries" : "Movie",
+    name: filmName,
+    alternateName: originName,
+    description:
+      description ||
+      `Xem phim ${filmName} (${originName}) online chất lượng cao Vietsub Thuyết Minh HD full.`,
+    image: posterUrl || backdropUrl,
+    dateCreated: film?.year ? String(film.year) : undefined,
+    genre: genres.map((g: any) => g?.name).filter(Boolean),
+    countryOfOrigin: countries.map((c: any) => c?.name).filter(Boolean),
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: tmdbRating > 0 ? (tmdbRating / 2).toFixed(1) : "4.8",
+      bestRating: "5",
+      worstRating: "1",
+      ratingCount: "128",
+    },
+    potentialAction: {
+      "@type": "WatchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `https://cineverse-movie.vercel.app/watch/${slug}`,
+        actionPlatform: [
+          "http://schema.org/DesktopWebPlatform",
+          "http://schema.org/MobileWebPlatform",
+        ],
+      },
+    },
+  };
+
+  const seoTitle = `${filmName} ${originName ? `(${originName})` : ""} ${film?.year ? `- ${film.year}` : ""} Vietsub HD | CineVerse`;
+  const seoDescription = description
+    ? description.slice(0, 160)
+    : `Xem phim ${filmName} (${originName}) chất lượng cao Vietsub Thuyết minh HD miễn phí trên CineVerse.`;
 
   return (
     <div className="bg-black min-h-screen text-foreground pb-24 font-sans relative select-none">
+      {/* ── JSON-LD STRUCTURED DATA SCHEMA FOR GOOGLE SEO ── */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      {/* ── DYNAMIC HEAD META TAGS (OPEN GRAPH & TWITTER CARDS) ── */}
+      <head>
+        <title>{seoTitle}</title>
+        <meta name="description" content={seoDescription} />
+        <meta property="og:title" content={seoTitle} />
+        <meta property="og:description" content={seoDescription} />
+        <meta property="og:image" content={posterUrl || backdropUrl} />
+        <meta property="og:type" content="video.movie" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoTitle} />
+        <meta name="twitter:description" content={seoDescription} />
+        <meta name="twitter:image" content={posterUrl || backdropUrl} />
+      </head>
       {/* ── Giant Backdrop Banner (Plex Style Left-to-Right Blended Layout) ── */}
       {(backdropUrl || posterUrl) && (
         <div className="absolute top-0 left-0 right-0 h-[65vh] md:h-[82vh] w-full z-0 overflow-hidden select-none">
@@ -872,13 +932,8 @@ export default function FilmDetailPage() {
               </Link>
 
               <button
-                onClick={() =>
-                  toast(
-                    t("film.trailerLoading", "Tính năng trailer đang tải!"),
-                    "info",
-                  )
-                }
-                className="bg-white/10 hover:bg-white/20 text-white px-6 py-2.5 sm:py-3 rounded-full font-bold tracking-wider uppercase text-xs border border-white/15 backdrop-blur-md transition-colors"
+                onClick={() => setShowTrailer(true)}
+                className="bg-white/10 hover:bg-white/20 text-white px-6 py-2.5 sm:py-3 rounded-full font-bold tracking-wider uppercase text-xs border border-white/15 backdrop-blur-md transition-colors cursor-pointer active:scale-95"
               >
                 {t("film.trailer", "Trailer")}
               </button>
@@ -1243,6 +1298,15 @@ export default function FilmDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Trailer Video Modal */}
+      <TrailerModal
+        isOpen={showTrailer}
+        onClose={() => setShowTrailer(false)}
+        filmName={film?.name || ""}
+        trailerUrl={film?.trailer_url}
+        tmdbVideoKey={trailer?.key}
+      />
     </div>
   );
 }

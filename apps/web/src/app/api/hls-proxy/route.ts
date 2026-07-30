@@ -194,8 +194,12 @@ function filterM3u8(content: string, originalUrl: string): string {
         continue; // bỏ segment quảng cáo lẻ
       }
 
-      // Proxy segment qua server để tránh CORS
-      filtered.push(`${proxyBase}${encodeURIComponent(absoluteUrl)}`);
+      // Nếu là sub-manifest .m3u8 thì proxy tiếp, nếu là .ts/.m4s segment thì dùng trực tiếp URL tuyệt đối
+      if (absoluteUrl.includes(".m3u8")) {
+        filtered.push(`${proxyBase}${encodeURIComponent(absoluteUrl)}`);
+      } else {
+        filtered.push(absoluteUrl);
+      }
       continue;
     }
 

@@ -43,6 +43,13 @@ import { cn } from "@/lib/utils";
 import { ContinueWatchingRow } from "@/components/film/ContinueWatchingRow";
 import { SmartRecommendationSection } from "@/components/film/SmartRecommendationSection";
 import { Top10RankedRow } from "@/components/film/Top10RankedRow";
+import { TrailerModal } from "@/components/film/TrailerModal";
+import {
+  getFranchiseBaseName,
+  deduplicateSectionRow,
+  excludePreviousSectionSlugs,
+} from "@/lib/recommendation-engine";
+import HeroBanner from "@/app/components/HeroBanner";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -109,358 +116,6 @@ const StyledSwiperContainer = styled.div`
   }
 `;
 
-// ── Netflix Hero Banner ───────────────────────────────────────────
-function HeroBanner({ films }: { films: FilmItem[] }) {
-  const { t } = useTranslation();
-  const featured = useMemo(() => {
-    return deduplicate(films).slice(0, 6);
-  }, [films]);
-
-  const [current, setCurrent] = useState(0);
-  const [showTrailer, setShowTrailer] = useState(false);
-  const [scrollY, setScrollY] = useState(0);
-
-  // Parallax scroll listener
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    if (featured.length < 2) return;
-    const rotationTimer = setInterval(() => {
-      setCurrent((index) => (index + 1) % featured.length);
-    }, 8000);
-    return () => clearInterval(rotationTimer);
-  }, [featured.length]);
-
-  const film = featured[current];
-
-  // Fetch detail data with high staleTime so slide switching has 0ms delay
-  const { data: detailData } = useQuery({
-    queryKey: ["hero-film-detail", film?.slug],
-    queryFn: () =>
-      movieApi.getDetail(film!.slug).then((response) => response.data),
-    enabled: !!film?.slug,
-    staleTime: 10 * 60 * 1000,
-  });
-
-  const filmDetail = detailData?.movie || detailData || film;
-  const { bestBackdrop, tmdbData } = useTmdb({
-    film: filmDetail || film,
-    enabled: !!film,
-    fetchCredits: false,
-    fetchVideos: true,
-  });
-
-  const tmdbBackdropUrl = bestBackdrop
-    ? tmdbBackdrop(bestBackdrop.file_path, "original")
-    : null;
-
-  if (!film) return null;
-
-  const detail = detailData?.movie || detailData || {};
-  const genres = Array.isArray(detail.category)
-    ? detail.category.slice(0, 3)
-    : [];
-  const country = Array.isArray(detail.country)
-    ? detail.country[0]?.name
-    : undefined;
-  const episode = detail.episode_current || film.episode_current;
-  const description = String(detail.content || "")
-    .replace(/<[^>]*>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .trim();
-
-  const backdrop =
-    tmdbBackdropUrl ||
-    resolveImageUrl(film.thumb_url) ||
-    resolveImageUrl(film.poster_url);
-
-  // Calculate parallax opacity and scale based on scroll position
-  const heroOpacity = Math.max(0, 1 - scrollY / 600);
-  const heroScale = 1 + scrollY * 0.0003;
-
-  // Search trailer key from TMDB or YouTube query
-  const trailerVideo = tmdbData?.videos?.results?.find(
-    (v: any) =>
-      v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser"),
-  );
-  const youtubeTrailerUrl = trailerVideo?.key
-    ? `https://www.youtube.com/embed/${trailerVideo.key}?autoplay=1&mute=0`
-    : `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(film.name + " trailer vietsub")}&autoplay=1`;
-
-  const nameLen = film.name.length;
-  const titleFontSizeClass =
-    nameLen > 55
-      ? "text-2xl md:text-3xl lg:text-4xl"
-      : nameLen > 32
-        ? "text-3xl md:text-4xl lg:text-5xl"
-        : "text-3xl md:text-5xl lg:text-6xl";
-
-  return (
-    <div className="relative h-[calc(100vh+100px)] min-h-[700px] w-full overflow-hidden bg-background">
-      {/* Background Poster Image with Parallax & Smooth Framer Motion Crossfade */}
-      <div
-        className="absolute inset-0 w-full h-full transition-transform duration-100 ease-out"
-        style={{
-          transform: `scale(${heroScale})`,
-          opacity: heroOpacity,
-        }}
-      >
-        <AnimatePresence mode="popLayout">
-          <motion.div
-            key={film.slug}
-            initial={{ opacity: 0, scale: 1.04 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute inset-0 w-full h-full"
-          >
-            {backdrop && (
-              <NextImage
-                src={backdrop}
-                alt={film.name}
-                fill
-                priority={current === 0}
-                quality={90}
-                sizes="100vw"
-                className="object-cover object-center brightness-[0.75]"
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {/* Cinematic Gradient Masks - Deep Dark Vignette */}
-      <div
-        className="absolute inset-0 z-10 pointer-events-none"
-        style={{
-          background: `
-            linear-gradient(to right, var(--background) 0%, rgba(var(--background-rgb), 0.8) 40%, transparent 70%),
-            linear-gradient(to top, var(--background) 0%, rgba(var(--background-rgb), 0.95) 20%, transparent 100%)
-          `,
-        }}
-      />
-
-      {/* Content Container with Zero Layout Shift */}
-      <div
-        className="absolute inset-0 z-20 flex items-end sm:items-center pb-36 sm:pb-0 transition-opacity duration-300"
-        style={{ opacity: heroOpacity }}
-      >
-        <div className="w-full px-4 sm:pl-16 sm:pr-8 md:pl-24 md:pr-12">
-          <div className="max-w-3xl min-h-[380px] flex flex-col justify-end">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={film.slug}
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-col space-y-4 md:space-y-5"
-              >
-                {/* Release Metadata */}
-                <div className="flex flex-wrap items-center gap-2.5 text-xs font-bold text-white/75 md:text-sm min-h-[28px]">
-                  <span className="rounded-md bg-white/15 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white border border-white/20 backdrop-blur-md">
-                    NỔI BẬT
-                  </span>
-                  {film.year && (
-                    <span className="text-white/80">{film.year}</span>
-                  )}
-                  {country && (
-                    <>
-                      <span className="text-white/30">|</span>
-                      <span className="text-white/80">{country}</span>
-                    </>
-                  )}
-                  {episode && (
-                    <>
-                      <span className="text-white/30">|</span>
-                      <span className="text-white/80">{episode}</span>
-                    </>
-                  )}
-                </div>
-
-                {/* Title Container - Reserved Height Eliminates Jumping */}
-                <div className="min-h-[3.5rem] sm:min-h-[4.5rem] flex flex-col justify-center">
-                  <h1
-                    className={cn(
-                      "max-w-3xl font-be-vietnam font-extrabold leading-[1.12] tracking-[-0.025em] text-white drop-shadow-2xl",
-                      titleFontSizeClass,
-                    )}
-                  >
-                    {film.name}
-                  </h1>
-                  {film.origin_name && (
-                    <p className="mt-1 text-sm font-semibold tracking-wide text-white/60 md:text-lg">
-                      {film.origin_name}
-                    </p>
-                  )}
-                </div>
-
-                {/* Genre Pills Container */}
-                <div className="min-h-[28px] flex flex-wrap gap-2 items-center">
-                  {genres.map((genre: any) => (
-                    <Link
-                      key={genre.slug || genre.name}
-                      href={genre.slug ? `/genre/${genre.slug}` : "#"}
-                      className="rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-[11px] font-medium text-white/80 backdrop-blur-md transition-colors hover:bg-white/15 hover:text-white"
-                    >
-                      {genre.name}
-                    </Link>
-                  ))}
-                </div>
-
-                {/* Synopsis Container with Line Clamp */}
-                <div className="min-h-[4.2rem] max-w-2xl">
-                  <p className="text-sm font-medium leading-7 text-neutral-300 line-clamp-3 md:text-base">
-                    {description ||
-                      "Khám phá nội dung và bắt đầu xem bộ phim ngay hôm nay."}
-                  </p>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-wrap items-center gap-3 pt-2">
-                  <Link
-                    href={`/watch/${film.slug}`}
-                    className="flex items-center gap-2 rounded-full bg-white hover:bg-neutral-200 text-black font-black px-7 py-3.5 text-xs uppercase tracking-wider shadow-2xl transition-all hover:scale-[1.03] active:scale-95 cursor-pointer"
-                  >
-                    <Play size={16} fill="currentColor" />
-                    <span>XEM NGAY</span>
-                  </Link>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowTrailer(true)}
-                    className="flex items-center gap-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-3.5 text-xs uppercase tracking-wider backdrop-blur-md transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
-                  >
-                    <Film size={16} className="text-white/80" />
-                    <span>XEM TRAILER</span>
-                  </button>
-
-                  <Link
-                    href={`/film/${film.slug}`}
-                    className="flex items-center gap-2 rounded-full border border-white/10 bg-black/40 hover:bg-white/10 text-white/90 font-bold px-6 py-3.5 text-xs uppercase tracking-wider backdrop-blur-md transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
-                  >
-                    <Info size={16} className="text-white/70" />
-                    <span>{t("home.details", "Chi tiết")}</span>
-                  </Link>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </div>
-      </div>
-
-      {/* Running Thumbnail Indicators */}
-      <div className="absolute right-4 sm:right-8 md:right-12 bottom-8 z-30 hidden sm:flex items-center gap-2">
-        {featured.map((item, i) => {
-          const thumbImg =
-            resolveImageUrl(item.thumb_url) ||
-            resolveImageUrl(item.poster_url) ||
-            "";
-          const isActive = i === current;
-          return (
-            <button
-              key={item.slug || i}
-              onClick={() => setCurrent(i)}
-              aria-label={`Switch to ${item.name}`}
-              className={cn(
-                "relative w-16 sm:w-20 md:w-24 aspect-[16/9] rounded-lg overflow-hidden cursor-pointer flex-shrink-0 group",
-                "transition-all duration-300 will-change-transform",
-                isActive
-                  ? "border-2 border-white scale-105 shadow-2xl z-10"
-                  : "border border-white/20 opacity-50 hover:opacity-100 hover:border-white/60 scale-95 hover:scale-100",
-              )}
-            >
-              {thumbImg ? (
-                <NextImage
-                  src={thumbImg}
-                  alt={item.name}
-                  fill
-                  quality={65}
-                  sizes="(max-width: 640px) 64px, (max-width: 768px) 80px, 96px"
-                  className="object-cover object-center"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-[10px] text-neutral-400 font-bold px-1 text-center truncate">
-                  {item.name}
-                </div>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Mobile dot indicators */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex sm:hidden items-center gap-1.5">
-        {featured.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => {
-              setIsTransitioning(true);
-              setCurrent(i);
-              setTimeout(() => setIsTransitioning(false), 800);
-            }}
-            aria-label={`Slide ${i + 1}`}
-            className={cn(
-              "rounded-full transition-all duration-300",
-              i === current
-                ? "w-6 h-1.5 bg-white shadow-sm"
-                : "w-1.5 h-1.5 bg-white/40 hover:bg-white/70",
-            )}
-          />
-        ))}
-      </div>
-
-      {/* Scroll Down Indicator - Minimalist Dark Outline */}
-      <div
-        className="absolute left-1/2 -translate-x-1/2 bottom-5 z-20 hidden sm:flex flex-col items-center gap-1.5 cursor-pointer group transition-all duration-300 opacity-60 hover:opacity-100"
-        onClick={() =>
-          window.scrollTo({
-            top: window.innerHeight * 0.88,
-            behavior: "smooth",
-          })
-        }
-        title="Cuộn xuống để xem phim"
-      >
-        <div className="w-[22px] h-[34px] rounded-full border-2 border-white/40 flex justify-center pt-1.5 backdrop-blur-md bg-black/40 group-hover:border-white/80 group-hover:bg-black/60 transition-all">
-          <div className="w-1 h-2 bg-white/70 group-hover:bg-white rounded-full animate-bounce" />
-        </div>
-        <ChevronDown
-          size={16}
-          className="text-white/60 group-hover:text-white transform group-hover:translate-y-0.5 transition-all"
-        />
-      </div>
-
-      {/* Trailer Video Modal Popup */}
-      {showTrailer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl p-4 sm:p-8 animate-fade-in">
-          <div className="relative w-full max-w-4xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-            <button
-              onClick={() => setShowTrailer(false)}
-              className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/70 hover:bg-white/20 text-white flex items-center justify-center border border-white/20 transition-all cursor-pointer shadow-lg"
-            >
-              <X size={20} />
-            </button>
-            <iframe
-              src={youtubeTrailerUrl}
-              title={`Trailer ${film.name}`}
-              className="w-full h-full border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── Lazy-render wrapper — only mounts children when visible in viewport ──
 function LazySection({
   children,
@@ -482,7 +137,7 @@ function LazySection({
           observer.disconnect();
         }
       },
-      { rootMargin: "200px 0px" }, // pre-load 200px before visible
+      { rootMargin: "800px 0px" }, // pre-load 800px in advance so components are ready with 0ms scroll hitch
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -616,24 +271,10 @@ function FilmSection({
   );
 }
 
-// Helper to deduplicate films by slug
-const deduplicate = (films: FilmItem[]) => {
-  const seen = new Set();
-  return (films || []).filter((film) => {
-    if (!film || !film.slug) return false;
-    const isDuplicate = seen.has(film.slug);
-    seen.add(film.slug);
-    return !isDuplicate;
-  });
-};
-
-// Helper to filter out slugs used in previous sections (cross-section dedup)
-const excludeSlugs = (
-  films: FilmItem[],
-  usedSlugs: Set<string>,
-): FilmItem[] => {
-  return films.filter((f) => !usedSlugs.has(f.slug));
-};
+const deduplicateRow = (films: FilmItem[]) => deduplicateSectionRow(films);
+const deduplicate = (films: FilmItem[]) => deduplicateSectionRow(films);
+const excludeSlugs = (films: FilmItem[], usedSlugs: Set<string>) =>
+  excludePreviousSectionSlugs(films, usedSlugs);
 
 // Stable shuffle using a seed (changes each page load but stable within)
 const shuffleArray = <T,>(arr: T[]): T[] => {
@@ -881,6 +522,102 @@ export default function HomePage() {
 
   const showBannerSkeleton = bannerFilms.length === 0;
 
+  // Cross-section deduplication registry
+  const {
+    top10List,
+    hotList,
+    latestRowList,
+    actionRowList,
+    seriesRowList,
+    singleRowList,
+    animeRowList,
+    horrorRowList,
+    romanceRowList,
+    comedyRowList,
+  } = useMemo(() => {
+    const usedSlugs = new Set<string>();
+
+    const trackUsed = (list: FilmItem[]) => {
+      list.forEach((f) => {
+        if (f.slug) usedSlugs.add(f.slug.toLowerCase());
+        const baseName = getFranchiseBaseName(f.name);
+        if (baseName.length > 3) usedSlugs.add(`franchise:${baseName}`);
+      });
+    };
+
+    const top10List = deduplicateRow(latestFilms).slice(0, 10);
+    trackUsed(top10List);
+
+    const hotList = deduplicateRow(excludeSlugs(hotFilms, usedSlugs)).slice(
+      0,
+      12,
+    );
+    trackUsed(hotList);
+
+    const latestRowList = deduplicateRow(
+      excludeSlugs(latestFilms, usedSlugs),
+    ).slice(0, 12);
+    trackUsed(latestRowList);
+
+    const actionRowList = deduplicateRow(
+      excludeSlugs(actionFilms, usedSlugs),
+    ).slice(0, 12);
+    trackUsed(actionRowList);
+
+    const seriesRowList = deduplicateRow(
+      excludeSlugs(seriesFilms, usedSlugs),
+    ).slice(0, 12);
+    trackUsed(seriesRowList);
+
+    const horrorRowList = deduplicateRow(
+      excludeSlugs(horrorFilms, usedSlugs),
+    ).slice(0, 12);
+    trackUsed(horrorRowList);
+
+    const romanceRowList = deduplicateRow(
+      excludeSlugs(romanceFilms, usedSlugs),
+    ).slice(0, 12);
+    trackUsed(romanceRowList);
+
+    const comedyRowList = deduplicateRow(
+      excludeSlugs(comedyFilms, usedSlugs),
+    ).slice(0, 12);
+    trackUsed(comedyRowList);
+
+    const singleRowList = deduplicateRow(
+      excludeSlugs(singleFilms, usedSlugs),
+    ).slice(0, 12);
+    trackUsed(singleRowList);
+
+    const animeRowList = deduplicateRow(
+      excludeSlugs(animeFilms, usedSlugs),
+    ).slice(0, 12);
+    trackUsed(animeRowList);
+
+    return {
+      top10List,
+      hotList,
+      latestRowList,
+      actionRowList,
+      seriesRowList,
+      singleRowList,
+      animeRowList,
+      horrorRowList,
+      romanceRowList,
+      comedyRowList,
+    };
+  }, [
+    latestFilms,
+    hotFilms,
+    actionFilms,
+    seriesFilms,
+    singleFilms,
+    animeFilms,
+    horrorFilms,
+    romanceFilms,
+    comedyFilms,
+  ]);
+
   if (latestError) {
     return (
       <div className="container mx-auto px-4 py-24 text-center max-w-xl">
@@ -907,10 +644,10 @@ export default function HomePage() {
   }
 
   return (
-    <div className="bg-background min-h-screen text-foreground overflow-hidden pb-12 -mt-[100px]">
+    <div className="bg-background min-h-screen text-foreground overflow-hidden pb-12">
       {/* Hero Banner with slider */}
       {showBannerSkeleton ? (
-        <div className="w-full h-[calc(100vh+100px)] min-h-[700px] bg-gradient-to-br from-neutral-950 via-[#10141a] to-neutral-900 animate-pulse" />
+        <div className="w-full h-screen bg-gradient-to-br from-neutral-950 via-[#10141a] to-neutral-900 animate-pulse" />
       ) : (
         <HeroBanner films={bannerFilms} />
       )}
@@ -918,7 +655,7 @@ export default function HomePage() {
       {/* Main Row Content — full layout with safe left padding for vertical sidebar */}
       <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 relative pt-6 md:pt-10 z-30">
         {/* TOP 10 RANKED MOVIES (Metallic Numbers Netflix Style) */}
-        <Top10RankedRow films={latestFilms} />
+        <Top10RankedRow films={top10List} />
         {/* Continue Watching / Watch History Row (positioned right below Top Movies) */}
         <ContinueWatchingRow />
         {/* AI Smart Recommendation Engine */}
@@ -930,19 +667,9 @@ export default function HomePage() {
         <>
           <LazySection>
             <FilmSection
-              title="Phim Mới Cập Nhật"
+              title={t("home.latest", "Phim Mới Cập Nhật")}
               icon={Clock}
-              films={hotFilms.slice(0, 12)}
-              isLoading={hotLoading}
-              href="/films"
-            />
-          </LazySection>
-
-          <LazySection>
-            <FilmSection
-              title={t("home.latest")}
-              icon={TrendingUp}
-              films={latestFilms.slice(0, 12)}
+              films={latestRowList}
               isLoading={latestLoading}
               href="/films"
             />
@@ -952,7 +679,7 @@ export default function HomePage() {
             <FilmSection
               title="Phim Hành Động"
               icon={Zap}
-              films={actionFilms.slice(0, 12)}
+              films={actionRowList}
               isLoading={actionLoading}
               href="/genre/hanh-dong"
             />
@@ -962,7 +689,7 @@ export default function HomePage() {
             <FilmSection
               title={t("home.series")}
               icon={Tv}
-              films={seriesFilms.slice(0, 12)}
+              films={seriesRowList}
               isLoading={seriesLoading}
               href="/films/series"
             />
@@ -987,7 +714,7 @@ export default function HomePage() {
                 <FilmSection
                   title="Phim Kinh Dị"
                   icon={Ghost}
-                  films={horrorFilms.slice(0, 12)}
+                  films={horrorRowList}
                   isLoading={horrorLoading}
                   href="/genre/kinh-di"
                 />
@@ -997,7 +724,7 @@ export default function HomePage() {
                 <FilmSection
                   title={t("home.single")}
                   icon={Clapperboard}
-                  films={singleFilms.slice(0, 12)}
+                  films={singleRowList}
                   isLoading={singleLoading}
                   href="/films/single"
                 />
@@ -1007,7 +734,7 @@ export default function HomePage() {
                 <FilmSection
                   title="Phim Tình Cảm"
                   icon={Heart}
-                  films={romanceFilms.slice(0, 12)}
+                  films={romanceRowList}
                   isLoading={romanceLoading}
                   href="/genre/tinh-cam"
                 />
@@ -1017,7 +744,7 @@ export default function HomePage() {
                 <FilmSection
                   title="Phim Hài Hước"
                   icon={Laugh}
-                  films={comedyFilms.slice(0, 12)}
+                  films={comedyRowList}
                   isLoading={comedyLoading}
                   href="/genre/hai-huoc"
                 />
@@ -1027,7 +754,7 @@ export default function HomePage() {
                 <FilmSection
                   title={t("home.anime")}
                   icon={Sparkles}
-                  films={animeFilms.slice(0, 12)}
+                  films={animeRowList}
                   isLoading={animeLoading}
                   href="/films/anime"
                 />

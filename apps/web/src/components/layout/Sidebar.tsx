@@ -34,6 +34,9 @@ const W = 72; // sidebar width in px
 export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [scrolledPastBanner, setScrolledPastBanner] = useState(false);
+
+  const isHomePage = pathname === "/";
 
   useEffect(() => {
     try {
@@ -43,6 +46,27 @@ export function Sidebar() {
       // ignore localStorage errors
     }
   }, []);
+
+  // Track scroll position to hide sidebar over Hero Banner on Homepage
+  useEffect(() => {
+    if (!isHomePage) {
+      setScrolledPastBanner(true);
+      return;
+    }
+
+    const handleScroll = () => {
+      // Show sidebar only after scrolling past Hero Banner (~420px)
+      if (window.scrollY > 420) {
+        setScrolledPastBanner(true);
+      } else {
+        setScrolledPastBanner(false);
+      }
+    };
+
+    handleScroll(); // Initial check
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isHomePage]);
 
   const toggle = () => {
     const next = !collapsed;
@@ -54,14 +78,20 @@ export function Sidebar() {
     }
   };
 
+  const isVisible = !isHomePage || scrolledPastBanner;
+
   return (
     <>
-      {/* ── SIDEBAR — fixed, truly transparent, floats over content ── */}
+      {/* ── SIDEBAR — fixed, truly transparent, floats over content when scrolled past banner ── */}
       <aside
-        className="hidden lg:block fixed left-0 top-16 bottom-0 z-40 overflow-hidden pointer-events-none"
+        className={cn(
+          "hidden lg:block fixed left-0 top-16 bottom-0 z-40 overflow-hidden transition-all duration-500 ease-out",
+          isVisible
+            ? "opacity-100 translate-x-0 pointer-events-auto"
+            : "opacity-0 -translate-x-6 pointer-events-none",
+        )}
         style={{
           width: collapsed ? 0 : W,
-          transition: "width 0.25s ease",
           background: "none",
           backgroundColor: "transparent",
           backdropFilter: "none",
@@ -131,14 +161,17 @@ export function Sidebar() {
           collapsed ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng"
         }
         className={cn(
-          "hidden lg:flex fixed z-50 items-center justify-center transition-all duration-300 cursor-pointer active:scale-90 group",
+          "hidden lg:flex fixed z-50 items-center justify-center transition-all duration-500 ease-out cursor-pointer active:scale-90 group",
           "w-8 h-8 rounded-full bg-[#181c24] hover:bg-[#282e3d] text-white/70 hover:text-white border border-white/10 hover:border-white/30 shadow-2xl backdrop-blur-md",
+          isVisible
+            ? "opacity-100 scale-100 pointer-events-auto"
+            : "opacity-0 scale-75 pointer-events-none",
         )}
         style={{
           top: "84px",
           left: collapsed ? "14px" : `${W - 14}px`,
           transition:
-            "left 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease, border-color 0.2s ease",
+            "left 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-out, transform 0.5s ease-out, background-color 0.2s ease, border-color 0.2s ease",
         }}
       >
         <span

@@ -4,15 +4,32 @@ const KKPHIM_BASE = process.env.KKPHIM_API_BASE || "https://phimapi.com";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Static pages
-  const routes = ["", "/login", "/register", "/watchlist", "/search"].map(
-    (route) => ({
-      url: `${SITE_URL}${route}`,
-      lastModified: new Date(),
-      changeFrequency: "daily" as const,
-      priority: route === "" ? 1.0 : 0.8,
-    }),
-  );
+  // Static & Category pages
+  const staticRoutes = [
+    "",
+    "/login",
+    "/register",
+    "/watchlist",
+    "/search",
+    "/films/series",
+    "/films/single",
+    "/films/anime",
+    "/genre/hanh-dong",
+    "/genre/kinh-di",
+    "/genre/tinh-cam",
+    "/genre/hai-huoc",
+    "/genre/vien-tuong",
+    "/country/han-quoc",
+    "/country/trung-quoc",
+    "/country/au-my",
+  ];
+
+  const routes = staticRoutes.map((route) => ({
+    url: `${SITE_URL}${route}`,
+    lastModified: new Date(),
+    changeFrequency: "daily" as const,
+    priority: route === "" ? 1.0 : 0.8,
+  }));
 
   try {
     // Dynamic pages (latest movies fetched directly server-side)

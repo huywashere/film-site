@@ -18,9 +18,10 @@ import {
   Sparkles,
   Check,
   Star,
-  Zap,
+  User,
 } from "lucide-react";
 import { movieApi } from "@/lib/api";
+import { tmdbProfile } from "@/lib/tmdb";
 import { resolveImageUrl, FilmItem } from "@/components/film/FilmCard";
 import { VoiceSearchButton } from "@/components/search/VoiceSearchButton";
 import { cn } from "@/lib/utils";
@@ -71,6 +72,13 @@ function scoreFilmRelevance(film: FilmItem, rawQuery: string): number {
   const origin = (film.origin_name || "").toLowerCase();
   const slug = (film.slug || "").toLowerCase();
 
+  const actor = Array.isArray(film.actor)
+    ? film.actor.join(" ").toLowerCase()
+    : String(film.actor || "").toLowerCase();
+  const director = Array.isArray(film.director)
+    ? film.director.join(" ").toLowerCase()
+    : String(film.director || "").toLowerCase();
+
   // 1. Exact Vietnamese title starts with query (Highest Priority: 1000+)
   if (name.startsWith(q)) return 1000 - name.length;
 
@@ -80,13 +88,21 @@ function scoreFilmRelevance(film: FilmItem, rawQuery: string): number {
   // 3. Origin name contains exact query (Priority: 600+)
   if (origin.includes(q)) return 600 - origin.indexOf(q);
 
-  // 4. Unaccented search (Fallback Priority: 400+)
+  // 4. Actor or Director match (Priority: 750 / 700)
+  if (actor.includes(q)) return 750;
+  if (director.includes(q)) return 700;
+
+  // 5. Unaccented search (Fallback Priority: 400+)
   const qClean = removeAccents(q);
   const nameClean = removeAccents(name);
   const originClean = removeAccents(origin);
+  const actorClean = removeAccents(actor);
+  const directorClean = removeAccents(director);
 
   if (nameClean.startsWith(qClean)) return 400;
   if (nameClean.includes(qClean)) return 300;
+  if (actorClean.includes(qClean)) return 350;
+  if (directorClean.includes(qClean)) return 320;
   if (originClean.includes(qClean)) return 200;
   if (slug.includes(qClean)) return 100;
 
@@ -138,7 +154,7 @@ export function SpotlightSearchModal({
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [history, setHistory] = useState<string[]>([]);
   const [activeTypeFilter, setActiveTypeFilter] = useState<
-    "all" | "series" | "single" | "hoat-hinh"
+    "all" | "series" | "single" | "hoat-hinh" | "actor"
   >("all");
   const [activeLangFilter, setActiveLangFilter] = useState<
     "all" | "vietsub" | "thuyet-minh"
@@ -177,6 +193,25 @@ export function SpotlightSearchModal({
     staleTime: 1000 * 60 * 10,
     placeholderData: (prev) => prev,
   });
+
+  // Actor Search API (Search people via TMDB API)
+  const { data: actorSearchData } = useQuery({
+    queryKey: ["spotlight-actor-search", debouncedQuery],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/tmdb/search/person?query=${encodeURIComponent(debouncedQuery)}&language=vi-VN`,
+      );
+      if (!res.ok) return { results: [] };
+      return res.json();
+    },
+    enabled: mounted && debouncedQuery.trim().length >= 2,
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const searchedActors = useMemo(
+    () => actorSearchData?.results || [],
+    [actorSearchData],
+  );
 
   // Genres for quick filter chips
   const { data: genresData } = useQuery({
@@ -366,25 +401,25 @@ export function SpotlightSearchModal({
   return (
     <div
       suppressHydrationWarning
-      className="fixed inset-0 bg-black/85 backdrop-blur-2xl z-[100] flex items-start sm:items-center justify-center p-0 sm:p-6 md:p-8 animate-fade-in overscroll-contain"
+      className="fixed inset-0 bg-black/65 backdrop-blur-md z-[100] flex items-start sm:items-center justify-center p-2 sm:p-4 animate-fade-in overscroll-contain"
       onClick={onClose}
       onWheel={(e) => e.stopPropagation()}
     >
       <motion.div
         suppressHydrationWarning
-        initial={{ opacity: 0, y: -20, scale: 0.98 }}
+        initial={{ opacity: 0, y: -12, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -20, scale: 0.98 }}
-        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-        className="bg-[#0b0e13]/98 border-0 sm:border border-white/12 w-full max-w-6xl rounded-none sm:rounded-3xl overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.95)] flex flex-col backdrop-blur-3xl h-full sm:h-[88vh] max-h-none sm:max-h-[850px] my-0 sm:my-auto pointer-events-auto"
+        exit={{ opacity: 0, y: -12, scale: 0.98 }}
+        transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+        className="bg-[#0e1217]/95 border border-white/10 w-full max-w-2xl sm:max-w-3xl rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col h-full sm:h-[80vh] max-h-none sm:max-h-[680px] my-0 sm:my-auto pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Top Search Input Bar (Fixed Header) ── */}
         <div
           suppressHydrationWarning
-          className="flex items-center px-4 sm:px-6 py-3.5 sm:py-5 gap-3 sm:gap-4 border-b border-white/10 bg-white/[0.02] shrink-0"
+          className="flex items-center px-4 py-3 gap-3 border-b border-white/[0.08] bg-white/[0.015] shrink-0"
         >
-          <Search size={20} className="text-emerald-400 shrink-0" />
+          <Search size={18} className="text-white/40 shrink-0" />
           <input
             suppressHydrationWarning
             ref={inputRef}
@@ -393,12 +428,12 @@ export function SpotlightSearchModal({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Tìm kiếm phim, đạo diễn, diễn viên..."
-            className="flex-1 bg-transparent border-none text-white text-sm sm:text-lg font-bold placeholder:text-neutral-500 focus:outline-none focus:ring-0 tracking-wide"
+            className="flex-1 bg-transparent border-none text-white text-sm sm:text-base font-medium placeholder:text-white/30 focus:outline-none focus:ring-0 tracking-wide"
           />
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <VoiceSearchButton onResult={(text) => setQuery(text)} />
             {isFetching && (
-              <Loader2 size={18} className="animate-spin text-emerald-400" />
+              <Loader2 size={16} className="animate-spin text-white/50" />
             )}
             {query && (
               <button
@@ -406,14 +441,14 @@ export function SpotlightSearchModal({
                   setQuery("");
                   inputRef.current?.focus();
                 }}
-                className="text-neutral-400 hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/10"
+                className="text-white/40 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
               >
-                <X size={16} />
+                <X size={15} />
               </button>
             )}
             <button
               onClick={onClose}
-              className="text-xs font-bold text-neutral-400 bg-white/10 hover:bg-white/20 border border-white/15 px-2.5 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+              className="text-xs font-medium text-white/60 bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
             >
               Đóng
             </button>
@@ -421,12 +456,12 @@ export function SpotlightSearchModal({
         </div>
 
         {/* ── YouTube/Netflix Smart Filter Bar (Fixed Header) ── */}
-        <div className="px-4 sm:px-6 py-2.5 sm:py-3 border-b border-white/10 bg-black/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs shrink-0 overflow-x-auto scrollbar-hide">
+        <div className="px-4 py-2 border-b border-white/[0.06] bg-black/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs shrink-0 overflow-x-auto scrollbar-hide">
           {/* Type Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-0.5 shrink-0">
-            <span className="text-neutral-500 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1 shrink-0 mr-1">
-              <Filter size={12} className="text-emerald-400" />
-              Lọc theo:
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5 shrink-0">
+            <span className="text-white/35 font-semibold text-[10px] uppercase tracking-wider flex items-center gap-1 shrink-0 mr-1">
+              <Filter size={11} className="text-white/40" />
+              Lọc:
             </span>
 
             {[
@@ -434,16 +469,17 @@ export function SpotlightSearchModal({
               { id: "series", label: "Phim Bộ", count: seriesCount },
               { id: "single", label: "Phim Lẻ", count: singleCount },
               { id: "hoat-hinh", label: "Hoạt Hình", count: animeCount },
+              { id: "actor", label: "Diễn Viên", count: searchedActors.length },
             ].map((tab) => {
               const active = activeTypeFilter === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTypeFilter(tab.id as any)}
-                  className={`px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full font-extrabold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 text-xs ${
+                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 text-xs ${
                     active
-                      ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/25"
-                      : "bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border border-white/10"
+                      ? "bg-white text-black font-bold shadow-sm"
+                      : "bg-white/[0.04] hover:bg-white/[0.08] text-white/60 hover:text-white border border-white/[0.06]"
                   }`}
                 >
                   <span>{tab.label}</span>
@@ -451,8 +487,8 @@ export function SpotlightSearchModal({
                     <span
                       className={`text-[10px] px-1.5 py-0.2 rounded-full ${
                         active
-                          ? "bg-black/30 text-white"
-                          : "bg-white/10 text-neutral-400"
+                          ? "bg-black/20 text-black"
+                          : "bg-white/10 text-white/50"
                       }`}
                     >
                       {tab.count}
@@ -464,7 +500,7 @@ export function SpotlightSearchModal({
           </div>
 
           {/* Audio Language Filter */}
-          <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto scrollbar-hide pb-0.5 sm:pb-0">
+          <div className="flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-hide">
             {[
               { id: "all", label: "Tất cả Audio" },
               { id: "vietsub", label: "Vietsub" },
@@ -475,10 +511,10 @@ export function SpotlightSearchModal({
                 <button
                   key={lang.id}
                   onClick={() => setActiveLangFilter(lang.id as any)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer shrink-0 ${
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer shrink-0 ${
                     active
-                      ? "bg-white/20 text-white border border-white/30"
-                      : "text-neutral-500 hover:text-neutral-300"
+                      ? "bg-white/15 text-white border border-white/20"
+                      : "text-white/40 hover:text-white/70"
                   }`}
                 >
                   {lang.label}
@@ -538,6 +574,66 @@ export function SpotlightSearchModal({
                   })}
                 </div>
               </div>
+
+              {/* Actor Results Section */}
+              {searchedActors.length > 0 &&
+                activeTypeFilter !== "series" &&
+                activeTypeFilter !== "single" &&
+                activeTypeFilter !== "hoat-hinh" && (
+                  <div className="space-y-2 mb-4 bg-white/[0.02] border border-white/[0.07] p-3.5 rounded-xl">
+                    <div className="flex items-center justify-between px-1">
+                      <span className="flex items-center gap-1.5 text-xs text-white/80 font-bold uppercase tracking-wider">
+                        <User size={14} className="text-white/60" />
+                        Diễn viên tìm thấy ({searchedActors.length})
+                      </span>
+                      <Link
+                        href={`/actors?q=${encodeURIComponent(debouncedQuery)}`}
+                        onClick={onClose}
+                        className="text-[11px] font-medium text-white/40 hover:text-white transition-colors"
+                      >
+                        Xem tất cả diễn viên →
+                      </Link>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                      {searchedActors.slice(0, 4).map((person: any) => {
+                        const profile = tmdbProfile(
+                          person.profile_path,
+                          "w185",
+                        );
+                        return (
+                          <Link
+                            key={person.id}
+                            href={`/actors/${person.id}`}
+                            onClick={onClose}
+                            className="flex items-center gap-2.5 p-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all group"
+                          >
+                            <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 bg-neutral-900 border border-white/10 group-hover:border-white/30">
+                              {profile ? (
+                                <img
+                                  src={profile}
+                                  alt={person.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white/40">
+                                  {person.name[0]}
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="text-xs font-bold text-white group-hover:text-white truncate">
+                                {person.name}
+                              </h4>
+                              <p className="text-[10px] text-white/40 truncate">
+                                {person.known_for_department || "Diễn viên"}
+                              </p>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
               {/* Loading Skeleton */}
               {isFetching && rawResults.length === 0 ? (
@@ -647,10 +743,10 @@ export function SpotlightSearchModal({
             <div className="space-y-8">
               {/* Recent History Searches */}
               {history.length > 0 && (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between px-1">
-                    <span className="flex items-center gap-1.5 text-xs text-neutral-400 font-bold uppercase tracking-wider">
-                      <Clock size={14} className="text-emerald-400" />
+                    <span className="flex items-center gap-1.5 text-[11px] text-white/40 font-bold uppercase tracking-wider">
+                      <Clock size={13} className="text-white/40" />
                       Tìm kiếm gần đây
                     </span>
                     <button
@@ -658,26 +754,26 @@ export function SpotlightSearchModal({
                         localStorage.removeItem(HISTORY_KEY);
                         setHistory([]);
                       }}
-                      className="text-xs text-neutral-500 hover:text-red-400 transition-colors"
+                      className="text-[11px] text-white/35 hover:text-red-400 transition-colors"
                     >
                       Xóa tất cả
                     </button>
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {history.map((term) => (
                       <div
                         key={term}
                         onClick={() => handleHistoryClick(term)}
-                        className="group flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-3.5 py-1.5 rounded-full text-xs font-semibold text-neutral-200 hover:text-white cursor-pointer transition-all active:scale-95"
+                        className="group flex items-center gap-1.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] px-3 py-1 rounded-lg text-xs font-medium text-white/70 hover:text-white cursor-pointer transition-all active:scale-95"
                       >
-                        <Clock size={12} className="text-neutral-500" />
+                        <Clock size={11} className="text-white/30" />
                         <span>{term}</span>
                         <button
                           onClick={(e) => handleRemoveHistory(e, term)}
-                          className="opacity-40 group-hover:opacity-100 hover:text-red-400 transition-opacity ml-1"
+                          className="opacity-40 group-hover:opacity-100 hover:text-red-400 transition-opacity ml-0.5"
                         >
-                          <X size={12} />
+                          <X size={11} />
                         </button>
                       </div>
                     ))}
@@ -686,12 +782,12 @@ export function SpotlightSearchModal({
               )}
 
               {/* Trending Quick Genre Chips */}
-              <div className="space-y-3">
-                <span className="flex items-center gap-1.5 text-xs text-neutral-400 font-bold uppercase tracking-wider px-1">
-                  <TrendingUp size={14} className="text-emerald-400" />
+              <div className="space-y-2">
+                <span className="flex items-center gap-1.5 text-[11px] text-white/40 font-bold uppercase tracking-wider px-1">
+                  <TrendingUp size={13} className="text-white/40" />
                   Chủ đề thịnh hành
                 </span>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {quickGenres.map((g) => (
                     <button
                       key={g.slug}
@@ -699,7 +795,7 @@ export function SpotlightSearchModal({
                         setQuery(g.label);
                         inputRef.current?.focus();
                       }}
-                      className="bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 px-4 py-2 rounded-xl text-xs font-bold text-emerald-300 hover:text-white transition-all cursor-pointer active:scale-95"
+                      className="bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.07] px-3 py-1.5 rounded-lg text-xs font-medium text-white/70 hover:text-white transition-all cursor-pointer active:scale-95"
                     >
                       #{g.label}
                     </button>
@@ -709,10 +805,10 @@ export function SpotlightSearchModal({
 
               {/* Popular Movie Suggestions Grid */}
               {uniqueSuggestions.length > 0 && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between px-1">
-                    <span className="flex items-center gap-1.5 text-xs text-neutral-400 font-bold uppercase tracking-wider">
-                      <Sparkles size={14} className="text-emerald-400" />
+                    <span className="flex items-center gap-1.5 text-[11px] text-white/40 font-bold uppercase tracking-wider">
+                      <Sparkles size={13} className="text-white/40" />
                       Gợi ý phim hot hôm nay
                     </span>
                   </div>

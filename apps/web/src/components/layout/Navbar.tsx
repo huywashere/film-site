@@ -616,7 +616,7 @@ export function Navbar() {
                 /* Minimalist Sleek User Icon Button with Glassmorphism */
                 <button
                   type="button"
-                  onClick={() => openAuthModal("login")}
+                  onClick={() => router.push("/login")}
                   aria-label="Đăng nhập tài khoản"
                   title="Đăng nhập / Tài khoản thành viên"
                   className="flex items-center justify-center w-8 h-8 rounded-full bg-white/[0.06] backdrop-blur-xl border border-white/15 text-neutral-300 hover:text-white hover:border-white/40 hover:bg-white/[0.12] transition-all duration-300 shadow-lg shadow-black/40 active:scale-95 cursor-pointer"

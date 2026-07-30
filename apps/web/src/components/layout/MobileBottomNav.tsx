@@ -100,14 +100,13 @@ export function MobileBottomNav() {
             )}
           </Link>
         ) : (
-          <button
-            type="button"
-            onClick={() => openAuthModal("login")}
+          <Link
+            href="/login"
             className="flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] font-semibold text-neutral-400 hover:text-white transition-all"
           >
             <User size={19} />
             <span className="mt-0.5 tracking-tight">Đăng nhập</span>
-          </button>
+          </Link>
         )}
       </div>
     </nav>

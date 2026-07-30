@@ -31,7 +31,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useTranslation } from "@/store/langStore";
 import { useWatchParty } from "@/hooks/useWatchParty";
 import { useTmdb } from "@/hooks/useTmdb";
-import { tmdbBackdrop } from "@/lib/tmdb";
+import { tmdbBackdrop, tmdbApi } from "@/lib/tmdb";
 import { WatchPartyPanel } from "@/components/watch/WatchPartyPanel";
 import { AdvancedCommentSection } from "@/components/comments/AdvancedCommentSection";
 
@@ -182,7 +182,7 @@ export default function WatchPage() {
   const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(
     null,
   );
-  const [useEmbedPlayer, setUseEmbedPlayer] = useState(false);
+  const [useEmbedPlayer, setUseEmbedPlayer] = useState(true);
   const [activeServerType, setActiveServerType] =
     useState<ServerType>("vietsub");
   const [currentTypeServer, setCurrentTypeServer] = useState(0);
@@ -212,6 +212,8 @@ export default function WatchPage() {
   const [showEpThumbnails, setShowEpThumbnails] = useState(false);
   const [artInstance, setArtInstance] = useState<any>(null);
   const hasSkippedIntroRef = useRef(false);
+  const [epRangeIndex, setEpRangeIndex] = useState(0);
+  const epGridRef = useRef<HTMLDivElement>(null);
 
   const [autoSkipIntro, setAutoSkipIntro] = useState<boolean>(() => {
     try {
@@ -435,6 +437,22 @@ export default function WatchPage() {
     enabled: !!user && !!slug,
   });
 
+  // Fetch TMDB Scene Stills / Backdrops for Episode Scene Thumbnails
+  const tmdbShowId = film?.tmdb?.id || film?.tmdb_id;
+  const tmdbMediaType =
+    film?.type === "series" || film?.type === "hoat-hinh" ? "tv" : "movie";
+
+  const { data: tmdbImages } = useQuery({
+    queryKey: ["watch-tmdb-scenes", tmdbMediaType, tmdbShowId],
+    queryFn: () => tmdbApi.getImages(tmdbMediaType, String(tmdbShowId)),
+    enabled: !!tmdbShowId,
+    staleTime: 1000 * 60 * 60,
+  });
+
+  const sceneStills: any[] = useMemo(() => {
+    return tmdbImages?.backdrops || [];
+  }, [tmdbImages]);
+
   // Episode processing — gom từ tất cả nguồn, gán nhãn rõ ràng
   const kkphimEps: any[] = data?.episodes || [];
   const ophimEps: any[] = ophimData?.episodes || [];
@@ -487,7 +505,7 @@ export default function WatchPage() {
 
   const currentTypeServers = serversByType[activeServerType] || [];
   const server = episodes[currentServer] || episodes[0];
-  const serverData: any[] = server?.server_data || [];
+  const serverData: any[] = useMemo(() => server?.server_data || [], [server]);
   const currentEpData: any =
     serverData.find((e: any) => (e.slug || e.name) === currentEp) ||
     serverData[0];
@@ -728,7 +746,9 @@ export default function WatchPage() {
           art.on("pause", () => clearLoadTimeout());
           art.on("video:canplay", () => clearLoadTimeout());
           art.on("video:loadedmetadata", () => clearLoadTimeout());
-        } catch {}
+        } catch (_err) {
+          // Ignore Artplayer listener errors
+        }
       }
     },
     [clearLoadTimeout],
@@ -795,8 +815,43 @@ export default function WatchPage() {
       ep.name.toLowerCase().includes(episodeSearch.toLowerCase()),
   );
 
+  const watchSeoTitle = `Xem Phim ${film?.name || ""} ${currentEpData?.name ? `- Tập ${currentEpData.name}` : ""} Vietsub HD | CineVerse`;
+  const watchSeoDescription = `Xem phim ${film?.name || ""} ${currentEpData?.name ? `Tập ${currentEpData.name}` : ""} Vietsub Thuyết minh HD online mượt mà không quảng cáo độc hại.`;
+
+  const watchJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Movie",
+    name: film?.name,
+    alternateName: film?.origin_name,
+    description: watchSeoDescription,
+    image: posterUrl || tmdbBackdropUrl,
+    dateCreated: film?.year ? String(film.year) : undefined,
+    potentialAction: {
+      "@type": "WatchAction",
+      target: `https://cineverse-movie.vercel.app/watch/${slug}`,
+    },
+  };
+
   return (
     <div className="min-h-screen bg-black text-white relative">
+      {/* ── JSON-LD STRUCTURED DATA SCHEMA FOR GOOGLE SEO ── */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(watchJsonLd) }}
+      />
+
+      {/* ── DYNAMIC HEAD META TAGS ── */}
+      <head>
+        <title>{watchSeoTitle}</title>
+        <meta name="description" content={watchSeoDescription} />
+        <meta property="og:title" content={watchSeoTitle} />
+        <meta property="og:description" content={watchSeoDescription} />
+        <meta property="og:image" content={posterUrl || tmdbBackdropUrl} />
+        <meta property="og:type" content="video.other" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={watchSeoTitle} />
+        <meta name="twitter:image" content={posterUrl || tmdbBackdropUrl} />
+      </head>
       {/* ── CINEMA LIGHTS-OFF OVERLAY ── */}
       {lightOff && (
         <div
@@ -1058,321 +1113,442 @@ export default function WatchPage() {
               </div>
             </div>
 
-            {/* 3. SERVER TABS — 2 nhóm: Phụ đề & Thuyết minh */}
-            {episodes.length > 0 &&
-              (() => {
-                // Nhóm theo type
-                const subEps = episodes.filter((ep) => ep._type === "vietsub");
-                const dubEps = episodes.filter(
-                  (ep) => ep._type === "thuyet-minh",
-                );
-                const hasSubtitle = subEps.length > 0;
-                const hasDub = dubEps.length > 0;
-                const activeGroup =
-                  activeServerType === "thuyet-minh" ? dubEps : subEps;
+            {/* 3. SERVER TABS — Always show BOTH Phụ đề & Thuyết minh tabs */}
+            {(() => {
+              const subEps = episodes.filter((ep) => ep._type === "vietsub");
+              const dubEps = episodes.filter(
+                (ep) => ep._type === "thuyet-minh",
+              );
+              const activeGroup =
+                activeServerType === "thuyet-minh" ? dubEps : subEps;
 
-                return (
-                  <div className="space-y-3">
-                    {/* ── Tab chọn dạng: Phụ đề / Thuyết minh ── */}
-                    <div className="flex items-center gap-2">
-                      {hasSubtitle && (
-                        <button
-                          onClick={() => {
-                            setActiveServerType("vietsub");
-                            const first = subEps[0];
-                            if (first) {
-                              const idx = episodes.indexOf(first);
-                              setCurrentServer(idx >= 0 ? idx : 0);
-                              setUseEmbedPlayer(false);
-                              const nd = first?.server_data || [];
-                              if (nd.length > 0)
-                                router.push(
-                                  `/watch/${slug}?ep=${nd[0].slug || nd[0].name}`,
-                                );
-                            }
-                          }}
-                          className={cn(
-                            "flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all",
-                            activeServerType !== "thuyet-minh"
-                              ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-300"
-                              : "bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/70 hover:border-white/20",
-                          )}
-                        >
-                          <Subtitles size={13} />
-                          Phụ đề
-                          <span className="text-[9px] font-bold bg-white/10 rounded-full px-1.5 py-0.5">
-                            {subEps.length}
-                          </span>
-                        </button>
+              return (
+                <div className="space-y-3">
+                  {/* ── Tab chọn dạng: Phụ đề / Thuyết minh ── */}
+                  <div className="flex items-center gap-2">
+                    {/* Tab Phụ đề (Vietsub) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveServerType("vietsub");
+                        if (subEps.length > 0) {
+                          const first = subEps[0];
+                          const idx = episodes.indexOf(first);
+                          setCurrentServer(idx >= 0 ? idx : 0);
+                          setUseEmbedPlayer(false);
+                          const nd = first?.server_data || [];
+                          if (nd.length > 0)
+                            router.push(
+                              `/watch/${slug}?ep=${nd[0].slug || nd[0].name}`,
+                            );
+                        }
+                      }}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer select-none",
+                        activeServerType === "vietsub"
+                          ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-300 shadow-md shadow-emerald-500/10"
+                          : "bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/70 hover:border-white/20",
+                        subEps.length === 0 && "opacity-60",
                       )}
-                      {hasDub && (
-                        <button
-                          onClick={() => {
-                            setActiveServerType("thuyet-minh");
-                            const first = dubEps[0];
-                            if (first) {
-                              const idx = episodes.indexOf(first);
-                              setCurrentServer(idx >= 0 ? idx : 0);
-                              setUseEmbedPlayer(false);
-                              const nd = first?.server_data || [];
+                    >
+                      <Subtitles size={13} />
+                      Phụ đề
+                      <span
+                        className={cn(
+                          "text-[9px] font-bold rounded-full px-1.5 py-0.5",
+                          subEps.length > 0
+                            ? "bg-white/10 text-white"
+                            : "bg-white/5 text-white/40",
+                        )}
+                      >
+                        {subEps.length}
+                      </span>
+                    </button>
+
+                    {/* Tab Thuyết minh (Dubbed / Lồng tiếng) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveServerType("thuyet-minh");
+                        if (dubEps.length > 0) {
+                          const first = dubEps[0];
+                          const idx = episodes.indexOf(first);
+                          setCurrentServer(idx >= 0 ? idx : 0);
+                          setUseEmbedPlayer(false);
+                          const nd = first?.server_data || [];
+                          if (nd.length > 0)
+                            router.push(
+                              `/watch/${slug}?ep=${nd[0].slug || nd[0].name}`,
+                            );
+                        }
+                      }}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer select-none",
+                        activeServerType === "thuyet-minh"
+                          ? "bg-amber-500/15 border-amber-500/50 text-amber-300 shadow-md shadow-amber-500/10"
+                          : "bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/70 hover:border-white/20",
+                        dubEps.length === 0 && "opacity-60",
+                      )}
+                    >
+                      <Mic size={13} />
+                      Thuyết minh / Lồng tiếng
+                      <span
+                        className={cn(
+                          "text-[9px] font-bold rounded-full px-1.5 py-0.5",
+                          dubEps.length > 0
+                            ? "bg-white/10 text-white"
+                            : "bg-white/5 text-white/40",
+                        )}
+                      >
+                        {dubEps.length}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* ── Server trong nhóm đang chọn ── */}
+                  {activeGroup.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {activeGroup.map((ep) => {
+                        const i = episodes.indexOf(ep);
+                        const isActive = i === currentServer && useEmbedPlayer;
+                        const hasFailed = failedServers.includes(i);
+                        const sourceColors: Record<string, string> = {
+                          kkphim: isActive
+                            ? "bg-blue-500/15 border-blue-500/50 text-blue-300"
+                            : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-blue-500/30 hover:text-blue-300/70",
+                          ophim: isActive
+                            ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-300"
+                            : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-emerald-500/30 hover:text-emerald-300/70",
+                          nguonc: isActive
+                            ? "bg-amber-500/15 border-amber-500/50 text-amber-300"
+                            : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-amber-500/30 hover:text-amber-300/70",
+                          vsmov: isActive
+                            ? "bg-purple-500/15 border-purple-500/50 text-purple-300"
+                            : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-purple-500/30 hover:text-purple-300/70",
+                        };
+                        const colorClass =
+                          sourceColors[ep._source] || sourceColors.kkphim;
+
+                        return (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              setCurrentServer(i);
+                              setCurrentTypeServer(i);
+                              setUseEmbedPlayer(true);
+                              const nd = ep?.server_data || [];
                               if (nd.length > 0)
                                 router.push(
                                   `/watch/${slug}?ep=${nd[0].slug || nd[0].name}`,
                                 );
-                            }
+                            }}
+                            disabled={hasFailed}
+                            className={cn(
+                              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-medium transition-all cursor-pointer",
+                              hasFailed
+                                ? "opacity-30 cursor-not-allowed line-through bg-white/[0.02] border-white/[0.05] text-white/30"
+                                : colorClass,
+                            )}
+                          >
+                            <Server size={11} />
+                            {ep.server_name}
+                            {/* Đang fallback sang server này */}
+                            {isActive && isFallbacking && (
+                              <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+                            )}
+                            {/* Đang active và load bình thường */}
+                            {isActive && !isFallbacking && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
+                            )}
+                            {ep.server_data?.length > 0 && (
+                              <span className="text-[9px] bg-white/10 rounded-full px-1.5 py-0.5">
+                                {ep.server_data.length} tập
+                              </span>
+                            )}
+                            {hasFailed && (
+                              <AlertTriangle
+                                size={9}
+                                className="text-red-400"
+                              />
+                            )}
+                          </button>
+                        );
+                      })}
+
+                      {/* ✨ Server VIP ArtPlayer Button (Chặn QC, HLS Native Controls) */}
+                      {m3u8Url && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUseEmbedPlayer(false);
                           }}
                           className={cn(
-                            "flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all",
-                            activeServerType === "thuyet-minh"
-                              ? "bg-amber-500/15 border-amber-500/50 text-amber-300"
-                              : "bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/70 hover:border-white/20",
+                            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-bold transition-all cursor-pointer select-none",
+                            !useEmbedPlayer
+                              ? "bg-gradient-to-r from-red-600/30 to-amber-600/30 border-amber-500/60 text-amber-200 shadow-lg shadow-amber-500/10 ring-1 ring-amber-500/30"
+                              : "bg-white/[0.03] border-white/[0.08] text-amber-400/70 hover:text-amber-300 hover:border-amber-500/30",
                           )}
+                          title="Phát qua trình phát ArtPlayer hỗ trợ lọc quảng cáo & chỉnh tốc độ"
                         >
-                          <Mic size={13} />
-                          Thuyết minh
-                          <span className="text-[9px] font-bold bg-white/10 rounded-full px-1.5 py-0.5">
-                            {dubEps.length}
-                          </span>
+                          <Sparkles size={12} className="text-amber-400" />
+                          <span>Server VIP (ArtPlayer - Chặn QC)</span>
+                          {!useEmbedPlayer && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 opacity-90 animate-pulse" />
+                          )}
                         </button>
                       )}
                     </div>
+                  ) : (
+                    <div className="p-3 bg-white/[0.02] border border-white/[0.05] rounded-xl text-xs text-white/50 flex items-center gap-2">
+                      <Info size={14} className="text-amber-400 shrink-0" />
+                      <span>
+                        {activeServerType === "thuyet-minh"
+                          ? "Phim này hiện chưa có bản Thuyết minh / Lồng tiếng. Bạn có thể chuyển qua bản Phụ đề ở trên."
+                          : "Phim này hiện chưa có bản Phụ đề. Bạn có thể chuyển qua bản Thuyết minh ở trên."}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
-                    {/* ── Server trong nhóm đang chọn ── */}
-                    {activeGroup.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {activeGroup.map((ep) => {
-                          const i = episodes.indexOf(ep);
-                          const isActive = i === currentServer;
-                          const hasFailed = failedServers.includes(i);
-                          const sourceColors: Record<string, string> = {
-                            kkphim: isActive
-                              ? "bg-blue-500/15 border-blue-500/50 text-blue-300"
-                              : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-blue-500/30 hover:text-blue-300/70",
-                            ophim: isActive
-                              ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-300"
-                              : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-emerald-500/30 hover:text-emerald-300/70",
-                            nguonc: isActive
-                              ? "bg-amber-500/15 border-amber-500/50 text-amber-300"
-                              : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-amber-500/30 hover:text-amber-300/70",
-                            vsmov: isActive
-                              ? "bg-purple-500/15 border-purple-500/50 text-purple-300"
-                              : "bg-white/[0.03] border-white/[0.07] text-white/45 hover:border-purple-500/30 hover:text-purple-300/70",
-                          };
-                          const colorClass =
-                            sourceColors[ep._source] || sourceColors.kkphim;
+            {/* 4. EPISODE LIST — matching exact reference images with range scroll & toggle switch */}
+            {(() => {
+              const rangeSize = 40;
+              const totalRanges = Math.ceil(serverData.length / rangeSize);
+              const rangeStart = epRangeIndex * rangeSize;
+              const rangeEnd = Math.min(
+                (epRangeIndex + 1) * rangeSize,
+                serverData.length,
+              );
+
+              const displayedEps = episodeSearch.trim()
+                ? filteredEps
+                : serverData.length > 30
+                  ? serverData.slice(rangeStart, rangeEnd)
+                  : filteredEps;
+
+              return (
+                <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl overflow-hidden">
+                  {/* Header: Danh sách tập ( X / Y ) + Toggle Switch */}
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.05]">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-white/80">
+                        Danh sách tập{" "}
+                        <span className="text-white/40">
+                          ({" "}
+                          <span className="text-emerald-400 font-extrabold">
+                            {currentEpIndex >= 0 ? currentEpIndex + 1 : 1}
+                          </span>{" "}
+                          /{" "}
+                          <span className="text-emerald-400/80">
+                            {serverData.length}
+                          </span>{" "}
+                          )
+                        </span>
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      {serverData.length > 16 && (
+                        <div className="relative hidden sm:block">
+                          <Search
+                            size={12}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/25"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Tìm tập..."
+                            value={episodeSearch}
+                            onChange={(e) => setEpisodeSearch(e.target.value)}
+                            className="bg-white/[0.04] border border-white/[0.06] pl-7 pr-3 py-1 text-[11px] text-white placeholder-white/25 rounded-lg focus:outline-none focus:border-white/20 w-28 transition-colors"
+                          />
+                        </div>
+                      )}
+
+                      {/* Toggle Switch: Hiện ảnh / Ẩn ảnh */}
+                      <label className="flex items-center gap-2 text-xs text-white/60 cursor-pointer select-none">
+                        <span>{showEpThumbnails ? "Ẩn ảnh" : "Hiện ảnh"}</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowEpThumbnails(!showEpThumbnails)}
+                          className={cn(
+                            "w-9 h-5 rounded-full p-0.5 transition-colors cursor-pointer flex items-center",
+                            showEpThumbnails
+                              ? "bg-emerald-500 justify-end"
+                              : "bg-white/20 justify-start",
+                          )}
+                        >
+                          <span className="w-4 h-4 rounded-full bg-white shadow-md block" />
+                        </button>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Range Navigation Bar for Movies with >30 Episodes */}
+                  {serverData.length > 30 && !episodeSearch && (
+                    <div className="flex items-center gap-1.5 px-4 py-2 bg-white/[0.015] border-b border-white/[0.04] overflow-x-auto scrollbar-hide">
+                      <span className="text-[10px] font-bold text-white/30 uppercase tracking-wider shrink-0 mr-1">
+                        Khoảng tập:
+                      </span>
+                      {Array.from({ length: totalRanges }).map((_, rIdx) => {
+                        const start = rIdx * rangeSize + 1;
+                        const end = Math.min(
+                          (rIdx + 1) * rangeSize,
+                          serverData.length,
+                        );
+                        const isCurrentRange = rIdx === epRangeIndex;
+                        const containsActiveEp =
+                          currentEpIndex >= start - 1 &&
+                          currentEpIndex <= end - 1;
+
+                        return (
+                          <button
+                            key={rIdx}
+                            type="button"
+                            onClick={() => setEpRangeIndex(rIdx)}
+                            className={cn(
+                              "px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 cursor-pointer border",
+                              isCurrentRange
+                                ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-sm"
+                                : containsActiveEp
+                                  ? "bg-white/10 border-emerald-500/30 text-emerald-400"
+                                  : "bg-white/[0.03] border-white/[0.06] text-white/50 hover:bg-white/[0.07] hover:text-white",
+                            )}
+                          >
+                            {start} – {end}
+                            {containsActiveEp && (
+                              <span className="ml-1 w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Episodes Container */}
+                  <div className="p-3">
+                    {!showEpThumbnails ? (
+                      /* ── MODE 1: Pill Grid Mode (Matching Reference Image 1) ── */
+                      <div
+                        ref={epGridRef}
+                        className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2 max-h-64 overflow-y-auto scrollbar-hide"
+                      >
+                        {displayedEps.map((ep: any, i: number) => {
+                          const isActive =
+                            ep.slug === currentEp ||
+                            ep.name === currentEp ||
+                            episodes.indexOf(ep) === currentEpIndex;
+                          const epNum = ep.name.replace(/^tập\s*/i, "");
+                          return (
+                            <button
+                              key={ep.slug || ep.name || i}
+                              onClick={() =>
+                                router.push(
+                                  `/watch/${slug}?ep=${ep.slug || ep.name}`,
+                                )
+                              }
+                              className={cn(
+                                "flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-3 transition-all cursor-pointer border text-xs font-bold",
+                                isActive
+                                  ? "bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-600/30"
+                                  : "bg-[#14181f]/80 hover:bg-white/[0.08] border-white/10 text-white/70 hover:text-white",
+                              )}
+                            >
+                              <Play
+                                size={10}
+                                fill="currentColor"
+                                className="shrink-0"
+                              />
+                              <span>Tập {epNum}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      /* ── MODE 2: Landscape Still Grid Mode (Matching Reference Image 2) ── */
+                      <div
+                        ref={epGridRef}
+                        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-96 overflow-y-auto scrollbar-hide"
+                      >
+                        {displayedEps.map((ep: any, i: number) => {
+                          const isActive =
+                            ep.slug === currentEp ||
+                            ep.name === currentEp ||
+                            episodes.indexOf(ep) === currentEpIndex;
+                          const epNum = ep.name.replace(/^tập\s*/i, "");
+
+                          // Unique episode scene backdrop still mapping
+                          let stillImage = tmdbBackdropUrl || posterUrl;
+                          if (sceneStills && sceneStills.length > 0) {
+                            const sceneItem =
+                              sceneStills[i % sceneStills.length];
+                            if (sceneItem?.file_path) {
+                              stillImage =
+                                tmdbBackdrop(sceneItem.file_path, "w780") ||
+                                stillImage;
+                            }
+                          }
 
                           return (
                             <button
-                              key={i}
-                              onClick={() => {
-                                setCurrentServer(i);
-                                setCurrentTypeServer(i);
-                                setUseEmbedPlayer(false);
-                                const nd = ep?.server_data || [];
-                                if (nd.length > 0)
-                                  router.push(
-                                    `/watch/${slug}?ep=${nd[0].slug || nd[0].name}`,
-                                  );
-                              }}
-                              disabled={hasFailed}
+                              key={ep.slug || ep.name || i}
+                              onClick={() =>
+                                router.push(
+                                  `/watch/${slug}?ep=${ep.slug || ep.name}`,
+                                )
+                              }
                               className={cn(
-                                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-medium transition-all",
-                                hasFailed
-                                  ? "opacity-30 cursor-not-allowed line-through bg-white/[0.02] border-white/[0.05] text-white/30"
-                                  : colorClass,
+                                "group/ep relative aspect-video rounded-xl overflow-hidden border transition-all cursor-pointer text-left bg-neutral-900",
+                                isActive
+                                  ? "border-2 border-emerald-500 ring-2 ring-emerald-500/30 shadow-xl"
+                                  : "border-white/10 hover:border-white/30 hover:scale-[1.02]",
                               )}
                             >
-                              <Server size={11} />
-                              {ep.server_name}
-                              {/* Đang fallback sang server này */}
-                              {isActive && isFallbacking && (
-                                <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
-                              )}
-                              {/* Đang active và load bình thường */}
-                              {isActive && !isFallbacking && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
-                              )}
-                              {ep.server_data?.length > 0 && (
-                                <span className="text-[9px] bg-white/10 rounded-full px-1.5 py-0.5">
-                                  {ep.server_data.length} tập
-                                </span>
-                              )}
-                              {hasFailed && (
-                                <AlertTriangle
-                                  size={9}
-                                  className="text-red-400"
+                              {stillImage ? (
+                                <img
+                                  src={stillImage}
+                                  alt={`Tập ${epNum}`}
+                                  className="w-full h-full object-cover brightness-75 group-hover/ep:brightness-100 transition-all duration-300"
                                 />
+                              ) : (
+                                <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-white/20">
+                                  <Clapperboard size={20} />
+                                </div>
                               )}
+
+                              {/* Gradient Overlay */}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+
+                              {/* ĐANG XEM Badge */}
+                              {isActive && (
+                                <div className="absolute top-2 right-2 z-10 bg-emerald-500 text-white font-extrabold text-[9px] px-2 py-0.5 rounded shadow-lg uppercase tracking-wider">
+                                  Đang xem
+                                </div>
+                              )}
+
+                              {/* Episode Title */}
+                              <div className="absolute bottom-2 left-2.5 z-10">
+                                <span
+                                  className={cn(
+                                    "text-xs font-black drop-shadow-md",
+                                    isActive
+                                      ? "text-emerald-400"
+                                      : "text-white group-hover/ep:text-emerald-300",
+                                  )}
+                                >
+                                  Tập {epNum}
+                                </span>
+                              </div>
                             </button>
                           );
                         })}
                       </div>
                     )}
                   </div>
-                );
-              })()}
-
-            {/* 4. EPISODE LIST — matching exact reference images with toggle switch */}
-            <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl overflow-hidden">
-              {/* Header: Danh sách tập ( X / Y ) + Toggle Switch */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.05]">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-white/80">
-                    Danh sách tập{" "}
-                    <span className="text-white/40">
-                      ({" "}
-                      <span className="text-emerald-400 font-extrabold">
-                        {currentEpIndex >= 0 ? currentEpIndex + 1 : 1}
-                      </span>{" "}
-                      /{" "}
-                      <span className="text-emerald-400/80">
-                        {serverData.length}
-                      </span>{" "}
-                      )
-                    </span>
-                  </span>
                 </div>
-
-                <div className="flex items-center gap-3">
-                  {serverData.length > 16 && (
-                    <div className="relative hidden sm:block">
-                      <Search
-                        size={12}
-                        className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/25"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Tìm tập..."
-                        value={episodeSearch}
-                        onChange={(e) => setEpisodeSearch(e.target.value)}
-                        className="bg-white/[0.04] border border-white/[0.06] pl-7 pr-3 py-1 text-[11px] text-white placeholder-white/25 rounded-lg focus:outline-none focus:border-white/20 w-28 transition-colors"
-                      />
-                    </div>
-                  )}
-
-                  {/* Toggle Switch: Hiện ảnh / Ẩn ảnh */}
-                  <label className="flex items-center gap-2 text-xs text-white/60 cursor-pointer select-none">
-                    <span>{showEpThumbnails ? "Ẩn ảnh" : "Hiện ảnh"}</span>
-                    <button
-                      type="button"
-                      onClick={() => setShowEpThumbnails(!showEpThumbnails)}
-                      className={cn(
-                        "w-9 h-5 rounded-full p-0.5 transition-colors cursor-pointer flex items-center",
-                        showEpThumbnails
-                          ? "bg-emerald-500 justify-end"
-                          : "bg-white/20 justify-start",
-                      )}
-                    >
-                      <span className="w-4 h-4 rounded-full bg-white shadow-md block" />
-                    </button>
-                  </label>
-                </div>
-              </div>
-
-              {/* Episodes Container */}
-              <div className="p-3">
-                {!showEpThumbnails ? (
-                  /* ── MODE 1: Pill Grid Mode (Matching Screenshot 1) ── */
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2 max-h-64 overflow-y-auto scrollbar-hide">
-                    {filteredEps.map((ep: any, i: number) => {
-                      const isActive =
-                        ep.slug === currentEp ||
-                        ep.name === currentEp ||
-                        i === currentEpIndex;
-                      const epNum = ep.name.replace(/^tập\s*/i, "");
-                      return (
-                        <button
-                          key={ep.slug || ep.name || i}
-                          onClick={() =>
-                            router.push(
-                              `/watch/${slug}?ep=${ep.slug || ep.name}`,
-                            )
-                          }
-                          className={cn(
-                            "flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-3 transition-all cursor-pointer border text-xs font-bold",
-                            isActive
-                              ? "bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-600/30"
-                              : "bg-[#14181f]/80 hover:bg-white/[0.08] border-white/10 text-white/70 hover:text-white",
-                          )}
-                        >
-                          <Play
-                            size={10}
-                            fill="currentColor"
-                            className="shrink-0"
-                          />
-                          <span>Tập {epNum}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  /* ── MODE 2: Landscape Still Grid Mode (Matching Screenshot 2) ── */
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-96 overflow-y-auto scrollbar-hide">
-                    {filteredEps.map((ep: any, i: number) => {
-                      const isActive =
-                        ep.slug === currentEp ||
-                        ep.name === currentEp ||
-                        i === currentEpIndex;
-                      const epNum = ep.name.replace(/^tập\s*/i, "");
-                      const stillImage = posterUrl || tmdbBackdropUrl;
-
-                      return (
-                        <button
-                          key={ep.slug || ep.name || i}
-                          onClick={() =>
-                            router.push(
-                              `/watch/${slug}?ep=${ep.slug || ep.name}`,
-                            )
-                          }
-                          className={cn(
-                            "group/ep relative aspect-video rounded-xl overflow-hidden border transition-all cursor-pointer text-left bg-neutral-900",
-                            isActive
-                              ? "border-2 border-emerald-500 ring-2 ring-emerald-500/30 shadow-xl"
-                              : "border-white/10 hover:border-white/30 hover:scale-[1.02]",
-                          )}
-                        >
-                          {stillImage ? (
-                            <img
-                              src={stillImage}
-                              alt={`Tập ${epNum}`}
-                              className="w-full h-full object-cover brightness-75 group-hover/ep:brightness-100 transition-all duration-300"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-white/20">
-                              <Clapperboard size={20} />
-                            </div>
-                          )}
-
-                          {/* Gradient Overlay */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-
-                          {/* ĐANG XEM Badge */}
-                          {isActive && (
-                            <div className="absolute top-2 right-2 z-10 bg-emerald-500 text-white font-extrabold text-[9px] px-2 py-0.5 rounded shadow-lg uppercase tracking-wider">
-                              Đang xem
-                            </div>
-                          )}
-
-                          {/* Episode Title */}
-                          <div className="absolute bottom-2 left-2.5 z-10">
-                            <span
-                              className={cn(
-                                "text-xs font-black drop-shadow-md",
-                                isActive
-                                  ? "text-emerald-400"
-                                  : "text-white group-hover/ep:text-emerald-300",
-                              )}
-                            >
-                              Tập {epNum}
-                            </span>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
+              );
+            })()}
 
             {/* 5. KEYBOARD SHORTCUTS */}
             <details className="group bg-white/[0.02] border border-white/[0.05] rounded-xl overflow-hidden">

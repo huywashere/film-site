@@ -9,7 +9,6 @@ import { RegisterSW } from "@/components/layout/RegisterSW";
 import { ThemeWatcher } from "@/components/layout/ThemeWatcher";
 import { ScrollProvider } from "@/providers/ScrollProvider";
 import { OfflineDetector } from "@/components/layout/OfflineDetector";
-import { AuthModal } from "@/components/auth/AuthModal";
 
 export const viewport: Viewport = {
   themeColor: "#14181c",
@@ -78,7 +77,6 @@ export default function RootLayout({
         <QueryProvider>
           <ToastProvider>
             <OfflineDetector />
-            <AuthModal />
             <ScrollProvider>
               <ConditionalNavbar />
               <Sidebar />

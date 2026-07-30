@@ -103,7 +103,9 @@ export const kkphimApi = {
         `/v1/api/tim-kiem?keyword=${encodeURIComponent(cleanKw)}&page=${page}&limit=${limit}`,
       );
       if (res?.data?.items?.length > 0 || res?.items?.length > 0) return res;
-    } catch {}
+    } catch (_err) {
+      // Fallback search strategy
+    }
 
     // 2. Tìm không dấu nếu từ khóa gốc có dấu (ví dụ: "bố già" -> "bo gia")
     const unaccented = cleanKw
@@ -118,7 +120,9 @@ export const kkphimApi = {
           `/v1/api/tim-kiem?keyword=${encodeURIComponent(unaccented)}&page=${page}&limit=${limit}`,
         );
         if (res?.data?.items?.length > 0 || res?.items?.length > 0) return res;
-      } catch {}
+      } catch (_err) {
+        // Fallback search strategy
+      }
     }
 
     // 3. Fallback qua API OPhim nếu KKPhim không tìm thấy
@@ -127,7 +131,9 @@ export const kkphimApi = {
         `/tim-kiem?keyword=${encodeURIComponent(cleanKw)}`,
       );
       if (ophimRes?.data?.items?.length > 0) return ophimRes;
-    } catch {}
+    } catch (_err) {
+      // Fallback search strategy
+    }
 
     return fetchKKPhim(
       `/v1/api/tim-kiem?keyword=${encodeURIComponent(cleanKw)}&page=${page}&limit=${limit}`,
