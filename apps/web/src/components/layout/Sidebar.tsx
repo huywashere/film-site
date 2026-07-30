@@ -163,7 +163,7 @@ export function Sidebar() {
             : "opacity-0 scale-75 pointer-events-none",
         )}
         style={{
-          top: "84px",
+          top: "135px",
           left: collapsed ? "14px" : `${W - 14}px`,
           transition:
             "left 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-out, transform 0.5s ease-out, background-color 0.2s ease, border-color 0.2s ease",
