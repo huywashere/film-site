@@ -68,13 +68,12 @@ export function Top10RankedRow({
                 <SwiperSlide key={film.slug || index} className="!w-auto">
                   <Link
                     href={`/film/${film.slug}`}
-                    className="flex items-start group/item relative select-none cursor-pointer pt-2 pb-2 pr-2"
+                    className="flex flex-col group/item relative select-none cursor-pointer pt-4 pb-2 pr-2"
                   >
-                    {/* Left Stack: Big Rank Number + Vertical Movie Title */}
-                    <div className="relative flex items-center shrink-0">
-                      {/* Big Montserrat 900 Rank Number */}
+                    {/* Big Montserrat 900 Rank Number peeking BEHIND the TOP-LEFT of the card */}
+                    <div className="absolute -top-4 left-0 z-0 pointer-events-none select-none">
                       <span
-                        className="text-[95px] sm:text-[125px] md:text-[155px] font-black leading-none tracking-tighter transition-transform duration-300 group-hover/item:scale-105 block drop-shadow-2xl select-none"
+                        className="text-[95px] sm:text-[125px] md:text-[155px] font-black leading-none tracking-tighter transition-transform duration-300 group-hover/item:scale-105 block drop-shadow-2xl"
                         style={{
                           color: "transparent",
                           WebkitTextStroke:
@@ -92,22 +91,22 @@ export function Top10RankedRow({
                       >
                         {rank}
                       </span>
-
-                      {/* Vertical Movie Title running along the left side of the poster */}
-                      <div className="flex flex-col justify-end -ml-4 sm:-ml-6 z-20 pb-2 h-[195px] sm:h-[232px] md:h-[270px] mt-9 sm:mt-11 md:mt-13 pointer-events-none">
-                        <p className="[writing-mode:vertical-rl] rotate-180 text-xs sm:text-sm font-extrabold text-white/90 group-hover/item:text-white transition-colors tracking-wide max-h-[170px] sm:max-h-[200px] truncate drop-shadow-md">
-                          {film.name}
-                        </p>
-                        {film.origin_name && (
-                          <p className="[writing-mode:vertical-rl] rotate-180 text-[10px] text-neutral-400 max-h-[110px] truncate mt-1">
-                            {film.origin_name}
-                          </p>
-                        )}
-                      </div>
                     </div>
 
-                    {/* Vertical Poster Card */}
-                    <div className="relative z-10 w-[130px] sm:w-[155px] md:w-[180px] h-[195px] sm:h-[232px] md:h-[270px] rounded-2xl overflow-hidden border border-white/10 group-hover/item:border-white/50 group-hover/item:scale-[1.03] shadow-2xl bg-neutral-900 transition-all duration-300 mt-9 sm:mt-11 md:mt-13 ml-2.5 sm:ml-3.5">
+                    {/* Vertical Movie Title running along the left side of the poster card */}
+                    <div className="absolute bottom-3 left-0 sm:left-1 z-20 flex flex-col justify-end pointer-events-none max-h-[160px] sm:max-h-[190px] md:max-h-[220px]">
+                      <p className="[writing-mode:vertical-rl] rotate-180 text-xs sm:text-sm font-extrabold text-white group-hover/item:text-netflixRed transition-colors tracking-wide max-h-[140px] sm:max-h-[170px] truncate drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                        {film.name}
+                      </p>
+                      {film.origin_name && (
+                        <p className="[writing-mode:vertical-rl] rotate-180 text-[10px] text-neutral-400 max-h-[90px] truncate mt-1 drop-shadow">
+                          {film.origin_name}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Vertical Poster Card (Foreground z-10) */}
+                    <div className="relative z-10 w-[130px] sm:w-[155px] md:w-[180px] h-[195px] sm:h-[232px] md:h-[270px] rounded-2xl overflow-hidden border border-white/10 group-hover/item:border-white/50 group-hover/item:scale-[1.03] shadow-2xl bg-neutral-900 transition-all duration-300 mt-9 sm:mt-11 md:mt-13 ml-7 sm:ml-9 md:ml-11">
                       {posterUrl ? (
                         <img
                           src={posterUrl}
