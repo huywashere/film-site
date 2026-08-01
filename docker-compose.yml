@@ -1,98 +1,160 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database
+  # ── PostgreSQL Database ──────────────────────────────────────
   postgres:
-    image: postgres:15-alpine
-    container_name: movie_demo_postgres
+    image: postgres:16-alpine
+    container_name: cineverse_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-movie_demo}
-    ports:
-      - '5432:5432'
+      POSTGRES_USER: ${POSTGRES_USER:-cineverse}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-cineverse_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - movie_demo_network
+      - cineverse_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cineverse} -d ${POSTGRES_DB:-cineverse_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Redis Cache
+  # ── Redis Cache ─────────────────────────────────────────────
   redis:
     image: redis:7-alpine
-    container_name: movie_demo_redis
+    container_name: cineverse_redis
     restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD:-redis123}
-    ports:
-      - '6379:6379'
+    command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     networks:
-      - movie_demo_network
+      - cineverse_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # NestJS API
+  # ── NestJS API ──────────────────────────────────────────────
   api:
     build:
       context: .
       dockerfile: Dockerfile
       target: api
-    container_name: movie_demo_api
+    container_name: cineverse_api
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-movie_demo}
+      PORT: 4000
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cineverse}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-cineverse_db}
+      # Redis
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      # JWT
       JWT_SECRET: ${JWT_SECRET}
-      PORT: 4000
-    ports:
-      - '4000:4000'
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      # KKPhim API
+      KKPHIM_BASE_URL: ${KKPHIM_BASE_URL:-https://phimapi.com}
+      KKPHIM_CDN_URL: ${KKPHIM_CDN_URL:-https://phimimg.com}
+      # TMDB
+      TMDB_ACCESS_TOKEN: ${TMDB_ACCESS_TOKEN}
+      # Cloudflare Turnstile
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
+      # Frontend URL (for CORS)
+      FRONTEND_URL: ${FRONTEND_URL:-https://localhost}
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
-      - movie_demo_network
+      - cineverse_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/api/v1/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
-  # Next.js Web App
+  # ── Next.js Web App ─────────────────────────────────────────
   web:
     build:
       context: .
       dockerfile: Dockerfile
       target: web
-    container_name: movie_demo_web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-CineVerse}
+        NEXT_PUBLIC_FIREBASE_API_KEY: ${NEXT_PUBLIC_FIREBASE_API_KEY}
+        NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}
+        NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${NEXT_PUBLIC_FIREBASE_PROJECT_ID}
+        NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}
+        NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}
+        NEXT_PUBLIC_FIREBASE_APP_ID: ${NEXT_PUBLIC_FIREBASE_APP_ID}
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+        TMDB_API_KEY: ${TMDB_API_KEY}
+        TMDB_ACCESS_TOKEN: ${TMDB_ACCESS_TOKEN}
+        KKPHIM_API_BASE: ${KKPHIM_API_BASE:-https://phimapi.com}
+        OPHIM_API_BASE: ${OPHIM_API_BASE:-https://ophim1.com}
+    container_name: cineverse_web
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: http://api:4000
-    ports:
-      - '3000:3000'
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      # Server-side env vars (runtime, không cần bake)
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      KKPHIM_API_BASE: ${KKPHIM_API_BASE:-https://phimapi.com}
+      OPHIM_API_BASE: ${OPHIM_API_BASE:-https://ophim1.com}
+      TMDB_API_KEY: ${TMDB_API_KEY}
+      TMDB_ACCESS_TOKEN: ${TMDB_ACCESS_TOKEN}
+      TMDB_CLOUDFLARE_WORKER_URL: ${TMDB_CLOUDFLARE_WORKER_URL}
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     networks:
-      - movie_demo_network
+      - cineverse_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
 
-  # Nginx Reverse Proxy
+  # ── Nginx Reverse Proxy ─────────────────────────────────────
   nginx:
     image: nginx:alpine
-    container_name: movie_demo_nginx
+    container_name: cineverse_nginx
     restart: unless-stopped
     ports:
-      - '80:80'
-      - '443:443'
+      - "80:80"
+      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./ssl:/etc/nginx/ssl:ro
+      - nginx_cache:/var/cache/nginx
     depends_on:
-      - web
-      - api
+      web:
+        condition: service_healthy
+      api:
+        condition: service_healthy
     networks:
-      - movie_demo_network
+      - cineverse_net
 
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local
+  nginx_cache:
+    driver: local
 
 networks:
-  movie_demo_network:
+  cineverse_net:
     driver: bridge

@@ -1,9 +1,12 @@
 const isDev = process.env.NODE_ENV === "development";
+const isProd = process.env.NODE_ENV === "production";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Use separate directories for dev and prod builds to prevent Windows file lock collisions
   distDir: isDev ? ".next-dev" : ".next",
+  // Standalone output for Docker production builds
+  output: isProd ? "standalone" : undefined,
   poweredByHeader: false,
 
   // eslint is no longer configured here in Next.js 16 — use eslint.config.js instead

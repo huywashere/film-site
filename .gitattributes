@@ -1,0 +1,18 @@
+# Đảm bảo shell scripts dùng LF (Unix line endings) khi checkout
+*.sh text eol=lf
+
+# Text files
+*.md text eol=crlf
+*.json text eol=crlf
+*.yml text eol=crlf
+*.yaml text eol=crlf
+*.ts text eol=crlf
+*.tsx text eol=crlf
+*.js text eol=crlf
+*.css text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.ico binary
+*.webp binary
