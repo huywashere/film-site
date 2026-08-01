@@ -18,6 +18,9 @@ const ALLOWED_IMAGE_HOSTS = [
   // OPhim
   "img.ophim.live",
   "*.ophim.live",
+  "ophim1.com",
+  "ophim17.cc",
+  "*.ophim.cc",
   // NguonC
   "images.nguonc.com",
   "phim.nguonc.com",

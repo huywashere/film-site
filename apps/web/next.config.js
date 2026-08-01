@@ -43,11 +43,25 @@ const nextConfig = {
     // include a dynamic `url` query parameter.
     localPatterns: [{ pathname: "/api/image-proxy" }],
     remotePatterns: [
+      // KKPhim
       { protocol: "https", hostname: "phimimg.com" },
       { protocol: "https", hostname: "img.phimapi.com" },
       { protocol: "https", hostname: "phimapi.com" },
       { protocol: "https", hostname: "**.phimapi.com" },
       { protocol: "https", hostname: "**.kkphim.vip" },
+      // OPhim CDN — thumb_url/poster_url dùng prefix này
+      { protocol: "https", hostname: "img.ophim.live" },
+      { protocol: "https", hostname: "**.ophim.live" },
+      { protocol: "https", hostname: "ophim1.com" },
+      { protocol: "https", hostname: "ophim17.cc" },
+      { protocol: "https", hostname: "**.ophim.cc" },
+      // VSMov
+      { protocol: "https", hostname: "vsmov.com" },
+      { protocol: "https", hostname: "**.vsmov.com" },
+      // NguonC
+      { protocol: "https", hostname: "phim.nguonc.com" },
+      { protocol: "https", hostname: "**.nguonc.com" },
+      // Misc
       { protocol: "https", hostname: "ui-avatars.com" },
       { protocol: "https", hostname: "motphim.net" },
       { protocol: "https", hostname: "**.motphim.net" },

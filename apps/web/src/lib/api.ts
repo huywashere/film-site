@@ -164,37 +164,9 @@ const fetchOphim = async (endpoint: string) => {
   const response = await fetch(`/api/ophim${endpoint}`);
   const json = await response.json();
 
-  if (json?.data?.items) {
-    const cdnDomain =
-      json.data.APP_DOMAIN_CDN_IMAGE || "https://img.ophim.live";
-    const cdnUrl = json.data.pathImage || `${cdnDomain}/uploads/movies/`;
-    const finalCdn = cdnUrl.endsWith("/") ? cdnUrl : `${cdnUrl}/`;
-    json.data.items = json.data.items.map((item: any) => ({
-      ...item,
-      thumb_url: item.thumb_url?.startsWith("http")
-        ? item.thumb_url
-        : `${finalCdn}${item.thumb_url}`,
-      poster_url: item.poster_url?.startsWith("http")
-        ? item.poster_url
-        : `${finalCdn}${item.poster_url}`,
-    }));
-  }
-
-  if (json?.movie) {
-    const finalCdn = "https://img.ophim.live/uploads/movies/";
-    json.movie = {
-      ...json.movie,
-      thumb_url:
-        json.movie.thumb_url?.startsWith("http") || !json.movie.thumb_url
-          ? json.movie.thumb_url
-          : `${finalCdn}${json.movie.thumb_url}`,
-      poster_url:
-        json.movie.poster_url?.startsWith("http") || !json.movie.poster_url
-          ? json.movie.poster_url
-          : `${finalCdn}${json.movie.poster_url}`,
-    };
-  }
-
+  // NOTE: Image URL normalization is now handled at the proxy layer
+  // (apps/web/src/app/api/ophim/[...path]/route.ts normalizeOphimImages)
+  // This function just returns the already-normalized JSON.
   return json;
 };
 
@@ -211,17 +183,71 @@ const fetchVsmov = async (endpoint: string) => {
 };
 
 export const vsmovApi = {
-  getLatest: (page = 1, limit = 24) =>
-    fetchVsmov(`/danh-sach/phim-moi-cap-nhat?page=${page}&limit=${limit}`),
-  search: (keyword: string, page = 1, limit = 24) =>
-    fetchVsmov(
-      `/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`,
-    ),
+  // Phim mới cập nhật
+  getLatest: (page = 1) =>
+    fetchVsmov(`/danh-sach/phim-moi-cap-nhat?page=${page}`),
+
+  // Danh sách theo loại
+  getByType: (slug: string, page = 1) =>
+    fetchVsmov(`/danh-sach/${slug}?page=${page}`),
+
+  getSeries: (page = 1) => fetchVsmov(`/danh-sach/phim-bo?page=${page}`),
+  getSingle: (page = 1) => fetchVsmov(`/danh-sach/phim-le?page=${page}`),
+  getAnime: (page = 1) => fetchVsmov(`/danh-sach/hoat-hinh?page=${page}`),
+  getNowShowing: (page = 1) =>
+    fetchVsmov(`/danh-sach/dang-chieu?page=${page}`),
+  getDubbed: (page = 1) => fetchVsmov(`/danh-sach/long-tieng?page=${page}`),
+  getSubteam: (page = 1) => fetchVsmov(`/danh-sach/subteam?page=${page}`),
+
+  // Chi tiết phìm
   getDetail: (slug: string) => fetchVsmov(`/phim/${slug}`),
-  getByGenre: (slug: string, page = 1, limit = 24) =>
-    fetchVsmov(`/the-loai/${slug}?page=${page}&limit=${limit}`),
-  getByCountry: (slug: string, page = 1, limit = 24) =>
-    fetchVsmov(`/quoc-gia/${slug}?page=${page}&limit=${limit}`),
+
+  // Theo thể loại, quốc gia, năm
+  getByGenre: (slug: string, page = 1) =>
+    fetchVsmov(`/the-loai/${slug}?page=${page}`),
+  getByCountry: (slug: string, page = 1) =>
+    fetchVsmov(`/quoc-gia/${slug}?page=${page}`),
+  getByYear: (year: number, page = 1) =>
+    fetchVsmov(`/nam-phat-hanh/${year}?page=${page}`),
+
+  // Tìm kiếm
+  search: (keyword: string, page = 1) =>
+    fetchVsmov(
+      `/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}`,
+    ),
+};
+
+// ── NguonC API (qua Next.js proxy) ────────────────────────────────
+export const nguoncApi = {
+  // Phim mới cập nhật
+  getLatest: (page = 1) =>
+    fetchNguonc(`/films/phim-moi-cap-nhat?page=${page}`),
+
+  // Danh sách theo loại
+  getByCategory: (slug: string, page = 1) =>
+    fetchNguonc(`/films/danh-sach/${slug}?page=${page}`),
+
+  getSeries: (page = 1) => fetchNguonc(`/films/danh-sach/phim-bo?page=${page}`),
+  getSingle: (page = 1) => fetchNguonc(`/films/danh-sach/phim-le?page=${page}`),
+  getTvShows: (page = 1) =>
+    fetchNguonc(`/films/danh-sach/tv-shows?page=${page}`),
+  getNowShowing: (page = 1) =>
+    fetchNguonc(`/films/danh-sach/dang-chieu?page=${page}`),
+
+  // Chi tiết phìm
+  getDetail: (slug: string) => fetchNguonc(`/film/${slug}`),
+
+  // Theo thể loại, quốc gia, năm
+  getByGenre: (slug: string, page = 1) =>
+    fetchNguonc(`/films/the-loai/${slug}?page=${page}`),
+  getByCountry: (slug: string, page = 1) =>
+    fetchNguonc(`/films/quoc-gia/${slug}?page=${page}`),
+  getByYear: (year: number, page = 1) =>
+    fetchNguonc(`/films/nam-phat-hanh/${year}?page=${page}`),
+
+  // Tìm kiếm
+  search: (keyword: string, page = 1) =>
+    fetchNguonc(`/films/search?keyword=${encodeURIComponent(keyword)}&page=${page}`),
 };
 
 function asRecord(value: unknown): Record<string, any> {
@@ -289,10 +315,11 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
       request: () => kkphimApi.search(primaryKeyword, page, limit),
     },
     {
+      // OPhim dùng /tim-kiem (không phải /v1/api/tim-kiem)
       source: "ophim",
       request: () =>
         fetchOphim(
-          `/v1/api/tim-kiem?keyword=${encodedKeyword}&page=${page}&limit=${limit}`,
+          `/tim-kiem?keyword=${encodedKeyword}&page=${page}`,
         ),
     },
     {
@@ -302,7 +329,7 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
     },
     {
       source: "vsmov",
-      request: () => vsmovApi.search(primaryKeyword, page, limit),
+      request: () => vsmovApi.search(primaryKeyword, page),
     },
   ];
 
@@ -322,7 +349,7 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
         source: "ophim",
         request: () =>
           fetchOphim(
-            `/v1/api/tim-kiem?keyword=${encodedVariant}&page=${page}&limit=${limit}`,
+            `/tim-kiem?keyword=${encodedVariant}&page=${page}`,
           ),
       },
     );
