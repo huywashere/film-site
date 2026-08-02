@@ -16,6 +16,16 @@ interface HeroBannerProps {
   films: FilmItem[];
 }
 
+function getWatchHref(film: FilmItem): string {
+  const source = film._source;
+  const sourceSlug = source ? film._sourceSlugs?.[source] : undefined;
+  if (!source || !sourceSlug || sourceSlug === film.slug) {
+    return `/watch/${film.slug}${source ? `?source=${source}` : ""}`;
+  }
+
+  return `/watch/${film.slug}?${new URLSearchParams({ source, sourceSlug }).toString()}`;
+}
+
 // ── Curated US/UK Hollywood Blockbusters Fallback ──────────────
 const HOLLYWOOD_FALLBACKS: FilmItem[] = [
   {
@@ -246,7 +256,7 @@ export default function HeroBannerOptimized({ films }: HeroBannerProps) {
               {/* ── Action Buttons ─────────────────────────────── */}
               <div className="flex items-center space-x-3 pt-2">
                 <Link
-                  href={`/watch/${film.slug}`}
+                  href={getWatchHref(film)}
                   className="flex items-center space-x-2 bg-neutral-800 hover:bg-neutral-900 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-black px-7 py-3 rounded-full text-xs font-black tracking-wider uppercase transition-colors shadow-md border border-neutral-700 dark:border-white/5"
                   prefetch={false}
                 >

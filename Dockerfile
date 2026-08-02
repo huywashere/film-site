@@ -1,105 +1,125 @@
-# Multi-stage build for production
+# ══════════════════════════════════════════════════════
+# CineVerse — Production Dockerfile (pnpm monorepo)
+# ══════════════════════════════════════════════════════
 
-# Stage 1: Build API
-FROM node:18-alpine AS api-builder
+ARG NODE_VERSION=20
+ARG PNPM_VERSION=9.5.0
+
+# ── Base image with pnpm ──────────────────────────────
+FROM node:${NODE_VERSION}-alpine AS base
+ARG PNPM_VERSION
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+# ── Stage 1: Install all dependencies ─────────────────
+FROM base AS deps
 WORKDIR /app
 
-# Copy root package files
-COPY package*.json ./
-COPY turbo.json ./
+# Copy workspace config files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc turbo.json ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
 
-# Copy API package files
-COPY apps/api/package*.json ./apps/api/
+# Install all deps (including devDependencies for build)
+RUN pnpm install --frozen-lockfile
 
-# Install dependencies
-RUN npm install
+# ── Stage 2: Build API ─────────────────────────────────
+FROM base AS api-builder
+WORKDIR /app
 
-# Copy API source
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules 2>/dev/null || true
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc turbo.json ./
 COPY apps/api ./apps/api
 
-# Generate Prisma Client
-RUN cd apps/api && npx prisma generate
+# Generate Prisma Client & Build NestJS
+RUN cd apps/api && npx prisma generate && pnpm run build
 
-# Build API
-RUN npm run build --workspace=api
-
-
-# Stage 2: Build Web
-FROM node:18-alpine AS web-builder
+# ── Stage 3: Build Web ─────────────────────────────────
+FROM base AS web-builder
 WORKDIR /app
 
-# Copy root package files
-COPY package*.json ./
-COPY turbo.json ./
-
-# Copy Web package files
-COPY apps/web/package*.json ./apps/web/
-
-# Install dependencies
-RUN npm install
-
-# Copy Web source
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules 2>/dev/null || true
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc turbo.json ./
 COPY apps/web ./apps/web
 
-# Build Web
-RUN npm run build --workspace=web
+# Build args for Next.js (baked at build time)
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_APP_NAME=CineVerse
+ARG NEXT_PUBLIC_FIREBASE_API_KEY
+ARG NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+ARG NEXT_PUBLIC_FIREBASE_PROJECT_ID
+ARG NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+ARG NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+ARG NEXT_PUBLIC_FIREBASE_APP_ID
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
+ARG TMDB_API_KEY
+ARG TMDB_ACCESS_TOKEN
+ARG KKPHIM_API_BASE=https://phimapi.com
+ARG OPHIM_API_BASE=https://ophim1.com
 
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME
+ENV NEXT_PUBLIC_FIREBASE_API_KEY=$NEXT_PUBLIC_FIREBASE_API_KEY
+ENV NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+ENV NEXT_PUBLIC_FIREBASE_PROJECT_ID=$NEXT_PUBLIC_FIREBASE_PROJECT_ID
+ENV NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=$NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+ENV NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=$NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+ENV NEXT_PUBLIC_FIREBASE_APP_ID=$NEXT_PUBLIC_FIREBASE_APP_ID
+ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
+ENV TMDB_API_KEY=$TMDB_API_KEY
+ENV TMDB_ACCESS_TOKEN=$TMDB_ACCESS_TOKEN
+ENV KKPHIM_API_BASE=$KKPHIM_API_BASE
+ENV OPHIM_API_BASE=$OPHIM_API_BASE
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Stage 3: API Production (Harden & Secure)
-FROM node:18-alpine AS api
+RUN cd apps/web && pnpm run build
+
+# ── Stage 4: API Production Runtime ───────────────────
+FROM node:${NODE_VERSION}-alpine AS api
+ARG PNPM_VERSION
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+
 ENV NODE_ENV=production
 WORKDIR /app
 
-# Pre-create directory and set correct owner
-RUN mkdir -p /app && chown -R node:node /app
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nestjs
 
-# Copy package files with correct node ownership
-COPY --chown=node:node --from=api-builder /app/package*.json ./
-COPY --chown=node:node --from=api-builder /app/apps/api/package*.json ./apps/api/
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY apps/api/package.json ./apps/api/
 
-# Switch to non-privileged user
-USER node
+# Install production deps only
+RUN pnpm install --frozen-lockfile --prod --filter api
 
-# Install production dependencies only
-RUN npm install --omit=dev --workspace=api
+# Copy built artifacts
+COPY --from=api-builder --chown=nestjs:nodejs /app/apps/api/dist ./apps/api/dist
+COPY --from=api-builder --chown=nestjs:nodejs /app/apps/api/prisma ./apps/api/prisma
+COPY --from=api-builder --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 
-# Copy built API artifacts
-COPY --chown=node:node --from=api-builder /app/apps/api/dist ./apps/api/dist
-COPY --chown=node:node --from=api-builder /app/apps/api/prisma ./apps/api/prisma
-COPY --chown=node:node --from=api-builder /app/node_modules/.prisma ./node_modules/.prisma
-
-# Expose API port
+USER nestjs
 EXPOSE 4000
-
-# Start API
 CMD ["node", "apps/api/dist/main.js"]
 
+# ── Stage 5: Web Production Runtime ───────────────────
+FROM node:${NODE_VERSION}-alpine AS web
 
-# Stage 4: Web Production (Harden & Secure)
-FROM node:18-alpine AS web
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app
 
-# Pre-create directory and set correct owner
-RUN mkdir -p /app && chown -R node:node /app
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
-# Copy package files with correct node ownership
-COPY --chown=node:node --from=web-builder /app/package*.json ./
-COPY --chown=node:node --from=web-builder /app/apps/web/package*.json ./apps/web/
+# Copy built Next.js standalone app
+COPY --from=web-builder /app/apps/web/public ./apps/web/public
+COPY --from=web-builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+COPY --from=web-builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 
-# Switch to non-privileged user
-USER node
-
-# Install production dependencies only
-RUN npm install --omit=dev --workspace=web
-
-# Copy built Web app artifacts
-COPY --chown=node:node --from=web-builder /app/apps/web/.next ./apps/web/.next
-COPY --chown=node:node --from=web-builder /app/apps/web/public ./apps/web/public
-COPY --chown=node:node --from=web-builder /app/apps/web/next.config.js ./apps/web/
-
-# Expose Web port
+USER nextjs
 EXPOSE 3000
-
-# Start Web
-CMD ["npm", "start", "--workspace=web"]
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+CMD ["node", "apps/web/server.js"]

@@ -8,6 +8,7 @@ import { JwtStrategy } from "./strategies/jwt.strategy";
 import { GoogleStrategy } from "./strategies/google.strategy";
 import { FirebaseTokenVerifier } from "./firebase-token-verifier.service";
 import { FirebaseAuthGuard } from "./guards/firebase-auth.guard";
+import { TurnstileService } from "./turnstile.service";
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { FirebaseAuthGuard } from "./guards/firebase-auth.guard";
     GoogleStrategy,
     FirebaseTokenVerifier,
     FirebaseAuthGuard,
+    TurnstileService,
   ],
   exports: [AuthService, JwtModule, FirebaseTokenVerifier, FirebaseAuthGuard],
 })

@@ -42,7 +42,7 @@ export class FirebaseAuthGuard implements CanActivate {
         email: claims.email,
         name: claims.name,
         picture: claims.picture,
-        email_verified: claims.emailVerified,
+        emailVerified: claims.emailVerified,
         // Roles must come from Firebase custom claims set server-side via the
         // Admin SDK — never from anything the client can influence.
         role: claims.raw.role === "ADMIN" ? "ADMIN" : "USER",

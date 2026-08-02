@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "**" ]
   pull_request:
     branches: [ main ]
 
@@ -34,19 +34,23 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Dependency Vulnerability Audit
         run: pnpm audit --audit-level=high
-        continue-on-error: true
 
       - name: Generate Prisma Client
         run: cd apps/api && npx prisma generate
-        continue-on-error: true
 
-      - name: Run Lint
-        run: cd apps/web && npx eslint src --ext .ts,.tsx --max-warnings=9999
-        continue-on-error: true
+      - name: Run type checks
+        run: |
+          pnpm --filter api exec tsc --noEmit
+          pnpm --filter web exec tsc --noEmit
+
+      - name: Run lint
+        run: |
+          pnpm --filter api run lint
+          pnpm --filter web run lint
 
       - name: Run Build
         run: pnpm run build

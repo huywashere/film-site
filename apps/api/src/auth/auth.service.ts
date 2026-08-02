@@ -464,6 +464,86 @@ export class AuthService {
     );
   }
 
+  async validateFirebaseUser(
+    profile: {
+      uid: string;
+      email?: string;
+      name?: string;
+      picture?: string;
+      emailVerified?: boolean;
+    },
+    userAgent?: string,
+    ipAddress?: string,
+  ) {
+    if (!profile.email) {
+      throw new BadRequestException("Tài khoản Google chưa cung cấp email");
+    }
+
+    const email = profile.email.toLowerCase();
+    const providerId = `firebase:${profile.uid}`;
+    let user = await this.prisma.user.findUnique({
+      where: { googleId: providerId },
+    });
+
+    if (!user) {
+      user = await this.prisma.user.findUnique({ where: { email } });
+    }
+
+    if (user) {
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          googleId: providerId,
+          displayName: profile.name || user.displayName,
+          avatarUrl: profile.picture || user.avatarUrl,
+          isEmailVerified: profile.emailVerified || user.isEmailVerified,
+        },
+      });
+    } else {
+      const randomPass = `firebase_oauth_${randomBytes(16).toString("hex")}`;
+      const suffix = randomBytes(4).toString("hex");
+      const username = `${email.split("@")[0]}_${suffix}`;
+      user = await this.prisma.user.create({
+        data: {
+          email,
+          username,
+          passwordHash: await bcrypt.hash(randomPass, 12),
+          displayName: profile.name || username,
+          avatarUrl: profile.picture || null,
+          googleId: providerId,
+          isEmailVerified: Boolean(profile.emailVerified),
+        },
+      });
+    }
+
+    const tokens = await this.signTokens(
+      user.id,
+      user.email,
+      user.username,
+      userAgent,
+      ipAddress,
+    );
+
+    // Returning the public account alongside the cookie tokens removes the
+    // fragile second `/auth/me` request immediately after an OAuth exchange.
+    // The browser still only receives the tokens as httpOnly cookies.
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+        bio: user.bio,
+        role: user.role,
+        googleId: user.googleId,
+        twoFactorEnabled: user.twoFactorEnabled,
+        isLocked: user.isLocked,
+      },
+    };
+  }
+
   async setup2FA(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new BadRequestException("User không tồn tại");

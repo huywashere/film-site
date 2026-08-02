@@ -1,5 +1,5 @@
 "use client";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -12,6 +12,7 @@ import {
 } from "@/components/film/FilmCard";
 import { Pagination } from "@/components/film/Pagination";
 import { useTmdb } from "@/hooks/useTmdb";
+import { tmdbProfile } from "@/lib/tmdb";
 import {
   Play,
   Info,
@@ -26,7 +27,6 @@ import {
 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, FreeMode } from "swiper/modules";
-import { motion } from "framer-motion";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -68,12 +68,7 @@ function CountryCategoryRow({
   if (!isLoading && !films.length) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-30px" }}
-      className="mb-10"
-    >
+    <div className="mb-10" aria-busy={isLoading}>
       <div className="flex items-center justify-between mb-3 px-1">
         <h2 className="text-lg md:text-xl font-extrabold text-white flex items-center space-x-2">
           <Icon size={18} className="text-netflixRed" />
@@ -151,119 +146,106 @@ function CountryCategoryRow({
           </button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
-// Circular Featured Actors Row
-function FeaturedActorsRow({ slug }: { slug: string }) {
-  const isChina = slug === "trung-quoc";
-  const actors = isChina
-    ? [
-        {
-          name: "Triệu Lộ Tư",
-          role: "Diễn viên",
-          img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-        },
-        {
-          name: "Dương Dương",
-          role: "Diễn viên",
-          img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
-        },
-        {
-          name: "Vương Hạc Đệ",
-          role: "Diễn viên",
-          img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
-        },
-        {
-          name: "Bạch Lộc",
-          role: "Diễn viên",
-          img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80",
-        },
-        {
-          name: "Tiêu Chiến",
-          role: "Diễn viên",
-          img: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=200&q=80",
-        },
-      ]
-    : [
-        {
-          name: "Song Joong-ki",
-          role: "Diễn viên",
-          img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
-        },
-        {
-          name: "Kim Ji-won",
-          role: "Diễn viên",
-          img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-        },
-        {
-          name: "IU (Lee Ji-eun)",
-          role: "Ca sĩ / Diễn viên",
-          img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80",
-        },
-        {
-          name: "Park Seo-joon",
-          role: "Diễn viên",
-          img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
-        },
-        {
-          name: "Son Ye-jin",
-          role: "Diễn viên",
-          img: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80",
-        },
-        {
-          name: "Hyun Bin",
-          role: "Diễn viên",
-          img: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=200&q=80",
-        },
-      ];
+// The cast follows the active hero, instead of showing a static demo roster.
+function FeaturedActorsRow({ film }: { film?: FilmItem }) {
+  const { cast, creditsLoading } = useTmdb({
+    film,
+    enabled: !!film,
+    fetchImages: false,
+    fetchVideos: false,
+  });
+
+  if (!film || (!creditsLoading && cast.length === 0)) return null;
 
   return (
     <div className="mb-10">
       <div className="flex items-center space-x-2 mb-4 px-1">
-        <UserCheck size={18} className="text-netflixRed" />
+        <UserCheck size={18} className="text-white/70" />
         <h2 className="text-lg md:text-xl font-extrabold text-white">
           Diễn viên nổi bật
         </h2>
       </div>
 
       <div className="flex items-center gap-6 overflow-x-auto pb-4 scrollbar-none px-1">
-        {actors.map((actor, i) => (
-          <Link
-            key={i}
-            href={`/search?q=${encodeURIComponent(actor.name)}`}
-            className="flex flex-col items-center flex-shrink-0 group cursor-pointer"
-          >
-            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-white/10 group-hover:border-netflixRed group-hover:scale-105 transition-all duration-300 shadow-xl">
-              <img
-                src={actor.img}
-                alt={actor.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <span className="mt-2.5 text-xs font-bold text-white group-hover:text-netflixRed transition-colors text-center max-w-[110px] truncate">
-              {actor.name}
-            </span>
-            <span className="text-[10px] text-neutral-400 font-medium text-center">
-              {actor.role}
-            </span>
-          </Link>
-        ))}
+        {creditsLoading
+          ? Array.from({ length: 6 }).map((_, index) => (
+              <div
+                key={index}
+                className="flex flex-col items-center flex-shrink-0 animate-pulse"
+              >
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white/[0.08]" />
+                <div className="mt-3 h-3 w-20 rounded bg-white/[0.08]" />
+              </div>
+            ))
+          : cast.slice(0, 8).map((actor) => (
+              <Link
+                key={actor.id}
+                href={`/actors/${actor.id}`}
+                className="flex flex-col items-center flex-shrink-0 group cursor-pointer"
+              >
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-white/10 group-hover:border-white/50 group-hover:scale-[1.03] transition-all duration-200">
+                  {tmdbProfile(actor.profile_path, "w185") ? (
+                    <img
+                      src={tmdbProfile(actor.profile_path, "w185") || ""}
+                      alt={actor.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex w-full h-full items-center justify-center bg-white/[0.08] text-2xl font-bold text-white/50">
+                      {actor.name.slice(0, 1)}
+                    </span>
+                  )}
+                </div>
+                <span className="mt-2.5 text-xs font-bold text-white group-hover:text-white/70 transition-colors text-center max-w-[110px] truncate">
+                  {actor.name}
+                </span>
+              </Link>
+            ))}
       </div>
     </div>
   );
 }
 
 // Top Spotlight Hero Banner for Country Page
-function CountryHeroBanner({ film }: { film?: FilmItem }) {
-  if (!film) return null;
-
+function CountryHeroBanner({
+  film,
+  countryName,
+  fullBleed = false,
+}: {
+  film?: FilmItem;
+  countryName: string;
+  fullBleed?: boolean;
+}) {
   const { bestBackdrop } = useTmdb({
     film,
+    enabled: !!film,
     fetchCredits: false,
     fetchVideos: false,
   });
+
+  if (!film) {
+    return (
+      <section
+        aria-label="Đang tải phim nổi bật"
+        className={
+          fullBleed
+            ? "relative w-full min-h-[440px] md:min-h-[560px] overflow-hidden bg-[#0b0e13]"
+            : "relative w-full h-[450px] md:h-[520px] rounded-3xl overflow-hidden mb-12 bg-[#0b0e13] border border-white/10"
+        }
+      >
+        <div className="absolute inset-0 bg-[linear-gradient(120deg,#0b0e13_20%,#171c24_48%,#0b0e13_76%)] animate-pulse" />
+        <div className="absolute bottom-12 left-5 w-2/3 max-w-md space-y-3 sm:left-10 lg:left-[calc(6rem+4vw)]">
+          <div className="h-3 w-24 rounded bg-white/10" />
+          <div className="h-10 w-full rounded bg-white/10" />
+          <div className="h-4 w-2/3 rounded bg-white/[0.07]" />
+        </div>
+      </section>
+    );
+  }
 
   const backdrop =
     (bestBackdrop?.file_path
@@ -273,7 +255,13 @@ function CountryHeroBanner({ film }: { film?: FilmItem }) {
     resolveImageUrl(film.poster_url);
 
   return (
-    <div className="relative w-full h-[450px] md:h-[520px] rounded-3xl overflow-hidden mb-12 shadow-2xl bg-neutral-900 border border-white/10">
+    <section
+      className={
+        fullBleed
+          ? "relative w-full min-h-[440px] md:min-h-[560px] overflow-hidden bg-[#090c12]"
+          : "relative w-full h-[450px] md:h-[520px] rounded-3xl overflow-hidden mb-12 shadow-2xl bg-neutral-900 border border-white/10"
+      }
+    >
       {backdrop && (
         <img
           src={backdrop}
@@ -288,11 +276,17 @@ function CountryHeroBanner({ film }: { film?: FilmItem }) {
         }}
       />
 
-      <div className="absolute inset-0 flex items-end sm:items-center p-6 sm:p-12 z-10">
+      <div
+        className={`absolute inset-0 flex items-end sm:items-center z-10 ${
+          fullBleed
+            ? "px-5 pb-12 pt-28 sm:px-10 sm:py-20 lg:pl-[calc(6rem+4vw)]"
+            : "p-6 sm:p-12"
+        }`}
+      >
         <div className="max-w-2xl space-y-3 sm:space-y-4">
           <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-white/80">
-            <span className="bg-netflixRed text-white px-2.5 py-0.5 rounded text-[10px] uppercase font-black tracking-wider">
-              NỔI BẬT KHAI THÁC
+            <span className="bg-white text-[#11151b] px-2.5 py-0.5 rounded-md text-[10px] uppercase font-black tracking-wider">
+              Phim {countryName} nổi bật
             </span>
             {film.year && <span>{film.year}</span>}
             {film.quality && <span>• {film.quality}</span>}
@@ -317,7 +311,7 @@ function CountryHeroBanner({ film }: { film?: FilmItem }) {
             </Link>
             <Link
               href={`/film/${film.slug}`}
-              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold px-5 py-3 rounded-full text-xs uppercase tracking-wider backdrop-blur-md border border-white/15 transition-all"
+              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold px-5 py-3 rounded-full text-xs uppercase tracking-wider border border-white/15 transition-all"
             >
               <Info size={16} />
               <span>Chi tiết</span>
@@ -325,7 +319,7 @@ function CountryHeroBanner({ film }: { film?: FilmItem }) {
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -336,6 +330,8 @@ export default function CountryPage() {
   const slug = params.slug as string;
   const page = Number(searchParams.get("page") || 1);
   const label = COUNTRY_NAMES[slug] || slug;
+  const isFeaturedCountry = slug === "han-quoc" || slug === "trung-quoc";
+  const [heroSeed, setHeroSeed] = useState(() => Math.random());
 
   // Main catalog query for full listing & pagination
   const { data: mainData, isLoading: mainLoading } = useQuery({
@@ -344,36 +340,78 @@ export default function CountryPage() {
   });
 
   const films: FilmItem[] = mainData?.data?.items || mainData?.items || [];
-  const heroFilm = films[0];
+  const heroFilm = films.length
+    ? films[Math.floor(heroSeed * films.length)]
+    : undefined;
+
+  // Change the featured title whenever a visitor enters either country hub.
+  useEffect(() => {
+    setHeroSeed(Math.random());
+  }, [slug]);
 
   // Specific genre queries filtered by country
   const { data: romanceData, isLoading: romanceLoading } = useQuery({
     queryKey: ["country-romance", slug],
-    queryFn: () => movieApi.getByGenre("tinh-cam", 1).then((r) => r.data),
+    queryFn: () =>
+      movieApi
+        .getFiltered({
+          country: slug,
+          category: "tinh-cam",
+          page: 1,
+          limit: 18,
+        })
+        .then((r) => r.data),
     staleTime: 1000 * 60 * 10,
   });
 
   const { data: actionData, isLoading: actionLoading } = useQuery({
     queryKey: ["country-action", slug],
-    queryFn: () => movieApi.getByGenre("hanh-dong", 1).then((r) => r.data),
+    queryFn: () =>
+      movieApi
+        .getFiltered({
+          country: slug,
+          category: "hanh-dong",
+          page: 1,
+          limit: 18,
+        })
+        .then((r) => r.data),
     staleTime: 1000 * 60 * 10,
   });
 
   const { data: coTrangData, isLoading: coTrangLoading } = useQuery({
     queryKey: ["country-cotrang", slug],
-    queryFn: () => movieApi.getByGenre("co-trang", 1).then((r) => r.data),
+    queryFn: () =>
+      movieApi
+        .getFiltered({
+          country: slug,
+          category: "co-trang",
+          page: 1,
+          limit: 18,
+        })
+        .then((r) => r.data),
     staleTime: 1000 * 60 * 10,
   });
 
   const { data: animeData, isLoading: animeLoading } = useQuery({
     queryKey: ["country-anime", slug],
-    queryFn: () => movieApi.getByGenre("hoat-hinh", 1).then((r) => r.data),
+    queryFn: () =>
+      movieApi
+        .getFiltered({
+          country: slug,
+          category: "hoat-hinh",
+          page: 1,
+          limit: 18,
+        })
+        .then((r) => r.data),
     staleTime: 1000 * 60 * 10,
   });
 
   const { data: crimeData, isLoading: crimeLoading } = useQuery({
     queryKey: ["country-hinhsu", slug],
-    queryFn: () => movieApi.getByGenre("hinh-su", 1).then((r) => r.data),
+    queryFn: () =>
+      movieApi
+        .getFiltered({ country: slug, category: "hinh-su", page: 1, limit: 18 })
+        .then((r) => r.data),
     staleTime: 1000 * 60 * 10,
   });
 
@@ -412,8 +450,14 @@ export default function CountryPage() {
 
   return (
     <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 pt-20 pb-16 bg-background min-h-screen text-foreground">
-      {/* Top Hero Banner */}
-      <CountryHeroBanner film={heroFilm} />
+      {/* Full-bleed media is reserved for the Korean and Chinese hubs. */}
+      {isFeaturedCountry ? (
+        <div className="-mt-20 -mx-4 mb-10 md:-mx-10 lg:-ml-24 lg:-mr-10">
+          <CountryHeroBanner film={heroFilm} countryName={label} fullBleed />
+        </div>
+      ) : (
+        <CountryHeroBanner film={heroFilm} countryName={label} />
+      )}
 
       {/* Categorized Movie Hub Rows */}
       <CountryCategoryRow
@@ -445,7 +489,7 @@ export default function CountryPage() {
       />
 
       {/* Featured Actors Row */}
-      <FeaturedActorsRow slug={slug} />
+      <FeaturedActorsRow film={heroFilm} />
 
       <CountryCategoryRow
         title="Phim Hoạt Hình & Anime"

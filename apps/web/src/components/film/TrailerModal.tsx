@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { X, Clapperboard, Loader2 } from "lucide-react";
+import { X, Clapperboard, Loader2, ExternalLink } from "lucide-react";
 import { useTmdb } from "@/hooks/useTmdb";
 import { FilmItem } from "@/components/film/FilmCard";
 
@@ -9,6 +9,8 @@ interface TrailerModalProps {
   film?: FilmItem | null;
   isOpen: boolean;
   onClose: () => void;
+  /** Render within a positioned Hero instead of above the entire document. */
+  presentation?: "dialog" | "hero";
   filmName?: string;
   trailerUrl?: string;
   tmdbVideoKey?: string;
@@ -18,6 +20,7 @@ export function TrailerModal({
   film,
   isOpen,
   onClose,
+  presentation = "dialog",
   filmName: directFilmName,
   trailerUrl,
   tmdbVideoKey,
@@ -60,20 +63,23 @@ export function TrailerModal({
   let youtubeKey = tmdbVideoKey || trailer?.key;
   if (!youtubeKey && trailerUrl) {
     const match = trailerUrl.match(
-      /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/,
+      /(?:youtu\.be\/|youtube\.com\/(?:embed\/|shorts\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/,
     );
     if (match) youtubeKey = match[1];
   }
 
-  // Fallback YouTube search embed URL if no explicit key was found
+  // YouTube removed search-result embeds. Never render that blank iframe as a fallback.
   const embedSrc = youtubeKey
-    ? `https://www.youtube-nocookie.com/embed/${youtubeKey}?autoplay=1&rel=0&modestbranding=1`
-    : `https://www.youtube-nocookie.com/embed?listType=search&list=${encodeURIComponent(
-        `${displayName} official trailer`,
-      )}&autoplay=1`;
+    ? `https://www.youtube-nocookie.com/embed/${youtubeKey}?autoplay=1&playsinline=1&rel=0&modestbranding=1`
+    : null;
+  const youtubeSearchHref = `https://www.youtube.com/results?search_query=${encodeURIComponent(
+    `${displayName} official trailer`,
+  )}`;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 md:p-10 animate-in fade-in duration-200">
+    <div
+      className={`${presentation === "hero" ? "absolute" : "fixed"} inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 md:p-10 animate-in fade-in duration-200`}
+    >
       {/* Dark backdrop overlay */}
       <div
         onClick={onClose}
@@ -108,7 +114,7 @@ export function TrailerModal({
               <Loader2 size={24} className="animate-spin text-neutral-400" />
               <p className="text-xs font-medium">Đang tải trailer...</p>
             </div>
-          ) : (
+          ) : embedSrc ? (
             <iframe
               src={embedSrc}
               title={`${displayName} Official Trailer`}
@@ -116,6 +122,23 @@ export function TrailerModal({
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
+          ) : (
+            <div className="flex max-w-sm flex-col items-center gap-3 px-6 text-center text-neutral-300">
+              <Clapperboard size={28} className="text-emerald-300" />
+              <p className="text-sm font-semibold">Trailer chưa có trên TMDB</p>
+              <p className="text-xs leading-relaxed text-neutral-500">
+                Mở kết quả YouTube để xem trailer chính thức của phim này.
+              </p>
+              <a
+                href={youtubeSearchHref}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-full bg-emerald-400 px-4 py-2 text-xs font-bold text-[#07110d] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+              >
+                Mở YouTube
+                <ExternalLink size={14} />
+              </a>
+            </div>
           )}
         </div>
       </div>

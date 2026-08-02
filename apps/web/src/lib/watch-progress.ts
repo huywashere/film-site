@@ -12,28 +12,36 @@ export interface WatchProgressEntry {
 const STORAGE_KEY = "cineverse_continue_watching";
 
 export const watchProgressStorage = {
-  getEntries: (): WatchProgressEntry[] => {
+  getHistoryEntries: (): WatchProgressEntry[] => {
     if (typeof window === "undefined") return [];
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return [];
-      const parsed: WatchProgressEntry[] = JSON.parse(raw);
-      // Filter out invalid items or completed items (>95% watched)
-      return parsed
-        .filter(
-          (item) =>
-            item.duration > 0 && item.currentTime / item.duration < 0.95,
-        )
-        .sort((a, b) => b.updatedAt - a.updatedAt);
+      return (JSON.parse(raw) as WatchProgressEntry[]).sort(
+        (a, b) => b.updatedAt - a.updatedAt,
+      );
     } catch {
       return [];
     }
   },
 
+  getEntries: (): WatchProgressEntry[] => {
+    return (
+      watchProgressStorage
+        .getHistoryEntries()
+        // Filter out invalid items or completed items (>95% watched)
+        .filter(
+          (item) =>
+            item.duration > 0 && item.currentTime / item.duration < 0.95,
+        )
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+    );
+  },
+
   saveProgress: (entry: Omit<WatchProgressEntry, "updatedAt">) => {
     if (typeof window === "undefined") return;
     try {
-      const entries = watchProgressStorage.getEntries();
+      const entries = watchProgressStorage.getHistoryEntries();
       const existingIndex = entries.findIndex(
         (e) => e.slug === entry.slug && e.epSlug === entry.epSlug,
       );
@@ -72,6 +80,11 @@ export const watchProgressStorage = {
     } catch (e) {
       console.error("Failed to remove watch progress entry:", e);
     }
+  },
+
+  clearAll: () => {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem(STORAGE_KEY);
   },
 };
 

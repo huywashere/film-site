@@ -119,8 +119,10 @@ function runDedupeTests() {
   );
   assert(
     "Case 6b: Merged genres contains both Hành Động and Phiêu Lưu",
-    merged.genres?.includes("Hành Động") &&
+    Boolean(
+      merged.genres?.includes("Hành Động") &&
       merged.genres?.includes("Phiêu Lưu"),
+    ),
   );
 
   console.log("\n----------------------------------------------------");

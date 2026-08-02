@@ -8,6 +8,8 @@ export interface MovieProxyConfig {
   sourceName: string;
   cachePrefix: string;
   baseUrl: string;
+  /** Danh sách domain dự phòng khi baseUrl không phản hồi */
+  fallbackUrls?: string[];
   redisUrl?: string;
   getTtl: (path: string) => number;
   transform?: (data: unknown, path: string) => unknown;
@@ -165,17 +167,37 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
 
     try {
       const data = await breaker.execute(async () => {
-        const response = await fetch(upstreamUrl, {
-          headers: config.headers || { "Content-Type": "application/json" },
-          signal: AbortSignal.timeout(timeoutMs),
-        });
+        // Thử baseUrl trước, nếu lỗi thì thử fallbackUrls
+        const allUrls = [
+          `${config.baseUrl}/${path}${searchParams ? `?${searchParams}` : ""}`,
+          ...(config.fallbackUrls || []).map(
+            (fb) =>
+              `${fb}/${path}${searchParams ? `?${searchParams}` : ""}`,
+          ),
+        ];
 
-        if (!response.ok) {
-          throw new Error(`Upstream returned ${response.status}`);
+        let lastError: Error | null = null;
+        for (const url of allUrls) {
+          try {
+            const response = await fetch(url, {
+              headers: config.headers || { "Content-Type": "application/json" },
+              signal: AbortSignal.timeout(timeoutMs),
+            });
+
+            if (!response.ok) {
+              lastError = new Error(`Upstream ${url} returned ${response.status}`);
+              continue; // thử URL tiếp theo
+            }
+
+            const rawData = await response.json();
+            return config.transform ? config.transform(rawData, path) : rawData;
+          } catch (e) {
+            lastError = e instanceof Error ? e : new Error(String(e));
+            // Tiếp tục thử URL tiếp theo
+          }
         }
 
-        const rawData = await response.json();
-        return config.transform ? config.transform(rawData, path) : rawData;
+        throw lastError || new Error("All upstream URLs failed");
       });
 
       if (client && client.status === "ready") {

@@ -10,3 +10,8 @@ dist
 .DS_Store
 prisma/migrations/dev.db
 *.tsbuildinfo
+
+# VPS Deploy (KHÔNG commit các file này)
+ssl/
+.cloudflared/
+.env.production.local

@@ -1,256 +1,267 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/providers/ToastProvider";
-import { checkWatchPartyReactionRateLimit } from "@/lib/rate-limiter";
+import {
+  createWatchPartySocket,
+  type PlaybackAction,
+  type SocketAck,
+  type WatchPartyMessage,
+  type WatchPartyParticipant,
+  type WatchPartyPlayerState,
+  type WatchPartyRoom,
+} from "@/lib/watch-party-socket";
 
-export interface Participant {
-  id: string;
-  name: string;
-  avatar: string;
-  isHost?: boolean;
-}
-
-export interface ChatMessage {
-  id: string;
-  senderId: string;
-  senderName: string;
-  senderAvatar: string;
-  text: string;
-  timestamp: string;
-  isSystem?: boolean;
-}
+export type Participant = WatchPartyParticipant;
+export type ChatMessage = WatchPartyMessage;
 
 export interface FloatingReaction {
   id: string;
   emoji: string;
   senderName: string;
-  left: number; // Percentage 10-90%
+  left: number;
+}
+
+export interface CreateWatchPartyInput {
+  name?: string;
+  movieName?: string;
+  posterUrl?: string;
+}
+
+export type WatchPartyConnectionState = "connecting" | "online" | "offline";
+
+function getGuestId() {
+  if (typeof window === "undefined") return "guest";
+  const key = "cineverse-watch-party-guest";
+  const existing = window.localStorage.getItem(key);
+  if (existing) return existing;
+  const id = `guest-${crypto.randomUUID()}`;
+  window.localStorage.setItem(key, id);
+  return id;
 }
 
 export function useWatchParty(movieSlug: string, episodeName: string) {
-  const user = useAuthStore((s) => s.user);
+  const user = useAuthStore((state) => state.user);
   const { toast } = useToast();
+  const socket = useMemo(() => createWatchPartySocket(), []);
 
-  const [roomId, setRoomId] = useState<string | null>(null);
-  const [isHost, setIsHost] = useState<boolean>(false);
-  const [participants, setParticipants] = useState<Participant[]>([]);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [room, setRoom] = useState<WatchPartyRoom | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [connectionState, setConnectionState] =
+    useState<WatchPartyConnectionState>("connecting");
   const [floatingReactions, setFloatingReactions] = useState<
     FloatingReaction[]
   >([]);
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [channel, setChannel] = useState<BroadcastChannel | null>(null);
+  const [remotePlayerState, setRemotePlayerState] =
+    useState<WatchPartyPlayerState | null>(null);
 
-  const userId = user?.id;
-  const userIdRef = useRef(userId);
-  userIdRef.current = userId;
+  const roomIdRef = useRef<string | null>(null);
+  const identityRef = useRef({
+    userId: user?.id || getGuestId(),
+    name: user?.displayName || user?.username || "Khách Cineverse",
+    avatar: user?.avatarUrl,
+  });
+  identityRef.current = {
+    userId: user?.id || getGuestId(),
+    name: user?.displayName || user?.username || "Khách Cineverse",
+    avatar: user?.avatarUrl,
+  };
 
-  useEffect(() => {
-    if (!roomId) return;
-
-    const bc = new BroadcastChannel(`cineverse_watch_party_${roomId}`);
-    setChannel(bc);
-
-    bc.onmessage = (event) => {
-      const { type, payload } = event.data;
-      if (type === "USER_JOINED") {
-        setParticipants((prev) => {
-          if (prev.some((p) => p.id === payload.id)) return prev;
-          return [...prev, payload];
-        });
-        addSystemMessage(`${payload.name} đã tham gia phòng xem chung!`);
-      } else if (type === "USER_LEFT") {
-        setParticipants((prev) => prev.filter((p) => p.id !== payload.id));
-        addSystemMessage(`${payload.name} đã rời phòng.`);
-      } else if (type === "CHAT_MESSAGE") {
-        setMessages((prev) => [...prev, payload]);
-      } else if (type === "REACTION") {
-        triggerFloatingReaction(payload.emoji, payload.senderName);
-      } else if (type === "PLAYER_SYNC") {
-        // Broadcasted playback sync event
-        if (payload.senderId !== userIdRef.current) {
-          addSystemMessage(
-            `${payload.senderName} vừa ${payload.action === "play" ? "phát" : payload.action === "pause" ? "tạm dừng" : "chuyển thời gian"} video.`,
-          );
-        }
-      }
-    };
-
-    return () => {
-      bc.close();
-    };
-  }, [roomId]);
-
-  const addSystemMessage = useCallback((text: string) => {
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Math.random().toString(),
-        senderId: "system",
-        senderName: "Hệ thống",
-        senderAvatar: "",
-        text,
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        isSystem: true,
-      },
-    ]);
-  }, []);
-
-  const triggerFloatingReaction = useCallback(
-    (emoji: string, senderName: string) => {
-      const newReaction: FloatingReaction = {
-        id: Math.random().toString(),
-        emoji,
-        senderName,
-        left: Math.floor(Math.random() * 70) + 15, // 15% to 85%
+  const triggerReaction = useCallback(
+    (reaction: { id?: string; emoji: string; senderName: string }) => {
+      const item: FloatingReaction = {
+        id: reaction.id || crypto.randomUUID(),
+        emoji: reaction.emoji,
+        senderName: reaction.senderName,
+        left: Math.floor(Math.random() * 70) + 15,
       };
-      setFloatingReactions((prev) => [...prev, newReaction]);
-      setTimeout(() => {
-        setFloatingReactions((prev) =>
-          prev.filter((r) => r.id !== newReaction.id),
-        );
-      }, 2500);
+      setFloatingReactions((current) => [...current, item]);
+      window.setTimeout(
+        () =>
+          setFloatingReactions((current) =>
+            current.filter((entry) => entry.id !== item.id),
+          ),
+        2_500,
+      );
     },
     [],
   );
 
-  const createRoom = () => {
-    const newRoomId =
-      "WP-" + Math.random().toString(36).substring(2, 7).toUpperCase();
-    setRoomId(newRoomId);
-    setIsHost(true);
-    setIsOpen(true);
-
-    const currentUser: Participant = {
-      id: user?.id || "guest-" + Math.random().toString(36).substring(2, 5),
-      name: user?.displayName || user?.username || "Bạn (Trưởng phòng)",
-      avatar:
-        user?.avatarUrl ||
-        `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || "User")}&background=00e054&color=000`,
-      isHost: true,
+  useEffect(() => {
+    const handleConnect = () => {
+      setConnectionState("online");
+      if (roomIdRef.current) {
+        socket.emit(
+          "room:join",
+          { roomId: roomIdRef.current, identity: identityRef.current },
+          (result: SocketAck) => {
+            if (result.ok && result.room) setRoom(result.room);
+          },
+        );
+      }
     };
+    const handleDisconnect = () => setConnectionState("offline");
+    const handleConnectError = () => setConnectionState("offline");
+    const handleSnapshot = (snapshot: WatchPartyRoom) => setRoom(snapshot);
+    const handleMessage = (message: WatchPartyMessage) =>
+      setRoom((current) =>
+        current
+          ? { ...current, messages: [...current.messages, message].slice(-100) }
+          : current,
+      );
+    const handlePlayerState = (state: WatchPartyPlayerState) =>
+      setRemotePlayerState(state);
 
-    setParticipants([currentUser]);
-    setMessages([
-      {
-        id: "init",
-        senderId: "system",
-        senderName: "Hệ thống",
-        senderAvatar: "",
-        text: `Phòng xem chung #${newRoomId} đã sẵn sàng! Chia sẻ đường link để mời bạn bè cùng xem.`,
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        isSystem: true,
-      },
-    ]);
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("connect_error", handleConnectError);
+    socket.on("room:snapshot", handleSnapshot);
+    socket.on("chat:message", handleMessage);
+    socket.on("reaction", triggerReaction);
+    socket.on("player:state", handlePlayerState);
+    socket.connect();
 
-    toast(`Đã tạo phòng xem chung #${newRoomId}!`, "success");
-  };
-
-  const joinRoom = (targetRoomId: string) => {
-    setRoomId(targetRoomId);
-    setIsHost(false);
-    setIsOpen(true);
-
-    const currentUser: Participant = {
-      id: user?.id || "guest-" + Math.random().toString(36).substring(2, 5),
-      name: user?.displayName || user?.username || "Thành viên mới",
-      avatar:
-        user?.avatarUrl ||
-        `https://ui-avatars.com/api/?name=User&background=2c3440&color=fff`,
+    return () => {
+      if (roomIdRef.current && socket.connected) {
+        socket.emit("room:leave", { roomId: roomIdRef.current });
+      }
+      socket.removeAllListeners();
+      socket.disconnect();
     };
+  }, [socket, triggerReaction]);
 
-    setParticipants([currentUser]);
-    toast(`Đã tham gia phòng xem chung #${targetRoomId}!`, "success");
-  };
+  const createRoom = useCallback(
+    (input: CreateWatchPartyInput = {}) =>
+      new Promise<string | null>((resolve) => {
+        if (!socket.connected) {
+          toast("Chưa kết nối được máy chủ xem chung.", "error");
+          resolve(null);
+          return;
+        }
+        socket.emit(
+          "room:create",
+          {
+            identity: identityRef.current,
+            name: input.name,
+            movie: {
+              slug: movieSlug,
+              name: input.movieName || "Phim đang xem",
+              posterUrl: input.posterUrl,
+              episode: episodeName,
+            },
+          },
+          (result: SocketAck) => {
+            if (!result.ok || !result.room) {
+              toast(result.error || "Không thể tạo phòng xem chung.", "error");
+              resolve(null);
+              return;
+            }
+            roomIdRef.current = result.room.id;
+            setRoom(result.room);
+            setIsOpen(true);
+            toast(`Đã tạo phòng ${result.room.id}.`, "success");
+            resolve(result.room.id);
+          },
+        );
+      }),
+    [episodeName, movieSlug, socket, toast],
+  );
 
-  const leaveRoom = () => {
-    if (channel && user) {
-      channel.postMessage({
-        type: "USER_LEFT",
-        payload: { id: user.id, name: user.displayName || user.username },
-      });
-    }
-    setRoomId(null);
-    setIsHost(false);
-    setParticipants([]);
-    setMessages([]);
+  const joinRoom = useCallback(
+    (targetRoomId: string) =>
+      new Promise<boolean>((resolve) => {
+        const roomId = targetRoomId.trim().toUpperCase();
+        if (!roomId) return resolve(false);
+        roomIdRef.current = roomId;
+        const sendJoin = () => {
+          socket.emit(
+            "room:join",
+            { roomId, identity: identityRef.current },
+            (result: SocketAck) => {
+              if (!result.ok || !result.room) {
+                roomIdRef.current = null;
+                toast(result.error || "Không thể tham gia phòng.", "error");
+                resolve(false);
+                return;
+              }
+              setRoom(result.room);
+              setIsOpen(true);
+              if (result.room.playerState) {
+                setRemotePlayerState(result.room.playerState);
+              }
+              resolve(true);
+            },
+          );
+        };
+        if (socket.connected) sendJoin();
+        else socket.once("connect", sendJoin);
+      }),
+    [socket, toast],
+  );
+
+  const leaveRoom = useCallback(() => {
+    const roomId = roomIdRef.current;
+    if (roomId && socket.connected) socket.emit("room:leave", { roomId });
+    roomIdRef.current = null;
+    setRoom(null);
+    setRemotePlayerState(null);
     setIsOpen(false);
     toast("Đã rời phòng xem chung.", "info");
-  };
+  }, [socket, toast]);
 
-  const sendMessage = (text: string) => {
-    if (!text.trim() || !roomId) return;
-    const msg: ChatMessage = {
-      id: Math.random().toString(),
-      senderId: user?.id || "guest",
-      senderName: user?.displayName || user?.username || "Thành viên",
-      senderAvatar:
-        user?.avatarUrl ||
-        `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || "U")}&background=2c3440&color=fff`,
-      text: text.trim(),
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-
-    setMessages((prev) => [...prev, msg]);
-    if (channel) {
-      channel.postMessage({ type: "CHAT_MESSAGE", payload: msg });
-    }
-  };
-
-  const sendReaction = (emoji: string) => {
-    const rateCheck = checkWatchPartyReactionRateLimit(user?.id || "guest");
-    if (!rateCheck.allowed) {
-      toast(
-        `Bạn đang thả biểu cảm quá nhanh! Vui lòng đợi ${rateCheck.retryAfterSeconds}s.`,
-        "error",
-      );
-      return;
-    }
-
-    const senderName = user?.displayName || user?.username || "Thành viên";
-    triggerFloatingReaction(emoji, senderName);
-    if (channel) {
-      channel.postMessage({
-        type: "REACTION",
-        payload: { emoji, senderName },
-      });
-    }
-  };
-
-  const syncPlayerState = (
-    action: "play" | "pause" | "seek",
-    currentTime: number,
-  ) => {
-    if (channel && roomId) {
-      channel.postMessage({
-        type: "PLAYER_SYNC",
-        payload: {
-          action,
-          currentTime,
-          senderId: user?.id || "guest",
-          senderName: user?.displayName || user?.username || "Thành viên",
+  const sendMessage = useCallback(
+    (text: string) => {
+      if (!room?.id || !text.trim() || connectionState !== "online") return;
+      socket.emit(
+        "chat:send",
+        { roomId: room.id, text: text.trim() },
+        (result: SocketAck) => {
+          if (!result.ok)
+            toast(result.error || "Không gửi được tin nhắn.", "error");
         },
+      );
+    },
+    [connectionState, room?.id, socket, toast],
+  );
+
+  const sendReaction = useCallback(
+    (emoji: string) => {
+      if (!room?.id || connectionState !== "online") return;
+      socket.emit(
+        "reaction:send",
+        { roomId: room.id, emoji },
+        (result: SocketAck) => {
+          if (!result.ok)
+            toast(result.error || "Không gửi được biểu cảm.", "error");
+        },
+      );
+    },
+    [connectionState, room?.id, socket, toast],
+  );
+
+  const syncPlayerState = useCallback(
+    (action: PlaybackAction, currentTime: number) => {
+      if (!room?.id || room.hostId !== socket.id || !socket.connected) return;
+      socket.emit("player:state", {
+        roomId: room.id,
+        action,
+        currentTime,
+        episode: episodeName,
       });
-    }
-  };
+    },
+    [episodeName, room?.hostId, room?.id, socket],
+  );
 
   return {
-    roomId,
-    isHost,
-    participants,
-    messages,
+    room,
+    roomId: room?.id || null,
+    isHost: Boolean(room && room.hostId === socket.id),
+    participants: room?.participants || [],
+    messages: room?.messages || [],
     floatingReactions,
+    remotePlayerState,
+    connectionState,
     isOpen,
     setIsOpen,
     createRoom,

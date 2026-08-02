@@ -191,19 +191,19 @@ export default function UserDashboardPage() {
   const watchlistItems = watchlistData?.items || [];
 
   return (
-    <div className="min-h-screen bg-[#111419] text-white pb-20 pt-20 md:pt-24 px-4 md:px-8 font-sans select-none">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* ── LEFT SIDEBAR PANEL ("Quản lý tài khoản") ── */}
-        <div className="lg:col-span-3 bg-[#181c24] border border-white/10 rounded-2xl p-5 shadow-2xl space-y-6">
-          <h2 className="text-lg font-extrabold text-white px-2 tracking-tight">
-            Quản lý tài khoản
+    <div className="min-h-[100dvh] bg-[#090b0e] text-white pb-20 pt-24 md:pt-28 px-4 md:px-8 font-sans select-none">
+      <div className="max-w-6xl mx-auto space-y-5">
+        {/* Profile navigation lives inside one compact profile header. */}
+        <div className="rounded-2xl border border-white/10 bg-[#12161b] p-4 md:p-5 shadow-[0_18px_45px_rgba(0,0,0,0.2)]">
+          <h2 className="text-xl font-extrabold text-white tracking-tight">
+            Hồ sơ của bạn
           </h2>
+          <p className="mt-1 text-xs text-neutral-400">Quản lý tài khoản, phim đã lưu và lịch sử xem tại một nơi.</p>
 
-          {/* Navigation Links */}
-          <nav className="space-y-1">
+          <nav className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
             <button
               onClick={() => setActiveTab("account")}
-              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+              className={`shrink-0 flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
                 activeTab === "account"
                   ? "bg-white/10 text-white border border-white/15 shadow-md"
                   : "text-neutral-400 hover:text-white hover:bg-white/5"
@@ -215,7 +215,7 @@ export default function UserDashboardPage() {
 
             <button
               onClick={() => setActiveTab("watchlist")}
-              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`shrink-0 flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "watchlist"
                   ? "bg-white/10 text-white border border-white/15 shadow-md"
                   : "text-neutral-400 hover:text-white hover:bg-white/5"
@@ -227,7 +227,7 @@ export default function UserDashboardPage() {
 
             <button
               onClick={() => setActiveTab("collections")}
-              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`shrink-0 flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "collections"
                   ? "bg-white/10 text-white border border-white/15 shadow-md"
                   : "text-neutral-400 hover:text-white hover:bg-white/5"
@@ -239,7 +239,7 @@ export default function UserDashboardPage() {
 
             <button
               onClick={() => setActiveTab("reviews")}
-              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`shrink-0 flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "reviews"
                   ? "bg-white/10 text-white border border-white/15 shadow-md"
                   : "text-neutral-400 hover:text-white hover:bg-white/5"
@@ -251,7 +251,7 @@ export default function UserDashboardPage() {
 
             <button
               onClick={() => setActiveTab("history")}
-              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`shrink-0 flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "history"
                   ? "bg-white/10 text-white border border-white/15 shadow-md"
                   : "text-neutral-400 hover:text-white hover:bg-white/5"
@@ -263,7 +263,7 @@ export default function UserDashboardPage() {
 
             <button
               onClick={() => setActiveTab("settings")}
-              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`shrink-0 flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "settings"
                   ? "bg-white/10 text-white border border-white/15 shadow-md"
                   : "text-neutral-400 hover:text-white hover:bg-white/5"
@@ -273,7 +273,7 @@ export default function UserDashboardPage() {
               <span>Cài đặt tiện ích</span>
             </button>
 
-            <div className="pt-2 border-t border-white/10 my-1 space-y-1">
+            <div className="hidden">
               <button
                 onClick={() =>
                   toast("Giao diện tối được kích hoạt làm mặc định", "info")
@@ -302,9 +302,8 @@ export default function UserDashboardPage() {
             </div>
           </nav>
 
-          {/* User Profile Card at Bottom of Sidebar */}
-          <div className="pt-4 border-t border-white/10 space-y-3">
-            <div className="flex items-center space-x-3 px-2">
+          <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
+            <div className="flex items-center space-x-3">
               <img
                 src={
                   selectedAvatar ||
@@ -314,7 +313,7 @@ export default function UserDashboardPage() {
                   )}&background=1f2937&color=ffffff`
                 }
                 alt={profile.username}
-                className="w-10 h-10 rounded-full object-cover border border-white/20 bg-neutral-900 shrink-0"
+                className="w-10 h-10 rounded-full object-cover border border-emerald-400/30 bg-neutral-900 shrink-0"
               />
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-extrabold text-white truncate">
@@ -329,7 +328,7 @@ export default function UserDashboardPage() {
             {user && (
               <button
                 onClick={() => setShowLogoutModal(true)}
-                className="w-full flex items-center space-x-2 text-neutral-400 hover:text-red-400 text-xs font-bold px-3 py-2 rounded-xl transition-colors cursor-pointer"
+                className="flex items-center space-x-2 text-neutral-400 hover:text-red-400 text-xs font-bold px-3 py-2 rounded-xl transition-colors cursor-pointer"
               >
                 <LogOut size={14} />
                 <span>Thoát</span>
@@ -338,18 +337,17 @@ export default function UserDashboardPage() {
           </div>
         </div>
 
-        {/* ── RIGHT MAIN PANEL ── */}
-        <div className="lg:col-span-9 bg-[#181c24] border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl min-h-[560px]">
+        <div className="bg-[#12161b] border border-white/10 rounded-2xl p-5 md:p-8 shadow-[0_18px_45px_rgba(0,0,0,0.2)] min-h-[560px]">
           {/* TAB 1: TÀI KHOẢN */}
           {activeTab === "account" && (
             <div className="space-y-8">
               {/* Header */}
               <div className="border-b border-white/5 pb-4">
                 <h1 className="text-2xl font-extrabold text-white tracking-tight">
-                  Tài khoản
+                  Thông tin hồ sơ
                 </h1>
                 <p className="text-xs text-neutral-400 mt-1">
-                  Cập nhật thông tin tài khoản
+                  Cập nhật các thông tin hiển thị trên CineVerse
                 </p>
               </div>
 

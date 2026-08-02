@@ -1,4 +1,6 @@
-export type MovieSource = "kkphim" | "ophim" | "nguonc" | "vsmov";
+import type { MovieSource } from "@/types/movie";
+
+export type { MovieSource } from "@/types/movie";
 
 export interface NormalizedFilmItem extends Record<string, unknown> {
   slug: string;

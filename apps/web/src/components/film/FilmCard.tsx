@@ -8,6 +8,8 @@ import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/providers/ToastProvider";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import type { MovieSource } from "@/lib/movie-normalizer";
+import { guestDataStorage } from "@/lib/user-data";
 
 export interface FilmItem {
   _id?: string;
@@ -33,6 +35,16 @@ export interface FilmItem {
     vote_count?: number;
     rating?: number;
   };
+  /** Source metadata is retained when search results from several providers merge. */
+  _source?: MovieSource;
+  _sources?: MovieSource[];
+  _sourceSlugs?: Partial<Record<MovieSource, string>>;
+  content?: string;
+  actor?: string[];
+  director?: string[];
+  category?: Array<{ name?: string; slug?: string }>;
+  country?: Array<{ name?: string; slug?: string }>;
+  time?: string;
 }
 
 interface FilmCardProps {
@@ -98,6 +110,29 @@ export function FilmCard({
     setImageSrc(url);
   }, [film.poster_url, film.thumb_url, variant]);
 
+  useEffect(() => {
+    let active = true;
+    if (!user) {
+      setSaved(guestDataStorage.isWatchlisted(slug));
+      return () => {
+        active = false;
+      };
+    }
+
+    void watchlistApi
+      .check(slug)
+      .then((response) => {
+        if (active) setSaved(Boolean(response.data?.inWatchlist));
+      })
+      .catch(() => {
+        if (active) setSaved(guestDataStorage.isWatchlisted(slug));
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [slug, user]);
+
   const handleImageError = () => {
     setImageSrc(
       `data:image/svg+xml;utf8,${encodeURIComponent(PLACEHOLDER_SVG)}`,
@@ -145,27 +180,40 @@ export function FilmCard({
   const handleWatchlist = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    const movieData = {
+      title,
+      titleEn: film.origin_name,
+      posterUrl: film.poster_url || imageSrc || initialPosterUrl || undefined,
+      thumbUrl: film.thumb_url || undefined,
+      type: film.type,
+      year: film.year,
+    };
+    const nextSaved = !saved;
+    setSaved(nextSaved);
+
     if (!user) {
-      toast("Bạn cần đăng nhập để thêm vào watchlist", "error");
+      if (nextSaved) guestDataStorage.addWatchlist(slug, movieData);
+      else guestDataStorage.removeWatchlist(slug);
+      toast(
+        nextSaved ? "Đã lưu vào Xem sau trên thiết bị" : "Đã xóa khỏi Xem sau",
+      );
       return;
     }
+
     try {
-      if (saved) {
+      if (!nextSaved) {
         await watchlistApi.remove(slug);
-        setSaved(false);
-        toast("Đã xóa khỏi watchlist");
+        toast("Đã xóa khỏi xem sau");
       } else {
-        await watchlistApi.add(slug, {
-          title,
-          thumbUrl: imageSrc || initialPosterUrl,
-          type: film.type,
-          year: film.year,
-        });
-        setSaved(true);
-        toast("Đã thêm vào watchlist!", "success");
+        await watchlistApi.add(slug, movieData);
+        toast("Đã thêm vào xem sau", "success");
       }
+      await queryClient.invalidateQueries({ queryKey: ["watchlist"] });
     } catch {
-      toast("Có lỗi xảy ra", "error");
+      // Preserve the optimistic action locally so a transient API failure never loses it.
+      if (nextSaved) guestDataStorage.addWatchlist(slug, movieData);
+      else guestDataStorage.removeWatchlist(slug);
+      toast("Đã lưu cục bộ và sẽ đồng bộ lại khi kết nối ổn định", "info");
     }
   };
 
@@ -180,101 +228,109 @@ export function FilmCard({
       : null);
 
   return (
-    <Link
-      href={`/film/${slug}`}
-      className="group relative flex flex-col cursor-pointer transition-transform duration-300 animate-in fade-in duration-300 select-none"
+    <div
+      className="group relative flex flex-col select-none"
       style={width ? { width, flexShrink: 0 } : undefined}
       onMouseEnter={prefetchFilmDetail}
     >
-      {/* ── Modern Premium Poster Frame ── */}
-      <div
-        className={cn(
-          "relative w-full overflow-hidden rounded-xl bg-neutral-950 border border-white/10 shadow-md group-hover:shadow-2xl group-hover:border-blue-500/40 transition-all duration-300 aspect-[2/3]",
-          variant === "landscape" ? "aspect-video" : "",
-        )}
+      <Link
+        href={`/film/${slug}`}
+        className="flex flex-col cursor-pointer transition-transform duration-200"
       >
-        {imageSrc ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={imageSrc}
-            alt={title}
-            className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
-            onError={handleImageError}
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-neutral-900 text-neutral-600">
-            <Clapperboard size={36} className="opacity-40" />
-          </div>
-        )}
-
-        {/* Bottom subtle gradient for image protection */}
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
-
-        {/* ── TOP-LEFT AUDIO BADGE ── */}
-        {langBadge && (
-          <div className="absolute top-1 left-1 sm:top-2 sm:left-2 bg-black/75 backdrop-blur-md border border-white/15 text-white font-semibold text-[8px] sm:text-[10px] px-1 sm:px-2 py-0.5 rounded shadow z-10">
-            {langBadge}
-          </div>
-        )}
-
-        {/* ── TOP-RIGHT QUALITY BADGE ── */}
-        <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-blue-600 text-white font-black text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded uppercase tracking-wide shadow z-10">
-          {qualityBadge}
-        </div>
-
-        {/* ── BOTTOM-LEFT EPISODE STATUS BADGE ── */}
-        {episodeBadge && (
-          <div className="absolute bottom-1 left-1 sm:bottom-2 sm:left-2 bg-black/85 backdrop-blur-md border border-white/15 text-neutral-200 font-medium text-[8px] sm:text-[10px] px-1 sm:px-2 py-0.5 rounded shadow z-10 line-clamp-1 max-w-[85%]">
-            {episodeBadge}
-          </div>
-        )}
-
-        {/* Hover Overlay with Play Button & Watchlist */}
-        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-20 backdrop-blur-[2px]">
-          {showActions && (
-            <button
-              onClick={handleWatchlist}
-              className={cn(
-                "absolute top-2 right-2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/70 border border-white/20 flex items-center justify-center text-white hover:bg-blue-600 hover:border-blue-500 transition-all",
-                saved ? "bg-blue-600 text-white border-blue-500" : "",
-              )}
-              title={saved ? "Xóa khỏi Watchlist" : "Thêm vào Watchlist"}
-            >
-              <Bookmark size={13} fill={saved ? "currentColor" : "none"} />
-            </button>
+        {/* ── Modern Premium Poster Frame ── */}
+        <div
+          className={cn(
+            "relative w-full overflow-hidden rounded-xl bg-neutral-950 border border-white/10 shadow-md group-hover:border-white/30 transition-colors duration-200 aspect-[2/3]",
+            variant === "landscape" ? "aspect-video" : "",
+          )}
+        >
+          {imageSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={imageSrc}
+              alt={title}
+              className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+              onError={handleImageError}
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-neutral-900 text-neutral-600">
+              <Clapperboard size={36} className="opacity-40" />
+            </div>
           )}
 
-          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/40 transform scale-90 group-hover:scale-100 transition-all duration-300">
-            <Play size={16} fill="currentColor" className="ml-0.5" />
+          {/* A small contrast gradient protects episode text without blur. */}
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
+
+          {/* ── TOP-LEFT AUDIO BADGE ── */}
+          {langBadge && (
+            <div className="absolute top-1 left-1 sm:top-2 sm:left-2 bg-black/80 border border-white/15 text-white font-semibold text-[8px] sm:text-[10px] px-1 sm:px-2 py-0.5 rounded z-10">
+              {langBadge}
+            </div>
+          )}
+
+          {/* ── TOP-RIGHT QUALITY BADGE ── */}
+          <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-white text-[#11151b] font-black text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded uppercase tracking-wide z-10">
+            {qualityBadge}
+          </div>
+
+          {/* ── BOTTOM-LEFT EPISODE STATUS BADGE ── */}
+          {episodeBadge && (
+            <div className="absolute bottom-1 left-1 sm:bottom-2 sm:left-2 bg-black/85 border border-white/15 text-neutral-200 font-medium text-[8px] sm:text-[10px] px-1 sm:px-2 py-0.5 rounded z-10 line-clamp-1 max-w-[85%]">
+              {episodeBadge}
+            </div>
+          )}
+
+          {/* Hover only reveals playback. Saving remains available to touch users. */}
+          <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center z-20">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white text-[#11151b] flex items-center justify-center transform scale-90 group-hover:scale-100 transition-all duration-200">
+              <Play size={16} fill="currentColor" className="ml-0.5" />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* ── Clean Metadata Below Poster ── */}
-      {!hideDetails && (
-        <div className="flex flex-col text-left mt-1.5 sm:mt-2 px-0.5 space-y-0.5 sm:space-y-1">
-          {/* Title - Clean, non-forced case, max 2 lines */}
-          <h4 className="text-[11px] sm:text-sm font-semibold text-neutral-100 line-clamp-2 leading-tight group-hover:text-blue-400 transition-colors">
-            {title}
-          </h4>
+        {/* ── Clean Metadata Below Poster ── */}
+        {!hideDetails && (
+          <div className="flex flex-col text-left mt-1.5 sm:mt-2 px-0.5 space-y-0.5 sm:space-y-1">
+            {/* Title - Clean, non-forced case, max 2 lines */}
+            <h4 className="text-[11px] sm:text-sm font-semibold text-neutral-100 line-clamp-2 leading-tight group-hover:text-white/70 transition-colors">
+              {title}
+            </h4>
 
-          {/* Subtitle Row with Origin/Year & Sleek Rating */}
-          <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-neutral-400 gap-1 sm:gap-2">
-            <span className="line-clamp-1 flex-1 font-normal text-neutral-400">
-              {film.origin_name || (film.year ? `${film.year}` : "")}
-            </span>
+            {/* Subtitle Row with Origin/Year & Sleek Rating */}
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-neutral-400 gap-1 sm:gap-2">
+              <span className="line-clamp-1 flex-1 font-normal text-neutral-400">
+                {film.origin_name || (film.year ? `${film.year}` : "")}
+              </span>
 
-            {ratingVal && Number(ratingVal) > 0 && (
-              <div className="flex items-center gap-0.5 sm:gap-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 px-1 sm:px-1.5 py-0.5 rounded font-bold text-[9px] sm:text-[10px] shrink-0">
-                <Star size={10} fill="currentColor" />
-                <span>{Number(ratingVal).toFixed(1)}</span>
-              </div>
-            )}
+              {ratingVal && Number(ratingVal) > 0 && (
+                <div className="flex items-center gap-0.5 sm:gap-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 px-1 sm:px-1.5 py-0.5 rounded font-bold text-[9px] sm:text-[10px] shrink-0">
+                  <Star size={10} fill="currentColor" />
+                  <span>{Number(ratingVal).toFixed(1)}</span>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
+      </Link>
+
+      {showActions && (
+        <button
+          type="button"
+          onClick={handleWatchlist}
+          aria-pressed={saved}
+          className={cn(
+            "absolute right-2 top-2 z-30 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-[#11151b]/95 text-white transition-colors active:scale-[0.96]",
+            saved
+              ? "border-white bg-white text-[#11151b]"
+              : "hover:border-white/50 hover:bg-[#1c232d]",
+          )}
+          title={saved ? "Bỏ khỏi xem sau" : "Thêm vào xem sau"}
+        >
+          <Bookmark size={14} fill={saved ? "currentColor" : "none"} />
+        </button>
       )}
-    </Link>
+    </div>
   );
 }
 

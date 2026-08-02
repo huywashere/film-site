@@ -26,7 +26,7 @@ export class IngestPipelineService {
       );
       const startTime = Date.now();
 
-      const [kkphimRes, ophimRes, nguoncRes] = await Promise.allSettled([
+      const [kkphimRes, ophimRes, nguoncRes, vsmovRes] = await Promise.allSettled([
         fetch("https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=1", {
           headers: { "User-Agent": "Mozilla/5.0" },
         }),
@@ -35,6 +35,12 @@ export class IngestPipelineService {
         }),
         fetch("https://phim.nguonc.com/api/films/phim-moi-cap-nhat?page=1", {
           headers: { "User-Agent": "Mozilla/5.0" },
+        }),
+        fetch("https://vsmov.com/danh-sach/phim-moi-cap-nhat?page=1", {
+          headers: {
+            "User-Agent": "Mozilla/5.0",
+            Referer: "https://vsmov.com/",
+          },
         }),
       ]);
 
@@ -49,10 +55,19 @@ export class IngestPipelineService {
         );
       }
 
-      // Extract OPhim
+      // Extract OPhim — fix image URLs với pathImage prefix
       if (ophimRes.status === "fulfilled" && ophimRes.value.ok) {
         const data = await ophimRes.value.json();
-        const items = data.items || [];
+        const cdn = (data.pathImage || "https://img.ophim.live/uploads/movies/").replace(/\/?$/, "/");
+        const items = (data.items || []).map((item: any) => ({
+          ...item,
+          thumb_url: item.thumb_url?.startsWith("http")
+            ? item.thumb_url
+            : cdn + (item.thumb_url || ""),
+          poster_url: item.poster_url?.startsWith("http")
+            ? item.poster_url
+            : cdn + (item.poster_url || ""),
+        }));
         items.forEach((item: any) =>
           rawItems.push({ item, provider: "ophim" }),
         );
@@ -67,8 +82,26 @@ export class IngestPipelineService {
         );
       }
 
+      // Extract VSMov — fix image URLs với pathImage prefix
+      if (vsmovRes.status === "fulfilled" && vsmovRes.value.ok) {
+        const data = await vsmovRes.value.json();
+        const cdn = (data.pathImage || "https://vsmov.com/uploads/movies/").replace(/\/?$/, "/");
+        const items = (data.items || []).map((item: any) => ({
+          ...item,
+          thumb_url: item.thumb_url?.startsWith("http")
+            ? item.thumb_url
+            : cdn + (item.thumb_url || ""),
+          poster_url: item.poster_url?.startsWith("http")
+            ? item.poster_url
+            : cdn + (item.poster_url || ""),
+        }));
+        items.forEach((item: any) =>
+          rawItems.push({ item, provider: "vsmov" }),
+        );
+      }
+
       console.log(
-        `📥 [IngestPipeline] Raw items collected from 3 sources: ${rawItems.length}`,
+        `📥 [IngestPipeline] Raw items collected from 4 sources: ${rawItems.length}`,
       );
 
       // Transform raw items to UnifiedMovieRecord

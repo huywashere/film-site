@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,6 +8,7 @@ import Image from "next/image";
 import {
   History as HistoryIcon,
   ChevronLeft,
+  ChevronRight,
   X,
   Play,
   Trash2,
@@ -19,6 +20,8 @@ import { watchHistoryApi } from "@/lib/api";
 import { resolveImageUrl } from "@/components/film/FilmCard";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/providers/ToastProvider";
+import { guestDataStorage } from "@/lib/user-data";
+import { watchProgressStorage } from "@/lib/watch-progress";
 
 interface HistoryItem {
   id: string;
@@ -37,11 +40,28 @@ export default function HistoryPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [guestHistory, setGuestHistory] = useState<HistoryItem[]>([]);
+
+  useEffect(() => {
+    setGuestHistory(
+      guestDataStorage.getHistory().map((item) => ({
+        id: `guest-${item.slug}-${item.epSlug}`,
+        movieId: item.slug,
+        movieTitle: item.title,
+        movieThumb: item.poster,
+        episode: item.epSlug,
+        progress: item.currentTime,
+        duration: item.duration,
+        updatedAt: new Date(item.updatedAt).toISOString(),
+      })),
+    );
+  }, []);
 
   // Fetch history - must be called unconditionally (Rules of Hooks)
   const { data: historyData, isLoading } = useQuery({
-    queryKey: ["watch-history", user?.id],
-    queryFn: () => watchHistoryApi.getHistory(1, 50).then((r) => r.data),
+    queryKey: ["watch-history", user?.id, page],
+    queryFn: () => watchHistoryApi.getHistory(page, 24).then((r) => r.data),
     enabled: !!user, // Only fetch when user is logged in
   });
 
@@ -66,39 +86,43 @@ export default function HistoryPage() {
     },
   });
 
-  // Redirect if not logged in
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background pt-24 pb-16 flex items-center justify-center px-4">
-        <div className="text-center max-w-md">
-          <HistoryIcon size={64} className="mx-auto mb-4 text-neutral-600" />
-          <h1 className="text-2xl font-bold text-white mb-2">
-            Đăng nhập để xem lịch sử
-          </h1>
-          <p className="text-neutral-400 mb-6">
-            Bạn cần đăng nhập để xem lịch sử xem phim
-          </p>
-          <button
-            onClick={() => router.push("/login")}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-full font-semibold transition-colors"
-          >
-            Đăng nhập ngay
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const historyItems: HistoryItem[] = historyData?.items || [];
+  const historyItems: HistoryItem[] = user
+    ? historyData?.items || []
+    : guestHistory;
+  const total = user ? historyData?.total || 0 : guestHistory.length;
+  const totalPages = user ? historyData?.totalPages || 1 : 1;
 
   const handleDelete = (id: string) => {
     setDeletingId(id);
+    if (!user) {
+      const item = guestHistory.find((entry) => entry.id === id);
+      if (item) {
+        const entry = guestDataStorage
+          .getHistory()
+          .find(
+            (candidate) =>
+              candidate.slug === item.movieId &&
+              candidate.epSlug === item.episode,
+          );
+        if (entry) {
+          watchProgressStorage.removeEntry(entry.slug, entry.epSlug);
+        }
+      }
+      setGuestHistory((entries) => entries.filter((entry) => entry.id !== id));
+      setDeletingId(null);
+      toast("Đã xóa khỏi lịch sử", "success");
+      return;
+    }
     deleteMutation.mutate(id);
   };
 
   const handleClearAll = () => {
     if (confirm("Bạn có chắc muốn xóa toàn bộ lịch sử xem?")) {
-      clearAllMutation.mutate();
+      if (user) clearAllMutation.mutate();
+      else {
+        watchProgressStorage.clearAll();
+        setGuestHistory([]);
+      }
     }
   };
 
@@ -142,7 +166,8 @@ export default function HistoryPage() {
                   Lịch sử xem
                 </h1>
                 <p className="text-sm text-neutral-400 mt-1 normal-case font-normal tracking-normal">
-                  {historyItems.length} phim đã xem
+                  {total} phim đã xem{" "}
+                  {user ? "trong tài khoản" : "trên thiết bị này"}
                 </p>
               </div>
             </div>
@@ -169,104 +194,134 @@ export default function HistoryPage() {
             <Loader2 size={40} className="animate-spin text-blue-500" />
           </div>
         ) : historyItems.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {historyItems.map((item) => {
-              const progress = formatProgress(item.progress, item.duration);
-              const posterUrl = resolveImageUrl(item.movieThumb);
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {historyItems.map((item) => {
+                const progress = formatProgress(item.progress, item.duration);
+                const posterUrl = resolveImageUrl(item.movieThumb);
 
-              return (
-                <div
-                  key={item.id}
-                  className="group bg-white/5 hover:bg-white/10 rounded-2xl overflow-hidden transition-all border border-white/10 hover:border-white/20 relative"
-                >
-                  {/* Delete Button */}
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    disabled={deletingId === item.id}
-                    className="absolute top-3 right-3 z-10 p-2 bg-black/60 hover:bg-black/80 backdrop-blur-sm rounded-full transition-all opacity-0 group-hover:opacity-100"
+                return (
+                  <div
+                    key={item.id}
+                    className="group bg-white/5 hover:bg-white/10 rounded-2xl overflow-hidden transition-all border border-white/10 hover:border-white/20 relative"
                   >
-                    {deletingId === item.id ? (
-                      <Loader2 size={16} className="animate-spin text-white" />
-                    ) : (
-                      <X size={16} className="text-white" />
-                    )}
-                  </button>
-
-                  <Link href={`/watch/${item.movieId}`} className="flex">
-                    {/* Thumbnail */}
-                    <div className="relative w-40 md:w-48 flex-shrink-0">
-                      {posterUrl ? (
-                        <Image
-                          src={posterUrl}
-                          alt={item.movieTitle}
-                          fill
-                          className="object-cover"
+                    {/* Delete Button */}
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      disabled={deletingId === item.id}
+                      className="absolute top-3 right-3 z-10 p-2 bg-black/60 hover:bg-black/80 backdrop-blur-sm rounded-full transition-all opacity-0 group-hover:opacity-100"
+                    >
+                      {deletingId === item.id ? (
+                        <Loader2
+                          size={16}
+                          className="animate-spin text-white"
                         />
                       ) : (
-                        <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
-                          <Play size={32} className="text-neutral-600" />
-                        </div>
+                        <X size={16} className="text-white" />
                       )}
+                    </button>
 
-                      {/* Progress Bar Overlay */}
-                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/50">
-                        <div
-                          className="h-full bg-blue-500 transition-all"
-                          style={{ width: `${progress}%` }}
-                        />
-                      </div>
-
-                      {/* Play Overlay */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
-                          <Play
-                            size={20}
-                            fill="black"
-                            className="text-black ml-1"
+                    <Link href={`/watch/${item.movieId}`} className="flex">
+                      {/* Thumbnail */}
+                      <div className="relative w-40 md:w-48 flex-shrink-0">
+                        {posterUrl ? (
+                          <Image
+                            src={posterUrl}
+                            alt={item.movieTitle}
+                            fill
+                            className="object-cover"
                           />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 p-4 flex flex-col justify-between">
-                      <div>
-                        <h3 className="font-bold text-white text-sm md:text-base line-clamp-2 mb-2">
-                          {item.movieTitle}
-                        </h3>
-
-                        {item.episode && (
-                          <p className="text-xs text-blue-400 font-semibold mb-2">
-                            {item.episode}
-                          </p>
+                        ) : (
+                          <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
+                            <Play size={32} className="text-neutral-600" />
+                          </div>
                         )}
 
-                        <div className="flex items-center space-x-2 text-xs text-neutral-400">
-                          <Clock size={14} />
-                          <span>{formatTimeAgo(item.updatedAt)}</span>
-                        </div>
-                      </div>
-
-                      <div className="mt-3">
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="text-neutral-400">Đã xem</span>
-                          <span className="text-white font-semibold">
-                            {progress}%
-                          </span>
-                        </div>
-                        <div className="h-1.5 bg-neutral-700 rounded-full overflow-hidden">
+                        {/* Progress Bar Overlay */}
+                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/50">
                           <div
                             className="h-full bg-blue-500 transition-all"
                             style={{ width: `${progress}%` }}
                           />
                         </div>
+
+                        {/* Play Overlay */}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
+                            <Play
+                              size={20}
+                              fill="black"
+                              className="text-black ml-1"
+                            />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
+
+                      {/* Info */}
+                      <div className="flex-1 p-4 flex flex-col justify-between">
+                        <div>
+                          <h3 className="font-bold text-white text-sm md:text-base line-clamp-2 mb-2">
+                            {item.movieTitle}
+                          </h3>
+
+                          {item.episode && (
+                            <p className="text-xs text-blue-400 font-semibold mb-2">
+                              {item.episode}
+                            </p>
+                          )}
+
+                          <div className="flex items-center space-x-2 text-xs text-neutral-400">
+                            <Clock size={14} />
+                            <span>{formatTimeAgo(item.updatedAt)}</span>
+                          </div>
+                        </div>
+
+                        <div className="mt-3">
+                          <div className="flex items-center justify-between text-xs mb-1">
+                            <span className="text-neutral-400">Đã xem</span>
+                            <span className="text-white font-semibold">
+                              {progress}%
+                            </span>
+                          </div>
+                          <div className="h-1.5 bg-neutral-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-blue-500 transition-all"
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+            {user && totalPages > 1 && (
+              <div className="mt-10 flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPage((value) => Math.max(1, value - 1))}
+                  disabled={page === 1}
+                  className="rounded-xl border border-white/15 p-2 text-white disabled:opacity-40"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="text-sm text-neutral-400">
+                  Trang {page}/{totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPage((value) => Math.min(totalPages, value + 1))
+                  }
+                  disabled={page === totalPages}
+                  className="rounded-xl border border-white/15 p-2 text-white disabled:opacity-40"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-20">
             <HistoryIcon size={64} className="mx-auto mb-4 text-neutral-700" />

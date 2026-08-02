@@ -17,48 +17,54 @@ import {
 import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import { AuthGuard } from "@nestjs/passport";
 import { AuthService } from "./auth.service";
+import { FirebaseAuthGuard } from "./guards/firebase-auth.guard";
+import { TurnstileService } from "./turnstile.service";
 import { RegisterDto, LoginDto } from "./dto/auth.dto";
 import { Response } from "express";
 
 @Controller("auth")
 @UseGuards(ThrottlerGuard)
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private readonly turnstile: TurnstileService,
+  ) {}
+
+  private getCookieOptions(maxAge: number) {
+    const requestedSameSite = (process.env.COOKIE_SAME_SITE || "lax").toLowerCase();
+    const sameSite =
+      requestedSameSite === "none"
+        ? "none"
+        : requestedSameSite === "strict"
+          ? "strict"
+          : "lax";
+    const isProduction = process.env.NODE_ENV === "production";
+    const domain = process.env.COOKIE_DOMAIN?.trim();
+
+    return {
+      httpOnly: true,
+      // `none` is required only when the API and web app are genuinely
+      // cross-site. It must always travel over HTTPS.
+      secure: isProduction || sameSite === "none",
+      sameSite: sameSite as "strict" | "lax" | "none",
+      path: "/",
+      maxAge,
+      ...(domain ? { domain } : {}),
+    };
+  }
 
   private setCookies(res: Response, accessToken: string, refreshToken: string) {
-    const isProduction = process.env.NODE_ENV === "production";
-
-    res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: "strict",
-      maxAge: 15 * 60 * 1000, // 15 minutes
-    });
-
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    res.cookie("accessToken", accessToken, this.getCookieOptions(15 * 60 * 1000));
+    res.cookie(
+      "refreshToken",
+      refreshToken,
+      this.getCookieOptions(7 * 24 * 60 * 60 * 1000),
+    );
   }
 
   private clearCookies(res: Response) {
-    const isProduction = process.env.NODE_ENV === "production";
-
-    res.cookie("accessToken", "", {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: "strict",
-      maxAge: 0,
-    });
-
-    res.cookie("refreshToken", "", {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: "strict",
-      maxAge: 0,
-    });
+    res.cookie("accessToken", "", this.getCookieOptions(0));
+    res.cookie("refreshToken", "", this.getCookieOptions(0));
   }
 
   @Post("register")
@@ -69,6 +75,7 @@ export class AuthController {
     @Headers("user-agent") userAgent: string,
     @Ip() ip: string,
   ) {
+    await this.turnstile.verify(dto.turnstileToken, ip, "register");
     const tokens = await this.authService.register(dto, userAgent, ip);
     this.setCookies(res, tokens.accessToken, tokens.refreshToken);
     return { success: true, message: "Đăng ký thành công" };
@@ -83,6 +90,7 @@ export class AuthController {
     @Headers("user-agent") userAgent: string,
     @Ip() ip: string,
   ) {
+    await this.turnstile.verify(dto.turnstileToken, ip, "login");
     const result = await this.authService.login(dto, userAgent, ip);
     if ("require2FA" in result) {
       return result;
@@ -133,6 +141,24 @@ export class AuthController {
     this.setCookies(res, tokens.accessToken, tokens.refreshToken);
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
     res.redirect(frontendUrl);
+  }
+
+  /** Exchange a verified Firebase ID token for the normal CineVerse cookie session. */
+  @Post("firebase")
+  @UseGuards(FirebaseAuthGuard)
+  async firebaseAuth(
+    @Request() req,
+    @Res({ passthrough: true }) res: Response,
+    @Headers("user-agent") userAgent: string,
+    @Ip() ip: string,
+  ) {
+    const tokens = await this.authService.validateFirebaseUser(
+      req.user,
+      userAgent,
+      ip,
+    );
+    this.setCookies(res, tokens.accessToken, tokens.refreshToken);
+    return { success: true, user: tokens.user };
   }
 
   @Post("verify-email")

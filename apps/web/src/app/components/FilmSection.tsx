@@ -14,18 +14,6 @@ import {
   FilmItem,
 } from "@/components/film/FilmCard";
 import { useTranslation } from "@/store/langStore";
-import dynamic from "next/dynamic";
-
-// Lazy load Swiper
-const Swiper = dynamic(() => import("swiper/react").then((mod) => mod.Swiper), {
-  ssr: false,
-});
-const SwiperSlide = dynamic(
-  () => import("swiper/react").then((mod) => mod.SwiperSlide),
-  {
-    ssr: false,
-  },
-);
 
 const icons = {
   Clock,
@@ -69,13 +57,16 @@ export default function FilmSection({
       </div>
 
       {/* Horizontal scroll tuned for 4 movies per view on mobile without overlap */}
-      <div className="overflow-x-auto pb-4 scrollbar-hide">
+      <div
+        className="overflow-x-auto pb-4 scrollbar-hide"
+        aria-busy={isLoading}
+      >
         <div className="flex gap-3 sm:gap-4 px-1">
           {isLoading
             ? Array.from({ length: 8 }).map((_, i) => (
                 <div
                   key={`skeleton-${i}`}
-                  className="w-[calc(25%-9px)] min-w-[78px] sm:w-[160px] md:w-[190px] lg:w-[210px] flex-shrink-0"
+                  className="w-[28vw] min-w-[88px] max-w-[132px] sm:w-[160px] sm:max-w-none md:w-[190px] lg:w-[210px] flex-shrink-0"
                 >
                   <FilmCardSkeleton hideDetails={false} />
                 </div>
@@ -83,7 +74,7 @@ export default function FilmSection({
             : films.slice(0, 16).map((film) => (
                 <div
                   key={film.slug}
-                  className="w-[calc(25%-9px)] min-w-[78px] sm:w-[160px] md:w-[190px] lg:w-[210px] flex-shrink-0"
+                  className="w-[28vw] min-w-[88px] max-w-[132px] sm:w-[160px] sm:max-w-none md:w-[190px] lg:w-[210px] flex-shrink-0"
                 >
                   <FilmCard
                     film={film}

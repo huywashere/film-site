@@ -16,6 +16,8 @@ import { HealthModule } from "./health/health.module";
 import { WatchHistoryModule } from "./watch-history/watch-history.module";
 import { AdminModule } from "./admin/admin.module";
 import { validateEnv } from "./config/env.validation";
+import { WatchPartyModule } from "./watch-party/watch-party.module";
+import { TelemetryModule } from "./telemetry/telemetry.module";
 
 @Module({
   imports: [
@@ -52,6 +54,8 @@ import { validateEnv } from "./config/env.validation";
     HealthModule,
     WatchHistoryModule,
     AdminModule,
+    WatchPartyModule,
+    TelemetryModule,
   ],
   providers: [
     // Applied globally through the DI container so ThrottlerGuard receives the

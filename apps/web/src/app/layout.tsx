@@ -9,13 +9,14 @@ import { RegisterSW } from "@/components/layout/RegisterSW";
 import { ThemeWatcher } from "@/components/layout/ThemeWatcher";
 import { ScrollProvider } from "@/providers/ScrollProvider";
 import { OfflineDetector } from "@/components/layout/OfflineDetector";
+import { GuestDataMergePrompt } from "@/components/auth/GuestDataMergePrompt";
+import { ClientTelemetry } from "@/components/layout/ClientTelemetry";
+import { AuthSessionBridge } from "@/components/auth/AuthSessionBridge";
 
 export const viewport: Viewport = {
-  themeColor: "#14181c",
+  themeColor: "#08090c",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover",
 };
 
@@ -38,8 +39,9 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: "CineVerse",
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
   },
+  formatDetection: { telephone: false },
   openGraph: {
     title: "CineVerse — Xem Phim Online",
     description: "Nền tảng xem phim online chất lượng cao",
@@ -74,16 +76,31 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <ThemeWatcher />
         <RegisterSW />
+        <ClientTelemetry />
         <QueryProvider>
           <ToastProvider>
+            <AuthSessionBridge />
             <OfflineDetector />
+            <GuestDataMergePrompt />
             <ScrollProvider>
-              <ConditionalNavbar />
-              <Sidebar />
-              <main className="page-content pb-16 lg:pb-0">{children}</main>
-              <MobileBottomNav />
-              <ScrollToTopButton />
-              <ConditionalFooter />
+              <div data-site-chrome>
+                <ConditionalNavbar />
+              </div>
+              <div data-site-chrome>
+                <Sidebar />
+              </div>
+              <main className="page-content pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0">
+                {children}
+              </main>
+              <div data-site-chrome>
+                <MobileBottomNav />
+              </div>
+              <div data-site-chrome>
+                <ScrollToTopButton />
+              </div>
+              <div data-site-chrome>
+                <ConditionalFooter />
+              </div>
             </ScrollProvider>
           </ToastProvider>
         </QueryProvider>

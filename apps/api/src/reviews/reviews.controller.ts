@@ -26,6 +26,12 @@ export class ReviewsController {
     return this.reviewsService.getByMovie(movieId, +page);
   }
 
+  @Get("mine")
+  @UseGuards(AuthGuard("jwt"))
+  getMine(@Request() req, @Query("page") page = 1) {
+    return this.reviewsService.getMine(req.user.id, +page);
+  }
+
   @Post()
   @UseGuards(AuthGuard("jwt"))
   create(

@@ -17,7 +17,7 @@ interface Top10RankedRowProps {
 
 export function Top10RankedRow({
   films,
-  title = "TOP 10 Phim Nổi Bật Trong Tuần",
+  title = "TOP 10 Đang Được Xem Nhiều",
 }: Top10RankedRowProps) {
   const top10 = films.slice(0, 10);
   const [swiper, setSwiper] = useState<any>(null);

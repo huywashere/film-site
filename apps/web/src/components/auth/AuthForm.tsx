@@ -8,7 +8,6 @@ import { useToast } from "@/providers/ToastProvider";
 import { motion, AnimatePresence } from "framer-motion";
 import styled from "@emotion/styled";
 import { cn } from "@/lib/utils";
-import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
 
 // --- EMOTION STYLED COMPONENTS ---
 
@@ -106,7 +105,6 @@ export function AuthForm({ initialMode = "login" }: AuthFormProps) {
   const [form, setForm] = useState({ email: "", username: "", password: "" });
   const [showPw, setShowPw] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState("");
 
   // 2FA login states
   const [require2FA, setRequire2FA] = useState(false);
@@ -120,30 +118,25 @@ export function AuthForm({ initialMode = "login" }: AuthFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!turnstileToken) {
-      toast(
-        "Vui lòng hoàn thành xác minh Cloudflare Turnstile bảo mật trước khi tiếp tục.",
-        "error",
-      );
-      return;
-    }
     try {
       if (mode === "login") {
         const result = await login(form.email, form.password);
         if (result && result.require2FA) {
           setRequire2FA(true);
-          setTempToken(result.tempToken);
+          setTempToken(result.tempToken || "");
           toast("Vui lòng nhập mã OTP để tiếp tục đăng nhập", "info");
         } else {
           toast("Đăng nhập thành công!", "success");
-          const loggedUser = useAuthStore.getState().user;
-          const uname = loggedUser?.username || form.email.split("@")[0];
-          router.push(`/profile/${encodeURIComponent(uname)}`);
+          router.push("/");
         }
       } else {
-        await register(form.email, form.username, form.password);
+        await register({
+          email: form.email,
+          username: form.username,
+          password: form.password,
+        });
         toast("Đăng ký thành công!", "success");
-        router.push(`/profile/${encodeURIComponent(form.username)}`);
+        router.push("/");
       }
     } catch (err: any) {
       const msg = err?.response?.data?.message;
@@ -166,10 +159,7 @@ export function AuthForm({ initialMode = "login" }: AuthFormProps) {
       const { fetchMe } = useAuthStore.getState();
       await fetchMe();
 
-      const loggedUser = useAuthStore.getState().user;
-      router.push(
-        `/profile/${encodeURIComponent(loggedUser?.username || "User")}`,
-      );
+      router.push("/");
     } catch (err: any) {
       const msg = err?.response?.data?.message;
       const finalMsg = Array.isArray(msg)
@@ -187,7 +177,6 @@ export function AuthForm({ initialMode = "login" }: AuthFormProps) {
         firebaseAuth,
         googleProvider,
         signInWithPopup,
-        signInWithRedirect,
       } = await import("@/lib/firebase");
       try {
         const res = await signInWithPopup(firebaseAuth, googleProvider);
@@ -210,7 +199,7 @@ export function AuthForm({ initialMode = "login" }: AuthFormProps) {
             `Đăng nhập thành công với Google! Chào mừng ${name}.`,
             "success",
           );
-          router.push(`/profile/${encodeURIComponent(name)}`);
+          router.push("/");
           return;
         }
       } catch (popupErr: any) {
@@ -219,8 +208,12 @@ export function AuthForm({ initialMode = "login" }: AuthFormProps) {
           popupErr.code === "auth/cancelled-popup-request"
         )
           return;
-        // Fallback to redirect
-        await signInWithRedirect(firebaseAuth, googleProvider);
+        toast(
+          popupErr.code === "auth/popup-blocked"
+            ? "Trình duyệt đã chặn cửa sổ Google. Hãy cho phép popup rồi thử lại."
+            : popupErr.message || "Không thể đăng nhập bằng Google.",
+          "error",
+        );
       }
     } catch (err: any) {
       toast(err.message || "Lỗi đăng nhập Google", "error");
@@ -233,7 +226,6 @@ export function AuthForm({ initialMode = "login" }: AuthFormProps) {
         firebaseAuth,
         facebookProvider,
         signInWithPopup,
-        signInWithRedirect,
       } = await import("@/lib/firebase");
       try {
         const res = await signInWithPopup(firebaseAuth, facebookProvider);
@@ -256,7 +248,7 @@ export function AuthForm({ initialMode = "login" }: AuthFormProps) {
             `Đăng nhập thành công với Facebook! Chào mừng ${name}.`,
             "success",
           );
-          router.push(`/profile/${encodeURIComponent(name)}`);
+          router.push("/");
           return;
         }
       } catch (popupErr: any) {
@@ -265,7 +257,12 @@ export function AuthForm({ initialMode = "login" }: AuthFormProps) {
           popupErr.code === "auth/cancelled-popup-request"
         )
           return;
-        await signInWithRedirect(firebaseAuth, facebookProvider);
+        toast(
+          popupErr.code === "auth/popup-blocked"
+            ? "Trình duyệt đã chặn cửa sổ Facebook. Hãy cho phép popup rồi thử lại."
+            : popupErr.message || "Không thể đăng nhập bằng Facebook.",
+          "error",
+        );
       }
     } catch (err: any) {
       toast(err.message || "Lỗi đăng nhập Facebook", "error");
@@ -488,14 +485,6 @@ export function AuthForm({ initialMode = "login" }: AuthFormProps) {
                     </Link>
                   )}
                 </div>
-
-                {/* Cloudflare Turnstile CAPTCHA Widget */}
-                <TurnstileWidget
-                  onVerify={(token) => setTurnstileToken(token)}
-                  onExpire={() => setTurnstileToken("")}
-                  onError={() => setTurnstileToken("")}
-                  theme="dark"
-                />
 
                 {/* Submit Button */}
                 <motion.button

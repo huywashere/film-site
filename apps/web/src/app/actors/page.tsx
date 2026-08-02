@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { Search, User, Star, Loader2 } from "lucide-react";
+import { Search, User, Loader2 } from "lucide-react";
 import { tmdbApi, tmdbProfile } from "@/lib/tmdb";
 import { cn } from "@/lib/utils";
 
@@ -16,22 +16,17 @@ function ActorCard({ person }: { person: any }) {
     .map((w: string) => w[0])
     .join("")
     .toUpperCase();
-  const knownFor = (person.known_for || [])
-    .slice(0, 2)
-    .map((m: any) => m.title || m.name)
-    .filter(Boolean);
-
   return (
     <Link
       href={`/actors/${person.id}`}
-      className="bg-[#12161a]/70 border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/25 hover:-translate-y-1 transition-all group shadow-xl"
+      className="group flex flex-col items-center rounded-2xl p-3 text-center transition-transform duration-200 hover:-translate-y-0.5"
     >
-      <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/10 group-hover:border-red-500/60 transition-colors mb-3 bg-neutral-900 shadow-lg">
+      <div className="mb-2.5 h-20 w-20 overflow-hidden rounded-full border-2 border-white/10 bg-neutral-900 transition-colors group-hover:border-white/50 sm:h-24 sm:w-24">
         {profileUrl ? (
           <img
             src={profileUrl}
             alt={person.name}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.04]"
             loading="lazy"
           />
         ) : (
@@ -42,30 +37,9 @@ function ActorCard({ person }: { person: any }) {
           </div>
         )}
       </div>
-      <h3 className="font-extrabold text-sm text-white group-hover:text-red-400 transition-colors line-clamp-1 w-full">
+      <h3 className="w-full line-clamp-1 text-sm font-bold text-white transition-colors group-hover:text-white/70">
         {person.name}
       </h3>
-      <p className="text-[10px] text-neutral-500 mt-0.5 mb-2">
-        {person.known_for_department || "Diễn viên"}
-      </p>
-      {knownFor.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-1 mt-1">
-          {knownFor.map((title: string, i: number) => (
-            <span
-              key={i}
-              className="text-[9px] font-semibold text-neutral-400 bg-white/5 border border-white/8 px-1.5 py-0.5 rounded-md line-clamp-1 max-w-[120px]"
-            >
-              {title}
-            </span>
-          ))}
-        </div>
-      )}
-      {person.popularity && (
-        <div className="flex items-center gap-1 mt-2 text-[10px] text-amber-400/70">
-          <Star size={9} fill="currentColor" />
-          <span>{Math.round(person.popularity)}</span>
-        </div>
-      )}
     </Link>
   );
 }
@@ -141,7 +115,7 @@ export default function ActorsPage() {
           <Loader2 size={28} className="animate-spin text-neutral-500" />
         </div>
       ) : displayPeople.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-3 gap-x-3 gap-y-6 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
           {displayPeople.map((person: any) => (
             <ActorCard key={person.id} person={person} />
           ))}
