@@ -1,284 +1,146 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
-  Users,
-  Film,
+  ArrowDownRight,
+  ArrowUpRight,
+  CalendarDays,
+  CheckCircle2,
+  CirclePlay,
+  Clock3,
+  Database,
   Eye,
-  Radio,
-  TrendingUp,
-  Award,
-  Calendar,
-  Sparkles,
+  Film,
+  MoreHorizontal,
   RefreshCw,
+  ServerCog,
+  TrendingUp,
+  Users,
 } from "lucide-react";
 
-// Mock Overview Data (connected via API in live environment)
-const OVERVIEW_DATA = {
-  totalUsers: 1428,
-  totalMovies: 12850,
-  viewsToday: 4890,
-  viewsWeek: 34120,
-  viewsMonth: 129400,
-  activeWatchParties: 5,
-  dailyViewsChart: [
-    { date: "16/07", views: 2100 },
-    { date: "17/07", views: 2450 },
-    { date: "18/07", views: 3100 },
-    { date: "19/07", views: 2800 },
-    { date: "20/07", views: 3900 },
-    { date: "21/07", views: 4200 },
-    { date: "22/07", views: 3800 },
-    { date: "23/07", views: 4100 },
-    { date: "24/07", views: 4600 },
-    { date: "25/07", views: 5200 },
-    { date: "26/07", views: 4900 },
-    { date: "27/07", views: 5400 },
-    { date: "28/07", views: 4890 },
-  ],
-  top10WeeklyMovies: [
-    { rank: 1, title: "Bố Già", year: 2021, type: "Phim Lẻ", views: 8940, poster: "https://img.phimapi.com/upload/vod/20240101/bo-gia.jpg" },
-    { rank: 2, title: "Bọ Ngựa (Queen Mantis)", year: 2025, type: "Phim Bộ", views: 6420, poster: "https://img.phimapi.com/upload/vod/20250101/bo-ngua.jpg" },
-    { rank: 3, title: "Bóng Ma Báo Thù", year: 2026, type: "Phim Bộ", views: 5120, poster: "https://img.phimapi.com/upload/vod/20260101/bong-ma.jpg" },
-    { rank: 4, title: "Bố Vợ Tôi Là Mafia", year: 2026, type: "Phim Bộ", views: 4980, poster: "https://img.phimapi.com/upload/vod/20260101/bo-vo.jpg" },
-    { rank: 5, title: "Dáng Say Tựa Đoá Bách Hợp", year: 2026, type: "Phim Lẻ", views: 4210, poster: "" },
-    { rank: 6, title: "One Piece Film Red", year: 2022, type: "Hoạt Hình", views: 3890, poster: "" },
-    { rank: 7, title: "Chuyến Tàu Sinh Tử", year: 2016, type: "Phim Lẻ", views: 3540, poster: "" },
-    { rank: 8, title: "Biệt Đội Marvel", year: 2023, type: "Phim Lẻ", views: 3200, poster: "" },
-    { rank: 9, title: "Naruto Shippuden", year: 2017, type: "Hoạt Hình", views: 2980, poster: "" },
-    { rank: 10, title: "Dragon Ball Super", year: 2018, type: "Hoạt Hình", views: 2750, poster: "" },
-  ],
-};
+const TRAFFIC = [38, 45, 49, 47, 56, 62, 59, 66, 63, 72, 69, 76];
+const CONTENT_SHARE = [44, 29, 17, 10];
+const ACTIVITY = [
+  { title: "Đồng bộ nguồn OPhim hoàn tất", detail: "1.284 bản ghi đã được kiểm tra", time: "8 phút trước", icon: Database, tone: "blue" },
+  { title: "Tài khoản mới được xác thực", detail: "nguyen.minh@cineverse.vn", time: "21 phút trước", icon: Users, tone: "emerald" },
+  { title: "Nguồn NguonC cần kiểm tra", detail: "Tỷ lệ phản hồi thấp hơn ngưỡng", time: "42 phút trước", icon: ServerCog, tone: "amber" },
+  { title: "Phim được đưa về bản nháp", detail: "Lãnh Chúa Vùng Đất Không Cư Dân", time: "1 giờ trước", icon: Film, tone: "rose" },
+];
+
+function formatNumber(value: number) {
+  return new Intl.NumberFormat("vi-VN").format(value);
+}
+
+function MiniTrend({ values, color = "#246bfe" }: { values: number[]; color?: string }) {
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const points = values.map((value, index) => {
+    const x = (index / (values.length - 1)) * 100;
+    const y = 26 - ((value - min) / Math.max(max - min, 1)) * 21;
+    return `${x},${y}`;
+  }).join(" ");
+  return <svg viewBox="0 0 100 30" className="h-9 w-24 overflow-visible" aria-hidden="true"><polyline points={points} fill="none" stroke={color} strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+}
+
+function StatCard({ label, value, delta, down, icon: Icon, chart, chartColor }: { label: string; value: string; delta: string; down?: boolean; icon: typeof Users; chart: number[]; chartColor?: string }) {
+  return (
+    <section className="admin-card min-w-0 p-5">
+      <div className="flex items-start justify-between gap-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#edf3ff] text-[var(--admin-brand)]"><Icon size={19} /></span>
+        <MiniTrend values={chart} color={chartColor} />
+      </div>
+      <p className="mt-5 text-[11px] font-bold uppercase tracking-[.08em] text-slate-400">{label}</p>
+      <div className="mt-1 flex items-end justify-between gap-2"><strong className="text-[25px] font-bold tracking-[-.04em] text-slate-800">{value}</strong><span className={`mb-1 inline-flex items-center gap-0.5 text-[11px] font-semibold ${down ? "text-rose-500" : "text-emerald-600"}`}>{down ? <ArrowDownRight size={13} /> : <ArrowUpRight size={13} />}{delta}</span></div>
+      <p className="mt-2 text-[11px] text-slate-400">so với kỳ trước</p>
+    </section>
+  );
+}
 
 export default function AdminDashboardPage() {
-  const [chartDays, setChartDays] = useState<7 | 14>(14);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [range, setRange] = useState<"7D" | "30D" | "12T">("30D");
+  const [refreshing, setRefreshing] = useState(false);
+  const chartData = useMemo(() => range === "7D" ? TRAFFIC.slice(-7) : range === "12T" ? TRAFFIC : [...TRAFFIC, 71, 79, 83, 78, 88, 91], [range]);
+  const chartMax = Math.max(...chartData);
 
-  const maxViews = Math.max(...OVERVIEW_DATA.dailyViewsChart.map((d) => d.views));
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 600);
+  const refresh = () => {
+    setRefreshing(true);
+    window.setTimeout(() => setRefreshing(false), 620);
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      {/* ── Top Page Header ── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#30363d] pb-5">
+    <div className="admin-fade-in space-y-6">
+      <header className="flex flex-col justify-between gap-4 xl:flex-row xl:items-end">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-            <span>Dashboard Tổng Quan</span>
-            <span className="text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-mono font-medium">
-              GIAI ĐOẠN 1
-            </span>
-          </h1>
-          <p className="text-xs text-neutral-400 mt-1">
-            Giám sát số liệu hệ thống, lưu lượng xem và bảng xếp hạng phim realtime
-          </p>
+          <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-400"><span>Dashboard</span><span className="text-slate-300">/</span><span className="text-slate-600">Tổng quan</span></div>
+          <h1 className="mt-2 text-[28px] font-bold tracking-[-.045em] text-slate-800 sm:text-[32px]">Chào buổi sáng, Admin</h1>
+          <p className="mt-1 text-[13px] text-slate-500">Đây là nhịp vận hành CineVerse trong hôm nay.</p>
         </div>
-
-        <button
-          onClick={handleRefresh}
-          className="flex items-center gap-2 bg-[#161b22] hover:bg-[#21262d] text-neutral-300 hover:text-white border border-[#30363d] text-xs font-semibold px-4 py-2 rounded-lg transition-all active:scale-95 cursor-pointer"
-        >
-          <RefreshCw size={14} className={isRefreshing ? "animate-spin text-blue-400" : ""} />
-          <span>Cập nhật số liệu</span>
-        </button>
-      </div>
-
-      {/* ── Item 1: Core Stat Cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Users */}
-        <div className="bg-[#161b22] border border-[#30363d] p-5 rounded-xl space-y-2">
-          <div className="flex items-center justify-between text-neutral-400">
-            <span className="text-xs font-semibold">Tổng Người Dùng</span>
-            <Users size={18} className="text-blue-400" />
-          </div>
-          <div className="text-2xl font-extrabold text-white">
-            {OVERVIEW_DATA.totalUsers.toLocaleString("vi-VN")}
-          </div>
-          <p className="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
-            <TrendingUp size={12} /> +12.4% so với tháng trước
-          </p>
+        <div className="flex items-center gap-3">
+          <span className="hidden items-center gap-2 text-[12px] text-slate-500 sm:inline-flex"><CalendarDays size={15} className="text-slate-400" /> 02 tháng 08, 2026</span>
+          <button onClick={refresh} className="inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--admin-brand)] px-3.5 text-[12px] font-semibold text-white shadow-[0_6px_14px_rgba(36,107,254,.18)] transition-colors hover:bg-[var(--admin-brand-strong)] disabled:opacity-70" disabled={refreshing}>
+            <RefreshCw size={15} className={refreshing ? "animate-spin" : ""} />{refreshing ? "Đang đồng bộ" : "Làm mới dữ liệu"}
+          </button>
         </div>
+      </header>
 
-        {/* Total Movies */}
-        <div className="bg-[#161b22] border border-[#30363d] p-5 rounded-xl space-y-2">
-          <div className="flex items-center justify-between text-neutral-400">
-            <span className="text-xs font-semibold">Tổng Phim Hệ Thống</span>
-            <Film size={18} className="text-purple-400" />
-          </div>
-          <div className="text-2xl font-extrabold text-white">
-            {OVERVIEW_DATA.totalMovies.toLocaleString("vi-VN")}
-          </div>
-          <p className="text-[11px] text-neutral-400 font-medium">
-            Tự động đồng bộ từ 3 nguồn API
-          </p>
-        </div>
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Người dùng hoạt động" value="24.680" delta="12,5%" icon={Users} chart={[10, 12, 15, 13, 17, 19, 24, 22, 25]} />
+        <StatCard label="Lượt xem hôm nay" value="48.230" delta="8,2%" icon={Eye} chart={[8, 14, 12, 17, 19, 18, 25, 22, 30]} chartColor="#16a085" />
+        <StatCard label="Phim trong thư viện" value="12.850" delta="3,1%" icon={Film} chart={[10, 10, 12, 14, 14, 16, 18, 20, 22]} chartColor="#8b5cf6" />
+        <StatCard label="Tỷ lệ phát thành công" value="98,4%" delta="0,6%" icon={CirclePlay} chart={[15, 16, 15, 17, 16, 18, 19, 18, 20]} chartColor="#d58a18" />
+      </section>
 
-        {/* Today/Week Views */}
-        <div className="bg-[#161b22] border border-[#30363d] p-5 rounded-xl space-y-2">
-          <div className="flex items-center justify-between text-neutral-400">
-            <span className="text-xs font-semibold">Lượt Xem Hôm Nay</span>
-            <Eye size={18} className="text-emerald-400" />
+      <section className="grid gap-5 2xl:grid-cols-[minmax(0,1.75fr)_minmax(330px,.8fr)]">
+        <div className="admin-card overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--admin-line)] px-5 py-4">
+            <div><h2 className="text-[14px] font-bold text-slate-800">Xu hướng lượt xem</h2><p className="mt-0.5 text-[11px] text-slate-400">Tổng lượt phát hợp lệ theo thời gian</p></div>
+            <div className="flex rounded-lg bg-slate-100 p-1">
+              {(["7D", "30D", "12T"] as const).map((item) => <button key={item} onClick={() => setRange(item)} className={`rounded-md px-3 py-1.5 text-[11px] font-semibold transition-colors ${range === item ? "bg-white text-[var(--admin-brand)] shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>{item}</button>)}
+            </div>
           </div>
-          <div className="text-2xl font-extrabold text-white">
-            {OVERVIEW_DATA.viewsToday.toLocaleString("vi-VN")}
-          </div>
-          <div className="flex items-center justify-between text-[11px] text-neutral-400 pt-1 border-t border-[#21262d]">
-            <span>Tuần này: <strong>{OVERVIEW_DATA.viewsWeek.toLocaleString("vi-VN")}</strong></span>
-            <span>Tháng: <strong>{(OVERVIEW_DATA.viewsMonth / 1000).toFixed(0)}k</strong></span>
+          <div className="grid gap-5 p-5 lg:grid-cols-[180px_minmax(0,1fr)]">
+            <div className="space-y-5 lg:border-r lg:border-[var(--admin-line)] lg:pr-5">
+              <div><p className="text-[11px] text-slate-400">Tổng lượt xem</p><p className="mt-1 text-[25px] font-bold tracking-[-.04em] text-slate-800">129.400</p><span className="mt-1 inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-1 text-[10px] font-bold text-emerald-700"><TrendingUp size={11} /> 11,2%</span></div>
+              <div><p className="text-[11px] text-slate-400">Thời gian xem TB</p><p className="mt-1 text-[18px] font-bold text-slate-700">38 phút</p><p className="mt-1 text-[10px] text-slate-400">cao hơn 4 phút</p></div>
+              <div className="rounded-lg bg-[#f5f8ff] p-3"><p className="text-[10px] font-semibold text-blue-700">Gợi ý vận hành</p><p className="mt-1 text-[11px] leading-4 text-slate-500">Kiểm tra nguồn phát có tỷ lệ lỗi cao vào khung giờ tối.</p></div>
+            </div>
+            <div className="relative min-w-0">
+              <div className="pointer-events-none absolute inset-x-0 top-1/2 border-t border-dashed border-slate-200" />
+              <div className="pointer-events-none absolute inset-x-0 top-[16%] border-t border-dashed border-slate-100" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-[17%] border-t border-dashed border-slate-100" />
+              <div className="relative flex h-[246px] items-end justify-between gap-1.5 pt-6 sm:gap-3">
+                {chartData.map((value, index) => <div key={`${value}-${index}`} className="group flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2"><div className="relative w-full max-w-[26px] rounded-t-md bg-gradient-to-t from-[#246bfe] to-[#81abff] transition-transform duration-200 group-hover:-translate-y-1" style={{ height: `${Math.max(18, (value / chartMax) * 100)}%` }}><span className="absolute -top-6 left-1/2 hidden -translate-x-1/2 rounded bg-slate-800 px-1.5 py-0.5 text-[9px] font-semibold text-white group-hover:block">{value}k</span></div><span className="text-[9px] text-slate-400">{range === "12T" ? `T${index + 1}` : `${index + 1}`}</span></div>)}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Active Watch Parties */}
-        <div className="bg-[#161b22] border border-[#30363d] p-5 rounded-xl space-y-2">
-          <div className="flex items-center justify-between text-neutral-400">
-            <span className="text-xs font-semibold">Phòng Xem Chung (Active)</span>
-            <Radio size={18} className="text-rose-400 animate-pulse" />
-          </div>
-          <div className="text-2xl font-extrabold text-white flex items-center gap-2">
-            <span>{OVERVIEW_DATA.activeWatchParties}</span>
-            <span className="text-xs font-normal text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
-              Live Now
-            </span>
-          </div>
-          <p className="text-[11px] text-neutral-400 font-medium">
-            28 thành viên đang trực tuyến xem cùng nhau
-          </p>
-        </div>
-      </div>
-
-      {/* ── Item 1.2: Daily Views Chart ── */}
-      <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <TrendingUp size={16} className="text-blue-400" />
-              Biểu Đồ Lượt Xem Theo Ngày
-            </h3>
-            <p className="text-xs text-neutral-400 mt-0.5">
-              Thống kê tổng lượt xem từng ngày trong 14 ngày gần nhất
-            </p>
-          </div>
-
-          <div className="flex items-center gap-1.5 bg-[#0d1117] p-1 rounded-lg border border-[#30363d]">
-            <button
-              onClick={() => setChartDays(7)}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
-                chartDays === 7
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-neutral-400 hover:text-white"
-              }`}
-            >
-              7 ngày
-            </button>
-            <button
-              onClick={() => setChartDays(14)}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
-                chartDays === 14
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-neutral-400 hover:text-white"
-              }`}
-            >
-              14 ngày
-            </button>
+        <div className="admin-card">
+          <div className="flex items-center justify-between border-b border-[var(--admin-line)] px-5 py-4"><div><h2 className="text-[14px] font-bold text-slate-800">Phân bổ nội dung</h2><p className="mt-0.5 text-[11px] text-slate-400">Theo định dạng hiện có</p></div><button className="admin-icon-button !h-8 !w-8" aria-label="Tùy chọn biểu đồ"><MoreHorizontal size={18} /></button></div>
+          <div className="p-5">
+            <div className="mx-auto grid h-44 w-44 place-items-center rounded-full" style={{ background: `conic-gradient(#246bfe 0 ${CONTENT_SHARE[0]}%, #14b8a6 ${CONTENT_SHARE[0]}% ${CONTENT_SHARE[0] + CONTENT_SHARE[1]}%, #8b5cf6 ${CONTENT_SHARE[0] + CONTENT_SHARE[1]}% ${CONTENT_SHARE[0] + CONTENT_SHARE[1] + CONTENT_SHARE[2]}%, #e8edf5 ${CONTENT_SHARE[0] + CONTENT_SHARE[1] + CONTENT_SHARE[2]}% 100%)` }}><div className="grid h-28 w-28 place-items-center rounded-full bg-white text-center"><span><strong className="block text-[25px] tracking-[-.04em] text-slate-800">12,8k</strong><small className="text-[10px] text-slate-400">Tổng phim</small></span></div></div>
+            <div className="mt-6 grid grid-cols-2 gap-x-5 gap-y-3 text-[11px]">
+              {[ ["Phim bộ", "44%", "bg-[#246bfe]"], ["Phim lẻ", "29%", "bg-[#14b8a6]"], ["Hoạt hình", "17%", "bg-[#8b5cf6]"], ["Khác", "10%", "bg-slate-200"] ].map(([label, percentage, color]) => <div key={label} className="flex items-center justify-between"><span className="flex items-center gap-2 text-slate-500"><i className={`h-2 w-2 rounded-full ${color}`} />{label}</span><strong className="text-slate-700">{percentage}</strong></div>)}
+            </div>
           </div>
         </div>
+      </section>
 
-        {/* Minimalist SVG Bar Chart */}
-        <div className="pt-4 pb-2">
-          <div className="h-48 flex items-end justify-between gap-2 border-b border-[#30363d] pb-2 px-2">
-            {OVERVIEW_DATA.dailyViewsChart
-              .slice(chartDays === 7 ? 7 : 0)
-              .map((item, idx) => {
-                const heightPercent = Math.round((item.views / maxViews) * 100);
-                return (
-                  <div key={idx} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
-                    {/* Tooltip on hover */}
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-neutral-900 border border-[#30363d] text-white text-[10px] font-mono px-2 py-1 rounded shadow-lg pointer-events-none whitespace-nowrap mb-1">
-                      {item.views.toLocaleString("vi-VN")} lượt xem
-                    </div>
-                    {/* Bar */}
-                    <div
-                      style={{ height: `${heightPercent}%` }}
-                      className="w-full max-w-[28px] bg-blue-600 hover:bg-blue-500 rounded-t transition-all duration-300 cursor-pointer"
-                    />
-                    {/* Date label */}
-                    <span className="text-[10px] text-neutral-500 font-mono group-hover:text-neutral-300">
-                      {item.date}
-                    </span>
-                  </div>
-                );
-              })}
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,.9fr)]">
+        <div className="admin-card overflow-hidden">
+          <div className="flex items-center justify-between border-b border-[var(--admin-line)] px-5 py-4"><div><h2 className="text-[14px] font-bold text-slate-800">Hoạt động gần đây</h2><p className="mt-0.5 text-[11px] text-slate-400">Thay đổi quan trọng của hệ thống</p></div><button className="text-[11px] font-semibold text-[var(--admin-brand)] hover:text-[var(--admin-brand-strong)]">Xem nhật ký</button></div>
+          <div className="divide-y divide-[var(--admin-line)] px-5">
+            {ACTIVITY.map(({ title, detail, time, icon: Icon, tone }) => <div key={title} className="flex gap-3 py-4"><span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${tone === "blue" ? "bg-blue-50 text-blue-600" : tone === "emerald" ? "bg-emerald-50 text-emerald-600" : tone === "amber" ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-500"}`}><Icon size={15} /></span><div className="min-w-0 flex-1"><p className="truncate text-[12px] font-semibold text-slate-700">{title}</p><p className="mt-0.5 truncate text-[11px] text-slate-400">{detail}</p></div><span className="whitespace-nowrap pt-1 text-[10px] text-slate-400">{time}</span></div>)}
           </div>
         </div>
-      </div>
-
-      {/* ── Item 1.3: Top 10 Most Viewed Movies Weekly ── */}
-      <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Award size={16} className="text-amber-400" />
-              Top 10 Phim Xem Nhiều Nhất Trong Tuần
-            </h3>
-            <p className="text-xs text-neutral-400 mt-0.5">
-              Xếp hạng dựa trên dữ liệu ViewLog thực tế từ người dùng
-            </p>
+        <div className="admin-card overflow-hidden">
+          <div className="flex items-center justify-between border-b border-[var(--admin-line)] px-5 py-4"><div><h2 className="text-[14px] font-bold text-slate-800">Sức khỏe nguồn phim</h2><p className="mt-0.5 text-[11px] text-slate-400">Theo dõi phản hồi 15 phút gần nhất</p></div><span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600"><CheckCircle2 size={13} /> 3 / 4 ổn định</span></div>
+          <div className="space-y-4 p-5">
+            {[ ["KKPhim", "99,8%", 99, "bg-emerald-500"], ["OPhim", "98,9%", 98, "bg-emerald-500"], ["NguonC", "91,4%", 91, "bg-amber-500"], ["TMDB metadata", "100%", 100, "bg-blue-500"] ].map(([name, percentage, value, color]) => <div key={name as string}><div className="mb-1.5 flex items-center justify-between text-[11px]"><span className="font-semibold text-slate-600">{name}</span><span className="text-slate-400">{percentage}</span></div><div className="h-1.5 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full ${color}`} style={{ width: `${value}%` }} /></div></div>)}
+            <div className="flex items-center gap-2 border-t border-[var(--admin-line)] pt-4 text-[11px] text-slate-500"><Clock3 size={14} className="text-slate-400" /> Cập nhật lần cuối lúc 09:42</div>
           </div>
         </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-[#30363d] text-neutral-400 uppercase text-[10px] tracking-wider bg-[#0d1117]/50">
-                <th className="py-3 px-4 font-bold w-16">Hạng</th>
-                <th className="py-3 px-4 font-bold">Tên Phim</th>
-                <th className="py-3 px-4 font-bold w-24">Năm</th>
-                <th className="py-3 px-4 font-bold w-28">Loại Phim</th>
-                <th className="py-3 px-4 font-bold w-36 text-right">Lượt Xem Tuần</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#21262d]">
-              {OVERVIEW_DATA.top10WeeklyMovies.map((movie) => (
-                <tr key={movie.rank} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="py-3 px-4 font-extrabold text-neutral-400">
-                    {movie.rank <= 3 ? (
-                      <span className={`w-6 h-6 rounded-full inline-flex items-center justify-center text-xs font-black text-white ${
-                        movie.rank === 1 ? "bg-amber-500" : movie.rank === 2 ? "bg-neutral-400" : "bg-amber-700"
-                      }`}>
-                        {movie.rank}
-                      </span>
-                    ) : (
-                      <span className="ml-2">#{movie.rank}</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4 font-bold text-white">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-11 bg-neutral-800 rounded overflow-hidden shrink-0 border border-white/10">
-                        {movie.poster ? (
-                          <img src={movie.poster} alt={movie.title} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-[10px] text-neutral-600">
-                            🎬
-                          </div>
-                        )}
-                      </div>
-                      <span>{movie.title}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-neutral-400 font-mono">{movie.year}</td>
-                  <td className="py-3 px-4 text-neutral-300 font-medium">{movie.type}</td>
-                  <td className="py-3 px-4 font-extrabold text-blue-400 text-right font-mono">
-                    {movie.views.toLocaleString("vi-VN")} lượt
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      </section>
     </div>
   );
 }

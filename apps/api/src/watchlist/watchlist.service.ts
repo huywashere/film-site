@@ -16,7 +16,8 @@ export class WatchlistService {
       }),
       this.prisma.watchlist.count({ where: { userId } }),
     ]);
-    return { items, total, page, pages: Math.ceil(total / limit) };
+    const totalPages = Math.ceil(total / limit);
+    return { items, total, page, pages: totalPages, totalPages, limit };
   }
 
   async add(userId: string, movieId: string, movieData?: any) {

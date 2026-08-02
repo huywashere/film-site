@@ -64,7 +64,9 @@ export function buildUserTasteVector(): UserTasteVector {
       totalInteractions++;
 
       // Higher progress percentage = stronger positive preference
-      const weight = item.progress > 80 ? 10 : item.progress > 30 ? 5 : 2;
+      const progressPercent =
+        item.duration > 0 ? (item.currentTime / item.duration) * 100 : 0;
+      const weight = progressPercent > 80 ? 10 : progressPercent > 30 ? 5 : 2;
 
       // Extract title keywords to infer genres (e.g. "Phần", "Hoạt Hình")
       const titleLower = (item.title || "").toLowerCase();

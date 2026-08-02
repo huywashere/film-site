@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useAuthStore, User } from "@/store/authStore";
+import { useState } from "react";
+import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/providers/ToastProvider";
 import {
   firebaseAuth,
@@ -9,18 +9,17 @@ import {
   facebookProvider,
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendEmailVerification,
   sendPasswordResetEmail,
   signOut,
-  onAuthStateChanged,
   updateProfile,
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
 } from "@/lib/firebase";
+import { establishFirebaseSession } from "@/lib/auth-session";
 import { mapFirebaseErrorToVietnamese } from "@/lib/firebaseErrorMap";
 import {
   validateEmail,
@@ -35,58 +34,9 @@ export function useAuth() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Sync user state with Firebase Auth
-  useEffect(() => {
-    getRedirectResult(firebaseAuth)
-      .then((res) => {
-        if (res?.user) {
-          handleSuccess(res.user);
-        }
-      })
-      .catch((e) => console.warn("Redirect check error:", e));
-
-    const unsubscribe = onAuthStateChanged(firebaseAuth, (currentUser) => {
-      if (currentUser) {
-        const email = currentUser.email || `${currentUser.uid}@cineverse.app`;
-        const name =
-          currentUser.displayName || currentUser.email?.split("@")[0] || "User";
-        const role = email.toLowerCase().includes("admin") ? "ADMIN" : "USER";
-        setUser({
-          id: currentUser.uid,
-          email,
-          username: name,
-          displayName: name,
-          avatarUrl:
-            currentUser.photoURL ||
-            `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2c3440&color=ffffff&size=100`,
-          role,
-          emailVerified: currentUser.emailVerified,
-        } as any);
-      } else {
-        setUser(null);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const handleSuccess = (fbUser: any, customName?: string) => {
-    const email = fbUser.email || `${fbUser.uid}@cineverse.app`;
-    const name =
-      customName || fbUser.displayName || fbUser.email?.split("@")[0] || "User";
-    const role = email.toLowerCase().includes("admin") ? "ADMIN" : "USER";
-
-    setUser({
-      id: fbUser.uid,
-      email,
-      username: name,
-      displayName: name,
-      avatarUrl:
-        fbUser.photoURL ||
-        `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2c3440&color=ffffff&size=100`,
-      role,
-      emailVerified: fbUser.emailVerified,
-    } as any);
+  const handleSuccess = async (fbUser: Parameters<typeof establishFirebaseSession>[0]) => {
+    const account = await establishFirebaseSession(fbUser);
+    setUser(account);
   };
 
   // 1. REGISTER WITH EMAIL & PASSWORD
@@ -132,7 +82,7 @@ export function useAuth() {
         } catch (vErr) {
           console.warn("Verification email error:", vErr);
         }
-        handleSuccess(res.user, username.trim());
+        await handleSuccess(res.user);
         toast(
           "Đăng ký thành công! Vui lòng kiểm tra hộp thư email để xác thực tài khoản.",
           "success",
@@ -176,7 +126,7 @@ export function useAuth() {
         pass,
       );
       if (res.user) {
-        handleSuccess(res.user);
+        await handleSuccess(res.user);
         if (!res.user.emailVerified) {
           toast(
             "Tài khoản chưa được xác thực email. Bạn có thể bấm gửi lại email xác thực.",
@@ -204,7 +154,7 @@ export function useAuth() {
     try {
       const res = await signInWithPopup(firebaseAuth, googleProvider);
       if (res?.user) {
-        handleSuccess(res.user);
+        await handleSuccess(res.user);
         toast(
           `Đăng nhập Google thành công! Chào mừng ${res.user.displayName || "bạn"}.`,
           "success",
@@ -242,7 +192,7 @@ export function useAuth() {
     try {
       const res = await signInWithPopup(firebaseAuth, facebookProvider);
       if (res?.user) {
-        handleSuccess(res.user);
+        await handleSuccess(res.user);
         toast(
           `Đăng nhập Facebook thành công! Chào mừng ${res.user.displayName || "bạn"}.`,
           "success",

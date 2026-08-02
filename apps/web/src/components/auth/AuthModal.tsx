@@ -27,7 +27,6 @@ import {
   googleProvider,
   facebookProvider,
   signInWithPopup,
-  signInWithRedirect,
   getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -36,7 +35,6 @@ import {
   onAuthStateChanged,
 } from "@/lib/firebase";
 
-import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
 import { CinematicAuthBackground } from "@/components/auth/CinematicAuthBackground";
 
 export function AuthModal() {
@@ -55,7 +53,6 @@ export function AuthModal() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [turnstileToken, setTurnstileToken] = useState("");
 
   const handleFirebaseUserSuccess = (fbUser: any, customUsername?: string) => {
     const email = fbUser.email || `${fbUser.uid}@cineverse.app`;
@@ -121,19 +118,13 @@ export function AuthModal() {
       const res = await signInWithPopup(firebaseAuth, googleProvider);
       handleFirebaseUserSuccess(res.user);
     } catch (err: any) {
-      if (
-        err.code === "auth/popup-blocked" ||
-        err.code === "auth/popup-closed-by-user"
-      ) {
-        try {
-          await signInWithRedirect(firebaseAuth, googleProvider);
-          return;
-        } catch (redirectErr: any) {
-          setErrorMsg("Không thể mở đăng nhập Google.");
-        }
-      } else {
-        setErrorMsg(err.message || "Đăng nhập Google thất bại.");
-      }
+      setErrorMsg(
+        err.code === "auth/popup-blocked"
+          ? "Trình duyệt đã chặn cửa sổ Google. Hãy cho phép popup rồi thử lại."
+          : err.code === "auth/popup-closed-by-user"
+            ? "Bạn đã đóng cửa sổ đăng nhập Google."
+            : err.message || "Đăng nhập Google thất bại.",
+      );
     } finally {
       setLoading(false);
     }
@@ -146,19 +137,13 @@ export function AuthModal() {
       const res = await signInWithPopup(firebaseAuth, facebookProvider);
       handleFirebaseUserSuccess(res.user);
     } catch (err: any) {
-      if (
-        err.code === "auth/popup-blocked" ||
-        err.code === "auth/popup-closed-by-user"
-      ) {
-        try {
-          await signInWithRedirect(firebaseAuth, facebookProvider);
-          return;
-        } catch (redirectErr: any) {
-          setErrorMsg("Không thể mở đăng nhập Facebook.");
-        }
-      } else {
-        setErrorMsg(err.message || "Đăng nhập Facebook thất bại.");
-      }
+      setErrorMsg(
+        err.code === "auth/popup-blocked"
+          ? "Trình duyệt đã chặn cửa sổ Facebook. Hãy cho phép popup rồi thử lại."
+          : err.code === "auth/popup-closed-by-user"
+            ? "Bạn đã đóng cửa sổ đăng nhập Facebook."
+            : err.message || "Đăng nhập Facebook thất bại.",
+      );
     } finally {
       setLoading(false);
     }
@@ -622,17 +607,6 @@ export function AuthModal() {
             </button>
           </div>
         )}
-
-        {/* Cloudflare Turnstile CAPTCHA */}
-        <div className="flex justify-center pt-4">
-          <TurnstileWidget
-            onSuccess={(token) => setTurnstileToken(token)}
-            onVerify={(token) => setTurnstileToken(token)}
-            onExpire={() => setTurnstileToken("")}
-            onError={() => setTurnstileToken("")}
-            theme="dark"
-          />
-        </div>
 
         {/* Divider */}
         <div className="relative flex items-center justify-center my-5">

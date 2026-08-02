@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,10 +18,44 @@ import {
   KeyRound,
   Loader2,
 } from "lucide-react";
-import { useAuthStore } from "@/store/authStore";
+import { useAuthStore, type User as AuthUser } from "@/store/authStore";
 import { useToast } from "@/providers/ToastProvider";
-import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
 import { firebaseAuth, sendPasswordResetEmail } from "@/lib/firebase";
+import { authApi } from "@/lib/api";
+import { establishFirebaseSession } from "@/lib/auth-session";
+import type { User as FirebaseUser } from "firebase/auth";
+import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
+
+function getGoogleAuthErrorMessage(error: unknown) {
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? String(error.code)
+      : "";
+
+  switch (code) {
+    case "auth/unauthorized-domain":
+      return "Tên miền hiện tại chưa được cho phép đăng nhập Google. Hãy thêm tên miền này vào Firebase Authentication > Settings > Authorized domains.";
+    case "auth/operation-not-allowed":
+      return "Google Sign-In chưa được bật trong Firebase Authentication.";
+    case "auth/network-request-failed":
+      return "Không thể kết nối đến Google. Vui lòng kiểm tra mạng và thử lại.";
+    case "auth/account-exists-with-different-credential":
+      return "Email này đã được đăng ký bằng phương thức đăng nhập khác.";
+    case "auth/popup-blocked":
+      return "Trình duyệt đã chặn cửa sổ đăng nhập Google. Hãy cho phép popup rồi thử lại.";
+    case "auth/popup-closed-by-user":
+      return "Bạn đã đóng cửa sổ đăng nhập Google.";
+    case "auth/web-storage-unsupported":
+      return "Trình duyệt đang chặn bộ nhớ cần thiết cho Google Sign-In. Hãy cho phép cookie rồi thử lại.";
+    case "auth/invalid-api-key":
+    case "auth/app-not-authorized":
+      return "Cấu hình Firebase cho Google Sign-In không hợp lệ.";
+    default:
+      return code
+        ? `Không thể đăng nhập bằng Google (${code.replace("auth/", "")}).`
+        : "Không thể đăng nhập bằng Google. Vui lòng thử lại.";
+  }
+}
 
 export function AuthPageForm({
   initialMode = "login",
@@ -43,8 +77,11 @@ export function AuthPageForm({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [facebookLoading, setFacebookLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   // 2FA login states
   const [require2FA, setRequire2FA] = useState(false);
@@ -55,11 +92,16 @@ export function AuthPageForm({
   // Seamless Mode Switcher with URL Update (Zero Flickering)
   const switchMode = (newMode: "login" | "register") => {
     setIsForgotMode(false);
+    setTurnstileToken(null);
     setModeState(newMode);
     if (typeof window !== "undefined") {
       window.history.replaceState(null, "", `/${newMode}`);
     }
   };
+
+  const handleTurnstileTokenChange = useCallback((token: string | null) => {
+    setTurnstileToken(token);
+  }, []);
 
   const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,12 +135,8 @@ export function AuthPageForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-    if (siteKey && !turnstileToken) {
-      toast(
-        "Vui lòng hoàn thành xác minh Cloudflare Turnstile bảo mật.",
-        "error",
-      );
+    if (turnstileEnabled && !turnstileToken) {
+      toast("Vui lòng hoàn tất xác minh chống bot trước khi tiếp tục.", "error");
       return;
     }
 
@@ -120,10 +158,11 @@ export function AuthPageForm({
           username: cleanUsername,
           displayName: (displayName || username).trim(),
           password,
+          turnstileToken: turnstileToken || undefined,
         });
         if (res?.user) {
           toast("Tạo tài khoản thành công!", "success");
-          router.push("/");
+          router.replace("/");
         }
       } catch (err: any) {
         const msg = err?.response?.data?.message;
@@ -134,14 +173,14 @@ export function AuthPageForm({
       }
     } else {
       try {
-        const result = await login(email, password);
+        const result = await login(email, password, turnstileToken || undefined);
         if (result && result.require2FA) {
           setRequire2FA(true);
-          setTempToken(result.tempToken);
+          setTempToken(result.tempToken || "");
           toast("Vui lòng nhập mã OTP để tiếp tục đăng nhập", "info");
         } else {
           toast("Đăng nhập thành công!", "success");
-          router.push("/");
+          router.replace("/");
         }
       } catch (err: any) {
         const msg = err?.response?.data?.message;
@@ -164,8 +203,7 @@ export function AuthPageForm({
 
       const { fetchMe } = useAuthStore.getState();
       await fetchMe();
-
-      router.push("/");
+      router.replace("/");
     } catch (err: any) {
       const msg = err?.response?.data?.message;
       const finalMsg = Array.isArray(msg)
@@ -177,59 +215,81 @@ export function AuthPageForm({
     }
   };
 
+  const completeFirebaseLogin = useCallback(
+    async (firebaseUser: FirebaseUser) => {
+      const name =
+        firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User";
+      // A social sign-in is complete only after the API has minted its own
+      // httpOnly access/refresh session. Never fall back to a local-only user.
+      const account: AuthUser = await establishFirebaseSession(firebaseUser);
+      useAuthStore.getState().setUser(account);
+      toast(`Welcome back, ${name}!`, "success");
+      router.replace("/");
+    },
+    [router, toast],
+  );
+
+  useEffect(() => {
+    let mounted = true;
+
+    void import("@/lib/firebase")
+      .then(({ getRedirectResult }) => getRedirectResult(firebaseAuth))
+      .then((result) => {
+        if (mounted && result?.user) void completeFirebaseLogin(result.user);
+      })
+      .catch((error: unknown) => {
+        if (mounted) toast(getGoogleAuthErrorMessage(error), "error");
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [completeFirebaseLogin, toast]);
+
   const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
     try {
       const { firebaseAuth, googleProvider, signInWithPopup } =
         await import("@/lib/firebase");
-      const res = await signInWithPopup(firebaseAuth, googleProvider);
-      if (res?.user) {
-        const name =
-          res.user.displayName || res.user.email?.split("@")[0] || "User";
-        const userEmail = res.user.email || `${res.user.uid}@cineverse.app`;
-        const role = userEmail.toLowerCase().includes("admin")
-          ? "ADMIN"
-          : "USER";
-        useAuthStore.getState().setUser({
-          id: res.user.uid,
-          email: userEmail,
-          username: name.toLowerCase().replace(/\s+/g, "_"),
-          displayName: name,
-          avatar: res.user.photoURL || undefined,
-          role,
-        });
-        toast(`Welcome back, ${name}!`, "success");
-        router.push("/");
+      const result = await signInWithPopup(firebaseAuth, googleProvider);
+      if (!result.user) {
+        throw new Error("Google không trả về thông tin tài khoản.");
       }
-    } catch (err: any) {
-      toast("Không thể đăng nhập bằng Google", "error");
+      await completeFirebaseLogin(result.user);
+    } catch (error: unknown) {
+      console.error("Google sign-in popup failed", error);
+      toast(getGoogleAuthErrorMessage(error), "error");
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
   const handleFacebookLogin = async () => {
+    setFacebookLoading(true);
     try {
       const { firebaseAuth, facebookProvider, signInWithPopup } =
         await import("@/lib/firebase");
       const res = await signInWithPopup(firebaseAuth, facebookProvider);
       if (res?.user) {
-        const name =
-          res.user.displayName || res.user.email?.split("@")[0] || "User";
-        const userEmail = res.user.email || `${res.user.uid}@cineverse.app`;
-        const role = userEmail.toLowerCase().includes("admin")
-          ? "ADMIN"
-          : "USER";
-        useAuthStore.getState().setUser({
-          id: res.user.uid,
-          email: userEmail,
-          username: name.toLowerCase().replace(/\s+/g, "_"),
-          displayName: name,
-          avatar: res.user.photoURL || undefined,
-          role,
-        });
-        toast(`Welcome back, ${name}!`, "success");
-        router.push("/");
+        await completeFirebaseLogin(res.user);
+      } else {
+        throw new Error("Facebook không trả về thông tin tài khoản.");
       }
-    } catch (err: any) {
-      toast("Không thể đăng nhập bằng Facebook", "error");
+    } catch (error: unknown) {
+      const code =
+        error && typeof error === "object" && "code" in error
+          ? String(error.code)
+          : "";
+      toast(
+        code === "auth/popup-blocked"
+          ? "Trình duyệt đã chặn cửa sổ đăng nhập Facebook. Hãy cho phép popup rồi thử lại."
+          : code === "auth/popup-closed-by-user"
+            ? "Bạn đã đóng cửa sổ đăng nhập Facebook."
+            : "Không thể đăng nhập bằng Facebook. Vui lòng thử lại.",
+        "error",
+      );
+    } finally {
+      setFacebookLoading(false);
     }
   };
 
@@ -544,9 +604,13 @@ export function AuthPageForm({
                 )}
 
                 {/* Submit Action Button */}
+                <TurnstileWidget
+                  action={mode}
+                  onTokenChange={handleTurnstileTokenChange}
+                />
                 <button
                   type="submit"
-                  disabled={isLoading || !turnstileToken}
+                  disabled={isLoading || (turnstileEnabled && !turnstileToken)}
                   className="w-full py-3 rounded-lg bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-semibold transition-all shadow-sm active:scale-[0.99] disabled:opacity-50 mt-2 cursor-pointer"
                 >
                   {isLoading
@@ -574,17 +638,6 @@ export function AuthPageForm({
         </div>
       )}
 
-      {/* Cloudflare Turnstile CAPTCHA */}
-      <div className="flex justify-center pt-2.5">
-        <TurnstileWidget
-          onSuccess={(token) => setTurnstileToken(token)}
-          onVerify={(token) => setTurnstileToken(token)}
-          onExpire={() => setTurnstileToken("")}
-          onError={() => setTurnstileToken("")}
-          theme="dark"
-        />
-      </div>
-
       {/* Divider */}
       <div className="relative flex items-center justify-center my-3">
         <div className="flex-grow border-t border-white/15" />
@@ -599,7 +652,8 @@ export function AuthPageForm({
         <button
           type="button"
           onClick={handleGoogleLogin}
-          className="flex items-center justify-center gap-2.5 bg-white/[0.06] hover:bg-white/15 border border-white/15 rounded-lg py-2.5 px-3 transition-colors cursor-pointer text-xs font-medium text-neutral-200"
+          disabled={googleLoading}
+          className="flex items-center justify-center gap-2.5 bg-white/[0.06] hover:bg-white/15 border border-white/15 rounded-lg py-2.5 px-3 transition-colors cursor-pointer text-xs font-medium text-neutral-200 disabled:cursor-wait disabled:opacity-60"
         >
           <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
             <path
@@ -619,18 +673,19 @@ export function AuthPageForm({
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
             />
           </svg>
-          <span>Google</span>
+          <span>{googleLoading ? "Đang mở Google..." : "Google"}</span>
         </button>
 
         <button
           type="button"
           onClick={handleFacebookLogin}
+          disabled={facebookLoading}
           className="flex items-center justify-center gap-2.5 bg-white/[0.06] hover:bg-white/15 border border-white/15 rounded-lg py-2.5 px-3 transition-colors cursor-pointer text-xs font-medium text-neutral-200"
         >
           <svg className="w-4 h-4 fill-[#1877F2] shrink-0" viewBox="0 0 24 24">
             <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
           </svg>
-          <span>Facebook</span>
+          <span>{facebookLoading ? "Đang mở Facebook..." : "Facebook"}</span>
         </button>
       </div>
     </div>

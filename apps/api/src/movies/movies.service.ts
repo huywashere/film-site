@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { RedisCacheService } from "../redis/redis.service";
+import { PrismaService } from "../prisma/prisma.service";
 import axios, { AxiosInstance } from "axios";
 
 @Injectable()
@@ -12,6 +13,7 @@ export class MoviesService {
   constructor(
     private readonly config: ConfigService,
     private readonly cache: RedisCacheService,
+    private readonly prisma: PrismaService,
   ) {
     this.baseUrl = config.get("KKPHIM_BASE_URL") || "https://phimapi.com";
     this.http = axios.create({
@@ -58,6 +60,51 @@ export class MoviesService {
       `/danh-sach/phim-moi-cap-nhat?page=${page}`,
       120,
     );
+  }
+
+  /**
+   * Real popularity signal, calculated from completed playback events over
+   * the last seven days.  This intentionally stays separate from upstream
+   * "latest" feeds so the ranked row is not just another new-release row.
+   */
+  async getTrending(limit = 20) {
+    const safeLimit = Math.min(Math.max(limit || 20, 1), 40);
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const ranked = await this.prisma.viewLog.groupBy({
+      by: ["movieId"],
+      where: { viewedAt: { gte: since } },
+      _count: { movieId: true },
+      orderBy: { _count: { movieId: "desc" } },
+      take: safeLimit,
+    });
+
+    if (!ranked.length) return [];
+
+    const movieIds = ranked.map((item) => item.movieId);
+    const movies = await this.prisma.movie.findMany({
+      where: { id: { in: movieIds }, isHidden: false },
+    });
+    const movieById = new Map(movies.map((movie) => [movie.id, movie]));
+
+    return ranked.flatMap((item) => {
+      const movie = movieById.get(item.movieId);
+      if (!movie) return [];
+      return [{
+        _id: movie.id,
+        slug: movie.id,
+        name: movie.title,
+        origin_name: movie.originName || movie.titleEn || undefined,
+        poster_url: movie.posterUrl || undefined,
+        thumb_url: movie.thumbUrl || undefined,
+        year: movie.year || undefined,
+        type: movie.type,
+        episode_current: movie.totalEpisodes ? `Tập ${movie.totalEpisodes}` : "Full",
+        quality: movie.quality || undefined,
+        lang: movie.language || undefined,
+        content: movie.description || undefined,
+        views: item._count.movieId,
+      }];
+    });
   }
 
   // GET /v1/api/danh-sach/phim-bo?page=1

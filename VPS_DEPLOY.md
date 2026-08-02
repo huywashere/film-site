@@ -119,6 +119,22 @@ cd /opt/cineverse
 docker compose up -d --build web
 ```
 
+### Cloudflare Turnstile cho đăng nhập và đăng ký
+
+Tạo một widget **Managed** trong Cloudflare Turnstile, thêm hostname production của CineVerse, rồi đặt hai giá trị sau trong `/opt/cineverse/.env`:
+
+```env
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=YOUR_TURNSTILE_SITE_KEY
+TURNSTILE_SECRET_KEY=YOUR_TURNSTILE_SECRET_KEY
+```
+
+`TURNSTILE_SECRET_KEY` chỉ thuộc về API, không đưa vào mã nguồn hoặc biến `NEXT_PUBLIC_*`. Sau khi đổi biến môi trường, rebuild cả web và API:
+
+```bash
+cd /opt/cineverse
+docker compose up -d --build web api
+```
+
 ---
 
 ## Bước 5: Kiểm tra

@@ -3,29 +3,81 @@
 @tailwind utilities;
 
 :root {
-  --background: #0d1117;
-  --foreground: #c9d1d9;
+  --admin-canvas: #f4f7fb;
+  --admin-surface: #ffffff;
+  --admin-surface-muted: #f8faff;
+  --admin-sidebar: #182235;
+  --admin-sidebar-raised: #25344d;
+  --admin-ink: #1e293b;
+  --admin-muted: #6c7a90;
+  --admin-line: #e5eaf2;
+  --admin-brand: #246bfe;
+  --admin-brand-strong: #1559e8;
+  --admin-success: #14866d;
+  --admin-warning: #c56c12;
+  --admin-danger: #d64b5d;
 }
 
+* { box-sizing: border-box; }
+
+html { background: var(--admin-canvas); }
+
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  color: var(--admin-ink);
+  background: var(--admin-canvas);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   overflow-x: hidden;
 }
 
-/* Custom minimal scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+button, input, select { font: inherit; }
+
+::selection { background: #dce8ff; color: #123c9b; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd4e2; border: 2px solid transparent; background-clip: padding-box; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #aebbd0; border: 2px solid transparent; background-clip: padding-box; }
+
+.admin-card {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-line);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(27, 44, 72, .025), 0 8px 22px rgba(27, 44, 72, .035);
 }
-::-webkit-scrollbar-track {
-  background: #0d1117;
+
+.admin-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: #66758c;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
 }
-::-webkit-scrollbar-thumb {
-  background: #21262d;
-  border-radius: 4px;
+
+.admin-icon-button:hover { color: var(--admin-brand); background: #f1f5ff; border-color: #e0eaff; }
+
+.admin-control {
+  height: 38px;
+  border: 1px solid var(--admin-line);
+  border-radius: 9px;
+  color: #475569;
+  background: var(--admin-surface);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #30363d;
+
+.admin-control:focus { outline: 0; border-color: #8fb2ff; box-shadow: 0 0 0 3px #e7efff; }
+
+.admin-fade-in { animation: admin-fade-in 260ms ease-out both; }
+
+@keyframes admin-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }

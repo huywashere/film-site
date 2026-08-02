@@ -93,4 +93,20 @@ export class ReviewsService {
       take: limit,
     });
   }
+
+  async getMine(userId: string, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [reviews, total] = await Promise.all([
+      this.prisma.review.findMany({
+        where: { userId },
+        include: { movie: true },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      this.prisma.review.count({ where: { userId } }),
+    ]);
+
+    return { reviews, total, page, pages: Math.ceil(total / limit) };
+  }
 }

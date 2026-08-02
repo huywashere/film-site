@@ -66,6 +66,12 @@ export function validateEnv(
     );
   }
 
+  if (isProduction && !config.TURNSTILE_SECRET_KEY) {
+    problems.push(
+      "TURNSTILE_SECRET_KEY is not set - credential authentication would be unprotected",
+    );
+  }
+
   if (problems.length > 0) {
     const summary = problems.map((p) => `  - ${p}`).join("\n");
 

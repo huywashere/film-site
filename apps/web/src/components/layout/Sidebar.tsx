@@ -15,7 +15,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const SIDEBAR_ITEMS = [
   { title: "Trang chủ", href: "/", icon: Home },
@@ -35,8 +35,10 @@ export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [scrolledPastBanner, setScrolledPastBanner] = useState(false);
+  const homeThresholdRef = useRef<HTMLDivElement>(null);
 
   const isHomePage = pathname === "/";
+  const isAuthPage = pathname === "/login" || pathname === "/register";
 
   useEffect(() => {
     try {
@@ -47,21 +49,23 @@ export function Sidebar() {
     }
   }, []);
 
-  // Track scroll position to hide sidebar over top banner until scrolled down
+  // Only the home hero hides this navigation. All other pages keep it fixed.
   useEffect(() => {
-    const handleScroll = () => {
-      // Show sidebar only after scrolling down past top banner (~350px)
-      if (window.scrollY > 350) {
-        setScrolledPastBanner(true);
-      } else {
-        setScrolledPastBanner(false);
-      }
-    };
+    if (!isHomePage) {
+      setScrolledPastBanner(true);
+      return;
+    }
 
-    handleScroll(); // Initial check
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    setScrolledPastBanner(false);
+    const threshold = homeThresholdRef.current;
+    if (!threshold) return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      setScrolledPastBanner(!entry.isIntersecting);
+    });
+    observer.observe(threshold);
+    return () => observer.disconnect();
+  }, [isHomePage]);
 
   const toggle = () => {
     const next = !collapsed;
@@ -73,10 +77,19 @@ export function Sidebar() {
     }
   };
 
-  const isVisible = scrolledPastBanner;
+  const isVisible = !isHomePage || scrolledPastBanner;
+
+  if (isAuthPage) return null;
 
   return (
     <>
+      {isHomePage && (
+        <div
+          ref={homeThresholdRef}
+          aria-hidden="true"
+          className="absolute left-0 top-[350px] h-px w-px pointer-events-none"
+        />
+      )}
       {/* ── SIDEBAR — fixed, truly transparent, floats over content when scrolled past banner ── */}
       <aside
         className={cn(

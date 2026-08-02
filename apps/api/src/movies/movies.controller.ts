@@ -14,6 +14,12 @@ export class MoviesController {
     return this.moviesService.getLatest(+page);
   }
 
+  /** Public weekly ranking used by the home-page Top 10 row. */
+  @Get("trending")
+  getTrending(@Query("limit") limit = 20) {
+    return this.moviesService.getTrending(+limit);
+  }
+
   @Get("series")
   getSeries(@Query("page") page = 1, @Query("limit") limit = 24) {
     return this.moviesService.getSeries(+page, +limit);

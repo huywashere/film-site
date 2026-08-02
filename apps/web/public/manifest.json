@@ -3,10 +3,14 @@
   "short_name": "CineVerse",
   "description": "Nền tảng xem phim online chất lượng cao. Phim bộ, phim lẻ, hoạt hình, TV Shows với phụ đề tiếng Việt.",
   "start_url": "/",
+  "scope": "/",
+  "id": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "background_color": "#0a0f14",
   "theme_color": "#00c030",
   "orientation": "portrait-primary",
+  "categories": ["entertainment", "video", "movies"],
   "icons": [
     {
       "src": "/icons/icon-192x192.png",

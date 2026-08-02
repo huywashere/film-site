@@ -72,7 +72,18 @@ export class WatchHistoryService {
       }),
       this.prisma.watchHistory.count({ where: { userId } }),
     ]);
-    return { items, total, page, pages: Math.ceil(total / limit) };
+    const totalPages = Math.ceil(total / limit);
+    return {
+      items: items.map(({ watchedAt, ...item }) => ({
+        ...item,
+        updatedAt: watchedAt,
+      })),
+      total,
+      page,
+      pages: totalPages,
+      totalPages,
+      limit,
+    };
   }
 
   /** Get all history entries for a specific movie (to resume from correct episode) */

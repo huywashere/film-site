@@ -809,12 +809,18 @@ export default function FilmDetailPage() {
         <meta name="description" content={seoDescription} />
         <meta property="og:title" content={seoTitle} />
         <meta property="og:description" content={seoDescription} />
-        <meta property="og:image" content={posterUrl || backdropUrl} />
+        <meta
+          property="og:image"
+          content={posterUrl || backdropUrl || undefined}
+        />
         <meta property="og:type" content="video.movie" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={seoTitle} />
         <meta name="twitter:description" content={seoDescription} />
-        <meta name="twitter:image" content={posterUrl || backdropUrl} />
+        <meta
+          name="twitter:image"
+          content={posterUrl || backdropUrl || undefined}
+        />
       </head>
       {/* ── Giant Backdrop Banner (Plex Style Left-to-Right Blended Layout) ── */}
       {(backdropUrl || posterUrl) && (
@@ -1292,7 +1298,7 @@ export default function FilmDetailPage() {
                     className="relative aspect-video rounded-xl overflow-hidden border border-white/10 bg-neutral-900 group shadow-lg"
                   >
                     <img
-                      src={tmdbBackdrop(bg.file_path, "w780")}
+                      src={tmdbBackdrop(bg.file_path, "w780") || ""}
                       alt={`Ảnh phim ${idx + 1}`}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       loading="lazy"

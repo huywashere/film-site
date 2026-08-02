@@ -1,373 +1,191 @@
 import { NextRequest, NextResponse } from "next/server";
+import { lookup } from "node:dns/promises";
+import {
+  filterHlsManifest,
+  isLikelyAdUrl,
+  type HlsUriKind,
+} from "@/lib/hls-ad-filter";
 
-// ── Danh sách domain & keyword quảng cáo/cờ bạc cần block triệt để ──
-const AD_DOMAINS = [
-  "googlesyndication",
-  "doubleclick",
-  "googleadservices",
-  "adservice",
-  "ads.google",
-  "pagead",
-  "adnxs",
-  "advertising",
-  "adserver",
-  "adtech",
-  "adsystem",
-  "adform",
-  "adroll",
-  "criteo",
-  "taboola",
-  "outbrain",
-  "revcontent",
-  "mgid",
-  "propellerads",
-  "popcash",
-  "popads",
-  "exoclick",
-  "trafficjunky",
-  "juicyads",
-  "hilltopads",
-  "adsterra",
-  "clickadu",
-  "richpush",
-  "pushground",
-  "evadav",
-  "zeropark",
-  "admaven",
-  "adcash",
-  "bidvertiser",
-  "yllix",
-  "adf.ly",
-  "shorte.st",
-  "ouo.io",
-  "cdn-ads",
-  "ad-cdn",
-  "ads-cdn",
-  "banner-ads",
-  "preroll",
-  "midroll",
-  "postroll",
-  // Các domain nhà cái, cờ bạc, casino phổ biến trong stream API phim Việt
-  "9922",
-  "8877",
-  "789bet",
-  "shbet",
-  "jun88",
-  "hi88",
-  "f8bet",
-  "okvip",
-  "new88",
-  "bk8",
-  "w88",
-  "fun88",
-  "12bet",
-  "v9bet",
-  "fb88",
-  "m88",
-  "78win",
-  "kubet",
-  "ku11",
-  "kucasino",
-  "thabet",
-  "88online",
-  "choi88",
-  "win79",
-  "rikvip",
-  "go88",
-  "sunwin",
-  "b52",
-  "macao",
-  "tai-xiu",
-  "taixiu",
-  "nohu",
-  "quayhu",
-  "gamebai",
-  "baccarat",
-];
+const MAX_REDIRECTS = 3;
+const UPSTREAM_TIMEOUT_MS = 15_000;
 
-// ── Pattern nhận biết segment quảng cáo trong HLS ────────────────
-const AD_SEGMENT_PATTERNS = [
-  /\/ads?\//i,
-  /\/advertisement\//i,
-  /\/preroll\//i,
-  /\/midroll\//i,
-  /\/postroll\//i,
-  /ad[_-]?segment/i,
-  /commercial/i,
-  /sponsor/i,
-  /betting/i,
-  /casino/i,
-  /nha[_-]?cai/i,
-  /quang[_-]?cao/i,
-  /qc[_-]?/i,
-  /banner/i,
-];
-
-// ── Kiểm tra URL có phải quảng cáo không ─────────────────────────
-function isAdUrl(url: string): boolean {
-  const lower = url.toLowerCase();
-  if (AD_DOMAINS.some((d) => lower.includes(d))) return true;
-  if (AD_SEGMENT_PATTERNS.some((p) => p.test(url))) return true;
-  return false;
-}
-
-// ── Resolve URL tương đối thành tuyệt đối ────────────────────────
-function resolveUrl(base: string, relative: string): string {
-  if (relative.startsWith("http://") || relative.startsWith("https://")) {
-    return relative;
-  }
-  try {
-    return new URL(relative, base).toString();
-  } catch {
-    return relative;
-  }
-}
-
-// ── Lấy base URL từ m3u8 URL ─────────────────────────────────────
-function getBaseUrl(url: string): string {
-  try {
-    const u = new URL(url);
-    const parts = u.pathname.split("/");
-    parts.pop(); // bỏ filename
-    return `${u.protocol}//${u.host}${parts.join("/")}`;
-  } catch {
-    return url;
-  }
-}
-
-// ── Filter HLS manifest, bỏ triệt để cả khối segment quảng cáo ────
-function filterM3u8(content: string, originalUrl: string): string {
-  const baseUrl = getBaseUrl(originalUrl);
-  const proxyBase = "/api/hls-proxy?url=";
-  const lines = content.split("\n");
-  const filtered: string[] = [];
-  let inAdBlock = false;
-  let removedAds = 0;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-
-    // Bỏ qua dòng trống
-    if (!line) {
-      if (!inAdBlock) filtered.push("");
-      continue;
-    }
-
-    // Detect #EXT-X-DISCONTINUITY (dấu hiệu chèn khối quảng cáo)
-    if (line === "#EXT-X-DISCONTINUITY") {
-      if (inAdBlock) {
-        // Kết thúc khối quảng cáo
-        inAdBlock = false;
-        continue;
-      }
-
-      // Kiểm tra 15 dòng tiếp theo xem có chứa URL quảng cáo/nhà cái không
-      const sliceLines = lines.slice(i + 1, i + 16);
-      const isAdBlock = sliceLines.some((l) => {
-        const trimmed = l.trim();
-        if (!trimmed.startsWith("#") && trimmed) {
-          const abs = resolveUrl(baseUrl, trimmed);
-          return isAdUrl(abs);
-        }
-        return false;
-      });
-
-      if (isAdBlock) {
-        inAdBlock = true;
-        removedAds++;
-        continue; // bỏ tag DISCONTINUITY mở đầu khối quảng cáo
-      }
-    }
-
-    // Nếu đang trong khối quảng cáo → bỏ tất cả các dòng tới khi hết khối
-    if (inAdBlock) {
-      removedAds++;
-      continue;
-    }
-
-    // Xử lý dòng segment (.ts, .m4s, .aac...)
-    if (!line.startsWith("#")) {
-      const absoluteUrl = resolveUrl(baseUrl, line);
-
-      if (isAdUrl(absoluteUrl)) {
-        removedAds++;
-        continue; // bỏ segment quảng cáo lẻ
-      }
-
-      // Nếu là sub-manifest .m3u8 thì proxy tiếp, nếu là .ts/.m4s segment thì dùng trực tiếp URL tuyệt đối
-      if (absoluteUrl.includes(".m3u8")) {
-        filtered.push(`${proxyBase}${encodeURIComponent(absoluteUrl)}`);
-      } else {
-        filtered.push(absoluteUrl);
-      }
-      continue;
-    }
-
-    // Xử lý URI trong các tag HLS
-    if (line.includes("URI=")) {
-      const uriMatch = line.match(/URI="([^"]+)"/);
-      if (uriMatch) {
-        const uri = uriMatch[1];
-        const absoluteUri = resolveUrl(baseUrl, uri);
-        if (isAdUrl(absoluteUri)) {
-          removedAds++;
-          continue;
-        }
-        // Proxy URI
-        const proxiedLine = line.replace(
-          `URI="${uri}"`,
-          `URI="${proxyBase}${encodeURIComponent(absoluteUri)}"`,
-        );
-        filtered.push(proxiedLine);
-        continue;
-      }
-    }
-
-    // Xử lý playlist con (master m3u8 → variant streams)
-    if (
-      line.startsWith("#EXT-X-STREAM-INF") ||
-      line.startsWith("#EXT-X-MEDIA")
-    ) {
-      filtered.push(line);
-      // Dòng tiếp theo là URL của variant
-      const nextLine = lines[i + 1]?.trim();
-      if (nextLine && !nextLine.startsWith("#")) {
-        i++;
-        const absoluteUrl = resolveUrl(baseUrl, nextLine);
-        filtered.push(`${proxyBase}${encodeURIComponent(absoluteUrl)}`);
-        continue;
-      }
-      continue;
-    }
-
-    // Giữ nguyên các tag HLS khác
-    filtered.push(line);
-  }
-
-  if (removedAds > 0) {
-    console.log(
-      `[hls-proxy] Đã gỡ triệt để ${removedAds} dòng/segment quảng cáo`,
-    );
-  }
-
-  return filtered.join("\n");
-}
-
-// ── SSRF protection: Block private IPs & invalid protocols ────────
 function isPrivateHost(hostname: string): boolean {
   const host = hostname.toLowerCase().trim();
   if (
     host === "localhost" ||
     host === "127.0.0.1" ||
     host === "0.0.0.0" ||
+    host === "::" ||
     host === "::1" ||
-    host === "169.254.169.254" ||
     host.endsWith(".local") ||
     host.endsWith(".internal")
   ) {
     return true;
   }
-  if (
+  return (
     /^10\./.test(host) ||
+    /^127\./.test(host) ||
+    /^0\./.test(host) ||
+    /^169\.254\./.test(host) ||
+    /^100\.(6[4-9]|[7-9][0-9]|1[0-1][0-9]|12[0-7])\./.test(host) ||
     /^192\.168\./.test(host) ||
-    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host)
-  ) {
-    return true;
-  }
-  return false;
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host) ||
+    /^(?:fc|fd)[0-9a-f]{2}:/i.test(host) ||
+    /^fe[89ab][0-9a-f]:/i.test(host) ||
+    /^::ffff:(?:0:)?(?:127|10|192\.168|172\.(?:1[6-9]|2[0-9]|3[0-1]))\./i.test(host)
+  );
 }
 
-// ── Main handler ──────────────────────────────────────────────────
-export async function GET(request: NextRequest) {
-  const url = request.nextUrl.searchParams.get("url");
+async function validateTargetUrl(value: string): Promise<URL> {
+  const parsed = new URL(value);
+  if (!(["http:", "https:"] as string[]).includes(parsed.protocol)) {
+    throw new Error("Giao thức không hợp lệ");
+  }
+  if (parsed.username || parsed.password || isPrivateHost(parsed.hostname)) {
+    throw new Error("Host bị cấm");
+  }
 
-  if (!url) {
+  try {
+    const addresses = await lookup(parsed.hostname, { all: true, verbatim: true });
+    if (addresses.length === 0 || addresses.some(({ address }) => isPrivateHost(address))) {
+      throw new Error("Host bị cấm");
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message === "Host bị cấm") throw error;
+    throw new Error("Không thể phân giải host");
+  }
+  return parsed;
+}
+
+function proxiedUrl(url: string): string {
+  return `/api/hls-proxy?url=${encodeURIComponent(url)}`;
+}
+
+function rewriteManifestUri(url: string, kind: HlsUriKind): string {
+  // HLS.js fetches every URI in the manifest from the browser. Keeping media
+  // segments on the upstream origin made the manifest load but then failed at
+  // 00:00 on providers without permissive CORS. Proxy manifests, keys and
+  // segments consistently so the full stream has one same-origin contract.
+  void kind;
+  return proxiedUrl(url);
+}
+
+async function fetchUpstream(
+  initialUrl: URL,
+  rangeHeader?: string | null,
+): Promise<{ response: Response; finalUrl: string }> {
+  let currentUrl = initialUrl;
+
+  for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects++) {
+    const response = await fetch(currentUrl, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+        Referer: currentUrl.origin,
+        Origin: currentUrl.origin,
+        ...(rangeHeader ? { Range: rangeHeader } : {}),
+      },
+      redirect: "manual",
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
+
+    if (response.status < 300 || response.status >= 400) {
+      return { response, finalUrl: currentUrl.toString() };
+    }
+
+    const location = response.headers.get("location");
+    if (!location || redirects === MAX_REDIRECTS) {
+      throw new Error("Upstream chuyển hướng không hợp lệ");
+    }
+    currentUrl = await validateTargetUrl(new URL(location, currentUrl).toString());
+  }
+
+  throw new Error("Quá nhiều lần chuyển hướng");
+}
+
+export async function GET(request: NextRequest) {
+  const rawUrl = request.nextUrl.searchParams.get("url");
+  if (!rawUrl) {
     return NextResponse.json({ error: "Thiếu tham số url" }, { status: 400 });
   }
 
-  // Decode URL
-  let targetUrl: string;
+  let targetUrl: URL;
   try {
-    targetUrl = decodeURIComponent(url);
-  } catch {
-    targetUrl = url;
-  }
-
-  // Validate URL structure & SSRF
-  let parsedTarget: URL;
-  try {
-    parsedTarget = new URL(targetUrl);
-    if (!["http:", "https:"].includes(parsedTarget.protocol)) {
-      return NextResponse.json(
-        { error: "Giao thức không hợp lệ" },
-        { status: 400 },
-      );
-    }
-    if (isPrivateHost(parsedTarget.hostname)) {
-      return NextResponse.json(
-        { error: "Truy cập host bị cấm" },
-        { status: 403 },
-      );
-    }
-  } catch {
+    targetUrl = await validateTargetUrl(rawUrl);
+  } catch (error) {
     return NextResponse.json(
-      { error: "URL không đúng định dạng" },
+      { error: error instanceof Error ? error.message : "URL không hợp lệ" },
       { status: 400 },
     );
   }
 
-  // Block nếu URL là quảng cáo
-  if (isAdUrl(targetUrl)) {
-    return new NextResponse(null, { status: 204 });
+  if (isLikelyAdUrl(targetUrl.toString())) {
+    return new NextResponse(null, {
+      status: 204,
+      headers: { "X-Cineverse-Ad-Blocked": "uri" },
+    });
   }
 
   try {
-    const response = await fetch(targetUrl, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
-        Referer: new URL(targetUrl).origin,
-        Origin: new URL(targetUrl).origin,
-      },
-      signal: AbortSignal.timeout(15000),
-    });
-
-    if (!response.ok) {
+    const { response, finalUrl } = await fetchUpstream(
+      targetUrl,
+      request.headers.get("range"),
+    );
+    if (!response.ok && response.status !== 206) {
       return new NextResponse(null, { status: response.status });
     }
 
     const contentType = response.headers.get("content-type") || "";
-    const isM3u8 =
+    const pathname = new URL(finalUrl).pathname.toLowerCase();
+    const isManifest =
       contentType.includes("mpegurl") ||
       contentType.includes("x-mpegurl") ||
-      targetUrl.includes(".m3u8");
+      pathname.endsWith(".m3u8") ||
+      pathname.endsWith(".m3u");
 
-    if (isM3u8) {
-      // Filter manifest để bỏ quảng cáo
-      const text = await response.text();
-      const filtered = filterM3u8(text, targetUrl);
+    if (isManifest) {
+      const sourceManifest = await response.text();
+      const { manifest, stats } = filterHlsManifest(
+        sourceManifest,
+        finalUrl,
+        rewriteManifestUri,
+      );
+      const filtered =
+        stats.removedSegments + stats.removedTags + stats.removedUris > 0;
 
-      return new NextResponse(filtered, {
+      return new NextResponse(manifest, {
         headers: {
           "Content-Type": "application/vnd.apple.mpegurl",
           "Access-Control-Allow-Origin": "*",
-          "Cache-Control": "no-cache",
+          "Cache-Control": "no-store",
+          "X-Cineverse-Ad-Filtered": filtered ? "1" : "0",
+          "X-Cineverse-Ad-Segments": String(stats.removedSegments),
+          "X-Cineverse-Ad-Breaks": String(stats.detectedBreaks),
+          "X-Cineverse-Ad-Reasons": stats.reasons.join(",").slice(0, 160),
         },
       });
     }
 
-    // Với segment video (.ts, .m4s...) - stream thẳng qua
-    const buffer = await response.arrayBuffer();
-    return new NextResponse(buffer, {
+    const body = await response.arrayBuffer();
+    return new NextResponse(body, {
+      status: response.status,
       headers: {
-        "Content-Type": contentType || "video/mp2t",
+        "Content-Type": contentType || "application/octet-stream",
         "Access-Control-Allow-Origin": "*",
         "Cache-Control": "public, max-age=3600",
+        ...(response.headers.get("content-range")
+          ? { "Content-Range": response.headers.get("content-range")! }
+          : {}),
+        ...(response.headers.get("accept-ranges")
+          ? { "Accept-Ranges": response.headers.get("accept-ranges")! }
+          : {}),
       },
     });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.warn("[hls-proxy] error:", msg);
+  } catch (error) {
+    console.warn(
+      "[hls-proxy] upstream error:",
+      error instanceof Error ? error.message : String(error),
+    );
     return new NextResponse(null, { status: 502 });
   }
 }

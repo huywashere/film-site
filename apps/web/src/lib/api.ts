@@ -7,14 +7,47 @@ import {
   type MovieSource,
 } from "@/lib/movie-normalizer";
 import { rankSearchResults, expandQuery } from "@/lib/search-engine";
+import type {
+  PaginatedResponse,
+  WatchHistoryItem,
+  WatchlistItem,
+} from "@/types/movie";
+import { recordTelemetry } from "@/lib/telemetry";
 
 // ── KKPhim API Configuration ──────────────────────────────────────
 const KKPHIM_PROXY = "/api/kkphim";
 
+const trackedMovieFetch = async (path: string) => {
+  const startedAt = performance.now();
+  try {
+    const response = await fetch(path);
+    recordTelemetry("movie_api.response", {
+      path: path.split("?")[0],
+      status: response.status,
+      duration_ms: Math.round(performance.now() - startedAt),
+      cache:
+        response.headers.get("x-cache") ||
+        response.headers.get("cache-status") ||
+        "unknown",
+    });
+    return response;
+  } catch (error) {
+    recordTelemetry(
+      "movie_api.error",
+      {
+        path: path.split("?")[0],
+        duration_ms: Math.round(performance.now() - startedAt),
+      },
+      "warning",
+    );
+    throw error;
+  }
+};
+
 // Helper function to handle API calls
 const fetchKKPhim = async (endpoint: string) => {
   try {
-    const response = await fetch(`${KKPHIM_PROXY}${endpoint}`);
+    const response = await trackedMovieFetch(`${KKPHIM_PROXY}${endpoint}`);
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
     }
@@ -161,7 +194,7 @@ export const kkphimApi = {
 
 // ── OPhim, NguonC & VSMOV Proxies ──────────────────────────────
 const fetchOphim = async (endpoint: string) => {
-  const response = await fetch(`/api/ophim${endpoint}`);
+  const response = await trackedMovieFetch(`/api/ophim${endpoint}`);
   const json = await response.json();
 
   // NOTE: Image URL normalization is now handled at the proxy layer
@@ -171,13 +204,13 @@ const fetchOphim = async (endpoint: string) => {
 };
 
 const fetchNguonc = async (endpoint: string) => {
-  const response = await fetch(`/api/nguonc${endpoint}`);
+  const response = await trackedMovieFetch(`/api/nguonc${endpoint}`);
   if (!response.ok) throw new Error(`NguonC API Error: ${response.status}`);
   return response.json();
 };
 
 const fetchVsmov = async (endpoint: string) => {
-  const response = await fetch(`/api/vsmov${endpoint}`);
+  const response = await trackedMovieFetch(`/api/vsmov${endpoint}`);
   if (!response.ok) throw new Error(`VSMOV API Error: ${response.status}`);
   return response.json();
 };
@@ -194,8 +227,7 @@ export const vsmovApi = {
   getSeries: (page = 1) => fetchVsmov(`/danh-sach/phim-bo?page=${page}`),
   getSingle: (page = 1) => fetchVsmov(`/danh-sach/phim-le?page=${page}`),
   getAnime: (page = 1) => fetchVsmov(`/danh-sach/hoat-hinh?page=${page}`),
-  getNowShowing: (page = 1) =>
-    fetchVsmov(`/danh-sach/dang-chieu?page=${page}`),
+  getNowShowing: (page = 1) => fetchVsmov(`/danh-sach/dang-chieu?page=${page}`),
   getDubbed: (page = 1) => fetchVsmov(`/danh-sach/long-tieng?page=${page}`),
   getSubteam: (page = 1) => fetchVsmov(`/danh-sach/subteam?page=${page}`),
 
@@ -212,16 +244,13 @@ export const vsmovApi = {
 
   // Tìm kiếm
   search: (keyword: string, page = 1) =>
-    fetchVsmov(
-      `/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}`,
-    ),
+    fetchVsmov(`/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}`),
 };
 
 // ── NguonC API (qua Next.js proxy) ────────────────────────────────
 export const nguoncApi = {
   // Phim mới cập nhật
-  getLatest: (page = 1) =>
-    fetchNguonc(`/films/phim-moi-cap-nhat?page=${page}`),
+  getLatest: (page = 1) => fetchNguonc(`/films/phim-moi-cap-nhat?page=${page}`),
 
   // Danh sách theo loại
   getByCategory: (slug: string, page = 1) =>
@@ -247,7 +276,9 @@ export const nguoncApi = {
 
   // Tìm kiếm
   search: (keyword: string, page = 1) =>
-    fetchNguonc(`/films/search?keyword=${encodeURIComponent(keyword)}&page=${page}`),
+    fetchNguonc(
+      `/films/search?keyword=${encodeURIComponent(keyword)}&page=${page}`,
+    ),
 };
 
 function asRecord(value: unknown): Record<string, any> {
@@ -318,9 +349,7 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
       // OPhim dùng /tim-kiem (không phải /v1/api/tim-kiem)
       source: "ophim",
       request: () =>
-        fetchOphim(
-          `/tim-kiem?keyword=${encodedKeyword}&page=${page}`,
-        ),
+        fetchOphim(`/tim-kiem?keyword=${encodedKeyword}&page=${page}`),
     },
     {
       source: "nguonc",
@@ -348,9 +377,7 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
       {
         source: "ophim",
         request: () =>
-          fetchOphim(
-            `/tim-kiem?keyword=${encodedVariant}&page=${page}`,
-          ),
+          fetchOphim(`/tim-kiem?keyword=${encodedVariant}&page=${page}`),
       },
     );
   }
@@ -412,7 +439,10 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
   };
 }
 
-async function getDetailFromAnySource(slug: string): Promise<any> {
+async function getDetailFromAnySource(
+  slug: string,
+  preferredSource?: MovieSource,
+): Promise<any> {
   const requests: Array<{
     source: MovieSource;
     request: () => Promise<unknown>;
@@ -435,7 +465,14 @@ async function getDetailFromAnySource(slug: string): Promise<any> {
     },
   ];
 
-  for (const entry of requests) {
+  const orderedRequests = preferredSource
+    ? [
+        ...requests.filter((entry) => entry.source === preferredSource),
+        ...requests.filter((entry) => entry.source !== preferredSource),
+      ]
+    : requests;
+
+  for (const entry of orderedRequests) {
     try {
       const data = await entry.request();
       if (isUsableMovieDetail(data)) {
@@ -464,8 +501,8 @@ export const movieApi = {
     kkphimApi.getAnime(page, 24).then((data) => ({ data })),
   getTvShows: (page = 1) =>
     kkphimApi.getTvShows(page, 24).then((data) => ({ data })),
-  getDetail: (slug: string) =>
-    getDetailFromAnySource(slug).then((data) => ({ data })),
+  getDetail: (slug: string, preferredSource?: MovieSource) =>
+    getDetailFromAnySource(slug, preferredSource).then((data) => ({ data })),
   getDetailV1: (slug: string) =>
     kkphimApi.getDetailV1(slug).then((data) => ({ data })),
   search: (keyword: string, page = 1, limit = 24) =>
@@ -494,8 +531,18 @@ export const movieApi = {
 };
 
 // ── NestJS Backend API (cần backend chạy) ───────────────────────────
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+const configuredApiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(
+  /\/$/,
+  "",
+);
+
+// The Nest application has a fixed `/api/v1` prefix. Older local env files
+// used `/api`, which made every authenticated request return 404 after login.
+const API_BASE = configuredApiBase
+  ? configuredApiBase.endsWith("/api")
+    ? `${configuredApiBase}/v1`
+    : configuredApiBase
+  : "http://localhost:3001/api/v1";
 
 export const api = axios.create({
   baseURL: API_BASE,
@@ -504,15 +551,56 @@ export const api = axios.create({
 
 // Request interceptor — attach auth token (removed local storage logic, handled by cookies)
 api.interceptors.request.use((config) => {
+  (config as typeof config & { metadata?: { startedAt: number } }).metadata = {
+    startedAt: performance.now(),
+  };
   return config;
 });
 
 // Response interceptor — handle 401 with refresh
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    const metadata = (
+      res.config as typeof res.config & {
+        metadata?: { startedAt: number };
+      }
+    ).metadata;
+    recordTelemetry("api.response", {
+      path: res.config.url || "unknown",
+      status: res.status,
+      duration_ms: metadata
+        ? Math.round(performance.now() - metadata.startedAt)
+        : 0,
+      cache: res.headers["x-cache"] || res.headers["cache-status"] || "unknown",
+    });
+    return res;
+  },
   async (err) => {
     const original = err.config;
-    if (err.response?.status === 401 && !original._retry) {
+    const metadata = (
+      original as { metadata?: { startedAt: number } } | undefined
+    )?.metadata;
+    recordTelemetry(
+      "api.error",
+      {
+        path: original?.url || "unknown",
+        status: err.response?.status || 0,
+        duration_ms: metadata
+          ? Math.round(performance.now() - metadata.startedAt)
+          : 0,
+      },
+      "warning",
+    );
+    const requestPath = String(original?.url || "");
+    // Authentication endpoints deliberately return 401/400 while a user is
+    // signing in, exchanging a Firebase token, or recovering a session.  A
+    // global redirect here races the login UI and can send an already signed-in
+    // user back to /login. Let the calling form surface that error instead.
+    const isAuthFlowRequest = /^\/auth\/(?:login|register|firebase|refresh|2fa\/login-verify)/.test(
+      requestPath,
+    );
+
+    if (err.response?.status === 401 && !original._retry && !isAuthFlowRequest) {
       original._retry = true;
       try {
         // Because withCredentials is true, this post will automatically send the refreshToken cookie
@@ -525,10 +613,10 @@ api.interceptors.response.use(
         // Retry original request (cookies are automatically sent)
         return api(original);
       } catch {
-        // Redirect if refresh fails (token revoked or expired)
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
-        }
+        // A failed refresh must not navigate the whole application. Public
+        // pages still issue a few optional account requests, and redirecting
+        // from this shared interceptor made the home page bounce to /login.
+        // Protected screens decide how to present an unauthenticated state.
       }
     }
     return Promise.reject(err);
@@ -537,10 +625,19 @@ api.interceptors.response.use(
 
 // ── Auth API ───────────────────────────────────────────────
 export const authApi = {
-  register: (data: { email: string; username: string; password: string }) =>
+  register: (data: {
+    email: string;
+    username: string;
+    password: string;
+    turnstileToken?: string;
+  }) =>
     api.post("/auth/register", data),
-  login: (data: { email: string; password: string }) =>
+  login: (data: { email: string; password: string; turnstileToken?: string }) =>
     api.post("/auth/login", data),
+  firebaseLogin: (idToken: string) =>
+    api.post<{ success: true; user: import("@/store/authStore").User }>("/auth/firebase", {}, {
+      headers: { Authorization: `Bearer ${idToken}` },
+    }),
   getMe: () => api.get("/auth/me"),
   verifyEmail: (data: { token: string }) =>
     api.post("/auth/verify-email", data),
@@ -565,7 +662,8 @@ export const authApi = {
 
 // ── Watchlist API ──────────────────────────────────────────
 export const watchlistApi = {
-  get: (page = 1) => api.get(`/watchlist?page=${page}`),
+  get: (page = 1) =>
+    api.get<PaginatedResponse<WatchlistItem>>(`/watchlist?page=${page}`),
   add: (movieId: string, movieData?: any) =>
     api.post("/watchlist", { movieId, movieData }),
   remove: (movieId: string) => api.delete(`/watchlist/${movieId}`),
@@ -577,6 +675,7 @@ export const reviewsApi = {
   getByMovie: (movieId: string, page = 1) =>
     api.get(`/reviews/movie/${movieId}?page=${page}`),
   getRecent: (page = 1) => api.get(`/reviews?page=${page}`),
+  getMine: (page = 1) => api.get(`/reviews/mine?page=${page}`),
   create: (data: { movieId: string; content: string; rating?: number }) =>
     api.post("/reviews", data),
   delete: (id: string) => api.delete(`/reviews/${id}`),
@@ -606,7 +705,9 @@ export const watchHistoryApi = {
 
   /** Get paginated history list */
   getHistory: (page = 1, limit = 20) =>
-    api.get(`/watch-history?page=${page}&limit=${limit}`),
+    api.get<PaginatedResponse<WatchHistoryItem>>(
+      `/watch-history?page=${page}&limit=${limit}`,
+    ),
 
   /** Get resume data for a specific movie (returns all episodes) */
   getResume: (movieId: string) => api.get(`/watch-history/resume/${movieId}`),

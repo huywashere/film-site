@@ -1,7 +1,13 @@
 "use client";
-import { createContext, useContext, useState, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 import { Check, XCircle, Info, AlertTriangle, X } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 type ToastType = "success" | "error" | "info" | "warning";
 interface Toast {
@@ -19,14 +25,23 @@ export const useToast = () => useContext(ToastContext);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const nextId = useRef(0);
+  const reduceMotion = useReducedMotion();
 
   const toast = useCallback((message: string, type: ToastType = "info") => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(
-      () => setToasts((prev) => prev.filter((t) => t.id !== id)),
-      3500,
-    );
+    const id = ++nextId.current;
+    let inserted = false;
+    setToasts((prev) => {
+      // One system event should never cover the player with repeated copies.
+      if (prev.some((item) => item.message === message && item.type === type)) {
+        return prev;
+      }
+      inserted = true;
+      return [...prev, { id, message, type }].slice(-3);
+    });
+    setTimeout(() => {
+      if (inserted) setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3500);
   }, []);
 
   const remove = (id: number) =>
@@ -37,21 +52,25 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       Icon: Check,
       iconColor: "text-emerald-400",
       accentBg: "bg-emerald-500/15 border-emerald-500/30",
+      accentLine: "bg-emerald-400",
     },
     error: {
       Icon: XCircle,
       iconColor: "text-red-400",
       accentBg: "bg-red-500/15 border-red-500/30",
+      accentLine: "bg-red-400",
     },
     warning: {
       Icon: AlertTriangle,
       iconColor: "text-amber-400",
       accentBg: "bg-amber-500/15 border-amber-500/30",
+      accentLine: "bg-amber-400",
     },
     info: {
       Icon: Info,
       iconColor: "text-blue-400",
       accentBg: "bg-blue-500/15 border-blue-500/30",
+      accentLine: "bg-blue-400",
     },
   };
 
@@ -59,8 +78,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ toast }}>
       {children}
 
-      {/* ── Senior Minimalist Top-Centered Toast Bar (Linear/Vercel Aesthetic) ── */}
-      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none max-w-md w-full px-4">
+      <div
+        className="pointer-events-none fixed left-1/2 top-[max(0.75rem,env(safe-area-inset-top))] z-[9999] w-[min(24rem,calc(100vw-2rem))] -translate-x-1/2"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         <AnimatePresence>
           {toasts.map((t) => {
             const cfg = config[t.type] || config.info;
@@ -69,28 +91,60 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             return (
               <motion.div
                 key={t.id}
-                initial={{ opacity: 0, y: -16, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -12, scale: 0.96 }}
-                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                className="pointer-events-auto w-full bg-[#0c1015]/95 border border-white/10 backdrop-blur-xl rounded-2xl px-4 py-3 shadow-[0_16px_36px_rgba(0,0,0,0.6)] flex items-center justify-between gap-3 text-xs md:text-sm font-medium text-neutral-100 select-none"
+                layout
+                initial={reduceMotion ? false : { opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+                transition={{
+                  duration: reduceMotion ? 0.01 : 0.2,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                role={t.type === "error" ? "alert" : "status"}
+                className="pointer-events-auto relative mb-2 overflow-hidden rounded-xl border border-white/[0.12] bg-[#12161d]/[0.98] px-3.5 py-3 shadow-[0_14px_32px_rgba(0,0,0,0.38)] [backdrop-filter:blur(18px)]"
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className={`absolute inset-y-0 left-0 w-0.5 ${cfg.accentLine}`}
+                  aria-hidden="true"
+                />
+                <div className="flex min-w-0 items-start gap-2.5 pl-1">
                   <div
-                    className={`p-1.5 rounded-xl border ${cfg.accentBg} ${cfg.iconColor} shrink-0`}
+                    className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border ${cfg.accentBg} ${cfg.iconColor}`}
                   >
-                    <IconComponent size={15} strokeWidth={2.5} />
+                    <IconComponent size={14} strokeWidth={2.2} />
                   </div>
-                  <span className="truncate">{t.message}</span>
+                  <div className="min-w-0 flex-1 pr-6">
+                    <p
+                      className={`text-[10px] font-bold uppercase tracking-[0.12em] ${cfg.iconColor}`}
+                    >
+                      {t.type === "error"
+                        ? "Không thể hoàn tất"
+                        : t.type === "success"
+                          ? "Đã cập nhật"
+                          : t.type === "warning"
+                            ? "Cần lưu ý"
+                            : "Thông báo hệ thống"}
+                    </p>
+                    <p className="mt-0.5 text-[13px] font-medium leading-5 text-neutral-100">
+                      {t.message}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => remove(t.id)}
+                    className="absolute right-2.5 top-2.5 rounded-md p-1 text-neutral-500 transition-colors hover:bg-white/[0.07] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                    aria-label="Đóng thông báo"
+                  >
+                    <X size={14} strokeWidth={2} />
+                  </button>
                 </div>
-
-                <button
-                  onClick={() => remove(t.id)}
-                  className="p-1 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer shrink-0"
-                  aria-label="Close notification"
-                >
-                  <X size={14} />
-                </button>
+                <motion.div
+                  className={`absolute bottom-0 left-0 h-px ${cfg.accentLine}`}
+                  initial={{ width: "100%" }}
+                  animate={{ width: "0%" }}
+                  transition={{
+                    duration: reduceMotion ? 0 : 3.5,
+                    ease: "linear",
+                  }}
+                />
               </motion.div>
             );
           })}

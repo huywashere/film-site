@@ -7,5 +7,12 @@
     "@next/next/no-page-custom-font": "off",
     "no-console": "off"
   },
-  "ignorePatterns": ["node_modules", ".next", ".next-dev", "out", "dist"]
+  "ignorePatterns": [
+    "node_modules",
+    ".next",
+    ".next-dev",
+    "out",
+    "dist",
+    "**/page.redesigned.tsx"
+  ]
 }

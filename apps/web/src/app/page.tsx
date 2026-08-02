@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { ChevronRight, ChevronLeft, ChevronDown, Loader2 } from "lucide-react";
-import { movieApi } from "@/lib/api";
+import { api, movieApi } from "@/lib/api";
 import {
   FilmCard,
   FilmCardSkeleton,
@@ -32,7 +32,7 @@ function deduplicate(films: FilmItem[]): FilmItem[] {
   });
 }
 
-// ── 5 Phim Hero Banner theo yêu cầu chính xác (TMDB 4K Backdrop Ảnh Gốc) ──
+// ── Danh sách dự phòng khi playlist TMDB của Hero chưa kịp tải ──
 const HERO_5_FILMS: FilmItem[] = [
   {
     _id: "ky-si-bong-dem",
@@ -520,6 +520,13 @@ export default function HomePage() {
     queryFn: () => movieApi.getLatest(1).then((r) => r.data),
   });
 
+  const { data: trendingData } = useQuery({
+    queryKey: ["weekly-trending-movies"],
+    queryFn: () => api.get<FilmItem[]>("/movies/trending?limit=30").then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+    retry: 1,
+  });
+
   // US/UK data for Hero Banner
   const { data: usUkBannerData } = useQuery({
     queryKey: ["hero-us-uk-blockbusters-p1"],
@@ -616,8 +623,12 @@ export default function HomePage() {
     () => deduplicate(latestData?.items || latestData?.data?.items || []),
     [latestData],
   );
+  const trendingFilms = useMemo(
+    () => deduplicate(Array.isArray(trendingData) ? trendingData : []),
+    [trendingData],
+  );
 
-  // ── 5 Phim Hero Banner chuẩn xác theo yêu cầu người dùng ──
+  // Hero tự thay thế danh sách dự phòng bằng 6 phim TMDB ngẫu nhiên mỗi phiên.
   const bannerFilms = HERO_5_FILMS;
   const showBannerSkeleton = false;
 
@@ -643,11 +654,6 @@ export default function HomePage() {
       return deduplicate(rawFilms).slice(0, targetCount);
     };
 
-    const top10List = filterLiveActionOnly(deduplicate(latestFilms)).slice(
-      0,
-      10,
-    );
-
     // Initial 4 Sections
     const vfxRowList = buildRow(vfxFilms);
     const usUkSeriesRowList = buildRow(usUkSeriesFilms);
@@ -665,6 +671,51 @@ export default function HomePage() {
     const warRowList = buildRow(warFilms);
     const comedyRowList = buildRow(comedyFilms);
     const romanceRowList = buildRow(romanceFilms);
+
+    const sectionSlugs = new Set(
+      [
+        ...vfxRowList,
+        ...usUkSeriesRowList,
+        ...actionRowList,
+        ...scifiRowList,
+        ...nextWatchRowList,
+        ...seriesRowList,
+        ...animeRowList,
+        ...adventureRowList,
+        ...singleRowList,
+        ...dramaRowList,
+        ...disasterRowList,
+        ...warRowList,
+        ...comedyRowList,
+        ...romanceRowList,
+      ].map((film) => film.slug),
+    );
+    const top10List = filterLiveActionOnly(trendingFilms)
+      .filter((film) => !sectionSlugs.has(film.slug))
+      .slice(0, 10);
+    if (top10List.length < 10) {
+      top10List.push(
+        ...filterLiveActionOnly(latestFilms)
+          .filter(
+            (film) =>
+              !sectionSlugs.has(film.slug) &&
+              !top10List.some((ranked) => ranked.slug === film.slug),
+          )
+          .slice(0, 10 - top10List.length),
+      );
+    }
+    // A new deployment may not have any local view logs yet. Keep the section
+    // useful during that warm-up period, while preferring non-duplicated titles
+    // whenever the catalogue gives us enough options.
+    if (top10List.length < 10) {
+      top10List.push(
+        ...filterLiveActionOnly(latestFilms)
+          .filter(
+            (film) => !top10List.some((ranked) => ranked.slug === film.slug),
+          )
+          .slice(0, 10 - top10List.length),
+      );
+    }
 
     return {
       top10List,
@@ -684,6 +735,7 @@ export default function HomePage() {
       romanceRowList,
     };
   }, [
+    trendingFilms,
     latestFilms,
     vfxFilms,
     usUkSeriesFilms,

@@ -1,464 +1,115 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
-  Film,
-  Search,
-  Filter,
-  Eye,
-  EyeOff,
-  Edit,
-  Layers,
-  RefreshCw,
   Check,
-  X,
   ChevronLeft,
   ChevronRight,
   Database,
-  Plus,
-  Trash2,
+  Edit3,
+  Eye,
+  EyeOff,
+  Film,
+  Layers3,
+  MoreHorizontal,
+  RefreshCw,
+  Search,
+  X,
 } from "lucide-react";
 
-// Mock Movie Items (Server-side paginated)
-const INITIAL_MOVIES = [
-  {
-    id: "bo-gia",
-    title: "Bố Già",
-    originName: "Dad, I'm Sorry",
-    posterUrl: "https://img.phimapi.com/upload/vod/20240101/bo-gia.jpg",
-    year: 2021,
-    type: "single",
-    sources: ["kkphim", "ophim"],
-    isHidden: false,
-    description: "Bộ phim điện ảnh tâm lý tình cảm gia đình nổi tiếng của Trấn Thành.",
-  },
-  {
-    id: "bo-ngua",
-    title: "Bọ Ngựa",
-    originName: "Queen Mantis",
-    posterUrl: "https://img.phimapi.com/upload/vod/20250101/bo-ngua.jpg",
-    year: 2025,
-    type: "series",
-    sources: ["kkphim", "nguonc"],
-    isHidden: false,
-    description: "Phim truyền hình giật gân kịch tính mới nhất.",
-  },
-  {
-    id: "bong-ma-bao-thu",
-    title: "Bóng Ma Báo Thù",
-    originName: "M.I.A.",
-    posterUrl: "https://img.phimapi.com/upload/vod/20260101/bong-ma.jpg",
-    year: 2026,
-    type: "series",
-    sources: ["kkphim", "ophim", "nguonc"],
-    isHidden: true,
-    description: "Hành trình báo thù ly kỳ trong bóng tối.",
-  },
-  {
-    id: "bo-vo-toi-la-mafia",
-    title: "Bố Vợ Tôi Là Mafia",
-    originName: "Bapa Mentuaku Mafia",
-    posterUrl: "https://img.phimapi.com/upload/vod/20260101/bo-vo.jpg",
-    year: 2026,
-    type: "series",
-    sources: ["kkphim"],
-    isHidden: false,
-    description: "Phim hài hước hành động đặc sắc.",
-  },
+type Movie = {
+  id: string;
+  title: string;
+  originName: string;
+  posterUrl: string;
+  year: number;
+  type: "single" | "series" | "anime";
+  sources: string[];
+  isHidden: boolean;
+  description: string;
+};
+
+const INITIAL_MOVIES: Movie[] = [
+  { id: "bo-gia", title: "Bố Già", originName: "Dad, I'm Sorry", posterUrl: "https://img.phimapi.com/upload/vod/20240101/bo-gia.jpg", year: 2021, type: "single", sources: ["KKPhim", "OPhim"], isHidden: false, description: "Bộ phim điện ảnh tâm lý tình cảm gia đình." },
+  { id: "bo-ngua", title: "Bọ Ngựa", originName: "Queen Mantis", posterUrl: "https://img.phimapi.com/upload/vod/20250101/bo-ngua.jpg", year: 2025, type: "series", sources: ["KKPhim", "NguonC"], isHidden: false, description: "Phim truyền hình giật gân kịch tính mới nhất." },
+  { id: "bong-ma-bao-thu", title: "Bóng Ma Báo Thù", originName: "M.I.A.", posterUrl: "https://img.phimapi.com/upload/vod/20260101/bong-ma.jpg", year: 2026, type: "series", sources: ["KKPhim", "OPhim", "NguonC"], isHidden: true, description: "Hành trình báo thù ly kỳ trong bóng tối." },
+  { id: "bo-vo-toi-la-mafia", title: "Bố Vợ Tôi Là Mafia", originName: "Bapa Mentuaku Mafia", posterUrl: "https://img.phimapi.com/upload/vod/20260101/bo-vo.jpg", year: 2026, type: "series", sources: ["KKPhim"], isHidden: false, description: "Phim hài hước hành động đặc sắc." },
+  { id: "one-piece-red", title: "One Piece Film: Red", originName: "One Piece Film Red", posterUrl: "", year: 2022, type: "anime", sources: ["OPhim", "NguonC"], isHidden: false, description: "Cuộc phiêu lưu âm nhạc của băng hải tặc Mũ Rơm." },
 ];
 
+const sourceClass: Record<string, string> = { KKPhim: "bg-blue-50 text-blue-700", OPhim: "bg-violet-50 text-violet-700", NguonC: "bg-amber-50 text-amber-700" };
+
 export default function MovieManagementPage() {
-  const [movies, setMovies] = useState(INITIAL_MOVIES);
+  return <Suspense fallback={<div className="admin-card h-80 animate-pulse" />}><MovieManagementContent /></Suspense>;
+}
+
+function MovieManagementContent() {
+  const params = useSearchParams();
+  const [movies, setMovies] = useState<Movie[]>(INITIAL_MOVIES);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [sourceFilter, setSourceFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [page, setPage] = useState(1);
+  const [editing, setEditing] = useState<Movie | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  // Edit Modal State
-  const [editingMovie, setEditingMovie] = useState<any>(null);
-  // Source Merge/Split Modal State
-  const [sourcesMovie, setSourcesMovie] = useState<any>(null);
-  // Sync Toast State
-  const [syncStatus, setSyncStatus] = useState<string | null>(null);
+  useEffect(() => setSearch(params.get("search") ?? ""), [params]);
 
-  // Filter movies
-  const filteredMovies = movies.filter((m) => {
-    if (search && !m.title.toLowerCase().includes(search.toLowerCase()) && !m.originName.toLowerCase().includes(search.toLowerCase())) {
-      return false;
-    }
-    if (typeFilter !== "all" && m.type !== typeFilter) return false;
-    if (sourceFilter !== "all" && !m.sources.includes(sourceFilter)) return false;
-    if (statusFilter === "hidden" && !m.isHidden) return false;
-    if (statusFilter === "visible" && m.isHidden) return false;
+  const filteredMovies = useMemo(() => movies.filter((movie) => {
+    const keyword = search.trim().toLowerCase();
+    if (keyword && !movie.title.toLowerCase().includes(keyword) && !movie.originName.toLowerCase().includes(keyword)) return false;
+    if (typeFilter !== "all" && movie.type !== typeFilter) return false;
+    if (statusFilter === "visible" && movie.isHidden) return false;
+    if (statusFilter === "hidden" && !movie.isHidden) return false;
     return true;
-  });
+  }), [movies, search, statusFilter, typeFilter]);
 
-  // Toggle Hide/Unhide
-  const handleToggleHide = (id: string) => {
-    setMovies((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, isHidden: !m.isHidden } : m))
-    );
+  const sync = () => {
+    setSyncing(true);
+    window.setTimeout(() => { setSyncing(false); setNotice("Đã tạo yêu cầu đồng bộ nguồn phim."); }, 700);
   };
-
-  // Trigger Manual Sync
-  const handleTriggerSync = (sourceName: string) => {
-    setSyncStatus(`Đã phát lệnh kích hoạt job BullMQ đồng bộ cho nguồn [${sourceName.toUpperCase()}]!`);
-    setTimeout(() => setSyncStatus(null), 4000);
-  };
-
-  // Save Metadata Edit
-  const handleSaveMetadata = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingMovie) return;
-    setMovies((prev) =>
-      prev.map((m) => (m.id === editingMovie.id ? editingMovie : m))
-    );
-    setEditingMovie(null);
-  };
-
-  // Save Sources Merge/Split
-  const handleSaveSources = (newSources: string[]) => {
-    if (!sourcesMovie) return;
-    setMovies((prev) =>
-      prev.map((m) => (m.id === sourcesMovie.id ? { ...m, sources: newSources } : m))
-    );
-    setSourcesMovie(null);
+  const toggleVisibility = (id: string) => setMovies((items) => items.map((movie) => movie.id === id ? { ...movie, isHidden: !movie.isHidden } : movie));
+  const save = () => {
+    if (!editing) return;
+    setMovies((items) => items.map((movie) => movie.id === editing.id ? editing : movie));
+    setEditing(null);
+    setNotice("Đã lưu thay đổi phim.");
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* ── Page Header ── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#30363d] pb-5">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-            <Film size={22} className="text-purple-400" />
-            <span>Quản Lý Danh Sách Phim</span>
-            <span className="text-xs bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded font-mono font-medium">
-              GIAI ĐOẠN 1
-            </span>
-          </h1>
-          <p className="text-xs text-neutral-400 mt-1">
-            Kiểm tra nguồn hợp nhất, đồng bộ BullMQ thủ công, ẩn/hiện và sửa metadata phim
-          </p>
-        </div>
+    <div className="admin-fade-in space-y-6">
+      <header className="flex flex-col justify-between gap-4 xl:flex-row xl:items-end">
+        <div><div className="flex items-center gap-2 text-[11px] font-semibold text-slate-400"><span>Nội dung</span><span className="text-slate-300">/</span><span className="text-slate-600">Thư viện phim</span></div><h1 className="mt-2 text-[29px] font-bold tracking-[-.045em] text-slate-800">Thư viện phim</h1><p className="mt-1 text-[13px] text-slate-500">Kiểm soát metadata, nguồn phát và trạng thái xuất bản.</p></div>
+        <button onClick={sync} disabled={syncing} className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[var(--admin-brand)] px-3.5 text-[12px] font-semibold text-white shadow-[0_6px_14px_rgba(36,107,254,.18)] transition-colors hover:bg-[var(--admin-brand-strong)] disabled:opacity-70"><RefreshCw size={15} className={syncing ? "animate-spin" : ""} />{syncing ? "Đang tạo yêu cầu" : "Đồng bộ nguồn"}</button>
+      </header>
 
-        {/* ── Manual Sync Buttons per Source ── */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-neutral-400 font-bold uppercase mr-1">Đồng bộ ngay:</span>
-          {["kkphim", "ophim", "nguonc"].map((src) => (
-            <button
-              key={src}
-              onClick={() => handleTriggerSync(src)}
-              className="flex items-center gap-1.5 bg-[#161b22] hover:bg-blue-600/20 text-neutral-300 hover:text-blue-400 border border-[#30363d] hover:border-blue-500/40 text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95 cursor-pointer"
-            >
-              <RefreshCw size={12} />
-              <span className="uppercase">{src}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+      {notice && <div className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-[12px] font-medium text-emerald-700"><span className="flex items-center gap-2"><Check size={16} /> {notice}</span><button onClick={() => setNotice(null)} aria-label="Đóng thông báo"><X size={16} /></button></div>}
 
-      {/* Sync Status Alert Toast */}
-      {syncStatus && (
-        <div className="bg-blue-600/15 border border-blue-500/30 text-blue-300 p-3 rounded-lg text-xs font-semibold flex items-center justify-between animate-fade-in">
-          <span>⚡ {syncStatus}</span>
-          <button onClick={() => setSyncStatus(null)}><X size={14} /></button>
-        </div>
-      )}
-
-      {/* ── Filter & Search Toolbar ── */}
-      <div className="bg-[#161b22] border border-[#30363d] p-4 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
-        {/* Search Bar */}
-        <div className="relative flex-1 min-w-[240px]">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm kiếm theo tên phim, tên gốc..."
-            className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg pl-9 pr-3 py-2 text-white placeholder:text-neutral-500 focus:outline-none focus:border-blue-500 font-medium"
-          />
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Type Filter */}
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-neutral-300 focus:outline-none focus:border-blue-500 font-medium"
-          >
-            <option value="all">Tất cả loại phim</option>
-            <option value="series">Phim Bộ</option>
-            <option value="single">Phim Lẻ</option>
-            <option value="hoathinh">Hoạt Hình</option>
-          </select>
-
-          {/* Source Filter */}
-          <select
-            value={sourceFilter}
-            onChange={(e) => setSourceFilter(e.target.value)}
-            className="bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-neutral-300 focus:outline-none focus:border-blue-500 font-medium"
-          >
-            <option value="all">Tất cả nguồn (3 APIs)</option>
-            <option value="kkphim">KKPhim</option>
-            <option value="ophim">OPhim</option>
-            <option value="nguonc">NguonC</option>
-          </select>
-
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-neutral-300 focus:outline-none focus:border-blue-500 font-medium"
-          >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="visible">Đang hiển thị</option>
-            <option value="hidden">Đã ẩn (Khoá)</option>
-          </select>
-        </div>
-      </div>
-
-      {/* ── Server-Side Paginated Table ── */}
-      <div className="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden shadow-lg">
-        <table className="w-full text-left text-xs">
-          <thead>
-            <tr className="border-b border-[#30363d] text-neutral-400 uppercase text-[10px] tracking-wider bg-[#0d1117]/60">
-              <th className="py-3.5 px-4 font-bold">Phim</th>
-              <th className="py-3.5 px-4 font-bold w-24">Loại</th>
-              <th className="py-3.5 px-4 font-bold w-32">Nguồn Tích Hợp</th>
-              <th className="py-3.5 px-4 font-bold w-28">Trạng Thái</th>
-              <th className="py-3.5 px-4 font-bold w-36 text-right">Thao Tác Admin</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#21262d]">
-            {filteredMovies.map((film) => (
-              <tr key={film.id} className={`hover:bg-white/[0.02] transition-colors ${film.isHidden ? "opacity-60 bg-red-500/[0.02]" : ""}`}>
-                <td className="py-3.5 px-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-14 bg-neutral-900 rounded overflow-hidden shrink-0 border border-white/10 relative">
-                      {film.posterUrl ? (
-                        <img src={film.posterUrl} alt={film.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-neutral-600">🎬</div>
-                      )}
-                      {film.isHidden && (
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-red-400">
-                          <EyeOff size={14} />
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-white text-sm line-clamp-1">{film.title}</h4>
-                      <p className="text-[11px] text-neutral-400">{film.originName} ({film.year})</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="py-3.5 px-4 font-semibold text-neutral-300 capitalize">
-                  {film.type === "series" ? "Phim Bộ" : "Phim Lẻ"}
-                </td>
-                <td className="py-3.5 px-4">
-                  <div className="flex flex-wrap gap-1">
-                    {film.sources.map((src) => (
-                      <span
-                        key={src}
-                        className="bg-blue-600/15 border border-blue-500/30 text-blue-400 text-[10px] font-mono px-1.5 py-0.5 rounded font-bold uppercase"
-                      >
-                        {src}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td className="py-3.5 px-4">
-                  {film.isHidden ? (
-                    <span className="bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] font-bold px-2 py-0.5 rounded inline-flex items-center gap-1">
-                      <EyeOff size={10} /> Đã Ẩn
-                    </span>
-                  ) : (
-                    <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold px-2 py-0.5 rounded inline-flex items-center gap-1">
-                      <Eye size={10} /> Hiển Thị
-                    </span>
-                  )}
-                </td>
-                <td className="py-3.5 px-4 text-right">
-                  <div className="flex items-center justify-end gap-1.5">
-                    {/* Inspect/Tách Gộp Sources */}
-                    <button
-                      onClick={() => setSourcesMovie(film)}
-                      className="p-1.5 bg-[#0d1117] hover:bg-blue-600/20 text-neutral-400 hover:text-blue-400 border border-[#30363d] rounded-lg transition-colors"
-                      title="Quản lý mảng nguồn Sources (Tách/Gộp thủ công)"
-                    >
-                      <Layers size={14} />
-                    </button>
-
-                    {/* Edit Metadata */}
-                    <button
-                      onClick={() => setEditingMovie({ ...film })}
-                      className="p-1.5 bg-[#0d1117] hover:bg-white/10 text-neutral-400 hover:text-white border border-[#30363d] rounded-lg transition-colors"
-                      title="Sửa metadata thủ công"
-                    >
-                      <Edit size={14} />
-                    </button>
-
-                    {/* Toggle Hide/Unhide */}
-                    <button
-                      onClick={() => handleToggleHide(film.id)}
-                      className={`p-1.5 rounded-lg border transition-colors ${
-                        film.isHidden
-                          ? "bg-emerald-600/20 text-emerald-400 border-emerald-500/40 hover:bg-emerald-600/30"
-                          : "bg-red-600/20 text-red-400 border-red-500/40 hover:bg-red-600/30"
-                      }`}
-                      title={film.isHidden ? "Mở hiển thị lại cho User" : "Ẩn/Khoá phim khỏi User"}
-                    >
-                      {film.isHidden ? <Eye size={14} /> : <EyeOff size={14} />}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* Server Pagination Footer */}
-        <div className="p-4 border-t border-[#30363d] bg-[#0d1117]/40 flex items-center justify-between text-xs text-neutral-400">
-          <span>Hiển thị <strong>{filteredMovies.length}</strong> / <strong>{movies.length}</strong> phim</span>
-          <div className="flex items-center gap-2">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage(p => p - 1)}
-              className="p-1.5 bg-[#161b22] border border-[#30363d] rounded-lg disabled:opacity-40"
-            >
-              <ChevronLeft size={14} />
-            </button>
-            <span className="font-mono font-bold text-white">Trang {page} / 1</span>
-            <button
-              disabled
-              className="p-1.5 bg-[#161b22] border border-[#30363d] rounded-lg disabled:opacity-40"
-            >
-              <ChevronRight size={14} />
-            </button>
+      <section className="admin-card overflow-hidden">
+        <div className="flex flex-col gap-4 border-b border-[var(--admin-line)] p-5 lg:flex-row lg:items-center lg:justify-between">
+          <div><h2 className="text-[14px] font-bold text-slate-800">Danh mục nội dung</h2><p className="mt-0.5 text-[11px] text-slate-400">{filteredMovies.length} kết quả trong danh sách hiện tại</p></div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <label className="relative min-w-[250px]"><Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} className="admin-control w-full bg-slate-50 pl-9 pr-3 text-[12px] placeholder:text-slate-400" placeholder="Tìm theo tên phim..." /></label>
+            <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="admin-control px-3 text-[12px]"><option value="all">Tất cả định dạng</option><option value="series">Phim bộ</option><option value="single">Phim lẻ</option><option value="anime">Hoạt hình</option></select>
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="admin-control px-3 text-[12px]"><option value="all">Mọi trạng thái</option><option value="visible">Đang hiển thị</option><option value="hidden">Đã ẩn</option></select>
           </div>
         </div>
-      </div>
-
-      {/* ── Modal: Sửa Metadata Thủ Công ── */}
-      {editingMovie && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-lg p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#30363d] pb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Edit size={16} className="text-blue-400" />
-                Sửa Metadata Thủ Công
-              </h3>
-              <button onClick={() => setEditingMovie(null)}><X size={16} className="text-neutral-400" /></button>
-            </div>
-
-            <form onSubmit={handleSaveMetadata} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-neutral-400 font-semibold mb-1">Tên Phim</label>
-                <input
-                  type="text"
-                  value={editingMovie.title}
-                  onChange={(e) => setEditingMovie({ ...editingMovie, title: e.target.value })}
-                  className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-neutral-400 font-semibold mb-1">URL Poster / Thumbnail</label>
-                <input
-                  type="text"
-                  value={editingMovie.posterUrl}
-                  onChange={(e) => setEditingMovie({ ...editingMovie, posterUrl: e.target.value })}
-                  className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 font-mono text-[11px]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-neutral-400 font-semibold mb-1">Mô tả Phim</label>
-                <textarea
-                  rows={4}
-                  value={editingMovie.description}
-                  onChange={(e) => setEditingMovie({ ...editingMovie, description: e.target.value })}
-                  className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg p-3 text-white focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#30363d]">
-                <button
-                  type="button"
-                  onClick={() => setEditingMovie(null)}
-                  className="px-4 py-2 bg-transparent text-neutral-400 hover:text-white font-semibold rounded-lg"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow"
-                >
-                  Lưu thay đổi
-                </button>
-              </div>
-            </form>
-          </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[920px] text-left">
+            <thead className="bg-slate-50/80 text-[10px] font-bold uppercase tracking-[.07em] text-slate-400"><tr><th className="px-5 py-3">Nội dung</th><th className="px-4 py-3">Định dạng</th><th className="px-4 py-3">Nguồn phát</th><th className="px-4 py-3">Trạng thái</th><th className="px-4 py-3">Cập nhật</th><th className="px-5 py-3 text-right">Thao tác</th></tr></thead>
+            <tbody className="divide-y divide-[var(--admin-line)]">
+              {filteredMovies.map((movie) => <tr key={movie.id} className="transition-colors hover:bg-slate-50/70"><td className="px-5 py-3.5"><div className="flex items-center gap-3"><div className="grid h-12 w-9 shrink-0 place-items-center overflow-hidden rounded-md bg-gradient-to-br from-[#dce6fa] to-[#bdcbe5] text-slate-500">{movie.posterUrl ? <img src={movie.posterUrl} alt="" className="h-full w-full object-cover" /> : <Film size={15} />}</div><div className="min-w-0"><p className="max-w-[240px] truncate text-[12px] font-semibold text-slate-700">{movie.title}</p><p className="mt-0.5 max-w-[240px] truncate text-[11px] text-slate-400">{movie.originName} · {movie.year}</p></div></div></td><td className="px-4 py-3.5"><span className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">{movie.type === "series" ? "Phim bộ" : movie.type === "single" ? "Phim lẻ" : "Hoạt hình"}</span></td><td className="px-4 py-3.5"><div className="flex flex-wrap gap-1">{movie.sources.map((source) => <span key={source} className={`rounded-md px-1.5 py-1 text-[10px] font-semibold ${sourceClass[source]}`}>{source}</span>)}</div></td><td className="px-4 py-3.5"><span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${movie.isHidden ? "text-slate-400" : "text-emerald-600"}`}><i className={`h-1.5 w-1.5 rounded-full ${movie.isHidden ? "bg-slate-300" : "bg-emerald-500"}`} />{movie.isHidden ? "Đã ẩn" : "Đang hiển thị"}</span></td><td className="px-4 py-3.5 text-[11px] text-slate-400">Hôm nay, 09:42</td><td className="px-5 py-3.5"><div className="flex justify-end gap-1"><button onClick={() => setEditing({ ...movie })} className="admin-icon-button !h-8 !w-8" title="Chỉnh sửa"><Edit3 size={15} /></button><button onClick={() => toggleVisibility(movie.id)} className="admin-icon-button !h-8 !w-8" title={movie.isHidden ? "Hiện phim" : "Ẩn phim"}>{movie.isHidden ? <Eye size={15} /> : <EyeOff size={15} />}</button><button className="admin-icon-button !h-8 !w-8" title="Tùy chọn"><MoreHorizontal size={17} /></button></div></td></tr>)}
+              {!filteredMovies.length && <tr><td colSpan={6} className="px-5 py-14 text-center text-[12px] text-slate-400">Không tìm thấy nội dung phù hợp.</td></tr>}
+            </tbody>
+          </table>
         </div>
-      )}
+        <footer className="flex items-center justify-between border-t border-[var(--admin-line)] px-5 py-3"><span className="text-[11px] text-slate-400">Hiển thị {filteredMovies.length} trên 12.850 phim</span><div className="flex gap-1"><button className="admin-icon-button !h-8 !w-8" disabled aria-label="Trang trước"><ChevronLeft size={16} /></button><button className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--admin-brand)] text-[11px] font-bold text-white">1</button><button className="grid h-8 w-8 place-items-center rounded-lg text-[11px] font-semibold text-slate-500 hover:bg-slate-100">2</button><button className="admin-icon-button !h-8 !w-8" aria-label="Trang sau"><ChevronRight size={16} /></button></div></footer>
+      </section>
 
-      {/* ── Modal: Xem Chi Tiết & Tách/Gộp Nguồn Sources ── */}
-      {sourcesMovie && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#30363d] pb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Layers size={16} className="text-blue-400" />
-                Mảng Nguồn Phim (Sources)
-              </h3>
-              <button onClick={() => setSourcesMovie(null)}><X size={16} className="text-neutral-400" /></button>
-            </div>
+      <section className="grid gap-4 md:grid-cols-3"><div className="admin-card flex items-center gap-3 p-4"><span className="grid h-9 w-9 place-items-center rounded-lg bg-blue-50 text-blue-600"><Database size={17} /></span><span><strong className="block text-[14px] text-slate-700">3 nguồn đang hoạt động</strong><small className="text-[11px] text-slate-400">Đồng bộ metadata theo lịch</small></span></div><div className="admin-card flex items-center gap-3 p-4"><span className="grid h-9 w-9 place-items-center rounded-lg bg-violet-50 text-violet-600"><Layers3 size={17} /></span><span><strong className="block text-[14px] text-slate-700">1.420 phim đã gộp</strong><small className="text-[11px] text-slate-400">Tránh lặp nội dung giữa nguồn</small></span></div><div className="admin-card flex items-center gap-3 p-4"><span className="grid h-9 w-9 place-items-center rounded-lg bg-emerald-50 text-emerald-600"><Check size={17} /></span><span><strong className="block text-[14px] text-slate-700">99,2% metadata hợp lệ</strong><small className="text-[11px] text-slate-400">Đã kiểm tra trong 24 giờ</small></span></div></section>
 
-            <div className="space-y-3 text-xs">
-              <p className="text-neutral-400">
-                Phim <strong>{sourcesMovie.title}</strong> hiện hợp nhất dữ liệu từ các nguồn sau:
-              </p>
-
-              <div className="space-y-2">
-                {["kkphim", "ophim", "nguonc"].map((src) => {
-                  const isChecked = sourcesMovie.sources.includes(src);
-                  return (
-                    <label
-                      key={src}
-                      className="flex items-center justify-between bg-[#0d1117] border border-[#30363d] p-3 rounded-lg cursor-pointer hover:border-blue-500/50 transition-colors"
-                    >
-                      <span className="font-bold text-white uppercase">{src}</span>
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => {
-                          const nextSources = isChecked
-                            ? sourcesMovie.sources.filter((s: string) => s !== src)
-                            : [...sourcesMovie.sources, src];
-                          setSourcesMovie({ ...sourcesMovie, sources: nextSources });
-                        }}
-                        className="w-4 h-4 accent-blue-600 rounded"
-                      />
-                    </label>
-                  );
-                })}
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#30363d]">
-                <button
-                  onClick={() => handleSaveSources(sourcesMovie.sources)}
-                  className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow"
-                >
-                  Xác nhận Tách / Gộp Nguồn
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {editing && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/35 p-4 backdrop-blur-[2px]"><div role="dialog" aria-modal="true" aria-labelledby="edit-film-title" className="w-full max-w-lg rounded-2xl bg-white shadow-2xl"><div className="flex items-center justify-between border-b border-[var(--admin-line)] px-5 py-4"><div><h2 id="edit-film-title" className="text-[15px] font-bold text-slate-800">Chỉnh sửa phim</h2><p className="mt-0.5 text-[11px] text-slate-400">Cập nhật metadata hiển thị trong thư viện.</p></div><button onClick={() => setEditing(null)} className="admin-icon-button !h-8 !w-8" aria-label="Đóng"><X size={17} /></button></div><div className="space-y-4 p-5"><label className="block text-[11px] font-semibold text-slate-600">Tên phim<input value={editing.title} onChange={(event) => setEditing({ ...editing, title: event.target.value })} className="admin-control mt-1.5 w-full px-3 text-[13px]" /></label><label className="block text-[11px] font-semibold text-slate-600">Tên gốc<input value={editing.originName} onChange={(event) => setEditing({ ...editing, originName: event.target.value })} className="admin-control mt-1.5 w-full px-3 text-[13px]" /></label><label className="block text-[11px] font-semibold text-slate-600">Mô tả<textarea value={editing.description} onChange={(event) => setEditing({ ...editing, description: event.target.value })} className="mt-1.5 min-h-24 w-full rounded-lg border border-[var(--admin-line)] px-3 py-2 text-[13px] text-slate-600 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-50" /></label></div><div className="flex justify-end gap-2 border-t border-[var(--admin-line)] px-5 py-4"><button onClick={() => setEditing(null)} className="h-9 rounded-lg px-3.5 text-[12px] font-semibold text-slate-500 hover:bg-slate-100">Hủy</button><button onClick={save} className="h-9 rounded-lg bg-[var(--admin-brand)] px-3.5 text-[12px] font-semibold text-white hover:bg-[var(--admin-brand-strong)]">Lưu thay đổi</button></div></div></div>}
     </div>
   );
 }

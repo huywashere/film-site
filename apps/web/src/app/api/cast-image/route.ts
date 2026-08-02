@@ -25,7 +25,9 @@ function getRedisClient(): Redis | null {
       if (redis) {
         try {
           redis.disconnect();
-        } catch (e) {}
+        } catch {
+          // Redis is optional for this image lookup.
+        }
         redis = null;
       }
     });
@@ -79,7 +81,9 @@ export async function GET(request: NextRequest) {
           url: cached === "placeholder" ? null : cached,
         });
       }
-    } catch (e) {}
+    } catch {
+      // Cache misses must not make the image endpoint fail.
+    }
   }
 
   let imageUrl = "";
@@ -143,7 +147,9 @@ export async function GET(request: NextRequest) {
         "EX",
         14 * 24 * 60 * 60,
       );
-    } catch (e) {}
+    } catch {
+      // Cache writes are best effort.
+    }
   }
 
   return NextResponse.json({ url: imageUrl || null });

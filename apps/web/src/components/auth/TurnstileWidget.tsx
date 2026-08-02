@@ -1,245 +1,177 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { Loader2, RefreshCw, TriangleAlert } from "lucide-react";
 
-interface TurnstileWidgetProps {
-  onVerify?: (token: string) => void;
-  onSuccess?: (token: string) => void;
-  onExpire?: () => void;
-  onError?: () => void;
-  theme?: "dark" | "light" | "auto";
-}
+type TurnstileAction = "login" | "register";
+
+type TurnstileApi = {
+  ready: (callback: () => void) => void;
+  render: (
+    container: HTMLElement,
+    options: {
+      sitekey: string;
+      action: TurnstileAction;
+      theme: "dark";
+      size: "flexible";
+      callback: (token: string) => void;
+      "error-callback": () => void;
+      "expired-callback": () => void;
+    },
+  ) => string;
+  remove: (widgetId: string) => void;
+};
 
 declare global {
   interface Window {
-    turnstile?: {
-      render: (
-        container: string | HTMLElement,
-        options: {
-          sitekey: string;
-          theme?: string;
-          callback?: (token: string) => void;
-          "expired-callback"?: () => void;
-          "error-callback"?: () => void;
-        },
-      ) => string;
-      reset: (widgetId?: string) => void;
-      remove?: (widgetId?: string) => void;
-    };
-    onloadTurnstileCallback?: () => void;
+    turnstile?: TurnstileApi;
   }
 }
 
-export function TurnstileWidget({
-  onVerify,
-  onSuccess,
-  onExpire,
-  onError,
-  theme = "dark",
-}: TurnstileWidgetProps) {
+const SCRIPT_ID = "cf-turnstile-explicit";
+const SCRIPT_URL =
+  "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+
+function getTurnstileScript(): HTMLScriptElement {
+  const existing = document.getElementById(SCRIPT_ID);
+  if (existing instanceof HTMLScriptElement) return existing;
+
+  const script = document.createElement("script");
+  script.id = SCRIPT_ID;
+  script.src = SCRIPT_URL;
+  script.async = true;
+  script.defer = true;
+  document.head.appendChild(script);
+  return script;
+}
+
+type TurnstileWidgetProps = {
+  action: TurnstileAction;
+  onTokenChange: (token: string | null) => void;
+};
+
+export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
-  const [status, setStatus] = useState<"idle" | "verifying" | "success">(
-    "idle",
-  );
-  const [isRealRendered, setIsRealRendered] = useState(false);
-
-  const onVerifyRef = useRef(onVerify);
-  const onSuccessRef = useRef(onSuccess);
-  const onExpireRef = useRef(onExpire);
-  const onErrorRef = useRef(onError);
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    onVerifyRef.current = onVerify;
-    onSuccessRef.current = onSuccess;
-    onExpireRef.current = onExpire;
-    onErrorRef.current = onError;
-  });
-
-  const notifySuccess = (token: string) => {
-    setStatus("success");
-    if (onVerifyRef.current) onVerifyRef.current(token);
-    if (onSuccessRef.current) onSuccessRef.current(token);
-  };
-
-  const handleManualClick = () => {
-    if (status === "success") return;
-    setStatus("verifying");
-    setTimeout(() => {
-      notifySuccess("cf-turnstile-verified-token-pass");
-    }, 450);
-  };
-
-  useEffect(() => {
-    let isMounted = true;
-    const envKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-    const activeSiteKey = envKey || "2x00000000000000000000AB";
-
-    const renderWidget = () => {
-      if (!isMounted || !containerRef.current || !window.turnstile) return;
-      if (widgetIdRef.current !== null) return;
-
-      try {
-        widgetIdRef.current = window.turnstile.render(containerRef.current, {
-          sitekey: activeSiteKey,
-          theme: theme || "dark",
-          callback: (token: string) => {
-            if (isMounted) {
-              notifySuccess(token);
-              setIsRealRendered(true);
-            }
-          },
-          "expired-callback": () => {
-            if (isMounted) {
-              setStatus("idle");
-              onExpireRef.current?.();
-            }
-          },
-          "error-callback": () => {
-            if (!isMounted) return;
-            // Enable dev fallback on domain error
-            setIsRealRendered(false);
-          },
-        });
-
-        if (widgetIdRef.current && isMounted) {
-          // Check if iframe was actually injected into container
-          setTimeout(() => {
-            if (
-              isMounted &&
-              containerRef.current &&
-              containerRef.current.children.length > 0
-            ) {
-              setIsRealRendered(true);
-            }
-          }, 300);
-        }
-      } catch (err) {
-        console.warn("Turnstile error:", err);
-      }
-    };
-
-    window.onloadTurnstileCallback = () => {
-      if (isMounted) renderWidget();
-    };
-
-    const scriptId = "cf-turnstile-script";
-    let script = document.getElementById(scriptId) as HTMLScriptElement;
-
-    if (!script) {
-      script = document.createElement("script");
-      script.id = scriptId;
-      script.src =
-        "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback";
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-    } else if (window.turnstile) {
-      renderWidget();
+    if (!siteKey || !containerRef.current) {
+      onTokenChange(null);
+      return;
     }
 
-    const timer = setInterval(() => {
-      if (window.turnstile && widgetIdRef.current === null) {
-        renderWidget();
+    let disposed = false;
+    let renderScheduled = false;
+    setStatus("loading");
+    const render = () => {
+      if (
+        disposed ||
+        renderScheduled ||
+        widgetIdRef.current ||
+        !containerRef.current ||
+        !window.turnstile
+      )
+        return;
+
+      renderScheduled = true;
+      window.turnstile.ready(() => {
+        if (disposed || !containerRef.current || !window.turnstile) return;
+        try {
+          widgetIdRef.current = window.turnstile.render(containerRef.current, {
+            sitekey: siteKey,
+            action,
+            theme: "dark",
+            size: "flexible",
+            callback: (token) => {
+              setStatus("ready");
+              onTokenChange(token);
+            },
+            "error-callback": () => {
+              setStatus("error");
+              onTokenChange(null);
+            },
+            "expired-callback": () => {
+              setStatus("loading");
+              onTokenChange(null);
+            },
+          });
+          setStatus("ready");
+        } catch {
+          setStatus("error");
+          onTokenChange(null);
+        }
+      });
+    };
+
+    const script = getTurnstileScript();
+    if (window.turnstile) {
+      render();
+    } else {
+      script.addEventListener("load", render, { once: true });
+      script.addEventListener(
+        "error",
+        () => {
+          setStatus("error");
+          onTokenChange(null);
+        },
+        { once: true },
+      );
+    }
+
+    // Next hot-reloads and rapid form mode switches can attach after the CDN
+    // script has already fired its load event. Polling only during bootstrap
+    // closes that race without adding a permanent timer to the page.
+    const readinessTimer = window.setInterval(() => {
+      if (window.turnstile) {
+        window.clearInterval(readinessTimer);
+        render();
       }
-    }, 200);
+    }, 100);
+    const timeoutTimer = window.setTimeout(() => {
+      window.clearInterval(readinessTimer);
+      if (!window.turnstile && !disposed) setStatus("error");
+    }, 8_000);
 
     return () => {
-      isMounted = false;
-      clearInterval(timer);
-    };
-  }, [theme]);
-
-  // Auto-verify in development if needed
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (status === "idle") {
-        notifySuccess("cf-turnstile-auto-verified-token");
+      disposed = true;
+      script.removeEventListener("load", render);
+      window.clearInterval(readinessTimer);
+      window.clearTimeout(timeoutTimer);
+      if (widgetIdRef.current && window.turnstile) {
+        window.turnstile.remove(widgetIdRef.current);
+        widgetIdRef.current = null;
       }
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
+      onTokenChange(null);
+    };
+  }, [action, attempt, onTokenChange, siteKey]);
+
+  if (!siteKey) return null;
 
   return (
-    <div className="flex items-center justify-center my-3 w-full min-h-[65px]">
-      {/* Real Cloudflare Turnstile Container */}
-      <div
-        ref={containerRef}
-        className={
-          isRealRendered ? "flex justify-center min-h-[65px]" : "hidden"
-        }
-      />
-
-      {/* Cloudflare Turnstile Widget (Visible whenever real script doesn't render iframe) */}
-      {!isRealRendered && (
-        <div
-          onClick={handleManualClick}
-          className="w-[300px] h-[65px] bg-[#303030] border border-white/20 rounded-sm px-4 flex items-center justify-between shadow-md select-none cursor-pointer hover:border-white/40 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            {status === "idle" && (
-              <div className="w-5 h-5 rounded border border-[#777777] bg-[#222222] group-hover:border-white transition-colors flex items-center justify-center flex-shrink-0" />
-            )}
-
-            {status === "verifying" && (
-              <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
-                <Loader2 size={18} className="animate-spin text-[#F48120]" />
-              </div>
-            )}
-
-            {status === "success" && (
-              <div className="w-7 h-7 rounded-full bg-[#22c55e] flex items-center justify-center text-white shadow-sm flex-shrink-0 animate-in zoom-in-50 duration-200">
-                <Check size={18} strokeWidth={3} />
-              </div>
-            )}
-
-            <span className="text-sm font-medium text-white tracking-tight">
-              {status === "idle" && "Xác thực bạn là con người"}
-              {status === "verifying" && "Đang xác thực..."}
-              {status === "success" && "Thành công!"}
-            </span>
-          </div>
-
-          <div className="flex flex-col items-end gap-0.5 pointer-events-auto">
-            <div className="flex items-center gap-1">
-              <svg
-                width="22"
-                height="14"
-                viewBox="0 0 48 30"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M38.5 13.5C37.8 8.8 33.8 5.2 29 5.2C27.9 5.2 26.9 5.4 25.9 5.8C24.3 2.3 20.8 0 16.7 0C11.1 0 6.5 4.3 6.0 9.8C2.5 10.8 0 14.0 0 17.8C0 22.3 3.7 26 8.2 26H37.8C42.3 26 46 22.3 46 17.8C46 13.7 42.7 10.3 38.5 13.5Z"
-                  fill="#F48120"
-                />
-              </svg>
-              <span className="text-[10px] font-black tracking-widest text-white uppercase font-sans">
-                CLOUDFLARE
-              </span>
-            </div>
-            <div className="flex flex-col items-end text-[9px] text-neutral-300 font-normal leading-tight">
-              <a
-                href="https://www.cloudflare.com/privacypolicy/"
-                target="_blank"
-                rel="noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="underline hover:text-white transition-colors"
-              >
-                Quyền riêng tư
-              </a>
-              <a
-                href="https://support.cloudflare.com"
-                target="_blank"
-                rel="noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="underline hover:text-white transition-colors"
-              >
-                Giúp đỡ
-              </a>
-            </div>
-          </div>
+    <div className="pt-0.5" aria-label="Xác minh chống bot">
+      <div ref={containerRef} className="min-h-[65px]" />
+      {status === "loading" && (
+        <p className="-mt-[58px] flex h-[58px] items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] text-[11px] text-neutral-400">
+          <Loader2 size={14} className="animate-spin" /> Đang tải xác minh chống bot...
+        </p>
+      )}
+      {status === "error" && (
+        <div className="-mt-[58px] flex min-h-[58px] items-center justify-between gap-3 rounded-lg border border-amber-300/20 bg-amber-300/[0.07] px-3 text-left text-[11px] leading-4 text-amber-100">
+          <span className="flex items-start gap-2"><TriangleAlert size={15} className="mt-0.5 shrink-0 text-amber-300" />Không tải được xác minh. Kiểm tra mạng hoặc tiện ích chặn quảng cáo.</span>
+          <button
+            type="button"
+            onClick={() => {
+              document.getElementById(SCRIPT_ID)?.remove();
+              delete window.turnstile;
+              setAttempt((value) => value + 1);
+            }}
+            className="shrink-0 rounded-md border border-amber-200/25 px-2 py-1 text-amber-100 transition-colors hover:bg-amber-200/10"
+          >
+            <RefreshCw size={13} aria-label="Tải lại xác minh" />
+          </button>
         </div>
       )}
     </div>

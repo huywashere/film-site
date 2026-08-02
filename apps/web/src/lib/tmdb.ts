@@ -90,6 +90,33 @@ export interface TmdbMovie {
   media_type?: "movie" | "tv";
 }
 
+export interface TmdbPagedResults {
+  page: number;
+  results: TmdbMovie[];
+  total_pages: number;
+  total_results?: number;
+}
+
+export interface TmdbDiscoverOptions {
+  page?: number;
+  region?: string;
+  with_original_language?: string;
+  with_origin_country?: string;
+  sort_by?:
+    "popularity.desc" | "vote_average.desc" | "primary_release_date.desc";
+  "vote_count.gte"?: number;
+}
+
+function toDiscoverParams(
+  options: TmdbDiscoverOptions,
+): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(options).flatMap(([key, value]) =>
+      value === undefined ? [] : [[key, String(value)]],
+    ),
+  );
+}
+
 export interface TmdbCastMember {
   id: number;
   name: string;
@@ -236,6 +263,17 @@ export const tmdbApi = {
       results: (TmdbMovie & { media_type: string })[];
       total_pages: number;
     }>("search/multi", { query, page: String(page) }),
+
+  // ── Khám phá theo thị trường / ngôn ngữ ──
+  discoverMovies: (options: TmdbDiscoverOptions = {}) =>
+    fetchTmdb<TmdbPagedResults>(
+      "discover/movie",
+      toDiscoverParams({
+        sort_by: "popularity.desc",
+        "vote_count.gte": 20,
+        ...options,
+      }),
+    ),
 
   // ── Trending & Popular ──
   getTrending: (

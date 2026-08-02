@@ -115,27 +115,29 @@ export default function BrowseFilmsPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const rawItems = data?.items || data?.data?.items || [];
+  const rawItems: Array<Record<string, unknown>> = (data?.items ||
+    data?.data?.items ||
+    []) as Array<Record<string, unknown>>;
   const totalPages =
     data?.params?.pagination?.totalPages ||
     data?.pagination?.totalPages ||
     Math.ceil((data?.totalItems || 100) / 24);
 
   const films: FilmItem[] = useMemo(() => {
-    let list = rawItems.map((item: any) => ({
-      _id: item._id || item.id || item.slug,
-      name: item.name || item.title || "",
-      origin_name: item.origin_name || item.original_title || "",
-      slug: item.slug,
-      poster_url: item.poster_url || item.thumb_url,
-      thumb_url: item.thumb_url || item.poster_url,
-      year: item.year || 2026,
-      episode_current: item.episode_current || "HD",
-      quality: item.quality || "FHD",
-      lang: item.lang || "Vietsub",
-      category: item.category || [],
-      country: item.country || [],
-      vote_average: item.vote_average || item.rating || 8.5,
+    let list: FilmItem[] = rawItems.map((item): FilmItem => ({
+      _id: String(item._id || item.id || item.slug || ""),
+      name: String(item.name || item.title || ""),
+      origin_name: String(item.origin_name || item.original_title || ""),
+      slug: String(item.slug || ""),
+      poster_url: String(item.poster_url || item.thumb_url || ""),
+      thumb_url: String(item.thumb_url || item.poster_url || ""),
+      year: Number(item.year) || 2026,
+      episode_current: String(item.episode_current || "HD"),
+      quality: String(item.quality || "FHD"),
+      lang: String(item.lang || "Vietsub"),
+      category: Array.isArray(item.category) ? item.category : [],
+      country: Array.isArray(item.country) ? item.country : [],
+      vote_average: Number(item.vote_average || item.rating) || 8.5,
     }));
 
     if (selectedYear) {

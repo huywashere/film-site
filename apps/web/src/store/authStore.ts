@@ -15,23 +15,38 @@ export interface User {
   isLocked?: boolean;
 }
 
+export interface RegisterInput {
+  email: string;
+  username: string;
+  displayName?: string;
+  password: string;
+  turnstileToken?: string;
+}
+
+export interface LoginResult {
+  success?: boolean;
+  user?: User;
+  require2FA?: boolean;
+  tempToken?: string;
+}
+
 interface AuthState {
   user: User | null;
   isLoading: boolean;
   setUser: (user: User | null) => void;
-  login: (email: string, password: string) => Promise<any>;
-  register: (
+  login: (
     email: string,
-    username: string,
     password: string,
-  ) => Promise<void>;
+    turnstileToken?: string,
+  ) => Promise<LoginResult>;
+  register: (input: RegisterInput) => Promise<LoginResult>;
   logout: () => Promise<void>;
   fetchMe: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isLoading: false,
 
@@ -47,31 +62,36 @@ export const useAuthStore = create<AuthState>()(
         set({ user });
       },
 
-      login: async (email, password) => {
+      login: async (email, password, turnstileToken) => {
         set({ isLoading: true });
         try {
-          const { data } = await authApi.login({ email, password });
+          const { data } = await authApi.login({
+            email,
+            password,
+            turnstileToken,
+          });
           if (data && data.require2FA) {
             set({ isLoading: false });
-            return data;
+            return data as LoginResult;
           }
           set({ isLoading: false });
           const { data: user } = await authApi.getMe();
-          set({ user });
-          return { success: true };
+          get().setUser(user);
+          return { success: true, user };
         } catch (err) {
           set({ isLoading: false });
           throw err;
         }
       },
 
-      register: async (email, username, password) => {
+      register: async ({ email, username, password, turnstileToken }) => {
         set({ isLoading: true });
         try {
-          await authApi.register({ email, username, password });
+          await authApi.register({ email, username, password, turnstileToken });
           set({ isLoading: false });
           const { data: user } = await authApi.getMe();
-          set({ user });
+          get().setUser(user);
+          return { success: true, user };
         } catch (err) {
           set({ isLoading: false });
           throw err;
@@ -86,15 +106,18 @@ export const useAuthStore = create<AuthState>()(
         } catch (e) {
           console.error("Logout error:", e);
         }
-        set({ user: null });
+        get().setUser(null);
       },
 
       fetchMe: async () => {
         try {
           const { data } = await authApi.getMe();
-          set({ user: data });
+          get().setUser(data);
         } catch {
-          // Keep persisted user if offline
+          // Persisted UI state is not proof of an API session. Clearing it
+          // avoids presenting a user as signed in when its cookie session has
+          // expired or was revoked on another device.
+          get().setUser(null);
         }
       },
     }),

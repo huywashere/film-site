@@ -66,11 +66,18 @@ async function bootstrap() {
   app.setGlobalPrefix("api/v1");
 
   // ── CORS – restrict to trusted frontend origins ───────────────
-  const origins = process.env.FRONTEND_URL
+  const configuredOrigins = process.env.FRONTEND_URL
     ? process.env.FRONTEND_URL.split(",")
         .map((o) => o.trim())
         .filter(Boolean)
     : ["http://localhost:3000"];
+  const origins = Array.from(
+    new Set(
+      process.env.NODE_ENV === "production"
+        ? configuredOrigins
+        : [...configuredOrigins, "http://127.0.0.1:3000"],
+    ),
+  );
 
   app.enableCors({
     origin: origins,

@@ -31,6 +31,18 @@ body {
   font-optical-sizing: auto;
 }
 
+/* Error routes are full-screen states; none of the regular site chrome may
+   compete with them. :has() also applies before the client status marker runs. */
+body:has(.status-page),
+body[data-status-page="true"] {
+  overflow: hidden;
+}
+
+body:has(.status-page) [data-site-chrome],
+body[data-status-page="true"] [data-site-chrome] {
+  display: none !important;
+}
+
 /* Manrope — cinematic, premium cho headings */
 h1,
 h2,
@@ -131,6 +143,7 @@ pre,
 /* Smooth scroll behavior */
 html {
   scroll-behavior: smooth;
+  background: var(--background);
 }
 
 body {
@@ -140,6 +153,16 @@ body {
     "rlig" 1,
     "calt" 1,
     "kern" 1;
+  min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
 }
 
 /* ── Animation Keyframes ───────────────────────────────────────── */

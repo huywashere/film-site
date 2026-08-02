@@ -1,5 +1,5 @@
 "use client";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
@@ -26,8 +26,6 @@ import {
 } from "lucide-react";
 import { movieApi, watchHistoryApi } from "@/lib/api";
 import { resolveImageUrl } from "@/components/film/FilmCard";
-import { watchProgressStorage } from "@/lib/watch-progress";
-import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/providers/ToastProvider";
 import { useAuthStore } from "@/store/authStore";
@@ -37,10 +35,15 @@ import { useTmdb } from "@/hooks/useTmdb";
 import { tmdbBackdrop, tmdbApi } from "@/lib/tmdb";
 import { WatchPartyPanel } from "@/components/watch/WatchPartyPanel";
 import { AdvancedCommentSection } from "@/components/comments/AdvancedCommentSection";
-
-const ArtPlayer = dynamic(() => import("@/components/video/ArtPlayer"), {
-  ssr: false,
-});
+import { HlsVideoPlayer } from "@/components/video/HlsVideoPlayer";
+import { watchProgressStorage } from "@/lib/watch-progress";
+import {
+  classifyPlayerError,
+  markSourceFailure,
+  markSourceSuccess,
+  rankHealthyCandidates,
+} from "@/lib/player-source-health";
+import { recordTelemetry } from "@/lib/telemetry";
 
 // ── Server type detection ──────────────────────────────────────
 type ServerType = "vietsub" | "thuyet-minh" | "raw";
@@ -174,6 +177,16 @@ export default function WatchPage() {
 
   const slug = params.slug as string;
   const currentEp = searchParams.get("ep") || "";
+  const requestedSource = searchParams.get("source");
+  const preferredSource = ["kkphim", "ophim", "nguonc", "vsmov"].includes(
+    requestedSource || "",
+  )
+    ? (requestedSource as "kkphim" | "ophim" | "nguonc" | "vsmov")
+    : undefined;
+  const sourceSlug = searchParams.get("sourceSlug") || slug;
+  const roomCode = searchParams.get("room");
+  const shouldCreateParty = searchParams.get("party") === "create";
+  const requestedRoomName = searchParams.get("roomName") || "";
   const wp = useWatchParty(slug, currentEp);
 
   // State
@@ -185,7 +198,9 @@ export default function WatchPage() {
   const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(
     null,
   );
-  const [useEmbedPlayer, setUseEmbedPlayer] = useState(true);
+  // Native HLS is the primary transport because it exposes real playback
+  // events. Provider iframe remains the safe final transport fallback.
+  const [playerEngine, setPlayerEngine] = useState<"hls" | "iframe">("hls");
   const [activeServerType, setActiveServerType] =
     useState<ServerType>("vietsub");
   const [currentTypeServer, setCurrentTypeServer] = useState(0);
@@ -193,12 +208,16 @@ export default function WatchPage() {
   // Fallback state
   const [isFallbacking, setIsFallbacking] = useState(false);
   const [fallbackMessage, setFallbackMessage] = useState("");
-  const [loadTimeout, setLoadTimeout] = useState<ReturnType<
-    typeof setTimeout
-  > | null>(null);
   const fallbackAttemptRef = useRef(0);
+  const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const iframeLoadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fallbackInProgressRef = useRef(false);
+  const preserveServerOnTypeChangeRef = useRef(false);
   const autoNextTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const lastSyncRef = useRef(0);
+  const playerLoadStartedAtRef = useRef(Date.now());
+  const playedSourceKeysRef = useRef(new Set<string>());
+  const lastKnownPlaybackTimeRef = useRef(0);
+  const lastProgressSyncRef = useRef(0);
 
   // Universal Player Container & Gestures (for ALL video players & iframe sources)
   const playerContainerRef = useRef<HTMLDivElement>(null);
@@ -215,6 +234,9 @@ export default function WatchPage() {
   const [showEpThumbnails, setShowEpThumbnails] = useState(false);
   const [artInstance, setArtInstance] = useState<any>(null);
   const hasSkippedIntroRef = useRef(false);
+  const joinedRoomRef = useRef<string | null>(null);
+  const creatingRoomRef = useRef(false);
+  const applyingRemoteStateRef = useRef(false);
   const [epRangeIndex, setEpRangeIndex] = useState(0);
   const epGridRef = useRef<HTMLDivElement>(null);
 
@@ -226,11 +248,61 @@ export default function WatchPage() {
     }
   });
 
+  useEffect(() => {
+    if (
+      roomCode &&
+      wp.roomId !== roomCode &&
+      joinedRoomRef.current !== roomCode
+    ) {
+      joinedRoomRef.current = roomCode;
+      wp.joinRoom(roomCode);
+    }
+  }, [roomCode, wp.joinRoom, wp.roomId]);
+
+  useEffect(() => {
+    const state = wp.remotePlayerState;
+    if (!state || !artInstance || wp.isHost) return;
+
+    if (state.episode && state.episode !== currentEp) {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      nextParams.set("ep", state.episode);
+      if (wp.roomId) nextParams.set("room", wp.roomId);
+      router.replace(`/watch/${slug}?${nextParams.toString()}`);
+      return;
+    }
+
+    applyingRemoteStateRef.current = true;
+    const drift = Math.abs((artInstance.currentTime || 0) - state.currentTime);
+    if (drift > 1.5 || state.action === "seek") {
+      artInstance.currentTime = state.currentTime;
+    }
+    if (state.action === "play") {
+      artInstance.video?.play?.().catch?.(() => {});
+    } else if (state.action === "pause") {
+      artInstance.video?.pause?.();
+    }
+    const release = window.setTimeout(() => {
+      applyingRemoteStateRef.current = false;
+    }, 800);
+    return () => window.clearTimeout(release);
+  }, [
+    artInstance,
+    currentEp,
+    router,
+    searchParams,
+    slug,
+    wp.isHost,
+    wp.remotePlayerState,
+    wp.roomId,
+  ]);
+
   const toggleAutoSkipIntro = (val: boolean) => {
     setAutoSkipIntro(val);
     try {
       localStorage.setItem("auto-skip-intro", String(val));
-    } catch {}
+    } catch {
+      // Storage can be unavailable in private browsing mode.
+    }
   };
 
   useEffect(() => {
@@ -338,14 +410,12 @@ export default function WatchPage() {
     }
   };
 
-  const progressSyncMutation = useMutation({
-    mutationFn: (data: any) => watchHistoryApi.upsert(data),
-  });
-
   // Data
   const { data, isLoading } = useQuery({
-    queryKey: ["film", slug],
-    queryFn: () => movieApi.getDetail(slug).then((r) => r.data),
+    queryKey: ["film", sourceSlug, preferredSource],
+    queryFn: () =>
+      movieApi.getDetail(sourceSlug, preferredSource).then((r) => r.data),
+    enabled: !!sourceSlug,
   });
   const { data: ophimData } = useQuery({
     queryKey: ["film-ophim", slug],
@@ -406,18 +476,24 @@ export default function WatchPage() {
         try {
           const r: any = await movieApi.search(matchedKeyword, 1, 15);
           items.push(...(r?.data?.items || r?.data?.data?.items || []));
-        } catch {}
+        } catch {
+          // Recommendation source is optional.
+        }
       }
       if (filmCategory) {
         try {
           const r: any = await movieApi.getByGenre(filmCategory, 1);
           items.push(...(r?.data?.data?.items || r?.data?.items || []));
-        } catch {}
+        } catch {
+          // Recommendation source is optional.
+        }
       }
       try {
         const r: any = await movieApi.getLatest(1);
         items.push(...(r?.data?.items || r?.data?.data?.items || []));
-      } catch {}
+      } catch {
+        // Recommendation source is optional.
+      }
       const seen = new Set<string>();
       return {
         items: items
@@ -509,6 +585,11 @@ export default function WatchPage() {
 
   const currentTypeServers = serversByType[activeServerType] || [];
   const server = episodes[currentServer] || episodes[0];
+  const sourceCandidate = {
+    key: `${server?._source || "unknown"}:${server?.server_name || currentServer}`,
+    source: server?._source,
+    serverName: server?.server_name,
+  };
   const serverData: any[] = useMemo(() => server?.server_data || [], [server]);
   const currentEpData: any =
     serverData.find((e: any) => (e.slug || e.name) === currentEp) ||
@@ -517,12 +598,12 @@ export default function WatchPage() {
   const m3u8Url: string = currentEpData?.link_m3u8 || "";
   const embedUrl: string = currentEpData?.link_embed || "";
 
-  // Proxy m3u8 qua server để filter quảng cáo + fix CORS
-  const proxiedM3u8 = m3u8Url
-    ? `/api/hls-proxy?url=${encodeURIComponent(m3u8Url)}`
-    : "";
-
-  const videoUrl = proxiedM3u8 || embedUrl;
+  const iframeUrl =
+    embedUrl ||
+    (m3u8Url
+      ? `https://player.phimapi.com/player/?url=${encodeURIComponent(m3u8Url)}`
+      : "");
+  const videoUrl = m3u8Url || iframeUrl;
 
   const currentEpIndex = serverData.findIndex(
     (e: any) =>
@@ -534,6 +615,53 @@ export default function WatchPage() {
     resolveImageUrl(film?.thumb_url) ||
     resolveImageUrl(film?.poster_url) ||
     undefined;
+
+  const createCurrentMovieParty = useCallback(async () => {
+    const newRoomId = await wp.createRoom({
+      name: requestedRoomName || undefined,
+      movieName: film?.name || film?.origin_name || "Phim đang xem",
+      posterUrl,
+    });
+    if (!newRoomId) return null;
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set("room", newRoomId);
+    nextParams.delete("party");
+    nextParams.delete("roomName");
+    router.replace(`/watch/${slug}?${nextParams.toString()}`);
+    return newRoomId;
+  }, [
+    film?.name,
+    film?.origin_name,
+    posterUrl,
+    requestedRoomName,
+    router,
+    searchParams,
+    slug,
+    wp.createRoom,
+  ]);
+
+  useEffect(() => {
+    if (
+      !shouldCreateParty ||
+      !film ||
+      wp.roomId ||
+      wp.connectionState !== "online" ||
+      creatingRoomRef.current
+    ) {
+      return;
+    }
+    creatingRoomRef.current = true;
+    createCurrentMovieParty().then((roomId) => {
+      if (!roomId) creatingRoomRef.current = false;
+    });
+  }, [
+    createCurrentMovieParty,
+    film,
+    shouldCreateParty,
+    wp.connectionState,
+    wp.roomId,
+  ]);
 
   // TMDB backdrop cho hero phia tren player
   const { bestBackdrop } = useTmdb({
@@ -551,15 +679,71 @@ export default function WatchPage() {
     (item: any) => item.episode === epName,
   );
   const dbProgress = currentResumeEntry?.progress || 0;
+  const localProgress = useMemo(() => {
+    if (!progressKey) return 0;
+    return watchProgressStorage
+      .getHistoryEntries()
+      .find((entry) => entry.slug === slug && entry.epSlug === epName)
+      ?.currentTime || 0;
+  }, [epName, progressKey, slug]);
+  const resumeAt = Math.max(dbProgress, localProgress);
+
+  const handlePlaybackProgress = useCallback(
+    (currentTime: number, duration: number) => {
+      if (!slug || !epName || !Number.isFinite(duration) || duration < 10)
+        return;
+
+      lastKnownPlaybackTimeRef.current = currentTime;
+      watchProgressStorage.saveProgress({
+        slug,
+        epSlug: currentEpData?.slug || currentEpData?.name || "01",
+        epName,
+        title: film?.name || film?.origin_name || slug,
+        poster: posterUrl || "",
+        currentTime,
+        duration,
+      });
+
+      if (!user || Date.now() - lastProgressSyncRef.current < 15_000) return;
+      lastProgressSyncRef.current = Date.now();
+      void watchHistoryApi
+        .upsert({
+          movieId: slug,
+          episode: epName,
+          progress: currentTime,
+          duration,
+          movieTitle: film?.name || film?.origin_name || slug,
+          movieThumb: posterUrl,
+          serverName: server?.server_name,
+        })
+        .catch(() => {
+          // The local copy above is the durable fallback if the API is briefly
+          // unavailable. A later progress event will retry the sync.
+          recordTelemetry("watch_progress.sync_failed", { slug, episode: epName }, "warning");
+        });
+    },
+    [currentEpData, epName, film?.name, film?.origin_name, posterUrl, server?.server_name, slug, user],
+  );
 
   // Navigation
+  const watchUrlForEpisode = useCallback(
+    (episode: string) => {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      nextParams.set("ep", episode);
+      nextParams.delete("party");
+      nextParams.delete("roomName");
+      return `/watch/${slug}?${nextParams.toString()}`;
+    },
+    [searchParams, slug],
+  );
+
   const goNextEpisode = useCallback(() => {
     setAutoNextCountdown(null);
     if (currentEpIndex >= 0 && currentEpIndex < serverData.length - 1) {
       const next = serverData[currentEpIndex + 1];
-      router.push(`/watch/${slug}?ep=${next.slug || next.name}`);
+      router.push(watchUrlForEpisode(next.slug || next.name));
     }
-  }, [currentEpIndex, serverData, slug, router]);
+  }, [currentEpIndex, router, serverData, watchUrlForEpisode]);
 
   const handleVideoEnded = useCallback(() => {
     if (!autoNextConfig) return;
@@ -580,85 +764,60 @@ export default function WatchPage() {
     return () => clearTimeout(t);
   }, [autoNextCountdown, goNextEpisode]);
 
-  // Progress
-  const handleProgress = useCallback(
-    (currentTime: number, duration: number) => {
-      if (!slug || !epName || duration < 10) return;
-
-      // Auto-skip Intro (+85s) when autoSkipIntro setting is ON
-      if (
-        autoSkipIntro &&
-        !hasSkippedIntroRef.current &&
-        currentTime >= 2 &&
-        currentTime <= 15
-      ) {
-        hasSkippedIntroRef.current = true;
-        if (artInstance) {
-          artInstance.seek = currentTime + 85;
-          toast("Đã tự động bỏ qua Intro (+85s)", "info");
-        }
-      }
-
-      watchProgressStorage.saveProgress({
-        slug,
-        epSlug: currentEpData?.slug || "01",
-        epName,
-        title: film?.name || slug,
-        poster: posterUrl || "",
-        currentTime,
-        duration,
-      });
-      if (!user) return;
-      const now = Date.now();
-      if (now - lastSyncRef.current < 15000) return;
-      lastSyncRef.current = now;
-      progressSyncMutation.mutate({
-        movieId: slug,
-        episode: epName,
-        progress: currentTime,
-        duration,
-        movieTitle: film?.name || slug,
-        movieThumb: posterUrl,
-      });
-    },
-    [
-      user,
-      slug,
-      epName,
-      film?.name,
-      posterUrl,
-      currentEpData,
-      progressSyncMutation,
-      autoSkipIntro,
-      artInstance,
-      toast,
-    ],
-  );
-
   // ── Smart Fallback Engine ─────────────────────────────────────
   const tryNextServer = useCallback(
     (reason: string) => {
+      if (fallbackInProgressRef.current) return;
+      fallbackInProgressRef.current = true;
       const currentIdx = currentServer;
       const upd = [...failedServers, currentIdx];
       setFailedServers(upd);
       setIsFallbacking(true);
 
-      // Tìm server tiếp theo chưa fail trong cùng type
-      const sameTypeServers = episodes.filter(
-        (ep) => ep._type === activeServerType,
-      );
-      const nextSameType = sameTypeServers.find(
-        (ep) => !upd.includes(episodes.indexOf(ep)),
+      const errorKind = classifyPlayerError({ type: reason });
+      markSourceFailure(sourceCandidate, errorKind);
+      recordTelemetry(
+        "player.source_failed",
+        {
+          source: server?._source || "unknown",
+          server: server?.server_name || "unknown",
+          episode: currentEpData?.slug || currentEpData?.name || "unknown",
+          error_kind: errorKind,
+          attempt: fallbackAttemptRef.current + 1,
+        },
+        "warning",
       );
 
-      // Nếu không còn server cùng type → thử type khác
-      const nextAnyType = !nextSameType
-        ? episodes.find((ep) => !upd.includes(episodes.indexOf(ep)))
-        : null;
-
-      const nextEp = nextSameType || nextAnyType;
+      const targetEpisode =
+        currentEpData?.slug || currentEpData?.name || currentEp;
+      const usable = episodes.filter((ep) => {
+        const episodeMatches = (ep.server_data || []).some(
+          (item: { slug?: string; name?: string }) =>
+            (item.slug || item.name) === targetEpisode,
+        );
+        return episodeMatches && !upd.includes(episodes.indexOf(ep));
+      });
+      // Prefer an embed-capable source with the current subtitle type; source
+      // health decides the order inside that group.
+      const ranked = rankHealthyCandidates(usable);
+      const nextEp =
+        ranked.find(
+          (ep) =>
+            ep._type === activeServerType &&
+            (ep.server_data || []).some(
+              (item: any) => item.link_embed || item.link_m3u8,
+            ),
+        ) ||
+        ranked.find((ep) =>
+          (ep.server_data || []).some(
+            (item: any) => item.link_embed || item.link_m3u8,
+          ),
+        ) ||
+        ranked.find((ep) => ep._type === activeServerType) ||
+        ranked[0];
 
       if (!nextEp) {
+        fallbackInProgressRef.current = false;
         setIsFallbacking(false);
         setFallbackMessage("");
         toast("Tất cả server không khả dụng!", "error");
@@ -667,33 +826,40 @@ export default function WatchPage() {
 
       const nextIdx = episodes.indexOf(nextEp);
       const isSwitchingType = nextEp._type !== activeServerType;
-
       setFallbackMessage(
         isSwitchingType
           ? `Chuyển sang ${nextEp._type === "thuyet-minh" ? "Thuyết minh" : "Phụ đề"}...`
           : `Thử server ${nextEp.server_name}...`,
       );
 
-      // Delay nhỏ để UX mượt, không flash
-      setTimeout(() => {
-        if (isSwitchingType) setActiveServerType(nextEp._type as ServerType);
+      // Delay nhỏ để UX mượt, không flash. Keep its handle so leaving the
+      // player cannot let a stale fallback navigate back to this film.
+      if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
+      fallbackTimerRef.current = setTimeout(() => {
+        fallbackTimerRef.current = null;
+        if (isSwitchingType) {
+          preserveServerOnTypeChangeRef.current = true;
+          setActiveServerType(nextEp._type as ServerType);
+        }
         setCurrentServer(nextIdx);
         setCurrentTypeServer(nextIdx);
-        setUseEmbedPlayer(true);
+        const nextEpisodeData = (nextEp.server_data || []).find(
+          (item: { slug?: string; name?: string }) =>
+            (item.slug || item.name) === targetEpisode,
+        );
+        setPlayerEngine(nextEpisodeData?.link_m3u8 ? "hls" : "iframe");
         setIsFallbacking(false);
+        fallbackInProgressRef.current = false;
         setFallbackMessage("");
         fallbackAttemptRef.current += 1;
 
-        // Cập nhật URL episode nếu server mới có tập khác
-        const nd = nextEp?.server_data || [];
-        const sameEp = nd.find((e: any) => (e.slug || e.name) === currentEp);
-        const targetEp = sameEp || nd[0];
-        if (targetEp) {
-          router.replace(
-            `/watch/${slug}?ep=${targetEp.slug || targetEp.name}`,
-            { scroll: false },
-          );
-        }
+        playerLoadStartedAtRef.current = Date.now();
+        recordTelemetry("player.fallback", {
+          from_source: server?._source || "unknown",
+          to_source: nextEp._source || "unknown",
+          episode: targetEpisode || "unknown",
+          fallback_kind: "iframe",
+        });
       }, 600);
     },
     [
@@ -702,61 +868,64 @@ export default function WatchPage() {
       episodes,
       activeServerType,
       currentEp,
-      slug,
-      router,
+      currentEpData,
+      server,
+      sourceCandidate,
       toast,
     ],
   );
 
-  // Timeout 25s nếu video bị treo không load được hẳn
-  const startLoadTimeout = useCallback(() => {
-    if (loadTimeout) clearTimeout(loadTimeout);
-    const t = setTimeout(() => {
-      // Chỉ auto-fallback nếu player thực sự chưa sẵn sàng
-      tryNextServer("timeout");
-    }, 25000);
-    setLoadTimeout(t);
-  }, [loadTimeout, tryNextServer]);
-
-  const clearLoadTimeout = useCallback(() => {
-    if (loadTimeout) {
-      clearTimeout(loadTimeout);
-      setLoadTimeout(null);
+  const clearIframeLoadTimeout = useCallback(() => {
+    if (iframeLoadTimerRef.current) {
+      clearTimeout(iframeLoadTimerRef.current);
+      iframeLoadTimerRef.current = null;
     }
-  }, [loadTimeout]);
+  }, []);
 
-  const handlePlayerError = useCallback(
-    (err: any) => {
-      clearLoadTimeout();
-      // Thử embed trước nếu đang dùng m3u8
-      if (embedUrl && !useEmbedPlayer) {
-        setUseEmbedPlayer(true);
+  const startIframeLoadTimeout = useCallback(() => {
+    clearIframeLoadTimeout();
+    iframeLoadTimerRef.current = setTimeout(() => {
+      iframeLoadTimerRef.current = null;
+      tryNextServer("iframe-timeout");
+    }, 12_000);
+  }, [clearIframeLoadTimeout, tryNextServer]);
+
+  const handlePlayerFailure = useCallback(
+    (reason: string) => {
+      // HLS has observable manifest/segment/CORS errors. Before declaring a
+      // provider dead, give its maintained iframe implementation one chance.
+      if (playerEngine === "hls" && iframeUrl) {
+        setIsFallbacking(true);
+        setFallbackMessage("Đang chuyển sang trình phát dự phòng...");
+        recordTelemetry("player.transport_fallback", {
+          source: server?._source || "unknown",
+          server: server?.server_name || "unknown",
+          transport: "hls",
+          error_kind: classifyPlayerError({ type: reason }),
+        }, "warning");
+        playerLoadStartedAtRef.current = Date.now();
+        setPlayerEngine("iframe");
         return;
       }
-      tryNextServer("error");
+      tryNextServer(reason);
     },
-    [clearLoadTimeout, embedUrl, useEmbedPlayer, tryNextServer],
+    [iframeUrl, playerEngine, server?._source, server?.server_name, tryNextServer],
   );
 
-  const handlePlayerReady = useCallback(
-    (art: any) => {
-      clearLoadTimeout();
-      setIsFallbacking(false);
-      setFallbackMessage("");
-      if (art) {
-        setArtInstance(art);
-        try {
-          art.on("play", () => clearLoadTimeout());
-          art.on("pause", () => clearLoadTimeout());
-          art.on("video:canplay", () => clearLoadTimeout());
-          art.on("video:loadedmetadata", () => clearLoadTimeout());
-        } catch (_err) {
-          // Ignore Artplayer listener errors
-        }
+  // A failed server may have scheduled a delayed router.replace. Cancel it
+  // during unmount so navigation away from a film always remains final.
+  useEffect(() => {
+    return () => {
+      if (fallbackTimerRef.current) {
+        clearTimeout(fallbackTimerRef.current);
+        fallbackTimerRef.current = null;
       }
-    },
-    [clearLoadTimeout],
-  );
+      if (iframeLoadTimerRef.current) {
+        clearTimeout(iframeLoadTimerRef.current);
+        iframeLoadTimerRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const sp = searchParams.get("server");
@@ -769,31 +938,52 @@ export default function WatchPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    setUseEmbedPlayer(false);
     setFailedServers([]);
     setIsFallbacking(false);
     setFallbackMessage("");
+    playerLoadStartedAtRef.current = Date.now();
     fallbackAttemptRef.current = 0;
-    clearLoadTimeout();
-  }, [currentEp, currentServer]);
-
-  // Bắt đầu timeout khi URL video thay đổi
-  useEffect(() => {
-    if (!proxiedM3u8 && !embedUrl) return;
-    if (isFallbacking) return;
-    startLoadTimeout();
-    return () => clearLoadTimeout();
+    fallbackInProgressRef.current = false;
+    lastKnownPlaybackTimeRef.current = resumeAt;
+    clearIframeLoadTimeout();
+    setPlayerEngine(m3u8Url ? "hls" : "iframe");
+    // A new episode intentionally resets source failures; changing source for
+    // the same episode must retain them so fallback never retries a bad server.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [proxiedM3u8, embedUrl, currentServer]);
+  }, [currentEp]);
 
   useEffect(() => {
+    playerLoadStartedAtRef.current = Date.now();
+  }, [currentServer]);
+
+  // An iframe cannot emit media errors from its cross-origin document, so the
+  // outer document owns a deterministic source timeout for that transport.
+  useEffect(() => {
+    if (!iframeUrl || playerEngine !== "iframe") return;
+    startIframeLoadTimeout();
+    return () => clearIframeLoadTimeout();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [iframeUrl, currentServer, playerEngine]);
+
+  useEffect(() => {
+    if (preserveServerOnTypeChangeRef.current) {
+      preserveServerOnTypeChangeRef.current = false;
+      return;
+    }
     setCurrentTypeServer(0);
     const first = serversByType[activeServerType]?.[0];
     if (first) {
       const gIdx = episodes.indexOf(first);
       setCurrentServer(gIdx >= 0 ? gIdx : 0);
+      setPlayerEngine(first.server_data?.[0]?.link_m3u8 ? "hls" : "iframe");
     }
   }, [activeServerType]);
+
+  useEffect(() => {
+    if (typeof document !== "undefined" && film?.name) {
+      document.title = `Xem Phim ${film.name} ${currentEpData?.name ? `- Tập ${currentEpData.name}` : ""} Vietsub HD | CineVerse`;
+    }
+  }, [film?.name, currentEpData?.name]);
 
   if (isLoading) return <WatchSkeleton />;
 
@@ -821,12 +1011,6 @@ export default function WatchPage() {
 
   const watchSeoTitle = `Xem Phim ${film?.name || ""} ${currentEpData?.name ? `- Tập ${currentEpData.name}` : ""} Vietsub HD | CineVerse`;
   const watchSeoDescription = `Xem phim ${film?.name || ""} ${currentEpData?.name ? `Tập ${currentEpData.name}` : ""} Vietsub Thuyết minh HD online mượt mà không quảng cáo độc hại.`;
-
-  useEffect(() => {
-    if (watchSeoTitle && typeof document !== "undefined") {
-      document.title = watchSeoTitle;
-    }
-  }, [watchSeoTitle]);
 
   const watchJsonLd = {
     "@context": "https://schema.org",
@@ -921,11 +1105,12 @@ export default function WatchPage() {
                 </button>
 
                 <button
-                  onClick={() => {
-                    if (!wp.roomId) wp.createRoom();
+                  onClick={async () => {
+                    if (!wp.roomId) await createCurrentMovieParty();
                     else wp.setIsOpen(!wp.isOpen);
                   }}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] hover:text-white/80 transition-colors text-white/50"
+                  disabled={wp.connectionState !== "online"}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] hover:text-white/80 transition-colors text-white/50 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <Sparkles size={12} />
                   <span className="hidden sm:inline">
@@ -1012,17 +1197,75 @@ export default function WatchPage() {
               )}
               {videoUrl ? (
                 <>
-                  {embedUrl || videoUrl ? (
+                  {playerEngine === "hls" && m3u8Url ? (
+                    <HlsVideoPlayer
+                      key={`hls:${server?._source || "unknown"}:${currentServer}:${currentEpData?.slug || currentEpData?.name || ""}`}
+                      src={m3u8Url}
+                      poster={posterUrl}
+                      initialTime={lastKnownPlaybackTimeRef.current || resumeAt}
+                      autoPlay={autoPlayConfig}
+                      onReady={() => {
+                        setIsFallbacking(false);
+                        setFallbackMessage("");
+                      }}
+                      onPlaying={() => {
+                        const sourceKey = `${sourceCandidate.source || "unknown"}:${sourceCandidate.serverName || "unknown"}`;
+                        if (!playedSourceKeysRef.current.has(sourceKey)) {
+                          playedSourceKeysRef.current.add(sourceKey);
+                          markSourceSuccess(sourceCandidate);
+                          recordTelemetry("watch_now.success", {
+                            source: sourceCandidate.source || "unknown",
+                            server: sourceCandidate.serverName || "unknown",
+                            episode: currentEpData?.slug || currentEpData?.name || "unknown",
+                            start_time_ms: Date.now() - playerLoadStartedAtRef.current,
+                            engine: "hls",
+                          });
+                        }
+                      }}
+                      onProgress={handlePlaybackProgress}
+                      onEnded={handleVideoEnded}
+                      onError={(error) => handlePlayerFailure(error.type)}
+                    />
+                  ) : iframeUrl ? (
                     <div className="relative w-full h-full">
                       <iframe
-                        src={embedUrl || videoUrl}
+                        key={`iframe:${server?._source || "unknown"}:${currentServer}:${currentEpData?.slug || currentEpData?.name || ""}`}
+                        src={iframeUrl}
                         className="w-full h-full"
                         allowFullScreen
                         allow="autoplay; fullscreen"
                         sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
                         title={`${film?.name} - ${currentEpData?.name}`}
-                        onLoad={() => clearLoadTimeout()}
-                        onError={() => tryNextServer("iframe-error")}
+                        onLoad={() => {
+                          clearIframeLoadTimeout();
+                          setIsFallbacking(false);
+                          setFallbackMessage("");
+                          const sourceKey = `${sourceCandidate.source || "unknown"}:${sourceCandidate.serverName || "unknown"}`;
+                          if (!playedSourceKeysRef.current.has(sourceKey)) {
+                            playedSourceKeysRef.current.add(sourceKey);
+                            markSourceSuccess(sourceCandidate);
+                            recordTelemetry("watch_now.success", {
+                              source: sourceCandidate.source || "unknown",
+                              server: sourceCandidate.serverName || "unknown",
+                              episode:
+                                currentEpData?.slug ||
+                                currentEpData?.name ||
+                                "unknown",
+                              start_time_ms:
+                                Date.now() - playerLoadStartedAtRef.current,
+                              engine: "iframe",
+                            });
+                          }
+                          recordTelemetry("player.iframe_loaded", {
+                            source: sourceCandidate.source || "unknown",
+                            server: sourceCandidate.serverName || "unknown",
+                            episode:
+                              currentEpData?.slug ||
+                              currentEpData?.name ||
+                              "unknown",
+                          });
+                        }}
+                        onError={() => handlePlayerFailure("iframe-error")}
                       />
                     </div>
                   ) : (
@@ -1069,7 +1312,7 @@ export default function WatchPage() {
                   <button
                     onClick={() => {
                       const p = serverData[currentEpIndex - 1];
-                      router.push(`/watch/${slug}?ep=${p.slug || p.name}`);
+                      router.push(watchUrlForEpisode(p.slug || p.name));
                     }}
                     className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white/50 bg-white/[0.04] border border-white/[0.08] rounded-lg hover:text-white hover:bg-white/[0.08] transition-colors"
                   >
@@ -1081,7 +1324,7 @@ export default function WatchPage() {
                     <button
                       onClick={() => {
                         const n = serverData[currentEpIndex + 1];
-                        router.push(`/watch/${slug}?ep=${n.slug || n.name}`);
+                        router.push(watchUrlForEpisode(n.slug || n.name));
                       }}
                       className="flex items-center gap-1 px-4 py-1.5 text-xs font-semibold bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors"
                     >
@@ -1113,11 +1356,15 @@ export default function WatchPage() {
                           const first = subEps[0];
                           const idx = episodes.indexOf(first);
                           setCurrentServer(idx >= 0 ? idx : 0);
-                          setUseEmbedPlayer(false);
+                          setPlayerEngine(
+                            first?.server_data?.[0]?.link_m3u8
+                              ? "hls"
+                              : "iframe",
+                          );
                           const nd = first?.server_data || [];
                           if (nd.length > 0)
                             router.push(
-                              `/watch/${slug}?ep=${nd[0].slug || nd[0].name}`,
+                              watchUrlForEpisode(nd[0].slug || nd[0].name),
                             );
                         }
                       }}
@@ -1152,11 +1399,15 @@ export default function WatchPage() {
                           const first = dubEps[0];
                           const idx = episodes.indexOf(first);
                           setCurrentServer(idx >= 0 ? idx : 0);
-                          setUseEmbedPlayer(false);
+                          setPlayerEngine(
+                            first?.server_data?.[0]?.link_m3u8
+                              ? "hls"
+                              : "iframe",
+                          );
                           const nd = first?.server_data || [];
                           if (nd.length > 0)
                             router.push(
-                              `/watch/${slug}?ep=${nd[0].slug || nd[0].name}`,
+                              watchUrlForEpisode(nd[0].slug || nd[0].name),
                             );
                         }
                       }}
@@ -1188,7 +1439,7 @@ export default function WatchPage() {
                     <div className="flex flex-wrap gap-2">
                       {activeGroup.map((ep) => {
                         const i = episodes.indexOf(ep);
-                        const isActive = i === currentServer && useEmbedPlayer;
+                        const isActive = i === currentServer;
                         const hasFailed = failedServers.includes(i);
                         const sourceColors: Record<string, string> = {
                           kkphim: isActive
@@ -1213,11 +1464,15 @@ export default function WatchPage() {
                             onClick={() => {
                               setCurrentServer(i);
                               setCurrentTypeServer(i);
-                              setUseEmbedPlayer(true);
+                              setPlayerEngine(
+                                ep?.server_data?.[0]?.link_m3u8
+                                  ? "hls"
+                                  : "iframe",
+                              );
                               const nd = ep?.server_data || [];
                               if (nd.length > 0)
                                 router.push(
-                                  `/watch/${slug}?ep=${nd[0].slug || nd[0].name}`,
+                                  watchUrlForEpisode(nd[0].slug || nd[0].name),
                                 );
                             }}
                             disabled={hasFailed}
@@ -1400,7 +1655,7 @@ export default function WatchPage() {
                               key={ep.slug || ep.name || i}
                               onClick={() =>
                                 router.push(
-                                  `/watch/${slug}?ep=${ep.slug || ep.name}`,
+                                  watchUrlForEpisode(ep.slug || ep.name),
                                 )
                               }
                               className={cn(
@@ -1450,7 +1705,7 @@ export default function WatchPage() {
                               key={ep.slug || ep.name || i}
                               onClick={() =>
                                 router.push(
-                                  `/watch/${slug}?ep=${ep.slug || ep.name}`,
+                                  watchUrlForEpisode(ep.slug || ep.name),
                                 )
                               }
                               className={cn(
@@ -1729,6 +1984,7 @@ export default function WatchPage() {
         <WatchPartyPanel
           roomId={wp.roomId}
           isHost={wp.isHost}
+          connectionState={wp.connectionState}
           participants={wp.participants}
           messages={wp.messages}
           floatingReactions={wp.floatingReactions}

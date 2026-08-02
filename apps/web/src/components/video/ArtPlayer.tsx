@@ -14,10 +14,16 @@ export interface ArtPlayerProps {
   autoplay?: boolean;
   progressKey?: string;
   dbProgress?: number;
+  initialTime?: number;
   onEnded?: () => void;
   onProgress?: (currentTime: number, duration: number) => void;
   onReady?: (player: Artplayer) => void;
+  onPlaybackStart?: (player: Artplayer) => void;
   onError?: (error: unknown) => void;
+  onPlaybackStateChange?: (state: {
+    action: "play" | "pause" | "seek";
+    currentTime: number;
+  }) => void;
   isTheaterMode?: boolean;
   onTheaterModeToggle?: (active: boolean) => void;
   // Skip intro/outro timestamps (giây)
@@ -35,10 +41,13 @@ export default function ArtPlayer({
   autoplay = false,
   progressKey,
   dbProgress,
+  initialTime,
   onEnded,
   onProgress,
   onReady,
+  onPlaybackStart,
   onError,
+  onPlaybackStateChange,
   isTheaterMode = false,
   onTheaterModeToggle,
   skipIntroStart,
@@ -74,9 +83,13 @@ export default function ArtPlayer({
   const onEndedRef = useRef(onEnded);
   const onProgressRef = useRef(onProgress);
   const onErrorRef = useRef(onError);
+  const onPlaybackStartRef = useRef(onPlaybackStart);
+  const onPlaybackStateChangeRef = useRef(onPlaybackStateChange);
   onEndedRef.current = onEnded;
   onProgressRef.current = onProgress;
   onErrorRef.current = onError;
+  onPlaybackStartRef.current = onPlaybackStart;
+  onPlaybackStateChangeRef.current = onPlaybackStateChange;
 
   // ── Scroll Observer for Floating Mini-Player ──────────────────────
   useEffect(() => {
@@ -109,11 +122,105 @@ export default function ArtPlayer({
 
     // -- HLS quality levels (populated after manifest load) --
     let hlsInstance: Hls | null = null;
+    let networkRecoveries = 0;
+    let mediaRecoveries = 0;
     const qualityLevels: { default: boolean; html: string; url: string }[] = [];
+
+    // HLS.js is attached directly to ArtPlayer's video element. The playback
+    // URL is a proxy route with query parameters, so extension-based custom
+    // type dispatch is not a dependable place to initialize HLS.
+    const attachHls = (video: HTMLVideoElement, streamUrl: string) => {
+      if (Hls.isSupported()) {
+        video.crossOrigin = "anonymous";
+        const hls = new Hls({
+          enableWorker: true,
+          backBufferLength: 90,
+          maxBufferLength: 60,
+          capLevelToPlayerSize: true,
+          startLevel: -1,
+        });
+        hlsInstance = hls;
+
+        hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
+          const levels = data.levels ?? [];
+          if (levels.length <= 1) return;
+
+          const prefQuality = useSettingsStore.getState().defaultQuality;
+          if (prefQuality !== "auto") {
+            const targetIdx = levels.findIndex(
+              (level) =>
+                level.height &&
+                `${level.height}p`.toLowerCase() === prefQuality.toLowerCase(),
+            );
+            if (targetIdx !== -1) hls.currentLevel = targetIdx;
+          }
+
+          const built = levels.map((level, i) => ({
+            default:
+              i === hls.currentLevel || (hls.currentLevel === -1 && i === 0),
+            html: level.height ? `${level.height}p` : `Level ${i + 1}`,
+            url: streamUrl,
+            level: i,
+          }));
+          qualityLevels.unshift({
+            default: hls.currentLevel === -1,
+            html: "Tự động (ABR)",
+            url: streamUrl,
+            level: -1,
+          } as (typeof qualityLevels)[number]);
+          built.forEach((quality) =>
+            qualityLevels.push(quality as (typeof qualityLevels)[number]),
+          );
+
+          player.setting.update({
+            name: "quality",
+            html: "Chất lượng",
+            tooltip: built.find((quality) => quality.default)?.html ?? "Auto",
+            selector: qualityLevels.map((quality) => ({
+              default: quality.default,
+              html: quality.html,
+              url: quality.url,
+              level: (quality as { level?: number }).level ?? -1,
+            })),
+            onSelect(item: { level: number; html: string }) {
+              hls.currentLevel = item.level ?? -1;
+              return item.html;
+            },
+          } as any);
+        });
+
+        hls.on(Hls.Events.ERROR, (_event, data) => {
+          if (!data.fatal) return;
+          if (
+            data.type === Hls.ErrorTypes.NETWORK_ERROR &&
+            networkRecoveries < 1
+          ) {
+            networkRecoveries += 1;
+            hls.startLoad();
+            return;
+          }
+          if (data.type === Hls.ErrorTypes.MEDIA_ERROR && mediaRecoveries < 1) {
+            mediaRecoveries += 1;
+            hls.recoverMediaError();
+            return;
+          }
+          hls.destroy();
+          onErrorRef.current?.({ type: "HLS_FATAL_ERROR", details: data });
+        });
+
+        hls.loadSource(streamUrl);
+        hls.attachMedia(video);
+        (video as HTMLVideoElement & { hls: Hls }).hls = hls;
+      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        video.src = streamUrl;
+      } else {
+        onErrorRef.current?.({ type: "HLS_UNSUPPORTED" });
+      }
+    };
 
     const player = new Artplayer({
       container: containerRef.current,
-      url,
+      url: isHls ? "" : url,
       poster,
       title,
       volume: 0.8,
@@ -137,126 +244,6 @@ export default function ArtPlayer({
       airplay: true,
       theme: "#e5a93b",
       lang: "vi",
-
-      // -- HLS support with ABR & quality selector --
-      ...(isHls
-        ? {
-            customType: {
-              m3u8: (video: HTMLMediaElement, streamUrl: string) => {
-                if (Hls.isSupported()) {
-                  const hls = new Hls({
-                    enableWorker: true,
-                    backBufferLength: 90,
-                    maxBufferLength: 60,
-                    capLevelToPlayerSize: true, // Auto ABR tuning
-                    startLevel: -1, // Auto level selection based on bandwidth
-                  });
-                  hlsInstance = hls;
-
-                  hls.on(Hls.Events.ERROR, (_event, data) => {
-                    if (data.fatal) {
-                      switch (data.type) {
-                        case Hls.ErrorTypes.NETWORK_ERROR:
-                          hls.startLoad();
-                          break;
-                        case Hls.ErrorTypes.MEDIA_ERROR:
-                          hls.recoverMediaError();
-                          break;
-                        default:
-                          hls.destroy();
-                          if (onError) onError(data);
-                          break;
-                      }
-                    }
-                  });
-
-                  hls.loadSource(streamUrl);
-                  hls.attachMedia(video);
-
-                  hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
-                    // Build quality options from HLS levels
-                    const levels = data.levels ?? [];
-                    if (levels.length > 1) {
-                      // Apply user default quality setting if not "auto"
-                      const prefQuality =
-                        useSettingsStore.getState().defaultQuality;
-                      if (prefQuality !== "auto") {
-                        const targetIdx = levels.findIndex(
-                          (l) =>
-                            l.height &&
-                            `${l.height}p`.toLowerCase() ===
-                              prefQuality.toLowerCase(),
-                        );
-                        if (targetIdx !== -1) {
-                          hls.currentLevel = targetIdx;
-                        }
-                      }
-                      const built = levels.map((level, i) => ({
-                        default:
-                          i === hls.currentLevel ||
-                          (hls.currentLevel === -1 && i === 0),
-                        html: level.height
-                          ? `${level.height}p`
-                          : `Level ${i + 1}`,
-                        url: streamUrl,
-                        level: i,
-                      }));
-                      // Add Auto option
-                      qualityLevels.unshift({
-                        default: hls.currentLevel === -1,
-                        html: "Tự động (ABR)",
-                        url: streamUrl,
-                        level: -1,
-                      } as (typeof qualityLevels)[number]);
-                      built.forEach((q) =>
-                        qualityLevels.push(q as (typeof qualityLevels)[number]),
-                      );
-
-                      player.setting.update({
-                        name: "quality",
-                        html: "Chất lượng",
-                        tooltip: built.find((q) => q.default)?.html ?? "Auto",
-                        selector: qualityLevels.map((q) => ({
-                          default: q.default,
-                          html: q.html,
-                          url: q.url,
-                          level: (q as { level?: number }).level ?? -1,
-                        })),
-                        onSelect(item: { level: number; html: string }) {
-                          hls.currentLevel = item.level ?? -1;
-                          return item.html;
-                        },
-                      } as any);
-                    }
-                  });
-
-                  hls.on(Hls.Events.ERROR, (_event, data) => {
-                    if (data.fatal) {
-                      switch (data.type) {
-                        case Hls.ErrorTypes.NETWORK_ERROR:
-                          hls.startLoad();
-                          break;
-                        case Hls.ErrorTypes.MEDIA_ERROR:
-                          hls.recoverMediaError();
-                          break;
-                        default:
-                          hls.destroy();
-                          onErrorRef.current?.({
-                            type: "HLS_FATAL_ERROR",
-                            details: data,
-                          });
-                      }
-                    }
-                  });
-
-                  (video as HTMLMediaElement & { hls: Hls }).hls = hls;
-                } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-                  video.src = streamUrl;
-                }
-              },
-            },
-          }
-        : {}),
 
       // Hotkey settings
       hotkey: true,
@@ -311,7 +298,9 @@ export default function ArtPlayer({
           ],
           onSelect(item: { offset: number; html: string }) {
             if (player.subtitle) {
-              player.subtitle.offset = item.offset;
+              (
+                player.subtitle as typeof player.subtitle & { offset?: number }
+              ).offset = item.offset;
               player.notice.show = `Phụ đề: ${item.html}`;
             }
             return item.html;
@@ -389,6 +378,33 @@ export default function ArtPlayer({
     } as unknown as ConstructorParameters<typeof Artplayer>[0]);
 
     playerRef.current = player;
+    if (isHls) attachHls(player.video, url);
+
+    player.on("video:play", () => {
+      onPlaybackStateChangeRef.current?.({
+        action: "play",
+        currentTime: player.currentTime,
+      });
+    });
+    player.on("video:pause", () => {
+      onPlaybackStateChangeRef.current?.({
+        action: "pause",
+        currentTime: player.currentTime,
+      });
+    });
+    player.on("video:seeked", () => {
+      onPlaybackStateChangeRef.current?.({
+        action: "seek",
+        currentTime: player.currentTime,
+      });
+    });
+    let didStartPlayback = false;
+    player.on("video:playing", () => {
+      if (!didStartPlayback) {
+        didStartPlayback = true;
+        onPlaybackStartRef.current?.(player);
+      }
+    });
 
     const handlePlayerHotkeys = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -588,7 +604,7 @@ export default function ArtPlayer({
 
     // -- Resume: restore saved position using progressKey (slug+ep) or dbProgress --
     const savedKey = progressKey ? `wp_${progressKey}` : null;
-    let startTime = 0;
+    let startTime = initialTime || 0;
     if (savedKey) {
       const saved = localStorage.getItem(savedKey);
       if (saved) {
@@ -664,7 +680,7 @@ export default function ArtPlayer({
     };
     // Only re-run when url changes (the source). Other props use refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url, progressKey]);
+  }, [url, progressKey, initialTime]);
 
   // Dynamically update the Theater Mode button UI in the player controls
   useEffect(() => {
