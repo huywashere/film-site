@@ -1,3 +1,5 @@
+import { captureMessage } from "@/lib/sentry";
+
 export type TelemetryLevel = "info" | "warning" | "error";
 
 type TelemetryProperties = Record<
@@ -29,6 +31,10 @@ export function recordTelemetry(
   level: TelemetryLevel = "info",
 ) {
   if (typeof window === "undefined") return;
+
+  if (level === "error") {
+    captureMessage(`[Telemetry Error] ${name}`, "error");
+  }
 
   const payload = JSON.stringify({
     name: name.slice(0, 96),
