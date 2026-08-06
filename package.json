@@ -24,8 +24,8 @@
     "eslint": "^9.39.5",
     "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-prettier": "^5.5.6",
-    "prettier": "^3.9.5",
-    "turbo": "^2.10.5"
+    "prettier": "^3.9.6",
+    "turbo": "^2.10.8"
   },
   "engines": {
     "node": ">=18"
