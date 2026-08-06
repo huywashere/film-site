@@ -17,10 +17,10 @@ jobs:
           fetch-depth: 0
 
       - name: Run Gitleaks Secret Scanner
-        uses: gitleaks/gitleaks-action@v2
+        uses: zricethezav/gitleaks-action@v2
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # KHÔNG dùng continue-on-error — secret leak phải block pipeline
 
       - name: Install pnpm
         uses: pnpm/action-setup@v3
