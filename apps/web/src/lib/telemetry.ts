@@ -43,13 +43,15 @@ export function recordTelemetry(
     properties: cleanProperties(properties),
     timestamp: new Date().toISOString(),
   });
-  const endpoint = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1"}/telemetry/client`;
+  const rawBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1").replace(/\/+$/, "");
+  const baseUrl = rawBase.endsWith("/api/v1") ? rawBase : rawBase.endsWith("/api") ? `${rawBase}/v1` : `${rawBase}/api/v1`;
+  const endpoint = `${baseUrl}/telemetry/client`;
 
   try {
     if (navigator.sendBeacon) {
       navigator.sendBeacon(
         endpoint,
-        new Blob([payload], { type: "application/json" }),
+        new Blob([payload], { type: "text/plain" }),
       );
       return;
     }
@@ -59,7 +61,7 @@ export function recordTelemetry(
       headers: { "content-type": "application/json" },
       credentials: "omit",
       keepalive: true,
-    });
+    }).catch(() => {});
   } catch {
     // Observability must never affect playback or navigation.
   }
