@@ -16,13 +16,16 @@ import {
   Search,
   ShieldCheck,
   Users,
+  Radio,
   X,
 } from "lucide-react";
 
 const PRIMARY_NAV = [
   { href: "/", label: "Tổng quan", description: "Hoạt động hôm nay", icon: LayoutDashboard },
   { href: "/movies", label: "Thư viện phim", description: "Nội dung và nguồn", icon: Film },
-  { href: "/users", label: "Người dùng", description: "Tài khoản và phiên", icon: Users },
+  { href: "/users", label: "Người dùng", description: "Tài khoản DB & Phiên", icon: Users },
+  { href: "/watch-party", label: "Watch Party", description: "Phòng Live WebSocket", icon: Radio },
+  { href: "/system", label: "Bảo mật & Rate Limit", description: "Kiểm tra hệ thống", icon: ShieldCheck },
 ];
 
 export default function AdminRootLayout({ children }: { children: React.ReactNode }) {

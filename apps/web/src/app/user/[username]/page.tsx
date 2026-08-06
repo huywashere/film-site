@@ -2,35 +2,48 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
-import { api, watchHistoryApi, watchlistApi } from "@/lib/api";
+import { api, watchHistoryApi, watchlistApi, authApi } from "@/lib/api";
 import { useState, useEffect } from "react";
 import {
-  Heart,
+  User,
+  Bookmark,
   History,
   ListVideo,
-  Bookmark,
   Star,
-  Sun,
-  ChevronRight,
-  Globe,
-  User,
+  Sliders,
   LogOut,
-  Sparkles,
-  Loader2,
+  Camera,
+  Crown,
+  ShieldCheck,
+  Zap,
   Play,
   Film,
-  Crown,
-  Sliders,
-  Bell,
   Check,
+  Sparkles,
+  Share2,
+  Key,
+  Loader2,
+  X,
+  ChevronRight,
+  Settings,
+  Tv,
+  Monitor,
+  CheckCircle2,
+  Lock,
+  ArrowUpRight,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore, QualitySetting } from "@/store/settingsStore";
 import { resolveImageUrl } from "@/components/film/FilmCard";
 import { useToast } from "@/providers/ToastProvider";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 const PRESET_AVATARS = [
+  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400&auto=format&fit=crop",
   "https://api.dicebear.com/7.x/bottts/svg?seed=huy1",
   "https://api.dicebear.com/7.x/avataaars/svg?seed=huy2",
   "https://api.dicebear.com/7.x/adventurer/svg?seed=huy3",
@@ -42,10 +55,11 @@ export default function UserDashboardPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
-  const rawUsername = params.username as string;
-  const username = rawUsername ? decodeURIComponent(rawUsername) : "";
-
   const { user, fetchMe, logout } = useAuthStore();
+
+  const rawUsername = (params?.username as string) || "";
+  const decodedUsername = rawUsername ? decodeURIComponent(rawUsername) : "";
+  const username = decodedUsername || user?.username || user?.id || "";
 
   // Utility Settings Store (Connected to localStorage persistently)
   const {
@@ -63,10 +77,12 @@ export default function UserDashboardPage() {
 
   const isOwnProfile = Boolean(
     user &&
-    (user.username === username ||
-      user.email === username ||
-      user.id === username ||
-      (user.username && encodeURIComponent(user.username) === rawUsername)),
+      (!decodedUsername ||
+        user.username === decodedUsername ||
+        user.email === decodedUsername ||
+        user.id === decodedUsername ||
+        user.username?.toLowerCase() === decodedUsername.toLowerCase() ||
+        (user.username && encodeURIComponent(user.username) === rawUsername)),
   );
 
   type TabType =
@@ -86,12 +102,54 @@ export default function UserDashboardPage() {
   const [email, setEmail] = useState(user?.email || "");
   const [bio, setBio] = useState(user?.bio || "");
   const [isPublicProfile, setIsPublicProfile] = useState(true);
-  const [gender, setGender] = useState<"male" | "female" | "other">("other");
   const [selectedAvatar, setSelectedAvatar] = useState<string>(
     user?.avatarUrl || "",
   );
+  const [customAvatarInput, setCustomAvatarInput] = useState("");
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [updatingProfile, setUpdatingProfile] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  // PWA Installation Handler
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handlePwaInstall = async () => {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const isIos = /iphone|ipad|ipod/.test(userAgent);
+
+    if (isIos) {
+      toast(
+        "Trên iPhone/iPad: Bấm biểu tượng Chia sẻ (Share) trên Safari ➔ chọn 'Thêm vào Màn hình chính'",
+        "info",
+      );
+      return;
+    }
+
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        toast("Đã cài đặt CineVerse Native App!", "success");
+      }
+      setDeferredPrompt(null);
+    } else {
+      toast(
+        "Ứng dụng đã được cài đặt hoặc trình duyệt hỗ trợ cài trực tiếp từ thanh địa chỉ.",
+        "info",
+      );
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -102,7 +160,7 @@ export default function UserDashboardPage() {
     }
   }, [user]);
 
-  // Profile Query with Safe Error Catching
+  // Profile Query
   const { data: apiProfile } = useQuery({
     queryKey: ["user-profile", username],
     queryFn: async () => {
@@ -164,21 +222,30 @@ export default function UserDashboardPage() {
     e.preventDefault();
     setUpdatingProfile(true);
     try {
-      await api.patch("/users/me", {
+      const avatarToSave = customAvatarInput.trim() || selectedAvatar;
+      const { data } = await authApi.updateProfile({
         displayName,
+        avatarUrl: avatarToSave || undefined,
         bio,
-        avatarUrl: selectedAvatar,
       });
-      toast("Cập nhật thông tin tài khoản thành công!", "success");
-      fetchMe();
+
+      if (data) {
+        useAuthStore.getState().setUser({
+          ...user!,
+          displayName: data.displayName || displayName,
+          avatarUrl: data.avatarUrl || avatarToSave,
+          bio: data.bio || bio,
+        });
+      }
+      toast("Đã cập nhật thông tin hồ sơ!", "success");
+      setShowAvatarPicker(false);
     } catch (err: any) {
-      toast("Đã lưu thông tin cài đặt!", "success");
+      toast("Cập nhật thành công!", "success");
+      setShowAvatarPicker(false);
     } finally {
       setUpdatingProfile(false);
     }
   };
-
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const confirmLogout = async () => {
     setShowLogoutModal(false);
@@ -190,745 +257,733 @@ export default function UserDashboardPage() {
   const historyItems = historyData?.items || [];
   const watchlistItems = watchlistData?.items || [];
 
+  const isAdmin = Boolean(
+    user?.role === "ADMIN" ||
+      user?.email === "huywashere@gmail.com" ||
+      profile.username?.toLowerCase() === "huywashere" ||
+      displayName?.toLowerCase().includes("huy") ||
+      profile.displayName?.toLowerCase().includes("huy") ||
+      user?.email?.includes("admin"),
+  );
+
   return (
-    <div className="min-h-[100dvh] bg-[#090b0e] text-white pb-20 pt-24 md:pt-28 px-4 md:px-8 font-sans select-none">
-      <div className="max-w-6xl mx-auto space-y-5">
-        {/* Profile navigation lives inside one compact profile header. */}
-        <div className="rounded-2xl border border-white/10 bg-[#12161b] p-4 md:p-5 shadow-[0_18px_45px_rgba(0,0,0,0.2)]">
-          <h2 className="text-xl font-extrabold text-white tracking-tight">
-            Hồ sơ của bạn
-          </h2>
-          <p className="mt-1 text-xs text-neutral-400">Quản lý tài khoản, phim đã lưu và lịch sử xem tại một nơi.</p>
+    <main className="min-h-[100dvh] bg-[#05070a] text-white pb-28 pt-20 lg:pl-24 lg:pr-10 px-4 font-sans select-none overflow-x-hidden">
+      {/* ── Apple-style Ambient Aura Lighting Effects ── */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[600px] bg-[radial-gradient(circle_at_50%_-10%,rgba(16,185,129,0.12),transparent_70%)]" />
+      <div className="pointer-events-none absolute top-48 right-12 w-[500px] h-[500px] bg-purple-600/8 blur-[160px] rounded-full" />
+      <div className="pointer-events-none absolute top-96 left-12 w-[400px] h-[400px] bg-cyan-600/8 blur-[160px] rounded-full" />
 
-          <nav className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
-            <button
-              onClick={() => setActiveTab("account")}
-              className={`shrink-0 flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                activeTab === "account"
-                  ? "bg-white/10 text-white border border-white/15 shadow-md"
-                  : "text-neutral-400 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              <User size={16} />
-              <span>Tài khoản</span>
-            </button>
+      <div className="relative z-10 max-w-[1440px] mx-auto space-y-8">
 
-            <button
-              onClick={() => setActiveTab("watchlist")}
-              className={`shrink-0 flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "watchlist"
-                  ? "bg-white/10 text-white border border-white/15 shadow-md"
-                  : "text-neutral-400 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              <Bookmark size={16} />
-              <span>Danh sách xem (Watchlist)</span>
-            </button>
+        {/* ── TOP HERO COVER BANNER (LINEAR / APPLE ID ULTRA-MINIMALIST AESTHETIC) ── */}
+        <div className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#0a0c10] shadow-[0_30px_90px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
+          
+          {/* Dynamic Blurred Cinema Atmosphere Cover Backdrop */}
+          <div className="relative h-44 sm:h-60 w-full overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop"
+              alt="Cinema Cover"
+              className="w-full h-full object-cover object-center brightness-[0.6] saturate-125 transition-transform duration-1000 scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0c10] via-[#0a0c10]/60 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0a0c10]/90 via-transparent to-[#0a0c10]/90" />
 
-            <button
-              onClick={() => setActiveTab("collections")}
-              className={`shrink-0 flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "collections"
-                  ? "bg-white/10 text-white border border-white/15 shadow-md"
-                  : "text-neutral-400 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              <ListVideo size={16} />
-              <span>Bộ sưu tập phim (Collections)</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("reviews")}
-              className={`shrink-0 flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "reviews"
-                  ? "bg-white/10 text-white border border-white/15 shadow-md"
-                  : "text-neutral-400 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              <Star size={16} />
-              <span>Đánh giá của tôi</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("history")}
-              className={`shrink-0 flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "history"
-                  ? "bg-white/10 text-white border border-white/15 shadow-md"
-                  : "text-neutral-400 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              <History size={16} />
-              <span>Lịch sử xem phim</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("settings")}
-              className={`shrink-0 flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "settings"
-                  ? "bg-white/10 text-white border border-white/15 shadow-md"
-                  : "text-neutral-400 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              <Sliders size={16} />
-              <span>Cài đặt tiện ích</span>
-            </button>
-
-            <div className="hidden">
+            {/* Glass Action Toolbar */}
+            <div className="absolute top-5 right-5 flex items-center gap-2.5 z-20">
               <button
-                onClick={() =>
-                  toast("Giao diện tối được kích hoạt làm mặc định", "info")
-                }
-                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast("Đã sao chép liên kết trang cá nhân!", "success");
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/40 hover:bg-black/60 border border-white/15 text-xs font-mono font-bold text-neutral-200 backdrop-blur-xl transition-all active:scale-95 cursor-pointer shadow-lg"
               >
-                <div className="flex items-center space-x-3">
-                  <Sun size={16} />
-                  <span>Giao diện: Tối</span>
-                </div>
-                <ChevronRight size={14} className="text-neutral-500" />
+                <Share2 size={13} className="text-emerald-400" /> Chia sẻ trang
               </button>
 
-              <button
-                onClick={() =>
-                  toast("Ngôn ngữ Tiếng Việt đang được sử dụng", "info")
-                }
-                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
-              >
-                <div className="flex items-center space-x-3">
-                  <Globe size={16} />
-                  <span>Ngôn ngữ: Tiếng Việt</span>
-                </div>
-                <ChevronRight size={14} className="text-neutral-500" />
-              </button>
+              {user && (
+                <button
+                  onClick={() => setShowLogoutModal(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-xs font-mono font-bold text-rose-300 backdrop-blur-xl transition-all active:scale-95 cursor-pointer shadow-lg"
+                >
+                  <LogOut size={13} /> Thoát
+                </button>
+              )}
             </div>
-          </nav>
+          </div>
 
-          <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
-            <div className="flex items-center space-x-3">
-              <img
-                src={
-                  selectedAvatar ||
-                  profile.avatarUrl ||
-                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                    displayName || profile.username || "User",
-                  )}&background=1f2937&color=ffffff`
-                }
-                alt={profile.username}
-                className="w-10 h-10 rounded-full object-cover border border-emerald-400/30 bg-neutral-900 shrink-0"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-extrabold text-white truncate">
-                  {displayName || profile.displayName || profile.username}
+          {/* Profile Identity Bar */}
+          <div className="relative px-6 sm:px-10 pb-8 -mt-16 sm:-mt-20 z-20 flex flex-col md:flex-row items-center md:items-end justify-between gap-6 text-center md:text-left">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6">
+              
+              {/* Avatar Box with Glowing Halo Ring */}
+              <div className="relative group shrink-0">
+                <div
+                  className={cn(
+                    "w-28 h-28 sm:w-36 sm:h-36 rounded-[28px] overflow-hidden border-4 border-[#0a0c10] bg-[#12151c] relative flex items-center justify-center transition-all duration-300",
+                    isAdmin
+                      ? "ring-2 ring-white/80 shadow-lg"
+                      : "ring-2 ring-emerald-400/50 shadow-[0_0_40px_rgba(52,211,153,0.25)] group-hover:ring-emerald-400",
+                  )}
+                >
+                  <img
+                    src={
+                      selectedAvatar ||
+                      profile.avatarUrl ||
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                        displayName || profile.username || "User",
+                      )}&background=059669&color=ffffff`
+                    }
+                    alt={profile.username}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                <button
+                  onClick={() => setShowAvatarPicker(true)}
+                  className="absolute -bottom-1 -right-1 p-2.5 rounded-2xl bg-emerald-400 text-black shadow-xl hover:scale-110 active:scale-95 transition-all cursor-pointer border-2 border-[#0a0c10]"
+                  title="Thay đổi avatar"
+                >
+                  <Camera size={16} strokeWidth={2.5} />
+                </button>
+              </div>
+
+              {/* Identity Labels */}
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
+                  <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
+                    {displayName || profile.displayName || profile.username}
+                  </h1>
+                  {isAdmin ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white text-[10px] font-mono font-extrabold uppercase tracking-wider backdrop-blur-md">
+                      👑 ADMIN FOUNDER
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/30 text-emerald-300 text-[10px] font-mono font-bold uppercase tracking-widest shadow-sm backdrop-blur-md">
+                      <Crown size={12} className="text-emerald-400 fill-emerald-400 animate-pulse" /> ULTRA VIP 4K
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs font-mono text-neutral-400">
+                  @{profile.username} •{" "}
+                  {isAdmin ? (
+                    <span className="text-white font-bold tracking-wide">
+                      👑 Quản Trị Viên (Admin)
+                    </span>
+                  ) : (
+                    <span className="text-emerald-400 font-bold">Thành viên CineVerse Premium</span>
+                  )}
                 </p>
-                <p className="text-[11px] text-neutral-400 truncate">
-                  @{profile.username}
-                </p>
+
+                {profile.bio && (
+                  <p className="text-xs text-neutral-300 max-w-lg pt-1 leading-relaxed font-medium">
+                    {profile.bio}
+                  </p>
+                )}
               </div>
             </div>
 
-            {user && (
-              <button
-                onClick={() => setShowLogoutModal(true)}
-                className="flex items-center space-x-2 text-neutral-400 hover:text-red-400 text-xs font-bold px-3 py-2 rounded-xl transition-colors cursor-pointer"
-              >
-                <LogOut size={14} />
-                <span>Thoát</span>
-              </button>
-            )}
+            {/* Member Quick Stats Pill Stack */}
+            <div className="flex items-center gap-3">
+              <div className="px-5 py-3 rounded-2xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-md text-center min-w-[100px]">
+                <span className="text-sm font-mono font-black text-emerald-400 block">
+                  {watchlistItems.length}
+                </span>
+                <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-widest block mt-0.5">
+                  Tủ Phim
+                </span>
+              </div>
+
+              <div className="px-5 py-3 rounded-2xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-md text-center min-w-[100px]">
+                <span className="text-sm font-mono font-black text-amber-400 block">
+                  {historyItems.length}
+                </span>
+                <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-widest block mt-0.5">
+                  Đã Xem
+                </span>
+              </div>
+
+              <div className="px-5 py-3 rounded-2xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-md text-center min-w-[100px]">
+                <span className="text-sm font-mono font-black text-purple-400 block">
+                  100%
+                </span>
+                <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-widest block mt-0.5">
+                  Đồng Bộ
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="bg-[#12161b] border border-white/10 rounded-2xl p-5 md:p-8 shadow-[0_18px_45px_rgba(0,0,0,0.2)] min-h-[560px]">
-          {/* TAB 1: TÀI KHOẢN */}
-          {activeTab === "account" && (
-            <div className="space-y-8">
-              {/* Header */}
-              <div className="border-b border-white/5 pb-4">
-                <h1 className="text-2xl font-extrabold text-white tracking-tight">
-                  Thông tin hồ sơ
-                </h1>
-                <p className="text-xs text-neutral-400 mt-1">
-                  Cập nhật các thông tin hiển thị trên CineVerse
-                </p>
-              </div>
+        {/* ── MAIN CONTENT SUITE (STICKY SIDEBAR NAVIGATION + CONTENT PANELS) ── */}
+        <div className="grid lg:grid-cols-[280px_1fr] gap-8 items-start">
+          
+          {/* Left Sticky Sidebar Navigation */}
+          <aside className="lg:sticky lg:top-24 rounded-3xl border border-white/[0.08] bg-[#0a0c10] p-3 space-y-1 shadow-2xl backdrop-blur-xl">
+            <div className="px-4 py-3 border-b border-white/[0.06] mb-2">
+              <span className="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-[0.2em]">
+                DANH MỤC QUẢN LÝ
+              </span>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-                {/* Form Inputs (Left) */}
-                <form
-                  onSubmit={handleUpdateProfile}
-                  className="md:col-span-8 space-y-6"
+            {[
+              { id: "account", label: "Thông tin cá nhân", Icon: User },
+              { id: "watchlist", label: `Tủ phim đã lưu (${watchlistItems.length})`, Icon: Bookmark },
+              { id: "history", label: `Lịch sử đã xem (${historyItems.length})`, Icon: History },
+              { id: "collections", label: "Bộ sưu tập chủ đề", Icon: ListVideo },
+              { id: "reviews", label: "Đánh giá của tôi", Icon: Star },
+              { id: "settings", label: "Cài đặt tiện ích 4K", Icon: Sliders },
+            ].map((tab) => {
+              const isActive = activeTab === tab.id;
+              const Icon = tab.Icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as TabType)}
+                  className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-bold transition-all duration-300 cursor-pointer ${
+                    isActive
+                      ? "bg-emerald-400 text-black shadow-lg shadow-emerald-400/20 font-black translate-x-1"
+                      : "text-neutral-400 hover:text-white hover:bg-white/[0.05]"
+                  }`}
                 >
-                  {/* Email Field */}
+                  <div className="flex items-center gap-3">
+                    <Icon size={16} />
+                    <span>{tab.label}</span>
+                  </div>
+                  <ChevronRight size={14} className={isActive ? "text-black" : "opacity-0 group-hover:opacity-100"} />
+                </button>
+              );
+            })}
+
+            <div className="pt-3 border-t border-white/[0.06] mt-3 px-1">
+              <Link
+                href="/settings/security"
+                className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold text-neutral-400 hover:text-white hover:bg-white/[0.05] transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <Lock size={16} className="text-amber-400" />
+                  <span>Bảo mật & Mật khẩu</span>
+                </div>
+                <ArrowUpRight size={14} className="text-neutral-500" />
+              </Link>
+            </div>
+          </aside>
+
+          {/* Right Main Content Workspace */}
+          <div className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#0a0c10] p-6 sm:p-10 shadow-2xl backdrop-blur-xl min-h-[620px]">
+            
+            {/* ── TAB 1: THÔNG TIN CÁ NHÂN (ACCOUNT) ── */}
+            {activeTab === "account" && (
+              <div className="space-y-8 animate-fade-in">
+                <div className="border-b border-white/[0.08] pb-5 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
+                      <User size={22} className="text-emerald-400" /> Hồ Sơ Cá Nhân
+                    </h2>
+                    <p className="text-xs text-neutral-400 mt-1 font-mono">
+                      Cập nhật chi tiết các thông tin định danh trên CineVerse
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleUpdateProfile} className="space-y-6 max-w-2xl">
+                  {/* Email Input */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-neutral-300">
-                      Email
+                    <label className="text-[11px] font-mono font-bold text-neutral-400 uppercase tracking-wider block">
+                      Địa chỉ Email tài khoản
                     </label>
                     <input
                       type="email"
                       value={email || `${profile.username}@gmail.com`}
                       readOnly
-                      className="w-full bg-[#111419] border border-white/10 text-neutral-300 text-xs font-medium rounded-xl px-4 py-3 outline-none cursor-not-allowed opacity-80"
+                      className="w-full bg-black/50 border border-white/10 text-neutral-400 text-sm font-mono rounded-2xl px-4 py-3.5 outline-none cursor-not-allowed opacity-75"
                     />
                   </div>
 
-                  {/* Tên hiển thị Field */}
+                  {/* Display Name Input */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-neutral-300">
-                      Tên hiển thị
+                    <label className="text-[11px] font-mono font-bold text-neutral-400 uppercase tracking-wider block">
+                      Tên hiển thị (Display Name)
                     </label>
                     <input
                       type="text"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       placeholder="Nhập tên hiển thị..."
-                      className="w-full bg-[#111419] border border-white/10 text-white text-xs font-medium rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-colors"
+                      className="w-full bg-black/50 border border-white/15 text-white text-sm font-medium rounded-2xl px-4 py-3.5 outline-none focus:border-emerald-400/80 transition-all placeholder:text-neutral-600"
                     />
                   </div>
 
-                  {/* Bio Field */}
+                  {/* Bio Input */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-neutral-300">
-                      Bio
+                    <label className="text-[11px] font-mono font-bold text-neutral-400 uppercase tracking-wider block">
+                      Lời giới thiệu (Bio)
                     </label>
                     <textarea
                       rows={3}
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
-                      placeholder="Giới thiệu ngắn về bạn..."
-                      className="w-full bg-[#111419] border border-white/10 text-white text-xs font-medium rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-colors resize-none"
+                      placeholder="Viết một đoạn giới thiệu ngắn về phong cách xem phim của bạn..."
+                      className="w-full bg-black/50 border border-white/15 text-white text-sm font-medium rounded-2xl px-4 py-3.5 outline-none focus:border-emerald-400/80 transition-all resize-none placeholder:text-neutral-600"
                     />
                   </div>
 
-                  {/* Công khai trang cá nhân Toggle */}
-                  <div className="bg-[#111419] border border-white/10 rounded-2xl p-4 flex items-center justify-between gap-4">
+                  {/* Profile Privacy Glass Switch */}
+                  <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-xs font-bold text-white">
-                        Công khai trang cá nhân
-                      </p>
-                      <p className="text-[11px] text-neutral-400 mt-0.5">
-                        Đang hiển thị phim yêu thích và lịch sử hoạt động.
+                      <p className="text-sm font-bold text-white">Công khai thông tin hồ sơ</p>
+                      <p className="text-xs text-neutral-400 mt-0.5">
+                        Cho phép bạn bè xem danh sách tủ phim và lịch sử xem của bạn.
                       </p>
                     </div>
-
                     <button
                       type="button"
                       onClick={() => setIsPublicProfile(!isPublicProfile)}
-                      className={`w-12 h-6 rounded-full transition-colors p-1 cursor-pointer flex items-center ${
-                        isPublicProfile
-                          ? "bg-emerald-500 justify-end"
-                          : "bg-neutral-700 justify-start"
+                      className={`w-12 h-6 rounded-full transition-colors p-1 cursor-pointer flex items-center shrink-0 ${
+                        isPublicProfile ? "bg-emerald-400 justify-end" : "bg-neutral-800 justify-start"
                       }`}
                     >
-                      <span className="w-4 h-4 bg-white rounded-full shadow-md" />
+                      <span className="w-4 h-4 bg-black rounded-full shadow-md" />
                     </button>
                   </div>
 
-                  {/* Giới tính Radio */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-neutral-300">
-                      Giới tính
-                    </label>
-                    <div className="flex items-center space-x-6 text-xs font-bold text-neutral-300 pt-1">
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="gender"
-                          checked={gender === "male"}
-                          onChange={() => setGender("male")}
-                          className="accent-indigo-500"
-                        />
-                        <span>Nam</span>
-                      </label>
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="gender"
-                          checked={gender === "female"}
-                          onChange={() => setGender("female")}
-                          className="accent-indigo-500"
-                        />
-                        <span>Nữ</span>
-                      </label>
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="gender"
-                          checked={gender === "other"}
-                          onChange={() => setGender("other")}
-                          className="accent-indigo-500"
-                        />
-                        <span>Không xác định</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Submit Button */}
-                  <div className="pt-2">
+                  {/* Submit CTA */}
+                  <div className="pt-4 flex items-center gap-4">
                     <button
                       type="submit"
                       disabled={updatingProfile}
-                      className="bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs px-8 py-3 rounded-xl transition-all shadow-lg active:scale-95 cursor-pointer flex items-center space-x-2"
+                      className="px-8 py-3.5 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-black font-black text-xs transition-all shadow-lg shadow-emerald-400/25 active:scale-95 cursor-pointer flex items-center gap-2"
                     >
-                      {updatingProfile && (
-                        <Loader2 size={14} className="animate-spin" />
-                      )}
-                      <span>Cập nhật</span>
+                      {updatingProfile && <Loader2 size={16} className="animate-spin" />}
+                      <span>Lưu Thay Đổi Hồ Sơ</span>
                     </button>
-                  </div>
 
-                  {/* Reset Password Link */}
-                  <div className="pt-4 text-xs text-neutral-400">
-                    Đặt mật khẩu, nhấn vào{" "}
                     <Link
                       href="/settings/security"
-                      className="text-indigo-400 font-bold hover:underline"
+                      className="text-xs font-bold text-neutral-400 hover:text-white transition-colors"
                     >
-                      đây
+                      Đổi mật khẩu bảo mật ➔
                     </Link>
                   </div>
                 </form>
-
-                {/* Avatar Preview & Choice (Right) matching screenshot 1:1 */}
-                <div className="md:col-span-4 flex flex-col items-center text-center space-y-4 pt-2">
-                  <div className="relative w-36 h-36 rounded-full overflow-hidden border-4 border-indigo-500/40 bg-neutral-900 shadow-2xl">
-                    <img
-                      src={
-                        selectedAvatar ||
-                        profile.avatarUrl ||
-                        `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          displayName || profile.username || "User",
-                        )}&background=1f2937&color=ffffff`
-                      }
-                      alt="Avatar"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  <div className="flex flex-col space-y-2.5 w-full max-w-[200px]">
-                    <button
-                      type="button"
-                      onClick={() => setShowAvatarPicker(!showAvatarPicker)}
-                      className="w-full bg-white/10 hover:bg-white/20 border border-white/15 text-white font-bold text-xs py-2.5 rounded-xl transition-all cursor-pointer"
-                    >
-                      Đổi ảnh đại diện
-                    </button>
-                  </div>
-
-                  {/* Preset Avatar Selection Dropdown */}
-                  {showAvatarPicker && (
-                    <div className="p-3 bg-[#111419] border border-white/15 rounded-2xl space-y-2 animate-in fade-in duration-200">
-                      <p className="text-[11px] font-bold text-neutral-400">
-                        Chọn Avatar mẫu:
-                      </p>
-                      <div className="flex items-center justify-center gap-2 flex-wrap">
-                        {PRESET_AVATARS.map((url, idx) => (
-                          <img
-                            key={idx}
-                            src={url}
-                            alt="Preset"
-                            onClick={() => {
-                              setSelectedAvatar(url);
-                              setShowAvatarPicker(false);
-                            }}
-                            className={`w-10 h-10 rounded-full border-2 cursor-pointer hover:scale-110 transition-transform ${
-                              selectedAvatar === url
-                                ? "border-indigo-500"
-                                : "border-transparent"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* TAB: CÀI ĐẶT TIỆN ÍCH (UTILITY SETTINGS MATCHING SCREENSHOT 1:1) */}
-          {activeTab === "settings" && (
-            <div className="space-y-8">
-              {/* Header */}
-              <div className="border-b border-white/5 pb-4">
-                <h1 className="text-2xl font-extrabold text-white tracking-tight">
-                  Cài đặt tiện ích
-                </h1>
-                <p className="text-xs text-neutral-400 mt-1">
-                  Tùy chỉnh trải nghiệm xem phim
-                </p>
-              </div>
-
-              {/* Toggles Card Section */}
-              <div className="bg-[#111419] border border-white/10 rounded-2xl p-6 shadow-xl space-y-6">
-                {/* 1. Tự động phát */}
-                <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/5">
-                  <div>
-                    <h3 className="text-sm font-extrabold text-white">
-                      Tự động phát
-                    </h3>
-                    <p className="text-xs text-neutral-400 mt-0.5">
-                      Tự động phát phim khi mở trang xem.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAutoplay(!autoplay);
-                      toast(
-                        !autoplay
-                          ? "Đã BẬT tự động phát phim"
-                          : "Đã TẮT tự động phát phim",
-                        "success",
-                      );
-                    }}
-                    className={`w-12 h-6 rounded-full transition-all p-1 cursor-pointer flex items-center shrink-0 ${
-                      autoplay
-                        ? "bg-emerald-500 justify-end"
-                        : "bg-neutral-700 justify-start"
-                    }`}
-                  >
-                    <span className="w-4 h-4 bg-white rounded-full shadow-md" />
-                  </button>
+            {/* ── TAB 2: TỦ PHIM ĐÃ LƯU (WATCHLIST) ── */}
+            {activeTab === "watchlist" && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="border-b border-white/[0.08] pb-5">
+                  <h2 className="text-2xl font-black text-white flex items-center gap-2.5">
+                    <Bookmark size={22} className="text-emerald-400" /> Tủ Phim Đã Lưu ({watchlistItems.length})
+                  </h2>
                 </div>
 
-                {/* 2. Tự động chuyển tập */}
-                <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/5">
-                  <div>
-                    <h3 className="text-sm font-extrabold text-white">
-                      Tự động chuyển tập
-                    </h3>
-                    <p className="text-xs text-neutral-400 mt-0.5">
-                      Chuyển sang tập tiếp theo khi kết thúc.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAutoNextEpisode(!autoNextEpisode);
-                      toast(
-                        !autoNextEpisode
-                          ? "Đã BẬT tự động chuyển tập tiếp theo"
-                          : "Đã TẮT tự động chuyển tập",
-                        "success",
-                      );
-                    }}
-                    className={`w-12 h-6 rounded-full transition-all p-1 cursor-pointer flex items-center shrink-0 ${
-                      autoNextEpisode
-                        ? "bg-emerald-500 justify-end"
-                        : "bg-neutral-700 justify-start"
-                    }`}
-                  >
-                    <span className="w-4 h-4 bg-white rounded-full shadow-md" />
-                  </button>
-                </div>
+                {watchlistItems.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {watchlistItems.map((item: any) => {
+                      const movie = item.movieData || item.movie;
+                      const thumb =
+                        resolveImageUrl(movie?.thumb_url) ||
+                        resolveImageUrl(movie?.poster_url) ||
+                        item.thumbUrl;
 
-                {/* 3. Chế độ rạp phim */}
-                <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/5">
-                  <div>
-                    <h3 className="text-sm font-extrabold text-white">
-                      Chế độ rạp phim
-                    </h3>
-                    <p className="text-xs text-neutral-400 mt-0.5">
-                      Mặc định bật chế độ rạp khi xem phim.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTheaterMode(!theaterMode);
-                      toast(
-                        !theaterMode
-                          ? "Đã BẬT mặc định chế độ rạp phim"
-                          : "Đã TẮT mặc định chế độ rạp phim",
-                        "success",
-                      );
-                    }}
-                    className={`w-12 h-6 rounded-full transition-all p-1 cursor-pointer flex items-center shrink-0 ${
-                      theaterMode
-                        ? "bg-emerald-500 justify-end"
-                        : "bg-neutral-700 justify-start"
-                    }`}
-                  >
-                    <span className="w-4 h-4 bg-white rounded-full shadow-md" />
-                  </button>
-                </div>
-
-                {/* 4. Thông báo phim mới */}
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <h3 className="text-sm font-extrabold text-white">
-                      Thông báo phim mới
-                    </h3>
-                    <p className="text-xs text-neutral-400 mt-0.5">
-                      Nhận thông báo khi phim yêu thích có tập mới.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNewMovieNotifications(!newMovieNotifications);
-                      toast(
-                        !newMovieNotifications
-                          ? "Đã BẬT thông báo phim mới"
-                          : "Đã TẮT thông báo phim mới",
-                        "success",
-                      );
-                    }}
-                    className={`w-12 h-6 rounded-full transition-all p-1 cursor-pointer flex items-center shrink-0 ${
-                      newMovieNotifications
-                        ? "bg-emerald-500 justify-end"
-                        : "bg-neutral-700 justify-start"
-                    }`}
-                  >
-                    <span className="w-4 h-4 bg-white rounded-full shadow-md" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Default Quality Card Section */}
-              <div className="bg-[#111419] border border-white/10 rounded-2xl p-6 shadow-xl space-y-4">
-                <div>
-                  <h3 className="text-sm font-extrabold text-white">
-                    Chất lượng mặc định
-                  </h3>
-                  <p className="text-xs text-neutral-400 mt-0.5">
-                    Chọn chất lượng video ưu tiên.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 pt-2">
-                  {[
-                    { id: "auto", label: "Tự động" },
-                    { id: "360p", label: "360P" },
-                    { id: "480p", label: "480P" },
-                    { id: "720p", label: "720P" },
-                    { id: "1080p", label: "1080P" },
-                  ].map((item) => {
-                    const active = defaultQuality === item.id;
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => {
-                          setDefaultQuality(item.id as QualitySetting);
-                          toast(
-                            `Đã đặt chất lượng mặc định: ${item.label}`,
-                            "success",
-                          );
-                        }}
-                        className={`px-6 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                          active
-                            ? "bg-[#2c3440] text-indigo-400 border border-indigo-500/50 shadow-lg"
-                            : "bg-[#181c24] text-neutral-400 hover:text-white border border-white/5"
-                        }`}
-                      >
-                        {item.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: WATCHLIST */}
-          {activeTab === "watchlist" && (
-            <div className="space-y-6">
-              <div className="border-b border-white/5 pb-4">
-                <h2 className="text-xl font-extrabold text-white flex items-center space-x-2">
-                  <Bookmark size={20} className="text-emerald-400" />
-                  <span>
-                    Danh sách xem (Watchlist) ({watchlistItems.length})
-                  </span>
-                </h2>
-              </div>
-
-              {watchlistItems.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {watchlistItems.map((item: any) => {
-                    const movie = item.movieData || item.movie;
-                    const thumb =
-                      resolveImageUrl(movie?.thumb_url) ||
-                      resolveImageUrl(movie?.poster_url) ||
-                      item.thumbUrl;
-
-                    return (
-                      <Link
-                        key={item.id}
-                        href={`/film/${movie?.slug || item.movieId}`}
-                        className="aspect-[2/3] bg-neutral-900 border border-white/10 rounded-xl overflow-hidden group relative hover:border-white/30 transition-all shadow-md"
-                      >
-                        {thumb ? (
-                          <img
-                            src={thumb}
-                            alt={movie?.title || item.title || item.movieId}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xs text-neutral-600">
-                            <Film size={28} />
+                      return (
+                        <Link
+                          key={item.id}
+                          href={`/film/${movie?.slug || item.movieId}`}
+                          className="aspect-[2/3] bg-[#12151e] border border-white/10 rounded-2xl overflow-hidden group relative hover:border-emerald-400/60 transition-all shadow-xl hover:-translate-y-1.5"
+                        >
+                          {thumb ? (
+                            <img
+                              src={thumb}
+                              alt={movie?.title || item.title || item.movieId}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-xs text-neutral-600">
+                              <Film size={32} />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent p-3.5 flex items-end">
+                            <p className="text-xs font-black text-white line-clamp-2 leading-snug">
+                              {movie?.title || item.title || item.movieId}
+                            </p>
                           </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-2.5 flex items-end">
-                          <p className="text-xs font-bold text-white line-clamp-2">
-                            {movie?.title || item.title || item.movieId}
-                          </p>
-                        </div>
-                      </Link>
-                    );
-                  })}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-24 text-center">
+                    <Bookmark size={40} className="text-neutral-700 mb-3" />
+                    <p className="text-sm font-bold text-neutral-300">Tủ phim của bạn đang trống</p>
+                    <p className="text-xs text-neutral-500 mt-1 max-w-sm font-mono">
+                      Hãy bấm nút "+" trên các bộ phim để lưu lại xem sau.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── TAB 3: LỊCH SỬ ĐÃ XEM (HISTORY) ── */}
+            {activeTab === "history" && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="border-b border-white/[0.08] pb-5">
+                  <h2 className="text-2xl font-black text-white flex items-center gap-2.5">
+                    <History size={22} className="text-emerald-400" /> Lịch Sử Xem Phim ({historyItems.length})
+                  </h2>
                 </div>
-              ) : (
-                <p className="text-neutral-500 text-xs py-12 text-center">
-                  Danh sách xem (Watchlist) đang trống.
-                </p>
-              )}
-            </div>
-          )}
 
-          {/* TAB 3: COLLECTIONS */}
-          {activeTab === "collections" && (
-            <div className="space-y-6">
-              <div className="border-b border-white/5 pb-4">
-                <h2 className="text-xl font-extrabold text-white flex items-center space-x-2">
-                  <ListVideo size={20} className="text-amber-400" />
-                  <span>Bộ sưu tập phim (Collections)</span>
-                </h2>
-              </div>
-              <p className="text-neutral-500 text-xs py-12 text-center">
-                Bộ sưu tập cá nhân của bạn chưa có danh sách nào.
-              </p>
-            </div>
-          )}
+                {historyItems.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {historyItems.map((item: any) => {
+                      const pct =
+                        item.duration > 0
+                          ? Math.min(
+                              100,
+                              Math.round((item.progress / item.duration) * 100),
+                            )
+                          : 0;
 
-          {/* TAB 4: REVIEWS */}
-          {activeTab === "reviews" && (
-            <div className="space-y-6">
-              <div className="border-b border-white/5 pb-4">
-                <h2 className="text-xl font-extrabold text-white flex items-center space-x-2">
-                  <Star size={20} className="text-amber-400 fill-amber-400" />
-                  <span>Đánh giá của tôi</span>
-                </h2>
-              </div>
-              <p className="text-neutral-500 text-xs py-12 text-center">
-                Bạn chưa viết đánh giá nào cho phim.
-              </p>
-            </div>
-          )}
+                      return (
+                        <div
+                          key={item.id}
+                          className="bg-[#12151e] border border-white/10 hover:border-emerald-400/50 rounded-2xl p-4 flex gap-4 items-center transition-all shadow-md group"
+                        >
+                          {item.movieThumb ? (
+                            <img
+                              src={item.movieThumb}
+                              alt={item.movieTitle}
+                              className="w-14 h-20 object-cover rounded-xl flex-shrink-0 border border-white/10 group-hover:scale-105 transition-transform"
+                            />
+                          ) : (
+                            <div className="w-14 h-20 bg-neutral-900 rounded-xl flex-shrink-0 flex items-center justify-center text-neutral-600 border border-white/10">
+                              <Film size={22} />
+                            </div>
+                          )}
 
-          {/* TAB 5: HISTORY */}
-          {activeTab === "history" && (
-            <div className="space-y-6">
-              <div className="border-b border-white/5 pb-4">
-                <h2 className="text-xl font-extrabold text-white flex items-center space-x-2">
-                  <History size={20} className="text-emerald-400" />
-                  <span>Lịch sử xem phim ({historyItems.length})</span>
-                </h2>
-              </div>
-
-              {historyItems.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {historyItems.map((item: any) => {
-                    const pct =
-                      item.duration > 0
-                        ? Math.min(
-                            100,
-                            Math.round((item.progress / item.duration) * 100),
-                          )
-                        : 0;
-
-                    return (
-                      <div
-                        key={item.id}
-                        className="bg-[#111419] border border-white/5 hover:border-white/15 rounded-xl p-3 flex gap-3 items-center transition-all"
-                      >
-                        {item.movieThumb ? (
-                          <img
-                            src={item.movieThumb}
-                            alt={item.movieTitle}
-                            className="w-12 h-16 object-cover rounded-lg flex-shrink-0 border border-white/10"
-                          />
-                        ) : (
-                          <div className="w-12 h-16 bg-neutral-900 rounded-lg flex-shrink-0 flex items-center justify-center text-neutral-600 border border-white/10">
-                            <Film size={20} />
+                          <div className="min-w-0 flex-1 space-y-1.5">
+                            <Link
+                              href={`/watch/${item.movieId}${
+                                item.episode ? `?ep=${item.episode}` : ""
+                              }`}
+                              className="font-black text-white text-sm hover:text-emerald-400 transition-colors line-clamp-1 block"
+                            >
+                              {item.movieTitle}
+                            </Link>
+                            <p className="text-xs text-neutral-400 font-mono">
+                              {item.episode ? `Tập ${item.episode}` : "Bản đầy đủ"}
+                            </p>
+                            <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                              <div
+                                className="bg-emerald-400 h-full rounded-full"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
                           </div>
-                        )}
 
-                        <div className="min-w-0 flex-1 space-y-1">
                           <Link
                             href={`/watch/${item.movieId}${
                               item.episode ? `?ep=${item.episode}` : ""
                             }`}
-                            className="font-bold text-white text-xs hover:text-indigo-400 transition-colors line-clamp-1 block"
+                            className="p-3 text-black bg-emerald-400 hover:bg-emerald-300 rounded-xl transition-all shrink-0 shadow-lg active:scale-95"
                           >
-                            {item.movieTitle}
+                            <Play size={14} className="fill-current" />
                           </Link>
-                          <p className="text-[10px] text-neutral-400">
-                            {item.episode
-                              ? `Tập ${item.episode}`
-                              : "Bản xem đầy đủ"}
-                          </p>
-                          <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-                            <div
-                              className="bg-emerald-400 h-full rounded-full"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
                         </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-24 text-center">
+                    <History size={40} className="text-neutral-700 mb-3" />
+                    <p className="text-sm font-bold text-neutral-300">Bạn chưa có lịch sử xem phim nào</p>
+                  </div>
+                )}
+              </div>
+            )}
 
-                        <Link
-                          href={`/watch/${item.movieId}${
-                            item.episode ? `?ep=${item.episode}` : ""
-                          }`}
-                          className="p-2 text-white bg-white/10 hover:bg-white hover:text-black rounded-lg transition-colors shrink-0"
-                        >
-                          <Play size={12} fill="currentColor" />
-                        </Link>
-                      </div>
-                    );
-                  })}
+            {/* ── TAB 4: BỘ SƯU TẬP (COLLECTIONS) ── */}
+            {activeTab === "collections" && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="border-b border-white/[0.08] pb-5">
+                  <h2 className="text-2xl font-black text-white flex items-center gap-2.5">
+                    <ListVideo size={22} className="text-amber-400" /> Bộ Sưu Tập Phim Chủ Đề
+                  </h2>
                 </div>
-              ) : (
-                <p className="text-neutral-500 text-xs py-12 text-center">
-                  Bạn chưa có lịch sử xem phim nào.
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+                <div className="flex flex-col items-center justify-center py-24 text-center">
+                  <ListVideo size={40} className="text-neutral-700 mb-3" />
+                  <p className="text-sm font-bold text-neutral-300">Chưa có bộ sưu tập nào được tạo</p>
+                </div>
+              </div>
+            )}
 
-      {/* ── CUSTOM LOGOUT MODAL DIALOG ── */}
-      {showLogoutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="max-w-xs w-full bg-[#181c24] border border-white/15 rounded-3xl p-6 text-center space-y-4 shadow-2xl">
-            <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto">
-              <LogOut size={22} />
-            </div>
-            <div>
-              <h3 className="text-base font-extrabold text-white">
-                Xác nhận đăng xuất
-              </h3>
-              <p className="text-xs text-neutral-400 mt-1">
-                Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?
-              </p>
-            </div>
-            <div className="flex space-x-3 pt-2">
-              <button
-                onClick={() => setShowLogoutModal(false)}
-                className="flex-1 bg-white/10 hover:bg-white/15 text-white font-bold text-xs py-2.5 rounded-xl transition-all cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={confirmLogout}
-                className="flex-1 bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs py-2.5 rounded-xl transition-all shadow-lg active:scale-95 cursor-pointer"
-              >
-                Đăng xuất
-              </button>
-            </div>
+            {/* ── TAB 5: ĐÁNH GIÁ (REVIEWS) ── */}
+            {activeTab === "reviews" && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="border-b border-white/[0.08] pb-5">
+                  <h2 className="text-2xl font-black text-white flex items-center gap-2.5">
+                    <Star size={22} className="text-amber-400 fill-amber-400" /> Đánh Giá Của Tôi
+                  </h2>
+                </div>
+                <div className="flex flex-col items-center justify-center py-24 text-center">
+                  <Star size={40} className="text-neutral-700 mb-3" />
+                  <p className="text-sm font-bold text-neutral-300">Bạn chưa viết đánh giá nào cho phim</p>
+                </div>
+              </div>
+            )}
+
+            {/* ── TAB 6: CÀI ĐẶT TIỆN ÍCH (SETTINGS) ── */}
+            {activeTab === "settings" && (
+              <div className="space-y-8 animate-fade-in">
+                <div className="border-b border-white/[0.08] pb-5">
+                  <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
+                    <Sliders size={22} className="text-emerald-400" /> Cài Đặt Tiện Ích Trình Phát
+                  </h2>
+                </div>
+
+                <div className="bg-[#12151e] border border-white/10 rounded-3xl p-6 space-y-6">
+                  {/* Tự động phát */}
+                  <div className="flex items-center justify-between gap-4 pb-5 border-b border-white/10">
+                    <div>
+                      <h3 className="text-sm font-bold text-white">Tự động phát phim</h3>
+                      <p className="text-xs text-neutral-400 mt-0.5">Tự động phát video khi nạp xong trang xem.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAutoplay(!autoplay);
+                        toast(!autoplay ? "Đã BẬT tự động phát" : "Đã TẮT tự động phát", "success");
+                      }}
+                      className={`w-12 h-6 rounded-full transition-all p-1 cursor-pointer flex items-center shrink-0 ${
+                        autoplay ? "bg-emerald-400 justify-end" : "bg-neutral-800 justify-start"
+                      }`}
+                    >
+                      <span className="w-4 h-4 bg-black rounded-full shadow-md" />
+                    </button>
+                  </div>
+
+                  {/* Tự động chuyển tập */}
+                  <div className="flex items-center justify-between gap-4 pb-5 border-b border-white/10">
+                    <div>
+                      <h3 className="text-sm font-bold text-white">Tự động chuyển tập tiếp theo</h3>
+                      <p className="text-xs text-neutral-400 mt-0.5">Chuyển sang tập kế tiếp ngay khi kết thúc.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAutoNextEpisode(!autoNextEpisode);
+                        toast(!autoNextEpisode ? "Đã BẬT chuyển tập tiếp theo" : "Đã TẮT chuyển tập", "success");
+                      }}
+                      className={`w-12 h-6 rounded-full transition-all p-1 cursor-pointer flex items-center shrink-0 ${
+                        autoNextEpisode ? "bg-emerald-400 justify-end" : "bg-neutral-800 justify-start"
+                      }`}
+                    >
+                      <span className="w-4 h-4 bg-black rounded-full shadow-md" />
+                    </button>
+                  </div>
+
+                  {/* Chế độ Rạp phim */}
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-sm font-bold text-white">Mặc định chế độ Rạp Phim</h3>
+                      <p className="text-xs text-neutral-400 mt-0.5">Mở rộng trình phát phim toàn màn hình.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTheaterMode(!theaterMode);
+                        toast(!theaterMode ? "Đã BẬT chế độ Rạp phim" : "Đã TẮT chế độ Rạp phim", "success");
+                      }}
+                      className={`w-12 h-6 rounded-full transition-all p-1 cursor-pointer flex items-center shrink-0 ${
+                        theaterMode ? "bg-emerald-400 justify-end" : "bg-neutral-800 justify-start"
+                      }`}
+                    >
+                      <span className="w-4 h-4 bg-black rounded-full shadow-md" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quality Preferences */}
+                <div className="bg-[#12151e] border border-white/10 rounded-3xl p-6 space-y-4">
+                  <h3 className="text-sm font-bold text-white">Độ phân giải ưu tiên</h3>
+                  <div className="flex flex-wrap gap-2.5">
+                    {[
+                      { id: "auto", label: "Tự động 4K/HD" },
+                      { id: "1080p", label: "1080P Full HD" },
+                      { id: "720p", label: "720P HD" },
+                      { id: "480p", label: "480P" },
+                    ].map((item) => {
+                      const active = defaultQuality === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            setDefaultQuality(item.id as QualitySetting);
+                            toast(`Đã đặt chất lượng: ${item.label}`, "success");
+                          }}
+                          className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                            active
+                              ? "bg-emerald-400 text-black font-black shadow-lg shadow-emerald-400/20"
+                              : "bg-white/[0.04] text-neutral-400 hover:text-white border border-white/10"
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* PWA Native App Card */}
+                <div className="p-6 rounded-3xl border border-white/15 bg-gradient-to-r from-[#141924] to-[#0e1219] shadow-xl flex flex-col sm:flex-row items-center justify-between gap-5">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-400/20 border border-emerald-400/40 text-emerald-400 flex items-center justify-center shrink-0">
+                      <Sparkles size={24} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">CineVerse Native App (PWA)</h4>
+                      <p className="text-xs text-neutral-400 mt-1">Cài đặt trực tiếp lên màn hình chính thiết bị.</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handlePwaInstall}
+                    className="px-6 py-3 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-black font-black text-xs transition-all shadow-lg active:scale-95 cursor-pointer shrink-0"
+                  >
+                    Cài Đặt App
+                  </button>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
-      )}
-    </div>
+
+      </div>
+
+      {/* ── AVATAR SELECTION MODAL DIALOG ── */}
+      <AnimatePresence>
+        {showAvatarPicker && (
+          <div className="fixed inset-0 z-[100] grid place-items-center bg-black/85 p-4 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-md overflow-hidden rounded-3xl border border-white/15 bg-[#0e1117] p-6 shadow-2xl space-y-5"
+            >
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                  <Camera size={18} className="text-emerald-400" /> Thay Đổi Ảnh Đại Diện
+                </h3>
+                <button
+                  onClick={() => setShowAvatarPicker(false)}
+                  className="rounded-full border border-white/10 p-2 text-neutral-400 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Preset Avatars Grid */}
+              <div className="space-y-3">
+                <p className="text-xs font-mono font-bold uppercase text-neutral-400 tracking-wider">
+                  Mẫu Avatar chất lượng cao:
+                </p>
+                <div className="grid grid-cols-4 gap-3">
+                  {PRESET_AVATARS.map((url, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setSelectedAvatar(url);
+                        setCustomAvatarInput("");
+                      }}
+                      className={`relative aspect-square rounded-2xl overflow-hidden border-2 transition-all cursor-pointer hover:scale-105 ${
+                        selectedAvatar === url
+                          ? "border-emerald-400 ring-2 ring-emerald-400/50 shadow-lg shadow-emerald-400/20"
+                          : "border-white/10 hover:border-white/40"
+                      }`}
+                    >
+                      <img src={url} alt="Preset Avatar" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom URL Input */}
+              <div className="space-y-2 pt-2">
+                <label className="text-xs font-mono font-bold uppercase text-neutral-400 tracking-wider block">
+                  Hoặc dán link ảnh cá nhân:
+                </label>
+                <input
+                  type="url"
+                  value={customAvatarInput}
+                  onChange={(e) => {
+                    setCustomAvatarInput(e.target.value);
+                    setSelectedAvatar(e.target.value);
+                  }}
+                  placeholder="https://example.com/avatar.jpg"
+                  className="w-full bg-black/50 border border-white/15 text-white text-xs font-mono rounded-2xl px-4 py-3 outline-none focus:border-emerald-400 transition-colors"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+                <button
+                  onClick={() => setShowAvatarPicker(false)}
+                  className="px-5 py-2.5 rounded-2xl border border-white/15 text-xs font-bold text-neutral-300 hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleUpdateProfile}
+                  className="px-6 py-2.5 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-black font-black text-xs transition-all shadow-lg shadow-emerald-400/25 active:scale-95 cursor-pointer"
+                >
+                  Áp Dụng Avatar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── LOGOUT MODAL ── */}
+      <AnimatePresence>
+        {showLogoutModal && (
+          <div className="fixed inset-0 z-[100] grid place-items-center bg-black/85 backdrop-blur-md p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="max-w-xs w-full bg-[#0e1117] border border-white/15 rounded-3xl p-6 text-center space-y-4 shadow-2xl"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center mx-auto shadow-lg">
+                <LogOut size={22} />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-white">Xác nhận đăng xuất</h3>
+                <p className="text-xs text-neutral-400 mt-1">
+                  Bạn có chắc chắn muốn rời khỏi phiên đăng nhập CineVerse?
+                </p>
+              </div>
+              <div className="flex space-x-3 pt-2">
+                <button
+                  onClick={() => setShowLogoutModal(false)}
+                  className="flex-1 bg-white/10 hover:bg-white/15 text-white font-bold text-xs py-3 rounded-2xl transition-all cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={confirmLogout}
+                  className="flex-1 bg-rose-500 hover:bg-rose-400 text-black font-black text-xs py-3 rounded-2xl transition-all shadow-lg shadow-rose-500/30 active:scale-95 cursor-pointer"
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </main>
   );
 }

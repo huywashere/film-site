@@ -8,13 +8,10 @@ export async function HeroBannerServer() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s timeout
 
-    const data = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/kkphim/danh-sach/phim-moi-cap-nhat?page=1`,
-      {
-        next: { revalidate: 300 }, // ISR: revalidate every 5 minutes
-        signal: controller.signal,
-      },
-    ).then((res) => res.json());
+    const data = await fetch(`/api/kkphim/danh-sach/phim-moi-cap-nhat?page=1`, {
+      next: { revalidate: 300 }, // ISR: revalidate every 5 minutes
+      signal: controller.signal,
+    }).then((res) => res.json());
 
     clearTimeout(timeoutId);
 

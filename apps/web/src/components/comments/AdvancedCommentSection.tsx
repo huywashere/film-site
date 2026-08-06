@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Star,
   ThumbsUp,
@@ -17,7 +17,7 @@ import { checkCommentRateLimit } from "@/lib/rate-limiter";
 
 export interface CommentItem {
   id: string;
-  user: { name: string; avatar: string };
+  user: { name: string; avatar: string; role?: string };
   content: string;
   rating?: number;
   isSpoiler?: boolean;
@@ -29,11 +29,36 @@ export interface CommentItem {
 interface AdvancedCommentSectionProps {
   movieSlug: string;
   episodeName?: string;
+  currentVideoTimeSeconds?: number;
+  onSeekToTimestamp?: (seconds: number) => void;
+}
+
+function parseTimestampToSeconds(ts: string): number {
+  const parts = ts.split(":").map((p) => parseInt(p, 10) || 0);
+  if (parts.length === 3) {
+    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  }
+  if (parts.length === 2) {
+    return parts[0] * 60 + parts[1];
+  }
+  return 0;
+}
+
+function formatSecondsToTimestamp(totalSeconds: number): string {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = Math.floor(totalSeconds % 60);
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  }
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
 export function AdvancedCommentSection({
   movieSlug,
   episodeName,
+  currentVideoTimeSeconds = 0,
+  onSeekToTimestamp,
 }: AdvancedCommentSectionProps) {
   const currentUser = useAuthStore((s) => s.user);
   const { toast } = useToast();
@@ -46,16 +71,44 @@ export function AdvancedCommentSection({
     Record<string, boolean>
   >({});
 
-  // Empty initial comments — no demo data
+  // Initial comments list with localStorage persistence
   const [comments, setComments] = useState<CommentItem[]>([]);
+
+  const storageKey = `cineverse_comments_${movieSlug || "default"}`;
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        setComments(JSON.parse(raw));
+      }
+    } catch {
+      // ignore JSON parse error
+    }
+  }, [storageKey]);
+
+  const saveComments = (newComments: CommentItem[]) => {
+    setComments(newComments);
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(newComments));
+    } catch {
+      // ignore
+    }
+  };
 
   const toggleSpoilerReveal = (id: string) =>
     setRevealedSpoilers((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const handleLike = (id: string) => {
-    setComments((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, likes: c.likes + 1 } : c)),
+    const updated = comments.map((c) =>
+      c.id === id ? { ...c, likes: c.likes + 1 } : c,
     );
+    saveComments(updated);
+  };
+
+  const insertCurrentTimestamp = () => {
+    const formatted = formatSecondsToTimestamp(currentVideoTimeSeconds);
+    setContent((prev) => `${prev} [${formatted}] `);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -78,6 +131,7 @@ export function AdvancedCommentSection({
         avatar:
           currentUser?.avatarUrl ||
           `https://ui-avatars.com/api/?name=U&background=1e293b&color=fff`,
+        role: currentUser?.role || "USER",
       },
       content: content.trim(),
       rating,
@@ -87,10 +141,52 @@ export function AdvancedCommentSection({
       episode: episodeName,
     };
 
-    setComments([newComment, ...comments]);
+    const updated = [newComment, ...comments];
+    saveComments(updated);
     setContent("");
     setIsSpoiler(false);
     toast("Đã đăng bình luận!", "success");
+  };
+
+  const renderCommentContent = (text: string) => {
+    // Regex matching timestamp patterns like 05:20, 1:25:30, [12:45]
+    const regex = /(?:\[)?\b(?:(\d{1,2}):)?(\d{1,2}):(\d{2})\b(?:\])?/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+      const matchIndex = match.index;
+      if (matchIndex > lastIndex) {
+        parts.push(text.substring(lastIndex, matchIndex));
+      }
+      const timeString = match[0].replace(/[\[\]]/g, "");
+      const seconds = parseTimestampToSeconds(timeString);
+
+      parts.push(
+        <button
+          key={`${timeString}-${matchIndex}`}
+          type="button"
+          onClick={() => {
+            if (onSeekToTimestamp) {
+              onSeekToTimestamp(seconds);
+              toast(`Đã chuyển tới mốc ${timeString}`, "info");
+            }
+          }}
+          className="inline-flex items-center gap-1 mx-1 px-2 py-0.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/35 text-blue-400 font-mono font-bold text-[11px] border border-blue-500/30 transition-all cursor-pointer shadow-sm active:scale-95"
+          title={`Bấm để chuyển trình phát tới ${timeString}`}
+        >
+          ⏱ {timeString}
+        </button>,
+      );
+      lastIndex = regex.lastIndex;
+    }
+
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : text;
   };
 
   return (
@@ -113,34 +209,48 @@ export function AdvancedCommentSection({
 
       {/* Write Comment Form */}
       <form onSubmit={handleSubmit} className="space-y-3">
-        {/* Rating row */}
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-white/40">Đánh giá:</span>
-          <div className="flex items-center gap-0.5">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                type="button"
-                key={star}
-                onClick={() => setRating(star)}
-                onMouseEnter={() => setHoverRating(star)}
-                onMouseLeave={() => setHoverRating(0)}
-                className="p-0.5 hover:scale-110 transition-transform"
-              >
-                <Star
-                  size={16}
-                  className={cn(
-                    "transition-colors",
-                    (hoverRating || rating) >= star
-                      ? "fill-amber-400 text-amber-400"
-                      : "text-white/15",
-                  )}
-                />
-              </button>
-            ))}
+        {/* Rating row + Insert Timestamp Button */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-white/40">Đánh giá:</span>
+            <div className="flex items-center gap-0.5">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  type="button"
+                  key={star}
+                  onClick={() => setRating(star)}
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  className="p-0.5 hover:scale-110 transition-transform"
+                >
+                  <Star
+                    size={16}
+                    className={cn(
+                      "transition-colors",
+                      (hoverRating || rating) >= star
+                        ? "fill-amber-400 text-amber-400"
+                        : "text-white/15",
+                    )}
+                  />
+                </button>
+              ))}
+            </div>
+            <span className="text-xs text-amber-400/80 font-medium">
+              {rating}.0
+            </span>
           </div>
-          <span className="text-xs text-amber-400/80 font-medium">
-            {rating}.0
-          </span>
+
+          {/* Instant Timestamp Insert Button */}
+          {currentUser && (
+            <button
+              type="button"
+              onClick={insertCurrentTimestamp}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/30 text-xs font-bold transition-all cursor-pointer active:scale-95"
+              title="Gắn số phút/giây đang xem vào ô bình luận"
+            >
+              <span>⏱ Chèn mốc time ({formatSecondsToTimestamp(currentVideoTimeSeconds)})</span>
+            </button>
+          )}
         </div>
 
         {/* Textarea */}
@@ -150,7 +260,7 @@ export function AdvancedCommentSection({
             onChange={(e) => setContent(e.target.value)}
             placeholder={
               currentUser
-                ? "Chia sẻ suy nghĩ của bạn..."
+                ? "Chia sẻ suy nghĩ của bạn (ví dụ: 'Đoạn 05:20 xem hay quá!')..."
                 : "Đăng nhập để bình luận"
             }
             disabled={!currentUser}
@@ -202,11 +312,20 @@ export function AdvancedCommentSection({
           </p>
         </div>
       ) : (
-        <div className="space-y-0 divide-y divide-white/[0.04]">
+        <div className="space-y-3">
           {comments.map((comment) => {
             const isRevealed = revealedSpoilers[comment.id];
+            const isAdminComment =
+              comment.user.name.toLowerCase().includes("huy") ||
+              comment.user.name === "Phu Huy Nguyen" ||
+              comment.user.name === "huywashere" ||
+              (comment as any).user?.role === "admin";
+
             return (
-              <div key={comment.id} className="py-4 space-y-2">
+              <div
+                key={comment.id}
+                className="py-3.5 space-y-2 border-b border-white/[0.04] last:border-none"
+              >
                 {/* Row: avatar + name + time + rating */}
                 <div className="flex items-center gap-2.5">
                   <img
@@ -214,16 +333,21 @@ export function AdvancedCommentSection({
                     alt={comment.user.name}
                     className="w-7 h-7 rounded-full object-cover border border-white/10 flex-shrink-0"
                   />
-                  <div className="flex-1 min-w-0">
-                    <span className="text-xs font-semibold text-white/80">
+                  <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-bold text-white tracking-tight">
                       {comment.user.name}
                     </span>
-                    <span className="text-[10px] text-white/30 ml-2">
+                    {isAdminComment && (
+                      <span className="px-2.5 py-1 rounded-lg bg-white/12 border border-white/25 text-white text-[11px] font-mono font-black uppercase tracking-wider shadow-sm">
+                        👑 ADMIN
+                      </span>
+                    )}
+                    <span className="text-[10px] text-white/30 font-mono">
                       {comment.timestamp}
                     </span>
                   </div>
                   {comment.rating && (
-                    <div className="flex items-center gap-0.5 text-[10px] text-amber-400/70 flex-shrink-0">
+                    <div className="flex items-center gap-0.5 text-[10px] text-amber-400/80 font-bold flex-shrink-0">
                       <Star size={10} fill="currentColor" />
                       <span>{comment.rating}.0</span>
                     </div>
@@ -243,9 +367,9 @@ export function AdvancedCommentSection({
                     </button>
                   ) : (
                     <div>
-                      <p className="text-xs text-white/60 leading-relaxed">
-                        {comment.content}
-                      </p>
+                      <div className="text-xs text-white/60 leading-relaxed">
+                        {renderCommentContent(comment.content)}
+                      </div>
                       {comment.isSpoiler && isRevealed && (
                         <button
                           onClick={() => toggleSpoilerReveal(comment.id)}

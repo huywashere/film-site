@@ -16,22 +16,59 @@ export default function WatchlistPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [guestItems, setGuestItems] = useState<GuestWatchlistItem[]>([]);
+  const [removedSlugs, setRemovedSlugs] = useState<string[]>([]);
 
   useEffect(() => {
     setGuestItems(guestDataStorage.getWatchlist());
+
+    const handleWatchlistChanged = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && detail.action === "remove" && detail.movieId) {
+        setRemovedSlugs((prev) => [...new Set([...prev, detail.movieId])]);
+        setGuestItems((items) => items.filter((i) => i.movieId !== detail.movieId));
+      }
+    };
+
+    window.addEventListener("cineverse_watchlist_changed", handleWatchlistChanged);
+    return () => {
+      window.removeEventListener("cineverse_watchlist_changed", handleWatchlistChanged);
+    };
   }, []);
 
   // Fetch watchlist data - must be called unconditionally (Rules of Hooks)
   const { data: watchlistData, isLoading } = useQuery({
     queryKey: ["watchlist", user?.id, page],
-    queryFn: () => watchlistApi.get(page).then((r) => r.data),
+    queryFn: async () => {
+      try {
+        const res = await watchlistApi.get(page);
+        const data = res?.data;
+        if (Array.isArray(data)) {
+          return { items: data, total: data.length, totalPages: 1 };
+        }
+        return {
+          items: data?.items || [],
+          total: data?.total || 0,
+          totalPages: data?.totalPages || 1,
+        };
+      } catch (_err) {
+        return { items: [], total: 0, totalPages: 1 };
+      }
+    },
     enabled: !!user, // Only fetch when user is logged in
   });
 
-  const watchlistItems: Array<WatchlistItem | GuestWatchlistItem> = user
-    ? watchlistData?.items || []
+  const rawWatchlistItems: Array<WatchlistItem | GuestWatchlistItem> = user
+    ? Array.isArray(watchlistData?.items)
+      ? watchlistData.items
+      : Array.isArray(watchlistData)
+        ? watchlistData
+        : []
     : guestItems;
-  const total = user ? watchlistData?.total || 0 : guestItems.length;
+
+  const watchlistItems = rawWatchlistItems.filter(
+    (item) => !removedSlugs.includes(item.movieId),
+  );
+  const total = watchlistItems.length;
   const totalPages = user ? watchlistData?.totalPages || 1 : 1;
 
   return (
@@ -39,23 +76,15 @@ export default function WatchlistPage() {
       {/* Header */}
       <div className="border-b border-white/10 bg-transparent sticky top-16 z-30">
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6">
-          {/* Back Button & Title */}
-          <div className="flex items-center space-x-4 mb-4">
-            <button
-              onClick={() => router.back()}
-              className="p-2 hover:bg-white/5 rounded-lg transition-colors"
-            >
-              <ChevronLeft size={24} className="text-neutral-400" />
-            </button>
-            <div>
-              <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight">
-                Xem sau
-              </h1>
-              <p className="text-sm text-neutral-400 mt-1 normal-case font-normal tracking-normal">
-                {total} phim đã lưu{" "}
-                {user ? "trong tài khoản" : "trên thiết bị này"}
-              </p>
-            </div>
+          {/* Back Button & Title (Centered) */}
+          <div className="flex flex-col items-center justify-center text-center max-w-2xl mx-auto py-2">
+            <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight">
+              Xem Sau
+            </h1>
+            <p className="text-sm text-neutral-400 mt-1.5 normal-case font-normal tracking-normal">
+              {total} phim đã lưu{" "}
+              {user ? "trong tài khoản" : "trên thiết bị này"}
+            </p>
           </div>
         </div>
       </div>

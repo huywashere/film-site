@@ -4,6 +4,7 @@ import type { NestExpressApplication } from "@nestjs/platform-express";
 import helmet from "helmet";
 import * as cookieParser from "cookie-parser";
 import * as Sentry from "@sentry/node";
+import rateLimit from "express-rate-limit";
 import { AppModule } from "./app.module";
 
 // ── Clean & Pretty Console Logger (Suppresses RouterExplorer route mapping spam) ──
@@ -38,8 +39,28 @@ async function bootstrap() {
     Number.isFinite(trustedProxyHops) ? trustedProxyHops : 1,
   );
 
-  // ── Security headers (Helmet) ──────────────────────────────────
+  // ── Security middleware ───────────────────────────────────────
+  const exposeServerIdentity = process.env.EXPOSE_SERVER_IDENTITY === "true";
+
+  if (!exposeServerIdentity) {
+    app.disable("x-powered-by");
+  }
+
+  if (exposeServerIdentity) {
+    app.use((req, res, next) => {
+      res.setHeader("X-Powered-By", "Express");
+      res.setHeader("Server", "Express");
+      next();
+    });
+  }
+
   app.use(cookieParser());
+  app.use((req, res, next) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    next();
+  });
   app.use(
     helmet({
       frameguard: { action: "sameorigin" },
@@ -65,6 +86,61 @@ async function bootstrap() {
   // ── Global prefix ─────────────────────────────────────────────
   app.setGlobalPrefix("api/v1");
 
+  const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 200,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: "Quá nhiều yêu cầu, vui lòng thử lại sau" },
+  });
+
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: "Quá nhiều lần thử đăng nhập, vui lòng thử lại sau" },
+  });
+
+  const forgotPasswordLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: "Quá nhiều yêu cầu khôi phục mật khẩu, vui lòng thử lại sau 15 phút" },
+  });
+
+  const searchLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: "Bạn thực hiện tìm kiếm quá nhanh, vui lòng thử lại sau 1 phút" },
+  });
+
+  const reviewLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: "Bạn gửi bình luận quá nhanh, vui lòng chờ 1 phút" },
+  });
+
+  const watchHistoryLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: "Tần suất đồng bộ tiến độ quá dày đặc" },
+  });
+
+  app.use(globalLimiter);
+  app.use("/api/v1/auth/forgot-password", forgotPasswordLimiter);
+  app.use("/api/v1/auth", authLimiter);
+  app.use("/api/v1/movies/search", searchLimiter);
+  app.use("/api/v1/movies/:id/reviews", reviewLimiter);
+  app.use("/api/v1/users/me/watch-history", watchHistoryLimiter);
+
   // ── CORS – restrict to trusted frontend origins ───────────────
   const configuredOrigins = process.env.FRONTEND_URL
     ? process.env.FRONTEND_URL.split(",")
@@ -75,15 +151,27 @@ async function bootstrap() {
     new Set(
       process.env.NODE_ENV === "production"
         ? configuredOrigins
-        : [...configuredOrigins, "http://127.0.0.1:3000"],
+        : [...configuredOrigins, "http://127.0.0.1:3000", "http://localhost:3000"],
     ),
   );
 
   app.enableCors({
-    origin: origins,
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      if (origins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("Origin not allowed by CORS"));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     maxAge: 600,
   });
 

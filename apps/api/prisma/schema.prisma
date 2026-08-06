@@ -10,6 +10,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// FIX #14: Dùng enum thay vì String cho role — type-safe, tránh typo
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+
+  @@map("role")
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -18,7 +27,7 @@ model User {
   displayName  String?
   avatarUrl    String?
   bio          String?
-  role         String   @default("USER") // "ADMIN" | "USER"
+  role         Role     @default(USER)  // FIX #14: enum thay vì String
   isBanned     Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -148,6 +157,9 @@ model AuditLog {
   action     String   // e.g. "LOCK_USER", "UNLOCK_USER", "HIDE_MOVIE", "UNHIDE_MOVIE", "EDIT_METADATA", "FORCE_CLOSE_PARTY"
   targetId   String?
   details    String?  @db.Text
+  // FIX #11: Thêm IP và User-Agent để truy vết forensics
+  ipAddress  String?
+  userAgent  String?  @db.Text
   createdAt  DateTime @default(now())
 
   admin User @relation("AdminAuditLogs", fields: [adminId], references: [id], onDelete: Cascade)

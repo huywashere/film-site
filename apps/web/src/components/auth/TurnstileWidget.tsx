@@ -30,7 +30,7 @@ declare global {
 
 const SCRIPT_ID = "cf-turnstile-explicit";
 const SCRIPT_URL =
-  "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+  "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad";
 
 function getTurnstileScript(): HTMLScriptElement {
   const existing = document.getElementById(SCRIPT_ID);
@@ -39,8 +39,6 @@ function getTurnstileScript(): HTMLScriptElement {
   const script = document.createElement("script");
   script.id = SCRIPT_ID;
   script.src = SCRIPT_URL;
-  script.async = true;
-  script.defer = true;
   document.head.appendChild(script);
   return script;
 }
@@ -72,38 +70,36 @@ export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps)
         renderScheduled ||
         widgetIdRef.current ||
         !containerRef.current ||
-        !window.turnstile
+        !window.turnstile ||
+        typeof window.turnstile.render !== "function"
       )
         return;
 
       renderScheduled = true;
-      window.turnstile.ready(() => {
-        if (disposed || !containerRef.current || !window.turnstile) return;
-        try {
-          widgetIdRef.current = window.turnstile.render(containerRef.current, {
-            sitekey: siteKey,
-            action,
-            theme: "dark",
-            size: "flexible",
-            callback: (token) => {
-              setStatus("ready");
-              onTokenChange(token);
-            },
-            "error-callback": () => {
-              setStatus("error");
-              onTokenChange(null);
-            },
-            "expired-callback": () => {
-              setStatus("loading");
-              onTokenChange(null);
-            },
-          });
-          setStatus("ready");
-        } catch {
-          setStatus("error");
-          onTokenChange(null);
-        }
-      });
+      try {
+        widgetIdRef.current = window.turnstile.render(containerRef.current, {
+          sitekey: siteKey,
+          action,
+          theme: "dark",
+          size: "flexible",
+          callback: (token) => {
+            setStatus("ready");
+            onTokenChange(token);
+          },
+          "error-callback": () => {
+            setStatus("error");
+            onTokenChange(null);
+          },
+          "expired-callback": () => {
+            setStatus("loading");
+            onTokenChange(null);
+          },
+        });
+        setStatus("ready");
+      } catch {
+        setStatus("error");
+        onTokenChange(null);
+      }
     };
 
     const script = getTurnstileScript();

@@ -9,9 +9,11 @@ import { GoogleStrategy } from "./strategies/google.strategy";
 import { FirebaseTokenVerifier } from "./firebase-token-verifier.service";
 import { FirebaseAuthGuard } from "./guards/firebase-auth.guard";
 import { TurnstileService } from "./turnstile.service";
+import { RedisCacheModule } from "../redis/redis.module";
 
 @Module({
   imports: [
+    RedisCacheModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

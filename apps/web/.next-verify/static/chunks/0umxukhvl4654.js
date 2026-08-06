@@ -1,0 +1,1 @@
+(globalThis.TURBOPACK||(globalThis.TURBOPACK=[])).push(["object"==typeof document?document.currentScript:void 0,18299,t=>{"use strict";var i=t.i(62835),a=t.i(48285);t.s(["default",0,function({children:t}){return(0,i.jsx)(a.motion.div,{initial:{opacity:0},animate:{opacity:1},transition:{duration:.15,ease:"easeOut"},className:"w-full transform-gpu",children:t})}])}]);

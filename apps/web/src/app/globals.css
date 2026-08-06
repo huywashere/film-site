@@ -181,6 +181,15 @@ body {
   animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+@keyframes marquee-rtl {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
 /* ── Radix UI Overrides ────────────────────────────────────────── */
 @layer components {
   .page-content {
@@ -195,8 +204,25 @@ body {
 
 .gpu-accelerated {
   transform: translate3d(0, 0, 0);
+  will-change: transform, opacity;
   backface-visibility: hidden;
   perspective: 1000px;
+}
+
+/* ── Performance & Offscreen Rendering Optimization ───────────── */
+.cv-section-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 480px;
+}
+
+.cv-grid-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 320px;
+}
+
+/* Smooth scrolling without main thread thrashes */
+html {
+  scroll-behavior: smooth;
 }
 
 /* ── Sidebar transparent — handled via inline style directly ──── */

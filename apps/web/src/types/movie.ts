@@ -1,4 +1,4 @@
-export type MovieSource = "kkphim" | "ophim" | "nguonc" | "vsmov";
+export type MovieSource = "kkphim" | "ophim" | "nguonc" | "vsmov" | "vidsrc";
 
 export interface NamedValue {
   name?: string;

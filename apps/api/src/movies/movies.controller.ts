@@ -1,11 +1,15 @@
 import { Controller, Get, Param, Query, UseGuards } from "@nestjs/common";
 import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import { MoviesService } from "./movies.service";
+import { VidsrcService } from "./vidsrc.service";
 
 @Controller("movies")
 @UseGuards(ThrottlerGuard)
 export class MoviesController {
-  constructor(private moviesService: MoviesService) {}
+  constructor(
+    private readonly moviesService: MoviesService,
+    private readonly vidsrcService: VidsrcService,
+  ) {}
 
   // ── Danh sách phim ──────────────────────────────────────────────
 
@@ -137,6 +141,20 @@ export class MoviesController {
     @Query("limit") limit = 24,
   ) {
     return this.moviesService.search(keyword || "", +page, +limit);
+  }
+
+  @Get("vidsrc/detail/:slug")
+  getVidsrcDetail(@Param("slug") slug: string) {
+    return this.vidsrcService.getMovie(slug);
+  }
+
+  @Get("vidsrc/search")
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  searchVidsrc(
+    @Query("keyword") keyword: string,
+    @Query("page") page = 1,
+  ) {
+    return this.vidsrcService.search(keyword || "", +page);
   }
 
   // ── Thể loại ────────────────────────────────────────────────────

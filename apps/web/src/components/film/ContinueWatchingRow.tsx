@@ -31,7 +31,7 @@ export function ContinueWatchingRow({
 
   // Load localStorage entries for non-logged-in guest users or local progress
   useEffect(() => {
-    const entries = watchProgressStorage.getEntries();
+    const entries = watchProgressStorage.getHistoryEntries();
     setLocalEntries(entries);
   }, []);
 
@@ -71,9 +71,7 @@ export function ContinueWatchingRow({
   }, [localEntries, serverItems]);
 
   const hasHistory = historyEntries.length > 0;
-  const sectionTitle = hasHistory
-    ? "Tiếp tục xem"
-    : "Lựa chọn hàng đầu hôm nay cho bạn";
+  const sectionTitle = "Lịch Sử Xem Gần Đây";
 
   // Remove single local item from watch progress
   const handleRemoveItem = (

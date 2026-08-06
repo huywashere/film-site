@@ -146,7 +146,7 @@ const LISTS_CATALOG = [
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, logout, fetchMe } = useAuthStore();
   const openAuthModal = useAuthModalStore((state) => state.openModal);
   const { t, lang, setLang, isTransitioning } = useTranslation();
   const { theme, toggleTheme } = useThemeStore();
@@ -227,7 +227,33 @@ export function Navbar() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    fetchMe().catch(() => {});
+
+    // Listen to Firebase Auth state for automatic session sync
+    let unsubscribe: (() => void) | undefined;
+    import("@/lib/firebase").then(({ firebaseAuth, onAuthStateChanged }) => {
+      if (firebaseAuth) {
+        unsubscribe = onAuthStateChanged(firebaseAuth, (fbUser: any) => {
+          if (fbUser && !useAuthStore.getState().user) {
+            const name =
+              fbUser.displayName || fbUser.email?.split("@")[0] || "User";
+            useAuthStore.getState().setUser({
+              id: fbUser.uid,
+              email: fbUser.email || `${fbUser.uid}@google.com`,
+              username: fbUser.email?.split("@")[0] || fbUser.uid,
+              displayName: name,
+              avatarUrl: fbUser.photoURL || undefined,
+              role: "USER",
+            });
+          }
+        });
+      }
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [fetchMe]);
 
   // Global Ctrl/Cmd+K shortcut to open Spotlight search from anywhere
   useEffect(() => {
@@ -453,14 +479,21 @@ export function Navbar() {
                 /* YouTube-style Profile menu dropdown */
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger className="flex items-center space-x-1 focus:outline-none cursor-pointer group">
-                    <img
-                      src={
-                        user.avatarUrl ||
-                        `https://ui-avatars.com/api/?name=${user.username}&background=2c3440&color=ffffff&size=36`
-                      }
-                      alt={user.displayName || user.username}
-                      className="w-8 h-8 rounded-full object-cover border border-white/20 group-hover:border-white transition-all shadow-md"
-                    />
+                    {user.avatarUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={user.avatarUrl}
+                        alt={user.displayName || user.username}
+                        className="w-8 h-8 rounded-full object-cover border border-white/20 group-hover:border-emerald-400 transition-all shadow-md"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-bold text-xs flex items-center justify-center shadow-md group-hover:border-emerald-400 transition-colors">
+                        {(user.displayName || user.username || "U").slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
                     <ChevronDown
                       size={13}
                       className="text-neutral-400 group-hover:text-white transition-colors"
@@ -493,7 +526,9 @@ export function Navbar() {
                         <button
                           onClick={() =>
                             router.push(
-                              `/profile/${encodeURIComponent(user.username)}`,
+                              user.username
+                                ? `/user/${encodeURIComponent(user.username)}`
+                                : "/user",
                             )
                           }
                           className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold hover:underline mt-0.5 block cursor-pointer"
@@ -503,46 +538,27 @@ export function Navbar() {
                       </div>
                     </div>
 
-                    {/* Section 1: Main Features */}
+                    {/* Section 1: Main Quick Access Shortcuts */}
                     <div className="py-1.5 space-y-0.5">
                       <DropdownMenuItem
                         onClick={() =>
                           router.push(
-                            `/profile/${encodeURIComponent(user.username)}`,
+                            user.username
+                              ? `/user/${encodeURIComponent(user.username)}`
+                              : "/user",
                           )
                         }
                         className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
                       >
-                        <User size={16} className="mr-3 text-neutral-400" />
-                        <span>Tài khoản CineVerse</span>
+                        <User size={16} className="mr-3 text-emerald-400" />
+                        <span>Trang cá nhân & Tủ phim</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => router.push("/watchlist")}
+                        onClick={() => router.push("/settings/security")}
                         className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
                       >
-                        <Bookmark size={16} className="mr-3 text-neutral-400" />
-                        <span>Danh sách xem (Watchlist)</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => router.push("/lists")}
-                        className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
-                      >
-                        <List size={16} className="mr-3 text-neutral-400" />
-                        <span>Bộ sưu tập phim (Collections)</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => router.push("/reviews")}
-                        className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
-                      >
-                        <Star size={16} className="mr-3 text-neutral-400" />
-                        <span>Đánh giá của tôi</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => router.push("/history")}
-                        className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
-                      >
-                        <History size={16} className="mr-3 text-neutral-400" />
-                        <span>Lịch sử xem phim</span>
+                        <Settings size={16} className="mr-3 text-neutral-400" />
+                        <span>Cài đặt & Bảo mật</span>
                       </DropdownMenuItem>
                     </div>
 
@@ -586,19 +602,6 @@ export function Navbar() {
                         </div>
                         <ChevronRight size={14} className="text-neutral-500" />
                       </DropdownMenuItem>
-
-                      <DropdownMenuItem
-                        onClick={() => router.push("/settings/security")}
-                        className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center justify-between py-2.5 px-3 text-xs font-semibold"
-                      >
-                        <div className="flex items-center">
-                          <Settings
-                            size={16}
-                            className="mr-3 text-neutral-400"
-                          />
-                          <span>Cài đặt tài khoản</span>
-                        </div>
-                      </DropdownMenuItem>
                     </div>
 
                     {/* Section 3: Logout Session */}
@@ -620,7 +623,15 @@ export function Navbar() {
                 /* Minimalist Sleek User Icon Button with Glassmorphism */
                 <button
                   type="button"
-                  onClick={() => router.push("/login")}
+                  onClick={() => {
+                    const curUser = useAuthStore.getState().user;
+                    if (curUser) {
+                      const targetSlug = curUser.username || curUser.id;
+                      router.push(`/user/${encodeURIComponent(targetSlug)}`);
+                    } else {
+                      router.push("/login");
+                    }
+                  }}
                   aria-label="Đăng nhập tài khoản"
                   title="Đăng nhập / Tài khoản thành viên"
                   className="flex items-center justify-center w-8 h-8 rounded-full bg-white/[0.06] backdrop-blur-xl border border-white/15 text-neutral-300 hover:text-white hover:border-white/40 hover:bg-white/[0.12] transition-all duration-300 shadow-lg shadow-black/40 active:scale-95 cursor-pointer"

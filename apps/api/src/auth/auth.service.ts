@@ -28,26 +28,46 @@ import { MailService } from "../mail/mail.service";
 import { UAParser } from "ua-parser-js";
 import { generateSecret, verify, generateURI } from "otplib";
 import * as QRCode from "qrcode";
+import { RedisCacheService } from "../redis/redis.service";
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  /** Max failed logins per account before temporary lockout */
+  private readonly MAX_FAILED_LOGINS = 10;
+  /** Lockout duration in seconds (15 minutes) */
+  private readonly LOCKOUT_TTL = 15 * 60;
 
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
     private config: ConfigService,
     private mailService: MailService,
+    private cache: RedisCacheService,
   ) {}
 
   private getCryptoKey(secret: string): Buffer {
     return createHash("sha256").update(secret).digest();
   }
 
+  /** Returns the AES-256 key dedicated to TOTP secret encryption.
+   *  Uses TOTP_ENCRYPTION_KEY env var — intentionally separate from JWT_SECRET
+   *  so a leaked signing secret cannot also decrypt 2FA secrets.
+   */
+  private getTotpEncryptionKey(): Buffer {
+    const key = this.config.get<string>("TOTP_ENCRYPTION_KEY");
+    if (!key) {
+      this.logger.warn(
+        "TOTP_ENCRYPTION_KEY is not set — falling back to JWT_SECRET. " +
+        "Set a dedicated TOTP_ENCRYPTION_KEY to isolate 2FA encryption.",
+      );
+    }
+    return this.getCryptoKey(key || this.config.get<string>("JWT_SECRET") || "fallback_insecure");
+  }
+
   private encrypt(text: string): string {
-    const keyString = this.config.get("JWT_SECRET") || "default_crypto_secret";
     const iv = randomBytes(16);
-    const key = this.getCryptoKey(keyString);
+    const key = this.getTotpEncryptionKey();
     const cipher = createCipheriv("aes-256-cbc", key, iv);
     let encrypted = cipher.update(text);
     encrypted = Buffer.concat([encrypted, cipher.final()]);
@@ -55,11 +75,10 @@ export class AuthService {
   }
 
   private decrypt(text: string): string {
-    const keyString = this.config.get("JWT_SECRET") || "default_crypto_secret";
     const textParts = text.split(":");
     const iv = Buffer.from(textParts.shift()!, "hex");
     const encryptedText = Buffer.from(textParts.join(":"), "hex");
-    const key = this.getCryptoKey(keyString);
+    const key = this.getTotpEncryptionKey();
     const decipher = createDecipheriv("aes-256-cbc", key, iv);
     let decrypted = decipher.update(encryptedText);
     decrypted = Buffer.concat([decrypted, decipher.final()]);
@@ -161,12 +180,28 @@ export class AuthService {
   }
 
   async login(dto: LoginDto, userAgent?: string, ipAddress?: string) {
+    // Normalise identifier for the brute-force key (email or username)
+    const identifier = dto.email.toLowerCase().trim();
+    const failKey = `login_fail:${identifier}`;
+
+    // Check per-account lockout before hitting the DB
+    const failCountRaw = await this.cache.get(failKey);
+    const failCount = failCountRaw ? parseInt(failCountRaw, 10) : 0;
+    if (failCount >= this.MAX_FAILED_LOGINS) {
+      throw new UnauthorizedException(
+        "Tài khoản tạm thời bị khóa do quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau 15 phút.",
+      );
+    }
+
     const user = await this.prisma.user.findFirst({
       where: { OR: [{ email: dto.email }, { username: dto.email }] },
     });
 
-    if (!user)
+    if (!user) {
+      // Increment fail counter even for non-existent accounts to avoid user enumeration timing
+      await this.cache.set(failKey, String(failCount + 1), this.LOCKOUT_TTL);
       throw new UnauthorizedException("Thông tin đăng nhập không hợp lệ");
+    }
 
     if (user.isLocked) {
       throw new UnauthorizedException(
@@ -175,8 +210,19 @@ export class AuthService {
     }
 
     const match = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!match)
+    if (!match) {
+      const newCount = failCount + 1;
+      await this.cache.set(failKey, String(newCount), this.LOCKOUT_TTL);
+      if (newCount >= this.MAX_FAILED_LOGINS) {
+        this.logger.warn(
+          `Account brute-force lockout triggered for identifier: ${identifier}`,
+        );
+      }
       throw new UnauthorizedException("Thông tin đăng nhập không hợp lệ");
+    }
+
+    // Successful login — clear the fail counter
+    await this.cache.del(failKey);
 
     if (user.twoFactorEnabled) {
       const tempToken = await this.jwt.signAsync(
@@ -194,6 +240,7 @@ export class AuthService {
       ipAddress,
     );
   }
+
 
   async signTokens(
     userId: string,
@@ -834,10 +881,12 @@ export class AuthService {
         `Suspicious login detected for user ${email}. Generating suspiciousToken.`,
       );
       const suspiciousToken = randomBytes(32).toString("hex");
+      // Store only the hash — plaintext is sent via email; DB holds the hash only
+      const suspiciousTokenHash = await bcrypt.hash(suspiciousToken, 10);
 
       await this.prisma.user.update({
         where: { id: userId },
-        data: { suspiciousToken },
+        data: { suspiciousToken: suspiciousTokenHash },
       });
 
       await this.mailService.sendNewDeviceAlertEmail(email, {
@@ -850,18 +899,32 @@ export class AuthService {
   }
 
   async lockAccount(suspiciousToken: string) {
-    const user = await this.prisma.user.findFirst({
-      where: { suspiciousToken },
+    // Find any non-locked user that has a suspiciousToken hash set
+    const candidates = await this.prisma.user.findMany({
+      where: { suspiciousToken: { not: null }, isLocked: false },
+      select: { id: true, suspiciousToken: true },
     });
 
-    if (!user) {
+    let matchedUser: { id: string } | null = null;
+    for (const candidate of candidates) {
+      const isMatch = await bcrypt.compare(
+        suspiciousToken,
+        candidate.suspiciousToken!,
+      );
+      if (isMatch) {
+        matchedUser = candidate;
+        break;
+      }
+    }
+
+    if (!matchedUser) {
       throw new BadRequestException(
         "Mã xác thực khóa tài khoản không hợp lệ hoặc đã được sử dụng.",
       );
     }
 
     await this.prisma.user.update({
-      where: { id: user.id },
+      where: { id: matchedUser.id },
       data: {
         isLocked: true,
         suspiciousToken: null,
@@ -869,7 +932,7 @@ export class AuthService {
     });
 
     await this.prisma.refreshToken.updateMany({
-      where: { userId: user.id },
+      where: { userId: matchedUser.id },
       data: { isRevoked: true },
     });
 

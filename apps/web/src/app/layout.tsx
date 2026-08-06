@@ -57,6 +57,19 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "CineVerse",
+    alternateName: "CineVerse Phim Online 4K",
+    url: "https://cineverse-movie.vercel.app",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: "https://cineverse-movie.vercel.app/search?q={search_term_string}",
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
     <html lang="vi" suppressHydrationWarning>
       <head>
@@ -66,12 +79,20 @@ export default function RootLayout({
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
+        <link rel="preconnect" href="https://phimimg.com" />
+        <link rel="dns-prefetch" href="https://phimimg.com" />
+        <link rel="preconnect" href="https://image.tmdb.org" />
+        <link rel="dns-prefetch" href="https://image.tmdb.org" />
         {/* Be Vietnam Pro — font chính, hỗ trợ tiếng Việt hoàn hảo */}
         <link
           href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500&family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@400;500;600;700;800;900&display=swap"
           rel="stylesheet"
         />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        />
       </head>
       <body suppressHydrationWarning>
         <ThemeWatcher />

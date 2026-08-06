@@ -19,7 +19,7 @@ const KNOWN_PLACEHOLDER_SECRETS = new Set([
   "changeme",
 ]);
 
-const REQUIRED_SECRETS = ["JWT_SECRET", "JWT_REFRESH_SECRET"] as const;
+const REQUIRED_SECRETS = ["JWT_SECRET", "JWT_REFRESH_SECRET", "TOTP_ENCRYPTION_KEY"] as const;
 
 /**
  * Validates security-critical configuration at boot.
@@ -58,6 +58,15 @@ export function validateEnv(
     config.JWT_SECRET === config.JWT_REFRESH_SECRET
   ) {
     problems.push("JWT_SECRET and JWT_REFRESH_SECRET must be different values");
+  }
+
+  // TOTP key phải khác JWT_SECRET — mục đích là isolate encryption keys
+  if (
+    typeof config.JWT_SECRET === "string" &&
+    typeof config.TOTP_ENCRYPTION_KEY === "string" &&
+    config.JWT_SECRET === config.TOTP_ENCRYPTION_KEY
+  ) {
+    problems.push("TOTP_ENCRYPTION_KEY must be different from JWT_SECRET");
   }
 
   if (isProduction && !config.FRONTEND_URL) {

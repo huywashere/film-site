@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import {
   Search,
   X,
@@ -239,7 +239,18 @@ function SearchContent() {
     staleTime: 1000 * 60 * 5,
   });
 
-  const films: FilmItem[] = data?.data?.items || data?.items || [];
+  const rawFilms: FilmItem[] = data?.data?.items || data?.items || [];
+
+  const films: FilmItem[] = useMemo(() => {
+    const seen = new Set<string>();
+    return rawFilms.filter((f) => {
+      const uniqueId = f.slug || f._id || (f as any).id;
+      if (!uniqueId || seen.has(uniqueId)) return false;
+      seen.add(uniqueId);
+      return true;
+    });
+  }, [rawFilms]);
+
   const rawTotal =
     data?.data?.params?.pagination?.totalPages ||
     data?.params?.pagination?.totalPages ||
@@ -477,8 +488,8 @@ function SearchContent() {
           ) : (
             <>
               <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-4 md:gap-6 animate-in fade-in duration-300">
-                {films.map((film) => (
-                  <FilmCard key={film.slug} film={film} />
+                {films.map((film, idx) => (
+                  <FilmCard key={`${film.slug || film._id || (film as any).id}-${idx}`} film={film} />
                 ))}
               </div>
 

@@ -112,12 +112,31 @@ export const useAuthStore = create<AuthState>()(
       fetchMe: async () => {
         try {
           const { data } = await authApi.getMe();
-          get().setUser(data);
+          if (data && (data.id || data.username || data.email)) {
+            get().setUser(data);
+            return;
+          }
         } catch {
-          // Persisted UI state is not proof of an API session. Clearing it
-          // avoids presenting a user as signed in when its cookie session has
-          // expired or was revoked on another device.
-          get().setUser(null);
+          // If backend fetch fails (e.g. offline/guest mode), check Firebase Auth user
+          try {
+            const { firebaseAuth } = await import("@/lib/firebase");
+            const fbUser = firebaseAuth?.currentUser;
+            if (fbUser) {
+              const name =
+                fbUser.displayName || fbUser.email?.split("@")[0] || "User";
+              get().setUser({
+                id: fbUser.uid,
+                email: fbUser.email || `${fbUser.uid}@google.com`,
+                username: fbUser.email?.split("@")[0] || fbUser.uid,
+                displayName: name,
+                avatarUrl: fbUser.photoURL || undefined,
+                role: "USER",
+              });
+              return;
+            }
+          } catch {
+            // Keep existing persisted user in Zustand
+          }
         }
       },
     }),

@@ -125,6 +125,22 @@ export class RedisCacheService implements OnModuleDestroy {
     await this.set(key, JSON.stringify(value), ttlSeconds);
   }
 
+  /** Get or compute cached value with SWR dual-tier fallback */
+  async getOrSet<T>(
+    key: string,
+    factory: () => Promise<T>,
+    ttlSeconds: number = 300,
+  ): Promise<T> {
+    const cached = await this.getJson<T>(key);
+    if (cached !== null) return cached;
+
+    const fresh = await factory();
+    if (fresh !== null && fresh !== undefined) {
+      await this.setJson(key, fresh, ttlSeconds);
+    }
+    return fresh;
+  }
+
   async onModuleDestroy() {
     if (this.client) {
       await this.client.quit().catch(() => this.client?.disconnect());

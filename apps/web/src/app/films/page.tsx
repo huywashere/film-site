@@ -149,27 +149,25 @@ export default function BrowseFilmsPage() {
 
   return (
     <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 pt-20 sm:pt-24 pb-20 bg-background min-h-screen text-foreground select-none font-sans">
-      {/* ── Page Title Header ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-white/5">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <div className="p-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500">
-              <Clapperboard size={20} />
-            </div>
-            <span className="text-xs font-extrabold uppercase tracking-widest text-red-500">
-              Bộ Lọc Điện Ảnh
-            </span>
+      {/* ── Page Title Header (Centered) ── */}
+      <div className="flex flex-col items-center justify-center text-center gap-3 mb-10 pb-6 border-b border-white/5 max-w-3xl mx-auto">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500">
+            <Clapperboard size={20} />
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-            Duyệt Tìm Kho Phim
-          </h1>
-          <p className="text-xs sm:text-sm text-neutral-400 mt-1">
-            Khám phá hàng ngàn bộ phim bom tấn, phim bộ, hoạt hình mới nhất
-          </p>
+          <span className="text-xs font-extrabold uppercase tracking-widest text-red-500">
+            Bộ Lọc Điện Ảnh
+          </span>
         </div>
+        <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+          Duyệt Tìm Kho Phim
+        </h1>
+        <p className="text-xs sm:text-sm text-neutral-400">
+          Khám phá hàng ngàn bộ phim bom tấn, phim bộ, hoạt hình mới nhất
+        </p>
 
         {/* Quick Search */}
-        <div className="relative min-w-[280px] sm:min-w-[320px]">
+        <div className="relative w-full max-w-md mt-2">
           <Search
             size={16}
             className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400"

@@ -1,0 +1,193 @@
+# ══════════════════════════════════════════════════════════════════
+# CineVerse — GitLab CI/CD Pipeline
+# ══════════════════════════════════════════════════════════════════
+#
+# STAGES:
+#   test   → lint, typecheck, dependency audit (mọi branch)
+#   build  → docker build + push lên GitLab Registry (chỉ main)
+#   deploy → SSH vào VPS, pull image mới, restart (chỉ main)
+#
+# VARIABLES CẦN CẤU HÌNH TRONG GITLAB:
+#   GitLab → Project → Settings → CI/CD → Variables
+#   ┌────────────────────────────┬────────────────────────────────────┬───────────┬────────┐
+#   │ Variable                   │ Mô tả                              │ Protected │ Masked │
+#   ├────────────────────────────┼────────────────────────────────────┼───────────┼────────┤
+#   │ SSH_PRIVATE_KEY            │ Private key SSH vào VPS            │    ✅     │   ✅   │
+#   │ VPS_HOST                   │ IP hoặc domain VPS                 │    ✅     │   ❌   │
+#   │ VPS_USER                   │ SSH user (thường là "deploy")      │    ✅     │   ❌   │
+#   │ VPS_APP_DIR                │ /opt/cineverse                     │    ✅     │   ❌   │
+#   │ APP_URL                    │ https://yourdomain.com             │    ✅     │   ❌   │
+#   │ NEXT_PUBLIC_API_URL        │ https://yourdomain.com/api/v1      │    ✅     │   ❌   │
+#   │ NEXT_PUBLIC_FIREBASE_*     │ Các Firebase NEXT_PUBLIC_ vars     │    ✅     │   ❌   │
+#   │ NEXT_PUBLIC_TURNSTILE_*    │ Cloudflare Turnstile site key      │    ✅     │   ❌   │
+#   └────────────────────────────┴────────────────────────────────────┴───────────┴────────┘
+#   (CI_REGISTRY, CI_REGISTRY_USER, CI_REGISTRY_PASSWORD được GitLab tự inject)
+# ══════════════════════════════════════════════════════════════════
+
+image: node:20-alpine
+
+variables:
+  # GitLab Container Registry — tự động từ GitLab
+  REGISTRY_IMAGE: $CI_REGISTRY_IMAGE
+  # Tag image theo commit SHA (dễ rollback)
+  IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+  # pnpm cache path
+  PNPM_HOME: "${CI_PROJECT_DIR}/.pnpm-store"
+  # Tắt Next.js telemetry trong CI
+  NEXT_TELEMETRY_DISABLED: "1"
+  # Docker
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_BUILDKIT: "1"
+
+# ── Cache pnpm store giữa các jobs ─────────────────────────────
+.pnpm_cache: &pnpm_cache
+  cache:
+    key:
+      files:
+        - pnpm-lock.yaml
+    paths:
+      - .pnpm-store
+    policy: pull-push
+
+stages:
+  - test
+  - build
+  - deploy
+
+# ══════════════════════════════════════════════════════
+# STAGE 1: TEST
+# Chạy trên mọi branch để bắt lỗi sớm
+# ══════════════════════════════════════════════════════
+test:
+  stage: test
+  <<: *pnpm_cache
+  before_script:
+    - apk add --no-cache curl git
+    - npm install -g pnpm@9 --quiet
+    - pnpm install --frozen-lockfile
+  script:
+    # 1. Dependency vulnerability audit
+    - echo "🔍 Kiểm tra lỗ hổng dependency..."
+    - pnpm audit --audit-level=high
+
+    # 2. Generate Prisma client (cần cho typecheck)
+    - echo "⚙️  Generating Prisma client..."
+    - pnpm --filter api exec prisma generate
+
+    # 3. TypeScript typecheck
+    - echo "📝 TypeScript typecheck..."
+    - pnpm --filter api exec tsc --noEmit
+    - pnpm --filter web exec tsc --noEmit
+
+    # 4. Lint
+    - echo "🔎 ESLint..."
+    - pnpm --filter api run lint
+    - pnpm --filter web run lint
+  rules:
+    # Chạy trên mọi push và merge request
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+# ══════════════════════════════════════════════════════
+# STAGE 2: BUILD
+# Build Docker images và push lên GitLab Container Registry
+# Chỉ chạy khi push lên main (sau khi test pass)
+# ══════════════════════════════════════════════════════
+.build_base: &build_base
+  stage: build
+  image: docker:27
+  services:
+    - docker:27-dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: on_success
+
+build:api:
+  <<: *build_base
+  script:
+    - echo "🐳 Building API image (tag=$IMAGE_TAG)..."
+    - |
+      docker build \
+        --target api \
+        --tag "$REGISTRY_IMAGE/api:$IMAGE_TAG" \
+        --tag "$REGISTRY_IMAGE/api:latest" \
+        --cache-from "$REGISTRY_IMAGE/api:latest" \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        .
+    - docker push "$REGISTRY_IMAGE/api:$IMAGE_TAG"
+    - docker push "$REGISTRY_IMAGE/api:latest"
+    - echo "✅ API image pushed: $REGISTRY_IMAGE/api:$IMAGE_TAG"
+
+build:web:
+  <<: *build_base
+  script:
+    - echo "🐳 Building Web image (tag=$IMAGE_TAG)..."
+    - |
+      docker build \
+        --target web \
+        --tag "$REGISTRY_IMAGE/web:$IMAGE_TAG" \
+        --tag "$REGISTRY_IMAGE/web:latest" \
+        --cache-from "$REGISTRY_IMAGE/web:latest" \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        --build-arg NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" \
+        --build-arg NEXT_PUBLIC_APP_NAME="CineVerse" \
+        --build-arg NEXT_PUBLIC_FIREBASE_API_KEY="$NEXT_PUBLIC_FIREBASE_API_KEY" \
+        --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN" \
+        --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID="$NEXT_PUBLIC_FIREBASE_PROJECT_ID" \
+        --build-arg NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="$NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET" \
+        --build-arg NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="$NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID" \
+        --build-arg NEXT_PUBLIC_FIREBASE_APP_ID="$NEXT_PUBLIC_FIREBASE_APP_ID" \
+        --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY="$NEXT_PUBLIC_TURNSTILE_SITE_KEY" \
+        --build-arg KKPHIM_API_BASE="${KKPHIM_API_BASE:-https://phimapi.com}" \
+        --build-arg OPHIM_API_BASE="${OPHIM_API_BASE:-https://ophim1.com}" \
+        .
+    - docker push "$REGISTRY_IMAGE/web:$IMAGE_TAG"
+    - docker push "$REGISTRY_IMAGE/web:latest"
+    - echo "✅ Web image pushed: $REGISTRY_IMAGE/web:$IMAGE_TAG"
+
+# ══════════════════════════════════════════════════════
+# STAGE 3: DEPLOY
+# SSH vào VPS, pull image mới, restart services
+# ══════════════════════════════════════════════════════
+deploy:production:
+  stage: deploy
+  image: alpine:latest
+  environment:
+    name: production
+    url: $APP_URL
+  before_script:
+    # Cài SSH client
+    - apk add --no-cache openssh-client
+    # Setup SSH key từ GitLab CI variable
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
+    - chmod 600 ~/.ssh/id_ed25519
+    # Trust VPS host key
+    - ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+  script:
+    - echo "🚀 Deploying CineVerse $IMAGE_TAG to production ($VPS_HOST)..."
+    - |
+      ssh -i ~/.ssh/id_ed25519 \
+          -o StrictHostKeyChecking=accept-new \
+          -o ConnectTimeout=30 \
+          "$VPS_USER@$VPS_HOST" \
+          "REGISTRY_IMAGE='$REGISTRY_IMAGE' \
+           IMAGE_TAG='$IMAGE_TAG' \
+           CI_REGISTRY='$CI_REGISTRY' \
+           CI_REGISTRY_USER='$CI_REGISTRY_USER' \
+           CI_REGISTRY_PASSWORD='$CI_REGISTRY_PASSWORD' \
+           bash $VPS_APP_DIR/scripts/gitlab-deploy.sh"
+    - echo "✅ Deploy $IMAGE_TAG hoàn tất!"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: on_success
+  needs:
+    - job: build:api
+    - job: build:web
+  retry:
+    max: 1
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure

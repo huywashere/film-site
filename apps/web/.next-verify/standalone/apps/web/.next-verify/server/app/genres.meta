@@ -1,0 +1,15 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/genres/layout,_N_T_/genres/page,_N_T_/genres"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/genres/__PAGE__",
+    "/genres",
+    "/_index",
+    "/_head"
+  ]
+}

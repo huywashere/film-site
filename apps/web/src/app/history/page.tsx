@@ -42,6 +42,7 @@ export default function HistoryPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [guestHistory, setGuestHistory] = useState<HistoryItem[]>([]);
+  const [removedIds, setRemovedIds] = useState<string[]>([]);
 
   useEffect(() => {
     setGuestHistory(
@@ -61,7 +62,22 @@ export default function HistoryPage() {
   // Fetch history - must be called unconditionally (Rules of Hooks)
   const { data: historyData, isLoading } = useQuery({
     queryKey: ["watch-history", user?.id, page],
-    queryFn: () => watchHistoryApi.getHistory(page, 24).then((r) => r.data),
+    queryFn: async () => {
+      try {
+        const res = await watchHistoryApi.getHistory(page, 24);
+        const data = res?.data;
+        if (Array.isArray(data)) {
+          return { items: data, total: data.length, totalPages: 1 };
+        }
+        return {
+          items: data?.items || [],
+          total: data?.total || 0,
+          totalPages: data?.totalPages || 1,
+        };
+      } catch (_err) {
+        return { items: [], total: 0, totalPages: 1 };
+      }
+    },
     enabled: !!user, // Only fetch when user is logged in
   });
 
@@ -70,10 +86,6 @@ export default function HistoryPage() {
     mutationFn: (id: string) => watchHistoryApi.deleteEntry(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["watch-history"] });
-      toast("Đã xóa khỏi lịch sử", "success");
-    },
-    onError: () => {
-      toast("Không thể xóa", "error");
     },
   });
 
@@ -82,18 +94,26 @@ export default function HistoryPage() {
     mutationFn: () => watchHistoryApi.clearAll(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["watch-history"] });
-      toast("Đã xóa toàn bộ lịch sử", "success");
     },
   });
 
-  const historyItems: HistoryItem[] = user
-    ? historyData?.items || []
+  const rawHistoryItems: HistoryItem[] = user
+    ? Array.isArray(historyData?.items)
+      ? historyData.items
+      : Array.isArray(historyData)
+        ? historyData
+        : []
     : guestHistory;
-  const total = user ? historyData?.total || 0 : guestHistory.length;
+
+  const historyItems = rawHistoryItems.filter((item) => !removedIds.includes(item.id));
+  const total = historyItems.length;
   const totalPages = user ? historyData?.totalPages || 1 : 1;
 
   const handleDelete = (id: string) => {
-    setDeletingId(id);
+    // ⚡ INSTANT OPTIMISTIC UI REMOVAL (0ms delay)
+    setRemovedIds((prev) => [...prev, id]);
+    toast("Đã xóa khỏi lịch sử", "success");
+
     if (!user) {
       const item = guestHistory.find((entry) => entry.id === id);
       if (item) {
@@ -109,17 +129,31 @@ export default function HistoryPage() {
         }
       }
       setGuestHistory((entries) => entries.filter((entry) => entry.id !== id));
-      setDeletingId(null);
-      toast("Đã xóa khỏi lịch sử", "success");
       return;
     }
-    deleteMutation.mutate(id);
+
+    deleteMutation.mutate(id, {
+      onError: () => {
+        setRemovedIds((prev) => prev.filter((item) => item !== id));
+        toast("Không thể xóa lúc này", "error");
+      },
+    });
   };
 
   const handleClearAll = () => {
     if (confirm("Bạn có chắc muốn xóa toàn bộ lịch sử xem?")) {
-      if (user) clearAllMutation.mutate();
-      else {
+      const allIds = rawHistoryItems.map((item) => item.id);
+      setRemovedIds((prev) => [...new Set([...prev, ...allIds])]);
+      toast("Đã xóa toàn bộ lịch sử", "success");
+
+      if (user) {
+        clearAllMutation.mutate(undefined, {
+          onError: () => {
+            setRemovedIds([]);
+            toast("Không thể xóa toàn bộ lịch sử", "error");
+          },
+        });
+      } else {
         watchProgressStorage.clearAll();
         setGuestHistory([]);
       }
@@ -152,35 +186,25 @@ export default function HistoryPage() {
       {/* Header */}
       <div className="border-b border-white/10 bg-transparent sticky top-16 z-30">
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6">
-          {/* Back Button & Title */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => router.back()}
-                className="p-2 hover:bg-white/5 rounded-lg transition-colors"
-              >
-                <ChevronLeft size={24} className="text-neutral-400" />
-              </button>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight">
-                  Lịch sử xem
-                </h1>
-                <p className="text-sm text-neutral-400 mt-1 normal-case font-normal tracking-normal">
-                  {total} phim đã xem{" "}
-                  {user ? "trong tài khoản" : "trên thiết bị này"}
-                </p>
-              </div>
-            </div>
+          {/* Header (Centered) */}
+          <div className="flex flex-col items-center justify-center text-center max-w-2xl mx-auto py-2 gap-2.5">
+            <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight">
+              Lịch Sử Xem
+            </h1>
+            <p className="text-sm text-neutral-400 normal-case font-normal tracking-normal">
+              {total} phim đã xem{" "}
+              {user ? "trong tài khoản" : "trên thiết bị này"}
+            </p>
 
             {/* Clear All Button */}
             {historyItems.length > 0 && (
               <button
                 onClick={handleClearAll}
                 disabled={clearAllMutation.isPending}
-                className="flex items-center space-x-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg font-semibold text-sm transition-colors disabled:opacity-50"
+                className="mt-1 flex items-center space-x-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl font-semibold text-xs transition-colors border border-red-500/20 disabled:opacity-50"
               >
-                <Trash2 size={16} />
-                <span className="hidden sm:inline">Xóa tất cả</span>
+                <Trash2 size={14} />
+                <span>Xóa tất cả lịch sử</span>
               </button>
             )}
           </div>
@@ -229,6 +253,7 @@ export default function HistoryPage() {
                             src={posterUrl}
                             alt={item.movieTitle}
                             fill
+                            unoptimized
                             className="object-cover"
                           />
                         ) : (

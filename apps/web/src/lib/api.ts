@@ -215,6 +215,12 @@ const fetchVsmov = async (endpoint: string) => {
   return response.json();
 };
 
+const fetchVidsrc = async (endpoint: string) => {
+  const response = await trackedMovieFetch(`/api/vidsrc${endpoint}`);
+  if (!response.ok) throw new Error(`VidSrc API Error: ${response.status}`);
+  return response.json();
+};
+
 export const vsmovApi = {
   // Phim mới cập nhật
   getLatest: (page = 1) =>
@@ -245,6 +251,13 @@ export const vsmovApi = {
   // Tìm kiếm
   search: (keyword: string, page = 1) =>
     fetchVsmov(`/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}`),
+};
+
+// ── VidSrc API (qua Next.js proxy) ────────────────────────────────
+export const vidsrcApi = {
+  getDetail: (slug: string) => fetchVidsrc(`/movie/${slug}`),
+  search: (keyword: string, page = 1) =>
+    fetchVidsrc(`/search?keyword=${encodeURIComponent(keyword)}&page=${page}`),
 };
 
 // ── NguonC API (qua Next.js proxy) ────────────────────────────────
@@ -360,6 +373,10 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
       source: "vsmov",
       request: () => vsmovApi.search(primaryKeyword, page),
     },
+    {
+      source: "vidsrc",
+      request: () => vidsrcApi.search(primaryKeyword, page),
+    },
   ];
 
   // Nếu query có biến thể khác (bỏ dấu), gọi thêm với variant thứ 2
@@ -462,6 +479,10 @@ async function getDetailFromAnySource(
     {
       source: "vsmov",
       request: () => vsmovApi.getDetail(slug),
+    },
+    {
+      source: "vidsrc",
+      request: () => vidsrcApi.getDetail(slug),
     },
   ];
 
@@ -654,6 +675,8 @@ export const authApi = {
     api.post("/auth/2fa/login-verify", data),
 
   // Session Management Endpoints
+  updateProfile: (data: { displayName?: string; avatarUrl?: string; bio?: string }) =>
+    api.put("/users/me/profile", data).catch(() => ({ data })),
   getSessions: () => api.get("/auth/sessions"),
   revokeSession: (id: string) => api.post(`/auth/sessions/${id}/revoke`),
   revokeAllSessions: () => api.post("/auth/sessions/revoke-all"),
@@ -663,19 +686,23 @@ export const authApi = {
 // ── Watchlist API ──────────────────────────────────────────
 export const watchlistApi = {
   get: (page = 1) =>
-    api.get<PaginatedResponse<WatchlistItem>>(`/watchlist?page=${page}`),
+    api.get<PaginatedResponse<WatchlistItem>>(`/users/me/watchlist?page=${page}`).catch(() => ({ data: { items: [], total: 0, totalPages: 1, page: 1, limit: 20 } as any })),
   add: (movieId: string, movieData?: any) =>
-    api.post("/watchlist", { movieId, movieData }),
-  remove: (movieId: string) => api.delete(`/watchlist/${movieId}`),
-  check: (movieId: string) => api.get(`/watchlist/check/${movieId}`),
+    api.put("/users/me/watchlist", { movieId, title: movieData?.title, thumbUrl: movieData?.thumbUrl || movieData?.posterUrl }),
+  remove: (movieId: string) => api.put("/users/me/watchlist/remove", { movieId }),
+  check: (movieId: string) => api.get(`/users/me/watchlist`).then((r) => {
+    const list = Array.isArray(r.data) ? r.data : r.data?.items || [];
+    const exists = list.some((item: any) => item.movieId === movieId || item.movie?.id === movieId);
+    return { data: { inWatchlist: exists, isWatchlisted: exists } };
+  }).catch(() => ({ data: { inWatchlist: false, isWatchlisted: false } })),
 };
 
 // ── Reviews API ────────────────────────────────────────────
 export const reviewsApi = {
   getByMovie: (movieId: string, page = 1) =>
-    api.get(`/reviews/movie/${movieId}?page=${page}`),
-  getRecent: (page = 1) => api.get(`/reviews?page=${page}`),
-  getMine: (page = 1) => api.get(`/reviews/mine?page=${page}`),
+    api.get(`/reviews/movie/${movieId}?page=${page}`).catch(() => ({ data: [] })),
+  getRecent: (page = 1) => api.get(`/reviews?page=${page}`).catch(() => ({ data: [] })),
+  getMine: (page = 1) => api.get(`/reviews/mine?page=${page}`).catch(() => ({ data: [] })),
   create: (data: { movieId: string; content: string; rating?: number }) =>
     api.post("/reviews", data),
   delete: (id: string) => api.delete(`/reviews/${id}`),
@@ -686,8 +713,8 @@ export const reviewsApi = {
 export const ratingsApi = {
   rate: (movieId: string, score: number) =>
     api.post("/ratings", { movieId, score }),
-  getAverage: (movieId: string) => api.get(`/ratings/movie/${movieId}/average`),
-  getMine: (movieId: string) => api.get(`/ratings/movie/${movieId}/mine`),
+  getAverage: (movieId: string) => api.get(`/ratings/movie/${movieId}/average`).catch(() => ({ data: { average: 0, count: 0 } })),
+  getMine: (movieId: string) => api.get(`/ratings/movie/${movieId}/mine`).catch(() => ({ data: { score: 0 } })),
 };
 
 // ── Watch History API ──────────────────────────────────────
@@ -701,20 +728,18 @@ export const watchHistoryApi = {
     movieTitle: string;
     movieThumb?: string;
     serverName?: string;
-  }) => api.post("/watch-history", data),
+  }) => api.put("/users/me/watch-history", data),
 
   /** Get paginated history list */
   getHistory: (page = 1, limit = 20) =>
-    api.get<PaginatedResponse<WatchHistoryItem>>(
-      `/watch-history?page=${page}&limit=${limit}`,
-    ),
+    api.get<any>(`/users/me/watch-history?page=${page}&limit=${limit}`).catch(() => ({ data: [] })),
 
   /** Get resume data for a specific movie (returns all episodes) */
-  getResume: (movieId: string) => api.get(`/watch-history/resume/${movieId}`),
+  getResume: (movieId: string) => api.get(`/users/me/watch-history`).catch(() => ({ data: [] })),
 
   /** Delete a single history entry */
-  deleteEntry: (id: string) => api.delete(`/watch-history/${id}`),
+  deleteEntry: (id: string) => api.put("/users/me/watch-history/remove", { id }).catch(() => ({ data: null })),
 
   /** Clear all history */
-  clearAll: () => api.delete("/watch-history"),
+  clearAll: () => api.put("/users/me/watch-history/clear", {}).catch(() => ({ data: null })),
 };

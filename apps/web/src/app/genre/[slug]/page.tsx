@@ -78,17 +78,15 @@ export default function GenrePage() {
 
   return (
     <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 pt-20 sm:pt-24 pb-20 bg-background min-h-screen text-foreground">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-4 border-b border-white/10 gap-2">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
-            Thể Loại: {label}
-          </h1>
-          <p className="text-xs text-neutral-400 font-semibold mt-1">
-            Tổng hợp danh sách các bộ phim thuộc thể loại {label} hay nhất
-          </p>
-        </div>
-        <div className="text-xs font-bold text-neutral-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 self-start md:self-auto">
+      {/* Page Header — Centered */}
+      <div className="flex flex-col items-center justify-center text-center mb-10 pb-6 border-b border-white/10 gap-2.5 max-w-3xl mx-auto">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+          Thể Loại: {label}
+        </h1>
+        <p className="text-xs sm:text-sm text-neutral-400 font-medium">
+          Tổng hợp danh sách các bộ phim thuộc thể loại {label} hay nhất
+        </p>
+        <div className="mt-1 text-xs font-mono font-bold text-neutral-300 bg-white/5 px-4 py-1.5 rounded-full border border-white/10">
           Trang <span className="text-white font-extrabold">{page}</span> /{" "}
           {totalPages}
         </div>
@@ -102,8 +100,8 @@ export default function GenrePage() {
         </div>
       ) : films.length > 0 ? (
         <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-4 md:gap-6">
-          {films.map((f) => (
-            <FilmCard key={f.slug} film={f} />
+          {films.map((f, idx) => (
+            <FilmCard key={`${f.slug || f._id || (f as any).id}-${idx}`} film={f} />
           ))}
         </div>
       ) : (

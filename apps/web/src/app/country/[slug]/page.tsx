@@ -115,8 +115,8 @@ function CountryCategoryRow({
                     <FilmCardSkeleton width={175} hideDetails={false} />
                   </SwiperSlide>
                 ))
-              : films.map((film) => (
-                  <SwiperSlide key={film.slug} style={{ width: "175px" }}>
+              : films.map((film, idx) => (
+                  <SwiperSlide key={`${film.slug || film._id || (film as any).id}-${idx}`} style={{ width: "175px" }}>
                     <FilmCard
                       film={film}
                       width={175}

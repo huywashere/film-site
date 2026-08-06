@@ -24,25 +24,28 @@ export function AuthSessionBridge() {
         const store = useAuthStore.getState();
         try {
           const { data } = await authApi.getMe();
-          if (active) store.setUser(data);
+          if (active && data && data.id) store.setUser(data);
           return;
         } catch {
           const firebaseUser = firebaseAuth.currentUser;
-          if (!firebaseUser) {
-            if (active) store.setUser(null);
-            return;
+          if (firebaseUser) {
+            try {
+              const user = await establishFirebaseSession(firebaseUser);
+              if (active && user) {
+                store.setUser(user);
+                return;
+              }
+            } catch (error) {
+              recordTelemetry(
+                "auth.firebase_session_sync_failed",
+                { reason: error instanceof Error ? error.message : "unknown" },
+                "warning",
+              );
+            }
           }
-
-          try {
-            const user = await establishFirebaseSession(firebaseUser);
-            if (active) store.setUser(user);
-          } catch (error) {
-            // Do not retain a local-only identity. The next token event or
-            // page load can retry, while the UI correctly remains signed out.
-            if (active) store.setUser(null);
-            recordTelemetry("auth.firebase_session_sync_failed", {
-              reason: error instanceof Error ? error.message : "unknown",
-            }, "warning");
+          // Preserve existing authenticated user session if present
+          if (active && !store.user) {
+            store.setUser(null);
           }
         }
       })().finally(() => {

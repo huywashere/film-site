@@ -11,6 +11,9 @@ export class AuditService {
     action: string;
     targetId?: string;
     details?: string;
+    // FIX #11: Thêm IP và User-Agent để truy vết forensics
+    ipAddress?: string;
+    userAgent?: string;
   }) {
     return this.prisma.auditLog.create({
       data: {
@@ -19,6 +22,8 @@ export class AuditService {
         action: params.action,
         targetId: params.targetId,
         details: params.details,
+        ipAddress: params.ipAddress,
+        userAgent: params.userAgent,
       },
     });
   }

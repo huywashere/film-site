@@ -83,7 +83,7 @@ export function DashPagination({
             className={cn(
               "h-0.5 rounded-full transition-all duration-300 cursor-pointer",
               isActive
-                ? "w-5 bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                ? "w-5 bg-white"
                 : "w-2 bg-white/30 hover:bg-white/70 hover:w-3",
             )}
           />

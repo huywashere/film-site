@@ -16,6 +16,8 @@ import { Navigation, FreeMode } from "swiper/modules";
 import { Top10RankedRow } from "@/components/film/Top10RankedRow";
 import { ContinueWatchingRow } from "@/components/film/ContinueWatchingRow";
 import { DashPagination } from "@/components/film/DashPagination";
+import { HeroShowcaseSection } from "@/components/film/HeroShowcaseSection";
+import { CuratedSpotlightSection } from "@/components/film/CuratedSpotlightSection";
 import HeroBanner from "@/app/components/HeroBanner";
 
 import "swiper/css";
@@ -32,27 +34,27 @@ function deduplicate(films: FilmItem[]): FilmItem[] {
   });
 }
 
-// ── Danh sách dự phòng khi playlist TMDB của Hero chưa kịp tải ──
-const HERO_5_FILMS: FilmItem[] = [
+// ── Danh sách Hollywood Sci-Fi, Marvel & DC chọn lọc ngẫu nhiên cho Hero Banner ──
+const HOLLYWOOD_HERO_POOL: FilmItem[] = [
   {
-    _id: "ky-si-bong-dem",
-    name: "The Dark Knight",
-    origin_name: "The Dark Knight",
-    slug: "ky-si-bong-dem",
+    _id: "deadpool-va-wolverine",
+    name: "Deadpool & Wolverine",
+    origin_name: "Deadpool & Wolverine",
+    slug: "deadpool-va-wolverine",
     type: "single",
     poster_url:
-      "https://phimimg.com/upload/vod/20240104-1/2cae46be24f514793c9e873f6de0fc32.jpg",
+      "https://phimimg.com/upload/vod/20250821-1/45b6b9aad03ae0aa2aceb5d73419831a.jpg",
     thumb_url:
-      "https://image.tmdb.org/t/p/original/dqK9Hag1054tghRQSqLSfrkvQnA.jpg",
-    time: "152 phút",
+      "https://phimimg.com/upload/vod/20250821-1/1ec414f82adc729512410edd1b083996.jpg",
+    time: "128 phút",
     episode_current: "Full",
     quality: "4K Ultra HD",
     lang: "Vietsub + Thuyết Minh",
-    year: 2008,
-    vote_average: 9.0,
-    rating: 9.0,
+    year: 2024,
+    vote_average: 8.5,
+    rating: 8.5,
     content:
-      "Người dơi bước vào giai đoạn cam go nhất trong cuộc chiến chống lại cái ác khi tên tội phạm bậc thầy The Joker xuất hiện nhằm đe dọa biến Gotham thành đống đổ nát.",
+      "Marvel Universe — Bộ đôi lầy lội Deadpool và Wolverine bắt tay trong phi vụ bảo vệ đa vũ trụ Marvel.",
   },
   {
     _id: "nguoi-nhen-khong-con-nha",
@@ -63,7 +65,7 @@ const HERO_5_FILMS: FilmItem[] = [
     poster_url:
       "https://phimimg.com/upload/vod/20250828-1/08fd0a68865ce452e959ae2bf58b7a8c.jpg",
     thumb_url:
-      "https://image.tmdb.org/t/p/original/AeK2MPOpYrOOgZNfFnfwp0L8tNn.jpg",
+      "https://phimimg.com/upload/vod/20250828-1/db868e69da1af78d124ed464063b27a6.jpg",
     time: "148 phút",
     episode_current: "Full",
     quality: "4K Ultra HD",
@@ -72,47 +74,27 @@ const HERO_5_FILMS: FilmItem[] = [
     vote_average: 8.3,
     rating: 8.3,
     content:
-      "Peter Parker đã bị lộ mặt và không còn có thể tách biệt cuộc sống bình thường. Khi anh yêu cầu sự giúp đỡ từ Doctor Strange, một phép thuật sai lầm đã xé rách đa vũ trụ.",
+      "Marvel Cinematic Universe — Khi danh tính bị tiết lộ, Peter Parker nhờ Doctor Strange làm phép xé rách đa vũ trụ.",
   },
   {
-    _id: "thoi-khac-cong-bo",
-    name: "Disclosure Day",
-    origin_name: "Disclosure Day",
-    slug: "thoi-khac-cong-bo",
+    _id: "ky-si-bong-dem",
+    name: "The Dark Knight",
+    origin_name: "The Dark Knight",
+    slug: "ky-si-bong-dem",
     type: "single",
     poster_url:
-      "https://phimimg.com/uploads/movies/20260722/thoi-khac-cong-bo-poster.webp",
+      "https://phimimg.com/upload/vod/20240104-1/2cae46be24f514793c9e873f6de0fc32.jpg",
     thumb_url:
-      "https://image.tmdb.org/t/p/original/flxau5Iu7bChQHsESqvGZ3FQRaI.jpg",
-    time: "146 phút",
+      "https://phimimg.com/upload/vod/20240104-1/b2748e456090a1c43b246c014b60fa1a.jpg",
+    time: "152 phút",
     episode_current: "Full",
     quality: "4K Ultra HD",
     lang: "Vietsub + Thuyết Minh",
-    year: 2026,
-    vote_average: 8.5,
-    rating: 8.5,
+    year: 2008,
+    vote_average: 9.0,
+    rating: 9.0,
     content:
-      "Nếu một ngày bạn nhận ra rằng chúng ta chưa bao giờ đơn độc trong vũ trụ. Mùa Hè 2026, sự thật vĩ đại vạch trần toàn thế giới trong Ngày Khai Tiết.",
-  },
-  {
-    _id: "star-wars-mandalorian-va-grogu",
-    name: "Star Wars: The Mandalorian & Grogu",
-    origin_name: "Star Wars: The Mandalorian and Grogu",
-    slug: "star-wars-mandalorian-va-grogu",
-    type: "single",
-    poster_url:
-      "https://phimimg.com/upload/vod/20260625-1/e43e9e9207618823fa3ca762e8fc274e.jpg",
-    thumb_url:
-      "https://image.tmdb.org/t/p/original/MJcERawyqGqJdPsOBc0C449hQ9.jpg",
-    time: "132 phút",
-    episode_current: "Full",
-    quality: "4K Ultra HD",
-    lang: "Vietsub",
-    year: 2026,
-    vote_average: 8.7,
-    rating: 8.7,
-    content:
-      "Đế Chế sụp đổ nhưng các lãnh chúa chiến tranh vẫn rải rác khắp thiên hà. Thợ săn tiền thưởng Din Djarin cùng chú bé Grogu phải bảo vệ hòa bình của Nền Cộng Hòa Mới.",
+      "DC Universe — Batman bước vào cuộc đụng độ khốc liệt nhất lịch sử Gotham chống lại tên tội phạm thiên tài Joker.",
   },
   {
     _id: "avatar-dong-chay-cua-nuoc",
@@ -123,7 +105,7 @@ const HERO_5_FILMS: FilmItem[] = [
     poster_url:
       "https://phimimg.com/upload/vod/20250513-1/59fc5ffe0025ca40c99d48b070b59320.jpg",
     thumb_url:
-      "https://image.tmdb.org/t/p/original/kJsPVzdyBrYHLomuNv5SJDXUQ2f.jpg",
+      "https://phimimg.com/upload/vod/20250513-1/7b4e51db1a258ef9602558352066bfec.jpg",
     time: "192 phút",
     episode_current: "Full",
     quality: "4K Ultra HD",
@@ -132,7 +114,47 @@ const HERO_5_FILMS: FilmItem[] = [
     vote_average: 8.8,
     rating: 8.8,
     content:
-      "Phim lấy bối cảnh 10 năm sau sự kiện phần đầu. Jake Sully cùng gia đình Na'vi phải rời bỏ quê nhà để tới sinh sống tại vùng biển Pandora trước sự tấn công của con người.",
+      "Sci-Fi Masterpiece — Jake Sully cùng gia đình Na'vi bảo vệ vùng biển đại dương Pandora huyền ảo.",
+  },
+  {
+    _id: "avengers-tran-chien-cuoi-cung",
+    name: "Avengers: Endgame",
+    origin_name: "Avengers: Endgame",
+    slug: "avengers-tran-chien-cuoi-cung",
+    type: "single",
+    poster_url:
+      "https://phimimg.com/upload/vod/20240128-1/4278b5bc228cbc7963f50547e6c76cff.jpg",
+    thumb_url:
+      "https://phimimg.com/upload/vod/20240128-1/72824a2b39de2fbb3e9617058b2f9eb3.jpg",
+    time: "181 phút",
+    episode_current: "Full",
+    quality: "4K Ultra HD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2019,
+    vote_average: 8.9,
+    rating: 8.9,
+    content:
+      "Marvel Cinematic Universe — Các siêu anh hùng sống sót sau cú búng tay của Thanos cùng nhau tập hợp cho trận chiến quyết định vận mệnh vũ trụ.",
+  },
+  {
+    _id: "ho-den-tu-than",
+    name: "Interstellar",
+    origin_name: "Interstellar",
+    slug: "ho-den-tu-than",
+    type: "single",
+    poster_url:
+      "https://phimimg.com/upload/vod/20250302-1/4cee31c3afd0fbfd11ed4f14b1bfd816.jpg",
+    thumb_url:
+      "https://phimimg.com/upload/vod/20250302-1/6012710a981edf1b6209bdb7fa82d1a6.jpg",
+    time: "169 phút",
+    episode_current: "Full",
+    quality: "4K Ultra HD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2014,
+    vote_average: 8.7,
+    rating: 8.7,
+    content:
+      "Sci-Fi / Khoa Học Viễn Tưởng — Nhóm phi hành gia du hành qua hố giun không gian để tìm kiếm ngôi nhà mới cho nhân loại trước nguy cơ diệt vong.",
   },
 ];
 
@@ -299,7 +321,7 @@ function FilmSection({
   );
 }
 
-// Component Wrapper for Intersection Observer Lazy Load (No min-height gaps)
+// Component Wrapper for Intersection Observer Lazy Load (No min-height gaps, GPU Accelerated)
 function LazySection({ children }: { children: React.ReactNode }) {
   const [isVisible, setIsVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -312,7 +334,7 @@ function LazySection({ children }: { children: React.ReactNode }) {
           observer.disconnect();
         }
       },
-      { rootMargin: "250px" },
+      { rootMargin: "350px 0px" },
     );
 
     if (containerRef.current) {
@@ -323,7 +345,10 @@ function LazySection({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div ref={containerRef}>
+    <div
+      ref={containerRef}
+      className="[content-visibility:auto] [contain-intrinsic-size:1px_400px] transform-gpu"
+    >
       {isVisible ? (
         children
       ) : (
@@ -628,8 +653,11 @@ export default function HomePage() {
     [trendingData],
   );
 
-  // Hero tự thay thế danh sách dự phòng bằng 6 phim TMDB ngẫu nhiên mỗi phiên.
-  const bannerFilms = HERO_5_FILMS;
+  // Cố định 6 phim Hollywood bom tấn hàng đầu (Marvel, DC, Avatar, Sci-Fi) cho Hero Banner
+  const bannerFilms = useMemo(() => {
+    return HOLLYWOOD_HERO_POOL.slice(0, 6);
+  }, []);
+
   const showBannerSkeleton = false;
 
   // Deduplication registry & row limits
@@ -781,8 +809,9 @@ export default function HomePage() {
         </LazySection>
 
         <LazySection>
-          <FilmSection
+          <HeroShowcaseSection
             title="Series Âu-Mỹ"
+            badge="SERIES ĐẶC SẮC"
             films={usUkSeriesRowList}
             isLoading={usUkSeriesLoading}
             href="/country/au-my"
@@ -799,8 +828,9 @@ export default function HomePage() {
         </LazySection>
 
         <LazySection>
-          <FilmSection
+          <CuratedSpotlightSection
             title="Phim Khoa Học Viễn Tưởng Bom Tấn"
+            badge="TUYỂN CHỌN BIÊN TẬP"
             films={scifiRowList}
             isLoading={scifiLoading}
             href="/genre/vien-tuong"

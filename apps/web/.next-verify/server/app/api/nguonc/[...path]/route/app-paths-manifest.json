@@ -1,0 +1,3 @@
+{
+  "/api/nguonc/[...path]/route": "app/api/nguonc/[...path]/route.js"
+}

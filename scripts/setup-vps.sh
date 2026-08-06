@@ -210,3 +210,43 @@ echo -e "🔄 Update app: ${CYAN}cd $APP_DIR && bash scripts/deploy.sh${NC}"
 echo ""
 warn "Tiếp theo: Cấu hình Cloudflare Tunnel để có HTTPS"
 echo "   Xem hướng dẫn trong: $APP_DIR/VPS_DEPLOY.md"
+
+# ── Bước 11: Tạo SSH key cho GitLab CI/CD ─────────────────────
+header "Bước 11: Tạo SSH key cho GitLab CI/CD (auto-deploy)"
+GITLAB_KEY_PATH="/home/$DEPLOY_USER/.ssh/gitlab_ci_ed25519"
+
+if [[ ! -f "$GITLAB_KEY_PATH" ]]; then
+    sudo -u $DEPLOY_USER ssh-keygen \
+        -t ed25519 \
+        -C "gitlab-ci-deploy@cineverse" \
+        -f "$GITLAB_KEY_PATH" \
+        -N ""
+
+    # Thêm public key vào authorized_keys
+    sudo -u $DEPLOY_USER cat "${GITLAB_KEY_PATH}.pub" >> \
+        "/home/$DEPLOY_USER/.ssh/authorized_keys"
+    chmod 600 "/home/$DEPLOY_USER/.ssh/authorized_keys"
+
+    log "SSH key đã được tạo"
+else
+    warn "SSH key đã tồn tại tại $GITLAB_KEY_PATH"
+fi
+
+echo ""
+echo -e "${YELLOW}══════════════════════════════════════════════════════════${NC}"
+echo -e "${YELLOW}  📋 COPY private key này vào GitLab CI/CD Variables       ${NC}"
+echo -e "${YELLOW}  GitLab → Project → Settings → CI/CD → Variables          ${NC}"
+echo -e "${YELLOW}  Variable name: SSH_PRIVATE_KEY | Protected ✅ | Masked ✅${NC}"
+echo -e "${YELLOW}══════════════════════════════════════════════════════════${NC}"
+echo ""
+cat "$GITLAB_KEY_PATH"
+echo ""
+echo -e "${YELLOW}══════════════════════════════════════════════════════════${NC}"
+echo ""
+echo -e "Các variables cần thêm vào GitLab CI/CD:"
+echo -e "  ${CYAN}SSH_PRIVATE_KEY${NC}  = (private key ở trên)"
+echo -e "  ${CYAN}VPS_HOST${NC}         = $(hostname -I | awk '{print $1}')"
+echo -e "  ${CYAN}VPS_USER${NC}         = $DEPLOY_USER"
+echo -e "  ${CYAN}VPS_APP_DIR${NC}      = $APP_DIR"
+echo -e "  ${CYAN}APP_URL${NC}          = https://yourdomain.com"
+

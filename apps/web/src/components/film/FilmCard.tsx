@@ -69,6 +69,10 @@ export function resolveImageUrl(url?: unknown): string | null {
   let resolved = url.trim();
   if (!resolved) return null;
 
+  if (resolved.startsWith("/api/image-proxy")) {
+    return resolved;
+  }
+
   if (resolved.startsWith("//")) {
     resolved = `https:${resolved}`;
   } else if (
@@ -191,6 +195,16 @@ export function FilmCard({
     const nextSaved = !saved;
     setSaved(nextSaved);
 
+    if (!nextSaved) {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("cineverse_watchlist_changed", {
+            detail: { movieId: slug, action: "remove" },
+          }),
+        );
+      }
+    }
+
     if (!user) {
       if (nextSaved) guestDataStorage.addWatchlist(slug, movieData);
       else guestDataStorage.removeWatchlist(slug);
@@ -229,7 +243,7 @@ export function FilmCard({
 
   return (
     <div
-      className="group relative flex flex-col select-none"
+      className="group relative flex flex-col select-none gpu-accelerated transform-gpu"
       style={width ? { width, flexShrink: 0 } : undefined}
       onMouseEnter={prefetchFilmDetail}
     >
@@ -251,6 +265,7 @@ export function FilmCard({
               alt={title}
               className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
+              decoding="async"
               onError={handleImageError}
             />
           ) : (

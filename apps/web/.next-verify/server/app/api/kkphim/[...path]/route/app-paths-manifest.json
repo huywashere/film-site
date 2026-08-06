@@ -1,0 +1,3 @@
+{
+  "/api/kkphim/[...path]/route": "app/api/kkphim/[...path]/route.js"
+}

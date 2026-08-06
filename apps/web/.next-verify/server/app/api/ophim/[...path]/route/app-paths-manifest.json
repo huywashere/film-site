@@ -1,0 +1,3 @@
+{
+  "/api/ophim/[...path]/route": "app/api/ophim/[...path]/route.js"
+}

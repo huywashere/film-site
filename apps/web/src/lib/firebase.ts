@@ -37,25 +37,39 @@ const firebaseConfig = {
     "1:872645160784:web:402aa0eadfa47ff3884655",
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-export const firebaseAuth = getAuth(app);
+const isBrowser = typeof window !== "undefined";
 
-if (typeof window !== "undefined") {
-  setPersistence(firebaseAuth, browserLocalPersistence).catch((e) =>
-    console.error("Firebase persistence set error:", e),
-  );
+let app: any = null;
+let firebaseAuth: any = null;
+let googleProvider: any = null;
+let facebookProvider: any = null;
+
+if (isBrowser) {
+  try {
+    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    firebaseAuth = getAuth(app);
+    setPersistence(firebaseAuth, browserLocalPersistence).catch((e) =>
+      console.warn("Firebase persistence warning:", e),
+    );
+
+    googleProvider = new GoogleAuthProvider();
+    googleProvider.addScope("email");
+    googleProvider.addScope("profile");
+    googleProvider.setCustomParameters({ prompt: "select_account" });
+
+    facebookProvider = new FacebookAuthProvider();
+    facebookProvider.addScope("email");
+    facebookProvider.addScope("public_profile");
+  } catch (err) {
+    console.warn("Firebase Auth init warning:", err);
+  }
 }
 
-export const googleProvider = new GoogleAuthProvider();
-googleProvider.addScope("email");
-googleProvider.addScope("profile");
-googleProvider.setCustomParameters({ prompt: "select_account" });
-
-export const facebookProvider = new FacebookAuthProvider();
-facebookProvider.addScope("email");
-facebookProvider.addScope("public_profile");
-
 export {
+  app,
+  firebaseAuth,
+  googleProvider,
+  facebookProvider,
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,

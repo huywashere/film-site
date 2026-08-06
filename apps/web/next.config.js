@@ -81,6 +81,10 @@ const nextConfig = {
       // TMDB
       { protocol: "https", hostname: "image.tmdb.org" },
     ],
+    localPatterns: [
+      { pathname: "/api/image-proxy", search: "?*" },
+      { pathname: "/**", search: "?*" },
+    ],
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
@@ -89,6 +93,24 @@ const nextConfig = {
   },
   // Global XSS & Security Response Headers
   async headers() {
+    // FIX #2: Removed 'unsafe-eval' which allowed arbitrary JS execution.
+    // 'unsafe-inline' is still present for Next.js hydration compatibility.
+    // For a full nonce-based CSP, see apps/web/src/middleware.ts
+    const cspValue = [
+      `default-src 'self'`,
+      // In dev: 'unsafe-eval' is required by React for hot-reload & callstack reconstruction.
+      // In prod: removed for security (FIX #2).
+      `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ""} https://apis.google.com https://www.gstatic.com https://www.google.com https://*.firebaseapp.com https://challenges.cloudflare.com`,
+      `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
+      `img-src 'self' data: blob: https:`,
+      `font-src 'self' data: https://fonts.gstatic.com`,
+      `connect-src 'self' https: wss: ${apiConnectSources} https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com`,
+      `frame-src 'self' https: https://accounts.google.com https://*.firebaseapp.com https://www.google.com https://challenges.cloudflare.com`,
+      `object-src 'none'`,
+      `base-uri 'self'`,
+      `form-action 'self'`,
+    ].join("; ");
+
     return [
       {
         source: "/:path*",
@@ -115,16 +137,25 @@ const nextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://www.google.com https://*.firebaseapp.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https: wss: ${apiConnectSources} https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com; frame-src 'self' https: https://accounts.google.com https://*.firebaseapp.com https://www.google.com; object-src 'none';`,
+            value: cspValue,
           },
         ],
       },
       {
+        // FIX #7: Restrict CORS to same-origin instead of wildcard *
+        // The KKPhim proxy should only be called from our own frontend
         source: "/api/kkphim/:path*",
-        headers: [{ key: "Access-Control-Allow-Origin", value: "*" }],
+        headers: [
+          {
+            key: "Access-Control-Allow-Origin",
+            value: process.env.NEXT_PUBLIC_APP_URL || "https://cineverse.app",
+          },
+          { key: "Access-Control-Allow-Methods", value: "GET, OPTIONS" },
+        ],
       },
     ];
   },
 };
 
 module.exports = nextConfig;
+

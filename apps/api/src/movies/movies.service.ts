@@ -66,9 +66,17 @@ export class MoviesService {
    * Real popularity signal, calculated from completed playback events over
    * the last seven days.  This intentionally stays separate from upstream
    * "latest" feeds so the ranked row is not just another new-release row.
+   *
+   * Cached for 5 minutes — expensive groupBy + JOIN query.
    */
   async getTrending(limit = 20) {
     const safeLimit = Math.min(Math.max(limit || 20, 1), 40);
+    const cacheKey = `movies:trending:${safeLimit}`;
+
+    // Check cache first — this query is expensive
+    const cached = await this.cache.getJson<object[]>(cacheKey);
+    if (cached !== null) return cached;
+
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const ranked = await this.prisma.viewLog.groupBy({
       by: ["movieId"],
@@ -78,7 +86,10 @@ export class MoviesService {
       take: safeLimit,
     });
 
-    if (!ranked.length) return [];
+    if (!ranked.length) {
+      await this.cache.setJson(cacheKey, [], 300);
+      return [];
+    }
 
     const movieIds = ranked.map((item) => item.movieId);
     const movies = await this.prisma.movie.findMany({
@@ -86,7 +97,7 @@ export class MoviesService {
     });
     const movieById = new Map(movies.map((movie) => [movie.id, movie]));
 
-    return ranked.flatMap((item) => {
+    const result = ranked.flatMap((item) => {
       const movie = movieById.get(item.movieId);
       if (!movie) return [];
       return [{
@@ -105,7 +116,12 @@ export class MoviesService {
         views: item._count.movieId,
       }];
     });
+
+    // Cache for 5 minutes — trending doesn't need to be real-time
+    await this.cache.setJson(cacheKey, result, 300);
+    return result;
   }
+
 
   // GET /v1/api/danh-sach/phim-bo?page=1
   async getSeries(page = 1, limit = 24) {

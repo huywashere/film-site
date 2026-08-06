@@ -10,6 +10,7 @@ export interface WatchProgressEntry {
 }
 
 const STORAGE_KEY = "cineverse_continue_watching";
+let lastSyncTimestamp = 0;
 
 export const watchProgressStorage = {
   getHistoryEntries: (): WatchProgressEntry[] => {
@@ -60,6 +61,22 @@ export const watchProgressStorage = {
       // Limit to 20 recent items
       const trimmed = entries.slice(0, 20);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+
+      // Async sync to DB backend (throttled: at most once every 5 seconds)
+      const now = Date.now();
+      if (now - lastSyncTimestamp > 5000) {
+        lastSyncTimestamp = now;
+        import("@/lib/api").then(({ api }) => {
+          api.put("/users/me/watch-history", {
+            movieId: entry.slug,
+            movieTitle: entry.title,
+            movieThumb: entry.poster,
+            episode: entry.epSlug || "1",
+            progress: entry.currentTime,
+            duration: entry.duration,
+          }).catch(() => {});
+        }).catch(() => {});
+      }
     } catch (e) {
       console.error("Failed to save watch progress:", e);
     }

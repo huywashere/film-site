@@ -1,13 +1,7 @@
-import { LoginForm } from "@/components/auth/LoginForm";
-import { CinematicAuthBackground } from "@/components/auth/CinematicAuthBackground";
+"use client";
+
+import { AuthPageForm } from "@/components/auth/AuthPageForm";
 
 export default function LoginPage() {
-  return (
-    <div className="h-[100dvh] w-full bg-[#040508] relative flex items-center justify-center p-4 overflow-hidden">
-      <CinematicAuthBackground />
-      <div className="relative z-10 w-full flex justify-center items-center">
-        <LoginForm />
-      </div>
-    </div>
-  );
+  return <AuthPageForm initialMode="login" />;
 }

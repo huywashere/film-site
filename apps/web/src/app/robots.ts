@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/profile/", "/watch/"], // Save crawler budget by blocking player/user routes
+      disallow: ["/profile/", "/admin/"], // Block private user/admin routes
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

@@ -25,6 +25,7 @@ import {
   Mic,
   Monitor,
   ChevronRight as ChevronRightIcon,
+  ArrowLeft,
 } from "lucide-react";
 import { movieApi, watchlistApi, ratingsApi, reviewsApi } from "@/lib/api";
 import { StarRating } from "@/components/film/StarRating";
@@ -544,6 +545,7 @@ function WriteReview({ movieId }: { movieId: string }) {
 
 // ── Main Detail Page (Plex Redesign) ──────────────────────────
 export default function FilmDetailPage() {
+  const router = useRouter();
   const params = useParams();
   const slug = params.slug as string;
   const { user } = useAuthStore();
@@ -790,6 +792,33 @@ export default function FilmDetailPage() {
     },
   };
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Trang Chủ",
+        item: "https://cineverse-movie.vercel.app",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: typeLabel,
+        item: `https://cineverse-movie.vercel.app/films/${film?.type === "series" ? "series" : "single"}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: filmName,
+        item: `https://cineverse-movie.vercel.app/film/${slug}`,
+      },
+    ],
+  };
+
+  const jsonLdPayload = [jsonLd, breadcrumbJsonLd];
+
   const seoTitle = `${filmName} ${originName ? `(${originName})` : ""} ${film?.year ? `- ${film.year}` : ""} Vietsub HD | CineVerse`;
   const seoDescription = cleanContent
     ? cleanContent.slice(0, 160)
@@ -800,28 +829,28 @@ export default function FilmDetailPage() {
       {/* ── JSON-LD STRUCTURED DATA SCHEMA FOR GOOGLE SEO ── */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdPayload) }}
       />
 
       {/* ── DYNAMIC HEAD META TAGS (OPEN GRAPH & TWITTER CARDS) ── */}
-      <head>
-        <title>{seoTitle}</title>
-        <meta name="description" content={seoDescription} />
-        <meta property="og:title" content={seoTitle} />
-        <meta property="og:description" content={seoDescription} />
-        <meta
-          property="og:image"
-          content={posterUrl || backdropUrl || undefined}
-        />
-        <meta property="og:type" content="video.movie" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={seoTitle} />
-        <meta name="twitter:description" content={seoDescription} />
-        <meta
-          name="twitter:image"
-          content={posterUrl || backdropUrl || undefined}
-        />
-      </head>
+      <title>{seoTitle}</title>
+      <meta name="description" content={seoDescription} />
+      <link rel="canonical" href={`https://cineverse-movie.vercel.app/film/${slug}`} />
+      <meta property="og:title" content={seoTitle} />
+      <meta property="og:description" content={seoDescription} />
+      <meta property="og:url" content={`https://cineverse-movie.vercel.app/film/${slug}`} />
+      <meta
+        property="og:image"
+        content={posterUrl || backdropUrl || undefined}
+      />
+      <meta property="og:type" content="video.movie" />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={seoTitle} />
+      <meta name="twitter:description" content={seoDescription} />
+      <meta
+        name="twitter:image"
+        content={posterUrl || backdropUrl || undefined}
+      />
       {/* ── Giant Backdrop Banner (Plex Style Left-to-Right Blended Layout) ── */}
       {(backdropUrl || posterUrl) && (
         <div className="absolute top-0 left-0 right-0 h-[65vh] md:h-[82vh] w-full z-0 overflow-hidden select-none">
@@ -842,8 +871,16 @@ export default function FilmDetailPage() {
 
       {/* ── Main Content Container ── */}
       <div className="relative z-10 container mx-auto px-4 md:px-12 pt-24 sm:pt-28">
-        {/* ── 1. Breadcrumb Bar (Matching Reference Image 1) ── */}
+        {/* ── 1. Back Button & Breadcrumb Bar ── */}
         <div className="flex items-center gap-2 text-xs font-semibold text-neutral-400 mb-5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold transition-all text-xs border border-white/15 shadow-sm active:scale-95 cursor-pointer mr-1"
+          >
+            <ArrowLeft size={13} />
+            <span>Quay lại</span>
+          </button>
           <Link
             href="/"
             className="hover:text-white transition-colors flex items-center gap-1"
