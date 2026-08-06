@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cineverse-api
+  namespace: cineverse
+  labels:
+    app: cineverse-api
+    tier: backend
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: cineverse-api
+  template:
+    metadata:
+      labels:
+        app: cineverse-api
+        tier: backend
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: api
+          image: registry.gitlab.com/nguyenphuhuy/film-site/api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3001
+              name: http
+          envFrom:
+            - configMapRef:
+                name: cineverse-config
+            - secretRef:
+                name: cineverse-secret
+          resources:
+            requests:
+              cpu: 150m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 3001
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cineverse-api-service
+  namespace: cineverse
+  labels:
+    app: cineverse-api
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3001
+      targetPort: 3001
+      protocol: TCP
+      name: http
+  selector:
+    app: cineverse-api
