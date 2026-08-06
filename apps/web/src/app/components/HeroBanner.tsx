@@ -216,9 +216,6 @@ export default function HeroBanner({ films }: HeroBannerProps) {
     return () => clearInterval(timer);
   }, [featured.length, reduceMotion]);
 
-  const film = featured[current];
-  if (!film) return null;
-
   const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
 
   const promoCards = useMemo(() => {
@@ -228,6 +225,9 @@ export default function HeroBanner({ films }: HeroBannerProps) {
       (_, offset) => featured[(current + offset + 1) % featured.length],
     );
   }, [featured, current]);
+
+  const film = featured[current];
+  if (!film) return null;
 
   const ratingVal =
     film.tmdb?.vote_average || film.vote_average || film.rating || 8.3;
