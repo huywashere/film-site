@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import {
   Home,
   Heart,
@@ -33,6 +34,7 @@ const W = 72; // sidebar width in px
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [scrolledPastBanner, setScrolledPastBanner] = useState(false);
   const homeThresholdRef = useRef<HTMLDivElement>(null);
@@ -74,6 +76,14 @@ export function Sidebar() {
       localStorage.setItem("sidebar-collapsed", String(next));
     } catch (_e) {
       // ignore localStorage errors
+    }
+  };
+
+  const handleMouseEnter = (href: string) => {
+    try {
+      router.prefetch(href);
+    } catch (_e) {
+      // ignore prefetch errors
     }
   };
 
@@ -123,29 +133,33 @@ export function Sidebar() {
                 href={item.href}
                 prefetch={true}
                 title={item.title}
+                onMouseEnter={() => handleMouseEnter(item.href)}
                 className={cn(
-                  "relative flex flex-col items-center justify-center rounded-xl py-3.5 transition-all duration-150 group",
-                  isActive ? "text-white" : "text-white/40 hover:text-white/80",
+                  "relative flex flex-col items-center justify-center rounded-xl py-3.5 transition-colors duration-150 group cursor-pointer",
+                  isActive ? "text-white font-bold" : "text-white/40 hover:text-white/80",
                 )}
                 style={{ width: W - 12 }}
               >
-                {/* Active: white vertical bar centred on the item */}
+                {/* Active: Framer Motion sliding white vertical bar centred on the item */}
                 {isActive && (
-                  <span
-                    className="absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full bg-white"
+                  <motion.span
+                    layoutId="sidebar-active-bar"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full bg-white z-20"
                     style={{ width: 3, height: 20 }}
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
                   />
                 )}
 
-                {/* Hover background pill */}
-                <span
-                  className={cn(
-                    "absolute inset-0 rounded-xl transition-all duration-150",
-                    isActive
-                      ? "bg-white/10"
-                      : "bg-transparent group-hover:bg-white/[0.04]",
-                  )}
-                />
+                {/* Active: Framer Motion sliding background pill */}
+                {isActive ? (
+                  <motion.span
+                    layoutId="sidebar-active-pill"
+                    className="absolute inset-0 rounded-xl bg-white/10 z-0"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                ) : (
+                  <span className="absolute inset-0 rounded-xl bg-transparent group-hover:bg-white/[0.05] transition-colors z-0" />
+                )}
 
                 <item.icon
                   size={21}
