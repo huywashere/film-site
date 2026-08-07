@@ -12,6 +12,7 @@ import { OfflineDetector } from "@/components/layout/OfflineDetector";
 import { GuestDataMergePrompt } from "@/components/auth/GuestDataMergePrompt";
 import { ClientTelemetry } from "@/components/layout/ClientTelemetry";
 import { AuthSessionBridge } from "@/components/auth/AuthSessionBridge";
+import { AntiDevTools } from "@/components/security/AntiDevTools";
 
 export const viewport: Viewport = {
   themeColor: "#08090c",
@@ -97,6 +98,7 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <ThemeWatcher />
         <RegisterSW />
+        <AntiDevTools />
         <ClientTelemetry />
         <QueryProvider>
           <ToastProvider>
