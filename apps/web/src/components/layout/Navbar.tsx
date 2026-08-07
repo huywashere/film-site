@@ -89,42 +89,42 @@ export const GENRES_LIST = [
 ];
 
 export const COUNTRIES_LIST = [
-  { label: "Anh", slug: "anh" },
-  { label: "Ba Lan", slug: "ba-lan" },
-  { label: "Brazil", slug: "brazil" },
-  { label: "Bồ Đào Nha", slug: "bo-dao-nha" },
-  { label: "Canada", slug: "canada" },
-  { label: "Châu Phi", slug: "chau-phi" },
-  { label: "Hà Lan", slug: "ha-lan" },
-  { label: "Hàn Quốc", slug: "han-quoc" },
-  { label: "Hồng Kông", slug: "hong-kong" },
-  { label: "Indonesia", slug: "indonesia" },
-  { label: "Malaysia", slug: "malaysia" },
-  { label: "Mexico", slug: "mexico" },
-  { label: "Na Uy", slug: "na-uy" },
-  { label: "Nam Phi", slug: "nam-phi" },
-  { label: "Nga", slug: "nga" },
-  { label: "Nhật Bản", slug: "nhat-ban" },
-  { label: "Philippines", slug: "philippines" },
-  { label: "Pháp", slug: "phap" },
-  { label: "Quốc Gia Khác", slug: "quoc-gia-khac" },
-  { label: "Thái Lan", slug: "thai-lan" },
-  { label: "Thổ Nhĩ Kỳ", slug: "tho-nhi-ky" },
-  { label: "Thụy Sĩ", slug: "thuy-si" },
-  { label: "Thụy Điển", slug: "thuy-dien" },
-  { label: "Trung Quốc", slug: "trung-quoc" },
-  { label: "Tây Ban Nha", slug: "tay-ban-nha" },
-  { label: "UAE", slug: "uae" },
-  { label: "Ukraina", slug: "ukraina" },
-  { label: "Việt Nam", slug: "viet-nam" },
-  { label: "Âu Mỹ", slug: "au-my" },
-  { label: "Úc", slug: "uc" },
-  { label: "Ý", slug: "y" },
-  { label: "Đan Mạch", slug: "dan-mach" },
-  { label: "Đài Loan", slug: "dai-loan" },
-  { label: "Đức", slug: "duc" },
-  { label: "Ả Rập Xê Út", slug: "a-rap-xe-ut" },
-  { label: "Ấn Độ", slug: "an-do" },
+  { label: "Anh", slug: "anh", flag: "🇬🇧" },
+  { label: "Ba Lan", slug: "ba-lan", flag: "🇵🇱" },
+  { label: "Brazil", slug: "brazil", flag: "🇧🇷" },
+  { label: "Bồ Đào Nha", slug: "bo-dao-nha", flag: "🇵🇹" },
+  { label: "Canada", slug: "canada", flag: "🇨🇦" },
+  { label: "Châu Phi", slug: "chau-phi", flag: "🌍" },
+  { label: "Hà Lan", slug: "ha-lan", flag: "🇳🇱" },
+  { label: "Hàn Quốc", slug: "han-quoc", flag: "🇰🇷" },
+  { label: "Hồng Kông", slug: "hong-kong", flag: "🇭🇰" },
+  { label: "Indonesia", slug: "indonesia", flag: "🇮🇩" },
+  { label: "Malaysia", slug: "malaysia", flag: "🇲🇾" },
+  { label: "Mexico", slug: "mexico", flag: "🇲🇽" },
+  { label: "Na Uy", slug: "na-uy", flag: "🇳🇴" },
+  { label: "Nam Phi", slug: "nam-phi", flag: "🇿🇦" },
+  { label: "Nga", slug: "nga", flag: "🇷🇺" },
+  { label: "Nhật Bản", slug: "nhat-ban", flag: "🇯🇵" },
+  { label: "Philippines", slug: "philippines", flag: "🇵🇭" },
+  { label: "Pháp", slug: "phap", flag: "🇫🇷" },
+  { label: "Quốc Gia Khác", slug: "quoc-gia-khac", flag: "🌐" },
+  { label: "Thái Lan", slug: "thai-lan", flag: "🇹🇭" },
+  { label: "Thổ Nhĩ Kỳ", slug: "tho-nhi-ky", flag: "🇹🇷" },
+  { label: "Thụy Sĩ", slug: "thuy-si", flag: "🇨🇭" },
+  { label: "Thụy Điển", slug: "thuy-dien", flag: "🇸🇪" },
+  { label: "Trung Quốc", slug: "trung-quoc", flag: "🇨🇳" },
+  { label: "Tây Ban Nha", slug: "tay-ban-nha", flag: "🇪🇸" },
+  { label: "UAE", slug: "uae", flag: "🇦🇪" },
+  { label: "Ukraina", slug: "ukraina", flag: "🇺🇦" },
+  { label: "Việt Nam", slug: "viet-nam", flag: "🇻🇳" },
+  { label: "Âu Mỹ", slug: "au-my", flag: "🇺🇸" },
+  { label: "Úc", slug: "uc", flag: "🇦🇺" },
+  { label: "Ý", slug: "y", flag: "🇮🇹" },
+  { label: "Đan Mạch", slug: "dan-mach", flag: "🇩🇰" },
+  { label: "Đài Loan", slug: "dai-loan", flag: "🇹🇼" },
+  { label: "Đức", slug: "duc", flag: "🇩🇪" },
+  { label: "Ả Rập Xê Út", slug: "a-rap-xe-ut", flag: "🇸🇦" },
+  { label: "Ấn Độ", slug: "an-do", flag: "🇮🇳" },
 ];
 
 const LISTS_CATALOG = [
@@ -334,9 +334,10 @@ export function Navbar() {
                   <Link
                     key={item.slug}
                     href={`/country/${item.slug}`}
-                    className="px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 block truncate"
+                    className="px-3 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 flex items-center gap-2 truncate group/flag"
                   >
-                    {item.label}
+                    <span className="text-base shrink-0 transition-transform group-hover/flag:scale-125">{item.flag}</span>
+                    <span className="truncate">{item.label}</span>
                   </Link>
                 ))}
               </div>
