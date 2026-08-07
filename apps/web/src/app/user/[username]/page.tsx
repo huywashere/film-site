@@ -254,7 +254,7 @@ export default function UserDashboardPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-black text-white pt-20 pb-28 lg:pl-24 lg:pr-10 px-4 max-w-[1440px] mx-auto font-sans select-none space-y-6">
+    <main className="min-h-screen bg-black text-white pt-20 pb-28 px-4 sm:px-8 lg:px-12 max-w-[1440px] mx-auto font-sans select-none space-y-6">
       
       {/* ── CINEMA PROFILE HEADER ── */}
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-neutral-950 shadow-2xl">
