@@ -7,17 +7,16 @@ import {
   ChevronLeft,
   ChevronRight,
   Home,
-  Tv,
+  MonitorPlay,
+  Music,
   Flame,
-  Popcorn,
-  BookmarkCheck,
-  Library,
-  History,
   Star,
   Layers,
   Heart,
   Film,
   Languages,
+  History,
+  Popcorn,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useRef } from "react";
@@ -38,13 +37,12 @@ function TelegramIcon({ className, size = 20 }: { className?: string; size?: num
 
 const SIDEBAR_ITEMS = [
   { title: "Trang chủ", href: "/", icon: Home },
-  { title: "Phim Hàn", href: "/country/han-quoc", icon: Heart },
-  { title: "Phim Trung", href: "/country/trung-quoc", icon: Film },
-  { title: "Phim Song Ngữ", href: "/search?q=song%20ngu", icon: Languages },
-  { title: "Duyệt Phim", href: "/films", icon: Tv },
-  { title: "Thế Giới Phim", href: "/genres", icon: Flame },
-  { title: "Xem Chung", href: "/watch-party", icon: Popcorn },
+  { title: "Phim & Video", href: "/films", icon: MonitorPlay },
+  { title: "Nhạc & Giải trí", href: "/watch-party", icon: Music },
+  { title: "Phim Hot Trending", href: "/genres", icon: Flame },
+  { title: "Phim Hàn", href: "/country/han-quoc", icon: Star },
   { title: "Bộ Sưu Tập", href: "/watchlist", icon: Layers },
+  { title: "Phim Song Ngữ", href: "/search?q=song%20ngu", icon: Languages },
   { title: "Lịch Sử", href: "/history", icon: History },
   {
     title: "Kênh Telegram",
