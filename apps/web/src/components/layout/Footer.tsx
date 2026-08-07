@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { Clapperboard } from "lucide-react";
 import { resolveImageUrl } from "@/components/film/FilmCard";
 
-// ── Cat random images (giữ nguyên gif meme theo yêu cầu người dùng) ──────────
+// ── Cat random images ────────────────────────────────────────────────────────
 const CAT_IMAGES = [
   "/images/cat1.gif",
   "/images/cat2.gif",
@@ -19,7 +19,7 @@ function getRandomCat() {
   return CAT_IMAGES[Math.floor(Math.random() * CAT_IMAGES.length)];
 }
 
-// ── Danh sách Phim Hot cho Băng rôn chạy từ phải qua trái ─────────────────────
+// ── HOT MOVIES FOR MARQUEE TICKER ────────────────────────────────────────────
 const HOT_MARQUEE_MOVIES = [
   {
     slug: "deadpool-va-wolverine",
@@ -93,10 +93,10 @@ const HOT_MARQUEE_MOVIES = [
   },
 ];
 
-// ── Footer columns (NestJS style font-mono & categories) ─────────────────────
+// ── FOOTER LINK COLUMNS ──────────────────────────────────────────────────────
 const FOOTER_LINKS = [
   {
-    heading: "Nội dung",
+    heading: "NỘI DUNG",
     links: [
       { label: "Phim mới nhất", href: "/films" },
       { label: "Phim bộ", href: "/films/series" },
@@ -105,7 +105,7 @@ const FOOTER_LINKS = [
     ],
   },
   {
-    heading: "Thể loại",
+    heading: "THỂ LOẠI",
     links: [
       { label: "Hành động", href: "/genre/hanh-dong" },
       { label: "Tình cảm", href: "/genre/tinh-cam" },
@@ -114,7 +114,7 @@ const FOOTER_LINKS = [
     ],
   },
   {
-    heading: "Quốc gia",
+    heading: "QUỐC GIA",
     links: [
       { label: "Phim Hàn Quốc", href: "/country/han-quoc" },
       { label: "Phim Trung Quốc", href: "/country/trung-quoc" },
@@ -123,7 +123,7 @@ const FOOTER_LINKS = [
     ],
   },
   {
-    heading: "Về chúng tôi",
+    heading: "VỀ CHÚNG TÔI",
     links: [
       { label: "Điều khoản", href: "/terms" },
       { label: "Quyền riêng tư", href: "/privacy" },
@@ -153,21 +153,15 @@ export function Footer() {
   };
 
   return (
-    <footer className="relative w-full overflow-hidden bg-[#040507] py-10 md:py-14 pl-4 lg:pl-28 pr-4 lg:pr-12 z-20">
-      {/* ── NestJS Glowing Color Aura Background (Loang lổ màu đỏ/crimson phía sau) ── */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[95%] max-w-[1400px] h-[380px] bg-gradient-to-r from-rose-600/45 via-red-600/40 to-purple-700/30 blur-[130px] rounded-full opacity-85" />
-        <div className="absolute top-1/4 -left-32 w-[400px] h-[400px] bg-rose-700/25 blur-[140px] rounded-full" />
-        <div className="absolute bottom-10 -right-32 w-[400px] h-[400px] bg-purple-700/20 blur-[140px] rounded-full" />
-      </div>
-
-      {/* ── NestJS Main Rounded Card Container (Bo viền cong vừa vặn với lề thanh tab dọc) ── */}
-      <div className="relative z-10 w-full max-w-[1500px] mx-auto bg-[#0b0c10]/95 border border-white/10 rounded-[28px] md:rounded-[36px] overflow-hidden shadow-[0_30px_90px_rgba(0,0,0,0.85)]">
-        {/* ── Top Section: Băng Rôn Phim Hot Chạy Liên Tục từ Phải sang Trái (Không tiêu đề) ── */}
-        <div className="border-b border-white/[0.08] py-5 px-4 relative overflow-hidden bg-gradient-to-b from-white/[0.03] to-transparent">
+    <footer className="relative w-full overflow-hidden bg-background py-10 md:py-14 pl-4 lg:pl-28 pr-4 lg:pr-12 z-20">
+      {/* ── Main Rounded Minimalist Card Container ── */}
+      <div className="relative z-10 w-full max-w-[1500px] mx-auto bg-neutral-950/90 border border-white/10 rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl">
+        
+        {/* ── Top Section: Ticker Marquee ── */}
+        <div className="border-b border-white/10 py-5 px-4 relative overflow-hidden bg-white/[0.02]">
           {/* Left & Right gradient fade masks */}
-          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-16 md:w-24 bg-gradient-to-r from-[#0b0c10] to-transparent z-10" />
-          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 md:w-24 bg-gradient-to-l from-[#0b0c10] to-transparent z-10" />
+          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-16 md:w-24 bg-gradient-to-r from-neutral-950 to-transparent z-10" />
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 md:w-24 bg-gradient-to-l from-neutral-950 to-transparent z-10" />
 
           {/* Infinite Marquee Track (Right to Left) */}
           <div className="overflow-hidden w-full flex">
@@ -176,7 +170,7 @@ export function Footer() {
                 isPaused ? "[animation-play-state:paused]" : ""
               }`}
               style={{
-                animation: "marquee-rtl 65s linear infinite",
+                animation: "marquee-rtl 60s linear infinite",
               }}
               onMouseEnter={() => setIsPaused(true)}
               onMouseLeave={() => setIsPaused(false)}
@@ -192,7 +186,7 @@ export function Footer() {
                   <Link
                     key={`${movie.slug}-${idx}`}
                     href={`/watch/${movie.slug}`}
-                    className="group flex items-center gap-3 p-2 pr-4 rounded-2xl bg-[#14161f]/90 hover:bg-[#1f2230] border border-white/10 hover:border-rose-500/50 transition-all duration-200 shrink-0 hover:scale-105 shadow-md cursor-pointer"
+                    className="group flex items-center gap-3 p-2 pr-4 rounded-2xl bg-neutral-900/80 hover:bg-neutral-800/90 border border-white/10 hover:border-white/30 transition-all duration-200 shrink-0 hover:scale-105 shadow-md cursor-pointer"
                   >
                     <div className="w-10 h-14 rounded-xl overflow-hidden bg-neutral-900 border border-white/10 shrink-0 relative flex items-center justify-center">
                       {imgProxyUrl ? (
@@ -211,7 +205,7 @@ export function Footer() {
                       )}
                     </div>
                     <div className="flex flex-col gap-1 text-left">
-                      <span className="text-xs font-bold text-white group-hover:text-rose-400 transition-colors line-clamp-1 max-w-[160px]">
+                      <span className="text-xs font-bold text-white group-hover:text-neutral-200 transition-colors line-clamp-1 max-w-[160px]">
                         {movie.name}
                       </span>
                       <div className="flex items-center gap-2 text-[10px] text-neutral-400 font-mono">
@@ -228,11 +222,10 @@ export function Footer() {
         </div>
 
         {/* Middle Section: Newsletter + Link Columns */}
-        <div className="grid lg:grid-cols-[1fr_1.35fr] divide-y lg:divide-y-0 lg:divide-x divide-white/[0.08]">
+        <div className="grid lg:grid-cols-[1fr_1.35fr] divide-y lg:divide-y-0 lg:divide-x divide-white/10">
           {/* Left: Newsletter Box */}
-          <div className="p-8 md:p-12 relative flex flex-col justify-between overflow-hidden bg-[#0d0e14]/60">
-            {/* Wavy background lines texture */}
-            <div className="absolute inset-0 opacity-[0.07] pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
+          <div className="p-8 md:p-12 relative flex flex-col justify-between overflow-hidden bg-neutral-900/30">
+            <div className="absolute inset-0 opacity-[0.05] pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
 
             <div>
               <h4 className="text-lg md:text-xl font-bold text-white mb-2 tracking-tight">
@@ -243,7 +236,7 @@ export function Footer() {
               </p>
 
               <form onSubmit={handleSubscribe} className="relative max-w-sm">
-                <div className="flex items-center rounded-2xl bg-neutral-900/90 border border-white/15 p-1.5 focus-within:border-rose-500/60 transition-all shadow-inner">
+                <div className="flex items-center rounded-2xl bg-neutral-900 border border-white/15 p-1.5 focus-within:border-white/40 transition-colors shadow-inner">
                   <input
                     type="email"
                     required
@@ -254,7 +247,7 @@ export function Footer() {
                   />
                   <button
                     type="submit"
-                    className="shrink-0 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold font-mono transition-all hover:scale-105 active:scale-95 border border-white/15 shadow-md cursor-pointer"
+                    className="shrink-0 px-5 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold font-mono transition-all hover:scale-105 active:scale-95 border border-white/15 shadow-md cursor-pointer"
                   >
                     {subscribed ? "Subscribed!" : "Subscribe"}
                   </button>
@@ -277,7 +270,7 @@ export function Footer() {
                         href={link.href}
                         target={(link as any).external ? "_blank" : undefined}
                         rel={(link as any).external ? "noopener noreferrer" : undefined}
-                        className="text-xs font-mono text-neutral-300 hover:text-rose-400 transition-colors"
+                        className="text-xs font-mono text-neutral-400 hover:text-white transition-colors"
                       >
                         {link.label}
                       </Link>
@@ -290,13 +283,13 @@ export function Footer() {
         </div>
 
         {/* Bottom copyright bar inside card */}
-        <div className="border-t border-white/[0.08] px-8 md:px-12 py-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] font-mono tracking-widest text-neutral-500 uppercase bg-[#090a0e]/80">
+        <div className="border-t border-white/10 px-8 md:px-12 py-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] font-mono tracking-widest text-neutral-500 uppercase bg-black/40">
           <span>RELEASED UNDER MIT LICENSE / COPYRIGHT © 2024 - {year} CINEVERSE</span>
           <span>DESIGNED BY TEAM CINEVERSE / HOSTED ON VERCEL</span>
         </div>
       </div>
 
-      {/* ── Cat GIF Meme Section (Giữ nguyên hình gif mèo theo yêu cầu) ── */}
+      {/* ── Cat GIF Meme Section ── */}
       {catSrc && (
         <div className="relative z-10 flex justify-center pt-8 pb-2">
           <motion.div
@@ -312,7 +305,7 @@ export function Footer() {
               alt="Mèo meme ngẫu nhiên"
               width={90}
               height={90}
-              className="rounded-xl object-cover border border-white/20 shadow-[0_10px_30px_rgba(225,29,72,0.3)] group-hover:scale-110 transition-transform duration-300"
+              className="rounded-xl object-cover border border-white/15 shadow-lg group-hover:scale-105 transition-transform duration-300"
               unoptimized
             />
           </motion.div>
