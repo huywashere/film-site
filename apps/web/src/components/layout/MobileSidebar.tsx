@@ -69,17 +69,15 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             className="flex items-center space-x-3"
             onClick={onClose}
           >
-            <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center shadow-lg">
-              <FilmIcon size={20} className="text-white" strokeWidth={2.5} />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-white text-xl font-black tracking-tight lowercase">
-                cineverse
-              </span>
-              <span className="text-neutral-400 text-[10px] font-semibold uppercase tracking-widest">
-                Xem Phim Online
-              </span>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/cinephim-logo.png"
+              alt="CinePhim Logo"
+              className="h-8 sm:h-9 w-auto object-contain"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = "/logo.png";
+              }}
+            />
           </Link>
           <button
             onClick={onClose}

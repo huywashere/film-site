@@ -280,16 +280,16 @@ export function Navbar() {
         <div className="w-full px-4 md:px-8 flex items-center justify-between gap-3 md:gap-6 relative">
           {/* Left Block: Logo (shrink-0 ensures it NEVER gets overlapped) */}
           <div className="flex items-center shrink-0">
-            <Link href="/" className="flex items-center space-x-1.5 group">
-              <span
-                className="text-foreground text-xl sm:text-2xl font-black tracking-tighter lowercase"
-                style={{
-                  fontFamily: "'Bebas Neue', sans-serif",
-                  letterSpacing: "-0.02em",
+            <Link href="/" className="flex items-center space-x-2 group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/cinephim-logo.png"
+                alt="CinePhim Logo"
+                className="h-8 sm:h-9 w-auto object-contain transition-transform group-hover:scale-105"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "/logo.png";
                 }}
-              >
-                cineverse
-              </span>
+              />
             </Link>
           </div>
 
