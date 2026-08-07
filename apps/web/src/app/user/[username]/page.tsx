@@ -267,16 +267,14 @@ export default function UserDashboardPage() {
   );
 
   return (
-    <main className="min-h-[100dvh] bg-[#05070a] text-white pb-28 pt-20 lg:pl-24 lg:pr-10 px-4 font-sans select-none overflow-x-hidden">
-      {/* ── Apple-style Ambient Aura Lighting Effects ── */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[600px] bg-[radial-gradient(circle_at_50%_-10%,rgba(16,185,129,0.12),transparent_70%)]" />
-      <div className="pointer-events-none absolute top-48 right-12 w-[500px] h-[500px] bg-purple-600/8 blur-[160px] rounded-full" />
-      <div className="pointer-events-none absolute top-96 left-12 w-[400px] h-[400px] bg-cyan-600/8 blur-[160px] rounded-full" />
+    <main className="min-h-[100dvh] bg-background text-foreground pb-28 pt-20 lg:pl-24 lg:pr-10 px-4 font-sans select-none overflow-x-hidden">
+      {/* ── Apple-style Ambient Aura Lighting Effects (Ultra-Minimalist Dark) ── */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[600px] bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.03),transparent_70%)]" />
 
       <div className="relative z-10 max-w-[1440px] mx-auto space-y-8">
 
         {/* ── TOP HERO COVER BANNER (LINEAR / APPLE ID ULTRA-MINIMALIST AESTHETIC) ── */}
-        <div className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#0a0c10] shadow-[0_30px_90px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
+        <div className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-neutral-950 shadow-[0_30px_90px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
           
           {/* Dynamic Blurred Cinema Atmosphere Cover Backdrop */}
           <div className="relative h-44 sm:h-60 w-full overflow-hidden">
@@ -284,10 +282,10 @@ export default function UserDashboardPage() {
             <img
               src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop"
               alt="Cinema Cover"
-              className="w-full h-full object-cover object-center brightness-[0.6] saturate-125 transition-transform duration-1000 scale-105"
+              className="w-full h-full object-cover object-center brightness-[0.4] transition-transform duration-1000 scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0c10] via-[#0a0c10]/60 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0a0c10]/90 via-transparent to-[#0a0c10]/90" />
+            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/60 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-neutral-950/90 via-transparent to-neutral-950/90" />
 
             {/* Glass Action Toolbar */}
             <div className="absolute top-5 right-5 flex items-center gap-2.5 z-20">
@@ -296,15 +294,15 @@ export default function UserDashboardPage() {
                   navigator.clipboard.writeText(window.location.href);
                   toast("Đã sao chép liên kết trang cá nhân!", "success");
                 }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/40 hover:bg-black/60 border border-white/15 text-xs font-mono font-bold text-neutral-200 backdrop-blur-xl transition-all active:scale-95 cursor-pointer shadow-lg"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/50 hover:bg-black/80 border border-white/15 text-xs font-mono font-bold text-neutral-200 backdrop-blur-xl transition-all active:scale-95 cursor-pointer shadow-lg"
               >
-                <Share2 size={13} className="text-emerald-400" /> Chia sẻ trang
+                <Share2 size={13} className="text-neutral-400" /> Chia sẻ trang
               </button>
 
               {user && (
                 <button
                   onClick={() => setShowLogoutModal(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-xs font-mono font-bold text-rose-300 backdrop-blur-xl transition-all active:scale-95 cursor-pointer shadow-lg"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-mono font-bold text-neutral-300 backdrop-blur-xl transition-all active:scale-95 cursor-pointer shadow-lg"
                 >
                   <LogOut size={13} /> Thoát
                 </button>
@@ -316,15 +314,10 @@ export default function UserDashboardPage() {
           <div className="relative px-6 sm:px-10 pb-8 -mt-16 sm:-mt-20 z-20 flex flex-col md:flex-row items-center md:items-end justify-between gap-6 text-center md:text-left">
             <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6">
               
-              {/* Avatar Box with Glowing Halo Ring */}
+              {/* Avatar Box */}
               <div className="relative group shrink-0">
                 <div
-                  className={cn(
-                    "w-28 h-28 sm:w-36 sm:h-36 rounded-[28px] overflow-hidden border-4 border-[#0a0c10] bg-[#12151c] relative flex items-center justify-center transition-all duration-300",
-                    isAdmin
-                      ? "ring-2 ring-white/80 shadow-lg"
-                      : "ring-2 ring-emerald-400/50 shadow-[0_0_40px_rgba(52,211,153,0.25)] group-hover:ring-emerald-400",
-                  )}
+                  className="w-28 h-28 sm:w-36 sm:h-36 rounded-[28px] overflow-hidden border-4 border-neutral-950 bg-neutral-900 relative flex items-center justify-center transition-all duration-300 ring-2 ring-white/20 shadow-xl"
                 >
                   <img
                     src={
@@ -332,7 +325,7 @@ export default function UserDashboardPage() {
                       profile.avatarUrl ||
                       `https://ui-avatars.com/api/?name=${encodeURIComponent(
                         displayName || profile.username || "User",
-                      )}&background=059669&color=ffffff`
+                      )}&background=171717&color=ffffff`
                     }
                     alt={profile.username}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -340,7 +333,7 @@ export default function UserDashboardPage() {
                 </div>
                 <button
                   onClick={() => setShowAvatarPicker(true)}
-                  className="absolute -bottom-1 -right-1 p-2.5 rounded-2xl bg-emerald-400 text-black shadow-xl hover:scale-110 active:scale-95 transition-all cursor-pointer border-2 border-[#0a0c10]"
+                  className="absolute -bottom-1 -right-1 p-2.5 rounded-2xl bg-white text-black shadow-xl hover:scale-110 active:scale-95 transition-all cursor-pointer border-2 border-neutral-950"
                   title="Thay đổi avatar"
                 >
                   <Camera size={16} strokeWidth={2.5} />
@@ -358,8 +351,8 @@ export default function UserDashboardPage() {
                       👑 ADMIN FOUNDER
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/30 text-emerald-300 text-[10px] font-mono font-bold uppercase tracking-widest shadow-sm backdrop-blur-md">
-                      <Crown size={12} className="text-emerald-400 fill-emerald-400 animate-pulse" /> ULTRA VIP 4K
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-neutral-300 text-[10px] font-mono font-bold uppercase tracking-widest backdrop-blur-md">
+                      <Crown size={12} className="text-neutral-400" /> ULTRA VIP 4K
                     </span>
                   )}
                 </div>
@@ -371,12 +364,12 @@ export default function UserDashboardPage() {
                       👑 Quản Trị Viên (Admin)
                     </span>
                   ) : (
-                    <span className="text-emerald-400 font-bold">Thành viên CineVerse Premium</span>
+                    <span className="text-neutral-300 font-bold">Thành viên CineVerse Premium</span>
                   )}
                 </p>
 
                 {profile.bio && (
-                  <p className="text-xs text-neutral-300 max-w-lg pt-1 leading-relaxed font-medium">
+                  <p className="text-xs text-neutral-400 max-w-lg pt-1 leading-relaxed font-medium">
                     {profile.bio}
                   </p>
                 )}
@@ -386,7 +379,7 @@ export default function UserDashboardPage() {
             {/* Member Quick Stats Pill Stack */}
             <div className="flex items-center gap-3">
               <div className="px-5 py-3 rounded-2xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-md text-center min-w-[100px]">
-                <span className="text-sm font-mono font-black text-emerald-400 block">
+                <span className="text-sm font-mono font-black text-white block">
                   {watchlistItems.length}
                 </span>
                 <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-widest block mt-0.5">
@@ -395,7 +388,7 @@ export default function UserDashboardPage() {
               </div>
 
               <div className="px-5 py-3 rounded-2xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-md text-center min-w-[100px]">
-                <span className="text-sm font-mono font-black text-amber-400 block">
+                <span className="text-sm font-mono font-black text-white block">
                   {historyItems.length}
                 </span>
                 <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-widest block mt-0.5">
@@ -404,7 +397,7 @@ export default function UserDashboardPage() {
               </div>
 
               <div className="px-5 py-3 rounded-2xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-md text-center min-w-[100px]">
-                <span className="text-sm font-mono font-black text-purple-400 block">
+                <span className="text-sm font-mono font-black text-white block">
                   100%
                 </span>
                 <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-widest block mt-0.5">
@@ -419,7 +412,7 @@ export default function UserDashboardPage() {
         <div className="grid lg:grid-cols-[280px_1fr] gap-8 items-start">
           
           {/* Left Sticky Sidebar Navigation */}
-          <aside className="lg:sticky lg:top-24 rounded-3xl border border-white/[0.08] bg-[#0a0c10] p-3 space-y-1 shadow-2xl backdrop-blur-xl">
+          <aside className="lg:sticky lg:top-24 rounded-3xl border border-white/[0.08] bg-neutral-950 p-3 space-y-1 shadow-2xl backdrop-blur-xl">
             <div className="px-4 py-3 border-b border-white/[0.06] mb-2">
               <span className="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-[0.2em]">
                 DANH MỤC QUẢN LÝ
@@ -442,7 +435,7 @@ export default function UserDashboardPage() {
                   onClick={() => setActiveTab(tab.id as TabType)}
                   className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-bold transition-all duration-300 cursor-pointer ${
                     isActive
-                      ? "bg-emerald-400 text-black shadow-lg shadow-emerald-400/20 font-black translate-x-1"
+                      ? "bg-white text-black shadow-lg font-black translate-x-1"
                       : "text-neutral-400 hover:text-white hover:bg-white/[0.05]"
                   }`}
                 >
@@ -461,7 +454,7 @@ export default function UserDashboardPage() {
                 className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold text-neutral-400 hover:text-white hover:bg-white/[0.05] transition-all"
               >
                 <div className="flex items-center gap-3">
-                  <Lock size={16} className="text-amber-400" />
+                  <Lock size={16} className="text-neutral-400" />
                   <span>Bảo mật & Mật khẩu</span>
                 </div>
                 <ArrowUpRight size={14} className="text-neutral-500" />
@@ -470,7 +463,7 @@ export default function UserDashboardPage() {
           </aside>
 
           {/* Right Main Content Workspace */}
-          <div className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#0a0c10] p-6 sm:p-10 shadow-2xl backdrop-blur-xl min-h-[620px]">
+          <div className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-neutral-950 p-6 sm:p-10 shadow-2xl backdrop-blur-xl min-h-[620px]">
             
             {/* ── TAB 1: THÔNG TIN CÁ NHÂN (ACCOUNT) ── */}
             {activeTab === "account" && (
@@ -478,7 +471,7 @@ export default function UserDashboardPage() {
                 <div className="border-b border-white/[0.08] pb-5 flex items-center justify-between">
                   <div>
                     <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-                      <User size={22} className="text-emerald-400" /> Hồ Sơ Cá Nhân
+                      <User size={22} className="text-neutral-400" /> Hồ Sơ Cá Nhân
                     </h2>
                     <p className="text-xs text-neutral-400 mt-1 font-mono">
                       Cập nhật chi tiết các thông tin định danh trên CineVerse
@@ -496,7 +489,7 @@ export default function UserDashboardPage() {
                       type="email"
                       value={email || `${profile.username}@gmail.com`}
                       readOnly
-                      className="w-full bg-black/50 border border-white/10 text-neutral-400 text-sm font-mono rounded-2xl px-4 py-3.5 outline-none cursor-not-allowed opacity-75"
+                      className="w-full bg-neutral-900 border border-white/10 text-neutral-400 text-sm font-mono rounded-2xl px-4 py-3.5 outline-none cursor-not-allowed opacity-75"
                     />
                   </div>
 
@@ -510,7 +503,7 @@ export default function UserDashboardPage() {
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       placeholder="Nhập tên hiển thị..."
-                      className="w-full bg-black/50 border border-white/15 text-white text-sm font-medium rounded-2xl px-4 py-3.5 outline-none focus:border-emerald-400/80 transition-all placeholder:text-neutral-600"
+                      className="w-full bg-neutral-900 border border-white/15 text-white text-sm font-medium rounded-2xl px-4 py-3.5 outline-none focus:border-white/30 transition-all placeholder:text-neutral-600"
                     />
                   </div>
 
@@ -524,7 +517,7 @@ export default function UserDashboardPage() {
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
                       placeholder="Viết một đoạn giới thiệu ngắn về phong cách xem phim của bạn..."
-                      className="w-full bg-black/50 border border-white/15 text-white text-sm font-medium rounded-2xl px-4 py-3.5 outline-none focus:border-emerald-400/80 transition-all resize-none placeholder:text-neutral-600"
+                      className="w-full bg-neutral-900 border border-white/15 text-white text-sm font-medium rounded-2xl px-4 py-3.5 outline-none focus:border-white/30 transition-all resize-none placeholder:text-neutral-600"
                     />
                   </div>
 
@@ -540,7 +533,7 @@ export default function UserDashboardPage() {
                       type="button"
                       onClick={() => setIsPublicProfile(!isPublicProfile)}
                       className={`w-12 h-6 rounded-full transition-colors p-1 cursor-pointer flex items-center shrink-0 ${
-                        isPublicProfile ? "bg-emerald-400 justify-end" : "bg-neutral-800 justify-start"
+                        isPublicProfile ? "bg-white justify-end" : "bg-neutral-800 justify-start"
                       }`}
                     >
                       <span className="w-4 h-4 bg-black rounded-full shadow-md" />
@@ -552,7 +545,7 @@ export default function UserDashboardPage() {
                     <button
                       type="submit"
                       disabled={updatingProfile}
-                      className="px-8 py-3.5 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-black font-black text-xs transition-all shadow-lg shadow-emerald-400/25 active:scale-95 cursor-pointer flex items-center gap-2"
+                      className="px-8 py-3.5 rounded-2xl bg-white hover:bg-neutral-200 text-black font-extrabold text-xs transition-all shadow-lg active:scale-95 cursor-pointer flex items-center gap-2"
                     >
                       {updatingProfile && <Loader2 size={16} className="animate-spin" />}
                       <span>Lưu Thay Đổi Hồ Sơ</span>
@@ -574,7 +567,7 @@ export default function UserDashboardPage() {
               <div className="space-y-6 animate-fade-in">
                 <div className="border-b border-white/[0.08] pb-5">
                   <h2 className="text-2xl font-black text-white flex items-center gap-2.5">
-                    <Bookmark size={22} className="text-emerald-400" /> Tủ Phim Đã Lưu ({watchlistItems.length})
+                    <Bookmark size={22} className="text-neutral-400" /> Tủ Phim Đã Lưu ({watchlistItems.length})
                   </h2>
                 </div>
 
@@ -591,7 +584,7 @@ export default function UserDashboardPage() {
                         <Link
                           key={item.id}
                           href={`/film/${movie?.slug || item.movieId}`}
-                          className="aspect-[2/3] bg-[#12151e] border border-white/10 rounded-2xl overflow-hidden group relative hover:border-emerald-400/60 transition-all shadow-xl hover:-translate-y-1.5"
+                          className="aspect-[2/3] bg-neutral-900 border border-white/10 rounded-2xl overflow-hidden group relative hover:border-white/30 transition-all shadow-xl hover:-translate-y-1.5"
                         >
                           {thumb ? (
                             <img
@@ -630,7 +623,7 @@ export default function UserDashboardPage() {
               <div className="space-y-6 animate-fade-in">
                 <div className="border-b border-white/[0.08] pb-5">
                   <h2 className="text-2xl font-black text-white flex items-center gap-2.5">
-                    <History size={22} className="text-emerald-400" /> Lịch Sử Xem Phim ({historyItems.length})
+                    <History size={22} className="text-neutral-400" /> Lịch Sử Xem Phim ({historyItems.length})
                   </h2>
                 </div>
 
@@ -648,7 +641,7 @@ export default function UserDashboardPage() {
                       return (
                         <div
                           key={item.id}
-                          className="bg-[#12151e] border border-white/10 hover:border-emerald-400/50 rounded-2xl p-4 flex gap-4 items-center transition-all shadow-md group"
+                          className="bg-neutral-900 border border-white/10 hover:border-white/30 rounded-2xl p-4 flex gap-4 items-center transition-all shadow-md group"
                         >
                           {item.movieThumb ? (
                             <img
@@ -657,7 +650,7 @@ export default function UserDashboardPage() {
                               className="w-14 h-20 object-cover rounded-xl flex-shrink-0 border border-white/10 group-hover:scale-105 transition-transform"
                             />
                           ) : (
-                            <div className="w-14 h-20 bg-neutral-900 rounded-xl flex-shrink-0 flex items-center justify-center text-neutral-600 border border-white/10">
+                            <div className="w-14 h-20 bg-neutral-800 rounded-xl flex-shrink-0 flex items-center justify-center text-neutral-600 border border-white/10">
                               <Film size={22} />
                             </div>
                           )}
@@ -667,7 +660,7 @@ export default function UserDashboardPage() {
                               href={`/watch/${item.movieId}${
                                 item.episode ? `?ep=${item.episode}` : ""
                               }`}
-                              className="font-black text-white text-sm hover:text-emerald-400 transition-colors line-clamp-1 block"
+                              className="font-black text-white text-sm hover:text-white transition-colors line-clamp-1 block"
                             >
                               {item.movieTitle}
                             </Link>
@@ -676,7 +669,7 @@ export default function UserDashboardPage() {
                             </p>
                             <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
                               <div
-                                className="bg-emerald-400 h-full rounded-full"
+                                className="bg-white h-full rounded-full"
                                 style={{ width: `${pct}%` }}
                               />
                             </div>
@@ -686,7 +679,7 @@ export default function UserDashboardPage() {
                             href={`/watch/${item.movieId}${
                               item.episode ? `?ep=${item.episode}` : ""
                             }`}
-                            className="p-3 text-black bg-emerald-400 hover:bg-emerald-300 rounded-xl transition-all shrink-0 shadow-lg active:scale-95"
+                            className="p-3 text-black bg-white hover:bg-neutral-200 rounded-xl transition-all shrink-0 shadow-lg active:scale-95"
                           >
                             <Play size={14} className="fill-current" />
                           </Link>
@@ -708,7 +701,7 @@ export default function UserDashboardPage() {
               <div className="space-y-6 animate-fade-in">
                 <div className="border-b border-white/[0.08] pb-5">
                   <h2 className="text-2xl font-black text-white flex items-center gap-2.5">
-                    <ListVideo size={22} className="text-amber-400" /> Bộ Sưu Tập Phim Chủ Đề
+                    <ListVideo size={22} className="text-neutral-400" /> Bộ Sưu Tập Phim Chủ Đề
                   </h2>
                 </div>
                 <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -723,7 +716,7 @@ export default function UserDashboardPage() {
               <div className="space-y-6 animate-fade-in">
                 <div className="border-b border-white/[0.08] pb-5">
                   <h2 className="text-2xl font-black text-white flex items-center gap-2.5">
-                    <Star size={22} className="text-amber-400 fill-amber-400" /> Đánh Giá Của Tôi
+                    <Star size={22} className="text-neutral-400 fill-neutral-400" /> Đánh Giá Của Tôi
                   </h2>
                 </div>
                 <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -738,11 +731,11 @@ export default function UserDashboardPage() {
               <div className="space-y-8 animate-fade-in">
                 <div className="border-b border-white/[0.08] pb-5">
                   <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-                    <Sliders size={22} className="text-emerald-400" /> Cài Đặt Tiện Ích Trình Phát
+                    <Sliders size={22} className="text-neutral-400" /> Cài Đặt Tiện Ích Trình Phát
                   </h2>
                 </div>
 
-                <div className="bg-[#12151e] border border-white/10 rounded-3xl p-6 space-y-6">
+                <div className="bg-neutral-900 border border-white/10 rounded-3xl p-6 space-y-6">
                   {/* Tự động phát */}
                   <div className="flex items-center justify-between gap-4 pb-5 border-b border-white/10">
                     <div>
@@ -756,7 +749,7 @@ export default function UserDashboardPage() {
                         toast(!autoplay ? "Đã BẬT tự động phát" : "Đã TẮT tự động phát", "success");
                       }}
                       className={`w-12 h-6 rounded-full transition-all p-1 cursor-pointer flex items-center shrink-0 ${
-                        autoplay ? "bg-emerald-400 justify-end" : "bg-neutral-800 justify-start"
+                        autoplay ? "bg-white justify-end" : "bg-neutral-800 justify-start"
                       }`}
                     >
                       <span className="w-4 h-4 bg-black rounded-full shadow-md" />
@@ -776,7 +769,7 @@ export default function UserDashboardPage() {
                         toast(!autoNextEpisode ? "Đã BẬT chuyển tập tiếp theo" : "Đã TẮT chuyển tập", "success");
                       }}
                       className={`w-12 h-6 rounded-full transition-all p-1 cursor-pointer flex items-center shrink-0 ${
-                        autoNextEpisode ? "bg-emerald-400 justify-end" : "bg-neutral-800 justify-start"
+                        autoNextEpisode ? "bg-white justify-end" : "bg-neutral-800 justify-start"
                       }`}
                     >
                       <span className="w-4 h-4 bg-black rounded-full shadow-md" />
@@ -796,7 +789,7 @@ export default function UserDashboardPage() {
                         toast(!theaterMode ? "Đã BẬT chế độ Rạp phim" : "Đã TẮT chế độ Rạp phim", "success");
                       }}
                       className={`w-12 h-6 rounded-full transition-all p-1 cursor-pointer flex items-center shrink-0 ${
-                        theaterMode ? "bg-emerald-400 justify-end" : "bg-neutral-800 justify-start"
+                        theaterMode ? "bg-white justify-end" : "bg-neutral-800 justify-start"
                       }`}
                     >
                       <span className="w-4 h-4 bg-black rounded-full shadow-md" />
