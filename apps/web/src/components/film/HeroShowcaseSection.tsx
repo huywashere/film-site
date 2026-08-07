@@ -83,7 +83,7 @@ export function HeroShowcaseSection({
       </div>
 
       {/* Main 16:9 Showcase Card Container (Matching Form 1) */}
-      <div className="relative w-full rounded-[32px] md:rounded-[40px] overflow-hidden border border-white/10 bg-[#07080c] shadow-[0_30px_90px_rgba(0,0,0,0.95)] min-h-[500px] md:min-h-[550px] flex flex-col justify-between p-6 sm:p-10 md:p-12">
+      <div className="relative w-full rounded-[32px] md:rounded-[40px] overflow-hidden border border-white/10 bg-[#07080c] shadow-[0_30px_90px_rgba(0,0,0,0.95)] h-[540px] sm:h-[580px] md:h-[620px] flex flex-col justify-between p-6 sm:p-10 md:p-12">
         {/* Dynamic Background Image with Smooth Crossfade */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -122,7 +122,7 @@ export function HeroShowcaseSection({
               className="space-y-4"
             >
               {/* Category Glass Badges */}
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 h-7 overflow-hidden">
                 {categories.map((cat, i) => (
                   <span
                     key={i}
@@ -140,12 +140,12 @@ export function HeroShowcaseSection({
               </div>
 
               {/* Title & Origin Name */}
-              <div>
-                <h3 className="text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-[1.08] drop-shadow-lg">
+              <div className="min-h-[4rem] sm:min-h-[5rem] flex flex-col justify-end">
+                <h3 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-[1.1] drop-shadow-lg line-clamp-2">
                   {activeFilm.name}
                 </h3>
                 {activeFilm.origin_name && (
-                  <p className="text-xs sm:text-sm font-semibold text-neutral-400 mt-1.5 font-mono">
+                  <p className="text-xs sm:text-sm font-semibold text-neutral-400 mt-1 font-mono line-clamp-1">
                     {activeFilm.origin_name}{" "}
                     {activeFilm.year ? `(${activeFilm.year})` : ""}
                   </p>
@@ -153,13 +153,13 @@ export function HeroShowcaseSection({
               </div>
 
               {/* Synopsis Snippet */}
-              <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed line-clamp-3 md:line-clamp-4 max-w-xl font-sans drop-shadow">
+              <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed line-clamp-2 sm:line-clamp-3 max-w-xl font-sans drop-shadow h-[2.5rem] sm:h-[3.25rem] overflow-hidden">
                 {activeFilm.content ||
                   "Bộ phim series bom tấn đỉnh cao hứa hẹn những diễn biến bất ngờ và nghẹt thở qua từng tập phim."}
               </p>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-3 pt-3">
+              <div className="flex items-center gap-3 pt-2">
                 <Link
                   href={`/watch/${activeFilm.slug}`}
                   className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-white text-black font-extrabold text-xs sm:text-sm hover:bg-neutral-200 transition-all hover:scale-105 active:scale-95 shadow-2xl cursor-pointer"
