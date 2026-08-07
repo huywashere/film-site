@@ -267,14 +267,11 @@ export default function UserDashboardPage() {
   );
 
   return (
-    <main className="min-h-[100dvh] bg-background text-foreground pb-28 pt-20 lg:pl-24 lg:pr-10 px-4 font-sans select-none overflow-x-hidden">
-      {/* ── Apple-style Ambient Aura Lighting Effects (Ultra-Minimalist Dark) ── */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[600px] bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.03),transparent_70%)]" />
-
+    <main className="min-h-screen bg-black text-white pb-28 pt-20 px-4 sm:px-8 lg:px-12 font-sans select-none overflow-x-hidden">
       <div className="relative z-10 max-w-[1440px] mx-auto space-y-8">
 
-        {/* ── TOP HERO COVER BANNER (LINEAR / APPLE ID ULTRA-MINIMALIST AESTHETIC) ── */}
-        <div className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-neutral-950 shadow-[0_30px_90px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
+        {/* ── TOP HERO COVER BANNER (LINEAR / APPLE ID ULTRA-MINIMALIST PITCH BLACK) ── */}
+        <div className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-black shadow-[0_30px_90px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
           
           {/* Dynamic Blurred Cinema Atmosphere Cover Backdrop */}
           <div className="relative h-44 sm:h-60 w-full overflow-hidden">
@@ -282,10 +279,10 @@ export default function UserDashboardPage() {
             <img
               src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop"
               alt="Cinema Cover"
-              className="w-full h-full object-cover object-center brightness-[0.4] transition-transform duration-1000 scale-105"
+              className="w-full h-full object-cover object-center brightness-[0.3] transition-transform duration-1000 scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/60 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-neutral-950/90 via-transparent to-neutral-950/90" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-transparent to-black/90" />
 
             {/* Glass Action Toolbar */}
             <div className="absolute top-5 right-5 flex items-center gap-2.5 z-20">
@@ -412,7 +409,7 @@ export default function UserDashboardPage() {
         <div className="grid lg:grid-cols-[280px_1fr] gap-8 items-start">
           
           {/* Left Sticky Sidebar Navigation */}
-          <aside className="lg:sticky lg:top-24 rounded-3xl border border-white/[0.08] bg-neutral-950 p-3 space-y-1 shadow-2xl backdrop-blur-xl">
+          <aside className="lg:sticky lg:top-24 rounded-3xl border border-white/[0.08] bg-black p-3 space-y-1 shadow-2xl backdrop-blur-xl">
             <div className="px-4 py-3 border-b border-white/[0.06] mb-2">
               <span className="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-[0.2em]">
                 DANH MỤC QUẢN LÝ
@@ -463,7 +460,7 @@ export default function UserDashboardPage() {
           </aside>
 
           {/* Right Main Content Workspace */}
-          <div className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-neutral-950 p-6 sm:p-10 shadow-2xl backdrop-blur-xl min-h-[620px]">
+          <div className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-black p-6 sm:p-10 shadow-2xl backdrop-blur-xl min-h-[620px]">
             
             {/* ── TAB 1: THÔNG TIN CÁ NHÂN (ACCOUNT) ── */}
             {activeTab === "account" && (
