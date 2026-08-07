@@ -84,12 +84,12 @@ export function Top10RankedRow({
                           color: "transparent",
                           WebkitTextStroke:
                             rank === 1
-                              ? "4px #ffffff"
+                              ? "4.5px #e50914"
                               : rank === 2
-                                ? "4px #e5e5e5"
+                                ? "4.5px #38bdf8"
                                 : rank === 3
-                                  ? "4px #d4d4d4"
-                                  : "3.5px #525252",
+                                  ? "4.5px #f59e0b"
+                                  : "3.5px #475569",
                           fontFamily:
                             "'Montserrat', 'Russo One', 'Barlow Semi Condensed', sans-serif",
                           fontWeight: 900,
