@@ -4,12 +4,27 @@ import { useEffect } from "react";
 
 /**
  * CineVerse Media & Asset Protection Guard
- * Allows normal browser DevTools usage while preventing image dragging, 
- * image right-clicking, and direct asset hotlinking/copying.
+ * 1. Print Self-XSS Console Warning (Facebook/Discord Style)
+ * 2. Prevent dragging images to desktop / new tab
+ * 3. Prevent right-click "Save image as" on media elements
  */
 export function AssetProtectionGuard() {
   useEffect(() => {
-    // 1. Prevent dragging images to new tab or desktop
+    // Print Self-XSS Defense Warning Banner in Browser Console
+    if (typeof window !== "undefined") {
+      setTimeout(() => {
+        console.log(
+          "%cDỪNG LẠI! (STOP!)",
+          "color: #e50914; font-size: 40px; font-weight: bold; -webkit-text-stroke: 1px black;"
+        );
+        console.log(
+          "%cĐây là tính năng dành riêng cho lập trình viên. Nếu có ai bảo bạn dán bất kỳ mã nào vào đây, ĐÓ LÀ HÀNH VI LỪA ĐẢO nhằm chiếm đoạt tài khoản!",
+          "font-size: 16px; color: #ffffff; background: #111; padding: 8px; border-radius: 4px;"
+        );
+      }, 500);
+    }
+
+    // Prevent dragging images & videos to new tab or desktop
     const handleDragStart = (e: DragEvent) => {
       const target = e.target as HTMLElement | null;
       if (target && (target.tagName === "IMG" || target.tagName === "VIDEO" || target.closest("img"))) {
@@ -18,7 +33,7 @@ export function AssetProtectionGuard() {
       }
     };
 
-    // 2. Prevent right-clicking specifically on image & video elements to block "Save image as..."
+    // Prevent right-clicking specifically on image & video elements to block "Save image as..."
     const handleContextMenu = (e: MouseEvent) => {
       const target = e.target as HTMLElement | null;
       if (target && (target.tagName === "IMG" || target.tagName === "VIDEO" || target.closest("img"))) {
