@@ -280,16 +280,19 @@ export function Navbar() {
         <div className="w-full px-4 md:px-8 flex items-center justify-between gap-3 md:gap-6 relative">
           {/* Left Block: Logo (shrink-0 ensures it NEVER gets overlapped) */}
           <div className="flex items-center shrink-0">
-            <Link href="/" className="flex items-center space-x-2 group">
+            <Link href="/" className="flex items-center space-x-2.5 group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/cinephim-logo.png"
                 alt="CinePhim Logo"
-                className="h-8 sm:h-9 w-auto object-contain transition-transform group-hover:scale-105"
+                className="h-8 sm:h-9 w-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_12px_rgba(168,85,247,0.3)]"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = "/logo.png";
                 }}
               />
+              <span className="text-white text-xl sm:text-2xl font-black tracking-tight lowercase font-sans group-hover:text-purple-300 transition-colors">
+                cinephim
+              </span>
             </Link>
           </div>
 

@@ -53,6 +53,8 @@ export const metadata: Metadata = {
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { ScrollToTopButton } from "@/components/layout/ScrollToTop";
 
+import { InitialSplashLoader } from "@/components/layout/InitialSplashLoader";
+
 export default function RootLayout({
   children,
 }: {
@@ -61,8 +63,8 @@ export default function RootLayout({
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "CineVerse",
-    alternateName: "CineVerse Phim Online 4K",
+    name: "CinePhim",
+    alternateName: "CinePhim Xem Phim Online 4K",
     url: "https://cineverse-movie.vercel.app",
     potentialAction: {
       "@type": "SearchAction",
@@ -96,6 +98,7 @@ export default function RootLayout({
         />
       </head>
       <body suppressHydrationWarning>
+        <InitialSplashLoader />
         <ThemeWatcher />
         <RegisterSW />
         <AntiDevTools />

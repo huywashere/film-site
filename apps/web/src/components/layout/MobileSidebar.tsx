@@ -66,7 +66,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         <div className="px-6 py-5 border-b border-white/10 flex items-center justify-between">
           <Link
             href="/"
-            className="flex items-center space-x-3"
+            className="flex items-center space-x-2.5"
             onClick={onClose}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -78,6 +78,9 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 (e.currentTarget as HTMLImageElement).src = "/logo.png";
               }}
             />
+            <span className="text-white text-xl font-black tracking-tight lowercase font-sans">
+              cinephim
+            </span>
           </Link>
           <button
             onClick={onClose}
