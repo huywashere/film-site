@@ -15,6 +15,9 @@ import {
   History,
   Star,
   Layers,
+  Heart,
+  Film,
+  Languages,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useRef } from "react";
@@ -35,9 +38,11 @@ function TelegramIcon({ className, size = 20 }: { className?: string; size?: num
 
 const SIDEBAR_ITEMS = [
   { title: "Trang chủ", href: "/", icon: Home },
+  { title: "Phim Hàn", href: "/country/han-quoc", icon: Heart },
+  { title: "Phim Trung", href: "/country/trung-quoc", icon: Film },
+  { title: "Phim Song Ngữ", href: "/search?q=song%20ngu", icon: Languages },
   { title: "Duyệt Phim", href: "/films", icon: Tv },
   { title: "Thế Giới Phim", href: "/genres", icon: Flame },
-  { title: "Phim Hot", href: "/country/han-quoc", icon: Star },
   { title: "Xem Chung", href: "/watch-party", icon: Popcorn },
   { title: "Bộ Sưu Tập", href: "/watchlist", icon: Layers },
   { title: "Lịch Sử", href: "/history", icon: History },
