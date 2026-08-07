@@ -41,10 +41,6 @@ export function Sidebar() {
 
   const isHomePage = pathname === "/";
   const isAuthPage = pathname === "/login" || pathname === "/register";
-  const isUserPage =
-    pathname.startsWith("/user") ||
-    pathname.startsWith("/profile") ||
-    pathname.startsWith("/settings");
 
   useEffect(() => {
     try {
@@ -93,7 +89,7 @@ export function Sidebar() {
 
   const isVisible = !isHomePage || scrolledPastBanner;
 
-  if (isAuthPage || isUserPage) return null;
+  if (isAuthPage) return null;
 
   return (
     <>
