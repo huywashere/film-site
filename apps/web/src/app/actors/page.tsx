@@ -103,17 +103,18 @@ export default function ActorsPage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-background text-foreground pl-4 lg:pl-24 pr-4 md:pr-10 pt-20 sm:pt-24 pb-24">
-      {/* Minimalist Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-6 border-b border-white/10 gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">
-            Diễn Viên Nổi Tiếng
-          </h1>
-          <p className="mt-1 text-xs text-neutral-400">
-            {displayPeople.length} diễn viên điện ảnh nổi tiếng
-          </p>
-        </div>
+    <div className="w-full min-h-screen bg-background text-foreground pt-20 sm:pt-24 pb-24 px-4 sm:px-8 md:px-12 lg:pl-28 lg:pr-12">
+      <div className="max-w-7xl mx-auto">
+        {/* Minimalist Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-6 border-b border-white/10 gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">
+              Diễn Viên Nổi Tiếng
+            </h1>
+            <p className="mt-1 text-xs text-neutral-400">
+              {displayPeople.length} diễn viên điện ảnh nổi tiếng
+            </p>
+          </div>
 
         {/* Minimalist Search Box */}
         <form onSubmit={handleSearch} className="relative w-full md:w-80">
@@ -153,5 +154,6 @@ export default function ActorsPage() {
         </div>
       )}
     </div>
+  </div>
   );
 }

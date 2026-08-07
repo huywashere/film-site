@@ -54,8 +54,8 @@ export function HeroShowcaseSection({
       {/* Section Header */}
       <div className="flex items-center justify-between mb-4 px-1">
         <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/25 text-rose-400 text-[11px] font-mono font-bold tracking-wider uppercase shadow-sm">
-            <Sparkles size={12} className="text-rose-400 animate-pulse" />
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/5 border border-white/10 text-neutral-300 text-[11px] font-mono font-bold tracking-wider uppercase shadow-sm">
+            <Sparkles size={12} className="text-neutral-400" />
             <span>{badge}</span>
           </span>
           <h2 className="text-xl md:text-3xl font-black text-white tracking-tight">
@@ -229,7 +229,7 @@ export function HeroShowcaseSection({
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent opacity-90" />
                   {isActive && (
-                    <div className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white animate-pulse" />
+                    <div className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-white ring-2 ring-black" />
                   )}
                   <span className="absolute bottom-2 left-2.5 right-2.5 text-[11px] font-bold text-white line-clamp-1 text-left drop-shadow">
                     {film.name}

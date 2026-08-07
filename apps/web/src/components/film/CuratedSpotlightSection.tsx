@@ -57,7 +57,7 @@ export function CuratedSpotlightSection({
       {/* Section Header (Matching Form 2) */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-5 gap-3 px-1">
         <div>
-          <span className="text-[10px] font-mono font-bold tracking-[0.2em] text-rose-400 uppercase">
+          <span className="text-[10px] font-mono font-bold tracking-[0.2em] text-neutral-400 uppercase">
             {badge}
           </span>
           <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight mt-0.5">
@@ -132,7 +132,7 @@ export function CuratedSpotlightSection({
           {/* Spotlight Header Badge */}
           <div className="relative z-20 flex items-center justify-between">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white/90 text-xs font-mono font-bold tracking-wider shadow-md">
-              <Sparkles size={13} className="text-amber-400" />
+              <Sparkles size={13} className="text-neutral-400" />
               <span>
                 TIÊU ĐIỂM 0{activeIndex + 1} / 0{spotlightList.length}
               </span>
@@ -158,7 +158,7 @@ export function CuratedSpotlightSection({
                   {activeFilm.episode_current && (
                     <>
                       <span>•</span>
-                      <span className="text-rose-400">
+                      <span className="text-neutral-300">
                         {activeFilm.episode_current}
                       </span>
                     </>
