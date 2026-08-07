@@ -31,6 +31,16 @@ body {
   font-optical-sizing: auto;
 }
 
+/* Asset & Image Drag/Copy Protection */
+img, video {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+  user-select: none;
+}
+
 /* Error routes are full-screen states; none of the regular site chrome may
    compete with them. :has() also applies before the client status marker runs. */
 body:has(.status-page),
