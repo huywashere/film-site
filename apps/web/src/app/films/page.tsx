@@ -149,13 +149,13 @@ export default function BrowseFilmsPage() {
 
   return (
     <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 pt-20 sm:pt-24 pb-20 bg-background min-h-screen text-foreground select-none font-sans">
-      {/* ── Page Title Header (Centered) ── */}
+      {/* ── Page Title Header (Centered & Ultra-Minimalist) ── */}
       <div className="flex flex-col items-center justify-center text-center gap-3 mb-10 pb-6 border-b border-white/5 max-w-3xl mx-auto">
         <div className="flex items-center gap-2">
-          <div className="p-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500">
-            <Clapperboard size={20} />
+          <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-neutral-400">
+            <Clapperboard size={18} />
           </div>
-          <span className="text-xs font-extrabold uppercase tracking-widest text-red-500">
+          <span className="text-xs font-bold uppercase tracking-widest text-neutral-400">
             Bộ Lọc Điện Ảnh
           </span>
         </div>
@@ -180,17 +180,17 @@ export default function BrowseFilmsPage() {
               setPage(1);
             }}
             placeholder="Tìm tên phim, đạo diễn..."
-            className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none focus:border-red-500/80 transition-colors shadow-inner"
+            className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none focus:border-white/30 transition-colors shadow-inner"
           />
         </div>
       </div>
 
-      {/* ── Filter Controls Matrix ── */}
-      <div className="bg-[#10141b]/80 border border-white/10 rounded-3xl p-5 mb-8 backdrop-blur-xl shadow-2xl space-y-4">
+      {/* ── Filter Controls Matrix (Ultra-Minimalist Dark) ── */}
+      <div className="bg-neutral-950/80 border border-white/10 rounded-3xl p-5 mb-8 backdrop-blur-xl shadow-2xl space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <SlidersHorizontal size={16} className="text-emerald-400" />
-            <span className="text-xs font-bold uppercase tracking-wider text-white">
+            <SlidersHorizontal size={16} className="text-neutral-400" />
+            <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">
               Bộ Lọc Tìm Kiếm
             </span>
           </div>
@@ -198,7 +198,7 @@ export default function BrowseFilmsPage() {
           {isFiltered && (
             <button
               onClick={handleReset}
-              className="flex items-center gap-1.5 text-xs font-bold text-neutral-400 hover:text-red-400 transition-colors px-3 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10"
+              className="flex items-center gap-1.5 text-xs font-bold text-neutral-400 hover:text-white transition-colors px-3 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10"
             >
               <RotateCcw size={12} />
               <span>Đặt lại bộ lọc</span>
@@ -209,7 +209,7 @@ export default function BrowseFilmsPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
           {/* Genre Select */}
           <div>
-            <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
               Thể Loại
             </label>
             <select
@@ -218,7 +218,7 @@ export default function BrowseFilmsPage() {
                 setSelectedGenre(e.target.value);
                 setPage(1);
               }}
-              className="w-full bg-[#181f28] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 transition-colors cursor-pointer"
+              className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-neutral-200 focus:outline-none focus:border-white/30 transition-colors cursor-pointer"
             >
               <option value="">Tất cả thể loại</option>
               {GENRES_LIST.map((g) => (
@@ -231,7 +231,7 @@ export default function BrowseFilmsPage() {
 
           {/* Country Select */}
           <div>
-            <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
               Quốc Gia
             </label>
             <select
@@ -240,7 +240,7 @@ export default function BrowseFilmsPage() {
                 setSelectedCountry(e.target.value);
                 setPage(1);
               }}
-              className="w-full bg-[#181f28] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 transition-colors cursor-pointer"
+              className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-neutral-200 focus:outline-none focus:border-white/30 transition-colors cursor-pointer"
             >
               <option value="">Tất cả quốc gia</option>
               {COUNTRIES_LIST.map((c) => (
@@ -253,7 +253,7 @@ export default function BrowseFilmsPage() {
 
           {/* Year Select */}
           <div>
-            <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
               Năm Phát Hành
             </label>
             <select
@@ -262,7 +262,7 @@ export default function BrowseFilmsPage() {
                 setSelectedYear(e.target.value);
                 setPage(1);
               }}
-              className="w-full bg-[#181f28] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 transition-colors cursor-pointer"
+              className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-neutral-200 focus:outline-none focus:border-white/30 transition-colors cursor-pointer"
             >
               <option value="">Tất cả các năm</option>
               {YEARS.map((y) => (
@@ -275,7 +275,7 @@ export default function BrowseFilmsPage() {
 
           {/* Type Select */}
           <div>
-            <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
               Định Dạng
             </label>
             <select
@@ -284,7 +284,7 @@ export default function BrowseFilmsPage() {
                 setSelectedType(e.target.value);
                 setPage(1);
               }}
-              className="w-full bg-[#181f28] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 transition-colors cursor-pointer"
+              className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-neutral-200 focus:outline-none focus:border-white/30 transition-colors cursor-pointer"
             >
               {TYPES.map((t) => (
                 <option key={t.value} value={t.value}>
@@ -296,13 +296,13 @@ export default function BrowseFilmsPage() {
 
           {/* Sort Select */}
           <div>
-            <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
               Sắp Xếp
             </label>
             <select
               value={selectedSort}
               onChange={(e) => setSelectedSort(e.target.value)}
-              className="w-full bg-[#181f28] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 transition-colors cursor-pointer"
+              className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-neutral-200 focus:outline-none focus:border-white/30 transition-colors cursor-pointer"
             >
               {SORTS.map((s) => (
                 <option key={s.value} value={s.value}>
@@ -335,7 +335,7 @@ export default function BrowseFilmsPage() {
           </p>
           <button
             onClick={handleReset}
-            className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-xl transition-all shadow-lg active:scale-95"
+            className="px-6 py-2.5 bg-white text-black font-extrabold text-xs rounded-xl hover:bg-neutral-200 transition-all shadow-lg active:scale-95 cursor-pointer"
           >
             Bỏ chọn bộ lọc
           </button>
