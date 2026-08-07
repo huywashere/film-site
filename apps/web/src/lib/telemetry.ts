@@ -8,6 +8,8 @@ type TelemetryProperties = Record<
 >;
 
 const MAX_PROPERTIES = 12;
+let lastTelemetryTime = 0;
+const TELEMETRY_DEBOUNCE_MS = 3000;
 
 function cleanProperties(properties: TelemetryProperties = {}) {
   return Object.fromEntries(
@@ -21,9 +23,8 @@ function cleanProperties(properties: TelemetryProperties = {}) {
 }
 
 /**
- * Reports anonymous client-side operational events. The request intentionally
- * bypasses the shared Axios client so telemetry can never recursively report
- * its own failures.
+ * Reports anonymous client-side operational events.
+ * Debounced to prevent infinite loops when rate-limited.
  */
 export function recordTelemetry(
   name: string,
@@ -31,6 +32,13 @@ export function recordTelemetry(
   level: TelemetryLevel = "info",
 ) {
   if (typeof window === "undefined") return;
+
+  // Rate limit client telemetry calls to 1 every 3 seconds max
+  const now = Date.now();
+  if (now - lastTelemetryTime < TELEMETRY_DEBOUNCE_MS) {
+    return;
+  }
+  lastTelemetryTime = now;
 
   if (level === "error") {
     captureMessage(`[Telemetry Error] ${name}`, "error");

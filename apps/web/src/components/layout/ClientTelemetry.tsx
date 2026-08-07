@@ -3,16 +3,19 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { errorMessage, recordTelemetry } from "@/lib/telemetry";
+import { initSentry } from "@/lib/sentry";
 
 export function ClientTelemetry() {
   const pathname = usePathname();
 
   useEffect(() => {
+    initSentry();
     recordTelemetry("route.view", { path: pathname });
   }, [pathname]);
 
   useEffect(() => {
-    const onError = (event: ErrorEvent) =>
+    const onError = (event: ErrorEvent) => {
+      if (event.filename && event.filename.includes("telemetry/client")) return;
       recordTelemetry(
         "frontend.error",
         {
@@ -22,12 +25,16 @@ export function ClientTelemetry() {
         },
         "error",
       );
-    const onRejection = (event: PromiseRejectionEvent) =>
+    };
+    const onRejection = (event: PromiseRejectionEvent) => {
+      const msg = errorMessage(event.reason);
+      if (msg.includes("telemetry/client") || msg.includes("429")) return;
       recordTelemetry(
         "frontend.unhandled_rejection",
-        { message: errorMessage(event.reason) },
+        { message: msg },
         "error",
       );
+    };
 
     window.addEventListener("error", onError);
     window.addEventListener("unhandledrejection", onRejection);
