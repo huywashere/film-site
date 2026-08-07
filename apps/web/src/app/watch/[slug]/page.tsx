@@ -1094,7 +1094,10 @@ export default function WatchPage() {
 
   useEffect(() => {
     playerLoadStartedAtRef.current = Date.now();
-  }, [currentServer]);
+    if (m3u8Url) {
+      setPlayerEngine("hls");
+    }
+  }, [currentServer, m3u8Url]);
 
   // An iframe cannot emit media errors from its cross-origin document, so the
   // outer document owns a deterministic source timeout for that transport.

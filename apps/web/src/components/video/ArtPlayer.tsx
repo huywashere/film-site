@@ -79,12 +79,13 @@ export default function ArtPlayer({
   isTheaterModeRef.current = isTheaterMode;
   onTheaterModeToggleRef.current = onTheaterModeToggle;
 
-  // Keep latest callbacks in ref to avoid stale closures in event handlers
+  const onReadyRef = useRef(onReady);
   const onEndedRef = useRef(onEnded);
   const onProgressRef = useRef(onProgress);
   const onErrorRef = useRef(onError);
   const onPlaybackStartRef = useRef(onPlaybackStart);
   const onPlaybackStateChangeRef = useRef(onPlaybackStateChange);
+  onReadyRef.current = onReady;
   onEndedRef.current = onEnded;
   onProgressRef.current = onProgress;
   onErrorRef.current = onError;
@@ -561,7 +562,7 @@ export default function ArtPlayer({
     let drawInterval: NodeJS.Timeout | null = null;
 
     player.on("ready", () => {
-      if (onReady) onReady(player);
+      onReadyRef.current?.(player);
 
       const video = player.video;
       const canvas = canvasRef.current;
