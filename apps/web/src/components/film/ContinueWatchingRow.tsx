@@ -194,14 +194,14 @@ export function ContinueWatchingRow({
 
                           {/* Red Badge "Mới thêm" / "Tập X" at Bottom Left */}
                           <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5 pointer-events-none">
-                            <span className="bg-netflixRed text-white text-[10px] font-extrabold px-2 py-0.5 rounded shadow-md tracking-wide uppercase">
+                            <span className="bg-white text-black text-[10px] font-extrabold px-2 py-0.5 rounded shadow-md tracking-wide uppercase">
                               {item.epName || "Mới thêm"}
                             </span>
                           </div>
 
                           {/* Play Button Icon on Hover */}
                           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/30 backdrop-blur-[1px]">
-                            <div className="w-10 h-10 rounded-full bg-netflixRed text-white flex items-center justify-center shadow-lg transform scale-75 group-hover/card:scale-100 transition-transform">
+                            <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform scale-75 group-hover/card:scale-100 transition-transform">
                               <Play
                                 size={18}
                                 fill="currentColor"
@@ -214,7 +214,7 @@ export function ContinueWatchingRow({
                           {percent > 0 && (
                             <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-20">
                               <div
-                                className="h-full bg-netflixRed transition-all duration-300"
+                                className="h-full bg-white transition-all duration-300"
                                 style={{ width: `${percent}%` }}
                               />
                             </div>
@@ -223,7 +223,7 @@ export function ContinueWatchingRow({
 
                         {/* Title Underneath Card */}
                         <div className="mt-2 space-y-0.5 px-0.5">
-                          <p className="text-xs sm:text-sm font-extrabold text-white truncate group-hover/card:text-netflixRed transition-colors">
+                          <p className="text-xs sm:text-sm font-extrabold text-white truncate group-hover/card:text-white/80 transition-colors">
                             {item.title}
                           </p>
                         </div>
@@ -262,14 +262,14 @@ export function ContinueWatchingRow({
 
                           {/* Red Badge "Mới thêm" at Bottom Left (Matches Exact User Screenshot) */}
                           <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5 pointer-events-none">
-                            <span className="bg-netflixRed text-white text-[10px] font-extrabold px-2 py-0.5 rounded shadow-md tracking-wide uppercase">
+                            <span className="bg-white text-black text-[10px] font-extrabold px-2 py-0.5 rounded shadow-md tracking-wide uppercase">
                               Mới thêm
                             </span>
                           </div>
 
                           {/* Play Button Icon on Hover */}
                           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/30 backdrop-blur-[1px]">
-                            <div className="w-10 h-10 rounded-full bg-netflixRed text-white flex items-center justify-center shadow-lg transform scale-75 group-hover/card:scale-100 transition-transform">
+                            <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform scale-75 group-hover/card:scale-100 transition-transform">
                               <Play
                                 size={18}
                                 fill="currentColor"
@@ -281,7 +281,7 @@ export function ContinueWatchingRow({
 
                         {/* Title Underneath Card */}
                         <div className="mt-2 space-y-0.5 px-0.5">
-                          <p className="text-xs sm:text-sm font-extrabold text-white truncate group-hover/card:text-netflixRed transition-colors">
+                          <p className="text-xs sm:text-sm font-extrabold text-white truncate group-hover/card:text-white/80 transition-colors">
                             {film.name}
                           </p>
                         </div>

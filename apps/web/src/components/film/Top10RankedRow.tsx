@@ -84,12 +84,12 @@ export function Top10RankedRow({
                           color: "transparent",
                           WebkitTextStroke:
                             rank === 1
-                              ? "4px #3b82f6"
+                              ? "4px #ffffff"
                               : rank === 2
-                                ? "4px #ec4899"
+                                ? "4px #e5e5e5"
                                 : rank === 3
-                                  ? "4px #eab308"
-                                  : "3.5px #64748b",
+                                  ? "4px #d4d4d4"
+                                  : "3.5px #525252",
                           fontFamily:
                             "'Montserrat', 'Russo One', 'Barlow Semi Condensed', sans-serif",
                           fontWeight: 900,
@@ -101,7 +101,7 @@ export function Top10RankedRow({
 
                     {/* Vertical Movie Title running along the left side of the poster card */}
                     <div className="absolute bottom-3 left-0 sm:left-1 z-20 flex flex-col justify-end pointer-events-none max-h-[180px] sm:max-h-[210px] md:max-h-[240px]">
-                      <p className="[writing-mode:vertical-rl] rotate-180 text-xs sm:text-sm font-extrabold text-white group-hover/item:text-netflixRed transition-colors tracking-wide max-h-[170px] sm:max-h-[200px] truncate drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                      <p className="[writing-mode:vertical-rl] rotate-180 text-xs sm:text-sm font-extrabold text-white group-hover/item:text-white transition-colors tracking-wide max-h-[170px] sm:max-h-[200px] truncate drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                         {film.name}
                       </p>
                     </div>
@@ -124,7 +124,7 @@ export function Top10RankedRow({
                       {/* Quality Badge */}
                       <div className="absolute top-2 right-2 flex flex-col items-end gap-1 z-10">
                         {film.quality && (
-                          <span className="bg-netflixRed text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">
+                          <span className="bg-white text-black text-[9px] font-black px-1.5 py-0.5 rounded shadow">
                             {film.quality}
                           </span>
                         )}
@@ -132,7 +132,7 @@ export function Top10RankedRow({
 
                       {/* Play Button Icon on Hover */}
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity z-20 bg-black/40 backdrop-blur-[2px]">
-                        <div className="w-10 h-10 rounded-full bg-netflixRed text-white flex items-center justify-center shadow-lg transform scale-75 group-hover/item:scale-100 transition-transform">
+                        <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform scale-75 group-hover/item:scale-100 transition-transform">
                           <Play
                             size={18}
                             fill="currentColor"

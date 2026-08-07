@@ -11,6 +11,7 @@ import {
   Grid3x3,
   Hash,
   Users,
+  BookmarkCheck,
   BookOpen,
   History,
   ChevronDown,
@@ -31,6 +32,7 @@ const SIDEBAR_MAIN_ITEMS = [
   { title: "Duyệt Tìm", href: "/films", icon: Grid3x3 },
   { title: "Chủ đề", href: "/genres", icon: Hash },
   { title: "Xem Chung", href: "/watch-party", icon: Users },
+  { title: "Xem sau", href: "/watchlist", icon: BookmarkCheck },
   { title: "Thư viện", href: "/library", icon: BookOpen },
   { title: "Lịch sử", href: "/history", icon: History },
 ];
@@ -59,7 +61,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       />
 
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 bottom-0 w-72 bg-[#0a0e17]/98 backdrop-blur-xl border-r border-white/10 flex-col z-50 overflow-y-auto scrollbar-thin lg:hidden">
+      <aside className="fixed left-0 top-0 bottom-0 w-72 bg-neutral-950/98 backdrop-blur-xl border-r border-white/10 flex-col z-50 overflow-y-auto scrollbar-thin lg:hidden">
         {/* Header */}
         <div className="px-6 py-5 border-b border-white/10 flex items-center justify-between">
           <Link
@@ -67,7 +69,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             className="flex items-center space-x-3"
             onClick={onClose}
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
+            <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center shadow-lg">
               <FilmIcon size={20} className="text-white" strokeWidth={2.5} />
             </div>
             <div className="flex flex-col">
@@ -100,7 +102,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 className={cn(
                   "flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all",
                   isActive
-                    ? "bg-emerald-500/15 text-emerald-400"
+                    ? "bg-white/10 text-white"
                     : "text-neutral-300 hover:bg-white/5 hover:text-white",
                 )}
                 onClick={onClose}
@@ -108,7 +110,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 <item.icon
                   size={22}
                   className={cn(
-                    isActive ? "text-emerald-400" : "text-neutral-400",
+                    isActive ? "text-white" : "text-neutral-400",
                   )}
                   strokeWidth={2}
                 />
@@ -149,7 +151,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                     className={cn(
                       "block px-4 py-1.5 rounded-lg text-xs font-medium transition-all",
                       pathname === `/genre/${genre.slug}`
-                        ? "bg-emerald-500/10 text-emerald-400"
+                        ? "bg-white/10 text-white"
                         : "text-neutral-400 hover:bg-white/5 hover:text-white",
                     )}
                     onClick={onClose}

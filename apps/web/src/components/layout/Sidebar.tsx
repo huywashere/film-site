@@ -23,8 +23,8 @@ const SIDEBAR_ITEMS = [
   { title: "Phim Trung", href: "/country/trung-quoc", icon: Film },
   { title: "Duyệt Tìm", href: "/films", icon: Clapperboard },
   { title: "Chủ đề", href: "/genres", icon: Sparkles },
-  { title: "Xem sau", href: "/watchlist", icon: BookmarkCheck },
   { title: "Xem Chung", href: "/watch-party", icon: Popcorn },
+  { title: "Xem sau", href: "/watchlist", icon: BookmarkCheck },
   { title: "Thư viện", href: "/library", icon: Library },
   { title: "Lịch sử", href: "/history", icon: History },
 ];
@@ -129,10 +129,10 @@ export function Sidebar() {
                 )}
                 style={{ width: W - 12 }}
               >
-                {/* Active: blue vertical bar centred on the item */}
+                {/* Active: white vertical bar centred on the item */}
                 {isActive && (
                   <span
-                    className="absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full bg-blue-500"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full bg-white"
                     style={{ width: 3, height: 20 }}
                   />
                 )}
@@ -142,7 +142,7 @@ export function Sidebar() {
                   className={cn(
                     "absolute inset-0 rounded-xl transition-all duration-150",
                     isActive
-                      ? "bg-blue-500/10"
+                      ? "bg-white/10"
                       : "bg-transparent group-hover:bg-white/[0.04]",
                   )}
                 />
