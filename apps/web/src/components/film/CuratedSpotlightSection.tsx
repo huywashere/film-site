@@ -207,7 +207,7 @@ export function CuratedSpotlightSection({
         </div>
 
         {/* RIGHT COLUMN: Vertical List Box (Matching Form 2) */}
-        <div className="rounded-[32px] md:rounded-[40px] border border-white/10 bg-[#090b12]/95 backdrop-blur-2xl p-4 sm:p-5 flex flex-col justify-between shadow-2xl">
+        <div className="rounded-[32px] md:rounded-[40px] border border-white/10 bg-neutral-950 p-4 sm:p-5 flex flex-col justify-between shadow-2xl">
           <div className="flex items-center justify-between px-2 pb-3.5 border-b border-white/10">
             <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-neutral-400">
               DANH SÁCH CHỌN LỌC
@@ -231,7 +231,7 @@ export function CuratedSpotlightSection({
                   onClick={() => setActiveIndex(idx)}
                   className={`w-full group flex items-center gap-3.5 p-3 rounded-2xl transition-all duration-200 cursor-pointer text-left ${
                     isActive
-                      ? "bg-[#181c28] border-l-4 border-rose-500 border-t border-b border-r border-white/20 text-white shadow-xl shadow-rose-500/10 scale-[1.01]"
+                      ? "bg-neutral-900 border border-white/30 text-white shadow-lg"
                       : "hover:bg-white/[0.05] border border-transparent text-neutral-400 hover:text-white"
                   }`}
                 >
@@ -246,15 +246,12 @@ export function CuratedSpotlightSection({
                         e.currentTarget.style.display = "none";
                       }}
                     />
-                    {isActive && (
-                      <div className="absolute inset-0 bg-rose-500/15 border border-rose-500/40 rounded-xl" />
-                    )}
                   </div>
 
                   {/* Title & Index Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 text-[10px] font-mono font-bold text-neutral-500 mb-0.5">
-                      <span className={isActive ? "text-rose-400 font-bold" : ""}>
+                      <span className={isActive ? "text-white font-bold" : ""}>
                         0{idx + 1}
                       </span>
                       <span>•</span>
@@ -281,7 +278,7 @@ export function CuratedSpotlightSection({
                     size={15}
                     className={`shrink-0 transition-all duration-200 ${
                       isActive
-                        ? "text-rose-400 translate-x-0.5"
+                        ? "text-white translate-x-0.5 opacity-100"
                         : "text-neutral-600 opacity-0 group-hover:opacity-100"
                     }`}
                   />

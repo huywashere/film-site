@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Info, ChevronLeft, ChevronRight, Star, Sparkles } from "lucide-react";
@@ -22,6 +22,15 @@ export function HeroShowcaseSection({
   href,
 }: HeroShowcaseSectionProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+
+  // Auto-play slideshow timer
+  useEffect(() => {
+    if (!films || films.length === 0) return;
+    const timer = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % Math.min(films.length, 12));
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [films]);
 
   const activeFilm = useMemo(() => {
     if (!films || films.length === 0) return null;
@@ -201,7 +210,7 @@ export function HeroShowcaseSection({
             </div>
           </div>
 
-          <div className="flex items-center gap-3.5 overflow-x-auto scrollbar-none py-2 px-1">
+          <div className="flex items-center gap-3.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-2 px-1">
             {films.slice(0, 12).map((film, index) => {
               const isActive = index === activeIndex;
               const cardPoster =
