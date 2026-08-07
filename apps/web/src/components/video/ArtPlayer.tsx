@@ -221,7 +221,13 @@ export default function ArtPlayer({
 
     const player = new Artplayer({
       container: containerRef.current,
-      url: isHls ? "" : url,
+      url: url,
+      type: isHls ? "m3u8" : "auto",
+      customType: {
+        m3u8: function (video: HTMLVideoElement, streamUrl: string) {
+          attachHls(video, streamUrl);
+        },
+      },
       poster,
       title,
       volume: 0.8,
@@ -379,7 +385,6 @@ export default function ArtPlayer({
     } as unknown as ConstructorParameters<typeof Artplayer>[0]);
 
     playerRef.current = player;
-    if (isHls) attachHls(player.video, url);
 
     player.on("video:play", () => {
       onPlaybackStateChangeRef.current?.({
