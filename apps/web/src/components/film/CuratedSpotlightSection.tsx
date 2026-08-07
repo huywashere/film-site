@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -29,6 +29,15 @@ export function CuratedSpotlightSection({
   href,
 }: CuratedSpotlightSectionProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+
+  // Auto-play slideshow timer for smooth rotation
+  useEffect(() => {
+    if (!films || films.length === 0) return;
+    const timer = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % Math.min(films.length, 6));
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [films]);
 
   const activeFilm = useMemo(() => {
     if (!films || films.length === 0) return null;

@@ -237,9 +237,6 @@ export function HeroShowcaseSection({
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent opacity-90" />
-                  {isActive && (
-                    <div className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-white ring-2 ring-black" />
-                  )}
                   <span className="absolute bottom-2 left-2.5 right-2.5 text-[11px] font-bold text-white line-clamp-1 text-left drop-shadow">
                     {film.name}
                   </span>
