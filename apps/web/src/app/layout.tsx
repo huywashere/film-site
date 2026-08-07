@@ -23,28 +23,33 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "CineVerse — Xem Phim Online",
-    template: "%s | CineVerse",
+    default: "CinePhim — Xem Phim Online",
+    template: "%s | CinePhim",
   },
   description:
-    "Nền tảng xem phim online chất lượng cao. Phim bộ, phim lẻ, hoạt hình, TV Shows với phụ đề tiếng Việt.",
+    "Nền tảng xem phim online chất lượng cao 4K. Phim bộ, phim lẻ, hoạt hình, TV Shows với phụ đề tiếng Việt.",
   keywords: [
     "xem phim",
     "phim online",
     "phim bộ",
     "phim lẻ",
     "hoạt hình",
-    "CineVerse",
+    "CinePhim",
   ],
+  icons: {
+    icon: "/cinephim-logo.png",
+    shortcut: "/cinephim-logo.png",
+    apple: "/cinephim-logo.png",
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: "CineVerse",
+    title: "CinePhim",
     statusBarStyle: "black-translucent",
   },
   formatDetection: { telephone: false },
   openGraph: {
-    title: "CineVerse — Xem Phim Online",
+    title: "CinePhim — Xem Phim Online",
     description: "Nền tảng xem phim online chất lượng cao",
     type: "website",
   },
@@ -76,6 +81,9 @@ export default function RootLayout({
   return (
     <html lang="vi" suppressHydrationWarning>
       <head>
+        <link rel="icon" href="/cinephim-logo.png" type="image/png" />
+        <link rel="shortcut icon" href="/cinephim-logo.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/cinephim-logo.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
