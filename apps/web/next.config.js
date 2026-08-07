@@ -32,6 +32,15 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
 
+  // ── SECURITY & PRODUCTION BUNDLE PROTECTION ─────────────────────
+  // Disable browser source maps in production so original .tsx/.ts source code cannot be reconstructed
+  productionBrowserSourceMaps: false,
+  
+  // SWC Compiler optimization: strip console logs in production builds
+  compiler: {
+    removeConsole: isProd ? { exclude: ["error", "warn"] } : false,
+  },
+
   // ── PERFORMANCE OPTIMIZATIONS ──────────────────────────────────
   reactStrictMode: true,
   // SWC minification is enabled by default.

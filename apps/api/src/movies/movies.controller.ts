@@ -2,6 +2,7 @@ import { Controller, Get, Param, Query, UseGuards } from "@nestjs/common";
 import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import { MoviesService } from "./movies.service";
 import { VidsrcService } from "./vidsrc.service";
+import { StreamTokenService } from "./stream-token.service";
 
 @Controller("movies")
 @UseGuards(ThrottlerGuard)
@@ -9,7 +10,15 @@ export class MoviesController {
   constructor(
     private readonly moviesService: MoviesService,
     private readonly vidsrcService: VidsrcService,
+    private readonly streamTokenService: StreamTokenService,
   ) {}
+
+  /** Layer 3 Security: Issue time-bound HMAC stream token (10 min TTL) */
+  @Get("stream-token/:slug")
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  getStreamToken(@Param("slug") slug: string) {
+    return this.streamTokenService.generateStreamToken(slug);
+  }
 
   // ── Danh sách phim ──────────────────────────────────────────────
 
