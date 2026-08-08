@@ -143,11 +143,7 @@ export function AuthPageForm({
 
   useEffect(() => {
     if (currentUser) {
-      const targetSlug = currentUser.username || currentUser.id;
-      const targetUrl = targetSlug
-        ? `/user/${encodeURIComponent(targetSlug)}`
-        : "/";
-      router.replace(targetUrl);
+      router.replace("/");
     }
   }, [currentUser, router]);
 
@@ -219,7 +215,7 @@ export function AuthPageForm({
         });
         if (res?.user) {
           toast("Tạo tài khoản thành công!", "success");
-          router.replace(`/user/${encodeURIComponent(res.user.username || res.user.id)}`);
+          router.replace("/");
         }
       } catch (err: any) {
         const msg = err?.response?.data?.message;
@@ -237,20 +233,7 @@ export function AuthPageForm({
           toast("Vui lòng nhập mã OTP để tiếp tục đăng nhập", "info");
         } else {
           toast("Đăng nhập thành công!", "success");
-          let currentUser = result?.user || useAuthStore.getState().user;
-          if (!currentUser) {
-            try {
-              await useAuthStore.getState().fetchMe();
-              currentUser = useAuthStore.getState().user;
-            } catch (_e) {
-              // fallback
-            }
-          }
-          const targetSlug = currentUser?.username || currentUser?.id;
-          const userUrl = targetSlug
-            ? `/user/${encodeURIComponent(targetSlug)}`
-            : "/user";
-          router.replace(userUrl);
+          router.replace("/");
         }
       } catch (err: any) {
         const msg = err?.response?.data?.message;
@@ -305,8 +288,7 @@ export function AuthPageForm({
       }
       useAuthStore.getState().setUser(loggedUser);
       toast(`Chào mừng, ${name}!`, "success");
-      const userProfileUrl = `/user/${encodeURIComponent(loggedUser.username || loggedUser.id)}`;
-      router.replace(userProfileUrl);
+      router.replace("/");
     },
     [router, toast],
   );
