@@ -264,7 +264,7 @@ async function loadCuratedTmdbPlaylist(): Promise<HeroFilm[]> {
     HERO_TMDB_COLLECTIONS.map(async (col) => {
       const items = await Promise.all(
         col.ids.map(async (id) => {
-          const detail = await tmdbApi.getMovieDetails(id);
+          const detail = await tmdbApi.getMovieDetail(id);
           return detail ? toHeroFilm(detail as any) : null;
         }),
       );
@@ -381,10 +381,11 @@ export default function HeroBanner({ films }: HeroBannerProps) {
     if (typeof window !== "undefined") {
       try {
         const local = guestDataStorage.getHistory();
-        local.forEach((item) => {
-          if (item.slug && (item.currentTime || item.progress)) {
+        local.forEach((item: any) => {
+          const currentTime = item.currentTime || item.progress || 0;
+          if (item.slug && currentTime) {
             map.set(item.slug, {
-              progress: item.currentTime || item.progress || 0,
+              progress: currentTime,
               duration: item.duration || 0,
               ep: item.epSlug || item.episode,
             });
