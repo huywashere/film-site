@@ -168,7 +168,7 @@ export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps)
 
   return (
     <div className="pt-0.5" aria-label="Xác minh chống bot">
-      <div ref={containerRef} className="min-h-[65px]" />
+      <div ref={containerRef} className="h-[58px] max-h-[58px] overflow-hidden rounded-lg" />
       {status === "loading" && (
         <p className="-mt-[58px] flex h-[58px] items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] text-[11px] text-neutral-400">
           <Loader2 size={14} className="animate-spin" /> Đang tải xác minh chống bot...

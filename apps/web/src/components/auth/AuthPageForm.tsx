@@ -29,6 +29,7 @@ import { authApi } from "@/lib/api";
 import { establishFirebaseSession } from "@/lib/auth-session";
 import type { User as FirebaseUser } from "firebase/auth";
 import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
+import { tmdbApi, tmdbBackdrop } from "@/lib/tmdb";
 
 function getGoogleAuthErrorMessage(error: unknown) {
   const code =
@@ -99,6 +100,39 @@ export function AuthPageForm({
   const [tempToken, setTempToken] = useState("");
   const [otp, setOtp] = useState("");
   const [verifying2FA, setVerifying2FA] = useState(false);
+
+  // Dynamic random 4K movie backdrop from TMDB
+  const [randomMovie, setRandomMovie] = useState<{
+    title: string;
+    backdropUrl: string;
+  }>({
+    title: "Deadpool & Wolverine",
+    backdropUrl:
+      "https://image.tmdb.org/t/p/original/8Y4PKa2vRvmVnsacuYAsStjOfSu.jpg",
+  });
+
+  useEffect(() => {
+    tmdbApi
+      .getTrending("movie", "week")
+      .then((res) => {
+        if (res?.results && res.results.length > 0) {
+          const valid = res.results.filter(
+            (m: any) => m.backdrop_path && (m.title || m.name),
+          );
+          if (valid.length > 0) {
+            const picked = valid[Math.floor(Math.random() * valid.length)];
+            const bgUrl = tmdbBackdrop(picked.backdrop_path, "original");
+            if (bgUrl) {
+              setRandomMovie({
+                title: picked.title || picked.name || "CinePhim 4K",
+                backdropUrl: bgUrl,
+              });
+            }
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Auto-redirect if user is already logged in
   const currentUser = useAuthStore((state) => state.user);
@@ -350,9 +384,9 @@ export function AuthPageForm({
     }
   };
 
-  // ── Input shared class ──
+  // ── Input shared class (Glassmorphic & Roomy) ──
   const inputCls =
-    "w-full bg-[#1a1c23] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-white/35 focus:bg-[#1e2029] transition-all";
+    "w-full bg-[#161924]/90 hover:bg-[#1a1e2c] focus:bg-[#1e2233] border border-white/15 focus:border-white/40 rounded-xl px-4 py-3.5 text-sm text-white placeholder:text-neutral-500 transition-all outline-none shadow-inner";
 
   if (currentUser) {
     return (
@@ -368,66 +402,73 @@ export function AuthPageForm({
 
   return (
     // Outer wrapper — full viewport, cinematic bg
-    <div className="min-h-[100dvh] w-full bg-[#040508] flex flex-col relative overflow-hidden">
+    <div className="min-h-[100dvh] w-full bg-[#040508] flex flex-col relative overflow-hidden font-sans">
       <CinematicAuthBackground />
-
 
       {/* ── Main content: centered (full screen) ──────────────────────── */}
       <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-[1220px]">
-          {/* Card */}
-          <div className="relative bg-[#111318] border border-white/15 rounded-3xl overflow-hidden shadow-[0_32px_100px_rgba(0,0,0,0.85)]">
+        <div className="w-full max-w-[1200px]">
+          {/* Glassmorphic Auth Card */}
+          <div className="relative bg-[#0a0c14]/85 border border-white/20 rounded-3xl overflow-hidden backdrop-blur-3xl shadow-[0_32px_100px_rgba(0,0,0,0.95)]">
             <div className="grid md:grid-cols-[1fr_1.25fr]">
 
               {/* ── LEFT panel ─────────────────────────────────── */}
-              <div className="hidden md:flex flex-col justify-between p-10 md:p-12 border-r border-white/[0.08] relative overflow-hidden h-auto md:h-[660px]">
-                {/* 4K Sci-Fi Cinematic Backdrop */}
+              <div className="hidden md:flex flex-col justify-between p-10 md:p-12 border-r border-white/[0.12] relative overflow-hidden h-auto md:h-[680px]">
+                {/* Random 4K TMDB Movie Backdrop */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1600&auto=format&fit=crop"
-                  alt="Cinema 4K Backdrop"
-                  className="absolute inset-0 w-full h-full object-cover object-center brightness-[0.75]"
+                  src={randomMovie.backdropUrl}
+                  alt={randomMovie.title}
+                  className="absolute inset-0 w-full h-full object-cover object-center brightness-[0.72] scale-105 transition-transform duration-1000"
                   loading="eager"
                   onError={(e) => {
                     e.currentTarget.src =
-                      "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=1600&auto=format&fit=crop";
+                      "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1600&auto=format&fit=crop";
                   }}
                 />
                 {/* Gradient overlay: dark at bottom for text, subtle at top */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0d0f14] via-[#0d0f14]/75 to-[#0d0f14]/30" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0c14] via-[#0a0c14]/70 to-[#0a0c14]/30" />
                 {/* Right-edge fade to blend into form panel */}
-                <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-r from-transparent to-[#111318]" />
+                <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-r from-transparent to-[#0a0c14]/90" />
 
                 {/* Content — above the overlays */}
-                <div className="relative z-10 space-y-8">
+                <div className="relative z-10 space-y-6">
                   <p className="text-[11px] font-mono font-bold tracking-[0.2em] text-emerald-400 uppercase">
                     KHÔNG GIAN CÁ NHÂN CINEVERSE
                   </p>
                   <div>
-                    <h2 className="text-3xl lg:text-4xl font-black text-white leading-tight tracking-tight drop-shadow-xl">
+                    <h2 className="text-3xl lg:text-4xl font-black text-white leading-tight tracking-tight drop-shadow-2xl">
                       Tiếp tục trải nghiệm<br />xem phim của bạn.
                     </h2>
-                    <p className="mt-4 text-sm text-neutral-300/90 leading-relaxed max-w-[340px] font-medium">
+                    <p className="mt-3.5 text-sm text-neutral-300/90 leading-relaxed max-w-[350px] font-medium">
                       Một tài khoản duy nhất cho thư viện, tiến độ xem và tuỳ chọn cá nhân trên mọi thiết bị.
                     </p>
                   </div>
                 </div>
 
-                {/* Features list */}
-                <div className="relative z-10 space-y-3.5 mt-10">
-                  {LEFT_FEATURES.map(({ Icon, text }) => (
-                    <div key={text} className="flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-                        <Icon size={14} />
+                {/* Features list & TMDB Movie Title Badge */}
+                <div className="relative z-10 space-y-4 mt-8">
+                  {/* Glass Tag showing current TMDB Backdrop Movie */}
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 border border-white/20 backdrop-blur-md text-[11px] font-semibold text-white/90 shadow-lg">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="truncate max-w-[260px]">🎬 {randomMovie.title}</span>
+                  </div>
+
+                  <div className="space-y-3 pt-2">
+                    {LEFT_FEATURES.map(({ Icon, text }) => (
+                      <div key={text} className="flex items-center gap-3">
+                        <div className="w-7.5 h-7.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                          <Icon size={14} />
+                        </div>
+                        <span className="text-xs font-semibold text-neutral-200">{text}</span>
                       </div>
-                      <span className="text-xs font-semibold text-neutral-200">{text}</span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {/* ── RIGHT panel (form) ─────────────────────────── */}
-              <div className="p-8 md:p-12 h-auto md:h-[660px] flex flex-col justify-between overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="p-8 md:p-12 h-auto md:h-[680px] flex flex-col justify-between overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {/* Back to home button */}
                 <Link
                   href="/"
