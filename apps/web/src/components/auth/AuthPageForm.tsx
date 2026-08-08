@@ -716,10 +716,20 @@ export function AuthPageForm({
                           </label>
                         )}
 
+                        {/* Turnstile Bot Protection (If configured) */}
+                        {turnstileEnabled && (
+                          <div className="py-1">
+                            <TurnstileWidget
+                              action={mode}
+                              onTokenChange={handleTurnstileTokenChange}
+                            />
+                          </div>
+                        )}
+
                         {/* Submit */}
                         <button
                           type="submit"
-                          disabled={isLoading}
+                          disabled={isLoading || (turnstileEnabled && !turnstileToken)}
                           className="w-full py-3 rounded-xl bg-white text-[#0b0c10] text-xs font-bold transition-all hover:bg-neutral-100 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer mt-2"
                         >
                           {isLoading ? (

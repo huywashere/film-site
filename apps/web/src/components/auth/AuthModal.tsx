@@ -36,12 +36,16 @@ import {
 } from "@/lib/firebase";
 
 import { CinematicAuthBackground } from "@/components/auth/CinematicAuthBackground";
+import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
 
 export function AuthModal() {
   const router = useRouter();
   const { isOpen, mode, closeModal, setMode } = useAuthModalStore();
   const { setUser, login, register } = useAuthStore();
   const { toast } = useToast();
+
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   const [isForgotMode, setIsForgotMode] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -572,10 +576,20 @@ export function AuthModal() {
                     </div>
                   )}
 
+                  {/* Turnstile Bot Protection */}
+                  {turnstileEnabled && (
+                    <div className="py-1">
+                      <TurnstileWidget
+                        action={mode}
+                        onTokenChange={(token) => setTurnstileToken(token)}
+                      />
+                    </div>
+                  )}
+
                   {/* Submit Action Button */}
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || (turnstileEnabled && !turnstileToken)}
                     className="w-full py-3 rounded-lg bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-semibold transition-all shadow-sm active:scale-[0.99] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
                   >
                     {loading ? (
