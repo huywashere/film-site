@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useThemeStore } from "@/store/themeStore";
 
 export function ThemeWatcher() {
-  const { theme } = useThemeStore();
+  const { theme, pureBlack } = useThemeStore();
 
   useEffect(() => {
     // Prevent browser extensions (e.g. MetaMask, Web3 wallets, inpage.js) from triggering Next.js error overlays
@@ -64,8 +64,16 @@ export function ThemeWatcher() {
         root.classList.add("dark");
         root.classList.remove("light");
       }
+
+      if (pureBlack && theme === "dark") {
+        root.setAttribute("data-pure-black", "true");
+        root.classList.add("pure-black");
+      } else {
+        root.removeAttribute("data-pure-black");
+        root.classList.remove("pure-black");
+      }
     }
-  }, [theme]);
+  }, [theme, pureBlack]);
 
   return null;
 }

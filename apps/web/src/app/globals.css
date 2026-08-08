@@ -168,6 +168,36 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* ── OLED Pure Black Mode (#000000) ─────────────────────────── */
+html.pure-black,
+html[data-pure-black="true"] {
+  --background: #000000 !important;
+  --background-rgb: 0, 0, 0 !important;
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
+html.pure-black body,
+html[data-pure-black="true"] body,
+html.pure-black main,
+html[data-pure-black="true"] main,
+html.pure-black footer,
+html[data-pure-black="true"] footer,
+html.pure-black .bg-\[\#141414\],
+html[data-pure-black="true"] .bg-\[\#141414\] {
+  background-color: #000000 !important;
+}
+
+html.pure-black ::-webkit-scrollbar-track,
+html[data-pure-black="true"] ::-webkit-scrollbar-track {
+  background: #000000 !important;
+}
+
+html.pure-black ::-webkit-scrollbar-thumb,
+html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
+  border-color: #000000 !important;
+}
+
 @supports (padding: env(safe-area-inset-bottom)) {
   body {
     padding-left: env(safe-area-inset-left);
