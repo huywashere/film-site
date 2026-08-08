@@ -114,7 +114,7 @@ export function CuratedSpotlightSection({
         </div>
       </div>
 
-      <div className="grid overflow-hidden rounded-2xl sm:rounded-[28px] border border-white/10 bg-[#090b10] shadow-[0_26px_80px_rgba(0,0,0,0.4)] lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="grid overflow-hidden rounded-2xl sm:rounded-[28px] border border-white/10 bg-[#141414] lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]">
         <div className="relative min-h-[260px] sm:min-h-[510px] overflow-hidden">
           <motion.div
             key={activeFilm.slug}

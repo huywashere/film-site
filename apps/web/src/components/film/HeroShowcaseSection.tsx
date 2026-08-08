@@ -90,7 +90,7 @@ export function HeroShowcaseSection({
         )}
       </div>
 
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-[28px] border border-white/10 bg-[#090b10] shadow-[0_26px_80px_rgba(0,0,0,0.42)]">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-[28px] border border-white/10 bg-[#141414]">
         <div className="relative min-h-[260px] sm:min-h-[500px] overflow-hidden">
           <motion.div
             key={activeFilm.slug}

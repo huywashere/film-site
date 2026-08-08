@@ -68,7 +68,7 @@ export function SmartRecommendationSection() {
   if (isLoading || !rankedFilms.length) return null;
 
   return (
-    <section className="space-y-4 py-6 bg-white/[0.01] p-6 rounded-3xl border border-white/5 shadow-xl my-6">
+    <section className="space-y-4 py-6 bg-white/[0.01] p-6 rounded-3xl border border-white/5 my-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-lg shadow-emerald-500/10">
