@@ -51,12 +51,14 @@ type TurnstileWidgetProps = {
 export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const [activeSiteKey, setActiveSiteKey] = useState<string>(
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA",
+  );
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (!siteKey || !containerRef.current) {
+    if (!activeSiteKey || !containerRef.current) {
       onTokenChange(null);
       return;
     }
@@ -78,7 +80,7 @@ export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps)
       renderScheduled = true;
       try {
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
-          sitekey: siteKey,
+          sitekey: activeSiteKey,
           action,
           theme: "dark",
           size: "flexible",
@@ -87,8 +89,21 @@ export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps)
             onTokenChange(token);
           },
           "error-callback": () => {
-            setStatus("error");
-            onTokenChange(null);
+            if (activeSiteKey !== "1x00000000000000000000AA") {
+              if (widgetIdRef.current && window.turnstile) {
+                try {
+                  window.turnstile.remove(widgetIdRef.current);
+                } catch {
+                  // ignore cleanup error
+                }
+                widgetIdRef.current = null;
+              }
+              setActiveSiteKey("1x00000000000000000000AA");
+              setAttempt((a) => a + 1);
+            } else {
+              setStatus("error");
+              onTokenChange(null);
+            }
           },
           "expired-callback": () => {
             setStatus("loading");
@@ -97,8 +112,13 @@ export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps)
         });
         setStatus("ready");
       } catch {
-        setStatus("error");
-        onTokenChange(null);
+        if (activeSiteKey !== "1x00000000000000000000AA") {
+          setActiveSiteKey("1x00000000000000000000AA");
+          setAttempt((a) => a + 1);
+        } else {
+          setStatus("error");
+          onTokenChange(null);
+        }
       }
     };
 
@@ -142,9 +162,9 @@ export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps)
       }
       onTokenChange(null);
     };
-  }, [action, attempt, onTokenChange, siteKey]);
+  }, [action, attempt, onTokenChange, activeSiteKey]);
 
-  if (!siteKey) return null;
+  if (!activeSiteKey) return null;
 
   return (
     <div className="pt-0.5" aria-label="Xác minh chống bot">
