@@ -285,7 +285,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
   return (
     <section
       data-hero-banner="true"
-      className="relative min-h-[100dvh] w-full overflow-hidden bg-[#08090c] transform-gpu contain-paint"
+      className="relative min-h-[100dvh] w-full overflow-hidden bg-[#141414] transform-gpu contain-paint"
     >
       {/* Keep the player mounted at the top of the Hero instead of after its body content. */}
       <TrailerModal

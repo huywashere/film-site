@@ -104,7 +104,7 @@ export default function LibraryPage() {
 
   return (
     <div className="min-h-screen bg-background pb-16 pt-20 lg:ml-20">
-      <header className="sticky top-16 z-30 border-b border-white/10 bg-[#08090c]/95 backdrop-blur">
+      <header className="sticky top-16 z-30 border-b border-white/10 bg-[#141414]/95 backdrop-blur">
         <div className="mx-auto max-w-[1600px] px-4 py-6 md:px-8">
           <h1 className="text-3xl font-black tracking-tight text-white md:text-4xl">
             Thư viện của bạn

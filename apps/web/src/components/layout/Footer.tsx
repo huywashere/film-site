@@ -96,7 +96,7 @@ export function Footer() {
   return (
     <footer
       data-site-footer="true"
-      className="relative z-20 w-full bg-[#0a0b0d] border-t border-white/[0.06]"
+      className="relative z-20 w-full bg-[#141414] border-t border-white/[0.06]"
     >
       {/* Main footer content */}
       <div className="mx-auto max-w-[1400px] px-6 lg:px-10">

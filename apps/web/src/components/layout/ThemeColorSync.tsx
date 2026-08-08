@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-const DARK_BROWSER_CHROME = "#08090c";
+const DARK_BROWSER_CHROME = "#141414";
 const LIGHT_BROWSER_CHROME = "#f4f6f9";
 
 function isLightTheme(root: HTMLElement) {

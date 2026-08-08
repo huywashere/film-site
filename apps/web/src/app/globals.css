@@ -7,8 +7,8 @@
 
 /* ── CSS Variables ──────────────────────────────────────────── */
 :root {
-  --background: #08090c;
-  --background-rgb: 8, 9, 12;
+  --background: #141414;
+  --background-rgb: 20, 20, 20;
   --foreground: #ffffff;
   --netflixRed: #e50914;
   --primary: #e50914;
@@ -137,13 +137,13 @@ pre,
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f1216;
+  background: #141414;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #232936;
+  background: #2e2e2e;
   border-radius: 9999px;
-  border: 2px solid #0f1216;
+  border: 2px solid #141414;
 }
 
 ::-webkit-scrollbar-thumb:hover {

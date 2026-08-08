@@ -192,7 +192,7 @@ export function CuratedSpotlightSection({
           </div>
         </div>
 
-        <aside className="border-t border-white/10 bg-[#0d1015] p-3 sm:p-5 lg:border-l lg:border-t-0">
+        <aside className="border-t border-white/10 bg-[#141414] p-3 sm:p-5 lg:border-l lg:border-t-0">
           <div className="flex items-center justify-between border-b border-white/10 px-1 pb-2.5">
             <div>
               <p className="text-xs font-semibold text-white">

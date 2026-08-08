@@ -291,7 +291,7 @@ export function AuthModal() {
       />
 
       {/* Semi-Transparent Glass Modal Card (Be Vietnam Pro / CineVerse Font System) */}
-      <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto bg-[#070911]/90 backdrop-blur-3xl border border-white/20 rounded-3xl shadow-[0_0_90px_rgba(0,0,0,0.95)] p-5 sm:p-7 z-10 my-auto flex flex-col font-primary [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto bg-[#141414]/95 backdrop-blur-3xl border border-white/20 rounded-3xl shadow-[0_0_90px_rgba(0,0,0,0.95)] p-5 sm:p-7 z-10 my-auto flex flex-col font-primary [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {/* Close Button */}
         <button
           onClick={closeModal}

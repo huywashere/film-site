@@ -81,7 +81,7 @@ export function PwaInstallBanner() {
         <div className="flex items-start gap-3.5">
           {/* App Icon */}
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-500 to-purple-600 p-0.5 shrink-0 shadow-lg shadow-rose-500/20">
-            <div className="w-full h-full bg-[#08090c] rounded-[10px] flex items-center justify-center">
+            <div className="w-full h-full bg-[#141414] rounded-[10px] flex items-center justify-center">
               <Sparkles className="w-6 h-6 text-rose-400" />
             </div>
           </div>

@@ -17,7 +17,7 @@ import { AuthModal } from "@/components/auth/AuthModal";
 import { AntiDevTools } from "@/components/security/AntiDevTools";
 
 export const viewport: Viewport = {
-  themeColor: "#08090c",
+  themeColor: "#141414",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

@@ -409,7 +409,7 @@ export function AuthPageForm({
       <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-[1200px]">
           {/* Glassmorphic Auth Card */}
-          <div className="relative bg-[#0a0c14]/85 border border-white/20 rounded-3xl overflow-hidden backdrop-blur-3xl shadow-[0_32px_100px_rgba(0,0,0,0.95)]">
+          <div className="relative bg-[#141414]/90 border border-white/20 rounded-3xl overflow-hidden backdrop-blur-3xl shadow-[0_32px_100px_rgba(0,0,0,0.95)]">
             <div className="grid md:grid-cols-[1fr_1.25fr]">
 
               {/* ── LEFT panel ─────────────────────────────────── */}
@@ -427,9 +427,9 @@ export function AuthPageForm({
                   }}
                 />
                 {/* Gradient overlay: dark at bottom for text, subtle at top */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0c14] via-[#0a0c14]/70 to-[#0a0c14]/30" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/70 to-[#141414]/30" />
                 {/* Right-edge fade to blend into form panel */}
-                <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-r from-transparent to-[#0a0c14]/90" />
+                <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-r from-transparent to-[#141414]/90" />
 
                 {/* Content — above the overlays */}
                 <div className="relative z-10 space-y-6">
