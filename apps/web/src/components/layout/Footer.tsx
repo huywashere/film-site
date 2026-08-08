@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Play } from "lucide-react";
 
 const FOOTER_COLUMNS = [
   {
@@ -105,11 +104,17 @@ export function Footer() {
           {/* Logo */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="inline-flex items-center gap-2.5 group">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 text-white shadow-lg shadow-violet-900/40 transition-transform group-hover:scale-105">
-                <Play size={15} fill="currentColor" />
-              </span>
-              <span className="text-base font-black tracking-tight text-white uppercase">
-                Cine<span className="text-violet-400">Phim</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/cinephim-logo.png"
+                alt="CinePhim Logo"
+                className="h-8 w-auto object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_0_10px_rgba(168,85,247,0.25)]"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
+              />
+              <span className="text-base font-black tracking-tight text-white lowercase">
+                cine<span className="text-violet-400">phim</span>
               </span>
             </Link>
             <p className="mt-4 text-xs leading-6 text-neutral-500 max-w-[170px]">
