@@ -413,7 +413,7 @@ export function AuthPageForm({
             <div className="grid md:grid-cols-[1fr_1.25fr]">
 
               {/* ── LEFT panel ─────────────────────────────────── */}
-              <div className="hidden md:flex flex-col justify-between p-10 md:p-12 border-r border-white/[0.12] relative overflow-hidden h-auto md:h-[680px]">
+              <div className="hidden md:flex flex-col justify-between p-10 md:p-12 border-r border-white/[0.12] relative overflow-hidden h-auto md:min-h-[720px]">
                 {/* Random 4K TMDB Movie Backdrop */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -468,7 +468,7 @@ export function AuthPageForm({
               </div>
 
               {/* ── RIGHT panel (form) ─────────────────────────── */}
-              <div className="p-8 md:p-12 h-auto md:h-[680px] flex flex-col justify-between overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="p-8 md:p-12 h-auto md:min-h-[720px] flex flex-col justify-between overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {/* Back to home button */}
                 <Link
                   href="/"

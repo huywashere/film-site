@@ -167,10 +167,10 @@ export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps)
   if (!activeSiteKey) return null;
 
   return (
-    <div className="pt-0.5 overflow-hidden" aria-label="Xác minh chống bot">
-      <div ref={containerRef} className="h-[50px] max-h-[50px] overflow-hidden rounded-lg" />
+    <div className="py-1" aria-label="Xác minh chống bot">
+      <div ref={containerRef} className="min-h-[65px] h-[65px] w-full rounded-lg" />
       {status === "loading" && (
-        <p className="-mt-[58px] flex h-[58px] items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] text-[11px] text-neutral-400">
+        <p className="-mt-[65px] flex h-[65px] items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] text-[11px] text-neutral-400">
           <Loader2 size={14} className="animate-spin" /> Đang tải xác minh chống bot...
         </p>
       )}
