@@ -353,12 +353,13 @@ export default function HeroBanner({ films }: HeroBannerProps) {
 
   const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
 
-  const promoCards = useMemo(() => {
-    if (featured.length <= 1) return [];
-    return Array.from(
-      { length: Math.min(3, featured.length - 1) },
-      (_, offset) => featured[(current + offset + 1) % featured.length],
-    );
+  const fanCards = useMemo(() => {
+    if (featured.length === 0) return [];
+    return [
+      featured[current],
+      featured[(current + 1) % featured.length],
+      featured[(current + 2) % featured.length],
+    ].filter(Boolean);
   }, [featured, current]);
 
   // Fetch watch history to show "Xem tiếp mm:ss" CTA with progress bar
@@ -497,55 +498,91 @@ export default function HeroBanner({ films }: HeroBannerProps) {
         }}
       />
 
-      {/* Promo cards reel on desktop */}
-      <div className="absolute left-6 top-1/2 z-30 hidden w-[280px] -translate-y-1/2 xl:block 2xl:left-14">
-        <div className="relative h-[380px]">
-          {promoCards.map((promo, index) => {
+      {/* 🎴 3-Card Fan / Cascade Deck (Left side desktop) */}
+      <div className="absolute left-6 top-1/2 z-30 hidden w-[380px] h-[340px] -translate-y-1/2 xl:block 2xl:left-14 pointer-events-none">
+        <div className="relative w-full h-full pointer-events-auto">
+          {fanCards.map((cardFilm, index) => {
             const poster =
-              resolveDirectImageUrl(promo.poster_url) ||
-              resolveDirectImageUrl(promo.thumb_url);
+              resolveDirectImageUrl(cardFilm.poster_url) ||
+              resolveDirectImageUrl(cardFilm.thumb_url);
             const isHovered = hoveredCardIndex === index;
 
-            const baseTransforms = [
-              { x: 0, y: 0, rotate: -6, scale: 1 },
-              { x: 42, y: 36, rotate: 3, scale: 0.94 },
-              { x: 82, y: 72, rotate: 11, scale: 0.88 },
+            // User specified exact fan parameters:
+            // Card 1 (Active/Front): Frontmost, largest, offset left slightly, rotate -5°, brightness 1.0
+            // Card 2 (Middle): Behind, shift right 80px, shift up -20px, rotate +5°, scale 0.88, brightness 0.80
+            // Card 3 (Back): Deepest, shift right 150px, shift down +30px, rotate +10°, scale 0.80, brightness 0.65
+            const fanConfigs = [
+              {
+                x: -10,
+                y: 10,
+                rotate: -5,
+                scale: 1.0,
+                brightness: 1.0,
+                shadow: "shadow-[0_25px_60px_rgba(0,0,0,0.85)]",
+                border: "border-white/35",
+                zIndex: 30,
+              },
+              {
+                x: 80,
+                y: -20,
+                rotate: 5,
+                scale: 0.88,
+                brightness: 0.8,
+                shadow: "shadow-[0_18px_45px_rgba(0,0,0,0.7)]",
+                border: "border-white/20",
+                zIndex: 20,
+              },
+              {
+                x: 150,
+                y: 30,
+                rotate: 10,
+                scale: 0.8,
+                brightness: 0.65,
+                shadow: "shadow-[0_12px_35px_rgba(0,0,0,0.6)]",
+                border: "border-white/15",
+                zIndex: 10,
+              },
             ];
-            const baseTransform = baseTransforms[index] || baseTransforms[0];
+
+            const config = fanConfigs[index] || fanConfigs[0];
 
             return (
-              <div key={`${promo.slug}-${index}`}>
+              <div key={`${cardFilm.slug}-${index}`} className="relative">
                 <motion.article
-                  initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+                  initial={reduceMotion ? false : { opacity: 0, y: 20 }}
                   animate={{
-                    opacity: isHovered ? 1 : 1 - index * 0.15,
-                    x: isHovered ? baseTransform.x + 8 : baseTransform.x,
-                    y: isHovered ? baseTransform.y - 10 : baseTransform.y,
-                    rotate: isHovered ? 0 : baseTransform.rotate,
-                    scale: isHovered ? 1.08 : baseTransform.scale,
+                    opacity: 1,
+                    x: isHovered ? config.x + 6 : config.x,
+                    y: isHovered ? config.y - 8 : config.y,
+                    rotate: isHovered ? 0 : config.rotate,
+                    scale: isHovered ? config.scale * 1.06 : config.scale,
+                    filter: isHovered
+                      ? "brightness(1.05)"
+                      : `brightness(${config.brightness})`,
                   }}
                   transition={{
                     type: "spring",
-                    stiffness: 220,
-                    damping: 20,
+                    stiffness: 260,
+                    damping: 24,
                   }}
                   onMouseEnter={() => setHoveredCardIndex(index)}
                   onMouseLeave={() => setHoveredCardIndex(null)}
                   onClick={() => {
                     const targetIndex = featured.findIndex(
-                      (f) => f.slug === promo.slug,
+                      (f) => f.slug === cardFilm.slug,
                     );
                     if (targetIndex !== -1) setCurrent(targetIndex);
                   }}
                   className={cn(
-                    "absolute left-0 top-0 w-[160px] overflow-hidden rounded-2xl border bg-[#0d1017] shadow-[0_20px_50px_rgba(0,0,0,0.8)] cursor-pointer transition-all duration-300",
+                    "absolute left-0 top-0 w-[165px] overflow-hidden rounded-2xl border bg-[#0d1017] cursor-pointer transition-all duration-300",
+                    config.shadow,
                     isHovered
-                      ? "border-white/80 ring-2 ring-white/90 shadow-[0_0_35px_rgba(255,255,255,0.4)] z-50"
-                      : "border-white/20 z-[3-index]",
+                      ? "border-white/90 ring-2 ring-white/80 shadow-[0_0_35px_rgba(255,255,255,0.4)] z-50"
+                      : config.border,
                   )}
                   style={{
-                    zIndex: isHovered ? 50 : 3 - index,
-                    transformOrigin: "bottom left",
+                    zIndex: isHovered ? 50 : config.zIndex,
+                    transformOrigin: "center center",
                   }}
                 >
                   <div className="aspect-[2/3] overflow-hidden bg-[#131822] relative group">
@@ -553,25 +590,70 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={poster}
-                        alt={promo.name}
+                        alt={cardFilm.name}
                         loading="lazy"
                         decoding="async"
-                        className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : null}
 
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent p-2.5 text-left">
-                      <p className="text-[11px] font-extrabold text-white leading-tight line-clamp-1">
-                        {promo.origin_name || promo.name}
+                    {/* Poster Title Scrim Gradient */}
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent p-3 text-left">
+                      <p className="text-[11px] font-extrabold text-white leading-snug line-clamp-1">
+                        {cardFilm.origin_name || cardFilm.name}
                       </p>
-                      {promo.year && (
-                        <p className="text-[9px] font-mono text-neutral-400 font-bold mt-0.5">
-                          {promo.year} • ★ {promo.vote_average || 8.5}
+                      {cardFilm.year && (
+                        <p className="text-[9px] font-mono text-neutral-300 font-bold mt-0.5 flex items-center gap-1">
+                          <span>{cardFilm.year}</span>
+                          <span>•</span>
+                          <span className="text-amber-400">★ {cardFilm.vote_average || 8.5}</span>
                         </p>
                       )}
                     </div>
                   </div>
                 </motion.article>
+
+                {/* Floating Preview Tooltip on Hover */}
+                <AnimatePresence>
+                  {isHovered && (
+                    <motion.div
+                      initial={{ opacity: 0, x: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, x: 0, scale: 1 }}
+                      exit={{ opacity: 0, x: -10, scale: 0.95 }}
+                      transition={{ duration: 0.18 }}
+                      className="absolute left-[180px] z-[60] w-[240px] p-3.5 rounded-2xl bg-[#0b0e17]/95 border border-white/20 backdrop-blur-2xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] pointer-events-none space-y-1.5 text-left"
+                      style={{ top: `${config.y - 10}px` }}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/30 text-amber-400 text-[10px] font-mono font-bold">
+                          ★ {cardFilm.vote_average || 8.5}
+                        </span>
+                        {cardFilm.year && (
+                          <span className="text-[10px] font-mono text-neutral-400 font-bold">
+                            {cardFilm.year}
+                          </span>
+                        )}
+                        <span className="ml-auto text-[9px] font-mono font-bold text-rose-400 uppercase">
+                          Xem ngay ▶
+                        </span>
+                      </div>
+
+                      <h4 className="text-xs font-black text-white leading-snug line-clamp-1">
+                        {cardFilm.name}
+                      </h4>
+                      {cardFilm.origin_name && (
+                        <p className="text-[10px] text-neutral-400 font-mono line-clamp-1">
+                          {cardFilm.origin_name}
+                        </p>
+                      )}
+
+                      <p className="text-[10px] text-neutral-300 leading-relaxed line-clamp-2 pt-0.5">
+                        {cardFilm.content ||
+                          "Chuyển sang xem trailer & thông tin bộ phim bom tấn này."}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })}
