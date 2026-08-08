@@ -195,9 +195,9 @@ export function ContinueWatchingRow({
         <DashPagination swiper={swiper} />
       </div>
 
-      {/* Main Carousel Area with Right Minimalist Vertical Navigation */}
-      <div className="flex items-stretch gap-3">
-        <div className="flex-1 min-w-0">
+      {/* Main Carousel Area with Fixed Slide Widths */}
+      <div className="flex items-stretch gap-3.5">
+        <div className="flex-1 min-w-0 overflow-hidden">
           <Swiper
             modules={[Navigation, FreeMode]}
             onSwiper={(s) => setSwiper(s)}
@@ -214,17 +214,12 @@ export function ContinueWatchingRow({
                 swiper.params.navigation.nextEl = nextRef.current;
               }
             }}
-            spaceBetween={18}
-            slidesPerView={1.3}
+            speed={500}
+            slidesPerGroup={2}
             freeMode={{ enabled: true, momentumRatio: 0.8 }}
-            breakpoints={{
-              480: { slidesPerView: 2.1, spaceBetween: 16 },
-              640: { slidesPerView: 2.6, spaceBetween: 18 },
-              768: { slidesPerView: 3.2, spaceBetween: 20 },
-              1024: { slidesPerView: 3.8, spaceBetween: 22 },
-              1280: { slidesPerView: 4.2, spaceBetween: 22 },
-            }}
-            className="w-full !pb-3 !pt-1"
+            spaceBetween={18}
+            slidesPerView="auto"
+            className="w-full !pb-3 !pt-1 !pl-0.5"
           >
             {hasHistory
               ? historyEntries.map((item: any) => {
@@ -258,122 +253,124 @@ export function ContinueWatchingRow({
                       : 0;
 
                   return (
-                    <SwiperSlide key={item.slug}>
-                      <Link
-                        href={`/watch/${item.slug}${
-                          item.epSlug ? `?ep=${item.epSlug}` : ""
-                        }`}
-                        className="group/card block relative select-none cursor-pointer"
-                      >
-                        {/* 16:9 Landscape Card Format */}
-                        <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 group-hover/card:border-white/40 group-hover/card:scale-[1.02] shadow-2xl bg-neutral-900 transition-all duration-300 relative">
-                          {thumbUrl ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
-                              src={thumbUrl}
-                              alt={title}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-xs text-neutral-400 font-bold p-2 text-center">
-                              {title}
-                            </div>
-                          )}
-
-                          {/* Gradient Bottom Overlay */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent opacity-80 group-hover/card:opacity-60 transition-opacity" />
-
-                          {/* Language / Quality Badge inside Banner */}
-                          <div className="absolute bottom-2.5 right-2.5 z-20">
-                            <span className="bg-[#2a3853]/90 border border-white/15 text-blue-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded backdrop-blur-md shadow-md uppercase tracking-wider">
-                              {badge}
-                            </span>
-                          </div>
-
-                          {/* Play Button Icon on Hover */}
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/30 backdrop-blur-[1px]">
-                            <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform scale-75 group-hover/card:scale-100 transition-transform">
-                              <Play
-                                size={18}
-                                fill="currentColor"
-                                className="ml-0.5"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Remove Button on hover */}
-                          <button
-                            onClick={(e) =>
-                              handleRemoveItem(e, item.slug, item.epSlug)
-                            }
-                            title="Xóa khỏi lịch sử xem"
-                            className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-red-600 text-white/70 hover:text-white transition-all opacity-0 group-hover/card:opacity-100 z-30"
-                          >
-                            <X size={13} />
-                          </button>
-
-                          {/* Red Progress Line Bar at Bottom Edge */}
-                          {percent > 0 && (
-                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-20">
-                              <div
-                                className="h-full bg-[#e50914] transition-all duration-300"
-                                style={{ width: `${percent}%` }}
-                              />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Overlapping Vertical Poster Thumbnail + Title & Detailed Metadata Lines */}
-                        <div className="flex items-start gap-2.5 mt-2.5 px-0.5 relative">
-                          {/* Overlapping Vertical Poster Thumbnail on Bottom Left */}
-                          <div className="relative -mt-6 shrink-0 w-11 sm:w-13 aspect-[2/3] rounded-xl overflow-hidden border-2 border-[#141414] shadow-2xl bg-neutral-800 z-20 transition-transform duration-300 group-hover/card:scale-105 group-hover/card:-translate-y-1">
-                            {posterUrl ? (
+                    <SwiperSlide key={item.slug} className="!w-auto">
+                      <div className="w-[240px] sm:w-[280px] md:w-[310px] shrink-0">
+                        <Link
+                          href={`/watch/${item.slug}${
+                            item.epSlug ? `?ep=${item.epSlug}` : ""
+                          }`}
+                          className="group/card block relative select-none cursor-pointer"
+                        >
+                          {/* 16:9 Landscape Card Format */}
+                          <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 group-hover/card:border-white/40 group-hover/card:scale-[1.02] shadow-2xl bg-neutral-900 transition-all duration-300 relative">
+                            {thumbUrl ? (
                               /* eslint-disable-next-line @next/next/no-img-element */
                               <img
-                                src={posterUrl}
+                                src={thumbUrl}
                                 alt={title}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
                                 loading="lazy"
                               />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-[9px] text-neutral-500 font-bold p-1 text-center">
+                              <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-xs text-neutral-400 font-bold p-2 text-center">
                                 {title}
+                              </div>
+                            )}
+
+                            {/* Gradient Bottom Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent opacity-80 group-hover/card:opacity-60 transition-opacity" />
+
+                            {/* Language / Quality Badge inside Banner */}
+                            <div className="absolute bottom-2.5 right-2.5 z-20">
+                              <span className="bg-[#2a3853]/90 border border-white/15 text-blue-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded backdrop-blur-md shadow-md uppercase tracking-wider">
+                                {badge}
+                              </span>
+                            </div>
+
+                            {/* Play Button Icon on Hover */}
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/30 backdrop-blur-[1px]">
+                              <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform scale-75 group-hover/card:scale-100 transition-transform">
+                                <Play
+                                  size={18}
+                                  fill="currentColor"
+                                  className="ml-0.5"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Remove Button on hover */}
+                            <button
+                              onClick={(e) =>
+                                handleRemoveItem(e, item.slug, item.epSlug)
+                              }
+                              title="Xóa khỏi lịch sử xem"
+                              className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-red-600 text-white/70 hover:text-white transition-all opacity-0 group-hover/card:opacity-100 z-30"
+                            >
+                              <X size={13} />
+                            </button>
+
+                            {/* Red Progress Line Bar at Bottom Edge */}
+                            {percent > 0 && (
+                              <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-20">
+                                <div
+                                  className="h-full bg-[#e50914] transition-all duration-300"
+                                  style={{ width: `${percent}%` }}
+                                />
                               </div>
                             )}
                           </div>
 
-                          {/* Title & 3-line Detailed Metadata Block */}
-                          <div className="flex-1 min-w-0 pt-0.5 space-y-0.5">
-                            {/* Main Title */}
-                            <h3 className="text-xs sm:text-sm font-extrabold text-white leading-snug line-clamp-1 group-hover/card:text-blue-400 transition-colors">
-                              {title}
-                            </h3>
+                          {/* Overlapping Vertical Poster Thumbnail + Title & Detailed Metadata Lines */}
+                          <div className="flex items-start gap-2.5 mt-2.5 px-0.5 relative">
+                            {/* Overlapping Vertical Poster Thumbnail on Bottom Left */}
+                            <div className="relative -mt-6 shrink-0 w-11 sm:w-13 aspect-[2/3] rounded-xl overflow-hidden border-2 border-[#141414] shadow-2xl bg-neutral-800 z-20 transition-transform duration-300 group-hover/card:scale-105 group-hover/card:-translate-y-1">
+                              {posterUrl ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img
+                                  src={posterUrl}
+                                  alt={title}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-[9px] text-neutral-500 font-bold p-1 text-center">
+                                  {title}
+                                </div>
+                              )}
+                            </div>
 
-                            {/* English / Original Title */}
-                            {originName ? (
-                              <p className="text-[11px] text-neutral-400 font-normal leading-tight line-clamp-1">
-                                {originName}
-                              </p>
-                            ) : null}
+                            {/* Title & 3-line Detailed Metadata Block */}
+                            <div className="flex-1 min-w-0 pt-0.5 space-y-0.5">
+                              {/* Main Title */}
+                              <h3 className="text-xs sm:text-sm font-extrabold text-white leading-snug line-clamp-1 group-hover/card:text-blue-400 transition-colors">
+                                {title}
+                              </h3>
 
-                            {/* Metadata Line: T18 • 2026 • 1h 50m */}
-                            <div className="flex items-center gap-1.5 text-[10px] font-mono text-neutral-400 font-bold pt-0.5 flex-wrap">
-                              <span className="text-neutral-300 font-extrabold">
-                                {ageRating}
-                              </span>
-                              <span>•</span>
-                              <span>{year}</span>
-                              {durationStr ? (
-                                <>
-                                  <span>•</span>
-                                  <span>{durationStr}</span>
-                                </>
+                              {/* English / Original Title */}
+                              {originName ? (
+                                <p className="text-[11px] text-neutral-400 font-normal leading-tight line-clamp-1">
+                                  {originName}
+                                </p>
                               ) : null}
+
+                              {/* Metadata Line: T18 • 2026 • 1h 50m */}
+                              <div className="flex items-center gap-1.5 text-[10px] font-mono text-neutral-400 font-bold pt-0.5 flex-wrap">
+                                <span className="text-neutral-300 font-extrabold">
+                                  {ageRating}
+                                </span>
+                                <span>•</span>
+                                <span>{year}</span>
+                                {durationStr ? (
+                                  <>
+                                    <span>•</span>
+                                    <span>{durationStr}</span>
+                                  </>
+                                ) : null}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </Link>
+                        </Link>
+                      </div>
                     </SwiperSlide>
                   );
                 })
@@ -395,99 +392,101 @@ export function ContinueWatchingRow({
                   } = getHistoryCardMeta(film);
 
                   return (
-                    <SwiperSlide key={film.slug}>
-                      <Link
-                        href={`/film/${film.slug}`}
-                        className="group/card block relative select-none cursor-pointer"
-                      >
-                        {/* 16:9 Landscape Card Format */}
-                        <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 group-hover/card:border-white/40 group-hover/card:scale-[1.02] shadow-2xl bg-neutral-900 transition-all duration-300 relative">
-                          {thumbUrl ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
-                              src={thumbUrl}
-                              alt={film.name}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-xs text-neutral-400 font-bold p-2 text-center">
-                              {film.name}
-                            </div>
-                          )}
-
-                          {/* Gradient Bottom Overlay */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent opacity-80 group-hover/card:opacity-60 transition-opacity" />
-
-                          {/* Quality / Language Badge inside Banner */}
-                          <div className="absolute bottom-2.5 right-2.5 z-20">
-                            <span className="bg-[#2a3853]/90 border border-white/15 text-blue-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded backdrop-blur-md shadow-md uppercase tracking-wider">
-                              {badge}
-                            </span>
-                          </div>
-
-                          {/* Play Button Icon on Hover */}
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/30 backdrop-blur-[1px]">
-                            <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform scale-75 group-hover/card:scale-100 transition-transform">
-                              <Play
-                                size={18}
-                                fill="currentColor"
-                                className="ml-0.5"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Overlapping Vertical Poster Thumbnail + Title & Detailed Metadata Lines */}
-                        <div className="flex items-start gap-2.5 mt-2.5 px-0.5 relative">
-                          {/* Overlapping Vertical Poster Thumbnail on Bottom Left */}
-                          <div className="relative -mt-6 shrink-0 w-11 sm:w-13 aspect-[2/3] rounded-xl overflow-hidden border-2 border-[#141414] shadow-2xl bg-neutral-800 z-20 transition-transform duration-300 group-hover/card:scale-105 group-hover/card:-translate-y-1">
-                            {posterUrl ? (
+                    <SwiperSlide key={film.slug} className="!w-auto">
+                      <div className="w-[240px] sm:w-[280px] md:w-[310px] shrink-0">
+                        <Link
+                          href={`/film/${film.slug}`}
+                          className="group/card block relative select-none cursor-pointer"
+                        >
+                          {/* 16:9 Landscape Card Format */}
+                          <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 group-hover/card:border-white/40 group-hover/card:scale-[1.02] shadow-2xl bg-neutral-900 transition-all duration-300 relative">
+                            {thumbUrl ? (
                               /* eslint-disable-next-line @next/next/no-img-element */
                               <img
-                                src={posterUrl}
-                                alt={title}
-                                className="w-full h-full object-cover"
+                                src={thumbUrl}
+                                alt={film.name}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
                                 loading="lazy"
                               />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-[9px] text-neutral-500 font-bold p-1 text-center">
-                                {title}
+                              <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-xs text-neutral-400 font-bold p-2 text-center">
+                                {film.name}
                               </div>
                             )}
-                          </div>
 
-                          {/* Title & 3-line Detailed Metadata Block */}
-                          <div className="flex-1 min-w-0 pt-0.5 space-y-0.5">
-                            {/* Main Title */}
-                            <h3 className="text-xs sm:text-sm font-extrabold text-white leading-snug line-clamp-1 group-hover/card:text-blue-400 transition-colors">
-                              {title}
-                            </h3>
+                            {/* Gradient Bottom Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent opacity-80 group-hover/card:opacity-60 transition-opacity" />
 
-                            {/* English / Original Title */}
-                            {originName ? (
-                              <p className="text-[11px] text-neutral-400 font-normal leading-tight line-clamp-1">
-                                {originName}
-                              </p>
-                            ) : null}
-
-                            {/* Metadata Line: T18 • 2026 • 1h 50m */}
-                            <div className="flex items-center gap-1.5 text-[10px] font-mono text-neutral-400 font-bold pt-0.5 flex-wrap">
-                              <span className="text-neutral-300 font-extrabold">
-                                {ageRating}
+                            {/* Quality / Language Badge inside Banner */}
+                            <div className="absolute bottom-2.5 right-2.5 z-20">
+                              <span className="bg-[#2a3853]/90 border border-white/15 text-blue-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded backdrop-blur-md shadow-md uppercase tracking-wider">
+                                {badge}
                               </span>
-                              <span>•</span>
-                              <span>{year}</span>
-                              {durationStr ? (
-                                <>
-                                  <span>•</span>
-                                  <span>{durationStr}</span>
-                                </>
-                              ) : null}
+                            </div>
+
+                            {/* Play Button Icon on Hover */}
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/30 backdrop-blur-[1px]">
+                              <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform scale-75 group-hover/card:scale-100 transition-transform">
+                                <Play
+                                  size={18}
+                                  fill="currentColor"
+                                  className="ml-0.5"
+                                />
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </Link>
+
+                          {/* Overlapping Vertical Poster Thumbnail + Title & Detailed Metadata Lines */}
+                          <div className="flex items-start gap-2.5 mt-2.5 px-0.5 relative">
+                            {/* Overlapping Vertical Poster Thumbnail on Bottom Left */}
+                            <div className="relative -mt-6 shrink-0 w-11 sm:w-13 aspect-[2/3] rounded-xl overflow-hidden border-2 border-[#141414] shadow-2xl bg-neutral-800 z-20 transition-transform duration-300 group-hover/card:scale-105 group-hover/card:-translate-y-1">
+                              {posterUrl ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img
+                                  src={posterUrl}
+                                  alt={title}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-[9px] text-neutral-500 font-bold p-1 text-center">
+                                  {title}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Title & 3-line Detailed Metadata Block */}
+                            <div className="flex-1 min-w-0 pt-0.5 space-y-0.5">
+                              {/* Main Title */}
+                              <h3 className="text-xs sm:text-sm font-extrabold text-white leading-snug line-clamp-1 group-hover/card:text-blue-400 transition-colors">
+                                {title}
+                              </h3>
+
+                              {/* English / Original Title */}
+                              {originName ? (
+                                <p className="text-[11px] text-neutral-400 font-normal leading-tight line-clamp-1">
+                                  {originName}
+                                </p>
+                              ) : null}
+
+                              {/* Metadata Line: T18 • 2026 • 1h 50m */}
+                              <div className="flex items-center gap-1.5 text-[10px] font-mono text-neutral-400 font-bold pt-0.5 flex-wrap">
+                                <span className="text-neutral-300 font-extrabold">
+                                  {ageRating}
+                                </span>
+                                <span>•</span>
+                                <span>{year}</span>
+                                {durationStr ? (
+                                  <>
+                                    <span>•</span>
+                                    <span>{durationStr}</span>
+                                  </>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      </div>
                     </SwiperSlide>
                   );
                 })}
