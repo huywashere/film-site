@@ -11,13 +11,78 @@ import { useQuery } from "@tanstack/react-query";
 import { watchHistoryApi } from "@/lib/api";
 import { FilmItem, resolveImageUrl } from "./FilmCard";
 import { DashPagination } from "./DashPagination";
-import { cn } from "@/lib/utils";
 
 import "swiper/css";
 import "swiper/css/navigation";
 
 interface ContinueWatchingRowProps {
   fallbackFilms?: FilmItem[];
+}
+
+function getHistoryCardMeta(item: any) {
+  const title = item.title || item.name || "Phim đã xem";
+  const originName = item.originName || item.origin_name || item.titleEn || "";
+
+  const year =
+    item.year ||
+    (item.release_date ? String(item.release_date).slice(0, 4) : "2026");
+
+  let ageRating = item.ageRating || item.content_rating || "T16";
+  const lowerTitle = (title + " " + originName).toLowerCase();
+  if (
+    lowerTitle.includes("ma ") ||
+    lowerTitle.includes("evil") ||
+    lowerTitle.includes("kinh dị") ||
+    lowerTitle.includes("địa ngục")
+  ) {
+    ageRating = "T18";
+  } else if (
+    lowerTitle.includes("spider") ||
+    lowerTitle.includes("nhện") ||
+    lowerTitle.includes("marvel")
+  ) {
+    ageRating = "T13";
+  } else if (
+    lowerTitle.includes("hoạt hình") ||
+    lowerTitle.includes("cưới") ||
+    lowerTitle.includes("gia đình")
+  ) {
+    ageRating = "P";
+  }
+
+  let durationStr = "";
+  if (item.currentTime && item.duration) {
+    const mins = Math.floor(item.duration / 60);
+    if (mins >= 60) {
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      durationStr = `${h}h ${m < 10 ? `0${m}` : m}m`;
+    } else if (mins > 0) {
+      durationStr = `${mins}m`;
+    } else {
+      durationStr = item.epName || `Tập ${item.epSlug || 1}`;
+    }
+  } else if (item.time && item.time !== "Đang cập nhật") {
+    durationStr = item.time;
+  } else if (item.epSlug || item.epName) {
+    durationStr = item.epName || `Tập ${item.epSlug}`;
+  } else {
+    durationStr = "1h 48m";
+  }
+
+  let badge = "P.Sub";
+  const langLower = (item.lang || item.quality || "").toLowerCase();
+  if (langLower.includes("lồng tiếng") || langLower.includes("l.tiếng")) {
+    badge = "L.Tiếng";
+  } else if (langLower.includes("thuyết minh")) {
+    badge = "P.Thuyết Minh";
+  } else if (langLower.includes("vietsub") || langLower.includes("sub")) {
+    badge = "P.Sub";
+  } else if (item.quality) {
+    badge = item.quality;
+  }
+
+  return { title, originName, year, ageRating, durationStr, badge };
 }
 
 export function ContinueWatchingRow({
@@ -50,7 +115,22 @@ export function ContinueWatchingRow({
       epSlug: item.episode || "1",
       epName: item.episode ? `Tập ${item.episode}` : "",
       title: item.movieTitle || item.name || "Phim đã xem",
-      poster: item.movieThumb || item.poster || item.thumb,
+      originName: item.originName || item.origin_name || item.titleEn || "",
+      poster:
+        item.poster ||
+        item.moviePoster ||
+        item.poster_url ||
+        item.movieThumb ||
+        item.thumb,
+      thumb:
+        item.movieThumb ||
+        item.thumb ||
+        item.thumb_url ||
+        item.backdrop ||
+        item.poster,
+      year: item.year || item.movieYear,
+      lang: item.lang || item.movieLang,
+      quality: item.quality || item.movieQuality,
       currentTime: item.progress || 0,
       duration: item.duration || 100,
       updatedAt: item.updatedAt
@@ -86,9 +166,12 @@ export function ContinueWatchingRow({
   };
 
   return (
-    <div data-history-row="true" className="w-full mb-8 relative group/section">
+    <div
+      data-history-row="true"
+      className="w-full mb-10 relative group/section"
+    >
       {/* Header with Title + Inline Pill Button + Right Dash Line Indicators */}
-      <div className="flex items-center justify-between mb-3.5 px-1">
+      <div className="flex items-center justify-between mb-4 px-1">
         <div className="flex items-center gap-2.5">
           <h2
             data-history-title="true"
@@ -131,21 +214,36 @@ export function ContinueWatchingRow({
                 swiper.params.navigation.nextEl = nextRef.current;
               }
             }}
-            spaceBetween={14}
-            slidesPerView={1.4}
+            spaceBetween={18}
+            slidesPerView={1.3}
             freeMode={{ enabled: true, momentumRatio: 0.8 }}
             breakpoints={{
-              480: { slidesPerView: 2.2, spaceBetween: 14 },
-              640: { slidesPerView: 2.8, spaceBetween: 16 },
-              768: { slidesPerView: 3.4, spaceBetween: 16 },
-              1024: { slidesPerView: 4.2, spaceBetween: 18 },
-              1280: { slidesPerView: 5.2, spaceBetween: 18 },
+              480: { slidesPerView: 2.1, spaceBetween: 16 },
+              640: { slidesPerView: 2.6, spaceBetween: 18 },
+              768: { slidesPerView: 3.2, spaceBetween: 20 },
+              1024: { slidesPerView: 3.8, spaceBetween: 22 },
+              1280: { slidesPerView: 4.2, spaceBetween: 22 },
             }}
-            className="w-full !py-1"
+            className="w-full !pb-3 !pt-1"
           >
             {hasHistory
-              ? historyEntries.map((item) => {
-                  const posterUrl = resolveImageUrl(item.poster);
+              ? historyEntries.map((item: any) => {
+                  const posterUrl =
+                    resolveImageUrl(item.poster) ||
+                    resolveImageUrl(item.thumb);
+                  const thumbUrl =
+                    resolveImageUrl(item.thumb) ||
+                    resolveImageUrl(item.poster);
+
+                  const {
+                    title,
+                    originName,
+                    year,
+                    ageRating,
+                    durationStr,
+                    badge,
+                  } = getHistoryCardMeta(item);
+
                   const percent =
                     item.duration > 0
                       ? Math.min(
@@ -167,23 +265,42 @@ export function ContinueWatchingRow({
                         }`}
                         className="group/card block relative select-none cursor-pointer"
                       >
-                        {/* 16:9 Landscape Card (wide banner format) */}
+                        {/* 16:9 Landscape Card Format */}
                         <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 group-hover/card:border-white/40 group-hover/card:scale-[1.02] shadow-2xl bg-neutral-900 transition-all duration-300 relative">
-                          {posterUrl ? (
+                          {thumbUrl ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
                             <img
-                              src={posterUrl}
-                              alt={item.title}
+                              src={thumbUrl}
+                              alt={title}
                               className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
                               loading="lazy"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-xs text-neutral-400 font-bold p-2 text-center">
-                              {item.title}
+                              {title}
                             </div>
                           )}
 
                           {/* Gradient Bottom Overlay */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-85 group-hover/card:opacity-60 transition-opacity" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent opacity-80 group-hover/card:opacity-60 transition-opacity" />
+
+                          {/* Language / Quality Badge inside Banner */}
+                          <div className="absolute bottom-2.5 right-2.5 z-20">
+                            <span className="bg-[#2a3853]/90 border border-white/15 text-blue-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded backdrop-blur-md shadow-md uppercase tracking-wider">
+                              {badge}
+                            </span>
+                          </div>
+
+                          {/* Play Button Icon on Hover */}
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/30 backdrop-blur-[1px]">
+                            <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform scale-75 group-hover/card:scale-100 transition-transform">
+                              <Play
+                                size={18}
+                                fill="currentColor"
+                                className="ml-0.5"
+                              />
+                            </div>
+                          </div>
 
                           {/* Remove Button on hover */}
                           <button
@@ -196,40 +313,65 @@ export function ContinueWatchingRow({
                             <X size={13} />
                           </button>
 
-                          {/* Red Badge "Mới thêm" / "Tập X" at Bottom Left */}
-                          <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5 pointer-events-none">
-                            <span className="bg-white text-black text-[10px] font-extrabold px-2 py-0.5 rounded shadow-md tracking-wide uppercase">
-                              {item.epName || "Mới thêm"}
-                            </span>
-                          </div>
-
-                          {/* Play Button Icon on Hover */}
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/30 backdrop-blur-[1px]">
-                            <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform scale-75 group-hover/card:scale-100 transition-transform">
-                              <Play
-                                size={18}
-                                fill="currentColor"
-                                className="ml-0.5"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Progress Line Bar at Bottom Edge */}
+                          {/* Red Progress Line Bar at Bottom Edge */}
                           {percent > 0 && (
                             <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-20">
                               <div
-                                className="h-full bg-white transition-all duration-300"
+                                className="h-full bg-[#e50914] transition-all duration-300"
                                 style={{ width: `${percent}%` }}
                               />
                             </div>
                           )}
                         </div>
 
-                        {/* Title Underneath Card */}
-                        <div className="mt-2 space-y-0.5 px-0.5">
-                          <p className="text-xs sm:text-sm font-extrabold text-white truncate group-hover/card:text-white/80 transition-colors">
-                            {item.title}
-                          </p>
+                        {/* Overlapping Vertical Poster Thumbnail + Title & Detailed Metadata Lines */}
+                        <div className="flex items-start gap-2.5 mt-2.5 px-0.5 relative">
+                          {/* Overlapping Vertical Poster Thumbnail on Bottom Left */}
+                          <div className="relative -mt-6 shrink-0 w-11 sm:w-13 aspect-[2/3] rounded-xl overflow-hidden border-2 border-[#141414] shadow-2xl bg-neutral-800 z-20 transition-transform duration-300 group-hover/card:scale-105 group-hover/card:-translate-y-1">
+                            {posterUrl ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img
+                                src={posterUrl}
+                                alt={title}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[9px] text-neutral-500 font-bold p-1 text-center">
+                                {title}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Title & 3-line Detailed Metadata Block */}
+                          <div className="flex-1 min-w-0 pt-0.5 space-y-0.5">
+                            {/* Main Title */}
+                            <h3 className="text-xs sm:text-sm font-extrabold text-white leading-snug line-clamp-1 group-hover/card:text-blue-400 transition-colors">
+                              {title}
+                            </h3>
+
+                            {/* English / Original Title */}
+                            {originName ? (
+                              <p className="text-[11px] text-neutral-400 font-normal leading-tight line-clamp-1">
+                                {originName}
+                              </p>
+                            ) : null}
+
+                            {/* Metadata Line: T18 • 2026 • 1h 50m */}
+                            <div className="flex items-center gap-1.5 text-[10px] font-mono text-neutral-400 font-bold pt-0.5 flex-wrap">
+                              <span className="text-neutral-300 font-extrabold">
+                                {ageRating}
+                              </span>
+                              <span>•</span>
+                              <span>{year}</span>
+                              {durationStr ? (
+                                <>
+                                  <span>•</span>
+                                  <span>{durationStr}</span>
+                                </>
+                              ) : null}
+                            </div>
+                          </div>
                         </div>
                       </Link>
                     </SwiperSlide>
@@ -237,8 +379,20 @@ export function ContinueWatchingRow({
                 })
               : fallbackFilms.slice(0, 10).map((film) => {
                   const posterUrl =
+                    resolveImageUrl(film.poster_url) ||
+                    resolveImageUrl(film.thumb_url);
+                  const thumbUrl =
                     resolveImageUrl(film.thumb_url) ||
                     resolveImageUrl(film.poster_url);
+
+                  const {
+                    title,
+                    originName,
+                    year,
+                    ageRating,
+                    durationStr,
+                    badge,
+                  } = getHistoryCardMeta(film);
 
                   return (
                     <SwiperSlide key={film.slug}>
@@ -246,11 +400,12 @@ export function ContinueWatchingRow({
                         href={`/film/${film.slug}`}
                         className="group/card block relative select-none cursor-pointer"
                       >
-                        {/* 16:9 Landscape Card (wide banner format) */}
+                        {/* 16:9 Landscape Card Format */}
                         <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 group-hover/card:border-white/40 group-hover/card:scale-[1.02] shadow-2xl bg-neutral-900 transition-all duration-300 relative">
-                          {posterUrl ? (
+                          {thumbUrl ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
                             <img
-                              src={posterUrl}
+                              src={thumbUrl}
                               alt={film.name}
                               className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
                               loading="lazy"
@@ -262,12 +417,12 @@ export function ContinueWatchingRow({
                           )}
 
                           {/* Gradient Bottom Overlay */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-85 group-hover/card:opacity-60 transition-opacity" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent opacity-80 group-hover/card:opacity-60 transition-opacity" />
 
-                          {/* Red Badge "Mới thêm" at Bottom Left (Matches Exact User Screenshot) */}
-                          <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5 pointer-events-none">
-                            <span className="bg-white text-black text-[10px] font-extrabold px-2 py-0.5 rounded shadow-md tracking-wide uppercase">
-                              Mới thêm
+                          {/* Quality / Language Badge inside Banner */}
+                          <div className="absolute bottom-2.5 right-2.5 z-20">
+                            <span className="bg-[#2a3853]/90 border border-white/15 text-blue-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded backdrop-blur-md shadow-md uppercase tracking-wider">
+                              {badge}
                             </span>
                           </div>
 
@@ -283,11 +438,54 @@ export function ContinueWatchingRow({
                           </div>
                         </div>
 
-                        {/* Title Underneath Card */}
-                        <div className="mt-2 space-y-0.5 px-0.5">
-                          <p className="text-xs sm:text-sm font-extrabold text-white truncate group-hover/card:text-white/80 transition-colors">
-                            {film.name}
-                          </p>
+                        {/* Overlapping Vertical Poster Thumbnail + Title & Detailed Metadata Lines */}
+                        <div className="flex items-start gap-2.5 mt-2.5 px-0.5 relative">
+                          {/* Overlapping Vertical Poster Thumbnail on Bottom Left */}
+                          <div className="relative -mt-6 shrink-0 w-11 sm:w-13 aspect-[2/3] rounded-xl overflow-hidden border-2 border-[#141414] shadow-2xl bg-neutral-800 z-20 transition-transform duration-300 group-hover/card:scale-105 group-hover/card:-translate-y-1">
+                            {posterUrl ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img
+                                src={posterUrl}
+                                alt={title}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[9px] text-neutral-500 font-bold p-1 text-center">
+                                {title}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Title & 3-line Detailed Metadata Block */}
+                          <div className="flex-1 min-w-0 pt-0.5 space-y-0.5">
+                            {/* Main Title */}
+                            <h3 className="text-xs sm:text-sm font-extrabold text-white leading-snug line-clamp-1 group-hover/card:text-blue-400 transition-colors">
+                              {title}
+                            </h3>
+
+                            {/* English / Original Title */}
+                            {originName ? (
+                              <p className="text-[11px] text-neutral-400 font-normal leading-tight line-clamp-1">
+                                {originName}
+                              </p>
+                            ) : null}
+
+                            {/* Metadata Line: T18 • 2026 • 1h 50m */}
+                            <div className="flex items-center gap-1.5 text-[10px] font-mono text-neutral-400 font-bold pt-0.5 flex-wrap">
+                              <span className="text-neutral-300 font-extrabold">
+                                {ageRating}
+                              </span>
+                              <span>•</span>
+                              <span>{year}</span>
+                              {durationStr ? (
+                                <>
+                                  <span>•</span>
+                                  <span>{durationStr}</span>
+                                </>
+                              ) : null}
+                            </div>
+                          </div>
                         </div>
                       </Link>
                     </SwiperSlide>
