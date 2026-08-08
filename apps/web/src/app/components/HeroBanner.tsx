@@ -205,7 +205,12 @@ export default function HeroBanner({ films }: HeroBannerProps) {
 
   const fallbackFeatured = useMemo(() => {
     if (films && films.length > 0) {
-      return films.slice(0, 6);
+      const pool = [...films];
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      return pool.slice(0, 6);
     }
     return [];
   }, [films]);
@@ -219,18 +224,6 @@ export default function HeroBanner({ films }: HeroBannerProps) {
   );
 
   useEffect(() => {
-    try {
-      const cached = JSON.parse(
-        sessionStorage.getItem(HERO_SESSION_KEY) || "null",
-      );
-      if (isStoredHeroPlaylist(cached)) {
-        setTmdbFeatured(cached);
-        return;
-      }
-    } catch {
-      sessionStorage.removeItem(HERO_SESSION_KEY);
-    }
-
     let active = true;
     const loadPlaylist = async () => {
       let playlist = await loadCuratedTmdbPlaylist();
@@ -239,11 +232,11 @@ export default function HeroBanner({ films }: HeroBannerProps) {
         const groups = await Promise.all(
           HERO_MARKETS.map(async (market) => {
             const response = await tmdbApi.discoverMovies({
-              page: 1 + Math.floor(Math.random() * 3),
+              page: 1 + Math.floor(Math.random() * 5),
               region: market.region,
               with_origin_country: market.code,
               with_original_language: market.language,
-              "vote_count.gte": 1000,
+              "vote_count.gte": 500,
             });
             return response?.results || [];
           }),
@@ -253,11 +246,6 @@ export default function HeroBanner({ films }: HeroBannerProps) {
 
       if (!active || playlist.length !== 6) return;
       setTmdbFeatured(playlist);
-      try {
-        sessionStorage.setItem(HERO_SESSION_KEY, JSON.stringify(playlist));
-      } catch {
-        // Session storage is only an optimization; the banner still works.
-      }
     };
 
     void loadPlaylist();

@@ -678,10 +678,16 @@ export default function HomePage() {
     [trendingData],
   );
 
-  // Cố định 6 phim Hollywood bom tấn hàng đầu (Marvel, DC, Avatar, Sci-Fi) cho Hero Banner
+  // Randomize 6 phim Hollywood & phim mới hot cho Hero Banner
   const bannerFilms = useMemo(() => {
-    return HOLLYWOOD_HERO_POOL.slice(0, 6);
-  }, []);
+    const combined = [...HOLLYWOOD_HERO_POOL, ...latestFilms];
+    const pool = deduplicate(combined);
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    return pool.slice(0, 6);
+  }, [latestFilms]);
 
   const showBannerSkeleton = false;
 
