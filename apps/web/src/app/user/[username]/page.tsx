@@ -61,6 +61,50 @@ type TabItem = {
   category: "profile" | "settings";
 };
 
+// ── Toggle component ────────────────────────────────────────────────
+function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className={cn(
+        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200",
+        checked ? "bg-[#e50914]" : "bg-white/10"
+      )}
+    >
+      <span
+        className={cn(
+          "inline-block h-4 w-4 rounded-full bg-white transition-transform duration-200",
+          checked ? "translate-x-6" : "translate-x-1"
+        )}
+      />
+    </button>
+  );
+}
+
+// ── Setting row ─────────────────────────────────────────────────────
+function SettingRow({
+  title,
+  desc,
+  checked,
+  onChange,
+}: {
+  title: string;
+  desc: string;
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-6 py-4 border-b border-white/[0.06] last:border-0">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-white">{title}</p>
+        <p className="mt-0.5 text-xs text-neutral-500 leading-5">{desc}</p>
+      </div>
+      <Toggle checked={checked} onChange={onChange} />
+    </div>
+  );
+}
+
 export default function UserDashboardPage() {
   const params = useParams();
   const router = useRouter();
@@ -91,7 +135,6 @@ export default function UserDashboardPage() {
     }
   }, [tabParam]);
 
-  // Utility Settings Store
   const {
     autoplay,
     autoNextEpisode,
@@ -111,7 +154,6 @@ export default function UserDashboardPage() {
       (user.username && encodeURIComponent(user.username) === rawUsername)),
   );
 
-  // Form Profile State
   const [displayName, setDisplayName] = useState(
     user?.displayName || user?.username || "",
   );
@@ -126,7 +168,6 @@ export default function UserDashboardPage() {
   const [updatingProfile, setUpdatingProfile] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // Password Security Form State
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -142,7 +183,6 @@ export default function UserDashboardPage() {
     }
   }, [user]);
 
-  // Profile Query
   const { data: apiProfile } = useQuery({
     queryKey: ["user-profile", username],
     queryFn: async () => {
@@ -176,7 +216,6 @@ export default function UserDashboardPage() {
           _count: { watchlist: 0, reviews: 0 },
         });
 
-  // Watch History Query
   const { data: historyData } = useQuery({
     queryKey: ["user-history", username],
     queryFn: () =>
@@ -188,7 +227,6 @@ export default function UserDashboardPage() {
     retry: false,
   });
 
-  // Watchlist Query
   const { data: watchlistData } = useQuery({
     queryKey: ["user-watchlist", username],
     queryFn: () =>
@@ -210,7 +248,6 @@ export default function UserDashboardPage() {
         avatarUrl: avatarToSave || undefined,
         bio,
       });
-
       if (data) {
         useAuthStore.getState().setUser({
           ...user!,
@@ -241,10 +278,7 @@ export default function UserDashboardPage() {
     }
     setChangingPassword(true);
     try {
-      await authApi.changePassword({
-        currentPassword,
-        newPassword,
-      });
+      await authApi.changePassword({ currentPassword, newPassword });
       toast("Đã cập nhật mật khẩu mới an toàn!", "success");
       setCurrentPassword("");
       setNewPassword("");
@@ -272,937 +306,534 @@ export default function UserDashboardPage() {
   );
 
   const TABS: TabItem[] = [
-    {
-      id: "account",
-      label: "Thông tin cá nhân",
-      icon: User,
-      category: "profile",
-    },
-    {
-      id: "stats",
-      label: "Thống kê cày phim",
-      icon: BarChart3,
-      category: "profile",
-    },
-    {
-      id: "watchlist",
-      label: `Tủ phim đã lưu (${watchlistItems.length})`,
-      icon: Bookmark,
-      category: "profile",
-    },
-    {
-      id: "history",
-      label: `Lịch sử xem (${historyItems.length})`,
-      icon: History,
-      category: "profile",
-    },
-    {
-      id: "settings",
-      label: "Cài đặt trình phát 4K",
-      icon: Sliders,
-      category: "settings",
-    },
-    {
-      id: "security",
-      label: "Mật khẩu & bảo mật",
-      icon: Lock,
-      category: "settings",
-    },
+    { id: "account", label: "Thông tin cá nhân", icon: User, category: "profile" },
+    { id: "stats", label: "Thống kê", icon: BarChart3, category: "profile" },
+    { id: "watchlist", label: `Tủ phim (${watchlistItems.length})`, icon: Bookmark, category: "profile" },
+    { id: "history", label: `Lịch sử (${historyItems.length})`, icon: History, category: "profile" },
+    { id: "settings", label: "Trình phát", icon: Sliders, category: "settings" },
+    { id: "security", label: "Bảo mật", icon: Lock, category: "settings" },
   ];
 
-  return (
-    <main className="mx-auto min-h-screen max-w-[1440px] space-y-6 bg-[#0b0d12] px-4 pb-28 pt-20 font-sans text-white select-none sm:px-8 lg:px-12">
-      {/* Identity header: a calm account overview with one clear action zone. */}
-      <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#10141b] shadow-[0_24px_70px_rgba(0,0,0,0.24)]">
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-500/[0.12] via-transparent to-transparent" />
-        <div className="relative z-10 border-b border-white/10 px-6 py-4 sm:px-9">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-semibold tracking-[0.08em] text-neutral-500">
-                Tài khoản
-              </p>
-              <p className="mt-1 text-sm font-semibold text-neutral-200">
-                Không gian cá nhân của bạn
-              </p>
-            </div>
-            <span className="hidden rounded-full border border-violet-300/20 bg-violet-300/[0.08] px-3 py-1 text-[11px] font-semibold text-violet-200 sm:inline-flex">
-              CinePhim 4K
-            </span>
-          </div>
-        </div>
+  // ── Input style ──────────────────────────────────────────────────
+  const inputCls =
+    "w-full rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-neutral-600 outline-none transition-all focus:border-white/25 focus:bg-white/[0.07]";
 
-        <div className="relative z-10 flex flex-col justify-between gap-8 p-6 sm:p-9 lg:flex-row lg:items-center">
-          {/* Left Avatar & Identity Group */}
-          <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
-            {/* Avatar Box with Gradient Halo Ring */}
-            <div className="relative group shrink-0">
-              <div className="rounded-[22px] border border-violet-200/35 bg-violet-300/[0.08] p-1.5 shadow-[0_14px_35px_rgba(109,40,217,0.18)]">
-                <div className="relative h-24 w-24 overflow-hidden rounded-[17px] bg-neutral-900 sm:h-28 sm:w-28">
-                  <img
-                    src={
-                      selectedAvatar ||
-                      profile.avatarUrl ||
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        displayName || profile.username || "User",
-                      )}&background=171717&color=ffffff`
-                    }
-                    alt={profile.username}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-              </div>
+  return (
+    <main className="min-h-screen bg-[#141414] text-white select-none">
+      {/* ── COVER BANNER ── */}
+      <div className="relative h-48 sm:h-56 overflow-hidden bg-gradient-to-br from-neutral-900 via-[#1a1a1a] to-[#141414]">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(229,9,20,0.12)_0%,_transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(255,255,255,0.03)_0%,_transparent_50%)]" />
+        {/* Subtle film strip pattern */}
+        <div className="absolute inset-0 opacity-[0.03]"
+          style={{ backgroundImage: "repeating-linear-gradient(90deg, #fff 0px, #fff 2px, transparent 2px, transparent 60px)" }} />
+      </div>
+
+      {/* ── PROFILE HEADER (overlapping cover) ── */}
+      <div className="mx-auto max-w-[1300px] px-4 sm:px-8">
+        <div className="-mt-16 flex flex-col gap-5 sm:flex-row sm:items-end sm:gap-6 pb-6 border-b border-white/[0.07]">
+          {/* Avatar */}
+          <div className="relative shrink-0 group">
+            <div className={cn(
+              "h-28 w-28 sm:h-32 sm:w-32 rounded-full overflow-hidden border-4 ring-2",
+              isOwnProfile
+                ? "border-[#141414] ring-[#e50914]/60"
+                : "border-[#141414] ring-white/10"
+            )}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={
+                  selectedAvatar ||
+                  profile.avatarUrl ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    displayName || profile.username || "User",
+                  )}&background=1a1a1a&color=ffffff`
+                }
+                alt={profile.username}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+            {isOwnProfile && (
               <button
                 onClick={() => setShowAvatarPicker(true)}
-                className="absolute -bottom-1 -right-1 cursor-pointer rounded-xl border-2 border-[#10141b] bg-white p-2 text-black shadow-xl transition-transform hover:scale-105 active:scale-95"
-                title="Thay đổi avatar"
+                className="absolute bottom-1 right-1 h-8 w-8 rounded-full bg-white text-black flex items-center justify-center cursor-pointer hover:bg-neutral-200 transition-colors"
+                title="Đổi avatar"
               >
-                <Camera size={14} strokeWidth={2.5} />
+                <Camera size={13} strokeWidth={2.5} />
               </button>
-            </div>
+            )}
+          </div>
 
-            {/* Identity Info */}
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-start">
+          {/* Identity */}
+          <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between pb-1">
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
                   {displayName || profile.displayName || profile.username}
                 </h1>
                 {isAdmin ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-300/25 bg-violet-300/[0.1] px-3 py-1 text-[11px] font-semibold text-violet-100">
-                    <Sparkles size={12} className="text-amber-400" /> ADMIN
-                    FOUNDER
+                  <span className="inline-flex items-center gap-1 rounded-md bg-[#e50914]/10 border border-[#e50914]/30 px-2.5 py-0.5 text-[10px] font-bold text-[#e50914] uppercase tracking-wider">
+                    <Sparkles size={10} /> Admin
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-[11px] font-semibold text-neutral-200">
-                    <Crown size={12} className="text-neutral-400" /> ULTRA VIP
-                    4K
+                  <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.06] border border-white/10 px-2.5 py-0.5 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                    <Crown size={10} /> VIP 4K
                   </span>
                 )}
               </div>
-
-              <p className="text-sm text-neutral-400">
-                @{profile.username}{" "}
-                <span className="px-1 text-neutral-600">/</span>{" "}
-                <span className="text-neutral-300 font-medium">
-                  {user?.email || `${profile.username}@gmail.com`}
-                </span>
+              <p className="text-sm text-neutral-500">
+                @{profile.username}
+                <span className="mx-2 text-neutral-700">·</span>
+                <span className="text-neutral-400">{user?.email || `${profile.username}@gmail.com`}</span>
               </p>
-
               {profile.bio && (
-                <p className="max-w-lg pt-0.5 text-sm leading-relaxed text-neutral-300 line-clamp-2">
+                <p className="text-sm text-neutral-400 leading-relaxed max-w-md line-clamp-2">
                   {profile.bio}
                 </p>
               )}
             </div>
-          </div>
 
-          {/* Right Header Quick Stats & Actions */}
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-end lg:max-w-[430px]">
-            <div className="flex items-center divide-x divide-white/10 rounded-2xl border border-white/10 bg-white/[0.035] px-1">
-              <div className="min-w-[98px] px-4 py-3 text-center">
-                <span className="text-sm font-mono font-black text-white block">
-                  {watchlistItems.length}
-                </span>
-                <span className="text-[10px] font-semibold text-neutral-500">
-                  Tủ Phim
-                </span>
+            {/* Quick stats + actions */}
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Stats */}
+              <div className="flex items-center gap-px rounded-lg overflow-hidden border border-white/10">
+                <div className="px-5 py-2.5 bg-white/[0.04] text-center min-w-[80px]">
+                  <div className="text-lg font-black text-white">{watchlistItems.length}</div>
+                  <div className="text-[10px] text-neutral-500 font-medium">Tủ phim</div>
+                </div>
+                <div className="px-5 py-2.5 bg-white/[0.04] text-center min-w-[80px] border-l border-white/10">
+                  <div className="text-lg font-black text-white">{historyItems.length}</div>
+                  <div className="text-[10px] text-neutral-500 font-medium">Đã xem</div>
+                </div>
               </div>
 
-              <div className="min-w-[98px] px-4 py-3 text-center">
-                <span className="text-sm font-mono font-black text-white block">
-                  {historyItems.length}
-                </span>
-                <span className="text-[10px] font-semibold text-neutral-500">
-                  Đã Xem
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
+              {/* Actions */}
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
-                  toast("Đã sao chép liên kết trang cá nhân!", "success");
+                  toast("Đã sao chép liên kết!", "success");
                 }}
-                className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3.5 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-white/[0.11] active:scale-95"
+                className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-xs font-semibold text-neutral-300 hover:bg-white/[0.08] hover:text-white transition-colors cursor-pointer"
               >
-                <Share2 size={14} className="text-neutral-300" /> Chia sẻ
+                <Share2 size={13} /> Chia sẻ
               </button>
 
               {user && (
                 <button
                   onClick={() => setShowLogoutModal(true)}
-                  className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-transparent px-3.5 py-2.5 text-xs font-semibold text-neutral-400 transition-colors hover:bg-white/[0.06] hover:text-white active:scale-95"
+                  className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-transparent px-3.5 py-2.5 text-xs font-semibold text-neutral-500 hover:bg-white/[0.04] hover:text-white transition-colors cursor-pointer"
                 >
-                  <LogOut size={14} /> Thoát
+                  <LogOut size={13} /> Đăng xuất
                 </button>
               )}
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-neutral-500">
-          Quản lý thông tin, thói quen xem và danh sách phim của bạn.
-        </p>
-        <AccountPageTabs
-          active="profile"
-          username={profile.username || username}
-        />
-      </div>
-
-      {/* ── TWO-COLUMN WORKSPACE GRID (LEFT NAVIGATION MENU + RIGHT WORKSPACE) ── */}
-      <div className="grid items-start gap-5 lg:grid-cols-[248px_minmax(0,1fr)]">
-        {/* Left Navigation Menu */}
-        <aside className="rounded-3xl border border-white/10 bg-[#10141b] p-3 shadow-[0_16px_45px_rgba(0,0,0,0.18)] lg:sticky lg:top-24">
-          <div className="px-3 pb-3 pt-2">
-            <p className="text-xs font-semibold text-white">
-              Điều hướng tài khoản
-            </p>
-            <p className="mt-1 text-xs leading-5 text-neutral-500">
-              Chọn một mục để cập nhật không gian của bạn.
-            </p>
-          </div>
-
-          <div className="border-t border-white/10 pt-3">
-            <p className="px-3 pb-2 text-[10px] font-semibold tracking-[0.12em] text-neutral-500">
-              HỒ SƠ
-            </p>
-            <div className="space-y-1">
-              {TABS.filter((tab) => tab.category === "profile").map((tab) => {
-                const isActive = activeTab === tab.id;
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as TabType)}
-                    className={cn(
-                      "group relative flex w-full cursor-pointer items-center justify-between overflow-hidden rounded-xl px-3.5 py-3 text-xs font-semibold transition-colors",
-                      isActive
-                        ? "bg-white/[0.09] text-white shadow-sm ring-1 ring-violet-300/20"
-                        : "text-neutral-400 hover:bg-white/[0.06] hover:text-white",
-                    )}
-                  >
-                    <div className="flex items-center gap-3 relative z-10">
-                      <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
-                      <span>{tab.label}</span>
-                    </div>
-                    <ChevronRight
-                      size={14}
-                      className={cn(
-                        "relative z-10 transition-transform duration-200",
-                        isActive
-                          ? "text-violet-200 translate-x-0"
-                          : "opacity-0 group-hover:opacity-100 -translate-x-1 text-neutral-400",
-                      )}
-                    />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="mt-4 border-t border-white/10 pt-3">
-            <p className="px-3 pb-2 text-[10px] font-semibold tracking-[0.12em] text-neutral-500">
-              TÙY CHỈNH
-            </p>
-            <div className="space-y-1">
-              {TABS.filter((tab) => tab.category === "settings").map((tab) => {
-                const isActive = activeTab === tab.id;
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as TabType)}
-                    className={cn(
-                      "group relative flex w-full cursor-pointer items-center justify-between overflow-hidden rounded-xl px-3.5 py-3 text-xs font-semibold transition-colors",
-                      isActive
-                        ? "bg-white/[0.09] text-white shadow-sm ring-1 ring-violet-300/20"
-                        : "text-neutral-400 hover:bg-white/[0.06] hover:text-white",
-                    )}
-                  >
-                    <div className="relative z-10 flex items-center gap-3">
-                      <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
-                      <span>{tab.label}</span>
-                    </div>
-                    <ChevronRight
-                      size={14}
-                      className={cn(
-                        "relative z-10 transition-transform duration-200",
-                        isActive
-                          ? "text-violet-200"
-                          : "-translate-x-1 text-neutral-400 opacity-0 group-hover:translate-x-0 group-hover:opacity-100",
-                      )}
-                    />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </aside>
-
-        {/* Right Main Content Panel */}
-        <div className="relative min-h-[540px] rounded-3xl border border-white/10 bg-[#10141b] p-5 shadow-[0_16px_45px_rgba(0,0,0,0.18)] sm:p-8 lg:p-9">
-          {/* TAB 1: THÔNG TIN CÁ NHÂN */}
-          {activeTab === "account" && (
-            <form
-              onSubmit={handleUpdateProfile}
-              className="max-w-3xl space-y-6 animate-fade-in"
-            >
-              <div className="border-b border-white/10 pb-5">
-                <h2 className="flex items-center gap-2.5 text-xl font-black text-white">
-                  <User size={22} className="text-violet-200" /> Thông tin cá
-                  nhân
-                </h2>
-                <p className="text-xs text-neutral-400 mt-1 font-mono">
-                  Cập nhật những thông tin người khác nhìn thấy trên CinePhim.
+        {/* ── MAIN WORKSPACE ── */}
+        <div className="flex gap-8 py-8 pb-28">
+          {/* ── LEFT SIDEBAR ── */}
+          <aside className="hidden lg:block w-52 shrink-0 sticky top-20 self-start">
+            <div className="space-y-6">
+              {/* Profile group */}
+              <div>
+                <p className="px-2 mb-2 text-[10px] font-bold tracking-[0.1em] text-neutral-600 uppercase">
+                  Hồ sơ
                 </p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[11px] font-mono font-extrabold text-neutral-400 uppercase tracking-wider block">
-                  Email tài khoản
-                </label>
-                <input
-                  type="email"
-                  value={email || `${profile.username}@gmail.com`}
-                  readOnly
-                  className="w-full rounded-xl border border-white/10 bg-[#0b0f15] px-4 py-3.5 text-sm font-mono text-neutral-400 opacity-75 shadow-inner outline-none cursor-not-allowed"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[11px] font-mono font-extrabold text-neutral-400 uppercase tracking-wider block">
-                  Tên hiển thị
-                </label>
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Nhập tên hiển thị..."
-                  className="w-full rounded-xl border border-white/10 bg-[#0b0f15] px-4 py-3.5 text-sm text-white shadow-inner outline-none transition-all focus:border-violet-300/50 focus:ring-1 focus:ring-violet-300/20"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[11px] font-mono font-extrabold text-neutral-400 uppercase tracking-wider block">
-                  Giới thiệu về bạn
-                </label>
-                <textarea
-                  rows={3}
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="Viết một đoạn ngắn giới thiệu về phong cách xem phim của bạn..."
-                  className="w-full resize-none rounded-xl border border-white/10 bg-[#0b0f15] px-4 py-3.5 text-sm text-white shadow-inner outline-none transition-all focus:border-violet-300/50 focus:ring-1 focus:ring-violet-300/20"
-                />
-              </div>
-
-              <div className="p-4.5 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-white">
-                    Hiển thị hồ sơ công khai
-                  </p>
-                  <p className="mt-0.5 text-xs leading-5 text-neutral-400">
-                    Cho phép người khác xem tủ phim và lịch sử xem của bạn.
-                  </p>
+                <div className="space-y-0.5">
+                  {TABS.filter((t) => t.category === "profile").map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={cn(
+                          "group flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all",
+                          isActive
+                            ? "bg-white/[0.08] text-white border-l-2 border-[#e50914] pl-[10px]"
+                            : "text-neutral-500 hover:bg-white/[0.04] hover:text-neutral-200 border-l-2 border-transparent pl-[10px]"
+                        )}
+                      >
+                        <Icon size={15} strokeWidth={isActive ? 2.5 : 2} className="shrink-0" />
+                        <span className="truncate">{tab.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
+              </div>
+
+              {/* Settings group */}
+              <div>
+                <p className="px-2 mb-2 text-[10px] font-bold tracking-[0.1em] text-neutral-600 uppercase">
+                  Cài đặt
+                </p>
+                <div className="space-y-0.5">
+                  {TABS.filter((t) => t.category === "settings").map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={cn(
+                          "group flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all",
+                          isActive
+                            ? "bg-white/[0.08] text-white border-l-2 border-[#e50914] pl-[10px]"
+                            : "text-neutral-500 hover:bg-white/[0.04] hover:text-neutral-200 border-l-2 border-transparent pl-[10px]"
+                        )}
+                      >
+                        <Icon size={15} strokeWidth={isActive ? 2.5 : 2} className="shrink-0" />
+                        <span className="truncate">{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          {/* ── MOBILE TAB BAR ── */}
+          <div className="lg:hidden w-full fixed bottom-0 left-0 z-40 bg-[#141414]/95 backdrop-blur border-t border-white/[0.07] flex overflow-x-auto px-2 py-2 gap-1">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
                 <button
-                  type="button"
-                  onClick={() => setIsPublicProfile(!isPublicProfile)}
-                  className={`flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full p-1 transition-colors ${
-                    isPublicProfile
-                      ? "justify-end bg-violet-300"
-                      : "justify-start bg-white/10"
-                  }`}
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    "flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-medium whitespace-nowrap cursor-pointer transition-colors shrink-0",
+                    isActive ? "text-white bg-white/10" : "text-neutral-600"
+                  )}
                 >
-                  <span className="h-5 w-5 rounded-full bg-[#0b0d12] shadow-md" />
+                  <Icon size={16} />
+                  <span>{tab.label.split(" ")[0]}</span>
                 </button>
-              </div>
+              );
+            })}
+          </div>
 
-              <button
-                type="submit"
-                disabled={updatingProfile}
-                className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-5 py-3.5 text-xs font-bold text-black shadow-xl transition-all hover:bg-violet-100 active:scale-[0.98]"
-              >
-                {updatingProfile && (
-                  <Loader2 size={16} className="animate-spin" />
-                )}
-                <span>Lưu thay đổi</span>
-              </button>
-            </form>
-          )}
+          {/* ── RIGHT CONTENT PANEL ── */}
+          <div className="flex-1 min-w-0">
 
-          {/* TAB STATS: THỐNG KÊ CÀY PHIM */}
-          {activeTab === "stats" && (
-            <div className="space-y-8 max-w-4xl animate-fade-in">
-              <div className="border-b border-white/10 pb-5 flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-black text-white flex items-center gap-2.5">
-                    <BarChart3 size={22} className="text-neutral-300" /> Thống
-                    Kê & Phân Tích Cày Phim
-                  </h2>
-                  <p className="text-xs text-neutral-400 mt-1 font-mono">
-                    Tổng quan hành trình điện ảnh & thói quen xem phim của bạn
-                    trên CinePhim
-                  </p>
+            {/* TAB: THÔNG TIN CÁ NHÂN */}
+            {activeTab === "account" && (
+              <form onSubmit={handleUpdateProfile} className="max-w-2xl animate-fade-in space-y-6">
+                <div className="border-b border-white/[0.07] pb-4">
+                  <h2 className="text-lg font-bold text-white">Thông tin cá nhân</h2>
+                  <p className="mt-1 text-sm text-neutral-500">Cập nhật thông tin hiển thị công khai trên CinePhim.</p>
                 </div>
-
-                <div className="px-3.5 py-1.5 rounded-xl bg-white/10 border border-white/20 text-xs font-mono font-bold text-white flex items-center gap-2">
-                  <Trophy size={14} className="text-amber-400" />
-                  <span>
-                    Cấp độ:{" "}
-                    {historyItems.length >= 20
-                      ? "🥇 Đại Cao Thủ 4K"
-                      : historyItems.length >= 5
-                        ? "🥈 Cinephile Chính Hiệu"
-                        : "🥉 Mọt Phim Tập Sự"}
-                  </span>
-                </div>
-              </div>
-
-              {/* 4 Overview Metric Cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="p-5 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2 relative overflow-hidden group hover:border-white/25 transition-all">
-                  <div className="flex items-center justify-between text-neutral-400">
-                    <span className="text-[10px] font-mono font-extrabold uppercase tracking-wider">
-                      Thời gian cày
-                    </span>
-                    <Clock size={16} />
-                  </div>
-                  <div className="text-2xl font-black text-white font-mono tracking-tight">
-                    {Math.floor((historyItems.length * 45) / 60)}{" "}
-                    <span className="text-xs font-normal text-neutral-400">
-                      giờ
-                    </span>{" "}
-                    {(historyItems.length * 45) % 60}{" "}
-                    <span className="text-xs font-normal text-neutral-400">
-                      phút
-                    </span>
-                  </div>
-                  <p className="text-[10px] font-mono text-neutral-500">
-                    Dựa trên nhật ký lịch sử xem
-                  </p>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2 relative overflow-hidden group hover:border-white/25 transition-all">
-                  <div className="flex items-center justify-between text-neutral-400">
-                    <span className="text-[10px] font-mono font-extrabold uppercase tracking-wider">
-                      Đã hoàn thành
-                    </span>
-                    <Film size={16} />
-                  </div>
-                  <div className="text-2xl font-black text-white font-mono tracking-tight">
-                    {historyItems.length}{" "}
-                    <span className="text-xs font-normal text-neutral-400">
-                      tập phim
-                    </span>
-                  </div>
-                  <p className="text-[10px] font-mono text-neutral-500">
-                    Các tập phim đã thưởng thức
-                  </p>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2 relative overflow-hidden group hover:border-white/25 transition-all">
-                  <div className="flex items-center justify-between text-neutral-400">
-                    <span className="text-[10px] font-mono font-extrabold uppercase tracking-wider">
-                      Tủ phim lưu trữ
-                    </span>
-                    <Bookmark size={16} />
-                  </div>
-                  <div className="text-2xl font-black text-white font-mono tracking-tight">
-                    {watchlistItems.length}{" "}
-                    <span className="text-xs font-normal text-neutral-400">
-                      bộ phim
-                    </span>
-                  </div>
-                  <p className="text-[10px] font-mono text-neutral-500">
-                    Trong danh sách theo dõi
-                  </p>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2 relative overflow-hidden group hover:border-white/25 transition-all">
-                  <div className="flex items-center justify-between text-neutral-400">
-                    <span className="text-[10px] font-mono font-extrabold uppercase tracking-wider">
-                      Đánh giá chung
-                    </span>
-                    <Award size={16} />
-                  </div>
-                  <div className="text-2xl font-black text-white font-mono tracking-tight">
-                    9.8{" "}
-                    <span className="text-xs font-normal text-neutral-400">
-                      / 10
-                    </span>
-                  </div>
-                  <p className="text-[10px] font-mono text-neutral-500">
-                    Điểm số yêu thích trung bình
-                  </p>
-                </div>
-              </div>
-
-              {/* Top Favorite Genres Breakdown */}
-              <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 space-y-5">
-                <h3 className="text-sm font-mono font-extrabold uppercase text-neutral-300 tracking-wider flex items-center gap-2">
-                  <Flame size={16} className="text-amber-400" /> Thể Loại Phim
-                  Xem Nhiều Nhất
-                </h3>
 
                 <div className="space-y-4">
                   <div>
-                    <div className="flex justify-between text-xs font-mono font-bold mb-1.5">
-                      <span className="text-white">
-                        🇰🇷 Phim Hàn Quốc (K-Drama)
-                      </span>
-                      <span className="text-neutral-400">42% • 28 Giờ</span>
-                    </div>
-                    <div className="h-2.5 w-full bg-white/10 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-white rounded-full"
-                        style={{ width: "42%" }}
-                      />
-                    </div>
+                    <label className="block text-xs font-semibold text-neutral-400 mb-2 uppercase tracking-wider">Email tài khoản</label>
+                    <input type="email" value={email || `${profile.username}@gmail.com`} readOnly
+                      className={cn(inputCls, "cursor-not-allowed opacity-50")} />
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-xs font-mono font-bold mb-1.5">
-                      <span className="text-white">
-                        🇨🇳 Phim Trung Quốc (C-Drama)
-                      </span>
-                      <span className="text-neutral-400">28% • 19 Giờ</span>
-                    </div>
-                    <div className="h-2.5 w-full bg-white/10 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-neutral-400 rounded-full"
-                        style={{ width: "28%" }}
-                      />
-                    </div>
+                    <label className="block text-xs font-semibold text-neutral-400 mb-2 uppercase tracking-wider">Tên hiển thị</label>
+                    <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)}
+                      placeholder="Nhập tên hiển thị..." className={inputCls} />
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-xs font-mono font-bold mb-1.5">
-                      <span className="text-white">
-                        💥 Phim Hành Động & Viễn Tưởng
-                      </span>
-                      <span className="text-neutral-400">18% • 12 Giờ</span>
-                    </div>
-                    <div className="h-2.5 w-full bg-white/10 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-neutral-600 rounded-full"
-                        style={{ width: "18%" }}
-                      />
-                    </div>
+                    <label className="block text-xs font-semibold text-neutral-400 mb-2 uppercase tracking-wider">Giới thiệu</label>
+                    <textarea rows={3} value={bio} onChange={(e) => setBio(e.target.value)}
+                      placeholder="Viết vài dòng về phong cách xem phim của bạn..."
+                      className={cn(inputCls, "resize-none")} />
                   </div>
 
+                  <div className="flex items-center justify-between py-3 border-t border-b border-white/[0.07]">
+                    <div>
+                      <p className="text-sm font-semibold text-white">Hồ sơ công khai</p>
+                      <p className="text-xs text-neutral-500 mt-0.5">Cho phép người khác xem tủ phim của bạn.</p>
+                    </div>
+                    <Toggle checked={isPublicProfile} onChange={() => setIsPublicProfile(!isPublicProfile)} />
+                  </div>
+                </div>
+
+                <button type="submit" disabled={updatingProfile}
+                  className="flex items-center gap-2 rounded-lg bg-[#e50914] hover:bg-[#c4070f] px-6 py-3 text-sm font-bold text-white transition-colors cursor-pointer disabled:opacity-60">
+                  {updatingProfile && <Loader2 size={15} className="animate-spin" />}
+                  Lưu thay đổi
+                </button>
+              </form>
+            )}
+
+            {/* TAB: THỐNG KÊ */}
+            {activeTab === "stats" && (
+              <div className="max-w-3xl animate-fade-in space-y-6">
+                <div className="border-b border-white/[0.07] pb-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="flex justify-between text-xs font-mono font-bold mb-1.5">
-                      <span className="text-white">
-                        🍿 Phim Chiếu Rạp & Khác
-                      </span>
-                      <span className="text-neutral-400">12% • 8 Giờ</span>
-                    </div>
-                    <div className="h-2.5 w-full bg-white/10 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-neutral-700 rounded-full"
-                        style={{ width: "12%" }}
-                      />
-                    </div>
+                    <h2 className="text-lg font-bold text-white">Thống kê xem phim</h2>
+                    <p className="mt-1 text-sm text-neutral-500">Tổng quan hành trình điện ảnh của bạn trên CinePhim.</p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3 py-1.5 rounded-lg">
+                    <Trophy size={13} />
+                    {historyItems.length >= 20 ? "Đại Cao Thủ 4K" : historyItems.length >= 5 ? "Cinephile Chính Hiệu" : "Mọt Phim Tập Sự"}
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
 
-          {/* TAB 2: BẢO MẬT & MẬT KHẨU */}
-          {activeTab === "security" && (
-            <form
-              onSubmit={handleChangePassword}
-              className="max-w-3xl space-y-6 animate-fade-in"
-            >
-              <div className="border-b border-white/10 pb-5">
-                <h2 className="text-xl font-black text-white flex items-center gap-2.5">
-                  <Lock size={22} className="text-neutral-400" /> Thiết Lập Mật
-                  Khẩu & Bảo Mật
-                </h2>
-                <p className="text-xs text-neutral-400 mt-1 font-mono">
-                  Đổi mật khẩu và quản lý bảo mật tài khoản trực tiếp trong hồ
-                  sơ
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[11px] font-mono font-extrabold text-neutral-400 uppercase tracking-wider block">
-                  Mật khẩu hiện tại
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPasswords ? "text" : "password"}
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Nhập mật khẩu hiện tại..."
-                    className="w-full rounded-xl border border-white/10 bg-[#0b0f15] px-4 py-3.5 pr-12 text-sm text-white shadow-inner outline-none transition-all focus:border-violet-300/50 focus:ring-1 focus:ring-violet-300/20"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPasswords(!showPasswords)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
-                  >
-                    {showPasswords ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[11px] font-mono font-extrabold text-neutral-400 uppercase tracking-wider block">
-                  Mật khẩu mới
-                </label>
-                <input
-                  type={showPasswords ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Tối thiểu 6 ký tự..."
-                  className="w-full rounded-xl border border-white/10 bg-[#0b0f15] px-4 py-3.5 text-sm text-white shadow-inner outline-none transition-all focus:border-violet-300/50 focus:ring-1 focus:ring-violet-300/20"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[11px] font-mono font-extrabold text-neutral-400 uppercase tracking-wider block">
-                  Xác nhận mật khẩu mới
-                </label>
-                <input
-                  type={showPasswords ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Nhập lại mật khẩu mới..."
-                  className="w-full rounded-xl border border-white/10 bg-[#0b0f15] px-4 py-3.5 text-sm text-white shadow-inner outline-none transition-all focus:border-violet-300/50 focus:ring-1 focus:ring-violet-300/20"
-                />
-              </div>
-
-              {/* 2FA Status Pill */}
-              <div className="p-4.5 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <ShieldCheck size={22} className="text-white" />
-                  <div>
-                    <p className="text-sm font-bold text-white">
-                      Xác thực 2 yếu tố (2FA)
-                    </p>
-                    <p className="text-xs text-neutral-400 mt-0.5 font-mono">
-                      Tài khoản của bạn đang được bảo vệ an toàn.
-                    </p>
-                  </div>
-                </div>
-                <span className="px-3.5 py-1 rounded-full bg-white/10 border border-white/20 text-white text-[10px] font-mono font-bold uppercase">
-                  Đang Kích Hoạt
-                </span>
-              </div>
-
-              <button
-                type="submit"
-                disabled={changingPassword}
-                className="px-8 py-3.5 rounded-2xl bg-white hover:bg-neutral-200 text-black font-black text-xs transition-all hover:scale-[1.02] active:scale-95 cursor-pointer flex items-center gap-2 shadow-xl"
-              >
-                {changingPassword && (
-                  <Loader2 size={16} className="animate-spin" />
-                )}
-                <Key size={14} />
-                <span>Cập Nhật Mật Khẩu Mới</span>
-              </button>
-            </form>
-          )}
-
-          {/* TAB 3: TỦ PHIM ĐÃ LƯU */}
-          {activeTab === "watchlist" && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="border-b border-white/10 pb-5">
-                <h2 className="text-xl font-black text-white flex items-center gap-2.5">
-                  <Bookmark size={22} className="text-neutral-400" /> Tủ Phim Đã
-                  Lưu ({watchlistItems.length})
-                </h2>
-              </div>
-
-              {watchlistItems.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {watchlistItems.map((item: any) => {
-                    const movie = item.movieData || item.movie;
-                    const thumb =
-                      resolveImageUrl(movie?.thumb_url) ||
-                      resolveImageUrl(movie?.poster_url) ||
-                      item.thumbUrl;
-
-                    return (
-                      <Link
-                        key={item.id}
-                        href={`/film/${movie?.slug || item.movieId}`}
-                        className="aspect-[2/3] bg-neutral-900 border border-white/15 rounded-2xl overflow-hidden group relative hover:border-white/40 transition-all shadow-xl hover:-translate-y-1.5"
-                      >
-                        {thumb ? (
-                          <img
-                            src={thumb}
-                            alt={movie?.title || item.title || item.movieId}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xs text-neutral-600">
-                            <Film size={32} />
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent p-3.5 flex items-end">
-                          <p className="text-xs font-black text-white line-clamp-2 leading-snug">
-                            {movie?.title || item.title || item.movieId}
-                          </p>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-24 text-center">
-                  <Bookmark size={44} className="text-neutral-700 mb-3" />
-                  <p className="text-sm font-bold text-neutral-300">
-                    Tủ phim của bạn đang trống
-                  </p>
-                  <p className="text-xs text-neutral-500 mt-1 max-w-sm font-mono">
-                    Hãy bấm nút "+" trên các bộ phim để lưu lại xem sau.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB 4: LỊCH SỬ ĐÃ XEM */}
-          {activeTab === "history" && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="border-b border-white/10 pb-5">
-                <h2 className="text-xl font-black text-white flex items-center gap-2.5">
-                  <History size={22} className="text-neutral-400" /> Lịch Sử Xem
-                  Phim ({historyItems.length})
-                </h2>
-              </div>
-
-              {historyItems.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {historyItems.map((item: any) => {
-                    const pct =
-                      item.duration > 0
-                        ? Math.min(
-                            100,
-                            Math.round((item.progress / item.duration) * 100),
-                          )
-                        : 0;
-
-                    return (
-                      <div
-                        key={item.id}
-                        className="bg-neutral-900 border border-white/15 hover:border-white/40 rounded-2xl p-4 flex gap-4 items-center transition-all shadow-md group"
-                      >
-                        {item.movieThumb ? (
-                          <img
-                            src={item.movieThumb}
-                            alt={item.movieTitle}
-                            className="w-14 h-20 object-cover rounded-xl flex-shrink-0 border border-white/10 group-hover:scale-105 transition-transform"
-                          />
-                        ) : (
-                          <div className="w-14 h-20 bg-neutral-800 rounded-xl flex-shrink-0 flex items-center justify-center text-neutral-600 border border-white/10">
-                            <Film size={22} />
-                          </div>
-                        )}
-
-                        <div className="min-w-0 flex-1 space-y-1.5">
-                          <Link
-                            href={`/watch/${item.movieId}${
-                              item.episode ? `?ep=${item.episode}` : ""
-                            }`}
-                            className="font-black text-white text-sm hover:text-white transition-colors line-clamp-1 block"
-                          >
-                            {item.movieTitle}
-                          </Link>
-                          <p className="text-xs text-neutral-400 font-mono">
-                            {item.episode
-                              ? `Tập ${item.episode}`
-                              : "Bản đầy đủ"}
-                          </p>
-                          <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
-                            <div
-                              className="bg-white h-full rounded-full"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                        </div>
-
-                        <Link
-                          href={`/watch/${item.movieId}${
-                            item.episode ? `?ep=${item.episode}` : ""
-                          }`}
-                          className="p-3 text-black bg-white hover:bg-neutral-200 rounded-xl transition-all shrink-0 shadow-lg active:scale-95"
-                        >
-                          <Play size={14} className="fill-current" />
-                        </Link>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { label: "Thời gian xem", value: `${Math.floor((historyItems.length * 45) / 60)}h ${(historyItems.length * 45) % 60}m`, icon: Clock },
+                    { label: "Tập đã xem", value: historyItems.length, icon: Film },
+                    { label: "Tủ phim", value: watchlistItems.length, icon: Bookmark },
+                    { label: "Điểm TB", value: "9.8", icon: Award },
+                  ].map(({ label, value, icon: Icon }) => (
+                    <div key={label} className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4 hover:border-white/[0.14] transition-colors">
+                      <div className="flex items-center justify-between text-neutral-500 mb-2">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider">{label}</span>
+                        <Icon size={14} />
                       </div>
-                    );
-                  })}
+                      <div className="text-2xl font-black text-white">{value}</div>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-24 text-center">
-                  <History size={44} className="text-neutral-700 mb-3" />
-                  <p className="text-sm font-bold text-neutral-300">
-                    Chưa có lịch sử xem phim
-                  </p>
-                  <p className="text-xs text-neutral-500 mt-1 max-w-sm font-mono">
-                    Các bộ phim bạn đã xem sẽ xuất hiện tại đây.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
 
-          {/* TAB 5: CÀI ĐẶT TRÌNH PHÁT 4K */}
-          {activeTab === "settings" && (
-            <div className="max-w-3xl space-y-6 animate-fade-in">
-              <div className="border-b border-white/10 pb-5">
-                <h2 className="text-xl font-black text-white flex items-center gap-2.5">
-                  <Sliders size={22} className="text-neutral-400" /> Cài Đặt
-                  Trình Phát 4K
-                </h2>
-                <p className="text-xs text-neutral-400 mt-1 font-mono">
-                  Tùy chỉnh hành vi phát video tự động và chế độ xem phim
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="p-4.5 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-bold text-white">
-                      Tự động phát video (Autoplay)
-                    </p>
-                    <p className="text-xs text-neutral-400 mt-0.5 font-mono">
-                      Tự động chạy phim ngay khi mở trang xem.
-                    </p>
+                <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-5">
+                  <h3 className="flex items-center gap-2 text-sm font-bold text-white mb-4">
+                    <Flame size={14} className="text-amber-400" /> Thể loại xem nhiều nhất
+                  </h3>
+                  <div className="space-y-3">
+                    {[
+                      { label: "🇰🇷 Phim Hàn Quốc", pct: 42, note: "42% • 28 giờ" },
+                      { label: "🇨🇳 Phim Trung Quốc", pct: 28, note: "28% • 19 giờ" },
+                      { label: "💥 Hành Động & Viễn Tưởng", pct: 18, note: "18% • 12 giờ" },
+                      { label: "🍿 Khác", pct: 12, note: "12% • 8 giờ" },
+                    ].map(({ label, pct, note }) => (
+                      <div key={label}>
+                        <div className="flex justify-between text-xs font-medium mb-1.5">
+                          <span className="text-neutral-300">{label}</span>
+                          <span className="text-neutral-500">{note}</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-white/[0.06] rounded-full overflow-hidden">
+                          <div className="h-full bg-white rounded-full" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setAutoplay(!autoplay)}
-                    className={`w-12 h-6 rounded-full transition-colors p-1 cursor-pointer flex items-center shrink-0 ${
-                      autoplay
-                        ? "bg-white justify-end"
-                        : "bg-neutral-800 justify-start"
-                    }`}
-                  >
-                    <span className="w-4 h-4 bg-black rounded-full shadow-md" />
-                  </button>
-                </div>
-
-                <div className="p-4.5 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-bold text-white">
-                      Tự động chuyển tập tiếp theo
-                    </p>
-                    <p className="text-xs text-neutral-400 mt-0.5 font-mono">
-                      Chuyển sang tập tiếp theo khi tập hiện tại kết thúc.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setAutoNextEpisode(!autoNextEpisode)}
-                    className={`w-12 h-6 rounded-full transition-colors p-1 cursor-pointer flex items-center shrink-0 ${
-                      autoNextEpisode
-                        ? "bg-white justify-end"
-                        : "bg-neutral-800 justify-start"
-                    }`}
-                  >
-                    <span className="w-4 h-4 bg-black rounded-full shadow-md" />
-                  </button>
-                </div>
-
-                <div className="p-4.5 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-bold text-white">
-                      Mặc định chế độ rạp chiếu (Theater Mode)
-                    </p>
-                    <p className="text-xs text-neutral-400 mt-0.5 font-mono">
-                      Mở rộng trình phát video tràn màn hình rạp chiếu.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setTheaterMode(!theaterMode)}
-                    className={`w-12 h-6 rounded-full transition-colors p-1 cursor-pointer flex items-center shrink-0 ${
-                      theaterMode
-                        ? "bg-white justify-end"
-                        : "bg-neutral-800 justify-start"
-                    }`}
-                  >
-                    <span className="w-4 h-4 bg-black rounded-full shadow-md" />
-                  </button>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {/* TAB: BẢO MẬT */}
+            {activeTab === "security" && (
+              <form onSubmit={handleChangePassword} className="max-w-2xl animate-fade-in space-y-6">
+                <div className="border-b border-white/[0.07] pb-4">
+                  <h2 className="text-lg font-bold text-white">Mật khẩu & Bảo mật</h2>
+                  <p className="mt-1 text-sm text-neutral-500">Đổi mật khẩu và bảo vệ tài khoản của bạn.</p>
+                </div>
+
+                <div className="space-y-4">
+                  {[
+                    { label: "Mật khẩu hiện tại", value: currentPassword, onChange: setCurrentPassword, placeholder: "Nhập mật khẩu hiện tại..." },
+                    { label: "Mật khẩu mới", value: newPassword, onChange: setNewPassword, placeholder: "Tối thiểu 6 ký tự..." },
+                    { label: "Xác nhận mật khẩu mới", value: confirmPassword, onChange: setConfirmPassword, placeholder: "Nhập lại mật khẩu mới..." },
+                  ].map(({ label, value, onChange, placeholder }) => (
+                    <div key={label}>
+                      <label className="block text-xs font-semibold text-neutral-400 mb-2 uppercase tracking-wider">{label}</label>
+                      <div className="relative">
+                        <input type={showPasswords ? "text" : "password"} value={value}
+                          onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+                          className={cn(inputCls, "pr-12")} />
+                        <button type="button" onClick={() => setShowPasswords(!showPasswords)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white cursor-pointer">
+                          {showPasswords ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between rounded-lg border border-white/[0.07] bg-white/[0.03] p-4">
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck size={18} className="text-emerald-400 shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-white">Xác thực 2 yếu tố (2FA)</p>
+                      <p className="text-xs text-neutral-500 mt-0.5">Tài khoản của bạn đang được bảo vệ an toàn.</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                    Đang bật
+                  </span>
+                </div>
+
+                <button type="submit" disabled={changingPassword}
+                  className="flex items-center gap-2 rounded-lg bg-[#e50914] hover:bg-[#c4070f] px-6 py-3 text-sm font-bold text-white transition-colors cursor-pointer disabled:opacity-60">
+                  {changingPassword && <Loader2 size={15} className="animate-spin" />}
+                  <Key size={14} /> Cập nhật mật khẩu
+                </button>
+              </form>
+            )}
+
+            {/* TAB: TỦ PHIM */}
+            {activeTab === "watchlist" && (
+              <div className="animate-fade-in space-y-5">
+                <div className="border-b border-white/[0.07] pb-4">
+                  <h2 className="text-lg font-bold text-white">Tủ phim đã lưu <span className="text-neutral-500 font-normal">({watchlistItems.length})</span></h2>
+                </div>
+
+                {watchlistItems.length > 0 ? (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                    {watchlistItems.map((item: any) => {
+                      const movie = item.movieData || item.movie;
+                      const thumb = resolveImageUrl(movie?.thumb_url) || resolveImageUrl(movie?.poster_url) || item.thumbUrl;
+                      return (
+                        <Link key={item.id} href={`/film/${movie?.slug || item.movieId}`}
+                          className="group relative aspect-[2/3] overflow-hidden rounded-lg bg-neutral-900 border border-white/[0.07] hover:border-white/20 transition-all">
+                          {thumb ? (
+                            <img src={thumb} alt={movie?.title || item.movieId}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-400" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-neutral-700"><Film size={28} /></div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent p-2.5 flex items-end">
+                            <p className="text-[11px] font-bold text-white line-clamp-2 leading-tight">
+                              {movie?.title || item.title || item.movieId}
+                            </p>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-24 text-center">
+                    <Bookmark size={40} className="text-neutral-700 mb-3" />
+                    <p className="text-sm font-semibold text-neutral-400">Tủ phim đang trống</p>
+                    <p className="text-xs text-neutral-600 mt-1">Bấm nút lưu trên các bộ phim để thêm vào đây.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB: LỊCH SỬ */}
+            {activeTab === "history" && (
+              <div className="animate-fade-in space-y-5">
+                <div className="border-b border-white/[0.07] pb-4">
+                  <h2 className="text-lg font-bold text-white">Lịch sử xem phim <span className="text-neutral-500 font-normal">({historyItems.length})</span></h2>
+                </div>
+
+                {historyItems.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {historyItems.map((item: any) => {
+                      const pct = item.duration > 0
+                        ? Math.min(100, Math.round((item.progress / item.duration) * 100))
+                        : 0;
+                      return (
+                        <div key={item.id}
+                          className="flex gap-3 items-center rounded-lg border border-white/[0.07] bg-white/[0.02] p-3 hover:border-white/[0.14] hover:bg-white/[0.04] transition-all group">
+                          {item.movieThumb ? (
+                            <img src={item.movieThumb} alt={item.movieTitle}
+                              className="w-12 h-[68px] object-cover rounded-md shrink-0 border border-white/[0.07]" />
+                          ) : (
+                            <div className="w-12 h-[68px] bg-neutral-800 rounded-md shrink-0 flex items-center justify-center text-neutral-600 border border-white/[0.07]">
+                              <Film size={18} />
+                            </div>
+                          )}
+
+                          <div className="min-w-0 flex-1 space-y-1.5">
+                            <Link href={`/watch/${item.movieId}${item.episode ? `?ep=${item.episode}` : ""}`}
+                              className="block text-sm font-bold text-white hover:text-neutral-200 line-clamp-1 transition-colors">
+                              {item.movieTitle}
+                            </Link>
+                            <p className="text-xs text-neutral-500">{item.episode ? `Tập ${item.episode}` : "Bản đầy đủ"}</p>
+                            <div className="w-full bg-white/[0.07] h-1 rounded-full overflow-hidden">
+                              <div className="bg-[#e50914] h-full rounded-full" style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+
+                          <Link href={`/watch/${item.movieId}${item.episode ? `?ep=${item.episode}` : ""}`}
+                            className="h-8 w-8 rounded-full bg-white text-black flex items-center justify-center shrink-0 hover:bg-neutral-200 transition-colors">
+                            <Play size={12} className="fill-current ml-0.5" />
+                          </Link>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-24 text-center">
+                    <History size={40} className="text-neutral-700 mb-3" />
+                    <p className="text-sm font-semibold text-neutral-400">Chưa có lịch sử xem</p>
+                    <p className="text-xs text-neutral-600 mt-1">Các phim bạn đã xem sẽ xuất hiện tại đây.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB: TRÌNH PHÁT */}
+            {activeTab === "settings" && (
+              <div className="max-w-2xl animate-fade-in space-y-6">
+                <div className="border-b border-white/[0.07] pb-4">
+                  <h2 className="text-lg font-bold text-white">Cài đặt trình phát</h2>
+                  <p className="mt-1 text-sm text-neutral-500">Tùy chỉnh trải nghiệm xem phim 4K của bạn.</p>
+                </div>
+
+                <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] divide-y divide-white/[0.06]">
+                  <div className="px-5">
+                    <SettingRow
+                      title="Tự động phát (Autoplay)"
+                      desc="Tự động chạy phim ngay khi mở trang xem."
+                      checked={autoplay}
+                      onChange={() => setAutoplay(!autoplay)}
+                    />
+                    <SettingRow
+                      title="Tự động chuyển tập tiếp theo"
+                      desc="Chuyển sang tập kế tiếp khi tập hiện tại kết thúc."
+                      checked={autoNextEpisode}
+                      onChange={() => setAutoNextEpisode(!autoNextEpisode)}
+                    />
+                    <SettingRow
+                      title="Chế độ rạp chiếu (Theater Mode)"
+                      desc="Mặc định mở rộng trình phát tràn màn hình."
+                      checked={theaterMode}
+                      onChange={() => setTheaterMode(!theaterMode)}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* ── MODAL: PICK AVATAR ── */}
       <AnimatePresence>
         {showAvatarPicker && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-md bg-neutral-950 border border-white/20 rounded-3xl p-6 space-y-5 shadow-2xl"
-            >
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <h3 className="text-base font-black text-white">
-                  Chọn Ảnh Đại Diện (Avatar)
-                </h3>
-                <button
-                  onClick={() => setShowAvatarPicker(false)}
-                  className="text-xs font-mono text-neutral-400 hover:text-white"
-                >
-                  Đóng [✕]
-                </button>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.93, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.93, opacity: 0 }} transition={{ duration: 0.15 }}
+              className="w-full max-w-md bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 space-y-5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-bold text-white">Chọn ảnh đại diện</h3>
+                <button onClick={() => setShowAvatarPicker(false)}
+                  className="text-neutral-500 hover:text-white text-xs cursor-pointer">✕ Đóng</button>
               </div>
 
-              {/* Preset Avatars Grid */}
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-4 gap-2.5">
                 {PRESET_AVATARS.map((url, i) => (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      setSelectedAvatar(url);
-                      setCustomAvatarInput("");
-                    }}
-                    className={`aspect-square rounded-2xl overflow-hidden border-2 transition-all p-0.5 cursor-pointer ${
-                      selectedAvatar === url
-                        ? "border-white scale-105 shadow-lg"
-                        : "border-transparent opacity-60 hover:opacity-100"
-                    }`}
-                  >
-                    <img
-                      src={url}
-                      alt={`Avatar ${i}`}
-                      className="w-full h-full object-cover rounded-xl"
-                    />
+                  <button key={i} onClick={() => { setSelectedAvatar(url); setCustomAvatarInput(""); }}
+                    className={cn("aspect-square rounded-xl overflow-hidden border-2 transition-all cursor-pointer",
+                      selectedAvatar === url ? "border-[#e50914] scale-105" : "border-transparent opacity-60 hover:opacity-100")}>
+                    <img src={url} alt={`Avatar ${i}`} className="w-full h-full object-cover rounded-lg" />
                   </button>
                 ))}
               </div>
 
-              {/* Custom Image URL Input */}
-              <div className="space-y-2 pt-2 border-t border-white/10">
-                <label className="text-[10px] font-mono font-bold text-neutral-400 uppercase">
-                  Hoặc dán đường dẫn ảnh tùy chỉnh (URL)
+              <div className="pt-3 border-t border-white/[0.07] space-y-2">
+                <label className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider">
+                  Hoặc dán URL ảnh tùy chỉnh
                 </label>
-                <input
-                  type="url"
-                  value={customAvatarInput}
-                  onChange={(e) => setCustomAvatarInput(e.target.value)}
-                  placeholder="https://example.com/avatar.png..."
-                  className="w-full bg-neutral-900 border border-white/15 text-white text-xs rounded-2xl px-4 py-3 outline-none focus:border-white/30"
-                />
+                <input type="url" value={customAvatarInput} onChange={(e) => setCustomAvatarInput(e.target.value)}
+                  placeholder="https://example.com/avatar.png"
+                  className="w-full bg-white/[0.04] border border-white/10 text-white text-sm rounded-lg px-4 py-2.5 outline-none focus:border-white/25" />
               </div>
 
-              <button
-                onClick={() => setShowAvatarPicker(false)}
-                className="w-full py-3 rounded-2xl bg-white text-black font-extrabold text-xs hover:bg-neutral-200 transition-all cursor-pointer shadow-lg"
-              >
-                Xác Nhận Chọn Avatar
+              <button onClick={() => setShowAvatarPicker(false)}
+                className="w-full py-2.5 rounded-lg bg-[#e50914] hover:bg-[#c4070f] text-white text-sm font-bold transition-colors cursor-pointer">
+                Xác nhận
               </button>
             </motion.div>
           </div>
@@ -1212,40 +843,25 @@ export default function UserDashboardPage() {
       {/* ── MODAL: CONFIRM LOGOUT ── */}
       <AnimatePresence>
         {showLogoutModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-sm bg-neutral-950 border border-white/20 rounded-3xl p-6 text-center space-y-4 shadow-2xl"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto text-white">
-                <LogOut size={22} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.93, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.93, opacity: 0 }} transition={{ duration: 0.15 }}
+              className="w-full max-w-sm bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 text-center space-y-4">
+              <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto">
+                <LogOut size={20} className="text-red-400" />
               </div>
-              <h3 className="text-lg font-black text-white">
-                Đăng Xuất Tài Khoản?
-              </h3>
-              <p className="text-xs text-neutral-400 font-mono">
-                Bạn có chắc chắn muốn đăng xuất khỏi phiên làm việc hiện tại
-                trên CinePhim?
-              </p>
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => setShowLogoutModal(false)}
-                  className="flex-1 py-3 rounded-2xl bg-neutral-900 border border-white/15 text-xs font-bold text-neutral-300 hover:text-white hover:bg-neutral-800 transition-all cursor-pointer"
-                >
-                  Hủy Bỏ
+              <div>
+                <h3 className="text-base font-bold text-white">Đăng xuất?</h3>
+                <p className="text-xs text-neutral-500 mt-1.5">Bạn có chắc muốn đăng xuất khỏi phiên làm việc hiện tại trên CinePhim?</p>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setShowLogoutModal(false)}
+                  className="flex-1 py-2.5 rounded-lg border border-white/10 bg-white/[0.04] text-sm font-semibold text-neutral-300 hover:bg-white/[0.08] hover:text-white transition-colors cursor-pointer">
+                  Hủy
                 </button>
-                <button
-                  onClick={() => {
-                    logout();
-                    setShowLogoutModal(false);
-                    toast("Đã đăng xuất tài khoản!", "info");
-                    router.push("/");
-                  }}
-                  className="flex-1 py-3 rounded-2xl bg-white text-black font-black text-xs hover:bg-neutral-200 transition-all cursor-pointer shadow-lg"
-                >
-                  Đăng Xuất
+                <button onClick={() => { logout(); setShowLogoutModal(false); toast("Đã đăng xuất!", "info"); router.push("/"); }}
+                  className="flex-1 py-2.5 rounded-lg bg-[#e50914] hover:bg-[#c4070f] text-sm font-bold text-white transition-colors cursor-pointer">
+                  Đăng xuất
                 </button>
               </div>
             </motion.div>
