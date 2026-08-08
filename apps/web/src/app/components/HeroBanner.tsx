@@ -467,8 +467,8 @@ export default function HeroBanner({ films }: HeroBannerProps) {
             <div
               key={item.slug || idx}
               className={cn(
-                "absolute inset-0 w-full h-full transition-opacity duration-700 ease-out will-change-[opacity] pointer-events-none",
-                isActive ? "opacity-100 z-10" : "opacity-0 z-0",
+                "absolute inset-0 w-full h-full transition-all duration-1000 ease-[cubic-bezier(0.25,1,0.5,1)] will-change-[opacity,transform] pointer-events-none",
+                isActive ? "opacity-100 scale-100 z-10" : "opacity-0 scale-[1.02] z-0",
               )}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -786,8 +786,8 @@ export default function HeroBanner({ films }: HeroBannerProps) {
 
       {/* Widescreen Movie Card Bar + Progress & Counter Indicator (Bottom Right) */}
       <div className="absolute right-4 sm:right-8 md:right-12 bottom-6 z-30 hidden sm:flex flex-col items-end gap-2 max-w-[calc(100vw-2rem)]">
-        {/* Indicator Row: 01 / 06 Counter & Thin Progress Bar */}
-        <div className="flex items-center gap-2.5 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/15 text-[11px] font-mono font-bold text-neutral-300 shadow-xl">
+        {/* Indicator Row: 01 / 06 Counter & Thin Progress Bar (More Transparent) */}
+        <div className="flex items-center gap-2.5 bg-black/25 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-[11px] font-mono font-bold text-neutral-300/90 shadow-lg">
           <span className="text-white font-extrabold tracking-wider">
             {String(current + 1).padStart(2, "0")} <span className="text-neutral-500 font-normal">/</span> {String(featured.length).padStart(2, "0")}
           </span>
@@ -804,8 +804,8 @@ export default function HeroBanner({ films }: HeroBannerProps) {
           </div>
         </div>
 
-        {/* Thumbnails Row with Hover Preview */}
-        <div className="flex items-center gap-2 overflow-x-auto p-1 scrollbar-none">
+        {/* Thumbnails Row with Hover Preview (Scrollbar Completely Hidden) */}
+        <div className="flex items-center gap-2 overflow-x-auto p-1 scrollbar-none [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none]">
           {featured.slice(0, 6).map((item, i) => {
             const cardImg =
               item.thumb_url ||
