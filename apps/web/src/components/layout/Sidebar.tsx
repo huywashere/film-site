@@ -140,7 +140,7 @@ export function Sidebar() {
         )}
         style={{ width: W }}
       >
-        <div className="flex flex-col items-center justify-center py-4 px-1.5 bg-neutral-950/85 backdrop-blur-xl border border-l-0 border-white/10 rounded-r-2xl shadow-2xl pointer-events-auto gap-3.5 my-auto">
+        <div className="flex flex-col items-center justify-center py-4 px-1.5 bg-black/30 backdrop-blur-md border border-l-0 border-white/10 rounded-r-2xl pointer-events-auto gap-3.5 my-auto">
           {/* Top Collapse Button (Mũi tên thu gọn) */}
           <button
             onClick={toggle}
@@ -241,7 +241,7 @@ export function Sidebar() {
           onClick={toggle}
           aria-label="Mở thanh điều hướng"
           title="Mở rộng menu"
-          className="hidden lg:flex fixed left-0 top-1/2 -translate-y-1/2 z-40 p-2.5 bg-neutral-950/90 border border-l-0 border-white/20 rounded-r-xl text-white/60 hover:text-white hover:bg-neutral-900 transition-all duration-200 shadow-2xl cursor-pointer hover:scale-110 hover:pr-3.5"
+          className="hidden lg:flex fixed left-0 top-1/2 -translate-y-1/2 z-40 p-2.5 bg-black/30 backdrop-blur-md border border-l-0 border-white/10 rounded-r-xl text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200 cursor-pointer hover:scale-110 hover:pr-3.5"
         >
           <ChevronRight size={20} strokeWidth={2.2} />
         </button>
