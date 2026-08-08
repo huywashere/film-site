@@ -561,8 +561,8 @@ export default function HomePage() {
     enabled: showMoreSections,
   });
 
-  // Latest films query for Hero Banner
-  const { data: latestData } = useQuery({
+  // Latest films query for Phim Mới Cập Nhật
+  const { data: latestData, isLoading: latestLoading } = useQuery({
     queryKey: ["latest-v2", 1],
     queryFn: () => movieApi.getLatest(1).then((r) => r.data),
   });
@@ -701,6 +701,7 @@ export default function HomePage() {
   // Deduplication registry & row limits
   const {
     top10List,
+    latestRowList,
     vfxRowList,
     usUkSeriesRowList,
     actionRowList,
@@ -720,7 +721,8 @@ export default function HomePage() {
       return deduplicate(rawFilms).slice(0, targetCount);
     };
 
-    // Initial 4 Sections
+    // Initial Sections
+    const latestRowList = buildRow(latestFilms);
     const vfxRowList = buildRow(vfxFilms);
     const usUkSeriesRowList = buildRow(usUkSeriesFilms);
     const actionRowList = buildRow(actionFilms);
@@ -740,6 +742,7 @@ export default function HomePage() {
 
     const sectionSlugs = new Set(
       [
+        ...latestRowList,
         ...vfxRowList,
         ...usUkSeriesRowList,
         ...actionRowList,
@@ -791,6 +794,7 @@ export default function HomePage() {
 
     return {
       top10List,
+      latestRowList,
       vfxRowList,
       usUkSeriesRowList,
       actionRowList,
@@ -844,6 +848,16 @@ export default function HomePage() {
 
         {/* ── 16:9 LANDSCAPE WATCH HISTORY / RECENTLY WATCHED ROW ── */}
         <ContinueWatchingRow fallbackFilms={top10List} />
+
+        {/* ── PHIM MỚI CẬP NHẬT (NEWLY UPDATED MOVIES ROW) ── */}
+        <LazySection>
+          <FilmSection
+            title="Phim Mới Cập Nhật"
+            films={latestRowList}
+            isLoading={latestLoading}
+            href="/films"
+          />
+        </LazySection>
 
         {/* ── Initial 4 Movie Sections ── */}
         <LazySection>
