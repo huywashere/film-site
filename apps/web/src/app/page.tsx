@@ -678,16 +678,23 @@ export default function HomePage() {
     [trendingData],
   );
 
-  // Randomize 6 phim Hollywood & phim mới hot cho Hero Banner
+  // Priority High-Interest & Top-Trending Movies for Hero Banner
   const bannerFilms = useMemo(() => {
-    const combined = [...HOLLYWOOD_HERO_POOL, ...latestFilms];
-    const pool = deduplicate(combined);
+    const popularPool = filterLiveActionOnly([
+      ...trendingFilms,
+      ...HOLLYWOOD_HERO_POOL,
+      ...(usUkBannerData?.data?.items || usUkBannerData?.items || []),
+      ...actionFilms,
+    ]);
+    const pool = deduplicate(
+      popularPool.length > 0 ? popularPool : HOLLYWOOD_HERO_POOL,
+    );
     for (let i = pool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
     return pool.slice(0, 6);
-  }, [latestFilms]);
+  }, [trendingFilms, usUkBannerData, actionFilms]);
 
   const showBannerSkeleton = false;
 
@@ -749,12 +756,21 @@ export default function HomePage() {
         ...romanceRowList,
       ].map((film) => film.slug),
     );
-    const top10List = filterLiveActionOnly(trendingFilms)
+
+    const highInterestFilms = deduplicate([
+      ...trendingFilms,
+      ...(usUkBannerData?.data?.items || usUkBannerData?.items || []),
+      ...actionFilms,
+      ...scifiFilms,
+      ...HOLLYWOOD_HERO_POOL,
+    ]);
+
+    const top10List = filterLiveActionOnly(highInterestFilms)
       .filter((film) => !sectionSlugs.has(film.slug))
       .slice(0, 10);
     if (top10List.length < 10) {
       top10List.push(
-        ...filterLiveActionOnly(latestFilms)
+        ...filterLiveActionOnly(highInterestFilms)
           .filter(
             (film) =>
               !sectionSlugs.has(film.slug) &&
@@ -763,12 +779,9 @@ export default function HomePage() {
           .slice(0, 10 - top10List.length),
       );
     }
-    // A new deployment may not have any local view logs yet. Keep the section
-    // useful during that warm-up period, while preferring non-duplicated titles
-    // whenever the catalogue gives us enough options.
     if (top10List.length < 10) {
       top10List.push(
-        ...filterLiveActionOnly(latestFilms)
+        ...filterLiveActionOnly(highInterestFilms)
           .filter(
             (film) => !top10List.some((ranked) => ranked.slug === film.slug),
           )
