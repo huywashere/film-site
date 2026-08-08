@@ -291,26 +291,26 @@ export function AuthModal() {
       />
 
       {/* Semi-Transparent Glass Modal Card (Be Vietnam Pro / CineVerse Font System) */}
-      <div className="relative w-full max-w-lg bg-[#07080a]/75 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-[0_0_90px_rgba(0,0,0,0.95)] p-6 sm:p-8 z-10 my-auto flex flex-col font-primary">
+      <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto bg-[#070911]/90 backdrop-blur-3xl border border-white/20 rounded-3xl shadow-[0_0_90px_rgba(0,0,0,0.95)] p-5 sm:p-7 z-10 my-auto flex flex-col font-primary [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {/* Close Button */}
         <button
           onClick={closeModal}
-          className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer z-20"
+          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer z-20"
           aria-label="Đóng"
         >
           <X size={16} />
         </button>
 
         {/* Title Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-white tracking-tight">
+        <div className="text-center mb-4">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
             {isForgotMode
               ? "Quên mật khẩu"
               : mode === "login"
                 ? "Đăng nhập"
                 : "Tạo tài khoản"}
           </h1>
-          <p className="text-xs text-neutral-300 font-medium mt-2 leading-relaxed max-w-sm mx-auto">
+          <p className="text-xs text-neutral-300/90 font-medium mt-1.5 leading-relaxed max-w-sm mx-auto">
             {isForgotMode
               ? "Nhập địa chỉ email đăng ký của bạn để nhận liên kết khôi phục mật khẩu."
               : mode === "login"
@@ -321,7 +321,7 @@ export function AuthModal() {
 
         {!isForgotMode && (
           /* Mode Switching Tabs (Grid 2 Nút Đặt Ngang) */
-          <div className="grid grid-cols-2 gap-3 mb-6 relative">
+          <div className="grid grid-cols-2 gap-2.5 mb-4 relative">
             <button
               type="button"
               onClick={() => {
@@ -623,7 +623,7 @@ export function AuthModal() {
         )}
 
         {/* Divider */}
-        <div className="relative flex items-center justify-center my-5">
+        <div className="relative flex items-center justify-center my-3">
           <div className="flex-grow border-t border-white/15" />
           <span className="px-3 text-xs font-medium text-neutral-400 bg-black/40 backdrop-blur-md rounded-full border border-white/10">
             hoặc tiếp tục bằng
