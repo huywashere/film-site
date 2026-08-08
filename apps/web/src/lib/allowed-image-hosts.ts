@@ -27,16 +27,19 @@ const ALLOWED_IMAGE_HOSTS = [
   // VSMOV
   "vsmov.com",
   "*.vsmov.com",
+  "storage.vsmov.com",
   "nguon.vsphim.com",
   "*.vsphim.com",
   // TMDB
   "image.tmdb.org",
   "*.tmdb.org",
   "tmdb.org",
-  // Misc
+  // Misc & Avatars & Flags
   "motphim.net",
   "*.motphim.net",
   "ui-avatars.com",
+  "flagcdn.com",
+  "*.flagcdn.com",
   // Wikipedia thumbnails returned by /api/cast-image
   "upload.wikimedia.org",
 ] as const;

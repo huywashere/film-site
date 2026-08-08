@@ -27,10 +27,13 @@ export function Top10RankedRow({
   if (!top10.length) return null;
 
   return (
-    <div className="w-full my-8 relative">
+    <div data-top10-row="true" className="w-full my-8 relative">
       {/* Section Header matching standard film sections (Clean typography + dash indicators) */}
       <div className="flex items-center justify-between mb-3.5 px-1">
-        <h2 className="text-lg md:text-xl font-extrabold text-white tracking-tight">
+        <h2
+          data-top10-title="true"
+          className="text-lg md:text-xl font-extrabold text-white tracking-tight"
+        >
           {title}
         </h2>
 
@@ -101,7 +104,10 @@ export function Top10RankedRow({
 
                     {/* Vertical Movie Title running along the left side of the poster card */}
                     <div className="absolute bottom-3 left-0 sm:left-1 z-20 flex flex-col justify-end pointer-events-none max-h-[180px] sm:max-h-[210px] md:max-h-[240px]">
-                      <p className="[writing-mode:vertical-rl] rotate-180 text-xs sm:text-sm font-extrabold text-white group-hover/item:text-white transition-colors tracking-wide max-h-[170px] sm:max-h-[200px] truncate drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                      <p
+                        data-rank-title="true"
+                        className="[writing-mode:vertical-rl] rotate-180 text-xs sm:text-sm font-extrabold text-white group-hover/item:text-white transition-colors tracking-wide max-h-[170px] sm:max-h-[200px] truncate drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]"
+                      >
                         {film.name}
                       </p>
                     </div>
@@ -153,6 +159,7 @@ export function Top10RankedRow({
           <button
             ref={nextRef}
             aria-label="Next slide"
+            data-row-nav="true"
             className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
           >
             <ChevronRight size={22} strokeWidth={2.5} />
@@ -160,6 +167,7 @@ export function Top10RankedRow({
           <button
             ref={prevRef}
             aria-label="Previous slide"
+            data-row-nav="true"
             className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
           >
             <ChevronLeft size={22} strokeWidth={2.5} />

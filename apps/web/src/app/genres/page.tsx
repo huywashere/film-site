@@ -204,10 +204,10 @@ export default function GenresTopicsPage() {
       </header>
 
       {/* ── FEATURED TOPIC BENTO SHOWCASE ── */}
-      <section className="mb-16 relative z-10 cv-section-auto">
-        <div className="flex items-center justify-between mb-6 px-1">
-          <h2 className="text-sm font-black uppercase tracking-[0.2em] text-neutral-300 flex items-center gap-2.5">
-            <Flame size={18} className="text-neutral-400" />
+      <section className="mb-10 sm:mb-16 relative z-10 cv-section-auto">
+        <div className="flex items-center justify-between mb-3.5 sm:mb-6 px-1">
+          <h2 className="text-xs sm:text-sm font-black uppercase tracking-[0.18em] text-neutral-300 flex items-center gap-2">
+            <Flame size={16} className="text-neutral-400 sm:w-[18px] sm:h-[18px]" />
             <span>BỘ SƯU TẬP CHỦ ĐỀ HOT NHẤT</span>
           </h2>
           <span className="text-[11px] font-mono text-neutral-500 font-semibold hidden sm:inline-block">
@@ -215,8 +215,8 @@ export default function GenresTopicsPage() {
           </span>
         </div>
 
-        {/* Bento Grid with Ambient Poster Backdrops & Hover Physics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Bento Grid: 2-column on mobile for compact space-saving layout */}
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
           {FEATURED_TOPICS.map((topic, index) => {
             const Icon = topic.icon;
             return (
@@ -228,7 +228,7 @@ export default function GenresTopicsPage() {
               >
                 <Link
                   href={topic.link}
-                  className={`group relative overflow-hidden rounded-3xl p-6 border border-white/10 ${topic.borderColor} ${topic.glowColor} transition-all duration-500 shadow-2xl flex flex-col justify-between min-h-[220px] sm:min-h-[240px] bg-neutral-950 transform-gpu hover:-translate-y-1.5`}
+                  className={`group relative overflow-hidden rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 border border-white/10 ${topic.borderColor} ${topic.glowColor} transition-all duration-500 shadow-xl flex flex-col justify-between min-h-[140px] sm:min-h-[240px] bg-neutral-950 transform-gpu hover:-translate-y-1`}
                 >
                   {/* Ambient Backdrop Image with Zoom & Dark Gradient Scrim */}
                   <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
@@ -252,37 +252,38 @@ export default function GenresTopicsPage() {
                   </div>
 
                   {/* Top Glass Tags & Glyph */}
-                  <div className="relative z-20 flex items-center justify-between gap-2 mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className={`px-3 py-1 rounded-full border text-[10px] font-mono font-bold uppercase tracking-wider backdrop-blur-md shadow-md ${topic.badgeBg}`}>
+                  <div className="relative z-20 flex items-center justify-between gap-1.5 mb-2 sm:mb-4">
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <span className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full border text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider backdrop-blur-md shadow-md ${topic.badgeBg}`}>
                         {topic.badge}
                       </span>
-                      <span className="px-2.5 py-1 rounded-full bg-black/60 border border-white/15 text-[10px] font-mono font-bold text-amber-400 flex items-center gap-1 backdrop-blur-md">
-                        <Star size={10} className="fill-amber-400" />
+                      <span className="px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-black/60 border border-white/15 text-[9px] sm:text-[10px] font-mono font-bold text-amber-400 flex items-center gap-0.5 sm:gap-1 backdrop-blur-md">
+                        <Star size={9} className="fill-amber-400 sm:w-[10px] sm:h-[10px]" />
                         <span>{topic.rating}</span>
                       </span>
                     </div>
 
-                    <div className="w-10 h-10 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center text-white group-hover:scale-110 group-hover:bg-white group-hover:text-black transition-all shadow-lg">
-                      <Icon size={18} />
+                    <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center text-white group-hover:scale-110 group-hover:bg-white group-hover:text-black transition-all shadow-lg shrink-0">
+                      <Icon size={14} className="sm:hidden" />
+                      <Icon size={18} className="hidden sm:block" />
                     </div>
                   </div>
 
                   {/* Middle Content */}
-                  <div className="relative z-20 space-y-1.5 mt-auto">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-neutral-400 block">
+                  <div className="relative z-20 space-y-0.5 sm:space-y-1.5 mt-auto">
+                    <span className="text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-widest text-neutral-400 block">
                       {topic.featuredTag}
                     </span>
-                    <h3 className="text-xl sm:text-2xl font-black text-white group-hover:text-white transition-colors drop-shadow-md">
+                    <h3 className="text-xs sm:text-2xl font-bold sm:font-black text-white group-hover:text-white transition-colors drop-shadow-md line-clamp-1">
                       {topic.title}
                     </h3>
-                    <p className="text-xs text-neutral-400 line-clamp-2 leading-relaxed font-medium">
+                    <p className="hidden sm:block text-xs text-neutral-400 line-clamp-2 leading-relaxed font-medium">
                       {topic.subtitle}
                     </p>
                   </div>
 
-                  {/* Bottom Action Footer */}
-                  <div className="relative z-20 flex items-center justify-between pt-4 border-t border-white/10 mt-4 text-xs font-bold text-neutral-400 group-hover:text-white transition-colors">
+                  {/* Bottom Action Footer (Desktop only) */}
+                  <div className="relative z-20 hidden sm:flex items-center justify-between pt-4 border-t border-white/10 mt-4 text-xs font-bold text-neutral-400 group-hover:text-white transition-colors">
                     <span className="flex items-center gap-1">
                       <span>Khám phá bộ sưu tập</span>
                     </span>

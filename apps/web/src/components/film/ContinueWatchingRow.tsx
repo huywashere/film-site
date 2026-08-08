@@ -86,16 +86,20 @@ export function ContinueWatchingRow({
   };
 
   return (
-    <div className="w-full mb-8 relative group/section">
+    <div data-history-row="true" className="w-full mb-8 relative group/section">
       {/* Header with Title + Inline Pill Button + Right Dash Line Indicators */}
       <div className="flex items-center justify-between mb-3.5 px-1">
         <div className="flex items-center gap-2.5">
-          <h2 className="text-lg md:text-xl font-extrabold text-white tracking-tight">
+          <h2
+            data-history-title="true"
+            className="text-lg md:text-xl font-extrabold text-white tracking-tight"
+          >
             {sectionTitle}
           </h2>
           {hasHistory && (
             <Link
               href="/history"
+              data-history-action="true"
               className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.12] text-white/90 hover:text-white text-xs font-medium transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95 ml-1"
             >
               <span>Xem tất cả</span>

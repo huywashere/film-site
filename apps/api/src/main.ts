@@ -83,12 +83,46 @@ async function bootstrap() {
     }),
   );
 
+  // ── CORS – restrict to trusted frontend origins ───────────────
+  const configuredOrigins = process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(",")
+        .map((o) => o.trim())
+        .filter(Boolean)
+    : ["http://localhost:3000"];
+  const origins = Array.from(
+    new Set(
+      process.env.NODE_ENV === "production"
+        ? configuredOrigins
+        : [...configuredOrigins, "http://127.0.0.1:3000", "http://localhost:3000"],
+    ),
+  );
+
+  app.enableCors({
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      if (origins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("Origin not allowed by CORS"));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    maxAge: 600,
+  });
+
   // ── Global prefix ─────────────────────────────────────────────
   app.setGlobalPrefix("api/v1");
 
   const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 200,
+    max: 1000,
     standardHeaders: true,
     legacyHeaders: false,
     message: { success: false, message: "Quá nhiều yêu cầu, vui lòng thử lại sau" },
@@ -136,44 +170,11 @@ async function bootstrap() {
 
   app.use(globalLimiter);
   app.use("/api/v1/auth/forgot-password", forgotPasswordLimiter);
-  app.use("/api/v1/auth", authLimiter);
+  app.use("/api/v1/auth/login", authLimiter);
+  app.use("/api/v1/auth/register", authLimiter);
   app.use("/api/v1/movies/search", searchLimiter);
   app.use("/api/v1/movies/:id/reviews", reviewLimiter);
   app.use("/api/v1/users/me/watch-history", watchHistoryLimiter);
-
-  // ── CORS – restrict to trusted frontend origins ───────────────
-  const configuredOrigins = process.env.FRONTEND_URL
-    ? process.env.FRONTEND_URL.split(",")
-        .map((o) => o.trim())
-        .filter(Boolean)
-    : ["http://localhost:3000"];
-  const origins = Array.from(
-    new Set(
-      process.env.NODE_ENV === "production"
-        ? configuredOrigins
-        : [...configuredOrigins, "http://127.0.0.1:3000", "http://localhost:3000"],
-    ),
-  );
-
-  app.enableCors({
-    origin: (origin, callback) => {
-      if (!origin) {
-        callback(null, true);
-        return;
-      }
-
-      if (origins.includes(origin)) {
-        callback(null, true);
-        return;
-      }
-
-      callback(new Error("Origin not allowed by CORS"));
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-    maxAge: 600,
-  });
 
   // ── Request body size cap ─────────────────────────────────────
   const { json, urlencoded } = await import("express");

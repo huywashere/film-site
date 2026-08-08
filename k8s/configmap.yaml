@@ -8,6 +8,6 @@ data:
   PORT: "3001"
   KKPHIM_BASE_URL: "https://phimapi.com"
   KKPHIM_CDN_URL: "https://phimimg.com"
-  OPHIM_API_BASE: "https://ophim1.com"
+  OPHIM_API_BASE: "https://ophim17.cc/"
   NEXT_PUBLIC_API_URL: "https://api.cineverse.com/api/v1"
   NEXT_PUBLIC_APP_NAME: "CineVerse"

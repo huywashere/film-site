@@ -411,16 +411,17 @@ export function SpotlightSearchModal({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -12, scale: 0.98 }}
         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-        className="flex h-[calc(100dvh-1rem-env(safe-area-inset-top))] w-full max-w-5xl flex-col overflow-hidden rounded-[22px] border border-white/10 bg-[#0b1016]/95 shadow-[0_28px_100px_rgba(0,0,0,0.65)] pointer-events-auto transform-gpu sm:h-[min(82dvh,760px)]"
+        className="flex h-auto max-h-[88dvh] w-full max-w-5xl flex-col overflow-hidden rounded-[20px] sm:rounded-[22px] border border-white/10 bg-[#0b1016]/95 shadow-[0_28px_100px_rgba(0,0,0,0.65)] pointer-events-auto transform-gpu sm:h-[min(82dvh,760px)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Top Search Input Bar (Fixed Header) ── */}
         <div
           suppressHydrationWarning
-          className="flex items-center gap-3 border-b border-white/[0.08] bg-[#101720]/80 px-4 py-3.5 shrink-0 sm:px-5"
+          className="flex items-center gap-2 sm:gap-3 border-b border-white/[0.08] bg-[#101720]/80 px-3 py-2.5 shrink-0 sm:px-5 sm:py-3.5"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-emerald-300">
-            <Search size={17} strokeWidth={2} />
+          <span className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl border border-white/10 bg-white/[0.04] text-emerald-300">
+            <Search size={15} strokeWidth={2} className="sm:hidden" />
+            <Search size={17} strokeWidth={2} className="hidden sm:block" />
           </span>
           <input
             suppressHydrationWarning
@@ -430,12 +431,12 @@ export function SpotlightSearchModal({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Tìm kiếm phim, đạo diễn, diễn viên..."
-            className="min-w-0 flex-1 border-none bg-transparent text-sm font-semibold tracking-wide text-white placeholder:text-white/35 focus:outline-none focus:ring-0 sm:text-base"
+            className="min-w-0 flex-1 border-none bg-transparent text-xs font-semibold tracking-wide text-white placeholder:text-white/35 focus:outline-none focus:ring-0 sm:text-base"
           />
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <VoiceSearchButton onResult={(text) => setQuery(text)} />
             {isFetching && (
-              <Loader2 size={16} className="animate-spin text-white/50" />
+              <Loader2 size={15} className="animate-spin text-white/50" />
             )}
             {query && (
               <button
@@ -443,14 +444,14 @@ export function SpotlightSearchModal({
                   setQuery("");
                   inputRef.current?.focus();
                 }}
-                className="rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                className="rounded-lg p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
               >
-                <X size={15} />
+                <X size={14} />
               </button>
             )}
             <button
               onClick={onClose}
-              className="rounded-full border border-white/10 bg-white/[0.08] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:scale-[1.02] hover:bg-white/[0.16] active:scale-[0.98]"
+              className="rounded-full border border-white/10 bg-white/[0.08] px-2.5 py-1 text-[11px] font-bold text-white shadow-sm transition-all hover:scale-[1.02] hover:bg-white/[0.16] active:scale-[0.98] sm:px-3.5 sm:py-1.5 sm:text-xs"
             >
               Đóng
             </button>
@@ -458,11 +459,11 @@ export function SpotlightSearchModal({
         </div>
 
         {/* ── YouTube/Netflix Smart Filter Bar (Fixed Header) ── */}
-        <div className="flex shrink-0 flex-col justify-between gap-2.5 overflow-x-auto border-b border-white/[0.06] bg-[#080c11] px-4 py-3 text-xs scrollbar-hide sm:flex-row sm:items-center sm:px-5">
+        <div className="flex shrink-0 flex-col justify-between gap-1.5 overflow-x-auto border-b border-white/[0.06] bg-[#080c11] px-3 py-2 text-xs scrollbar-hide sm:flex-row sm:items-center sm:gap-2.5 sm:px-5 sm:py-3">
           {/* Type Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-0.5 shrink-0">
-            <span className="text-white/40 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1 shrink-0 mr-1">
-              <Filter size={11} className="text-white/50" />
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide py-0.5 shrink-0">
+            <span className="text-white/40 font-bold text-[9px] sm:text-[10px] uppercase tracking-wider flex items-center gap-1 shrink-0 mr-0.5">
+              <Filter size={10} className="text-white/50" />
               Lọc:
             </span>
 
@@ -478,7 +479,7 @@ export function SpotlightSearchModal({
                 <button
                   key={tab.id}
                   onClick={() => setActiveTypeFilter(tab.id as any)}
-                  className={`px-3.5 py-1.5 rounded-full font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 text-xs ${
+                  className={`px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1 text-[11px] sm:text-xs ${
                     active
                       ? "bg-emerald-400 text-[#06110c] shadow-md shadow-emerald-500/20"
                       : "bg-white/[0.06] hover:bg-white/[0.12] text-neutral-300 hover:text-white border border-white/10"
@@ -487,7 +488,7 @@ export function SpotlightSearchModal({
                   <span>{tab.label}</span>
                   {isSearching && tab.count > 0 && (
                     <span
-                      className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                      className={`text-[9px] sm:text-[10px] px-1 py-0.1 rounded-full ${
                         active
                           ? "bg-[#06110c]/20 text-[#06110c]"
                           : "bg-white/10 text-white/60"
@@ -502,7 +503,7 @@ export function SpotlightSearchModal({
           </div>
 
           {/* Audio Language Filter */}
-          <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-hide">
             {[
               { id: "all", label: "Tất cả Audio" },
               { id: "vietsub", label: "Vietsub" },
@@ -513,7 +514,7 @@ export function SpotlightSearchModal({
                 <button
                   key={lang.id}
                   onClick={() => setActiveLangFilter(lang.id as any)}
-                  className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer shrink-0 ${
+                  className={`px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-[11px] font-semibold transition-all cursor-pointer shrink-0 ${
                     active
                       ? "bg-white/15 text-emerald-200 border border-emerald-300/30 shadow-sm"
                       : "text-neutral-400 hover:text-white hover:bg-white/[0.06]"
@@ -529,7 +530,7 @@ export function SpotlightSearchModal({
         {/* ── Main Scrollable View Area (Smooth Touch & Mouse Scrollable Container) ── */}
         <div
           onWheel={(e) => e.stopPropagation()}
-          className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y bg-[#0b1016] p-3 sm:p-5 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-white/5 pointer-events-auto transform-gpu"
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y bg-[#0b1016] p-2.5 sm:p-5 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-white/5 pointer-events-auto transform-gpu"
         >
           {/* ── SEARCH MODE ── */}
           {isSearching ? (

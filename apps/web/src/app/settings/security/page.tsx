@@ -13,14 +13,13 @@ import {
   ShieldAlert,
   KeyRound,
   Loader2,
-  Lock,
   Copy,
   Check,
-  User,
   ArrowLeft,
   Globe,
 } from "lucide-react";
 import Link from "next/link";
+import { AccountPageTabs } from "@/components/account/AccountPageTabs";
 
 interface Session {
   id: string;
@@ -46,18 +45,18 @@ function TwoFactorSection({
   disabling: boolean;
 }) {
   return (
-    <div className="bg-[#14181f] border border-white/10 rounded-2xl p-6 shadow-xl space-y-5">
+    <div className="space-y-5 rounded-2xl border border-white/10 bg-[#10141b] p-5 shadow-[0_16px_45px_rgba(0,0,0,0.18)] sm:p-6">
       <div className="flex items-start justify-between">
         <div className="flex items-center space-x-4">
-          <div className="p-3 bg-white/5 border border-white/10 rounded-xl text-white">
+          <div className="rounded-xl border border-violet-300/20 bg-violet-300/[0.08] p-3 text-violet-100">
             <Shield className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-base font-extrabold text-white">
-              Xác thực hai yếu tố (2FA)
+            <h3 className="text-base font-bold text-white">
+              Xác thực hai bước
             </h3>
             <p className="text-xs text-neutral-400 mt-0.5">
-              Yêu cầu mã xác thực OTP từ ứng dụng Authenticator khi đăng nhập.
+              Thêm một lớp bảo vệ bằng mã OTP từ ứng dụng Authenticator.
             </p>
           </div>
         </div>
@@ -101,9 +100,9 @@ function TwoFactorSection({
         ) : (
           <button
             onClick={onSetup}
-            className="bg-white hover:bg-neutral-200 text-black font-extrabold text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all shadow-lg active:scale-95 cursor-pointer"
+            className="cursor-pointer rounded-xl bg-white px-5 py-2.5 text-xs font-bold text-black shadow-lg transition-all hover:bg-violet-100 active:scale-95"
           >
-            Thiết lập 2FA
+            Bật xác thực
           </button>
         )}
       </div>
@@ -118,18 +117,18 @@ function GoogleLinkSection({ user }: { user: any }) {
   const googleLinkUrl = `${apiBase.replace("/api/v1", "")}/api/v1/auth/google`;
 
   return (
-    <div className="bg-[#14181f] border border-white/10 rounded-2xl p-6 shadow-xl space-y-5">
+    <div className="space-y-5 rounded-2xl border border-white/10 bg-[#10141b] p-5 shadow-[0_16px_45px_rgba(0,0,0,0.18)] sm:p-6">
       <div className="flex items-start justify-between">
         <div className="flex items-center space-x-4">
-          <div className="p-3 bg-white/5 border border-white/10 rounded-xl text-white">
+          <div className="rounded-xl border border-white/10 bg-white/[0.05] p-3 text-white">
             <KeyRound className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-base font-extrabold text-white">
+            <h3 className="text-base font-bold text-white">
               Liên kết tài khoản Google
             </h3>
             <p className="text-xs text-neutral-400 mt-0.5">
-              Đăng nhập nhanh bằng Google mà không cần mật khẩu.
+              Dùng Google để đăng nhập nhanh hơn trong những lần sau.
             </p>
           </div>
         </div>
@@ -308,12 +307,12 @@ export default function SecuritySettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f1216] text-foreground pb-24 pt-24 px-4 md:px-12 select-none">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen bg-[#0b0d12] px-4 pb-24 pt-24 text-foreground select-none md:px-10">
+      <div className="mx-auto max-w-[1180px] space-y-6">
         {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-6">
+        <div className="rounded-[28px] border border-white/10 bg-[#10141b] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.2)] sm:p-8">
           <div>
-            <div className="flex items-center space-x-2 text-xs text-neutral-400 mb-2">
+            <div className="mb-3 flex items-center space-x-2 text-xs text-neutral-500">
               <Link
                 href="/"
                 className="hover:text-white transition-colors flex items-center gap-1"
@@ -323,34 +322,24 @@ export default function SecuritySettingsPage() {
               <span>/</span>
               <span className="text-white font-bold">Cài đặt bảo mật</span>
             </div>
-            <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
-              Cài Đặt Bảo Mật
+            <h1 className="text-2xl font-black tracking-tight text-white sm:text-4xl">
+              Giữ tài khoản an toàn
             </h1>
             <p className="text-xs sm:text-sm text-neutral-400 mt-1">
-              Quản lý xác thực hai yếu tố, theo dõi thiết bị hoạt động và liên
-              kết mạng xã hội.
+              Quản lý các lớp bảo vệ và thiết bị đang đăng nhập trong một nơi.
             </p>
           </div>
 
-          {/* Quick Tab Switcher */}
-          <div className="flex items-center space-x-2 bg-white/5 border border-white/10 p-1 rounded-xl self-start md:self-auto">
-            <button className="px-4 py-2 rounded-lg bg-white/10 text-white font-extrabold text-xs flex items-center space-x-1.5 cursor-pointer">
-              <Lock size={13} />
-              <span>Bảo mật</span>
-            </button>
-            {user.username && (
-              <Link
-                href={`/profile/${user.username}`}
-                className="px-4 py-2 rounded-lg text-neutral-400 hover:text-white font-bold text-xs transition-colors flex items-center space-x-1.5"
-              >
-                <User size={13} />
-                <span>Hồ sơ</span>
-              </Link>
-            )}
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-neutral-500">
+              Một vài phút thiết lập hôm nay giúp bạn yên tâm hơn mỗi lần xem
+              phim.
+            </p>
+            <AccountPageTabs active="security" username={user.username} />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
           {/* Left Column: 2FA & Google Account */}
           <div className="lg:col-span-7 space-y-6">
             <TwoFactorSection
@@ -364,15 +353,15 @@ export default function SecuritySettingsPage() {
           </div>
 
           {/* Right Column: Sessions (Device Tracking) */}
-          <div className="lg:col-span-5 bg-[#14181f] border border-white/10 rounded-2xl p-6 shadow-xl space-y-5">
+          <div className="space-y-5 rounded-2xl border border-white/10 bg-[#10141b] p-5 shadow-[0_16px_45px_rgba(0,0,0,0.18)] sm:p-6 lg:col-span-5">
             <div className="flex items-center justify-between border-b border-white/5 pb-4">
               <div className="flex items-center space-x-3">
-                <div className="p-2.5 bg-white/5 border border-white/10 rounded-xl text-white">
+                <div className="rounded-xl border border-white/10 bg-white/[0.05] p-2.5 text-white">
                   <Laptop className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-white">
-                    Thiết Bị Hoạt Động
+                  <h3 className="text-base font-bold text-white">
+                    Thiết bị đã đăng nhập
                   </h3>
                   <p className="text-[11px] text-neutral-400">
                     {sessions.length} thiết bị đã đăng nhập

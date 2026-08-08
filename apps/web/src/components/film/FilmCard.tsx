@@ -138,6 +138,48 @@ export function FilmCard({
   }, [slug, user]);
 
   const handleImageError = () => {
+    const posterResolved = resolveImageUrl(film.poster_url);
+    const thumbResolved = resolveImageUrl(film.thumb_url);
+
+    // 1. If poster was tried and failed, try thumb
+    if (
+      imageSrc === posterResolved &&
+      thumbResolved &&
+      thumbResolved !== posterResolved
+    ) {
+      setImageSrc(thumbResolved);
+      return;
+    }
+
+    // 2. If thumb was tried and failed, try poster
+    if (
+      imageSrc === thumbResolved &&
+      posterResolved &&
+      posterResolved !== thumbResolved
+    ) {
+      setImageSrc(posterResolved);
+      return;
+    }
+
+    // 3. Direct raw poster/thumb URL as fallback
+    if (
+      film.poster_url &&
+      film.poster_url.startsWith("http") &&
+      imageSrc !== film.poster_url
+    ) {
+      setImageSrc(film.poster_url);
+      return;
+    }
+    if (
+      film.thumb_url &&
+      film.thumb_url.startsWith("http") &&
+      imageSrc !== film.thumb_url
+    ) {
+      setImageSrc(film.thumb_url);
+      return;
+    }
+
+    // 4. Final placeholder SVG
     setImageSrc(
       `data:image/svg+xml;utf8,${encodeURIComponent(PLACEHOLDER_SVG)}`,
     );
@@ -243,6 +285,7 @@ export function FilmCard({
 
   return (
     <div
+      data-film-card="true"
       className="group relative flex flex-col select-none gpu-accelerated transform-gpu"
       style={width ? { width, flexShrink: 0 } : undefined}
       onMouseEnter={prefetchFilmDetail}
@@ -313,7 +356,10 @@ export function FilmCard({
             </h4>
 
             {/* Subtitle Row with Origin/Year & Sleek Rating */}
-            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-neutral-400 gap-1 sm:gap-2">
+            <div
+              data-film-meta="true"
+              className="flex items-center justify-between text-[10px] sm:text-[11px] text-neutral-400 gap-1 sm:gap-2"
+            >
               <span className="line-clamp-1 flex-1 font-normal text-neutral-400">
                 {film.origin_name || (film.year ? `${film.year}` : "")}
               </span>

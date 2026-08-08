@@ -511,17 +511,202 @@ async function getDetailFromAnySource(
   };
 }
 
+type CatalogSourceRequest = {
+  source: MovieSource;
+  request: () => Promise<unknown>;
+};
+
+/**
+ * Read catalogue pages from every available provider. Lists used to be
+ * hard-wired to KKPhim, which made the other healthy providers invisible.
+ * Results are deduped by TMDB/IMDB/title-year and then interleaved so one
+ * source cannot occupy the entire first viewport.
+ */
+async function getMergedCatalogPage(
+  page: number,
+  requests: CatalogSourceRequest[],
+  perSourceLimit = 36,
+): Promise<any> {
+  const settled = await Promise.allSettled(
+    requests.map((entry) => entry.request()),
+  );
+  const groups = requests.map((entry, index) => ({
+    source: entry.source,
+    items:
+      settled[index].status === "fulfilled"
+        ? extractFilmItems(settled[index].value)
+        : [],
+  }));
+  const merged = dedupeFilmsBySource(groups);
+  const sourceOrder: MovieSource[] = ["kkphim", "nguonc", "vsmov", "ophim"];
+  const buckets = new Map<MovieSource, typeof merged>();
+
+  for (const film of merged) {
+    const bucket = buckets.get(film._source) || [];
+    bucket.push(film);
+    buckets.set(film._source, bucket);
+  }
+
+  const items: typeof merged = [];
+  for (let cursor = 0; cursor < perSourceLimit; cursor += 1) {
+    for (const source of sourceOrder) {
+      const bucket = buckets.get(source);
+      const next = bucket?.shift();
+      if (next) items.push(next);
+    }
+  }
+
+  return {
+    status: true,
+    msg: "done",
+    items,
+    params: {
+      pagination: {
+        currentPage: page,
+        totalItems: items.length,
+        totalItemsPerPage: items.length,
+        totalPages: 1,
+      },
+    },
+    pagination: {
+      currentPage: page,
+      totalItems: items.length,
+      totalItemsPerPage: items.length,
+      totalPages: 1,
+    },
+    paginate: {
+      current_page: page,
+      total_items: items.length,
+      items_per_page: items.length,
+      total_page: 1,
+    },
+    data: {
+      items,
+      params: {
+        pagination: {
+          currentPage: page,
+          totalItems: items.length,
+          totalItemsPerPage: items.length,
+          totalPages: 1,
+        },
+      },
+    },
+    _sources: groups.map((group) => ({
+      source: group.source,
+      count: group.items.length,
+    })),
+  };
+}
+
+function catalogRequests(
+  kind:
+    "latest" | "series" | "single" | "anime" | "tvshows" | "genre" | "country",
+  page: number,
+  value?: string,
+): CatalogSourceRequest[] {
+  const encodedValue = value ? encodeURIComponent(value) : "";
+  const requests: CatalogSourceRequest[] = [
+    {
+      source: "kkphim",
+      request: () => {
+        if (kind === "latest") return kkphimApi.getLatest(page);
+        if (kind === "series") return kkphimApi.getSeries(page, 36);
+        if (kind === "single") return kkphimApi.getSingle(page, 36);
+        if (kind === "anime") return kkphimApi.getAnime(page, 36);
+        if (kind === "tvshows") return kkphimApi.getTvShows(page, 36);
+        if (kind === "genre")
+          return kkphimApi.getByGenre(value || "", page, 36);
+        return kkphimApi.getByCountry(value || "", page, 36);
+      },
+    },
+    {
+      source: "nguonc",
+      request: () => {
+        if (kind === "latest") return nguoncApi.getLatest(page);
+        if (kind === "series") return nguoncApi.getSeries(page);
+        if (kind === "single") return nguoncApi.getSingle(page);
+        if (kind === "tvshows") return nguoncApi.getTvShows(page);
+        if (kind === "genre") {
+          const nguonGenre =
+            value === "vien-tuong" ? "khoa-hoc-vien-tuong" : value;
+          return nguoncApi.getByGenre(nguonGenre || "", page);
+        }
+        if (kind === "country")
+          return nguoncApi.getByCountry(value || "", page);
+        return nguoncApi.getByCategory(
+          kind === "anime" ? "hoat-hinh" : kind,
+          page,
+        );
+      },
+    },
+    {
+      source: "vsmov",
+      request: () => {
+        if (kind === "latest") return vsmovApi.getLatest(page);
+        if (kind === "series") return vsmovApi.getSeries(page);
+        if (kind === "single") return vsmovApi.getSingle(page);
+        if (kind === "anime") return vsmovApi.getAnime(page);
+        if (kind === "genre") return vsmovApi.getByGenre(value || "", page);
+        if (kind === "country") return vsmovApi.getByCountry(value || "", page);
+        return vsmovApi.getByType("tv-shows", page);
+      },
+    },
+    ...(kind !== "tvshows"
+      ? [
+          {
+            source: "ophim",
+            request: () => {
+              if (kind === "latest")
+                return fetchOphim(`/danh-sach/phim-moi-cap-nhat?page=${page}`);
+              if (kind === "series")
+                return fetchOphim(
+                  `/v1/api/danh-sach/phim-bo?page=${page}&limit=36`,
+                );
+              if (kind === "single")
+                return fetchOphim(
+                  `/v1/api/danh-sach/phim-le?page=${page}&limit=36`,
+                );
+              if (kind === "anime")
+                return fetchOphim(
+                  `/v1/api/danh-sach/hoat-hinh?page=${page}&limit=36`,
+                );
+              if (kind === "genre")
+                return fetchOphim(
+                  `/v1/api/the-loai/${encodedValue}?page=${page}&limit=36`,
+                );
+              return fetchOphim(
+                `/v1/api/quoc-gia/${encodedValue}?page=${page}&limit=36`,
+              );
+            },
+          } as CatalogSourceRequest,
+        ]
+      : []),
+  ];
+  return requests;
+}
+
 // ── movieApi (alias for component compatibility) ──────────────────
 export const movieApi = {
-  getLatest: (page = 1) => kkphimApi.getLatest(page).then((data) => ({ data })),
+  getLatest: (page = 1) =>
+    getMergedCatalogPage(page, catalogRequests("latest", page)).then(
+      (data) => ({ data }),
+    ),
   getSeries: (page = 1) =>
-    kkphimApi.getSeries(page, 24).then((data) => ({ data })),
+    getMergedCatalogPage(page, catalogRequests("series", page)).then(
+      (data) => ({ data }),
+    ),
   getSingle: (page = 1) =>
-    kkphimApi.getSingle(page, 24).then((data) => ({ data })),
+    getMergedCatalogPage(page, catalogRequests("single", page)).then(
+      (data) => ({ data }),
+    ),
   getAnime: (page = 1) =>
-    kkphimApi.getAnime(page, 24).then((data) => ({ data })),
+    getMergedCatalogPage(page, catalogRequests("anime", page)).then((data) => ({
+      data,
+    })),
   getTvShows: (page = 1) =>
-    kkphimApi.getTvShows(page, 24).then((data) => ({ data })),
+    getMergedCatalogPage(page, catalogRequests("tvshows", page)).then(
+      (data) => ({ data }),
+    ),
   getDetail: (slug: string, preferredSource?: MovieSource) =>
     getDetailFromAnySource(slug, preferredSource).then((data) => ({ data })),
   getDetailV1: (slug: string) =>
@@ -529,9 +714,13 @@ export const movieApi = {
   search: (keyword: string, page = 1, limit = 24) =>
     searchAllSources(keyword, page, limit).then((data) => ({ data })),
   getByGenre: (slug: string, page = 1) =>
-    kkphimApi.getByGenre(slug, page).then((data) => ({ data })),
+    getMergedCatalogPage(page, catalogRequests("genre", page, slug)).then(
+      (data) => ({ data }),
+    ),
   getByCountry: (slug: string, page = 1) =>
-    kkphimApi.getByCountry(slug, page).then((data) => ({ data })),
+    getMergedCatalogPage(page, catalogRequests("country", page, slug)).then(
+      (data) => ({ data }),
+    ),
   getByYear: (year: number, page = 1) =>
     kkphimApi.getByYear(year, page).then((data) => ({ data })),
   getGenres: () => kkphimApi.getGenres().then((data) => ({ data })),
@@ -617,11 +806,16 @@ api.interceptors.response.use(
     // signing in, exchanging a Firebase token, or recovering a session.  A
     // global redirect here races the login UI and can send an already signed-in
     // user back to /login. Let the calling form surface that error instead.
-    const isAuthFlowRequest = /^\/auth\/(?:login|register|firebase|refresh|2fa\/login-verify)/.test(
-      requestPath,
-    );
+    const isAuthFlowRequest =
+      /^\/auth\/(?:login|register|firebase|refresh|2fa\/login-verify)/.test(
+        requestPath,
+      );
 
-    if (err.response?.status === 401 && !original._retry && !isAuthFlowRequest) {
+    if (
+      err.response?.status === 401 &&
+      !original._retry &&
+      !isAuthFlowRequest
+    ) {
       original._retry = true;
       try {
         // Because withCredentials is true, this post will automatically send the refreshToken cookie
@@ -651,14 +845,17 @@ export const authApi = {
     username: string;
     password: string;
     turnstileToken?: string;
-  }) =>
-    api.post("/auth/register", data),
+  }) => api.post("/auth/register", data),
   login: (data: { email: string; password: string; turnstileToken?: string }) =>
     api.post("/auth/login", data),
   firebaseLogin: (idToken: string) =>
-    api.post<{ success: true; user: import("@/store/authStore").User }>("/auth/firebase", {}, {
-      headers: { Authorization: `Bearer ${idToken}` },
-    }),
+    api.post<{ success: true; user: import("@/store/authStore").User }>(
+      "/auth/firebase",
+      {},
+      {
+        headers: { Authorization: `Bearer ${idToken}` },
+      },
+    ),
   getMe: () => api.get("/auth/me"),
   verifyEmail: (data: { token: string }) =>
     api.post("/auth/verify-email", data),
@@ -675,10 +872,15 @@ export const authApi = {
     api.post("/auth/2fa/login-verify", data),
 
   // Profile & Password Endpoints
-  updateProfile: (data: { displayName?: string; avatarUrl?: string; bio?: string }) =>
-    api.put("/users/me/profile", data).catch(() => ({ data })),
+  updateProfile: (data: {
+    displayName?: string;
+    avatarUrl?: string;
+    bio?: string;
+  }) => api.put("/users/me/profile", data).catch(() => ({ data })),
   changePassword: (data: { currentPassword?: string; newPassword?: string }) =>
-    api.put("/auth/change-password", data).catch(() => ({ data: { success: true } })),
+    api
+      .put("/auth/change-password", data)
+      .catch(() => ({ data: { success: true } })),
   getSessions: () => api.get("/auth/sessions"),
   revokeSession: (id: string) => api.post(`/auth/sessions/${id}/revoke`),
   revokeAllSessions: () => api.post("/auth/sessions/revoke-all"),
@@ -686,25 +888,55 @@ export const authApi = {
 };
 
 // ── Watchlist API ──────────────────────────────────────────
+let cachedWatchlistPromise: Promise<any> | null = null;
+let cachedWatchlistTime = 0;
+
 export const watchlistApi = {
   get: (page = 1) =>
-    api.get<PaginatedResponse<WatchlistItem>>(`/users/me/watchlist?page=${page}`).catch(() => ({ data: { items: [], total: 0, totalPages: 1, page: 1, limit: 20 } as any })),
-  add: (movieId: string, movieData?: any) =>
-    api.put("/users/me/watchlist", { movieId, title: movieData?.title, thumbUrl: movieData?.thumbUrl || movieData?.posterUrl }),
-  remove: (movieId: string) => api.put("/users/me/watchlist/remove", { movieId }),
-  check: (movieId: string) => api.get(`/users/me/watchlist`).then((r) => {
+    api
+      .get<PaginatedResponse<WatchlistItem>>(`/users/me/watchlist?page=${page}`)
+      .catch(() => ({
+        data: { items: [], total: 0, totalPages: 1, page: 1, limit: 20 } as any,
+      })),
+  add: (movieId: string, movieData?: any) => {
+    cachedWatchlistPromise = null;
+    return api.put("/users/me/watchlist", {
+      movieId,
+      title: movieData?.title,
+      thumbUrl: movieData?.thumbUrl || movieData?.posterUrl,
+    });
+  },
+  remove: (movieId: string) => {
+    cachedWatchlistPromise = null;
+    return api.put("/users/me/watchlist/remove", { movieId });
+  },
+  check: async (movieId: string) => {
+    const now = Date.now();
+    if (!cachedWatchlistPromise || now - cachedWatchlistTime > 5000) {
+      cachedWatchlistTime = now;
+      cachedWatchlistPromise = api
+        .get(`/users/me/watchlist`)
+        .catch(() => ({ data: [] }));
+    }
+    const r = await cachedWatchlistPromise;
     const list = Array.isArray(r.data) ? r.data : r.data?.items || [];
-    const exists = list.some((item: any) => item.movieId === movieId || item.movie?.id === movieId);
+    const exists = list.some(
+      (item: any) => item.movieId === movieId || item.movie?.id === movieId,
+    );
     return { data: { inWatchlist: exists, isWatchlisted: exists } };
-  }).catch(() => ({ data: { inWatchlist: false, isWatchlisted: false } })),
+  },
 };
 
 // ── Reviews API ────────────────────────────────────────────
 export const reviewsApi = {
   getByMovie: (movieId: string, page = 1) =>
-    api.get(`/reviews/movie/${movieId}?page=${page}`).catch(() => ({ data: [] })),
-  getRecent: (page = 1) => api.get(`/reviews?page=${page}`).catch(() => ({ data: [] })),
-  getMine: (page = 1) => api.get(`/reviews/mine?page=${page}`).catch(() => ({ data: [] })),
+    api
+      .get(`/reviews/movie/${movieId}?page=${page}`)
+      .catch(() => ({ data: [] })),
+  getRecent: (page = 1) =>
+    api.get(`/reviews?page=${page}`).catch(() => ({ data: [] })),
+  getMine: (page = 1) =>
+    api.get(`/reviews/mine?page=${page}`).catch(() => ({ data: [] })),
   create: (data: { movieId: string; content: string; rating?: number }) =>
     api.post("/reviews", data),
   delete: (id: string) => api.delete(`/reviews/${id}`),
@@ -715,8 +947,14 @@ export const reviewsApi = {
 export const ratingsApi = {
   rate: (movieId: string, score: number) =>
     api.post("/ratings", { movieId, score }),
-  getAverage: (movieId: string) => api.get(`/ratings/movie/${movieId}/average`).catch(() => ({ data: { average: 0, count: 0 } })),
-  getMine: (movieId: string) => api.get(`/ratings/movie/${movieId}/mine`).catch(() => ({ data: { score: 0 } })),
+  getAverage: (movieId: string) =>
+    api
+      .get(`/ratings/movie/${movieId}/average`)
+      .catch(() => ({ data: { average: 0, count: 0 } })),
+  getMine: (movieId: string) =>
+    api
+      .get(`/ratings/movie/${movieId}/mine`)
+      .catch(() => ({ data: { score: 0 } })),
 };
 
 // ── Watch History API ──────────────────────────────────────
@@ -734,14 +972,21 @@ export const watchHistoryApi = {
 
   /** Get paginated history list */
   getHistory: (page = 1, limit = 20) =>
-    api.get<any>(`/users/me/watch-history?page=${page}&limit=${limit}`).catch(() => ({ data: [] })),
+    api
+      .get<any>(`/users/me/watch-history?page=${page}&limit=${limit}`)
+      .catch(() => ({ data: [] })),
 
   /** Get resume data for a specific movie (returns all episodes) */
-  getResume: (movieId: string) => api.get(`/users/me/watch-history`).catch(() => ({ data: [] })),
+  getResume: (movieId: string) =>
+    api.get(`/users/me/watch-history`).catch(() => ({ data: [] })),
 
   /** Delete a single history entry */
-  deleteEntry: (id: string) => api.put("/users/me/watch-history/remove", { id }).catch(() => ({ data: null })),
+  deleteEntry: (id: string) =>
+    api
+      .put("/users/me/watch-history/remove", { id })
+      .catch(() => ({ data: null })),
 
   /** Clear all history */
-  clearAll: () => api.put("/users/me/watch-history/clear", {}).catch(() => ({ data: null })),
+  clearAll: () =>
+    api.put("/users/me/watch-history/clear", {}).catch(() => ({ data: null })),
 };

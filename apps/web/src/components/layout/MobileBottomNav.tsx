@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Home, Film, Bookmark, User } from "lucide-react";
+import { Home, LayoutGrid, History, Bookmark, User } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 
@@ -52,13 +52,19 @@ export function MobileBottomNav() {
       isActive: pathname === "/",
     },
     {
-      label: "Phim bộ",
-      href: "/films/series",
-      icon: Film,
-      isActive: pathname.startsWith("/films"),
+      label: "Chủ đề",
+      href: "/genres",
+      icon: LayoutGrid,
+      isActive: pathname === "/genres" || pathname.startsWith("/genre/"),
     },
     {
-      label: "Tủ phim",
+      label: "Lịch sử",
+      href: "/history",
+      icon: History,
+      isActive: pathname === "/history",
+    },
+    {
+      label: "Đã lưu",
       href: "/watchlist",
       icon: Bookmark,
       isActive: pathname === "/watchlist",
@@ -69,7 +75,7 @@ export function MobileBottomNav() {
     <nav
       aria-label="Điều hướng nhanh"
       className={cn(
-        "fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 right-3 z-40 lg:hidden rounded-2xl border border-white/[0.16] bg-[#101419]/78 px-1.5 py-1 shadow-[0_12px_34px_rgba(0,0,0,0.32)] backdrop-blur-2xl supports-[backdrop-filter]:bg-[#101419]/58 transition-[transform,opacity] duration-300 ease-out will-change-transform",
+        "fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 right-3 z-40 lg:hidden rounded-2xl border border-white/[0.16] bg-[#101419]/78 px-1 py-1 shadow-[0_12px_34px_rgba(0,0,0,0.32)] backdrop-blur-2xl supports-[backdrop-filter]:bg-[#101419]/58 transition-[transform,opacity] duration-300 ease-out will-change-transform",
         isHidden
           ? "pointer-events-none translate-y-[calc(100%+1.25rem)] opacity-0"
           : "translate-y-0 opacity-100",
@@ -86,15 +92,15 @@ export function MobileBottomNav() {
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full py-1 rounded-xl text-[10px] font-semibold transition-[color,background-color,transform] active:scale-[0.96] relative",
                 item.isActive
-                  ? "bg-emerald-400/10 text-emerald-300 font-extrabold"
+                  ? "bg-white/10 text-white font-extrabold"
                   : "text-neutral-400 hover:text-neutral-200",
               )}
             >
               <Icon
-                size={19}
+                size={18}
                 className={cn(
                   "transition-transform duration-200",
-                  item.isActive && "scale-110",
+                  item.isActive && "scale-110 text-white",
                 )}
               />
               <span className="mt-0.5 tracking-tight">{item.label}</span>
@@ -105,11 +111,11 @@ export function MobileBottomNav() {
         {/* User Account / Login Tab */}
         {user ? (
           <Link
-            href={`/profile/${encodeURIComponent(user.username)}`}
+            href={`/user/${encodeURIComponent(user.username)}`}
             className={cn(
               "flex flex-col items-center justify-center flex-1 h-full py-1 rounded-xl text-[10px] font-semibold transition-[color,background-color,transform] active:scale-[0.96] relative",
-              pathname.startsWith("/profile")
-                ? "bg-emerald-400/10 text-emerald-300 font-extrabold"
+              pathname.startsWith("/user/") || pathname.startsWith("/profile/")
+                ? "bg-white/10 text-white font-extrabold"
                 : "text-neutral-400 hover:text-neutral-200",
             )}
           >
@@ -120,9 +126,9 @@ export function MobileBottomNav() {
               }
               alt={user.username}
               className={cn(
-                "w-5 h-5 rounded-full object-cover border border-white/20 transition-transform",
-                pathname.startsWith("/profile") &&
-                  "scale-110 border-emerald-400 ring-2 ring-emerald-400/30",
+                "w-4 h-4 rounded-full object-cover border border-white/20 transition-transform",
+                (pathname.startsWith("/user/") || pathname.startsWith("/profile/")) &&
+                  "scale-110 border-white ring-2 ring-white/30",
               )}
             />
             <span className="mt-0.5 tracking-tight">Cá nhân</span>
@@ -130,9 +136,13 @@ export function MobileBottomNav() {
         ) : (
           <Link
             href="/login"
-            className="flex flex-col items-center justify-center flex-1 h-full py-1 rounded-xl text-[10px] font-semibold text-neutral-400 hover:text-white transition-[color,background-color,transform] active:scale-[0.96]"
+            className={cn(
+              "flex flex-col items-center justify-center flex-1 h-full py-1 rounded-xl text-[10px] font-semibold text-neutral-400 hover:text-white transition-[color,background-color,transform] active:scale-[0.96]",
+              (pathname === "/login" || pathname === "/register") &&
+                "bg-white/10 text-white font-extrabold",
+            )}
           >
-            <User size={19} />
+            <User size={18} />
             <span className="mt-0.5 tracking-tight">Đăng nhập</span>
           </Link>
         )}

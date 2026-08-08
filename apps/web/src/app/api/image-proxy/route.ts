@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 /** Refuse to relay anything larger than this (bytes). */
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 /** Abort slow upstreams so a request can't pin a serverless function open. */
-const FETCH_TIMEOUT_MS = 8000;
+const FETCH_TIMEOUT_MS = 3000;
 
 // Fallback dark cinematic poster SVG when all CDNs fail
 const PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450" fill="none">
@@ -26,11 +26,79 @@ function placeholderResponse(maxAge: number) {
       "Content-Type": "image/svg+xml",
       "Cache-Control":
         maxAge > 0 ? `public, max-age=${maxAge}` : "no-store, max-age=0",
-      // The placeholder is static markup we control, but be explicit anyway.
       "Content-Security-Policy":
         "default-src 'none'; style-src 'unsafe-inline'",
     },
   });
+}
+
+function generateCandidateUrls(rawUrl: string): string[] {
+  let imageUrl = rawUrl.trim();
+  if (imageUrl.startsWith("//")) {
+    imageUrl = `https:${imageUrl}`;
+  }
+
+  // Bare paths are relative to default KKPhim CDN
+  if (!/^https?:\/\//i.test(imageUrl)) {
+    const cleanPath = imageUrl.replace(/^\/+/, "");
+    imageUrl = `https://img.phimapi.com/${cleanPath}`;
+  }
+
+  imageUrl = imageUrl.replace(/^http:\/\//i, "https://");
+
+  const ordered: string[] = [imageUrl];
+
+  // 1. Domain swaps across known movie CDNs (include ophim1.com since img.ophim.live can redirect)
+  const domainMap: Record<string, string[]> = {
+    "img.ophim.live": ["ophim1.com", "phimimg.com", "img.phimapi.com", "images.nguonc.com", "phim.nguonc.com"],
+    "ophim1.com": ["img.ophim.live", "phimimg.com", "img.phimapi.com"],
+    "img.phimapi.com": ["phimimg.com", "ophim1.com", "img.ophim.live", "images.nguonc.com"],
+    "phimimg.com": ["img.phimapi.com", "ophim1.com", "img.ophim.live", "images.nguonc.com"],
+    "images.nguonc.com": ["phimimg.com", "img.phimapi.com", "ophim1.com", "img.ophim.live"],
+    "phim.nguonc.com": ["images.nguonc.com", "ophim1.com", "phimimg.com", "img.phimapi.com"],
+    "vsmov.com": ["storage.vsmov.com"],
+  };
+
+  const domainCandidates = [...ordered];
+  for (const cand of domainCandidates) {
+    for (const [sourceDomain, targets] of Object.entries(domainMap)) {
+      if (cand.includes(sourceDomain)) {
+        for (const targetDomain of targets) {
+          ordered.push(cand.replace(sourceDomain, targetDomain));
+        }
+      }
+    }
+  }
+
+  // 2. Extension swaps (.webp, .jpg, .png, .jpeg)
+  const extRegex = /\.(jpg|jpeg|webp|png)$/i;
+  const currentList = [...ordered];
+  for (const cand of currentList) {
+    const match = cand.match(extRegex);
+    if (match) {
+      const currentExt = match[0].toLowerCase();
+      const alternatives = [".webp", ".jpg", ".png", ".jpeg"].filter(
+        (ext) => ext !== currentExt,
+      );
+      for (const ext of alternatives) {
+        ordered.push(cand.replace(extRegex, ext));
+      }
+    } else {
+      ordered.push(`${cand}.webp`, `${cand}.jpg`, `${cand}.png`);
+    }
+  }
+
+  // 3. Poster / Thumb keyword swaps
+  const postThumbList = [...ordered];
+  for (const cand of postThumbList) {
+    if (cand.includes("-poster")) {
+      ordered.push(cand.replace("-poster", "-thumb"));
+    } else if (cand.includes("-thumb")) {
+      ordered.push(cand.replace("-thumb", "-poster"));
+    }
+  }
+
+  return Array.from(new Set(ordered));
 }
 
 export async function GET(request: NextRequest) {
@@ -46,38 +114,7 @@ export async function GET(request: NextRequest) {
     return new NextResponse("Missing url parameter", { status: 400 });
   }
 
-  let imageUrl = rawUrl.trim();
-  if (imageUrl.startsWith("//")) {
-    imageUrl = `https:${imageUrl}`;
-  }
-
-  // Bare paths are relative to the default KKPhim CDN.
-  if (!/^https?:\/\//i.test(imageUrl)) {
-    const cleanPath = imageUrl.replace(/^\/+/, "");
-    imageUrl = `https://img.phimapi.com/${cleanPath}`;
-  }
-
-  // Upgrade plain http to https so the allowlist check can't be sidestepped
-  // with an http:// URL that later redirects somewhere internal.
-  imageUrl = imageUrl.replace(/^http:\/\//i, "https://");
-
-  // Generate fallback candidate URLs across KKPhim, OPhim, and NguonC CDNs
-  const candidateUrls: string[] = [imageUrl];
-
-  if (imageUrl.includes("img.phimapi.com")) {
-    candidateUrls.push(imageUrl.replace("img.phimapi.com", "phimimg.com"));
-    candidateUrls.push(
-      imageUrl.replace("img.phimapi.com", "images.nguonc.com"),
-    );
-  } else if (imageUrl.includes("phimimg.com")) {
-    candidateUrls.push(imageUrl.replace("phimimg.com", "img.phimapi.com"));
-    candidateUrls.push(imageUrl.replace("phimimg.com", "images.nguonc.com"));
-  } else if (imageUrl.includes("images.nguonc.com")) {
-    candidateUrls.push(imageUrl.replace("images.nguonc.com", "phimimg.com"));
-    candidateUrls.push(
-      imageUrl.replace("images.nguonc.com", "img.phimapi.com"),
-    );
-  }
+  const candidateUrls = generateCandidateUrls(rawUrl);
 
   // Drop anything not on the allowlist before a single request goes out.
   const safeUrls = candidateUrls
@@ -100,18 +137,22 @@ export async function GET(request: NextRequest) {
           Accept:
             "image/avif,image/webkit-image,image/apng,image/svg+xml,image/*,*/*;q=0.8",
         },
-        // Never follow a redirect — an allowlisted CDN could otherwise bounce
-        // us to an internal address and defeat the host check above.
-        redirect: "manual",
+        redirect: "follow",
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-        next: { revalidate: 86400 }, // Cache on Next.js edge for 24 hours
+        next: { revalidate: 86400 },
       });
 
       if (!res.ok) continue;
 
+      // Ensure redirected final URL stays within allowed hosts & isn't a Cloudflare abuse page
+      if (res.url) {
+        if (!validateImageUrl(res.url) || res.url.includes("abuse")) {
+          console.warn(`[image-proxy] redirected to disallowed/abuse host: ${res.url}`);
+          continue;
+        }
+      }
+
       const contentType = res.headers.get("content-type") || "";
-      // Only relay real images. Without this the proxy happily returns HTML or
-      // JSON from an upstream, which is how an open proxy gets abused.
       if (!contentType.startsWith("image/")) {
         console.warn(
           `[image-proxy] refused non-image content-type "${contentType}" from ${urlToFetch}`,
@@ -130,7 +171,6 @@ export async function GET(request: NextRequest) {
           "Content-Type": contentType,
           "Cache-Control": "public, max-age=31536000, immutable",
           "X-Content-Type-Options": "nosniff",
-          // An allowlisted CDN could still serve a scriptable SVG; sandbox it.
           "Content-Security-Policy":
             "default-src 'none'; style-src 'unsafe-inline'",
         },
@@ -140,6 +180,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // If all CDN fetch candidates fail, return clean SVG placeholder instead of broken 404/500 image
+  // If all CDN fetch candidates fail, return clean SVG placeholder
   return placeholderResponse(86400);
 }

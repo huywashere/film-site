@@ -1,0 +1,240 @@
+/*
+ * CinePhim light theme compatibility layer.
+ *
+ * The header and artwork surfaces are intentionally excluded from the light
+ * palette. They stay cinematic and use the same glass treatment as dark mode.
+ */
+
+:where(html.light, html[data-theme="light"]) {
+  color-scheme: light;
+  --background: #f3f5f8 !important;
+  --background-rgb: 243, 245, 248 !important;
+  --foreground: #172033 !important;
+  --card: #ffffff !important;
+  --card-foreground: #172033 !important;
+  --popover: #ffffff !important;
+  --popover-foreground: #172033 !important;
+  --primary: #d62f45;
+  --primary-foreground: #ffffff;
+  --secondary: #e9edf2;
+  --secondary-foreground: #253047;
+  --muted: #edf0f4;
+  --muted-foreground: #68758a;
+  --accent: #fce9ed;
+  --accent-foreground: #b72037;
+  --border: rgba(23, 32, 51, 0.12);
+  --input: rgba(23, 32, 51, 0.18);
+  --ring: rgba(214, 47, 69, 0.35);
+  --light-canvas: #f3f5f8;
+  --light-surface: #ffffff;
+  --light-surface-raised: #f8fafc;
+  --light-text: #172033;
+  --light-text-muted: #68758a;
+  --light-border: rgba(23, 32, 51, 0.12);
+  --light-shadow: 0 16px 40px rgba(30, 43, 64, 0.1);
+}
+
+:where(html.light, html[data-theme="light"]) body,
+:where(html.light, html[data-theme="light"]) .page-content {
+  background: var(--light-canvas);
+  color: var(--light-text);
+}
+
+/* Keep the navbar glassy, dark and legible in both themes. */
+:where(html.light, html[data-theme="light"]) header[data-site-header] {
+  color: #f8fafc !important;
+  background-color: transparent !important;
+  background-image: linear-gradient(
+    to bottom,
+    rgba(8, 9, 12, 0.88),
+    rgba(8, 9, 12, 0.24) 70%,
+    transparent
+  ) !important;
+  border: 0 !important;
+  border-bottom-width: 0 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045) !important;
+  backdrop-filter: blur(14px) saturate(135%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(135%) !important;
+}
+
+:where(html.light, html[data-theme="light"])
+  header[data-site-header][data-scrolled="true"] {
+  background-color: rgba(8, 9, 12, 0.58) !important;
+  background-image: linear-gradient(
+    180deg,
+    rgba(8, 9, 12, 0.68),
+    rgba(8, 9, 12, 0.42)
+  ) !important;
+  border: 0 !important;
+  border-bottom-width: 0 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    0 10px 34px rgba(0, 0, 0, 0.18) !important;
+}
+
+:where(html.light, html[data-theme="light"])
+  header[data-site-header]
+  :is(
+    .text-white,
+    .text-neutral-200,
+    .text-neutral-300,
+    .text-neutral-400,
+    .text-neutral-500
+  ) {
+  color: #e5e7eb !important;
+}
+
+:where(html.light, html[data-theme="light"])
+  header[data-site-header]
+  :is([class*="bg-black/40"], [class*="bg-black/60"]) {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* The main hero and the two editorial feature panels stay cinematic. */
+:where(html.light, html[data-theme="light"]) [data-hero-banner],
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] {
+  color: #ffffff;
+}
+
+:where(html.light, html[data-theme="light"]) [data-hero-banner] {
+  background-color: #08090c !important;
+}
+
+/* Catalog typography and controls on the matte light canvas. */
+:where(html.light, html[data-theme="light"])
+  [data-home-content]
+  :is([data-film-section-title], [data-top10-title], [data-history-title]) {
+  color: var(--light-text) !important;
+}
+
+:where(html.light, html[data-theme="light"])
+  [data-home-content]
+  :is([data-film-section-action], [data-history-action]) {
+  color: #526078 !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  border-color: var(--light-border) !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-film-card] h4 {
+  color: var(--light-text);
+}
+
+:where(html.light, html[data-theme="light"]) [data-film-card] h4:hover,
+:where(html.light, html[data-theme="light"]) [data-film-card]:hover h4 {
+  color: #b72037;
+}
+
+:where(html.light, html[data-theme="light"]) [data-film-card] [data-film-meta] {
+  color: var(--light-text-muted);
+}
+
+:where(html.light, html[data-theme="light"])
+  [data-top10-row]
+  [data-rank-title] {
+  color: #26344c !important;
+  text-shadow: 0 2px 8px rgba(255, 255, 255, 0.95) !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-top10-row] [data-row-nav] {
+  color: rgba(38, 52, 76, 0.5) !important;
+}
+
+:where(html.light, html[data-theme="light"])
+  [data-home-content]
+  :is(input, textarea, select):not([type="checkbox"]):not([type="radio"]):not(
+    [type="range"]
+  ) {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--light-text);
+  border-color: rgba(23, 32, 51, 0.18);
+}
+
+/* Footer: one elevated light surface, with enough contrast for the ticker. */
+:where(html.light, html[data-theme="light"]) footer[data-site-footer] {
+  background: var(--light-canvas) !important;
+  color: var(--light-text) !important;
+  border-top: 1px solid var(--light-border) !important;
+}
+
+:where(html.light, html[data-theme="light"])
+  footer[data-site-footer]
+  [data-footer-card] {
+  background: var(--light-surface) !important;
+  border-color: var(--light-border) !important;
+  box-shadow: var(--light-shadow) !important;
+}
+
+:where(html.light, html[data-theme="light"])
+  footer[data-site-footer]
+  [data-footer-ticker],
+:where(html.light, html[data-theme="light"])
+  footer[data-site-footer]
+  [data-footer-newsletter] {
+  background: var(--light-surface-raised) !important;
+  border-color: var(--light-border) !important;
+}
+
+:where(html.light, html[data-theme="light"])
+  footer[data-site-footer]
+  [data-footer-movie] {
+  background: #ffffff !important;
+  border-color: var(--light-border) !important;
+  box-shadow: 0 8px 20px rgba(30, 43, 64, 0.08) !important;
+}
+
+:where(html.light, html[data-theme="light"])
+  footer[data-site-footer]
+  [data-footer-bottom] {
+  background: #eef1f5 !important;
+  border-color: var(--light-border) !important;
+  color: #7a869a !important;
+}
+
+:where(html.light, html[data-theme="light"])
+  footer[data-site-footer]
+  :is(.text-white, .text-neutral-300, .text-neutral-400, .text-neutral-500) {
+  color: var(--light-text-muted) !important;
+}
+
+:where(html.light, html[data-theme="light"])
+  footer[data-site-footer]
+  :is([data-footer-heading], [data-footer-link]) {
+  color: var(--light-text) !important;
+}
+
+:where(html.light, html[data-theme="light"])
+  footer[data-site-footer]
+  :is([data-footer-link]):hover {
+  color: #b72037 !important;
+}
+
+:where(html.light, html[data-theme="light"])
+  footer[data-site-footer]
+  [data-footer-input] {
+  background: #ffffff !important;
+  border-color: rgba(23, 32, 51, 0.16) !important;
+}
+
+:where(html.light, html[data-theme="light"])
+  footer[data-site-footer]
+  [data-footer-input]
+  input {
+  color: var(--light-text) !important;
+}
+
+:where(html.light, html[data-theme="light"])
+  footer[data-site-footer]
+  [data-footer-input]
+  button {
+  background: #1d2637 !important;
+  color: #ffffff !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(html.light, html[data-theme="light"]) *,
+  :where(html.light, html[data-theme="light"]) *::before,
+  :where(html.light, html[data-theme="light"]) *::after {
+    scroll-behavior: auto !important;
+  }
+}

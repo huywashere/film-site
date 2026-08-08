@@ -2,23 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Home,
   Tv,
   Film as FilmIcon,
   Sparkles,
-  Grid3x3,
-  Hash,
   Users,
   BookmarkCheck,
   BookOpen,
   History,
   ChevronDown,
   X,
+  User,
+  LogOut,
+  Clapperboard,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { GENRES_LIST } from "./Navbar";
+import { useAuthStore } from "@/store/authStore";
+import { GENRES_LIST, COUNTRIES_LIST } from "./Navbar";
 
 interface MobileSidebarProps {
   isOpen: boolean;
@@ -27,28 +30,36 @@ interface MobileSidebarProps {
 
 const SIDEBAR_MAIN_ITEMS = [
   { title: "Trang chủ", href: "/", icon: Home },
-  { title: "Phim Hàn", href: "/country/han-quoc", icon: Tv },
-  { title: "Phim Trung", href: "/country/trung-quoc", icon: Tv },
-  { title: "Duyệt Tìm", href: "/films", icon: Grid3x3 },
-  { title: "Chủ đề", href: "/genres", icon: Hash },
+  { title: "Phim Bộ", href: "/films/series", icon: Tv },
+  { title: "Phim Lẻ", href: "/films/single", icon: FilmIcon },
+  { title: "Hoạt Hình", href: "/films/anime", icon: Clapperboard },
   { title: "Xem Chung", href: "/watch-party", icon: Users },
-  { title: "Xem sau", href: "/watchlist", icon: BookmarkCheck },
+  { title: "Diễn Viên", href: "/actors", icon: User },
+];
+
+const SIDEBAR_PERSONAL_ITEMS = [
+  { title: "Tủ phim", href: "/watchlist", icon: BookmarkCheck },
   { title: "Thư viện", href: "/library", icon: BookOpen },
-  { title: "Lịch sử", href: "/history", icon: History },
+  { title: "Lịch sử xem", href: "/history", icon: History },
 ];
 
 export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const pathname = usePathname();
-  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const { user, logout } = useAuthStore();
   const [showGenres, setShowGenres] = useState(false);
+  const [showCountries, setShowCountries] = useState(false);
 
-  const toggleExpand = (title: string) => {
-    setExpandedItems((prev) =>
-      prev.includes(title)
-        ? prev.filter((item) => item !== title)
-        : [...prev, title],
-    );
-  };
+  // Lock background body scroll when mobile menu is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -56,108 +67,246 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 lg:hidden"
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] lg:hidden animate-in fade-in duration-200"
         onClick={onClose}
       />
 
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 bottom-0 w-72 bg-neutral-950/98 backdrop-blur-xl border-r border-white/10 flex-col z-50 overflow-y-auto scrollbar-thin lg:hidden">
-        {/* Header */}
-        <div className="px-6 py-5 border-b border-white/10 flex items-center justify-between">
+      {/* Minimalist Black & White Sheet Drawer */}
+      <aside className="fixed left-0 top-0 bottom-0 h-[100dvh] w-[85vw] max-w-[320px] bg-[#0a0c10] border-r border-white/10 z-[65] overflow-y-auto overscroll-contain touch-pan-y scrollbar-none lg:hidden shadow-[0_0_40px_rgba(0,0,0,0.9)] animate-in slide-in-from-left duration-250">
+        {/* Sticky Header */}
+        <div className="sticky top-0 bg-[#0a0c10]/95 backdrop-blur-xl px-5 py-4 border-b border-white/10 flex items-center justify-between z-20">
           <Link
             href="/"
-            className="flex items-center space-x-2.5"
+            className="flex items-center space-x-2"
             onClick={onClose}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/cinephim-logo.png"
               alt="CinePhim Logo"
-              className="h-8 sm:h-9 w-auto object-contain"
+              className="h-7 w-auto object-contain"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).src = "/logo.png";
               }}
             />
-            <span className="text-white text-xl font-black tracking-tight lowercase font-sans">
+            <span className="text-white text-lg font-black tracking-tight lowercase font-sans">
               cinephim
             </span>
           </Link>
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+            aria-label="Đóng menu"
+            className="p-1.5 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors active:scale-95 cursor-pointer"
           >
-            <X size={20} className="text-neutral-400" />
+            <X size={20} />
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {SIDEBAR_MAIN_ITEMS.map((item) => {
-            const isActive =
-              pathname === item.href || pathname.startsWith(item.href + "/");
-
-            return (
-              <Link
-                key={item.title}
-                href={item.href}
-                className={cn(
-                  "flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all",
-                  isActive
-                    ? "bg-white/10 text-white"
-                    : "text-neutral-300 hover:bg-white/5 hover:text-white",
-                )}
-                onClick={onClose}
-              >
-                <item.icon
-                  size={22}
-                  className={cn(
-                    isActive ? "text-white" : "text-neutral-400",
-                  )}
-                  strokeWidth={2}
+        {/* User Profile Card (Visible when logged in) */}
+        {user && (
+          <div className="p-4 border-b border-white/10 bg-white/[0.02]">
+            <div className="flex flex-col space-y-3">
+              <div className="flex items-center space-x-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={
+                    user.avatarUrl ||
+                    `https://ui-avatars.com/api/?name=${user.username}&background=2c3440&color=ffffff&size=40`
+                  }
+                  alt={user.displayName || user.username}
+                  className="w-10 h-10 rounded-full object-cover border border-white/20 shadow"
                 />
-                <span>{item.title}</span>
-              </Link>
-            );
-          })}
+                <div className="flex-1 min-w-0">
+                  <p className="font-extrabold text-xs text-white truncate">
+                    {user.displayName || user.username}
+                  </p>
+                  <p className="text-[11px] text-neutral-400 truncate">
+                    @{user.username}
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-0.5">
+                <Link
+                  href={`/user/${encodeURIComponent(user.username)}`}
+                  className="flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl bg-white/10 border border-white/15 text-xs font-semibold text-white hover:bg-white/20 transition-all text-center active:scale-95"
+                  onClick={onClose}
+                >
+                  <User size={13} />
+                  <span>Cá nhân</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    logout();
+                    onClose();
+                  }}
+                  className="flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-neutral-300 hover:bg-white/10 hover:text-white transition-all text-center active:scale-95 cursor-pointer"
+                >
+                  <LogOut size={13} />
+                  <span>Thoát</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
-          {/* Genres */}
-          <div className="pt-4 mt-4 border-t border-white/10">
+        {/* Scrollable Navigation List */}
+        <nav className="px-3 py-4 space-y-5 pb-36">
+          {/* Main Navigation Group */}
+          <div>
+            <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-neutral-500">
+              Khám phá
+            </p>
+            <div className="space-y-1">
+              {SIDEBAR_MAIN_ITEMS.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== "/" && pathname.startsWith(item.href));
+
+                return (
+                  <Link
+                    key={item.title}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all",
+                      isActive
+                        ? "bg-white/10 border border-white/15 text-white font-bold shadow-sm"
+                        : "text-neutral-300 hover:bg-white/5 hover:text-white",
+                    )}
+                    onClick={onClose}
+                  >
+                    <item.icon
+                      size={17}
+                      className={cn(
+                        isActive ? "text-white" : "text-neutral-400",
+                      )}
+                      strokeWidth={2}
+                    />
+                    <span>{item.title}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Personal Group */}
+          <div>
+            <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-neutral-500">
+              Thư viện cá nhân
+            </p>
+            <div className="space-y-1">
+              {SIDEBAR_PERSONAL_ITEMS.map((item) => {
+                const isActive = pathname === item.href;
+
+                return (
+                  <Link
+                    key={item.title}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all",
+                      isActive
+                        ? "bg-white/10 border border-white/15 text-white font-bold shadow-sm"
+                        : "text-neutral-300 hover:bg-white/5 hover:text-white",
+                    )}
+                    onClick={onClose}
+                  >
+                    <item.icon
+                      size={17}
+                      className={cn(
+                        isActive ? "text-white" : "text-neutral-400",
+                      )}
+                      strokeWidth={2}
+                    />
+                    <span>{item.title}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Genres Collapsible Grid */}
+          <div>
             <button
+              type="button"
               onClick={() => setShowGenres(!showGenres)}
-              className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-semibold text-neutral-300 hover:bg-white/5 hover:text-white transition-all"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-neutral-300 hover:bg-white/5 hover:text-white transition-all cursor-pointer"
             >
               <div className="flex items-center space-x-3">
-                <Sparkles
-                  size={20}
-                  className="text-neutral-400"
-                  strokeWidth={2}
-                />
-                <span>Thể loại</span>
+                <Sparkles size={17} className="text-neutral-400" />
+                <span>Thể loại phim</span>
               </div>
               <ChevronDown
-                size={16}
+                size={15}
                 className={cn(
-                  "transition-transform text-neutral-500",
-                  showGenres ? "rotate-180" : "",
+                  "transition-transform duration-200 text-neutral-500",
+                  showGenres && "rotate-180 text-white",
                 )}
               />
             </button>
 
             {showGenres && (
-              <div className="mt-2 ml-10 space-y-1 max-h-64 overflow-y-auto scrollbar-thin">
-                {GENRES_LIST.slice(0, 12).map((genre) => (
+              <div className="mt-2 grid grid-cols-2 gap-1.5 px-1 pt-1 animate-in fade-in duration-200">
+                {GENRES_LIST.map((genre) => (
                   <Link
                     key={genre.slug}
                     href={`/genre/${genre.slug}`}
                     className={cn(
-                      "block px-4 py-1.5 rounded-lg text-xs font-medium transition-all",
+                      "px-3 py-2 rounded-lg text-[11px] font-medium transition-all truncate border",
                       pathname === `/genre/${genre.slug}`
-                        ? "bg-white/10 text-white"
-                        : "text-neutral-400 hover:bg-white/5 hover:text-white",
+                        ? "bg-white/15 border-white/30 text-white font-bold"
+                        : "border-white/5 bg-white/[0.02] text-neutral-400 hover:text-white hover:bg-white/10",
                     )}
                     onClick={onClose}
                   >
                     {genre.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Countries Collapsible Grid */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowCountries(!showCountries)}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-neutral-300 hover:bg-white/5 hover:text-white transition-all cursor-pointer"
+            >
+              <div className="flex items-center space-x-3">
+                <Globe size={17} className="text-neutral-400" />
+                <span>Quốc gia</span>
+              </div>
+              <ChevronDown
+                size={15}
+                className={cn(
+                  "transition-transform duration-200 text-neutral-500",
+                  showCountries && "rotate-180 text-white",
+                )}
+              />
+            </button>
+
+            {showCountries && (
+              <div className="mt-2 grid grid-cols-2 gap-1.5 px-1 pt-1 animate-in fade-in duration-200">
+                {COUNTRIES_LIST.map((c) => (
+                  <Link
+                    key={c.slug}
+                    href={`/country/${c.slug}`}
+                    className={cn(
+                      "flex items-center space-x-2 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all border truncate",
+                      pathname === `/country/${c.slug}`
+                        ? "bg-white/15 border-white/30 text-white font-bold"
+                        : "border-white/5 bg-white/[0.02] text-neutral-400 hover:text-white hover:bg-white/10",
+                    )}
+                    onClick={onClose}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`https://flagcdn.com/w40/${c.code}.png`}
+                      alt={c.label}
+                      className="w-4 h-3 object-cover rounded-[2px] shrink-0"
+                    />
+                    <span className="truncate">{c.label}</span>
                   </Link>
                 ))}
               </div>

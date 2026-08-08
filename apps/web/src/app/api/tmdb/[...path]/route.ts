@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const TMDB_TOKEN = process.env.TMDB_ACCESS_TOKEN || "";
-const TMDB_API_KEY =
-  process.env.TMDB_API_KEY || "f85dbd29011db19e75f5d29028fd096d";
+const TMDB_API_KEY = process.env.TMDB_API_KEY || "";
 
 function getTtl(path: string): number {
   if (path.includes("images")) return 86400;
@@ -51,13 +50,20 @@ export async function GET(
   const cfWorkerUrl = process.env.TMDB_CLOUDFLARE_WORKER_URL
     ? process.env.TMDB_CLOUDFLARE_WORKER_URL.replace(/\/$/, "")
     : "";
-  const hosts = cfWorkerUrl
-    ? [
-        `${cfWorkerUrl}/3`,
-        "https://api.tmdb.org/3",
-        "https://api.themoviedb.org/3",
-      ]
-    : ["https://api.tmdb.org/3", "https://api.themoviedb.org/3"];
+  // api.themoviedb.org is blocked by some regional networks while the TMDB
+  // api.tmdb.org alias remains reachable. Try the reachable alias first and
+  // retain the canonical hostname as a fallback.
+  const regionalHost = "https://api.tmdb.org/3";
+  const officialHost = "https://api.themoviedb.org/3";
+  const workerHost = cfWorkerUrl ? `${cfWorkerUrl}/3` : "";
+  const workerIsLocal = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(
+    cfWorkerUrl,
+  );
+  const hosts = workerHost
+    ? workerIsLocal
+      ? [regionalHost, officialHost, workerHost]
+      : [workerHost, regionalHost, officialHost]
+    : [regionalHost, officialHost];
   const cacheKey = hosts[0] + "/" + path + (qs ? "?" + qs : "");
 
   const cached = cache.get(cacheKey);
@@ -76,7 +82,8 @@ export async function GET(
     headers["Authorization"] = "Bearer " + TMDB_TOKEN;
   }
 
-  let lastError: any = null;
+  let lastError: unknown = null;
+  let lastStatus = 502;
   for (const host of hosts) {
     const upstreamUrl = host + "/" + path + (qs ? "?" + qs : "");
     try {
@@ -101,6 +108,8 @@ export async function GET(
           headers: { "X-Cache": "MISS", "X-Source": "TMDB" },
         });
       }
+      lastStatus = response.status;
+      lastError = new Error(`TMDB upstream responded with ${response.status}`);
     } catch (err) {
       lastError = err;
     }
@@ -111,6 +120,6 @@ export async function GET(
   console.warn("[tmdb-proxy] error:", msg);
   return NextResponse.json(
     { error: "Khong the ket noi TMDB API" },
-    { status: 200 },
+    { status: lastStatus >= 400 && lastStatus < 600 ? lastStatus : 502 },
   );
 }

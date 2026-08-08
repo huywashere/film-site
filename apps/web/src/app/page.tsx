@@ -200,6 +200,17 @@ function filterLiveActionOnly(films: FilmItem[]): FilmItem[] {
   return films.filter((f) => !isAnimationOrAnime(f));
 }
 
+function isLikelySeries(film: FilmItem): boolean {
+  const type = (film.type || "").toLowerCase();
+  const episode = (film.episode_current || "").toLowerCase();
+  const title = `${film.name || ""} ${film.origin_name || ""}`.toLowerCase();
+  return (
+    ["series", "phim-bo", "tvshows", "tv-shows"].includes(type) ||
+    /tập|episode|hoàn tất|đang chiếu/.test(episode) ||
+    /phần \d+|season \d+/.test(title)
+  );
+}
+
 // Standard Film Carousel Section Component (With Sleek Right Vertical Pills Navigation)
 function FilmSection({
   title,
@@ -234,17 +245,28 @@ function FilmSection({
   if (!films || films.length === 0) return null;
 
   return (
-    <div className="mb-8 group/section">
+    <div data-film-section="true" className="mb-8 group/section">
       {/* Title Header matching user's requested layout (Inline pill button + right dash line pagination) */}
-      <div className="flex items-center justify-between mb-3.5 px-1">
+      <div className="mb-3.5 flex items-center justify-between px-1">
         {/* Left Side: Title + Inline "Xem tất cả >" Pill Button */}
         <div className="flex items-center gap-2.5">
-          <h2 className="text-lg md:text-xl font-extrabold text-white tracking-tight">
-            {title}
-          </h2>
+          <div>
+            <h2
+              data-film-section-title="true"
+              className="text-lg md:text-xl font-extrabold text-white tracking-tight"
+            >
+              {title}
+            </h2>
+            <p className="mt-1 text-[11px] text-neutral-500">
+              {films.length} tuyển chọn từ{" "}
+              {new Set(films.map((film) => film._source || "kkphim")).size}{" "}
+              nguồn dữ liệu
+            </p>
+          </div>
           {href && (
             <Link
               href={href}
+              data-film-section-action="true"
               className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.12] text-white/90 hover:text-white text-xs font-medium transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95 ml-1"
             >
               <span>Xem tất cả</span>
@@ -547,7 +569,8 @@ export default function HomePage() {
 
   const { data: trendingData } = useQuery({
     queryKey: ["weekly-trending-movies"],
-    queryFn: () => api.get<FilmItem[]>("/movies/trending?limit=30").then((r) => r.data),
+    queryFn: () =>
+      api.get<FilmItem[]>("/movies/trending?limit=30").then((r) => r.data),
     staleTime: 1000 * 60 * 10,
     retry: 1,
   });
@@ -574,7 +597,9 @@ export default function HomePage() {
 
   const usUkSeriesFilms = useMemo(() => {
     const list = usUkSeriesData?.data?.items || usUkSeriesData?.items || [];
-    return filterLiveActionOnly(deduplicate(list));
+    const liveAction = filterLiveActionOnly(deduplicate(list));
+    const seriesOnly = liveAction.filter(isLikelySeries);
+    return seriesOnly.length >= 6 ? seriesOnly : liveAction;
   }, [usUkSeriesData]);
 
   const actionFilms = useMemo(() => {
@@ -791,7 +816,10 @@ export default function HomePage() {
       )}
 
       {/* Main Content Area */}
-      <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 relative pt-6 md:pt-10 z-30">
+      <div
+        data-home-content="true"
+        className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 relative pt-6 md:pt-10 z-30"
+      >
         {/* ONLY TOP 10 RANKED MOVIES KEPT AT TOP */}
         <Top10RankedRow films={top10List} />
 

@@ -1,4 +1,5 @@
 import "./globals.css";
+import "./light-theme.css";
 import type { Metadata, Viewport } from "next";
 import { ConditionalNavbar } from "@/components/layout/ConditionalNavbar";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
@@ -7,11 +8,12 @@ import { QueryProvider } from "@/providers/QueryProvider";
 import { ToastProvider } from "@/providers/ToastProvider";
 import { RegisterSW } from "@/components/layout/RegisterSW";
 import { ThemeWatcher } from "@/components/layout/ThemeWatcher";
+import { ThemeColorSync } from "@/components/layout/ThemeColorSync";
 import { ScrollProvider } from "@/providers/ScrollProvider";
 import { OfflineDetector } from "@/components/layout/OfflineDetector";
-import { GuestDataMergePrompt } from "@/components/auth/GuestDataMergePrompt";
 import { ClientTelemetry } from "@/components/layout/ClientTelemetry";
 import { AuthSessionBridge } from "@/components/auth/AuthSessionBridge";
+import { AuthModal } from "@/components/auth/AuthModal";
 import { AntiDevTools } from "@/components/security/AntiDevTools";
 
 export const viewport: Viewport = {
@@ -58,8 +60,6 @@ export const metadata: Metadata = {
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { ScrollToTopButton } from "@/components/layout/ScrollToTop";
 
-import { InitialSplashLoader } from "@/components/layout/InitialSplashLoader";
-
 export default function RootLayout({
   children,
 }: {
@@ -73,7 +73,8 @@ export default function RootLayout({
     url: "https://cineverse-movie.vercel.app",
     potentialAction: {
       "@type": "SearchAction",
-      target: "https://cineverse-movie.vercel.app/search?q={search_term_string}",
+      target:
+        "https://cineverse-movie.vercel.app/search?q={search_term_string}",
       "query-input": "required name=search_term_string",
     },
   };
@@ -106,16 +107,16 @@ export default function RootLayout({
         />
       </head>
       <body suppressHydrationWarning>
-        <InitialSplashLoader />
         <ThemeWatcher />
+        <ThemeColorSync />
         <RegisterSW />
         <AntiDevTools />
         <ClientTelemetry />
         <QueryProvider>
           <ToastProvider>
             <AuthSessionBridge />
+            <AuthModal />
             <OfflineDetector />
-            <GuestDataMergePrompt />
             <ScrollProvider>
               <div data-site-chrome>
                 <ConditionalNavbar />
@@ -123,17 +124,15 @@ export default function RootLayout({
               <div data-site-chrome>
                 <Sidebar />
               </div>
-              <main className="page-content pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0">
+              <main className="page-content min-h-screen">
                 {children}
+                <ConditionalFooter />
               </main>
               <div data-site-chrome>
                 <MobileBottomNav />
               </div>
               <div data-site-chrome>
                 <ScrollToTopButton />
-              </div>
-              <div data-site-chrome>
-                <ConditionalFooter />
               </div>
             </ScrollProvider>
           </ToastProvider>

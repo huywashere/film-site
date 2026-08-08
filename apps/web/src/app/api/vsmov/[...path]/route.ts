@@ -12,22 +12,21 @@ import { createMovieProxyHandler } from "@/lib/movie-proxy";
  *   GET /nam-phat-hanh/{year}?page=X        — Theo năm
  *   GET /tim-kiem?keyword=X&page=Y          — Tìm kiếm
  *
- * QUAN TRỌNG: Base URL là https://vsmov.com (KHÔNG phải /api)
+ * VSMov JSON endpoints live under https://vsmov.com/api.
  * Image URLs là relative paths, cần prepend với pathImage từ response.
  *
  * Field mapping: giống KKPhim/OPhim (origin_name, episode_current, etc.)
  */
 
-// ── Base URL: vsmov.com (không có /api prefix) ───────────────────
-const VSMOV_BASE = process.env.VSMOV_API_BASE || "https://vsmov.com";
-const VSMOV_DEFAULT_CDN = "https://vsmov.com/uploads/movies/";
+// ── Base URL: vsmov.com/api ───────────────────────────────────────
+const VSMOV_BASE = process.env.VSMOV_API_BASE || "https://vsmov.com/api";
+const VSMOV_DEFAULT_CDN = "https://vsmov.com/storage/images/";
 
 // ── Image URL normalizer ─────────────────────────────────────────
 function normalizeVsmovImages(raw: any, _path: string): any {
   if (!raw) return raw;
 
-  const cdnBase =
-    raw?.pathImage || raw?.data?.pathImage || VSMOV_DEFAULT_CDN;
+  const cdnBase = raw?.pathImage || raw?.data?.pathImage || VSMOV_DEFAULT_CDN;
   const cdn = cdnBase.endsWith("/") ? cdnBase : cdnBase + "/";
 
   const fixUrl = (url?: string): string => {

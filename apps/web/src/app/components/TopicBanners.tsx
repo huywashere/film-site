@@ -53,7 +53,7 @@ export default function TopicBanners() {
           <Link
             key={i}
             href={topic.href}
-            className="relative overflow-hidden rounded-[28px] p-4 flex flex-col justify-between shadow-2xl transition-all duration-300 hover:-translate-y-1 group cursor-pointer min-h-[220px] md:min-h-[260px] bg-slate-900"
+            className="relative overflow-hidden rounded-[24px] sm:rounded-[28px] p-3.5 sm:p-4 flex flex-col justify-between shadow-2xl transition-all duration-300 hover:-translate-y-1 group cursor-pointer min-h-[160px] sm:min-h-[220px] md:min-h-[260px] bg-slate-900"
             style={
               topic.image
                 ? {

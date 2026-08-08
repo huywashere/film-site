@@ -1,111 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import Image from "next/image";
-import { motion } from "framer-motion";
-import { Clapperboard } from "lucide-react";
-import { resolveImageUrl } from "@/components/film/FilmCard";
+import { useState } from "react";
+import { ArrowUpRight, Check, Mail, Play } from "lucide-react";
 
-// ── Cat random images ────────────────────────────────────────────────────────
-const CAT_IMAGES = [
-  "/images/cat1.gif",
-  "/images/cat2.gif",
-  "/images/cat3.gif",
-  "/images/cat4.gif",
-];
-
-function getRandomCat() {
-  return CAT_IMAGES[Math.floor(Math.random() * CAT_IMAGES.length)];
-}
-
-// ── HOT MOVIES FOR MARQUEE TICKER ────────────────────────────────────────────
-const HOT_MARQUEE_MOVIES = [
-  {
-    slug: "deadpool-va-wolverine",
-    name: "Deadpool & Wolverine",
-    year: 2024,
-    rating: 8.5,
-    poster: "https://image.tmdb.org/t/p/w500/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg",
-  },
-  {
-    slug: "nguoi-nhen-khong-con-nha",
-    name: "Spider-Man: No Way Home",
-    year: 2021,
-    rating: 8.3,
-    poster: "https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg",
-  },
-  {
-    slug: "hanh-tinh-cat-phan-hai",
-    name: "Dune: Part Two",
-    year: 2024,
-    rating: 8.6,
-    poster: "https://image.tmdb.org/t/p/w500/1pdfLPoLMag8StABMwM2FiCShjE.jpg",
-  },
-  {
-    slug: "ky-si-bong-dem",
-    name: "The Dark Knight",
-    year: 2008,
-    rating: 9.0,
-    poster: "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
-  },
-  {
-    slug: "biet-doi-sieu-anh-hung-ket-thuc",
-    name: "Avengers: Endgame",
-    year: 2019,
-    rating: 8.9,
-    poster: "https://image.tmdb.org/t/p/w500/or06FN3Dka5tukK1e9vtnW3vScO.jpg",
-  },
-  {
-    slug: "ho-den-tu-than",
-    name: "Interstellar",
-    year: 2014,
-    rating: 8.7,
-    poster: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBv9B.jpg",
-  },
-  {
-    slug: "the-batman",
-    name: "The Batman",
-    year: 2022,
-    rating: 8.4,
-    poster: "https://image.tmdb.org/t/p/w500/74xTEgt7R36Fpooo50r9T25onhq.jpg",
-  },
-  {
-    slug: "phu-thuy-toi-thuong-trong-da-vu-tru-hon-loan",
-    name: "Doctor Strange",
-    year: 2022,
-    rating: 8.1,
-    poster: "https://image.tmdb.org/t/p/w500/9G0z19726rmtWFuVJXRV8FjFBKV.jpg",
-  },
-  {
-    slug: "ve-binh-dai-ngan-ha-3",
-    name: "Guardians of the Galaxy 3",
-    year: 2023,
-    rating: 8.5,
-    poster: "https://image.tmdb.org/t/p/w500/r2J02Z2OpNTctZOSN1YUYiiA1Im.jpg",
-  },
-  {
-    slug: "avatar-dong-chay-cua-nuoc",
-    name: "Avatar: The Way Of Water",
-    year: 2022,
-    rating: 8.8,
-    poster: "https://image.tmdb.org/t/p/w500/t6HIfvMGNVChmFutvUt2E8R9DsM.jpg",
-  },
-];
-
-// ── FOOTER LINK COLUMNS ──────────────────────────────────────────────────────
 const FOOTER_LINKS = [
   {
-    heading: "NỘI DUNG",
+    heading: "Khám phá",
     links: [
-      { label: "Phim mới nhất", href: "/films" },
+      { label: "Phim mới", href: "/films" },
       { label: "Phim bộ", href: "/films/series" },
       { label: "Phim lẻ", href: "/films/single" },
       { label: "Hoạt hình", href: "/films/hoat-hinh" },
     ],
   },
   {
-    heading: "THỂ LOẠI",
+    heading: "Thể loại",
     links: [
       { label: "Hành động", href: "/genre/hanh-dong" },
       { label: "Tình cảm", href: "/genre/tinh-cam" },
@@ -114,16 +24,16 @@ const FOOTER_LINKS = [
     ],
   },
   {
-    heading: "QUỐC GIA",
+    heading: "Quốc gia",
     links: [
-      { label: "Phim Hàn Quốc", href: "/country/han-quoc" },
-      { label: "Phim Trung Quốc", href: "/country/trung-quoc" },
-      { label: "Phim Âu Mỹ", href: "/country/au-my" },
-      { label: "Phim Nhật Bản", href: "/country/nhat-ban" },
+      { label: "Hàn Quốc", href: "/country/han-quoc" },
+      { label: "Trung Quốc", href: "/country/trung-quoc" },
+      { label: "Âu Mỹ", href: "/country/au-my" },
+      { label: "Nhật Bản", href: "/country/nhat-ban" },
     ],
   },
   {
-    heading: "VỀ CHÚNG TÔI",
+    heading: "CinePhim",
     links: [
       { label: "Điều khoản", href: "/terms" },
       { label: "Quyền riêng tư", href: "/privacy" },
@@ -134,183 +44,147 @@ const FOOTER_LINKS = [
 ];
 
 export function Footer() {
-  const [catSrc, setCatSrc] = useState<string>("");
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
   const year = new Date().getFullYear();
 
-  useEffect(() => {
-    setCatSrc(getRandomCat());
-  }, []);
-
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) {
-      setSubscribed(true);
-      setEmail("");
-    }
+  const handleSubscribe = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!email.trim()) return;
+    setSubscribed(true);
+    setEmail("");
   };
 
   return (
-    <footer className="relative w-full overflow-hidden bg-background py-10 md:py-14 pl-4 lg:pl-28 pr-4 lg:pr-12 z-20">
-      {/* ── Main Rounded Minimalist Card Container ── */}
-      <div className="relative z-10 w-full max-w-[1500px] mx-auto bg-neutral-950/90 border border-white/10 rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl">
-        
-        {/* ── Top Section: Ticker Marquee ── */}
-        <div className="border-b border-white/10 py-5 px-4 relative overflow-hidden bg-white/[0.02]">
-          {/* Left & Right gradient fade masks */}
-          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-16 md:w-24 bg-gradient-to-r from-neutral-950 to-transparent z-10" />
-          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 md:w-24 bg-gradient-to-l from-neutral-950 to-transparent z-10" />
+    <footer
+      data-site-footer="true"
+      className="relative z-20 w-full overflow-hidden bg-[#080a0e] px-4 pt-10 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pl-28 lg:pr-12 md:pt-16 lg:pb-14"
+    >
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-72 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-violet-700/20 via-transparent to-transparent" />
 
-          {/* Infinite Marquee Track (Right to Left) */}
-          <div className="overflow-hidden w-full flex">
-            <div
-              className={`flex gap-4 shrink-0 ${
-                isPaused ? "[animation-play-state:paused]" : ""
-              }`}
-              style={{
-                animation: "marquee-rtl 60s linear infinite",
-              }}
-              onMouseEnter={() => setIsPaused(true)}
-              onMouseLeave={() => setIsPaused(false)}
-            >
-              {[
-                ...HOT_MARQUEE_MOVIES,
-                ...HOT_MARQUEE_MOVIES,
-                ...HOT_MARQUEE_MOVIES,
-              ].map((movie, idx) => {
-                const imgProxyUrl = resolveImageUrl(movie.poster);
+      <div
+        data-footer-card="true"
+        className="relative mx-auto w-full max-w-[1500px] overflow-hidden rounded-[28px] border border-white/10 bg-[#0d1015] shadow-[0_30px_100px_rgba(0,0,0,0.38)]"
+      >
+        <div className="grid min-h-[410px] lg:grid-cols-[0.82fr_1.18fr]">
+          <section
+            data-footer-newsletter="true"
+            className="relative overflow-hidden border-b border-white/10 p-7 sm:p-10 lg:border-b-0 lg:border-r lg:p-12"
+          >
+            <div className="pointer-events-none absolute -bottom-48 -left-28 h-[430px] w-[430px] rounded-full border border-white/[0.055]" />
+            <div className="pointer-events-none absolute -bottom-56 -left-12 h-[430px] w-[430px] rounded-full border border-white/[0.045]" />
+            <div className="pointer-events-none absolute -bottom-64 left-4 h-[430px] w-[430px] rounded-full border border-white/[0.035]" />
 
-                return (
-                  <Link
-                    key={`${movie.slug}-${idx}`}
-                    href={`/watch/${movie.slug}`}
-                    className="group flex items-center gap-3 p-2 pr-4 rounded-2xl bg-neutral-900/80 hover:bg-neutral-800/90 border border-white/10 hover:border-white/30 transition-all duration-200 shrink-0 hover:scale-105 shadow-md cursor-pointer"
-                  >
-                    <div className="w-10 h-14 rounded-xl overflow-hidden bg-neutral-900 border border-white/10 shrink-0 relative flex items-center justify-center">
-                      {imgProxyUrl ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={imgProxyUrl}
-                          alt={movie.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                          loading="lazy"
-                          onError={(e) => {
-                            e.currentTarget.style.display = "none";
-                          }}
-                        />
-                      ) : (
-                        <Clapperboard size={14} className="text-neutral-500" />
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-1 text-left">
-                      <span className="text-xs font-bold text-white group-hover:text-neutral-200 transition-colors line-clamp-1 max-w-[160px]">
-                        {movie.name}
-                      </span>
-                      <div className="flex items-center gap-2 text-[10px] text-neutral-400 font-mono">
-                        <span className="text-amber-400 font-bold">★ {movie.rating}</span>
-                        <span>•</span>
-                        <span>{movie.year}</span>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+            <div className="relative flex h-full max-w-lg flex-col justify-between gap-14">
+              <Link href="/" className="inline-flex w-fit items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-violet-300/25 bg-violet-300/[0.1] text-violet-200 shadow-[0_10px_30px_rgba(109,40,217,0.18)]">
+                  <Play size={17} fill="currentColor" />
+                </span>
+                <span className="text-xl font-black tracking-tight text-white">
+                  cinephim
+                </span>
+              </Link>
 
-        {/* Middle Section: Newsletter + Link Columns */}
-        <div className="grid lg:grid-cols-[1fr_1.35fr] divide-y lg:divide-y-0 lg:divide-x divide-white/10">
-          {/* Left: Newsletter Box */}
-          <div className="p-8 md:p-12 relative flex flex-col justify-between overflow-hidden bg-neutral-900/30">
-            <div className="absolute inset-0 opacity-[0.05] pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
-
-            <div>
-              <h4 className="text-lg md:text-xl font-bold text-white mb-2 tracking-tight">
-                Want to stay in touch?
-              </h4>
-              <p className="text-xs text-neutral-400 leading-relaxed max-w-sm mb-6 font-mono">
-                Join our newsletter to get the latest news, updates and special movie offers.
-              </p>
-
-              <form onSubmit={handleSubscribe} className="relative max-w-sm">
-                <div className="flex items-center rounded-2xl bg-neutral-900 border border-white/15 p-1.5 focus-within:border-white/40 transition-colors shadow-inner">
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="ENTER YOUR E-MAIL"
-                    className="w-full bg-transparent px-3 py-2 text-xs font-mono text-white placeholder:text-neutral-600 focus:outline-none"
-                  />
-                  <button
-                    type="submit"
-                    className="shrink-0 px-5 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold font-mono transition-all hover:scale-105 active:scale-95 border border-white/15 shadow-md cursor-pointer"
-                  >
-                    {subscribed ? "Subscribed!" : "Subscribe"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-
-          {/* Right: 4 Footer Columns */}
-          <div className="p-8 md:p-12 grid grid-cols-2 sm:grid-cols-4 gap-8">
-            {FOOTER_LINKS.map((col) => (
-              <div key={col.heading}>
-                <p className="text-[10px] font-mono font-bold tracking-[0.2em] text-neutral-500 uppercase mb-4">
-                  {col.heading}
+              <div>
+                <h2
+                  data-footer-heading="true"
+                  className="max-w-md text-2xl font-black tracking-tight text-white sm:text-3xl"
+                >
+                  Có phim hay, chúng tôi sẽ báo bạn biết.
+                </h2>
+                <p className="mt-3 max-w-md text-sm leading-6 text-neutral-400">
+                  Nhận danh sách phim đáng xem và các cập nhật quan trọng. Không
+                  gửi thư rác.
                 </p>
-                <ul className="space-y-3">
-                  {col.links.map((link) => (
-                    <li key={link.label}>
-                      <Link
-                        href={link.href}
-                        target={(link as any).external ? "_blank" : undefined}
-                        rel={(link as any).external ? "noopener noreferrer" : undefined}
-                        className="text-xs font-mono text-neutral-400 hover:text-white transition-colors"
-                      >
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Bottom copyright bar inside card */}
-        <div className="border-t border-white/10 px-8 md:px-12 py-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] font-mono tracking-widest text-neutral-500 uppercase bg-black/40">
-          <span>RELEASED UNDER MIT LICENSE / COPYRIGHT © 2024 - {year} CINEVERSE</span>
-          <span>DESIGNED BY TEAM CINEVERSE / HOSTED ON VERCEL</span>
+                <form onSubmit={handleSubscribe} className="mt-7 max-w-md">
+                  <label htmlFor="footer-email" className="sr-only">
+                    Email nhận bản tin
+                  </label>
+                  <div
+                    data-footer-input="true"
+                    className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.055] p-1.5 shadow-inner transition-colors focus-within:border-violet-300/40"
+                  >
+                    <Mail
+                      size={16}
+                      className="ml-3 shrink-0 text-neutral-500"
+                    />
+                    <input
+                      id="footer-email"
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      placeholder="Email của bạn"
+                      className="min-w-0 flex-1 bg-transparent px-1 py-2.5 text-sm text-white outline-none placeholder:text-neutral-600"
+                    />
+                    <button
+                      type="submit"
+                      className="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-black transition-colors hover:bg-violet-100 active:scale-[0.98]"
+                    >
+                      {subscribed ? <Check size={14} /> : null}
+                      {subscribed ? "Đã đăng ký" : "Đăng ký"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </section>
+
+          <div className="flex min-w-0 flex-col">
+            <div className="grid flex-1 grid-cols-2 gap-x-7 gap-y-10 p-7 sm:grid-cols-4 sm:p-10 lg:p-12">
+              {FOOTER_LINKS.map((column) => (
+                <div key={column.heading}>
+                  <p className="mb-5 text-[11px] font-semibold text-neutral-500">
+                    {column.heading}
+                  </p>
+                  <ul className="space-y-3.5">
+                    {column.links.map((link) => (
+                      <li key={link.label}>
+                        <Link
+                          href={link.href}
+                          data-footer-link="true"
+                          className="group inline-flex items-center gap-1.5 text-sm font-semibold text-neutral-300 transition-colors hover:text-white"
+                        >
+                          {link.label}
+                          <ArrowUpRight
+                            size={12}
+                            className="translate-y-0.5 opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-70"
+                          />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+
+            <div
+              data-footer-bottom="true"
+              className="flex flex-col gap-3 border-t border-white/10 px-7 py-5 text-xs text-neutral-500 sm:flex-row sm:items-center sm:justify-between sm:px-10 lg:px-12"
+            >
+              <p>
+                © 2024 - {year} CinePhim. Nội dung được tổng hợp từ các nguồn
+                công khai.
+              </p>
+              <div className="flex items-center gap-4">
+                <Link
+                  href="/privacy"
+                  className="transition-colors hover:text-white"
+                >
+                  Quyền riêng tư
+                </Link>
+                <Link
+                  href="/terms"
+                  className="transition-colors hover:text-white"
+                >
+                  Điều khoản
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* ── Cat GIF Meme Section ── */}
-      {catSrc && (
-        <div className="relative z-10 flex justify-center pt-8 pb-2">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="group cursor-pointer"
-            onClick={() => setCatSrc(getRandomCat())}
-            title="Click để đổi mèo ngẫu nhiên!"
-          >
-            <Image
-              src={catSrc}
-              alt="Mèo meme ngẫu nhiên"
-              width={90}
-              height={90}
-              className="rounded-xl object-cover border border-white/15 shadow-lg group-hover:scale-105 transition-transform duration-300"
-              unoptimized
-            />
-          </motion.div>
-        </div>
-      )}
     </footer>
   );
 }

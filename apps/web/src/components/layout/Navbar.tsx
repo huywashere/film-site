@@ -89,42 +89,42 @@ export const GENRES_LIST = [
 ];
 
 export const COUNTRIES_LIST = [
-  { label: "Anh", slug: "anh", flag: "🇬🇧" },
-  { label: "Ba Lan", slug: "ba-lan", flag: "🇵🇱" },
-  { label: "Brazil", slug: "brazil", flag: "🇧🇷" },
-  { label: "Bồ Đào Nha", slug: "bo-dao-nha", flag: "🇵🇹" },
-  { label: "Canada", slug: "canada", flag: "🇨🇦" },
-  { label: "Châu Phi", slug: "chau-phi", flag: "🌍" },
-  { label: "Hà Lan", slug: "ha-lan", flag: "🇳🇱" },
-  { label: "Hàn Quốc", slug: "han-quoc", flag: "🇰🇷" },
-  { label: "Hồng Kông", slug: "hong-kong", flag: "🇭🇰" },
-  { label: "Indonesia", slug: "indonesia", flag: "🇮🇩" },
-  { label: "Malaysia", slug: "malaysia", flag: "🇲🇾" },
-  { label: "Mexico", slug: "mexico", flag: "🇲🇽" },
-  { label: "Na Uy", slug: "na-uy", flag: "🇳🇴" },
-  { label: "Nam Phi", slug: "nam-phi", flag: "🇿🇦" },
-  { label: "Nga", slug: "nga", flag: "🇷🇺" },
-  { label: "Nhật Bản", slug: "nhat-ban", flag: "🇯🇵" },
-  { label: "Philippines", slug: "philippines", flag: "🇵🇭" },
-  { label: "Pháp", slug: "phap", flag: "🇫🇷" },
-  { label: "Quốc Gia Khác", slug: "quoc-gia-khac", flag: "🌐" },
-  { label: "Thái Lan", slug: "thai-lan", flag: "🇹🇭" },
-  { label: "Thổ Nhĩ Kỳ", slug: "tho-nhi-ky", flag: "🇹🇷" },
-  { label: "Thụy Sĩ", slug: "thuy-si", flag: "🇨🇭" },
-  { label: "Thụy Điển", slug: "thuy-dien", flag: "🇸🇪" },
-  { label: "Trung Quốc", slug: "trung-quoc", flag: "🇨🇳" },
-  { label: "Tây Ban Nha", slug: "tay-ban-nha", flag: "🇪🇸" },
-  { label: "UAE", slug: "uae", flag: "🇦🇪" },
-  { label: "Ukraina", slug: "ukraina", flag: "🇺🇦" },
-  { label: "Việt Nam", slug: "viet-nam", flag: "🇻🇳" },
-  { label: "Âu Mỹ", slug: "au-my", flag: "🇺🇸" },
-  { label: "Úc", slug: "uc", flag: "🇦🇺" },
-  { label: "Ý", slug: "y", flag: "🇮🇹" },
-  { label: "Đan Mạch", slug: "dan-mach", flag: "🇩🇰" },
-  { label: "Đài Loan", slug: "dai-loan", flag: "🇹🇼" },
-  { label: "Đức", slug: "duc", flag: "🇩🇪" },
-  { label: "Ả Rập Xê Út", slug: "a-rap-xe-ut", flag: "🇸🇦" },
-  { label: "Ấn Độ", slug: "an-do", flag: "🇮🇳" },
+  { label: "Anh", slug: "anh", code: "gb" },
+  { label: "Ba Lan", slug: "ba-lan", code: "pl" },
+  { label: "Brazil", slug: "brazil", code: "br" },
+  { label: "Bồ Đào Nha", slug: "bo-dao-nha", code: "pt" },
+  { label: "Canada", slug: "canada", code: "ca" },
+  { label: "Châu Phi", slug: "chau-phi", code: "za" },
+  { label: "Hà Lan", slug: "ha-lan", code: "nl" },
+  { label: "Hàn Quốc", slug: "han-quoc", code: "kr" },
+  { label: "Hồng Kông", slug: "hong-kong", code: "hk" },
+  { label: "Indonesia", slug: "indonesia", code: "id" },
+  { label: "Malaysia", slug: "malaysia", code: "my" },
+  { label: "Mexico", slug: "mexico", code: "mx" },
+  { label: "Na Uy", slug: "na-uy", code: "no" },
+  { label: "Nam Phi", slug: "nam-phi", code: "za" },
+  { label: "Nga", slug: "nga", code: "ru" },
+  { label: "Nhật Bản", slug: "nhat-ban", code: "jp" },
+  { label: "Philippines", slug: "philippines", code: "ph" },
+  { label: "Pháp", slug: "phap", code: "fr" },
+  { label: "Quốc Gia Khác", slug: "quoc-gia-khac", code: "un" },
+  { label: "Thái Lan", slug: "thai-lan", code: "th" },
+  { label: "Thổ Nhĩ Kỳ", slug: "tho-nhi-ky", code: "tr" },
+  { label: "Thụy Sĩ", slug: "thuy-si", code: "ch" },
+  { label: "Thụy Điển", slug: "thuy-dien", code: "se" },
+  { label: "Trung Quốc", slug: "trung-quoc", code: "cn" },
+  { label: "Tây Ban Nha", slug: "tay-ban-nha", code: "es" },
+  { label: "UAE", slug: "uae", code: "ae" },
+  { label: "Ukraina", slug: "ukraina", code: "ua" },
+  { label: "Việt Nam", slug: "viet-nam", code: "vn" },
+  { label: "Âu Mỹ", slug: "au-my", code: "us" },
+  { label: "Úc", slug: "uc", code: "au" },
+  { label: "Ý", slug: "y", code: "it" },
+  { label: "Đan Mạch", slug: "dan-mach", code: "dk" },
+  { label: "Đài Loan", slug: "dai-loan", code: "tw" },
+  { label: "Đức", slug: "duc", code: "de" },
+  { label: "Ả Rập Xê Út", slug: "a-rap-xe-ut", code: "sa" },
+  { label: "Ấn Độ", slug: "an-do", code: "in" },
 ];
 
 const LISTS_CATALOG = [
@@ -270,11 +270,13 @@ export function Navbar() {
   return (
     <>
       <header
+        data-site-header="true"
+        data-scrolled={scrolled ? "true" : "false"}
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-16 flex items-center",
+          "fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-16 flex items-center backdrop-blur-md border-0",
           scrolled
-            ? "bg-background/95 shadow-md backdrop-blur-md"
-            : "bg-gradient-to-b from-background/80 via-background/20 to-transparent",
+            ? "bg-[#08090c]/70 shadow-md"
+            : "bg-gradient-to-b from-[#08090c]/90 via-[#08090c]/30 to-transparent",
         )}
       >
         <div className="w-full px-4 md:px-8 flex items-center justify-between gap-3 md:gap-6 relative">
@@ -297,14 +299,14 @@ export function Navbar() {
           </div>
 
           {/* Center Block: Desktop Navigation Links (Absolute 100% Centered in Header) */}
-          <nav className="hidden lg:flex items-center justify-center space-x-4 xl:space-x-6 text-sm font-medium text-neutral-600 dark:text-neutral-300 absolute left-1/2 -translate-x-1/2 z-10">
+          <nav className="hidden lg:flex items-center justify-center space-x-4 xl:space-x-6 text-sm font-medium text-neutral-200 absolute left-1/2 -translate-x-1/2 z-10">
             {/* Thể Loại Dropdown */}
             <div className="relative group py-5">
-              <button className="flex items-center space-x-1 hover:text-neutral-900 dark:hover:text-white transition-colors focus:outline-none font-semibold">
+              <button className="flex items-center space-x-1 text-neutral-200 hover:text-white transition-colors focus:outline-none font-semibold">
                 <span>{t("nav.genres")}</span>
                 <ChevronDown
                   size={14}
-                  className="transition-transform duration-200 group-hover:rotate-180"
+                  className="transition-transform duration-200 group-hover:rotate-180 text-neutral-300"
                 />
               </button>
               <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[520px] p-4 bg-[#090c15]/65 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.6)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-3 gap-y-1.5 gap-x-2 z-50">
@@ -322,11 +324,11 @@ export function Navbar() {
 
             {/* Quốc Gia Dropdown */}
             <div className="relative group py-5">
-              <button className="flex items-center space-x-1 hover:text-neutral-900 dark:hover:text-white transition-colors focus:outline-none font-semibold">
+              <button className="flex items-center space-x-1 text-neutral-200 hover:text-white transition-colors focus:outline-none font-semibold">
                 <span>{t("nav.country")}</span>
                 <ChevronDown
                   size={14}
-                  className="transition-transform duration-200 group-hover:rotate-180"
+                  className="transition-transform duration-200 group-hover:rotate-180 text-neutral-300"
                 />
               </button>
               <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[640px] p-4 bg-[#090c15]/65 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.6)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-4 gap-y-1.5 gap-x-2 z-50 max-h-[75vh] overflow-y-auto scrollbar-thin">
@@ -334,9 +336,15 @@ export function Navbar() {
                   <Link
                     key={item.slug}
                     href={`/country/${item.slug}`}
-                    className="px-3 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 flex items-center gap-2 truncate group/flag"
+                    className="px-3 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 flex items-center gap-2.5 truncate group/flag"
                   >
-                    <span className="text-base shrink-0 transition-transform group-hover/flag:scale-125">{item.flag}</span>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`https://flagcdn.com/w40/${item.code}.png`}
+                      alt={item.label}
+                      className="w-5 h-3.5 object-cover rounded-[3px] border border-white/20 shrink-0 group-hover/flag:scale-110 transition-transform shadow-sm"
+                      loading="lazy"
+                    />
                     <span className="truncate">{item.label}</span>
                   </Link>
                 ))}
@@ -345,11 +353,11 @@ export function Navbar() {
 
             {/* Danh Sách Dropdown */}
             <div className="relative group py-5">
-              <button className="flex items-center space-x-1 hover:text-neutral-900 dark:hover:text-white transition-colors focus:outline-none font-semibold">
+              <button className="flex items-center space-x-1 text-neutral-200 hover:text-white transition-colors focus:outline-none font-semibold">
                 <span>{t("nav.list")}</span>
                 <ChevronDown
                   size={14}
-                  className="transition-transform duration-200 group-hover:rotate-180"
+                  className="transition-transform duration-200 group-hover:rotate-180 text-neutral-300"
                 />
               </button>
               <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[500px] p-4 bg-[#090c15]/65 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.6)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-3 gap-y-1.5 gap-x-2 z-50">
@@ -370,10 +378,10 @@ export function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "hover:text-neutral-900 dark:hover:text-white transition-colors font-semibold",
+                  "hover:text-white transition-colors font-semibold",
                   pathname === link.href
-                    ? "text-neutral-900 dark:text-white font-black"
-                    : "text-neutral-600 dark:text-neutral-300",
+                    ? "text-white font-black"
+                    : "text-neutral-200",
                 )}
               >
                 {link.label || t(link.key!)}
@@ -495,7 +503,9 @@ export function Navbar() {
                       />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-bold text-xs flex items-center justify-center shadow-md group-hover:border-emerald-400 transition-colors">
-                        {(user.displayName || user.username || "U").slice(0, 2).toUpperCase()}
+                        {(user.displayName || user.username || "U")
+                          .slice(0, 2)
+                          .toUpperCase()}
                       </div>
                     )}
                     <ChevronDown
@@ -527,18 +537,6 @@ export function Navbar() {
                         <p className="text-xs text-neutral-400 truncate">
                           @{user.username}
                         </p>
-                        <button
-                          onClick={() =>
-                            router.push(
-                              user.username
-                                ? `/user/${encodeURIComponent(user.username)}`
-                                : "/user",
-                            )
-                          }
-                          className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold hover:underline mt-0.5 block cursor-pointer"
-                        >
-                          Xem trang cá nhân
-                        </button>
                       </div>
                     </div>
 
@@ -554,15 +552,15 @@ export function Navbar() {
                         }
                         className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
                       >
-                        <User size={16} className="mr-3 text-emerald-400" />
-                        <span>Trang cá nhân & Tủ phim</span>
+                        <User size={16} className="mr-3 text-neutral-300" />
+                        <span>Trang cá nhân</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => router.push("/settings/security")}
                         className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
                       >
-                        <Settings size={16} className="mr-3 text-neutral-400" />
-                        <span>Cài đặt & Bảo mật</span>
+                        <Settings size={16} className="mr-3 text-neutral-300" />
+                        <span>Cài đặt</span>
                       </DropdownMenuItem>
                     </div>
 
@@ -624,89 +622,35 @@ export function Navbar() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                /* Minimalist Sleek User Icon Button with Glassmorphism */
-                <button
-                  type="button"
-                  onClick={() => {
-                    const curUser = useAuthStore.getState().user;
-                    if (curUser) {
-                      const targetSlug = curUser.username || curUser.id;
-                      router.push(`/user/${encodeURIComponent(targetSlug)}`);
-                    } else {
-                      router.push("/login");
-                    }
-                  }}
-                  aria-label="Đăng nhập tài khoản"
-                  title="Đăng nhập / Tài khoản thành viên"
-                  className="flex items-center justify-center w-8 h-8 rounded-full bg-white/[0.06] backdrop-blur-xl border border-white/15 text-neutral-300 hover:text-white hover:border-white/40 hover:bg-white/[0.12] transition-all duration-300 shadow-lg shadow-black/40 active:scale-95 cursor-pointer"
+                /* Desktop Guest Login User Icon Button (Navigates to /login) */
+                <Link
+                  href="/login"
+                  aria-label="Đăng nhập"
+                  title="Đăng nhập"
+                  className="hidden lg:flex items-center justify-center p-1.5 text-neutral-300 hover:text-white transition-colors cursor-pointer active:scale-95"
                 >
-                  <User size={16} />
-                </button>
+                  <User size={20} className="stroke-[2.2]" />
+                </Link>
               )}
             </div>
 
             {/* Mobile menu trigger */}
             <button
-              className="lg:hidden text-neutral-300 hover:text-white transition-colors p-1"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-1.5 text-neutral-300 hover:text-white transition-colors cursor-pointer active:scale-95 flex items-center justify-center"
+              onClick={() => setMobileSidebarOpen(true)}
+              aria-label="Mở menu"
             >
-              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              <Menu size={22} className="stroke-[2.2]" />
             </button>
           </div>
         </div>
       </header>
 
-      {/* Mobile Drawer menu */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-background pt-20 flex flex-col p-6 space-y-4 text-neutral-300 text-base font-semibold animate-in fade-in slide-in-from-top-4 duration-300 overflow-y-auto">
-          <Link
-            href="/films/series"
-            className="py-2 border-b border-border"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Phim Bộ
-          </Link>
-          <Link
-            href="/films/single"
-            className="py-2 border-b border-border"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Phim Lẻ
-          </Link>
-          <Link
-            href="/films/anime"
-            className="py-2 border-b border-border"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Hoạt Hình
-          </Link>
-          <Link
-            href="/watchlist"
-            className="py-2 border-b border-border"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Watchlist
-          </Link>
-          {!user && (
-            <div className="flex flex-col space-y-3 pt-6">
-              <Link
-                href="/login"
-                className="w-full text-center py-2.5 rounded border border-white/10 hover:bg-white/5 transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Đăng nhập
-              </Link>
-              <Link
-                href="/register"
-                className="w-full text-center py-2.5 rounded bg-[#E50914] text-white hover:bg-[#C11119] transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Đăng ký
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Modern High-End Mobile Drawer */}
+      <MobileSidebar
+        isOpen={mobileSidebarOpen}
+        onClose={() => setMobileSidebarOpen(false)}
+      />
 
       {/* ── Spotlight Search Modal — single unified search UI ── */}
       <AnimatePresence>

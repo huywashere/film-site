@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Suspense } from "react";
 import { useAuthStore } from "@/store/authStore";
 import UserDashboardPage from "./[username]/page";
 
@@ -17,5 +18,16 @@ export default function UserProfileIndexPage() {
     }
   }, [user, router]);
 
-  return <UserDashboardPage />;
+  return (
+    <Suspense
+      fallback={
+        <div
+          className="min-h-screen bg-[#0b0d12]"
+          aria-label="Đang tải hồ sơ"
+        />
+      }
+    >
+      <UserDashboardPage />
+    </Suspense>
+  );
 }
