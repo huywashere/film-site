@@ -15,6 +15,7 @@ import { ClientTelemetry } from "@/components/layout/ClientTelemetry";
 import { AuthSessionBridge } from "@/components/auth/AuthSessionBridge";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { AntiDevTools } from "@/components/security/AntiDevTools";
+import { LogoSplashIntro } from "@/components/layout/LogoSplashIntro";
 
 export const viewport: Viewport = {
   themeColor: "#141414",
@@ -107,6 +108,7 @@ export default function RootLayout({
         />
       </head>
       <body suppressHydrationWarning>
+        <LogoSplashIntro />
         <ThemeWatcher />
         <ThemeColorSync />
         <RegisterSW />

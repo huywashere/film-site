@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import {
   Search,
@@ -283,16 +284,26 @@ export function Navbar() {
           {/* Left Block: Logo (shrink-0 ensures it NEVER gets overlapped) */}
           <div className="flex items-center shrink-0">
             <Link href="/" className="flex items-center space-x-2.5 group">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/cinephim-logo.png"
-                alt="CinePhim Logo"
-                className="h-8 sm:h-9 w-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_12px_rgba(168,85,247,0.3)]"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "/logo.png";
-                }}
-              />
-              <span className="text-white text-xl sm:text-2xl font-black tracking-tight lowercase font-sans group-hover:text-purple-300 transition-colors">
+              <motion.div
+                whileHover={{ scale: 1.12, rotate: 6 }}
+                whileTap={{ scale: 0.95 }}
+                className="relative flex items-center justify-center"
+              >
+                {/* Glowing Purple Pulse Aura Behind Logo */}
+                <div className="absolute inset-0 rounded-full bg-purple-500/35 blur-md opacity-70 group-hover:opacity-100 transition-opacity animate-pulse" />
+
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/cinephim-logo.png"
+                  alt="CinePhim Logo"
+                  className="h-8 sm:h-9 w-auto object-contain relative z-10 drop-shadow-[0_0_16px_rgba(168,85,247,0.6)] transition-transform duration-300"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = "/logo.png";
+                  }}
+                />
+              </motion.div>
+
+              <span className="text-white text-xl sm:text-2xl font-black tracking-tight lowercase font-sans group-hover:text-purple-300 transition-colors duration-300 drop-shadow-[0_0_12px_rgba(168,85,247,0.4)]">
                 cinephim
               </span>
             </Link>
