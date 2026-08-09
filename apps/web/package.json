@@ -11,8 +11,8 @@
     "lint:fix": "eslint src --ext .ts,.tsx --fix --max-warnings=9999",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:unit": "node --test src/lib/player-source-routing.test.mts src/lib/hero-image.test.mts",
-    "test:source-routing": "node --test src/lib/player-source-routing.test.mts",
+    "test:unit": "tsx --test src/lib/player-source-routing.test.mts src/lib/hero-image.test.mts",
+    "test:source-routing": "tsx --test src/lib/player-source-routing.test.mts",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\""
   },
@@ -56,6 +56,7 @@
     "eslint-config-next": "^16.2.11",
     "postcss": "^8.5.23",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.23.11",
     "typescript": "^5.0.0"
   }
 }
