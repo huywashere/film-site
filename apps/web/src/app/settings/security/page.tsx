@@ -102,7 +102,11 @@ function TwoFactorSection({
 
 // ── Google Link Section ──────────────────────────────────────────────
 function GoogleLinkSection({ user }: { user: any }) {
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+  const apiBase =
+    process.env.NEXT_PUBLIC_API_URL ||
+    (process.env.NODE_ENV === "production"
+      ? "/api/v1"
+      : "http://localhost:3001/api/v1");
   const googleLinkUrl = `${apiBase.replace("/api/v1", "")}/api/v1/auth/google`;
 
   return (

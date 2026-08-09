@@ -756,6 +756,10 @@ const configuredApiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(
   /\/$/,
   "",
 );
+const defaultApiBase =
+  process.env.NODE_ENV === "production"
+    ? "/api/v1"
+    : "http://localhost:3001/api/v1";
 
 // The Nest application has a fixed `/api/v1` prefix. Older local env files
 // used `/api`, which made every authenticated request return 404 after login.
@@ -763,7 +767,7 @@ const API_BASE = configuredApiBase
   ? configuredApiBase.endsWith("/api")
     ? `${configuredApiBase}/v1`
     : configuredApiBase
-  : "http://localhost:3001/api/v1";
+  : defaultApiBase;
 
 export const api = axios.create({
   baseURL: API_BASE,

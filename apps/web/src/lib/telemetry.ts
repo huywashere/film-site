@@ -35,9 +35,14 @@ function cleanProperties(properties: TelemetryProperties = {}) {
 }
 
 function telemetryEndpoint() {
-  const rawBase = (
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1"
-  ).replace(/\/+$/, "");
+  const fallbackBase =
+    process.env.NODE_ENV === "production"
+      ? "/api/v1"
+      : "http://localhost:3001/api/v1";
+  const rawBase = (process.env.NEXT_PUBLIC_API_URL || fallbackBase).replace(
+    /\/+$/,
+    "",
+  );
   const baseUrl = rawBase.endsWith("/api/v1")
     ? rawBase
     : rawBase.endsWith("/api")

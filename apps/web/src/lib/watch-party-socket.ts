@@ -66,12 +66,19 @@ export interface SocketAck {
 }
 
 function getSocketOrigin() {
-  const configured =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+  const configured = process.env.NEXT_PUBLIC_API_URL;
+  if (!configured) {
+    if (typeof window !== "undefined") return window.location.origin;
+    return process.env.NODE_ENV === "production"
+      ? "http://127.0.0.1"
+      : "http://localhost:3001";
+  }
   try {
     return new URL(configured).origin;
   } catch {
-    return "http://localhost:3001";
+    return typeof window !== "undefined"
+      ? window.location.origin
+      : "http://127.0.0.1";
   }
 }
 
