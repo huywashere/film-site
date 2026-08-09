@@ -56,6 +56,9 @@ jobs:
           pnpm --filter api run lint
           pnpm --filter web run lint
 
+      - name: Run unit tests
+        run: pnpm --filter web run test:unit
+
       - name: Run Build
         run: pnpm run build
         env:

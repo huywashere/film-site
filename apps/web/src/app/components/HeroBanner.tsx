@@ -13,6 +13,7 @@ import { watchlistApi, watchHistoryApi } from "@/lib/api";
 import { useToast } from "@/providers/ToastProvider";
 import { cn } from "@/lib/utils";
 import { guestDataStorage } from "@/lib/user-data";
+import { buildHeroImageCandidates } from "@/lib/hero-image";
 import {
   tmdbApi,
   tmdbBackdrop,
@@ -33,7 +34,7 @@ interface HeroFilm extends FilmItem {
   tmdbOnly?: boolean;
 }
 
-const HERO_SESSION_KEY = "cineverse.tmdb-hero.v2";
+const HERO_SESSION_KEY = "cineverse.tmdb-hero.v3";
 const HERO_INDEX_SESSION_KEY = "cineverse.tmdb-hero-index.v1";
 
 const HERO_TMDB_COLLECTIONS = [
@@ -304,6 +305,74 @@ function HeroMovieTitle({ film }: { film: HeroFilm }) {
         />
       )}
     </div>
+  );
+}
+
+function HeroBackdropImage({
+  film,
+  isActive,
+}: {
+  film: HeroFilm;
+  isActive: boolean;
+}) {
+  const candidates = useMemo(
+    () =>
+      buildHeroImageCandidates({
+        heroBackdrop: film.heroBackdrop,
+        thumbUrl: film.thumb_url,
+        posterUrl: film.poster_url,
+      }),
+    [film.heroBackdrop, film.poster_url, film.thumb_url],
+  );
+  const [candidateIndex, setCandidateIndex] = useState(0);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    setCandidateIndex(0);
+    setLoaded(false);
+  }, [film.slug, candidates]);
+
+  const tryNextCandidate = () => {
+    setLoaded(false);
+    setCandidateIndex((index) =>
+      Math.min(index + 1, Math.max(candidates.length - 1, 0)),
+    );
+  };
+
+  const src = candidates[candidateIndex];
+  if (!src) return null;
+
+  return (
+    <>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_35%,rgba(50,58,72,0.3),transparent_44%),linear-gradient(135deg,#0b0e13_0%,#151a22_52%,#0b0d12_100%)]" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        key={`${film.slug}-${candidateIndex}`}
+        src={src}
+        alt={film.name}
+        loading={isActive ? "eager" : "lazy"}
+        decoding="async"
+        fetchPriority={isActive ? "high" : "low"}
+        onLoad={(event) => {
+          // The legacy proxy placeholder is exactly 300x450. Treat stale
+          // cached copies as failures as well, then advance to a real source.
+          if (
+            event.currentTarget.naturalWidth === 300 &&
+            event.currentTarget.naturalHeight === 450 &&
+            candidateIndex < candidates.length - 1
+          ) {
+            tryNextCandidate();
+            return;
+          }
+          setLoaded(true);
+        }}
+        onError={tryNextCandidate}
+        className={cn(
+          "h-full w-full object-cover object-center brightness-[0.72] transition-opacity duration-500",
+          loaded ? "opacity-100" : "opacity-0",
+        )}
+      />
+    </>
   );
 }
 
@@ -661,14 +730,6 @@ export default function HeroBanner({ films }: HeroBannerProps) {
       <div className="absolute inset-0 w-full h-full">
         {featured.map((item, idx) => {
           const isActive = idx === current;
-          const bgUrl = isActive
-            ? (item as HeroFilm).heroBackdrop ||
-              resolveDirectImageUrl(item.thumb_url) ||
-              resolveDirectImageUrl(item.poster_url)
-            : resolveDirectImageUrl(item.thumb_url) ||
-              (item as HeroFilm).heroBackdrop ||
-              resolveDirectImageUrl(item.poster_url);
-          if (!bgUrl) return null;
 
           return (
             <div
@@ -678,15 +739,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                 isActive ? "opacity-100 scale-100 z-10" : "opacity-0 scale-[1.02] z-0",
               )}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={bgUrl}
-                alt={item.name}
-                loading={isActive ? "eager" : "lazy"}
-                decoding="async"
-                fetchPriority={isActive ? "high" : "low"}
-                className="w-full h-full object-cover object-center brightness-[0.72]"
-              />
+              <HeroBackdropImage film={item as HeroFilm} isActive={isActive} />
             </div>
           );
         })}

@@ -8,7 +8,8 @@ ARG PNPM_VERSION=9.5.0
 # ── Base image with pnpm ──────────────────────────────
 FROM node:${NODE_VERSION}-alpine AS base
 ARG PNPM_VERSION
-RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+RUN apk add --no-cache openssl && \
+    corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
@@ -25,24 +26,28 @@ COPY apps/web/package.json ./apps/web/
 RUN pnpm install --frozen-lockfile
 
 # ── Stage 2: Build API ─────────────────────────────────
-FROM base AS api-builder
+# Inherit the deps filesystem directly. Copying pnpm's workspace node_modules
+# between stages dereferences/breaks its relative symlinks (notably Prisma).
+FROM deps AS api-builder
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules 2>/dev/null || true
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc turbo.json ./
 COPY apps/api ./apps/api
 
-# Generate Prisma Client & Build NestJS
-RUN cd apps/api && npx prisma generate && pnpm run build
+# Use the root pnpm bin links. Workspace-local links may be replaced when the
+# Windows build context is overlaid in Docker, while the root store is stable.
+RUN /app/node_modules/.bin/prisma generate --schema=apps/api/prisma/schema.prisma && \
+    cd apps/api && /app/node_modules/.bin/nest build
+
+# Create a self-contained production package. This preserves pnpm's generated
+# Prisma client without carrying the entire monorepo/dev dependency tree.
+RUN pnpm --filter api deploy --prod /prod/api && \
+    cp -R apps/api/dist /prod/api/dist && \
+    cd /prod/api && /app/node_modules/.bin/prisma generate --schema=prisma/schema.prisma
 
 # ── Stage 3: Build Web ─────────────────────────────────
-FROM base AS web-builder
+FROM deps AS web-builder
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules 2>/dev/null || true
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc turbo.json ./
 COPY apps/web ./apps/web
 
 # Build args for Next.js (baked at build time — ONLY NEXT_PUBLIC_* vars)
@@ -74,12 +79,13 @@ ENV KKPHIM_API_BASE=$KKPHIM_API_BASE
 ENV OPHIM_API_BASE=$OPHIM_API_BASE
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN cd apps/web && pnpm run build
+RUN cd apps/web && \
+    /app/node_modules/.bin/next build && \
+    node scripts/check-performance-budget.mjs
 
 # ── Stage 4: API Production Runtime ───────────────────
 FROM node:${NODE_VERSION}-alpine AS api
-ARG PNPM_VERSION
-RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+RUN apk add --no-cache openssl
 
 ENV NODE_ENV=production
 WORKDIR /app
@@ -87,16 +93,8 @@ WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
-COPY apps/api/package.json ./apps/api/
-
-# Install production deps only
-RUN pnpm install --frozen-lockfile --prod --filter api
-
-# Copy built artifacts
-COPY --from=api-builder --chown=nestjs:nodejs /app/apps/api/dist ./apps/api/dist
-COPY --from=api-builder --chown=nestjs:nodejs /app/apps/api/prisma ./apps/api/prisma
-COPY --from=api-builder --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+# Copy the portable production package built by pnpm deploy.
+COPY --from=api-builder --chown=nestjs:nodejs /prod/api ./apps/api
 
 USER nestjs
 EXPOSE 4000

@@ -84,6 +84,10 @@ test:
     - echo "🔎 ESLint..."
     - pnpm --filter api run lint
     - pnpm --filter web run lint
+
+    # 5. Fast unit tests for playback routing and resilient hero images
+    - echo "🧪 Unit tests..."
+    - pnpm --filter web run test:unit
   rules:
     # Chạy trên mọi push và merge request
     - if: '$CI_PIPELINE_SOURCE == "push"'

@@ -68,6 +68,18 @@ function placeholderResponse(maxAge: number) {
   });
 }
 
+function failedImageResponse(strict: boolean, status = 502) {
+  if (!strict) return placeholderResponse(status === 429 ? 0 : 300);
+
+  return new NextResponse(null, {
+    status,
+    headers: {
+      "Cache-Control": "no-store, max-age=0",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
+
 function generateCandidateUrls(rawUrl: string): string[] {
   let imageUrl = rawUrl.trim();
   if (imageUrl.startsWith("//")) {
@@ -184,12 +196,13 @@ async function fetchImageCandidate(
 }
 
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const strict = searchParams.get("strict") === "1";
   const rateCheck = checkImageProxyRateLimit(clientIpFromRequest(request));
   if (!rateCheck.allowed) {
-    return placeholderResponse(0);
+    return failedImageResponse(strict, 429);
   }
 
-  const { searchParams } = new URL(request.url);
   const rawUrl = searchParams.get("url");
   const fallbackUrl = searchParams.get("fallback");
 
@@ -211,7 +224,7 @@ export async function GET(request: NextRequest) {
     console.warn(
       `[image-proxy] blocked disallowed host for url parameter: ${rawUrl.slice(0, 200)}`,
     );
-    return placeholderResponse(86400);
+    return strict ? failedImageResponse(true) : placeholderResponse(86400);
   }
 
   const deadline = Date.now() + TOTAL_FALLBACK_BUDGET_MS;
@@ -248,5 +261,5 @@ export async function GET(request: NextRequest) {
   }
 
   // If all CDN fetch candidates fail, return clean SVG placeholder
-  return placeholderResponse(300);
+  return failedImageResponse(strict);
 }
