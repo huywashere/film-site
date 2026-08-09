@@ -20,35 +20,36 @@ enum Role {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  username     String   @unique
-  passwordHash String
-  displayName  String?
-  avatarUrl    String?
-  bio          String?
-  role         Role     @default(USER)  // FIX #14: enum thay vì String
-  isBanned     Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  isEmailVerified Boolean  @default(false)
-  googleId        String?  @unique
-  twoFactorEnabled Boolean @default(false)
-  twoFactorAuth   TwoFactorAuth?
-  isLocked        Boolean  @default(false)
-  suspiciousToken String?
+  id                       String         @id @default(cuid())
+  email                    String         @unique
+  username                 String         @unique
+  passwordHash             String
+  displayName              String?
+  avatarUrl                String?
+  bio                      String?
+  role                     Role           @default(USER) // FIX #14: enum thay vì String
+  isBanned                 Boolean        @default(false)
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+  isEmailVerified          Boolean        @default(false)
+  googleId                 String?        @unique
+  twoFactorEnabled         Boolean        @default(false)
+  twoFactorAuth            TwoFactorAuth?
+  isLocked                 Boolean        @default(false)
+  suspiciousToken          String?
+  suspiciousTokenExpiresAt DateTime?
 
-  watchlist  Watchlist[]
-  reviews    Review[]
-  ratings    Rating[]
-  following  Follow[]    @relation("follower")
-  followers  Follow[]    @relation("following")
-  reviewLikes ReviewLike[]
-  refreshTokens RefreshToken[]
+  watchlist          Watchlist[]
+  reviews            Review[]
+  ratings            Rating[]
+  following          Follow[]             @relation("follower")
+  followers          Follow[]             @relation("following")
+  reviewLikes        ReviewLike[]
+  refreshTokens      RefreshToken[]
   verificationTokens VerificationToken[]
   resetTokens        ResetPasswordToken[]
   watchHistories     WatchHistory[]
-  auditLogs          AuditLog[]     @relation("AdminAuditLogs")
+  auditLogs          AuditLog[]           @relation("AdminAuditLogs")
 
   @@map("users")
 }
@@ -128,25 +129,27 @@ model Movie {
   posterUrl     String?
   thumbUrl      String?
   year          Int?
-  type          String   // "series" | "single" | "hoathinh" | "tvshows"
-  status        String?  // "completed" | "ongoing"
+  type          String // "series" | "single" | "hoathinh" | "tvshows"
+  status        String? // "completed" | "ongoing"
   totalEpisodes Int?
   description   String?  @db.Text
   quality       String?
   language      String?
-  runtime       Int?     // phút
+  runtime       Int? // phút
   imdbId        String?
   isHidden      Boolean  @default(false)
   sources       String[] @default([])
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  watchlist Watchlist[]
-  reviews   Review[]
-  ratings   Rating[]
-  viewLogs  ViewLog[]
+  watchlist      Watchlist[]
+  reviews        Review[]
+  ratings        Rating[]
+  viewLogs       ViewLog[]
   watchHistories WatchHistory[]
 
+  @@index([type, isHidden, year])
+  @@index([isHidden, updatedAt(sort: Desc)])
   @@map("movies")
 }
 
@@ -154,7 +157,7 @@ model AuditLog {
   id         String   @id @default(cuid())
   adminId    String
   adminEmail String
-  action     String   // e.g. "LOCK_USER", "UNLOCK_USER", "HIDE_MOVIE", "UNHIDE_MOVIE", "EDIT_METADATA", "FORCE_CLOSE_PARTY"
+  action     String // e.g. "LOCK_USER", "UNLOCK_USER", "HIDE_MOVIE", "UNHIDE_MOVIE", "EDIT_METADATA", "FORCE_CLOSE_PARTY"
   targetId   String?
   details    String?  @db.Text
   // FIX #11: Thêm IP và User-Agent để truy vết forensics
@@ -187,15 +190,16 @@ model Review {
   userId    String
   movieId   String
   content   String   @db.Text
-  rating    Float?   // 0.5 - 5.0 (half star)
+  rating    Float? // 0.5 - 5.0 (half star)
   likeCount Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  movie  Movie        @relation(fields: [movieId], references: [id], onDelete: Cascade)
-  likes  ReviewLike[]
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie        @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  likes ReviewLike[]
 
+  @@index([movieId, createdAt(sort: Desc)])
   @@map("reviews")
 }
 
@@ -213,24 +217,26 @@ model ReviewLike {
 model Rating {
   userId  String
   movieId String
-  score   Float    // 0.5 - 5.0
+  score   Float // 0.5 - 5.0
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
 
   @@id([userId, movieId])
+  @@index([movieId])
   @@map("ratings")
 }
 
 model ViewLog {
-  id       String   @id @default(cuid())
-  movieId  String
-  episode  String?
+  id         String   @id @default(cuid())
+  movieId    String
+  episode    String?
   serverName String?
-  viewedAt DateTime @default(now())
+  viewedAt   DateTime @default(now())
 
   movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
 
+  @@index([viewedAt(sort: Desc), movieId])
   @@map("view_logs")
 }
 
@@ -240,9 +246,9 @@ model WatchHistory {
   movieId    String
   movieTitle String
   movieThumb String?
-  episode    String?  // e.g. "1", "2", "tap-1"
-  progress   Float    @default(0)  // seconds watched
-  duration   Float    @default(0)  // total video duration in seconds
+  episode    String? // e.g. "1", "2", "tap-1"
+  progress   Float    @default(0) // seconds watched
+  duration   Float    @default(0) // total video duration in seconds
   serverName String?
   watchedAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

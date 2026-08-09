@@ -5,7 +5,7 @@ Hệ thống kiến trúc Kubernetes dành cho ứng dụng **CineVerse** đư�
 ## 📂 Danh mục File Manifests trong `k8s/`
 
 1. **[namespace.yaml](file:///c:/Project_Movie_Site/k8s/namespace.yaml)**: Tạo không gian tên `cineverse` cách ly các tài nguyên.
-2. **[configmap.yaml](file:///c:/Project_Movie_Site/k8s/configmap.yaml)** & **[secret.yaml](file:///c:/Project_Movie_Site/k8s/secret.yaml)**: Lưu trữ cấu hình và các khóa mật an toàn.
+2. `configmap.yaml` chứa cấu hình công khai. Tạo `secret.yaml` chưa được theo dõi từ `secret.example.yaml`, hoặc ưu tiên External Secrets/Sealed Secrets. Không commit Secret đã điền giá trị.
 3. **[api-deployment.yaml](file:///c:/Project_Movie_Site/k8s/api-deployment.yaml)**: Deployment & Service cho NestJS API (2 replicas mặc định, Liveness/Readiness Probes, Zero-downtime rolling update).
 4. **[web-deployment.yaml](file:///c:/Project_Movie_Site/k8s/web-deployment.yaml)**: Deployment & Service cho Next.js Web App Frontend.
 5. **[redis-deployment.yaml](file:///c:/Project_Movie_Site/k8s/redis-deployment.yaml)**: Cụm Redis Cache kèm PersistentVolumeClaim (PVC 5GB).
@@ -19,7 +19,7 @@ Hệ thống kiến trúc Kubernetes dành cho ứng dụng **CineVerse** đư�
 
 ### 1. Triển khai bằng 1 câu lệnh bash
 ```bash
-bash k8s/deploy.sh
+IMAGE_TAG=<git-commit-sha> bash k8s/deploy.sh
 ```
 
 ### 2. Kiểm tra trạng thái các Pods và Autoscaler

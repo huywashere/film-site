@@ -93,8 +93,7 @@ export function Top10RankedRow({
                                 : rank === 3
                                   ? "4.5px #f59e0b"
                                   : "3.5px #475569",
-                          fontFamily:
-                            "'Montserrat', 'Russo One', 'Barlow Semi Condensed', sans-serif",
+                          fontFamily: "var(--font-display)",
                           fontWeight: 900,
                         }}
                       >

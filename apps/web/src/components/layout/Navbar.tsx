@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import {
   Search,
@@ -42,7 +41,6 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { MobileSidebar } from "./MobileSidebar";
-import { AnimatePresence } from "framer-motion";
 
 // Lazy-load SpotlightSearchModal to avoid server-side issues
 const SpotlightSearchModal = dynamic(
@@ -144,10 +142,36 @@ const LISTS_CATALOG = [
   { label: "Phim Chiếu Rạp", href: "/search?q=chieu%20rap" },
 ];
 
+function AnimatedNavbarLogo() {
+  return (
+    <Link href="/" className="flex items-center space-x-2.5 group select-none">
+      <div className="relative flex cursor-pointer items-center justify-center transition-transform duration-300 motion-safe:hover:rotate-[8deg] motion-safe:hover:scale-110 active:scale-95">
+        <div className="absolute inset-0 rounded-full bg-purple-500/40 blur-md motion-safe:animate-pulse" />
+
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/cinephim-logo.png"
+          alt="CinePhim Logo"
+          className="h-8 sm:h-9 w-auto object-contain relative z-10 drop-shadow-[0_0_20px_rgba(168,85,247,0.7)] transition-transform duration-300"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = "/logo.png";
+          }}
+        />
+      </div>
+
+      <div className="relative overflow-hidden">
+        <span className="text-white text-xl sm:text-2xl font-black tracking-tight lowercase font-sans group-hover:text-purple-300 transition-colors duration-300 drop-shadow-[0_0_15px_rgba(168,85,247,0.4)] block">
+          cinephim
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout, fetchMe } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const openAuthModal = useAuthModalStore((state) => state.openModal);
   const { t, lang, setLang, isTransitioning } = useTranslation();
   const { theme, toggleTheme } = useThemeStore();
@@ -213,48 +237,27 @@ export function Navbar() {
     }
   };
 
-  // Scroll detection to update header background
+  // Keep the header transparent at the top and introduce glass only after scroll.
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 30) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
+    let frameId: number | null = null;
+    const update = () => {
+      frameId = null;
+      setScrolled(window.scrollY > 30);
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const onScroll = () => {
+      if (frameId === null) frameId = window.requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frameId !== null) window.cancelAnimationFrame(frameId);
+    };
   }, []);
 
   useEffect(() => {
     setMounted(true);
-    fetchMe().catch(() => {});
-
-    // Listen to Firebase Auth state for automatic session sync
-    let unsubscribe: (() => void) | undefined;
-    import("@/lib/firebase").then(({ firebaseAuth, onAuthStateChanged }) => {
-      if (firebaseAuth) {
-        unsubscribe = onAuthStateChanged(firebaseAuth, (fbUser: any) => {
-          if (fbUser && !useAuthStore.getState().user) {
-            const name =
-              fbUser.displayName || fbUser.email?.split("@")[0] || "User";
-            useAuthStore.getState().setUser({
-              id: fbUser.uid,
-              email: fbUser.email || `${fbUser.uid}@google.com`,
-              username: fbUser.email?.split("@")[0] || fbUser.uid,
-              displayName: name,
-              avatarUrl: fbUser.photoURL || undefined,
-              role: "USER",
-            });
-          }
-        });
-      }
-    });
-
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, [fetchMe]);
+  }, []);
 
   // Global Ctrl/Cmd+K shortcut to open Spotlight search from anywhere
   useEffect(() => {
@@ -274,39 +277,15 @@ export function Navbar() {
         data-site-header="true"
         data-scrolled={scrolled ? "true" : "false"}
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-16 flex items-center backdrop-blur-md border-0",
+          "fixed top-0 left-0 right-0 z-50 h-16 flex items-center border-b transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300",
           scrolled
-            ? "bg-[#141414]/80 shadow-md"
-            : "bg-gradient-to-b from-[#141414]/90 via-[#141414]/30 to-transparent",
+            ? "border-white/[0.08] bg-[#0b0d12]/80 shadow-[0_12px_34px_rgba(0,0,0,0.22)] backdrop-blur-xl backdrop-saturate-150"
+            : "border-transparent bg-transparent shadow-none backdrop-blur-none",
         )}
       >
         <div className="w-full px-4 md:px-8 flex items-center justify-between gap-3 md:gap-6 relative">
-          {/* Left Block: Logo (shrink-0 ensures it NEVER gets overlapped) */}
           <div className="flex items-center shrink-0">
-            <Link href="/" className="flex items-center space-x-2.5 group">
-              <motion.div
-                whileHover={{ scale: 1.12, rotate: 6 }}
-                whileTap={{ scale: 0.95 }}
-                className="relative flex items-center justify-center"
-              >
-                {/* Glowing Purple Pulse Aura Behind Logo */}
-                <div className="absolute inset-0 rounded-full bg-purple-500/35 blur-md opacity-70 group-hover:opacity-100 transition-opacity animate-pulse" />
-
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/cinephim-logo.png"
-                  alt="CinePhim Logo"
-                  className="h-8 sm:h-9 w-auto object-contain relative z-10 drop-shadow-[0_0_16px_rgba(168,85,247,0.6)] transition-transform duration-300"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = "/logo.png";
-                  }}
-                />
-              </motion.div>
-
-              <span className="text-white text-xl sm:text-2xl font-black tracking-tight lowercase font-sans group-hover:text-purple-300 transition-colors duration-300 drop-shadow-[0_0_12px_rgba(168,85,247,0.4)]">
-                cinephim
-              </span>
-            </Link>
+            <AnimatedNavbarLogo />
           </div>
 
           {/* Center Block: Desktop Navigation Links (Absolute 100% Centered in Header) */}
@@ -664,15 +643,13 @@ export function Navbar() {
       />
 
       {/* ── Spotlight Search Modal — single unified search UI ── */}
-      <AnimatePresence>
-        {isSpotlightOpen && (
-          <SpotlightSearchModal
-            isOpen={isSpotlightOpen}
-            onClose={() => setIsSpotlightOpen(false)}
-            suggestions={[]}
-          />
-        )}
-      </AnimatePresence>
+      {isSpotlightOpen && (
+        <SpotlightSearchModal
+          isOpen={isSpotlightOpen}
+          onClose={() => setIsSpotlightOpen(false)}
+          suggestions={[]}
+        />
+      )}
     </>
   );
 }

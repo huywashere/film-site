@@ -1,8 +1,27 @@
-import { Controller, Get, Param, Query, UseGuards } from "@nestjs/common";
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Param,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import { MoviesService } from "./movies.service";
 import { VidsrcService } from "./vidsrc.service";
-import { StreamTokenService } from "./stream-token.service";
+
+function boundedInt(value: unknown, fallback: number, min: number, max: number) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) ? Math.min(Math.max(parsed, min), max) : fallback;
+}
+
+function safeIdentifier(value: string, maxLength = 180) {
+  const normalized = String(value || "").trim();
+  if (!normalized || normalized.length > maxLength || !/^[\p{L}\p{N}._~-]+$/u.test(normalized)) {
+    throw new BadRequestException("Mã nội dung không hợp lệ");
+  }
+  return normalized;
+}
 
 @Controller("movies")
 @UseGuards(ThrottlerGuard)
@@ -10,47 +29,39 @@ export class MoviesController {
   constructor(
     private readonly moviesService: MoviesService,
     private readonly vidsrcService: VidsrcService,
-    private readonly streamTokenService: StreamTokenService,
   ) {}
-
-  /** Layer 3 Security: Issue time-bound HMAC stream token (10 min TTL) */
-  @Get("stream-token/:slug")
-  @Throttle({ default: { limit: 20, ttl: 60000 } })
-  getStreamToken(@Param("slug") slug: string) {
-    return this.streamTokenService.generateStreamToken(slug);
-  }
 
   // ── Danh sách phim ──────────────────────────────────────────────
 
   @Get("latest")
   getLatest(@Query("page") page = 1) {
-    return this.moviesService.getLatest(+page);
+    return this.moviesService.getLatest(boundedInt(page, 1, 1, 10_000));
   }
 
   /** Public weekly ranking used by the home-page Top 10 row. */
   @Get("trending")
   getTrending(@Query("limit") limit = 20) {
-    return this.moviesService.getTrending(+limit);
+    return this.moviesService.getTrending(boundedInt(limit, 20, 1, 100));
   }
 
   @Get("series")
   getSeries(@Query("page") page = 1, @Query("limit") limit = 24) {
-    return this.moviesService.getSeries(+page, +limit);
+    return this.moviesService.getSeries(boundedInt(page, 1, 1, 10_000), boundedInt(limit, 24, 1, 100));
   }
 
   @Get("single")
   getSingle(@Query("page") page = 1, @Query("limit") limit = 24) {
-    return this.moviesService.getSingle(+page, +limit);
+    return this.moviesService.getSingle(boundedInt(page, 1, 1, 10_000), boundedInt(limit, 24, 1, 100));
   }
 
   @Get("anime")
   getAnime(@Query("page") page = 1, @Query("limit") limit = 24) {
-    return this.moviesService.getAnime(+page, +limit);
+    return this.moviesService.getAnime(boundedInt(page, 1, 1, 10_000), boundedInt(limit, 24, 1, 100));
   }
 
   @Get("tvshows")
   getTvShows(@Query("page") page = 1, @Query("limit") limit = 24) {
-    return this.moviesService.getTvShows(+page, +limit);
+    return this.moviesService.getTvShows(boundedInt(page, 1, 1, 10_000), boundedInt(limit, 24, 1, 100));
   }
 
   @Get("filtered")
@@ -70,11 +81,11 @@ export class MoviesController {
       status,
       category,
       country,
-      year: year ? +year : undefined,
-      page: +page,
-      limit: +limit,
-      sort_field: sortField,
-      sort_type: sortType,
+      year: year ? boundedInt(year, new Date().getFullYear(), 1888, 2100) : undefined,
+      page: boundedInt(page, 1, 1, 10_000),
+      limit: boundedInt(limit, 24, 1, 100),
+      sort_field: ["modified.time", "year", "_id"].includes(sortField || "") ? sortField : undefined,
+      sort_type: sortType === "asc" ? "asc" : "desc",
     });
   }
 
@@ -82,17 +93,17 @@ export class MoviesController {
 
   @Get("detail/:slug")
   getDetail(@Param("slug") slug: string) {
-    return this.moviesService.getDetail(slug);
+    return this.moviesService.getDetail(safeIdentifier(slug));
   }
 
   @Get("detail-v1/:slug")
   getDetailV1(@Param("slug") slug: string) {
-    return this.moviesService.getDetailV1(slug);
+    return this.moviesService.getDetailV1(safeIdentifier(slug));
   }
 
   @Get("by-id/:id")
   getById(@Param("id") id: string) {
-    return this.moviesService.getById(id);
+    return this.moviesService.getById(safeIdentifier(id));
   }
 
   @Get("by-tmdb")
@@ -102,15 +113,15 @@ export class MoviesController {
     @Query("season") season?: number,
   ) {
     return this.moviesService.getByTmdb(
-      tmdbId,
-      type,
-      season ? +season : undefined,
+      safeIdentifier(tmdbId, 20),
+      type === "tv" ? "tv" : "movie",
+      season ? boundedInt(season, 1, 1, 100) : undefined,
     );
   }
 
   @Get("by-imdb")
   getByImdb(@Query("imdb_id") imdbId: string) {
-    return this.moviesService.getByImdb(imdbId);
+    return this.moviesService.getByImdb(safeIdentifier(imdbId, 20));
   }
 
   // ── Thông tin bổ sung ───────────────────────────────────────────
@@ -120,7 +131,7 @@ export class MoviesController {
     @Query("tmdb_type") tmdbType: "tv" | "movie",
     @Query("tmdb_id") tmdbId: string,
   ) {
-    return this.moviesService.getImages(tmdbType, tmdbId);
+    return this.moviesService.getImages(tmdbType === "tv" ? "tv" : "movie", safeIdentifier(tmdbId, 20));
   }
 
   @Get("cast")
@@ -128,7 +139,7 @@ export class MoviesController {
     @Query("tmdb_type") tmdbType: "tv" | "movie",
     @Query("tmdb_id") tmdbId: string,
   ) {
-    return this.moviesService.getCast(tmdbType, tmdbId);
+    return this.moviesService.getCast(tmdbType === "tv" ? "tv" : "movie", safeIdentifier(tmdbId, 20));
   }
 
   @Get("keywords")
@@ -136,7 +147,7 @@ export class MoviesController {
     @Query("tmdb_type") tmdbType: "tv" | "movie",
     @Query("tmdb_id") tmdbId: string,
   ) {
-    return this.moviesService.getKeywords(tmdbType, tmdbId);
+    return this.moviesService.getKeywords(tmdbType === "tv" ? "tv" : "movie", safeIdentifier(tmdbId, 20));
   }
 
   // ── Tìm kiếm & Lọc ──────────────────────────────────────────────
@@ -149,12 +160,16 @@ export class MoviesController {
     @Query("page") page = 1,
     @Query("limit") limit = 24,
   ) {
-    return this.moviesService.search(keyword || "", +page, +limit);
+    return this.moviesService.search(
+      String(keyword || "").trim().slice(0, 120),
+      boundedInt(page, 1, 1, 10_000),
+      boundedInt(limit, 24, 1, 100),
+    );
   }
 
   @Get("vidsrc/detail/:slug")
   getVidsrcDetail(@Param("slug") slug: string) {
-    return this.vidsrcService.getMovie(slug);
+    return this.vidsrcService.getMovie(safeIdentifier(slug));
   }
 
   @Get("vidsrc/search")
@@ -163,7 +178,10 @@ export class MoviesController {
     @Query("keyword") keyword: string,
     @Query("page") page = 1,
   ) {
-    return this.vidsrcService.search(keyword || "", +page);
+    return this.vidsrcService.search(
+      String(keyword || "").trim().slice(0, 120),
+      boundedInt(page, 1, 1, 10_000),
+    );
   }
 
   // ── Thể loại ────────────────────────────────────────────────────
@@ -179,7 +197,7 @@ export class MoviesController {
     @Query("page") page = 1,
     @Query("limit") limit = 24,
   ) {
-    return this.moviesService.getByGenre(slug, +page, +limit);
+    return this.moviesService.getByGenre(safeIdentifier(slug), boundedInt(page, 1, 1, 10_000), boundedInt(limit, 24, 1, 100));
   }
 
   // ── Quốc gia ────────────────────────────────────────────────────
@@ -195,7 +213,7 @@ export class MoviesController {
     @Query("page") page = 1,
     @Query("limit") limit = 24,
   ) {
-    return this.moviesService.getByCountry(slug, +page, +limit);
+    return this.moviesService.getByCountry(safeIdentifier(slug), boundedInt(page, 1, 1, 10_000), boundedInt(limit, 24, 1, 100));
   }
 
   // ── Năm phát hành ───────────────────────────────────────────────
@@ -211,13 +229,13 @@ export class MoviesController {
     @Query("page") page = 1,
     @Query("limit") limit = 24,
   ) {
-    return this.moviesService.getByYear(+year, +page, +limit);
+    return this.moviesService.getByYear(boundedInt(year, new Date().getFullYear(), 1888, 2100), boundedInt(page, 1, 1, 10_000), boundedInt(limit, 24, 1, 100));
   }
 
   // ── Dynamic slug route (must be last) ───────────────────────────
 
   @Get(":slug")
   getMovieBySlug(@Param("slug") slug: string) {
-    return this.moviesService.getDetail(slug);
+    return this.moviesService.getDetail(safeIdentifier(slug));
   }
 }

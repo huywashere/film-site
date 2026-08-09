@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
+import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import {
   getAuth,
   GoogleAuthProvider,
@@ -17,34 +17,28 @@ import {
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
+  type Auth,
 } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey:
-    process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
-    "AIzaSyBgJ17X1FHA2vcu7Uq88Qcnuo3pFCi3Ixk",
-  authDomain:
-    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
-    "film-site-eb0c4.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "film-site-eb0c4",
-  storageBucket:
-    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
-    "film-site-eb0c4.firebasestorage.app",
-  messagingSenderId:
-    process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "872645160784",
-  appId:
-    process.env.NEXT_PUBLIC_FIREBASE_APP_ID ||
-    "1:872645160784:web:402aa0eadfa47ff3884655",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
 };
 
 const isBrowser = typeof window !== "undefined";
+export const isFirebaseConfigured =
+  Object.values(firebaseConfig).every(Boolean);
 
-let app: any = null;
-let firebaseAuth: any = null;
-let googleProvider: any = null;
-let facebookProvider: any = null;
+let app: FirebaseApp | null = null;
+let firebaseAuth: Auth | null = null;
+let googleProvider: GoogleAuthProvider | null = null;
+let facebookProvider: FacebookAuthProvider | null = null;
 
-if (isBrowser) {
+if (isBrowser && isFirebaseConfigured) {
   try {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     firebaseAuth = getAuth(app);
@@ -63,6 +57,31 @@ if (isBrowser) {
   } catch (err) {
     console.warn("Firebase Auth init warning:", err);
   }
+} else if (isBrowser && process.env.NODE_ENV === "development") {
+  console.warn(
+    "Firebase Auth is disabled because its environment variables are incomplete.",
+  );
+}
+
+export function getFirebaseAuth(): Auth {
+  if (!firebaseAuth) {
+    throw new Error("Firebase Auth is not configured.");
+  }
+  return firebaseAuth;
+}
+
+export function getGoogleProvider(): GoogleAuthProvider {
+  if (!googleProvider) {
+    throw new Error("Google authentication is not configured.");
+  }
+  return googleProvider;
+}
+
+export function getFacebookProvider(): FacebookAuthProvider {
+  if (!facebookProvider) {
+    throw new Error("Facebook authentication is not configured.");
+  }
+  return facebookProvider;
 }
 
 export {

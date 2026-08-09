@@ -87,8 +87,7 @@ export async function GET(request: NextRequest) {
   }
 
   let imageUrl = "";
-  const TMDB_API_KEY =
-    process.env.TMDB_API_KEY || "f85dbd29011db19e75f5d29028fd096d";
+  const TMDB_API_KEY = process.env.TMDB_API_KEY?.trim();
 
   // 2. Query TMDB API (Global Search - No language restriction)
   try {

@@ -8,6 +8,7 @@ import {
   HttpCode,
   Res,
   Headers,
+  Header,
   Ip,
   Param,
   Query,
@@ -21,6 +22,8 @@ import { FirebaseAuthGuard } from "./guards/firebase-auth.guard";
 import { TurnstileService } from "./turnstile.service";
 import { RegisterDto, LoginDto } from "./dto/auth.dto";
 import { Response } from "express";
+import { GoogleOAuthGuard } from "./guards/google-oauth.guard";
+import { LockAccountDto } from "./dto/auth.dto";
 
 @Controller("auth")
 @UseGuards(ThrottlerGuard)
@@ -72,13 +75,16 @@ export class AuthController {
   async register(
     @Body() dto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
-    @Headers("user-agent") userAgent: string,
     @Ip() ip: string,
   ) {
     await this.turnstile.verify(dto.turnstileToken, ip, "register");
-    const tokens = await this.authService.register(dto, userAgent, ip);
-    this.setCookies(res, tokens.accessToken, tokens.refreshToken);
-    return { success: true, message: "Đăng ký thành công" };
+    const result = await this.authService.register(dto);
+    this.clearCookies(res);
+    return {
+      success: true,
+      ...result,
+      message: "Đăng ký thành công. Vui lòng kiểm tra email để xác minh tài khoản.",
+    };
   }
 
   @Post("login")
@@ -122,11 +128,11 @@ export class AuthController {
   }
 
   @Get("google")
-  @UseGuards(AuthGuard("google"))
+  @UseGuards(GoogleOAuthGuard)
   async googleAuth(@Request() req) {}
 
   @Get("google/callback")
-  @UseGuards(AuthGuard("google"))
+  @UseGuards(GoogleOAuthGuard)
   async googleAuthRedirect(
     @Request() req,
     @Res() res: Response,
@@ -222,6 +228,7 @@ export class AuthController {
 
   @Post("2fa/verify")
   @UseGuards(AuthGuard("jwt"))
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   verify2FA(
     @Request() req,
     @Body() dto: import("./dto/auth.dto").TwoFactorVerifyDto,
@@ -231,6 +238,7 @@ export class AuthController {
 
   @Post("2fa/disable")
   @UseGuards(AuthGuard("jwt"))
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   disable2FA(
     @Request() req,
     @Body() dto: import("./dto/auth.dto").TwoFactorVerifyDto,
@@ -240,6 +248,7 @@ export class AuthController {
 
   @Post("2fa/login-verify")
   @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async loginVerify2FA(
     @Body() dto: import("./dto/auth.dto").TwoFactorLoginVerifyDto,
     @Res({ passthrough: true }) res: Response,
@@ -253,9 +262,20 @@ export class AuthController {
 
   @Get("lock-account")
   @HttpCode(200)
-  async lockAccount(@Query("token") token: string) {
+  @Header("Content-Type", "text/html; charset=utf-8")
+  @Header(
+    "Content-Security-Policy",
+    "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+  )
+  lockAccountConfirmation(@Query("token") token: string) {
     if (!token) throw new BadRequestException("Mã token không hợp lệ.");
-    const result = await this.authService.lockAccount(token);
+    const escapedToken = token.replace(/[&<>"']/g, (character) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[character]!);
     return `
       <html>
         <head>
@@ -270,12 +290,22 @@ export class AuthController {
         </head>
         <body>
           <div class="card">
-            <h1>🔒 Đã Khóa Tài Khoản</h1>
-            <p>${result.message}</p>
-            <p>Vui lòng liên hệ với bộ phận hỗ trợ khách hàng để được xác minh danh tính và mở khóa tài khoản.</p>
+            <h1>Xác nhận khóa tài khoản</h1>
+            <p>Chỉ tiếp tục nếu bạn không nhận ra lần đăng nhập vừa được thông báo.</p>
+            <form method="post" action="/api/v1/auth/lock-account">
+              <input type="hidden" name="token" value="${escapedToken}">
+              <button type="submit">Khóa tài khoản và thu hồi mọi phiên</button>
+            </form>
           </div>
         </body>
       </html>
     `;
+  }
+
+  @Post("lock-account")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  async lockAccount(@Body() dto: LockAccountDto) {
+    return this.authService.lockAccount(dto.token);
   }
 }

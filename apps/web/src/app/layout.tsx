@@ -1,6 +1,7 @@
 import "./globals.css";
 import "./light-theme.css";
 import type { Metadata, Viewport } from "next";
+import { Be_Vietnam_Pro } from "next/font/google";
 import { ConditionalNavbar } from "@/components/layout/ConditionalNavbar";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -13,9 +14,9 @@ import { ScrollProvider } from "@/providers/ScrollProvider";
 import { OfflineDetector } from "@/components/layout/OfflineDetector";
 import { ClientTelemetry } from "@/components/layout/ClientTelemetry";
 import { AuthSessionBridge } from "@/components/auth/AuthSessionBridge";
-import { AuthModal } from "@/components/auth/AuthModal";
+import { LazyAuthModalHost } from "@/components/auth/LazyAuthModalHost";
 import { AntiDevTools } from "@/components/security/AntiDevTools";
-import { LogoSplashIntro } from "@/components/layout/LogoSplashIntro";
+import { safeJsonLd } from "@/lib/safe-json-ld";
 
 export const viewport: Viewport = {
   themeColor: "#141414",
@@ -61,6 +62,14 @@ export const metadata: Metadata = {
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { ScrollToTopButton } from "@/components/layout/ScrollToTop";
 
+const beVietnamPro = Be_Vietnam_Pro({
+  subsets: ["vietnamese", "latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  display: "swap",
+  variable: "--font-be-vietnam",
+  preload: true,
+});
+
 export default function RootLayout({
   children,
 }: {
@@ -86,29 +95,17 @@ export default function RootLayout({
         <link rel="icon" href="/cinephim-logo.png" type="image/png" />
         <link rel="shortcut icon" href="/cinephim-logo.png" type="image/png" />
         <link rel="apple-touch-icon" href="/cinephim-logo.png" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
         <link rel="preconnect" href="https://phimimg.com" />
         <link rel="dns-prefetch" href="https://phimimg.com" />
         <link rel="preconnect" href="https://image.tmdb.org" />
         <link rel="dns-prefetch" href="https://image.tmdb.org" />
-        {/* Be Vietnam Pro — font chính, hỗ trợ tiếng Việt hoàn hảo */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500&family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@400;500;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteSchema) }}
         />
       </head>
-      <body suppressHydrationWarning>
-        <LogoSplashIntro />
+      <body className={beVietnamPro.variable} suppressHydrationWarning>
         <ThemeWatcher />
         <ThemeColorSync />
         <RegisterSW />
@@ -117,7 +114,7 @@ export default function RootLayout({
         <QueryProvider>
           <ToastProvider>
             <AuthSessionBridge />
-            <AuthModal />
+            <LazyAuthModalHost />
             <OfflineDetector />
             <ScrollProvider>
               <div data-site-chrome>

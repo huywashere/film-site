@@ -11,6 +11,7 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { WatchlistService } from "./watchlist.service";
+import { AddWatchlistDto } from "./watchlist.dto";
 
 @Controller("watchlist")
 export class WatchlistController {
@@ -19,12 +20,13 @@ export class WatchlistController {
   @Get()
   @UseGuards(AuthGuard("jwt"))
   getWatchlist(@Request() req, @Query("page") page = 1) {
-    return this.watchlistService.getWatchlist(req.user.id, +page);
+    const safePage = Math.min(Math.max(Number(page) || 1, 1), 10_000);
+    return this.watchlistService.getWatchlist(req.user.id, safePage);
   }
 
   @Post()
   @UseGuards(AuthGuard("jwt"))
-  add(@Request() req, @Body() dto: { movieId: string; movieData?: any }) {
+  add(@Request() req, @Body() dto: AddWatchlistDto) {
     return this.watchlistService.add(req.user.id, dto.movieId, dto.movieData);
   }
 

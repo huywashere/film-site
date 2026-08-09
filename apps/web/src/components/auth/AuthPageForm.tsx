@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CinematicAuthBackground } from "@/components/auth/CinematicAuthBackground";
@@ -20,16 +21,17 @@ import {
   Loader2,
   BarChart2,
   Clock,
+  Clapperboard,
 } from "lucide-react";
 import { useAuthStore, type User as AuthUser } from "@/store/authStore";
 import { useToast } from "@/providers/ToastProvider";
 import { cn } from "@/lib/utils";
-import { firebaseAuth, sendPasswordResetEmail } from "@/lib/firebase";
+import { getFirebaseAuth, sendPasswordResetEmail } from "@/lib/firebase";
 import { authApi } from "@/lib/api";
 import { establishFirebaseSession } from "@/lib/auth-session";
 import type { User as FirebaseUser } from "firebase/auth";
 import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
-import { tmdbApi, tmdbBackdrop } from "@/lib/tmdb";
+import { tmdbApi, tmdbBackdrop, tmdbPoster, type TmdbMovie } from "@/lib/tmdb";
 
 function getGoogleAuthErrorMessage(error: unknown) {
   const code =
@@ -68,6 +70,42 @@ const LEFT_FEATURES = [
   { Icon: ShieldCheck, text: "Quản lý phiên đăng nhập" },
 ];
 
+type AuthFeaturedMovie = {
+  title: string;
+  studio: string;
+  backdropUrl: string;
+  objectPosition: string;
+};
+
+const AUTH_FALLBACK_MOVIES: AuthFeaturedMovie[] = [
+  {
+    title: "Avengers: Infinity War",
+    studio: "Marvel Studios",
+    backdropUrl: "/images/wp3533664-avengers-infinity-war-4k-wallpapers.jpg",
+    objectPosition: "52% center",
+  },
+  {
+    title: "Avengers",
+    studio: "Marvel Studios",
+    backdropUrl: "/images/wp4300709-avengers-4k-wallpapers.jpg",
+    objectPosition: "50% center",
+  },
+  {
+    title: "Zack Snyder's Justice League",
+    studio: "DC",
+    backdropUrl:
+      "/images/zack-snyders-justice-league-dc-superheroes-dc-comics-2021-3840x2160-4980.jpg",
+    objectPosition: "52% center",
+  },
+  {
+    title: "The Odyssey",
+    studio: "Universal Pictures",
+    backdropUrl:
+      "/images/MV5BN2MyYjk2MWMtODMyZS00MDUyLW-8113-3732-1766460989.webp",
+    objectPosition: "50% center",
+  },
+];
+
 export function AuthPageForm({
   initialMode = "login",
 }: {
@@ -101,44 +139,67 @@ export function AuthPageForm({
   const [otp, setOtp] = useState("");
   const [verifying2FA, setVerifying2FA] = useState(false);
 
-  // Dynamic random 4K movie backdrop from TMDB
-  const [randomMovie, setRandomMovie] = useState<{
-    title: string;
-    backdropUrl: string;
-  }>({
-    title: "Deadpool & Wolverine",
-    backdropUrl:
-      "https://image.tmdb.org/t/p/original/8Y4PKa2vRvmVnsacuYAsStjOfSu.jpg",
-  });
+  // TMDB supplies a fresh image per page load. Local artwork remains available
+  // when TMDB or its image CDN cannot be reached.
+  const [randomMovie, setRandomMovie] = useState<AuthFeaturedMovie>(
+    AUTH_FALLBACK_MOVIES[0],
+  );
 
   useEffect(() => {
+    let cancelled = false;
+    const fallback =
+      AUTH_FALLBACK_MOVIES[
+        Math.floor(Math.random() * AUTH_FALLBACK_MOVIES.length)
+      ];
+    setRandomMovie(fallback);
+
     tmdbApi
       .getTrending("movie", "week")
-      .then((res) => {
-        if (res?.results && res.results.length > 0) {
-          const valid = res.results.filter(
-            (m: any) => m.backdrop_path && (m.title || m.name),
-          );
-          if (valid.length > 0) {
-            const picked = valid[Math.floor(Math.random() * valid.length)];
-            const bgUrl = tmdbBackdrop(picked.backdrop_path, "original");
-            if (bgUrl) {
-              setRandomMovie({
-                title: picked.title || picked.name || "CinePhim 4K",
-                backdropUrl: bgUrl,
-              });
-            }
-          }
-        }
+      .then((response) => {
+        if (cancelled) return;
+        const candidates = (response?.results || []).filter(
+          (movie: TmdbMovie) =>
+            Boolean(movie?.poster_path || movie?.backdrop_path) &&
+            Boolean(movie?.title || movie?.original_title || movie?.name),
+        );
+        if (candidates.length === 0) return;
+
+        const movie = candidates[
+          Math.floor(Math.random() * candidates.length)
+        ] as TmdbMovie;
+        const posterUrl = tmdbPoster(movie.poster_path, "w780");
+        const backdropUrl = tmdbBackdrop(movie.backdrop_path, "w1280");
+        const imageUrl = posterUrl || backdropUrl;
+        if (!imageUrl) return;
+
+        setRandomMovie({
+          title:
+            movie.title ||
+            movie.original_title ||
+            movie.name ||
+            "TMDB Trending",
+          studio: "TMDB Trending",
+          backdropUrl: imageUrl,
+          objectPosition: posterUrl ? "center top" : "center",
+        });
       })
-      .catch(() => {});
+      .catch(() => {
+        // The already-selected local fallback remains visible.
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Auto-redirect if user is already logged in
   const currentUser = useAuthStore((state) => state.user);
-  
+
   useEffect(() => {
-    useAuthStore.getState().fetchMe().catch(() => {});
+    useAuthStore
+      .getState()
+      .fetchMe()
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -173,7 +234,7 @@ export function AuthPageForm({
       const targetEmail = email.includes("@")
         ? email.trim()
         : `${email.trim()}@cineverse.app`;
-      await sendPasswordResetEmail(firebaseAuth, targetEmail);
+      await sendPasswordResetEmail(getFirebaseAuth(), targetEmail);
       toast(
         "Đã gửi email đặt lại mật khẩu! Vui lòng kiểm tra hộp thư của bạn.",
         "success",
@@ -198,8 +259,8 @@ export function AuthPageForm({
         toast("Mật khẩu xác nhận không trùng khớp", "error");
         return;
       }
-      if (password.length < 6) {
-        toast("Mật khẩu phải có ít nhất 6 ký tự", "error");
+      if (password.length < 8) {
+        toast("Mật khẩu phải có ít nhất 8 ký tự", "error");
         return;
       }
       try {
@@ -213,9 +274,12 @@ export function AuthPageForm({
           password,
           turnstileToken: turnstileToken || undefined,
         });
-        if (res?.user) {
-          toast("Tạo tài khoản thành công!", "success");
-          router.replace("/");
+        if (res?.requiresEmailVerification) {
+          toast(
+            "Tạo tài khoản thành công. Hãy kiểm tra email để xác minh trước khi đăng nhập.",
+            "success",
+          );
+          router.replace("/login?registered=1");
         }
       } catch (err: any) {
         const msg = err?.response?.data?.message;
@@ -226,7 +290,11 @@ export function AuthPageForm({
       }
     } else {
       try {
-        const result = await login(email, password, turnstileToken || undefined);
+        const result = await login(
+          email,
+          password,
+          turnstileToken || undefined,
+        );
         if (result && result.require2FA) {
           setRequire2FA(true);
           setTempToken(result.tempToken || "");
@@ -272,20 +340,7 @@ export function AuthPageForm({
     async (firebaseUser: FirebaseUser) => {
       const name =
         firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User";
-      let loggedUser: AuthUser;
-      try {
-        loggedUser = await establishFirebaseSession(firebaseUser);
-      } catch (err) {
-        console.warn("Backend exchange failed, using direct Firebase user session:", err);
-        loggedUser = {
-          id: firebaseUser.uid,
-          email: firebaseUser.email || `${firebaseUser.uid}@google.com`,
-          username: firebaseUser.email?.split("@")[0] || firebaseUser.uid,
-          displayName: name,
-          avatarUrl: firebaseUser.photoURL || undefined,
-          role: "USER",
-        };
-      }
+      const loggedUser: AuthUser = await establishFirebaseSession(firebaseUser);
       useAuthStore.getState().setUser(loggedUser);
       toast(`Chào mừng, ${name}!`, "success");
       router.replace("/");
@@ -297,15 +352,9 @@ export function AuthPageForm({
     let mounted = true;
 
     void import("@/lib/firebase")
-      .then(({ getRedirectResult, firebaseAuth }) => {
-        if (
-          !firebaseAuth ||
-          typeof firebaseAuth !== "object" ||
-          !("app" in firebaseAuth || "config" in firebaseAuth)
-        ) {
-          return null;
-        }
-        return getRedirectResult(firebaseAuth);
+      .then(({ getRedirectResult, isFirebaseConfigured, getFirebaseAuth }) => {
+        if (!isFirebaseConfigured) return null;
+        return getRedirectResult(getFirebaseAuth());
       })
       .then((result) => {
         if (mounted && result?.user) void completeFirebaseLogin(result.user);
@@ -322,9 +371,12 @@ export function AuthPageForm({
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     try {
-      const { firebaseAuth, googleProvider, signInWithPopup } =
+      const { getFirebaseAuth, getGoogleProvider, signInWithPopup } =
         await import("@/lib/firebase");
-      const result = await signInWithPopup(firebaseAuth, googleProvider);
+      const result = await signInWithPopup(
+        getFirebaseAuth(),
+        getGoogleProvider(),
+      );
       if (!result.user) {
         throw new Error("Google không trả về thông tin tài khoản.");
       }
@@ -340,9 +392,12 @@ export function AuthPageForm({
   const handleFacebookLogin = async () => {
     setFacebookLoading(true);
     try {
-      const { firebaseAuth, facebookProvider, signInWithPopup } =
+      const { getFirebaseAuth, getFacebookProvider, signInWithPopup } =
         await import("@/lib/firebase");
-      const res = await signInWithPopup(firebaseAuth, facebookProvider);
+      const res = await signInWithPopup(
+        getFirebaseAuth(),
+        getFacebookProvider(),
+      );
       if (res?.user) {
         await completeFirebaseLogin(res.user);
       } else {
@@ -393,21 +448,34 @@ export function AuthPageForm({
           {/* Glassmorphic Auth Card */}
           <div className="relative bg-[#141414]/90 border border-white/20 rounded-3xl overflow-hidden backdrop-blur-3xl shadow-[0_32px_100px_rgba(0,0,0,0.95)]">
             <div className="grid md:grid-cols-[1fr_1.25fr]">
-
               {/* ── LEFT panel ─────────────────────────────────── */}
               <div className="hidden md:flex flex-col justify-between p-10 md:p-12 border-r border-white/[0.12] relative overflow-hidden h-auto md:min-h-[720px]">
-                {/* Random 4K TMDB Movie Backdrop */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={randomMovie.backdropUrl}
-                  alt={randomMovie.title}
-                  className="absolute inset-0 w-full h-full object-cover object-center brightness-[0.72] scale-105 transition-transform duration-1000"
-                  loading="eager"
-                  onError={(e) => {
-                    e.currentTarget.src =
-                      "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1600&auto=format&fit=crop";
-                  }}
-                />
+                {/* TMDB artwork with a local fallback for reliable loading. */}
+                <AnimatePresence initial={false}>
+                  <motion.div
+                    key={randomMovie.backdropUrl}
+                    className="absolute inset-0 scale-[1.03]"
+                    initial={{ opacity: 0, scale: 1.055 }}
+                    animate={{ opacity: 1, scale: 1.03 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.7, ease: "easeOut" }}
+                  >
+                    <Image
+                      src={randomMovie.backdropUrl}
+                      alt={`Ảnh phim ${randomMovie.title}`}
+                      fill
+                      priority
+                      sizes="(min-width: 768px) 45vw, 0px"
+                      className="object-cover brightness-[0.68]"
+                      style={{ objectPosition: randomMovie.objectPosition }}
+                      onError={() => {
+                        if (randomMovie.backdropUrl.startsWith("/api/")) {
+                          setRandomMovie(AUTH_FALLBACK_MOVIES[0]);
+                        }
+                      }}
+                    />
+                  </motion.div>
+                </AnimatePresence>
                 {/* Gradient overlay: dark at bottom for text, subtle at top */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/70 to-[#141414]/30" />
                 {/* Right-edge fade to blend into form panel */}
@@ -420,20 +488,34 @@ export function AuthPageForm({
                   </p>
                   <div>
                     <h2 className="text-3xl lg:text-4xl font-black text-white leading-tight tracking-tight drop-shadow-2xl">
-                      Tiếp tục trải nghiệm<br />xem phim của bạn.
+                      Tiếp tục trải nghiệm
+                      <br />
+                      xem phim của bạn.
                     </h2>
                     <p className="mt-3.5 text-sm text-neutral-300/90 leading-relaxed max-w-[350px] font-medium">
-                      Một tài khoản duy nhất cho thư viện, tiến độ xem và tuỳ chọn cá nhân trên mọi thiết bị.
+                      Một tài khoản duy nhất cho thư viện, tiến độ xem và tuỳ
+                      chọn cá nhân trên mọi thiết bị.
                     </p>
                   </div>
                 </div>
 
-                {/* Features list & TMDB Movie Title Badge */}
+                {/* Features list & featured movie title */}
                 <div className="relative z-10 space-y-4 mt-8">
-                  {/* Glass Tag showing current TMDB Backdrop Movie */}
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 border border-white/20 backdrop-blur-md text-[11px] font-semibold text-white/90 shadow-lg">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="truncate max-w-[260px]">🎬 {randomMovie.title}</span>
+                  <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-white/20 bg-black/60 px-3 py-1.5 text-[11px] font-semibold text-white/90 shadow-lg backdrop-blur-md">
+                    <Clapperboard
+                      size={12}
+                      className="shrink-0 text-emerald-400"
+                    />
+                    <span className="shrink-0 text-neutral-400">
+                      {randomMovie.studio}
+                    </span>
+                    <span
+                      className="h-3 w-px shrink-0 bg-white/20"
+                      aria-hidden="true"
+                    />
+                    <span className="max-w-[190px] truncate">
+                      {randomMovie.title}
+                    </span>
                   </div>
 
                   <div className="space-y-3 pt-2">
@@ -442,7 +524,9 @@ export function AuthPageForm({
                         <div className="w-7.5 h-7.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
                           <Icon size={14} />
                         </div>
-                        <span className="text-xs font-semibold text-neutral-200">{text}</span>
+                        <span className="text-xs font-semibold text-neutral-200">
+                          {text}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -456,7 +540,10 @@ export function AuthPageForm({
                   href="/"
                   className="inline-flex items-center gap-1.5 text-[11px] text-neutral-500 hover:text-white transition-colors mb-5 group"
                 >
-                  <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
+                  <ArrowLeft
+                    size={12}
+                    className="group-hover:-translate-x-0.5 transition-transform"
+                  />
                   <span>Trang chủ</span>
                 </Link>
 
@@ -492,7 +579,7 @@ export function AuthPageForm({
 
                 {/* Mode tabs (only when not forgot) */}
                 {!isForgotMode && (
-                  <div className="flex gap-1 mb-6 p-1 bg-[#0d0f14] rounded-xl border border-white/[0.06]">
+                  <div className="mb-6 flex gap-1 rounded-xl bg-[#0d0f14] p-1">
                     {(["login", "register"] as const).map((m) => (
                       <button
                         key={m}
@@ -505,7 +592,11 @@ export function AuthPageForm({
                             : "text-neutral-500 hover:text-neutral-300",
                         )}
                       >
-                        {m === "login" ? <LogIn size={13} /> : <UserPlus size={13} />}
+                        {m === "login" ? (
+                          <LogIn size={13} />
+                        ) : (
+                          <UserPlus size={13} />
+                        )}
                         {m === "login" ? "Đăng nhập" : "Tạo tài khoản"}
                       </button>
                     ))}
@@ -516,14 +607,23 @@ export function AuthPageForm({
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div
                     key={isForgotMode ? "forgot" : mode}
-                    initial={{ opacity: 0, x: isForgotMode ? 0 : mode === "login" ? -24 : 24 }}
+                    initial={{
+                      opacity: 0,
+                      x: isForgotMode ? 0 : mode === "login" ? -24 : 24,
+                    }}
                     animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: isForgotMode ? 0 : mode === "login" ? 24 : -24 }}
+                    exit={{
+                      opacity: 0,
+                      x: isForgotMode ? 0 : mode === "login" ? 24 : -24,
+                    }}
                     transition={{ duration: 0.2, ease: "easeInOut" }}
                   >
                     {isForgotMode ? (
                       /* Forgot password */
-                      <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
+                      <form
+                        onSubmit={handleForgotPasswordSubmit}
+                        className="space-y-4"
+                      >
                         <div>
                           <label className="block text-xs font-medium text-neutral-400 mb-1.5">
                             Địa chỉ Email đăng ký
@@ -546,9 +646,14 @@ export function AuthPageForm({
                           className="w-full py-3 rounded-xl bg-white text-[#0b0c10] text-xs font-bold transition-all hover:bg-neutral-200 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2"
                         >
                           {resetLoading ? (
-                            <><Loader2 size={14} className="animate-spin" /> Đang gửi...</>
+                            <>
+                              <Loader2 size={14} className="animate-spin" />{" "}
+                              Đang gửi...
+                            </>
                           ) : (
-                            <><KeyRound size={14} /> Gửi email khôi phục</>
+                            <>
+                              <KeyRound size={14} /> Gửi email khôi phục
+                            </>
                           )}
                         </button>
                         <div className="text-center">
@@ -565,8 +670,13 @@ export function AuthPageForm({
                       /* 2FA */
                       <form onSubmit={handleOTPSubmit} className="space-y-4">
                         <div className="p-4 rounded-xl bg-[#0d0f14] border border-white/[0.06] text-center">
-                          <ShieldCheck size={28} className="mx-auto text-emerald-400 mb-2" />
-                          <h3 className="text-sm font-bold text-white">Xác Thực 2 Lớp</h3>
+                          <ShieldCheck
+                            size={28}
+                            className="mx-auto text-emerald-400 mb-2"
+                          />
+                          <h3 className="text-sm font-bold text-white">
+                            Xác Thực 2 Lớp
+                          </h3>
                           <p className="text-xs text-neutral-500 mt-1">
                             Nhập mã 6 chữ số từ Google Authenticator.
                           </p>
@@ -575,7 +685,9 @@ export function AuthPageForm({
                           type="text"
                           maxLength={6}
                           value={otp}
-                          onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                          onChange={(e) =>
+                            setOtp(e.target.value.replace(/\D/g, ""))
+                          }
                           placeholder="123456"
                           className="w-full text-center text-2xl font-mono tracking-[0.5em] bg-[#1a1c23] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/35 transition-all"
                           required
@@ -586,7 +698,9 @@ export function AuthPageForm({
                           disabled={verifying2FA || otp.length !== 6}
                           className="w-full py-3 rounded-xl bg-white text-[#0b0c10] text-xs font-bold transition-all hover:bg-neutral-200 active:scale-[0.99] disabled:opacity-50"
                         >
-                          {verifying2FA ? "Đang xác thực..." : "Xác nhận đăng nhập"}
+                          {verifying2FA
+                            ? "Đang xác thực..."
+                            : "Xác nhận đăng nhập"}
                         </button>
                       </form>
                     ) : (
@@ -595,21 +709,27 @@ export function AuthPageForm({
                         {mode === "register" && (
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Họ và tên</label>
+                              <label className="block text-xs font-medium text-neutral-400 mb-1.5">
+                                Họ và tên
+                              </label>
                               <div className="relative">
                                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-600 pointer-events-none" />
                                 <input
                                   type="text"
                                   required
                                   value={displayName}
-                                  onChange={(e) => setDisplayName(e.target.value)}
+                                  onChange={(e) =>
+                                    setDisplayName(e.target.value)
+                                  }
                                   placeholder="Họ và tên"
                                   className={`${inputCls} pl-10`}
                                 />
                               </div>
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Tên tài khoản</label>
+                              <label className="block text-xs font-medium text-neutral-400 mb-1.5">
+                                Tên tài khoản
+                              </label>
                               <div className="relative">
                                 <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-600 pointer-events-none" />
                                 <input
@@ -627,7 +747,9 @@ export function AuthPageForm({
 
                         {/* Email */}
                         <div>
-                          <label className="block text-xs font-medium text-neutral-400 mb-1.5">Email</label>
+                          <label className="block text-xs font-medium text-neutral-400 mb-1.5">
+                            Email
+                          </label>
                           <input
                             type="email"
                             autoComplete="email"
@@ -643,7 +765,9 @@ export function AuthPageForm({
                         {mode === "login" ? (
                           <div>
                             <div className="flex items-center justify-between mb-1.5">
-                              <label className="text-xs font-medium text-neutral-400">Mật khẩu</label>
+                              <label className="text-xs font-medium text-neutral-400">
+                                Mật khẩu
+                              </label>
                               <button
                                 type="button"
                                 onClick={() => setIsForgotMode(true)}
@@ -667,14 +791,20 @@ export function AuthPageForm({
                                 onClick={() => setShowPassword(!showPassword)}
                                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-600 hover:text-neutral-300 transition-colors cursor-pointer"
                               >
-                                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                                {showPassword ? (
+                                  <EyeOff size={15} />
+                                ) : (
+                                  <Eye size={15} />
+                                )}
                               </button>
                             </div>
                           </div>
                         ) : (
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Mật khẩu</label>
+                              <label className="block text-xs font-medium text-neutral-400 mb-1.5">
+                                Mật khẩu
+                              </label>
                               <div className="relative">
                                 <input
                                   type={showPassword ? "text" : "password"}
@@ -690,28 +820,44 @@ export function AuthPageForm({
                                   onClick={() => setShowPassword(!showPassword)}
                                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-600 hover:text-neutral-300 transition-colors cursor-pointer"
                                 >
-                                  {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                                  {showPassword ? (
+                                    <EyeOff size={13} />
+                                  ) : (
+                                    <Eye size={13} />
+                                  )}
                                 </button>
                               </div>
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Xác nhận</label>
+                              <label className="block text-xs font-medium text-neutral-400 mb-1.5">
+                                Xác nhận
+                              </label>
                               <div className="relative">
                                 <input
-                                  type={showConfirmPassword ? "text" : "password"}
+                                  type={
+                                    showConfirmPassword ? "text" : "password"
+                                  }
                                   autoComplete="new-password"
                                   required
                                   value={confirmPassword}
-                                  onChange={(e) => setConfirmPassword(e.target.value)}
+                                  onChange={(e) =>
+                                    setConfirmPassword(e.target.value)
+                                  }
                                   placeholder="Nhắc lại mật khẩu"
                                   className={`${inputCls} pr-8`}
                                 />
                                 <button
                                   type="button"
-                                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                  onClick={() =>
+                                    setShowConfirmPassword(!showConfirmPassword)
+                                  }
                                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-600 hover:text-neutral-300 transition-colors cursor-pointer"
                                 >
-                                  {showConfirmPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                                  {showConfirmPassword ? (
+                                    <EyeOff size={13} />
+                                  ) : (
+                                    <Eye size={13} />
+                                  )}
                                 </button>
                               </div>
                             </div>
@@ -752,11 +898,16 @@ export function AuthPageForm({
                         {/* Submit */}
                         <button
                           type="submit"
-                          disabled={isLoading || (turnstileEnabled && !turnstileToken)}
+                          disabled={
+                            isLoading || (turnstileEnabled && !turnstileToken)
+                          }
                           className="w-full py-3 rounded-xl bg-white text-[#0b0c10] text-xs font-bold transition-all hover:bg-neutral-100 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer mt-2"
                         >
                           {isLoading ? (
-                            <><Loader2 size={14} className="animate-spin" /> Đang đăng nhập...</>
+                            <>
+                              <Loader2 size={14} className="animate-spin" />{" "}
+                              Đang đăng nhập...
+                            </>
                           ) : mode === "login" ? (
                             "Đăng nhập"
                           ) : (
@@ -787,10 +938,22 @@ export function AuthPageForm({
                         className="flex items-center justify-center gap-2 bg-[#1a1c23] hover:bg-[#1e2029] border border-white/[0.08] rounded-xl py-2.5 px-3 transition-all cursor-pointer text-xs font-medium text-neutral-300 disabled:opacity-60"
                       >
                         <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                          <path
+                            fill="#4285F4"
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                          />
+                          <path
+                            fill="#34A853"
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                          />
+                          <path
+                            fill="#FBBC05"
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                          />
+                          <path
+                            fill="#EA4335"
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                          />
                         </svg>
                         <span>{googleLoading ? "Đang mở..." : "Google"}</span>
                       </button>
@@ -801,10 +964,15 @@ export function AuthPageForm({
                         disabled={facebookLoading}
                         className="flex items-center justify-center gap-2 bg-[#1a1c23] hover:bg-[#1e2029] border border-white/[0.08] rounded-xl py-2.5 px-3 transition-all cursor-pointer text-xs font-medium text-neutral-300"
                       >
-                        <svg className="w-4 h-4 fill-[#1877F2] shrink-0" viewBox="0 0 24 24">
+                        <svg
+                          className="w-4 h-4 fill-[#1877F2] shrink-0"
+                          viewBox="0 0 24 24"
+                        >
                           <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                         </svg>
-                        <span>{facebookLoading ? "Đang mở..." : "Facebook"}</span>
+                        <span>
+                          {facebookLoading ? "Đang mở..." : "Facebook"}
+                        </span>
                       </button>
                     </div>
                   </>

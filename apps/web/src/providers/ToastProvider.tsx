@@ -7,7 +7,6 @@ import {
   useRef,
 } from "react";
 import { Check, XCircle, Info, AlertTriangle, X } from "lucide-react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 type ToastType = "success" | "error" | "info" | "warning";
 interface Toast {
@@ -26,7 +25,6 @@ export const useToast = () => useContext(ToastContext);
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const nextId = useRef(0);
-  const reduceMotion = useReducedMotion();
 
   const toast = useCallback((message: string, type: ToastType = "info") => {
     const id = ++nextId.current;
@@ -83,24 +81,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         aria-live="polite"
         aria-atomic="true"
       >
-        <AnimatePresence>
-          {toasts.map((t) => {
+        {toasts.map((t) => {
             const cfg = config[t.type] || config.info;
             const IconComponent = cfg.Icon;
 
             return (
-              <motion.div
+              <div
                 key={t.id}
-                layout
-                initial={reduceMotion ? false : { opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
-                transition={{
-                  duration: reduceMotion ? 0.01 : 0.2,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
                 role={t.type === "error" ? "alert" : "status"}
-                className="pointer-events-auto relative mb-2 overflow-hidden rounded-xl border border-white/[0.12] bg-[#12161d]/[0.98] px-3.5 py-3 shadow-[0_14px_32px_rgba(0,0,0,0.38)] [backdrop-filter:blur(18px)]"
+                className="pointer-events-auto relative mb-2 overflow-hidden rounded-xl border border-white/[0.12] bg-[#12161d]/[0.98] px-3.5 py-3 shadow-[0_14px_32px_rgba(0,0,0,0.38)] [backdrop-filter:blur(18px)] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-2 motion-safe:duration-200"
               >
                 <div
                   className={`absolute inset-y-0 left-0 w-0.5 ${cfg.accentLine}`}
@@ -136,19 +125,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                     <X size={14} strokeWidth={2} />
                   </button>
                 </div>
-                <motion.div
-                  className={`absolute bottom-0 left-0 h-px ${cfg.accentLine}`}
-                  initial={{ width: "100%" }}
-                  animate={{ width: "0%" }}
-                  transition={{
-                    duration: reduceMotion ? 0 : 3.5,
-                    ease: "linear",
-                  }}
-                />
-              </motion.div>
+              </div>
             );
           })}
-        </AnimatePresence>
       </div>
     </ToastContext.Provider>
   );

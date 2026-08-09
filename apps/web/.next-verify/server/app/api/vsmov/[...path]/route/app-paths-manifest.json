@@ -1,3 +1,0 @@
-{
-  "/api/vsmov/[...path]/route": "app/api/vsmov/[...path]/route.js"
-}

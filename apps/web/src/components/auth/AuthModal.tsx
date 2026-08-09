@@ -23,17 +23,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  firebaseAuth,
-  googleProvider,
-  facebookProvider,
+  getFirebaseAuth,
+  getGoogleProvider,
+  getFacebookProvider,
+  isFirebaseConfigured,
   signInWithPopup,
   getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendEmailVerification,
   sendPasswordResetEmail,
   updateProfile,
-  onAuthStateChanged,
 } from "@/lib/firebase";
+import { establishFirebaseSession } from "@/lib/auth-session";
 
 import { CinematicAuthBackground } from "@/components/auth/CinematicAuthBackground";
 import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
@@ -58,69 +60,38 @@ export function AuthModal() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const handleFirebaseUserSuccess = (fbUser: any, customUsername?: string) => {
-    const email = fbUser.email || `${fbUser.uid}@cineverse.app`;
-    const name =
-      customUsername ||
-      fbUser.displayName ||
-      fbUser.email?.split("@")[0] ||
-      "User";
-    const role = email.toLowerCase().includes("admin") ? "ADMIN" : "USER";
+  const handleFirebaseUserSuccess = async (fbUser: any) => {
+    const user = await establishFirebaseSession(fbUser);
+    setUser(user);
 
-    setUser({
-      id: fbUser.uid,
-      email,
-      username: name,
-      displayName: name,
-      avatarUrl:
-        fbUser.photoURL ||
-        `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2c3440&color=ffffff&size=100`,
-      role,
-    });
-
-    toast(`Đăng nhập thành công! Chào mừng ${name}.`, "success");
+    toast(
+      `Đăng nhập thành công! Chào mừng ${user.displayName || user.username}.`,
+      "success",
+    );
     closeModal();
     router.push("/");
   };
 
   useEffect(() => {
-    getRedirectResult(firebaseAuth)
-      .then((res) => {
+    if (!isFirebaseConfigured) return;
+
+    getRedirectResult(getFirebaseAuth())
+      .then(async (res) => {
         if (res?.user) {
-          handleFirebaseUserSuccess(res.user);
+          await handleFirebaseUserSuccess(res.user);
         }
       })
       .catch((e) => console.warn("Redirect result check:", e));
 
-    const unsubscribe = onAuthStateChanged(firebaseAuth, (currentUser) => {
-      if (currentUser) {
-        const email = currentUser.email || `${currentUser.uid}@cineverse.app`;
-        const name =
-          currentUser.displayName || currentUser.email?.split("@")[0] || "User";
-        const role = email.toLowerCase().includes("admin") ? "ADMIN" : "USER";
-        setUser({
-          id: currentUser.uid,
-          email,
-          username: name,
-          displayName: name,
-          avatarUrl:
-            currentUser.photoURL ||
-            `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2c3440&color=ffffff&size=100`,
-          role,
-        });
-        closeModal();
-      }
-    });
-
-    return () => unsubscribe();
+    return undefined;
   }, []);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
     setErrorMsg("");
     try {
-      const res = await signInWithPopup(firebaseAuth, googleProvider);
-      handleFirebaseUserSuccess(res.user);
+      const res = await signInWithPopup(getFirebaseAuth(), getGoogleProvider());
+      await handleFirebaseUserSuccess(res.user);
     } catch (err: any) {
       setErrorMsg(
         err.code === "auth/popup-blocked"
@@ -138,8 +109,11 @@ export function AuthModal() {
     setLoading(true);
     setErrorMsg("");
     try {
-      const res = await signInWithPopup(firebaseAuth, facebookProvider);
-      handleFirebaseUserSuccess(res.user);
+      const res = await signInWithPopup(
+        getFirebaseAuth(),
+        getFacebookProvider(),
+      );
+      await handleFirebaseUserSuccess(res.user);
     } catch (err: any) {
       setErrorMsg(
         err.code === "auth/popup-blocked"
@@ -167,7 +141,7 @@ export function AuthModal() {
       const targetEmail = emailOrUsername.includes("@")
         ? emailOrUsername.trim()
         : `${emailOrUsername.trim()}@cineverse.app`;
-      await sendPasswordResetEmail(firebaseAuth, targetEmail);
+      await sendPasswordResetEmail(getFirebaseAuth(), targetEmail);
       toast(
         "Đã gửi email đặt lại mật khẩu! Vui lòng kiểm tra hộp thư của bạn.",
         "success",
@@ -192,8 +166,8 @@ export function AuthModal() {
       return;
     }
 
-    if (password.length < 6) {
-      setErrorMsg("Mật khẩu phải có ít nhất 6 ký tự.");
+    if (password.length < 8) {
+      setErrorMsg("Mật khẩu phải có ít nhất 8 ký tự.");
       return;
     }
 
@@ -208,11 +182,11 @@ export function AuthModal() {
 
         try {
           const res = await signInWithEmailAndPassword(
-            firebaseAuth,
+            getFirebaseAuth(),
             loginEmail,
             password,
           );
-          handleFirebaseUserSuccess(res.user);
+          await handleFirebaseUserSuccess(res.user);
         } catch (fbErr: any) {
           const res = await login(emailOrUsername, password);
           if (res?.user) {
@@ -233,7 +207,7 @@ export function AuthModal() {
 
         try {
           const res = await createUserWithEmailAndPassword(
-            firebaseAuth,
+            getFirebaseAuth(),
             registerEmail,
             password,
           );
@@ -241,10 +215,13 @@ export function AuthModal() {
             await updateProfile(res.user, {
               displayName: (displayName || username).trim(),
             });
-            handleFirebaseUserSuccess(
-              res.user,
-              (displayName || username).trim(),
+            await sendEmailVerification(res.user);
+            toast(
+              "Tài khoản đã được tạo. Hãy kiểm tra email để xác minh trước khi đăng nhập.",
+              "success",
             );
+            closeModal();
+            setMode("login");
           }
         } catch (fbErr: any) {
           const res = await register({
@@ -253,10 +230,13 @@ export function AuthModal() {
             displayName: (displayName || username).trim(),
             password,
           });
-          if (res?.user) {
-            toast(`Tạo tài khoản thành công!`, "success");
+          if (res?.requiresEmailVerification) {
+            toast(
+              "Tạo tài khoản thành công. Hãy kiểm tra email để xác minh.",
+              "success",
+            );
             closeModal();
-            router.push("/");
+            setMode("login");
           } else {
             setErrorMsg("Không thể đăng ký. Email hoặc username đã tồn tại.");
           }

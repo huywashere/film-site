@@ -462,7 +462,7 @@ function SearchContent() {
           </div>
 
           {isLoading || !mounted ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 md:gap-6">
+            <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-4 md:gap-6">
               {Array.from({ length: 12 }).map((_, i) => (
                 <FilmCardSkeleton key={i} />
               ))}
@@ -519,7 +519,7 @@ export default function SearchPage() {
       fallback={
         <div className="container mx-auto px-4 md:px-8 max-w-7xl pt-24 pb-16 flex flex-col space-y-6">
           <div className="h-6 bg-white/5 rounded w-48 animate-pulse" />
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 md:gap-6">
+          <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-4 md:gap-6">
             {Array.from({ length: 12 }).map((_, i) => (
               <FilmCardSkeleton key={i} />
             ))}

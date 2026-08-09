@@ -60,6 +60,7 @@ services:
       # JWT
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      TOTP_ENCRYPTION_KEY: ${TOTP_ENCRYPTION_KEY}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
       # KKPhim API
@@ -69,6 +70,8 @@ services:
       TMDB_ACCESS_TOKEN: ${TMDB_ACCESS_TOKEN}
       # Cloudflare Turnstile
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
+      # Internal admin performance metrics
+      ADMIN_METRICS_TOKEN: ${ADMIN_METRICS_TOKEN}
       # Frontend URL (for CORS)
       FRONTEND_URL: ${FRONTEND_URL:-https://localhost}
     depends_on:
@@ -118,6 +121,9 @@ services:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
       KKPHIM_API_BASE: ${KKPHIM_API_BASE:-https://phimapi.com}
       OPHIM_API_BASE: ${OPHIM_API_BASE:-https://ophim1.com}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      HLS_PROXY_SECRET: ${HLS_PROXY_SECRET}
+      HLS_PROXY_ALLOWED_HOSTS: ${HLS_PROXY_ALLOWED_HOSTS}
       TMDB_API_KEY: ${TMDB_API_KEY}
       TMDB_ACCESS_TOKEN: ${TMDB_ACCESS_TOKEN}
       TMDB_CLOUDFLARE_WORKER_URL: ${TMDB_CLOUDFLARE_WORKER_URL}

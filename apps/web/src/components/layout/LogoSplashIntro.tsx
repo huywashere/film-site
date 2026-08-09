@@ -43,7 +43,7 @@ export function LogoSplashIntro() {
             className="flex flex-col items-center gap-3.5 relative z-10"
           >
             <div className="relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+              { }
               <motion.img
                 src="/cinephim-logo.png"
                 alt="CinePhim Logo"

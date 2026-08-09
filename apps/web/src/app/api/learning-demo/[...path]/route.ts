@@ -42,9 +42,9 @@ function buildDemoPayload(slug: string) {
 
 export async function GET(
   _request: Request,
-  { params }: { params: { path?: string[] } },
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
-  const segments = params?.path || [];
+  const { path: segments = [] } = await params;
   const maybeSlug = segments[1] || segments[0] || "demo";
 
   if (segments[0] === "movie") {

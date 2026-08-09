@@ -5,8 +5,11 @@ dist
 .env
 .env.local
 .env.*.local
+k8s/secret.yaml
+apps/web/.next-verify/
 *.log
 .turbo
+.terraform/
 .DS_Store
 prisma/migrations/dev.db
 *.tsbuildinfo

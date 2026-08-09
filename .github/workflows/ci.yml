@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "**" ]
+    branches: ["**"]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -16,32 +16,31 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
       - name: Run Gitleaks Secret Scanner
-        uses: zricethezav/gitleaks-action@v2
-        continue-on-error: true
+        uses: zricethezav/gitleaks-action@dcedce43c6f43de0b836d1fe38946645c9c638dc # v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
         with:
           version: 9
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Dependency Vulnerability Audit
-        run: pnpm audit --audit-level=high || true
+        run: pnpm audit --prod --audit-level=high
 
       - name: Generate Prisma Client
         run: cd apps/api && npx prisma generate
@@ -50,6 +49,7 @@ jobs:
         run: |
           pnpm --filter api exec tsc --noEmit
           pnpm --filter web exec tsc --noEmit
+          pnpm --filter @cineverse/admin-cms exec tsc --noEmit
 
       - name: Run lint
         run: |

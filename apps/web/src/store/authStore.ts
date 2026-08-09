@@ -28,6 +28,7 @@ export interface LoginResult {
   user?: User;
   require2FA?: boolean;
   tempToken?: string;
+  requiresEmailVerification?: boolean;
 }
 
 interface AuthState {
@@ -87,11 +88,18 @@ export const useAuthStore = create<AuthState>()(
       register: async ({ email, username, password, turnstileToken }) => {
         set({ isLoading: true });
         try {
-          await authApi.register({ email, username, password, turnstileToken });
+          const { data } = await authApi.register({
+            email,
+            username,
+            password,
+            turnstileToken,
+          });
           set({ isLoading: false });
-          const { data: user } = await authApi.getMe();
-          get().setUser(user);
-          return { success: true, user };
+          get().setUser(null);
+          return {
+            success: true,
+            requiresEmailVerification: Boolean(data?.requiresEmailVerification),
+          };
         } catch (err) {
           set({ isLoading: false });
           throw err;
@@ -101,7 +109,7 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         try {
           const { signOut, firebaseAuth } = await import("@/lib/firebase");
-          await signOut(firebaseAuth);
+          if (firebaseAuth) await signOut(firebaseAuth);
           await authApi.logout();
         } catch (e) {
           console.error("Logout error:", e);

@@ -91,8 +91,10 @@ const nextConfig = {
       { protocol: "https", hostname: "image.tmdb.org" },
     ],
     localPatterns: [
-      { pathname: "/api/image-proxy", search: "?*" },
-      { pathname: "/**", search: "?*" },
+      { pathname: "/api/image-proxy" },
+      // Curated first-party artwork (auth backgrounds, hero assets, logos).
+      { pathname: "/images/**" },
+      { pathname: "/**" },
     ],
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
@@ -102,32 +104,10 @@ const nextConfig = {
   },
   // Global XSS & Security Response Headers
   async headers() {
-    // FIX #2: Removed 'unsafe-eval' which allowed arbitrary JS execution.
-    // 'unsafe-inline' is still present for Next.js hydration compatibility.
-    // For a full nonce-based CSP, see apps/web/src/middleware.ts
-    const cspValue = [
-      `default-src 'self'`,
-      // In dev: 'unsafe-eval' is required by React for hot-reload & callstack reconstruction.
-      // In prod: removed for security (FIX #2).
-      `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ""} https://apis.google.com https://www.gstatic.com https://www.google.com https://*.firebaseapp.com https://challenges.cloudflare.com`,
-      `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
-      `img-src 'self' data: blob: https:`,
-      `font-src 'self' data: https://fonts.gstatic.com`,
-      `connect-src 'self' https: wss: ${apiConnectSources} https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com`,
-      `frame-src 'self' https: https://accounts.google.com https://*.firebaseapp.com https://www.google.com https://challenges.cloudflare.com`,
-      `object-src 'none'`,
-      `base-uri 'self'`,
-      `form-action 'self'`,
-    ].join("; ");
-
     return [
       {
         source: "/:path*",
         headers: [
-          {
-            key: "X-XSS-Protection",
-            value: "1; mode=block",
-          },
           {
             key: "X-Content-Type-Options",
             value: "nosniff",
@@ -144,10 +124,14 @@ const nextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
-          {
-            key: "Content-Security-Policy",
-            value: cspValue,
-          },
+          ...(isProd
+            ? [
+                {
+                  key: "Strict-Transport-Security",
+                  value: "max-age=31536000; includeSubDomains; preload",
+                },
+              ]
+            : []),
         ],
       },
       {

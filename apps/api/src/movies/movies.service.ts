@@ -32,23 +32,20 @@ export class MoviesService {
     url: string,
     ttlSeconds = 300,
   ): Promise<T> {
-    // 1. Check cache
-    const cached = await this.cache.getJson<T>(`movies:${key}`);
-    if (cached !== null) {
-      return cached;
-    }
-
-    // 2. Fetch from upstream
-    try {
-      const { data } = await this.http.get<T>(url);
-      // 3. Persist to cache
-      await this.cache.setJson(`movies:${key}`, data, ttlSeconds);
-      return data;
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      this.logger.error(`KKPhim API error for ${url}: ${msg}`);
-      throw err;
-    }
+    return this.cache.getOrSet<T>(
+      `movies:${key}`,
+      async () => {
+        try {
+          const { data } = await this.http.get<T>(url);
+          return data;
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          this.logger.error(`KKPhim API error for ${url}: ${msg}`);
+          throw err;
+        }
+      },
+      ttlSeconds,
+    );
   }
 
   // ── Danh sách phim ──────────────────────────────────────────────

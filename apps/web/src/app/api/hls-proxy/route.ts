@@ -5,9 +5,29 @@ import {
   isLikelyAdUrl,
   type HlsUriKind,
 } from "@/lib/hls-ad-filter";
+import {
+  createSignedHlsProxyUrl,
+  verifySignedHlsProxyUrl,
+} from "@/lib/hls-proxy-signature";
+import { checkHlsProxyRateLimit } from "@/lib/rate-limiter";
+import { clientIpFromRequest } from "@/lib/client-ip";
 
 const MAX_REDIRECTS = 3;
 const UPSTREAM_TIMEOUT_MS = 15_000;
+
+function hostIsAllowed(hostname: string): boolean {
+  const configured = (process.env.HLS_PROXY_ALLOWED_HOSTS || "")
+    .split(",")
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
+  if (configured.length === 0) return process.env.NODE_ENV !== "production";
+  const host = hostname.toLowerCase();
+  return configured.some((pattern) =>
+    pattern.startsWith("*.")
+      ? host === pattern.slice(2) || host.endsWith(pattern.slice(1))
+      : host === pattern,
+  );
+}
 
 function isPrivateHost(hostname: string): boolean {
   const host = hostname.toLowerCase().trim();
@@ -37,6 +57,7 @@ function isPrivateHost(hostname: string): boolean {
 }
 
 async function validateTargetUrl(value: string): Promise<URL> {
+  if (value.length > 4096) throw new Error("URL quá dài");
   const parsed = new URL(value);
   if (!(["http:", "https:"] as string[]).includes(parsed.protocol)) {
     throw new Error("Giao thức không hợp lệ");
@@ -44,10 +65,23 @@ async function validateTargetUrl(value: string): Promise<URL> {
   if (parsed.username || parsed.password || isPrivateHost(parsed.hostname)) {
     throw new Error("Host bị cấm");
   }
+  if (parsed.port && !["80", "443"].includes(parsed.port)) {
+    throw new Error("Cổng không hợp lệ");
+  }
+  if (process.env.NODE_ENV === "production" && parsed.protocol !== "https:") {
+    throw new Error("Media production phải dùng HTTPS");
+  }
+  if (!hostIsAllowed(parsed.hostname)) {
+    throw new Error("Host media chưa được cho phép");
+  }
 
+  const hostname = parsed.hostname.toLowerCase();
   try {
-    const addresses = await lookup(parsed.hostname, { all: true, verbatim: true });
-    if (addresses.length === 0 || addresses.some(({ address }) => isPrivateHost(address))) {
+    const addresses = await lookup(hostname, { all: true, verbatim: true });
+    if (
+      addresses.length === 0 ||
+      addresses.some(({ address }) => isPrivateHost(address))
+    ) {
       throw new Error("Host bị cấm");
     }
   } catch (error) {
@@ -57,17 +91,13 @@ async function validateTargetUrl(value: string): Promise<URL> {
   return parsed;
 }
 
-function proxiedUrl(url: string): string {
-  return `/api/hls-proxy?url=${encodeURIComponent(url)}`;
-}
-
 function rewriteManifestUri(url: string, kind: HlsUriKind): string {
   // HLS.js fetches every URI in the manifest from the browser. Keeping media
   // segments on the upstream origin made the manifest load but then failed at
   // 00:00 on providers without permissive CORS. Proxy manifests, keys and
   // segments consistently so the full stream has one same-origin contract.
   void kind;
-  return proxiedUrl(url);
+  return createSignedHlsProxyUrl(url);
 }
 
 async function fetchUpstream(
@@ -104,9 +134,28 @@ async function fetchUpstream(
 }
 
 export async function GET(request: NextRequest) {
+  const rateCheck = checkHlsProxyRateLimit(clientIpFromRequest(request));
+  if (!rateCheck.allowed) {
+    return NextResponse.json({ error: "Quá nhiều yêu cầu media" }, { status: 429 });
+  }
+
   const rawUrl = request.nextUrl.searchParams.get("url");
   if (!rawUrl) {
     return NextResponse.json({ error: "Thiếu tham số url" }, { status: 400 });
+  }
+
+  try {
+    if (
+      !verifySignedHlsProxyUrl(
+        rawUrl,
+        request.nextUrl.searchParams.get("expires"),
+        request.nextUrl.searchParams.get("signature"),
+      )
+    ) {
+      return NextResponse.json({ error: "Chữ ký media không hợp lệ" }, { status: 401 });
+    }
+  } catch {
+    return NextResponse.json({ error: "Chữ ký media không hợp lệ" }, { status: 401 });
   }
 
   let targetUrl: URL;
@@ -156,7 +205,6 @@ export async function GET(request: NextRequest) {
       return new NextResponse(manifest, {
         headers: {
           "Content-Type": "application/vnd.apple.mpegurl",
-          "Access-Control-Allow-Origin": "*",
           "Cache-Control": "no-store",
           "X-Cineverse-Ad-Filtered": filtered ? "1" : "0",
           "X-Cineverse-Ad-Segments": String(stats.removedSegments),
@@ -166,18 +214,24 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const body = await response.arrayBuffer();
-    return new NextResponse(body, {
+    // Stream media bytes directly to the browser. Buffering every segment in
+    // Node previously multiplied memory usage by concurrent viewers.
+    return new NextResponse(response.body, {
       status: response.status,
       headers: {
         "Content-Type": contentType || "application/octet-stream",
-        "Access-Control-Allow-Origin": "*",
-        "Cache-Control": "public, max-age=3600",
+        "Cache-Control": "private, max-age=300",
         ...(response.headers.get("content-range")
           ? { "Content-Range": response.headers.get("content-range")! }
           : {}),
         ...(response.headers.get("accept-ranges")
           ? { "Accept-Ranges": response.headers.get("accept-ranges")! }
+          : {}),
+        ...(response.headers.get("content-length")
+          ? { "Content-Length": response.headers.get("content-length")! }
+          : {}),
+        ...(response.headers.get("etag")
+          ? { ETag: response.headers.get("etag")! }
           : {}),
       },
     });

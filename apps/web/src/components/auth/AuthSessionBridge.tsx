@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { onIdTokenChanged, firebaseAuth } from "@/lib/firebase";
 import { authApi } from "@/lib/api";
 import { establishFirebaseSession } from "@/lib/auth-session";
 import { useAuthStore } from "@/store/authStore";
@@ -27,22 +26,6 @@ export function AuthSessionBridge() {
           if (active && data && data.id) store.setUser(data);
           return;
         } catch {
-          const firebaseUser = firebaseAuth.currentUser;
-          if (firebaseUser) {
-            try {
-              const user = await establishFirebaseSession(firebaseUser);
-              if (active && user) {
-                store.setUser(user);
-                return;
-              }
-            } catch (error) {
-              recordTelemetry(
-                "auth.firebase_session_sync_failed",
-                { reason: error instanceof Error ? error.message : "unknown" },
-                "warning",
-              );
-            }
-          }
           // Preserve existing authenticated user session if present
           if (active && !store.user) {
             store.setUser(null);
@@ -56,13 +39,39 @@ export function AuthSessionBridge() {
     };
 
     void restore();
-    const unsubscribe = onIdTokenChanged(firebaseAuth, () => {
-      void restore();
-    });
+    let unsubscribe: (() => void) | undefined;
+    const startFirebaseObserver = () => {
+      void import("@/lib/firebase").then(({ firebaseAuth, onIdTokenChanged }) => {
+        if (!active || !firebaseAuth) return;
+        unsubscribe = onIdTokenChanged(firebaseAuth, async (firebaseUser) => {
+          if (!active || !firebaseUser || useAuthStore.getState().user) return;
+          try {
+            const user = await establishFirebaseSession(firebaseUser);
+            if (active && user) useAuthStore.getState().setUser(user);
+          } catch (error) {
+            recordTelemetry(
+              "auth.firebase_session_sync_failed",
+              { reason: error instanceof Error ? error.message : "unknown" },
+              "warning",
+            );
+          }
+        });
+      });
+    };
+    const supportsIdleCallback =
+      typeof window.requestIdleCallback === "function";
+    const idleId = supportsIdleCallback
+      ? window.requestIdleCallback(startFirebaseObserver, { timeout: 2_500 })
+      : undefined;
+    const fallbackTimer = supportsIdleCallback
+      ? undefined
+      : globalThis.setTimeout(startFirebaseObserver, 1_500);
 
     return () => {
       active = false;
-      unsubscribe();
+      if (idleId !== undefined) window.cancelIdleCallback(idleId);
+      if (fallbackTimer !== undefined) globalThis.clearTimeout(fallbackTimer);
+      unsubscribe?.();
     };
   }, []);
 

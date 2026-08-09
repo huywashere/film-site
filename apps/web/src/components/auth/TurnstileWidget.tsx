@@ -15,7 +15,7 @@ type TurnstileApi = {
       theme: "dark";
       size: "flexible";
       callback: (token: string) => void;
-      "error-callback": () => void;
+      "error-callback": (errorCode: string) => boolean;
       "expired-callback": () => void;
     },
   ) => string;
@@ -30,7 +30,7 @@ declare global {
 
 const SCRIPT_ID = "cf-turnstile-explicit";
 const SCRIPT_URL =
-  "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad";
+  "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 
 function getTurnstileScript(): HTMLScriptElement {
   const existing = document.getElementById(SCRIPT_ID);
@@ -39,6 +39,8 @@ function getTurnstileScript(): HTMLScriptElement {
   const script = document.createElement("script");
   script.id = SCRIPT_ID;
   script.src = SCRIPT_URL;
+  script.async = true;
+  script.defer = true;
   document.head.appendChild(script);
   return script;
 }
@@ -48,17 +50,21 @@ type TurnstileWidgetProps = {
   onTokenChange: (token: string | null) => void;
 };
 
-export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps) {
+export function TurnstileWidget({
+  action,
+  onTokenChange,
+}: TurnstileWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
-  const [activeSiteKey, setActiveSiteKey] = useState<string>(
-    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA",
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const [status, setStatus] = useState<"loading" | "ready" | "error">(
+    "loading",
   );
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (!activeSiteKey || !containerRef.current) {
+    if (!siteKey || !containerRef.current) {
       onTokenChange(null);
       return;
     }
@@ -66,6 +72,7 @@ export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps)
     let disposed = false;
     let renderScheduled = false;
     setStatus("loading");
+    setErrorCode(null);
     const render = () => {
       if (
         disposed ||
@@ -80,7 +87,7 @@ export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps)
       renderScheduled = true;
       try {
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
-          sitekey: activeSiteKey,
+          sitekey: siteKey,
           action,
           theme: "dark",
           size: "flexible",
@@ -88,22 +95,11 @@ export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps)
             setStatus("ready");
             onTokenChange(token);
           },
-          "error-callback": () => {
-            if (activeSiteKey !== "1x00000000000000000000AA") {
-              if (widgetIdRef.current && window.turnstile) {
-                try {
-                  window.turnstile.remove(widgetIdRef.current);
-                } catch {
-                  // ignore cleanup error
-                }
-                widgetIdRef.current = null;
-              }
-              setActiveSiteKey("1x00000000000000000000AA");
-              setAttempt((a) => a + 1);
-            } else {
-              setStatus("error");
-              onTokenChange(null);
-            }
+          "error-callback": (code) => {
+            setStatus("error");
+            setErrorCode(code);
+            onTokenChange(null);
+            return true;
           },
           "expired-callback": () => {
             setStatus("loading");
@@ -112,13 +108,9 @@ export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps)
         });
         setStatus("ready");
       } catch {
-        if (activeSiteKey !== "1x00000000000000000000AA") {
-          setActiveSiteKey("1x00000000000000000000AA");
-          setAttempt((a) => a + 1);
-        } else {
-          setStatus("error");
-          onTokenChange(null);
-        }
+        setStatus("error");
+        setErrorCode("render-failed");
+        onTokenChange(null);
       }
     };
 
@@ -131,6 +123,7 @@ export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps)
         "error",
         () => {
           setStatus("error");
+          setErrorCode("script-load-failed");
           onTokenChange(null);
         },
         { once: true },
@@ -148,7 +141,10 @@ export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps)
     }, 100);
     const timeoutTimer = window.setTimeout(() => {
       window.clearInterval(readinessTimer);
-      if (!window.turnstile && !disposed) setStatus("error");
+      if (!window.turnstile && !disposed) {
+        setStatus("error");
+        setErrorCode("script-timeout");
+      }
     }, 8_000);
 
     return () => {
@@ -162,32 +158,54 @@ export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps)
       }
       onTokenChange(null);
     };
-  }, [action, attempt, onTokenChange, activeSiteKey]);
+  }, [action, attempt, onTokenChange, siteKey]);
 
-  if (!activeSiteKey) return null;
+  if (!siteKey) return null;
+
+  const hasConfigurationError = [
+    "110100",
+    "110110",
+    "110200",
+    "400020",
+    "400070",
+  ].includes(errorCode || "");
 
   return (
     <div className="py-1" aria-label="Xác minh chống bot">
-      <div ref={containerRef} className="min-h-[65px] h-[65px] w-full rounded-lg" />
+      <div
+        ref={containerRef}
+        className="min-h-[65px] h-[65px] w-full rounded-lg"
+      />
       {status === "loading" && (
         <p className="-mt-[65px] flex h-[65px] items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] text-[11px] text-neutral-400">
-          <Loader2 size={14} className="animate-spin" /> Đang tải xác minh chống bot...
+          <Loader2 size={14} className="animate-spin" /> Đang tải xác minh chống
+          bot...
         </p>
       )}
       {status === "error" && (
         <div className="-mt-[58px] flex min-h-[58px] items-center justify-between gap-3 rounded-lg border border-amber-300/20 bg-amber-300/[0.07] px-3 text-left text-[11px] leading-4 text-amber-100">
-          <span className="flex items-start gap-2"><TriangleAlert size={15} className="mt-0.5 shrink-0 text-amber-300" />Không tải được xác minh. Kiểm tra mạng hoặc tiện ích chặn quảng cáo.</span>
-          <button
-            type="button"
-            onClick={() => {
-              document.getElementById(SCRIPT_ID)?.remove();
-              delete window.turnstile;
-              setAttempt((value) => value + 1);
-            }}
-            className="shrink-0 rounded-md border border-amber-200/25 px-2 py-1 text-amber-100 transition-colors hover:bg-amber-200/10"
-          >
-            <RefreshCw size={13} aria-label="Tải lại xác minh" />
-          </button>
+          <span className="flex items-start gap-2">
+            <TriangleAlert
+              size={15}
+              className="mt-0.5 shrink-0 text-amber-300"
+            />
+            {hasConfigurationError
+              ? "Cấu hình xác minh chưa hợp lệ. Vui lòng liên hệ quản trị viên."
+              : "Không tải được xác minh. Kiểm tra mạng hoặc tiện ích chặn quảng cáo."}
+          </span>
+          {!hasConfigurationError && (
+            <button
+              type="button"
+              onClick={() => {
+                document.getElementById(SCRIPT_ID)?.remove();
+                delete window.turnstile;
+                setAttempt((value) => value + 1);
+              }}
+              className="shrink-0 rounded-md border border-amber-200/25 px-2 py-1 text-amber-100 transition-colors hover:bg-amber-200/10"
+            >
+              <RefreshCw size={13} aria-label="Tải lại xác minh" />
+            </button>
+          )}
         </div>
       )}
     </div>

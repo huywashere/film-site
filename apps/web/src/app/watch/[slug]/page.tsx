@@ -40,7 +40,7 @@ import { useTmdb } from "@/hooks/useTmdb";
 import { tmdbBackdrop, tmdbApi } from "@/lib/tmdb";
 import { WatchPartyPanel } from "@/components/watch/WatchPartyPanel";
 import { AdvancedCommentSection } from "@/components/comments/AdvancedCommentSection";
-import { HlsVideoPlayer } from "@/components/video/HlsVideoPlayer";
+import dynamic from "next/dynamic";
 import { watchProgressStorage } from "@/lib/watch-progress";
 import {
   classifyPlayerError,
@@ -49,42 +49,36 @@ import {
   rankHealthyCandidates,
 } from "@/lib/player-source-health";
 import { recordTelemetry } from "@/lib/telemetry";
+import { matchMovies } from "@/lib/dedupe";
+import type { MovieSource } from "@/types/movie";
+import WatchPageSkeleton from "./loading";
+import { safeJsonLd } from "@/lib/safe-json-ld";
+import {
+  buildVidsrcEmbedUrl,
+  canUseUnsandboxedEmbed,
+  detectServerType,
+  episodeNumberFromLabel,
+  findMatchingEpisode,
+  isPlayableEpisode,
+  isAutomaticPlaybackSource,
+  resolveSeasonNumber,
+  sourcePriority,
+  type ServerType,
+  type SourceServer,
+} from "@/lib/player-source-routing";
 
-// ── Server type detection ──────────────────────────────────────
-type ServerType = "vietsub" | "thuyet-minh" | "engsub" | "raw";
-
-function detectServerType(serverName: string, lang?: string): ServerType {
-  const name = (serverName || "").toLowerCase();
-  const l = (lang || "").toLowerCase();
-
-  // 1. Check Thuyết minh / Lồng tiếng FIRST
-  if (
-    name.includes("thuyet minh") ||
-    name.includes("thuyết minh") ||
-    name.includes("long tieng") ||
-    name.includes("lồng tiếng") ||
-    name.includes("thuyếtminh") ||
-    name.includes("lồngtiếng") ||
-    /\b(tm|lt|dub|dubbed|voiceover)\b/i.test(name) ||
-    l.includes("thuyet minh") ||
-    l.includes("thuyết minh") ||
-    l.includes("long tieng") ||
-    l.includes("lồng tiếng")
-  ) {
-    return "thuyet-minh";
-  }
-
-  // 2. Check explicit Engsub / English with word boundaries (avoids matching 'tieng')
-  if (
-    /\b(engsub|english\s*sub|vidsrc|english|eng)\b/i.test(name) ||
-    /\b(engsub|english\s*sub|english|eng)\b/i.test(l)
-  ) {
-    return "engsub";
-  }
-
-  // 3. Default to Vietsub
-  return "vietsub";
-}
+const HlsVideoPlayer = dynamic(
+  () =>
+    import("@/components/video/HlsVideoPlayer").then(
+      (module) => module.HlsVideoPlayer,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-full w-full animate-pulse bg-[#0b0d12]" />
+    ),
+  },
+);
 
 const TYPE_CFG: Record<
   ServerType,
@@ -162,15 +156,7 @@ function AutoNextOverlay({
 
 // ── Skeleton ──────────────────────────────────────────────────
 function WatchSkeleton() {
-  return (
-    <div className="min-h-screen bg-[#0d1117] pt-16">
-      <div className="bg-black aspect-video animate-pulse" />
-      <div className="max-w-screen-2xl mx-auto px-4 py-6 space-y-4">
-        <div className="h-5 bg-white/5 rounded w-48 animate-pulse" />
-        <div className="h-4 bg-white/5 rounded w-32 animate-pulse" />
-      </div>
-    </div>
-  );
+  return <WatchPageSkeleton />;
 }
 
 // ── MAIN PAGE ─────────────────────────────────────────────────
@@ -211,6 +197,7 @@ export default function WatchPage() {
   const [activeServerType, setActiveServerType] =
     useState<ServerType>("vietsub");
   const [currentTypeServer, setCurrentTypeServer] = useState(0);
+  const [vidsrcManuallySelected, setVidsrcManuallySelected] = useState(false);
 
   // Fallback state
   const [isFallbacking, setIsFallbacking] = useState(false);
@@ -427,44 +414,97 @@ export default function WatchPage() {
       movieApi.getDetail(sourceSlug, preferredSource).then((r) => r.data),
     enabled: !!sourceSlug,
   });
-  const { data: ophimData } = useQuery({
-    queryKey: ["film-ophim", slug],
-    queryFn: () =>
-      fetch(`/api/ophim/phim/${slug}`)
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null),
-    enabled: !!slug,
-  });
-  const { data: nguoncData } = useQuery({
-    queryKey: ["film-nguonc", slug],
-    queryFn: () =>
-      fetch(`/api/nguonc/film/${slug}`)
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null),
-    enabled: !!slug,
-  });
-  const { data: vsmovData } = useQuery({
-    queryKey: ["film-vsmov", slug],
-    queryFn: () =>
-      fetch(`/api/vsmov/phim/${slug}`)
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null),
-    enabled: !!slug,
-  });
   const film = data?.movie || data;
-  const filmLang: string = film?.lang || "";
-  const tmdbId = film?.tmdb?.id || film?.tmdb_id || data?.movie?.tmdb?.id;
-  const imdbId = film?.imdb?.id || film?.imdb_id || data?.movie?.imdb?.id;
-  const vidsrcLookupId = tmdbId || imdbId || slug;
+  const primarySource = String(
+    data?._source || data?.movie?._source || preferredSource || "kkphim",
+  );
+  const lookupTitle = film?.origin_name || film?.name || "";
 
-  const { data: vidsrcData } = useQuery({
-    queryKey: ["film-vidsrc", vidsrcLookupId],
-    queryFn: () =>
-      fetch(`/api/vidsrc/movie/${vidsrcLookupId}`)
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null),
-    enabled: !!vidsrcLookupId,
+  const { data: sourceLookupData } = useQuery({
+    queryKey: ["watch-source-lookup", lookupTitle, film?.year],
+    queryFn: () => movieApi.search(lookupTitle, 1, 30).then((r) => r.data),
+    enabled: Boolean(lookupTitle),
+    staleTime: 1000 * 60 * 30,
   });
+
+  const matchedSourceRecord = useMemo(() => {
+    const items = sourceLookupData?.data?.items || [];
+    return items.find((item: any) =>
+      matchMovies(
+        {
+          title: film?.name || "",
+          originTitle: film?.origin_name,
+          year: Number(film?.year) || undefined,
+        },
+        {
+          title: item?.name || item?.title || "",
+          originTitle: item?.origin_name || item?.originTitle,
+          year: Number(item?.year) || undefined,
+        },
+      ),
+    );
+  }, [sourceLookupData, film?.name, film?.origin_name, film?.year]);
+
+  const sourceSlugFor = useCallback(
+    (source: MovieSource) => {
+      if (primarySource === source) return sourceSlug;
+      return matchedSourceRecord?._sourceSlugs?.[source] || "";
+    },
+    [matchedSourceRecord, primarySource, sourceSlug],
+  );
+
+  const kkphimSlug = sourceSlugFor("kkphim");
+  const ophimSlug = sourceSlugFor("ophim");
+  const nguoncSlug = sourceSlugFor("nguonc");
+  const vsmovSlug = sourceSlugFor("vsmov");
+
+  const { data: kkphimFetchedData } = useQuery({
+    queryKey: ["film-kkphim", kkphimSlug],
+    queryFn: () =>
+      movieApi.getDetailFromSource("kkphim", kkphimSlug).then((r) => r.data),
+    enabled: Boolean(kkphimSlug) && primarySource !== "kkphim",
+  });
+  const { data: ophimFetchedData } = useQuery({
+    queryKey: ["film-ophim", ophimSlug],
+    queryFn: () =>
+      movieApi.getDetailFromSource("ophim", ophimSlug).then((r) => r.data),
+    enabled: Boolean(ophimSlug) && primarySource !== "ophim",
+  });
+  const { data: nguoncFetchedData } = useQuery({
+    queryKey: ["film-nguonc", nguoncSlug],
+    queryFn: () =>
+      movieApi.getDetailFromSource("nguonc", nguoncSlug).then((r) => r.data),
+    enabled: Boolean(nguoncSlug) && primarySource !== "nguonc",
+  });
+  const { data: vsmovFetchedData } = useQuery({
+    queryKey: ["film-vsmov", vsmovSlug],
+    queryFn: () =>
+      movieApi.getDetailFromSource("vsmov", vsmovSlug).then((r) => r.data),
+    enabled: Boolean(vsmovSlug) && primarySource !== "vsmov",
+  });
+
+  const kkphimData = primarySource === "kkphim" ? data : kkphimFetchedData;
+  const ophimData = primarySource === "ophim" ? data : ophimFetchedData;
+  const nguoncData = primarySource === "nguonc" ? data : nguoncFetchedData;
+  const vsmovData = primarySource === "vsmov" ? data : vsmovFetchedData;
+  const tmdbId = film?.tmdb?.id || film?.tmdb_id || data?.movie?.tmdb?.id;
+  const tmdbMediaType =
+    film?.tmdb?.type === "tv" ||
+    film?.type === "series" ||
+    film?.type === "tv" ||
+    film?.type === "hoat-hinh"
+      ? "tv"
+      : "movie";
+  const vidsrcSeason = resolveSeasonNumber(
+    film?.season_number,
+    film?.season,
+    film?.tmdb?.season,
+    data?.movie?.season_number,
+    data?.movie?.season,
+    film?.name,
+    film?.origin_name,
+    slug,
+  );
 
   // Recommendations
   const filmCategory =
@@ -539,9 +579,7 @@ export default function WatchPage() {
   });
 
   // Fetch TMDB Scene Stills / Backdrops for Episode Scene Thumbnails
-  const tmdbShowId = film?.tmdb?.id || film?.tmdb_id;
-  const tmdbMediaType =
-    film?.type === "series" || film?.type === "hoat-hinh" ? "tv" : "movie";
+  const tmdbShowId = tmdbId;
 
   const { data: tmdbImages } = useQuery({
     queryKey: ["watch-tmdb-scenes", tmdbMediaType, tmdbShowId],
@@ -555,91 +593,141 @@ export default function WatchPage() {
     return tmdbImages?.backdrops || [];
   }, [tmdbImages]);
 
-  // Episode processing — gom từ tất cả nguồn, gán nhãn rõ ràng
-  const kkphimEps: any[] =
-    data?.episodes || data?.data?.episodes || data?.movie?.episodes || [];
-  const ophimEps: any[] =
-    ophimData?.episodes ||
-    ophimData?.data?.episodes ||
-    ophimData?.movie?.episodes ||
-    [];
-  const nguoncEps: any[] =
-    nguoncData?.episodes ||
-    nguoncData?.data?.episodes ||
-    nguoncData?.movie?.episodes ||
-    [];
-  const vsmovEps: any[] =
-    vsmovData?.episodes ||
-    vsmovData?.data?.episodes ||
-    vsmovData?.movie?.episodes ||
-    [];
+  // Episode processing: normalize provider ownership, language and priority.
+  const episodes: SourceServer[] = useMemo(() => {
+    const extractEpisodes = (providerData: any): any[] =>
+      providerData?.episodes ||
+      providerData?.data?.episodes ||
+      providerData?.movie?.episodes ||
+      [];
+    const kkphimEps = extractEpisodes(kkphimData);
+    const ophimEps = extractEpisodes(ophimData);
+    const nguoncEps = extractEpisodes(nguoncData);
+    const vsmovEps = extractEpisodes(vsmovData);
+    let vidsrcEps: any[] = [];
 
-  const vidsrcEps: any[] = useMemo(() => {
-    if (
-      vidsrcData &&
-      Array.isArray(vidsrcData.episodes) &&
-      vidsrcData.episodes.length > 0
-    ) {
-      return vidsrcData.episodes;
+    if (tmdbMediaType === "movie") {
+      const embedUrl = buildVidsrcEmbedUrl({
+        tmdbId,
+        mediaType: "movie",
+        autoplay: autoPlayConfig,
+        subtitle: "en",
+        color: "8b5cf6",
+      });
+      if (embedUrl) {
+        vidsrcEps = [
+          {
+            server_name: "VidSrc Engsub",
+            server_data: [
+              {
+                name: "Full Movie (Engsub)",
+                slug: "full-engsub",
+                link_embed: embedUrl,
+                link_m3u8: "",
+              },
+            ],
+          },
+        ];
+      }
+    } else {
+      // VidSrc requires an explicit season and episode. Mirror the episode
+      // identities already supplied by Vietnamese providers so tab switches
+      // stay on the same episode instead of jumping back to episode one.
+      const episodeMap = new Map<number, any>();
+      for (const sourceServer of [
+        ...kkphimEps,
+        ...nguoncEps,
+        ...vsmovEps,
+        ...ophimEps,
+      ]) {
+        const sourceEpisodes = Array.isArray(sourceServer?.server_data)
+          ? sourceServer.server_data
+          : [];
+        for (const sourceEpisode of sourceEpisodes) {
+          const episodeNumber = episodeNumberFromLabel(
+            sourceEpisode?.slug || sourceEpisode?.name,
+          );
+          if (episodeNumber && !episodeMap.has(episodeNumber)) {
+            episodeMap.set(episodeNumber, sourceEpisode);
+          }
+        }
+      }
+
+      if (episodeMap.size === 0) {
+        const requestedEpisode = episodeNumberFromLabel(currentEp) || 1;
+        episodeMap.set(requestedEpisode, {
+          name: `Tập ${requestedEpisode}`,
+          slug: `tap-${requestedEpisode}`,
+        });
+      }
+
+      const serverData = Array.from(episodeMap.entries())
+        .sort(([left], [right]) => left - right)
+        .flatMap(([episodeNumber, sourceEpisode]) => {
+          const embedUrl = buildVidsrcEmbedUrl({
+            tmdbId,
+            mediaType: "tv",
+            season: vidsrcSeason,
+            episode: episodeNumber,
+            autoplay: autoPlayConfig,
+            subtitle: "en",
+            color: "8b5cf6",
+          });
+          return embedUrl
+            ? [
+                {
+                  name: sourceEpisode?.name || `Tập ${episodeNumber}`,
+                  slug: sourceEpisode?.slug || `tap-${episodeNumber}`,
+                  link_embed: embedUrl,
+                  link_m3u8: "",
+                },
+              ]
+            : [];
+        });
+
+      if (serverData.length > 0) {
+        vidsrcEps = [{ server_name: "VidSrc Engsub", server_data: serverData }];
+      }
     }
 
-    const res = vidsrcData?.result || vidsrcData?.data || vidsrcData;
-    const rawEmbed =
-      res?.embed_url ||
-      res?.url ||
-      res?.link ||
-      res?.link_embed ||
-      (typeof res === "string" ? res : null);
+    const tagSource = (arr: any[], sourceName: string, sourceKey: string) =>
+      arr.map((s, i): SourceServer => {
+        const originalName = String(s.server_name || "");
+        const serverData = Array.isArray(s.server_data) ? s.server_data : [];
+        return {
+          ...s,
+          server_name: originalName
+            ? `[${sourceName}] ${originalName}`
+            : `${sourceName} #${i + 1}`,
+          server_data: serverData,
+          _source: sourceKey,
+          _type: detectServerType(
+            originalName,
+            s.lang || s.language || s.audio || "",
+          ),
+          key: `${sourceKey}:${originalName || i}`,
+          priority: sourcePriority(sourceKey, serverData, currentEp),
+        };
+      });
 
-    const embedUrl =
-      rawEmbed ||
-      (tmdbId
-        ? `https://vidsrc.to/embed/movie/${tmdbId}`
-        : imdbId
-          ? `https://vidsrc.me/embed/movie?imdb=${imdbId}`
-          : `https://vidsrc.to/embed/movie/${slug}`);
-
-    if (embedUrl) {
-      return [
-        {
-          server_name: "VidSrc Engsub",
-          server_data: [
-            {
-              name: "Full Movie (Engsub)",
-              slug: "full-engsub",
-              link_embed: embedUrl,
-              link_m3u8: "",
-            },
-          ],
-        },
-      ];
-    }
-
-    return [];
-  }, [vidsrcData, tmdbId, imdbId, slug]);
-
-  // Mỗi nguồn được tag với tên nguồn + index server trong nguồn đó
-  const tagSource = (arr: any[], sourceName: string, sourceKey: string) =>
-    arr.map((s, i) => ({
-      ...s,
-      server_name:
-        s.server_name && s.server_name !== "Vietsub"
-          ? `[${sourceName}] ${s.server_name}`
-          : arr.length > 1
-            ? `${sourceName} #${i + 1}`
-            : sourceName,
-      _source: sourceKey,
-      _type: detectServerType(s.server_name || sourceName, filmLang),
-    }));
-
-  // Thứ tự ưu tiên 3 nguồn chính: KKPhim -> NguonC -> VSMov (sau đó mới tới OPhim, VidSrc)
-  const episodes = [
-    ...tagSource(kkphimEps, "KKPhim", "kkphim"),
-    ...tagSource(nguoncEps, "NguonC", "nguonc"),
-    ...tagSource(vsmovEps, "VSMov", "vsmov"),
-    ...tagSource(ophimEps, "OPhim", "ophim"),
-    ...tagSource(vidsrcEps, "VidSrc", "vidsrc"),
-  ];
+    return [
+      ...tagSource(kkphimEps, "KKPhim", "kkphim"),
+      ...tagSource(nguoncEps, "NguonC", "nguonc"),
+      ...tagSource(vsmovEps, "VSMov", "vsmov"),
+      ...tagSource(ophimEps, "OPhim", "ophim"),
+      ...tagSource(vidsrcEps, "VidSrc", "vidsrc"),
+    ];
+  }, [
+    autoPlayConfig,
+    currentEp,
+    kkphimData,
+    nguoncData,
+    ophimData,
+    tmdbId,
+    tmdbMediaType,
+    vidsrcSeason,
+    vsmovData,
+  ]);
 
   const serversByType = useMemo(() => {
     const g: Record<ServerType, any[]> = {
@@ -659,14 +747,27 @@ export default function WatchPage() {
       ),
     [serversByType],
   );
+  const automaticTypes = useMemo(
+    () =>
+      availableTypes.filter((type) =>
+        serversByType[type].some((candidate) =>
+          isAutomaticPlaybackSource(candidate._source),
+        ),
+      ),
+    [availableTypes, serversByType],
+  );
 
   useEffect(() => {
     if (episodes.length > 0) {
       // ⚡ Always prioritize Vietsub FIRST, then Thuyet Minh, then Engsub
+      const automaticServers = episodes.filter((candidate) =>
+        isAutomaticPlaybackSource(candidate._source),
+      );
       const pref =
-        episodes.find((ep) => ep._type === "vietsub") ||
-        episodes.find((ep) => ep._type === "thuyet-minh") ||
-        episodes[0];
+        automaticServers.find((ep) => ep._type === "vietsub") ||
+        automaticServers.find((ep) => ep._type === "thuyet-minh") ||
+        automaticServers.find((ep) => ep._type === "raw") ||
+        automaticServers[0];
       if (pref) {
         const idx = episodes.indexOf(pref);
         if (idx >= 0 && currentServer !== idx) {
@@ -675,35 +776,54 @@ export default function WatchPage() {
         if (pref._type && activeServerType !== pref._type) {
           setActiveServerType(pref._type as ServerType);
         }
+        setVidsrcManuallySelected(false);
       }
     }
   }, [episodes.length]);
 
   useEffect(() => {
-    if (availableTypes.length > 0 && !availableTypes.includes(activeServerType))
-      setActiveServerType(availableTypes[0]);
-  }, [availableTypes]);
+    if (vidsrcManuallySelected) return;
+    if (
+      automaticTypes.length > 0 &&
+      !automaticTypes.includes(activeServerType)
+    ) {
+      setActiveServerType(automaticTypes[0]);
+      setVidsrcManuallySelected(false);
+    }
+  }, [activeServerType, automaticTypes, vidsrcManuallySelected]);
 
   const currentTypeServers = serversByType[activeServerType] || [];
   const server = episodes[currentServer] || episodes[0];
-  const sourceCandidate = {
-    key: `${server?._source || "unknown"}:${server?.server_name || currentServer}`,
-    source: server?._source,
-    serverName: server?.server_name,
-  };
+  const sourceCandidate = useMemo(
+    () => ({
+      key: `${server?._source || "unknown"}:${server?.server_name || currentServer}`,
+      source: server?._source,
+      serverName: server?.server_name,
+      priority: server?.priority,
+    }),
+    [currentServer, server],
+  );
   const serverData: any[] = useMemo(() => server?.server_data || [], [server]);
   const currentEpData: any =
-    serverData.find((e: any) => (e.slug || e.name) === currentEp) ||
-    serverData[0];
+    findMatchingEpisode(serverData, currentEp) || serverData[0];
 
-  const m3u8Url: string = currentEpData?.link_m3u8 || "";
-  const embedUrl: string = currentEpData?.link_embed || "";
+  const vidsrcRequiresManualSelection =
+    server?._source === "vidsrc" && !vidsrcManuallySelected;
+  const m3u8Url: string = vidsrcRequiresManualSelection
+    ? ""
+    : currentEpData?.link_m3u8 || "";
+  const embedUrl: string = vidsrcRequiresManualSelection
+    ? ""
+    : currentEpData?.link_embed || "";
 
   const iframeUrl =
     embedUrl ||
     (m3u8Url
       ? `https://player.phimapi.com/player/?url=${encodeURIComponent(m3u8Url)}`
       : "");
+  const iframeSandbox = canUseUnsandboxedEmbed(server?._source, iframeUrl)
+    ? undefined
+    : "allow-scripts allow-same-origin allow-forms allow-presentation";
   const videoUrl = m3u8Url || iframeUrl;
 
   const currentEpIndex = serverData.findIndex(
@@ -723,9 +843,7 @@ export default function WatchPage() {
       const epName = currentEpData?.name || currentEp || "Tập 1";
       const movieTitle = film.name || film.origin_name || "Phim";
       const moviePoster =
-        posterUrl ||
-        resolveImageUrl(film.poster_url || film.thumb_url) ||
-        "";
+        posterUrl || resolveImageUrl(film.poster_url || film.thumb_url) || "";
 
       // Save to localStorage for guest & logged-in users
       watchProgressStorage.saveProgress({
@@ -821,10 +939,12 @@ export default function WatchPage() {
   const dbProgress = currentResumeEntry?.progress || 0;
   const localProgress = useMemo(() => {
     if (!progressKey) return 0;
-    return watchProgressStorage
-      .getHistoryEntries()
-      .find((entry) => entry.slug === slug && entry.epSlug === epName)
-      ?.currentTime || 0;
+    return (
+      watchProgressStorage
+        .getHistoryEntries()
+        .find((entry) => entry.slug === slug && entry.epSlug === epName)
+        ?.currentTime || 0
+    );
   }, [epName, progressKey, slug]);
   const resumeAt = Math.max(dbProgress, localProgress);
 
@@ -859,10 +979,23 @@ export default function WatchPage() {
         .catch(() => {
           // The local copy above is the durable fallback if the API is briefly
           // unavailable. A later progress event will retry the sync.
-          recordTelemetry("watch_progress.sync_failed", { slug, episode: epName }, "warning");
+          recordTelemetry(
+            "watch_progress.sync_failed",
+            { slug, episode: epName },
+            "warning",
+          );
         });
     },
-    [currentEpData, epName, film?.name, film?.origin_name, posterUrl, server?.server_name, slug, user],
+    [
+      currentEpData,
+      epName,
+      film?.name,
+      film?.origin_name,
+      posterUrl,
+      server?.server_name,
+      slug,
+      user,
+    ],
   );
 
   // Navigation
@@ -931,61 +1064,48 @@ export default function WatchPage() {
       const targetEpisode =
         currentEpData?.slug || currentEpData?.name || currentEp;
       const usable = episodes.filter((ep) => {
-        const episodeMatches = (ep.server_data || []).some(
-          (item: { slug?: string; name?: string }) =>
-            (item.slug || item.name) === targetEpisode,
+        const matchingEpisode = findMatchingEpisode(
+          ep.server_data,
+          targetEpisode,
         );
-        return episodeMatches && !upd.includes(episodes.indexOf(ep));
+        return (
+          isAutomaticPlaybackSource(ep._source) &&
+          ep._type === activeServerType &&
+          Boolean(matchingEpisode) &&
+          isPlayableEpisode(matchingEpisode) &&
+          !upd.includes(episodes.indexOf(ep))
+        );
       });
-      // Prefer an embed-capable source with the current subtitle type; source
-      // health decides the order inside that group.
+      // Fallback is intentionally locked to the selected audio/subtitle tab.
+      // Provider priority, transport quality and learned health decide order.
       const ranked = rankHealthyCandidates(usable);
-      const nextEp =
-        ranked.find(
-          (ep) =>
-            ep._type === activeServerType &&
-            (ep.server_data || []).some(
-              (item: any) => item.link_embed || item.link_m3u8,
-            ),
-        ) ||
-        ranked.find((ep) =>
-          (ep.server_data || []).some(
-            (item: any) => item.link_embed || item.link_m3u8,
-          ),
-        ) ||
-        ranked.find((ep) => ep._type === activeServerType) ||
-        ranked[0];
+      const nextEp = ranked[0];
 
       if (!nextEp) {
         fallbackInProgressRef.current = false;
         setIsFallbacking(false);
         setFallbackMessage("");
-        toast("Tất cả server không khả dụng!", "error");
+        toast(
+          `Không còn server ${TYPE_CFG[activeServerType].label} khả dụng cho tập này.`,
+          "error",
+        );
         return;
       }
 
       const nextIdx = episodes.indexOf(nextEp);
-      const isSwitchingType = nextEp._type !== activeServerType;
-      setFallbackMessage(
-        isSwitchingType
-          ? `Chuyển sang ${nextEp._type === "thuyet-minh" ? "Thuyết minh" : "Phụ đề"}...`
-          : `Thử server ${nextEp.server_name}...`,
-      );
+      setFallbackMessage(`Thử server ${nextEp.server_name}...`);
 
       // Delay nhỏ để UX mượt, không flash. Keep its handle so leaving the
       // player cannot let a stale fallback navigate back to this film.
       if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
       fallbackTimerRef.current = setTimeout(() => {
         fallbackTimerRef.current = null;
-        if (isSwitchingType) {
-          preserveServerOnTypeChangeRef.current = true;
-          setActiveServerType(nextEp._type as ServerType);
-        }
         setCurrentServer(nextIdx);
         setCurrentTypeServer(nextIdx);
-        const nextEpisodeData = (nextEp.server_data || []).find(
-          (item: { slug?: string; name?: string }) =>
-            (item.slug || item.name) === targetEpisode,
+        setVidsrcManuallySelected(false);
+        const nextEpisodeData = findMatchingEpisode(
+          nextEp.server_data,
+          targetEpisode,
         );
         setPlayerEngine(nextEpisodeData?.link_m3u8 ? "hls" : "iframe");
         setIsFallbacking(false);
@@ -1037,19 +1157,29 @@ export default function WatchPage() {
       if (playerEngine === "hls" && iframeUrl) {
         setIsFallbacking(true);
         setFallbackMessage("Đang chuyển sang trình phát dự phòng...");
-        recordTelemetry("player.transport_fallback", {
-          source: server?._source || "unknown",
-          server: server?.server_name || "unknown",
-          transport: "hls",
-          error_kind: classifyPlayerError({ type: reason }),
-        }, "warning");
+        recordTelemetry(
+          "player.transport_fallback",
+          {
+            source: server?._source || "unknown",
+            server: server?.server_name || "unknown",
+            transport: "hls",
+            error_kind: classifyPlayerError({ type: reason }),
+          },
+          "warning",
+        );
         playerLoadStartedAtRef.current = Date.now();
         setPlayerEngine("iframe");
         return;
       }
       tryNextServer(reason);
     },
-    [iframeUrl, playerEngine, server?._source, server?.server_name, tryNextServer],
+    [
+      iframeUrl,
+      playerEngine,
+      server?._source,
+      server?.server_name,
+      tryNextServer,
+    ],
   );
 
   // A failed server may have scheduled a delayed router.replace. Cancel it
@@ -1186,7 +1316,7 @@ export default function WatchPage() {
       {/* ── JSON-LD STRUCTURED DATA SCHEMA FOR GOOGLE SEO ── */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(watchJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(watchJsonLd) }}
       />
 
       {/* ── CINEMA LIGHTS-OFF OVERLAY ── */}
@@ -1370,7 +1500,8 @@ export default function WatchPage() {
                     <div className="absolute right-0 top-full mt-2 z-50 w-72 p-3.5 rounded-2xl bg-[#111419]/95 border border-white/15 backdrop-blur-xl shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150">
                       <div className="flex items-center justify-between pb-2 border-b border-white/10">
                         <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                          <Share2 size={13} className="text-blue-400" /> Chia Sẻ Phim Trực Tiếp
+                          <Share2 size={13} className="text-blue-400" /> Chia Sẻ
+                          Phim Trực Tiếp
                         </span>
                         <button
                           type="button"
@@ -1390,7 +1521,9 @@ export default function WatchPage() {
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 p-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 transition-all active:scale-95"
                         >
-                          <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[11px] flex items-center justify-center">f</span>
+                          <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[11px] flex items-center justify-center">
+                            f
+                          </span>
                           <span>Facebook</span>
                         </a>
 
@@ -1401,7 +1534,9 @@ export default function WatchPage() {
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 p-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-400/30 transition-all active:scale-95"
                         >
-                          <span className="w-5 h-5 rounded-full bg-blue-500 text-white font-black text-[10px] flex items-center justify-center">Z</span>
+                          <span className="w-5 h-5 rounded-full bg-blue-500 text-white font-black text-[10px] flex items-center justify-center">
+                            Z
+                          </span>
                           <span>Zalo</span>
                         </a>
 
@@ -1433,7 +1568,11 @@ export default function WatchPage() {
                         <input
                           type="text"
                           readOnly
-                          value={typeof window !== "undefined" ? window.location.href : ""}
+                          value={
+                            typeof window !== "undefined"
+                              ? window.location.href
+                              : ""
+                          }
                           className="w-full bg-black/40 border border-white/10 rounded-lg px-2.5 py-1.5 text-[10px] text-neutral-300 focus:outline-none truncate font-mono"
                         />
                         <button
@@ -1446,7 +1585,11 @@ export default function WatchPage() {
                           }}
                           className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg border border-white/15 transition-all shrink-0 active:scale-95"
                         >
-                          {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                          {copied ? (
+                            <Check size={13} className="text-emerald-400" />
+                          ) : (
+                            <Copy size={13} />
+                          )}
                           <span>{copied ? "Đã chép" : "Chép"}</span>
                         </button>
                       </div>
@@ -1464,9 +1607,7 @@ export default function WatchPage() {
               onPointerLeave={handleOuterPointerUp}
               className={cn(
                 "bg-black aspect-video rounded-xl overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none transition-all duration-300",
-                lightOff
-                  ? "relative z-50 ring-1 ring-white/20 shadow-2xl"
-                  : "",
+                lightOff ? "relative z-50 ring-1 ring-white/20 shadow-2xl" : "",
               )}
             >
               {/* ── Universal 2x Speed Hold Top HUD Banner ── */}
@@ -1543,8 +1684,12 @@ export default function WatchPage() {
                           recordTelemetry("watch_now.success", {
                             source: sourceCandidate.source || "unknown",
                             server: sourceCandidate.serverName || "unknown",
-                            episode: currentEpData?.slug || currentEpData?.name || "unknown",
-                            start_time_ms: Date.now() - playerLoadStartedAtRef.current,
+                            episode:
+                              currentEpData?.slug ||
+                              currentEpData?.name ||
+                              "unknown",
+                            start_time_ms:
+                              Date.now() - playerLoadStartedAtRef.current,
                             engine: "hls",
                           });
                         }
@@ -1560,8 +1705,8 @@ export default function WatchPage() {
                         src={iframeUrl}
                         className="w-full h-full"
                         allowFullScreen
-                        allow="autoplay; fullscreen"
-                        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+                        allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                        sandbox={iframeSandbox}
                         title={`${film?.name} - ${currentEpData?.name}`}
                         onLoad={() => {
                           clearIframeLoadTimeout();
@@ -1668,12 +1813,15 @@ export default function WatchPage() {
                 (ep) => ep._type === "thuyet-minh",
               );
               const engsubEps = episodes.filter((ep) => ep._type === "engsub");
+              const rawEps = episodes.filter((ep) => ep._type === "raw");
               const activeGroup =
                 activeServerType === "thuyet-minh"
                   ? dubEps
                   : activeServerType === "engsub"
                     ? engsubEps
-                    : subEps;
+                    : activeServerType === "raw"
+                      ? rawEps
+                      : subEps;
 
               const movieBackdrop =
                 tmdbBackdropUrl ||
@@ -1688,7 +1836,8 @@ export default function WatchPage() {
                   count: subEps.length,
                   eps: subEps,
                   activeBg: "bg-[#161a24] border-2 border-white shadow-lg",
-                  inactiveBg: "bg-[#0d1017] border border-white/15 hover:border-white/40",
+                  inactiveBg:
+                    "bg-[#0d1017] border border-white/15 hover:border-white/40",
                 },
                 {
                   id: "thuyet-minh",
@@ -1697,7 +1846,8 @@ export default function WatchPage() {
                   count: dubEps.length,
                   eps: dubEps,
                   activeBg: "bg-[#161a24] border-2 border-white shadow-lg",
-                  inactiveBg: "bg-[#0d1017] border border-white/15 hover:border-white/40",
+                  inactiveBg:
+                    "bg-[#0d1017] border border-white/15 hover:border-white/40",
                 },
                 ...(engsubEps.length > 0
                   ? [
@@ -1707,8 +1857,25 @@ export default function WatchPage() {
                         icon: "🌐",
                         count: engsubEps.length,
                         eps: engsubEps,
-                        activeBg: "bg-[#161a24] border-2 border-white shadow-lg",
-                        inactiveBg: "bg-[#0d1017] border border-white/15 hover:border-white/40",
+                        activeBg:
+                          "bg-[#161a24] border-2 border-white shadow-lg",
+                        inactiveBg:
+                          "bg-[#0d1017] border border-white/15 hover:border-white/40",
+                      },
+                    ]
+                  : []),
+                ...(rawEps.length > 0
+                  ? [
+                      {
+                        id: "raw",
+                        label: "Bản gốc / Chưa xác định",
+                        icon: "🎬",
+                        count: rawEps.length,
+                        eps: rawEps,
+                        activeBg:
+                          "bg-[#161a24] border-2 border-white shadow-lg",
+                        inactiveBg:
+                          "bg-[#0d1017] border border-white/15 hover:border-white/40",
                       },
                     ]
                   : []),
@@ -1727,27 +1894,45 @@ export default function WatchPage() {
                           key={opt.id}
                           onClick={() => {
                             if (!hasItems) return;
+                            const selectingVidSrc = opt.eps.every(
+                              (candidate) => candidate._source === "vidsrc",
+                            );
+                            setVidsrcManuallySelected(selectingVidSrc);
                             setActiveServerType(opt.id as ServerType);
                             if (opt.eps.length > 0) {
-                              const first = opt.eps[0];
+                              const targetEpisode =
+                                currentEpData?.slug ||
+                                currentEpData?.name ||
+                                currentEp;
+                              const first =
+                                opt.eps.find((candidate) =>
+                                  findMatchingEpisode(
+                                    candidate.server_data,
+                                    targetEpisode,
+                                  ),
+                                ) || opt.eps[0];
                               const idx = episodes.indexOf(first);
                               setCurrentServer(idx >= 0 ? idx : 0);
-                              setPlayerEngine(
-                                first?.server_data?.[0]?.link_m3u8
-                                  ? "hls"
-                                  : "iframe",
+                              const matchedEpisode = findMatchingEpisode(
+                                first?.server_data,
+                                targetEpisode,
                               );
-                              const nd = first?.server_data || [];
-                              if (nd.length > 0)
+                              const matchedEpisodeId =
+                                matchedEpisode?.slug || matchedEpisode?.name;
+                              setPlayerEngine(
+                                matchedEpisode?.link_m3u8 ? "hls" : "iframe",
+                              );
+                              if (matchedEpisodeId)
                                 router.push(
-                                  watchUrlForEpisode(nd[0].slug || nd[0].name),
+                                  watchUrlForEpisode(matchedEpisodeId),
                                 );
                             }
                           }}
                           className={cn(
                             "relative overflow-hidden rounded-2xl p-4 sm:p-5 flex flex-col justify-between h-[135px] sm:h-[145px] transition-all duration-300 select-none cursor-pointer group shadow-xl",
                             isActive ? opt.activeBg : opt.inactiveBg,
-                            !hasItems && "opacity-40 cursor-not-allowed grayscale",
+                            !hasItems &&
+                              "opacity-40 cursor-not-allowed grayscale",
                           )}
                         >
                           {/* Right Backdrop Image with Smooth Gradient Mask */}
@@ -1795,7 +1980,9 @@ export default function WatchPage() {
                               </span>
                             )}
                             {!hasItems && (
-                              <span className="text-[10px] text-amber-400 font-bold">Chưa có</span>
+                              <span className="text-[10px] text-amber-400 font-bold">
+                                Chưa có
+                              </span>
                             )}
                           </div>
                         </div>
@@ -1818,18 +2005,27 @@ export default function WatchPage() {
                           return (
                             <button
                               key={i}
+                              disabled={hasFailed}
                               onClick={() => {
+                                setVidsrcManuallySelected(
+                                  ep._source === "vidsrc",
+                                );
                                 setCurrentServer(i);
                                 setCurrentTypeServer(i);
-                                setPlayerEngine(
-                                  ep?.server_data?.[0]?.link_m3u8
-                                    ? "hls"
-                                    : "iframe",
+                                const matchedEpisode = findMatchingEpisode(
+                                  ep.server_data,
+                                  currentEpData?.slug ||
+                                    currentEpData?.name ||
+                                    currentEp,
                                 );
-                                const nd = ep?.server_data || [];
-                                if (nd.length > 0)
+                                const matchedEpisodeId =
+                                  matchedEpisode?.slug || matchedEpisode?.name;
+                                setPlayerEngine(
+                                  matchedEpisode?.link_m3u8 ? "hls" : "iframe",
+                                );
+                                if (matchedEpisodeId)
                                   router.push(
-                                    watchUrlForEpisode(nd[0].slug || nd[0].name),
+                                    watchUrlForEpisode(matchedEpisodeId),
                                   );
                               }}
                               className={cn(
@@ -1837,7 +2033,8 @@ export default function WatchPage() {
                                 isActive
                                   ? "bg-white text-black border-white font-black shadow-md"
                                   : "bg-white/[0.04] border-white/10 text-neutral-300 hover:text-white hover:bg-white/10",
-                                hasFailed && "opacity-30 line-through cursor-not-allowed bg-red-950/20 border-red-500/30 text-red-400",
+                                hasFailed &&
+                                  "opacity-30 line-through cursor-not-allowed bg-red-950/20 border-red-500/30 text-red-400",
                               )}
                             >
                               <Server size={13} />
@@ -2093,8 +2290,6 @@ export default function WatchPage() {
               );
             })()}
 
-
-
             {/* 6. COMMENTS */}
             <div className="border-t border-white/[0.05] pt-5">
               <AdvancedCommentSection
@@ -2302,8 +2497,6 @@ export default function WatchPage() {
           onClose={() => wp.setIsOpen(false)}
         />
       )}
-
-
     </div>
   );
 }

@@ -15,10 +15,33 @@ spec:
       labels:
         app: redis
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: redis
-          image: redis:7-alpine
-          command: ["redis-server", "--appendonly", "yes"]
+          image: redis:7.4-alpine
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -ec
+            - exec redis-server --appendonly yes --requirepass "$REDIS_PASSWORD"
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cineverse-redis-secret
+                  key: REDIS_PASSWORD
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 6379
               name: redis
@@ -32,10 +55,15 @@ spec:
           volumeMounts:
             - name: redis-storage
               mountPath: /data
+            - name: tmp
+              mountPath: /tmp
       volumes:
         - name: redis-storage
           persistentVolumeClaim:
             claimName: redis-pvc
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

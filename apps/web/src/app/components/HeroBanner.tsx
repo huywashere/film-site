@@ -13,7 +13,14 @@ import { watchlistApi, watchHistoryApi } from "@/lib/api";
 import { useToast } from "@/providers/ToastProvider";
 import { cn } from "@/lib/utils";
 import { guestDataStorage } from "@/lib/user-data";
-import { tmdbApi, tmdbBackdrop, tmdbPoster, type TmdbMovie } from "@/lib/tmdb";
+import {
+  tmdbApi,
+  tmdbBackdrop,
+  tmdbLogo,
+  tmdbPoster,
+  type TmdbImage,
+  type TmdbMovie,
+} from "@/lib/tmdb";
 
 interface HeroBannerProps {
   films: FilmItem[];
@@ -21,10 +28,13 @@ interface HeroBannerProps {
 
 interface HeroFilm extends FilmItem {
   heroBackdrop?: string;
+  titleLogo?: string;
+  titleLogoResolved?: boolean;
   tmdbOnly?: boolean;
 }
 
 const HERO_SESSION_KEY = "cineverse.tmdb-hero.v2";
+const HERO_INDEX_SESSION_KEY = "cineverse.tmdb-hero-index.v1";
 
 const HERO_TMDB_COLLECTIONS = [
   {
@@ -202,6 +212,101 @@ function getSpotlightBadge(film: HeroFilm, index: number) {
   return badges[index % badges.length];
 }
 
+function getBestTitleLogo(logos: TmdbImage[]): TmdbImage | null {
+  const languagePriority = (language?: string | null) => {
+    if (language === "vi") return 3;
+    if (language === "en") return 2;
+    if (!language) return 1;
+    return 0;
+  };
+
+  return (
+    [...logos]
+      .filter((logo) => Boolean(logo.file_path) && logo.width > 0 && logo.height > 0)
+      .sort((a, b) => {
+        const languageScore =
+          languagePriority(b.iso_639_1) - languagePriority(a.iso_639_1);
+        if (languageScore !== 0) return languageScore;
+        if (b.vote_average !== a.vote_average) {
+          return b.vote_average - a.vote_average;
+        }
+        return b.width - a.width;
+      })[0] || null
+  );
+}
+
+async function enrichHeroTitleLogos(playlist: HeroFilm[]): Promise<HeroFilm[]> {
+  return Promise.all(
+    playlist.map(async (film) => {
+      if (film.titleLogoResolved) return film;
+
+      const rawTmdbId = film.tmdb?.id || film.slug.match(/^tmdb-(\d+)$/)?.[1];
+      const tmdbId = Number(rawTmdbId);
+      if (!Number.isFinite(tmdbId) || tmdbId <= 0) {
+        return { ...film, titleLogoResolved: true };
+      }
+
+      const type =
+        film.tmdb?.type === "tv" ||
+        film.type === "series" ||
+        film.type === "tvshows"
+          ? "tv"
+          : "movie";
+      const images = await tmdbApi.getImages(type, tmdbId);
+      if (!images) return film;
+
+      const bestLogo = getBestTitleLogo(images.logos || []);
+      return {
+        ...film,
+        titleLogo: tmdbLogo(bestLogo?.file_path, "w500") || undefined,
+        titleLogoResolved: true,
+      };
+    }),
+  );
+}
+
+function HeroMovieTitle({ film }: { film: HeroFilm }) {
+  const [failedLogoSlug, setFailedLogoSlug] = useState<string | null>(null);
+  const title = film.origin_name || film.name;
+  const showLogo = Boolean(
+    film.titleLogo && failedLogoSlug !== film.slug,
+  );
+
+  return (
+    <div className="flex min-h-16 w-full items-center justify-center sm:min-h-24 md:min-h-28">
+      <h1
+        className={cn(
+          showLogo && "sr-only",
+          !showLogo &&
+            "max-w-2xl line-clamp-2 text-xl font-extrabold uppercase leading-tight tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl",
+        )}
+        style={
+          showLogo
+            ? undefined
+            : { fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }
+        }
+      >
+        {title}
+      </h1>
+
+      {showLogo && (
+        // TMDB title artwork has variable transparent bounds, so intrinsic
+        // object containment is more reliable here than a cropped Image fill.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={film.titleLogo}
+          alt=""
+          aria-hidden="true"
+          decoding="async"
+          loading="eager"
+          onError={() => setFailedLogoSlug(film.slug)}
+          className="max-h-16 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] sm:max-h-24 sm:max-w-[34rem] md:max-h-28"
+        />
+      )}
+    </div>
+  );
+}
+
 function selectRandomFilms(groups: TmdbMovie[][]): HeroFilm[] {
   const used = new Set<number>();
   const take = (pool: TmdbMovie[]): HeroFilm | null => {
@@ -250,6 +355,48 @@ function isStoredHeroPlaylist(value: unknown): value is HeroFilm[] {
   );
 }
 
+// Keep the hero continuous across client-side navigation. Session storage covers
+// reloads while this small in-memory cache avoids even a single fallback frame
+// when the user navigates away from and back to the home page.
+let cachedHeroPlaylist: HeroFilm[] | null = null;
+let cachedHeroIndex = 0;
+
+function readStoredHeroPlaylist(): HeroFilm[] | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const parsed: unknown = JSON.parse(
+      window.sessionStorage.getItem(HERO_SESSION_KEY) || "null",
+    );
+    return isStoredHeroPlaylist(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function readStoredHeroIndex(playlistLength: number): number {
+  if (typeof window === "undefined" || playlistLength <= 0) return 0;
+
+  const parsed = Number(
+    window.sessionStorage.getItem(HERO_INDEX_SESSION_KEY) || "0",
+  );
+  return Number.isInteger(parsed) && parsed >= 0 && parsed < playlistLength
+    ? parsed
+    : 0;
+}
+
+function storeHeroPlaylist(playlist: HeroFilm[]) {
+  cachedHeroPlaylist = playlist;
+  if (typeof window === "undefined") return;
+
+  try {
+    window.sessionStorage.setItem(HERO_SESSION_KEY, JSON.stringify(playlist));
+  } catch {
+    // Storage can be disabled in private/restricted browsing. The memory cache
+    // still keeps navigation within the current tab stable.
+  }
+}
+
 function shuffled<T>(values: readonly T[]): T[] {
   const result = [...values];
   for (let index = result.length - 1; index > 0; index -= 1) {
@@ -276,12 +423,17 @@ async function loadCuratedTmdbPlaylist(): Promise<HeroFilm[]> {
     .flat()
     .filter((film): film is HeroFilm => Boolean(film));
 
-  return shuffled(balanced).slice(0, 6);
+  return enrichHeroTitleLogos(shuffled(balanced).slice(0, 6));
 }
 
 export default function HeroBanner({ films }: HeroBannerProps) {
-  const [current, setCurrent] = useState(0);
-  const [tmdbFeatured, setTmdbFeatured] = useState<HeroFilm[] | null>(null);
+  const [current, setCurrent] = useState(cachedHeroIndex);
+  const [tmdbFeatured, setTmdbFeatured] = useState<HeroFilm[] | null>(
+    cachedHeroPlaylist,
+  );
+  const [playlistResolved, setPlaylistResolved] = useState(
+    Boolean(cachedHeroPlaylist),
+  );
   const [trailerModalFilm, setTrailerModalFilm] = useState<FilmItem | null>(null);
   const reduceMotion = useReducedMotion();
   const { user } = useAuthStore();
@@ -290,12 +442,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
 
   const fallbackFeatured = useMemo(() => {
     if (films && films.length > 0) {
-      const pool = [...films];
-      for (let i = pool.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [pool[i], pool[j]] = [pool[j], pool[i]];
-      }
-      return pool.slice(0, 6);
+      return films.slice(0, 6);
     }
     return [];
   }, [films]);
@@ -304,33 +451,61 @@ export default function HeroBanner({ films }: HeroBannerProps) {
     () =>
       tmdbFeatured && tmdbFeatured.length === 6
         ? tmdbFeatured
-        : fallbackFeatured,
-    [fallbackFeatured, tmdbFeatured],
+        : playlistResolved
+          ? fallbackFeatured
+          : [],
+    [fallbackFeatured, playlistResolved, tmdbFeatured],
   );
 
   useEffect(() => {
     let active = true;
     const loadPlaylist = async () => {
-      let playlist = await loadCuratedTmdbPlaylist();
-
-      if (playlist.length !== 6) {
-        const groups = await Promise.all(
-          HERO_MARKETS.map(async (market) => {
-            const response = await tmdbApi.discoverMovies({
-              page: 1 + Math.floor(Math.random() * 5),
-              region: market.region,
-              with_origin_country: market.code,
-              with_original_language: market.language,
-              "vote_count.gte": 500,
-            });
-            return response?.results || [];
-          }),
-        );
-        playlist = selectRandomFilms(groups);
+      const existingPlaylist = cachedHeroPlaylist || readStoredHeroPlaylist();
+      if (existingPlaylist) {
+        const playlistWithLogos = await enrichHeroTitleLogos(existingPlaylist);
+        if (!active) return;
+        const existingIndex = cachedHeroPlaylist
+          ? cachedHeroIndex
+          : readStoredHeroIndex(playlistWithLogos.length);
+        storeHeroPlaylist(playlistWithLogos);
+        cachedHeroIndex = existingIndex;
+        setTmdbFeatured(playlistWithLogos);
+        setCurrent(existingIndex);
+        setPlaylistResolved(true);
+        return;
       }
 
-      if (!active || playlist.length !== 6) return;
-      setTmdbFeatured(playlist);
+      let playlist: HeroFilm[] = [];
+      try {
+        playlist = await loadCuratedTmdbPlaylist();
+
+        if (playlist.length !== 6) {
+          const groups = await Promise.all(
+            HERO_MARKETS.map(async (market) => {
+              const response = await tmdbApi.discoverMovies({
+                page: 1 + Math.floor(Math.random() * 5),
+                region: market.region,
+                with_origin_country: market.code,
+                with_original_language: market.language,
+                "vote_count.gte": 500,
+              });
+              return response?.results || [];
+            }),
+          );
+          playlist = await enrichHeroTitleLogos(selectRandomFilms(groups));
+        }
+      } catch {
+        playlist = [];
+      }
+
+      if (!active) return;
+      if (playlist.length === 6) {
+        storeHeroPlaylist(playlist);
+        cachedHeroIndex = 0;
+        setTmdbFeatured(playlist);
+        setCurrent(0);
+      }
+      setPlaylistResolved(true);
     };
 
     void loadPlaylist();
@@ -342,6 +517,16 @@ export default function HeroBanner({ films }: HeroBannerProps) {
   useEffect(() => {
     setCurrent((index) => (index >= featured.length ? 0 : index));
   }, [featured.length]);
+
+  useEffect(() => {
+    if (featured.length === 0) return;
+    cachedHeroIndex = current;
+    try {
+      window.sessionStorage.setItem(HERO_INDEX_SESSION_KEY, String(current));
+    } catch {
+      // See storeHeroPlaylist: session storage is an optional optimization.
+    }
+  }, [current, featured.length]);
 
   useEffect(() => {
     if (featured.length <= 1 || reduceMotion) return;
@@ -411,7 +596,28 @@ export default function HeroBanner({ films }: HeroBannerProps) {
   }, [serverHistoryData]);
 
   const film = featured[current];
-  if (!film) return null;
+  if (!film) {
+    return (
+      <section
+        data-hero-banner="true"
+        aria-busy="true"
+        aria-label="Đang tải banner nổi bật"
+        className="relative min-h-[100dvh] w-full overflow-hidden bg-[#141414]"
+      >
+        <div className="absolute inset-0 animate-pulse bg-[radial-gradient(circle_at_70%_35%,rgba(50,58,72,0.32),transparent_42%),linear-gradient(135deg,#101318_0%,#171b22_52%,#101216_100%)]" />
+        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#14181c] via-[#14181c]/70 to-transparent" />
+        <div className="absolute bottom-[16%] right-[6%] hidden w-[min(42rem,48vw)] space-y-4 md:block">
+          <div className="h-4 w-36 rounded-full bg-white/8" />
+          <div className="h-12 w-4/5 rounded-xl bg-white/8" />
+          <div className="h-5 w-2/3 rounded-lg bg-white/6" />
+          <div className="flex gap-3 pt-3">
+            <div className="h-11 w-36 rounded-full bg-white/10" />
+            <div className="h-11 w-28 rounded-full bg-white/6" />
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   const ratingVal =
     film.tmdb?.vote_average || film.vote_average || film.rating || 8.3;
@@ -682,13 +888,8 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                 );
               })()}
 
-              {/* Movie Title */}
-              <h1
-                className="text-xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-wide uppercase leading-tight drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] max-w-2xl line-clamp-2"
-                style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }}
-              >
-                {film.origin_name || film.name}
-              </h1>
+              {/* Official TMDB title artwork with an accessible text fallback. */}
+              <HeroMovieTitle film={film} />
 
               {/* Badges Pill Row (⭐ Rating, Year, 4K, Vietsub/Lồng tiếng) */}
               <div className="flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap">
@@ -730,7 +931,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                 {film.content
                   ? film.content.replace(/<[^>]*>?/gm, "")
                   : film.origin_name
-                    ? `${film.origin_name} — ` + t("home.heroDesc")
+                    ? `${film.origin_name} - ` + t("home.heroDesc")
                     : t("home.heroDesc")}
               </p>
 

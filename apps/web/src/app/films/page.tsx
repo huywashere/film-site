@@ -13,7 +13,11 @@ import {
   Loader2,
   Clapperboard,
 } from "lucide-react";
-import { FilmCard, FilmItem } from "@/components/film/FilmCard";
+import {
+  FilmCard,
+  FilmCardSkeleton,
+  FilmItem,
+} from "@/components/film/FilmCard";
 import { Pagination } from "@/components/film/Pagination";
 import { GENRES_LIST, COUNTRIES_LIST } from "@/components/layout/Navbar";
 import { movieApi } from "@/lib/api";
@@ -318,10 +322,7 @@ export default function BrowseFilmsPage() {
       {isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {Array.from({ length: 18 }).map((_, i) => (
-            <div
-              key={i}
-              className="aspect-[2/3] rounded-2xl bg-white/5 animate-pulse border border-white/5"
-            />
+            <FilmCardSkeleton key={i} />
           ))}
         </div>
       ) : films.length === 0 ? (

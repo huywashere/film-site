@@ -2,11 +2,16 @@ import {
   ConnectedSocket,
   MessageBody,
   OnGatewayDisconnect,
+  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from "@nestjs/websockets";
 import type { Namespace, Socket } from "socket.io";
+import { JwtService } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
+import { randomUUID } from "crypto";
+import { PrismaService } from "../prisma/prisma.service";
 import { WatchPartyService } from "./watch-party.service";
 import {
   CreateRoomPayload,
@@ -23,16 +28,66 @@ const allowedOrigins = process.env.FRONTEND_URL
   cors: { origin: allowedOrigins, credentials: true },
   maxHttpBufferSize: 16_384,
 })
-export class WatchPartyGateway implements OnGatewayDisconnect {
+export class WatchPartyGateway implements OnGatewayDisconnect, OnGatewayInit {
   @WebSocketServer()
   private namespace!: Namespace;
 
   private readonly activity = new Map<string, Map<string, number[]>>();
 
-  constructor(private readonly rooms: WatchPartyService) {}
+  constructor(
+    private readonly rooms: WatchPartyService,
+    private readonly jwt: JwtService,
+    private readonly config: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  afterInit(namespace: Namespace) {
+    namespace.use(async (socket, next) => {
+      try {
+        const cookies = this.parseCookies(socket.handshake.headers.cookie || "");
+        const token = cookies.accessToken;
+        if (token) {
+          const payload = await this.jwt.verifyAsync(token, {
+            secret: this.config.get<string>("JWT_SECRET"),
+          });
+          const user = await this.prisma.user.findUnique({
+            where: { id: payload.sub },
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatarUrl: true,
+              isBanned: true,
+              isLocked: true,
+            },
+          });
+          if (!user || user.isBanned || user.isLocked) {
+            return next(new Error("Tài khoản không được phép tham gia."));
+          }
+          socket.data.identity = {
+            userId: user.id,
+            name: user.displayName || user.username,
+            avatar: user.avatarUrl || undefined,
+          };
+        } else {
+          const guestId = `guest-${randomUUID()}`;
+          const guestName = `Khách ${guestId.slice(-6).toUpperCase()}`;
+          socket.data.identity = {
+            userId: guestId,
+            name: guestName,
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(guestName)}&background=17202a&color=ffffff`,
+          };
+        }
+        next();
+      } catch {
+        next(new Error("Phiên đăng nhập không hợp lệ."));
+      }
+    });
+  }
 
   @SubscribeMessage("rooms:list")
-  listRooms() {
+  listRooms(@ConnectedSocket() socket: Socket) {
+    this.enforceRateLimit(this.rateKey(socket), "list", 10, 10_000);
     return { ok: true, rooms: this.rooms.listRooms() };
   }
 
@@ -42,7 +97,12 @@ export class WatchPartyGateway implements OnGatewayDisconnect {
     @MessageBody() payload: CreateRoomPayload,
   ) {
     return this.execute(async () => {
-      const room = this.rooms.createRoom(socket.id, payload || {});
+      this.enforceRateLimit(this.rateKey(socket), "create", 3, 60_000);
+      const room = this.rooms.createRoom(
+        socket.id,
+        payload || {},
+        socket.data.identity,
+      );
       await socket.join(this.channel(room.id));
       this.emitLobby();
       return { room };
@@ -55,8 +115,13 @@ export class WatchPartyGateway implements OnGatewayDisconnect {
     @MessageBody() payload: JoinRoomPayload,
   ) {
     return this.execute(async () => {
+      this.enforceRateLimit(this.rateKey(socket), "join", 12, 30_000);
       const roomId = String(payload?.roomId || "");
-      const result = this.rooms.joinRoom(socket.id, roomId, payload?.identity);
+      const result = this.rooms.joinRoom(
+        socket.id,
+        roomId,
+        socket.data.identity,
+      );
       await socket.join(this.channel(result.room.id));
       this.namespace
         .to(this.channel(result.room.id))
@@ -95,7 +160,7 @@ export class WatchPartyGateway implements OnGatewayDisconnect {
     @MessageBody() payload: { roomId?: string; text?: string },
   ) {
     return this.execute(() => {
-      this.enforceRateLimit(socket.id, "chat", 6, 5_000);
+      this.enforceRateLimit(this.rateKey(socket), "chat", 6, 5_000);
       const roomId = String(payload?.roomId || "");
       const message = this.rooms.addMessage(
         socket.id,
@@ -113,7 +178,7 @@ export class WatchPartyGateway implements OnGatewayDisconnect {
     @MessageBody() payload: { roomId?: string; emoji?: string },
   ) {
     return this.execute(() => {
-      this.enforceRateLimit(socket.id, "reaction", 12, 5_000);
+      this.enforceRateLimit(this.rateKey(socket), "reaction", 12, 5_000);
       const roomId = String(payload?.roomId || "");
       const reaction = this.rooms.addReaction(
         socket.id,
@@ -131,7 +196,7 @@ export class WatchPartyGateway implements OnGatewayDisconnect {
     @MessageBody() payload: PlayerStatePayload,
   ) {
     return this.execute(() => {
-      this.enforceRateLimit(socket.id, "player", 16, 5_000);
+      this.enforceRateLimit(this.rateKey(socket), "player", 16, 5_000);
       const roomId = String(payload?.roomId || "");
       const state = this.rooms.updatePlayer(
         socket.id,
@@ -146,7 +211,6 @@ export class WatchPartyGateway implements OnGatewayDisconnect {
   }
 
   handleDisconnect(socket: Socket) {
-    this.activity.delete(socket.id);
     const results = this.rooms.leaveAll(socket.id);
     for (const result of results) {
       if (result.room) {
@@ -180,14 +244,14 @@ export class WatchPartyGateway implements OnGatewayDisconnect {
   }
 
   private enforceRateLimit(
-    socketId: string,
+    identifier: string,
     key: string,
     limit: number,
     windowMs: number,
   ) {
     const now = Date.now();
     const socketActivity =
-      this.activity.get(socketId) ?? new Map<string, number[]>();
+      this.activity.get(identifier) ?? new Map<string, number[]>();
     const attempts = (socketActivity.get(key) ?? []).filter(
       (time) => now - time < windowMs,
     );
@@ -196,6 +260,35 @@ export class WatchPartyGateway implements OnGatewayDisconnect {
     }
     attempts.push(now);
     socketActivity.set(key, attempts);
-    this.activity.set(socketId, socketActivity);
+    this.activity.set(identifier, socketActivity);
+    while (this.activity.size > 10_000) {
+      const oldest = this.activity.keys().next().value;
+      if (!oldest) break;
+      this.activity.delete(oldest);
+    }
+  }
+
+  private rateKey(socket: Socket) {
+    return `ip:${socket.handshake.address || "unknown"}`;
+  }
+
+  private parseCookies(raw: string): Record<string, string> {
+    return Object.fromEntries(
+      raw
+        .split(";")
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .map((part) => {
+          const separator = part.indexOf("=");
+          if (separator < 0) return [part, ""];
+          const key = part.slice(0, separator);
+          const value = part.slice(separator + 1);
+          try {
+            return [key, decodeURIComponent(value)];
+          } catch {
+            return [key, value];
+          }
+        }),
+    );
   }
 }

@@ -22,11 +22,24 @@ spec:
         app: cineverse-web
         tier: frontend
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
       terminationGracePeriodSeconds: 30
       containers:
         - name: web
-          image: registry.gitlab.com/nguyenphuhuy/film-site/web:latest
-          imagePullPolicy: Always
+          image: registry.gitlab.com/nguyenphuhuy/film-site/web:CHANGE_ME_COMMIT_SHA
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 3000
               name: http
@@ -34,7 +47,7 @@ spec:
             - configMapRef:
                 name: cineverse-config
             - secretRef:
-                name: cineverse-secret
+                name: cineverse-web-secret
           resources:
             requests:
               cpu: 150m
@@ -58,6 +71,18 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 2
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: next-cache
+              mountPath: /app/apps/web/.next/cache
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 128Mi
+        - name: next-cache
+          emptyDir:
+            sizeLimit: 512Mi
 ---
 apiVersion: v1
 kind: Service

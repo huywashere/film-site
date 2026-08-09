@@ -8,8 +8,20 @@ type TelemetryProperties = Record<
 >;
 
 const MAX_PROPERTIES = 12;
-let lastTelemetryTime = 0;
-const TELEMETRY_DEBOUNCE_MS = 3000;
+const MAX_BATCH_SIZE = 20;
+const FLUSH_DELAY_MS = 1_000;
+
+type QueuedTelemetry = {
+  name: string;
+  level: TelemetryLevel;
+  route: string;
+  properties: ReturnType<typeof cleanProperties>;
+  timestamp: string;
+};
+
+const telemetryQueue: QueuedTelemetry[] = [];
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
+let flushInFlight = false;
 
 function cleanProperties(properties: TelemetryProperties = {}) {
   return Object.fromEntries(
@@ -22,10 +34,48 @@ function cleanProperties(properties: TelemetryProperties = {}) {
   );
 }
 
-/**
- * Reports anonymous client-side operational events.
- * Debounced to prevent infinite loops when rate-limited.
- */
+function telemetryEndpoint() {
+  const rawBase = (
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1"
+  ).replace(/\/+$/, "");
+  const baseUrl = rawBase.endsWith("/api/v1")
+    ? rawBase
+    : rawBase.endsWith("/api")
+      ? `${rawBase}/v1`
+      : `${rawBase}/api/v1`;
+  return `${baseUrl}/telemetry/client/batch`;
+}
+
+function scheduleFlush(delay = FLUSH_DELAY_MS) {
+  if (flushTimer !== null || flushInFlight) return;
+  flushTimer = globalThis.setTimeout(() => {
+    flushTimer = null;
+    flushTelemetry();
+  }, delay);
+}
+
+function flushTelemetry() {
+  if (flushInFlight || telemetryQueue.length === 0) return;
+  flushInFlight = true;
+  const events = telemetryQueue.splice(0, MAX_BATCH_SIZE);
+
+  void fetch(telemetryEndpoint(), {
+    method: "POST",
+    body: JSON.stringify({ events }),
+    headers: { "content-type": "application/json" },
+    credentials: "omit",
+    keepalive: true,
+  })
+    .catch(() => {
+      // Telemetry is best-effort; never retry indefinitely during an outage.
+    })
+    .finally(() => {
+      flushInFlight = false;
+      if (telemetryQueue.length > 0) scheduleFlush();
+    });
+}
+
+/** Reports anonymous client-side operational events in small request batches. */
 export function recordTelemetry(
   name: string,
   properties: TelemetryProperties = {},
@@ -33,45 +83,24 @@ export function recordTelemetry(
 ) {
   if (typeof window === "undefined") return;
 
-  // Rate limit client telemetry calls to 1 every 3 seconds max
-  const now = Date.now();
-  if (now - lastTelemetryTime < TELEMETRY_DEBOUNCE_MS) {
-    return;
-  }
-  lastTelemetryTime = now;
-
   if (level === "error") {
     captureMessage(`[Telemetry Error] ${name}`, "error");
   }
 
-  const payload = JSON.stringify({
+  telemetryQueue.push({
     name: name.slice(0, 96),
     level,
     route: window.location.pathname.slice(0, 180),
     properties: cleanProperties(properties),
     timestamp: new Date().toISOString(),
   });
-  const rawBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1").replace(/\/+$/, "");
-  const baseUrl = rawBase.endsWith("/api/v1") ? rawBase : rawBase.endsWith("/api") ? `${rawBase}/v1` : `${rawBase}/api/v1`;
-  const endpoint = `${baseUrl}/telemetry/client`;
+  if (telemetryQueue.length > MAX_BATCH_SIZE * 2) telemetryQueue.shift();
 
-  try {
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon(
-        endpoint,
-        new Blob([payload], { type: "text/plain" }),
-      );
-      return;
-    }
-    void fetch(endpoint, {
-      method: "POST",
-      body: payload,
-      headers: { "content-type": "application/json" },
-      credentials: "omit",
-      keepalive: true,
-    }).catch(() => {});
-  } catch {
-    // Observability must never affect playback or navigation.
+  if (level === "info") scheduleFlush();
+  else {
+    if (flushTimer !== null) globalThis.clearTimeout(flushTimer);
+    flushTimer = null;
+    flushTelemetry();
   }
 }
 

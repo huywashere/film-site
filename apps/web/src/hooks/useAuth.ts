@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/providers/ToastProvider";
 import {
-  firebaseAuth,
-  googleProvider,
-  facebookProvider,
+  getFirebaseAuth,
+  getGoogleProvider,
+  getFacebookProvider,
   signInWithPopup,
   signInWithRedirect,
   signInWithEmailAndPassword,
@@ -34,7 +34,9 @@ export function useAuth() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSuccess = async (fbUser: Parameters<typeof establishFirebaseSession>[0]) => {
+  const handleSuccess = async (
+    fbUser: Parameters<typeof establishFirebaseSession>[0],
+  ) => {
     const account = await establishFirebaseSession(fbUser);
     setUser(account);
   };
@@ -69,7 +71,7 @@ export function useAuth() {
     setLoading(true);
     try {
       const res = await createUserWithEmailAndPassword(
-        firebaseAuth,
+        getFirebaseAuth(),
         email.trim(),
         pass,
       );
@@ -118,10 +120,10 @@ export function useAuth() {
       const persistence = rememberMe
         ? browserLocalPersistence
         : browserSessionPersistence;
-      await setPersistence(firebaseAuth, persistence);
+      await setPersistence(getFirebaseAuth(), persistence);
 
       const res = await signInWithEmailAndPassword(
-        firebaseAuth,
+        getFirebaseAuth(),
         email.trim(),
         pass,
       );
@@ -152,7 +154,7 @@ export function useAuth() {
     setError(null);
     setLoading(true);
     try {
-      const res = await signInWithPopup(firebaseAuth, googleProvider);
+      const res = await signInWithPopup(getFirebaseAuth(), getGoogleProvider());
       if (res?.user) {
         await handleSuccess(res.user);
         toast(
@@ -169,7 +171,7 @@ export function useAuth() {
         return false;
       }
       try {
-        await signInWithRedirect(firebaseAuth, googleProvider);
+        await signInWithRedirect(getFirebaseAuth(), getGoogleProvider());
         return true;
       } catch (redirectErr: any) {
         const msg = mapFirebaseErrorToVietnamese(
@@ -190,7 +192,10 @@ export function useAuth() {
     setError(null);
     setLoading(true);
     try {
-      const res = await signInWithPopup(firebaseAuth, facebookProvider);
+      const res = await signInWithPopup(
+        getFirebaseAuth(),
+        getFacebookProvider(),
+      );
       if (res?.user) {
         await handleSuccess(res.user);
         toast(
@@ -207,7 +212,7 @@ export function useAuth() {
         return false;
       }
       try {
-        await signInWithRedirect(firebaseAuth, facebookProvider);
+        await signInWithRedirect(getFirebaseAuth(), getFacebookProvider());
         return true;
       } catch (redirectErr: any) {
         const msg = mapFirebaseErrorToVietnamese(
@@ -243,7 +248,7 @@ export function useAuth() {
 
     setLoading(true);
     try {
-      await sendPasswordResetEmail(firebaseAuth, email.trim());
+      await sendPasswordResetEmail(getFirebaseAuth(), email.trim());
       toast(
         "Nếu địa chỉ email tồn tại trong hệ thống, hướng dẫn đặt lại mật khẩu đã được gửi tới hộp thư của bạn.",
         "success",
@@ -263,7 +268,8 @@ export function useAuth() {
 
   // 6. RESEND EMAIL VERIFICATION
   const sendVerificationEmail = async () => {
-    if (!firebaseAuth.currentUser) {
+    const currentUser = getFirebaseAuth().currentUser;
+    if (!currentUser) {
       toast(
         "Vui lòng đăng nhập trước khi yêu cầu gửi email xác thực.",
         "error",
@@ -271,7 +277,7 @@ export function useAuth() {
       return false;
     }
 
-    const rateCheck = checkPasswordResetRateLimit(firebaseAuth.currentUser.uid);
+    const rateCheck = checkPasswordResetRateLimit(currentUser.uid);
     if (!rateCheck.allowed) {
       const msg = `Bạn đã yêu cầu gửi email xác thực quá nhiều lần. Vui lòng đợi ${rateCheck.retryAfterSeconds} giây.`;
       toast(msg, "error");
@@ -280,7 +286,7 @@ export function useAuth() {
 
     setLoading(true);
     try {
-      await sendEmailVerification(firebaseAuth.currentUser);
+      await sendEmailVerification(currentUser);
       toast(
         "Email xác thực đã được gửi lại! Vui lòng kiểm tra hòm thư của bạn.",
         "success",
@@ -299,7 +305,7 @@ export function useAuth() {
   const logout = async () => {
     setLoading(true);
     try {
-      await signOut(firebaseAuth);
+      await signOut(getFirebaseAuth());
       await storeLogout();
       toast("Đã đăng xuất thành công.", "info");
     } catch (err: any) {

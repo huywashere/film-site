@@ -9,6 +9,7 @@ export interface ThrottlerStorageRecord {
 }
 
 export class RedisThrottlerStorage implements ThrottlerStorage {
+  private readonly maxMemoryKeys = 20_000;
   private redis: Redis | null = null;
   private isRedisDisabled = false;
   private readonly memoryFallback = new Map<
@@ -86,6 +87,16 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
 
     // In-memory fallback
     const now = Date.now();
+    if (this.memoryFallback.size >= this.maxMemoryKeys) {
+      for (const [storedKey, stored] of this.memoryFallback) {
+        if (stored.expiresAt <= now) this.memoryFallback.delete(storedKey);
+      }
+      while (this.memoryFallback.size >= this.maxMemoryKeys) {
+        const oldest = this.memoryFallback.keys().next().value;
+        if (!oldest) break;
+        this.memoryFallback.delete(oldest);
+      }
+    }
     const record = this.memoryFallback.get(key);
 
     if (!record || record.expiresAt <= now) {

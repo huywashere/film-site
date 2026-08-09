@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "ioredis";
 import { CircuitBreaker, CircuitOpenError } from "@/lib/circuit-breaker";
+import { signHlsUrlsInPayload } from "@/lib/hls-proxy-signature";
 
 type CacheEntry = { data: unknown; expiry: number };
 
@@ -96,7 +97,7 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
       // URL parsing failed.
     }
 
-    return true; // Guarantee app movie fetches always work 100%
+    return false;
   }
 
   function headers(cacheStatus: string, ttlSeconds: number = 300): HeadersInit {
@@ -110,12 +111,15 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
   }
 
   function evictStaleMemoryEntries() {
-    if (memoryCache.size <= maxMemoryEntries) return;
-
     const now = Date.now();
     memoryCache.forEach((value, key) => {
       if (value.expiry <= now) memoryCache.delete(key);
     });
+    while (memoryCache.size > maxMemoryEntries) {
+      const oldestKey = memoryCache.keys().next().value;
+      if (!oldestKey) break;
+      memoryCache.delete(oldestKey);
+    }
   }
 
   return async function GET(
@@ -140,10 +144,25 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
     // Next 15+ makes dynamic route params asynchronous, while Next 14 passes
     // the object directly. Await handles both forms.
     const { path: pathSegments } = await params;
+    if (
+      pathSegments.length === 0 ||
+      pathSegments.length > 12 ||
+      pathSegments.some(
+        (segment) =>
+          segment.length === 0 ||
+          segment.length > 180 ||
+          !/^[\p{L}\p{N}._~-]+$/u.test(segment),
+      ) ||
+      request.nextUrl.search.length > 2048
+    ) {
+      return NextResponse.json({ error: "Đường dẫn không hợp lệ" }, { status: 400 });
+    }
     const path = pathSegments.join("/");
     const searchParams = request.nextUrl.searchParams.toString();
     const upstreamUrl = `${config.baseUrl}/${path}${searchParams ? `?${searchParams}` : ""}`;
-    const cacheKey = `${config.cachePrefix}:${upstreamUrl}`;
+    // Versioned so pre-hardening cache entries containing unsigned HLS URLs
+    // cannot be served after deployment.
+    const cacheKey = `security-v2:${config.cachePrefix}:${upstreamUrl}`;
     const ttlSeconds = config.getTtl(path);
     const client = getRedisClient();
 
@@ -162,6 +181,8 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
 
     const memoryEntry = memoryCache.get(cacheKey);
     if (memoryEntry && memoryEntry.expiry > Date.now()) {
+      memoryCache.delete(cacheKey);
+      memoryCache.set(cacheKey, memoryEntry);
       return NextResponse.json(memoryEntry.data, {
         headers: headers("HIT-MEMORY", ttlSeconds),
       });
@@ -192,7 +213,10 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
             }
 
             const rawData = await response.json();
-            return config.transform ? config.transform(rawData, path) : rawData;
+            const transformed = config.transform
+              ? config.transform(rawData, path)
+              : rawData;
+            return signHlsUrlsInPayload(transformed);
           } catch (e) {
             lastError = e instanceof Error ? e : new Error(String(e));
             // Tiếp tục thử URL tiếp theo

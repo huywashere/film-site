@@ -62,19 +62,47 @@ export class AuthService {
         "Set a dedicated TOTP_ENCRYPTION_KEY to isolate 2FA encryption.",
       );
     }
-    return this.getCryptoKey(key || this.config.get<string>("JWT_SECRET") || "fallback_insecure");
+    const fallback = this.config.get<string>("JWT_SECRET");
+    if (!key && !fallback) {
+      throw new Error("TOTP_ENCRYPTION_KEY is required");
+    }
+    return this.getCryptoKey(key || fallback!);
   }
 
   private encrypt(text: string): string {
-    const iv = randomBytes(16);
+    const iv = randomBytes(12);
     const key = this.getTotpEncryptionKey();
-    const cipher = createCipheriv("aes-256-cbc", key, iv);
+    const cipher = createCipheriv("aes-256-gcm", key, iv);
     let encrypted = cipher.update(text);
     encrypted = Buffer.concat([encrypted, cipher.final()]);
-    return iv.toString("hex") + ":" + encrypted.toString("hex");
+    return [
+      "v2",
+      iv.toString("hex"),
+      cipher.getAuthTag().toString("hex"),
+      encrypted.toString("hex"),
+    ].join(":");
   }
 
   private decrypt(text: string): string {
+    if (text.startsWith("v2:")) {
+      const [, ivHex, authTagHex, encryptedHex] = text.split(":");
+      if (!ivHex || !authTagHex || !encryptedHex) {
+        throw new Error("Invalid encrypted TOTP secret");
+      }
+      const decipher = createDecipheriv(
+        "aes-256-gcm",
+        this.getTotpEncryptionKey(),
+        Buffer.from(ivHex, "hex"),
+      );
+      decipher.setAuthTag(Buffer.from(authTagHex, "hex"));
+      return Buffer.concat([
+        decipher.update(Buffer.from(encryptedHex, "hex")),
+        decipher.final(),
+      ]).toString();
+    }
+
+    // Backward-compatible read path. Existing CBC values are re-encrypted as
+    // authenticated GCM the next time 2FA is set up.
     const textParts = text.split(":");
     const iv = Buffer.from(textParts.shift()!, "hex");
     const encryptedText = Buffer.from(textParts.join(":"), "hex");
@@ -83,6 +111,17 @@ export class AuthService {
     let decrypted = decipher.update(encryptedText);
     decrypted = Buffer.concat([decrypted, decipher.final()]);
     return decrypted.toString();
+  }
+
+  private assertAccountCanAuthenticate(user: {
+    isLocked: boolean;
+    isBanned: boolean;
+  }): void {
+    if (user.isLocked || user.isBanned) {
+      throw new UnauthorizedException(
+        "Tài khoản hiện không được phép đăng nhập. Vui lòng liên hệ hỗ trợ.",
+      );
+    }
   }
 
   private generateSecureToken(id: string): {
@@ -95,9 +134,11 @@ export class AuthService {
     return { plainToken, tokenHash };
   }
 
-  async register(dto: RegisterDto, userAgent?: string, ipAddress?: string) {
+  async register(dto: RegisterDto) {
+    const email = dto.email.toLowerCase().trim();
+    const username = dto.username.trim();
     const existingUser = await this.prisma.user.findFirst({
-      where: { OR: [{ email: dto.email }, { username: dto.username }] },
+      where: { OR: [{ email }, { username }] },
     });
 
     if (existingUser) {
@@ -109,10 +150,10 @@ export class AuthService {
     const hash = await bcrypt.hash(dto.password, 12);
     const user = await this.prisma.user.create({
       data: {
-        email: dto.email,
-        username: dto.username,
+        email,
+        username,
         passwordHash: hash,
-        displayName: dto.username,
+        displayName: username,
       },
     });
 
@@ -141,13 +182,7 @@ export class AuthService {
         );
       });
 
-    return this.signTokens(
-      user.id,
-      user.email,
-      user.username,
-      userAgent,
-      ipAddress,
-    );
+    return { requiresEmailVerification: true };
   }
 
   async verifyEmail(dto: VerifyEmailDto) {
@@ -194,19 +229,13 @@ export class AuthService {
     }
 
     const user = await this.prisma.user.findFirst({
-      where: { OR: [{ email: dto.email }, { username: dto.email }] },
+      where: { OR: [{ email: identifier }, { username: dto.email.trim() }] },
     });
 
     if (!user) {
       // Increment fail counter even for non-existent accounts to avoid user enumeration timing
       await this.cache.set(failKey, String(failCount + 1), this.LOCKOUT_TTL);
       throw new UnauthorizedException("Thông tin đăng nhập không hợp lệ");
-    }
-
-    if (user.isLocked) {
-      throw new UnauthorizedException(
-        "Tài khoản đã bị khóa do có hoạt động bất thường. Vui lòng liên hệ hỗ trợ.",
-      );
     }
 
     const match = await bcrypt.compare(dto.password, user.passwordHash);
@@ -219,6 +248,13 @@ export class AuthService {
         );
       }
       throw new UnauthorizedException("Thông tin đăng nhập không hợp lệ");
+    }
+
+    this.assertAccountCanAuthenticate(user);
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedException(
+        "Vui lòng xác minh email trước khi đăng nhập.",
+      );
     }
 
     // Successful login — clear the fail counter
@@ -309,10 +345,17 @@ export class AuthService {
 
       const record = await this.prisma.refreshToken.findUnique({
         where: { id: tokenId },
+        include: { user: true },
       });
 
       if (!record)
         throw new UnauthorizedException("Refresh token không tồn tại");
+
+      if (record.userId !== userId) {
+        throw new UnauthorizedException("Refresh token không hợp lệ");
+      }
+
+      this.assertAccountCanAuthenticate(record.user);
 
       if (record.isRevoked) {
         await this.prisma.refreshToken.updateMany({
@@ -332,10 +375,20 @@ export class AuthService {
       if (!isMatch)
         throw new UnauthorizedException("Refresh token không hợp lệ");
 
-      await this.prisma.refreshToken.update({
-        where: { id: record.id },
-        data: { isRevoked: true },
+      const claimed = await this.prisma.refreshToken.updateMany({
+        where: { id: record.id, userId, isRevoked: false },
+        data: { isRevoked: true, lastUsedAt: new Date() },
       });
+
+      if (claimed.count !== 1) {
+        await this.prisma.refreshToken.updateMany({
+          where: { userId },
+          data: { isRevoked: true },
+        });
+        throw new UnauthorizedException(
+          "Phát hiện refresh token được sử dụng lại, vui lòng đăng nhập lại",
+        );
+      }
 
       return this.signTokens(
         userId,
@@ -448,13 +501,21 @@ export class AuthService {
     userAgent?: string,
     ipAddress?: string,
   ) {
-    const { googleId, email, firstName, lastName, picture } = profile;
+    const { googleId, email, firstName, lastName, picture, emailVerified } =
+      profile;
+    if (!email || emailVerified !== true) {
+      throw new UnauthorizedException(
+        "Google chưa xác minh email của tài khoản này.",
+      );
+    }
 
+    const normalizedEmail = email.toLowerCase().trim();
     let user = await this.prisma.user.findUnique({
       where: { googleId },
     });
 
     if (user) {
+      this.assertAccountCanAuthenticate(user);
       return this.signTokens(
         user.id,
         user.email,
@@ -465,10 +526,11 @@ export class AuthService {
     }
 
     user = await this.prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (user) {
+      this.assertAccountCanAuthenticate(user);
       user = await this.prisma.user.update({
         where: { id: user.id },
         data: {
@@ -488,11 +550,11 @@ export class AuthService {
     const randomPass = "google_oauth_" + randomBytes(16).toString("hex");
     const hash = await bcrypt.hash(randomPass, 12);
     const suffix = randomBytes(4).toString("hex");
-    const username = `${email.split("@")[0]}_${suffix}`;
+    const username = `${normalizedEmail.split("@")[0]}_${suffix}`;
 
     user = await this.prisma.user.create({
       data: {
-        email,
+        email: normalizedEmail,
         username,
         passwordHash: hash,
         displayName: `${firstName || ""} ${lastName || ""}`.trim() || username,
@@ -525,6 +587,11 @@ export class AuthService {
     if (!profile.email) {
       throw new BadRequestException("Tài khoản Google chưa cung cấp email");
     }
+    if (!profile.emailVerified) {
+      throw new UnauthorizedException(
+        "Email Firebase phải được xác minh trước khi đăng nhập hoặc liên kết tài khoản.",
+      );
+    }
 
     const email = profile.email.toLowerCase();
     const providerId = `firebase:${profile.uid}`;
@@ -537,6 +604,7 @@ export class AuthService {
     }
 
     if (user) {
+      this.assertAccountCanAuthenticate(user);
       user = await this.prisma.user.update({
         where: { id: user.id },
         data: {
@@ -594,6 +662,12 @@ export class AuthService {
   async setup2FA(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new BadRequestException("User không tồn tại");
+    this.assertAccountCanAuthenticate(user);
+    if (user.twoFactorEnabled) {
+      throw new BadRequestException(
+        "2FA đang hoạt động. Hãy tắt 2FA trước khi thiết lập lại.",
+      );
+    }
 
     const secret = generateSecret();
     const encryptedSecret = this.encrypt(secret);
@@ -642,6 +716,12 @@ export class AuthService {
     if (!record) throw new BadRequestException("Chưa thiết lập 2FA");
 
     const decryptedSecret = this.decrypt(record.secret);
+    if (!record.secret.startsWith("v2:")) {
+      await this.prisma.twoFactorAuth.update({
+        where: { userId },
+        data: { secret: this.encrypt(decryptedSecret) },
+      });
+    }
     const isValid = await verify({
       token: dto.code,
       secret: decryptedSecret,
@@ -701,6 +781,7 @@ export class AuthService {
       const userId = payload.sub;
       const user = await this.prisma.user.findUnique({ where: { id: userId } });
       if (!user) throw new UnauthorizedException("User không tồn tại");
+      this.assertAccountCanAuthenticate(user);
 
       const record = await this.prisma.twoFactorAuth.findUnique({
         where: { userId },
@@ -709,6 +790,12 @@ export class AuthService {
       if (!record) throw new UnauthorizedException("Chưa thiết lập 2FA");
 
       const decryptedSecret = this.decrypt(record.secret);
+      if (!record.secret.startsWith("v2:")) {
+        await this.prisma.twoFactorAuth.update({
+          where: { userId },
+          data: { secret: this.encrypt(decryptedSecret) },
+        });
+      }
       let isValid = (await verify({
         token: dto.code,
         secret: decryptedSecret,
@@ -886,40 +973,50 @@ export class AuthService {
 
       await this.prisma.user.update({
         where: { id: userId },
-        data: { suspiciousToken: suspiciousTokenHash },
+        data: {
+          suspiciousToken: suspiciousTokenHash,
+          suspiciousTokenExpiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
       });
 
       await this.mailService.sendNewDeviceAlertEmail(email, {
         browser: currentBrowser,
         os: currentOS,
         ipAddress: ipAddress || "Unknown IP",
-        token: suspiciousToken,
+        token: `${userId}.${suspiciousToken}`,
       });
     }
   }
 
   async lockAccount(suspiciousToken: string) {
-    // Find any non-locked user that has a suspiciousToken hash set
-    const candidates = await this.prisma.user.findMany({
-      where: { suspiciousToken: { not: null }, isLocked: false },
-      select: { id: true, suspiciousToken: true },
-    });
-
-    let matchedUser: { id: string } | null = null;
-    for (const candidate of candidates) {
-      const isMatch = await bcrypt.compare(
-        suspiciousToken,
-        candidate.suspiciousToken!,
-      );
-      if (isMatch) {
-        matchedUser = candidate;
-        break;
-      }
-    }
-
-    if (!matchedUser) {
+    const [userId, randomToken, ...extra] = suspiciousToken.split(".");
+    if (!userId || !randomToken || extra.length > 0) {
       throw new BadRequestException(
         "Mã xác thực khóa tài khoản không hợp lệ hoặc đã được sử dụng.",
+      );
+    }
+
+    const matchedUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        suspiciousToken: true,
+        suspiciousTokenExpiresAt: true,
+        isLocked: true,
+      },
+    });
+    const isExpired =
+      !matchedUser?.suspiciousTokenExpiresAt ||
+      matchedUser.suspiciousTokenExpiresAt.getTime() < Date.now();
+    const isMatch =
+      Boolean(matchedUser?.suspiciousToken) &&
+      !matchedUser!.isLocked &&
+      !isExpired &&
+      (await bcrypt.compare(randomToken, matchedUser!.suspiciousToken!));
+
+    if (!isMatch) {
+      throw new BadRequestException(
+        "Mã xác thực khóa tài khoản không hợp lệ hoặc đã hết hạn.",
       );
     }
 
@@ -928,6 +1025,7 @@ export class AuthService {
       data: {
         isLocked: true,
         suspiciousToken: null,
+        suspiciousTokenExpiresAt: null,
       },
     });
 

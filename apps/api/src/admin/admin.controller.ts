@@ -12,6 +12,16 @@ import {
 import { AdminService } from "./admin.service";
 import { FirebaseAuthGuard } from "../auth/guards/firebase-auth.guard";
 import { AdminRoleGuard } from "../auth/guards/admin-role.guard";
+import {
+  ManualSyncDto,
+  UpdateMovieMetadataDto,
+  UpdateMovieSourcesDto,
+} from "./admin.dto";
+
+function paginationValue(value: string | undefined, fallback: number, max: number) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) ? Math.min(Math.max(parsed, 1), max) : fallback;
+}
 
 @Controller("admin")
 @UseGuards(FirebaseAuthGuard, AdminRoleGuard)
@@ -34,10 +44,10 @@ export class AdminController {
     @Query("isHidden") isHidden?: string,
   ) {
     return this.adminService.getMoviesPaginated({
-      page: page ? parseInt(page) : 1,
-      limit: limit ? parseInt(limit) : 12,
-      search,
-      type,
+      page: paginationValue(page, 1, 10_000),
+      limit: paginationValue(limit, 12, 100),
+      search: search?.slice(0, 200),
+      type: type?.slice(0, 40),
       isHidden:
         isHidden === "true" ? true : isHidden === "false" ? false : undefined,
     });
@@ -51,7 +61,7 @@ export class AdminController {
   @Patch("movies/:id/metadata")
   updateMovieMetadata(
     @Param("id") id: string,
-    @Body() body: { title?: string; posterUrl?: string; description?: string },
+    @Body() body: UpdateMovieMetadataDto,
     @Req() req: any,
   ) {
     return this.adminService.updateMovieMetadata(id, body, req.user);
@@ -60,14 +70,14 @@ export class AdminController {
   @Patch("movies/:id/sources")
   updateMovieSources(
     @Param("id") id: string,
-    @Body() body: { sources: string[] },
+    @Body() body: UpdateMovieSourcesDto,
     @Req() req: any,
   ) {
     return this.adminService.updateMovieSources(id, body.sources, req.user);
   }
 
   @Post("movies/sync")
-  triggerManualSync(@Body() body: { source: string }, @Req() req: any) {
+  triggerManualSync(@Body() body: ManualSyncDto, @Req() req: any) {
     return this.adminService.triggerManualSync(body.source, req.user);
   }
 
@@ -80,9 +90,9 @@ export class AdminController {
     @Query("status") status?: "active" | "banned" | "unverified",
   ) {
     return this.adminService.getUsersPaginated({
-      page: page ? parseInt(page) : 1,
-      limit: limit ? parseInt(limit) : 12,
-      search,
+      page: paginationValue(page, 1, 10_000),
+      limit: paginationValue(limit, 12, 100),
+      search: search?.slice(0, 200),
       status,
     });
   }

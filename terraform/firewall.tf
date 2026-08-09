@@ -4,25 +4,27 @@ resource "digitalocean_firewall" "cineverse_firewall" {
 
   droplet_ids = [digitalocean_droplet.cineverse_server.id]
 
-  # Allow HTTP (Port 80) from anywhere
+  # The origin is reachable only through Cloudflare, preventing WAF bypass.
   inbound_rule {
     protocol         = "tcp"
     port_range       = "80"
-    source_addresses = ["0.0.0.0/0", "::/0"]
+    source_addresses = var.cloudflare_origin_cidrs
   }
 
-  # Allow HTTPS (Port 443) from anywhere
+  # Allow HTTPS from Cloudflare proxy ranges only.
   inbound_rule {
     protocol         = "tcp"
     port_range       = "443"
-    source_addresses = ["0.0.0.0/0", "::/0"]
+    source_addresses = var.cloudflare_origin_cidrs
   }
 
-  # Allow SSH (Port 22) for admin access
-  inbound_rule {
-    protocol         = "tcp"
-    port_range       = "22"
-    source_addresses = ["0.0.0.0/0", "::/0"]
+  dynamic "inbound_rule" {
+    for_each = length(var.admin_ssh_cidrs) > 0 ? [1] : []
+    content {
+      protocol         = "tcp"
+      port_range       = "22"
+      source_addresses = var.admin_ssh_cidrs
+    }
   }
 
   # Allow all outbound traffic (Package updates, API fetches)

@@ -15,11 +15,22 @@ const KNOWN_PLACEHOLDER_SECRETS = new Set([
   "your-super-secret-refresh-key-change-in-production",
   "default_crypto_secret",
   "dummy_secret_for_ci",
+  "replace-with-a-long-random-token",
+  "replace-with-a-unique-random-secret",
+  "replace-with-a-different-random-secret",
+  "replace-with-another-random-secret",
+  "replace-with-a-dedicated-random-secret",
+  "replace-with-a-dedicated-random-token",
   "secret",
   "changeme",
 ]);
 
-const REQUIRED_SECRETS = ["JWT_SECRET", "JWT_REFRESH_SECRET", "TOTP_ENCRYPTION_KEY"] as const;
+const REQUIRED_SECRETS = [
+  "JWT_SECRET",
+  "JWT_REFRESH_SECRET",
+  "TOTP_ENCRYPTION_KEY",
+  "ADMIN_METRICS_TOKEN",
+] as const;
 
 /**
  * Validates security-critical configuration at boot.

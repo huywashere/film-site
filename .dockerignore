@@ -5,15 +5,16 @@ yarn-error.log
 package-lock.json
 yarn.lock
 
-# Environment files
-.env
-.env.local
-.env.*.local
+# Environment files must never enter a build context. Public NEXT_PUBLIC_*
+# values are supplied explicitly as build args.
+**/.env
+**/.env.*
 
 # Build outputs
 dist
 build
-.next
+**/.next
+**/.next-*
 out
 .turbo
 

@@ -56,9 +56,25 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.use((req, res, next) => {
-    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
-    res.setHeader("Pragma", "no-cache");
-    res.setHeader("Expires", "0");
+    const isPublicMovieRead =
+      req.method === "GET" &&
+      req.path.startsWith("/api/v1/movies/") &&
+      !req.path.startsWith("/api/v1/movies/stream-token/");
+
+    if (isPublicMovieRead) {
+      res.setHeader(
+        "Cache-Control",
+        "public, max-age=60, s-maxage=300, stale-while-revalidate=600",
+      );
+      res.setHeader("Vary", "Origin, Accept-Encoding");
+    } else {
+      res.setHeader(
+        "Cache-Control",
+        "no-store, no-cache, must-revalidate, private",
+      );
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+    }
     next();
   });
   app.use(
@@ -96,6 +112,34 @@ async function bootstrap() {
         : [...configuredOrigins, "http://127.0.0.1:3000", "http://localhost:3000"],
     ),
   );
+
+  // Cookie-authenticated unsafe requests must originate from a trusted web
+  // application. CORS alone does not stop form-based CSRF requests.
+  app.use((req, res, next) => {
+    const unsafeMethod = !["GET", "HEAD", "OPTIONS"].includes(req.method);
+    const hasSessionCookie = Boolean(
+      req.cookies?.accessToken || req.cookies?.refreshToken,
+    );
+    const hasBearerToken = /^Bearer\s+\S+/i.test(
+      String(req.headers.authorization || ""),
+    );
+    if (!unsafeMethod || !hasSessionCookie || hasBearerToken) {
+      next();
+      return;
+    }
+
+    const origin = String(req.headers.origin || "");
+    const requestOrigin = `${req.protocol}://${req.get("host")}`;
+    if (origin && (origins.includes(origin) || origin === requestOrigin)) {
+      next();
+      return;
+    }
+
+    res.status(403).json({
+      success: false,
+      message: "Nguồn yêu cầu không được phép",
+    });
+  });
 
   app.enableCors({
     origin: (origin, callback) => {

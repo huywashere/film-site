@@ -17,6 +17,9 @@ interface InternalRoom extends WatchPartyRoomSnapshot {
 
 @Injectable()
 export class WatchPartyService implements OnModuleDestroy {
+  private readonly maxRooms = 500;
+  private readonly maxRoomsPerSocket = 3;
+  private readonly maxParticipantsPerRoom = 50;
   private readonly rooms = new Map<string, InternalRoom>();
   private readonly socketRooms = new Map<string, Set<string>>();
   private readonly cleanupTimer = setInterval(
@@ -28,12 +31,24 @@ export class WatchPartyService implements OnModuleDestroy {
     clearInterval(this.cleanupTimer);
   }
 
-  createRoom(socketId: string, payload: CreateRoomPayload) {
+  createRoom(
+    socketId: string,
+    payload: CreateRoomPayload,
+    trustedIdentity?: WatchPartyIdentity,
+  ) {
+    if (this.rooms.size >= this.maxRooms) {
+      throw new Error("Hệ thống đã đạt giới hạn phòng đang hoạt động.");
+    }
+    if (
+      (this.socketRooms.get(socketId)?.size || 0) >= this.maxRoomsPerSocket
+    ) {
+      throw new Error("Bạn đã đạt giới hạn số phòng có thể tạo.");
+    }
     const now = new Date().toISOString();
     const id = this.generateRoomId();
     const participant = this.createParticipant(
       socketId,
-      payload.identity,
+      trustedIdentity,
       true,
       now,
     );
@@ -70,6 +85,9 @@ export class WatchPartyService implements OnModuleDestroy {
     const room = this.requireRoom(roomId);
     const existing = room.participants.find((item) => item.id === socketId);
     if (existing) return { room: this.snapshot(room), participant: existing };
+    if (room.participants.length >= this.maxParticipantsPerRoom) {
+      throw new Error("Phòng đã đủ người tham gia.");
+    }
 
     const now = new Date().toISOString();
     const participant = this.createParticipant(socketId, identity, false, now);
@@ -317,9 +335,12 @@ export class WatchPartyService implements OnModuleDestroy {
   }
 
   private removeExpiredRooms() {
-    const expiresBefore = Date.now() - 6 * 60 * 60 * 1000;
+    const expiresBefore = Date.now() - 2 * 60 * 60 * 1000;
     for (const [roomId, room] of this.rooms) {
       if (new Date(room.updatedAt).getTime() < expiresBefore) {
+        for (const participant of room.participants) {
+          this.untrackSocketRoom(participant.id, roomId);
+        }
         this.rooms.delete(roomId);
       }
     }

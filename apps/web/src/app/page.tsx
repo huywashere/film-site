@@ -1,7 +1,6 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { ChevronRight, ChevronLeft, ChevronDown, Loader2 } from "lucide-react";
 import { api, movieApi } from "@/lib/api";
@@ -227,22 +226,7 @@ function FilmSection({
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
 
-  if (isLoading) {
-    return (
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <div className="h-6 w-48 bg-white/10 rounded animate-pulse" />
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <FilmCardSkeleton key={i} />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (!films || films.length === 0) return null;
+  if (!isLoading && (!films || films.length === 0)) return null;
 
   return (
     <div data-film-section="true" className="mb-8 group/section">
@@ -257,11 +241,15 @@ function FilmSection({
             >
               {title}
             </h2>
-            <p className="mt-1 text-[11px] text-neutral-500">
-              {films.length} tuyển chọn từ{" "}
-              {new Set(films.map((film) => film._source || "kkphim")).size}{" "}
-              nguồn dữ liệu
-            </p>
+            {isLoading ? (
+              <div className="mt-1 h-3 w-36 rounded bg-white/[0.07] motion-safe:animate-pulse" />
+            ) : (
+              <p className="mt-1 text-[11px] text-neutral-500">
+                {films.length} tuyển chọn từ{" "}
+                {new Set(films.map((film) => film._source || "kkphim")).size}{" "}
+                nguồn dữ liệu
+              </p>
+            )}
           </div>
           {href && (
             <Link
@@ -276,11 +264,15 @@ function FilmSection({
         </div>
 
         {/* Right Side: Dynamic Dash Line Pagination Indicators (— - - - -) */}
-        <DashPagination swiper={swiper} />
+        {isLoading ? (
+          <div className="h-2 w-24 rounded bg-white/[0.07] motion-safe:animate-pulse" />
+        ) : (
+          <DashPagination swiper={swiper} />
+        )}
       </div>
 
       {/* Row Container with Right Minimalist Vertical Stack Navigation */}
-      <div className="flex items-stretch gap-3">
+      <div className="flex items-stretch gap-3" aria-busy={isLoading}>
         <div className="flex-1 min-w-0">
           <Swiper
             modules={[Navigation, FreeMode]}
@@ -310,11 +302,17 @@ function FilmSection({
             }}
             className="w-full !py-1"
           >
-            {films.map((film, idx) => (
-              <SwiperSlide key={film._id || film.slug || idx}>
-                <FilmCard film={film} />
-              </SwiperSlide>
-            ))}
+            {isLoading
+              ? Array.from({ length: 10 }, (_, index) => (
+                  <SwiperSlide key={`film-skeleton-${index}`}>
+                    <FilmCardSkeleton />
+                  </SwiperSlide>
+                ))
+              : films.map((film, idx) => (
+                  <SwiperSlide key={film._id || film.slug || idx}>
+                    <FilmCard film={film} />
+                  </SwiperSlide>
+                ))}
           </Swiper>
         </div>
 
@@ -322,6 +320,7 @@ function FilmSection({
         <div className="hidden sm:flex flex-col justify-center gap-3 shrink-0 my-auto px-1">
           <button
             ref={nextRef}
+            disabled={isLoading}
             aria-label="Next slide"
             title="Xem phim tiếp theo"
             className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
@@ -331,6 +330,7 @@ function FilmSection({
 
           <button
             ref={prevRef}
+            disabled={isLoading}
             aria-label="Previous slide"
             title="Xem phim trước"
             className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
@@ -374,7 +374,7 @@ function LazySection({ children }: { children: React.ReactNode }) {
       {isVisible ? (
         children
       ) : (
-        <div className="w-full h-32 animate-pulse bg-white/[0.01] rounded-2xl mb-8" />
+        <div className="mb-8 h-[260px] w-full rounded-2xl bg-white/[0.01] motion-safe:animate-pulse sm:h-[340px] lg:h-[360px]" />
       )}
     </div>
   );
@@ -382,10 +382,24 @@ function LazySection({ children }: { children: React.ReactNode }) {
 
 export default function HomePage() {
   const { t } = useTranslation();
-  const router = useRouter();
 
   const [showMoreSections, setShowMoreSections] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [catalogReady, setCatalogReady] = useState(false);
+
+  // Let the hero become interactive before starting the below-the-fold
+  // catalogue fan-out. This removes several competing requests from the LCP
+  // window without changing the rows users receive.
+  useEffect(() => {
+    if ("requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(() => setCatalogReady(true), {
+        timeout: 1_200,
+      });
+      return () => window.cancelIdleCallback(idleId);
+    }
+    const timer = globalThis.setTimeout(() => setCatalogReady(true), 500);
+    return () => globalThis.clearTimeout(timer);
+  }, []);
 
   const handleShowMore = () => {
     setIsLoadingMore(true);
@@ -409,11 +423,13 @@ export default function HomePage() {
         })
         .then((r) => r.data),
     staleTime: 1000 * 60 * 10,
+    enabled: catalogReady,
   });
   const { data: vfxData, isLoading: vfxLoading } = useQuery({
     queryKey: ["vfx-movies"],
     queryFn: () => movieApi.getByGenre("than-thoai", 1).then((r) => r.data),
     staleTime: 1000 * 60 * 10,
+    enabled: catalogReady,
   });
 
   // 2. Series Âu-Mỹ (Hollywood TV Series)
@@ -421,6 +437,7 @@ export default function HomePage() {
     queryKey: ["us-uk-series"],
     queryFn: () => movieApi.getByCountry("au-my", 1).then((r) => r.data),
     staleTime: 1000 * 60 * 10,
+    enabled: catalogReady,
   });
 
   // 3. Phim hành động (Hollywood Action Movies)
@@ -436,11 +453,13 @@ export default function HomePage() {
         })
         .then((r) => r.data),
     staleTime: 1000 * 60 * 10,
+    enabled: catalogReady,
   });
   const { data: actionData, isLoading: actionLoading } = useQuery({
     queryKey: ["action-movies"],
     queryFn: () => movieApi.getByGenre("hanh-dong", 1).then((r) => r.data),
     staleTime: 1000 * 60 * 10,
+    enabled: catalogReady,
   });
 
   // 4. Phim khoa học viễn tưởng bom tấn (Hollywood Sci-Fi Blockbusters)
@@ -456,11 +475,13 @@ export default function HomePage() {
         })
         .then((r) => r.data),
     staleTime: 1000 * 60 * 10,
+    enabled: catalogReady,
   });
   const { data: scifiData, isLoading: scifiLoading } = useQuery({
     queryKey: ["scifi-movies"],
     queryFn: () => movieApi.getByGenre("vien-tuong", 1).then((r) => r.data),
     staleTime: 1000 * 60 * 10,
+    enabled: catalogReady,
   });
 
   // ── Lazy Loaded 10 Sections Data (Loaded after clicking Xem Thêm) ──
@@ -565,6 +586,7 @@ export default function HomePage() {
   const { data: latestData, isLoading: latestLoading } = useQuery({
     queryKey: ["latest-v2", 1],
     queryFn: () => movieApi.getLatest(1).then((r) => r.data),
+    enabled: catalogReady,
   });
 
   const { data: trendingData } = useQuery({
@@ -573,19 +595,6 @@ export default function HomePage() {
       api.get<FilmItem[]>("/movies/trending?limit=30").then((r) => r.data),
     staleTime: 1000 * 60 * 10,
     retry: 1,
-  });
-
-  // US/UK data for Hero Banner
-  const { data: usUkBannerData } = useQuery({
-    queryKey: ["hero-us-uk-blockbusters-p1"],
-    queryFn: () => movieApi.getByCountry("au-my", 1).then((r) => r.data),
-    staleTime: 1000 * 60 * 10,
-  });
-
-  const { data: marvelHeroData } = useQuery({
-    queryKey: ["hero-marvel-blockbusters"],
-    queryFn: () => movieApi.search("Marvel", 1).then((r) => r.data),
-    staleTime: 1000 * 60 * 10,
   });
 
   // ── Process arrays with STRICT Live-Action filtering for Hollywood rows ──
@@ -680,21 +689,11 @@ export default function HomePage() {
 
   // Priority High-Interest & Top-Trending Movies for Hero Banner
   const bannerFilms = useMemo(() => {
-    const popularPool = filterLiveActionOnly([
-      ...trendingFilms,
-      ...HOLLYWOOD_HERO_POOL,
-      ...(usUkBannerData?.data?.items || usUkBannerData?.items || []),
-      ...actionFilms,
-    ]);
-    const pool = deduplicate(
-      popularPool.length > 0 ? popularPool : HOLLYWOOD_HERO_POOL,
-    );
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
-    return pool.slice(0, 6);
-  }, [trendingFilms, usUkBannerData, actionFilms]);
+    const trendingPool = filterLiveActionOnly(trendingFilms);
+    return deduplicate(
+      trendingPool.length > 0 ? trendingPool : HOLLYWOOD_HERO_POOL,
+    ).slice(0, 6);
+  }, [trendingFilms]);
 
   const showBannerSkeleton = false;
 
@@ -762,7 +761,6 @@ export default function HomePage() {
 
     const highInterestFilms = deduplicate([
       ...trendingFilms,
-      ...(usUkBannerData?.data?.items || usUkBannerData?.items || []),
       ...actionFilms,
       ...scifiFilms,
       ...HOLLYWOOD_HERO_POOL,

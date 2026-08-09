@@ -9,6 +9,7 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { RatingsService } from "./ratings.service";
+import { CreateRatingDto } from "./ratings.dto";
 
 @Controller("ratings")
 export class RatingsController {
@@ -16,7 +17,7 @@ export class RatingsController {
 
   @Post()
   @UseGuards(AuthGuard("jwt"))
-  rate(@Request() req, @Body() dto: { movieId: string; score: number }) {
+  rate(@Request() req, @Body() dto: CreateRatingDto) {
     return this.ratingsService.rate(req.user.id, dto.movieId, dto.score);
   }
 

@@ -2,9 +2,59 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function proxy(request: NextRequest) {
-  return NextResponse.next();
+  const nonce = btoa(crypto.randomUUID());
+  const isDevelopment = process.env.NODE_ENV === "development";
+  const apiOrigin = (() => {
+    try {
+      return process.env.NEXT_PUBLIC_API_URL
+        ? new URL(process.env.NEXT_PUBLIC_API_URL).origin
+        : "";
+    } catch {
+      return "";
+    }
+  })();
+
+  const csp = [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${
+      isDevelopment ? " 'unsafe-eval'" : ""
+    } https://apis.google.com https://www.gstatic.com https://www.google.com https://challenges.cloudflare.com`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "img-src 'self' data: blob: https://image.tmdb.org https://phimimg.com https://img.phimapi.com https://img.ophim.live https://images.nguonc.com https://vsmov.com https://ui-avatars.com https://upload.wikimedia.org",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    `connect-src 'self'${apiOrigin ? ` ${apiOrigin}` : ""}${
+      isDevelopment
+        ? " http://localhost:3001 http://127.0.0.1:3001 ws://localhost:3001 ws://127.0.0.1:3001"
+        : ""
+    } https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com wss://*.firebaseio.com`,
+    "frame-src 'self' https://accounts.google.com https://*.firebaseapp.com https://www.google.com https://challenges.cloudflare.com https://vidsrc.sbs https://*.phimapi.com https://*.ophim.live https://ophim1.com https://*.nguonc.com https://*.vsmov.com",
+    "media-src 'self' blob:",
+    "worker-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'self'",
+    ...(isDevelopment ? [] : ["upgrade-insecure-requests"]),
+  ].join("; ");
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set("Content-Security-Policy", csp);
+  return response;
 }
 
 export const config = {
-  matcher: ["/profile/:path*", "/watchlist", "/settings/:path*", "/history"],
+  matcher: [
+    {
+      source:
+        "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
+      missing: [
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ],
+    },
+  ],
 };

@@ -68,7 +68,7 @@ test:
   script:
     # 1. Dependency vulnerability audit
     - echo "🔍 Kiểm tra lỗ hổng dependency..."
-    - pnpm audit --audit-level=high || true
+    - pnpm audit --prod --audit-level=high
 
     # 2. Generate Prisma client (cần cho typecheck)
     - echo "⚙️  Generating Prisma client..."
@@ -78,6 +78,7 @@ test:
     - echo "📝 TypeScript typecheck..."
     - pnpm --filter api exec tsc --noEmit
     - pnpm --filter web exec tsc --noEmit
+    - pnpm --filter @cineverse/admin-cms exec tsc --noEmit
 
     # 4. Lint
     - echo "🔎 ESLint..."
@@ -139,13 +140,15 @@ deploy:production:
     - mkdir -p ~/.ssh
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
     - chmod 600 ~/.ssh/id_ed25519
-    # Trust VPS host key
-    - ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+    # Pin the expected VPS host key in a protected CI variable.
+    - test -n "$VPS_KNOWN_HOSTS"
+    - printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+    - chmod 600 ~/.ssh/known_hosts
   script:
     - echo "🚀 Deploying CineVerse $IMAGE_TAG to production ($VPS_HOST)..."
     - |
       ssh -i ~/.ssh/id_ed25519 \
-          -o StrictHostKeyChecking=accept-new \
+          -o StrictHostKeyChecking=yes \
           -o ConnectTimeout=30 \
           "$VPS_USER@$VPS_HOST" \
           "REGISTRY_IMAGE='$REGISTRY_IMAGE' \
@@ -166,3 +169,11 @@ deploy:production:
     when:
       - runner_system_failure
       - stuck_or_timeout_failure
+# Scan the checked-out tree without publishing historical secret values in logs.
+secret-scan:
+  stage: test
+  image:
+    name: zricethezav/gitleaks:v8.28.0
+    entrypoint: [""]
+  script:
+    - gitleaks detect --source . --no-git --redact --exit-code 1

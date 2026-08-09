@@ -1,6 +1,0 @@
-User-Agent: *
-Allow: /
-Disallow: /profile/
-Disallow: /watch/
-
-Sitemap: http://localhost:3000/sitemap.xml

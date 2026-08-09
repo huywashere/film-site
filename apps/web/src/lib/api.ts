@@ -1,4 +1,5 @@
-import axios from "axios";
+import axios, { type AxiosResponse } from "axios";
+import type { User } from "@/store/authStore";
 import {
   dedupeFilmsBySource,
   extractFilmItems,
@@ -253,11 +254,14 @@ export const vsmovApi = {
     fetchVsmov(`/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}`),
 };
 
-// ── VidSrc API (qua Next.js proxy) ────────────────────────────────
+// ── VidSrc embed adapter (TMDB IDs only; not a catalogue API) ─────
 export const vidsrcApi = {
-  getDetail: (slug: string) => fetchVidsrc(`/movie/${slug}`),
-  search: (keyword: string, page = 1) =>
-    fetchVidsrc(`/search?keyword=${encodeURIComponent(keyword)}&page=${page}`),
+  getMovieEmbed: (tmdbId: string | number) =>
+    fetchVidsrc(`/movie/${encodeURIComponent(String(tmdbId))}?sub=en`),
+  getTvEmbed: (tmdbId: string | number, season: number, episode: number) =>
+    fetchVidsrc(
+      `/tv/${encodeURIComponent(String(tmdbId))}/${season}/${episode}?sub=en`,
+    ),
 };
 
 // ── NguonC API (qua Next.js proxy) ────────────────────────────────
@@ -373,10 +377,6 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
       source: "vsmov",
       request: () => vsmovApi.search(primaryKeyword, page),
     },
-    {
-      source: "vidsrc",
-      request: () => vidsrcApi.search(primaryKeyword, page),
-    },
   ];
 
   // Nếu query có biến thể khác (bỏ dấu), gọi thêm với variant thứ 2
@@ -480,10 +480,6 @@ async function getDetailFromAnySource(
       source: "vsmov",
       request: () => vsmovApi.getDetail(slug),
     },
-    {
-      source: "vidsrc",
-      request: () => vidsrcApi.getDetail(slug),
-    },
   ];
 
   const orderedRequests = preferredSource
@@ -509,6 +505,19 @@ async function getDetailFromAnySource(
     error: true,
     message: `Không tìm thấy phim: ${slug}`,
   };
+}
+
+async function getDetailFromSource(source: MovieSource, slug: string) {
+  const requests: Record<MovieSource, () => Promise<unknown>> = {
+    kkphim: () => kkphimApi.getDetail(slug),
+    ophim: () => fetchOphim(`/phim/${slug}`),
+    nguonc: () => fetchNguonc(`/film/${slug}`),
+    vsmov: () => vsmovApi.getDetail(slug),
+    vidsrc: () =>
+      Promise.reject(new Error("VidSrc chỉ hỗ trợ trình phát bằng TMDB ID.")),
+  };
+  const data = await requests[source]();
+  return tagMovieDetailSource(data, source);
 }
 
 type CatalogSourceRequest = {
@@ -709,6 +718,8 @@ export const movieApi = {
     ),
   getDetail: (slug: string, preferredSource?: MovieSource) =>
     getDetailFromAnySource(slug, preferredSource).then((data) => ({ data })),
+  getDetailFromSource: (source: MovieSource, slug: string) =>
+    getDetailFromSource(source, slug).then((data) => ({ data })),
   getDetailV1: (slug: string) =>
     kkphimApi.getDetailV1(slug).then((data) => ({ data })),
   search: (keyword: string, page = 1, limit = 24) =>
@@ -839,6 +850,17 @@ api.interceptors.response.use(
 );
 
 // ── Auth API ───────────────────────────────────────────────
+let getMeInFlight: Promise<AxiosResponse<User>> | null = null;
+
+function getCurrentUserOnce(): Promise<AxiosResponse<User>> {
+  if (!getMeInFlight) {
+    getMeInFlight = api.get<User>("/auth/me").finally(() => {
+      getMeInFlight = null;
+    });
+  }
+  return getMeInFlight;
+}
+
 export const authApi = {
   register: (data: {
     email: string;
@@ -856,7 +878,10 @@ export const authApi = {
         headers: { Authorization: `Bearer ${idToken}` },
       },
     ),
-  getMe: () => api.get("/auth/me"),
+  // Layout, auth pages and Firebase restoration can mount together. Coalesce
+  // their bootstrap request so guests do not trigger several 401/refresh
+  // round-trips and signed-in users only hydrate once.
+  getMe: getCurrentUserOnce,
   verifyEmail: (data: { token: string }) =>
     api.post("/auth/verify-email", data),
   forgotPassword: (data: { email: string }) =>

@@ -64,7 +64,7 @@ const PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="300" hei
 </svg>`;
 
 // Helper: resolve image URL securely
-export function resolveImageUrl(url?: unknown): string | null {
+function normalizeUpstreamImageUrl(url?: unknown): string | null {
   if (!url || typeof url !== "string") return null;
   let resolved = url.trim();
   if (!resolved) return null;
@@ -82,7 +82,23 @@ export function resolveImageUrl(url?: unknown): string | null {
     const cleanPath = resolved.startsWith("/") ? resolved.slice(1) : resolved;
     resolved = `https://img.phimapi.com/${cleanPath}`;
   }
-  return `/api/image-proxy?url=${encodeURIComponent(resolved)}`;
+  return resolved;
+}
+
+export function resolveImageUrl(
+  url?: unknown,
+  fallbackUrl?: unknown,
+): string | null {
+  const resolved = normalizeUpstreamImageUrl(url);
+  if (!resolved) return null;
+  if (resolved.startsWith("/api/image-proxy")) return resolved;
+
+  const fallback = normalizeUpstreamImageUrl(fallbackUrl);
+  const fallbackQuery =
+    fallback && fallback !== resolved && !fallback.startsWith("/api/image-proxy")
+      ? `&fallback=${encodeURIComponent(fallback)}`
+      : "";
+  return `/api/image-proxy?url=${encodeURIComponent(resolved)}${fallbackQuery}`;
 }
 
 export function FilmCard({
@@ -101,16 +117,20 @@ export function FilmCard({
   const title = film.name || film.title || "Chưa có tên";
   const initialPosterUrl =
     variant === "landscape"
-      ? resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url)
-      : resolveImageUrl(film.poster_url) || resolveImageUrl(film.thumb_url);
+      ? resolveImageUrl(film.thumb_url, film.poster_url) ||
+        resolveImageUrl(film.poster_url)
+      : resolveImageUrl(film.poster_url, film.thumb_url) ||
+        resolveImageUrl(film.thumb_url);
 
   const [imageSrc, setImageSrc] = useState<string | null>(initialPosterUrl);
 
   useEffect(() => {
     const url =
       variant === "landscape"
-        ? resolveImageUrl(film.thumb_url) || resolveImageUrl(film.poster_url)
-        : resolveImageUrl(film.poster_url) || resolveImageUrl(film.thumb_url);
+        ? resolveImageUrl(film.thumb_url, film.poster_url) ||
+          resolveImageUrl(film.poster_url)
+        : resolveImageUrl(film.poster_url, film.thumb_url) ||
+          resolveImageUrl(film.thumb_url);
     setImageSrc(url);
   }, [film.poster_url, film.thumb_url, variant]);
 
@@ -351,14 +371,14 @@ export function FilmCard({
         {!hideDetails && (
           <div className="flex flex-col text-left mt-1.5 sm:mt-2 px-0.5 space-y-0.5 sm:space-y-1">
             {/* Title - Clean, non-forced case, max 2 lines */}
-            <h4 className="text-[11px] sm:text-sm font-semibold text-neutral-100 line-clamp-2 leading-tight group-hover:text-white/70 transition-colors">
+            <h4 className="min-h-[28px] sm:min-h-[35px] text-[11px] sm:text-sm font-semibold text-neutral-100 line-clamp-2 leading-tight group-hover:text-white/70 transition-colors">
               {title}
             </h4>
 
             {/* Subtitle Row with Origin/Year & Sleek Rating */}
             <div
               data-film-meta="true"
-              className="flex items-center justify-between text-[10px] sm:text-[11px] text-neutral-400 gap-1 sm:gap-2"
+              className="flex min-h-[18px] items-center justify-between text-[10px] sm:text-[11px] text-neutral-400 gap-1 sm:gap-2"
             >
               <span className="line-clamp-1 flex-1 font-normal text-neutral-400">
                 {film.origin_name || (film.year ? `${film.year}` : "")}
@@ -399,20 +419,41 @@ export function FilmCard({
 export function FilmCardSkeleton({
   width,
   hideDetails = false,
+  showActions = true,
+  variant = "standard",
 }: {
   width?: number | string;
   hideDetails?: boolean;
+  showActions?: boolean;
+  variant?: "standard" | "landscape";
 }) {
   return (
     <div
+      aria-hidden="true"
       style={width ? { width, flexShrink: 0 } : undefined}
-      className="w-full flex flex-col space-y-2 animate-pulse"
+      className="relative flex w-full flex-col select-none motion-safe:animate-pulse"
     >
-      <div className="w-full aspect-[2/3] bg-neutral-900 rounded-xl border border-white/5 relative overflow-hidden" />
+      <div
+        className={cn(
+          "relative w-full overflow-hidden rounded-xl border border-white/10 bg-neutral-900 aspect-[2/3]",
+          variant === "landscape" && "aspect-video",
+        )}
+      >
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 to-transparent" />
+      </div>
+      {showActions && (
+        <div className="absolute right-2 top-2 h-8 w-8 rounded-full border border-white/10 bg-neutral-800" />
+      )}
       {!hideDetails && (
-        <div className="flex flex-col space-y-1.5 px-0.5">
-          <div className="h-3.5 bg-neutral-800 rounded w-4/5" />
-          <div className="h-3 bg-neutral-900 rounded w-2/5" />
+        <div className="mt-1.5 flex flex-col space-y-0.5 px-0.5 sm:mt-2 sm:space-y-1">
+          <div className="flex min-h-[28px] flex-col gap-1 sm:min-h-[35px]">
+            <div className="h-3 w-4/5 rounded bg-neutral-800 sm:h-3.5" />
+            <div className="h-3 w-3/5 rounded bg-neutral-800/70 sm:h-3.5" />
+          </div>
+          <div className="flex min-h-[18px] items-center justify-between gap-2">
+            <div className="h-2.5 w-2/5 rounded bg-neutral-900 sm:h-3" />
+            <div className="h-4 w-10 rounded bg-neutral-800/80" />
+          </div>
         </div>
       )}
     </div>

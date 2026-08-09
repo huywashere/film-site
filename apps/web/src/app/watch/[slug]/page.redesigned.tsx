@@ -705,10 +705,12 @@ export default function WatchPageRedesigned() {
               {film?.content && (
                 <div className="space-y-2 pt-4 border-t border-white/10">
                   <h3 className="text-sm font-bold text-white">Synopsis</h3>
-                  <div
-                    className="text-sm text-white/70 leading-relaxed max-h-32 overflow-y-auto"
-                    dangerouslySetInnerHTML={{ __html: film.content }}
-                  />
+                  <div className="text-sm text-white/70 leading-relaxed max-h-32 overflow-y-auto">
+                    {film.content
+                      .replace(/<[^>]*>/g, " ")
+                      .replace(/\s+/g, " ")
+                      .trim()}
+                  </div>
                 </div>
               )}
 

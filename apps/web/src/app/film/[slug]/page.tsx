@@ -38,6 +38,7 @@ import { Button } from "@/components/ui/button";
 import { useTmdb, useTmdbPerson } from "@/hooks/useTmdb";
 import { tmdbBackdrop, tmdbProfile, tmdbPoster } from "@/lib/tmdb";
 import { TrailerModal } from "@/components/film/TrailerModal";
+import { safeJsonLd } from "@/lib/safe-json-ld";
 
 // ── Cast Card (Only renders actors with actual photos) ──────
 function CastCard({
@@ -202,7 +203,7 @@ function EpisodeList({
       <div className="flex items-center justify-between">
         <h3
           className="text-sm font-bold text-white"
-          style={{ fontFamily: "'Outfit', sans-serif" }}
+          style={{ fontFamily: "var(--font-display)" }}
         >
           Danh sách tập ({items.length})
         </h3>
@@ -829,7 +830,7 @@ export default function FilmDetailPage() {
       {/* ── JSON-LD STRUCTURED DATA SCHEMA FOR GOOGLE SEO ── */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdPayload) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLdPayload) }}
       />
 
       {/* ── DYNAMIC HEAD META TAGS (OPEN GRAPH & TWITTER CARDS) ── */}
@@ -1362,16 +1363,70 @@ export default function FilmDetailPage() {
 
 function FilmDetailSkeleton() {
   return (
-    <div className="bg-[#0f1216] min-h-screen text-white pb-24">
-      <div className="w-full h-[65vh] md:h-[80vh] bg-neutral-900 animate-pulse" />
-      <div className="container mx-auto px-6 md:px-12 relative -mt-[35vh] md:-mt-[45vh] z-20">
-        <div className="max-w-3xl flex flex-col space-y-6">
-          <div className="h-14 md:h-20 bg-neutral-800 animate-pulse rounded w-3/4" />
-          <div className="h-6 bg-neutral-800 animate-pulse rounded w-1/2" />
-          <div className="h-20 bg-neutral-800 animate-pulse rounded w-full max-w-2xl mt-4" />
-          <div className="flex space-x-4 mt-8">
-            <div className="h-12 bg-neutral-800 animate-pulse rounded w-40" />
-            <div className="h-12 bg-neutral-800 animate-pulse rounded w-32" />
+    <div className="relative min-h-screen bg-black pb-24 text-white">
+      <div className="absolute inset-x-0 top-0 h-[65vh] overflow-hidden md:h-[82vh]">
+        <div className="h-full w-full animate-pulse bg-gradient-to-br from-[#161b22] via-[#0d1015] to-black" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/85 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black to-transparent" />
+      </div>
+
+      <div className="container relative z-10 mx-auto px-4 pt-24 md:px-12 sm:pt-28">
+        <div className="animate-pulse">
+          <div className="mb-5 h-7 w-72 rounded-full bg-white/[0.07]" />
+
+          <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
+            <div className="space-y-5 lg:col-span-8">
+              <div className="h-11 w-4/5 rounded-lg bg-white/10 sm:h-14 md:h-16" />
+              <div className="h-4 w-2/5 rounded bg-white/[0.07]" />
+              <div className="flex gap-2">
+                {[72, 104, 56, 88].map((width, index) => (
+                  <div
+                    key={index}
+                    className="h-6 rounded-md bg-white/[0.08]"
+                    style={{ width }}
+                  />
+                ))}
+              </div>
+              <div className="flex gap-3 pt-2">
+                <div className="h-11 w-32 rounded-full bg-white/15" />
+                <div className="h-11 w-24 rounded-full bg-white/[0.08]" />
+                <div className="h-11 w-32 rounded-full bg-white/[0.05]" />
+              </div>
+            </div>
+
+            <div className="hidden justify-end lg:col-span-4 lg:flex">
+              <div className="aspect-[2/3] w-64 rounded-2xl border border-white/[0.08] bg-white/[0.07]" />
+            </div>
+          </div>
+
+          <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {Array.from({ length: 5 }, (_, index) => (
+              <div
+                key={index}
+                className="h-28 rounded-xl border border-white/[0.07] bg-white/[0.035] p-4"
+              >
+                <div className="h-3 w-20 rounded bg-white/[0.08]" />
+                <div className="mt-5 h-4 w-3/4 rounded bg-white/[0.06]" />
+                <div className="mt-2 h-3 w-1/2 rounded bg-white/[0.04]" />
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
+            <div className="h-64 rounded-2xl border border-white/[0.06] bg-white/[0.025] p-5">
+              <div className="h-5 w-36 rounded bg-white/[0.08]" />
+              <div className="mt-5 h-3 w-full rounded bg-white/[0.055]" />
+              <div className="mt-3 h-3 w-11/12 rounded bg-white/[0.055]" />
+              <div className="mt-3 h-3 w-4/5 rounded bg-white/[0.055]" />
+            </div>
+            <div className="h-64 rounded-2xl border border-white/[0.06] bg-white/[0.025] p-5">
+              <div className="h-5 w-28 rounded bg-white/[0.08]" />
+              <div className="mt-5 grid grid-cols-4 gap-2">
+                {Array.from({ length: 12 }, (_, index) => (
+                  <div key={index} className="h-9 rounded-lg bg-white/[0.055]" />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

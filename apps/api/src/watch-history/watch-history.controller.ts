@@ -10,7 +10,8 @@ import {
   Request,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
-import { WatchHistoryService, UpsertHistoryDto } from "./watch-history.service";
+import { WatchHistoryService } from "./watch-history.service";
+import { UpsertHistoryDto } from "./watch-history.dto";
 
 @Controller("watch-history")
 @UseGuards(AuthGuard("jwt"))
@@ -35,8 +36,8 @@ export class WatchHistoryController {
   ) {
     return this.watchHistoryService.getHistory(
       req.user.id,
-      parseInt(page, 10),
-      parseInt(limit, 10),
+      Math.min(Math.max(parseInt(page, 10) || 1, 1), 10_000),
+      Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100),
     );
   }
 

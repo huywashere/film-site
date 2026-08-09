@@ -1,6 +1,6 @@
 # ── Cloudflare DNS Records ─────────────────────────────────────────
 data "cloudflare_zone" "cineverse" {
-  count = var.cloudflare_zone_id != "" ? 1 : 0
+  count   = var.cloudflare_zone_id != "" ? 1 : 0
   zone_id = var.cloudflare_zone_id
 }
 
@@ -43,7 +43,8 @@ resource "cloudflare_zone_settings_override" "cineverse_security" {
   zone_id = var.cloudflare_zone_id
 
   settings {
-    ssl                      = "full"
+    # Cloudflare provider value `strict` maps to dashboard mode “Full (strict)”.
+    ssl                      = "strict"
     always_use_https         = "on"
     min_tls_version          = "1.2"
     brotli                   = "on"

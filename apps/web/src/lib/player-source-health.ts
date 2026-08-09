@@ -14,6 +14,7 @@ export type PlayerCandidate = {
   key: string;
   source?: string;
   serverName?: string;
+  priority?: number;
 };
 
 // Bump when the player transport changes so a previous implementation cannot
@@ -113,7 +114,11 @@ export function rankHealthyCandidates<T extends PlayerCandidate>(
 ) {
   return candidates
     .filter(canTrySource)
-    .sort((a, b) => getSourceHealth(b).score - getSourceHealth(a).score);
+    .sort(
+      (a, b) =>
+        getSourceHealth(b).score + (b.priority || 0) -
+        (getSourceHealth(a).score + (a.priority || 0)),
+    );
 }
 
 export function classifyPlayerError(error: unknown): PlayerErrorKind {

@@ -293,6 +293,14 @@ export class AdminService {
         refreshTokens: {
           where: { isRevoked: false },
           orderBy: { lastUsedAt: "desc" },
+          select: {
+            id: true,
+            expiresAt: true,
+            createdAt: true,
+            userAgent: true,
+            ipAddress: true,
+            lastUsedAt: true,
+          },
         },
       },
     });

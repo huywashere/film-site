@@ -1,15 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-
-export interface UpsertHistoryDto {
-  movieId: string;
-  episode?: string;
-  progress: number;
-  duration: number;
-  movieTitle: string;
-  movieThumb?: string;
-  serverName?: string;
-}
+import { UpsertHistoryDto } from "./watch-history.dto";
 
 @Injectable()
 export class WatchHistoryService {

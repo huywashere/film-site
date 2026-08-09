@@ -146,3 +146,10 @@ export function checkImageProxyRateLimit(
 ): RateLimitResult {
   return checkRateLimit(`img_proxy:${identifier}`, 2000, 60_000);
 }
+
+/** HLS manifests and segments are chatty, but still need a finite bandwidth cap. */
+export function checkHlsProxyRateLimit(
+  identifier: string = "global",
+): RateLimitResult {
+  return checkRateLimit(`hls_proxy:${identifier}`, 3000, 60_000);
+}

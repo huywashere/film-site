@@ -135,12 +135,14 @@ export default function ArtPlayer({
         video.crossOrigin = "anonymous";
         const hls = new Hls({
           enableWorker: true,
-          backBufferLength: 90,
-          maxBufferLength: 60,
+          backBufferLength: 30,
+          maxBufferLength: 30,
+          maxMaxBufferLength: 60,
           capLevelToPlayerSize: true,
           startLevel: -1,
         });
         hlsInstance = hls;
+        let activeStreamUrl = streamUrl;
 
         hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
           const levels = data.levels ?? [];
@@ -194,10 +196,19 @@ export default function ArtPlayer({
           if (!data.fatal) return;
           if (
             data.type === Hls.ErrorTypes.NETWORK_ERROR &&
-            networkRecoveries < 1
+            !activeStreamUrl.startsWith("/api/hls-proxy")
           ) {
             networkRecoveries += 1;
-            hls.startLoad();
+            activeStreamUrl = `/api/hls-proxy?url=${encodeURIComponent(streamUrl)}`;
+            hls.loadSource(activeStreamUrl);
+            return;
+          }
+          if (
+            data.type === Hls.ErrorTypes.NETWORK_ERROR &&
+            networkRecoveries < 2
+          ) {
+            networkRecoveries += 1;
+            hls.startLoad(-1);
             return;
           }
           if (data.type === Hls.ErrorTypes.MEDIA_ERROR && mediaRecoveries < 1) {

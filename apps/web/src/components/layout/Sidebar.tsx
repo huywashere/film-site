@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import {
   ChevronLeft,
   ChevronRight,
@@ -164,20 +163,16 @@ export function Sidebar() {
               <>
                 {/* Active Indicator Bar */}
                 {isActive && (
-                  <motion.span
-                    layoutId="sidebar-active-bar"
+                  <span
                     className="absolute -left-1.5 top-1/2 -translate-y-1/2 rounded-r-full bg-white z-20"
                     style={{ width: 3, height: 18 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   />
                 )}
 
                 {/* Active Background Pill */}
                 {isActive ? (
-                  <motion.span
-                    layoutId="sidebar-active-pill"
+                  <span
                     className="absolute inset-0 rounded-xl bg-white/10 z-0"
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   />
                 ) : (
                   <span className="absolute inset-0 rounded-xl bg-transparent group-hover:bg-white/[0.06] transition-colors z-0" />

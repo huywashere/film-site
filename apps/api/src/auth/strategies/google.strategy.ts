@@ -24,13 +24,17 @@ export class GoogleStrategy extends PassportStrategy(Strategy, "google") {
     done: VerifyCallback,
   ): Promise<any> {
     const { id, name, emails, photos } = profile;
+    const primaryEmail = emails?.[0];
     const user = {
       googleId: id,
-      email: emails[0].value,
-      firstName: name.givenName,
-      lastName: name.familyName,
-      picture: photos[0].value,
-      accessToken,
+      email: primaryEmail?.value,
+      emailVerified:
+        profile?._json?.email_verified === true ||
+        profile?._json?.verified_email === true ||
+        primaryEmail?.verified === true,
+      firstName: name?.givenName,
+      lastName: name?.familyName,
+      picture: photos?.[0]?.value,
     };
     done(null, user);
   }

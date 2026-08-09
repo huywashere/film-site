@@ -9,6 +9,12 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { UsersService } from "./users.service";
+import {
+  RemoveUserWatchlistDto,
+  SaveUserWatchHistoryDto,
+  UpdateProfileDto,
+  UserWatchlistDto,
+} from "./users.dto";
 
 @Controller("users")
 export class UsersController {
@@ -28,7 +34,7 @@ export class UsersController {
   @UseGuards(AuthGuard("jwt"))
   updateMe(
     @Request() req,
-    @Body() dto: { displayName?: string; bio?: string; avatarUrl?: string },
+    @Body() dto: UpdateProfileDto,
   ) {
     return this.usersService.updateMe(req.user.id, dto);
   }
@@ -44,16 +50,7 @@ export class UsersController {
   @UseGuards(AuthGuard("jwt"))
   saveWatchHistory(
     @Request() req,
-    @Body()
-    dto: {
-      movieId: string;
-      movieTitle: string;
-      movieThumb?: string;
-      episode?: string;
-      progress: number;
-      duration: number;
-      serverName?: string;
-    },
+    @Body() dto: SaveUserWatchHistoryDto,
   ) {
     return this.usersService.saveWatchHistory(req.user.id, dto);
   }
@@ -69,14 +66,14 @@ export class UsersController {
   @UseGuards(AuthGuard("jwt"))
   addToWatchlist(
     @Request() req,
-    @Body() dto: { movieId: string; title?: string; thumbUrl?: string },
+    @Body() dto: UserWatchlistDto,
   ) {
     return this.usersService.addToWatchlist(req.user.id, dto);
   }
 
   @Put("me/watchlist/remove")
   @UseGuards(AuthGuard("jwt"))
-  removeFromWatchlist(@Request() req, @Body() dto: { movieId: string }) {
+  removeFromWatchlist(@Request() req, @Body() dto: RemoveUserWatchlistDto) {
     return this.usersService.removeFromWatchlist(req.user.id, dto.movieId);
   }
 }

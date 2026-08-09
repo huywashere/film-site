@@ -11,3 +11,4 @@ data:
   OPHIM_API_BASE: "https://ophim17.cc/"
   NEXT_PUBLIC_API_URL: "https://api.cineverse.com/api/v1"
   NEXT_PUBLIC_APP_NAME: "CineVerse"
+  HLS_PROXY_ALLOWED_HOSTS: "*.phimapi.com,*.ophim.live,*.nguonc.com,*.vsmov.com"
