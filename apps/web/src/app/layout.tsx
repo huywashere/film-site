@@ -1,7 +1,7 @@
 import "./globals.css";
 import "./light-theme.css";
 import type { Metadata, Viewport } from "next";
-import { Be_Vietnam_Pro } from "next/font/google";
+import { Be_Vietnam_Pro, Manrope } from "next/font/google";
 import { ConditionalNavbar } from "@/components/layout/ConditionalNavbar";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -65,8 +65,17 @@ import { ScrollToTopButton } from "@/components/layout/ScrollToTop";
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ["vietnamese", "latin"],
   weight: ["400", "500", "600", "700", "800", "900"],
+  style: ["normal", "italic"],
   display: "swap",
   variable: "--font-be-vietnam",
+  preload: true,
+});
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-manrope",
   preload: true,
 });
 
@@ -105,7 +114,10 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteSchema) }}
         />
       </head>
-      <body className={beVietnamPro.variable} suppressHydrationWarning>
+      <body
+        className={`${beVietnamPro.variable} ${manrope.variable} font-sans antialiased`}
+        suppressHydrationWarning
+      >
         <ThemeWatcher />
         <ThemeColorSync />
         <RegisterSW />

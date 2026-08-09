@@ -10,16 +10,18 @@
   --netflixRed: #e50914;
   --primary: #e50914;
 
-  /* Font tokens */
+  /* Font tokens — Be Vietnam Pro là font chính, hỗ trợ tiếng Việt hoàn hảo */
   --font-primary:
-    var(--font-be-vietnam), -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+    var(--font-be-vietnam), "Be Vietnam Pro", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
   --font-ui: var(--font-primary);
-  --font-display: var(--font-primary);
+  --font-display:
+    var(--font-manrope), "Manrope", var(--font-be-vietnam), "Be Vietnam Pro",
+    -apple-system, sans-serif;
 }
 
 /* ── Font Family ────────────────────────────────────────────── */
-/* Be Vietnam Pro — font chính, hỗ trợ tiếng Việt hoàn hảo */
+/* Be Vietnam Pro — font chính, hỗ trợ đầy đủ dấu tiếng Việt */
 body {
   font-family: var(--font-primary);
   font-feature-settings:
@@ -51,7 +53,7 @@ body[data-status-page="true"] [data-site-chrome] {
   display: none !important;
 }
 
-/* Manrope — cinematic, premium cho headings */
+/* Be Vietnam Pro + Manrope — headings với hỗ trợ tiếng Việt tốt */
 h1,
 h2,
 h3,
@@ -64,7 +66,7 @@ h6 {
   line-height: 1.2;
 }
 
-/* Inter — cho số, code, UI elements nhỏ */
+/* UI elements nhỏ — code, kbd */
 .font-ui,
 code,
 kbd,
@@ -263,8 +265,6 @@ html {
   scroll-behavior: smooth;
 }
 
-/* ── Sidebar transparent — handled via inline style directly ──── */
-
 /* ── Loading States ────────────────────────────────────────────── */
 .skeleton {
   @apply animate-pulse bg-white/5;
@@ -281,4 +281,3 @@ html {
     scroll-behavior: auto !important;
   }
 }
-
