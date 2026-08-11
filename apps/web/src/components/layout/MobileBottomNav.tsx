@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import NextImage from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Home, LayoutGrid, History, Bookmark, User } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
+import { cardFont } from "@/lib/fonts";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
@@ -75,6 +77,7 @@ export function MobileBottomNav() {
     <nav
       aria-label="Điều hướng nhanh"
       className={cn(
+        cardFont.className,
         "fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 right-3 z-40 lg:hidden rounded-2xl border border-white/[0.16] bg-[#101419]/78 px-1 py-1 shadow-[0_12px_34px_rgba(0,0,0,0.32)] backdrop-blur-2xl supports-[backdrop-filter]:bg-[#101419]/58 transition-[transform,opacity] duration-300 ease-out will-change-transform",
         isHidden
           ? "pointer-events-none translate-y-[calc(100%+1.25rem)] opacity-0"
@@ -119,17 +122,20 @@ export function MobileBottomNav() {
                 : "text-neutral-400 hover:text-neutral-200",
             )}
           >
-            <img
+            <NextImage
               src={
                 user.avatarUrl ||
                 `https://ui-avatars.com/api/?name=${user.username}&background=2c3440&color=ffffff&size=24`
               }
               alt={user.username}
+              width={16}
+              height={16}
               className={cn(
-                "w-4 h-4 rounded-full object-cover border border-white/20 transition-transform",
+                "h-4 w-4 rounded-full object-cover border border-white/20 transition-transform",
                 (pathname.startsWith("/user/") || pathname.startsWith("/profile/")) &&
                   "scale-110 border-white ring-2 ring-white/30",
               )}
+              unoptimized
             />
             <span className="mt-0.5 tracking-tight">Cá nhân</span>
           </Link>

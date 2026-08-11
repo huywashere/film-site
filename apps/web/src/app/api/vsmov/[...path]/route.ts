@@ -1,4 +1,7 @@
-import { createMovieProxyHandler } from "@/lib/movie-proxy";
+import {
+  createMovieProxyHandler,
+  resolveMovieApiOrigins,
+} from "@/lib/movie-proxy";
 
 /**
  * VSMov API Proxy — https://vsmov.com
@@ -19,18 +22,21 @@ import { createMovieProxyHandler } from "@/lib/movie-proxy";
  */
 
 // ── Base URL: vsmov.com/api ───────────────────────────────────────
-const VSMOV_BASE = process.env.VSMOV_API_BASE || "https://vsmov.com/api";
+const VSMOV_ORIGINS = resolveMovieApiOrigins(
+  process.env.VSMOV_API_ORIGINS || process.env.VSMOV_API_BASE,
+  ["https://vsmov.com/api"],
+);
 const VSMOV_DEFAULT_CDN = "https://vsmov.com/storage/images/";
 
 // ── Image URL normalizer ─────────────────────────────────────────
-function normalizeVsmovImages(raw: any, _path: string): any {
+export function normalizeVsmovImages(raw: any, _path: string): any {
   if (!raw) return raw;
 
   const cdnBase = raw?.pathImage || raw?.data?.pathImage || VSMOV_DEFAULT_CDN;
   const cdn = cdnBase.endsWith("/") ? cdnBase : cdnBase + "/";
 
-  const fixUrl = (url?: string): string => {
-    if (!url) return "";
+  const fixUrl = (url: unknown): string => {
+    if (typeof url !== "string" || !url.trim()) return "";
     if (url.startsWith("http://") || url.startsWith("https://")) return url;
     if (url.startsWith("//")) return "https:" + url;
     return cdn + url;
@@ -88,7 +94,8 @@ function getTtl(path: string): number {
 export const GET = createMovieProxyHandler({
   sourceName: "VSMov",
   cachePrefix: "vsmov",
-  baseUrl: VSMOV_BASE,
+  baseUrl: VSMOV_ORIGINS[0],
+  fallbackUrls: VSMOV_ORIGINS.slice(1),
   getTtl,
   transform: normalizeVsmovImages,
   headers: {

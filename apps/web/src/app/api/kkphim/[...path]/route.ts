@@ -1,6 +1,12 @@
-import { createMovieProxyHandler } from "@/lib/movie-proxy";
+import {
+  createMovieProxyHandler,
+  resolveMovieApiOrigins,
+} from "@/lib/movie-proxy";
 
-const KKPHIM_BASE = process.env.KKPHIM_API_BASE || "https://phimapi.com";
+const KKPHIM_ORIGINS = resolveMovieApiOrigins(
+  process.env.KKPHIM_API_ORIGINS || process.env.KKPHIM_API_BASE,
+  ["https://phimapi.com"],
+);
 
 function getTtl(path: string): number {
   if (path.includes("phim-moi-cap-nhat")) return 120;
@@ -18,7 +24,8 @@ function getTtl(path: string): number {
 export const GET = createMovieProxyHandler({
   sourceName: "KKPhim",
   cachePrefix: "kkphim",
-  baseUrl: KKPHIM_BASE,
+  baseUrl: KKPHIM_ORIGINS[0],
+  fallbackUrls: KKPHIM_ORIGINS.slice(1),
   getTtl,
   maxMemoryEntries: 200,
   upstreamErrorMessage: "Lỗi kết nối KKPhim API",

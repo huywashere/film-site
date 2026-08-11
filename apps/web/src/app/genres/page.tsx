@@ -1,378 +1,278 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { useQueries } from "@tanstack/react-query";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import { cardFont } from "@/lib/fonts";
 import {
-  Sparkles,
-  Flame,
-  Swords,
-  Heart,
-  Ghost,
-  Compass,
-  GraduationCap,
-  Smile,
-  Baby,
-  Trophy,
-  Wand2,
-  Music,
-  ShieldAlert,
-  Tv,
-  Film,
-  Zap,
-  ChevronRight,
-  Search,
-  Skull,
-  Star,
-  Clapperboard,
-  Layers,
-} from "lucide-react";
-import { GENRES_LIST } from "@/components/layout/Navbar";
+  tmdbApi,
+  tmdbPoster,
+  type TmdbDiscoverOptions,
+  type TmdbMovie,
+} from "@/lib/tmdb";
 
-// ── Top 6 Featured Topic Collections with Ambient Backdrop Artworks & Glass Refraction ──
-const FEATURED_TOPICS = [
+type MovieTopic = {
+  slug: string;
+  title: string;
+  description: string;
+  href: string;
+  tone: string;
+  accent: string;
+  discover: TmdbDiscoverOptions;
+};
+
+const TOPICS: MovieTopic[] = [
   {
-    id: "co-trang",
-    title: "Cổ Trang Hoa Ngữ",
-    subtitle: "Võ hiệp, tiên hiệp & cung đấu tranh quyền hấp dẫn nhất",
-    badge: "1000+ PHIM",
-    accentColor: "from-neutral-800/40 via-neutral-900/60 to-neutral-950",
-    borderColor: "group-hover:border-white/30",
-    glowColor: "group-hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]",
-    badgeBg: "bg-white/10 text-neutral-300 border-white/15",
-    icon: Swords,
-    link: "/genre/co-trang",
-    backdrop:
-      "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
-    fallbackBackdrop:
-      "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
-    featuredTag: "Siêu Phẩm",
-    rating: "9.8",
+    slug: "hanh-dong",
+    title: "Hành Động Nghẹt Thở",
+    description: "Đối đầu, truy đuổi và những trận chiến tốc độ cao.",
+    href: "/genre/hanh-dong",
+    tone: "#251a19",
+    accent: "#fb7185",
+    discover: { with_genres: "28", sort_by: "popularity.desc" },
   },
   {
-    id: "han-quoc",
-    title: "K-Drama Hàn Quốc",
-    subtitle: "Tình cảm lãng mạn, kịch tính & góc nhìn học đường",
-    badge: "HOT TREND",
-    accentColor: "from-neutral-800/40 via-neutral-900/60 to-neutral-950",
-    borderColor: "group-hover:border-white/30",
-    glowColor: "group-hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]",
-    badgeBg: "bg-white/10 text-neutral-300 border-white/15",
-    icon: Heart,
-    link: "/country/han-quoc",
-    backdrop:
-      "https://images.unsplash.com/photo-1538485399081-7191377e8241?q=80&w=1200&auto=format&fit=crop",
-    fallbackBackdrop:
-      "https://images.unsplash.com/photo-1538485399081-7191377e8241?q=80&w=1200&auto=format&fit=crop",
-    featuredTag: "Bảng Xếp Hạng #1",
-    rating: "9.6",
+    slug: "vien-tuong",
+    title: "Thế Giới Viễn Tưởng",
+    description:
+      "Không gian, tương lai và những công nghệ ngoài sức tưởng tượng.",
+    href: "/genre/vien-tuong",
+    tone: "#172231",
+    accent: "#60a5fa",
+    discover: { with_genres: "878", sort_by: "popularity.desc" },
   },
   {
-    id: "hoat-hinh",
-    title: "Anime & Hoạt Hình 4K",
-    subtitle: "Thế giới huyền ảo, Manga chuyển thể & bom tấn Ghibli",
-    badge: "VŨ TRỤ ANIME",
-    accentColor: "from-neutral-800/40 via-neutral-900/60 to-neutral-950",
-    borderColor: "group-hover:border-white/30",
-    glowColor: "group-hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]",
-    badgeBg: "bg-white/10 text-neutral-300 border-white/15",
-    icon: Wand2,
-    link: "/films/anime",
-    backdrop:
-      "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop",
-    fallbackBackdrop:
-      "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop",
-    featuredTag: "Full HD / 4K",
-    rating: "9.7",
+    slug: "kinh-di",
+    title: "Kinh Dị Đêm Khuya",
+    description: "Bầu không khí ám ảnh và những bí mật đáng sợ.",
+    href: "/genre/kinh-di",
+    tone: "#25171c",
+    accent: "#c084fc",
+    discover: { with_genres: "27", sort_by: "popularity.desc" },
   },
   {
-    id: "kinh-di",
-    title: "Kinh Dị & Giật Gân",
-    subtitle: "Hồi hộp, rùng rợn & thót tim với những bí ẩn đen tối",
-    badge: "KINH DỊ",
-    accentColor: "from-neutral-800/40 via-neutral-900/60 to-neutral-950",
-    borderColor: "group-hover:border-white/30",
-    glowColor: "group-hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]",
-    badgeBg: "bg-white/10 text-neutral-300 border-white/15",
-    icon: Ghost,
-    link: "/genre/kinh-di",
-    backdrop:
-      "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop",
-    fallbackBackdrop:
-      "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop",
-    featuredTag: "Thriller",
-    rating: "9.2",
+    slug: "tinh-cam",
+    title: "Tình Yêu Và Cảm Xúc",
+    description: "Những mối quan hệ chạm đến trái tim người xem.",
+    href: "/genre/tinh-cam",
+    tone: "#2b1d27",
+    accent: "#f9a8d4",
+    discover: { with_genres: "10749", sort_by: "popularity.desc" },
   },
   {
-    id: "hanh-dong",
-    title: "Bom Tấn Hành Động",
-    subtitle: "Kỹ xảo Marvel/DC đỉnh cao, rượt đuổi & mãn nhãn",
-    badge: "MỚI CẬP NHẬT",
-    accentColor: "from-neutral-800/40 via-neutral-900/60 to-neutral-950",
-    borderColor: "group-hover:border-white/30",
-    glowColor: "group-hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]",
-    badgeBg: "bg-white/10 text-neutral-300 border-white/15",
-    icon: Zap,
-    link: "/genre/hanh-dong",
-    backdrop:
-      "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1200&auto=format&fit=crop",
-    fallbackBackdrop:
-      "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1200&auto=format&fit=crop",
-    featuredTag: "Blockbuster 2026",
-    rating: "9.9",
+    slug: "hai-huoc",
+    title: "Cười Thả Ga",
+    description: "Nhẹ nhàng, duyên dáng và đầy khoảnh khắc bất ngờ.",
+    href: "/genre/hai-huoc",
+    tone: "#292517",
+    accent: "#facc15",
+    discover: { with_genres: "35", sort_by: "popularity.desc" },
   },
   {
-    id: "vien-tuong",
-    title: "Khoa Học Viễn Tưởng",
-    subtitle: "Khám phá vũ trụ sâu thẫm, du hành thời gian & tương lai",
-    badge: "VŨ TRỤ CINEMA",
-    accentColor: "from-neutral-800/40 via-neutral-900/60 to-neutral-950",
-    borderColor: "group-hover:border-white/30",
-    glowColor: "group-hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]",
-    badgeBg: "bg-white/10 text-neutral-300 border-white/15",
-    icon: Compass,
-    link: "/genre/vien-tuong",
-    backdrop:
-      "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200&auto=format&fit=crop",
-    fallbackBackdrop:
-      "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200&auto=format&fit=crop",
-    featuredTag: "Masterpiece",
-    rating: "9.9",
+    slug: "phieu-luu",
+    title: "Phiêu Lưu Kỳ Thú",
+    description: "Những chuyến đi xa, vùng đất lạ và thử thách lớn.",
+    href: "/genre/phieu-luu",
+    tone: "#17302c",
+    accent: "#5eead4",
+    discover: { with_genres: "12", sort_by: "popularity.desc" },
+  },
+  {
+    slug: "gia-dinh",
+    title: "Gia Đình Cuối Tuần",
+    description: "Ấm áp, vui vẻ và phù hợp để xem cùng nhau.",
+    href: "/genre/gia-dinh",
+    tone: "#203025",
+    accent: "#86efac",
+    discover: { with_genres: "10751", sort_by: "popularity.desc" },
+  },
+  {
+    slug: "bi-an",
+    title: "Bí Ẩn Chưa Lời Giải",
+    description: "Manh mối, cú lật và những câu hỏi chưa có đáp án.",
+    href: "/genre/bi-an",
+    tone: "#22202e",
+    accent: "#a5b4fc",
+    discover: { with_genres: "9648", sort_by: "popularity.desc" },
+  },
+  {
+    slug: "anime-nhat-ban",
+    title: "Anime Nhật Bản",
+    description: "Hoạt hình Nhật với thế giới và phong cách kể chuyện riêng.",
+    href: "/films/anime",
+    tone: "#2b1d32",
+    accent: "#d8b4fe",
+    discover: {
+      with_genres: "16",
+      with_original_language: "ja",
+      sort_by: "popularity.desc",
+    },
+  },
+  {
+    slug: "lich-su",
+    title: "Sử Thi Và Lịch Sử",
+    description: "Những thời đại lớn, chiến trường và nhân vật có thật.",
+    href: "/genre/lich-su",
+    tone: "#30271d",
+    accent: "#fbbf24",
+    discover: { with_genres: "36", sort_by: "popularity.desc" },
+  },
+  {
+    slug: "tai-lieu",
+    title: "Tài Liệu Đời Thật",
+    description: "Câu chuyện thật về con người, thiên nhiên và xã hội.",
+    href: "/genre/tai-lieu",
+    tone: "#1e2c2a",
+    accent: "#67e8f9",
+    discover: { with_genres: "99", sort_by: "popularity.desc" },
+  },
+  {
+    slug: "am-nhac",
+    title: "Âm Nhạc Và Sân Khấu",
+    description: "Giai điệu, nghệ sĩ và những màn trình diễn đáng nhớ.",
+    href: "/genre/am-nhac",
+    tone: "#2c1f2a",
+    accent: "#f0abfc",
+    discover: { with_genres: "10402", sort_by: "popularity.desc" },
   },
 ];
 
-// ── Icons & Color Themes for 26 Genres ──
-const GENRE_CONFIG: Record<
-  string,
-  { icon: any; color: string; badge: string }
-> = {
-  "bi-an": { icon: Ghost, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Bí Ẩn" },
-  "chien-tranh": { icon: ShieldAlert, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Chiến Tranh" },
-  "chinh-kich": { icon: Film, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Drama" },
-  "co-trang": { icon: Swords, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Võ Hiệp" },
-  "gia-dinh": { icon: Heart, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Ấm Áp" },
-  "hai-huoc": { icon: Smile, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Giải Trí" },
-  "hanh-dong": { icon: Zap, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Mãn Nhãn" },
-  "hinh-su": { icon: Skull, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Trinh Thám" },
-  "hoc-duong": { icon: GraduationCap, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Tuổi Trẻ" },
-  "khoa-hoc": { icon: Compass, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Sci-Fi" },
-  "kinh-di": { icon: Ghost, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Rùng Rợn" },
-  "kinh-dien": { icon: Clapperboard, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Bất Hủ" },
-  "lich-su": { icon: Swords, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Lịch Sử" },
-  "mien-tay": { icon: Flame, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Cowboy" },
-  "phim-18": { icon: Flame, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "18+" },
-  "phim-ngan": { icon: Tv, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Ngắn" },
-  "phieu-luu": { icon: Compass, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Thám Hiểm" },
-  "than-thoai": { icon: Wand2, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Thần Thoại" },
-  "the-thao": { icon: Trophy, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Thể Thao" },
-  "tre-em": { icon: Baby, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Thiếu Nhi" },
-  "tai-lieu": { icon: Tv, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Tài Liệu" },
-  "tam-ly": { icon: Heart, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Sâu Sắc" },
-  "tinh-cam": { icon: Heart, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Lãng Mạn" },
-  "vien-tuong": { icon: Zap, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Tương Lai" },
-  "vo-thuat": { icon: Swords, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Kung Fu" },
-  "am-nhac": { icon: Music, color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10", badge: "Âm Nhạc" },
-};
+function buildTopicArtwork(
+  topicResults: (TmdbMovie[] | undefined)[],
+): (string | null)[] {
+  const usedMovieIds = new Set<number>();
+
+  return topicResults.map((items, topicIndex) => {
+    const candidates = (items || []).filter((item) =>
+      Boolean(item.poster_path),
+    );
+    if (!candidates.length) return null;
+
+    const rotated = candidates
+      .slice(topicIndex % candidates.length)
+      .concat(candidates.slice(0, topicIndex % candidates.length));
+    const movie =
+      rotated.find((candidate) => !usedMovieIds.has(candidate.id)) ||
+      rotated[0];
+
+    usedMovieIds.add(movie.id);
+    return tmdbPoster(movie.poster_path, "w500");
+  });
+}
 
 export default function GenresTopicsPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const filteredGenres = useMemo(() => {
-    if (!searchQuery.trim()) return GENRES_LIST;
-    const q = searchQuery.toLowerCase().trim();
-    return GENRES_LIST.filter(
-      (g) => g.label.toLowerCase().includes(q) || g.slug.toLowerCase().includes(q),
-    );
-  }, [searchQuery]);
+  const router = useRouter();
+  const topicQueries = useQueries({
+    queries: TOPICS.map((topic) => ({
+      queryKey: ["movie-world-topic", topic.slug, topic.discover],
+      queryFn: async () => {
+        const response = await tmdbApi.discoverMovies(topic.discover);
+        return response?.results || [];
+      },
+      staleTime: 60 * 60 * 1000,
+      gcTime: 6 * 60 * 60 * 1000,
+    })),
+  });
+  const topicArtwork = buildTopicArtwork(
+    topicQueries.map((query) => query.data),
+  );
 
   return (
-    <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 pt-20 sm:pt-24 pb-24 bg-background min-h-screen text-foreground select-none font-sans overflow-x-hidden">
-      {/* ── DESIGN READ HEADER (Ultra-Minimalist Dark) ── */}
-      <header className="mb-12 text-center max-w-3xl mx-auto relative z-10">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-neutral-400 text-xs font-mono font-bold tracking-widest uppercase mb-4">
-          <Sparkles size={14} className="text-neutral-400" />
-          <span>THỂ LOẠI & VŨ TRỤ PHIM</span>
-        </div>
+    <main
+      className={`${cardFont.className} relative min-h-[100dvh] overflow-hidden bg-background px-4 pb-28 pt-24 text-white md:pr-8 lg:pl-24`}
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[420px] bg-[radial-gradient(circle_at_28%_0%,rgba(62,124,155,0.15),transparent_60%)]"
+      />
 
-        <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight leading-none text-white drop-shadow-2xl">
-          Khám Phá Theo Chủ Đề
-        </h1>
+      <div className="relative mx-auto w-full max-w-[1720px]">
+        <header className="mb-9 sm:mb-11">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-neutral-400 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
+          >
+            <ArrowLeft size={16} /> Quay lại
+          </button>
+          <h1 className="text-3xl font-extrabold tracking-[-0.045em] text-white sm:text-4xl">
+            Thế Giới Phim
+          </h1>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-400">
+            Chọn đúng không khí bạn muốn xem. Mỗi chủ đề mở ra một danh sách
+            phim tương ứng.
+          </p>
+        </header>
 
-        <p className="text-xs sm:text-sm md:text-base text-neutral-400 mt-3.5 max-w-xl mx-auto leading-relaxed">
-          Hơn 50,000+ bộ phim 4K tuyển chọn theo thể loại, vũ trụ điện ảnh & xu hướng thưởng thức đỉnh cao của bạn.
-        </p>
-      </header>
-
-      {/* ── FEATURED TOPIC BENTO SHOWCASE ── */}
-      <section className="mb-10 sm:mb-16 relative z-10 cv-section-auto">
-        <div className="flex items-center justify-between mb-3.5 sm:mb-6 px-1">
-          <h2 className="text-xs sm:text-sm font-black uppercase tracking-[0.18em] text-neutral-300 flex items-center gap-2">
-            <Flame size={16} className="text-neutral-400 sm:w-[18px] sm:h-[18px]" />
-            <span>BỘ SƯU TẬP CHỦ ĐỀ HOT NHẤT</span>
+        <section aria-labelledby="movie-topics-title">
+          <h2 id="movie-topics-title" className="sr-only">
+            Danh sách chủ đề phim
           </h2>
-          <span className="text-[11px] font-mono text-neutral-500 font-semibold hidden sm:inline-block">
-            6 THỂ LOẠI THỊNH HÀNH 2026
-          </span>
-        </div>
-
-        {/* Bento Grid: 2-column on mobile for compact space-saving layout */}
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-          {FEATURED_TOPICS.map((topic, index) => {
-            const Icon = topic.icon;
-            return (
-              <motion.div
-                key={topic.id}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-              >
-                <Link
-                  href={topic.link}
-                  className={`group relative overflow-hidden rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 border border-white/10 ${topic.borderColor} ${topic.glowColor} transition-all duration-500 shadow-xl flex flex-col justify-between min-h-[140px] sm:min-h-[240px] bg-neutral-950 transform-gpu hover:-translate-y-1`}
-                >
-                  {/* Ambient Backdrop Image with Zoom & Dark Gradient Scrim */}
-                  <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={topic.backdrop}
-                      alt={topic.title}
-                      loading="lazy"
-                      decoding="async"
-                      onError={(e) => {
-                        const target = e.currentTarget;
-                        if (target.src !== topic.fallbackBackdrop) {
-                          target.src = topic.fallbackBackdrop;
-                        }
-                      }}
-                      className="w-full h-full object-cover object-center brightness-50 group-hover:scale-110 transition-transform duration-700 ease-out"
-                    />
-                    {/* Multi-layer Gradient Scrim for Readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#060709] via-[#060709]/80 to-transparent z-10" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#060709]/90 via-transparent to-[#060709]/60 z-10" />
-                  </div>
-
-                  {/* Top Glass Tags & Glyph */}
-                  <div className="relative z-20 flex items-center justify-between gap-1.5 mb-2 sm:mb-4">
-                    <div className="flex items-center gap-1 sm:gap-2">
-                      <span className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full border text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider backdrop-blur-md shadow-md ${topic.badgeBg}`}>
-                        {topic.badge}
-                      </span>
-                      <span className="px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-black/60 border border-white/15 text-[9px] sm:text-[10px] font-mono font-bold text-amber-400 flex items-center gap-0.5 sm:gap-1 backdrop-blur-md">
-                        <Star size={9} className="fill-amber-400 sm:w-[10px] sm:h-[10px]" />
-                        <span>{topic.rating}</span>
-                      </span>
-                    </div>
-
-                    <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center text-white group-hover:scale-110 group-hover:bg-white group-hover:text-black transition-all shadow-lg shrink-0">
-                      <Icon size={14} className="sm:hidden" />
-                      <Icon size={18} className="hidden sm:block" />
-                    </div>
-                  </div>
-
-                  {/* Middle Content */}
-                  <div className="relative z-20 space-y-0.5 sm:space-y-1.5 mt-auto">
-                    <span className="text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-widest text-neutral-400 block">
-                      {topic.featuredTag}
-                    </span>
-                    <h3 className="text-xs sm:text-2xl font-bold sm:font-black text-white group-hover:text-white transition-colors drop-shadow-md line-clamp-1">
-                      {topic.title}
-                    </h3>
-                    <p className="hidden sm:block text-xs text-neutral-400 line-clamp-2 leading-relaxed font-medium">
-                      {topic.subtitle}
-                    </p>
-                  </div>
-
-                  {/* Bottom Action Footer (Desktop only) */}
-                  <div className="relative z-20 hidden sm:flex items-center justify-between pt-4 border-t border-white/10 mt-4 text-xs font-bold text-neutral-400 group-hover:text-white transition-colors">
-                    <span className="flex items-center gap-1">
-                      <span>Khám phá bộ sưu tập</span>
-                    </span>
-                    <div className="w-7 h-7 rounded-full bg-white/10 group-hover:bg-white group-hover:text-black flex items-center justify-center transition-all">
-                      <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
-                    </div>
-                  </div>
-                </Link>
-              </motion.div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ── ALL 26 GENRES GRID WITH SEARCH FILTER ── */}
-      <section className="relative z-10 cv-section-auto">
-        {/* Section Header & Interactive Search Input */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 px-1">
-          <h2 className="text-sm font-black uppercase tracking-[0.2em] text-neutral-300 flex items-center gap-2.5">
-            <Layers size={18} className="text-neutral-400" />
-            <span>TẤT CẢ THỂ LOẠI PHIM ({filteredGenres.length})</span>
-          </h2>
-
-          {/* Quick Search Filter Input */}
-          <div className="relative w-full sm:w-64">
-            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
-            <input
-              type="text"
-              placeholder="Tìm nhanh thể loại..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-neutral-900 border border-white/10 focus:border-white/30 rounded-xl pl-9 pr-4 py-2 text-xs font-semibold text-white placeholder-neutral-500 focus:outline-none transition-all shadow-inner"
-            />
-          </div>
-        </div>
-
-        {/* 26 Genre Pill Card Grid */}
-        {filteredGenres.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
-            {filteredGenres.map((genre) => {
-              const cfg = GENRE_CONFIG[genre.slug] || {
-                icon: Film,
-                color: "from-white/10 to-neutral-900 text-neutral-300 border-white/10",
-                badge: "Phim",
-              };
-              const Icon = cfg.icon;
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:gap-5">
+            {TOPICS.map((topic, index) => {
+              const image = topicArtwork[index];
 
               return (
                 <Link
-                  key={genre.slug}
-                  href={`/genre/${genre.slug}`}
-                  className="group relative bg-neutral-950 border border-white/10 hover:border-white/30 rounded-2xl p-4 flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-1.5 shadow-xl backdrop-blur-md overflow-hidden cursor-pointer"
+                  key={topic.slug}
+                  href={topic.href}
+                  aria-label={`Xem chủ đề ${topic.title}`}
+                  className="group relative isolate min-h-[205px] overflow-hidden rounded-2xl border border-white/[0.09] transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_22px_55px_rgba(0,0,0,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                  style={{ backgroundColor: topic.tone }}
                 >
-                  {/* Subtle Top Ambient Glow Accent */}
-                  <div className="absolute top-0 inset-x-0 h-1 bg-white/20 opacity-40 group-hover:opacity-100 transition-opacity" />
-
-                  {/* Glyph Icon Capsule */}
-                  <div className="w-11 h-11 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3 text-neutral-300 group-hover:scale-110 group-hover:bg-white group-hover:text-black transition-all duration-300 shadow-md">
-                    <Icon size={20} />
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-y-0 right-0 w-[68%] overflow-hidden"
+                    style={{
+                      WebkitMaskImage:
+                        "linear-gradient(to left, black 58%, transparent 100%)",
+                      maskImage:
+                        "linear-gradient(to left, black 58%, transparent 100%)",
+                    }}
+                  >
+                    {image ? (
+                      <Image
+                        src={image}
+                        alt=""
+                        fill
+                        sizes="(min-width: 1280px) 22vw, (min-width: 640px) 46vw, 68vw"
+                        priority={index < 4}
+                        className="object-cover object-top opacity-90 transition-transform duration-500 ease-out group-hover:scale-[1.035]"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 animate-pulse bg-white/[0.035] motion-reduce:animate-none" />
+                    )}
                   </div>
 
-                  {/* Genre Title */}
-                  <h3 className="font-extrabold text-xs text-white group-hover:text-white transition-colors line-clamp-1">
-                    {genre.label}
-                  </h3>
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"
+                  />
 
-                  {/* Genre Badge Pill */}
-                  <span className="text-[9px] font-mono font-bold text-neutral-400 group-hover:text-neutral-200 mt-1 uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/5 group-hover:bg-white/10 border border-white/5 transition-colors">
-                    {cfg.badge}
-                  </span>
+                  <div className="relative z-10 flex min-h-[205px] max-w-[72%] flex-col justify-end p-5 sm:p-6">
+                    <span
+                      className="mb-3 h-1 w-8 rounded-full"
+                      style={{ backgroundColor: topic.accent }}
+                    />
+                    <h3 className="text-lg font-extrabold leading-[1.2] tracking-[-0.025em] text-white sm:text-xl">
+                      {topic.title}
+                    </h3>
+                    <p className="mt-2 line-clamp-2 text-[12px] leading-[1.55] text-neutral-300/80">
+                      {topic.description}
+                    </p>
+                    <ArrowUpRight
+                      size={18}
+                      className="absolute bottom-5 right-5 translate-y-1 text-white/50 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:text-white group-hover:opacity-100"
+                    />
+                  </div>
                 </Link>
               );
             })}
           </div>
-        ) : (
-          <div className="text-center py-16 bg-neutral-950 border border-white/10 rounded-3xl p-8 space-y-3">
-            <Search size={32} className="mx-auto text-neutral-500 animate-bounce" />
-            <p className="text-sm font-bold text-neutral-400">
-              Không tìm thấy thể loại phù hợp với từ khóa &quot;{searchQuery}&quot;
-            </p>
-            <button
-              onClick={() => setSearchQuery("")}
-              className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all cursor-pointer"
-            >
-              Xóa bộ lọc tìm kiếm
-            </button>
-          </div>
-        )}
-      </section>
-    </div>
+        </section>
+      </div>
+    </main>
   );
 }

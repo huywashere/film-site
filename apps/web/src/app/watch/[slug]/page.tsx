@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import NextImage from "next/image";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   ChevronLeft,
@@ -37,7 +38,8 @@ import { useAuthStore } from "@/store/authStore";
 import { useTranslation } from "@/store/langStore";
 import { useWatchParty } from "@/hooks/useWatchParty";
 import { useTmdb } from "@/hooks/useTmdb";
-import { tmdbBackdrop, tmdbApi } from "@/lib/tmdb";
+import { tmdbBackdrop } from "@/lib/tmdb";
+import { cardFont } from "@/lib/fonts";
 import { WatchPartyPanel } from "@/components/watch/WatchPartyPanel";
 import { AdvancedCommentSection } from "@/components/comments/AdvancedCommentSection";
 import dynamic from "next/dynamic";
@@ -181,6 +183,8 @@ export default function WatchPage() {
   const shouldCreateParty = searchParams.get("party") === "create";
   const requestedRoomName = searchParams.get("roomName") || "";
   const wp = useWatchParty(slug, currentEp);
+  const joinWatchPartyRoom = wp.joinRoom;
+  const createWatchPartyRoom = wp.createRoom;
 
   // State
   const [currentServer, setCurrentServer] = useState(0);
@@ -230,12 +234,29 @@ export default function WatchPage() {
   const [copied, setCopied] = useState(false);
   const [showEpThumbnails, setShowEpThumbnails] = useState(false);
   const [artInstance, setArtInstance] = useState<any>(null);
+  const [fallbackSourcesReady, setFallbackSourcesReady] = useState(false);
+  const [backgroundDataReady, setBackgroundDataReady] = useState(false);
   const hasSkippedIntroRef = useRef(false);
   const joinedRoomRef = useRef<string | null>(null);
   const creatingRoomRef = useRef(false);
   const applyingRemoteStateRef = useRef(false);
   const [epRangeIndex, setEpRangeIndex] = useState(0);
   const epGridRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fallbackTimer = window.setTimeout(
+      () => setFallbackSourcesReady(true),
+      450,
+    );
+    const backgroundTimer = window.setTimeout(
+      () => setBackgroundDataReady(true),
+      1100,
+    );
+    return () => {
+      window.clearTimeout(fallbackTimer);
+      window.clearTimeout(backgroundTimer);
+    };
+  }, []);
 
   const [autoSkipIntro, setAutoSkipIntro] = useState<boolean>(() => {
     try {
@@ -252,9 +273,9 @@ export default function WatchPage() {
       joinedRoomRef.current !== roomCode
     ) {
       joinedRoomRef.current = roomCode;
-      wp.joinRoom(roomCode);
+      joinWatchPartyRoom(roomCode);
     }
-  }, [roomCode, wp.joinRoom, wp.roomId]);
+  }, [joinWatchPartyRoom, roomCode, wp.roomId]);
 
   useEffect(() => {
     const state = wp.remotePlayerState;
@@ -413,6 +434,8 @@ export default function WatchPage() {
     queryFn: () =>
       movieApi.getDetail(sourceSlug, preferredSource).then((r) => r.data),
     enabled: !!sourceSlug,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
   });
   const film = data?.movie || data;
   const primarySource = String(
@@ -423,7 +446,7 @@ export default function WatchPage() {
   const { data: sourceLookupData } = useQuery({
     queryKey: ["watch-source-lookup", lookupTitle, film?.year],
     queryFn: () => movieApi.search(lookupTitle, 1, 30).then((r) => r.data),
-    enabled: Boolean(lookupTitle),
+    enabled: fallbackSourcesReady && Boolean(lookupTitle),
     staleTime: 1000 * 60 * 30,
   });
 
@@ -462,25 +485,33 @@ export default function WatchPage() {
     queryKey: ["film-kkphim", kkphimSlug],
     queryFn: () =>
       movieApi.getDetailFromSource("kkphim", kkphimSlug).then((r) => r.data),
-    enabled: Boolean(kkphimSlug) && primarySource !== "kkphim",
+    enabled:
+      fallbackSourcesReady &&
+      Boolean(kkphimSlug) &&
+      primarySource !== "kkphim",
   });
   const { data: ophimFetchedData } = useQuery({
     queryKey: ["film-ophim", ophimSlug],
     queryFn: () =>
       movieApi.getDetailFromSource("ophim", ophimSlug).then((r) => r.data),
-    enabled: Boolean(ophimSlug) && primarySource !== "ophim",
+    enabled:
+      fallbackSourcesReady && Boolean(ophimSlug) && primarySource !== "ophim",
   });
   const { data: nguoncFetchedData } = useQuery({
     queryKey: ["film-nguonc", nguoncSlug],
     queryFn: () =>
       movieApi.getDetailFromSource("nguonc", nguoncSlug).then((r) => r.data),
-    enabled: Boolean(nguoncSlug) && primarySource !== "nguonc",
+    enabled:
+      fallbackSourcesReady &&
+      Boolean(nguoncSlug) &&
+      primarySource !== "nguonc",
   });
   const { data: vsmovFetchedData } = useQuery({
     queryKey: ["film-vsmov", vsmovSlug],
     queryFn: () =>
       movieApi.getDetailFromSource("vsmov", vsmovSlug).then((r) => r.data),
-    enabled: Boolean(vsmovSlug) && primarySource !== "vsmov",
+    enabled:
+      fallbackSourcesReady && Boolean(vsmovSlug) && primarySource !== "vsmov",
   });
 
   const kkphimData = primarySource === "kkphim" ? data : kkphimFetchedData;
@@ -505,6 +536,13 @@ export default function WatchPage() {
     film?.origin_name,
     slug,
   );
+
+  const { bestBackdrop, backdrops: tmdbBackdrops } = useTmdb({
+    film,
+    enabled: !!film && backgroundDataReady,
+    fetchCredits: false,
+    fetchVideos: false,
+  });
 
   // Recommendations
   const filmCategory =
@@ -569,7 +607,7 @@ export default function WatchPage() {
           .slice(0, 10),
       };
     },
-    enabled: !!slug,
+    enabled: backgroundDataReady && !!slug,
   });
 
   const { data: resumeData } = useQuery({
@@ -579,19 +617,9 @@ export default function WatchPage() {
   });
 
   // Fetch TMDB Scene Stills / Backdrops for Episode Scene Thumbnails
-  const tmdbShowId = tmdbId;
-
-  const { data: tmdbImages } = useQuery({
-    queryKey: ["watch-tmdb-scenes", tmdbMediaType, tmdbShowId],
-    queryFn: () => tmdbApi.getImages(tmdbMediaType, String(tmdbShowId)),
-    enabled:
-      !!tmdbShowId && !isNaN(Number(tmdbShowId)) && Number(tmdbShowId) > 0,
-    staleTime: 1000 * 60 * 60,
-  });
-
   const sceneStills: any[] = useMemo(() => {
-    return tmdbImages?.backdrops || [];
-  }, [tmdbImages]);
+    return tmdbBackdrops || [];
+  }, [tmdbBackdrops]);
 
   // Episode processing: normalize provider ownership, language and priority.
   const episodes: SourceServer[] = useMemo(() => {
@@ -779,7 +807,7 @@ export default function WatchPage() {
         setVidsrcManuallySelected(false);
       }
     }
-  }, [episodes.length]);
+  }, [activeServerType, currentServer, episodes]);
 
   useEffect(() => {
     if (vidsrcManuallySelected) return;
@@ -875,7 +903,7 @@ export default function WatchPage() {
   }, [film, slug, currentEp, currentEpData?.name, posterUrl, user]);
 
   const createCurrentMovieParty = useCallback(async () => {
-    const newRoomId = await wp.createRoom({
+    const newRoomId = await createWatchPartyRoom({
       name: requestedRoomName || undefined,
       movieName: film?.name || film?.origin_name || "Phim đang xem",
       posterUrl,
@@ -896,7 +924,7 @@ export default function WatchPage() {
     router,
     searchParams,
     slug,
-    wp.createRoom,
+    createWatchPartyRoom,
   ]);
 
   useEffect(() => {
@@ -921,13 +949,7 @@ export default function WatchPage() {
     wp.roomId,
   ]);
 
-  // TMDB backdrop cho hero phia tren player
-  const { bestBackdrop } = useTmdb({
-    film,
-    enabled: !!film,
-    fetchCredits: false,
-    fetchVideos: false,
-  });
+  // TMDB backdrop and scene images share the single deferred query above.
   const tmdbBackdropUrl = bestBackdrop
     ? tmdbBackdrop(bestBackdrop.file_path, "w1280")
     : null;
@@ -1205,7 +1227,7 @@ export default function WatchPage() {
       const ep = episodes[idx];
       if (ep?._type) setActiveServerType(ep._type as ServerType);
     }
-  }, [searchParams]);
+  }, [episodes, searchParams]);
 
   useEffect(() => {
     setFailedServers([]);
@@ -1250,7 +1272,7 @@ export default function WatchPage() {
       setCurrentServer(gIdx >= 0 ? gIdx : 0);
       setPlayerEngine(first.server_data?.[0]?.link_m3u8 ? "hls" : "iframe");
     }
-  }, [activeServerType]);
+  }, [activeServerType, episodes, serversByType]);
 
   useEffect(() => {
     if (typeof document !== "undefined" && film?.name) {
@@ -1312,7 +1334,7 @@ export default function WatchPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white relative">
+    <div className={`${cardFont.className} relative min-h-screen bg-[#101114] text-white`}>
       {/* ── JSON-LD STRUCTURED DATA SCHEMA FOR GOOGLE SEO ── */}
       <script
         type="application/ld+json"
@@ -1643,7 +1665,7 @@ export default function WatchPage() {
                         toast("Đã bỏ qua Intro (+85s)", "info");
                       }
                     }}
-                    className="absolute bottom-16 right-5 z-40 bg-black/85 hover:bg-netflixRed text-white text-xs font-bold px-3.5 py-2 rounded-lg border border-white/20 backdrop-blur-md shadow-xl transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 animate-pulse"
+                    className="absolute bottom-16 right-5 z-40 flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/20 bg-[#15171b]/95 px-3.5 py-2 text-xs font-bold text-white transition-colors hover:bg-[#202329] active:scale-95"
                   >
                     <span>⏩ Bỏ qua Intro (+85s)</span>
                   </button>
@@ -1798,7 +1820,7 @@ export default function WatchPage() {
                         const n = serverData[currentEpIndex + 1];
                         router.push(watchUrlForEpisode(n.slug || n.name));
                       }}
-                      className="flex items-center gap-1 px-4 py-1.5 text-xs font-semibold bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors"
+                      className="flex items-center gap-1 rounded-lg bg-white px-4 py-1.5 text-xs font-semibold text-[#111317] transition-colors hover:bg-neutral-200"
                     >
                       Tập tiếp <ChevronRight size={13} />
                     </button>
@@ -1937,10 +1959,13 @@ export default function WatchPage() {
                         >
                           {/* Right Backdrop Image with Smooth Gradient Mask */}
                           {movieBackdrop && (
-                            <img
+                            <NextImage
                               src={movieBackdrop}
                               alt="Backdrop"
-                              className="absolute right-0 top-0 bottom-0 w-2/3 h-full object-cover object-center opacity-40 group-hover:scale-105 transition-transform duration-700 pointer-events-none"
+                              fill
+                              sizes="(max-width: 640px) 100vw, 50vw"
+                              className="object-cover object-center opacity-40 group-hover:scale-105 transition-transform duration-700 pointer-events-none"
+                              unoptimized
                             />
                           )}
                           <div className="absolute inset-0 bg-gradient-to-r from-[#0d1017] via-[#0d1017]/90 to-transparent pointer-events-none" />
@@ -2034,7 +2059,7 @@ export default function WatchPage() {
                                   ? "bg-white text-black border-white font-black shadow-md"
                                   : "bg-white/[0.04] border-white/10 text-neutral-300 hover:text-white hover:bg-white/10",
                                 hasFailed &&
-                                  "opacity-30 line-through cursor-not-allowed bg-red-950/20 border-red-500/30 text-red-400",
+                                  "cursor-not-allowed border-white/10 bg-white/[0.02] text-neutral-600 opacity-40 line-through",
                               )}
                             >
                               <Server size={13} />
@@ -2156,7 +2181,7 @@ export default function WatchPage() {
                                   : "bg-white/[0.03] border-white/[0.06] text-white/50 hover:bg-white/[0.07] hover:text-white",
                             )}
                           >
-                            {start} – {end}
+                            {start} - {end}
                             {containsActiveEp && (
                               <span className="ml-1 w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
                             )}
@@ -2246,10 +2271,13 @@ export default function WatchPage() {
                               )}
                             >
                               {stillImage ? (
-                                <img
+                                <NextImage
                                   src={stillImage}
                                   alt={`Tập ${epNum}`}
-                                  className="w-full h-full object-cover brightness-75 group-hover/ep:brightness-100 transition-all duration-300"
+                                  fill
+                                  sizes="(max-width: 640px) 50vw, 240px"
+                                  className="object-cover brightness-75 group-hover/ep:brightness-100 transition-all duration-300"
+                                  unoptimized
                                 />
                               ) : (
                                 <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-white/20">
@@ -2318,11 +2346,14 @@ export default function WatchPage() {
             <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 space-y-3">
               <div className="flex gap-3">
                 {posterUrl && (
-                  <div className="w-16 h-24 rounded-lg overflow-hidden flex-shrink-0 ring-1 ring-white/[0.08]">
-                    <img
+                  <div className="relative w-16 h-24 rounded-lg overflow-hidden flex-shrink-0 ring-1 ring-white/[0.08]">
+                    <NextImage
                       src={posterUrl}
                       alt={film?.name}
-                      className="w-full h-full object-cover"
+                      fill
+                      sizes="64px"
+                      className="object-cover"
+                      unoptimized
                     />
                   </div>
                 )}
@@ -2438,12 +2469,15 @@ export default function WatchPage() {
                         key={item._id || item.slug}
                         className="flex gap-2.5 group hover:bg-white/[0.03] -mx-1 px-1 py-1 rounded-lg transition-colors"
                       >
-                        <div className="w-12 h-[68px] rounded-lg bg-white/5 flex-shrink-0 overflow-hidden">
+                        <div className="relative w-12 h-[68px] rounded-lg bg-white/5 flex-shrink-0 overflow-hidden">
                           {thumb ? (
-                            <img
+                            <NextImage
                               src={thumb}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              fill
+                              sizes="48px"
+                              className="object-cover group-hover:scale-105 transition-transform duration-300"
                               alt={item.name}
+                              unoptimized
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">

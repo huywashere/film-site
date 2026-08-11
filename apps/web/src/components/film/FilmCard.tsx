@@ -10,6 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import type { MovieSource } from "@/lib/movie-normalizer";
 import { guestDataStorage } from "@/lib/user-data";
+import { cardFont } from "@/lib/fonts";
 
 export interface FilmItem {
   _id?: string;
@@ -39,6 +40,8 @@ export interface FilmItem {
   _source?: MovieSource;
   _sources?: MovieSource[];
   _sourceSlugs?: Partial<Record<MovieSource, string>>;
+  _canonicalKey?: string;
+  _duplicateCount?: number;
   content?: string;
   actor?: string[];
   director?: string[];
@@ -306,7 +309,7 @@ export function FilmCard({
   return (
     <div
       data-film-card="true"
-      className="group relative flex flex-col select-none gpu-accelerated transform-gpu"
+      className={`${cardFont.className} group relative flex flex-col select-none gpu-accelerated transform-gpu`}
       style={width ? { width, flexShrink: 0 } : undefined}
       onMouseEnter={prefetchFilmDetail}
     >
@@ -369,16 +372,19 @@ export function FilmCard({
 
         {/* ── Clean Metadata Below Poster ── */}
         {!hideDetails && (
-          <div className="flex flex-col text-left mt-1.5 sm:mt-2 px-0.5 space-y-0.5 sm:space-y-1">
-            {/* Title - Clean, non-forced case, max 2 lines */}
-            <h4 className="min-h-[28px] sm:min-h-[35px] text-[11px] sm:text-sm font-semibold text-neutral-100 line-clamp-2 leading-tight group-hover:text-white/70 transition-colors">
+          <div className="flex flex-col text-left mt-1.5 sm:mt-2 px-0.5">
+            {/* Keep dense rows stable: long titles collapse to one readable line. */}
+            <h4
+              className={`${cardFont.className} truncate text-[13px] font-bold leading-[1.25] tracking-[-0.01em] text-neutral-100 transition-colors group-hover:text-white sm:text-[15px]`}
+              title={title}
+            >
               {title}
             </h4>
 
             {/* Subtitle Row with Origin/Year & Sleek Rating */}
             <div
               data-film-meta="true"
-              className="flex min-h-[18px] items-center justify-between text-[10px] sm:text-[11px] text-neutral-400 gap-1 sm:gap-2"
+              className={`${cardFont.className} mt-0.5 flex min-h-[18px] items-center justify-between text-[11px] sm:text-xs leading-[1.3] text-neutral-400 gap-1 sm:gap-2`}
             >
               <span className="line-clamp-1 flex-1 font-normal text-neutral-400">
                 {film.origin_name || (film.year ? `${film.year}` : "")}
@@ -401,9 +407,10 @@ export function FilmCard({
           onClick={handleWatchlist}
           aria-pressed={saved}
           className={cn(
-            "absolute right-2 top-2 z-30 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-[#11151b]/95 text-white transition-colors active:scale-[0.96]",
+            "absolute right-2 top-2 z-30 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-[#11151b]/95 text-white transition-all duration-200 active:scale-[0.96]",
+            "opacity-0 group-hover:opacity-100 focus:opacity-100",
             saved
-              ? "border-white bg-white text-[#11151b]"
+              ? "border-white bg-white text-[#11151b] opacity-100"
               : "hover:border-white/50 hover:bg-[#1c232d]",
           )}
           title={saved ? "Bỏ khỏi xem sau" : "Thêm vào xem sau"}

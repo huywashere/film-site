@@ -39,6 +39,22 @@ import { useTmdb, useTmdbPerson } from "@/hooks/useTmdb";
 import { tmdbBackdrop, tmdbProfile, tmdbPoster } from "@/lib/tmdb";
 import { TrailerModal } from "@/components/film/TrailerModal";
 import { safeJsonLd } from "@/lib/safe-json-ld";
+import { cardFont } from "@/lib/fonts";
+
+function formatRating(value: number) {
+  return Number.isFinite(value) && value > 0 ? value.toFixed(1) : null;
+}
+
+function formatVoteCount(value: number) {
+  if (!Number.isFinite(value) || value <= 0) return null;
+  if (value >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(value >= 10_000_000 ? 0 : 1).replace(".0", "")} triệu`;
+  }
+  if (value >= 1_000) {
+    return `${(value / 1_000).toFixed(value >= 100_000 ? 0 : 1).replace(".0", "")} nghìn`;
+  }
+  return String(Math.round(value));
+}
 
 // ── Cast Card (Only renders actors with actual photos) ──────
 function CastCard({
@@ -97,18 +113,18 @@ function CastCard({
       className="flex flex-col items-center text-center space-y-1.5 p-1.5 w-24 md:w-28 flex-shrink-0 group cursor-pointer"
       title={`${cleanName}${role ? ` (${role})` : ""}`}
     >
-      <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden border border-white/10 group-hover:border-red-500/80 group-hover:scale-105 bg-neutral-900 flex items-center justify-center shadow-lg transition-all duration-300">
-        <img
+      <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-neutral-900 transition-[border-color,transform] duration-200 group-hover:scale-[1.03] group-hover:border-white/30 md:h-20 md:w-20">
+        <NextImage
           src={realPhotoUrl}
           alt={cleanName}
-          className="w-full h-full object-cover"
-          loading="lazy"
+          fill
+          sizes="80px"
+          className="object-cover"
+          unoptimized
         />
       </div>
       <div className="w-full truncate px-1">
-        <p className="text-[11px] font-bold text-white group-hover:text-red-400 transition-colors truncate">
-          {cleanName}
-        </p>
+        <p className="truncate text-[11px] font-bold text-white">{cleanName}</p>
         <p className="text-[9px] text-neutral-500 truncate mt-0.5">{role}</p>
       </div>
     </div>
@@ -145,19 +161,19 @@ const EP_TYPE_CONFIG: Record<
   vietsub: {
     label: "Vietsub",
     icon: Subtitles,
-    activeCls: "bg-emerald-500/20 border-emerald-500/60 text-emerald-300",
+    activeCls: "bg-white/12 border-white/30 text-white",
     inactiveCls: "bg-white/5 border-white/10 text-white/50 hover:text-white",
   },
   "thuyet-minh": {
     label: "Thuyết Minh",
     icon: Mic,
-    activeCls: "bg-amber-500/20 border-amber-500/60 text-amber-300",
+    activeCls: "bg-white/12 border-white/30 text-white",
     inactiveCls: "bg-white/5 border-white/10 text-white/50 hover:text-white",
   },
   raw: {
     label: "Bản Gốc",
     icon: Monitor,
-    activeCls: "bg-blue-500/20 border-blue-500/60 text-blue-300",
+    activeCls: "bg-white/12 border-white/30 text-white",
     inactiveCls: "bg-white/5 border-white/10 text-white/50 hover:text-white",
   },
 };
@@ -271,7 +287,7 @@ function EpisodeList({
               "flex items-center justify-center aspect-square rounded-lg",
               "text-xs font-bold transition-all",
               "bg-white/5 text-white/60 border border-white/[0.06]",
-              "hover:bg-emerald-500 hover:text-white hover:border-emerald-500 hover:scale-105 hover:shadow-lg hover:shadow-emerald-500/20",
+              "hover:border-white/30 hover:bg-white/10 hover:text-white",
             )}
           >
             {ep.name.replace(/^tập\s*/i, "")}
@@ -380,13 +396,16 @@ function ReviewItem({ review }: { review: any }) {
     <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl flex flex-col space-y-3 hover:border-white/10 transition-colors shadow-lg">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <img
+          <NextImage
             src={
               review.user?.avatarUrl ||
               `https://ui-avatars.com/api/?name=${review.user?.username || "U"}&background=182027&color=ffffff&size=32`
             }
             alt=""
-            className="w-8 h-8 rounded-full border border-white/10 object-cover"
+            width={32}
+            height={32}
+            className="h-8 w-8 rounded-full border border-white/10 object-cover"
+            unoptimized
           />
           <div className="min-w-0">
             <p className="text-xs font-bold text-white truncate">
@@ -398,7 +417,7 @@ function ReviewItem({ review }: { review: any }) {
           </div>
         </div>
         {review.rating && (
-          <div className="flex items-center gap-0.5 text-amber-500 text-xs">
+          <div className="flex items-center gap-0.5 text-neutral-300 text-xs">
             <Star size={10} fill="currentColor" />
             <span className="font-bold text-white">{review.rating}</span>
           </div>
@@ -428,7 +447,7 @@ function ReviewItem({ review }: { review: any }) {
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all border",
             reactions.userReacted === "love"
-              ? "bg-red-500/10 border-red-500/30 text-red-500 scale-105"
+              ? "scale-105 border-white/30 bg-white/10 text-white"
               : "bg-white/[0.02] border-white/5 text-neutral-400 hover:text-white hover:bg-white/[0.05]",
           )}
         >
@@ -441,7 +460,7 @@ function ReviewItem({ review }: { review: any }) {
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all border",
             reactions.userReacted === "agree"
-              ? "bg-amber-550/10 border-amber-500/30 text-amber-500 scale-105"
+              ? "scale-105 border-white/30 bg-white/10 text-white"
               : "bg-white/[0.02] border-white/5 text-neutral-400 hover:text-white hover:bg-white/[0.05]",
           )}
         >
@@ -470,7 +489,7 @@ function WriteReview({ movieId }: { movieId: string }) {
         </span>
         <Link
           href="/login"
-          className="bg-netflixRed hover:bg-[#C11119] text-white font-extrabold text-[11px] px-6 py-2.5 rounded-lg transition-all shadow-md"
+          className="rounded-lg bg-white px-6 py-2.5 text-[11px] font-extrabold text-[#111317] transition-colors hover:bg-neutral-200"
         >
           ĐĂNG NHẬP
         </Link>
@@ -505,13 +524,16 @@ function WriteReview({ movieId }: { movieId: string }) {
     >
       <div className="flex items-center justify-between pb-1">
         <div className="flex items-center space-x-2">
-          <img
+          <NextImage
             src={
               user.avatarUrl ||
               `https://ui-avatars.com/api/?name=${user.username}&background=182027&color=ffffff`
             }
             alt=""
-            className="w-8 h-8 rounded-full border border-white/10 object-cover"
+            width={32}
+            height={32}
+            className="h-8 w-8 rounded-full border border-white/10 object-cover"
+            unoptimized
           />
           <span className="text-xs font-bold text-white">
             {user.displayName || user.username}
@@ -528,14 +550,14 @@ function WriteReview({ movieId }: { movieId: string }) {
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="Chia sẻ cảm nhận của bạn về bộ phim này..."
-        className="w-full bg-black/20 border border-white/5 rounded-xl p-3 text-xs text-foreground placeholder:text-neutral-500 focus:border-netflixRed transition-colors focus:outline-none"
+        className="w-full rounded-xl border border-white/10 bg-black/20 p-3 text-xs text-foreground placeholder:text-neutral-500 transition-colors focus:border-white/30 focus:outline-none"
         rows={3}
       />
       <div className="flex justify-end">
         <button
           type="submit"
           disabled={!content.trim() || submitting}
-          className="bg-netflixRed hover:bg-[#C11119] text-white font-extrabold text-[10px] uppercase tracking-wider px-5 py-2.5 rounded-lg transition-colors disabled:opacity-50 shadow-md"
+          className="rounded-lg bg-white px-5 py-2.5 text-[10px] font-extrabold uppercase tracking-wider text-[#111317] transition-colors hover:bg-neutral-200 disabled:opacity-50"
         >
           {submitting ? "Đang gửi..." : "Gửi Đánh Giá"}
         </button>
@@ -556,11 +578,19 @@ export default function FilmDetailPage() {
   const [inWatchlist, setInWatchlist] = useState(false);
   const [myRating, setMyRating] = useState(0);
   const [showTrailer, setShowTrailer] = useState(false);
+  const [secondaryReady, setSecondaryReady] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSecondaryReady(true), 650);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   // Fetch film detail
   const { data, isLoading, error } = useQuery({
     queryKey: ["film", slug],
     queryFn: () => movieApi.getDetail(slug).then((r) => r.data),
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
   });
 
   const film = data?.movie || (data?.error ? null : data);
@@ -610,10 +640,11 @@ export default function FilmDetailPage() {
     bestPoster,
     cast: tmdbCast,
     trailer,
-    hasData: hasTmdb,
   } = useTmdb({
     film,
     enabled: !!film,
+    fetchCredits: secondaryReady,
+    fetchVideos: secondaryReady || showTrailer,
   });
 
   const posterUrl = film
@@ -662,16 +693,15 @@ export default function FilmDetailPage() {
     return (
       <div className="bg-[#14181c] min-h-[75vh] text-neutral-300 pt-28 pb-16 text-center flex flex-col items-center justify-center px-4 font-sans select-none">
         <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4 shadow-xl">
-          <Info size={32} className="text-emerald-400" />
+          <Info size={32} className="text-neutral-300" />
         </div>
         <h1 className="text-xl sm:text-2xl font-bold text-white mb-2">
           Không tìm thấy phim này
         </h1>
         <p className="text-xs sm:text-sm text-neutral-400 max-w-md mx-auto mb-6 leading-relaxed">
-          Bộ phim{" "}
-          <span className="text-emerald-400 font-semibold">"{slug}"</span> hiện
-          chưa có bản chiếu trên hệ thống hoặc đường dẫn không khả dụng. Bạn có
-          thể tìm kiếm phim khác hoặc quay về trang chủ.
+          Bộ phim <span className="font-semibold text-white">"{slug}"</span>{" "}
+          hiện chưa có bản chiếu trên hệ thống hoặc đường dẫn không khả dụng.
+          Bạn có thể tìm kiếm phim khác hoặc quay về trang chủ.
         </p>
         <div className="flex items-center gap-3">
           <Link
@@ -744,6 +774,15 @@ export default function FilmDetailPage() {
   const tmdbRating = Number(
     film?.tmdb?.vote_average || film?.vote_average || film?.rating || 0,
   );
+  const tmdbVoteCount = Number(film?.tmdb?.vote_count || film?.vote_count || 0);
+  const imdbRating = Number(
+    film?.imdb?.vote_average || film?.imdb_rating || film?.imdb?.rating || 0,
+  );
+  const imdbVoteCount = Number(film?.imdb?.vote_count || 0);
+  const tmdbRatingLabel = formatRating(tmdbRating);
+  const imdbRatingLabel = formatRating(imdbRating);
+  const tmdbVoteLabel = formatVoteCount(tmdbVoteCount);
+  const imdbVoteLabel = formatVoteCount(imdbVoteCount);
   const statusLabel =
     film?.status === "completed" ||
     String(film?.episode_current || "")
@@ -773,13 +812,16 @@ export default function FilmDetailPage() {
     dateCreated: film?.year ? String(film.year) : undefined,
     genre: genres.map((g: any) => g?.name).filter(Boolean),
     countryOfOrigin: countries.map((c: any) => c?.name).filter(Boolean),
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: tmdbRating > 0 ? (tmdbRating / 2).toFixed(1) : "4.8",
-      bestRating: "5",
-      worstRating: "1",
-      ratingCount: "128",
-    },
+    aggregateRating:
+      tmdbRating > 0
+        ? {
+            "@type": "AggregateRating",
+            ratingValue: tmdbRating.toFixed(1),
+            bestRating: "10",
+            worstRating: "0",
+            ratingCount: String(tmdbVoteCount || 1),
+          }
+        : undefined,
     potentialAction: {
       "@type": "WatchAction",
       target: {
@@ -826,7 +868,9 @@ export default function FilmDetailPage() {
     : `Xem phim ${filmName} (${originName}) chất lượng cao Vietsub Thuyết minh HD miễn phí trên CineVerse.`;
 
   return (
-    <div className="bg-black min-h-screen text-foreground pb-24 font-sans relative select-none">
+    <div
+      className={`${cardFont.className} relative min-h-screen select-none overflow-hidden bg-[#0d0f12] pb-24 text-foreground`}
+    >
       {/* ── JSON-LD STRUCTURED DATA SCHEMA FOR GOOGLE SEO ── */}
       <script
         type="application/ld+json"
@@ -836,10 +880,16 @@ export default function FilmDetailPage() {
       {/* ── DYNAMIC HEAD META TAGS (OPEN GRAPH & TWITTER CARDS) ── */}
       <title>{seoTitle}</title>
       <meta name="description" content={seoDescription} />
-      <link rel="canonical" href={`https://cineverse-movie.vercel.app/film/${slug}`} />
+      <link
+        rel="canonical"
+        href={`https://cineverse-movie.vercel.app/film/${slug}`}
+      />
       <meta property="og:title" content={seoTitle} />
       <meta property="og:description" content={seoDescription} />
-      <meta property="og:url" content={`https://cineverse-movie.vercel.app/film/${slug}`} />
+      <meta
+        property="og:url"
+        content={`https://cineverse-movie.vercel.app/film/${slug}`}
+      />
       <meta
         property="og:image"
         content={posterUrl || backdropUrl || undefined}
@@ -854,19 +904,19 @@ export default function FilmDetailPage() {
       />
       {/* ── Giant Backdrop Banner (Plex Style Left-to-Right Blended Layout) ── */}
       {(backdropUrl || posterUrl) && (
-        <div className="absolute top-0 left-0 right-0 h-[65vh] md:h-[82vh] w-full z-0 overflow-hidden select-none">
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[86vh] min-h-[720px] w-full select-none overflow-hidden md:h-[105vh] md:max-h-[1040px]">
           <NextImage
             src={backdropUrl || posterUrl || ""}
             alt=""
             fill
             sizes="100vw"
-            className="object-cover object-top opacity-60 scale-105"
+            className="scale-[1.03] object-cover object-top opacity-55"
             unoptimized
             priority
           />
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-transparent w-full md:w-[65%]" />
-          <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black to-transparent" />
+          <div className="absolute inset-0 bg-[#0d0f12]/55" />
+          <div className="absolute inset-0 w-full bg-gradient-to-r from-[#0d0f12] via-[#0d0f12]/85 to-[#0d0f12]/20 md:w-[72%]" />
+          <div className="absolute inset-x-0 bottom-0 h-[42%] bg-gradient-to-t from-[#0d0f12] via-[#0d0f12]/78 to-transparent" />
         </div>
       )}
 
@@ -917,7 +967,7 @@ export default function FilmDetailPage() {
               <ChevronRightIcon size={12} className="text-neutral-600" />
             </>
           )}
-          <span className="text-red-500 font-bold truncate max-w-xs">
+          <span className="max-w-xs truncate font-bold text-neutral-200">
             {film.name}
           </span>
         </div>
@@ -941,12 +991,12 @@ export default function FilmDetailPage() {
             {/* Metadata Tags Row (Matching Reference Image 1) */}
             <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
               {film.quality && (
-                <span className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold">
+                <span className="rounded-md border border-white/15 bg-white/[0.06] px-2.5 py-0.5 text-[11px] font-bold text-neutral-200">
                   {film.quality}
                 </span>
               )}
               {film.lang && (
-                <span className="bg-blue-500/20 border border-blue-500/40 text-blue-300 px-2.5 py-0.5 rounded-md text-[11px] font-bold">
+                <span className="rounded-md border border-white/15 bg-white/[0.06] px-2.5 py-0.5 text-[11px] font-bold text-neutral-200">
                   {film.lang}
                 </span>
               )}
@@ -955,17 +1005,40 @@ export default function FilmDetailPage() {
                   {film.year}
                 </span>
               )}
-
-              {/* External Provider Badges */}
-              {film.tmdb?.id && (
-                <span className="bg-sky-600/30 border border-sky-500/40 text-sky-300 text-[11px] px-2.5 py-0.5 rounded-md font-bold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-sky-400" /> TMDB
-                  #{film.tmdb.id}
+              {tmdbRatingLabel && (
+                <span
+                  className="rounded-md border border-white/15 bg-black/20 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-200"
+                  title={
+                    tmdbVoteCount > 0
+                      ? `${tmdbVoteCount.toLocaleString("vi-VN")} lượt đánh giá trên TMDB`
+                      : "Điểm TMDB"
+                  }
+                >
+                  <span className="text-neutral-500">TMDB</span>{" "}
+                  {tmdbRatingLabel}/10
+                  {tmdbVoteLabel && (
+                    <span className="ml-1 font-normal text-neutral-500">
+                      · {tmdbVoteLabel}
+                    </span>
+                  )}
                 </span>
               )}
-              {film.imdb?.id && (
-                <span className="bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[11px] px-2.5 py-0.5 rounded-md font-bold flex items-center gap-1">
-                  <Star size={11} fill="currentColor" /> IMDb: {film.imdb.id}
+              {imdbRatingLabel && (
+                <span
+                  className="rounded-md border border-white/15 bg-black/20 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-200"
+                  title={
+                    imdbVoteCount > 0
+                      ? `${imdbVoteCount.toLocaleString("vi-VN")} lượt đánh giá trên IMDb`
+                      : "Điểm IMDb"
+                  }
+                >
+                  <span className="text-neutral-500">IMDb</span>{" "}
+                  {imdbRatingLabel}/10
+                  {imdbVoteLabel && (
+                    <span className="ml-1 font-normal text-neutral-500">
+                      · {imdbVoteLabel}
+                    </span>
+                  )}
                 </span>
               )}
             </div>
@@ -974,7 +1047,7 @@ export default function FilmDetailPage() {
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link
                 href={watchLink}
-                className="bg-red-600 hover:bg-red-500 text-white px-7 py-2.5 sm:py-3 rounded-full font-extrabold tracking-wider uppercase text-xs shadow-xl flex items-center space-x-2 transition-transform hover:scale-105 active:scale-95"
+                className="flex items-center space-x-2 rounded-full bg-white px-7 py-2.5 text-xs font-extrabold text-[#111317] transition-colors hover:bg-neutral-200 active:scale-[0.98] sm:py-3"
                 onMouseEnter={prefetchWatchData}
               >
                 <Play size={14} fill="currentColor" />
@@ -996,7 +1069,7 @@ export default function FilmDetailPage() {
                     className={cn(
                       "w-9 h-9 rounded-full border flex items-center justify-center backdrop-blur-md transition-all cursor-pointer",
                       inWatchlist
-                        ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
+                        ? "border-white/30 bg-white/10 text-white"
                         : "bg-white/5 border-white/10 text-neutral-300 hover:text-white hover:border-white/30",
                     )}
                   >
@@ -1023,7 +1096,7 @@ export default function FilmDetailPage() {
                         "success",
                       );
                     }}
-                    className="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-emerald-500/50 backdrop-blur-md transition-all text-neutral-300 hover:text-emerald-400 cursor-pointer"
+                    className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5 text-neutral-300 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
                   >
                     <Bell size={15} />
                   </button>
@@ -1040,7 +1113,7 @@ export default function FilmDetailPage() {
                     <Star
                       size={15}
                       fill={myRating ? "currentColor" : "none"}
-                      className={cn(myRating ? "text-amber-500" : "")}
+                      className={cn(myRating ? "text-white" : "")}
                     />
                   </button>
                   <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider group-hover:text-neutral-300 transition-colors">
@@ -1076,39 +1149,42 @@ export default function FilmDetailPage() {
           <div className="lg:col-span-4 hidden lg:flex justify-end">
             <div className="w-64 aspect-[2/3] rounded-2xl overflow-hidden border border-white/10 bg-neutral-950/60 shadow-2xl relative group">
               {posterUrl && (
-                <img
+                <NextImage
                   src={posterUrl}
                   alt={film.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  fill
+                  sizes="256px"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  unoptimized
                 />
               )}
             </div>
           </div>
         </div>
 
-        {/* ── 2. Minimalist & Clean Metadata Info Cards Grid ── */}
-        <div className="mt-10 space-y-8">
+        {/* ── 2. Compact metadata rail ── */}
+        <div className="mt-8 space-y-8">
           <section
             aria-label="Thông tin phim"
-            className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5"
+            className="grid grid-cols-2 overflow-hidden rounded-[14px] border border-white/10 bg-[#0d0f12]/65 shadow-[0_14px_50px_rgba(0,0,0,0.18)] backdrop-blur-xl sm:grid-cols-3 sm:divide-x sm:divide-white/10"
           >
             {/* Card 1: Thể Loại */}
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md hover:border-white/20 transition-colors">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+            <div className="border-b border-r border-white/10 px-3.5 py-3 sm:border-b-0 sm:border-r-0">
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500">
                   Thể loại
                 </h2>
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-neutral-300">
+                <span className="text-[10px] font-semibold text-neutral-600">
                   {genres.length}
                 </span>
               </div>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex min-h-6 flex-wrap items-center gap-1.5">
                 {genres.length > 0 ? (
                   genres.map((genre: any) => (
                     <Link
                       key={genre.slug || genre.name}
                       href={genre.slug ? `/genre/${genre.slug}` : "#"}
-                      className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-neutral-300 hover:text-white hover:border-white/20 transition-colors"
+                      className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] font-medium text-neutral-300 transition-colors hover:border-white/20 hover:text-white"
                     >
                       {genre.name}
                     </Link>
@@ -1122,22 +1198,22 @@ export default function FilmDetailPage() {
             </div>
 
             {/* Card 2: Quốc gia */}
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md hover:border-white/20 transition-colors">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+            <div className="border-b border-white/10 px-3.5 py-3 sm:border-b-0">
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500">
                   Quốc gia
                 </h2>
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-neutral-300">
+                <span className="text-[10px] font-semibold text-neutral-600">
                   {countries.length}
                 </span>
               </div>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex min-h-6 flex-wrap items-center gap-1.5">
                 {countries.length > 0 ? (
                   countries.map((country: any) => (
                     <Link
                       key={country.slug || country.name}
                       href={country.slug ? `/country/${country.slug}` : "#"}
-                      className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-neutral-300 hover:text-white hover:border-white/20 transition-colors"
+                      className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] font-medium text-neutral-300 transition-colors hover:border-white/20 hover:text-white"
                     >
                       {country.name}
                     </Link>
@@ -1151,79 +1227,27 @@ export default function FilmDetailPage() {
             </div>
 
             {/* Card 3: Thông tin tập & thời lượng */}
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md hover:border-white/20 transition-colors">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+            <div className="col-span-2 px-3.5 py-3 sm:col-span-1">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500">
                   Thông tin
                 </h2>
-                <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                <span className="max-w-[55%] truncate rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[9px] font-semibold text-neutral-400">
                   {statusLabel}
                 </span>
               </div>
-              <dl className="space-y-1.5 text-xs">
+              <dl className="space-y-1 text-[11px]">
                 <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-400">Thời lượng</dt>
-                  <dd className="font-semibold text-white">
+                  <dt className="text-neutral-500">Thời lượng</dt>
+                  <dd className="truncate font-semibold text-neutral-200">
                     {film.time || "22 phút/tập"}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-400">Tập hiện tại</dt>
-                  <dd className="font-semibold text-emerald-400">
+                  <dt className="text-neutral-500">Tập hiện tại</dt>
+                  <dd className="truncate font-semibold text-neutral-200">
                     {film.episode_current ||
                       (episodeCount ? `Tập ${episodeCount}` : "Full")}
-                  </dd>
-                </div>
-              </dl>
-            </div>
-
-            {/* Card 4: TMDB Data */}
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md hover:border-white/20 transition-colors">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                  TMDB
-                </h2>
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-neutral-300">
-                  {typeLabel}
-                </span>
-              </div>
-              <dl className="space-y-1.5 text-xs">
-                <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-400">ID</dt>
-                  <dd className="font-semibold text-white">
-                    {film.tmdb?.id || "312266"}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-400">Điểm</dt>
-                  <dd className="font-bold text-amber-400">
-                    {tmdbRating > 0 ? `${tmdbRating.toFixed(1)}/10` : "0/10"}
-                  </dd>
-                </div>
-              </dl>
-            </div>
-
-            {/* Card 5: IMDb Data */}
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md hover:border-white/20 transition-colors">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                  IMDb
-                </h2>
-                <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-400">
-                  Rating
-                </span>
-              </div>
-              <dl className="space-y-1.5 text-xs">
-                <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-400">ID</dt>
-                  <dd className="font-semibold text-white truncate max-w-[90px]">
-                    {film.imdb?.id || "tt41276828"}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-400">Điểm</dt>
-                  <dd className="font-bold text-amber-400">
-                    {film.imdb_rating ? `${film.imdb_rating}/10` : "0/10"}
                   </dd>
                 </div>
               </dl>
@@ -1273,7 +1297,6 @@ export default function FilmDetailPage() {
           {/* ── 4. Nội Dung Phim Section (With Red Accent Line 1:1) ── */}
           <section className="space-y-3 pt-4 border-t border-white/5">
             <h2 className="text-base sm:text-lg font-bold text-white flex items-center">
-              <span className="w-1.5 h-5 bg-red-600 rounded-full mr-2.5 inline-block" />
               <span>Nội dung phim</span>
             </h2>
 
@@ -1295,7 +1318,6 @@ export default function FilmDetailPage() {
           {/* ── 5. Từ Khóa Tags Section (With Red Accent Line 1:1) ── */}
           <section className="space-y-3 pt-4 border-t border-white/5">
             <h2 className="text-base sm:text-lg font-bold text-white flex items-center">
-              <span className="w-1.5 h-5 bg-red-600 rounded-full mr-2.5 inline-block" />
               <span>Từ khóa</span>
               <span className="ml-2 text-xs font-normal text-neutral-400">
                 ({genres.length + 2} từ khóa)
@@ -1323,7 +1345,6 @@ export default function FilmDetailPage() {
           {backdrops && backdrops.length > 0 && (
             <section className="space-y-3 pt-4 border-t border-white/5">
               <h2 className="text-base sm:text-lg font-bold text-white flex items-center">
-                <span className="w-1.5 h-5 bg-red-600 rounded-full mr-2.5 inline-block" />
                 <span>Hình ảnh</span>
                 <span className="ml-2 text-xs font-normal text-neutral-400">
                   ({backdrops.length} ảnh)
@@ -1335,11 +1356,13 @@ export default function FilmDetailPage() {
                     key={idx}
                     className="relative aspect-video rounded-xl overflow-hidden border border-white/10 bg-neutral-900 group shadow-lg"
                   >
-                    <img
+                    <NextImage
                       src={tmdbBackdrop(bg.file_path, "w780") || ""}
                       alt={`Ảnh phim ${idx + 1}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      unoptimized
                     />
                   </div>
                 ))}
@@ -1353,6 +1376,7 @@ export default function FilmDetailPage() {
       <TrailerModal
         isOpen={showTrailer}
         onClose={() => setShowTrailer(false)}
+        film={film}
         filmName={film?.name || ""}
         trailerUrl={film?.trailer_url}
         tmdbVideoKey={trailer?.key}
@@ -1423,7 +1447,10 @@ function FilmDetailSkeleton() {
               <div className="h-5 w-28 rounded bg-white/[0.08]" />
               <div className="mt-5 grid grid-cols-4 gap-2">
                 {Array.from({ length: 12 }, (_, index) => (
-                  <div key={index} className="h-9 rounded-lg bg-white/[0.055]" />
+                  <div
+                    key={index}
+                    className="h-9 rounded-lg bg-white/[0.055]"
+                  />
                 ))}
               </div>
             </div>

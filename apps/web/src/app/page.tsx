@@ -18,6 +18,7 @@ import { DashPagination } from "@/components/film/DashPagination";
 import { HeroShowcaseSection } from "@/components/film/HeroShowcaseSection";
 import { CuratedSpotlightSection } from "@/components/film/CuratedSpotlightSection";
 import HeroBanner from "@/app/components/HeroBanner";
+import { cardFont } from "@/lib/fonts";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -53,7 +54,7 @@ const HOLLYWOOD_HERO_POOL: FilmItem[] = [
     vote_average: 8.5,
     rating: 8.5,
     content:
-      "Marvel Universe — Bộ đôi lầy lội Deadpool và Wolverine bắt tay trong phi vụ bảo vệ đa vũ trụ Marvel.",
+      "Marvel Universe - Bộ đôi lầy lội Deadpool và Wolverine bắt tay trong phi vụ bảo vệ đa vũ trụ Marvel.",
   },
   {
     _id: "nguoi-nhen-khong-con-nha",
@@ -73,7 +74,7 @@ const HOLLYWOOD_HERO_POOL: FilmItem[] = [
     vote_average: 8.3,
     rating: 8.3,
     content:
-      "Marvel Cinematic Universe — Khi danh tính bị tiết lộ, Peter Parker nhờ Doctor Strange làm phép xé rách đa vũ trụ.",
+      "Marvel Cinematic Universe - Khi danh tính bị tiết lộ, Peter Parker nhờ Doctor Strange làm phép xé rách đa vũ trụ.",
   },
   {
     _id: "ky-si-bong-dem",
@@ -93,7 +94,7 @@ const HOLLYWOOD_HERO_POOL: FilmItem[] = [
     vote_average: 9.0,
     rating: 9.0,
     content:
-      "DC Universe — Batman bước vào cuộc đụng độ khốc liệt nhất lịch sử Gotham chống lại tên tội phạm thiên tài Joker.",
+      "DC Universe - Batman bước vào cuộc đụng độ khốc liệt nhất lịch sử Gotham chống lại tên tội phạm thiên tài Joker.",
   },
   {
     _id: "avatar-dong-chay-cua-nuoc",
@@ -113,7 +114,7 @@ const HOLLYWOOD_HERO_POOL: FilmItem[] = [
     vote_average: 8.8,
     rating: 8.8,
     content:
-      "Sci-Fi Masterpiece — Jake Sully cùng gia đình Na'vi bảo vệ vùng biển đại dương Pandora huyền ảo.",
+      "Sci-Fi Masterpiece - Jake Sully cùng gia đình Na'vi bảo vệ vùng biển đại dương Pandora huyền ảo.",
   },
   {
     _id: "avengers-tran-chien-cuoi-cung",
@@ -133,7 +134,7 @@ const HOLLYWOOD_HERO_POOL: FilmItem[] = [
     vote_average: 8.9,
     rating: 8.9,
     content:
-      "Marvel Cinematic Universe — Các siêu anh hùng sống sót sau cú búng tay của Thanos cùng nhau tập hợp cho trận chiến quyết định vận mệnh vũ trụ.",
+      "Marvel Cinematic Universe - Các siêu anh hùng sống sót sau cú búng tay của Thanos cùng nhau tập hợp cho trận chiến quyết định vận mệnh vũ trụ.",
   },
   {
     _id: "ho-den-tu-than",
@@ -153,7 +154,7 @@ const HOLLYWOOD_HERO_POOL: FilmItem[] = [
     vote_average: 8.7,
     rating: 8.7,
     content:
-      "Sci-Fi / Khoa Học Viễn Tưởng — Nhóm phi hành gia du hành qua hố giun không gian để tìm kiếm ngôi nhà mới cho nhân loại trước nguy cơ diệt vong.",
+      "Sci-Fi / Khoa Học Viễn Tưởng - Nhóm phi hành gia du hành qua hố giun không gian để tìm kiếm ngôi nhà mới cho nhân loại trước nguy cơ diệt vong.",
   },
 ];
 
@@ -210,6 +211,26 @@ function isLikelySeries(film: FilmItem): boolean {
   );
 }
 
+const SECTION_TITLE_TONES: Record<string, string> = {
+  "Phim Mới Cập Nhật": "from-cyan-400 via-sky-400 to-indigo-300",
+  "Phim Thần Thoại & Kỹ Xảo": "from-violet-400 via-fuchsia-400 to-rose-300",
+  "Phim Hành Động": "from-orange-400 via-amber-400 to-yellow-300",
+  "Phim Âu-Mỹ Đáng Xem": "from-emerald-400 via-teal-400 to-cyan-300",
+  "Series Quốc Tế": "from-blue-400 via-indigo-400 to-violet-300",
+  "Anime & Hoạt Hình": "from-pink-400 via-rose-400 to-orange-300",
+  "Phim Phiêu Lưu Mạo Hiểm": "from-lime-400 via-emerald-400 to-teal-300",
+  "Phim Lẻ Âu-Mỹ Chất Lượng Cao": "from-amber-300 via-yellow-300 to-lime-300",
+  "Phim Chính Kịch": "from-purple-400 via-violet-400 to-blue-300",
+  "Phim Kinh Dị & Sinh Tồn": "from-red-400 via-rose-400 to-orange-300",
+  "Thể Loại Chiến Tranh Và Gai Góc": "from-stone-300 via-neutral-400 to-slate-300",
+  "Phim Hài": "from-yellow-300 via-lime-300 to-emerald-300",
+  "Phim Tình Cảm": "from-fuchsia-400 via-pink-400 to-rose-300",
+};
+
+function sectionTitleTone(title: string) {
+  return SECTION_TITLE_TONES[title] || "from-cyan-400 via-sky-400 to-indigo-300";
+}
+
 // Standard Film Carousel Section Component (With Sleek Right Vertical Pills Navigation)
 function FilmSection({
   title,
@@ -229,7 +250,10 @@ function FilmSection({
   if (!isLoading && (!films || films.length === 0)) return null;
 
   return (
-    <div data-film-section="true" className="mb-8 group/section">
+    <div
+      data-film-section="true"
+      className={`${cardFont.className} mb-8 group/section`}
+    >
       {/* Title Header matching user's requested layout (Inline pill button + right dash line pagination) */}
       <div className="mb-3.5 flex items-center justify-between px-1">
         {/* Left Side: Title + Inline "Xem tất cả >" Pill Button */}
@@ -237,25 +261,16 @@ function FilmSection({
           <div>
             <h2
               data-film-section-title="true"
-              className="text-lg md:text-xl font-extrabold text-white tracking-tight"
+              className={`${cardFont.className} bg-gradient-to-r ${sectionTitleTone(title)} bg-clip-text text-xl font-extrabold tracking-[-0.025em] text-transparent sm:text-2xl`}
             >
               {title}
             </h2>
-            {isLoading ? (
-              <div className="mt-1 h-3 w-36 rounded bg-white/[0.07] motion-safe:animate-pulse" />
-            ) : (
-              <p className="mt-1 text-[11px] text-neutral-500">
-                {films.length} tuyển chọn từ{" "}
-                {new Set(films.map((film) => film._source || "kkphim")).size}{" "}
-                nguồn dữ liệu
-              </p>
-            )}
           </div>
           {href && (
             <Link
               href={href}
               data-film-section-action="true"
-              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.12] text-white/90 hover:text-white text-xs font-medium transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95 ml-1"
+              className={`${cardFont.className} inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.12] text-white/90 hover:text-white text-xs font-medium transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95 ml-1`}
             >
               <span>Xem tất cả</span>
               <ChevronRight size={12} strokeWidth={2.5} />
@@ -434,8 +449,16 @@ export default function HomePage() {
 
   // 2. Series Âu-Mỹ (Hollywood TV Series)
   const { data: usUkSeriesData, isLoading: usUkSeriesLoading } = useQuery({
-    queryKey: ["us-uk-series"],
-    queryFn: () => movieApi.getByCountry("au-my", 1).then((r) => r.data),
+    queryKey: ["us-uk-series-v2"],
+    queryFn: () =>
+      movieApi
+        .getFiltered({
+          type: "phim-bo",
+          country: "au-my",
+          page: 1,
+          limit: 24,
+        })
+        .then((r) => r.data),
     staleTime: 1000 * 60 * 10,
     enabled: catalogReady,
   });
@@ -534,8 +557,16 @@ export default function HomePage() {
 
   // 9. Phim chất lượng 4K (Hollywood 4K Movies)
   const { data: singleData, isLoading: singleLoading } = useQuery({
-    queryKey: ["single-v2", 1],
-    queryFn: () => movieApi.getByCountry("au-my", 1).then((r) => r.data),
+    queryKey: ["single-us-uk-v3", 1],
+    queryFn: () =>
+      movieApi
+        .getFiltered({
+          type: "phim-le",
+          country: "au-my",
+          page: 1,
+          limit: 24,
+        })
+        .then((r) => r.data),
     enabled: showMoreSections,
   });
 
@@ -607,8 +638,7 @@ export default function HomePage() {
   const usUkSeriesFilms = useMemo(() => {
     const list = usUkSeriesData?.data?.items || usUkSeriesData?.items || [];
     const liveAction = filterLiveActionOnly(deduplicate(list));
-    const seriesOnly = liveAction.filter(isLikelySeries);
-    return seriesOnly.length >= 6 ? seriesOnly : liveAction;
+    return liveAction.filter(isLikelySeries);
   }, [usUkSeriesData]);
 
   const actionFilms = useMemo(() => {
@@ -831,7 +861,7 @@ export default function HomePage() {
     <div className="bg-background min-h-screen text-foreground overflow-hidden pb-12">
       {/* Hero Banner slider */}
       {showBannerSkeleton ? (
-        <div className="w-full h-screen bg-gradient-to-br from-neutral-950 via-[#10141a] to-neutral-900 animate-pulse" />
+        <div className="min-h-[100dvh] w-full bg-gradient-to-br from-neutral-950 via-[#10141a] to-neutral-900 animate-pulse" />
       ) : (
         <HeroBanner films={bannerFilms} />
       )}
@@ -860,7 +890,7 @@ export default function HomePage() {
         {/* ── Initial 4 Movie Sections ── */}
         <LazySection>
           <FilmSection
-            title="Phim Kỹ Xảo"
+            title="Phim Thần Thoại & Kỹ Xảo"
             films={vfxRowList}
             isLoading={vfxLoading}
             href="/genre/than-thoai"
@@ -870,10 +900,9 @@ export default function HomePage() {
         <LazySection>
           <HeroShowcaseSection
             title="Series Âu-Mỹ"
-            badge="SERIES ĐẶC SẮC"
             films={usUkSeriesRowList}
             isLoading={usUkSeriesLoading}
-            href="/country/au-my"
+            href="/search?type=series&country=au-my"
           />
         </LazySection>
 
@@ -889,7 +918,6 @@ export default function HomePage() {
         <LazySection>
           <CuratedSpotlightSection
             title="Phim Khoa Học Viễn Tưởng Bom Tấn"
-            badge="TUYỂN CHỌN BIÊN TẬP"
             films={scifiRowList}
             isLoading={scifiLoading}
             href="/genre/vien-tuong"
@@ -920,10 +948,10 @@ export default function HomePage() {
             {/* ── 10 Lazy Loaded Sections ── */}
             <LazySection>
               <FilmSection
-                title="Xem Gì Tiếp Theo"
+                title="Phim Âu-Mỹ Đáng Xem"
                 films={nextWatchRowList}
                 isLoading={nextWatchLoading}
-                href="/films"
+                href="/country/au-my"
               />
             </LazySection>
 
@@ -938,7 +966,7 @@ export default function HomePage() {
 
             <LazySection>
               <FilmSection
-                title="Anime & Hoạt Hình Lồng Tiếng"
+                title="Anime & Hoạt Hình"
                 films={animeRowList}
                 isLoading={animeLoading}
                 href="/films/anime"
@@ -956,7 +984,7 @@ export default function HomePage() {
 
             <LazySection>
               <FilmSection
-                title="Phim Chất Lượng 4K"
+                title="Phim Lẻ Âu-Mỹ Chất Lượng Cao"
                 films={singleRowList}
                 isLoading={singleLoading}
                 href="/films/single"
@@ -965,7 +993,7 @@ export default function HomePage() {
 
             <LazySection>
               <FilmSection
-                title="Phim Chính Kịch Chuyển Thể Từ Sách"
+                title="Phim Chính Kịch"
                 films={dramaRowList}
                 isLoading={dramaLoading}
                 href="/genre/chinh-kich"
@@ -974,7 +1002,7 @@ export default function HomePage() {
 
             <LazySection>
               <FilmSection
-                title="Phim Kịch Tính Về Thảm Họa Chết Chóc"
+                title="Phim Kinh Dị & Sinh Tồn"
                 films={disasterRowList}
                 isLoading={disasterLoading}
                 href="/genre/kinh-di"
@@ -1001,7 +1029,7 @@ export default function HomePage() {
 
             <LazySection>
               <FilmSection
-                title="Bộ Phim Giải Trí Hoàn Hảo"
+                title="Phim Tình Cảm"
                 films={romanceRowList}
                 isLoading={romanceLoading}
                 href="/genre/tinh-cam"

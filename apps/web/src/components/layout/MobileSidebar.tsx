@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { GENRES_LIST, COUNTRIES_LIST } from "./Navbar";
+import { cardFont } from "@/lib/fonts";
 
 interface MobileSidebarProps {
   isOpen: boolean;
@@ -72,7 +73,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       />
 
       {/* Minimalist Black & White Sheet Drawer */}
-      <aside className="fixed left-0 top-0 bottom-0 h-[100dvh] w-[85vw] max-w-[320px] bg-[#0a0c10] border-r border-white/10 z-[65] overflow-y-auto overscroll-contain touch-pan-y scrollbar-none lg:hidden shadow-[0_0_40px_rgba(0,0,0,0.9)] animate-in slide-in-from-left duration-250">
+      <aside className={`${cardFont.className} fixed left-0 top-0 bottom-0 h-[100dvh] w-[88vw] max-w-[320px] bg-[#0a0c10] border-r border-white/10 z-[65] overflow-y-auto overscroll-contain touch-pan-y scrollbar-none lg:hidden shadow-[0_0_40px_rgba(0,0,0,0.9)] animate-in slide-in-from-left duration-250`}>
         {/* Sticky Header */}
         <div className="sticky top-0 bg-[#0a0c10]/95 backdrop-blur-xl px-5 py-4 border-b border-white/10 flex items-center justify-between z-20">
           <Link
@@ -97,7 +98,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             type="button"
             onClick={onClose}
             aria-label="Đóng menu"
-            className="p-1.5 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors active:scale-95 cursor-pointer"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-neutral-400 hover:text-white hover:bg-white/10 transition-colors active:scale-95 cursor-pointer"
           >
             <X size={20} />
           </button>
@@ -169,7 +170,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                     key={item.title}
                     href={item.href}
                     className={cn(
-                      "flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all",
+                      "flex min-h-11 items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all",
                       isActive
                         ? "bg-white/10 border border-white/15 text-white font-bold shadow-sm"
                         : "text-neutral-300 hover:bg-white/5 hover:text-white",
@@ -204,7 +205,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                     key={item.title}
                     href={item.href}
                     className={cn(
-                      "flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all",
+                      "flex min-h-11 items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all",
                       isActive
                         ? "bg-white/10 border border-white/15 text-white font-bold shadow-sm"
                         : "text-neutral-300 hover:bg-white/5 hover:text-white",
@@ -230,7 +231,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             <button
               type="button"
               onClick={() => setShowGenres(!showGenres)}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-neutral-300 hover:bg-white/5 hover:text-white transition-all cursor-pointer"
+              className="flex min-h-11 w-full items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-neutral-300 hover:bg-white/5 hover:text-white transition-all cursor-pointer"
             >
               <div className="flex items-center space-x-3">
                 <Sparkles size={17} className="text-neutral-400" />
@@ -271,7 +272,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             <button
               type="button"
               onClick={() => setShowCountries(!showCountries)}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-neutral-300 hover:bg-white/5 hover:text-white transition-all cursor-pointer"
+              className="flex min-h-11 w-full items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-neutral-300 hover:bg-white/5 hover:text-white transition-all cursor-pointer"
             >
               <div className="flex items-center space-x-3">
                 <Globe size={17} className="text-neutral-400" />

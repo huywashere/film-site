@@ -1,4 +1,7 @@
-import { createMovieProxyHandler } from "@/lib/movie-proxy";
+import {
+  createMovieProxyHandler,
+  resolveMovieApiOrigins,
+} from "@/lib/movie-proxy";
 
 /**
  * NguonC API Proxy — Source C (https://phim.nguonc.com)
@@ -20,8 +23,10 @@ import { createMovieProxyHandler } from "@/lib/movie-proxy";
  *   casts        → actor (array vs comma-string) ⚠️ different format
  */
 
-const NGUONC_BASE =
-  process.env.NGUONC_API_BASE || "https://phim.nguonc.com/api";
+const NGUONC_ORIGINS = resolveMovieApiOrigins(
+  process.env.NGUONC_API_ORIGINS || process.env.NGUONC_API_BASE,
+  ["https://phim.nguonc.com/api"],
+);
 
 /** Path-aware TTL in seconds */
 function getTtl(path: string): number {
@@ -35,7 +40,8 @@ function getTtl(path: string): number {
 export const GET = createMovieProxyHandler({
   sourceName: "NguonC",
   cachePrefix: "nguonc",
-  baseUrl: NGUONC_BASE,
+  baseUrl: NGUONC_ORIGINS[0],
+  fallbackUrls: NGUONC_ORIGINS.slice(1),
   getTtl,
   headers: {
     Accept: "application/json",

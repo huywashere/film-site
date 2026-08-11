@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { cardFont } from "@/lib/fonts";
 
 const FOOTER_COLUMNS = [
   {
@@ -95,7 +96,7 @@ export function Footer() {
   return (
     <footer
       data-site-footer="true"
-      className="relative z-20 w-full bg-[#141414] border-t border-white/[0.06]"
+      className={`${cardFont.className} relative z-20 w-full border-t border-white/[0.06] bg-[#141414]`}
     >
       {/* Main footer content */}
       <div className="mx-auto max-w-[1400px] px-6 lg:px-10">
@@ -113,11 +114,11 @@ export function Footer() {
                   (e.currentTarget as HTMLImageElement).style.display = "none";
                 }}
               />
-              <span className="text-base font-black tracking-tight text-white lowercase">
+              <span className="text-base font-extrabold lowercase tracking-[-0.025em] text-white">
                 cine<span className="text-violet-400">phim</span>
               </span>
             </Link>
-            <p className="mt-4 text-xs leading-6 text-neutral-500 max-w-[170px]">
+            <p className="mt-4 max-w-[180px] text-[12px] leading-5 text-neutral-500">
               Nền tảng xem phim trực tuyến miễn phí, chất lượng cao.
             </p>
           </div>
@@ -125,7 +126,7 @@ export function Footer() {
           {/* Link columns */}
           {FOOTER_COLUMNS.map((column) => (
             <div key={column.heading} className="min-w-0">
-              <p className="mb-4 text-[11px] font-bold tracking-[0.12em] text-neutral-400 uppercase">
+              <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.1em] text-neutral-300">
                 {column.heading}
               </p>
               <ul className="space-y-3">
@@ -134,7 +135,7 @@ export function Footer() {
                     <Link
                       href={link.href}
                       data-footer-link="true"
-                      className="text-sm text-neutral-500 transition-colors duration-150 hover:text-neutral-200"
+                      className="text-[13px] font-medium text-neutral-500 transition-colors duration-150 hover:text-neutral-200"
                     >
                       {link.label}
                     </Link>
@@ -168,13 +169,21 @@ export function Footer() {
 
           {/* Copyright + legal links */}
           <div className="flex flex-wrap items-center justify-center gap-1.5 text-[12px] text-neutral-600">
-            <span>© {year} CinePhim. Nội dung được tổng hợp từ các nguồn công khai.</span>
+            <span>
+              © {year} CinePhim. Nội dung được tổng hợp từ các nguồn công khai.
+            </span>
             <span className="text-neutral-700">•</span>
-            <Link href="/terms" className="transition-colors hover:text-neutral-400">
+            <Link
+              href="/terms"
+              className="transition-colors hover:text-neutral-400"
+            >
               Điều khoản
             </Link>
             <span className="text-neutral-700">•</span>
-            <Link href="/privacy" className="transition-colors hover:text-neutral-400">
+            <Link
+              href="/privacy"
+              className="transition-colors hover:text-neutral-400"
+            >
               Quyền riêng tư
             </Link>
           </div>

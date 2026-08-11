@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import NextImage from "next/image";
 import { movieApi } from "@/lib/api";
 import {
   FilmCard,
@@ -13,6 +14,7 @@ import {
 import { Pagination } from "@/components/film/Pagination";
 import { useTmdb } from "@/hooks/useTmdb";
 import { tmdbProfile } from "@/lib/tmdb";
+import { cardFont } from "@/lib/fonts";
 import {
   Play,
   Info,
@@ -189,10 +191,13 @@ function FeaturedActorsRow({ film }: { film?: FilmItem }) {
               >
                 <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-white/10 group-hover:border-white/50 group-hover:scale-[1.03] transition-all duration-200">
                   {tmdbProfile(actor.profile_path, "w185") ? (
-                    <img
+                    <NextImage
                       src={tmdbProfile(actor.profile_path, "w185") || ""}
                       alt={actor.name}
-                      className="w-full h-full object-cover"
+                      fill
+                      sizes="96px"
+                      className="object-cover"
+                      unoptimized
                     />
                   ) : (
                     <span className="flex w-full h-full items-center justify-center bg-white/[0.08] text-2xl font-bold text-white/50">
@@ -263,10 +268,13 @@ function CountryHeroBanner({
       }
     >
       {backdrop && (
-        <img
+        <NextImage
           src={backdrop}
           alt={film.name}
-          className="absolute inset-0 w-full h-full object-cover object-center brightness-[0.7]"
+          fill
+          sizes="100vw"
+          className="object-cover object-center brightness-[0.7]"
+          unoptimized
         />
       )}
       <div
@@ -449,7 +457,7 @@ export default function CountryPage() {
   };
 
   return (
-    <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 pt-20 pb-16 bg-background min-h-screen text-foreground">
+    <div className={`${cardFont.className} min-h-screen w-full bg-background pb-16 pl-4 pr-4 pt-20 text-foreground md:pr-10 lg:pl-24`}>
       {/* Full-bleed media is reserved for the Korean and Chinese hubs. */}
       {isFeaturedCountry ? (
         <div className="-mt-20 -mx-4 mb-10 md:-mx-10 lg:-ml-24 lg:-mr-10">
@@ -523,13 +531,13 @@ export default function CountryPage() {
 
       {/* Full Catalog Grid */}
       {mainLoading ? (
-        <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-2.5 sm:gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
           {Array.from({ length: 14 }).map((_, i) => (
             <FilmCardSkeleton key={i} />
           ))}
         </div>
       ) : films.length > 0 ? (
-        <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-2.5 sm:gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
           {films.map((f) => (
             <FilmCard key={f.slug} film={f} />
           ))}

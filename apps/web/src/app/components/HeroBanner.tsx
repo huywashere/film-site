@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Play, Star, Film, ChevronDown, Bookmark } from "lucide-react";
 import { FilmItem } from "@/components/film/FilmCard";
@@ -12,13 +12,17 @@ import { useQuery } from "@tanstack/react-query";
 import { watchlistApi, watchHistoryApi } from "@/lib/api";
 import { useToast } from "@/providers/ToastProvider";
 import { cn } from "@/lib/utils";
+import { heroSerifFont } from "@/lib/fonts";
 import { guestDataStorage } from "@/lib/user-data";
 import { buildHeroImageCandidates } from "@/lib/hero-image";
+import { cardFont } from "@/lib/fonts";
 import {
   tmdbApi,
   tmdbBackdrop,
   tmdbLogo,
   tmdbPoster,
+  extractTmdbInfo,
+  getYoutubeTrailer,
   type TmdbImage,
   type TmdbMovie,
 } from "@/lib/tmdb";
@@ -36,6 +40,10 @@ interface HeroFilm extends FilmItem {
 
 const HERO_SESSION_KEY = "cineverse.tmdb-hero.v3";
 const HERO_INDEX_SESSION_KEY = "cineverse.tmdb-hero-index.v1";
+
+// Trailer IDs are tiny and safe to retain for the current browser session.
+// This avoids repeating the TMDB request when a hero slide cycles back.
+const heroTrailerCache = new Map<string, string>();
 
 const HERO_TMDB_COLLECTIONS = [
   {
@@ -266,23 +274,37 @@ async function enrichHeroTitleLogos(playlist: HeroFilm[]): Promise<HeroFilm[]> {
   );
 }
 
-function HeroMovieTitle({ film }: { film: HeroFilm }) {
+function HeroMovieTitle({
+  film,
+  onReady,
+}: {
+  film: HeroFilm;
+  onReady: () => void;
+}) {
   const [failedLogoSlug, setFailedLogoSlug] = useState<string | null>(null);
+  const [loadedLogoSlug, setLoadedLogoSlug] = useState<string | null>(null);
   const title = film.origin_name || film.name;
   const showLogo = Boolean(
     film.titleLogo && failedLogoSlug !== film.slug,
   );
+  const logoLoaded = loadedLogoSlug === film.slug;
+
+  useEffect(() => {
+    if (!showLogo) onReady();
+  }, [film.slug, onReady, showLogo]);
 
   return (
-    <div className="flex min-h-16 w-full items-center justify-center sm:min-h-24 md:min-h-28">
+    <div
+      className="relative flex min-h-16 w-full items-center justify-center sm:min-h-24 md:min-h-28"
+    >
       <h1
         className={cn(
-          showLogo && "sr-only",
-          !showLogo &&
+          logoLoaded && "sr-only",
+          !logoLoaded &&
             "max-w-2xl line-clamp-2 text-xl font-extrabold uppercase leading-tight tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl",
         )}
         style={
-          showLogo
+          logoLoaded
             ? undefined
             : { fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }
         }
@@ -300,8 +322,18 @@ function HeroMovieTitle({ film }: { film: HeroFilm }) {
           aria-hidden="true"
           decoding="async"
           loading="eager"
-          onError={() => setFailedLogoSlug(film.slug)}
-          className="max-h-16 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] sm:max-h-24 sm:max-w-[34rem] md:max-h-28"
+          onLoad={() => {
+            setLoadedLogoSlug(film.slug);
+            onReady();
+          }}
+          onError={() => {
+            setFailedLogoSlug(film.slug);
+            onReady();
+          }}
+          className={cn(
+            "max-h-16 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-opacity duration-300 sm:max-h-24 sm:max-w-[34rem] md:max-h-28",
+            logoLoaded ? "opacity-100" : "absolute opacity-0",
+          )}
         />
       )}
     </div>
@@ -311,9 +343,13 @@ function HeroMovieTitle({ film }: { film: HeroFilm }) {
 function HeroBackdropImage({
   film,
   isActive,
+  revealed,
+  onReady,
 }: {
   film: HeroFilm;
   isActive: boolean;
+  revealed: boolean;
+  onReady: () => void;
 }) {
   const candidates = useMemo(
     () =>
@@ -325,21 +361,38 @@ function HeroBackdropImage({
     [film.heroBackdrop, film.poster_url, film.thumb_url],
   );
   const [candidateIndex, setCandidateIndex] = useState(0);
-  const [loaded, setLoaded] = useState(false);
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     setCandidateIndex(0);
-    setLoaded(false);
   }, [film.slug, candidates]);
 
   const tryNextCandidate = () => {
-    setLoaded(false);
+    setLoadedSrc(null);
     setCandidateIndex((index) =>
       Math.min(index + 1, Math.max(candidates.length - 1, 0)),
     );
   };
 
   const src = candidates[candidateIndex];
+
+  useEffect(() => {
+    const image = imageRef.current;
+    if (!src || !image?.complete || image.naturalWidth <= 0) return;
+    if (
+      image.naturalWidth === 300 &&
+      image.naturalHeight === 450 &&
+      candidateIndex < candidates.length - 1
+    ) {
+      setLoadedSrc(null);
+      setCandidateIndex((index) => Math.min(index + 1, candidates.length - 1));
+      return;
+    }
+    setLoadedSrc(src);
+    onReady();
+  }, [candidateIndex, candidates.length, onReady, src]);
+
   if (!src) return null;
 
   return (
@@ -347,6 +400,7 @@ function HeroBackdropImage({
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_35%,rgba(50,58,72,0.3),transparent_44%),linear-gradient(135deg,#0b0e13_0%,#151a22_52%,#0b0d12_100%)]" />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
+        ref={imageRef}
         key={`${film.slug}-${candidateIndex}`}
         src={src}
         alt={film.name}
@@ -364,15 +418,148 @@ function HeroBackdropImage({
             tryNextCandidate();
             return;
           }
-          setLoaded(true);
+          setLoadedSrc(src);
+          onReady();
         }}
         onError={tryNextCandidate}
         className={cn(
           "h-full w-full object-cover object-center brightness-[0.72] transition-opacity duration-500",
-          loaded ? "opacity-100" : "opacity-0",
+          loadedSrc === src && revealed ? "opacity-100" : "opacity-0",
         )}
       />
     </>
+  );
+}
+
+function HeroTrailerLayer({
+  film,
+  enabled,
+}: {
+  film: HeroFilm;
+  enabled: boolean;
+}) {
+  const layerRef = useRef<HTMLDivElement>(null);
+  const [isInView, setIsInView] = useState(false);
+  const [canStream, setCanStream] = useState(false);
+  const [trailerKey, setTrailerKey] = useState<string | null>(null);
+  const [frameReady, setFrameReady] = useState(false);
+
+  useEffect(() => {
+    const node = layerRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") {
+      setIsInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsInView(entry.isIntersecting),
+      { threshold: 0.25 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const desktopQuery = window.matchMedia("(min-width: 1024px)");
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const connection = (
+      navigator as Navigator & {
+        connection?: { saveData?: boolean; effectiveType?: string };
+      }
+    ).connection;
+
+    const updateEligibility = () => {
+      const constrainedConnection =
+        connection?.saveData === true ||
+        connection?.effectiveType === "slow-2g" ||
+        connection?.effectiveType === "2g";
+      setCanStream(
+        desktopQuery.matches &&
+          !motionQuery.matches &&
+          !constrainedConnection &&
+          document.visibilityState === "visible",
+      );
+    };
+
+    updateEligibility();
+    desktopQuery.addEventListener("change", updateEligibility);
+    motionQuery.addEventListener("change", updateEligibility);
+    document.addEventListener("visibilitychange", updateEligibility);
+    return () => {
+      desktopQuery.removeEventListener("change", updateEligibility);
+      motionQuery.removeEventListener("change", updateEligibility);
+      document.removeEventListener("visibilitychange", updateEligibility);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setTrailerKey(null);
+    setFrameReady(false);
+
+    if (!enabled || !isInView || !canStream) return;
+
+    const { tmdbId, type } = extractTmdbInfo(film);
+    if (!tmdbId) return;
+
+    const cacheKey = `${type}:${tmdbId}`;
+    const loadTrailer = async () => {
+      const cachedKey = heroTrailerCache.get(cacheKey);
+      if (cachedKey) {
+        if (!cancelled) setTrailerKey(cachedKey);
+        return;
+      }
+
+      try {
+        const response =
+          type === "tv"
+            ? await tmdbApi.getTvVideos(tmdbId)
+            : await tmdbApi.getMovieVideos(tmdbId);
+        const trailer = getYoutubeTrailer(response?.results || []);
+        if (!trailer?.key || cancelled) return;
+        heroTrailerCache.set(cacheKey, trailer.key);
+        setTrailerKey(trailer.key);
+      } catch {
+        // The TMDB image remains visible when a trailer is missing or blocked.
+      }
+    };
+
+    // Let the high-priority backdrop settle first. The third-party player is
+    // deliberately deferred so it never competes with the initial hero paint.
+    const timer = window.setTimeout(() => void loadTrailer(), 1400);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [canStream, enabled, film, isInView]);
+
+  const embedUrl = trailerKey
+    ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(trailerKey)}?autoplay=1&mute=1&controls=0&loop=1&playlist=${encodeURIComponent(trailerKey)}&playsinline=1&rel=0&disablekb=1&fs=0&iv_load_policy=3`
+    : null;
+
+  return (
+    <div
+      ref={layerRef}
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 z-20 hidden overflow-hidden lg:block"
+    >
+      {embedUrl && canStream && isInView && (
+        <iframe
+          key={`${film.slug}-${trailerKey}`}
+          src={embedUrl}
+          title={`Trailer nền ${film.name}`}
+          tabIndex={-1}
+          loading="lazy"
+          allow="autoplay; encrypted-media; picture-in-picture"
+          referrerPolicy="strict-origin-when-cross-origin"
+          onLoad={() => setFrameReady(true)}
+          className={cn(
+            "absolute left-1/2 top-1/2 h-[56.25vw] min-h-full w-[100vw] min-w-[177.78vh] -translate-x-1/2 -translate-y-1/2 border-0 object-cover transition-opacity duration-1000 ease-out",
+            frameReady ? "opacity-100" : "opacity-0",
+          )}
+        />
+      )}
+    </div>
   );
 }
 
@@ -500,10 +687,26 @@ export default function HeroBanner({ films }: HeroBannerProps) {
   const [tmdbFeatured, setTmdbFeatured] = useState<HeroFilm[] | null>(
     cachedHeroPlaylist,
   );
-  const [playlistResolved, setPlaylistResolved] = useState(
-    Boolean(cachedHeroPlaylist),
-  );
   const [trailerModalFilm, setTrailerModalFilm] = useState<FilmItem | null>(null);
+  const [visualReadiness, setVisualReadiness] = useState<
+    Record<string, { backdrop: boolean; title: boolean }>
+  >({});
+  const markVisualReady = useCallback(
+    (slug: string, part: "backdrop" | "title") => {
+      setVisualReadiness((currentReadiness) => {
+        if (currentReadiness[slug]?.[part]) return currentReadiness;
+        return {
+          ...currentReadiness,
+          [slug]: {
+            backdrop: currentReadiness[slug]?.backdrop ?? false,
+            title: currentReadiness[slug]?.title ?? false,
+            [part]: true,
+          },
+        };
+      });
+    },
+    [],
+  );
   const reduceMotion = useReducedMotion();
   const { user } = useAuthStore();
   const { toast } = useToast();
@@ -518,12 +721,10 @@ export default function HeroBanner({ films }: HeroBannerProps) {
 
   const featured = useMemo(
     () =>
-      tmdbFeatured && tmdbFeatured.length === 6
+      tmdbFeatured && tmdbFeatured.length > 0
         ? tmdbFeatured
-        : playlistResolved
-          ? fallbackFeatured
-          : [],
-    [fallbackFeatured, playlistResolved, tmdbFeatured],
+        : fallbackFeatured,
+    [fallbackFeatured, tmdbFeatured],
   );
 
   useEffect(() => {
@@ -540,7 +741,6 @@ export default function HeroBanner({ films }: HeroBannerProps) {
         cachedHeroIndex = existingIndex;
         setTmdbFeatured(playlistWithLogos);
         setCurrent(existingIndex);
-        setPlaylistResolved(true);
         return;
       }
 
@@ -574,7 +774,6 @@ export default function HeroBanner({ films }: HeroBannerProps) {
         setTmdbFeatured(playlist);
         setCurrent(0);
       }
-      setPlaylistResolved(true);
     };
 
     void loadPlaylist();
@@ -601,20 +800,33 @@ export default function HeroBanner({ films }: HeroBannerProps) {
     if (featured.length <= 1 || reduceMotion) return;
     const timer = setInterval(() => {
       setCurrent((c) => (c + 1) % featured.length);
-    }, 10000);
+    }, 14000);
     return () => clearInterval(timer);
   }, [featured.length, reduceMotion]);
 
   const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
+  const [fanCardSlugs, setFanCardSlugs] = useState<string[]>([]);
 
-  const fanCards = useMemo(() => {
-    if (featured.length === 0) return [];
-    return [
-      featured[current],
-      featured[(current + 1) % featured.length],
-      featured[(current + 2) % featured.length],
-    ].filter(Boolean);
-  }, [featured, current]);
+  useEffect(() => {
+    if (!featured.length) return;
+    setFanCardSlugs((existing) => {
+      const stillValid =
+        existing.length === Math.min(3, featured.length) &&
+        existing.every((slug) => featured.some((film) => film.slug === slug));
+      if (stillValid) return existing;
+      return shuffled(featured)
+        .slice(0, 3)
+        .map((film) => film.slug);
+    });
+  }, [featured]);
+
+  const fanCards = useMemo(
+    () =>
+      fanCardSlugs
+        .map((slug) => featured.find((film) => film.slug === slug))
+        .filter((film): film is HeroFilm => Boolean(film)),
+    [fanCardSlugs, featured],
+  );
 
   // Fetch watch history to show "Xem tiếp mm:ss" CTA with progress bar
   const { data: serverHistoryData } = useQuery({
@@ -717,7 +929,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
   return (
     <section
       data-hero-banner="true"
-      className="relative min-h-[100dvh] w-full overflow-hidden bg-[#141414] transform-gpu contain-paint"
+      className="font-cinema relative min-h-[100dvh] w-full overflow-hidden bg-[#141414] transform-gpu contain-paint"
     >
       <TrailerModal
         film={trailerModalFilm}
@@ -727,9 +939,10 @@ export default function HeroBanner({ films }: HeroBannerProps) {
       />
 
       {/* Direct CDN Preloaded Backdrop Layers (700ms GPU Opacity Crossfade) */}
-      <div className="absolute inset-0 w-full h-full">
+      <div className="absolute inset-0 z-0 w-full h-full">
         {featured.map((item, idx) => {
           const isActive = idx === current;
+          const visualReady = Boolean(visualReadiness[item.slug]?.backdrop);
 
           return (
             <div
@@ -739,10 +952,23 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                 isActive ? "opacity-100 scale-100 z-10" : "opacity-0 scale-[1.02] z-0",
               )}
             >
-              <HeroBackdropImage film={item as HeroFilm} isActive={isActive} />
+              <HeroBackdropImage
+                film={item as HeroFilm}
+                isActive={isActive}
+                revealed={visualReady}
+                onReady={() => markVisualReady(item.slug, "backdrop")}
+              />
             </div>
           );
         })}
+        <HeroTrailerLayer
+          film={film}
+          enabled={Boolean(
+            visualReadiness[film.slug]?.backdrop &&
+              visualReadiness[film.slug]?.title &&
+              !reduceMotion,
+          )}
+        />
       </div>
 
       {/* Vignette Dark Gradient Overlay */}
@@ -758,7 +984,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
       />
 
       {/* 🎴 3-Card Fan / Cascade Deck (Left side desktop) */}
-      <div className="absolute left-6 top-1/2 z-30 hidden w-[380px] h-[340px] -translate-y-1/2 xl:block 2xl:left-14 pointer-events-none">
+      <div className={`${cardFont.className} absolute left-6 top-1/2 z-30 hidden w-[380px] h-[340px] -translate-y-1/2 xl:block 2xl:left-14 pointer-events-none`}>
         <div className="relative w-full h-full pointer-events-auto">
           {fanCards.map((cardFilm, index) => {
             const poster =
@@ -897,7 +1123,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                         </span>
                       </div>
 
-                      <h4 className="text-xs font-black text-white leading-snug line-clamp-1">
+                      <h4 className={`${cardFont.className} text-xs font-black text-white leading-snug line-clamp-1`}>
                         {cardFilm.name}
                       </h4>
                       {cardFilm.origin_name && (
@@ -929,7 +1155,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col items-center space-y-2.5 sm:space-y-3.5 w-full"
+              className={`${heroSerifFont.className} flex w-full flex-col items-center space-y-2.5 sm:space-y-3.5`}
             >
               {/* 🏆 SINGLE PROMINENT SPOTLIGHT BADGE (Lý do để click) */}
               {(() => {
@@ -942,7 +1168,10 @@ export default function HeroBanner({ films }: HeroBannerProps) {
               })()}
 
               {/* Official TMDB title artwork with an accessible text fallback. */}
-              <HeroMovieTitle film={film} />
+              <HeroMovieTitle
+                film={film}
+                onReady={() => markVisualReady(film.slug, "title")}
+              />
 
               {/* Badges Pill Row (⭐ Rating, Year, 4K, Vietsub/Lồng tiếng) */}
               <div className="flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap">

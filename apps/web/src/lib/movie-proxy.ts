@@ -22,6 +22,49 @@ export interface MovieProxyConfig {
   upstreamErrorMessage?: string;
 }
 
+/**
+ * Resolve a deployment-controlled origin pool while rejecting unsafe URLs.
+ *
+ * The plural env value is comma-separated. Legacy single-origin variables can
+ * still be passed by the route so existing deployments keep working.
+ */
+export function resolveMovieApiOrigins(
+  configured: string | undefined,
+  defaults: string[],
+): string[] {
+  const candidates = [...(configured || "").split(","), ...defaults];
+  const origins: string[] = [];
+
+  for (const candidate of candidates) {
+    const value = candidate.trim();
+    if (!value) continue;
+
+    try {
+      const parsed = new URL(value);
+      if (
+        parsed.protocol !== "https:" ||
+        parsed.username ||
+        parsed.password ||
+        parsed.search ||
+        parsed.hash
+      ) {
+        continue;
+      }
+
+      const normalized = parsed.toString().replace(/\/$/, "");
+      if (!origins.includes(normalized)) origins.push(normalized);
+    } catch {
+      // Ignore malformed deployment configuration and keep known-safe defaults.
+    }
+  }
+
+  if (origins.length === 0) {
+    throw new Error("Movie API origin pool is empty");
+  }
+
+  return origins;
+}
+
 export function createMovieProxyHandler(config: MovieProxyConfig) {
   const breaker = new CircuitBreaker({
     name: config.sourceName,
@@ -155,7 +198,10 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
       ) ||
       request.nextUrl.search.length > 2048
     ) {
-      return NextResponse.json({ error: "Đường dẫn không hợp lệ" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Đường dẫn không hợp lệ" },
+        { status: 400 },
+      );
     }
     const path = pathSegments.join("/");
     const searchParams = request.nextUrl.searchParams.toString();
@@ -194,8 +240,7 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
         const allUrls = [
           `${config.baseUrl}/${path}${searchParams ? `?${searchParams}` : ""}`,
           ...(config.fallbackUrls || []).map(
-            (fb) =>
-              `${fb}/${path}${searchParams ? `?${searchParams}` : ""}`,
+            (fb) => `${fb}/${path}${searchParams ? `?${searchParams}` : ""}`,
           ),
         ];
 
@@ -208,7 +253,9 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
             });
 
             if (!response.ok) {
-              lastError = new Error(`Upstream ${url} returned ${response.status}`);
+              lastError = new Error(
+                `Upstream ${url} returned ${response.status}`,
+              );
               continue; // thử URL tiếp theo
             }
 

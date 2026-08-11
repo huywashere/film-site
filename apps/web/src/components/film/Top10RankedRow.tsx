@@ -1,14 +1,23 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
+import { Montserrat } from "next/font/google";
 import { useRef, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, FreeMode } from "swiper/modules";
 import { FilmItem, resolveImageUrl } from "./FilmCard";
 import { Play, ChevronLeft, ChevronRight } from "lucide-react";
 import { DashPagination } from "./DashPagination";
+import { cardFont } from "@/lib/fonts";
 
 import "swiper/css";
 import "swiper/css/navigation";
+
+const rankFont = Montserrat({
+  subsets: ["latin"],
+  weight: ["900"],
+  display: "swap",
+});
 
 interface Top10RankedRowProps {
   films: FilmItem[];
@@ -32,7 +41,7 @@ export function Top10RankedRow({
       <div className="flex items-center justify-between mb-3.5 px-1">
         <h2
           data-top10-title="true"
-          className="text-lg md:text-xl font-extrabold text-white tracking-tight"
+          className={`${cardFont.className} bg-gradient-to-r from-amber-300 via-yellow-300 to-orange-300 bg-clip-text text-lg md:text-xl font-extrabold text-transparent tracking-tight`}
         >
           {title}
         </h2>
@@ -79,22 +88,21 @@ export function Top10RankedRow({
                     href={`/film/${film.slug}`}
                     className="flex flex-col group/item relative select-none cursor-pointer pt-4 pb-2 pr-2"
                   >
-                    {/* Big Montserrat 900 Rank Number peeking BEHIND the TOP-LEFT of the card */}
-                    <div className="absolute -top-4 left-0 z-0 pointer-events-none select-none">
+                    {/* Netflix-style Bold Rank Number peeking BEHIND the TOP-LEFT of the card */}
+                    <div className="absolute -top-5 left-0 z-0 pointer-events-none select-none">
                       <span
-                        className="text-[95px] sm:text-[125px] md:text-[155px] font-black leading-none tracking-tighter transition-transform duration-300 group-hover/item:scale-105 block drop-shadow-2xl"
+                        className={`${rankFont.className} block text-[96px] font-black leading-none tracking-[-0.08em] opacity-100 transition-transform duration-300 group-hover/item:scale-105 sm:text-[128px] md:text-[152px]`}
                         style={{
                           color: "transparent",
-                          WebkitTextStroke:
+                          WebkitTextStrokeColor:
                             rank === 1
-                              ? "4.5px #e50914"
+                              ? "#6d5dfc"
                               : rank === 2
-                                ? "4.5px #38bdf8"
+                                ? "#f43f6e"
                                 : rank === 3
-                                  ? "4.5px #f59e0b"
-                                  : "3.5px #475569",
-                          fontFamily: "var(--font-display)",
-                          fontWeight: 900,
+                                  ? "#f5c400"
+                                  : "#64748b",
+                          WebkitTextStrokeWidth: "1.5px",
                         }}
                       >
                         {rank}
@@ -114,11 +122,12 @@ export function Top10RankedRow({
                     {/* Vertical Poster Card (Foreground z-10) */}
                     <div className="relative z-10 w-[130px] sm:w-[155px] md:w-[180px] h-[195px] sm:h-[232px] md:h-[270px] rounded-2xl overflow-hidden border border-white/10 group-hover/item:border-white/50 group-hover/item:scale-[1.03] shadow-2xl bg-neutral-900 transition-all duration-300 mt-9 sm:mt-11 md:mt-13 ml-7 sm:ml-9 md:ml-11">
                       {posterUrl ? (
-                        <img
+                        <Image
                           src={posterUrl}
                           alt={film.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105"
-                          loading="lazy"
+                          fill
+                          sizes="(max-width: 640px) 130px, (max-width: 768px) 155px, 180px"
+                          className="object-cover transition-transform duration-500 group-hover/item:scale-105"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-xs text-neutral-500 font-bold p-2 text-center">

@@ -111,6 +111,8 @@ services:
         # (chúng là server-side secrets, truyền qua runtime environment bên dưới)
         KKPHIM_API_BASE: ${KKPHIM_API_BASE:-https://phimapi.com}
         OPHIM_API_BASE: ${OPHIM_API_BASE:-https://ophim1.com}
+        NGUONC_API_BASE: ${NGUONC_API_BASE:-https://phim.nguonc.com/api}
+        VSMOV_API_BASE: ${VSMOV_API_BASE:-https://vsmov.com/api}
     container_name: cineverse_web
     restart: unless-stopped
     environment:
@@ -121,6 +123,12 @@ services:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
       KKPHIM_API_BASE: ${KKPHIM_API_BASE:-https://phimapi.com}
       OPHIM_API_BASE: ${OPHIM_API_BASE:-https://ophim1.com}
+      NGUONC_API_BASE: ${NGUONC_API_BASE:-https://phim.nguonc.com/api}
+      VSMOV_API_BASE: ${VSMOV_API_BASE:-https://vsmov.com/api}
+      KKPHIM_API_ORIGINS: ${KKPHIM_API_ORIGINS:-https://phimapi.com}
+      OPHIM_API_ORIGINS: ${OPHIM_API_ORIGINS:-https://ophim1.com,https://ophim17.cc,https://ophim3.cc}
+      NGUONC_API_ORIGINS: ${NGUONC_API_ORIGINS:-https://phim.nguonc.com/api}
+      VSMOV_API_ORIGINS: ${VSMOV_API_ORIGINS:-https://vsmov.com/api}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       HLS_PROXY_SECRET: ${HLS_PROXY_SECRET}
       HLS_PROXY_ALLOWED_HOSTS: ${HLS_PROXY_ALLOWED_HOSTS}

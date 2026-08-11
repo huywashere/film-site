@@ -8,6 +8,7 @@ import {
   FilmCardSkeleton,
 } from "@/components/film/FilmCard";
 import { Pagination } from "@/components/film/Pagination";
+import { cardFont } from "@/lib/fonts";
 
 const TYPE_LABELS: Record<string, string> = {
   series: "Phim Bộ",
@@ -65,7 +66,7 @@ export default function FilmsTypePage() {
   };
 
   return (
-    <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 pt-20 sm:pt-24 pb-20 bg-background min-h-screen text-foreground">
+    <div className={`${cardFont.className} min-h-screen w-full bg-background pb-20 pl-4 pr-4 pt-20 text-foreground sm:pt-24 md:pr-10 lg:pl-24`}>
       {/* Page Header — Centered */}
       <div className="flex flex-col items-center justify-center text-center mb-10 pb-6 border-b border-white/10 gap-2.5 max-w-3xl mx-auto">
         <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
@@ -81,13 +82,13 @@ export default function FilmsTypePage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-4 md:gap-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 md:gap-6 lg:grid-cols-6">
           {Array.from({ length: 24 }).map((_, i) => (
             <FilmCardSkeleton key={i} />
           ))}
         </div>
       ) : films.length > 0 ? (
-        <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-4 md:gap-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 md:gap-6 lg:grid-cols-6">
           {films.map((film, idx) => (
             <FilmCard key={`${film.slug || film._id || (film as any).id}-${idx}`} film={film} />
           ))}

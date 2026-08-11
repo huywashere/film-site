@@ -20,6 +20,59 @@ interface UseTmdbOptions {
   fetchVideos?: boolean;
 }
 
+function normalizeTmdbTitle(value: unknown): string {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .replace(/[^a-zA-Z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function pickBestTmdbResult(results: any[], film: any) {
+  if (!results?.length) return null;
+  const names = [film?.origin_name, film?.title, film?.name]
+    .map(normalizeTmdbTitle)
+    .filter(Boolean);
+  const expectedYear = Number(film?.year) || 0;
+
+  return [...results].sort((a, b) => {
+    const score = (item: any) => {
+      const candidateNames = [
+        item?.title,
+        item?.name,
+        item?.original_title,
+        item?.original_name,
+      ]
+        .map(normalizeTmdbTitle)
+        .filter(Boolean);
+      let value = candidateNames.some((name) => names.includes(name)) ? 100 : 0;
+      if (
+        candidateNames.some((name) =>
+          names.some(
+            (expected) => name.includes(expected) || expected.includes(name),
+          ),
+        )
+      ) {
+        value += 35;
+      }
+      const candidateYear = Number(
+        String(item?.release_date || item?.first_air_date || "").slice(0, 4),
+      );
+      if (expectedYear && candidateYear) {
+        const yearGap = Math.abs(expectedYear - candidateYear);
+        value += yearGap === 0 ? 30 : yearGap === 1 ? 12 : -yearGap;
+      }
+      value += Math.min(Number(item?.popularity || 0) / 100, 10);
+      return value;
+    };
+    return score(b) - score(a);
+  })[0];
+}
+
 export function useTmdb({
   film,
   enabled = true,
@@ -63,7 +116,7 @@ export function useTmdb({
     staleTime: 1000 * 60 * 60 * 24,
   });
 
-  const searchResult = searchData?.results?.[0];
+  const searchResult = pickBestTmdbResult(searchData?.results || [], film);
 
   const resolvedId =
     tmdbId ||

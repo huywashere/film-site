@@ -24,7 +24,7 @@ import {
   SearchHistory,
   searchHistoryStorage,
 } from "@/components/search/SearchHistory";
-import { cn } from "@/lib/utils";
+import { cardFont } from "@/lib/fonts";
 
 // ── Shared Lists ──────────────────────────────────────────────────
 const GENRES_LIST = [
@@ -237,14 +237,25 @@ function SearchContent() {
     },
     enabled: mounted && (Boolean(query) || isFilterOnly),
     staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 
-  const rawFilms: FilmItem[] = data?.data?.items || data?.items || [];
+  const rawFilms: FilmItem[] = useMemo(
+    () => data?.data?.items || data?.items || [],
+    [data],
+  );
 
   const films: FilmItem[] = useMemo(() => {
     const seen = new Set<string>();
     return rawFilms.filter((f) => {
-      const uniqueId = f.slug || f._id || (f as any).id;
+      const uniqueId =
+        f._canonicalKey ||
+        (f.tmdb?.id ? `tmdb:${f.tmdb.type || f.type}:${f.tmdb.id}` : null) ||
+        f.slug ||
+        f._id ||
+        (f as any).id;
       if (!uniqueId || seen.has(uniqueId)) return false;
       seen.add(uniqueId);
       return true;
@@ -288,7 +299,7 @@ function SearchContent() {
   };
 
   return (
-    <div className="container mx-auto px-4 md:px-8 max-w-7xl pt-24 pb-16">
+    <div className={`${cardFont.className} container mx-auto max-w-7xl px-4 pb-16 pt-24 md:px-8`}>
       {/* Search Header & Form Container */}
       <div className="max-w-3xl mx-auto mb-8 md:mb-12">
         <h1 className="text-2xl md:text-4xl font-extrabold text-white text-center mb-2 tracking-tight">
@@ -303,7 +314,7 @@ function SearchContent() {
           onSubmit={handleFormSubmit}
           className="relative mb-5 max-w-2xl mx-auto"
         >
-          <div className="relative flex items-center bg-[#12161a] border border-white/10 hover:border-white/20 focus-within:border-white/30 rounded-2xl p-1.5 shadow-xl transition-all">
+          <div className="relative flex items-center rounded-xl border border-white/10 bg-[#15171b] p-1.5 transition-colors hover:border-white/20 focus-within:border-white/30">
             <Search size={18} className="ml-3 text-neutral-400 shrink-0" />
             <input
               type="text"
@@ -325,20 +336,21 @@ function SearchContent() {
               )}
               <button
                 type="submit"
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer shadow-md"
+                aria-label="Tìm kiếm"
+                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-white text-xs font-bold text-[#111317] transition-colors hover:bg-neutral-200 sm:w-auto sm:px-4"
               >
                 <Search size={14} />
-                <span>Tìm kiếm</span>
+                <span className="hidden sm:inline">Tìm kiếm</span>
               </button>
             </div>
           </div>
         </form>
 
         {/* Filter Bar */}
-        <div className="bg-[#12161a]/80 border border-white/10 rounded-2xl p-3.5 backdrop-blur-md max-w-2xl mx-auto shadow-lg">
+        <div className="mx-auto max-w-2xl rounded-xl border border-white/10 bg-[#15171b] p-3.5">
           <div className="flex items-center justify-between border-b border-white/10 pb-2.5 mb-3">
             <div className="flex items-center space-x-2 text-xs font-bold text-neutral-300">
-              <Filter size={13} className="text-emerald-400" />
+              <Filter size={13} className="text-neutral-400" />
               <span>Bộ lọc tìm kiếm</span>
             </div>
             <button
@@ -449,7 +461,7 @@ function SearchContent() {
                 <span className="flex items-center space-x-1.5">
                   <Loader2
                     size={12}
-                    className="animate-spin text-emerald-400"
+                    className="animate-spin text-neutral-400"
                   />
                   <span>Đang tải kết quả tìm kiếm...</span>
                 </span>
@@ -462,7 +474,7 @@ function SearchContent() {
           </div>
 
           {isLoading || !mounted ? (
-            <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-4 md:gap-6">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-6 md:gap-6">
               {Array.from({ length: 12 }).map((_, i) => (
                 <FilmCardSkeleton key={i} />
               ))}
@@ -480,14 +492,14 @@ function SearchContent() {
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="mt-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                className="mt-2 cursor-pointer rounded-lg bg-white px-5 py-2 text-xs font-bold text-[#111317] transition-colors hover:bg-neutral-200"
               >
                 Đặt lại bộ lọc
               </button>
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-4 md:gap-6 animate-in fade-in duration-300">
+              <div className="grid grid-cols-2 gap-3 animate-in fade-in duration-300 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 md:gap-6 lg:grid-cols-6">
                 {films.map((film, idx) => (
                   <FilmCard key={`${film.slug || film._id || (film as any).id}-${idx}`} film={film} />
                 ))}
@@ -519,7 +531,7 @@ export default function SearchPage() {
       fallback={
         <div className="container mx-auto px-4 md:px-8 max-w-7xl pt-24 pb-16 flex flex-col space-y-6">
           <div className="h-6 bg-white/5 rounded w-48 animate-pulse" />
-          <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-4 md:gap-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 md:gap-6 lg:grid-cols-6">
             {Array.from({ length: 12 }).map((_, i) => (
               <FilmCardSkeleton key={i} />
             ))}
