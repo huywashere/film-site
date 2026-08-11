@@ -3,6 +3,7 @@
   "build": {
     "builder": "DOCKERFILE",
     "dockerfilePath": "Dockerfile.railway-api",
+    "buildCommand": null,
     "watchPatterns": [
       "apps/api/**",
       "Dockerfile.railway-api",
@@ -14,6 +15,7 @@
     ]
   },
   "deploy": {
+    "startCommand": "node dist/main.js",
     "preDeployCommand": [
       "./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma"
     ],
