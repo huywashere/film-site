@@ -84,6 +84,7 @@ export interface TmdbMovie {
   title?: string;
   name?: string;
   original_title?: string;
+  original_name?: string;
   overview?: string;
   poster_path?: string | null;
   backdrop_path?: string | null;
@@ -112,6 +113,9 @@ export interface TmdbDiscoverOptions {
   region?: string;
   with_original_language?: string;
   with_origin_country?: string;
+  with_genres?: string;
+  with_keywords?: string;
+  "vote_average.gte"?: number;
   sort_by?:
     "popularity.desc" | "vote_average.desc" | "primary_release_date.desc";
   "vote_count.gte"?: number;
@@ -316,7 +320,17 @@ export function extractTmdbInfo(film: any): {
         : null;
 
   const type: "movie" | "tv" =
-    film?.tmdb?.type === "tv" || film?.type === "series" || film?.type === "tv"
+    film?.tmdb?.type === "tv" ||
+    [
+      "series",
+      "tv",
+      "tvshows",
+      "tv-shows",
+      "phim-bo",
+      "hoat-hinh",
+      "hoathinh",
+      "anime",
+    ].includes(String(film?.type || "").toLowerCase())
       ? "tv"
       : "movie";
 

@@ -1,10 +1,26 @@
 {
+  "$schema": "https://railway.com/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS",
-    "buildCommand": "cd apps/api && pnpm install && pnpm build"
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile.railway-api",
+    "buildCommand": null,
+    "watchPatterns": [
+      "apps/api/**",
+      "Dockerfile.railway-api",
+      "package.json",
+      "pnpm-lock.yaml",
+      "pnpm-workspace.yaml",
+      ".npmrc",
+      "railway.json"
+    ]
   },
   "deploy": {
-    "startCommand": "cd apps/api && node dist/main.js",
+    "startCommand": "node dist/main.js",
+    "preDeployCommand": [
+      "./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma"
+    ],
+    "healthcheckPath": "/api/v1/health",
+    "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }

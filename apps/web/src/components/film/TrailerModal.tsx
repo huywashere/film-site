@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { X, Clapperboard, Loader2, ExternalLink } from "lucide-react";
 import { useTmdb } from "@/hooks/useTmdb";
 import { FilmItem } from "@/components/film/FilmCard";
+import { cardFont } from "@/lib/fonts";
 
 interface TrailerModalProps {
   film?: FilmItem | null;
@@ -25,7 +26,7 @@ export function TrailerModal({
   trailerUrl,
   tmdbVideoKey,
 }: TrailerModalProps) {
-  const { trailer, videosLoading } = useTmdb({
+  const { trailer, videos, videosLoading } = useTmdb({
     film: film || undefined,
     enabled: isOpen && !!film && !tmdbVideoKey,
     fetchImages: false,
@@ -59,26 +60,38 @@ export function TrailerModal({
   const displayName =
     directFilmName || film?.name || film?.title || "Phim Điện Ảnh";
 
-  // Extract Youtube ID from direct trailer URL or TMDB trailer
+  // Resolve YouTube first, then Vimeo as a secondary official video source.
   let youtubeKey = tmdbVideoKey || trailer?.key;
+  let vimeoKey = videos.find((video) => video.site === "Vimeo")?.key;
   if (!youtubeKey && trailerUrl) {
     const match = trailerUrl.match(
       /(?:youtu\.be\/|youtube\.com\/(?:embed\/|shorts\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/,
     );
     if (match) youtubeKey = match[1];
+    if (!youtubeKey && /^[\w-]{11}$/.test(trailerUrl.trim())) {
+      youtubeKey = trailerUrl.trim();
+    }
+    const vimeoMatch = trailerUrl.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+    if (!vimeoKey && vimeoMatch) vimeoKey = vimeoMatch[1];
   }
 
-  // YouTube removed search-result embeds. Never render that blank iframe as a fallback.
   const embedSrc = youtubeKey
-    ? `https://www.youtube-nocookie.com/embed/${youtubeKey}?autoplay=1&playsinline=1&rel=0&modestbranding=1`
-    : null;
+    ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtubeKey)}?autoplay=1&playsinline=1&rel=0`
+    : vimeoKey
+      ? `https://player.vimeo.com/video/${encodeURIComponent(vimeoKey)}?autoplay=1&title=0&byline=0`
+      : null;
   const youtubeSearchHref = `https://www.youtube.com/results?search_query=${encodeURIComponent(
     `${displayName} official trailer`,
   )}`;
+  const externalTrailerHref = youtubeKey
+    ? `https://www.youtube.com/watch?v=${encodeURIComponent(youtubeKey)}`
+    : vimeoKey
+      ? `https://vimeo.com/${encodeURIComponent(vimeoKey)}`
+      : youtubeSearchHref;
 
   return (
     <div
-      className={`${presentation === "hero" ? "absolute" : "fixed"} inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 md:p-10 animate-in fade-in duration-200`}
+      className={`${cardFont.className} ${presentation === "hero" ? "absolute" : "fixed"} inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 md:p-10 animate-in fade-in duration-200`}
     >
       {/* Dark backdrop overlay */}
       <div
@@ -98,18 +111,31 @@ export function TrailerModal({
             </span>
           </div>
 
-          <button
-            onClick={onClose}
-            className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
-            aria-label="Đóng"
-          >
-            <X size={15} />
-          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            {embedSrc && (
+              <a
+                href={externalTrailerHref}
+                target="_blank"
+                rel="noreferrer"
+                className="flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-semibold text-neutral-400 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                Mở nguồn
+                <ExternalLink size={12} />
+              </a>
+            )}
+            <button
+              onClick={onClose}
+              className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/10 text-neutral-300 transition-colors hover:bg-white/20 hover:text-white"
+              aria-label="Đóng"
+            >
+              <X size={15} />
+            </button>
+          </div>
         </div>
 
         {/* Video Frame Box (No Borders) */}
         <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black shadow-2xl flex items-center justify-center">
-          {videosLoading && !youtubeKey ? (
+          {videosLoading && !embedSrc ? (
             <div className="flex flex-col items-center gap-2 text-neutral-400">
               <Loader2 size={24} className="animate-spin text-neutral-400" />
               <p className="text-xs font-medium">Đang tải trailer...</p>
@@ -119,21 +145,21 @@ export function TrailerModal({
               src={embedSrc}
               title={`${displayName} Official Trailer`}
               className="w-full h-full border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
               allowFullScreen
             />
           ) : (
             <div className="flex max-w-sm flex-col items-center gap-3 px-6 text-center text-neutral-300">
-              <Clapperboard size={28} className="text-emerald-300" />
+              <Clapperboard size={28} className="text-neutral-300" />
               <p className="text-sm font-semibold">Trailer chưa có trên TMDB</p>
               <p className="text-xs leading-relaxed text-neutral-500">
                 Mở kết quả YouTube để xem trailer chính thức của phim này.
               </p>
               <a
-                href={youtubeSearchHref}
+                href={externalTrailerHref}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-full bg-emerald-400 px-4 py-2 text-xs font-bold text-[#07110d] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-[#111317] transition-colors hover:bg-neutral-200 active:scale-[0.98]"
               >
                 Mở YouTube
                 <ExternalLink size={14} />

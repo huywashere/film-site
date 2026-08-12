@@ -69,6 +69,15 @@ export function SearchHistory({ onSelectQuery }: SearchHistoryProps) {
   useEffect(() => {
     setMounted(true);
     setHistory(searchHistoryStorage.get());
+
+    const handleCleared = () => {
+      setHistory([]);
+    };
+
+    window.addEventListener("search_history_cleared", handleCleared);
+    return () => {
+      window.removeEventListener("search_history_cleared", handleCleared);
+    };
   }, []);
 
   if (!mounted) return null;

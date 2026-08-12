@@ -1,7 +1,11 @@
 import "./globals.css";
 import "./light-theme.css";
 import type { Metadata, Viewport } from "next";
-import { Be_Vietnam_Pro, Manrope } from "next/font/google";
+import {
+  Be_Vietnam_Pro,
+  Manrope,
+  Roboto_Condensed,
+} from "next/font/google";
 import { ConditionalNavbar } from "@/components/layout/ConditionalNavbar";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -72,10 +76,18 @@ const beVietnamPro = Be_Vietnam_Pro({
 });
 
 const manrope = Manrope({
-  subsets: ["latin"],
+  subsets: ["latin", "vietnamese"],
   weight: ["400", "500", "600", "700", "800"],
   display: "swap",
   variable: "--font-manrope",
+  preload: true,
+});
+
+const robotoCondensed = Roboto_Condensed({
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  display: "swap",
+  variable: "--font-cinema",
   preload: true,
 });
 
@@ -104,8 +116,14 @@ export default function RootLayout({
         <link rel="icon" href="/cinephim-logo.png" type="image/png" />
         <link rel="shortcut icon" href="/cinephim-logo.png" type="image/png" />
         <link rel="apple-touch-icon" href="/cinephim-logo.png" />
+        <link rel="preconnect" href="https://img.phimapi.com" />
+        <link rel="dns-prefetch" href="https://img.phimapi.com" />
         <link rel="preconnect" href="https://phimimg.com" />
         <link rel="dns-prefetch" href="https://phimimg.com" />
+        <link rel="preconnect" href="https://img.ophim.live" />
+        <link rel="dns-prefetch" href="https://img.ophim.live" />
+        <link rel="preconnect" href="https://images.nguonc.com" />
+        <link rel="dns-prefetch" href="https://images.nguonc.com" />
         <link rel="preconnect" href="https://image.tmdb.org" />
         <link rel="dns-prefetch" href="https://image.tmdb.org" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
@@ -115,7 +133,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${beVietnamPro.variable} ${manrope.variable} font-sans antialiased`}
+        className={`${beVietnamPro.variable} ${manrope.variable} ${robotoCondensed.variable} font-sans antialiased`}
         suppressHydrationWarning
       >
         <ThemeWatcher />

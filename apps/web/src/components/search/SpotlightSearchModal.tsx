@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, startTransition } from "react";
 import Link from "next/link";
+import NextImage from "next/image";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Search,
   Loader2,
@@ -14,17 +15,14 @@ import {
   X,
   Play,
   Filter,
-  Film,
   Sparkles,
-  Check,
-  Star,
   User,
 } from "lucide-react";
 import { movieApi } from "@/lib/api";
 import { tmdbProfile } from "@/lib/tmdb";
 import { resolveImageUrl, FilmItem } from "@/components/film/FilmCard";
 import { VoiceSearchButton } from "@/components/search/VoiceSearchButton";
-import { cn } from "@/lib/utils";
+import { cardFont } from "@/lib/fonts";
 
 // ── Local storage helpers ─────────────────────────────────────────
 const HISTORY_KEY = "cineverse-search-history";
@@ -63,50 +61,11 @@ function removeAccents(str: string): string {
     .toLowerCase();
 }
 
-// ── YouTube/Netflix Smart Relevance Scorer ───────────────────────
-function scoreFilmRelevance(film: FilmItem, rawQuery: string): number {
-  const q = rawQuery.trim().toLowerCase();
-  if (!q) return 0;
-
-  const name = (film.name || "").toLowerCase();
-  const origin = (film.origin_name || "").toLowerCase();
-  const slug = (film.slug || "").toLowerCase();
-
-  const actor = Array.isArray(film.actor)
-    ? film.actor.join(" ").toLowerCase()
-    : String(film.actor || "").toLowerCase();
-  const director = Array.isArray(film.director)
-    ? film.director.join(" ").toLowerCase()
-    : String(film.director || "").toLowerCase();
-
-  // 1. Exact Vietnamese title starts with query (Highest Priority: 1000+)
-  if (name.startsWith(q)) return 1000 - name.length;
-
-  // 2. Title contains exact query string (e.g., "Bố Già", "Bố Vợ") (High Priority: 800+)
-  if (name.includes(q)) return 800 - name.indexOf(q);
-
-  // 3. Origin name contains exact query (Priority: 600+)
-  if (origin.includes(q)) return 600 - origin.indexOf(q);
-
-  // 4. Actor or Director match (Priority: 750 / 700)
-  if (actor.includes(q)) return 750;
-  if (director.includes(q)) return 700;
-
-  // 5. Unaccented search (Fallback Priority: 400+)
-  const qClean = removeAccents(q);
-  const nameClean = removeAccents(name);
-  const originClean = removeAccents(origin);
-  const actorClean = removeAccents(actor);
-  const directorClean = removeAccents(director);
-
-  if (nameClean.startsWith(qClean)) return 400;
-  if (nameClean.includes(qClean)) return 300;
-  if (actorClean.includes(qClean)) return 350;
-  if (directorClean.includes(qClean)) return 320;
-  if (originClean.includes(qClean)) return 200;
-  if (slug.includes(qClean)) return 100;
-
-  return 1;
+function filmIdentity(film: FilmItem): string {
+  if (film._canonicalKey) return film._canonicalKey;
+  if (film.tmdb?.id) return `tmdb:${film.tmdb.type || film.type}:${film.tmdb.id}`;
+  const title = removeAccents(film.origin_name || film.name || film.slug);
+  return `${title}:${film.year || ""}`;
 }
 
 // ── Highlight matching text (Ultra-Fast 60fps String Slicing) ───
@@ -127,7 +86,7 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
   return (
     <span>
       {before}
-      <mark className="bg-transparent text-emerald-300 font-extrabold not-italic underline decoration-emerald-400/50">
+      <mark className="bg-white/10 font-extrabold not-italic text-white">
         {match}
       </mark>
       {after}
@@ -175,19 +134,21 @@ export function SpotlightSearchModal({
     }
   }, [isOpen, mounted]);
 
-  // Ultra-fast Debounce (100ms for instant feel)
+  // A short debounce prevents one request per keystroke without feeling delayed.
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQuery(query), 100);
+    const t = setTimeout(() => setDebouncedQuery(query), 180);
     return () => clearTimeout(t);
   }, [query]);
 
-  // Search API (Fetch 40 movies for deep scrollable grid)
+  // The API already performs canonical multi-source dedupe and relevance ranking.
   const { data: searchData, isFetching } = useQuery({
     queryKey: ["spotlight-search-fast", debouncedQuery],
-    queryFn: () => movieApi.search(debouncedQuery, 1, 40).then((r) => r.data),
-    enabled: mounted && debouncedQuery.trim().length >= 1,
+    queryFn: () => movieApi.search(debouncedQuery, 1, 24).then((r) => r.data),
+    enabled: mounted && debouncedQuery.trim().length >= 2,
     staleTime: 1000 * 60 * 10,
-    placeholderData: (prev) => prev,
+    gcTime: 1000 * 60 * 30,
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 
   // Actor Search API (Search people via TMDB API)
@@ -200,8 +161,13 @@ export function SpotlightSearchModal({
       if (!res.ok) return { results: [] };
       return res.json();
     },
-    enabled: mounted && debouncedQuery.trim().length >= 2,
+    enabled:
+      mounted &&
+      activeTypeFilter === "actor" &&
+      debouncedQuery.trim().length >= 2,
     staleTime: 1000 * 60 * 10,
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 
   const searchedActors = useMemo(
@@ -222,22 +188,13 @@ export function SpotlightSearchModal({
     [searchData],
   );
 
-  // ── YouTube/Netflix Smart Sorting & Dynamic Multi-Facet Filtering ──
+  // Preserve the server ranking, then apply only the selected facets locally.
   const sortedAndFilteredResults = useMemo(() => {
-    if (!debouncedQuery.trim()) return [];
+    if (debouncedQuery.trim().length < 2 || activeTypeFilter === "actor") {
+      return [];
+    }
 
-    // 1. Calculate relevance scores
-    const scored = rawResults.map((film) => ({
-      film,
-      score: scoreFilmRelevance(film, debouncedQuery),
-    }));
-
-    // 2. Sort by relevance score descending
-    scored.sort((a, b) => b.score - a.score);
-
-    // 3. Filter dynamically
-    return scored
-      .filter(({ film }) => {
+    return rawResults.filter((film) => {
         // Type filter
         if (activeTypeFilter === "series" && film.type !== "series")
           return false;
@@ -275,8 +232,7 @@ export function SpotlightSearchModal({
         }
 
         return true;
-      })
-      .map(({ film }) => film);
+      });
   }, [
     rawResults,
     debouncedQuery,
@@ -289,8 +245,9 @@ export function SpotlightSearchModal({
     const seen = new Set<string>();
     return sortedAndFilteredResults.filter((film) => {
       if (!film || !film.slug) return false;
-      if (seen.has(film.slug)) return false;
-      seen.add(film.slug);
+      const identity = filmIdentity(film);
+      if (seen.has(identity)) return false;
+      seen.add(identity);
       return true;
     });
   }, [sortedAndFilteredResults]);
@@ -305,7 +262,8 @@ export function SpotlightSearchModal({
     });
   }, [suggestions]);
 
-  const isSearching = debouncedQuery.trim().length >= 1;
+  const isSearching = debouncedQuery.trim().length >= 2;
+  const isQueryTooShort = query.trim().length === 1;
 
   // Type counts for badges
   const seriesCount = useMemo(
@@ -368,9 +326,9 @@ export function SpotlightSearchModal({
       e.preventDefault();
       e.stopPropagation();
       saveHistory(query.trim());
-      if (sortedAndFilteredResults.length > 0) {
+      if (uniqueSearchResults.length > 0) {
         onClose();
-        router.push(`/film/${sortedAndFilteredResults[0].slug}`);
+        router.push(`/film/${uniqueSearchResults[0].slug}`);
       } else {
         onClose();
         router.push(`/search?q=${encodeURIComponent(query.trim())}`);
@@ -401,7 +359,7 @@ export function SpotlightSearchModal({
   return (
     <div
       suppressHydrationWarning
-      className="fixed inset-0 z-[100] flex items-start justify-center bg-[#030508]/78 p-2 pt-[max(0.5rem,env(safe-area-inset-top))] backdrop-blur-xl sm:items-center sm:p-5 animate-fade-in overscroll-contain"
+      className={`${cardFont.className} fixed inset-0 z-[100] flex items-start justify-center bg-[#08090b]/80 p-2 pt-[max(0.5rem,env(safe-area-inset-top))] sm:items-center sm:p-5 animate-fade-in overscroll-contain`}
       onClick={onClose}
       onWheel={(e) => e.stopPropagation()}
     >
@@ -411,15 +369,15 @@ export function SpotlightSearchModal({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -12, scale: 0.98 }}
         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-        className="flex h-auto max-h-[88dvh] w-full max-w-5xl flex-col overflow-hidden rounded-[20px] sm:rounded-[22px] border border-white/10 bg-[#0b1016]/95 shadow-[0_28px_100px_rgba(0,0,0,0.65)] pointer-events-auto transform-gpu sm:h-[min(82dvh,760px)]"
+        className="pointer-events-auto flex h-auto max-h-[88dvh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#111317] shadow-[0_28px_80px_rgba(0,0,0,0.45)] transform-gpu sm:h-[min(82dvh,760px)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Top Search Input Bar (Fixed Header) ── */}
         <div
           suppressHydrationWarning
-          className="flex items-center gap-2 sm:gap-3 border-b border-white/[0.08] bg-[#101720]/80 px-3 py-2.5 shrink-0 sm:px-5 sm:py-3.5"
+          className="flex shrink-0 items-center gap-2 border-b border-white/10 bg-[#111317] px-3 py-2.5 sm:gap-3 sm:px-5 sm:py-3.5"
         >
-          <span className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl border border-white/10 bg-white/[0.04] text-emerald-300">
+          <span className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl border border-white/10 bg-white/[0.04] text-neutral-300">
             <Search size={15} strokeWidth={2} className="sm:hidden" />
             <Search size={17} strokeWidth={2} className="hidden sm:block" />
           </span>
@@ -431,7 +389,7 @@ export function SpotlightSearchModal({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Tìm kiếm phim, đạo diễn, diễn viên..."
-            className="min-w-0 flex-1 border-none bg-transparent text-xs font-semibold tracking-wide text-white placeholder:text-white/35 focus:outline-none focus:ring-0 sm:text-base"
+            className="min-w-0 flex-1 border-none bg-transparent text-xs font-medium text-white placeholder:text-neutral-500 focus:outline-none focus:ring-0 sm:text-base"
           />
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <VoiceSearchButton onResult={(text) => setQuery(text)} />
@@ -451,7 +409,7 @@ export function SpotlightSearchModal({
             )}
             <button
               onClick={onClose}
-              className="rounded-full border border-white/10 bg-white/[0.08] px-2.5 py-1 text-[11px] font-bold text-white shadow-sm transition-all hover:scale-[1.02] hover:bg-white/[0.16] active:scale-[0.98] sm:px-3.5 sm:py-1.5 sm:text-xs"
+              className="flex h-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.08] px-3 text-[11px] font-bold text-white shadow-sm transition-colors hover:bg-white/[0.16] active:scale-[0.98] sm:px-3.5 sm:text-xs"
             >
               Đóng
             </button>
@@ -459,7 +417,7 @@ export function SpotlightSearchModal({
         </div>
 
         {/* ── YouTube/Netflix Smart Filter Bar (Fixed Header) ── */}
-        <div className="flex shrink-0 flex-col justify-between gap-1.5 overflow-x-auto border-b border-white/[0.06] bg-[#080c11] px-3 py-2 text-xs scrollbar-hide sm:flex-row sm:items-center sm:gap-2.5 sm:px-5 sm:py-3">
+        <div className="flex shrink-0 flex-col justify-between gap-1.5 overflow-x-auto border-b border-white/10 bg-[#0d0f12] px-3 py-2 text-xs scrollbar-hide sm:flex-row sm:items-center sm:gap-2.5 sm:px-5 sm:py-3">
           {/* Type Filter Pills */}
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide py-0.5 shrink-0">
             <span className="text-white/40 font-bold text-[9px] sm:text-[10px] uppercase tracking-wider flex items-center gap-1 shrink-0 mr-0.5">
@@ -478,10 +436,12 @@ export function SpotlightSearchModal({
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTypeFilter(tab.id as any)}
+                  onClick={() =>
+                    startTransition(() => setActiveTypeFilter(tab.id as any))
+                  }
                   className={`px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1 text-[11px] sm:text-xs ${
                     active
-                      ? "bg-emerald-400 text-[#06110c] shadow-md shadow-emerald-500/20"
+                      ? "border border-white bg-white text-[#111317]"
                       : "bg-white/[0.06] hover:bg-white/[0.12] text-neutral-300 hover:text-white border border-white/10"
                   }`}
                 >
@@ -516,7 +476,7 @@ export function SpotlightSearchModal({
                   onClick={() => setActiveLangFilter(lang.id as any)}
                   className={`px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-[11px] font-semibold transition-all cursor-pointer shrink-0 ${
                     active
-                      ? "bg-white/15 text-emerald-200 border border-emerald-300/30 shadow-sm"
+                      ? "bg-white/12 text-white border border-white/25"
                       : "text-neutral-400 hover:text-white hover:bg-white/[0.06]"
                   }`}
                 >
@@ -530,10 +490,20 @@ export function SpotlightSearchModal({
         {/* ── Main Scrollable View Area (Smooth Touch & Mouse Scrollable Container) ── */}
         <div
           onWheel={(e) => e.stopPropagation()}
-          className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y bg-[#0b1016] p-2.5 sm:p-5 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-white/5 pointer-events-auto transform-gpu"
+          className="pointer-events-auto min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain bg-[#0d0f12] p-2.5 scrollbar-thin scrollbar-track-white/5 scrollbar-thumb-white/30 transform-gpu sm:p-5"
         >
           {/* ── SEARCH MODE ── */}
-          {isSearching ? (
+          {isQueryTooShort ? (
+            <div className="flex min-h-64 flex-col items-center justify-center gap-2 px-6 text-center">
+              <Search size={22} className="text-neutral-500" />
+              <p className="text-sm font-semibold text-neutral-200">
+                Nhập thêm một ký tự để tìm chính xác hơn
+              </p>
+              <p className="text-xs text-neutral-500">
+                Tìm kiếm bắt đầu từ hai ký tự để giảm truy vấn không cần thiết.
+              </p>
+            </div>
+          ) : isSearching ? (
             <div className="space-y-4">
               {/* Result Stats & Genre Filter Chips */}
               <div className="flex flex-wrap items-center justify-between gap-3 px-1 border-b border-white/5 pb-3">
@@ -543,7 +513,7 @@ export function SpotlightSearchModal({
                     {sortedAndFilteredResults.length}
                   </strong>{" "}
                   kết quả cho &ldquo;
-                  <span className="text-emerald-300 font-extrabold">
+                  <span className="font-extrabold text-white">
                     {debouncedQuery}
                   </span>
                   &rdquo;
@@ -555,7 +525,7 @@ export function SpotlightSearchModal({
                     onClick={() => setSelectedGenreSlug("all")}
                     className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer shrink-0 ${
                       selectedGenreSlug === "all"
-                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                        ? "bg-white/12 text-white border border-white/25"
                         : "text-neutral-400 hover:text-white"
                     }`}
                   >
@@ -569,7 +539,7 @@ export function SpotlightSearchModal({
                         onClick={() => setSelectedGenreSlug(g.slug)}
                         className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer shrink-0 ${
                           active
-                            ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                            ? "bg-white/12 text-white border border-white/25"
                             : "text-neutral-400 hover:text-white bg-white/5"
                         }`}
                       >
@@ -614,10 +584,13 @@ export function SpotlightSearchModal({
                           >
                             <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 bg-neutral-900 border border-white/10 group-hover:border-white/30">
                               {profile ? (
-                                <img
+                                <NextImage
                                   src={profile}
                                   alt={person.name}
-                                  className="w-full h-full object-cover"
+                                  fill
+                                  sizes="40px"
+                                  className="object-cover"
+                                  unoptimized
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white/40">
@@ -662,15 +635,18 @@ export function SpotlightSearchModal({
                       <div
                         key={`${film.slug}-${idx}`}
                         onClick={() => handleSelectMovie(film.slug)}
-                        className="group relative rounded-2xl bg-[#12161f] border border-white/10 hover:border-emerald-500/60 overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer hover:-translate-y-1"
+                        className="group relative cursor-pointer overflow-hidden rounded-xl border border-white/10 bg-[#15181d] transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-white/30"
                       >
                         {/* Poster Image */}
                         <div className="relative aspect-[2/3] w-full overflow-hidden bg-neutral-900">
                           {poster ? (
-                            <img
+                            <NextImage
                               src={poster}
                               alt={film.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              fill
+                              sizes="(max-width: 640px) 40vw, 180px"
+                              className="object-cover group-hover:scale-105 transition-transform duration-500"
+                              unoptimized
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center bg-white/5">
@@ -681,12 +657,12 @@ export function SpotlightSearchModal({
                           {/* Episode / Quality Badges */}
                           <div className="absolute top-2 left-2 flex flex-col items-start gap-1 z-10">
                             {film.episode_current && (
-                              <span className="bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider shadow">
+                              <span className="rounded-md border border-white/15 bg-[#111317]/90 px-2 py-0.5 text-[9px] font-bold text-white">
                                 {film.episode_current}
                               </span>
                             )}
                             {film.lang && (
-                              <span className="bg-black/75 backdrop-blur-md text-white/90 text-[9px] font-bold px-1.5 py-0.5 rounded border border-white/20">
+                              <span className="rounded border border-white/20 bg-[#111317]/90 px-1.5 py-0.5 text-[9px] font-bold text-white/90">
                                 {film.lang}
                               </span>
                             )}
@@ -694,7 +670,7 @@ export function SpotlightSearchModal({
 
                           {/* Hover Play Icon Overlay */}
                           <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-                            <div className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg transform scale-75 group-hover:scale-100 transition-transform">
+                            <div className="flex h-10 w-10 scale-75 items-center justify-center rounded-full bg-white text-[#111317] transition-transform group-hover:scale-100">
                               <Play
                                 size={18}
                                 fill="currentColor"
@@ -706,7 +682,7 @@ export function SpotlightSearchModal({
 
                         {/* Title & Info */}
                         <div className="p-3 space-y-1">
-                          <h3 className="text-xs font-extrabold text-white group-hover:text-emerald-400 transition-colors line-clamp-1">
+                          <h3 className="line-clamp-1 text-xs font-bold text-white">
                             <HighlightMatch
                               text={film.name}
                               query={debouncedQuery}
@@ -759,7 +735,7 @@ export function SpotlightSearchModal({
                         localStorage.removeItem(HISTORY_KEY);
                         setHistory([]);
                       }}
-                      className="text-[11px] text-white/35 hover:text-red-400 transition-colors"
+                      className="text-[11px] text-white/35 transition-colors hover:text-white"
                     >
                       Xóa tất cả
                     </button>
@@ -776,7 +752,7 @@ export function SpotlightSearchModal({
                         <span>{term}</span>
                         <button
                           onClick={(e) => handleRemoveHistory(e, term)}
-                          className="opacity-40 group-hover:opacity-100 hover:text-red-400 transition-opacity ml-0.5"
+                          className="ml-0.5 opacity-40 transition-opacity hover:text-white group-hover:opacity-100"
                         >
                           <X size={11} />
                         </button>
@@ -828,18 +804,21 @@ export function SpotlightSearchModal({
                         <div
                           key={`${film.slug}-${idx}`}
                           onClick={() => handleSelectMovie(film.slug)}
-                          className="group relative rounded-2xl bg-[#12161f] border border-white/10 hover:border-emerald-500/60 overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer hover:-translate-y-1"
+                          className="group relative cursor-pointer overflow-hidden rounded-xl border border-white/10 bg-[#15181d] transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-white/30"
                         >
                           <div className="relative aspect-[2/3] w-full overflow-hidden bg-neutral-900">
                             {poster && (
-                              <img
+                              <NextImage
                                 src={poster}
                                 alt={film.name}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                fill
+                                sizes="(max-width: 640px) 40vw, 180px"
+                                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                unoptimized
                               />
                             )}
                             <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-                              <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#111317]">
                                 <Play
                                   size={14}
                                   fill="currentColor"
@@ -849,7 +828,7 @@ export function SpotlightSearchModal({
                             </div>
                           </div>
                           <div className="p-2.5 space-y-0.5">
-                            <h4 className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors line-clamp-1">
+                            <h4 className="line-clamp-1 text-xs font-bold text-white">
                               {film.name}
                             </h4>
                             <p className="text-[10px] text-neutral-400 truncate">

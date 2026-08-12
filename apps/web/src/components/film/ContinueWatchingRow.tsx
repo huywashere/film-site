@@ -9,8 +9,13 @@ import { watchProgressStorage, WatchProgressEntry } from "@/lib/watch-progress";
 import { useAuthStore } from "@/store/authStore";
 import { useQuery } from "@tanstack/react-query";
 import { watchHistoryApi } from "@/lib/api";
-import { FilmItem, resolveImageUrl } from "./FilmCard";
+import {
+  FilmItem,
+  resolveImageUrl,
+  VERIFIED_FALLBACK_THUMBS,
+} from "./FilmCard";
 import { DashPagination } from "./DashPagination";
+import { cardFont } from "@/lib/fonts";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -168,14 +173,14 @@ export function ContinueWatchingRow({
   return (
     <div
       data-history-row="true"
-      className="w-full mb-10 relative group/section"
+      className={`${cardFont.className} w-full mb-10 relative group/section`}
     >
       {/* Header with Title + Inline Pill Button + Right Dash Line Indicators */}
       <div className="flex items-center justify-between mb-4 px-1">
         <div className="flex items-center gap-2.5">
           <h2
             data-history-title="true"
-            className="text-lg md:text-xl font-extrabold text-white tracking-tight"
+            className={`${cardFont.className} bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-300 bg-clip-text text-lg md:text-xl font-extrabold text-transparent tracking-tight`}
           >
             {sectionTitle}
           </h2>
@@ -183,7 +188,7 @@ export function ContinueWatchingRow({
             <Link
               href="/history"
               data-history-action="true"
-              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.12] text-white/90 hover:text-white text-xs font-medium transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95 ml-1"
+              className={`${cardFont.className} inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.12] text-white/90 hover:text-white text-xs font-medium transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95 ml-1`}
             >
               <span>Xem tất cả</span>
               <ChevronRight size={12} strokeWidth={2.5} />
@@ -222,13 +227,16 @@ export function ContinueWatchingRow({
             className="w-full !pb-3 !pt-1 !pl-0.5"
           >
             {hasHistory
-              ? historyEntries.map((item: any) => {
+              ? historyEntries.map((item: any, idx: number) => {
+                  const fallbackIndex = idx % VERIFIED_FALLBACK_THUMBS.length;
                   const posterUrl =
                     resolveImageUrl(item.poster) ||
-                    resolveImageUrl(item.thumb);
+                    resolveImageUrl(item.thumb) ||
+                    VERIFIED_FALLBACK_THUMBS[fallbackIndex];
                   const thumbUrl =
                     resolveImageUrl(item.thumb) ||
-                    resolveImageUrl(item.poster);
+                    resolveImageUrl(item.poster) ||
+                    VERIFIED_FALLBACK_THUMBS[fallbackIndex];
 
                   const {
                     title,
@@ -270,6 +278,28 @@ export function ContinueWatchingRow({
                                 alt={title}
                                 className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
                                 loading="lazy"
+                                onError={(e) => {
+                                  const target = e.currentTarget;
+                                  if (!target.dataset.failed) {
+                                    target.dataset.failed = "true";
+                                    const altPoster = item.poster
+                                      ? resolveImageUrl(item.poster)
+                                      : null;
+                                    if (
+                                      altPoster &&
+                                      altPoster !== thumbUrl &&
+                                      !altPoster.includes("uploads/movies")
+                                    ) {
+                                      target.src = altPoster;
+                                    } else {
+                                      target.src =
+                                        VERIFIED_FALLBACK_THUMBS[fallbackIndex];
+                                    }
+                                  } else {
+                                    target.src =
+                                      VERIFIED_FALLBACK_THUMBS[fallbackIndex];
+                                  }
+                                }}
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-xs text-neutral-400 font-bold p-2 text-center">
@@ -342,7 +372,7 @@ export function ContinueWatchingRow({
                             {/* Title & 3-line Detailed Metadata Block */}
                             <div className="flex-1 min-w-0 pt-0.5 space-y-0.5">
                               {/* Main Title */}
-                              <h3 className="text-xs sm:text-sm font-extrabold text-white leading-snug line-clamp-1 group-hover/card:text-blue-400 transition-colors">
+                              <h3 className={`${cardFont.className} text-xs sm:text-sm font-extrabold text-white leading-snug line-clamp-1 group-hover/card:text-blue-400 transition-colors`}>
                                 {title}
                               </h3>
 
@@ -458,7 +488,7 @@ export function ContinueWatchingRow({
                             {/* Title & 3-line Detailed Metadata Block */}
                             <div className="flex-1 min-w-0 pt-0.5 space-y-0.5">
                               {/* Main Title */}
-                              <h3 className="text-xs sm:text-sm font-extrabold text-white leading-snug line-clamp-1 group-hover/card:text-blue-400 transition-colors">
+                              <h3 className={`${cardFont.className} text-xs sm:text-sm font-extrabold text-white leading-snug line-clamp-1 group-hover/card:text-blue-400 transition-colors`}>
                                 {title}
                               </h3>
 

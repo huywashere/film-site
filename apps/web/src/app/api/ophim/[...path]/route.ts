@@ -1,13 +1,14 @@
-import { createMovieProxyHandler } from "@/lib/movie-proxy";
+import {
+  createMovieProxyHandler,
+  resolveMovieApiOrigins,
+} from "@/lib/movie-proxy";
 
 // ── OPhim domain fallback list ────────────────────────────────────
 // OPhim thường xuyên đổi domain. Thứ tự ưu tiên:
-const OPHIM_DOMAINS = [
-  process.env.OPHIM_API_BASE || "https://ophim1.com",
-  "https://ophim1.com",
-  "https://ophim17.cc",
-  "https://ophim3.cc",
-];
+const OPHIM_DOMAINS = resolveMovieApiOrigins(
+  process.env.OPHIM_API_ORIGINS || process.env.OPHIM_API_BASE,
+  ["https://ophim1.com", "https://ophim17.cc", "https://ophim3.cc"],
+);
 
 // CDN mặc định khi response không có pathImage
 const OPHIM_DEFAULT_CDN = "https://img.ophim.live/uploads/movies/";
@@ -26,8 +27,8 @@ function normalizeOphimImages(raw: any, _path: string): any {
     OPHIM_DEFAULT_CDN;
   const cdn = cdnBase.endsWith("/") ? cdnBase : cdnBase + "/";
 
-  const fixUrl = (url?: string): string => {
-    if (!url) return "";
+  const fixUrl = (url: unknown): string => {
+    if (typeof url !== "string" || !url.trim()) return "";
     if (url.startsWith("http://") || url.startsWith("https://")) return url;
     if (url.startsWith("//")) return "https:" + url;
     return cdn + url;

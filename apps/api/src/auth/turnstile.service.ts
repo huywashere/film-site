@@ -14,6 +14,8 @@ type TurnstileVerification = {
   "error-codes"?: string[];
 };
 
+const TURNSTILE_TEST_SECRET = "1x0000000000000000000000000000000AA";
+
 @Injectable()
 export class TurnstileService {
   private readonly logger = new Logger(TurnstileService.name);
@@ -25,13 +27,17 @@ export class TurnstileService {
     remoteIp: string | undefined,
     expectedAction: TurnstileAction,
   ): Promise<void> {
-    const secret = this.config.get<string>("TURNSTILE_SECRET_KEY");
     const isProduction = this.config.get<string>("NODE_ENV") === "production";
+    
+    // In local development, allow authentication without blocking on Cloudflare Turnstile token validation
+    if (!isProduction) {
+      return;
+    }
 
-    // Local development remains usable without Cloudflare credentials. Production
-    // never fails open: a missing secret blocks credential-based authentication.
+    const secret = this.config.get<string>("TURNSTILE_SECRET_KEY");
+
+    // Production never fails open: a missing secret blocks credential-based authentication.
     if (!secret) {
-      if (!isProduction) return;
       throw new ServiceUnavailableException(
         "Xác minh chống bot chưa được cấu hình. Vui lòng thử lại sau.",
       );
@@ -71,7 +77,11 @@ export class TurnstileService {
       );
     }
 
-    if (!result.success || result.action !== expectedAction) {
+    const actionMismatch = isProduction
+      ? result.action !== expectedAction
+      : Boolean(result.action && result.action !== expectedAction);
+
+    if (!result.success || actionMismatch) {
       this.logger.warn(
         `Rejected Turnstile token for ${expectedAction}: ${result["error-codes"]?.join(",") || "action-mismatch"}`,
       );

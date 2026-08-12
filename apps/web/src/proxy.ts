@@ -30,7 +30,7 @@ export function proxy(request: NextRequest) {
         ? " http://localhost:3001 http://127.0.0.1:3001 ws://localhost:3001 ws://127.0.0.1:3001"
         : ""
     } https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com wss://*.firebaseio.com`,
-    "frame-src 'self' https://accounts.google.com https://*.firebaseapp.com https://www.google.com https://challenges.cloudflare.com https://vidsrc.sbs https://*.phimapi.com https://*.ophim.live https://ophim1.com https://*.nguonc.com https://*.vsmov.com",
+    "frame-src 'self' https://accounts.google.com https://*.firebaseapp.com https://www.google.com https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://vidsrc.sbs https://*.phimapi.com https://*.kkphimplayer7.com https://*.ophim.live https://ophim1.com https://*.opstream12.com https://*.nguonc.com https://*.streamc.xyz https://*.vsmov.com https://*.streamvsmov.com",
     "media-src 'self' blob:",
     "worker-src 'self' blob:",
     "object-src 'none'",

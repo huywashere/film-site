@@ -6,22 +6,24 @@ import {
   ChevronLeft,
   ChevronRight,
   Home,
-  Tv,
-  Flame,
   Popcorn,
-  BookmarkCheck,
-  Library,
-  History,
-  Star,
   Layers,
-  Heart,
-  Film,
-  Languages,
+  History,
+  Clapperboard,
+  Drama,
+  LayoutGrid,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useRef } from "react";
+import { cardFont } from "@/lib/fonts";
 
-function TelegramIcon({ className, size = 20 }: { className?: string; size?: number }) {
+function TelegramIcon({
+  className,
+  size = 20,
+}: {
+  className?: string;
+  size?: number;
+}) {
   return (
     <svg
       width={size}
@@ -37,11 +39,9 @@ function TelegramIcon({ className, size = 20 }: { className?: string; size?: num
 
 const SIDEBAR_ITEMS = [
   { title: "Trang chủ", href: "/", icon: Home },
-  { title: "Phim Hàn", href: "/country/han-quoc", icon: Heart },
-  { title: "Phim Trung", href: "/country/trung-quoc", icon: Film },
-  { title: "Phim Song Ngữ", href: "/search?q=song%20ngu", icon: Languages },
-  { title: "Duyệt Phim", href: "/films", icon: Tv },
-  { title: "Thế Giới Phim", href: "/genres", icon: Flame },
+  { title: "Phim Hàn", href: "/country/han-quoc", icon: Clapperboard },
+  { title: "Phim Trung", href: "/country/trung-quoc", icon: Drama },
+  { title: "Thế Giới Phim", href: "/genres", icon: LayoutGrid },
   { title: "Xem Chung", href: "/watch-party", icon: Popcorn },
   { title: "Bộ Sưu Tập", href: "/watchlist", icon: Layers },
   { title: "Lịch Sử", href: "/history", icon: History },
@@ -132,6 +132,7 @@ export function Sidebar() {
       {/* ── VERTICALLY CENTERED SLIM SIDEBAR ── */}
       <aside
         className={cn(
+          cardFont.className,
           "hidden lg:flex fixed left-0 top-16 bottom-0 z-40 flex-col items-center justify-center transition-all duration-300 ease-in-out pointer-events-none",
           isVisible && !collapsed
             ? "opacity-100 translate-x-0"
@@ -171,9 +172,7 @@ export function Sidebar() {
 
                 {/* Active Background Pill */}
                 {isActive ? (
-                  <span
-                    className="absolute inset-0 rounded-xl bg-white/10 z-0"
-                  />
+                  <span className="absolute inset-0 rounded-xl bg-white/10 z-0" />
                 ) : (
                   <span className="absolute inset-0 rounded-xl bg-transparent group-hover:bg-white/[0.06] transition-colors z-0" />
                 )}
@@ -183,7 +182,9 @@ export function Sidebar() {
                   size={20}
                   className={cn(
                     "relative z-10 transition-transform group-hover:scale-110",
-                    item.isSpecial && !isActive && "text-[#229ED9] group-hover:text-[#38bdf8]",
+                    item.isSpecial &&
+                      !isActive &&
+                      "text-[#229ED9] group-hover:text-[#38bdf8]",
                   )}
                 />
 

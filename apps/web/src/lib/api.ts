@@ -379,38 +379,47 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
     },
   ];
 
-  // Nếu query có biến thể khác (bỏ dấu), gọi thêm với variant thứ 2
-  const extraRequests: Array<{
-    source: MovieSource;
-    request: () => Promise<unknown>;
-  }> = [];
-  if (variants.length > 1 && variants[1] !== primaryKeyword) {
-    const encodedVariant = encodeURIComponent(variants[1]);
-    extraRequests.push(
-      {
-        source: "kkphim",
-        request: () => kkphimApi.search(variants[1], page, limit),
-      },
-      {
-        source: "ophim",
-        request: () =>
-          fetchOphim(`/tim-kiem?keyword=${encodedVariant}&page=${page}`),
-      },
-    );
-  }
-
-  const [primarySettled, extraSettled] = await Promise.all([
-    Promise.allSettled(requests.map((e) => e.request())),
-    extraRequests.length > 0
-      ? Promise.allSettled(extraRequests.map((e) => e.request()))
-      : Promise.resolve([] as PromiseSettledResult<unknown>[]),
-  ]);
+  const primarySettled = await Promise.allSettled(
+    requests.map((entry) => entry.request()),
+  );
 
   // Gom kết quả từ primary requests
   const groups = primarySettled.map((result, i) => ({
     source: requests[i].source,
     items: result.status === "fulfilled" ? extractFilmItems(result.value) : [],
   }));
+
+  // The normalized scorer already handles accents locally. Only ask upstreams
+  // for a second spelling when the primary query returned too few candidates.
+  // This removes two network requests from the common search path.
+  const primaryMerged = dedupeFilmsBySource(groups);
+  const shouldExpandUpstream =
+    primaryMerged.length < Math.min(8, limit) &&
+    variants.length > 1 &&
+    variants[1] !== primaryKeyword;
+
+  const extraRequests: Array<{
+    source: MovieSource;
+    request: () => Promise<unknown>;
+  }> = shouldExpandUpstream
+    ? [
+        {
+          source: "kkphim",
+          request: () => kkphimApi.search(variants[1], page, limit),
+        },
+        {
+          source: "ophim",
+          request: () =>
+            fetchOphim(
+              `/tim-kiem?keyword=${encodeURIComponent(variants[1])}&page=${page}`,
+            ),
+        },
+      ]
+    : [];
+
+  const extraSettled = await Promise.allSettled(
+    extraRequests.map((entry) => entry.request()),
+  );
 
   // Gom kết quả từ extra requests (variant query)
   const extraGroups = extraSettled.map((result, i) => ({
@@ -420,7 +429,10 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
 
   // Merge tất cả groups (primary + extra)
   const allGroups = [...groups, ...extraGroups];
-  const merged = dedupeFilmsBySource(allGroups);
+  const merged =
+    extraGroups.length > 0
+      ? dedupeFilmsBySource(allGroups)
+      : primaryMerged;
 
   // ── Smart re-ranking với search engine ──
   const ranked = rankSearchResults(merged, trimmed);
@@ -489,6 +501,7 @@ async function getDetailFromAnySource(
       ]
     : requests;
 
+  // 1. Try sequentially with ordered preference
   for (const entry of orderedRequests) {
     try {
       const data = await entry.request();
@@ -496,7 +509,24 @@ async function getDetailFromAnySource(
         return tagMovieDetailSource(data, entry.source) as any;
       }
     } catch {
-      // Try the next movie source.
+      // Continue to next source
+    }
+  }
+
+  // 2. Parallel fallback check across all sources concurrently
+  const results = await Promise.allSettled(
+    requests.map(async (entry) => {
+      const data = await entry.request();
+      if (isUsableMovieDetail(data)) {
+        return tagMovieDetailSource(data, entry.source);
+      }
+      throw new Error("Detail not usable");
+    }),
+  );
+
+  for (const res of results) {
+    if (res.status === "fulfilled" && res.value) {
+      return res.value;
     }
   }
 

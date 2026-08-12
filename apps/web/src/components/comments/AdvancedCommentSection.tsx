@@ -331,7 +331,11 @@ export function AdvancedCommentSection({
                   <img
                     src={comment.user.avatar}
                     alt={comment.user.name}
+                    referrerPolicy="no-referrer"
                     className="w-7 h-7 rounded-full object-cover border border-white/10 flex-shrink-0"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user.name)}&background=10b981&color=ffffff&size=64`;
+                    }}
                   />
                   <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-bold text-white tracking-tight">

@@ -23,6 +23,7 @@ import {
 import Link from "next/link";
 import { AccountPageTabs } from "@/components/account/AccountPageTabs";
 import { cn } from "@/lib/utils";
+import { cardFont } from "@/lib/fonts";
 
 interface Session {
   id: string;
@@ -273,7 +274,7 @@ export default function SecuritySettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#141414] text-white select-none">
+    <div className={cn("min-h-screen bg-[#141414] text-white select-none", cardFont.className)}>
       <div className="mx-auto max-w-[1100px] px-4 sm:px-8 pt-24 pb-28">
 
         {/* ── PAGE HEADER ── */}

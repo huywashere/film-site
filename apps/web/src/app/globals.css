@@ -2,6 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes navbar-logo-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.navbar-logo-reveal {
+  animation: navbar-logo-reveal 480ms ease-out both;
+}
+
+.navbar-logo-reveal--wordmark {
+  animation-delay: 70ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navbar-logo-reveal {
+    animation: none;
+  }
+}
+
 /* ── CSS Variables ──────────────────────────────────────────── */
 :root {
   --background: #141414;
@@ -10,18 +35,17 @@
   --netflixRed: #e50914;
   --primary: #e50914;
 
-  /* Font tokens — Be Vietnam Pro là font chính, hỗ trợ tiếng Việt hoàn hảo */
+  /* Font tokens — Inter là font chính, đồng bộ toàn bộ giao diện */
   --font-primary:
-    var(--font-be-vietnam), "Be Vietnam Pro", -apple-system, BlinkMacSystemFont,
+    "Inter", var(--font-be-vietnam), -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
   --font-ui: var(--font-primary);
-  --font-display:
-    var(--font-manrope), "Manrope", var(--font-be-vietnam), "Be Vietnam Pro",
-    -apple-system, sans-serif;
+  --font-display: var(--font-primary);
+  --font-sans: var(--font-primary);
+  --font-serif: var(--font-primary);
 }
 
 /* ── Font Family ────────────────────────────────────────────── */
-/* Be Vietnam Pro — font chính, hỗ trợ đầy đủ dấu tiếng Việt */
 body {
   font-family: var(--font-primary);
   font-feature-settings:
@@ -53,7 +77,7 @@ body[data-status-page="true"] [data-site-chrome] {
   display: none !important;
 }
 
-/* Be Vietnam Pro + Manrope — headings với hỗ trợ tiếng Việt tốt */
+/* Be Vietnam Pro dùng thống nhất cho heading và nội dung. */
 h1,
 h2,
 h3,
@@ -88,6 +112,10 @@ pre,
 
 .font-manrope {
   font-family: var(--font-display);
+}
+
+.font-cinema {
+  font-family: var(--font-cinema), var(--font-primary);
 }
 
 .font-inter {
@@ -281,3 +309,61 @@ html {
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Custom Animations for Stake-style 404/500 & Film Not Found ── */
+@keyframes float-mascot {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(3deg);
+  }
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(-4deg);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes beam-shine {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scaleX(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scaleX(1.05);
+  }
+}
+
+.animate-float-mascot {
+  animation: float-mascot 4s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-beam-shine {
+  animation: beam-shine 2.5s ease-in-out infinite;
+}
+

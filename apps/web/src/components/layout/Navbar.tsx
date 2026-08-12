@@ -1,6 +1,7 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import NextImage from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
@@ -28,11 +29,13 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useAuthModalStore } from "@/store/authModalStore";
+import { useSettingsStore } from "@/store/settingsStore";
 import { useTranslation } from "@/store/langStore";
 import { useThemeStore } from "@/store/themeStore";
 import { movieApi } from "@/lib/api";
 import { resolveImageUrl } from "@/components/film/FilmCard";
 import { cn } from "@/lib/utils";
+import { cardFont } from "@/lib/fonts";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -144,23 +147,29 @@ const LISTS_CATALOG = [
 
 function AnimatedNavbarLogo() {
   return (
-    <Link href="/" className="flex items-center space-x-2.5 group select-none">
-      <div className="relative flex cursor-pointer items-center justify-center transition-transform duration-300 motion-safe:hover:rotate-[8deg] motion-safe:hover:scale-110 active:scale-95">
-        <div className="absolute inset-0 rounded-full bg-purple-500/40 blur-md motion-safe:animate-pulse" />
-
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+    <Link
+      href="/"
+      aria-label="CinePhim - Trang chủ"
+      className="group flex select-none items-center space-x-2.5"
+    >
+      <div className="relative flex cursor-pointer items-center justify-center active:scale-95">
+        <NextImage
           src="/cinephim-logo.png"
           alt="CinePhim Logo"
-          className="h-8 sm:h-9 w-auto object-contain relative z-10 drop-shadow-[0_0_20px_rgba(168,85,247,0.7)] transition-transform duration-300"
+          width={36}
+          height={36}
+          priority
+          className="navbar-logo-reveal relative z-10 h-8 w-8 object-contain sm:h-9 sm:w-9"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).src = "/logo.png";
           }}
         />
       </div>
 
-      <div className="relative overflow-hidden">
-        <span className="text-white text-xl sm:text-2xl font-black tracking-tight lowercase font-sans group-hover:text-purple-300 transition-colors duration-300 drop-shadow-[0_0_15px_rgba(168,85,247,0.4)] block">
+      <div
+        className="navbar-logo-reveal navbar-logo-reveal--wordmark relative overflow-hidden"
+      >
+        <span className="block font-sans text-xl font-black lowercase tracking-tight text-white transition-opacity duration-200 group-hover:opacity-80 sm:text-2xl">
           cinephim
         </span>
       </div>
@@ -222,7 +231,15 @@ export function Navbar() {
     }
   }, [latestNotificationRes]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const { newMovieNotifications, commentNotifications } = useSettingsStore();
+
+  const activeNotifications = notifications.filter((n) => {
+    if ((n as any).type === "comment" && !commentNotifications) return false;
+    if ((n as any).type !== "comment" && !newMovieNotifications) return false;
+    return true;
+  });
+
+  const unreadCount = activeNotifications.filter((n) => !n.read).length;
 
   const markAllRead = () => {
     setNotifications(notifications.map((n) => ({ ...n, read: true })));
@@ -277,7 +294,7 @@ export function Navbar() {
         data-site-header="true"
         data-scrolled={scrolled ? "true" : "false"}
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 h-16 flex items-center border-b transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300",
+          "fixed top-0 left-0 right-0 z-50 h-16 flex items-center border-b [font-family:var(--font-manrope)] transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300",
           scrolled
             ? "border-white/[0.08] bg-[#0b0d12]/80 shadow-[0_12px_34px_rgba(0,0,0,0.22)] backdrop-blur-xl backdrop-saturate-150"
             : "border-transparent bg-transparent shadow-none backdrop-blur-none",
@@ -304,6 +321,7 @@ export function Navbar() {
                   <Link
                     key={item.slug}
                     href={`/genre/${item.slug}`}
+                    onMouseEnter={() => router.prefetch(`/genre/${item.slug}`)}
                     className="px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 block truncate"
                   >
                     {item.label}
@@ -326,6 +344,7 @@ export function Navbar() {
                   <Link
                     key={item.slug}
                     href={`/country/${item.slug}`}
+                    onMouseEnter={() => router.prefetch(`/country/${item.slug}`)}
                     className="px-3 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 flex items-center gap-2.5 truncate group/flag"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -355,6 +374,7 @@ export function Navbar() {
                   <Link
                     key={item.label}
                     href={item.href}
+                    onMouseEnter={() => router.prefetch(item.href)}
                     className="px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 block truncate"
                   >
                     {item.label}
@@ -380,14 +400,14 @@ export function Navbar() {
           </nav>
 
           {/* Right Block: Search & Actions & Profile */}
-          <div className="flex items-center justify-end space-x-2 sm:space-x-3 shrink-0">
+          <div className="flex shrink-0 items-center justify-end space-x-1 sm:space-x-3">
             {/* ── Search Pill Button — desktop ── */}
             <button
               id="navbar-search-btn"
               onClick={() => setIsSpotlightOpen(true)}
               aria-label="Tìm kiếm phim"
               title="Tìm kiếm (Ctrl + K)"
-              className="hidden sm:flex items-center gap-2.5 bg-black/40 hover:bg-black/60 border border-white/10 hover:border-white/25 rounded-full pl-3.5 pr-3 py-2 text-xs transition-all duration-200 cursor-pointer group min-w-[200px] lg:min-w-[260px] backdrop-blur-sm"
+              className={`${cardFont.className} group hidden min-w-[200px] cursor-pointer items-center gap-2.5 rounded-full border border-white/10 bg-[#111317]/90 py-2 pl-3.5 pr-3 text-xs transition-colors duration-200 hover:border-white/25 hover:bg-[#181b20] sm:flex lg:min-w-[260px]`}
             >
               <Search
                 size={14}
@@ -404,19 +424,19 @@ export function Navbar() {
             <button
               onClick={() => setIsSpotlightOpen(true)}
               aria-label="Tìm kiếm"
-              className="sm:hidden p-1.5 text-neutral-400 hover:text-white transition-colors"
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-neutral-400 hover:bg-white/[0.06] hover:text-white transition-colors sm:hidden"
             >
               <Search size={20} />
             </button>
 
             {/* Profile / Actions */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-1 sm:space-x-3">
               {/* Notifications Bell Dropdown (Visible next to Avatar/User button) */}
               <DropdownMenu modal={false}>
-                <DropdownMenuTrigger className="relative p-1.5 text-neutral-300 hover:text-white transition-colors focus:outline-none cursor-pointer">
+                <DropdownMenuTrigger className="relative flex h-10 w-10 items-center justify-center rounded-xl text-neutral-300 hover:bg-white/[0.06] hover:text-white transition-colors focus:outline-none cursor-pointer">
                   <Bell size={20} className="stroke-[2.2]" />
                   {unreadCount > 0 && (
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                    <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-white" />
                   )}
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
@@ -425,7 +445,7 @@ export function Navbar() {
                   sideOffset={8}
                   collisionPadding={{ right: 12, left: 12 }}
                   onWheel={(e) => e.stopPropagation()}
-                  className="w-[calc(100vw-24px)] max-w-[360px] sm:w-88 p-3.5 bg-[#090c15]/75 backdrop-blur-3xl border border-white/15 text-neutral-300 text-xs shadow-[0_25px_60px_rgba(0,0,0,0.7)] z-50 rounded-2xl pointer-events-auto ring-1 ring-white/10"
+                  className={`${cardFont.className} pointer-events-auto z-50 w-[calc(100vw-24px)] max-w-[360px] rounded-2xl border border-white/10 bg-[#15171b] p-3.5 text-xs text-neutral-300 shadow-[0_22px_55px_rgba(0,0,0,0.42)] sm:w-88`}
                 >
                   <div className="flex items-center justify-between px-2 py-1.5 border-b border-white/10 mb-1.5">
                     <span className="font-bold text-white text-sm">
@@ -444,35 +464,41 @@ export function Navbar() {
                     onWheel={(e) => e.stopPropagation()}
                     className="max-h-[60vh] sm:max-h-72 overflow-y-auto overscroll-contain touch-pan-y space-y-1.5 pr-1 scrollbar-thin pointer-events-auto"
                   >
-                    {notifications.map((n) => (
-                      <div
-                        key={n.id}
-                        onClick={() => markAsRead(n.id, n.slug)}
-                        className={cn(
-                          "p-2.5 rounded-xl text-[11px] cursor-pointer hover:bg-white/15 hover:backdrop-blur-md transition-all flex items-start space-x-2.5 border border-white/5",
-                          n.read
-                            ? "opacity-60 bg-white/[0.02]"
-                            : "bg-white/[0.06] shadow-sm",
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            "w-2 h-2 rounded-full mt-1 flex-shrink-0 shadow",
-                            n.read
-                              ? "bg-neutral-600"
-                              : "bg-red-500 shadow-red-500/50",
-                          )}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white leading-snug break-words font-medium">
-                            {n.message}
-                          </p>
-                          <span className="text-[9px] text-neutral-400 font-semibold block mt-0.5">
-                            {n.time}
-                          </span>
-                        </div>
+                    {activeNotifications.length === 0 ? (
+                      <div className="p-6 text-center text-xs text-neutral-500">
+                        Chưa có thông báo nào (hoặc đã tắt trong Cài Đặt)
                       </div>
-                    ))}
+                    ) : (
+                      activeNotifications.map((n) => (
+                        <div
+                          key={n.id}
+                          onClick={() => markAsRead(n.id, n.slug)}
+                          className={cn(
+                            "p-2.5 rounded-xl text-[11px] cursor-pointer hover:bg-white/15 hover:backdrop-blur-md transition-all flex items-start space-x-2.5 border border-white/5",
+                            n.read
+                              ? "opacity-60 bg-white/[0.02]"
+                              : "bg-white/[0.06] shadow-sm",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "w-2 h-2 rounded-full mt-1 flex-shrink-0 shadow",
+                              n.read
+                                ? "bg-neutral-600"
+                                : "bg-red-500 shadow-red-500/50",
+                            )}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white leading-snug break-words font-medium">
+                              {n.message}
+                            </p>
+                            <span className="text-[9px] text-neutral-400 font-semibold block mt-0.5">
+                              {n.time}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -486,9 +512,10 @@ export function Navbar() {
                       <img
                         src={user.avatarUrl}
                         alt={user.displayName || user.username}
+                        referrerPolicy="no-referrer"
                         className="w-8 h-8 rounded-full object-cover border border-white/20 group-hover:border-emerald-400 transition-all shadow-md"
                         onError={(e) => {
-                          e.currentTarget.style.display = "none";
+                          (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=10b981&color=ffffff&size=64`;
                         }}
                       />
                     ) : (
@@ -508,17 +535,25 @@ export function Navbar() {
                     alignOffset={-32}
                     sideOffset={10}
                     collisionPadding={{ right: 32 }}
-                    className="w-72 -translate-x-6 sm:-translate-x-8 p-2.5 bg-[#090c15]/75 backdrop-blur-3xl border border-white/15 text-neutral-200 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.7)] z-50 divide-y divide-white/10 ring-1 ring-white/10"
+                    className={cn(
+                      "w-72 -translate-x-6 sm:-translate-x-8 p-2.5 bg-[#090c15]/75 backdrop-blur-3xl border border-white/15 text-neutral-200 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.7)] z-50 divide-y divide-white/10 ring-1 ring-white/10",
+                      cardFont.className,
+                    )}
                   >
                     {/* Top User Profile Header */}
                     <div className="p-2 flex items-center space-x-3 pb-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={
                           user.avatarUrl ||
-                          `https://ui-avatars.com/api/?name=${user.username}&background=2c3440&color=ffffff&size=40`
+                          `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=10b981&color=ffffff&size=80`
                         }
                         alt={user.displayName || user.username}
-                        className="w-10 h-10 rounded-full object-cover border border-white/20 shadow"
+                        referrerPolicy="no-referrer"
+                        className="h-10 w-10 rounded-full object-cover border border-white/20 shadow-md shrink-0"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=10b981&color=ffffff&size=80`;
+                        }}
                       />
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm text-white truncate">
@@ -546,7 +581,7 @@ export function Navbar() {
                         <span>Trang cá nhân</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => router.push("/settings/security")}
+                        onClick={() => router.push("/settings")}
                         className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
                       >
                         <Settings size={16} className="mr-3 text-neutral-300" />
@@ -626,7 +661,7 @@ export function Navbar() {
 
             {/* Mobile menu trigger */}
             <button
-              className="lg:hidden p-1.5 text-neutral-300 hover:text-white transition-colors cursor-pointer active:scale-95 flex items-center justify-center"
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-neutral-300 hover:bg-white/[0.06] hover:text-white transition-colors cursor-pointer active:scale-95 lg:hidden"
               onClick={() => setMobileSidebarOpen(true)}
               aria-label="Mở menu"
             >

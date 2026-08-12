@@ -91,15 +91,9 @@ docker run --rm \
     --network cineverse_cineverse_net \
     --env-file "$APP_DIR/.env" \
     "$REGISTRY_IMAGE/api:$IMAGE_TAG" \
-    node -e "
-const { execSync } = require('child_process');
-try {
-  execSync('npx prisma migrate deploy --schema=/app/apps/api/prisma/schema.prisma', { stdio: 'inherit' });
-} catch(e) {
-  console.error('Migration failed:', e.message);
-  process.exit(1);
-}
-" || warn "Migration thất bại hoặc không có migration mới — tiếp tục deploy"
+    /app/apps/api/node_modules/.bin/prisma migrate deploy \
+    --schema=/app/apps/api/prisma/schema.prisma \
+    || error "Migration thất bại — dừng deploy để tránh chạy code với schema cũ"
 log "Migrations hoàn tất"
 
 # ── Bước 5: Restart services (rolling) ────────────────────────
@@ -121,18 +115,31 @@ wait_healthy() {
         sleep 5
         elapsed=$((elapsed + 5))
     done
-    warn "$service chưa healthy sau ${max_wait}s — tiếp tục"
+    warn "$service chưa healthy sau ${max_wait}s"
+    return 1
+}
+
+rollback_services() {
+    if [[ -z "$PREV_TAG" ]]; then
+        error "Deploy lỗi và chưa có tag trước đó để rollback"
+    fi
+
+    warn "Rolling back API và Web về $PREV_TAG..."
+    export IMAGE_TAG="$PREV_TAG"
+    docker compose up -d --no-deps --pull never api web || true
+    echo "$PREV_TAG" > "$PREV_TAG_FILE"
+    error "Deploy $1 thất bại; đã yêu cầu rollback về $PREV_TAG"
 }
 
 # Restart API trước
 info "Restarting API..."
 docker compose up -d --no-deps --pull never api
-wait_healthy api
+wait_healthy api || rollback_services "$IMAGE_TAG"
 
 # Sau đó restart Web
 info "Restarting Web..."
 docker compose up -d --no-deps --pull never web
-wait_healthy web
+wait_healthy web || rollback_services "$IMAGE_TAG"
 
 log "Tất cả services đã được restart"
 
@@ -145,13 +152,13 @@ sleep 5
 docker compose ps
 echo ""
 
-# Kiểm tra API endpoint
-API_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/health 2>/dev/null || echo "000")
-if [[ "$API_HEALTH" == "200" ]]; then
-    log "Health check: OK (HTTP $API_HEALTH)"
-else
-    warn "Health check trả về HTTP $API_HEALTH — kiểm tra logs nếu cần"
+# Kiểm tra riêng API thật và Web, không dùng endpoint tĩnh của Nginx.
+API_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/v1/health 2>/dev/null || echo "000")
+WEB_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/ 2>/dev/null || echo "000")
+if [[ "$API_HEALTH" != "200" || "$WEB_HEALTH" != "200" ]]; then
+    rollback_services "$IMAGE_TAG"
 fi
+log "Health check: API $API_HEALTH, Web $WEB_HEALTH"
 
 # ── Bước 8: Dọn dẹp ───────────────────────────────────────────
 header "Bước 7: Cleanup"

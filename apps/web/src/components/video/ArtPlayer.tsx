@@ -801,7 +801,7 @@ export default function ArtPlayer({
       <style jsx global>{`
         .art-video-player {
           --art-theme: #e5a93b;
-          font-family: "Inter", system-ui, sans-serif;
+          font-family: var(--font-primary), system-ui, sans-serif;
         }
         .art-video-player .art-control-progress-inner {
           background: #e5a93b;
