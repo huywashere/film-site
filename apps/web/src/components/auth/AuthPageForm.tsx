@@ -38,7 +38,7 @@ function getGoogleAuthErrorMessage(error: unknown) {
   const serverMsg =
     (error as any)?.response?.data?.message ||
     (error as any)?.data?.message;
-    
+
   if (serverMsg) {
     return Array.isArray(serverMsg) ? serverMsg.join(", ") : String(serverMsg);
   }
@@ -160,7 +160,7 @@ export function AuthPageForm({
     let cancelled = false;
     const fallback =
       AUTH_FALLBACK_MOVIES[
-        Math.floor(Math.random() * AUTH_FALLBACK_MOVIES.length)
+      Math.floor(Math.random() * AUTH_FALLBACK_MOVIES.length)
       ];
     setRandomMovie(fallback);
 
@@ -210,7 +210,7 @@ export function AuthPageForm({
     useAuthStore
       .getState()
       .fetchMe()
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -254,7 +254,7 @@ export function AuthPageForm({
     } catch (err: any) {
       toast(
         err.message ||
-          "Không thể gửi email khôi phục. Vui lòng kiểm tra lại email.",
+        "Không thể gửi email khôi phục. Vui lòng kiểm tra lại email.",
         "error",
       );
     } finally {
@@ -532,7 +532,7 @@ export function AuthPageForm({
 
                   {/* Section label */}
                   <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
-                    Tài khoản CineVerse
+                    Tài khoản Netphim
                   </p>
 
                   {/* Mode title */}
@@ -556,8 +556,8 @@ export function AuthPageForm({
                     {isForgotMode
                       ? "Nhập email để nhận liên kết khôi phục mật khẩu."
                       : mode === "login"
-                        ? "Đồng bộ danh sách và tiếp tục xem trên mọi thiết bị."
-                        : "Tạo tài khoản và bắt đầu xem phim 4K miễn phí."}
+                        ? "Đăng nhập và tiếp tục xem trên mọi thiết bị."
+                        : "Tạo tài khoản và bắt đầu xem phim miễn phí."}
                   </p>
 
                   {/* Mode tabs (only when not forgot) */}
@@ -618,7 +618,7 @@ export function AuthPageForm({
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="email@example.com"
+                                placeholder="email"
                                 className={`${inputCls} pl-10`}
                               />
                             </div>
@@ -741,7 +741,7 @@ export function AuthPageForm({
                               required
                               value={email}
                               onChange={(e) => setEmail(e.target.value)}
-                              placeholder="email@example.com"
+                              placeholder="email"
                               className={inputCls}
                             />
                           </div>

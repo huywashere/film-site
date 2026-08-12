@@ -319,15 +319,15 @@ function FilmSection({
           >
             {isLoading
               ? Array.from({ length: 10 }, (_, index) => (
-                  <SwiperSlide key={`film-skeleton-${index}`}>
-                    <FilmCardSkeleton />
-                  </SwiperSlide>
-                ))
+                <SwiperSlide key={`film-skeleton-${index}`}>
+                  <FilmCardSkeleton />
+                </SwiperSlide>
+              ))
               : films.map((film, idx) => (
-                  <SwiperSlide key={film._id || film.slug || idx}>
-                    <FilmCard film={film} priority={idx < 8} />
-                  </SwiperSlide>
-                ))}
+                <SwiperSlide key={film._id || film.slug || idx}>
+                  <FilmCard film={film} priority={idx < 8} />
+                </SwiperSlide>
+              ))}
           </Swiper>
         </div>
 
@@ -932,7 +932,7 @@ export default function HomePage() {
               disabled={isLoadingMore}
               className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium text-neutral-400 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 transition-all cursor-pointer active:scale-95"
             >
-              <span>Xem thêm danh mục</span>
+              <span>Xem thêm phim</span>
               {isLoadingMore ? (
                 <Loader2 size={13} className="animate-spin text-white" />
               ) : (

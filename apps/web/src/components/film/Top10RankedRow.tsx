@@ -9,6 +9,7 @@ import { Play, ChevronLeft, ChevronRight, Clapperboard } from "lucide-react";
 import { DashPagination } from "./DashPagination";
 import { cardFont } from "@/lib/fonts";
 import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
+import { cn } from "@/lib/utils";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -84,7 +85,10 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
       className="flex flex-col group/item relative select-none cursor-pointer pt-4 pb-2 pr-2"
     >
       {/* Bold Rank Number Peeking Behind the Top-Left of Poster Card */}
-      <div className="absolute -top-4 sm:-top-6 -left-1 sm:-left-3 z-0 pointer-events-none select-none">
+      <div className={cn(
+        "absolute -top-4 sm:-top-6 z-0 pointer-events-none select-none",
+        rank === 1 ? "left-2 sm:left-4 md:left-5" : "left-0 sm:-left-2 md:-left-3"
+      )}>
         <span
           className={`${rankFont.className} block text-[98px] font-black leading-none tracking-[-0.09em] opacity-100 transition-transform duration-300 group-hover/item:scale-105 sm:text-[132px] md:text-[156px]`}
           style={getRankColorStyle(rank)}
@@ -227,7 +231,7 @@ export function Top10RankedRow({
           freeMode={{ enabled: true, momentumRatio: 0.8 }}
           spaceBetween={16}
           slidesPerView="auto"
-          className="!py-4 !pl-1 !pr-2"
+          className="!py-4 !pl-8 sm:!pl-12 md:!pl-16 !pr-4"
         >
           {top10.map((film, index) => (
             <SwiperSlide key={film.slug || index} className="!w-auto">

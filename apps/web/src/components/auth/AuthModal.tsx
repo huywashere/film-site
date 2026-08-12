@@ -154,7 +154,7 @@ export function AuthModal() {
     } catch (err: any) {
       setErrorMsg(
         err.message ||
-          "Không thể gửi email khôi phục. Vui lòng kiểm tra lại email.",
+        "Không thể gửi email khôi phục. Vui lòng kiểm tra lại email.",
       );
     } finally {
       setLoading(false);
@@ -314,11 +314,10 @@ export function AuthModal() {
                 setIsForgotMode(false);
                 setMode("login");
               }}
-              className={`relative flex flex-1 items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                mode === "login"
-                  ? "bg-red-600 text-white shadow-md shadow-red-600/30"
-                  : "text-neutral-400 hover:text-neutral-200"
-              }`}
+              className={`relative flex flex-1 items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${mode === "login"
+                ? "bg-red-600 text-white shadow-md shadow-red-600/30"
+                : "text-neutral-400 hover:text-neutral-200"
+                }`}
             >
               <LogIn size={13} />
               <span>Đăng nhập</span>
@@ -330,11 +329,10 @@ export function AuthModal() {
                 setIsForgotMode(false);
                 setMode("register");
               }}
-              className={`relative flex flex-1 items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                mode === "register"
-                  ? "bg-red-600 text-white shadow-md shadow-red-600/30"
-                  : "text-neutral-400 hover:text-neutral-200"
-              }`}
+              className={`relative flex flex-1 items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${mode === "register"
+                ? "bg-red-600 text-white shadow-md shadow-red-600/30"
+                : "text-neutral-400 hover:text-neutral-200"
+                }`}
             >
               <UserPlus size={13} />
               <span>Tạo tài khoản</span>
@@ -383,7 +381,7 @@ export function AuthModal() {
                         required
                         value={emailOrUsername}
                         onChange={(e) => setEmailOrUsername(e.target.value)}
-                        placeholder="email@example.com"
+                        placeholder="email"
                         className="w-full rounded-xl border border-white/[0.1] bg-white/[0.05] pl-9 pr-3.5 py-2.5 text-xs text-white placeholder:text-neutral-600 outline-none transition-all focus:border-red-500/60 focus:bg-white/[0.08] focus:ring-1 focus:ring-red-500/20 sm:text-sm"
                       />
                     </div>
@@ -472,7 +470,7 @@ export function AuthModal() {
                         required
                         value={emailOrUsername}
                         onChange={(e) => setEmailOrUsername(e.target.value)}
-                        placeholder={mode === "login" ? "email hoặc @username" : "email@example.com"}
+                        placeholder={mode === "login" ? "email hoặc @username" : "email"}
                         className="w-full rounded-xl border border-white/[0.1] bg-white/[0.05] pl-9 pr-3.5 py-2.5 text-xs text-white placeholder:text-neutral-600 outline-none transition-all focus:border-red-500/60 focus:bg-white/[0.08] focus:ring-1 focus:ring-red-500/20 sm:text-sm"
                       />
                     </div>

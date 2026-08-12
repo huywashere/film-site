@@ -12,6 +12,8 @@ import {
   Clapperboard,
   Drama,
   LayoutGrid,
+  TvMinimalPlay,
+  MonitorPlay,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useRef } from "react";
@@ -39,8 +41,8 @@ function TelegramIcon({
 
 const SIDEBAR_ITEMS = [
   { title: "Trang chủ", href: "/", icon: Home },
-  { title: "Phim Hàn", href: "/country/han-quoc", icon: Clapperboard },
-  { title: "Phim Trung", href: "/country/trung-quoc", icon: Drama },
+  { title: "Phim Hàn", href: "/country/han-quoc", icon: TvMinimalPlay },
+  { title: "Phim Trung", href: "/country/trung-quoc", icon: MonitorPlay },
   { title: "Thế Giới Phim", href: "/genres", icon: LayoutGrid },
   { title: "Xem Chung", href: "/watch-party", icon: Popcorn },
   { title: "Bộ Sưu Tập", href: "/watchlist", icon: Layers },
@@ -183,8 +185,8 @@ export function Sidebar() {
                   className={cn(
                     "relative z-10 transition-transform group-hover:scale-110",
                     item.isSpecial &&
-                      !isActive &&
-                      "text-[#229ED9] group-hover:text-[#38bdf8]",
+                    !isActive &&
+                    "text-[#229ED9] group-hover:text-[#38bdf8]",
                   )}
                 />
 
