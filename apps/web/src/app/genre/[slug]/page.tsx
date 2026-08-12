@@ -102,7 +102,7 @@ export default function GenrePage() {
       ) : films.length > 0 ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 md:gap-6 lg:grid-cols-6">
           {films.map((f, idx) => (
-            <FilmCard key={`${f.slug || f._id || (f as any).id}-${idx}`} film={f} />
+            <FilmCard key={`${f.slug || f._id || (f as any).id}-${idx}`} film={f} priority={idx < 8} />
           ))}
         </div>
       ) : (

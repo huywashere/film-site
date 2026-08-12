@@ -9,7 +9,11 @@ import { watchProgressStorage, WatchProgressEntry } from "@/lib/watch-progress";
 import { useAuthStore } from "@/store/authStore";
 import { useQuery } from "@tanstack/react-query";
 import { watchHistoryApi } from "@/lib/api";
-import { FilmItem, resolveImageUrl } from "./FilmCard";
+import {
+  FilmItem,
+  resolveImageUrl,
+  VERIFIED_FALLBACK_THUMBS,
+} from "./FilmCard";
 import { DashPagination } from "./DashPagination";
 import { cardFont } from "@/lib/fonts";
 
@@ -223,13 +227,16 @@ export function ContinueWatchingRow({
             className="w-full !pb-3 !pt-1 !pl-0.5"
           >
             {hasHistory
-              ? historyEntries.map((item: any) => {
+              ? historyEntries.map((item: any, idx: number) => {
+                  const fallbackIndex = idx % VERIFIED_FALLBACK_THUMBS.length;
                   const posterUrl =
                     resolveImageUrl(item.poster) ||
-                    resolveImageUrl(item.thumb);
+                    resolveImageUrl(item.thumb) ||
+                    VERIFIED_FALLBACK_THUMBS[fallbackIndex];
                   const thumbUrl =
                     resolveImageUrl(item.thumb) ||
-                    resolveImageUrl(item.poster);
+                    resolveImageUrl(item.poster) ||
+                    VERIFIED_FALLBACK_THUMBS[fallbackIndex];
 
                   const {
                     title,
@@ -271,6 +278,28 @@ export function ContinueWatchingRow({
                                 alt={title}
                                 className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
                                 loading="lazy"
+                                onError={(e) => {
+                                  const target = e.currentTarget;
+                                  if (!target.dataset.failed) {
+                                    target.dataset.failed = "true";
+                                    const altPoster = item.poster
+                                      ? resolveImageUrl(item.poster)
+                                      : null;
+                                    if (
+                                      altPoster &&
+                                      altPoster !== thumbUrl &&
+                                      !altPoster.includes("uploads/movies")
+                                    ) {
+                                      target.src = altPoster;
+                                    } else {
+                                      target.src =
+                                        VERIFIED_FALLBACK_THUMBS[fallbackIndex];
+                                    }
+                                  } else {
+                                    target.src =
+                                      VERIFIED_FALLBACK_THUMBS[fallbackIndex];
+                                  }
+                                }}
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-xs text-neutral-400 font-bold p-2 text-center">

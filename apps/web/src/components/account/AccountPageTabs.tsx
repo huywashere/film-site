@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ShieldCheck, UserRound } from "lucide-react";
+import { UserRound, Sliders } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { cardFont } from "@/lib/fonts";
 
 type AccountPageTabsProps = {
-  active: "profile" | "security";
+  active?: "profile" | "security" | "settings";
   username?: string | null;
 };
 
@@ -12,13 +13,16 @@ const tabClass =
 
 export function AccountPageTabs({ active, username }: AccountPageTabsProps) {
   const profileHref = username
-    ? `/profile/${encodeURIComponent(username)}`
-    : "/profile";
+    ? `/user/${encodeURIComponent(username)}`
+    : "/user/me";
 
   return (
     <nav
-      aria-label="Điều hướng tài khoản"
-      className="flex w-full items-center gap-1 rounded-xl border border-white/10 bg-[#0c1016] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] sm:w-auto"
+      aria-label="Điều hướng cài đặt & tài khoản"
+      className={cn(
+        "flex w-full items-center gap-1 rounded-xl border border-white/10 bg-[#0a0a0a] p-1 shadow-md sm:w-auto",
+        cardFont.className,
+      )}
     >
       <Link
         href={profileHref}
@@ -35,17 +39,17 @@ export function AccountPageTabs({ active, username }: AccountPageTabsProps) {
       </Link>
 
       <Link
-        href="/settings/security"
-        aria-current={active === "security" ? "page" : undefined}
+        href="/settings"
+        aria-current={active === "settings" ? "page" : undefined}
         className={cn(
           tabClass,
-          active === "security"
+          active === "settings"
             ? "bg-white/[0.09] text-white shadow-sm ring-1 ring-violet-300/20"
             : "text-neutral-400 hover:bg-white/[0.05] hover:text-white",
         )}
       >
-        <ShieldCheck size={15} strokeWidth={2} />
-        <span>Bảo mật</span>
+        <Sliders size={15} strokeWidth={2} />
+        <span>Trải nghiệm</span>
       </Link>
     </nav>
   );

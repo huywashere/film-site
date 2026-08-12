@@ -189,15 +189,15 @@ export function TurnstileWidget({
     <div aria-label="Xác minh chống bot">
       <div
         ref={containerRef}
-        className="h-[65px] min-h-[65px] w-full overflow-hidden rounded-xl"
+        className="h-[52px] min-h-[52px] w-full overflow-hidden rounded-none"
       />
       {status === "loading" && (
-        <p className="-mt-[65px] flex h-[65px] items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] text-[11px] text-neutral-400">
+        <p className="-mt-[52px] flex h-[52px] items-center justify-center gap-2 rounded-none border border-white/10 bg-white/[0.035] text-[11px] text-neutral-400">
           <Loader2 size={14} className="animate-spin" /> Đang tải xác minh...
         </p>
       )}
       {status === "error" && (
-        <div className="-mt-[65px] flex min-h-[65px] items-center justify-between gap-3 rounded-xl border border-amber-300/20 bg-[#1d1912] px-3 text-left text-[11px] leading-4 text-amber-100">
+        <div className="-mt-[52px] flex min-h-[52px] items-center justify-between gap-3 rounded-none border border-amber-300/20 bg-[#1d1912] px-3 text-left text-[11px] leading-4 text-amber-100">
           <span className="flex items-start gap-2">
             <TriangleAlert
               size={15}

@@ -35,6 +35,14 @@ import { tmdbApi, tmdbBackdrop, tmdbPoster, type TmdbMovie } from "@/lib/tmdb";
 import { cardFont } from "@/lib/fonts";
 
 function getGoogleAuthErrorMessage(error: unknown) {
+  const serverMsg =
+    (error as any)?.response?.data?.message ||
+    (error as any)?.data?.message;
+    
+  if (serverMsg) {
+    return Array.isArray(serverMsg) ? serverMsg.join(", ") : String(serverMsg);
+  }
+
   const code =
     error && typeof error === "object" && "code" in error
       ? String(error.code)
@@ -58,10 +66,13 @@ function getGoogleAuthErrorMessage(error: unknown) {
     case "auth/invalid-api-key":
     case "auth/app-not-authorized":
       return "Cấu hình Firebase cho Google Sign-In không hợp lệ.";
-    default:
-      return code
-        ? `Không thể đăng nhập bằng Google (${code.replace("auth/", "")}).`
-        : "Không thể đăng nhập bằng Google. Vui lòng thử lại.";
+    default: {
+      const rawMsg = (error as any)?.message;
+      if (rawMsg && typeof rawMsg === "string" && !rawMsg.includes("ERR_BAD_RESPONSE")) {
+        return rawMsg;
+      }
+      return "Không thể xác thực tài khoản Google. Vui lòng thử lại hoặc sử dụng đăng nhập bằng Email.";
+    }
   }
 }
 
@@ -486,52 +497,21 @@ export function AuthPageForm({
                 {/* Right-edge fade to blend into form panel */}
                 <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-r from-transparent to-[#141414]/90" />
 
-                {/* Content — above the overlays */}
-                <div className="relative z-10 space-y-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-red-300">
-                    KHÔNG GIAN CÁ NHÂN CINEVERSE
-                  </p>
-                  <div>
-                    <h2 className="text-[28px] font-extrabold leading-[1.18] tracking-[-0.035em] text-white drop-shadow-2xl lg:text-[32px]">
-                      Tiếp tục trải nghiệm
-                      <br />
-                      xem phim của bạn.
-                    </h2>
-                    <p className="mt-3 max-w-[330px] text-[13px] font-normal leading-5 text-neutral-300/90">
-                      Một tài khoản duy nhất cho thư viện, tiến độ xem và tuỳ
-                      chọn cá nhân trên mọi thiết bị.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Features list & featured movie title */}
-                <div className="relative z-10 mt-8 space-y-4">
-                  <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-white/20 bg-black/60 px-3 py-1.5 text-[11px] font-semibold text-white/90 shadow-lg backdrop-blur-md">
-                    <Clapperboard size={12} className="shrink-0 text-red-300" />
-                    <span className="shrink-0 text-neutral-400">
-                      {randomMovie.studio}
-                    </span>
-                    <span
-                      className="h-3 w-px shrink-0 bg-white/20"
-                      aria-hidden="true"
+                {/* Logo only — positioned neatly in top-left corner */}
+                <div className="relative z-10">
+                  <Link href="/" className="inline-block transition-transform duration-200 hover:scale-105">
+                    <Image
+                      src="/cinephim-logo.png"
+                      alt="CinePhim Logo"
+                      width={160}
+                      height={50}
+                      priority
+                      className="h-10 sm:h-12 w-auto object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "/logo.png";
+                      }}
                     />
-                    <span className="max-w-[190px] truncate">
-                      {randomMovie.title}
-                    </span>
-                  </div>
-
-                  <div className="space-y-3 pt-2">
-                    {LEFT_FEATURES.map(({ Icon, text }) => (
-                      <div key={text} className="flex items-center gap-3">
-                        <div className="flex size-7 shrink-0 items-center justify-center rounded-full border border-red-400/20 bg-red-400/10 text-red-300">
-                          <Icon size={14} />
-                        </div>
-                        <span className="text-xs font-semibold text-neutral-200">
-                          {text}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  </Link>
                 </div>
               </div>
 

@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useAuthModalStore } from "@/store/authModalStore";
+import { useSettingsStore } from "@/store/settingsStore";
 import { useTranslation } from "@/store/langStore";
 import { useThemeStore } from "@/store/themeStore";
 import { movieApi } from "@/lib/api";
@@ -230,7 +231,15 @@ export function Navbar() {
     }
   }, [latestNotificationRes]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const { newMovieNotifications, commentNotifications } = useSettingsStore();
+
+  const activeNotifications = notifications.filter((n) => {
+    if ((n as any).type === "comment" && !commentNotifications) return false;
+    if ((n as any).type !== "comment" && !newMovieNotifications) return false;
+    return true;
+  });
+
+  const unreadCount = activeNotifications.filter((n) => !n.read).length;
 
   const markAllRead = () => {
     setNotifications(notifications.map((n) => ({ ...n, read: true })));
@@ -312,6 +321,7 @@ export function Navbar() {
                   <Link
                     key={item.slug}
                     href={`/genre/${item.slug}`}
+                    onMouseEnter={() => router.prefetch(`/genre/${item.slug}`)}
                     className="px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 block truncate"
                   >
                     {item.label}
@@ -334,6 +344,7 @@ export function Navbar() {
                   <Link
                     key={item.slug}
                     href={`/country/${item.slug}`}
+                    onMouseEnter={() => router.prefetch(`/country/${item.slug}`)}
                     className="px-3 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 flex items-center gap-2.5 truncate group/flag"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -363,6 +374,7 @@ export function Navbar() {
                   <Link
                     key={item.label}
                     href={item.href}
+                    onMouseEnter={() => router.prefetch(item.href)}
                     className="px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 block truncate"
                   >
                     {item.label}
@@ -452,35 +464,41 @@ export function Navbar() {
                     onWheel={(e) => e.stopPropagation()}
                     className="max-h-[60vh] sm:max-h-72 overflow-y-auto overscroll-contain touch-pan-y space-y-1.5 pr-1 scrollbar-thin pointer-events-auto"
                   >
-                    {notifications.map((n) => (
-                      <div
-                        key={n.id}
-                        onClick={() => markAsRead(n.id, n.slug)}
-                        className={cn(
-                          "p-2.5 rounded-xl text-[11px] cursor-pointer hover:bg-white/15 hover:backdrop-blur-md transition-all flex items-start space-x-2.5 border border-white/5",
-                          n.read
-                            ? "opacity-60 bg-white/[0.02]"
-                            : "bg-white/[0.06] shadow-sm",
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            "w-2 h-2 rounded-full mt-1 flex-shrink-0 shadow",
-                            n.read
-                              ? "bg-neutral-600"
-                              : "bg-red-500 shadow-red-500/50",
-                          )}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white leading-snug break-words font-medium">
-                            {n.message}
-                          </p>
-                          <span className="text-[9px] text-neutral-400 font-semibold block mt-0.5">
-                            {n.time}
-                          </span>
-                        </div>
+                    {activeNotifications.length === 0 ? (
+                      <div className="p-6 text-center text-xs text-neutral-500">
+                        Chưa có thông báo nào (hoặc đã tắt trong Cài Đặt)
                       </div>
-                    ))}
+                    ) : (
+                      activeNotifications.map((n) => (
+                        <div
+                          key={n.id}
+                          onClick={() => markAsRead(n.id, n.slug)}
+                          className={cn(
+                            "p-2.5 rounded-xl text-[11px] cursor-pointer hover:bg-white/15 hover:backdrop-blur-md transition-all flex items-start space-x-2.5 border border-white/5",
+                            n.read
+                              ? "opacity-60 bg-white/[0.02]"
+                              : "bg-white/[0.06] shadow-sm",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "w-2 h-2 rounded-full mt-1 flex-shrink-0 shadow",
+                              n.read
+                                ? "bg-neutral-600"
+                                : "bg-red-500 shadow-red-500/50",
+                            )}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white leading-snug break-words font-medium">
+                              {n.message}
+                            </p>
+                            <span className="text-[9px] text-neutral-400 font-semibold block mt-0.5">
+                              {n.time}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -494,9 +512,10 @@ export function Navbar() {
                       <img
                         src={user.avatarUrl}
                         alt={user.displayName || user.username}
+                        referrerPolicy="no-referrer"
                         className="w-8 h-8 rounded-full object-cover border border-white/20 group-hover:border-emerald-400 transition-all shadow-md"
                         onError={(e) => {
-                          e.currentTarget.style.display = "none";
+                          (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=10b981&color=ffffff&size=64`;
                         }}
                       />
                     ) : (
@@ -516,20 +535,25 @@ export function Navbar() {
                     alignOffset={-32}
                     sideOffset={10}
                     collisionPadding={{ right: 32 }}
-                    className="w-72 -translate-x-6 sm:-translate-x-8 p-2.5 bg-[#090c15]/75 backdrop-blur-3xl border border-white/15 text-neutral-200 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.7)] z-50 divide-y divide-white/10 ring-1 ring-white/10"
+                    className={cn(
+                      "w-72 -translate-x-6 sm:-translate-x-8 p-2.5 bg-[#090c15]/75 backdrop-blur-3xl border border-white/15 text-neutral-200 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.7)] z-50 divide-y divide-white/10 ring-1 ring-white/10",
+                      cardFont.className,
+                    )}
                   >
                     {/* Top User Profile Header */}
                     <div className="p-2 flex items-center space-x-3 pb-3">
-                      <NextImage
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
                         src={
                           user.avatarUrl ||
-                          `https://ui-avatars.com/api/?name=${user.username}&background=2c3440&color=ffffff&size=40`
+                          `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=10b981&color=ffffff&size=80`
                         }
                         alt={user.displayName || user.username}
-                        width={40}
-                        height={40}
-                        className="h-10 w-10 rounded-full object-cover border border-white/20 shadow"
-                        unoptimized
+                        referrerPolicy="no-referrer"
+                        className="h-10 w-10 rounded-full object-cover border border-white/20 shadow-md shrink-0"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=10b981&color=ffffff&size=80`;
+                        }}
                       />
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm text-white truncate">
@@ -557,7 +581,7 @@ export function Navbar() {
                         <span>Trang cá nhân</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => router.push("/settings/security")}
+                        onClick={() => router.push("/settings")}
                         className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
                       >
                         <Settings size={16} className="mr-3 text-neutral-300" />

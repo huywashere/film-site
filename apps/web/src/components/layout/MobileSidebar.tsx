@@ -113,10 +113,14 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 <img
                   src={
                     user.avatarUrl ||
-                    `https://ui-avatars.com/api/?name=${user.username}&background=2c3440&color=ffffff&size=40`
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=10b981&color=ffffff&size=80`
                   }
                   alt={user.displayName || user.username}
-                  className="w-10 h-10 rounded-full object-cover border border-white/20 shadow"
+                  referrerPolicy="no-referrer"
+                  className="w-10 h-10 rounded-full object-cover border border-white/20 shadow-md shrink-0"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=10b981&color=ffffff&size=80`;
+                  }}
                 />
                 <div className="flex-1 min-w-0">
                   <p className="font-extrabold text-xs text-white truncate">

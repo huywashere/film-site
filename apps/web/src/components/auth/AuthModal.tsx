@@ -93,13 +93,17 @@ export function AuthModal() {
       const res = await signInWithPopup(getFirebaseAuth(), getGoogleProvider());
       await handleFirebaseUserSuccess(res.user);
     } catch (err: any) {
-      setErrorMsg(
-        err.code === "auth/popup-blocked"
-          ? "Trình duyệt đã chặn cửa sổ Google. Hãy cho phép popup rồi thử lại."
-          : err.code === "auth/popup-closed-by-user"
-            ? "Bạn đã đóng cửa sổ đăng nhập Google."
-            : err.message || "Đăng nhập Google thất bại.",
-      );
+      const serverMsg = err?.response?.data?.message;
+      const finalMsg = Array.isArray(serverMsg)
+        ? serverMsg.join(", ")
+        : typeof serverMsg === "string"
+          ? serverMsg
+          : err.code === "auth/popup-blocked"
+            ? "Trình duyệt đã chặn cửa sổ Google. Hãy cho phép popup rồi thử lại."
+            : err.code === "auth/popup-closed-by-user"
+              ? "Bạn đã đóng cửa sổ đăng nhập Google."
+              : "Không thể xác thực tài khoản Google. Vui lòng thử lại sau.";
+      setErrorMsg(finalMsg);
     } finally {
       setLoading(false);
     }

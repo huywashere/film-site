@@ -5,7 +5,11 @@ import { Montserrat } from "next/font/google";
 import { useRef, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, FreeMode } from "swiper/modules";
-import { FilmItem, resolveImageUrl } from "./FilmCard";
+import {
+  FilmItem,
+  resolveImageUrl,
+  VERIFIED_FALLBACK_POSTERS,
+} from "./FilmCard";
 import { Play, ChevronLeft, ChevronRight } from "lucide-react";
 import { DashPagination } from "./DashPagination";
 import { cardFont } from "@/lib/fonts";
@@ -71,16 +75,18 @@ export function Top10RankedRow({
             }}
             speed={600}
             slidesPerGroup={3}
-            freeMode={{ enabled: true, sticky: false }}
+            freeMode={{ enabled: true, momentumRatio: 0.8 }}
             spaceBetween={16}
             slidesPerView="auto"
             className="!py-4 !pl-1 !pr-2"
           >
             {top10.map((film, index) => {
               const rank = index + 1;
+              const fallbackIndex = index % VERIFIED_FALLBACK_POSTERS.length;
               const posterUrl =
                 resolveImageUrl(film.poster_url) ||
-                resolveImageUrl(film.thumb_url);
+                resolveImageUrl(film.thumb_url) ||
+                VERIFIED_FALLBACK_POSTERS[fallbackIndex];
 
               return (
                 <SwiperSlide key={film.slug || index} className="!w-auto">
@@ -122,12 +128,33 @@ export function Top10RankedRow({
                     {/* Vertical Poster Card (Foreground z-10) */}
                     <div className="relative z-10 w-[130px] sm:w-[155px] md:w-[180px] h-[195px] sm:h-[232px] md:h-[270px] rounded-2xl overflow-hidden border border-white/10 group-hover/item:border-white/50 group-hover/item:scale-[1.03] shadow-2xl bg-neutral-900 transition-all duration-300 mt-9 sm:mt-11 md:mt-13 ml-7 sm:ml-9 md:ml-11">
                       {posterUrl ? (
-                        <Image
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
                           src={posterUrl}
                           alt={film.name}
-                          fill
-                          sizes="(max-width: 640px) 130px, (max-width: 768px) 155px, 180px"
-                          className="object-cover transition-transform duration-500 group-hover/item:scale-105"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            if (!target.dataset.failed) {
+                              target.dataset.failed = "true";
+                              const altThumb = film.thumb_url
+                                ? resolveImageUrl(film.thumb_url)
+                                : null;
+                              if (
+                                altThumb &&
+                                altThumb !== posterUrl &&
+                                !altThumb.includes("uploads/movies")
+                              ) {
+                                target.src = altThumb;
+                              } else {
+                                target.src =
+                                  VERIFIED_FALLBACK_POSTERS[fallbackIndex];
+                              }
+                            } else {
+                              target.src =
+                                VERIFIED_FALLBACK_POSTERS[fallbackIndex];
+                            }
+                          }}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-xs text-neutral-500 font-bold p-2 text-center">

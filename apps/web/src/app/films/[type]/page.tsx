@@ -90,7 +90,7 @@ export default function FilmsTypePage() {
       ) : films.length > 0 ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 md:gap-6 lg:grid-cols-6">
           {films.map((film, idx) => (
-            <FilmCard key={`${film.slug || film._id || (film as any).id}-${idx}`} film={film} />
+            <FilmCard key={`${film.slug || film._id || (film as any).id}-${idx}`} film={film} priority={idx < 8} />
           ))}
         </div>
       ) : (

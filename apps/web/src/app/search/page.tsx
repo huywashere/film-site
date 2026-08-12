@@ -25,6 +25,7 @@ import {
   searchHistoryStorage,
 } from "@/components/search/SearchHistory";
 import { cardFont } from "@/lib/fonts";
+import { FilmNotFound } from "@/components/film/FilmNotFound";
 
 // ── Shared Lists ──────────────────────────────────────────────────
 const GENRES_LIST = [
@@ -480,23 +481,7 @@ function SearchContent() {
               ))}
             </div>
           ) : films.length === 0 ? (
-            <div className="text-center py-20 flex flex-col items-center justify-center space-y-3 bg-[#12161a]/60 border border-white/5 rounded-3xl">
-              <span className="text-6xl">🎬</span>
-              <p className="text-white font-bold">
-                Không tìm thấy kết quả nào phù hợp
-              </p>
-              <p className="text-neutral-400 text-xs max-w-sm">
-                Hãy thử lại với từ khóa khác hoặc xóa bộ lọc để mở rộng phạm vi
-                tìm kiếm.
-              </p>
-              <button
-                type="button"
-                onClick={handleResetFilters}
-                className="mt-2 cursor-pointer rounded-lg bg-white px-5 py-2 text-xs font-bold text-[#111317] transition-colors hover:bg-neutral-200"
-              >
-                Đặt lại bộ lọc
-              </button>
-            </div>
+            <FilmNotFound querySlug={query} title="Không tìm thấy kết quả nào phù hợp" />
           ) : (
             <>
               <div className="grid grid-cols-2 gap-3 animate-in fade-in duration-300 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 md:gap-6 lg:grid-cols-6">

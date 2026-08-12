@@ -148,12 +148,14 @@ export class AuthService {
     }
 
     const hash = await bcrypt.hash(dto.password, 12);
+    const isDev = process.env.NODE_ENV !== "production";
     const user = await this.prisma.user.create({
       data: {
         email,
         username,
         passwordHash: hash,
         displayName: username,
+        isEmailVerified: isDev,
       },
     });
 
@@ -251,7 +253,7 @@ export class AuthService {
     }
 
     this.assertAccountCanAuthenticate(user);
-    if (!user.isEmailVerified) {
+    if (!user.isEmailVerified && process.env.NODE_ENV === "production") {
       throw new UnauthorizedException(
         "Vui lòng xác minh email trước khi đăng nhập.",
       );
@@ -587,7 +589,7 @@ export class AuthService {
     if (!profile.email) {
       throw new BadRequestException("Tài khoản Google chưa cung cấp email");
     }
-    if (!profile.emailVerified) {
+    if (!profile.emailVerified && process.env.NODE_ENV === "production") {
       throw new UnauthorizedException(
         "Email Firebase phải được xác minh trước khi đăng nhập hoặc liên kết tài khoản.",
       );

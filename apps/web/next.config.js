@@ -65,6 +65,8 @@ const nextConfig = {
     // Poster URLs are served through the app's guarded image proxy and always
     // include a dynamic `url` query parameter.
     remotePatterns: [
+      { protocol: "https", hostname: "**" },
+      { protocol: "http", hostname: "**" },
       // KKPhim
       { protocol: "https", hostname: "phimimg.com" },
       { protocol: "https", hostname: "img.phimapi.com" },
@@ -83,8 +85,14 @@ const nextConfig = {
       // NguonC
       { protocol: "https", hostname: "phim.nguonc.com" },
       { protocol: "https", hostname: "**.nguonc.com" },
-      // Misc
+      // Misc & Social Avatars
       { protocol: "https", hostname: "ui-avatars.com" },
+      { protocol: "https", hostname: "lh3.googleusercontent.com" },
+      { protocol: "https", hostname: "**.googleusercontent.com" },
+      { protocol: "https", hostname: "avatars.githubusercontent.com" },
+      { protocol: "https", hostname: "platform-lookaside.fbsbx.com" },
+      { protocol: "https", hostname: "**.fbsbx.com" },
+      { protocol: "https", hostname: "secure.gravatar.com" },
       { protocol: "https", hostname: "motphim.net" },
       { protocol: "https", hostname: "**.motphim.net" },
       // TMDB

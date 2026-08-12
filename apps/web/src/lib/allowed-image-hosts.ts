@@ -65,9 +65,16 @@ export function isAllowedImageHost(hostname: string): boolean {
  * host outside the allowlist.
  */
 export function validateImageUrl(rawUrl: string): string | null {
+  let cleanUrl = rawUrl.trim();
+  if (cleanUrl.startsWith("//")) {
+    cleanUrl = `https:${cleanUrl}`;
+  } else if (cleanUrl.startsWith("http://")) {
+    cleanUrl = cleanUrl.replace(/^http:\/\//i, "https://");
+  }
+
   let parsed: URL;
   try {
-    parsed = new URL(rawUrl);
+    parsed = new URL(cleanUrl);
   } catch {
     return null;
   }

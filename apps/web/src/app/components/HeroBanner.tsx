@@ -1218,11 +1218,11 @@ export default function HeroBanner({ films }: HeroBannerProps) {
               </p>
 
               {/* Action Buttons (Watch Now / Resume Watch + Trailer + Bookmark with Tooltip) */}
-              <div className="flex items-center justify-center gap-2 sm:gap-3 pt-1">
+              <div className={`${cardFont.className} flex items-center justify-center gap-2 sm:gap-3 pt-1`}>
                 {hasWatched ? (
                   <Link
                     href={getWatchHref(film)}
-                    className="flex flex-col items-center justify-center bg-white hover:bg-neutral-200 text-black px-6 py-2 sm:px-7 sm:py-2.5 rounded-full transition-all duration-200 shadow-2xl hover:scale-105 active:scale-95 group min-w-[145px]"
+                    className={`${cardFont.className} flex flex-col items-center justify-center bg-white hover:bg-neutral-200 text-black px-6 py-2 sm:px-7 sm:py-2.5 rounded-full transition-all duration-200 shadow-2xl hover:scale-105 active:scale-95 group min-w-[145px]`}
                   >
                     <div className="flex items-center gap-1.5 text-xs font-black tracking-wide uppercase">
                       <Play size={14} className="fill-black" />
@@ -1240,7 +1240,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                 ) : (
                   <Link
                     href={getWatchHref(film)}
-                    className="flex items-center gap-1.5 sm:gap-2 bg-white hover:bg-neutral-200 text-black px-5 py-2.5 sm:px-7 sm:py-3 rounded-full text-xs font-black tracking-wide uppercase transition-all duration-200 shadow-2xl hover:scale-105 active:scale-95"
+                    className={`${cardFont.className} flex items-center gap-1.5 sm:gap-2 bg-white hover:bg-neutral-200 text-black px-5 py-2.5 sm:px-7 sm:py-3 rounded-full text-xs font-black tracking-wide uppercase transition-all duration-200 shadow-2xl hover:scale-105 active:scale-95`}
                   >
                     <Play size={14} className="fill-black" />
                     <span>Xem ngay</span>
@@ -1250,7 +1250,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                 <button
                   type="button"
                   onClick={() => setTrailerModalFilm(film)}
-                  className="flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/15 bg-[#181c24]/80 px-4 py-2.5 sm:px-5 sm:py-3 text-xs font-bold text-neutral-200 shadow-xl transition-all duration-200 hover:scale-105 hover:bg-white/20 hover:text-white active:scale-95 cursor-pointer"
+                  className={`${cardFont.className} flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/15 bg-[#181c24]/80 px-4 py-2.5 sm:px-5 sm:py-3 text-xs font-bold text-neutral-200 shadow-xl transition-all duration-200 hover:scale-105 hover:bg-white/20 hover:text-white active:scale-95 cursor-pointer`}
                 >
                   <Film size={14} className="text-neutral-300" />
                   <span>Trailer</span>

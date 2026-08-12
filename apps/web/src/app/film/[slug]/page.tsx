@@ -28,6 +28,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { movieApi, watchlistApi, ratingsApi, reviewsApi } from "@/lib/api";
+import { FilmNotFound } from "@/components/film/FilmNotFound";
 import { StarRating } from "@/components/film/StarRating";
 import { resolveImageUrl } from "@/components/film/FilmCard";
 import { useAuthStore } from "@/store/authStore";
@@ -689,36 +690,7 @@ export default function FilmDetailPage() {
 
   if (isLoading) return <FilmDetailSkeleton />;
 
-  if (isNotFound || !film)
-    return (
-      <div className="bg-[#14181c] min-h-[75vh] text-neutral-300 pt-28 pb-16 text-center flex flex-col items-center justify-center px-4 font-sans select-none">
-        <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4 shadow-xl">
-          <Info size={32} className="text-neutral-300" />
-        </div>
-        <h1 className="text-xl sm:text-2xl font-bold text-white mb-2">
-          Không tìm thấy phim này
-        </h1>
-        <p className="text-xs sm:text-sm text-neutral-400 max-w-md mx-auto mb-6 leading-relaxed">
-          Bộ phim <span className="font-semibold text-white">"{slug}"</span>{" "}
-          hiện chưa có bản chiếu trên hệ thống hoặc đường dẫn không khả dụng.
-          Bạn có thể tìm kiếm phim khác hoặc quay về trang chủ.
-        </p>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="px-6 py-2.5 bg-[#00e054] hover:bg-[#00c749] text-black font-bold text-xs rounded-full transition-all shadow-lg active:scale-95"
-          >
-            Quay về trang chủ
-          </Link>
-          <Link
-            href="/search"
-            className="px-6 py-2.5 bg-[#242c34] hover:bg-[#2c3440] text-white border border-white/10 font-bold text-xs rounded-full transition-all shadow-lg active:scale-95"
-          >
-            Tìm kiếm phim khác
-          </Link>
-        </div>
-      </div>
-    );
+  if (isNotFound || !film) return <FilmNotFound querySlug={slug} />;
 
   const handleWatchlist = async () => {
     if (!user) {

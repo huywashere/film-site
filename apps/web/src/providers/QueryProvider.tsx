@@ -12,6 +12,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             gcTime: 60 * 60 * 1000, // 60 minutes garbage collection time
             refetchOnWindowFocus: false, // Prevent refetching on tab focus
             refetchOnMount: false, // Prevent refetching when navigating back
+            placeholderData: (previousData: any) => previousData, // Seamless tab transitions without black flicker
             retry: 1,
           },
         },

@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { api, watchHistoryApi, watchlistApi, authApi } from "@/lib/api";
-import { useState, useEffect } from "react";
+import { useState, useEffect, startTransition } from "react";
 import {
   User,
   Bookmark,
@@ -30,6 +30,16 @@ import {
   Award,
   Flame,
   Tv,
+  Shield,
+  Laptop,
+  RefreshCw,
+  ShieldAlert,
+  KeyRound,
+  Copy,
+  Check,
+  Monitor,
+  Smartphone,
+  ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
@@ -39,6 +49,136 @@ import { useToast } from "@/providers/ToastProvider";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { AccountPageTabs } from "@/components/account/AccountPageTabs";
+import { cardFont } from "@/lib/fonts";
+
+interface Session {
+  id: string;
+  ipAddress: string;
+  browser: string;
+  os: string;
+  device?: string;
+  lastUsedAt: string;
+  createdAt: string;
+  isCurrent: boolean;
+}
+
+// ── 2FA Section ──────────────────────────────────────────────────────
+function TwoFactorSection({
+  user,
+  onSetup,
+  onDisable,
+  disabling,
+}: {
+  user: any;
+  onSetup: () => void;
+  onDisable: () => void;
+  disabling: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-black overflow-hidden shadow-2xl">
+      <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
+        <div className="flex items-center gap-4">
+          <div className={cn(
+            "h-10 w-10 rounded-xl flex items-center justify-center",
+            user?.twoFactorEnabled
+              ? "bg-emerald-500/10 border border-emerald-500/20"
+              : "bg-white/[0.05] border border-white/10"
+          )}>
+            <Shield className={cn("h-5 w-5", user?.twoFactorEnabled ? "text-emerald-400" : "text-neutral-400")} />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-white">Xác thực hai bước (2FA)</h3>
+            <p className="text-xs text-neutral-500 mt-0.5">
+              Thêm một lớp bảo vệ bằng mã OTP từ ứng dụng Authenticator.
+            </p>
+          </div>
+        </div>
+
+        <span className={cn(
+          "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shrink-0",
+          user?.twoFactorEnabled
+            ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+            : "bg-white/[0.05] border border-white/10 text-neutral-500"
+        )}>
+          {user?.twoFactorEnabled ? <><CheckCircle2 className="h-3 w-3" /> Đang bật</> : <><ShieldAlert className="h-3 w-3" /> Tắt</>}
+        </span>
+      </div>
+
+      <div className="flex items-center justify-between gap-4 p-5">
+        <p className="text-xs text-neutral-500">
+          {user?.twoFactorEnabled
+            ? "Tài khoản đã được bảo vệ bằng 2FA. Bạn có thể tắt nếu cần."
+            : "Khuyến nghị bật để bảo vệ tài khoản khỏi truy cập trái phép."}
+        </p>
+
+        {user?.twoFactorEnabled ? (
+          <button onClick={onDisable} disabled={disabling}
+            className="shrink-0 rounded-lg border border-white/10 bg-white/[0.04] hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 text-neutral-400 text-xs font-semibold px-4 py-2 transition-all cursor-pointer disabled:opacity-50">
+            {disabling ? <Loader2 className="h-4 w-4 animate-spin" /> : "Tắt 2FA"}
+          </button>
+        ) : (
+          <button onClick={onSetup}
+            className="shrink-0 rounded-lg bg-white hover:bg-neutral-200 text-black text-xs font-bold px-4 py-2 transition-colors cursor-pointer">
+            Bật xác thực
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Google Link Section ──────────────────────────────────────────────
+function GoogleLinkSection({ user }: { user: any }) {
+  const apiBase =
+    process.env.NEXT_PUBLIC_API_URL ||
+    (process.env.NODE_ENV === "production"
+      ? "/api/v1"
+      : "http://localhost:3001/api/v1");
+  const googleLinkUrl = `${apiBase.replace("/api/v1", "")}/api/v1/auth/google`;
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-black overflow-hidden shadow-2xl">
+      <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
+        <div className="flex items-center gap-4">
+          <div className="h-10 w-10 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center">
+            <KeyRound className="h-5 w-5 text-neutral-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-white">Liên kết tài khoản Google</h3>
+            <p className="text-xs text-neutral-500 mt-0.5">Đăng nhập nhanh hơn qua Google ở những lần sau.</p>
+          </div>
+        </div>
+
+        <span className={cn(
+          "px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shrink-0",
+          user?.googleId
+            ? "bg-white/[0.07] border border-white/10 text-neutral-300"
+            : "bg-white/[0.03] border border-white/[0.07] text-neutral-600"
+        )}>
+          {user?.googleId ? "Đã liên kết" : "Chưa liên kết"}
+        </span>
+      </div>
+
+      <div className="flex items-center justify-between gap-4 p-5">
+        <p className="text-xs text-neutral-500">
+          {user?.googleId ? "Tài khoản Google đã được liên kết thành công." : "Chưa kết nối tài khoản Google nào."}
+        </p>
+
+        {user?.googleId ? (
+          <button disabled
+            className="shrink-0 rounded-lg border border-white/[0.07] bg-white/[0.03] text-neutral-600 text-xs font-semibold px-4 py-2 cursor-not-allowed">
+            Đã liên kết
+          </button>
+        ) : (
+          <a href={googleLinkUrl}
+            className="shrink-0 rounded-lg border border-white/10 bg-white/[0.05] hover:bg-white/[0.1] text-white text-xs font-semibold px-4 py-2 transition-colors flex items-center gap-2">
+            Liên kết Google
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
 
 const PRESET_AVATARS = [
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop",
@@ -110,7 +250,7 @@ export default function UserDashboardPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { user, logout } = useAuthStore();
+  const { user, logout, fetchMe } = useAuthStore();
 
   const rawUsername = (params?.username as string) || "";
   const decodedUsername = rawUsername ? decodeURIComponent(rawUsername) : "";
@@ -173,6 +313,111 @@ export default function UserDashboardPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPasswords, setShowPasswords] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
+  const [revokingAll, setRevokingAll] = useState(false);
+
+  const [show2FAModal, setShow2FAModal] = useState(false);
+  const [twoFactorData, setTwoFactorData] = useState<{
+    qrCode: string;
+    secret: string;
+    backupCodes: string[];
+  } | null>(null);
+  const [otpCode, setOtpCode] = useState("");
+  const [verifying2FA, setVerifying2FA] = useState(false);
+  const [disabling2FA, setDisabling2FA] = useState(false);
+  const [copiedSecret, setCopiedSecret] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === "security" && isOwnProfile) {
+      loadSessions();
+    }
+  }, [activeTab, isOwnProfile]);
+
+  const loadSessions = async () => {
+    setLoadingSessions(true);
+    try {
+      const res = await authApi.getSessions();
+      setSessions(res.data || []);
+    } catch (err) {
+      console.error("Failed to load sessions", err);
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
+  const handleRevokeSession = async (id: string) => {
+    setRevokingId(id);
+    try {
+      await authApi.revokeSession(id);
+      toast("Đăng xuất thiết bị thành công", "success");
+      loadSessions();
+    } catch (err) {
+      toast("Đăng xuất thiết bị thất bại", "error");
+    } finally {
+      setRevokingId(null);
+    }
+  };
+
+  const handleRevokeAllOtherSessions = async () => {
+    if (!confirm("Bạn có chắc muốn đăng xuất khỏi tất cả thiết bị khác không?")) return;
+    setRevokingAll(true);
+    try {
+      await authApi.revokeAllSessions();
+      toast("Đã đăng xuất toàn bộ thiết bị khác", "success");
+      loadSessions();
+    } catch (err) {
+      toast("Thao tác thất bại", "error");
+    } finally {
+      setRevokingAll(false);
+    }
+  };
+
+  const handleSetup2FA = async () => {
+    try {
+      const res = await authApi.setup2FA();
+      setTwoFactorData(res.data);
+      setShow2FAModal(true);
+    } catch (err) {
+      toast("Không thể sinh QR Code cho 2FA", "error");
+    }
+  };
+
+  const handleVerify2FA = async () => {
+    if (!otpCode) return;
+    setVerifying2FA(true);
+    try {
+      await authApi.verify2FA({ code: otpCode });
+      toast("Kích hoạt 2FA thành công!", "success");
+      setShow2FAModal(false);
+      setTwoFactorData(null);
+      setOtpCode("");
+      fetchMe();
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || "Mã OTP không chính xác";
+      toast(Array.isArray(msg) ? msg.join(", ") : msg, "error");
+    } finally {
+      setVerifying2FA(false);
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    const code = prompt("Nhập mã OTP 6 số từ ứng dụng Authenticator để tắt 2FA:");
+    if (!code) return;
+    setDisabling2FA(true);
+    try {
+      await authApi.disable2FA({ code });
+      toast("Đã tắt 2FA an toàn", "success");
+      fetchMe();
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || "Không thể tắt 2FA";
+      toast(Array.isArray(msg) ? msg.join(", ") : msg, "error");
+    } finally {
+      setDisabling2FA(false);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -319,19 +564,28 @@ export default function UserDashboardPage() {
     "w-full rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-neutral-600 outline-none transition-all focus:border-white/25 focus:bg-white/[0.07]";
 
   return (
-    <main className="min-h-screen bg-[#141414] text-white select-none">
-      {/* ── COVER BANNER ── */}
-      <div className="relative h-48 sm:h-56 overflow-hidden bg-gradient-to-br from-neutral-900 via-[#1a1a1a] to-[#141414]">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(229,9,20,0.12)_0%,_transparent_60%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(255,255,255,0.03)_0%,_transparent_50%)]" />
-        {/* Subtle film strip pattern */}
-        <div className="absolute inset-0 opacity-[0.03]"
-          style={{ backgroundImage: "repeating-linear-gradient(90deg, #fff 0px, #fff 2px, transparent 2px, transparent 60px)" }} />
-      </div>
+    <main className={cn("min-h-screen bg-[#141414] text-white select-none", cardFont.className)}>
+      {/* ── PROFILE HEADER ── */}
+      <div className="mx-auto max-w-[1300px] px-4 sm:px-8 pt-24 pb-28">
+        {/* Nút Quay lại trang trước */}
+        <div className="mb-6">
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined" && window.history.length > 1) {
+                router.back();
+              } else {
+                router.push("/");
+              }
+            }}
+            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2 text-xs font-bold text-white transition-all hover:bg-white/[0.08] hover:border-white/20 cursor-pointer active:scale-95"
+          >
+            <ArrowLeft size={14} />
+            <span>Quay lại</span>
+          </button>
+        </div>
 
-      {/* ── PROFILE HEADER (overlapping cover) ── */}
-      <div className="mx-auto max-w-[1300px] px-4 sm:px-8">
-        <div className="-mt-16 flex flex-col gap-5 sm:flex-row sm:items-end sm:gap-6 pb-6 border-b border-white/[0.07]">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:gap-6 pb-6 border-b border-white/[0.07]">
           {/* Avatar */}
           <div className="relative shrink-0 group">
             <div className={cn(
@@ -347,10 +601,16 @@ export default function UserDashboardPage() {
                   profile.avatarUrl ||
                   `https://ui-avatars.com/api/?name=${encodeURIComponent(
                     displayName || profile.username || "User",
-                  )}&background=1a1a1a&color=ffffff`
+                  )}&background=10b981&color=ffffff&size=160`
                 }
                 alt={profile.username}
+                referrerPolicy="no-referrer"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    displayName || profile.username || "User",
+                  )}&background=10b981&color=ffffff&size=160`;
+                }}
               />
             </div>
             {isOwnProfile && (
@@ -433,8 +693,8 @@ export default function UserDashboardPage() {
         {/* ── MAIN WORKSPACE ── */}
         <div className="flex gap-8 py-8 pb-28">
           {/* ── LEFT SIDEBAR ── */}
-          <aside className="hidden lg:block w-52 shrink-0 sticky top-20 self-start">
-            <div className="space-y-6">
+          <aside className="hidden lg:block w-56 shrink-0 sticky top-24 self-start">
+            <div className="space-y-5 rounded-2xl border border-white/10 bg-black p-4 shadow-2xl">
               {/* Profile group */}
               <div>
                 <p className="px-2 mb-2 text-[10px] font-bold tracking-[0.1em] text-neutral-600 uppercase">
@@ -447,7 +707,7 @@ export default function UserDashboardPage() {
                     return (
                       <button
                         key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
+                        onClick={() => startTransition(() => setActiveTab(tab.id))}
                         className={cn(
                           "group flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all",
                           isActive
@@ -475,7 +735,7 @@ export default function UserDashboardPage() {
                     return (
                       <button
                         key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
+                        onClick={() => startTransition(() => setActiveTab(tab.id))}
                         className={cn(
                           "group flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all",
                           isActive
@@ -519,7 +779,7 @@ export default function UserDashboardPage() {
 
             {/* TAB: THÔNG TIN CÁ NHÂN */}
             {activeTab === "account" && (
-              <form onSubmit={handleUpdateProfile} className="max-w-2xl animate-fade-in space-y-6">
+              <form onSubmit={handleUpdateProfile} className="max-w-2xl animate-fade-in space-y-6 rounded-2xl border border-white/10 bg-black p-6 sm:p-8 shadow-2xl">
                 <div className="border-b border-white/[0.07] pb-4">
                   <h2 className="text-lg font-bold text-white">Thông tin cá nhân</h2>
                   <p className="mt-1 text-sm text-neutral-500">Cập nhật thông tin hiển thị công khai trên CinePhim.</p>
@@ -564,7 +824,7 @@ export default function UserDashboardPage() {
 
             {/* TAB: THỐNG KÊ */}
             {activeTab === "stats" && (
-              <div className="max-w-3xl animate-fade-in space-y-6">
+              <div className="max-w-3xl animate-fade-in space-y-6 rounded-2xl border border-white/10 bg-black p-6 sm:p-8 shadow-2xl">
                 <div className="border-b border-white/[0.07] pb-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h2 className="text-lg font-bold text-white">Thống kê xem phim</h2>
@@ -621,57 +881,149 @@ export default function UserDashboardPage() {
 
             {/* TAB: BẢO MẬT */}
             {activeTab === "security" && (
-              <form onSubmit={handleChangePassword} className="max-w-2xl animate-fade-in space-y-6">
+              <div className="animate-fade-in space-y-6 max-w-5xl">
                 <div className="border-b border-white/[0.07] pb-4">
-                  <h2 className="text-lg font-bold text-white">Mật khẩu & Bảo mật</h2>
-                  <p className="mt-1 text-sm text-neutral-500">Đổi mật khẩu và bảo vệ tài khoản của bạn.</p>
+                  <h2 className="text-lg font-bold text-white">Bảo mật & Thiết bị</h2>
+                  <p className="mt-1 text-sm text-neutral-500">
+                    Quản lý các lớp bảo vệ 2FA, mật khẩu và danh sách thiết bị đang đăng nhập.
+                  </p>
                 </div>
 
-                <div className="space-y-4">
-                  {[
-                    { label: "Mật khẩu hiện tại", value: currentPassword, onChange: setCurrentPassword, placeholder: "Nhập mật khẩu hiện tại..." },
-                    { label: "Mật khẩu mới", value: newPassword, onChange: setNewPassword, placeholder: "Tối thiểu 6 ký tự..." },
-                    { label: "Xác nhận mật khẩu mới", value: confirmPassword, onChange: setConfirmPassword, placeholder: "Nhập lại mật khẩu mới..." },
-                  ].map(({ label, value, onChange, placeholder }) => (
-                    <div key={label}>
-                      <label className="block text-xs font-semibold text-neutral-400 mb-2 uppercase tracking-wider">{label}</label>
-                      <div className="relative">
-                        <input type={showPasswords ? "text" : "password"} value={value}
-                          onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-                          className={cn(inputCls, "pr-12")} />
-                        <button type="button" onClick={() => setShowPasswords(!showPasswords)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white cursor-pointer">
-                          {showPasswords ? <EyeOff size={16} /> : <Eye size={16} />}
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
+                  {/* Left Column: Security Features & Change Password */}
+                  <div className="space-y-6">
+                    <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Các lớp bảo vệ</p>
+
+                    <TwoFactorSection
+                      user={profile}
+                      onSetup={handleSetup2FA}
+                      onDisable={handleDisable2FA}
+                      disabling={disabling2FA}
+                    />
+
+                    <GoogleLinkSection user={profile} />
+
+                    {/* Change Password Form */}
+                    <form onSubmit={handleChangePassword} className="rounded-xl border border-white/10 bg-black p-5 space-y-4 shadow-2xl">
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        <Key size={15} className="text-neutral-400" /> Đổi mật khẩu tài khoản
+                      </h3>
+
+                      {[
+                        { label: "Mật khẩu hiện tại", value: currentPassword, onChange: setCurrentPassword, placeholder: "Nhập mật khẩu hiện tại..." },
+                        { label: "Mật khẩu mới", value: newPassword, onChange: setNewPassword, placeholder: "Tối thiểu 6 ký tự..." },
+                        { label: "Xác nhận mật khẩu mới", value: confirmPassword, onChange: setConfirmPassword, placeholder: "Nhập lại mật khẩu mới..." },
+                      ].map(({ label, value, onChange, placeholder }) => (
+                        <div key={label}>
+                          <label className="block text-xs font-semibold text-neutral-400 mb-1.5 uppercase tracking-wider">{label}</label>
+                          <div className="relative">
+                            <input type={showPasswords ? "text" : "password"} value={value}
+                              onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+                              className={cn(inputCls, "pr-12")} />
+                            <button type="button" onClick={() => setShowPasswords(!showPasswords)}
+                              className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white cursor-pointer">
+                              {showPasswords ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+
+                      <button type="submit" disabled={changingPassword}
+                        className="flex items-center gap-2 rounded-lg bg-[#e50914] hover:bg-[#c4070f] px-5 py-2.5 text-xs font-bold text-white transition-colors cursor-pointer disabled:opacity-60">
+                        {changingPassword && <Loader2 size={14} className="animate-spin" />}
+                        <Key size={13} /> Cập nhật mật khẩu
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Right Column: Active Sessions */}
+                  <div>
+                    <div className="rounded-xl border border-white/10 bg-black overflow-hidden shadow-2xl">
+                      <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center">
+                            <Laptop className="h-4 w-4 text-neutral-400" />
+                          </div>
+                          <div>
+                            <h3 className="text-xs font-bold text-white">Thiết bị đã đăng nhập</h3>
+                            <p className="text-[11px] text-neutral-500">
+                              {sessions.length} thiết bị đang hoạt động
+                            </p>
+                          </div>
+                        </div>
+
+                        <button onClick={loadSessions} disabled={loadingSessions}
+                          className="p-1.5 rounded-lg hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                          title="Làm mới">
+                          <RefreshCw className={cn("h-3.5 w-3.5", loadingSessions && "animate-spin")} />
                         </button>
                       </div>
-                    </div>
-                  ))}
-                </div>
 
-                <div className="flex items-center justify-between rounded-lg border border-white/[0.07] bg-white/[0.03] p-4">
-                  <div className="flex items-center gap-3">
-                    <ShieldCheck size={18} className="text-emerald-400 shrink-0" />
-                    <div>
-                      <p className="text-sm font-semibold text-white">Xác thực 2 yếu tố (2FA)</p>
-                      <p className="text-xs text-neutral-500 mt-0.5">Tài khoản của bạn đang được bảo vệ an toàn.</p>
+                      <div className="divide-y divide-white/[0.04]">
+                        {loadingSessions ? (
+                          <div className="p-6 text-center text-xs text-neutral-500">
+                            <Loader2 className="h-4 w-4 animate-spin mx-auto mb-2" /> Đang tải thiết bị...
+                          </div>
+                        ) : sessions.length === 0 ? (
+                          <div className="p-6 text-center text-xs text-neutral-500">Không có thiết bị nào khác</div>
+                        ) : (
+                          sessions.map((session) => (
+                            <div key={session.id} className="p-4 flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="h-8 w-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center shrink-0">
+                                  {session.device?.toLowerCase().includes("mobile")
+                                    ? <Smartphone className="h-3.5 w-3.5 text-neutral-400" />
+                                    : <Monitor className="h-3.5 w-3.5 text-neutral-400" />}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-white truncate">
+                                      {session.browser} {session.os}
+                                    </span>
+                                    {session.isCurrent && (
+                                      <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wide bg-red-500/10 border border-red-500/20 text-red-400 shrink-0">
+                                        Thiết bị này
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[10px] text-neutral-500 truncate mt-0.5">
+                                    {session.device || session.os} • {session.ipAddress}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {!session.isCurrent && (
+                                <button onClick={() => handleRevokeSession(session.id)} disabled={revokingId === session.id}
+                                  className="p-1.5 rounded-lg hover:bg-red-500/10 hover:text-red-400 text-neutral-500 transition-colors cursor-pointer shrink-0"
+                                  title="Đăng xuất thiết bị này">
+                                  {revokingId === session.id
+                                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    : <LogOut className="h-3.5 w-3.5" />}
+                                </button>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {sessions.length > 1 && (
+                        <div className="p-4 border-t border-white/[0.06]">
+                          <button onClick={handleRevokeAllOtherSessions} disabled={revokingAll}
+                            className="w-full flex items-center justify-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.03] hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-400 text-neutral-400 text-xs font-semibold py-2.5 transition-all cursor-pointer disabled:opacity-50">
+                            {revokingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LogOut className="h-3.5 w-3.5" />}
+                            Đăng xuất tất cả thiết bị khác
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-md uppercase tracking-wider">
-                    Đang bật
-                  </span>
                 </div>
-
-                <button type="submit" disabled={changingPassword}
-                  className="flex items-center gap-2 rounded-lg bg-[#e50914] hover:bg-[#c4070f] px-6 py-3 text-sm font-bold text-white transition-colors cursor-pointer disabled:opacity-60">
-                  {changingPassword && <Loader2 size={15} className="animate-spin" />}
-                  <Key size={14} /> Cập nhật mật khẩu
-                </button>
-              </form>
+              </div>
             )}
 
             {/* TAB: TỦ PHIM */}
             {activeTab === "watchlist" && (
-              <div className="animate-fade-in space-y-5">
+              <div className="animate-fade-in space-y-5 rounded-2xl border border-white/10 bg-black p-6 sm:p-8 shadow-2xl">
                 <div className="border-b border-white/[0.07] pb-4">
                   <h2 className="text-lg font-bold text-white">Tủ phim đã lưu <span className="text-neutral-500 font-normal">({watchlistItems.length})</span></h2>
                 </div>
@@ -711,7 +1063,7 @@ export default function UserDashboardPage() {
 
             {/* TAB: LỊCH SỬ */}
             {activeTab === "history" && (
-              <div className="animate-fade-in space-y-5">
+              <div className="animate-fade-in space-y-5 rounded-2xl border border-white/10 bg-black p-6 sm:p-8 shadow-2xl">
                 <div className="border-b border-white/[0.07] pb-4">
                   <h2 className="text-lg font-bold text-white">Lịch sử xem phim <span className="text-neutral-500 font-normal">({historyItems.length})</span></h2>
                 </div>
@@ -765,10 +1117,18 @@ export default function UserDashboardPage() {
 
             {/* TAB: TRÌNH PHÁT */}
             {activeTab === "settings" && (
-              <div className="max-w-2xl animate-fade-in space-y-6">
-                <div className="border-b border-white/[0.07] pb-4">
-                  <h2 className="text-lg font-bold text-white">Cài đặt trình phát</h2>
-                  <p className="mt-1 text-sm text-neutral-500">Tùy chỉnh trải nghiệm xem phim 4K của bạn.</p>
+              <div className="max-w-2xl animate-fade-in space-y-6 rounded-2xl border border-white/10 bg-black p-6 sm:p-8 shadow-2xl">
+                <div className="border-b border-white/[0.07] pb-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-white">Cài đặt trình phát</h2>
+                    <p className="mt-1 text-sm text-neutral-500">Tùy chỉnh trải nghiệm xem phim 4K của bạn.</p>
+                  </div>
+                  <Link
+                    href="/settings"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-600/10 border border-red-500/20 text-red-400 hover:bg-red-600/20 text-xs font-bold transition-colors"
+                  >
+                    <Sliders size={14} /> Tất cả cài đặt
+                  </Link>
                 </div>
 
                 <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] divide-y divide-white/[0.06]">
@@ -868,6 +1228,65 @@ export default function UserDashboardPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* ── MODAL: 2FA SETUP ── */}
+      {show2FAModal && twoFactorData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+          <div className="max-w-md w-full bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="text-center">
+              <div className="h-12 w-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-3">
+                <Shield className="h-6 w-6 text-emerald-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Thiết lập xác thực 2FA</h3>
+              <p className="text-xs text-neutral-500 mt-1">Quét mã QR bằng ứng dụng Authenticator của bạn.</p>
+            </div>
+
+            <div className="flex justify-center p-4 bg-white rounded-xl w-fit mx-auto">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={twoFactorData.qrCode} alt="QR Code 2FA" className="w-40 h-40 rounded-lg object-contain" />
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border border-white/[0.07] bg-white/[0.03] px-4 py-3 font-mono text-sm">
+              <span className="text-neutral-500 text-xs">Mã bí mật:</span>
+              <span className="text-white font-bold select-all text-xs">{twoFactorData.secret}</span>
+              <button onClick={() => { navigator.clipboard.writeText(twoFactorData.secret); setCopiedSecret(true); setTimeout(() => setCopiedSecret(false), 2000); }}
+                className="text-neutral-500 hover:text-white p-1 cursor-pointer">
+                {copiedSecret ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold text-amber-400 text-center">
+                ⚠️ Lưu lại 10 mã dự phòng dưới đây (dùng khi mất điện thoại):
+              </p>
+              <div className="grid grid-cols-2 gap-1 bg-black/40 p-3 rounded-xl border border-white/[0.07] font-mono text-xs text-neutral-400 text-center">
+                {twoFactorData.backupCodes.map((code, i) => (
+                  <div key={i} className="py-0.5 select-all">{code}</div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-white/[0.07] space-y-2">
+              <label className="text-xs font-semibold text-neutral-400">Nhập mã OTP 6 số để xác nhận:</label>
+              <input type="text" maxLength={6} value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                placeholder="123456"
+                className="w-full bg-black/40 border border-white/10 text-white rounded-lg px-4 py-3 outline-none focus:border-white/25 text-center font-black tracking-[0.4em] text-xl" />
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => { setShow2FAModal(false); setTwoFactorData(null); setOtpCode(""); }}
+                className="flex-1 rounded-lg border border-white/10 bg-white/[0.04] text-neutral-400 hover:text-white text-sm font-semibold py-2.5 transition-colors cursor-pointer">
+                Hủy
+              </button>
+              <button onClick={handleVerify2FA} disabled={verifying2FA || otpCode.length !== 6}
+                className="flex-1 rounded-lg bg-white hover:bg-neutral-200 text-black font-bold text-sm py-2.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                {verifying2FA ? <Loader2 className="h-4 w-4 animate-spin" /> : "Kích hoạt 2FA"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

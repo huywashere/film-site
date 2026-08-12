@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, startTransition } from "react";
 import Link from "next/link";
 import NextImage from "next/image";
 import { useRouter } from "next/navigation";
@@ -436,7 +436,9 @@ export function SpotlightSearchModal({
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTypeFilter(tab.id as any)}
+                  onClick={() =>
+                    startTransition(() => setActiveTypeFilter(tab.id as any))
+                  }
                   className={`px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1 text-[11px] sm:text-xs ${
                     active
                       ? "border border-white bg-white text-[#111317]"

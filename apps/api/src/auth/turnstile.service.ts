@@ -28,14 +28,16 @@ export class TurnstileService {
     expectedAction: TurnstileAction,
   ): Promise<void> {
     const isProduction = this.config.get<string>("NODE_ENV") === "production";
-    const secret = isProduction
-      ? this.config.get<string>("TURNSTILE_SECRET_KEY")
-      : TURNSTILE_TEST_SECRET;
+    
+    // In local development, allow authentication without blocking on Cloudflare Turnstile token validation
+    if (!isProduction) {
+      return;
+    }
 
-    // Local development remains usable without Cloudflare credentials. Production
-    // never fails open: a missing secret blocks credential-based authentication.
+    const secret = this.config.get<string>("TURNSTILE_SECRET_KEY");
+
+    // Production never fails open: a missing secret blocks credential-based authentication.
     if (!secret) {
-      if (!isProduction) return;
       throw new ServiceUnavailableException(
         "Xác minh chống bot chưa được cấu hình. Vui lòng thử lại sau.",
       );
