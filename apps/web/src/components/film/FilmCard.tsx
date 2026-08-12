@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import type { MovieSource } from "@/lib/movie-normalizer";
 import { guestDataStorage } from "@/lib/user-data";
 import { cardFont } from "@/lib/fonts";
+import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
 
 export interface FilmItem {
   _id?: string;
@@ -139,6 +140,17 @@ function FilmCardComponent({
 
   const [imageSrc, setImageSrc] = useState<string | null>(initialPosterUrl);
 
+  // Automatically fetch high-res TMDB poster/backdrop artwork if local upstream image is missing or proxying
+  const { posterUrl: tmdbPosterUrl, backdropUrl: tmdbBackdropUrl } = useTmdbArtwork(
+    film,
+    !imageSrc || imageSrc.startsWith("/api/image-proxy"),
+  );
+
+  const preferredTmdb =
+    variant === "landscape"
+      ? tmdbBackdropUrl || tmdbPosterUrl
+      : tmdbPosterUrl || tmdbBackdropUrl;
+
   useEffect(() => {
     const url =
       variant === "landscape"
@@ -146,8 +158,20 @@ function FilmCardComponent({
           resolveImageUrl(film.poster_url)
         : resolveImageUrl(film.poster_url, film.thumb_url) ||
           resolveImageUrl(film.thumb_url);
-    setImageSrc(url);
-  }, [film.poster_url, film.thumb_url, variant]);
+
+    if (url) {
+      setImageSrc(url);
+    } else if (preferredTmdb) {
+      setImageSrc(preferredTmdb);
+    }
+  }, [film.poster_url, film.thumb_url, variant, preferredTmdb]);
+
+  // If TMDB returns an official artwork and local image is missing or failed, use TMDB artwork
+  useEffect(() => {
+    if (preferredTmdb && (!imageSrc || imageSrc.startsWith("/api/image-proxy"))) {
+      setImageSrc(preferredTmdb);
+    }
+  }, [preferredTmdb, imageSrc]);
 
   useEffect(() => {
     let active = true;
@@ -186,10 +210,16 @@ function FilmCardComponent({
   }, [slug, user, queryClient]);
 
   const handleImageError = () => {
+    // 1. If TMDB official artwork is available, use TMDB artwork!
+    if (preferredTmdb && imageSrc !== preferredTmdb) {
+      setImageSrc(preferredTmdb);
+      return;
+    }
+
     const posterResolved = normalizeUpstreamImageUrl(film.poster_url);
     const thumbResolved = normalizeUpstreamImageUrl(film.thumb_url);
 
-    // 1. If we used poster_url and thumb_url exists, try thumb_url
+    // 2. If we used poster_url and thumb_url exists, try thumb_url
     if (
       thumbResolved &&
       thumbResolved !== posterResolved &&
@@ -200,7 +230,7 @@ function FilmCardComponent({
       return;
     }
 
-    // 2. If direct CDN URL failed, try image-proxy
+    // 3. If direct CDN URL failed, try image-proxy
     if (
       imageSrc &&
       !imageSrc.startsWith("/api/image-proxy") &&
@@ -211,7 +241,7 @@ function FilmCardComponent({
       return;
     }
 
-    // 3. If image-proxy fails, set imageSrc to null so FilmCard renders a clean, movie-specific title poster
+    // 4. If image-proxy fails and no TMDB artwork, set imageSrc to null so FilmCard renders a clean, movie-specific title poster
     setImageSrc(null);
   };
 
@@ -286,7 +316,7 @@ function FilmCardComponent({
               onError={handleImageError}
             />
           ) : (
-            /* Clean, Movie-Specific Title Card (when image is completely missing from all upstreams) */
+            /* Clean, Movie-Specific Title Card (when image is completely missing from all upstreams & TMDB) */
             <div className="w-full h-full flex flex-col items-center justify-between p-4 bg-gradient-to-b from-neutral-800 via-neutral-900 to-black text-center relative">
               <div className="w-full flex justify-between items-center text-[10px] text-neutral-400 font-bold">
                 <span>{film.year || 2026}</span>

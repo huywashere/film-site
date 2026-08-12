@@ -1,13 +1,14 @@
 "use client";
 import Link from "next/link";
 import { Montserrat } from "next/font/google";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, FreeMode } from "swiper/modules";
 import { FilmItem, resolveImageUrl } from "./FilmCard";
 import { Play, ChevronLeft, ChevronRight, Clapperboard } from "lucide-react";
 import { DashPagination } from "./DashPagination";
 import { cardFont } from "@/lib/fonts";
+import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -21,6 +22,123 @@ const rankFont = Montserrat({
 interface Top10RankedRowProps {
   films: FilmItem[];
   title?: string;
+}
+
+function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
+  const initialUrl =
+    resolveImageUrl(film.poster_url, film.thumb_url) ||
+    resolveImageUrl(film.thumb_url);
+
+  const [imgSrc, setImgSrc] = useState<string | null>(initialUrl);
+
+  const { posterUrl: tmdbPosterUrl, backdropUrl: tmdbBackdropUrl } = useTmdbArtwork(
+    film,
+    !imgSrc || imgSrc.startsWith("/api/image-proxy"),
+  );
+
+  const preferredTmdb = tmdbPosterUrl || tmdbBackdropUrl;
+
+  useEffect(() => {
+    if (initialUrl) {
+      setImgSrc(initialUrl);
+    } else if (preferredTmdb) {
+      setImgSrc(preferredTmdb);
+    }
+  }, [initialUrl, preferredTmdb]);
+
+  useEffect(() => {
+    if (preferredTmdb && (!imgSrc || imgSrc.startsWith("/api/image-proxy"))) {
+      setImgSrc(preferredTmdb);
+    }
+  }, [preferredTmdb, imgSrc]);
+
+  const filmTitle = film.name || film.title || "Phim Top 10";
+
+  return (
+    <Link
+      href={`/film/${film.slug}`}
+      className="flex flex-col group/item relative select-none cursor-pointer pt-4 pb-2 pr-2"
+    >
+      {/* Netflix-style Bold Rank Number */}
+      <div className="absolute -top-5 left-0 z-0 pointer-events-none select-none">
+        <span
+          className={`${rankFont.className} block text-[96px] font-black leading-none tracking-[-0.08em] opacity-100 transition-transform duration-300 group-hover/item:scale-105 sm:text-[128px] md:text-[152px]`}
+          style={{
+            WebkitTextStroke: "2px rgba(255, 255, 255, 0.4)",
+            color: "transparent",
+            textShadow: "0 10px 30px rgba(0,0,0,0.9)",
+          }}
+        >
+          {rank}
+        </span>
+      </div>
+
+      {/* Poster Card Container */}
+      <div className="relative pl-14 sm:pl-20 md:pl-24 z-10">
+        <div className="relative w-[130px] sm:w-[160px] md:w-[185px] aspect-[2/3] rounded-2xl overflow-hidden border border-white/15 shadow-2xl group-hover/item:border-white/40 group-hover/item:scale-105 transition-all duration-300 bg-neutral-900">
+          {imgSrc ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={imgSrc}
+              alt={filmTitle}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105"
+              onError={() => {
+                if (preferredTmdb && imgSrc !== preferredTmdb) {
+                  setImgSrc(preferredTmdb);
+                } else if (imgSrc && !imgSrc.startsWith("/api/image-proxy")) {
+                  setImgSrc(`/api/image-proxy?url=${encodeURIComponent(imgSrc)}`);
+                } else {
+                  setImgSrc(null);
+                }
+              }}
+            />
+          ) : null}
+
+          {/* Fallback Movie Specific Title Backdrop */}
+          <div className="absolute inset-0 -z-10 flex flex-col items-center justify-between p-3 bg-gradient-to-b from-neutral-800 via-neutral-900 to-black text-center">
+            <span className="text-[10px] text-amber-400 font-bold self-end">
+              #{rank}
+            </span>
+            <div className="flex flex-col items-center gap-1.5 px-1">
+              <Clapperboard className="w-7 h-7 text-amber-500/80 mb-0.5" />
+              <h3 className="text-xs font-black text-white line-clamp-3 leading-snug">
+                {filmTitle}
+              </h3>
+            </div>
+            <span className="text-[9px] text-neutral-400 font-bold uppercase tracking-wider">
+              {film.quality || "HD"}
+            </span>
+          </div>
+
+          {/* Top Right Quality Badge */}
+          <div className="absolute top-2 right-2 z-20 pointer-events-none">
+            <span className="bg-black/80 border border-white/20 backdrop-blur-md text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">
+              {film.quality || "FHD"}
+            </span>
+          </div>
+
+          {/* Hover Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-xl transform scale-75 group-hover/item:scale-100 transition-transform">
+              <Play size={18} fill="currentColor" className="ml-0.5" />
+            </div>
+          </div>
+        </div>
+
+        {/* Movie Title Below Card */}
+        <div className="mt-2 text-center max-w-[130px] sm:max-w-[160px] md:max-w-[185px]">
+          <p className={`${cardFont.className} text-xs font-bold text-neutral-200 line-clamp-1 group-hover/item:text-amber-400 transition-colors`}>
+            {filmTitle}
+          </p>
+          {film.origin_name && (
+            <p className="text-[10px] text-neutral-400 line-clamp-1 italic font-medium">
+              {film.origin_name}
+            </p>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
 }
 
 export function Top10RankedRow({
@@ -91,109 +209,11 @@ export function Top10RankedRow({
           slidesPerView="auto"
           className="!py-4 !pl-1 !pr-2"
         >
-          {top10.map((film, index) => {
-            const rank = index + 1;
-            const posterUrl =
-              resolveImageUrl(film.poster_url, film.thumb_url) ||
-              resolveImageUrl(film.thumb_url);
-
-            const filmTitle = film.name || film.title || "Phim Top 10";
-
-            return (
-              <SwiperSlide key={film.slug || index} className="!w-auto">
-                <Link
-                  href={`/film/${film.slug}`}
-                  className="flex flex-col group/item relative select-none cursor-pointer pt-4 pb-2 pr-2"
-                >
-                  {/* Netflix-style Bold Rank Number */}
-                  <div className="absolute -top-5 left-0 z-0 pointer-events-none select-none">
-                    <span
-                      className={`${rankFont.className} block text-[96px] font-black leading-none tracking-[-0.08em] opacity-100 transition-transform duration-300 group-hover/item:scale-105 sm:text-[128px] md:text-[152px]`}
-                      style={{
-                        WebkitTextStroke: "2px rgba(255, 255, 255, 0.4)",
-                        color: "transparent",
-                        textShadow: "0 10px 30px rgba(0,0,0,0.9)",
-                      }}
-                    >
-                      {rank}
-                    </span>
-                  </div>
-
-                  {/* Poster Card Container */}
-                  <div className="relative pl-14 sm:pl-20 md:pl-24 z-10">
-                    <div className="relative w-[130px] sm:w-[160px] md:w-[185px] aspect-[2/3] rounded-2xl overflow-hidden border border-white/15 shadow-2xl group-hover/item:border-white/40 group-hover/item:scale-105 transition-all duration-300 bg-neutral-900">
-                      {posterUrl ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={posterUrl}
-                          alt={filmTitle}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105"
-                          onError={(e) => {
-                            const target = e.currentTarget;
-                            if (!target.dataset.failed) {
-                              target.dataset.failed = "true";
-                              const altThumb = film.thumb_url
-                                ? resolveImageUrl(film.thumb_url)
-                                : null;
-                              if (altThumb && altThumb !== posterUrl) {
-                                target.src = altThumb;
-                              } else {
-                                target.src = `/api/image-proxy?url=${encodeURIComponent(posterUrl)}`;
-                              }
-                            } else {
-                              target.style.display = "none";
-                            }
-                          }}
-                        />
-                      ) : null}
-
-                      {/* Fallback Movie Specific Title Backdrop */}
-                      <div className="absolute inset-0 -z-10 flex flex-col items-center justify-between p-3 bg-gradient-to-b from-neutral-800 via-neutral-900 to-black text-center">
-                        <span className="text-[10px] text-amber-400 font-bold self-end">
-                          #{rank}
-                        </span>
-                        <div className="flex flex-col items-center gap-1.5 px-1">
-                          <Clapperboard className="w-7 h-7 text-amber-500/80 mb-0.5" />
-                          <h3 className="text-xs font-black text-white line-clamp-3 leading-snug">
-                            {filmTitle}
-                          </h3>
-                        </div>
-                        <span className="text-[9px] text-neutral-400 font-bold uppercase tracking-wider">
-                          {film.quality || "HD"}
-                        </span>
-                      </div>
-
-                      {/* Top Right Quality Badge */}
-                      <div className="absolute top-2 right-2 z-20 pointer-events-none">
-                        <span className="bg-black/80 border border-white/20 backdrop-blur-md text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">
-                          {film.quality || "FHD"}
-                        </span>
-                      </div>
-
-                      {/* Hover Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                        <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-xl transform scale-75 group-hover/item:scale-100 transition-transform">
-                          <Play size={18} fill="currentColor" className="ml-0.5" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Movie Title Below Card */}
-                    <div className="mt-2 text-center max-w-[130px] sm:max-w-[160px] md:max-w-[185px]">
-                      <p className={`${cardFont.className} text-xs font-bold text-neutral-200 line-clamp-1 group-hover/item:text-amber-400 transition-colors`}>
-                        {filmTitle}
-                      </p>
-                      {film.origin_name && (
-                        <p className="text-[10px] text-neutral-400 line-clamp-1 italic font-medium">
-                          {film.origin_name}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              </SwiperSlide>
-            );
-          })}
+          {top10.map((film, index) => (
+            <SwiperSlide key={film.slug || index} className="!w-auto">
+              <Top10Item film={film} rank={index + 1} />
+            </SwiperSlide>
+          ))}
         </Swiper>
       </div>
     </section>
