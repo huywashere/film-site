@@ -25,44 +25,27 @@ interface Top10RankedRowProps {
 }
 
 function getRankColorStyle(rank: number) {
-  switch (rank) {
-    case 1:
-      return {
-        WebkitTextStroke: "3px #fbbf24",
-        color: "transparent",
-        filter: "drop-shadow(0 4px 20px rgba(251, 191, 36, 0.5))",
-      };
-    case 2:
-      return {
-        WebkitTextStroke: "3px #f43f5e",
-        color: "transparent",
-        filter: "drop-shadow(0 4px 20px rgba(244, 63, 94, 0.5))",
-      };
-    case 3:
-      return {
-        WebkitTextStroke: "3px #f59e0b",
-        color: "transparent",
-        filter: "drop-shadow(0 4px 20px rgba(245, 158, 11, 0.5))",
-      };
-    case 4:
-      return {
-        WebkitTextStroke: "2.5px #38bdf8",
-        color: "transparent",
-        filter: "drop-shadow(0 4px 18px rgba(56, 189, 248, 0.4))",
-      };
-    case 5:
-      return {
-        WebkitTextStroke: "2.5px #a855f7",
-        color: "transparent",
-        filter: "drop-shadow(0 4px 18px rgba(168, 85, 247, 0.4))",
-      };
-    default:
-      return {
-        WebkitTextStroke: "2px rgba(255, 255, 255, 0.45)",
-        color: "transparent",
-        filter: "drop-shadow(0 4px 15px rgba(0, 0, 0, 0.8))",
-      };
-  }
+  // Unique vibrant neon color palette for all 10 ranks (No duplicate colors!)
+  const colors: Record<number, { stroke: string; glow: string }> = {
+    1: { stroke: "#fbbf24", glow: "rgba(251, 191, 36, 0.6)" },  // Gold
+    2: { stroke: "#f43f5e", glow: "rgba(244, 63, 94, 0.6)" },   // Crimson Red
+    3: { stroke: "#f97316", glow: "rgba(249, 115, 22, 0.6)" },  // Vibrant Orange
+    4: { stroke: "#38bdf8", glow: "rgba(56, 189, 248, 0.55)" }, // Electric Cyan
+    5: { stroke: "#a855f7", glow: "rgba(168, 85, 247, 0.55)" }, // Neon Purple
+    6: { stroke: "#10b981", glow: "rgba(16, 185, 129, 0.55)" }, // Emerald Green
+    7: { stroke: "#ec4899", glow: "rgba(236, 72, 153, 0.55)" }, // Hot Pink
+    8: { stroke: "#84cc16", glow: "rgba(132, 204, 22, 0.55)" }, // Lime Green
+    9: { stroke: "#6366f1", glow: "rgba(99, 102, 241, 0.55)" }, // Indigo Blue
+    10: { stroke: "#ff5252", glow: "rgba(255, 82, 82, 0.55)" }, // Coral Rose
+  };
+
+  const style = colors[rank] || { stroke: "#e5e7eb", glow: "rgba(255, 255, 255, 0.35)" };
+
+  return {
+    WebkitTextStroke: "3px " + style.stroke,
+    color: "transparent",
+    filter: `drop-shadow(0 4px 18px ${style.glow})`,
+  };
 }
 
 function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
@@ -100,18 +83,18 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
       href={`/film/${film.slug}`}
       className="flex flex-col group/item relative select-none cursor-pointer pt-4 pb-2 pr-2"
     >
-      {/* Netflix-style Bold Rank Number */}
-      <div className="absolute -top-5 left-0 z-0 pointer-events-none select-none">
+      {/* Bold Rank Number Peeking Behind the Top-Left of Poster Card */}
+      <div className="absolute -top-4 sm:-top-6 -left-1 sm:-left-3 z-0 pointer-events-none select-none">
         <span
-          className={`${rankFont.className} block text-[96px] font-black leading-none tracking-[-0.08em] opacity-100 transition-transform duration-300 group-hover/item:scale-105 sm:text-[128px] md:text-[152px]`}
+          className={`${rankFont.className} block text-[98px] font-black leading-none tracking-[-0.09em] opacity-100 transition-transform duration-300 group-hover/item:scale-105 sm:text-[132px] md:text-[156px]`}
           style={getRankColorStyle(rank)}
         >
           {rank}
         </span>
       </div>
 
-      {/* Poster Card Container */}
-      <div className="relative pl-14 sm:pl-20 md:pl-24 z-10">
+      {/* Poster Card Container Overlapping Rank Number (Creating 3D Depth Layer) */}
+      <div className="relative pl-10 sm:pl-14 md:pl-16 z-10">
         <div className="relative w-[130px] sm:w-[160px] md:w-[185px] aspect-[2/3] rounded-2xl overflow-hidden border border-white/15 shadow-2xl group-hover/item:border-white/40 group-hover/item:scale-105 transition-all duration-300 bg-neutral-900">
           {imgSrc ? (
             /* eslint-disable-next-line @next/next/no-img-element */
