@@ -382,14 +382,19 @@ export const FilmCard = memo(FilmCardComponent);
 
 export function FilmCardSkeleton({
   variant = "standard",
+  width,
+  hideDetails,
 }: {
   variant?: "standard" | "landscape";
+  width?: number;
+  hideDetails?: boolean;
 }) {
   return (
     <div
       className={cn(
         "relative overflow-hidden rounded-xl bg-neutral-900 border border-white/5 animate-pulse",
         variant === "landscape" ? "aspect-video w-full" : "aspect-[2/3] w-full",
+        width ? `w-[${width}px]` : "w-full",
       )}
     >
       <div className="absolute inset-0 bg-neutral-800/40" />

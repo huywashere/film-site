@@ -9,11 +9,7 @@ import { watchProgressStorage, WatchProgressEntry } from "@/lib/watch-progress";
 import { useAuthStore } from "@/store/authStore";
 import { useQuery } from "@tanstack/react-query";
 import { watchHistoryApi } from "@/lib/api";
-import {
-  FilmItem,
-  resolveImageUrl,
-  VERIFIED_FALLBACK_THUMBS,
-} from "./FilmCard";
+import { FilmItem, resolveImageUrl } from "./FilmCard";
 import { DashPagination } from "./DashPagination";
 import { cardFont } from "@/lib/fonts";
 
