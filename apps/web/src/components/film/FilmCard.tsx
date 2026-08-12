@@ -215,46 +215,38 @@ function FilmCardComponent({
     const posterResolved = normalizeUpstreamImageUrl(film.poster_url);
     const thumbResolved = normalizeUpstreamImageUrl(film.thumb_url);
 
-    // 1. If direct CDN URL failed, try image-proxy
-    if (
-      imageSrc &&
-      !imageSrc.startsWith("/api/image-proxy") &&
-      !imageSrc.startsWith("data:")
-    ) {
-      const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(imageSrc)}`;
-      setImageSrc(proxyUrl);
-      return;
-    }
-
-    // 2. If poster proxy failed, try thumb proxy
-    if (
-      posterResolved &&
-      imageSrc?.includes(encodeURIComponent(posterResolved)) &&
-      thumbResolved &&
-      thumbResolved !== posterResolved
-    ) {
-      setImageSrc(
-        `/api/image-proxy?url=${encodeURIComponent(thumbResolved)}`,
-      );
-      return;
-    }
-
-    // 4. Fallback to verified movie poster artwork
     const hash = Math.abs(
       (slug || title).split("").reduce((acc, char) => acc + char.charCodeAt(0), 0),
     );
-    const fallbackImage =
+    const primaryFallback =
       variant === "landscape"
         ? VERIFIED_FALLBACK_THUMBS[hash % VERIFIED_FALLBACK_THUMBS.length]
         : VERIFIED_FALLBACK_POSTERS[hash % VERIFIED_FALLBACK_POSTERS.length];
 
-    if (imageSrc !== fallbackImage) {
-      setImageSrc(fallbackImage);
-    } else {
-      setImageSrc(
-        `data:image/svg+xml;utf8,${encodeURIComponent(PLACEHOLDER_SVG)}`,
-      );
+    // If poster failed and thumb exists, try thumb
+    if (
+      thumbResolved &&
+      thumbResolved !== posterResolved &&
+      imageSrc !== thumbResolved &&
+      !imageSrc?.includes(encodeURIComponent(thumbResolved))
+    ) {
+      setImageSrc(thumbResolved);
+      return;
     }
+
+    // Cycle through fallback poster artwork array if primary fallback fails
+    if (imageSrc === primaryFallback) {
+      const secondaryIndex = (hash + 1) % VERIFIED_FALLBACK_POSTERS.length;
+      const secondaryFallback =
+        variant === "landscape"
+          ? VERIFIED_FALLBACK_THUMBS[secondaryIndex]
+          : VERIFIED_FALLBACK_POSTERS[secondaryIndex];
+      setImageSrc(secondaryFallback);
+      return;
+    }
+
+    // Set primary verified fallback artwork directly
+    setImageSrc(primaryFallback);
   };
 
   const prefetchFilmDetail = () => {
