@@ -24,6 +24,47 @@ interface Top10RankedRowProps {
   title?: string;
 }
 
+function getRankColorStyle(rank: number) {
+  switch (rank) {
+    case 1:
+      return {
+        WebkitTextStroke: "3px #fbbf24",
+        color: "transparent",
+        filter: "drop-shadow(0 4px 20px rgba(251, 191, 36, 0.5))",
+      };
+    case 2:
+      return {
+        WebkitTextStroke: "3px #f43f5e",
+        color: "transparent",
+        filter: "drop-shadow(0 4px 20px rgba(244, 63, 94, 0.5))",
+      };
+    case 3:
+      return {
+        WebkitTextStroke: "3px #f59e0b",
+        color: "transparent",
+        filter: "drop-shadow(0 4px 20px rgba(245, 158, 11, 0.5))",
+      };
+    case 4:
+      return {
+        WebkitTextStroke: "2.5px #38bdf8",
+        color: "transparent",
+        filter: "drop-shadow(0 4px 18px rgba(56, 189, 248, 0.4))",
+      };
+    case 5:
+      return {
+        WebkitTextStroke: "2.5px #a855f7",
+        color: "transparent",
+        filter: "drop-shadow(0 4px 18px rgba(168, 85, 247, 0.4))",
+      };
+    default:
+      return {
+        WebkitTextStroke: "2px rgba(255, 255, 255, 0.45)",
+        color: "transparent",
+        filter: "drop-shadow(0 4px 15px rgba(0, 0, 0, 0.8))",
+      };
+  }
+}
+
 function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
   const initialUrl =
     resolveImageUrl(film.poster_url, film.thumb_url) ||
@@ -63,11 +104,7 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
       <div className="absolute -top-5 left-0 z-0 pointer-events-none select-none">
         <span
           className={`${rankFont.className} block text-[96px] font-black leading-none tracking-[-0.08em] opacity-100 transition-transform duration-300 group-hover/item:scale-105 sm:text-[128px] md:text-[152px]`}
-          style={{
-            WebkitTextStroke: "2px rgba(255, 255, 255, 0.4)",
-            color: "transparent",
-            textShadow: "0 10px 30px rgba(0,0,0,0.9)",
-          }}
+          style={getRankColorStyle(rank)}
         >
           {rank}
         </span>
