@@ -4,15 +4,27 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 interface DashPaginationProps {
-  swiper: any;
+  swiper?: any;
   totalDashes?: number;
+  total?: number;
+  current?: number;
+  className?: string;
 }
 
 export function DashPagination({
   swiper,
   totalDashes = 5,
+  total,
+  current = 0,
+  className,
 }: DashPaginationProps) {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(current);
+
+  useEffect(() => {
+    if (current !== undefined) {
+      setActiveIndex(current);
+    }
+  }, [current]);
 
   useEffect(() => {
     if (!swiper) return;

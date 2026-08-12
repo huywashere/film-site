@@ -379,3 +379,20 @@ function FilmCardComponent({
 }
 
 export const FilmCard = memo(FilmCardComponent);
+
+export function FilmCardSkeleton({
+  variant = "standard",
+}: {
+  variant?: "standard" | "landscape";
+}) {
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-xl bg-neutral-900 border border-white/5 animate-pulse",
+        variant === "landscape" ? "aspect-video w-full" : "aspect-[2/3] w-full",
+      )}
+    >
+      <div className="absolute inset-0 bg-neutral-800/40" />
+    </div>
+  );
+}
