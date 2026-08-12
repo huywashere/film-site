@@ -15,16 +15,6 @@ const TOTAL_FALLBACK_BUDGET_MS = 5000;
 const FALLBACK_BATCH_SIZE = 3;
 const MAX_REDIRECTS = 3;
 
-// 100% verified working fallback poster URLs on public CDN
-const VERIFIED_FALLBACK_POSTERS = [
-  "https://phimimg.com/upload/vod/20250821-1/45b6b9aad03ae0aa2aceb5d73419831a.jpg",
-  "https://phimimg.com/upload/vod/20250828-1/08fd0a68865ce452e959ae2bf58b7a8c.jpg",
-  "https://phimimg.com/upload/vod/20240104-1/2cae46be24f514793c9e873f6de0fc32.jpg",
-  "https://phimimg.com/upload/vod/20250513-1/59fc5ffe0025ca40c99d48b070b59320.jpg",
-  "https://phimimg.com/upload/vod/20240128-1/4278b5bc228cbc7963f50547e6c76cff.jpg",
-  "https://phimimg.com/upload/vod/20250302-1/4cee31c3afd0fbfd11ed4f14b1bfd816.jpg",
-];
-
 function isPrivateAddress(address: string): boolean {
   const value = address.toLowerCase();
   return (
@@ -56,25 +46,7 @@ async function assertPublicDns(url: string): Promise<void> {
   }
 }
 
-// Redirect to verified working poster instead of serving gray placeholder SVG
-function fallbackRedirectResponse(rawUrl?: string) {
-  const hash = rawUrl
-    ? Math.abs(rawUrl.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0))
-    : 0;
-  const fallbackUrl =
-    VERIFIED_FALLBACK_POSTERS[hash % VERIFIED_FALLBACK_POSTERS.length];
-
-  return NextResponse.redirect(fallbackUrl, {
-    status: 307,
-    headers: {
-      "Cache-Control": "public, max-age=3600",
-    },
-  });
-}
-
-function failedImageResponse(strict: boolean, rawUrl?: string, status = 502) {
-  if (!strict) return fallbackRedirectResponse(rawUrl);
-
+function failedImageResponse(status = 404) {
   return new NextResponse(null, {
     status,
     headers: {
@@ -105,6 +77,11 @@ function generateCandidateUrls(rawUrl: string): string[] {
 
   const ordered: string[] = [imageUrl];
 
+  // Replace invalid img.phimapi.com host with real phimimg.com CDN host
+  if (imageUrl.includes("img.phimapi.com/")) {
+    ordered.push(imageUrl.replace("img.phimapi.com/", "phimimg.com/"));
+  }
+
   // If path doesn't have upload/vod, try adding common CDN path prefixes
   if (!imageUrl.includes("upload/vod/") && !imageUrl.includes("uploads/")) {
     const urlObj = new URL(imageUrl);
@@ -130,10 +107,10 @@ function generateCandidateUrls(rawUrl: string): string[] {
 
   // Domain swaps across known movie CDNs
   const domainMap: Record<string, string[]> = {
-    "img.ophim.live": ["ophim1.com", "phimimg.com", "img.phimapi.com", "images.nguonc.com"],
-    "ophim1.com": ["img.ophim.live", "phimimg.com", "img.phimapi.com"],
     "img.phimapi.com": ["phimimg.com", "ophim1.com", "img.ophim.live", "images.nguonc.com"],
     "phimimg.com": ["img.phimapi.com", "ophim1.com", "img.ophim.live", "images.nguonc.com"],
+    "img.ophim.live": ["ophim1.com", "phimimg.com", "img.phimapi.com", "images.nguonc.com"],
+    "ophim1.com": ["img.ophim.live", "phimimg.com", "img.phimapi.com"],
     "images.nguonc.com": ["phimimg.com", "img.phimapi.com", "ophim1.com", "img.ophim.live"],
   };
 
@@ -212,10 +189,9 @@ async function fetchImageCandidate(
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const strict = searchParams.get("strict") === "1";
   const rateCheck = checkImageProxyRateLimit(clientIpFromRequest(request));
   if (!rateCheck.allowed) {
-    return failedImageResponse(strict, undefined, 429);
+    return failedImageResponse(429);
   }
 
   const rawUrl = searchParams.get("url");
@@ -235,7 +211,7 @@ export async function GET(request: NextRequest) {
     .filter((url): url is string => url !== null);
 
   if (safeUrls.length === 0) {
-    return strict ? failedImageResponse(true, rawUrl) : fallbackRedirectResponse(rawUrl);
+    return failedImageResponse(404);
   }
 
   const deadline = Date.now() + TOTAL_FALLBACK_BUDGET_MS;
@@ -271,6 +247,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // If all CDN fetch candidates fail, redirect to verified fallback poster
-  return failedImageResponse(strict, rawUrl);
+  // Return 404 if all candidates fail
+  return failedImageResponse(404);
 }

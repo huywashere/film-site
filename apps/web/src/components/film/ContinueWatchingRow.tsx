@@ -228,15 +228,12 @@ export function ContinueWatchingRow({
           >
             {hasHistory
               ? historyEntries.map((item: any, idx: number) => {
-                  const fallbackIndex = idx % VERIFIED_FALLBACK_THUMBS.length;
                   const posterUrl =
-                    resolveImageUrl(item.poster) ||
-                    resolveImageUrl(item.thumb) ||
-                    VERIFIED_FALLBACK_THUMBS[fallbackIndex];
+                    resolveImageUrl(item.poster, item.thumb) ||
+                    resolveImageUrl(item.thumb);
                   const thumbUrl =
-                    resolveImageUrl(item.thumb) ||
-                    resolveImageUrl(item.poster) ||
-                    VERIFIED_FALLBACK_THUMBS[fallbackIndex];
+                    resolveImageUrl(item.thumb, item.poster) ||
+                    resolveImageUrl(item.poster);
 
                   const {
                     title,
@@ -285,19 +282,13 @@ export function ContinueWatchingRow({
                                     const altPoster = item.poster
                                       ? resolveImageUrl(item.poster)
                                       : null;
-                                    if (
-                                      altPoster &&
-                                      altPoster !== thumbUrl &&
-                                      !altPoster.includes("uploads/movies")
-                                    ) {
+                                    if (altPoster && altPoster !== thumbUrl) {
                                       target.src = altPoster;
                                     } else {
-                                      target.src =
-                                        VERIFIED_FALLBACK_THUMBS[fallbackIndex];
+                                      target.src = `/api/image-proxy?url=${encodeURIComponent(thumbUrl)}`;
                                     }
                                   } else {
-                                    target.src =
-                                      VERIFIED_FALLBACK_THUMBS[fallbackIndex];
+                                    target.style.display = "none";
                                   }
                                 }}
                               />
