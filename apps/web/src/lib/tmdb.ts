@@ -6,6 +6,14 @@
 const TMDB_PROXY = "/api/tmdb";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
 
+function tmdbImageUrl(path: string, size: string): string {
+  const upstream = `${TMDB_IMAGE_BASE}/${size}${path}`;
+  // Some production browsers/networks fail image.tmdb.org while the Vercel
+  // origin can reach it reliably. Always use the cached same-origin proxy so
+  // components never bounce between a failed direct URL and its proxy.
+  return `/api/image-proxy?url=${encodeURIComponent(upstream)}`;
+}
+
 // ── Image URL helpers ─────────────────────────────────────────────
 
 export type PosterSize =
@@ -20,7 +28,7 @@ export function tmdbPoster(
   size: PosterSize = "w342",
 ): string | null {
   if (!path) return null;
-  return `${TMDB_IMAGE_BASE}/${size}${path}`;
+  return tmdbImageUrl(path, size);
 }
 
 export function tmdbBackdrop(
@@ -28,7 +36,7 @@ export function tmdbBackdrop(
   size: BackdropSize = "w1280",
 ): string | null {
   if (!path) return null;
-  return `${TMDB_IMAGE_BASE}/${size}${path}`;
+  return tmdbImageUrl(path, size);
 }
 
 export function tmdbLogo(
@@ -36,7 +44,7 @@ export function tmdbLogo(
   size: LogoSize = "w500",
 ): string | null {
   if (!path) return null;
-  return `${TMDB_IMAGE_BASE}/${size}${path}`;
+  return tmdbImageUrl(path, size);
 }
 
 export function tmdbProfile(
@@ -44,7 +52,7 @@ export function tmdbProfile(
   size: ProfileSize = "w185",
 ): string | null {
   if (!path) return null;
-  return `${TMDB_IMAGE_BASE}/${size}${path}`;
+  return tmdbImageUrl(path, size);
 }
 
 // ── Fetch helper ──────────────────────────────────────────────────

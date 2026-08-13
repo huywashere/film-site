@@ -8,7 +8,6 @@ import { FilmItem, resolveImageUrl } from "./FilmCard";
 import { Play, ChevronLeft, ChevronRight, Clapperboard } from "lucide-react";
 import { DashPagination } from "./DashPagination";
 import { cardFont } from "@/lib/fonts";
-import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
 import { cn } from "@/lib/utils";
 
 import "swiper/css";
@@ -56,26 +55,9 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
 
   const [imgSrc, setImgSrc] = useState<string | null>(initialUrl);
 
-  const { posterUrl: tmdbPosterUrl, backdropUrl: tmdbBackdropUrl } = useTmdbArtwork(
-    film,
-    !imgSrc || imgSrc.startsWith("/api/image-proxy"),
-  );
-
-  const preferredTmdb = tmdbPosterUrl || tmdbBackdropUrl;
-
   useEffect(() => {
-    if (initialUrl) {
-      setImgSrc(initialUrl);
-    } else if (preferredTmdb) {
-      setImgSrc(preferredTmdb);
-    }
-  }, [initialUrl, preferredTmdb]);
-
-  useEffect(() => {
-    if (preferredTmdb && (!imgSrc || imgSrc.startsWith("/api/image-proxy"))) {
-      setImgSrc(preferredTmdb);
-    }
-  }, [preferredTmdb, imgSrc]);
+    setImgSrc(initialUrl);
+  }, [initialUrl]);
 
   const filmTitle = film.name || film.title || "Phim Top 10";
 
@@ -107,9 +89,7 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
               alt={filmTitle}
               className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105"
               onError={() => {
-                if (preferredTmdb && imgSrc !== preferredTmdb) {
-                  setImgSrc(preferredTmdb);
-                } else if (imgSrc && !imgSrc.startsWith("/api/image-proxy")) {
+                if (imgSrc && !imgSrc.startsWith("/api/image-proxy")) {
                   setImgSrc(`/api/image-proxy?url=${encodeURIComponent(imgSrc)}`);
                 } else {
                   setImgSrc(null);
