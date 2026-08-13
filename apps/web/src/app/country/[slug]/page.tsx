@@ -278,14 +278,15 @@ function NetflixHeroBanner({
     <section className="relative w-full h-[65vh] sm:h-[75vh] min-h-[480px] max-h-[750px] overflow-hidden bg-black select-none">
       {/* Autoplay Video Trailer or Backdrop Image Fallback */}
       {trailerKey ? (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none select-none overflow-hidden z-0">
           <iframe
             src={`https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&mute=${
               isMuted ? 1 : 0
-            }&controls=0&loop=1&playlist=${trailerKey}&playsinline=1&enablejsapi=1&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1`}
+            }&controls=0&showinfo=0&autohide=1&loop=1&playlist=${trailerKey}&playsinline=1&enablejsapi=1&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0`}
             allow="autoplay; encrypted-media"
-            className="w-[300%] h-[300%] -top-[100%] -left-[100%] absolute object-cover scale-125 brightness-[0.8] opacity-90 transition-opacity duration-1000"
+            className="w-[300%] h-[300%] -top-[100%] -left-[100%] absolute object-cover scale-125 brightness-[0.8] opacity-90 transition-opacity duration-1000 pointer-events-none select-none"
             title={filmTitle}
+            tabIndex={-1}
           />
         </div>
       ) : backdrop ? (
