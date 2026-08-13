@@ -83,6 +83,28 @@ function getBaseTitle(name: string): string {
     .trim();
 }
 
+function shuffleArray<T>(array: T[], seed: number): T[] {
+  if (!array || !array.length) return [];
+  const arr = [...array];
+  let m = arr.length;
+  let t: T;
+  let i: number;
+  let s = seed * 10000;
+
+  const random = () => {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+
+  while (m) {
+    i = Math.floor(random() * m--);
+    t = arr[m];
+    arr[m] = arr[i];
+    arr[i] = t;
+  }
+  return arr;
+}
+
 function dedupeFilmsList(
   films: FilmItem[],
   globalSlugs?: Set<string>,
@@ -618,19 +640,19 @@ export default function CountryPage() {
   const activeGenreLabel =
     GENRE_OPTIONS.find((g) => g.slug === selectedGenre)?.label || "Thể loại";
 
-  // Prepare 100% Unique non-repeating lists for each Netflix row
+  // Prepare 100% Unique non-repeating dynamic lists for each Netflix row
   const globalSeenSlugs = new Set<string>();
-  const row1Films = dedupeFilmsList(films, globalSeenSlugs).slice(0, 14);
-  const row2Films = dedupeFilmsList(romanceFilms, globalSeenSlugs).slice(0, 14);
+  const row1Films = dedupeFilmsList(shuffleArray(films, heroSeed), globalSeenSlugs).slice(0, 14);
+  const row2Films = dedupeFilmsList(shuffleArray(romanceFilms, heroSeed + 1), globalSeenSlugs).slice(0, 14);
   const row3Films = dedupeFilmsList(
-    page2Films.length ? page2Films : films.slice(10),
+    shuffleArray(page2Films.length ? page2Films : films.slice(6), heroSeed + 2),
     globalSeenSlugs,
   ).slice(0, 14);
-  const row4Films = dedupeFilmsList(actionFilms, globalSeenSlugs).slice(0, 14);
-  const row5Films = dedupeFilmsList(coTrangFilms, globalSeenSlugs).slice(0, 14);
-  const row6Films = dedupeFilmsList(comedyFilms, globalSeenSlugs).slice(0, 14);
-  const row7Films = dedupeFilmsList(crimeFilms, globalSeenSlugs).slice(0, 14);
-  const row8Films = dedupeFilmsList(dramaFilms, globalSeenSlugs).slice(0, 14);
+  const row4Films = dedupeFilmsList(shuffleArray(actionFilms, heroSeed + 3), globalSeenSlugs).slice(0, 14);
+  const row5Films = dedupeFilmsList(shuffleArray(coTrangFilms, heroSeed + 4), globalSeenSlugs).slice(0, 14);
+  const row6Films = dedupeFilmsList(shuffleArray(comedyFilms, heroSeed + 5), globalSeenSlugs).slice(0, 14);
+  const row7Films = dedupeFilmsList(shuffleArray(crimeFilms, heroSeed + 6), globalSeenSlugs).slice(0, 14);
+  const row8Films = dedupeFilmsList(shuffleArray(dramaFilms, heroSeed + 7), globalSeenSlugs).slice(0, 14);
 
   return (
     <div className={`${cardFont.className} min-h-screen w-full bg-[#141414] text-foreground -mt-20 sm:-mt-24`}>

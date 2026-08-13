@@ -165,6 +165,39 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
   );
 }
 
+function getBaseTitle(name: string): string {
+  if (!name) return "";
+  return name
+    .toLowerCase()
+    .replace(/\(phần\s*\d+\)/gi, "")
+    .replace(/phần\s*\d+/gi, "")
+    .replace(/season\s*\d+/gi, "")
+    .replace(/\(vietsub\)/gi, "")
+    .replace(/\(thuyết\s*minh\)/gi, "")
+    .replace(/\(lồng\s*tiếng\)/gi, "")
+    .replace(/\(fhd\)/gi, "")
+    .replace(/\(hd\)/gi, "")
+    .replace(/[^a-z0-9\s]/gi, "")
+    .trim();
+}
+
+function dedupeTop10(films: FilmItem[]): FilmItem[] {
+  const seenBase = new Set<string>();
+  const result: FilmItem[] = [];
+
+  for (const film of films) {
+    if (!film) continue;
+    const rawTitle = film.name || film.title || "";
+    const baseTitle = getBaseTitle(rawTitle);
+
+    if (baseTitle && seenBase.has(baseTitle)) continue;
+    if (baseTitle) seenBase.add(baseTitle);
+    result.push(film);
+  }
+
+  return result;
+}
+
 export function Top10RankedRow({
   films,
   title = "TOP 10 Đang Được Xem Nhiều",
@@ -175,15 +208,13 @@ export function Top10RankedRow({
 
   if (!films || films.length === 0) return null;
 
-  const top10 = films.slice(0, 10);
+  const top10 = dedupeTop10(films).slice(0, 10);
 
   return (
     <section className="mb-10 relative group/section">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-          <span className="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-transparent">
-            {title}
-          </span>
+        <h2 className={`${cardFont.className} text-lg md:text-xl font-extrabold text-white flex items-center gap-2`}>
+          <span>{title}</span>
         </h2>
 
         {/* Custom Navigation */}
