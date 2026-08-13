@@ -315,7 +315,7 @@ function RecMovieItem({ item }: { item: any }) {
         </p>
         <div className="flex items-center gap-1.5 text-[10px] text-white/25">
           <span>{item.year}</span>
-          {item.tmdb?.vote_average > 0 && (
+          {typeof item?.tmdb?.vote_average === "number" && item.tmdb.vote_average > 0 && (
             <>
               <span>·</span>
               <span className="flex items-center gap-0.5 text-amber-400/60 font-bold">
@@ -343,7 +343,8 @@ export default function WatchPage() {
   const user = useAuthStore((s) => s.user);
   const { t } = useTranslation();
 
-  const slug = params.slug as string;
+  const rawSlug = (params.slug as string) || "";
+  const slug = useMemo(() => rawSlug.replace(/_/g, "-"), [rawSlug]);
   const currentEp = searchParams.get("ep") || "";
   const requestedSource = searchParams.get("source");
   const preferredSource = ["kkphim", "ophim", "nguonc", "vsmov"].includes(
