@@ -274,7 +274,7 @@ function NetflixHeroBanner({
   const filmTitle = film.name || film.title || "Phim Hay";
 
   return (
-    <section className="relative w-full h-[72vh] min-h-[520px] max-h-[820px] overflow-hidden bg-black select-none">
+    <section className="relative w-full h-[62vh] sm:h-[68vh] min-h-[460px] max-h-[700px] overflow-hidden bg-black select-none">
       {/* Background Image / Media */}
       {backdrop && (
         <NextImage
@@ -499,49 +499,11 @@ export default function CountryPage() {
 
   return (
     <div className={`${cardFont.className} min-h-screen w-full bg-[#141414] text-foreground`}>
-      {/* ── Sub-header Bar (Sub-navbar matching Netflix Screenshot 1) ── */}
-      <div className="sticky top-16 z-40 bg-[#141414]/90 backdrop-blur-md px-4 sm:px-12 md:px-16 lg:px-24 py-3 flex items-center justify-between border-b border-white/5 transition-all">
-        <div className="flex items-center gap-6">
-          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-            {isKoreanPage ? "Phim Hàn Quốc" : `Phim ${label}`}
-          </h1>
-
-          {/* Dropdown Genre Filter "Thể loại ▾" */}
-          <div className="relative">
-            <button
-              onClick={() => setShowGenreMenu(!showGenreMenu)}
-              className="flex items-center gap-2 bg-black border border-white/40 hover:border-white text-white font-bold text-xs sm:text-sm px-3 py-1 rounded transition-colors cursor-pointer select-none"
-            >
-              <span>{activeGenreLabel}</span>
-              <ChevronDown size={14} />
-            </button>
-
-            {showGenreMenu && (
-              <div className="absolute left-0 top-full mt-2 w-56 bg-[#141414] border border-white/20 rounded-md shadow-2xl z-50 py-2 overflow-hidden animate-in fade-in duration-150">
-                {GENRE_OPTIONS.map((g) => (
-                  <button
-                    key={g.slug}
-                    onClick={() => handleSelectGenre(g.slug)}
-                    className={`w-full text-left px-4 py-2 text-xs font-semibold transition-colors cursor-pointer ${
-                      selectedGenre === g.slug
-                        ? "bg-white/20 text-white font-bold"
-                        : "text-neutral-300 hover:bg-white/10 hover:text-white"
-                    }`}
-                  >
-                    {g.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* ── Netflix Spotlight Hero Banner ── */}
       <NetflixHeroBanner film={heroFilm} countryName={label} />
 
-      {/* ── Content Rows ── */}
-      <div className="px-4 sm:px-12 md:px-16 lg:px-24 pt-6 pb-16 space-y-4">
+      {/* ── Content Rows (Positioned cleanly below hero without any overlap) ── */}
+      <div className="relative z-20 px-4 sm:px-12 md:px-16 lg:px-24 pt-8 sm:pt-12 pb-16 space-y-6">
         {/* Continue Watching Row if logged in or has history */}
         <ContinueWatchingRow />
 
