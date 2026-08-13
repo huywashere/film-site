@@ -279,7 +279,7 @@ function NetflixHeroBanner({
   const filmTitle = film.name || film.title || "Phim Hay";
 
   return (
-    <section className="relative w-full h-[80vh] sm:h-[88vh] min-h-[560px] max-h-[860px] -mt-16 sm:-mt-20 overflow-hidden bg-black select-none">
+    <section className="relative w-full h-[85vh] sm:h-[92vh] lg:h-[96vh] min-h-[620px] max-h-[960px] overflow-hidden bg-black select-none">
       {/* High-Resolution Backdrop Image Layer (Always visible underneath) */}
       {backdrop && (
         <NextImage
@@ -540,7 +540,7 @@ export default function CountryPage() {
     GENRE_OPTIONS.find((g) => g.slug === selectedGenre)?.label || "Thể loại";
 
   return (
-    <div className={`${cardFont.className} min-h-screen w-full bg-[#141414] text-foreground`}>
+    <div className={`${cardFont.className} min-h-screen w-full bg-[#141414] text-foreground -mt-20 sm:-mt-24`}>
       {/* ── Netflix Spotlight Hero Banner with Background Video Trailer ── */}
       <NetflixHeroBanner film={heroFilm} countryName={label} />
 
