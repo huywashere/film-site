@@ -252,7 +252,7 @@ export default function ArtPlayer({
       playbackRate: true,
       aspectRatio: true,
       fullscreen: true,
-      fullscreenWeb: true,
+      fullscreenWeb: false,
       subtitleOffset: true,
       miniProgressBar: true,
       mutex: true,
@@ -263,8 +263,8 @@ export default function ArtPlayer({
       theme: "#f59e0b",
       lang: "vi",
 
-      // Hotkey settings
-      hotkey: true,
+      // Hotkey settings (handing via custom event listener)
+      hotkey: false,
 
       // Subtitle with style customization & Subtitle Offset Sync
       ...(subtitle
@@ -365,23 +365,6 @@ export default function ArtPlayer({
                   player.notice.show = "Trình duyệt không hỗ trợ PiP";
                 });
             }
-          },
-        },
-        {
-          name: "theater-mode",
-          position: "right",
-          html: `
-            <svg class="art-icon art-icon-theater" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="cursor: pointer; display: flex; align-items: center; justify-content: center; height: 100%;">
-              <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
-              <line x1="7" y1="4" x2="7" y2="20"></line>
-              <line x1="17" y1="4" x2="17" y2="20"></line>
-            </svg>
-          `,
-          tooltip: isTheaterModeRef.current
-            ? "Chế độ mặc định"
-            : "Chế độ rạp chiếu",
-          click: function () {
-            onTheaterModeToggleRef.current?.(!isTheaterModeRef.current);
           },
         },
       ],

@@ -511,4 +511,17 @@ html {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7) !important;
 }
 
+/* Hide Hotkey menu item & Web Fullscreen / Theater controls */
+.art-video-player .art-control-fullscreenWeb,
+.art-video-player .art-control-web-fullscreen,
+.art-video-player .art-icon-fullscreenWeb,
+.art-video-player .art-icon-theater,
+.art-video-player .art-control-theater-mode,
+.art-video-player .art-setting-item-hotkey,
+.art-video-player [data-for="fullscreenWeb"],
+.art-video-player [data-for="hotkey"] {
+  display: none !important;
+}
+
+
 
