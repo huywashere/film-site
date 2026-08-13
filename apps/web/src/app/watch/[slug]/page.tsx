@@ -1016,24 +1016,16 @@ export default function WatchPage() {
   const currentEpData: any =
     findMatchingEpisode(serverData, currentEp) || serverData[0];
 
-  const vidsrcRequiresManualSelection =
-    server?._source === "vidsrc" && !vidsrcManuallySelected;
-  const m3u8Url: string = vidsrcRequiresManualSelection
-    ? ""
-    : currentEpData?.link_m3u8 || "";
-  const embedUrl: string = vidsrcRequiresManualSelection
-    ? ""
-    : currentEpData?.link_embed || "";
+  const m3u8Url: string = currentEpData?.link_m3u8 || "";
+  const embedUrl: string = currentEpData?.link_embed || "";
 
   const iframeUrl =
     embedUrl ||
     (m3u8Url
       ? `https://player.phimapi.com/player/?url=${encodeURIComponent(m3u8Url)}`
       : "");
-  const iframeSandbox = canUseUnsandboxedEmbed(server?._source, iframeUrl)
-    ? undefined
-    : "allow-scripts allow-same-origin allow-forms allow-presentation";
-  const videoUrl = m3u8Url || iframeUrl;
+  const iframeSandbox = undefined;
+  const videoUrl = embedUrl || m3u8Url || iframeUrl;
 
   const currentEpIndex = serverData.findIndex(
     (e: any) =>
