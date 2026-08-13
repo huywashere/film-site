@@ -959,8 +959,15 @@ export default function WatchPage() {
     [availableTypes, serversByType],
   );
 
+  const initialSelectedRef = useRef(false);
+
   useEffect(() => {
-    if (episodes.length > 0) {
+    initialSelectedRef.current = false;
+  }, [slug]);
+
+  useEffect(() => {
+    if (episodes.length > 0 && !initialSelectedRef.current) {
+      initialSelectedRef.current = true;
       // ⚡ Always prioritize Vietsub FIRST, then Thuyet Minh, then Engsub
       const automaticServers = episodes.filter((candidate) =>
         isAutomaticPlaybackSource(candidate._source),
@@ -972,16 +979,16 @@ export default function WatchPage() {
         automaticServers[0];
       if (pref) {
         const idx = episodes.indexOf(pref);
-        if (idx >= 0 && currentServer !== idx) {
+        if (idx >= 0) {
           setCurrentServer(idx);
         }
-        if (pref._type && activeServerType !== pref._type) {
+        if (pref._type) {
           setActiveServerType(pref._type as ServerType);
         }
         setVidsrcManuallySelected(false);
       }
     }
-  }, [activeServerType, currentServer, episodes]);
+  }, [episodes]);
 
   useEffect(() => {
     if (vidsrcManuallySelected) return;
