@@ -454,13 +454,16 @@ export default function CountryPage() {
   const [heroSeed, setHeroSeed] = useState(() => Math.random());
   const [showGenreMenu, setShowGenreMenu] = useState(false);
 
-  // Main catalog query for full listing & pagination
+  // Main catalog query for full listing & pagination with Instant Cache
   const { data: mainData, isLoading: mainLoading } = useQuery({
     queryKey: ["country", slug, page, selectedGenre],
     queryFn: () =>
       selectedGenre
         ? movieApi.getFiltered({ country: slug, category: selectedGenre, page }).then((r) => r.data)
         : movieApi.getByCountry(slug, page).then((r) => r.data),
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
+    placeholderData: (previousData) => previousData,
   });
 
   const films: FilmItem[] = mainData?.data?.items || mainData?.items || [];
@@ -472,7 +475,7 @@ export default function CountryPage() {
     setHeroSeed(Math.random());
   }, [slug]);
 
-  // Specific genre queries filtered by country
+  // Specific genre queries filtered by country with Instant Cache
   const { data: romanceData, isLoading: romanceLoading } = useQuery({
     queryKey: ["country-romance", slug],
     queryFn: () =>
@@ -484,7 +487,8 @@ export default function CountryPage() {
           limit: 18,
         })
         .then((r) => r.data),
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
   });
 
   const { data: actionData, isLoading: actionLoading } = useQuery({
@@ -498,7 +502,8 @@ export default function CountryPage() {
           limit: 18,
         })
         .then((r) => r.data),
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
   });
 
   const { data: coTrangData, isLoading: coTrangLoading } = useQuery({
@@ -512,7 +517,8 @@ export default function CountryPage() {
           limit: 18,
         })
         .then((r) => r.data),
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
   });
 
   const { data: crimeData, isLoading: crimeLoading } = useQuery({
@@ -521,14 +527,16 @@ export default function CountryPage() {
       movieApi
         .getFiltered({ country: slug, category: "hinh-su", page: 1, limit: 18 })
         .then((r) => r.data),
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
   });
 
-  // Additional queries for maximum Korean movie variety
+  // Additional queries for maximum Korean movie variety with Instant Cache
   const { data: page2Data, isLoading: page2Loading } = useQuery({
     queryKey: ["country-p2", slug],
     queryFn: () => movieApi.getByCountry(slug, 2).then((r) => r.data),
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
   });
 
   const { data: comedyData, isLoading: comedyLoading } = useQuery({
@@ -537,7 +545,8 @@ export default function CountryPage() {
       movieApi
         .getFiltered({ country: slug, category: "hai-huoc", page: 1, limit: 20 })
         .then((r) => r.data),
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
   });
 
   const { data: dramaData, isLoading: dramaLoading } = useQuery({
@@ -546,7 +555,8 @@ export default function CountryPage() {
       movieApi
         .getFiltered({ country: slug, category: "tam-ly", page: 1, limit: 20 })
         .then((r) => r.data),
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
   });
 
   const romanceFilms: FilmItem[] =

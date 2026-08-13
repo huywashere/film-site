@@ -1,5 +1,5 @@
 "use client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import NextImage from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -180,6 +180,28 @@ function AnimatedNavbarLogo() {
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  // Prefetch Korean & Chinese movie hub routes & data in memory on mount for INSTANT 0ms tab switching
+  useEffect(() => {
+    try {
+      router.prefetch("/country/han-quoc");
+      router.prefetch("/country/trung-quoc");
+      queryClient.prefetchQuery({
+        queryKey: ["country", "han-quoc", 1, ""],
+        queryFn: () => movieApi.getByCountry("han-quoc", 1).then((r) => r.data),
+        staleTime: 1000 * 60 * 60,
+      });
+      queryClient.prefetchQuery({
+        queryKey: ["country", "trung-quoc", 1, ""],
+        queryFn: () => movieApi.getByCountry("trung-quoc", 1).then((r) => r.data),
+        staleTime: 1000 * 60 * 60,
+      });
+    } catch (_e) {
+      // ignore prefetch errors
+    }
+  }, [queryClient, router]);
+
   const { user, logout } = useAuthStore();
   const openAuthModal = useAuthModalStore((state) => state.openModal);
   const { t, lang, setLang, isTransitioning } = useTranslation();
