@@ -2019,7 +2019,7 @@ export default function WatchPage() {
                   {/* ── Version & Audio Selection Tabs ── */}
                   <div className="space-y-2">
                     <div className="text-[11px] font-extrabold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Subtitles size={13} className="text-red-500" />
+                      <Subtitles size={13} className="text-white/60" />
                       <span>Phiên bản Âm thanh & Phụ đề</span>
                     </div>
 
@@ -2070,18 +2070,18 @@ export default function WatchPage() {
                               }
                             }}
                             className={cn(
-                              "group inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none border active:scale-95",
+                              "group inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer select-none border active:scale-95",
                               isActive
-                                ? "bg-red-600 text-white border-red-500 shadow-lg shadow-red-900/40"
+                                ? "bg-white text-black border-white shadow-md scale-[1.02]"
                                 : hasItems
                                   ? "bg-white/[0.04] hover:bg-white/[0.09] text-neutral-300 border-white/10 hover:border-white/20"
                                   : "opacity-40 cursor-not-allowed bg-white/[0.02] border-white/5 text-neutral-500",
                             )}
                           >
-                            <IconComponent size={14} className={isActive ? "text-white" : "text-neutral-400 group-hover:text-white"} />
+                            <IconComponent size={14} className={isActive ? "text-black" : "text-neutral-400 group-hover:text-white"} />
                             <span>{opt.label}</span>
                             {isActive && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse ml-0.5" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-black ml-0.5" />
                             )}
                           </button>
                         );
@@ -2093,7 +2093,7 @@ export default function WatchPage() {
                   {activeGroup.length > 0 && (
                     <div className="pt-3 border-t border-white/[0.08] space-y-2">
                       <div className="text-[11px] font-extrabold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <Server size={13} className="text-red-500" />
+                        <Server size={13} className="text-white/60" />
                         <span>Máy chủ Nguồn phát ({activeGroup.length} Server)</span>
                       </div>
 
@@ -2137,12 +2137,12 @@ export default function WatchPage() {
                               className={cn(
                                 "px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none active:scale-95 border flex items-center gap-2",
                                 isActive
-                                  ? "bg-red-600 text-white border-red-500 shadow-md shadow-red-950/50"
+                                  ? "bg-white text-black border-white font-extrabold shadow-md scale-[1.02]"
                                   : "bg-white/[0.04] hover:bg-white/[0.09] text-neutral-300 border-white/10 hover:border-white/20",
                                 hasFailed && "opacity-30 cursor-not-allowed line-through",
                               )}
                             >
-                              <Radio size={12} className={isActive ? "text-white animate-pulse" : "text-neutral-400"} />
+                              <Radio size={12} className={isActive ? "text-black animate-pulse" : "text-neutral-400"} />
                               <span>
                                 {sourceTag ? `${sourceTag} • ${cleanServerName}` : cleanServerName}
                               </span>
@@ -2181,11 +2181,11 @@ export default function WatchPage() {
                         Danh sách tập{" "}
                         <span className="text-white/40">
                           ({" "}
-                          <span className="text-emerald-400 font-extrabold">
+                          <span className="text-white font-extrabold">
                             {currentEpIndex >= 0 ? currentEpIndex + 1 : 1}
                           </span>{" "}
                           /{" "}
-                          <span className="text-emerald-400/80">
+                          <span className="text-white/80">
                             {serverData.length}
                           </span>{" "}
                           )
@@ -2219,7 +2219,7 @@ export default function WatchPage() {
                           className={cn(
                             "w-9 h-5 rounded-full p-0.5 transition-colors cursor-pointer flex items-center",
                             showEpThumbnails
-                              ? "bg-emerald-500 justify-end"
+                              ? "bg-white/40 justify-end"
                               : "bg-white/20 justify-start",
                           )}
                         >
@@ -2254,15 +2254,15 @@ export default function WatchPage() {
                             className={cn(
                               "px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 cursor-pointer border",
                               isCurrentRange
-                                ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-sm"
+                                ? "bg-white border-white text-black shadow-sm"
                                 : containsActiveEp
-                                  ? "bg-white/10 border-emerald-500/30 text-emerald-400"
+                                  ? "bg-white/10 border-white/30 text-white"
                                   : "bg-white/[0.03] border-white/[0.06] text-white/50 hover:bg-white/[0.07] hover:text-white",
                             )}
                           >
                             {start} - {end}
                             {containsActiveEp && (
-                              <span className="ml-1 w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
+                              <span className="ml-1 w-1.5 h-1.5 rounded-full bg-white inline-block animate-pulse" />
                             )}
                           </button>
                         );
@@ -2295,14 +2295,14 @@ export default function WatchPage() {
                               className={cn(
                                 "flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-3 transition-all cursor-pointer border text-xs font-bold",
                                 isActive
-                                  ? "bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-600/30"
+                                  ? "bg-white border-white text-black font-extrabold shadow-lg scale-[1.02]"
                                   : "bg-[#14181f]/80 hover:bg-white/[0.08] border-white/10 text-white/70 hover:text-white",
                               )}
                             >
                               <Play
                                 size={10}
                                 fill="currentColor"
-                                className="shrink-0"
+                                className={isActive ? "text-black shrink-0" : "text-white/70 shrink-0"}
                               />
                               <span>Tập {epNum}</span>
                             </button>
@@ -2345,7 +2345,7 @@ export default function WatchPage() {
                               className={cn(
                                 "group/ep relative aspect-video rounded-xl overflow-hidden border transition-all cursor-pointer text-left bg-neutral-900",
                                 isActive
-                                  ? "border-2 border-emerald-500 ring-2 ring-emerald-500/30 shadow-xl"
+                                  ? "border-2 border-white ring-2 ring-white/20 shadow-xl"
                                   : "border-white/10 hover:border-white/30 hover:scale-[1.02]",
                               )}
                             >
@@ -2369,7 +2369,7 @@ export default function WatchPage() {
 
                               {/* ĐANG XEM Badge */}
                               {isActive && (
-                                <div className="absolute top-2 right-2 z-10 bg-emerald-500 text-white font-extrabold text-[9px] px-2 py-0.5 rounded shadow-lg uppercase tracking-wider">
+                                <div className="absolute top-2 right-2 z-10 bg-white text-black font-extrabold text-[9px] px-2 py-0.5 rounded shadow-lg uppercase tracking-wider">
                                   Đang xem
                                 </div>
                               )}
