@@ -21,6 +21,7 @@ import {
 import { movieApi } from "@/lib/api";
 import { tmdbProfile } from "@/lib/tmdb";
 import { resolveImageUrl, FilmItem } from "@/components/film/FilmCard";
+import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
 import { VoiceSearchButton } from "@/components/search/VoiceSearchButton";
 import { cardFont } from "@/lib/fonts";
 
@@ -66,6 +67,64 @@ function filmIdentity(film: FilmItem): string {
   if (film.tmdb?.id) return `tmdb:${film.tmdb.type || film.type}:${film.tmdb.id}`;
   const title = removeAccents(film.origin_name || film.name || film.slug);
   return `${title}:${film.year || ""}`;
+}
+
+function SearchCardImage({ film }: { film: FilmItem }) {
+  const initialPoster =
+    resolveImageUrl(film.poster_url, film.thumb_url) ||
+    resolveImageUrl(film.thumb_url);
+
+  const [imgSrc, setImgSrc] = useState<string | null>(initialPoster);
+
+  const { posterUrl: tmdbPosterUrl, backdropUrl: tmdbBackdropUrl } = useTmdbArtwork(
+    film,
+    !imgSrc || imgSrc.startsWith("/api/image-proxy"),
+  );
+
+  const preferredTmdb = tmdbPosterUrl || tmdbBackdropUrl;
+
+  useEffect(() => {
+    if (initialPoster) {
+      setImgSrc(initialPoster);
+    } else if (preferredTmdb) {
+      setImgSrc(preferredTmdb);
+    }
+  }, [initialPoster, preferredTmdb]);
+
+  useEffect(() => {
+    if (preferredTmdb && (!imgSrc || imgSrc.startsWith("/api/image-proxy"))) {
+      setImgSrc(preferredTmdb);
+    }
+  }, [preferredTmdb, imgSrc]);
+
+  if (!imgSrc) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center bg-gradient-to-b from-neutral-800 to-black">
+        <Clapperboard size={28} className="text-amber-500/80 mb-1" />
+        <span className="text-[10px] font-bold text-white line-clamp-2 leading-tight">
+          {film.name || film.title}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={imgSrc}
+      alt={film.name || film.title || "Poster"}
+      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+      onError={() => {
+        if (preferredTmdb && imgSrc !== preferredTmdb) {
+          setImgSrc(preferredTmdb);
+        } else if (imgSrc && !imgSrc.startsWith("/api/image-proxy")) {
+          setImgSrc(`/api/image-proxy?url=${encodeURIComponent(imgSrc)}`);
+        } else {
+          setImgSrc(null);
+        }
+      }}
+    />
+  );
 }
 
 // ── Highlight matching text (Ultra-Fast 60fps String Slicing) ───
@@ -639,20 +698,7 @@ export function SpotlightSearchModal({
                       >
                         {/* Poster Image */}
                         <div className="relative aspect-[2/3] w-full overflow-hidden bg-neutral-900">
-                          {poster ? (
-                            <NextImage
-                              src={poster}
-                              alt={film.name}
-                              fill
-                              sizes="(max-width: 640px) 40vw, 180px"
-                              className="object-cover group-hover:scale-105 transition-transform duration-500"
-                              unoptimized
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-white/5">
-                              <Clapperboard size={28} className="opacity-20" />
-                            </div>
-                          )}
+                          <SearchCardImage film={film} />
 
                           {/* Episode / Quality Badges */}
                           <div className="absolute top-2 left-2 flex flex-col items-start gap-1 z-10">

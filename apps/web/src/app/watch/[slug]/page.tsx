@@ -38,6 +38,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useTranslation } from "@/store/langStore";
 import { useWatchParty } from "@/hooks/useWatchParty";
 import { useTmdb } from "@/hooks/useTmdb";
+import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
 import { tmdbBackdrop } from "@/lib/tmdb";
 import { cardFont } from "@/lib/fonts";
 import { WatchPartyPanel } from "@/components/watch/WatchPartyPanel";
@@ -153,6 +154,178 @@ function AutoNextOverlay({
         </div>
       </div>
     </div>
+  );
+}
+
+// ── Sidebar Film Card Component with TMDB Artwork Resolution ──
+function SidebarFilmCard({ film, slug }: { film: any; slug: string }) {
+  const initialPoster =
+    resolveImageUrl(film?.poster_url, film?.thumb_url) ||
+    resolveImageUrl(film?.thumb_url);
+
+  const [imgSrc, setImgSrc] = useState<string | null>(initialPoster);
+
+  const { posterUrl: tmdbPosterUrl, backdropUrl: tmdbBackdropUrl } = useTmdbArtwork(
+    film,
+    !imgSrc || imgSrc.startsWith("/api/image-proxy"),
+  );
+
+  const preferredTmdb = tmdbPosterUrl || tmdbBackdropUrl;
+
+  useEffect(() => {
+    if (initialPoster) {
+      setImgSrc(initialPoster);
+    } else if (preferredTmdb) {
+      setImgSrc(preferredTmdb);
+    }
+  }, [initialPoster, preferredTmdb]);
+
+  useEffect(() => {
+    if (preferredTmdb && (!imgSrc || imgSrc.startsWith("/api/image-proxy"))) {
+      setImgSrc(preferredTmdb);
+    }
+  }, [preferredTmdb, imgSrc]);
+
+  return (
+    <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 space-y-3">
+      <div className="flex gap-3">
+        <div className="relative w-16 h-24 rounded-lg overflow-hidden flex-shrink-0 ring-1 ring-white/[0.08] bg-neutral-900">
+          {imgSrc ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={imgSrc}
+              alt={film?.name || "Poster"}
+              className="w-full h-full object-cover"
+              onError={() => {
+                if (preferredTmdb && imgSrc !== preferredTmdb) {
+                  setImgSrc(preferredTmdb);
+                } else if (imgSrc && !imgSrc.startsWith("/api/image-proxy")) {
+                  setImgSrc(`/api/image-proxy?url=${encodeURIComponent(imgSrc)}`);
+                } else {
+                  setImgSrc(null);
+                }
+              }}
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center p-1 text-center bg-gradient-to-b from-neutral-800 to-black">
+              <Clapperboard size={16} className="text-amber-500/80 mb-0.5" />
+              <span className="text-[9px] font-bold text-white leading-tight line-clamp-2">
+                {film?.name}
+              </span>
+            </div>
+          )}
+        </div>
+        <div className="space-y-1 min-w-0 flex-1">
+          <h2 className="text-xs font-bold text-white leading-snug line-clamp-2">
+            {film?.name}
+          </h2>
+          {film?.origin_name && film.origin_name !== film.name && (
+            <p className="text-[10px] text-white/30 line-clamp-1">
+              {film.origin_name}
+            </p>
+          )}
+          <p className="text-[10px] text-white/30">{film?.year}</p>
+          <div className="flex flex-wrap gap-1 pt-0.5">
+            {film?.quality && (
+              <span className="text-[9px] font-bold bg-white/8 text-white/60 px-1.5 py-0.5 rounded border border-white/[0.08]">
+                {film.quality}
+              </span>
+            )}
+            {film?.lang && (
+              <span className="text-[9px] font-bold bg-emerald-500/10 text-emerald-400/80 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                {film.lang}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+      <Link
+        href={`/film/${slug}`}
+        className="flex items-center justify-center gap-1.5 w-full py-1.5 text-[11px] font-medium text-white/40 bg-white/[0.03] border border-white/[0.06] rounded-lg hover:text-white/70 hover:bg-white/[0.06] transition-colors"
+      >
+        <Info size={11} /> Chi tiết phim
+      </Link>
+    </div>
+  );
+}
+
+// ── Recommendation Item Component with TMDB Artwork Resolution ──
+function RecMovieItem({ item }: { item: any }) {
+  const initialThumb =
+    resolveImageUrl(item.poster_url, item.thumb_url) ||
+    resolveImageUrl(item.thumb_url);
+
+  const [imgSrc, setImgSrc] = useState<string | null>(initialThumb);
+
+  const { posterUrl: tmdbPosterUrl, backdropUrl: tmdbBackdropUrl } = useTmdbArtwork(
+    item,
+    !imgSrc || imgSrc.startsWith("/api/image-proxy"),
+  );
+
+  const preferredTmdb = tmdbPosterUrl || tmdbBackdropUrl;
+
+  useEffect(() => {
+    if (initialThumb) {
+      setImgSrc(initialThumb);
+    } else if (preferredTmdb) {
+      setImgSrc(preferredTmdb);
+    }
+  }, [initialThumb, preferredTmdb]);
+
+  useEffect(() => {
+    if (preferredTmdb && (!imgSrc || imgSrc.startsWith("/api/image-proxy"))) {
+      setImgSrc(preferredTmdb);
+    }
+  }, [preferredTmdb, imgSrc]);
+
+  return (
+    <Link
+      href={`/film/${item.slug}`}
+      className="flex gap-2.5 group hover:bg-white/[0.03] -mx-1 px-1 py-1 rounded-lg transition-colors"
+    >
+      <div className="relative w-12 h-[68px] rounded-lg bg-neutral-900 flex-shrink-0 overflow-hidden border border-white/10">
+        {imgSrc ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={imgSrc}
+            alt={item.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={() => {
+              if (preferredTmdb && imgSrc !== preferredTmdb) {
+                setImgSrc(preferredTmdb);
+              } else if (imgSrc && !imgSrc.startsWith("/api/image-proxy")) {
+                setImgSrc(`/api/image-proxy?url=${encodeURIComponent(imgSrc)}`);
+              } else {
+                setImgSrc(null);
+              }
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center p-1 text-center bg-gradient-to-b from-neutral-800 to-black">
+            <Clapperboard size={14} className="text-amber-500/80 mb-0.5" />
+            <span className="text-[8px] font-bold text-white leading-tight line-clamp-2">
+              {item.name}
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="flex-1 min-w-0 py-0.5 space-y-0.5">
+        <p className="text-[11px] font-semibold text-white/70 group-hover:text-white line-clamp-2 leading-snug transition-colors">
+          {item.name}
+        </p>
+        <div className="flex items-center gap-1.5 text-[10px] text-white/25">
+          <span>{item.year}</span>
+          {item.tmdb?.vote_average > 0 && (
+            <>
+              <span>·</span>
+              <span className="flex items-center gap-0.5 text-amber-400/60 font-bold">
+                ★ {item.tmdb.vote_average.toFixed(1)}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+    </Link>
   );
 }
 
@@ -1422,63 +1595,7 @@ export default function WatchPage() {
                   </span>
                 </button>
 
-                {/* Keyboard Shortcuts Button & Dropdown (Directly next to Tat Den) */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setShowShortcutsModal((p) => !p)}
-                    className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border",
-                      showShortcutsModal
-                        ? "bg-white/10 text-white border-white/20 shadow-sm"
-                        : "bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-transparent",
-                    )}
-                    title="Bảng phím tắt điều khiển"
-                  >
-                    <kbd className="bg-white/10 border border-white/15 px-1 py-0.2 rounded text-[9px] font-mono text-white/90">
-                      ⌨
-                    </kbd>
-                    <span className="hidden sm:inline">Phím tắt</span>
-                  </button>
 
-                  {/* Compact Shortcuts Dropdown */}
-                  {showShortcutsModal && (
-                    <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 z-50 w-64 p-3 rounded-2xl bg-[#111419]/95 border border-white/15 backdrop-blur-xl shadow-2xl space-y-2 animate-in fade-in zoom-in-95 duration-150 select-none">
-                      <div className="flex items-center justify-between pb-1.5 border-b border-white/10 text-xs font-bold text-white">
-                        <span className="flex items-center gap-1.5">
-                          <span>⌨</span> Phím Tắt Điều Khiển
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setShowShortcutsModal(false)}
-                          className="text-neutral-400 hover:text-white text-xs px-1 rounded hover:bg-white/10"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-1 gap-1 text-[11px]">
-                        {[
-                          ["Space / K", "Phát / Tạm dừng"],
-                          ["F", "Toàn màn hình"],
-                          ["M", "Tắt / Bật tiếng"],
-                          ["← / →", "Tua lùi / Tua tới 10s"],
-                          ["↑ / ↓", "Âm lượng +/- 10%"],
-                          ["Nhấp giữ", "Tua nhanh 2X"],
-                        ].map(([key, desc]) => (
-                          <div
-                            key={key}
-                            className="flex items-center justify-between py-1 px-2 rounded-lg bg-white/[0.03]"
-                          >
-                            <span className="text-neutral-400">{desc}</span>
-                            <kbd className="bg-white/10 border border-white/15 px-1.5 py-0.5 rounded text-[9.5px] font-mono text-white font-bold shrink-0">
-                              {key}
-                            </kbd>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
 
                 <button
                   onClick={async () => {
@@ -2343,51 +2460,7 @@ export default function WatchPage() {
           {/* ───── RIGHT SIDEBAR ───── */}
           <div className="space-y-4 min-w-0">
             {/* Film Info */}
-            <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 space-y-3">
-              <div className="flex gap-3">
-                {posterUrl && (
-                  <div className="relative w-16 h-24 rounded-lg overflow-hidden flex-shrink-0 ring-1 ring-white/[0.08]">
-                    <NextImage
-                      src={posterUrl}
-                      alt={film?.name}
-                      fill
-                      sizes="64px"
-                      className="object-cover"
-                      unoptimized
-                    />
-                  </div>
-                )}
-                <div className="space-y-1 min-w-0 flex-1">
-                  <h2 className="text-xs font-bold text-white leading-snug line-clamp-2">
-                    {film?.name}
-                  </h2>
-                  {film?.origin_name && film.origin_name !== film.name && (
-                    <p className="text-[10px] text-white/30 line-clamp-1">
-                      {film.origin_name}
-                    </p>
-                  )}
-                  <p className="text-[10px] text-white/30">{film?.year}</p>
-                  <div className="flex flex-wrap gap-1 pt-0.5">
-                    {film?.quality && (
-                      <span className="text-[9px] font-bold bg-white/8 text-white/60 px-1.5 py-0.5 rounded border border-white/[0.08]">
-                        {film.quality}
-                      </span>
-                    )}
-                    {film?.lang && (
-                      <span className="text-[9px] font-bold bg-emerald-500/10 text-emerald-400/80 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                        {film.lang}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <Link
-                href={`/film/${slug}`}
-                className="flex items-center justify-center gap-1.5 w-full py-1.5 text-[11px] font-medium text-white/40 bg-white/[0.03] border border-white/[0.06] rounded-lg hover:text-white/70 hover:bg-white/[0.06] transition-colors"
-              >
-                <Info size={11} /> Chi tiết phim
-              </Link>
-            </div>
+            <SidebarFilmCard film={film} slug={slug} />
 
             {/* Settings */}
             <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 space-y-3">
@@ -2459,56 +2532,9 @@ export default function WatchPage() {
                     : "Phim tương tự"}
                 </p>
                 <div className="space-y-2.5">
-                  {recsData.items.slice(0, 8).map((item: any) => {
-                    const thumb =
-                      resolveImageUrl(item.thumb_url) ||
-                      resolveImageUrl(item.poster_url);
-                    return (
-                      <Link
-                        href={`/film/${item.slug}`}
-                        key={item._id || item.slug}
-                        className="flex gap-2.5 group hover:bg-white/[0.03] -mx-1 px-1 py-1 rounded-lg transition-colors"
-                      >
-                        <div className="relative w-12 h-[68px] rounded-lg bg-white/5 flex-shrink-0 overflow-hidden">
-                          {thumb ? (
-                            <NextImage
-                              src={thumb}
-                              fill
-                              sizes="48px"
-                              className="object-cover group-hover:scale-105 transition-transform duration-300"
-                              alt={item.name}
-                              unoptimized
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Clapperboard
-                                size={14}
-                                className="text-white/15"
-                              />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0 py-0.5 space-y-0.5">
-                          <p className="text-[11px] font-semibold text-white/70 group-hover:text-white line-clamp-2 leading-snug transition-colors">
-                            {item.name}
-                          </p>
-                          {/* Minimal rating: just the number */}
-                          <div className="flex items-center gap-1.5 text-[10px] text-white/25">
-                            <span>{item.year}</span>
-                            {item.tmdb?.vote_average > 0 && (
-                              <>
-                                <span>·</span>
-                                <span className="flex items-center gap-0.5 text-amber-400/60">
-                                  <Star size={9} fill="currentColor" />
-                                  {Number(item.tmdb.vote_average).toFixed(1)}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
+                  {recsData.items.slice(0, 8).map((item: any) => (
+                    <RecMovieItem key={item._id || item.slug} item={item} />
+                  ))}
                 </div>
               </div>
             )}
