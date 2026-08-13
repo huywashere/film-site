@@ -12,6 +12,7 @@ import type { MovieSource } from "@/lib/movie-normalizer";
 import { guestDataStorage } from "@/lib/user-data";
 import { cardFont } from "@/lib/fonts";
 import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
+import { normalizeMovieArtworkUrl } from "@/lib/movie-image-url";
 
 export interface FilmItem {
   _id?: string;
@@ -61,34 +62,7 @@ interface FilmCardProps {
 
 // Helper: resolve image URL securely and normalize KKPhim/PhimImg CDN hosts
 function normalizeUpstreamImageUrl(url?: unknown): string | null {
-  if (!url || typeof url !== "string") return null;
-  let resolved = url.trim();
-  if (!resolved) return null;
-
-  if (resolved.startsWith("/api/image-proxy")) {
-    return resolved;
-  }
-
-  if (resolved.startsWith("//")) {
-    resolved = `https:${resolved}`;
-  } else if (resolved.startsWith("http://")) {
-    resolved = resolved.replace(/^http:\/\//i, "https://");
-  } else if (!resolved.startsWith("https://")) {
-    const cleanPath = resolved.startsWith("/") ? resolved.slice(1) : resolved;
-    resolved = `https://phimimg.com/${cleanPath}`;
-  }
-
-  // Replace invalid img.phimapi.com host with real phimimg.com CDN host
-  if (resolved.includes("img.phimapi.com/")) {
-    resolved = resolved.replace("img.phimapi.com/", "phimimg.com/");
-  }
-
-  // Fix invalid legacy path "uploads/movies/" to valid CDN path "upload/vod/"
-  if (resolved.includes("uploads/movies/")) {
-    resolved = resolved.replace("uploads/movies/", "upload/vod/");
-  }
-
-  return resolved;
+  return normalizeMovieArtworkUrl(url);
 }
 
 export function resolveImageUrl(

@@ -83,11 +83,6 @@ function generateCandidateUrls(rawUrl: string): string[] {
     imageUrl = `https:${imageUrl}`;
   }
 
-  // Handle path cleanups
-  if (imageUrl.includes("uploads/movies/")) {
-    imageUrl = imageUrl.replace("uploads/movies/", "upload/vod/");
-  }
-
   // Bare paths are relative to default KKPhim/PhimImg CDN
   if (!/^https?:\/\//i.test(imageUrl)) {
     const cleanPath = imageUrl.replace(/^\/+/, "");
@@ -97,6 +92,16 @@ function generateCandidateUrls(rawUrl: string): string[] {
   imageUrl = imageUrl.replace(/^http:\/\//i, "https://");
 
   const ordered: string[] = [imageUrl];
+
+  // KKPhim currently serves both generations of artwork paths. Keep the
+  // upstream URL first: new releases use `uploads/movies`, while older titles
+  // commonly use `upload/vod`. Rewriting the former eagerly made every new
+  // poster a deterministic 404 in production.
+  if (imageUrl.includes("/uploads/movies/")) {
+    ordered.push(imageUrl.replace("/uploads/movies/", "/upload/vod/"));
+  } else if (imageUrl.includes("/upload/vod/")) {
+    ordered.push(imageUrl.replace("/upload/vod/", "/uploads/movies/"));
+  }
 
   // Replace invalid img.phimapi.com host with real phimimg.com CDN host
   if (imageUrl.includes("img.phimapi.com/")) {
