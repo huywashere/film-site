@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -11,21 +11,28 @@ import {
   FilmCardSkeleton,
   resolveImageUrl,
 } from "@/components/film/FilmCard";
+import { Top10RankedRow } from "@/components/film/Top10RankedRow";
+import { ContinueWatchingRow } from "@/components/film/ContinueWatchingRow";
 import { Pagination } from "@/components/film/Pagination";
 import { useTmdb } from "@/hooks/useTmdb";
 import { tmdbProfile } from "@/lib/tmdb";
 import { cardFont } from "@/lib/fonts";
+import { useAuthStore } from "@/store/authStore";
 import {
   Play,
   Info,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   Flame,
   Heart,
   Zap,
   Crown,
   Tv,
   UserCheck,
+  Volume2,
+  VolumeX,
+  Sparkles,
 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, FreeMode } from "swiper/modules";
@@ -50,6 +57,16 @@ const COUNTRY_NAMES: Record<string, string> = {
   "an-do": "Ấn Độ",
 };
 
+const GENRE_OPTIONS = [
+  { slug: "", label: "Tất cả thể loại" },
+  { slug: "tinh-cam", label: "Tình Cảm & Lãng Mạn" },
+  { slug: "hanh-dong", label: "Hành Động & Kịch Tính" },
+  { slug: "co-trang", label: "Cổ Trang & Thần Thoại" },
+  { slug: "hinh-su", label: "Hình Sự & Trinh Thám" },
+  { slug: "hoat-hinh", label: "Hoạt Hình & Anime" },
+  { slug: "vien-tuong", label: "Viễn Tưởng & Tương Lai" },
+];
+
 // Reusable Category Row with Navigation Buttons OUTSIDE on right
 function CountryCategoryRow({
   title,
@@ -57,23 +74,27 @@ function CountryCategoryRow({
   films,
   isLoading,
   href,
+  variant = "standard",
 }: {
   title: string;
-  icon: React.ElementType;
+  icon?: React.ElementType;
   films: FilmItem[];
   isLoading: boolean;
   href?: string;
+  variant?: "standard" | "landscape";
 }) {
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
 
   if (!isLoading && !films.length) return null;
 
+  const cardWidth = variant === "landscape" ? 240 : 175;
+
   return (
     <div className="mb-10" aria-busy={isLoading}>
       <div className="flex items-center justify-between mb-3 px-1">
         <h2 className="text-lg md:text-xl font-extrabold text-white flex items-center space-x-2">
-          <Icon size={18} className="text-netflixRed" />
+          {Icon && <Icon size={18} className="text-red-600" />}
           <span>{title}</span>
         </h2>
         {href && (
@@ -113,16 +134,19 @@ function CountryCategoryRow({
           >
             {isLoading
               ? Array.from({ length: 7 }).map((_, i) => (
-                  <SwiperSlide key={`sk-${i}`} style={{ width: "175px" }}>
-                    <FilmCardSkeleton width={175} hideDetails={false} />
+                  <SwiperSlide key={`sk-${i}`} style={{ width: `${cardWidth}px` }}>
+                    <FilmCardSkeleton width={cardWidth} hideDetails={false} />
                   </SwiperSlide>
                 ))
               : films.map((film, idx) => (
-                  <SwiperSlide key={`${film.slug || film._id || (film as any).id}-${idx}`} style={{ width: "175px" }}>
+                  <SwiperSlide
+                    key={`${film.slug || film._id || (film as any).id}-${idx}`}
+                    style={{ width: `${cardWidth}px` }}
+                  >
                     <FilmCard
                       film={film}
-                      width={175}
-                      variant="standard"
+                      width={cardWidth}
+                      variant={variant}
                       hideDetails={false}
                     />
                   </SwiperSlide>
@@ -130,7 +154,7 @@ function CountryCategoryRow({
           </Swiper>
         </div>
 
-        {/* Minimalist Navigation Buttons Column (Không màu, không bo viền) */}
+        {/* Minimalist Navigation Buttons Column */}
         <div className="hidden sm:flex flex-col justify-center gap-3 shrink-0 px-1">
           <button
             ref={nextRef}
@@ -152,7 +176,7 @@ function CountryCategoryRow({
   );
 }
 
-// The cast follows the active hero, instead of showing a static demo roster.
+// Featured Actors Row
 function FeaturedActorsRow({ film }: { film?: FilmItem }) {
   const { cast, creditsLoading } = useTmdb({
     film,
@@ -215,16 +239,16 @@ function FeaturedActorsRow({ film }: { film?: FilmItem }) {
   );
 }
 
-// Top Spotlight Hero Banner for Country Page
-function CountryHeroBanner({
+// 100% Netflix-Authentic Spotlight Hero Banner
+function NetflixHeroBanner({
   film,
   countryName,
-  fullBleed = false,
 }: {
   film?: FilmItem;
   countryName: string;
-  fullBleed?: boolean;
 }) {
+  const [isMuted, setIsMuted] = useState(true);
+
   const { bestBackdrop } = useTmdb({
     film,
     enabled: !!film,
@@ -234,20 +258,8 @@ function CountryHeroBanner({
 
   if (!film) {
     return (
-      <section
-        aria-label="Đang tải phim nổi bật"
-        className={
-          fullBleed
-            ? "relative w-full min-h-[440px] md:min-h-[560px] overflow-hidden bg-[#0b0e13]"
-            : "relative w-full h-[450px] md:h-[520px] rounded-3xl overflow-hidden mb-12 bg-[#0b0e13] border border-white/10"
-        }
-      >
-        <div className="absolute inset-0 bg-[linear-gradient(120deg,#0b0e13_20%,#171c24_48%,#0b0e13_76%)] animate-pulse" />
-        <div className="absolute bottom-12 left-5 w-2/3 max-w-md space-y-3 sm:left-10 lg:left-[calc(6rem+4vw)]">
-          <div className="h-3 w-24 rounded bg-white/10" />
-          <div className="h-10 w-full rounded bg-white/10" />
-          <div className="h-4 w-2/3 rounded bg-white/[0.07]" />
-        </div>
+      <section className="relative w-full h-[68vh] min-h-[500px] max-h-[780px] bg-[#141414] overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(120deg,#141414_20%,#1f1f1f_48%,#141414_76%)] animate-pulse" />
       </section>
     );
   }
@@ -259,72 +271,94 @@ function CountryHeroBanner({
     resolveImageUrl(film.thumb_url) ||
     resolveImageUrl(film.poster_url);
 
+  const filmTitle = film.name || film.title || "Phim Hay";
+
   return (
-    <section
-      className={
-        fullBleed
-          ? "relative w-full min-h-[440px] md:min-h-[560px] overflow-hidden bg-[#090c12]"
-          : "relative w-full h-[450px] md:h-[520px] rounded-3xl overflow-hidden mb-12 shadow-2xl bg-neutral-900 border border-white/10"
-      }
-    >
+    <section className="relative w-full h-[72vh] min-h-[520px] max-h-[820px] overflow-hidden bg-black select-none">
+      {/* Background Image / Media */}
       {backdrop && (
         <NextImage
           src={backdrop}
-          alt={film.name}
+          alt={filmTitle}
           fill
           sizes="100vw"
-          className="object-cover object-center brightness-[0.7]"
+          className="object-cover object-center brightness-[0.8] scale-105 transition-transform duration-1000"
+          priority
           unoptimized
         />
       )}
+
+      {/* Netflix Multi-layer Gradient Overlays for 100% Authentic Vignette */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 z-10"
         style={{
-          background: `linear-gradient(to right, rgba(7,9,14,0.96) 0%, rgba(7,9,14,0.65) 45%, transparent 100%), linear-gradient(to top, rgba(7,9,14,0.95) 0%, transparent 60%)`,
+          background: `
+            linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 40%, transparent 80%),
+            linear-gradient(to top, #141414 0%, rgba(20,20,20,0.6) 20%, transparent 60%),
+            linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 25%)
+          `,
         }}
       />
 
-      <div
-        className={`absolute inset-0 flex items-end sm:items-center z-10 ${
-          fullBleed
-            ? "px-5 pb-12 pt-28 sm:px-10 sm:py-20 lg:pl-[calc(6rem+4vw)]"
-            : "p-6 sm:p-12"
-        }`}
-      >
-        <div className="max-w-2xl space-y-3 sm:space-y-4">
-          <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-white/80">
-            <span className="bg-white text-[#11151b] px-2.5 py-0.5 rounded-md text-[10px] uppercase font-black tracking-wider">
-              Phim {countryName} nổi bật
+      {/* Left Content Overlay */}
+      <div className="absolute inset-0 z-20 flex items-center px-4 sm:px-12 md:px-16 lg:px-24">
+        <div className="max-w-xl space-y-4 sm:space-y-6 pt-16">
+          {/* Netflix Badge */}
+          <div className="flex items-center gap-2">
+            <span className="text-red-600 font-black text-xs uppercase tracking-widest bg-red-600/10 px-2 py-0.5 rounded border border-red-600/20">
+              S E R I E S • {countryName}
             </span>
-            {film.year && <span>{film.year}</span>}
-            {film.quality && <span>• {film.quality}</span>}
           </div>
 
-          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-white leading-tight drop-shadow-lg">
-            {film.name}
+          {/* Title Logo / Heading */}
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-tight tracking-tight drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
+            {filmTitle}
           </h1>
-          {film.origin_name && (
-            <p className="text-sm sm:text-base font-semibold text-neutral-300">
-              #{film.origin_name}
+
+          {film.origin_name && film.origin_name !== filmTitle && (
+            <p className="text-sm sm:text-lg font-bold text-neutral-300 italic drop-shadow">
+              {film.origin_name}
             </p>
           )}
 
+          {/* Tagline / Summary */}
+          <p className="text-xs sm:text-sm md:text-base font-medium text-neutral-200 line-clamp-3 leading-relaxed drop-shadow max-w-lg">
+            {film.content ||
+              `Trải nghiệm đỉnh cao của điện ảnh ${countryName} với những thước phim kịch tính, lãng mạn và hấp dẫn nhất.`}
+          </p>
+
+          {/* Action Buttons (Netflix Style) */}
           <div className="flex items-center gap-3 pt-2">
             <Link
               href={`/watch/${film.slug}`}
-              className="flex items-center gap-2 bg-white hover:bg-neutral-200 text-black font-black px-6 py-3 rounded-full text-xs uppercase tracking-wider shadow-xl transition-all hover:scale-105"
+              className="flex items-center gap-2.5 bg-white hover:bg-neutral-200 text-black font-black px-7 py-3 rounded-md text-sm sm:text-base shadow-2xl transition-all hover:scale-105 cursor-pointer active:scale-95"
             >
-              <Play size={16} fill="currentColor" />
-              <span>Xem Ngay</span>
+              <Play size={20} fill="currentColor" className="ml-0.5" />
+              <span>Phát</span>
             </Link>
             <Link
               href={`/film/${film.slug}`}
-              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold px-5 py-3 rounded-full text-xs uppercase tracking-wider border border-white/15 transition-all"
+              className="flex items-center gap-2.5 bg-white/20 hover:bg-white/30 text-white font-bold px-6 py-3 rounded-md text-sm sm:text-base backdrop-blur-md border border-white/20 transition-all cursor-pointer active:scale-95"
             >
-              <Info size={16} />
-              <span>Chi tiết</span>
+              <Info size={20} />
+              <span>Thông tin khác</span>
             </Link>
           </div>
+        </div>
+      </div>
+
+      {/* Right Controls (Volume Toggle & Maturity Badge) */}
+      <div className="absolute right-0 bottom-24 z-20 flex items-center gap-3">
+        <button
+          onClick={() => setIsMuted(!isMuted)}
+          className="w-10 h-10 rounded-full bg-black/40 border border-white/30 text-white flex items-center justify-center hover:bg-black/60 transition-all backdrop-blur-md cursor-pointer"
+          title={isMuted ? "Bật âm thanh" : "Tắt âm thanh"}
+        >
+          {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+        </button>
+
+        <div className="bg-black/60 border-l-3 border-white text-white font-bold text-xs sm:text-sm px-3.5 py-1 backdrop-blur-md pr-6">
+          {film.quality || "T18"}
         </div>
       </div>
     </section>
@@ -337,14 +371,21 @@ export default function CountryPage() {
   const searchParams = useSearchParams();
   const slug = params.slug as string;
   const page = Number(searchParams.get("page") || 1);
+  const selectedGenre = searchParams.get("category") || "";
   const label = COUNTRY_NAMES[slug] || slug;
-  const isFeaturedCountry = slug === "han-quoc" || slug === "trung-quoc";
+  const isKoreanPage = slug === "han-quoc";
+  const user = useAuthStore((s) => s.user);
+
   const [heroSeed, setHeroSeed] = useState(() => Math.random());
+  const [showGenreMenu, setShowGenreMenu] = useState(false);
 
   // Main catalog query for full listing & pagination
   const { data: mainData, isLoading: mainLoading } = useQuery({
-    queryKey: ["country", slug, page],
-    queryFn: () => movieApi.getByCountry(slug, page).then((r) => r.data),
+    queryKey: ["country", slug, page, selectedGenre],
+    queryFn: () =>
+      selectedGenre
+        ? movieApi.getFiltered({ country: slug, category: selectedGenre, page }).then((r) => r.data)
+        : movieApi.getByCountry(slug, page).then((r) => r.data),
   });
 
   const films: FilmItem[] = mainData?.data?.items || mainData?.items || [];
@@ -352,7 +393,6 @@ export default function CountryPage() {
     ? films[Math.floor(heroSeed * films.length)]
     : undefined;
 
-  // Change the featured title whenever a visitor enters either country hub.
   useEffect(() => {
     setHeroSeed(Math.random());
   }, [slug]);
@@ -400,20 +440,6 @@ export default function CountryPage() {
     staleTime: 1000 * 60 * 10,
   });
 
-  const { data: animeData, isLoading: animeLoading } = useQuery({
-    queryKey: ["country-anime", slug],
-    queryFn: () =>
-      movieApi
-        .getFiltered({
-          country: slug,
-          category: "hoat-hinh",
-          page: 1,
-          limit: 18,
-        })
-        .then((r) => r.data),
-    staleTime: 1000 * 60 * 10,
-  });
-
   const { data: crimeData, isLoading: crimeLoading } = useQuery({
     queryKey: ["country-hinhsu", slug],
     queryFn: () =>
@@ -429,8 +455,6 @@ export default function CountryPage() {
     actionData?.data?.items || actionData?.items || [];
   const coTrangFilms: FilmItem[] =
     coTrangData?.data?.items || coTrangData?.items || [];
-  const animeFilms: FilmItem[] =
-    animeData?.data?.items || animeData?.items || [];
   const crimeFilms: FilmItem[] =
     crimeData?.data?.items || crimeData?.items || [];
 
@@ -452,109 +476,169 @@ export default function CountryPage() {
     mainData?.pagination?.totalItems;
 
   const handlePageChange = (newPage: number) => {
-    router.push(`/country/${slug}?page=${newPage}`);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(newPage));
+    router.push(`/country/${slug}?${params.toString()}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleSelectGenre = (genreSlug: string) => {
+    setShowGenreMenu(false);
+    const params = new URLSearchParams(searchParams.toString());
+    if (genreSlug) {
+      params.set("category", genreSlug);
+    } else {
+      params.delete("category");
+    }
+    params.set("page", "1");
+    router.push(`/country/${slug}?${params.toString()}`);
+  };
+
+  const activeGenreLabel =
+    GENRE_OPTIONS.find((g) => g.slug === selectedGenre)?.label || "Thể loại";
+
   return (
-    <div className={`${cardFont.className} min-h-screen w-full bg-background pb-16 pl-4 pr-4 pt-20 text-foreground md:pr-10 lg:pl-24`}>
-      {/* Full-bleed media is reserved for the Korean and Chinese hubs. */}
-      {isFeaturedCountry ? (
-        <div className="-mt-20 -mx-4 mb-10 md:-mx-10 lg:-ml-24 lg:-mr-10">
-          <CountryHeroBanner film={heroFilm} countryName={label} fullBleed />
-        </div>
-      ) : (
-        <CountryHeroBanner film={heroFilm} countryName={label} />
-      )}
+    <div className={`${cardFont.className} min-h-screen w-full bg-[#141414] text-foreground`}>
+      {/* ── Sub-header Bar (Sub-navbar matching Netflix Screenshot 1) ── */}
+      <div className="sticky top-16 z-40 bg-[#141414]/90 backdrop-blur-md px-4 sm:px-12 md:px-16 lg:px-24 py-3 flex items-center justify-between border-b border-white/5 transition-all">
+        <div className="flex items-center gap-6">
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+            {isKoreanPage ? "Phim Hàn Quốc" : `Phim ${label}`}
+          </h1>
 
-      {/* Categorized Movie Hub Rows */}
-      <CountryCategoryRow
-        title={`Phim ${label} Đang Chiếu Hot`}
-        icon={Flame}
-        films={films.slice(0, 14)}
-        isLoading={mainLoading}
-      />
+          {/* Dropdown Genre Filter "Thể loại ▾" */}
+          <div className="relative">
+            <button
+              onClick={() => setShowGenreMenu(!showGenreMenu)}
+              className="flex items-center gap-2 bg-black border border-white/40 hover:border-white text-white font-bold text-xs sm:text-sm px-3 py-1 rounded transition-colors cursor-pointer select-none"
+            >
+              <span>{activeGenreLabel}</span>
+              <ChevronDown size={14} />
+            </button>
 
-      <CountryCategoryRow
-        title="Phim Tình Cảm & Lãng Mạn"
-        icon={Heart}
-        films={romanceFilms.slice(0, 14)}
-        isLoading={romanceLoading}
-      />
-
-      <CountryCategoryRow
-        title="Phim Hành Động & Kịch Tính"
-        icon={Zap}
-        films={actionFilms.slice(0, 14)}
-        isLoading={actionLoading}
-      />
-
-      <CountryCategoryRow
-        title="Phim Cổ Trang"
-        icon={Crown}
-        films={coTrangFilms.slice(0, 14)}
-        isLoading={coTrangLoading}
-      />
-
-      {/* Featured Actors Row */}
-      <FeaturedActorsRow film={heroFilm} />
-
-      <CountryCategoryRow
-        title="Phim Hoạt Hình & Anime"
-        icon={Tv}
-        films={animeFilms.slice(0, 14)}
-        isLoading={animeLoading}
-      />
-
-      <CountryCategoryRow
-        title="Phim Hình Sự & Trinh Thám"
-        icon={Flame}
-        films={crimeFilms.slice(0, 14)}
-        isLoading={crimeLoading}
-      />
-
-      {/* Full Catalog Section Header */}
-      <div className="mt-14 mb-8 pt-8 border-t border-white/10 flex flex-col md:flex-row md:items-end justify-between gap-2">
-        <div>
-          <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
-            Tất Cả Phim {label}
-          </h2>
-          <p className="text-xs text-neutral-400 font-semibold mt-1">
-            Danh sách tổng hợp đầy đủ kho phim chọn lọc sản xuất tại {label}
-          </p>
-        </div>
-        <div className="text-xs font-bold text-neutral-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 self-start md:self-auto">
-          Trang <span className="text-white font-extrabold">{page}</span> /{" "}
-          {totalPages}
+            {showGenreMenu && (
+              <div className="absolute left-0 top-full mt-2 w-56 bg-[#141414] border border-white/20 rounded-md shadow-2xl z-50 py-2 overflow-hidden animate-in fade-in duration-150">
+                {GENRE_OPTIONS.map((g) => (
+                  <button
+                    key={g.slug}
+                    onClick={() => handleSelectGenre(g.slug)}
+                    className={`w-full text-left px-4 py-2 text-xs font-semibold transition-colors cursor-pointer ${
+                      selectedGenre === g.slug
+                        ? "bg-white/20 text-white font-bold"
+                        : "text-neutral-300 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Full Catalog Grid */}
-      {mainLoading ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
-          {Array.from({ length: 14 }).map((_, i) => (
-            <FilmCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : films.length > 0 ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
-          {films.map((f) => (
-            <FilmCard key={f.slug} film={f} />
-          ))}
-        </div>
-      ) : (
-        <div className="py-20 text-center text-neutral-500 font-semibold text-sm">
-          Chưa có bộ phim nào thuộc quốc gia này.
-        </div>
-      )}
+      {/* ── Netflix Spotlight Hero Banner ── */}
+      <NetflixHeroBanner film={heroFilm} countryName={label} />
 
-      {/* Pagination Controls */}
-      <Pagination
-        currentPage={page}
-        totalPages={totalPages}
-        totalItems={totalItems}
-        onPageChange={handlePageChange}
-      />
+      {/* ── Content Rows ── */}
+      <div className="px-4 sm:px-12 md:px-16 lg:px-24 pt-6 pb-16 space-y-4">
+        {/* Continue Watching Row if logged in or has history */}
+        <ContinueWatchingRow />
+
+        {/* Top Picks For You Today (Landscape Cards) */}
+        <CountryCategoryRow
+          title="Lựa chọn hàng đầu hôm nay cho bạn"
+          icon={Flame}
+          films={films.slice(0, 12)}
+          isLoading={mainLoading}
+          variant="landscape"
+        />
+
+        {/* Top 10 Row (Netflix-Style Giant Rank Numbers) */}
+        <Top10RankedRow
+          films={films}
+          title={isKoreanPage ? "Top 10 Phim Hàn tại Việt Nam hôm nay" : `Top 10 Phim ${label} Hôm Nay`}
+        />
+
+        {/* Romantic K-Dramas Row */}
+        <CountryCategoryRow
+          title={isKoreanPage ? "Phim Hàn Tình Cảm & Lãng Mạn hay nhất" : "Phim Tình Cảm & Lãng Mạn"}
+          icon={Heart}
+          films={romanceFilms.slice(0, 14)}
+          isLoading={romanceLoading}
+        />
+
+        {/* Binge-Worthy Thriller Row (Landscape Cards) */}
+        <CountryCategoryRow
+          title={isKoreanPage ? "Series Phim Hàn kịch tính đáng xem liên tục" : "Phim Hành Động & Kịch Tính"}
+          icon={Zap}
+          films={actionFilms.slice(0, 14)}
+          isLoading={actionLoading}
+          variant="landscape"
+        />
+
+        {/* Historical / Period K-Dramas */}
+        <CountryCategoryRow
+          title={isKoreanPage ? "Phim Hàn Cổ Trang & Thần Thoại" : "Phim Cổ Trang"}
+          icon={Crown}
+          films={coTrangFilms.slice(0, 14)}
+          isLoading={coTrangLoading}
+        />
+
+        {/* Crime & Mystery K-Dramas */}
+        <CountryCategoryRow
+          title={isKoreanPage ? "Phim Hàn Hình Sự & Trinh Thám" : "Phim Hình Sự & Trinh Thám"}
+          icon={Flame}
+          films={crimeFilms.slice(0, 14)}
+          isLoading={crimeLoading}
+        />
+
+        {/* Featured Actors */}
+        <FeaturedActorsRow film={heroFilm} />
+
+        {/* Full Catalog Header */}
+        <div className="mt-14 mb-8 pt-8 border-t border-white/10 flex flex-col md:flex-row md:items-end justify-between gap-2">
+          <div>
+            <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
+              Tất Cả Phim {label} {selectedGenre ? `• ${activeGenreLabel}` : ""}
+            </h2>
+            <p className="text-xs text-neutral-400 font-semibold mt-1">
+              Kho phim điện ảnh và series truyền hình chọn lọc sản xuất tại {label}
+            </p>
+          </div>
+          <div className="text-xs font-bold text-neutral-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 self-start md:self-auto">
+            Trang <span className="text-white font-extrabold">{page}</span> /{" "}
+            {totalPages}
+          </div>
+        </div>
+
+        {/* Full Catalog Grid */}
+        {mainLoading ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
+            {Array.from({ length: 14 }).map((_, i) => (
+              <FilmCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : films.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
+            {films.map((f) => (
+              <FilmCard key={f.slug} film={f} />
+            ))}
+          </div>
+        ) : (
+          <div className="py-20 text-center text-neutral-500 font-semibold text-sm">
+            Chưa tìm thấy bộ phim nào phù hợp.
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          onPageChange={handlePageChange}
+        />
+      </div>
     </div>
   );
 }
