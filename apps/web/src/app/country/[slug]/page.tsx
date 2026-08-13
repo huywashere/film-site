@@ -491,6 +491,31 @@ export default function CountryPage() {
     staleTime: 1000 * 60 * 10,
   });
 
+  // Additional queries for maximum Korean movie variety
+  const { data: page2Data, isLoading: page2Loading } = useQuery({
+    queryKey: ["country-p2", slug],
+    queryFn: () => movieApi.getByCountry(slug, 2).then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const { data: comedyData, isLoading: comedyLoading } = useQuery({
+    queryKey: ["country-comedy", slug],
+    queryFn: () =>
+      movieApi
+        .getFiltered({ country: slug, category: "hai-huoc", page: 1, limit: 20 })
+        .then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const { data: dramaData, isLoading: dramaLoading } = useQuery({
+    queryKey: ["country-drama", slug],
+    queryFn: () =>
+      movieApi
+        .getFiltered({ country: slug, category: "tam-ly", page: 1, limit: 20 })
+        .then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+  });
+
   const romanceFilms: FilmItem[] =
     romanceData?.data?.items || romanceData?.items || [];
   const actionFilms: FilmItem[] =
@@ -499,6 +524,12 @@ export default function CountryPage() {
     coTrangData?.data?.items || coTrangData?.items || [];
   const crimeFilms: FilmItem[] =
     crimeData?.data?.items || crimeData?.items || [];
+  const page2Films: FilmItem[] =
+    page2Data?.data?.items || page2Data?.items || [];
+  const comedyFilms: FilmItem[] =
+    comedyData?.data?.items || comedyData?.items || [];
+  const dramaFilms: FilmItem[] =
+    dramaData?.data?.items || dramaData?.items || [];
 
   const rawTotal =
     mainData?.data?.params?.pagination?.totalPages ||
@@ -554,45 +585,81 @@ export default function CountryPage() {
           variant="landscape"
         />
 
-        {/* Row 2: Có thể bạn chưa xem */}
+        {/* Row 2: Tuyệt phẩm K-Drama lãng mạn */}
         <CountryCategoryRow
-          title="Có thể bạn chưa xem"
-          films={films.slice(6, 18)}
-          isLoading={mainLoading}
-          variant="landscape"
-        />
-
-        {/* Row 3: Romantic K-Dramas */}
-        <CountryCategoryRow
-          title={isKoreanPage ? "Phim Hàn Tình Cảm & Lãng Mạn hay nhất" : "Phim Tình Cảm & Lãng Mạn"}
+          title={
+            isKoreanPage
+              ? "Tuyệt phẩm K-Drama lãng mạn khiến trái tim tan chảy"
+              : "Phim Tình Cảm & Lãng Mạn"
+          }
           films={romanceFilms.slice(0, 14)}
           isLoading={romanceLoading}
         />
 
-        {/* Row 4: Binge-Worthy Thrillers */}
+        {/* Row 3: Có thể bạn chưa xem */}
         <CountryCategoryRow
-          title={isKoreanPage ? "Series Phim Hàn kịch tính đáng xem liên tục" : "Phim Hành Động & Kịch Tính"}
+          title="Có thể bạn chưa xem"
+          films={page2Films.length ? page2Films.slice(0, 14) : films.slice(6, 18)}
+          isLoading={page2Loading || mainLoading}
+          variant="landscape"
+        />
+
+        {/* Row 4: Series Phim Hàn kịch tính & giật gân */}
+        <CountryCategoryRow
+          title={
+            isKoreanPage
+              ? "Series Phim Hàn kịch tính & giật gân đáng xem liên tục"
+              : "Phim Hành Động & Kịch Tính"
+          }
           films={actionFilms.slice(0, 14)}
           isLoading={actionLoading}
           variant="landscape"
         />
 
-        {/* Row 5: Historical / Period K-Dramas */}
+        {/* Row 5: Phim Hàn Cổ Trang & Thần Thoại */}
         <CountryCategoryRow
-          title={isKoreanPage ? "Phim Hàn Cổ Trang & Thần Thoại" : "Phim Cổ Trang"}
+          title={
+            isKoreanPage
+              ? "Phim Hàn Cổ Trang & Thần Thoại Kỳ Ảo Đỉnh Cao"
+              : "Phim Cổ Trang"
+          }
           films={coTrangFilms.slice(0, 14)}
           isLoading={coTrangLoading}
         />
 
-        {/* Row 6: Crime & Mystery */}
+        {/* Row 6: Phim Hài Hước & Giải Trí Sảng Khoái */}
         <CountryCategoryRow
-          title={isKoreanPage ? "Phim Hàn Hình Sự & Trinh Thám" : "Phim Hình Sự & Trinh Thám"}
+          title={
+            isKoreanPage
+              ? "Phim Hàn Hài Hước & Giải Trí Sảng Khoái"
+              : "Phim Hài Hước Đặc Sắc"
+          }
+          films={comedyFilms.slice(0, 14)}
+          isLoading={comedyLoading}
+          variant="landscape"
+        />
+
+        {/* Row 7: Phim Hình Sự & Trinh Thám */}
+        <CountryCategoryRow
+          title={
+            isKoreanPage
+              ? "Phim Hàn Hình Sự, Trinh Thám & Phá Án Hồi Hộp"
+              : "Phim Hình Sự & Trinh Thám"
+          }
           films={crimeFilms.slice(0, 14)}
           isLoading={crimeLoading}
         />
 
-        {/* Featured Actors */}
-        <FeaturedActorsRow film={heroFilm} />
+        {/* Row 8: Phim Tâm Lý & Đời Thường */}
+        <CountryCategoryRow
+          title={
+            isKoreanPage
+              ? "Top Phim Tâm Lý & Đời Thường Chạm Đến Cảm Xúc"
+              : "Phim Tâm Lý Chọn Lọc"
+          }
+          films={dramaFilms.slice(0, 14)}
+          isLoading={dramaLoading}
+        />
 
         {/* Full Catalog Header */}
         <div className="mt-14 mb-8 pt-8 border-t border-white/10 flex flex-col md:flex-row md:items-end justify-between gap-2">
