@@ -18,6 +18,10 @@ import {
   Settings,
   Subtitles,
   Mic,
+  Globe,
+  MessageSquare,
+  Film,
+  Radio,
   Monitor,
   Server,
   Info,
@@ -1974,30 +1978,24 @@ export default function WatchPage() {
               const subOptions = [
                 {
                   id: "vietsub",
-                  label: "Phụ đề",
-                  icon: "💬",
+                  label: "Phụ Đề (Vietsub)",
+                  icon: MessageSquare,
                   count: subEps.length,
                   eps: subEps,
-                  activeBg: "bg-[#161a24] border-2 border-white shadow-lg",
-                  inactiveBg:
-                    "bg-[#0d1017] border border-white/15 hover:border-white/40",
                 },
                 {
                   id: "thuyet-minh",
-                  label: "Thuyết minh",
-                  icon: "🎙️",
+                  label: "Thuyết Minh",
+                  icon: Mic,
                   count: dubEps.length,
                   eps: dubEps,
-                  activeBg: "bg-[#161a24] border-2 border-white shadow-lg",
-                  inactiveBg:
-                    "bg-[#0d1017] border border-white/15 hover:border-white/40",
                 },
                 ...(engsubEps.length > 0
                   ? [
                       {
                         id: "engsub",
                         label: "Engsub (Phụ đề Anh)",
-                        icon: "🌐",
+                        icon: Globe,
                         count: engsubEps.length,
                         eps: engsubEps,
                       },
@@ -2007,8 +2005,8 @@ export default function WatchPage() {
                   ? [
                       {
                         id: "raw",
-                        label: "Bản gốc / Chưa xác định",
-                        icon: "🎬",
+                        label: "Bản Gốc / Raw",
+                        icon: Film,
                         count: rawEps.length,
                         eps: rawEps,
                       },
@@ -2017,128 +2015,141 @@ export default function WatchPage() {
               ];
 
               return (
-                <div className="space-y-3 bg-[#14161d]/80 p-3.5 sm:p-4 rounded-2xl border border-white/10 shadow-lg backdrop-blur-md">
-                  {/* ── Minimalist Version / Audio Pill Tabs ── */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    {subOptions.map((opt) => {
-                      const isActive = activeServerType === opt.id;
-                      const hasItems = opt.count > 0;
+                <div className="space-y-3.5 bg-[#12151c]/95 p-4 sm:p-4.5 rounded-2xl border border-white/10 shadow-2xl backdrop-blur-xl">
+                  {/* ── Version & Audio Selection Tabs ── */}
+                  <div className="space-y-2">
+                    <div className="text-[11px] font-extrabold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Subtitles size={13} className="text-red-500" />
+                      <span>Phiên bản Âm thanh & Phụ đề</span>
+                    </div>
 
-                      return (
-                        <button
-                          key={opt.id}
-                          disabled={!hasItems}
-                          onClick={() => {
-                            if (!hasItems) return;
-                            const selectingVidSrc = opt.eps.every(
-                              (candidate) => candidate._source === "vidsrc",
-                            );
-                            setVidsrcManuallySelected(selectingVidSrc);
-                            setActiveServerType(opt.id as ServerType);
-                            if (opt.eps.length > 0) {
-                              const targetEpisode =
-                                currentEpData?.slug ||
-                                currentEpData?.name ||
-                                currentEp;
-                              const first =
-                                opt.eps.find((candidate) =>
-                                  findMatchingEpisode(
-                                    candidate.server_data,
-                                    targetEpisode,
-                                  ),
-                                ) || opt.eps[0];
-                              const idx = episodes.indexOf(first);
-                              setCurrentServer(idx >= 0 ? idx : 0);
-                              const matchedEpisode = findMatchingEpisode(
-                                first?.server_data,
-                                targetEpisode,
-                              );
-                              const matchedEpisodeId =
-                                matchedEpisode?.slug || matchedEpisode?.name;
-                              setPlayerEngine(
-                                matchedEpisode?.link_m3u8 ? "hls" : "iframe",
-                              );
-                              if (matchedEpisodeId)
-                                router.push(
-                                  watchUrlForEpisode(matchedEpisodeId),
-                                );
-                            }
-                          }}
-                          className={cn(
-                            "group inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none active:scale-95 border",
-                            isActive
-                              ? "bg-white text-black border-white shadow-md scale-[1.02]"
-                              : hasItems
-                                ? "bg-white/[0.05] hover:bg-white/[0.12] text-neutral-300 border-white/10 hover:border-white/25"
-                                : "opacity-40 cursor-not-allowed bg-white/[0.02] border-white/5 text-neutral-500",
-                          )}
-                        >
-                          <span>{opt.icon}</span>
-                          <span>{opt.label}</span>
-                          {isActive && (
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse ml-0.5" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* ── Sleek Server Provider Pills ── */}
-                  {activeGroup.length > 0 && (
-                    <div className="pt-2 border-t border-white/[0.08] flex flex-wrap items-center gap-2 text-xs">
-                      <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mr-1">
-                        Nguồn phát:
-                      </span>
-                      {activeGroup.map((ep) => {
-                        const i = episodes.indexOf(ep);
-                        const isActive = i === currentServer;
-                        const hasFailed = failedServers.includes(i);
+                    <div className="flex flex-wrap items-center gap-2">
+                      {subOptions.map((opt) => {
+                        const isActive = activeServerType === opt.id;
+                        const hasItems = opt.count > 0;
+                        const IconComponent = opt.icon;
 
                         return (
                           <button
-                            key={i}
-                            disabled={hasFailed}
+                            key={opt.id}
+                            disabled={!hasItems}
                             onClick={() => {
-                              setVidsrcManuallySelected(
-                                ep._source === "vidsrc",
+                              if (!hasItems) return;
+                              const selectingVidSrc = opt.eps.every(
+                                (candidate) => candidate._source === "vidsrc",
                               );
-                              setCurrentServer(i);
-                              setCurrentTypeServer(i);
-                              const matchedEpisode = findMatchingEpisode(
-                                ep.server_data,
-                                currentEpData?.slug ||
+                              setVidsrcManuallySelected(selectingVidSrc);
+                              setActiveServerType(opt.id as ServerType);
+                              if (opt.eps.length > 0) {
+                                const targetEpisode =
+                                  currentEpData?.slug ||
                                   currentEpData?.name ||
-                                  currentEp,
-                              );
-                              const matchedEpisodeId =
-                                matchedEpisode?.slug || matchedEpisode?.name;
-                              setPlayerEngine(
-                                matchedEpisode?.link_m3u8 ? "hls" : "iframe",
-                              );
-                              if (matchedEpisodeId) {
-                                router.push(
-                                  watchUrlForEpisode(matchedEpisodeId),
+                                  currentEp;
+                                const first =
+                                  opt.eps.find((candidate) =>
+                                    findMatchingEpisode(
+                                      candidate.server_data,
+                                      targetEpisode,
+                                    ),
+                                  ) || opt.eps[0];
+                                const idx = episodes.indexOf(first);
+                                setCurrentServer(idx >= 0 ? idx : 0);
+                                const matchedEpisode = findMatchingEpisode(
+                                  first?.server_data,
+                                  targetEpisode,
                                 );
+                                const matchedEpisodeId =
+                                  matchedEpisode?.slug || matchedEpisode?.name;
+                                setPlayerEngine(
+                                  matchedEpisode?.link_m3u8 ? "hls" : "iframe",
+                                );
+                                if (matchedEpisodeId)
+                                  router.push(
+                                    watchUrlForEpisode(matchedEpisodeId),
+                                  );
                               }
                             }}
                             className={cn(
-                              "px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer select-none active:scale-95 border text-xs flex items-center gap-1.5",
+                              "group inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none border active:scale-95",
                               isActive
-                                ? "bg-red-600 text-white border-red-500 shadow-md"
-                                : "bg-white/[0.05] hover:bg-white/[0.12] text-neutral-300 border-white/10 hover:border-white/20",
-                              hasFailed && "opacity-30 cursor-not-allowed line-through",
+                                ? "bg-red-600 text-white border-red-500 shadow-lg shadow-red-900/40"
+                                : hasItems
+                                  ? "bg-white/[0.04] hover:bg-white/[0.09] text-neutral-300 border-white/10 hover:border-white/20"
+                                  : "opacity-40 cursor-not-allowed bg-white/[0.02] border-white/5 text-neutral-500",
                             )}
                           >
-                            <span>
-                              {ep._source ? `[${ep._source.toUpperCase()}] ` : ""}
-                              {ep.server_name || `Server ${i + 1}`}
-                            </span>
+                            <IconComponent size={14} className={isActive ? "text-white" : "text-neutral-400 group-hover:text-white"} />
+                            <span>{opt.label}</span>
                             {isActive && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse ml-0.5" />
                             )}
                           </button>
                         );
                       })}
+                    </div>
+                  </div>
+
+                  {/* ── Server Provider Mirrors ── */}
+                  {activeGroup.length > 0 && (
+                    <div className="pt-3 border-t border-white/[0.08] space-y-2">
+                      <div className="text-[11px] font-extrabold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Server size={13} className="text-red-500" />
+                        <span>Máy chủ Nguồn phát ({activeGroup.length} Server)</span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        {activeGroup.map((ep) => {
+                          const i = episodes.indexOf(ep);
+                          const isActive = i === currentServer;
+                          const hasFailed = failedServers.includes(i);
+
+                          const rawServerName = ep.server_name || `Server ${i + 1}`;
+                          const cleanServerName = rawServerName.replace(/^\[.*?\]\s*/, "");
+                          const sourceTag = ep._source ? ep._source.toUpperCase() : "";
+
+                          return (
+                            <button
+                              key={i}
+                              disabled={hasFailed}
+                              onClick={() => {
+                                setVidsrcManuallySelected(
+                                  ep._source === "vidsrc",
+                                );
+                                setCurrentServer(i);
+                                setCurrentTypeServer(i);
+                                const matchedEpisode = findMatchingEpisode(
+                                  ep.server_data,
+                                  currentEpData?.slug ||
+                                    currentEpData?.name ||
+                                    currentEp,
+                                );
+                                const matchedEpisodeId =
+                                  matchedEpisode?.slug || matchedEpisode?.name;
+                                setPlayerEngine(
+                                  matchedEpisode?.link_m3u8 ? "hls" : "iframe",
+                                );
+                                if (matchedEpisodeId) {
+                                  router.push(
+                                    watchUrlForEpisode(matchedEpisodeId),
+                                  );
+                                }
+                              }}
+                              className={cn(
+                                "px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none active:scale-95 border flex items-center gap-2",
+                                isActive
+                                  ? "bg-red-600 text-white border-red-500 shadow-md shadow-red-950/50"
+                                  : "bg-white/[0.04] hover:bg-white/[0.09] text-neutral-300 border-white/10 hover:border-white/20",
+                                hasFailed && "opacity-30 cursor-not-allowed line-through",
+                              )}
+                            >
+                              <Radio size={12} className={isActive ? "text-white animate-pulse" : "text-neutral-400"} />
+                              <span>
+                                {sourceTag ? `${sourceTag} • ${cleanServerName}` : cleanServerName}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
