@@ -66,6 +66,9 @@ export function Sidebar() {
   const homeThresholdRef = useRef<HTMLDivElement>(null);
 
   const isHomePage = pathname === "/";
+  const isCountryPage = pathname.startsWith("/country");
+  const hasHeroBanner = isHomePage || isCountryPage;
+
   const isAuthPage = pathname === "/login" || pathname === "/register";
   const isUserPage =
     pathname.startsWith("/user") ||
@@ -82,7 +85,7 @@ export function Sidebar() {
   }, []);
 
   useEffect(() => {
-    if (!isHomePage) {
+    if (!hasHeroBanner) {
       setScrolledPastBanner(true);
       return;
     }
@@ -96,7 +99,7 @@ export function Sidebar() {
     });
     observer.observe(threshold);
     return () => observer.disconnect();
-  }, [isHomePage]);
+  }, [hasHeroBanner, pathname]);
 
   const toggle = () => {
     const next = !collapsed;
@@ -117,13 +120,13 @@ export function Sidebar() {
     }
   };
 
-  const isVisible = !isHomePage || scrolledPastBanner;
+  const isVisible = !hasHeroBanner || scrolledPastBanner;
 
   if (isAuthPage || isUserPage) return null;
 
   return (
     <>
-      {isHomePage && (
+      {hasHeroBanner && (
         <div
           ref={homeThresholdRef}
           aria-hidden="true"
