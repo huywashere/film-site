@@ -463,7 +463,10 @@ export default function CountryPage() {
         : movieApi.getByCountry(slug, page).then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    placeholderData: (previousData) => previousData,
+    placeholderData: (previousData, previousQuery) => {
+      const prevSlug = (previousQuery?.queryKey as any)?.[1];
+      return prevSlug === slug ? previousData : undefined;
+    },
   });
 
   const films: FilmItem[] = mainData?.data?.items || mainData?.items || [];
@@ -471,7 +474,9 @@ export default function CountryPage() {
     ? films[Math.floor(heroSeed * films.length)]
     : undefined;
 
+  // Instantly reset scroll to top (0px) on country slug switch to prevent bottom scroll jumping
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" as any });
     setHeroSeed(Math.random());
   }, [slug]);
 
