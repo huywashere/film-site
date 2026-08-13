@@ -373,13 +373,6 @@ function NetflixHeroBanner({
       {/* Left Content Overlay */}
       <div className="absolute inset-0 z-20 flex items-center pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-4 sm:pr-8">
         <div className="max-w-xl space-y-4 sm:space-y-6 pt-16">
-          {/* Netflix Badge */}
-          <div className="flex items-center gap-2">
-            <span className="text-red-600 font-black text-xs uppercase tracking-widest bg-red-600/10 px-2 py-0.5 rounded border border-red-600/20">
-              S E R I E S • {countryName}
-            </span>
-          </div>
-
           {/* Official Title Logo PNG or Styled Heading */}
           {logoUrl ? (
             <div className="relative w-72 sm:w-96 h-24 sm:h-32 mb-2">
