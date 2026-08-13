@@ -279,7 +279,7 @@ function NetflixHeroBanner({
   const filmTitle = film.name || film.title || "Phim Hay";
 
   return (
-    <section className="relative w-full h-[65vh] sm:h-[75vh] min-h-[480px] max-h-[750px] overflow-hidden bg-black select-none">
+    <section className="relative w-full h-[80vh] sm:h-[88vh] min-h-[560px] max-h-[860px] -mt-16 sm:-mt-20 overflow-hidden bg-black select-none">
       {/* High-Resolution Backdrop Image Layer (Always visible underneath) */}
       {backdrop && (
         <NextImage
@@ -544,8 +544,8 @@ export default function CountryPage() {
       {/* ── Netflix Spotlight Hero Banner with Background Video Trailer ── */}
       <NetflixHeroBanner film={heroFilm} countryName={label} />
 
-      {/* ── Content Rows (Negative top margin to overlap video trailer matching Netflix reference screenshot) ── */}
-      <div className="relative z-20 -mt-28 sm:-mt-36 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6">
+      {/* ── Content Rows (Negative top margin to overlap full screen video trailer matching Netflix screenshot) ── */}
+      <div className="relative z-20 -mt-32 sm:-mt-44 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6">
         {/* Row 1: Phải thoát khỏi đây! */}
         <CountryCategoryRow
           title={isKoreanPage ? "Phải thoát khỏi đây!" : "Phim Nổi Bật Hôm Nay"}
