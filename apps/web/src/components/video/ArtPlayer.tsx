@@ -260,7 +260,7 @@ export default function ArtPlayer({
       playsInline: true,
       autoPlayback: true,
       airplay: true,
-      theme: "#e5a93b",
+      theme: "#f59e0b",
       lang: "vi",
 
       // Hotkey settings
