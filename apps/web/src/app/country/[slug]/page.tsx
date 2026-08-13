@@ -93,9 +93,8 @@ function CountryCategoryRow({
   return (
     <div className="mb-10" aria-busy={isLoading}>
       <div className="flex items-center justify-between mb-3 px-1">
-        <h2 className="text-lg md:text-xl font-extrabold text-white flex items-center space-x-2">
-          {Icon && <Icon size={18} className="text-red-600" />}
-          <span>{title}</span>
+        <h2 className="text-lg md:text-xl font-extrabold text-white">
+          {title}
         </h2>
         {href && (
           <Link
@@ -504,28 +503,17 @@ export default function CountryPage() {
 
       {/* ── Content Rows (Positioned cleanly below hero without any overlap) ── */}
       <div className="relative z-20 px-4 sm:px-12 md:px-16 lg:px-24 pt-8 sm:pt-12 pb-16 space-y-6">
-        {/* Continue Watching Row if logged in or has history */}
-        <ContinueWatchingRow />
-
         {/* Top Picks For You Today (Landscape Cards) */}
         <CountryCategoryRow
           title="Lựa chọn hàng đầu hôm nay cho bạn"
-          icon={Flame}
           films={films.slice(0, 12)}
           isLoading={mainLoading}
           variant="landscape"
         />
 
-        {/* Top 10 Row (Netflix-Style Giant Rank Numbers) */}
-        <Top10RankedRow
-          films={films}
-          title={isKoreanPage ? "Top 10 Phim Hàn tại Việt Nam hôm nay" : `Top 10 Phim ${label} Hôm Nay`}
-        />
-
         {/* Romantic K-Dramas Row */}
         <CountryCategoryRow
           title={isKoreanPage ? "Phim Hàn Tình Cảm & Lãng Mạn hay nhất" : "Phim Tình Cảm & Lãng Mạn"}
-          icon={Heart}
           films={romanceFilms.slice(0, 14)}
           isLoading={romanceLoading}
         />
@@ -533,7 +521,6 @@ export default function CountryPage() {
         {/* Binge-Worthy Thriller Row (Landscape Cards) */}
         <CountryCategoryRow
           title={isKoreanPage ? "Series Phim Hàn kịch tính đáng xem liên tục" : "Phim Hành Động & Kịch Tính"}
-          icon={Zap}
           films={actionFilms.slice(0, 14)}
           isLoading={actionLoading}
           variant="landscape"
@@ -542,7 +529,6 @@ export default function CountryPage() {
         {/* Historical / Period K-Dramas */}
         <CountryCategoryRow
           title={isKoreanPage ? "Phim Hàn Cổ Trang & Thần Thoại" : "Phim Cổ Trang"}
-          icon={Crown}
           films={coTrangFilms.slice(0, 14)}
           isLoading={coTrangLoading}
         />
@@ -550,7 +536,6 @@ export default function CountryPage() {
         {/* Crime & Mystery K-Dramas */}
         <CountryCategoryRow
           title={isKoreanPage ? "Phim Hàn Hình Sự & Trinh Thám" : "Phim Hình Sự & Trinh Thám"}
-          icon={Flame}
           films={crimeFilms.slice(0, 14)}
           isLoading={crimeLoading}
         />
