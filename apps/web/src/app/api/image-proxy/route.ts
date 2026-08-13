@@ -15,6 +15,27 @@ const TOTAL_FALLBACK_BUDGET_MS = 5000;
 const FALLBACK_BATCH_SIZE = 3;
 const MAX_REDIRECTS = 3;
 
+const RELIABLE_DIRECT_IMAGE_HOSTS = new Set([
+  "image.tmdb.org",
+  "phimimg.com",
+  "img.ophim.live",
+  "ophim1.com",
+  "images.nguonc.com",
+]);
+
+function prioritizeCandidateUrls(urls: string[]): string[] {
+  return [...urls].sort((left, right) => {
+    const score = (value: string) => {
+      try {
+        return RELIABLE_DIRECT_IMAGE_HOSTS.has(new URL(value).hostname) ? 0 : 1;
+      } catch {
+        return 2;
+      }
+    };
+    return score(left) - score(right);
+  });
+}
+
 function isPrivateAddress(address: string): boolean {
   const value = address.toLowerCase();
   return (
@@ -107,11 +128,31 @@ function generateCandidateUrls(rawUrl: string): string[] {
 
   // Domain swaps across known movie CDNs
   const domainMap: Record<string, string[]> = {
-    "img.phimapi.com": ["phimimg.com", "ophim1.com", "img.ophim.live", "images.nguonc.com"],
-    "phimimg.com": ["img.phimapi.com", "ophim1.com", "img.ophim.live", "images.nguonc.com"],
-    "img.ophim.live": ["ophim1.com", "phimimg.com", "img.phimapi.com", "images.nguonc.com"],
+    "img.phimapi.com": [
+      "phimimg.com",
+      "ophim1.com",
+      "img.ophim.live",
+      "images.nguonc.com",
+    ],
+    "phimimg.com": [
+      "img.phimapi.com",
+      "ophim1.com",
+      "img.ophim.live",
+      "images.nguonc.com",
+    ],
+    "img.ophim.live": [
+      "ophim1.com",
+      "phimimg.com",
+      "img.phimapi.com",
+      "images.nguonc.com",
+    ],
     "ophim1.com": ["img.ophim.live", "phimimg.com", "img.phimapi.com"],
-    "images.nguonc.com": ["phimimg.com", "img.phimapi.com", "ophim1.com", "img.ophim.live"],
+    "images.nguonc.com": [
+      "phimimg.com",
+      "img.phimapi.com",
+      "ophim1.com",
+      "img.ophim.live",
+    ],
   };
 
   const domainCandidates = [...ordered];
@@ -142,7 +183,11 @@ async function fetchImageCandidate(
   try {
     let currentUrl = urlToFetch;
     let res: Response | undefined;
-    for (let redirectCount = 0; redirectCount <= MAX_REDIRECTS; redirectCount += 1) {
+    for (
+      let redirectCount = 0;
+      redirectCount <= MAX_REDIRECTS;
+      redirectCount += 1
+    ) {
       const validated = validateImageUrl(currentUrl);
       if (!validated) throw new Error("unsafe-url");
       await assertPublicDns(validated);
@@ -206,7 +251,7 @@ export async function GET(request: NextRequest) {
     ...(fallbackUrl ? generateCandidateUrls(fallbackUrl).slice(0, 4) : []),
   ];
 
-  const safeUrls = candidateUrls
+  const safeUrls = prioritizeCandidateUrls(candidateUrls)
     .map(validateImageUrl)
     .filter((url): url is string => url !== null);
 
@@ -215,7 +260,11 @@ export async function GET(request: NextRequest) {
   }
 
   const deadline = Date.now() + TOTAL_FALLBACK_BUDGET_MS;
-  for (let offset = 0; offset < safeUrls.length; offset += FALLBACK_BATCH_SIZE) {
+  for (
+    let offset = 0;
+    offset < safeUrls.length;
+    offset += FALLBACK_BATCH_SIZE
+  ) {
     const remainingMs = deadline - Date.now();
     if (remainingMs <= 0) break;
 

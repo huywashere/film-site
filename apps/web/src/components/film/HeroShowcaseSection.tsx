@@ -11,7 +11,6 @@ import {
   Play,
   Star,
   Calendar,
-  Film,
 } from "lucide-react";
 import { FilmItem } from "@/components/film/FilmCard";
 import { TmdbArtwork } from "@/components/film/TmdbArtwork";
@@ -45,7 +44,7 @@ export function HeroShowcaseSection({
 }: HeroShowcaseSectionProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const reduceMotion = useReducedMotion();
-  const shortlist = useMemo(() => films.slice(0, 12), [films]);
+  const shortlist = useMemo(() => films.slice(0, 16), [films]);
   const activeFilm = shortlist[activeIndex % Math.max(shortlist.length, 1)];
 
   useEffect(() => {
@@ -93,9 +92,9 @@ export function HeroShowcaseSection({
       </div>
 
       {/* Main Card */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-background sm:rounded-[24px]">
+      <div className="relative">
         {/* Hero Backdrop */}
-        <div className="relative h-[260px] overflow-hidden sm:h-[340px] lg:h-[420px]">
+        <div className="relative h-[260px] overflow-hidden rounded-2xl border border-white/[0.08] sm:h-[340px] sm:rounded-[24px] lg:h-[420px]">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeFilm.slug}
@@ -119,7 +118,7 @@ export function HeroShowcaseSection({
           </AnimatePresence>
 
           {/* Content Overlay */}
-          <div className="relative z-10 flex h-full flex-col justify-between p-4 sm:p-8 lg:p-10">
+          <div className="relative z-10 flex h-full flex-col justify-between px-4 pb-16 pt-4 sm:px-8 sm:pb-24 sm:pt-8 lg:px-10 lg:pb-28 lg:pt-10">
             {/* Top row: counter + nav */}
             <div className="flex items-center justify-between">
               <span className="rounded-full border border-white/15 bg-black/50 px-2.5 py-1 text-[9px] font-semibold text-neutral-300 backdrop-blur-sm">
@@ -224,18 +223,9 @@ export function HeroShowcaseSection({
           </div>
         </div>
 
-        {/* Thumbnail Strip */}
-        <div className="border-t border-white/[0.07] bg-background px-3 py-3 sm:px-5 sm:py-3.5">
-          <div className="mb-2.5 flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Film size={11} className="text-violet-300" />
-              <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
-                Chọn Series
-              </p>
-            </div>
-            <p className="text-[10px] text-neutral-600">{shortlist.length} phim</p>
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-0.5 xl:justify-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {/* Thumbnail Strip: floats over the lower edge of the banner */}
+        <div className="relative z-20 -mt-12 px-3 sm:-mt-14 sm:px-6 lg:-mt-16">
+          <div className="flex gap-2 overflow-x-auto px-1 pb-2 pt-1 xl:justify-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {shortlist.map((film, index) => {
               const isActive = index === activeIndex;
               return (
@@ -245,8 +235,8 @@ export function HeroShowcaseSection({
                   onClick={() => setActiveIndex(index)}
                   className={`group relative w-[58px] shrink-0 overflow-hidden rounded-xl transition-all cursor-pointer sm:w-[70px] ${
                     isActive
-                      ? "ring-2 ring-violet-400 ring-offset-1 ring-offset-[#141414] opacity-100 scale-105"
-                      : "opacity-50 hover:opacity-90 hover:scale-[1.02]"
+                      ? "ring-2 ring-violet-400 opacity-100 scale-105 shadow-[0_12px_30px_rgba(0,0,0,0.5)]"
+                      : "opacity-65 shadow-[0_10px_24px_rgba(0,0,0,0.45)] hover:opacity-100 hover:scale-[1.02]"
                   }`}
                   title={film.name}
                 >

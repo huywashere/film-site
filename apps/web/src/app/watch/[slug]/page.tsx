@@ -406,6 +406,15 @@ export default function WatchPage() {
 
   // Cinema Mode & Player Enhancement States
   const [lightOff, setLightOff] = useState(false);
+
+  useEffect(() => {
+    if (lightOff) document.body.dataset.cinemaLights = "off";
+    else delete document.body.dataset.cinemaLights;
+
+    return () => {
+      delete document.body.dataset.cinemaLights;
+    };
+  }, [lightOff]);
   const [subDelayOffset, setSubDelayOffset] = useState<number>(0);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -1526,12 +1535,12 @@ export default function WatchPage() {
       {lightOff && (
         <div
           onClick={() => setLightOff(false)}
-          className="fixed inset-0 bg-black/90 z-40 transition-opacity duration-300 cursor-pointer flex items-start justify-center pt-20 pointer-events-auto backdrop-blur-sm"
+          className="fixed inset-0 z-40 flex cursor-pointer items-start justify-center bg-black/90 pt-5 backdrop-blur-sm transition-opacity duration-300 pointer-events-auto"
         >
-          <div className="bg-[#111419]/90 text-neutral-300 text-xs font-semibold px-4 py-2 rounded-full border border-white/15 backdrop-blur-md shadow-lg flex items-center gap-2">
+          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#141414]/90 px-3 py-2 text-[11px] font-semibold text-neutral-300 shadow-lg backdrop-blur-md">
             <LightbulbOff size={14} className="text-neutral-400" />
             <span>
-              Đang bật chế độ Tắt Đèn (Bấm bất kỳ đâu xung quanh để bật lại đèn)
+              Đang tắt đèn. Bấm ra ngoài video để bật lại.
             </span>
           </div>
         </div>

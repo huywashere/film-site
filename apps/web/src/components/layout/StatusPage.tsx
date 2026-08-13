@@ -17,7 +17,7 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
     recordTelemetry(
       `route.${code}`,
       { status: code },
-      isServerError ? "error" : "warning",
+      "warning",
     );
 
     return () => {
@@ -38,7 +38,8 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
     : "hoặc trang web đã di chuyển.";
 
   return (
-    <main className="relative flex min-h-[100dvh] w-full flex-col items-center justify-center bg-[#1b2a37] px-4 py-8 font-sans text-white select-none">
+    <main className="status-page fixed inset-0 z-[1000] flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden bg-[#141414] px-4 py-8 font-sans text-white select-none">
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[720px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/[0.045] blur-[120px]" />
       
       <section className="relative z-10 flex w-full max-w-5xl flex-col items-center text-center">
         
@@ -48,7 +49,7 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
             viewBox="0 0 900 420"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className="w-full h-full"
+            className="h-full w-full grayscale contrast-125 opacity-90"
           >
             <defs>
               {/* 3D Dark Block Color Matching Stake (#131e28) */}
@@ -246,7 +247,7 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
           </h1>
 
           {/* Subtitle (2 lines matching Stake's exact layout) */}
-          <p className="text-xs sm:text-[13px] leading-relaxed text-[#7895ad] mb-6">
+          <p className="mb-6 text-xs leading-relaxed text-neutral-500 sm:text-[13px]">
             {description1}
             <br />
             {description2}
@@ -257,14 +258,14 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
             <button
               type="button"
               onClick={onRetry}
-              className="inline-flex items-center justify-center h-10 px-6 rounded-md bg-[#2f4558] hover:bg-[#39536a] text-white font-bold text-xs sm:text-[13px] transition-colors shadow cursor-pointer border-none"
+              className="inline-flex h-10 cursor-pointer items-center justify-center rounded-lg border border-white/10 bg-white px-6 text-xs font-bold text-black shadow-lg shadow-black/20 transition-colors hover:bg-neutral-200 sm:text-[13px]"
             >
               Thử lại ngay
             </button>
           ) : (
             <Link
               href="/"
-              className="inline-flex items-center justify-center h-10 px-6 rounded-md bg-[#2f4558] hover:bg-[#39536a] text-white font-bold text-xs sm:text-[13px] transition-colors shadow cursor-pointer border-none"
+              className="inline-flex h-10 cursor-pointer items-center justify-center rounded-lg border border-white/10 bg-white px-6 text-xs font-bold text-black shadow-lg shadow-black/20 transition-colors hover:bg-neutral-200 sm:text-[13px]"
             >
               Đi tới trang chủ
             </Link>

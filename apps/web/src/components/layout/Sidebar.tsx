@@ -16,8 +16,11 @@ import {
   MonitorPlay,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { cardFont } from "@/lib/fonts";
+import { movieApi } from "@/lib/api";
+import { tmdbApi, type TmdbDiscoverOptions } from "@/lib/tmdb";
 
 function TelegramIcon({
   className,
@@ -58,12 +61,36 @@ const SIDEBAR_ITEMS = [
 
 const W = 60; // Slim width in px
 
+const MOVIE_WORLD_PREFETCH: Array<{
+  slug: string;
+  discover: TmdbDiscoverOptions;
+}> = [
+  {
+    slug: "hanh-dong",
+    discover: { with_genres: "28", sort_by: "popularity.desc" },
+  },
+  {
+    slug: "vien-tuong",
+    discover: { with_genres: "878", sort_by: "popularity.desc" },
+  },
+  {
+    slug: "kinh-di",
+    discover: { with_genres: "27", sort_by: "popularity.desc" },
+  },
+  {
+    slug: "tinh-cam",
+    discover: { with_genres: "10749", sort_by: "popularity.desc" },
+  },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [collapsed, setCollapsed] = useState(false);
   const [scrolledPastBanner, setScrolledPastBanner] = useState(false);
   const homeThresholdRef = useRef<HTMLDivElement>(null);
+  const warmedRoutesRef = useRef(new Set<string>());
 
   const isHomePage = pathname === "/";
   const isCountryPage = pathname.startsWith("/country");
@@ -111,14 +138,60 @@ export function Sidebar() {
     }
   };
 
-  const handleMouseEnter = (href: string) => {
+  const warmRoute = useCallback((href: string) => {
     if (href.startsWith("http")) return;
     try {
       router.prefetch(href);
     } catch (_e) {
       // ignore prefetch errors
     }
-  };
+
+    if (warmedRoutesRef.current.has(href)) return;
+    warmedRoutesRef.current.add(href);
+
+    const countrySlug = href.match(/^\/country\/([^/?]+)/)?.[1];
+    if (countrySlug) {
+      void queryClient.prefetchQuery({
+        queryKey: ["country-fast", countrySlug, 1, ""],
+        queryFn: () =>
+          movieApi.getByCountryFast(countrySlug, 1).then((response) => response.data),
+        staleTime: 1000 * 60 * 60,
+        gcTime: 1000 * 60 * 60 * 24,
+      });
+    }
+
+    if (href === "/genres") {
+      for (const topic of MOVIE_WORLD_PREFETCH) {
+        void queryClient.prefetchQuery({
+          queryKey: ["movie-world-topic", topic.slug, topic.discover],
+          queryFn: async () => {
+            const response = await tmdbApi.discoverMovies(topic.discover);
+            return response?.results || [];
+          },
+          staleTime: 1000 * 60 * 60,
+          gcTime: 1000 * 60 * 60 * 6,
+        });
+      }
+    }
+  }, [queryClient, router]);
+
+  useEffect(() => {
+    const warmPrimaryTabs = () => {
+      warmRoute("/country/han-quoc");
+      warmRoute("/country/trung-quoc");
+      warmRoute("/genres");
+    };
+
+    if ("requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(warmPrimaryTabs, {
+        timeout: 2500,
+      });
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timer = globalThis.setTimeout(warmPrimaryTabs, 1200);
+    return () => globalThis.clearTimeout(timer);
+  }, [warmRoute]);
 
   const isVisible = !hasHeroBanner || scrolledPastBanner;
 
@@ -221,7 +294,9 @@ export function Sidebar() {
                 key={item.href}
                 href={item.href}
                 prefetch={true}
-                onMouseEnter={() => handleMouseEnter(item.href)}
+                onMouseEnter={() => warmRoute(item.href)}
+                onFocus={() => warmRoute(item.href)}
+                onTouchStart={() => warmRoute(item.href)}
                 className={cn(
                   "relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 group cursor-pointer",
                   isActive

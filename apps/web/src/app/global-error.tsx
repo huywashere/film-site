@@ -15,10 +15,15 @@ export default function GlobalError({
     captureException(error, { tags: { scope: "global-error-boundary" } });
   }, [error]);
 
+  const retry = () => {
+    reset();
+    window.setTimeout(() => window.location.reload(), 50);
+  };
+
   return (
     <html lang="vi">
       <body>
-        <StatusPage code="500" onRetry={reset} />
+        <StatusPage code="500" onRetry={retry} />
       </body>
     </html>
   );

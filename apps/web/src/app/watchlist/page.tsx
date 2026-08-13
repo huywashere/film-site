@@ -10,6 +10,7 @@ import { watchlistApi } from "@/lib/api";
 import { FilmCard } from "@/components/film/FilmCard";
 import type { WatchlistItem } from "@/types/movie";
 import { guestDataStorage, type GuestWatchlistItem } from "@/lib/user-data";
+import { cardFont } from "@/lib/fonts";
 
 export default function WatchlistPage() {
   const { user } = useAuthStore();
@@ -19,6 +20,7 @@ export default function WatchlistPage() {
   const [removedSlugs, setRemovedSlugs] = useState<string[]>([]);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     setGuestItems(guestDataStorage.getWatchlist());
 
     const handleWatchlistChanged = (e: Event) => {
@@ -72,13 +74,15 @@ export default function WatchlistPage() {
   const totalPages = user ? watchlistData?.totalPages || 1 : 1;
 
   return (
-    <div className="min-h-screen bg-background pt-20 pb-16 lg:ml-20">
+    <div
+      className={`${cardFont.className} min-h-screen bg-background pb-16 pt-16 lg:ml-20`}
+    >
       {/* Header */}
-      <div className="border-b border-white/10 bg-transparent sticky top-16 z-30">
-        <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6">
+      <div className="relative z-10 border-b border-white/10 bg-background">
+        <div className="mx-auto max-w-[1600px] px-4 py-5 md:px-8 md:py-6">
           {/* Back Button & Title (Centered) */}
           <div className="flex flex-col items-center justify-center text-center max-w-2xl mx-auto py-2">
-            <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight">
+            <h1 className="text-2xl font-extrabold tracking-tight text-white md:text-3xl">
               Xem Sau
             </h1>
             <p className="text-sm text-neutral-400 mt-1.5 normal-case font-normal tracking-normal">
@@ -90,7 +94,7 @@ export default function WatchlistPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-8">
+      <div className="relative z-0 mx-auto max-w-[1600px] px-4 py-6 md:px-8 md:py-8">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 size={40} className="animate-spin text-blue-500" />

@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
-import { GENRES_LIST, COUNTRIES_LIST } from "./Navbar";
+import { GENRES_LIST, COUNTRIES_LIST, CountryFlagImage } from "./Navbar";
 import { cardFont } from "@/lib/fonts";
 
 interface MobileSidebarProps {
@@ -305,10 +305,9 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                     )}
                     onClick={onClose}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`https://flagcdn.com/w40/${c.code}.png`}
-                      alt={c.label}
+                    <CountryFlagImage
+                      code={c.code}
+                      label={c.label}
                       className="w-4 h-3 object-cover rounded-[2px] shrink-0"
                     />
                     <span className="truncate">{c.label}</span>

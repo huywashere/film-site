@@ -12,12 +12,116 @@ import { watchHistoryApi } from "@/lib/api";
 import { FilmItem, resolveImageUrl } from "./FilmCard";
 import { DashPagination } from "./DashPagination";
 import { cardFont } from "@/lib/fonts";
+import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
 
 import "swiper/css";
 import "swiper/css/navigation";
 
 interface ContinueWatchingRowProps {
   fallbackFilms?: FilmItem[];
+}
+
+function imageProxyFallback(url: string): string | null {
+  if (!/^https?:\/\//i.test(url) || url.includes("/api/image-proxy?")) {
+    return null;
+  }
+  return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+}
+
+/**
+ * History entries can outlive an upstream CDN URL. Keep the saved URL as the
+ * fast path, then recover with its alternate URL, the image proxy and TMDB.
+ * Rendering a title placeholder at the end also prevents the browser's broken
+ * image icon/alt text from leaking into the card layout.
+ */
+function HistoryArtwork({
+  item,
+  landscape,
+  className,
+}: {
+  item: any;
+  landscape: boolean;
+  className: string;
+}) {
+  const primary = landscape
+    ? resolveImageUrl(item.thumb || item.thumb_url, item.poster || item.poster_url)
+    : resolveImageUrl(item.poster || item.poster_url, item.thumb || item.thumb_url);
+  const alternate = landscape
+    ? resolveImageUrl(item.poster || item.poster_url)
+    : resolveImageUrl(item.thumb || item.thumb_url);
+  const [candidateIndex, setCandidateIndex] = useState(0);
+  const [needsTmdb, setNeedsTmdb] = useState(!primary);
+  const title = item.title || item.name || "Phim";
+  const filmForArtwork = useMemo<FilmItem>(
+    () => ({
+      slug: item.slug || item.movieId || title,
+      name: title,
+      title,
+      origin_name:
+        item.originName || item.origin_name || item.titleEn || undefined,
+      year: Number(item.year || item.movieYear) || undefined,
+      type: item.type,
+      tmdb: item.tmdb,
+    }),
+    [item, title],
+  );
+  const { posterUrl: tmdbPosterUrl, backdropUrl: tmdbBackdropUrl } =
+    useTmdbArtwork(filmForArtwork, needsTmdb);
+
+  const candidates = useMemo(() => {
+    const result: string[] = [];
+    const add = (value?: string | null) => {
+      if (value && !result.includes(value)) result.push(value);
+    };
+
+    add(primary);
+    add(alternate);
+    add(primary ? imageProxyFallback(primary) : null);
+    add(alternate ? imageProxyFallback(alternate) : null);
+    if (landscape) {
+      add(tmdbBackdropUrl);
+      add(tmdbPosterUrl);
+    } else {
+      add(tmdbPosterUrl);
+      add(tmdbBackdropUrl);
+    }
+    return result;
+  }, [alternate, landscape, primary, tmdbBackdropUrl, tmdbPosterUrl]);
+
+  const src = candidates[candidateIndex];
+
+  useEffect(() => {
+    setCandidateIndex(0);
+    setNeedsTmdb(!primary);
+  }, [item.slug, landscape, primary]);
+
+  if (!src) {
+    return (
+      <div
+        className={`${className} flex items-center justify-center bg-gradient-to-br from-neutral-800 to-neutral-950 p-2 text-center text-[10px] font-bold text-neutral-400`}
+      >
+        {title}
+      </div>
+    );
+  }
+
+  return (
+    // History artwork needs browser-level fallback control across several CDNs.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt=""
+      aria-label={`Ảnh phim ${title}`}
+      className={className}
+      loading="lazy"
+      decoding="async"
+      onError={() => {
+        const nextIndex = candidateIndex + 1;
+        if (nextIndex >= candidates.length) setNeedsTmdb(true);
+        setCandidateIndex(nextIndex);
+      }}
+    />
+  );
 }
 
 function getHistoryCardMeta(item: any) {
@@ -223,14 +327,7 @@ export function ContinueWatchingRow({
             className="w-full !pb-3 !pt-1 !pl-0.5"
           >
             {hasHistory
-              ? historyEntries.map((item: any, idx: number) => {
-                  const posterUrl =
-                    resolveImageUrl(item.poster, item.thumb) ||
-                    resolveImageUrl(item.thumb);
-                  const thumbUrl =
-                    resolveImageUrl(item.thumb, item.poster) ||
-                    resolveImageUrl(item.poster);
-
+              ? historyEntries.map((item: any) => {
                   const {
                     title,
                     originName,
@@ -264,35 +361,11 @@ export function ContinueWatchingRow({
                         >
                           {/* 16:9 Landscape Card Format */}
                           <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 group-hover/card:border-white/40 group-hover/card:scale-[1.02] shadow-2xl bg-neutral-900 transition-all duration-300 relative">
-                            {thumbUrl ? (
-                              /* eslint-disable-next-line @next/next/no-img-element */
-                              <img
-                                src={thumbUrl}
-                                alt={title}
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
-                                loading="lazy"
-                                onError={(e) => {
-                                  const target = e.currentTarget;
-                                  if (!target.dataset.failed) {
-                                    target.dataset.failed = "true";
-                                    const altPoster = item.poster
-                                      ? resolveImageUrl(item.poster)
-                                      : null;
-                                    if (altPoster && altPoster !== thumbUrl) {
-                                      target.src = altPoster;
-                                    } else {
-                                      target.src = `/api/image-proxy?url=${encodeURIComponent(thumbUrl)}`;
-                                    }
-                                  } else {
-                                    target.style.display = "none";
-                                  }
-                                }}
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-xs text-neutral-400 font-bold p-2 text-center">
-                                {title}
-                              </div>
-                            )}
+                            <HistoryArtwork
+                              item={item}
+                              landscape
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
+                            />
 
                             {/* Gradient Bottom Overlay */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent opacity-80 group-hover/card:opacity-60 transition-opacity" />
@@ -341,19 +414,11 @@ export function ContinueWatchingRow({
                           <div className="flex items-start gap-2.5 mt-2.5 px-0.5 relative">
                             {/* Overlapping Vertical Poster Thumbnail on Bottom Left */}
                             <div className="relative -mt-6 shrink-0 w-11 sm:w-13 aspect-[2/3] rounded-xl overflow-hidden border-2 border-[#141414] shadow-2xl bg-neutral-800 z-20 transition-transform duration-300 group-hover/card:scale-105 group-hover/card:-translate-y-1">
-                              {posterUrl ? (
-                                /* eslint-disable-next-line @next/next/no-img-element */
-                                <img
-                                  src={posterUrl}
-                                  alt={title}
-                                  className="w-full h-full object-cover"
-                                  loading="lazy"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[9px] text-neutral-500 font-bold p-1 text-center">
-                                  {title}
-                                </div>
-                              )}
+                              <HistoryArtwork
+                                item={item}
+                                landscape={false}
+                                className="w-full h-full object-cover"
+                              />
                             </div>
 
                             {/* Title & 3-line Detailed Metadata Block */}

@@ -15,7 +15,11 @@ import { Top10RankedRow } from "@/components/film/Top10RankedRow";
 import { ContinueWatchingRow } from "@/components/film/ContinueWatchingRow";
 import { Pagination } from "@/components/film/Pagination";
 import { useTmdb } from "@/hooks/useTmdb";
-import { tmdbProfile } from "@/lib/tmdb";
+import {
+  getYoutubeTrailer,
+  resolveTmdbHeroAssets,
+  tmdbProfile,
+} from "@/lib/tmdb";
 import { cardFont } from "@/lib/fonts";
 import { useAuthStore } from "@/store/authStore";
 import {
@@ -210,7 +214,10 @@ function CountryCategoryRow({
         >
           {isLoading
             ? Array.from({ length: 8 }).map((_, i) => (
-                <SwiperSlide key={`sk-${i}`} style={{ width: `${cardWidth}px` }}>
+                <SwiperSlide
+                  key={`sk-${i}`}
+                  style={{ width: `${cardWidth}px` }}
+                >
                   <FilmCardSkeleton width={cardWidth} hideDetails={false} />
                 </SwiperSlide>
               ))
@@ -299,25 +306,43 @@ function FeaturedActorsRow({ film }: { film?: FilmItem }) {
 function NetflixHeroBanner({
   film,
   countryName,
+  heroAssets,
 }: {
   film?: FilmItem;
   countryName: string;
+  heroAssets?: any;
 }) {
   const [isMuted, setIsMuted] = useState(true);
   const [frameReady, setFrameReady] = useState(false);
+  const [logoFailed, setLogoFailed] = useState(false);
+  const [backdropFailed, setBackdropFailed] = useState(false);
 
-  const { bestBackdrop, trailer, bestLogo } = useTmdb({
+  const fallbackTmdb = useTmdb({
     film,
-    enabled: !!film,
+    enabled: !!film && !heroAssets,
     fetchCredits: false,
     fetchVideos: true,
   });
+
+  const assetBackdrops = heroAssets?.images?.backdrops || [];
+  const assetLogos = heroAssets?.images?.logos || [];
+  const bestBackdrop =
+    assetBackdrops[0] ||
+    (heroAssets?.backdrop_path
+      ? { file_path: heroAssets.backdrop_path }
+      : fallbackTmdb.bestBackdrop);
+  const bestLogo = assetLogos[0] || fallbackTmdb.bestLogo;
+  const trailer = heroAssets
+    ? getYoutubeTrailer(heroAssets?.videos?.results || [])
+    : fallbackTmdb.trailer;
 
   const trailerKey = trailer?.key;
 
   useEffect(() => {
     setFrameReady(false);
-  }, [trailerKey]);
+    setLogoFailed(false);
+    setBackdropFailed(false);
+  }, [film?.slug, trailerKey]);
 
   if (!film) {
     return (
@@ -327,12 +352,15 @@ function NetflixHeroBanner({
     );
   }
 
-  const backdrop =
-    (bestBackdrop?.file_path
-      ? `https://image.tmdb.org/t/p/original${bestBackdrop.file_path}`
-      : null) ||
-    resolveImageUrl(film.thumb_url) ||
+  const providerBackdrop =
+    resolveImageUrl(film.thumb_url, film.poster_url) ||
     resolveImageUrl(film.poster_url);
+  const tmdbBackdropUrl = bestBackdrop?.file_path
+    ? `https://image.tmdb.org/t/p/w1280${bestBackdrop.file_path}`
+    : null;
+  const backdrop = backdropFailed
+    ? providerBackdrop
+    : tmdbBackdropUrl || providerBackdrop;
 
   const logoUrl = bestLogo?.file_path
     ? `https://image.tmdb.org/t/p/w500${bestLogo.file_path}`
@@ -352,6 +380,7 @@ function NetflixHeroBanner({
           className="object-cover object-center brightness-[0.8] scale-105 transition-transform duration-1000"
           priority
           unoptimized
+          onError={() => setBackdropFailed(true)}
         />
       )}
 
@@ -396,7 +425,7 @@ function NetflixHeroBanner({
       <div className="absolute inset-0 z-20 flex items-center pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-4 sm:pr-8">
         <div className="max-w-xl space-y-4 sm:space-y-6 pt-16">
           {/* Official Title Logo PNG or Styled Heading */}
-          {logoUrl ? (
+          {logoUrl && !logoFailed ? (
             <div className="relative w-72 sm:w-96 h-24 sm:h-32 mb-2">
               <NextImage
                 src={logoUrl}
@@ -404,6 +433,7 @@ function NetflixHeroBanner({
                 fill
                 className="object-contain object-left drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)]"
                 unoptimized
+                onError={() => setLogoFailed(true)}
               />
             </div>
           ) : (
@@ -475,31 +505,84 @@ export default function CountryPage() {
 
   const [heroSeed, setHeroSeed] = useState(() => Math.random());
   const [showGenreMenu, setShowGenreMenu] = useState(false);
+  const [loadSecondaryRows, setLoadSecondaryRows] = useState(false);
 
-  // Main catalog query for full listing & pagination with Instant Cache
-  const { data: mainData, isLoading: mainLoading } = useQuery({
-    queryKey: ["country", slug, page, selectedGenre],
+  // First healthy provider paints the hero immediately. The complete merged
+  // catalogue replaces it from cache without blocking the initial navigation.
+  const { data: fastData, isLoading: fastLoading } = useQuery({
+    queryKey: ["country-fast", slug, page, selectedGenre],
     queryFn: () =>
       selectedGenre
-        ? movieApi.getFiltered({ country: slug, category: selectedGenre, page }).then((r) => r.data)
-        : movieApi.getByCountry(slug, page).then((r) => r.data),
+        ? movieApi
+            .getFiltered({ country: slug, category: selectedGenre, page })
+            .then((r) => r.data)
+        : movieApi.getByCountryFast(slug, page).then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    placeholderData: (previousData, previousQuery) => {
-      const prevSlug = (previousQuery?.queryKey as any)?.[1];
-      return prevSlug === slug ? previousData : undefined;
-    },
+    placeholderData: undefined,
   });
 
-  const films: FilmItem[] = mainData?.data?.items || mainData?.items || [];
-  const heroFilm = films.length
-    ? films[Math.floor(heroSeed * films.length)]
-    : undefined;
+  const { data: mergedData } = useQuery({
+    queryKey: ["country", slug, page, selectedGenre],
+    queryFn: () => movieApi.getByCountry(slug, page).then((r) => r.data),
+    enabled: !selectedGenre && !!fastData,
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
+    placeholderData: undefined,
+  });
+
+  const mainData = mergedData || fastData;
+  const mainLoading = fastLoading && !mainData;
+
+  const films: FilmItem[] = useMemo(
+    () => mainData?.data?.items || mainData?.items || [],
+    [mainData],
+  );
+  const heroCandidates = useMemo(
+    () =>
+      films
+        .filter((film) => film.slug && (film.name || film.title))
+        .slice(0, 16),
+    [films],
+  );
+  const { data: resolvedHero } = useQuery({
+    queryKey: [
+      "country-hero-assets",
+      slug,
+      heroCandidates.map((film) => film.slug).join("|"),
+    ],
+    queryFn: async () => {
+      try {
+        return await Promise.any(
+          heroCandidates.map(async (candidate) => {
+            const assets = await resolveTmdbHeroAssets(candidate);
+            const trailer = getYoutubeTrailer(assets?.videos?.results || []);
+            if (assets?.backdrop_path && trailer?.key) {
+              return { film: candidate, assets };
+            }
+            throw new Error("Hero assets incomplete");
+          }),
+        );
+      } catch {
+        // Provider artwork still renders while the next refresh retries TMDB.
+        return null;
+      }
+    },
+    enabled: heroCandidates.length > 0,
+    staleTime: 1000 * 60 * 60 * 24,
+    gcTime: 1000 * 60 * 60 * 24,
+    placeholderData: undefined,
+    retry: false,
+  });
+  const heroFilm = resolvedHero?.film || heroCandidates[0];
 
   // Instantly reset scroll to top (0px) on country slug switch to prevent bottom scroll jumping
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" as any });
     setHeroSeed(Math.random());
+    setLoadSecondaryRows(false);
+    const timer = window.setTimeout(() => setLoadSecondaryRows(true), 900);
+    return () => window.clearTimeout(timer);
   }, [slug]);
 
   // Specific genre queries filtered by country with Instant Cache
@@ -516,6 +599,7 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
+    enabled: loadSecondaryRows,
   });
 
   const { data: actionData, isLoading: actionLoading } = useQuery({
@@ -531,6 +615,7 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
+    enabled: loadSecondaryRows,
   });
 
   const { data: coTrangData, isLoading: coTrangLoading } = useQuery({
@@ -546,6 +631,7 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
+    enabled: loadSecondaryRows,
   });
 
   const { data: crimeData, isLoading: crimeLoading } = useQuery({
@@ -556,6 +642,7 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
+    enabled: loadSecondaryRows,
   });
 
   // Additional queries for maximum Korean movie variety with Instant Cache
@@ -564,16 +651,23 @@ export default function CountryPage() {
     queryFn: () => movieApi.getByCountry(slug, 2).then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
+    enabled: loadSecondaryRows,
   });
 
   const { data: comedyData, isLoading: comedyLoading } = useQuery({
     queryKey: ["country-comedy", slug],
     queryFn: () =>
       movieApi
-        .getFiltered({ country: slug, category: "hai-huoc", page: 1, limit: 20 })
+        .getFiltered({
+          country: slug,
+          category: "hai-huoc",
+          page: 1,
+          limit: 20,
+        })
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
+    enabled: loadSecondaryRows,
   });
 
   const { data: dramaData, isLoading: dramaLoading } = useQuery({
@@ -584,6 +678,7 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
+    enabled: loadSecondaryRows,
   });
 
   const romanceFilms: FilmItem[] =
@@ -642,22 +737,49 @@ export default function CountryPage() {
 
   // Prepare 100% Unique non-repeating dynamic lists for each Netflix row
   const globalSeenSlugs = new Set<string>();
-  const row1Films = dedupeFilmsList(shuffleArray(films, heroSeed), globalSeenSlugs).slice(0, 14);
-  const row2Films = dedupeFilmsList(shuffleArray(romanceFilms, heroSeed + 1), globalSeenSlugs).slice(0, 14);
+  const row1Films = dedupeFilmsList(
+    shuffleArray(films, heroSeed),
+    globalSeenSlugs,
+  ).slice(0, 14);
+  const row2Films = dedupeFilmsList(
+    shuffleArray(romanceFilms, heroSeed + 1),
+    globalSeenSlugs,
+  ).slice(0, 14);
   const row3Films = dedupeFilmsList(
     shuffleArray(page2Films.length ? page2Films : films.slice(6), heroSeed + 2),
     globalSeenSlugs,
   ).slice(0, 14);
-  const row4Films = dedupeFilmsList(shuffleArray(actionFilms, heroSeed + 3), globalSeenSlugs).slice(0, 14);
-  const row5Films = dedupeFilmsList(shuffleArray(coTrangFilms, heroSeed + 4), globalSeenSlugs).slice(0, 14);
-  const row6Films = dedupeFilmsList(shuffleArray(comedyFilms, heroSeed + 5), globalSeenSlugs).slice(0, 14);
-  const row7Films = dedupeFilmsList(shuffleArray(crimeFilms, heroSeed + 6), globalSeenSlugs).slice(0, 14);
-  const row8Films = dedupeFilmsList(shuffleArray(dramaFilms, heroSeed + 7), globalSeenSlugs).slice(0, 14);
+  const row4Films = dedupeFilmsList(
+    shuffleArray(actionFilms, heroSeed + 3),
+    globalSeenSlugs,
+  ).slice(0, 14);
+  const row5Films = dedupeFilmsList(
+    shuffleArray(coTrangFilms, heroSeed + 4),
+    globalSeenSlugs,
+  ).slice(0, 14);
+  const row6Films = dedupeFilmsList(
+    shuffleArray(comedyFilms, heroSeed + 5),
+    globalSeenSlugs,
+  ).slice(0, 14);
+  const row7Films = dedupeFilmsList(
+    shuffleArray(crimeFilms, heroSeed + 6),
+    globalSeenSlugs,
+  ).slice(0, 14);
+  const row8Films = dedupeFilmsList(
+    shuffleArray(dramaFilms, heroSeed + 7),
+    globalSeenSlugs,
+  ).slice(0, 14);
 
   return (
-    <div className={`${cardFont.className} min-h-screen w-full bg-[#141414] text-foreground -mt-20 sm:-mt-24`}>
+    <div
+      className={`${cardFont.className} min-h-screen w-full bg-[#141414] text-foreground -mt-20 sm:-mt-24`}
+    >
       {/* ── Netflix Spotlight Hero Banner with Background Video Trailer ── */}
-      <NetflixHeroBanner film={heroFilm} countryName={label} />
+      <NetflixHeroBanner
+        film={heroFilm}
+        countryName={label}
+        heroAssets={resolvedHero?.assets}
+      />
 
       {/* ── Content Rows (Negative top margin to overlap full screen video trailer matching Netflix screenshot) ── */}
       <div className="relative z-20 -mt-32 sm:-mt-44 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6">
@@ -752,7 +874,8 @@ export default function CountryPage() {
               Tất Cả Phim {label} {selectedGenre ? `• ${activeGenreLabel}` : ""}
             </h2>
             <p className="text-xs text-neutral-400 font-semibold mt-1">
-              Kho phim điện ảnh và series truyền hình chọn lọc sản xuất tại {label}
+              Kho phim điện ảnh và series truyền hình chọn lọc sản xuất tại{" "}
+              {label}
             </p>
           </div>
           <div className="text-xs font-bold text-neutral-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 self-start md:self-auto">

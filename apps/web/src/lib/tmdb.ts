@@ -20,8 +20,7 @@ export function tmdbPoster(
   size: PosterSize = "w342",
 ): string | null {
   if (!path) return null;
-  const raw = `${TMDB_IMAGE_BASE}/${size}${path}`;
-  return `/api/image-proxy?url=${encodeURIComponent(raw)}`;
+  return `${TMDB_IMAGE_BASE}/${size}${path}`;
 }
 
 export function tmdbBackdrop(
@@ -29,8 +28,7 @@ export function tmdbBackdrop(
   size: BackdropSize = "w1280",
 ): string | null {
   if (!path) return null;
-  const raw = `${TMDB_IMAGE_BASE}/${size}${path}`;
-  return `/api/image-proxy?url=${encodeURIComponent(raw)}`;
+  return `${TMDB_IMAGE_BASE}/${size}${path}`;
 }
 
 export function tmdbLogo(
@@ -38,8 +36,7 @@ export function tmdbLogo(
   size: LogoSize = "w500",
 ): string | null {
   if (!path) return null;
-  const raw = `${TMDB_IMAGE_BASE}/${size}${path}`;
-  return `/api/image-proxy?url=${encodeURIComponent(raw)}`;
+  return `${TMDB_IMAGE_BASE}/${size}${path}`;
 }
 
 export function tmdbProfile(
@@ -47,8 +44,7 @@ export function tmdbProfile(
   size: ProfileSize = "w185",
 ): string | null {
   if (!path) return null;
-  const raw = `${TMDB_IMAGE_BASE}/${size}${path}`;
-  return `/api/image-proxy?url=${encodeURIComponent(raw)}`;
+  return `${TMDB_IMAGE_BASE}/${size}${path}`;
 }
 
 // ── Fetch helper ──────────────────────────────────────────────────
@@ -183,6 +179,11 @@ export interface TmdbFindResult {
   tv_results: TmdbMovie[];
 }
 
+export interface TmdbHeroAssets extends TmdbMovie {
+  images?: TmdbImages;
+  videos?: { results: TmdbVideo[] };
+}
+
 export interface TmdbPersonDetail {
   id: number;
   name: string;
@@ -242,12 +243,21 @@ export const tmdbApi = {
   // ── Trailer / Video ──
   getMovieVideos: (tmdbId: number) =>
     fetchTmdb<{ results: TmdbVideo[] }>(`movie/${tmdbId}/videos`, {
-      include_video_language: "vi,en",
+      include_video_language: "vi,en,zh,ko,null",
     }),
 
   getTvVideos: (tmdbId: number) =>
     fetchTmdb<{ results: TmdbVideo[] }>(`tv/${tmdbId}/videos`, {
-      include_video_language: "vi,en",
+      include_video_language: "vi,en,zh,ko,null",
+    }),
+
+  // One round trip for interaction-critical country heroes. Chinese/Korean
+  // videos are frequently tagged zh/ko or have no language tag at all.
+  getHeroAssets: (tmdbId: number, type: "movie" | "tv") =>
+    fetchTmdb<TmdbHeroAssets>(`${type}/${tmdbId}`, {
+      append_to_response: "images,videos",
+      include_image_language: "vi,en,zh,ko,null",
+      include_video_language: "vi,en,zh,ko,null",
     }),
 
   // ── Diễn viên chi tiết ──
@@ -340,6 +350,39 @@ export function extractTmdbInfo(film: any): {
       : film?.imdb_id || null;
 
   return { tmdbId, type, imdbId };
+}
+
+export async function resolveTmdbHeroAssets(
+  film: any,
+): Promise<TmdbHeroAssets | null> {
+  const extracted = extractTmdbInfo(film);
+  let tmdbId = extracted.tmdbId;
+  let type = extracted.type;
+
+  if (!tmdbId && extracted.imdbId) {
+    const found = await tmdbApi.findByImdbId(extracted.imdbId);
+    const matched = found?.tv_results?.[0] || found?.movie_results?.[0];
+    if (matched) {
+      tmdbId = matched.id;
+      type = found?.tv_results?.[0] ? "tv" : "movie";
+    }
+  }
+
+  if (!tmdbId) {
+    const title = String(film?.origin_name || film?.title || film?.name || "")
+      .replace(/\s*\([^)]*\)/g, " ")
+      .trim();
+    if (!title) return null;
+    const search =
+      type === "tv"
+        ? await tmdbApi.searchTv(title)
+        : await tmdbApi.searchMovie(title);
+    const matched = search?.results?.[0];
+    if (!matched) return null;
+    tmdbId = matched.id;
+  }
+
+  return tmdbApi.getHeroAssets(tmdbId, type);
 }
 
 // ── Helper: lấy trailer YouTube đầu tiên ─────────────────────────

@@ -430,9 +430,7 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
   // Merge tất cả groups (primary + extra)
   const allGroups = [...groups, ...extraGroups];
   const merged =
-    extraGroups.length > 0
-      ? dedupeFilmsBySource(allGroups)
-      : primaryMerged;
+    extraGroups.length > 0 ? dedupeFilmsBySource(allGroups) : primaryMerged;
 
   // ── Smart re-ranking với search engine ──
   const ranked = rankSearchResults(merged, trimmed);
@@ -501,40 +499,26 @@ async function getDetailFromAnySource(
       ]
     : requests;
 
-  // 1. Try sequentially with ordered preference
-  for (const entry of orderedRequests) {
-    try {
-      const data = await entry.request();
-      if (isUsableMovieDetail(data)) {
-        return tagMovieDetailSource(data, entry.source) as any;
-      }
-    } catch {
-      // Continue to next source
-    }
+  // Race every provider once. The old sequential loop could wait for four
+  // individual timeouts and then repeated the same four requests in parallel,
+  // leaving both detail and watch pages on skeletons for several seconds.
+  try {
+    return await Promise.any(
+      orderedRequests.map(async (entry) => {
+        const data = await entry.request();
+        if (isUsableMovieDetail(data)) {
+          return tagMovieDetailSource(data, entry.source);
+        }
+        throw new Error("Detail not usable");
+      }),
+    );
+  } catch {
+    return {
+      status: false,
+      error: true,
+      message: `Không tìm thấy phim: ${slug}`,
+    };
   }
-
-  // 2. Parallel fallback check across all sources concurrently
-  const results = await Promise.allSettled(
-    requests.map(async (entry) => {
-      const data = await entry.request();
-      if (isUsableMovieDetail(data)) {
-        return tagMovieDetailSource(data, entry.source);
-      }
-      throw new Error("Detail not usable");
-    }),
-  );
-
-  for (const res of results) {
-    if (res.status === "fulfilled" && res.value) {
-      return res.value;
-    }
-  }
-
-  return {
-    status: false,
-    error: true,
-    message: `Không tìm thấy phim: ${slug}`,
-  };
 }
 
 async function getDetailFromSource(source: MovieSource, slug: string) {
@@ -635,6 +619,42 @@ async function getMergedCatalogPage(
       count: group.items.length,
     })),
   };
+}
+
+/**
+ * Resolve the first healthy catalogue provider for interaction-critical pages.
+ * The complete multi-source merge can continue in a separate background query;
+ * navigation should not wait for the slowest upstream to time out.
+ */
+async function getFastCatalogPage(
+  page: number,
+  requests: CatalogSourceRequest[],
+): Promise<any> {
+  return Promise.any(
+    requests.map(async ({ source, request }) => {
+      const data = await request();
+      const rawItems = extractFilmItems(data);
+      if (!rawItems.length) throw new Error(`${source} returned no films`);
+      const items = dedupeFilmsBySource([{ source, items: rawItems }]);
+      if (!items.length) throw new Error(`${source} returned unusable films`);
+
+      const pagination = {
+        currentPage: page,
+        totalItems: items.length,
+        totalItemsPerPage: items.length,
+        totalPages: 1,
+      };
+      return {
+        status: true,
+        items,
+        params: { pagination },
+        pagination,
+        data: { items, params: { pagination } },
+        _sources: [{ source, count: items.length }],
+        _fast: true,
+      };
+    }),
+  );
 }
 
 function catalogRequests(
@@ -762,6 +782,10 @@ export const movieApi = {
     getMergedCatalogPage(page, catalogRequests("country", page, slug)).then(
       (data) => ({ data }),
     ),
+  getByCountryFast: (slug: string, page = 1) =>
+    getFastCatalogPage(page, catalogRequests("country", page, slug)).then(
+      (data) => ({ data }),
+    ),
   getByYear: (year: number, page = 1) =>
     kkphimApi.getByYear(year, page).then((data) => ({ data })),
   getGenres: () => kkphimApi.getGenres().then((data) => ({ data })),
@@ -852,7 +876,7 @@ api.interceptors.response.use(
     // global redirect here races the login UI and can send an already signed-in
     // user back to /login. Let the calling form surface that error instead.
     const isAuthFlowRequest =
-      /^\/auth\/(?:login|register|firebase|refresh|2fa\/login-verify)/.test(
+      /^\/auth\/(?:me|login|register|firebase|refresh|2fa\/login-verify)/.test(
         requestPath,
       );
 

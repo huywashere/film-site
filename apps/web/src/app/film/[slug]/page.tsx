@@ -648,18 +648,22 @@ export default function FilmDetailPage() {
     fetchVideos: secondaryReady || showTrailer,
   });
 
-  const posterUrl = film
-    ? (bestPoster ? tmdbPoster(bestPoster.file_path, "w500") : null) ||
-      resolveImageUrl(film?.poster_url) ||
-      resolveImageUrl(film?.thumb_url) ||
-      undefined
-    : undefined;
-
-  const backdropUrl = bestBackdrop
-    ? tmdbBackdrop(bestBackdrop.file_path, "w1280")
-    : resolveImageUrl(film?.thumb_url) ||
-      resolveImageUrl(film?.poster_url) ||
-      undefined;
+  const providerPosterUrl = film
+    ? resolveImageUrl(film.poster_url, film.thumb_url) ||
+      resolveImageUrl(film.thumb_url)
+    : null;
+  const providerBackdropUrl = film
+    ? resolveImageUrl(film.thumb_url, film.poster_url) ||
+      resolveImageUrl(film.poster_url)
+    : null;
+  const posterUrl =
+    providerPosterUrl ||
+    (bestPoster ? tmdbPoster(bestPoster.file_path, "w500") : null) ||
+    undefined;
+  const backdropUrl =
+    providerBackdropUrl ||
+    (bestBackdrop ? tmdbBackdrop(bestBackdrop.file_path, "w1280") : null) ||
+    undefined;
 
   // Watchlist status check
   useEffect(() => {

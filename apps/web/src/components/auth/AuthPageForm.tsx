@@ -481,13 +481,18 @@ export function AuthPageForm({
                       alt={`Ảnh phim ${randomMovie.title}`}
                       fill
                       priority
+                      unoptimized={randomMovie.backdropUrl.startsWith("/")}
                       sizes="(min-width: 768px) 45vw, 0px"
                       className="object-cover brightness-[0.68]"
                       style={{ objectPosition: randomMovie.objectPosition }}
                       onError={() => {
-                        if (randomMovie.backdropUrl.startsWith("/api/")) {
-                          setRandomMovie(AUTH_FALLBACK_MOVIES[0]);
-                        }
+                        setRandomMovie((prev) => {
+                          const idx = AUTH_FALLBACK_MOVIES.findIndex(
+                            (m) => m.backdropUrl === prev.backdropUrl,
+                          );
+                          const nextIdx = (idx + 1) % AUTH_FALLBACK_MOVIES.length;
+                          return AUTH_FALLBACK_MOVIES[nextIdx >= 0 ? nextIdx : 0];
+                        });
                       }}
                     />
                   </motion.div>

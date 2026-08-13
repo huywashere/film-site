@@ -77,6 +77,13 @@ body[data-status-page="true"] [data-site-chrome] {
   display: none !important;
 }
 
+/* Cinema mode removes navigation chrome so the player is the only visual
+   focus. The watch page owns this short-lived body state and cleans it up on
+   route changes. */
+body[data-cinema-lights="off"] [data-site-chrome] {
+  display: none !important;
+}
+
 /* Be Vietnam Pro dùng thống nhất cho heading và nội dung. */
 h1,
 h2,

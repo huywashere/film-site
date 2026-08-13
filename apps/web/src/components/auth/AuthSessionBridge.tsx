@@ -19,6 +19,14 @@ export function AuthSessionBridge() {
     const restore = async () => {
       if (restoreInFlight) return restoreInFlight;
 
+      // A public visitor has no session marker, so probing /auth/me can only
+      // produce a 401 followed by a pointless refresh request. Firebase still
+      // gets a chance to restore its own identity through the idle observer.
+      const hasSessionMarker = document.cookie
+        .split(";")
+        .some((cookie) => cookie.trim() === "cineverse-auth=true");
+      if (!hasSessionMarker && !useAuthStore.getState().user) return;
+
       restoreInFlight = (async () => {
         const store = useAuthStore.getState();
         try {

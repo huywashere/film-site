@@ -24,7 +24,7 @@ export function TmdbArtwork({
   priority = false,
   enabled = true,
 }: TmdbArtworkProps) {
-  const { backdropUrl, posterUrl, isLoading } = useTmdbArtwork(film, enabled);
+  const { backdropUrl, posterUrl } = useTmdbArtwork(film, enabled);
   const tmdbUrl = kind === "backdrop" ? backdropUrl : posterUrl;
   const providerFallback =
     kind === "backdrop"
@@ -32,7 +32,7 @@ export function TmdbArtwork({
       : resolveImageUrl(film.poster_url, film.thumb_url);
   const candidates = useMemo(
     () =>
-      [tmdbUrl, providerFallback, HERO_LOCAL_FALLBACK].filter(
+      [providerFallback, tmdbUrl, HERO_LOCAL_FALLBACK].filter(
         (candidate, index, values): candidate is string =>
           Boolean(candidate) && values.indexOf(candidate) === index,
       ),
@@ -47,11 +47,9 @@ export function TmdbArtwork({
   }, [film.slug, kind, tmdbUrl]);
 
   const src = candidates[candidateIndex] || HERO_LOCAL_FALLBACK;
-  const waitingForTmdb = enabled && isLoading && !tmdbUrl;
-
   return (
     <div className={cn("relative overflow-hidden bg-[#101218]", className)}>
-      {!waitingForTmdb && (
+      {src && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           key={src}
@@ -74,10 +72,10 @@ export function TmdbArtwork({
             "h-full w-full object-cover transition-opacity duration-500 motion-reduce:transition-none",
             loaded ? "opacity-100" : "opacity-0",
           )}
-          data-artwork-source={candidateIndex === 0 && tmdbUrl ? "tmdb" : "fallback"}
+          data-artwork-source={src === tmdbUrl ? "tmdb" : "fallback"}
         />
       )}
-      {(waitingForTmdb || !loaded) && (
+      {!loaded && (
         <div
           aria-hidden="true"
           className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,#101218_25%,#181b23_45%,#101218_65%)] bg-[length:220%_100%] motion-reduce:animate-none"

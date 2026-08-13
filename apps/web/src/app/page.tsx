@@ -34,8 +34,8 @@ function deduplicate(films: FilmItem[]): FilmItem[] {
   });
 }
 
-// ── Danh sách Hollywood Sci-Fi, Marvel & DC chọn lọc ngẫu nhiên cho Hero Banner ──
-const HOLLYWOOD_HERO_POOL: FilmItem[] = [
+// Fallback riêng cho hàng Top 10. Hero không còn dùng bộ banner tĩnh này.
+const HOLLYWOOD_TOP10_POOL: FilmItem[] = [
   {
     _id: "deadpool-va-wolverine",
     name: "Deadpool & Wolverine",
@@ -158,6 +158,28 @@ const HOLLYWOOD_HERO_POOL: FilmItem[] = [
   },
 ];
 
+const RETIRED_HERO_TITLES = [
+  "deadpool & wolverine",
+  "spider-man: no way home",
+  "the dark knight",
+  "avatar: the way of water",
+  "avengers: endgame",
+  "interstellar",
+  "joker",
+  "the batman",
+];
+
+function isRetiredHeroFilm(film: FilmItem): boolean {
+  const title = `${film.name || ""} ${film.origin_name || ""}`.toLowerCase();
+  return RETIRED_HERO_TITLES.some((retiredTitle) =>
+    title.includes(retiredTitle),
+  );
+}
+
+function hasHeroArtwork(film: FilmItem): boolean {
+  return Boolean(film.thumb_url && film.poster_url);
+}
+
 // Helper: Nhận diện phim Anime hoặc Hoạt hình 3D (Đấu La, Trảm Thần, Tiên Ni...)
 function isAnimationOrAnime(film: FilmItem): boolean {
   if (!film || !film.name) return false;
@@ -222,13 +244,16 @@ const SECTION_TITLE_TONES: Record<string, string> = {
   "Phim Lẻ Âu-Mỹ Chất Lượng Cao": "from-amber-300 via-yellow-300 to-lime-300",
   "Phim Chính Kịch": "from-purple-400 via-violet-400 to-blue-300",
   "Phim Kinh Dị & Sinh Tồn": "from-red-400 via-rose-400 to-orange-300",
-  "Thể Loại Chiến Tranh Và Gai Góc": "from-stone-300 via-neutral-400 to-slate-300",
+  "Thể Loại Chiến Tranh Và Gai Góc":
+    "from-stone-300 via-neutral-400 to-slate-300",
   "Phim Hài": "from-yellow-300 via-lime-300 to-emerald-300",
   "Phim Tình Cảm": "from-fuchsia-400 via-pink-400 to-rose-300",
 };
 
 function sectionTitleTone(title: string) {
-  return SECTION_TITLE_TONES[title] || "from-cyan-400 via-sky-400 to-indigo-300";
+  return (
+    SECTION_TITLE_TONES[title] || "from-cyan-400 via-sky-400 to-indigo-300"
+  );
 }
 
 // Standard Film Carousel Section Component (With Sleek Right Vertical Pills Navigation)
@@ -319,15 +344,15 @@ function FilmSection({
           >
             {isLoading
               ? Array.from({ length: 10 }, (_, index) => (
-                <SwiperSlide key={`film-skeleton-${index}`}>
-                  <FilmCardSkeleton />
-                </SwiperSlide>
-              ))
+                  <SwiperSlide key={`film-skeleton-${index}`}>
+                    <FilmCardSkeleton />
+                  </SwiperSlide>
+                ))
               : films.map((film, idx) => (
-                <SwiperSlide key={film._id || film.slug || idx}>
-                  <FilmCard film={film} priority={idx < 8} />
-                </SwiperSlide>
-              ))}
+                  <SwiperSlide key={film._id || film.slug || idx}>
+                    <FilmCard film={film} priority={idx < 8} />
+                  </SwiperSlide>
+                ))}
           </Swiper>
         </div>
 
@@ -456,6 +481,20 @@ export default function HomePage() {
           type: "phim-bo",
           country: "au-my",
           page: 1,
+          limit: 24,
+        })
+        .then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+    enabled: catalogReady,
+  });
+  const { data: usUkSeriesMoreData } = useQuery({
+    queryKey: ["us-uk-series-v2", 2],
+    queryFn: () =>
+      movieApi
+        .getFiltered({
+          type: "phim-bo",
+          country: "au-my",
+          page: 2,
           limit: 24,
         })
         .then((r) => r.data),
@@ -617,6 +656,7 @@ export default function HomePage() {
   const { data: latestData, isLoading: latestLoading } = useQuery({
     queryKey: ["latest-v2", 1],
     queryFn: () => movieApi.getLatest(1).then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
     enabled: catalogReady,
   });
 
@@ -636,10 +676,15 @@ export default function HomePage() {
   }, [vfxUsUkData, vfxData]);
 
   const usUkSeriesFilms = useMemo(() => {
-    const list = usUkSeriesData?.data?.items || usUkSeriesData?.items || [];
-    const liveAction = filterLiveActionOnly(deduplicate(list));
+    const firstPage =
+      usUkSeriesData?.data?.items || usUkSeriesData?.items || [];
+    const secondPage =
+      usUkSeriesMoreData?.data?.items || usUkSeriesMoreData?.items || [];
+    const liveAction = filterLiveActionOnly(
+      deduplicate([...firstPage, ...secondPage]),
+    );
     return liveAction.filter(isLikelySeries);
-  }, [usUkSeriesData]);
+  }, [usUkSeriesData, usUkSeriesMoreData]);
 
   const actionFilms = useMemo(() => {
     const usUkList = actionUsUkData?.data?.items || actionUsUkData?.items || [];
@@ -720,10 +765,11 @@ export default function HomePage() {
   // Priority High-Interest & Top-Trending Movies for Hero Banner
   const bannerFilms = useMemo(() => {
     const trendingPool = filterLiveActionOnly(trendingFilms);
-    return deduplicate(
-      trendingPool.length > 0 ? trendingPool : HOLLYWOOD_HERO_POOL,
-    ).slice(0, 6);
-  }, [trendingFilms]);
+    return deduplicate([...latestFilms, ...trendingPool])
+      .filter((film) => hasHeroArtwork(film) && !isRetiredHeroFilm(film))
+      .sort((a, b) => Number(b.year || 0) - Number(a.year || 0))
+      .slice(0, 6);
+  }, [latestFilms, trendingFilms]);
 
   const showBannerSkeleton = false;
 
@@ -753,7 +799,7 @@ export default function HomePage() {
     // Initial Sections
     const latestRowList = buildRow(latestFilms);
     const vfxRowList = buildRow(vfxFilms);
-    const usUkSeriesRowList = buildRow(usUkSeriesFilms);
+    const usUkSeriesRowList = buildRow(usUkSeriesFilms, 16);
     const actionRowList = buildRow(actionFilms);
     const scifiRowList = buildRow(scifiFilms);
 
@@ -793,7 +839,7 @@ export default function HomePage() {
       ...trendingFilms,
       ...actionFilms,
       ...scifiFilms,
-      ...HOLLYWOOD_HERO_POOL,
+      ...HOLLYWOOD_TOP10_POOL,
     ]);
 
     const top10List = filterLiveActionOnly(highInterestFilms)

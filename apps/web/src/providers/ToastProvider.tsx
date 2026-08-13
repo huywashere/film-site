@@ -114,7 +114,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
 
       <div
-        className="pointer-events-none fixed inset-x-3 top-[max(0.75rem,env(safe-area-inset-top))] z-[9999] flex flex-col items-end gap-2.5 [font-family:var(--font-be-vietnam)] sm:inset-x-auto sm:right-5 sm:top-20 sm:w-[390px]"
+        className="pointer-events-none fixed left-1/2 top-[max(0.75rem,env(safe-area-inset-top))] z-[9999] flex w-[calc(100%-1.5rem)] max-w-[390px] -translate-x-1/2 flex-col items-center gap-2.5 [font-family:var(--font-be-vietnam)] sm:top-20"
         aria-live="polite"
         aria-atomic="true"
       >
@@ -131,13 +131,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 initial={
                   reduceMotion
                     ? { opacity: 0 }
-                    : { opacity: 0, x: 32, scale: 0.97 }
+                    : { opacity: 0, y: -14, scale: 0.97 }
                 }
-                animate={{ opacity: 1, x: 0, scale: 1 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={
                   reduceMotion
                     ? { opacity: 0 }
-                    : { opacity: 0, x: 20, scale: 0.98 }
+                    : { opacity: 0, y: -10, scale: 0.98 }
                 }
                 transition={
                   reduceMotion

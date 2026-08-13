@@ -22,6 +22,15 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/providers/ToastProvider";
 import { guestDataStorage } from "@/lib/user-data";
 import { watchProgressStorage } from "@/lib/watch-progress";
+import { cardFont } from "@/lib/fonts";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface HistoryItem {
   id: string;
@@ -43,8 +52,10 @@ export default function HistoryPage() {
   const [page, setPage] = useState(1);
   const [guestHistory, setGuestHistory] = useState<HistoryItem[]>([]);
   const [removedIds, setRemovedIds] = useState<string[]>([]);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     setGuestHistory(
       guestDataStorage.getHistory().map((item) => ({
         id: `guest-${item.slug}-${item.epSlug}`,
@@ -141,22 +152,21 @@ export default function HistoryPage() {
   };
 
   const handleClearAll = () => {
-    if (confirm("Bạn có chắc muốn xóa toàn bộ lịch sử xem?")) {
-      const allIds = rawHistoryItems.map((item) => item.id);
-      setRemovedIds((prev) => [...new Set([...prev, ...allIds])]);
-      toast("Đã xóa toàn bộ lịch sử", "success");
+    setShowClearConfirm(false);
+    const allIds = rawHistoryItems.map((item) => item.id);
+    setRemovedIds((prev) => [...new Set([...prev, ...allIds])]);
+    toast("Đã xóa toàn bộ lịch sử", "success");
 
-      if (user) {
-        clearAllMutation.mutate(undefined, {
-          onError: () => {
-            setRemovedIds([]);
-            toast("Không thể xóa toàn bộ lịch sử", "error");
-          },
-        });
-      } else {
-        watchProgressStorage.clearAll();
-        setGuestHistory([]);
-      }
+    if (user) {
+      clearAllMutation.mutate(undefined, {
+        onError: () => {
+          setRemovedIds([]);
+          toast("Không thể xóa toàn bộ lịch sử", "error");
+        },
+      });
+    } else {
+      watchProgressStorage.clearAll();
+      setGuestHistory([]);
     }
   };
 
@@ -182,13 +192,15 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pt-20 pb-16 lg:ml-20">
+    <div
+      className={`${cardFont.className} min-h-screen bg-background pb-16 pt-16 lg:ml-20`}
+    >
       {/* Header */}
-      <div className="border-b border-white/10 bg-transparent sticky top-16 z-30">
-        <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6">
+      <div className="relative z-10 border-b border-white/10 bg-background">
+        <div className="mx-auto max-w-[1600px] px-4 py-5 md:px-8 md:py-6">
           {/* Header (Centered) */}
           <div className="flex flex-col items-center justify-center text-center max-w-2xl mx-auto py-2 gap-2.5">
-            <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight">
+            <h1 className="text-2xl font-extrabold tracking-tight text-white md:text-3xl">
               Lịch Sử Xem
             </h1>
             <p className="text-sm text-neutral-400 normal-case font-normal tracking-normal">
@@ -199,7 +211,7 @@ export default function HistoryPage() {
             {/* Clear All Button */}
             {historyItems.length > 0 && (
               <button
-                onClick={handleClearAll}
+                onClick={() => setShowClearConfirm(true)}
                 disabled={clearAllMutation.isPending}
                 className="mt-1 flex items-center space-x-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl font-semibold text-xs transition-colors border border-red-500/20 disabled:opacity-50"
               >
@@ -212,7 +224,7 @@ export default function HistoryPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-8">
+      <div className="relative z-0 mx-auto max-w-[1600px] px-4 py-6 md:px-8 md:py-8">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 size={40} className="animate-spin text-blue-500" />
@@ -365,6 +377,46 @@ export default function HistoryPage() {
           </div>
         )}
       </div>
+
+      <Dialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <DialogContent
+          className={`${cardFont.className} w-[calc(100%-2rem)] max-w-[390px] gap-0 rounded-2xl border border-white/10 bg-[#181818] p-0 text-white shadow-[0_24px_80px_rgba(0,0,0,0.65)]`}
+        >
+          <div className="p-5 sm:p-6">
+            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-neutral-300">
+              <Trash2 size={18} />
+            </div>
+            <DialogHeader className="space-y-2 pr-6 text-left">
+              <DialogTitle className="text-base font-bold tracking-tight text-white">
+                Xóa toàn bộ lịch sử?
+              </DialogTitle>
+              <DialogDescription className="text-[13px] leading-5 text-neutral-400">
+                Tiến độ của {total} phim trên thiết bị này sẽ bị xóa và không
+                thể khôi phục.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 border-t border-white/[0.07] px-5 py-4">
+            <DialogClose asChild>
+              <button
+                type="button"
+                className="rounded-lg px-4 py-2 text-xs font-semibold text-neutral-300 transition-colors hover:bg-white/[0.06] hover:text-white"
+              >
+                Hủy
+              </button>
+            </DialogClose>
+            <button
+              type="button"
+              onClick={handleClearAll}
+              disabled={clearAllMutation.isPending}
+              className="rounded-lg bg-white px-4 py-2 text-xs font-bold text-black transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Xóa lịch sử
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

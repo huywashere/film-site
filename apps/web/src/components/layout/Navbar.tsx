@@ -129,6 +129,46 @@ export const COUNTRIES_LIST = [
   { label: "Ấn Độ", slug: "an-do", code: "in" },
 ];
 
+export function getCountryEmoji(code?: string): string {
+  if (!code || code === "un") return "🌐";
+  const upper = code.toUpperCase();
+  if (upper.length !== 2) return "🌐";
+  const codePoints = [...upper].map((char) => 127397 + char.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
+}
+
+export function CountryFlagImage({
+  code,
+  label,
+  className = "w-5 h-3.5 object-cover rounded-[3px] border border-white/20 shrink-0 shadow-sm",
+}: {
+  code: string;
+  label: string;
+  className?: string;
+}) {
+  const [imgError, setImgError] = useState(false);
+  const emoji = getCountryEmoji(code);
+
+  if (imgError) {
+    return (
+      <span className="shrink-0 text-xs leading-none" role="img" aria-label={label}>
+        {emoji}
+      </span>
+    );
+  }
+
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={`https://flagcdn.com/w40/${code}.png`}
+      alt={label}
+      className={className}
+      loading="lazy"
+      onError={() => setImgError(true)}
+    />
+  );
+}
+
 const LISTS_CATALOG = [
   { label: "Bộ Sưu Tập Phim", href: "/lists" },
   { label: "Phim Mới", href: "/search?sort=modified.time%20desc" },
@@ -188,13 +228,15 @@ export function Navbar() {
       router.prefetch("/country/han-quoc");
       router.prefetch("/country/trung-quoc");
       queryClient.prefetchQuery({
-        queryKey: ["country", "han-quoc", 1, ""],
-        queryFn: () => movieApi.getByCountry("han-quoc", 1).then((r) => r.data),
+        queryKey: ["country-fast", "han-quoc", 1, ""],
+        queryFn: () =>
+          movieApi.getByCountryFast("han-quoc", 1).then((r) => r.data),
         staleTime: 1000 * 60 * 60,
       });
       queryClient.prefetchQuery({
-        queryKey: ["country", "trung-quoc", 1, ""],
-        queryFn: () => movieApi.getByCountry("trung-quoc", 1).then((r) => r.data),
+        queryKey: ["country-fast", "trung-quoc", 1, ""],
+        queryFn: () =>
+          movieApi.getByCountryFast("trung-quoc", 1).then((r) => r.data),
         staleTime: 1000 * 60 * 60,
       });
     } catch (_e) {
@@ -369,12 +411,10 @@ export function Navbar() {
                     onMouseEnter={() => router.prefetch(`/country/${item.slug}`)}
                     className="px-3 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 flex items-center gap-2.5 truncate group/flag"
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`https://flagcdn.com/w40/${item.code}.png`}
-                      alt={item.label}
+                    <CountryFlagImage
+                      code={item.code}
+                      label={item.label}
                       className="w-5 h-3.5 object-cover rounded-[3px] border border-white/20 shrink-0 group-hover/flag:scale-110 transition-transform shadow-sm"
-                      loading="lazy"
                     />
                     <span className="truncate">{item.label}</span>
                   </Link>

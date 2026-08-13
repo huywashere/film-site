@@ -155,7 +155,9 @@ export default function RootLayout({
               </div>
               <main className="page-content min-h-screen">
                 {children}
-                <ConditionalFooter />
+                <div data-site-chrome>
+                  <ConditionalFooter />
+                </div>
               </main>
               <div data-site-chrome>
                 <MobileBottomNav />

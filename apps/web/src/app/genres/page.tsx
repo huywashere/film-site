@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueries } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { cardFont } from "@/lib/fonts";
 import {
@@ -164,8 +165,20 @@ function buildTopicArtwork(
 
 export default function GenresTopicsPage() {
   const router = useRouter();
+  const [loadRemainingTopics, setLoadRemainingTopics] = useState(false);
+
+  useEffect(() => {
+    const start = () => setLoadRemainingTopics(true);
+    if ("requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(start, { timeout: 1200 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+    const timer = globalThis.setTimeout(start, 350);
+    return () => globalThis.clearTimeout(timer);
+  }, []);
+
   const topicQueries = useQueries({
-    queries: TOPICS.map((topic) => ({
+    queries: TOPICS.map((topic, index) => ({
       queryKey: ["movie-world-topic", topic.slug, topic.discover],
       queryFn: async () => {
         const response = await tmdbApi.discoverMovies(topic.discover);
@@ -173,6 +186,7 @@ export default function GenresTopicsPage() {
       },
       staleTime: 60 * 60 * 1000,
       gcTime: 6 * 60 * 60 * 1000,
+      enabled: index < 4 || loadRemainingTopics,
     })),
   });
   const topicArtwork = buildTopicArtwork(

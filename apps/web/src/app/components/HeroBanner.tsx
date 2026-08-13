@@ -9,7 +9,7 @@ import { TrailerModal } from "@/components/film/TrailerModal";
 import { useTranslation } from "@/store/langStore";
 import { useAuthStore } from "@/store/authStore";
 import { useQuery } from "@tanstack/react-query";
-import { watchlistApi, watchHistoryApi } from "@/lib/api";
+import { movieApi, watchlistApi, watchHistoryApi } from "@/lib/api";
 import { useToast } from "@/providers/ToastProvider";
 import { cn } from "@/lib/utils";
 import { heroSerifFont } from "@/lib/fonts";
@@ -38,32 +38,50 @@ interface HeroFilm extends FilmItem {
   tmdbOnly?: boolean;
 }
 
-const HERO_SESSION_KEY = "cineverse.tmdb-hero.v3";
-const HERO_INDEX_SESSION_KEY = "cineverse.tmdb-hero-index.v1";
+const HERO_SESSION_KEY = "cineverse.tmdb-hero.v4";
+const HERO_INDEX_SESSION_KEY = "cineverse.tmdb-hero-index.v2";
 
 // Trailer IDs are tiny and safe to retain for the current browser session.
 // This avoids repeating the TMDB request when a hero slide cycles back.
 const heroTrailerCache = new Map<string, string>();
 
-const HERO_TMDB_COLLECTIONS = [
-  {
-    label: "Marvel",
-    ids: [634649, 299534, 533535, 299536, 447365, 453395],
-  },
-  {
-    label: "DC",
-    ids: [414906, 155, 475557, 49521, 297762, 791373],
-  },
-  {
-    label: "Hollywood",
-    ids: [157336, 27205, 693134, 76600, 872585, 361743],
-  },
-] as const;
-
 const HERO_MARKETS = [
   { code: "US", region: "US", language: "en" },
-  { code: "GB", region: "GB", language: "en" },
+  { code: "KR", region: "KR", language: "ko" },
 ] as const;
+
+const HERO_MIN_RELEASE_YEAR = 2024;
+const HERO_ROTATION_MS = 14_000;
+const RETIRED_TMDB_HERO_IDS = new Set([
+  155, 157336, 27205, 299534, 299536, 361743, 414906, 447365, 453395, 475557,
+  49521, 533535, 634649, 693134, 76600, 791373, 872585,
+]);
+const RETIRED_TMDB_HERO_TITLES = [
+  "joker",
+  "the batman",
+  "the dark knight",
+  "avengers: endgame",
+  "interstellar",
+  "avatar: the way of water",
+  "spider-man: no way home",
+  "deadpool & wolverine",
+];
+
+function isFreshTmdbHero(movie: TmdbMovie): boolean {
+  const year = Number(
+    (movie.release_date || movie.first_air_date || "").slice(0, 4),
+  );
+  const title =
+    `${movie.title || ""} ${movie.name || ""} ${movie.original_title || ""}`.toLowerCase();
+
+  return (
+    year >= HERO_MIN_RELEASE_YEAR &&
+    !RETIRED_TMDB_HERO_IDS.has(movie.id) &&
+    !RETIRED_TMDB_HERO_TITLES.some((retiredTitle) =>
+      title.includes(retiredTitle),
+    )
+  );
+}
 
 function getWatchHref(film: HeroFilm): string {
   if (film.tmdbOnly) {
@@ -78,6 +96,69 @@ function getWatchHref(film: HeroFilm): string {
 
   const query = new URLSearchParams({ source, sourceSlug });
   return `/watch/${film.slug}?${query.toString()}`;
+}
+
+function normalizeHeroTitle(value?: string): string {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function movieTmdbId(film: FilmItem): string {
+  return String(film.tmdb?.id || (film as any).tmdb_id || "").trim();
+}
+
+async function attachPlayableSource(hero: HeroFilm): Promise<HeroFilm | null> {
+  if (!hero.tmdbOnly) return hero;
+
+  const query = hero.origin_name || hero.name;
+  const response = await movieApi.search(query, 1, 30);
+  const payload = response.data as any;
+  const items: FilmItem[] = payload?.data?.items || payload?.items || [];
+  const expectedTmdbId = movieTmdbId(hero);
+  const expectedTitles = new Set(
+    [hero.origin_name, hero.name].map(normalizeHeroTitle).filter(Boolean),
+  );
+
+  const match = items.find((candidate) => {
+    const candidateTmdbId = movieTmdbId(candidate);
+    if (expectedTmdbId && candidateTmdbId === expectedTmdbId) return true;
+
+    const candidateTitles = [candidate.origin_name, candidate.name]
+      .map(normalizeHeroTitle)
+      .filter(Boolean);
+    return Boolean(
+      hero.year &&
+      candidate.year === hero.year &&
+      candidateTitles.some((title) => expectedTitles.has(title)),
+    );
+  });
+
+  if (!match?.slug) return null;
+  return {
+    ...hero,
+    ...match,
+    // Retain the high-resolution TMDB presentation while routing playback via
+    // the exact provider slug discovered above.
+    heroBackdrop: hero.heroBackdrop,
+    titleLogo: hero.titleLogo,
+    titleLogoResolved: hero.titleLogoResolved,
+    poster_url: hero.poster_url || match.poster_url,
+    thumb_url: hero.thumb_url || match.thumb_url,
+    tmdbOnly: false,
+  };
+}
+
+async function retainPlayableHeroes(heroes: HeroFilm[]): Promise<HeroFilm[]> {
+  const resolved = await Promise.allSettled(heroes.map(attachPlayableSource));
+  return resolved.flatMap((result) =>
+    result.status === "fulfilled" && result.value ? [result.value] : [],
+  );
 }
 
 // Helper for direct CDN image URL
@@ -145,7 +226,12 @@ function getFilmDetailMeta(film: HeroFilm) {
   } else if (film.type === "series" || film.type === "hoathinh") {
     durationStr = "Phim bộ";
   } else {
-    const idNum = parseInt(film._id?.replace(/\D/g, "") || "120", 10);
+    // Movie providers do not agree on the ID shape. Some return a number or
+    // an object even though the normalized type is a string, so never call
+    // string methods on the upstream value directly.
+    const safeId = String(film._id ?? film.slug ?? "120");
+    const numericId = safeId.replace(/\D/g, "");
+    const idNum = numericId ? Number.parseInt(numericId, 10) : 120;
     const mins = 105 + (idNum % 35);
     const h = Math.floor(mins / 60);
     const m = mins % 60;
@@ -163,9 +249,18 @@ function getFilmDetailMeta(film: HeroFilm) {
     }
   } else {
     const lower = (film.name + " " + (film.origin_name || "")).toLowerCase();
-    if (lower.includes("dragon") || lower.includes("rồng") || lower.includes("game")) {
+    if (
+      lower.includes("dragon") ||
+      lower.includes("rồng") ||
+      lower.includes("game")
+    ) {
       genresStr = "Chính kịch • Hành động • Thần thoại";
-    } else if (lower.includes("avengers") || lower.includes("spider") || lower.includes("marvel") || lower.includes("dc")) {
+    } else if (
+      lower.includes("avengers") ||
+      lower.includes("spider") ||
+      lower.includes("marvel") ||
+      lower.includes("dc")
+    ) {
       genresStr = "Hành động • Viễn tưởng • Phiêu lưu";
     } else if (lower.includes("oppenheimer") || lower.includes("dark")) {
       genresStr = "Chính kịch • Lịch sử • Tiêu điểm";
@@ -176,15 +271,25 @@ function getFilmDetailMeta(film: HeroFilm) {
 
   let ageRating = "16+";
   const contentLower = (film.content || "").toLowerCase();
-  if (contentLower.includes("18+") || contentLower.includes("kinh dị") || contentLower.includes("bạo lực")) {
+  if (
+    contentLower.includes("18+") ||
+    contentLower.includes("kinh dị") ||
+    contentLower.includes("bạo lực")
+  ) {
     ageRating = "18+";
-  } else if (contentLower.includes("hoạt hình") || contentLower.includes("gia đình")) {
+  } else if (
+    contentLower.includes("hoạt hình") ||
+    contentLower.includes("gia đình")
+  ) {
     ageRating = "P";
   }
 
   let qualityBadge = "4K";
   if (film.quality) {
-    if (film.quality.toUpperCase() === "TMDB HD" || film.quality.toUpperCase() === "HD") {
+    if (
+      film.quality.toUpperCase() === "TMDB HD" ||
+      film.quality.toUpperCase() === "HD"
+    ) {
       qualityBadge = "4K";
     } else {
       qualityBadge = film.quality;
@@ -211,12 +316,33 @@ function getFilmDetailMeta(film: HeroFilm) {
 
 function getSpotlightBadge(film: HeroFilm, index: number) {
   const badges = [
-    { label: "🔥 #1 THỊNH HÀNH HÔM NAY", color: "from-red-600/90 to-amber-600/90 text-white border-red-500/40" },
-    { label: "🏆 TOP 10 PHIM BỘ TUẦN NÀY", color: "from-amber-600/90 to-yellow-500/90 text-white border-amber-400/40" },
-    { label: "✨ SIÊU PHẨM BẢN QUYỀN 4K", color: "from-violet-600/90 to-purple-500/90 text-white border-purple-400/40" },
-    { label: "🍿 PHIM CHIẾU RẠP HOT", color: "from-rose-600/90 to-pink-600/90 text-white border-rose-500/40" },
-    { label: "⚡ MỚI CẬP NHẬT TẬP MỚI", color: "from-emerald-600/90 to-teal-500/90 text-white border-emerald-400/40" },
-    { label: "💎 TOP PHIM ĐƯỢC BÌNH CHỌN", color: "from-blue-600/90 to-indigo-600/90 text-white border-blue-400/40" },
+    {
+      label: "🔥 #1 THỊNH HÀNH HÔM NAY",
+      color: "from-red-600/90 to-amber-600/90 text-white border-red-500/40",
+    },
+    {
+      label: "🏆 TOP 10 PHIM BỘ TUẦN NÀY",
+      color:
+        "from-amber-600/90 to-yellow-500/90 text-white border-amber-400/40",
+    },
+    {
+      label: "✨ SIÊU PHẨM BẢN QUYỀN 4K",
+      color:
+        "from-violet-600/90 to-purple-500/90 text-white border-purple-400/40",
+    },
+    {
+      label: "🍿 PHIM CHIẾU RẠP HOT",
+      color: "from-rose-600/90 to-pink-600/90 text-white border-rose-500/40",
+    },
+    {
+      label: "⚡ MỚI CẬP NHẬT TẬP MỚI",
+      color:
+        "from-emerald-600/90 to-teal-500/90 text-white border-emerald-400/40",
+    },
+    {
+      label: "💎 TOP PHIM ĐƯỢC BÌNH CHỌN",
+      color: "from-blue-600/90 to-indigo-600/90 text-white border-blue-400/40",
+    },
   ];
   return badges[index % badges.length];
 }
@@ -231,7 +357,9 @@ function getBestTitleLogo(logos: TmdbImage[]): TmdbImage | null {
 
   return (
     [...logos]
-      .filter((logo) => Boolean(logo.file_path) && logo.width > 0 && logo.height > 0)
+      .filter(
+        (logo) => Boolean(logo.file_path) && logo.width > 0 && logo.height > 0,
+      )
       .sort((a, b) => {
         const languageScore =
           languagePriority(b.iso_639_1) - languagePriority(a.iso_639_1);
@@ -284,9 +412,7 @@ function HeroMovieTitle({
   const [failedLogoSlug, setFailedLogoSlug] = useState<string | null>(null);
   const [loadedLogoSlug, setLoadedLogoSlug] = useState<string | null>(null);
   const title = film.origin_name || film.name;
-  const showLogo = Boolean(
-    film.titleLogo && failedLogoSlug !== film.slug,
-  );
+  const showLogo = Boolean(film.titleLogo && failedLogoSlug !== film.slug);
   const logoLoaded = loadedLogoSlug === film.slug;
 
   useEffect(() => {
@@ -294,19 +420,17 @@ function HeroMovieTitle({
   }, [film.slug, onReady, showLogo]);
 
   return (
-    <div
-      className="relative flex min-h-16 w-full items-center justify-center sm:min-h-24 md:min-h-28"
-    >
+    <div className="relative flex min-h-16 w-full items-center justify-center sm:min-h-24 md:min-h-28">
       <h1
         className={cn(
-          logoLoaded && "sr-only",
-          !logoLoaded &&
+          showLogo && "sr-only",
+          !showLogo &&
             "max-w-2xl line-clamp-2 text-xl font-extrabold uppercase leading-tight tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl",
         )}
         style={
-          logoLoaded
-            ? undefined
-            : { fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }
+          !showLogo
+            ? { fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }
+            : undefined
         }
       >
         {title}
@@ -317,9 +441,9 @@ function HeroMovieTitle({
         // object containment is more reliable here than a cropped Image fill.
         // eslint-disable-next-line @next/next/no-img-element
         <img
+          key={film.titleLogo}
           src={film.titleLogo}
-          alt=""
-          aria-hidden="true"
+          alt={title}
           decoding="async"
           loading="eager"
           onLoad={() => {
@@ -332,7 +456,7 @@ function HeroMovieTitle({
           }}
           className={cn(
             "max-h-16 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-opacity duration-300 sm:max-h-24 sm:max-w-[34rem] md:max-h-28",
-            logoLoaded ? "opacity-100" : "absolute opacity-0",
+            logoLoaded ? "opacity-100" : "opacity-0",
           )}
         />
       )}
@@ -600,7 +724,7 @@ function selectRandomFilms(groups: TmdbMovie[][]): HeroFilm[] {
 function isStoredHeroPlaylist(value: unknown): value is HeroFilm[] {
   return (
     Array.isArray(value) &&
-    value.length === 6 &&
+    value.length > 0 &&
     value.every(
       (film) =>
         typeof film === "object" &&
@@ -662,24 +786,29 @@ function shuffled<T>(values: readonly T[]): T[] {
   return result;
 }
 
-async function loadCuratedTmdbPlaylist(): Promise<HeroFilm[]> {
-  const collectionMovies = await Promise.all(
-    HERO_TMDB_COLLECTIONS.map(async (col) => {
-      const items = await Promise.all(
-        col.ids.map(async (id) => {
-          const detail = await tmdbApi.getMovieDetail(id);
-          return detail ? toHeroFilm(detail as any) : null;
-        }),
-      );
-      return items.filter((item): item is HeroFilm => Boolean(item));
-    }),
-  );
+async function loadFreshTmdbPlaylist(): Promise<HeroFilm[]> {
+  const [trending, ...marketGroups] = await Promise.all([
+    tmdbApi.getTrending("movie", "week"),
+    ...HERO_MARKETS.map((market) =>
+      tmdbApi.discoverMovies({
+        page: 1,
+        region: market.region,
+        with_origin_country: market.code,
+        with_original_language: market.language,
+        "vote_count.gte": 120,
+      }),
+    ),
+  ]);
 
-  const balanced = collectionMovies
-    .flat()
-    .filter((film): film is HeroFilm => Boolean(film));
+  const groups = [
+    (trending?.results || []).filter(isFreshTmdbHero),
+    ...marketGroups.map((group) =>
+      (group?.results || []).filter(isFreshTmdbHero),
+    ),
+  ];
 
-  return enrichHeroTitleLogos(shuffled(balanced).slice(0, 6));
+  const withLogos = await enrichHeroTitleLogos(selectRandomFilms(groups));
+  return retainPlayableHeroes(withLogos);
 }
 
 export default function HeroBanner({ films }: HeroBannerProps) {
@@ -687,7 +816,9 @@ export default function HeroBanner({ films }: HeroBannerProps) {
   const [tmdbFeatured, setTmdbFeatured] = useState<HeroFilm[] | null>(
     cachedHeroPlaylist,
   );
-  const [trailerModalFilm, setTrailerModalFilm] = useState<FilmItem | null>(null);
+  const [trailerModalFilm, setTrailerModalFilm] = useState<FilmItem | null>(
+    null,
+  );
   const [visualReadiness, setVisualReadiness] = useState<
     Record<string, { backdrop: boolean; title: boolean }>
   >({});
@@ -718,12 +849,15 @@ export default function HeroBanner({ films }: HeroBannerProps) {
     }
     return [];
   }, [films]);
+  const fallbackFeaturedRef = useRef(fallbackFeatured);
+
+  useEffect(() => {
+    fallbackFeaturedRef.current = fallbackFeatured;
+  }, [fallbackFeatured]);
 
   const featured = useMemo(
     () =>
-      tmdbFeatured && tmdbFeatured.length > 0
-        ? tmdbFeatured
-        : fallbackFeatured,
+      tmdbFeatured && tmdbFeatured.length > 0 ? tmdbFeatured : fallbackFeatured,
     [fallbackFeatured, tmdbFeatured],
   );
 
@@ -732,21 +866,33 @@ export default function HeroBanner({ films }: HeroBannerProps) {
     const loadPlaylist = async () => {
       const existingPlaylist = cachedHeroPlaylist || readStoredHeroPlaylist();
       if (existingPlaylist) {
-        const playlistWithLogos = await enrichHeroTitleLogos(existingPlaylist);
+        const playlistWithLogos = await retainPlayableHeroes(
+          await enrichHeroTitleLogos(existingPlaylist),
+        );
         if (!active) return;
-        const existingIndex = cachedHeroPlaylist
-          ? cachedHeroIndex
-          : readStoredHeroIndex(playlistWithLogos.length);
-        storeHeroPlaylist(playlistWithLogos);
-        cachedHeroIndex = existingIndex;
-        setTmdbFeatured(playlistWithLogos);
-        setCurrent(existingIndex);
-        return;
+        if (!playlistWithLogos.length) {
+          cachedHeroPlaylist = null;
+          try {
+            window.sessionStorage.removeItem(HERO_SESSION_KEY);
+          } catch {}
+        } else {
+          const existingIndex = cachedHeroPlaylist
+            ? cachedHeroIndex
+            : readStoredHeroIndex(playlistWithLogos.length);
+          storeHeroPlaylist(playlistWithLogos);
+          cachedHeroIndex = Math.min(
+            existingIndex,
+            playlistWithLogos.length - 1,
+          );
+          setTmdbFeatured(playlistWithLogos);
+          setCurrent(cachedHeroIndex);
+          return;
+        }
       }
 
       let playlist: HeroFilm[] = [];
       try {
-        playlist = await loadCuratedTmdbPlaylist();
+        playlist = await loadFreshTmdbPlaylist();
 
         if (playlist.length !== 6) {
           const groups = await Promise.all(
@@ -758,21 +904,25 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                 with_original_language: market.language,
                 "vote_count.gte": 500,
               });
-              return response?.results || [];
+              return (response?.results || []).filter(isFreshTmdbHero);
             }),
           );
-          playlist = await enrichHeroTitleLogos(selectRandomFilms(groups));
+          playlist = await retainPlayableHeroes(
+            await enrichHeroTitleLogos(selectRandomFilms(groups)),
+          );
         }
       } catch {
         playlist = [];
       }
 
       if (!active) return;
-      if (playlist.length === 6) {
+      if (playlist.length > 0) {
         storeHeroPlaylist(playlist);
         cachedHeroIndex = 0;
         setTmdbFeatured(playlist);
         setCurrent(0);
+      } else if (fallbackFeaturedRef.current.length > 0) {
+        setTmdbFeatured(null);
       }
     };
 
@@ -800,7 +950,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
     if (featured.length <= 1 || reduceMotion) return;
     const timer = setInterval(() => {
       setCurrent((c) => (c + 1) % featured.length);
-    }, 14000);
+    }, HERO_ROTATION_MS);
     return () => clearInterval(timer);
   }, [featured.length, reduceMotion]);
 
@@ -949,7 +1099,9 @@ export default function HeroBanner({ films }: HeroBannerProps) {
               key={item.slug || idx}
               className={cn(
                 "absolute inset-0 w-full h-full transition-all duration-1000 ease-[cubic-bezier(0.25,1,0.5,1)] will-change-[opacity,transform] pointer-events-none",
-                isActive ? "opacity-100 scale-100 z-10" : "opacity-0 scale-[1.02] z-0",
+                isActive
+                  ? "opacity-100 scale-100 z-10"
+                  : "opacity-0 scale-[1.02] z-0",
               )}
             >
               <HeroBackdropImage
@@ -965,8 +1117,8 @@ export default function HeroBanner({ films }: HeroBannerProps) {
           film={film}
           enabled={Boolean(
             visualReadiness[film.slug]?.backdrop &&
-              visualReadiness[film.slug]?.title &&
-              !reduceMotion,
+            visualReadiness[film.slug]?.title &&
+            !reduceMotion,
           )}
         />
       </div>
@@ -984,7 +1136,9 @@ export default function HeroBanner({ films }: HeroBannerProps) {
       />
 
       {/* 🎴 3-Card Fan / Cascade Deck (Left side desktop) */}
-      <div className={`${cardFont.className} absolute left-6 top-1/2 z-30 hidden w-[380px] h-[340px] -translate-y-1/2 xl:block 2xl:left-14 pointer-events-none`}>
+      <div
+        className={`${cardFont.className} absolute left-6 top-1/2 z-30 hidden w-[380px] h-[340px] -translate-y-1/2 xl:block 2xl:left-14 pointer-events-none`}
+      >
         <div className="relative w-full h-full pointer-events-auto">
           {fanCards.map((cardFilm, index) => {
             const poster =
@@ -1091,7 +1245,9 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                         <p className="text-[9px] font-mono text-neutral-300 font-bold mt-0.5 flex items-center gap-1">
                           <span>{cardFilm.year}</span>
                           <span>•</span>
-                          <span className="text-amber-400">★ {cardFilm.vote_average || 8.5}</span>
+                          <span className="text-amber-400">
+                            ★ {cardFilm.vote_average || 8.5}
+                          </span>
                         </p>
                       )}
                     </div>
@@ -1123,7 +1279,9 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                         </span>
                       </div>
 
-                      <h4 className={`${cardFont.className} text-xs font-black text-white leading-snug line-clamp-1`}>
+                      <h4
+                        className={`${cardFont.className} text-xs font-black text-white leading-snug line-clamp-1`}
+                      >
                         {cardFilm.name}
                       </h4>
                       {cardFilm.origin_name && (
@@ -1161,7 +1319,9 @@ export default function HeroBanner({ films }: HeroBannerProps) {
               {(() => {
                 const badge = getSpotlightBadge(film, current);
                 return (
-                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-gradient-to-r ${badge.color} border shadow-lg backdrop-blur-md`}>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-gradient-to-r ${badge.color} border shadow-lg backdrop-blur-md`}
+                  >
                     {badge.label}
                   </span>
                 );
@@ -1205,7 +1365,9 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                 <span className="text-neutral-500 font-bold">•</span>
                 <span>{genresStr}</span>
                 <span className="text-neutral-500 font-bold">•</span>
-                <span className="px-1.5 py-0.5 rounded bg-white/10 text-[11px] font-extrabold text-neutral-200 border border-white/15">{ageRating}</span>
+                <span className="px-1.5 py-0.5 rounded bg-white/10 text-[11px] font-extrabold text-neutral-200 border border-white/15">
+                  {ageRating}
+                </span>
               </div>
 
               {/* Centered Overview Text */}
@@ -1218,7 +1380,9 @@ export default function HeroBanner({ films }: HeroBannerProps) {
               </p>
 
               {/* Action Buttons (Watch Now / Resume Watch + Trailer + Bookmark with Tooltip) */}
-              <div className={`${cardFont.className} flex items-center justify-center gap-2 sm:gap-3 pt-1`}>
+              <div
+                className={`${cardFont.className} flex items-center justify-center gap-2 sm:gap-3 pt-1`}
+              >
                 {hasWatched ? (
                   <Link
                     href={getWatchHref(film)}
@@ -1283,7 +1447,10 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                       watchlistApi
                         .add(film.slug, movieData)
                         .then(() =>
-                          toast(`Đã thêm "${film.name}" vào tủ phim`, "success"),
+                          toast(
+                            `Đã thêm "${film.name}" vào tủ phim`,
+                            "success",
+                          ),
                         )
                         .catch(() => {
                           guestDataStorage.addWatchlist(film.slug, movieData);
@@ -1354,7 +1521,9 @@ export default function HeroBanner({ films }: HeroBannerProps) {
         {/* Indicator Row: 01 / 06 Counter & Thin Progress Bar (More Transparent) */}
         <div className="flex items-center gap-2.5 bg-black/25 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-[11px] font-mono font-bold text-neutral-300/90 shadow-lg">
           <span className="text-white font-extrabold tracking-wider">
-            {String(current + 1).padStart(2, "0")} <span className="text-neutral-500 font-normal">/</span> {String(featured.length).padStart(2, "0")}
+            {String(current + 1).padStart(2, "0")}{" "}
+            <span className="text-neutral-500 font-normal">/</span>{" "}
+            {String(featured.length).padStart(2, "0")}
           </span>
 
           {/* Thin Progress Bar indicating 10s auto rotation */}
@@ -1363,7 +1532,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
               key={current}
               initial={{ width: "0%" }}
               animate={{ width: "100%" }}
-              transition={{ duration: 10, ease: "linear" }}
+              transition={{ duration: HERO_ROTATION_MS / 1000, ease: "linear" }}
               className="h-full bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.8)]"
             />
           </div>
@@ -1383,8 +1552,14 @@ export default function HeroBanner({ films }: HeroBannerProps) {
               <div key={item.slug || i} className="relative group">
                 {/* Floating Preview Tooltip on Hover */}
                 <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-black/90 border border-white/20 backdrop-blur-md text-[11px] font-bold text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 shadow-2xl z-40 translate-y-1 group-hover:translate-y-0 text-center">
-                  <p className="line-clamp-1 max-w-[150px]">{item.origin_name || item.name}</p>
-                  {item.year && <span className="text-[9px] text-neutral-400 font-mono font-normal">({item.year})</span>}
+                  <p className="line-clamp-1 max-w-[150px]">
+                    {item.origin_name || item.name}
+                  </p>
+                  {item.year && (
+                    <span className="text-[9px] text-neutral-400 font-mono font-normal">
+                      ({item.year})
+                    </span>
+                  )}
                 </div>
 
                 <button

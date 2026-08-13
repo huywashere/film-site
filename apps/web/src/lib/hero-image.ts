@@ -103,6 +103,9 @@ export function buildHeroImageCandidates(input: {
       add(
         `${IMAGE_PROXY_PATH}?url=${encodeURIComponent(normalized)}&strict=1`,
       );
+      if (normalized.startsWith("https://")) {
+        add(normalized);
+      }
     }
   }
 
