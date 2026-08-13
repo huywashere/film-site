@@ -67,6 +67,46 @@ const GENRE_OPTIONS = [
   { slug: "vien-tuong", label: "Viễn Tưởng & Tương Lai" },
 ];
 
+function getBaseTitle(name: string): string {
+  if (!name) return "";
+  return name
+    .toLowerCase()
+    .replace(/\(phần\s*\d+\)/gi, "")
+    .replace(/phần\s*\d+/gi, "")
+    .replace(/season\s*\d+/gi, "")
+    .replace(/\(vietsub\)/gi, "")
+    .replace(/\(thuyết\s*minh\)/gi, "")
+    .replace(/\(lồng\s*tiếng\)/gi, "")
+    .replace(/\(fhd\)/gi, "")
+    .replace(/\(hd\)/gi, "")
+    .replace(/[^a-z0-9\s]/gi, "")
+    .trim();
+}
+
+function dedupeFilmsList(
+  films: FilmItem[],
+  globalSlugs?: Set<string>,
+): FilmItem[] {
+  const seenBase = new Set<string>();
+  const result: FilmItem[] = [];
+
+  for (const film of films) {
+    if (!film) continue;
+    const slug = film.slug || film._id || (film as any).id;
+    const rawTitle = film.name || film.title || "";
+    const baseTitle = getBaseTitle(rawTitle);
+
+    if (globalSlugs && slug && globalSlugs.has(slug)) continue;
+    if (baseTitle && seenBase.has(baseTitle)) continue;
+
+    if (baseTitle) seenBase.add(baseTitle);
+    if (globalSlugs && slug) globalSlugs.add(slug);
+    result.push(film);
+  }
+
+  return result;
+}
+
 // Reusable Category Row with Netflix Overlay Navigation Arrows
 function CountryCategoryRow({
   title,
@@ -570,6 +610,20 @@ export default function CountryPage() {
   const activeGenreLabel =
     GENRE_OPTIONS.find((g) => g.slug === selectedGenre)?.label || "Thể loại";
 
+  // Prepare 100% Unique non-repeating lists for each Netflix row
+  const globalSeenSlugs = new Set<string>();
+  const row1Films = dedupeFilmsList(films, globalSeenSlugs).slice(0, 14);
+  const row2Films = dedupeFilmsList(romanceFilms, globalSeenSlugs).slice(0, 14);
+  const row3Films = dedupeFilmsList(
+    page2Films.length ? page2Films : films.slice(10),
+    globalSeenSlugs,
+  ).slice(0, 14);
+  const row4Films = dedupeFilmsList(actionFilms, globalSeenSlugs).slice(0, 14);
+  const row5Films = dedupeFilmsList(coTrangFilms, globalSeenSlugs).slice(0, 14);
+  const row6Films = dedupeFilmsList(comedyFilms, globalSeenSlugs).slice(0, 14);
+  const row7Films = dedupeFilmsList(crimeFilms, globalSeenSlugs).slice(0, 14);
+  const row8Films = dedupeFilmsList(dramaFilms, globalSeenSlugs).slice(0, 14);
+
   return (
     <div className={`${cardFont.className} min-h-screen w-full bg-[#141414] text-foreground -mt-20 sm:-mt-24`}>
       {/* ── Netflix Spotlight Hero Banner with Background Video Trailer ── */}
@@ -580,7 +634,7 @@ export default function CountryPage() {
         {/* Row 1: Phải thoát khỏi đây! */}
         <CountryCategoryRow
           title={isKoreanPage ? "Phải thoát khỏi đây!" : "Phim Nổi Bật Hôm Nay"}
-          films={films.slice(0, 12)}
+          films={row1Films}
           isLoading={mainLoading}
           variant="landscape"
         />
@@ -592,14 +646,14 @@ export default function CountryPage() {
               ? "Tuyệt phẩm K-Drama lãng mạn khiến trái tim tan chảy"
               : "Phim Tình Cảm & Lãng Mạn"
           }
-          films={romanceFilms.slice(0, 14)}
+          films={row2Films}
           isLoading={romanceLoading}
         />
 
         {/* Row 3: Có thể bạn chưa xem */}
         <CountryCategoryRow
           title="Có thể bạn chưa xem"
-          films={page2Films.length ? page2Films.slice(0, 14) : films.slice(6, 18)}
+          films={row3Films}
           isLoading={page2Loading || mainLoading}
           variant="landscape"
         />
@@ -611,7 +665,7 @@ export default function CountryPage() {
               ? "Series Phim Hàn kịch tính & giật gân đáng xem liên tục"
               : "Phim Hành Động & Kịch Tính"
           }
-          films={actionFilms.slice(0, 14)}
+          films={row4Films}
           isLoading={actionLoading}
           variant="landscape"
         />
@@ -623,7 +677,7 @@ export default function CountryPage() {
               ? "Phim Hàn Cổ Trang & Thần Thoại Kỳ Ảo Đỉnh Cao"
               : "Phim Cổ Trang"
           }
-          films={coTrangFilms.slice(0, 14)}
+          films={row5Films}
           isLoading={coTrangLoading}
         />
 
@@ -634,7 +688,7 @@ export default function CountryPage() {
               ? "Phim Hàn Hài Hước & Giải Trí Sảng Khoái"
               : "Phim Hài Hước Đặc Sắc"
           }
-          films={comedyFilms.slice(0, 14)}
+          films={row6Films}
           isLoading={comedyLoading}
           variant="landscape"
         />
@@ -646,7 +700,7 @@ export default function CountryPage() {
               ? "Phim Hàn Hình Sự, Trinh Thám & Phá Án Hồi Hộp"
               : "Phim Hình Sự & Trinh Thám"
           }
-          films={crimeFilms.slice(0, 14)}
+          films={row7Films}
           isLoading={crimeLoading}
         />
 
@@ -657,7 +711,7 @@ export default function CountryPage() {
               ? "Top Phim Tâm Lý & Đời Thường Chạm Đến Cảm Xúc"
               : "Phim Tâm Lý Chọn Lọc"
           }
-          films={dramaFilms.slice(0, 14)}
+          films={row8Films}
           isLoading={dramaLoading}
         />
 
