@@ -24,9 +24,17 @@ const PROVIDER_PRIORITY: Record<string, number> = {
   vidsrc: 5,
 };
 
-const UNSANDBOXED_VIDSRC_HOSTS = new Set(["vidsrc.sbs", "www.vidsrc.sbs"]);
+const UNSANDBOXED_VIDSRC_HOSTS = new Set([
+  "vidsrc.to",
+  "www.vidsrc.to",
+  "vidsrc.in",
+  "vidsrc.pm",
+  "vidsrc.me",
+  "vidsrc.sbs",
+  "www.vidsrc.sbs",
+]);
 
-const VIDSRC_EMBED_ORIGIN = "https://vidsrc.sbs";
+const VIDSRC_EMBED_ORIGIN = "https://vidsrc.to";
 
 function positiveInteger(value: unknown): number | null {
   const parsed = Number(value);
