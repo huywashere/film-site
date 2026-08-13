@@ -372,7 +372,7 @@ function NetflixHeroBanner({
       </div>
 
       {/* Right Controls (Volume Toggle & Maturity Badge) */}
-      <div className="absolute right-0 bottom-24 z-20 flex items-center gap-3">
+      <div className="absolute right-0 bottom-36 sm:bottom-44 z-20 flex items-center gap-3">
         <button
           onClick={() => setIsMuted(!isMuted)}
           className="w-10 h-10 rounded-full bg-black/40 border border-white/30 text-white flex items-center justify-center hover:bg-black/60 transition-all backdrop-blur-md cursor-pointer"
@@ -526,8 +526,8 @@ export default function CountryPage() {
       {/* ── Netflix Spotlight Hero Banner with Background Video Trailer ── */}
       <NetflixHeroBanner film={heroFilm} countryName={label} />
 
-      {/* ── Content Rows (Respects left vertical sidebar, full-width to right edge) ── */}
-      <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pt-8 sm:pt-12 pb-16 space-y-6">
+      {/* ── Content Rows (Negative top margin to overlap video trailer matching Netflix reference screenshot) ── */}
+      <div className="relative z-20 -mt-28 sm:-mt-36 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6">
         {/* Row 1: Phải thoát khỏi đây! */}
         <CountryCategoryRow
           title={isKoreanPage ? "Phải thoát khỏi đây!" : "Phim Nổi Bật Hôm Nay"}
