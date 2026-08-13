@@ -234,7 +234,6 @@ function FeaturedActorsRow({ film }: { film?: FilmItem }) {
   );
 }
 
-// 100% Netflix-Authentic Spotlight Hero Banner with Background Video Trailer
 function NetflixHeroBanner({
   film,
   countryName,
@@ -243,6 +242,7 @@ function NetflixHeroBanner({
   countryName: string;
 }) {
   const [isMuted, setIsMuted] = useState(true);
+  const [frameReady, setFrameReady] = useState(false);
 
   const { bestBackdrop, trailer, bestLogo } = useTmdb({
     film,
@@ -252,6 +252,10 @@ function NetflixHeroBanner({
   });
 
   const trailerKey = trailer?.key;
+
+  useEffect(() => {
+    setFrameReady(false);
+  }, [trailerKey]);
 
   if (!film) {
     return (
@@ -276,20 +280,8 @@ function NetflixHeroBanner({
 
   return (
     <section className="relative w-full h-[65vh] sm:h-[75vh] min-h-[480px] max-h-[750px] overflow-hidden bg-black select-none">
-      {/* Autoplay Video Trailer or Backdrop Image Fallback */}
-      {trailerKey ? (
-        <div className="absolute inset-0 pointer-events-none select-none overflow-hidden z-0">
-          <iframe
-            src={`https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&mute=${
-              isMuted ? 1 : 0
-            }&controls=0&showinfo=0&autohide=1&loop=1&playlist=${trailerKey}&playsinline=1&enablejsapi=1&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0`}
-            allow="autoplay; encrypted-media"
-            className="w-[300%] h-[300%] -top-[100%] -left-[100%] absolute object-cover scale-125 brightness-[0.8] opacity-90 transition-opacity duration-1000 pointer-events-none select-none"
-            title={filmTitle}
-            tabIndex={-1}
-          />
-        </div>
-      ) : backdrop ? (
+      {/* High-Resolution Backdrop Image Layer (Always visible underneath) */}
+      {backdrop && (
         <NextImage
           src={backdrop}
           alt={filmTitle}
@@ -299,7 +291,32 @@ function NetflixHeroBanner({
           priority
           unoptimized
         />
-      ) : null}
+      )}
+
+      {/* Autoplay Video Trailer Layer (Fades in smoothly ONLY AFTER buffering finishes, hiding YouTube play/pause bezel) */}
+      {trailerKey && (
+        <div className="absolute inset-0 pointer-events-none select-none overflow-hidden z-0">
+          <iframe
+            key={`${film.slug}-${trailerKey}`}
+            src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(
+              trailerKey,
+            )}?autoplay=1&mute=${
+              isMuted ? 1 : 0
+            }&controls=0&showinfo=0&autohide=1&loop=1&playlist=${encodeURIComponent(
+              trailerKey,
+            )}&playsinline=1&enablejsapi=1&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0`}
+            allow="autoplay; encrypted-media; picture-in-picture"
+            onLoad={() => {
+              setTimeout(() => setFrameReady(true), 600);
+            }}
+            className={`absolute left-1/2 top-1/2 h-[56.25vw] min-h-full w-[100vw] min-w-[177.78vh] -translate-x-1/2 -translate-y-1/2 border-0 object-cover scale-110 brightness-[0.85] transition-opacity duration-1000 ease-out pointer-events-none select-none ${
+              frameReady ? "opacity-100" : "opacity-0"
+            }`}
+            title={filmTitle}
+            tabIndex={-1}
+          />
+        </div>
+      )}
 
       {/* Netflix Multi-layer Gradient Overlays for 100% Authentic Vignette */}
       <div
