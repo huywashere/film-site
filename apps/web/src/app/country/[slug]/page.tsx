@@ -313,7 +313,7 @@ function NetflixHeroBanner({
       />
 
       {/* Left Content Overlay */}
-      <div className="absolute inset-0 z-20 flex items-center px-4 sm:px-12 md:px-16 lg:px-24">
+      <div className="absolute inset-0 z-20 flex items-center pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-4 sm:pr-8">
         <div className="max-w-xl space-y-4 sm:space-y-6 pt-16">
           {/* Netflix Badge */}
           <div className="flex items-center gap-2">
@@ -526,8 +526,8 @@ export default function CountryPage() {
       {/* ── Netflix Spotlight Hero Banner with Background Video Trailer ── */}
       <NetflixHeroBanner film={heroFilm} countryName={label} />
 
-      {/* ── Content Rows matching Screenshot 2 (Full-width right edge) ── */}
-      <div className="relative z-20 px-4 sm:px-6 md:px-8 lg:px-10 pt-8 sm:pt-12 pb-16 space-y-6">
+      {/* ── Content Rows (Respects left vertical sidebar, full-width to right edge) ── */}
+      <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pt-8 sm:pt-12 pb-16 space-y-6">
         {/* Row 1: Phải thoát khỏi đây! */}
         <CountryCategoryRow
           title={isKoreanPage ? "Phải thoát khỏi đây!" : "Phim Nổi Bật Hôm Nay"}
