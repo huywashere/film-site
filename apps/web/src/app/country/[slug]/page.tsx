@@ -67,17 +67,15 @@ const GENRE_OPTIONS = [
   { slug: "vien-tuong", label: "Viễn Tưởng & Tương Lai" },
 ];
 
-// Reusable Category Row with Navigation Buttons OUTSIDE on right
+// Reusable Category Row with Netflix Overlay Navigation Arrows
 function CountryCategoryRow({
   title,
-  icon: Icon,
   films,
   isLoading,
   href,
   variant = "standard",
 }: {
   title: string;
-  icon?: React.ElementType;
   films: FilmItem[];
   isLoading: boolean;
   href?: string;
@@ -88,10 +86,10 @@ function CountryCategoryRow({
 
   if (!isLoading && !films.length) return null;
 
-  const cardWidth = variant === "landscape" ? 240 : 175;
+  const cardWidth = variant === "landscape" ? 245 : 175;
 
   return (
-    <div className="mb-10" aria-busy={isLoading}>
+    <div className="mb-8 group/row relative" aria-busy={isLoading}>
       <div className="flex items-center justify-between mb-3 px-1">
         <h2 className="text-lg md:text-xl font-extrabold text-white">
           {title}
@@ -107,69 +105,67 @@ function CountryCategoryRow({
         )}
       </div>
 
-      <div className="flex items-stretch gap-3.5">
-        <div className="flex-1 min-w-0 overflow-hidden">
-          <Swiper
-            modules={[Navigation, FreeMode]}
-            onBeforeInit={(swiper) => {
-              if (
-                swiper.params.navigation &&
-                typeof swiper.params.navigation !== "boolean"
-              ) {
-                swiper.params.navigation.prevEl = prevRef.current;
-                swiper.params.navigation.nextEl = nextRef.current;
-              }
-            }}
-            navigation={{
-              prevEl: prevRef.current,
-              nextEl: nextRef.current,
-            }}
-            speed={600}
-            slidesPerGroup={3}
-            spaceBetween={14}
-            slidesPerView="auto"
-            freeMode={{ enabled: true, momentumRatio: 0.8 }}
-            className="!py-2 !px-1"
-          >
-            {isLoading
-              ? Array.from({ length: 7 }).map((_, i) => (
-                  <SwiperSlide key={`sk-${i}`} style={{ width: `${cardWidth}px` }}>
-                    <FilmCardSkeleton width={cardWidth} hideDetails={false} />
-                  </SwiperSlide>
-                ))
-              : films.map((film, idx) => (
-                  <SwiperSlide
-                    key={`${film.slug || film._id || (film as any).id}-${idx}`}
-                    style={{ width: `${cardWidth}px` }}
-                  >
-                    <FilmCard
-                      film={film}
-                      width={cardWidth}
-                      variant={variant}
-                      hideDetails={false}
-                    />
-                  </SwiperSlide>
-                ))}
-          </Swiper>
-        </div>
+      <div className="relative w-full overflow-hidden">
+        {/* Left Overlay Arrow */}
+        <button
+          ref={prevRef}
+          aria-label="Previous slide"
+          className="absolute left-0 top-0 bottom-0 z-30 w-11 bg-black/75 hover:bg-black/90 text-white flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity cursor-pointer disabled:hidden rounded-r-md"
+        >
+          <ChevronLeft size={30} strokeWidth={2.5} />
+        </button>
 
-        {/* Minimalist Navigation Buttons Column */}
-        <div className="hidden sm:flex flex-col justify-center gap-3 shrink-0 px-1">
-          <button
-            ref={nextRef}
-            aria-label="Next slide"
-            className="p-2 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-20 disabled:pointer-events-none"
-          >
-            <ChevronRight size={28} strokeWidth={2.5} />
-          </button>
-          <button
-            ref={prevRef}
-            aria-label="Previous slide"
-            className="p-2 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-20 disabled:pointer-events-none"
-          >
-            <ChevronLeft size={28} strokeWidth={2.5} />
-          </button>
-        </div>
+        {/* Right Overlay Arrow */}
+        <button
+          ref={nextRef}
+          aria-label="Next slide"
+          className="absolute right-0 top-0 bottom-0 z-30 w-11 bg-black/75 hover:bg-black/90 text-white flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity cursor-pointer disabled:hidden rounded-l-md"
+        >
+          <ChevronRight size={30} strokeWidth={2.5} />
+        </button>
+
+        <Swiper
+          modules={[Navigation, FreeMode]}
+          onBeforeInit={(swiper) => {
+            if (
+              swiper.params.navigation &&
+              typeof swiper.params.navigation !== "boolean"
+            ) {
+              swiper.params.navigation.prevEl = prevRef.current;
+              swiper.params.navigation.nextEl = nextRef.current;
+            }
+          }}
+          navigation={{
+            prevEl: prevRef.current,
+            nextEl: nextRef.current,
+          }}
+          speed={600}
+          slidesPerGroup={4}
+          spaceBetween={14}
+          slidesPerView="auto"
+          freeMode={{ enabled: true, momentumRatio: 0.8 }}
+          className="!py-2 !px-1 w-full"
+        >
+          {isLoading
+            ? Array.from({ length: 8 }).map((_, i) => (
+                <SwiperSlide key={`sk-${i}`} style={{ width: `${cardWidth}px` }}>
+                  <FilmCardSkeleton width={cardWidth} hideDetails={false} />
+                </SwiperSlide>
+              ))
+            : films.map((film, idx) => (
+                <SwiperSlide
+                  key={`${film.slug || film._id || (film as any).id}-${idx}`}
+                  style={{ width: `${cardWidth}px` }}
+                >
+                  <FilmCard
+                    film={film}
+                    width={cardWidth}
+                    variant={variant}
+                    hideDetails={false}
+                  />
+                </SwiperSlide>
+              ))}
+        </Swiper>
       </div>
     </div>
   );
@@ -530,8 +526,8 @@ export default function CountryPage() {
       {/* ── Netflix Spotlight Hero Banner with Background Video Trailer ── */}
       <NetflixHeroBanner film={heroFilm} countryName={label} />
 
-      {/* ── Content Rows matching Screenshot 2 ── */}
-      <div className="relative z-20 px-4 sm:px-12 md:px-16 lg:px-24 pt-8 sm:pt-12 pb-16 space-y-6">
+      {/* ── Content Rows matching Screenshot 2 (Full-width right edge) ── */}
+      <div className="relative z-20 px-4 sm:px-6 md:px-8 lg:px-10 pt-8 sm:pt-12 pb-16 space-y-6">
         {/* Row 1: Phải thoát khỏi đây! */}
         <CountryCategoryRow
           title={isKoreanPage ? "Phải thoát khỏi đây!" : "Phim Nổi Bật Hôm Nay"}
