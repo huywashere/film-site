@@ -378,20 +378,21 @@ export function SpotlightSearchModal({
     router.push(`/film/${slug}`);
   };
 
+  const handleGoToSearchPage = (searchQuery?: string) => {
+    const targetQuery = (searchQuery !== undefined ? searchQuery : query).trim();
+    if (!targetQuery) return;
+    saveHistory(targetQuery);
+    onClose();
+    router.push(`/search?q=${encodeURIComponent(targetQuery)}`);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && query.trim()) {
       // The spotlight input must never bubble an Enter press into any auth
       // form mounted elsewhere in the app shell.
       e.preventDefault();
       e.stopPropagation();
-      saveHistory(query.trim());
-      if (uniqueSearchResults.length > 0) {
-        onClose();
-        router.push(`/film/${uniqueSearchResults[0].slug}`);
-      } else {
-        onClose();
-        router.push(`/search?q=${encodeURIComponent(query.trim())}`);
-      }
+      handleGoToSearchPage();
     }
   };
 
@@ -466,9 +467,18 @@ export function SpotlightSearchModal({
                 <X size={14} />
               </button>
             )}
+            {query.trim() && (
+              <button
+                onClick={() => handleGoToSearchPage()}
+                className="flex h-9 items-center gap-1.5 rounded-xl bg-white text-black px-3 text-[11px] font-extrabold shadow-sm transition-all hover:bg-neutral-200 active:scale-[0.98] sm:px-3.5 sm:text-xs cursor-pointer shrink-0"
+              >
+                <Filter size={13} />
+                <span>Bộ Lọc</span>
+              </button>
+            )}
             <button
               onClick={onClose}
-              className="flex h-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.08] px-3 text-[11px] font-bold text-white shadow-sm transition-colors hover:bg-white/[0.16] active:scale-[0.98] sm:px-3.5 sm:text-xs"
+              className="flex h-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.08] px-3 text-[11px] font-bold text-white shadow-sm transition-colors hover:bg-white/[0.16] active:scale-[0.98] sm:px-3.5 sm:text-xs cursor-pointer"
             >
               Đóng
             </button>
