@@ -2001,10 +2001,6 @@ export default function WatchPage() {
                         icon: "🌐",
                         count: engsubEps.length,
                         eps: engsubEps,
-                        activeBg:
-                          "bg-[#161a24] border-2 border-white shadow-lg",
-                        inactiveBg:
-                          "bg-[#0d1017] border border-white/15 hover:border-white/40",
                       },
                     ]
                   : []),
@@ -2016,26 +2012,23 @@ export default function WatchPage() {
                         icon: "🎬",
                         count: rawEps.length,
                         eps: rawEps,
-                        activeBg:
-                          "bg-[#161a24] border-2 border-white shadow-lg",
-                        inactiveBg:
-                          "bg-[#0d1017] border border-white/15 hover:border-white/40",
                       },
                     ]
                   : []),
               ];
 
               return (
-                <div className="space-y-4">
-                  {/* ── Subtitle / Version Selection Cards Grid ── */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-3 bg-[#14161d]/80 p-3.5 sm:p-4 rounded-2xl border border-white/10 shadow-lg backdrop-blur-md">
+                  {/* ── Minimalist Version / Audio Pill Tabs ── */}
+                  <div className="flex flex-wrap items-center gap-2">
                     {subOptions.map((opt) => {
                       const isActive = activeServerType === opt.id;
                       const hasItems = opt.count > 0;
 
                       return (
-                        <div
+                        <button
                           key={opt.id}
+                          disabled={!hasItems}
                           onClick={() => {
                             if (!hasItems) return;
                             const selectingVidSrc = opt.eps.every(
@@ -2073,126 +2066,80 @@ export default function WatchPage() {
                             }
                           }}
                           className={cn(
-                            "relative overflow-hidden rounded-2xl p-4 sm:p-5 flex flex-col justify-between h-[135px] sm:h-[145px] transition-all duration-300 select-none cursor-pointer group shadow-xl",
-                            isActive ? opt.activeBg : opt.inactiveBg,
-                            !hasItems &&
-                              "opacity-40 cursor-not-allowed grayscale",
+                            "group inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none active:scale-95 border",
+                            isActive
+                              ? "bg-white text-black border-white shadow-md scale-[1.02]"
+                              : hasItems
+                                ? "bg-white/[0.05] hover:bg-white/[0.12] text-neutral-300 border-white/10 hover:border-white/25"
+                                : "opacity-40 cursor-not-allowed bg-white/[0.02] border-white/5 text-neutral-500",
                           )}
                         >
-                          {/* Right Backdrop Image with Smooth Gradient Mask */}
-                          {movieBackdrop && (
-                            <NextImage
-                              src={movieBackdrop}
-                              alt="Backdrop"
-                              fill
-                              sizes="(max-width: 640px) 100vw, 50vw"
-                              className="object-cover object-center opacity-40 group-hover:scale-105 transition-transform duration-700 pointer-events-none"
-                              unoptimized
-                            />
+                          <span>{opt.icon}</span>
+                          <span>{opt.label}</span>
+                          {isActive && (
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse ml-0.5" />
                           )}
-                          <div className="absolute inset-0 bg-gradient-to-r from-[#0d1017] via-[#0d1017]/90 to-transparent pointer-events-none" />
-
-                          {/* Top Label & Icon */}
-                          <div className="relative z-10 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm">{opt.icon}</span>
-                              <span className="text-xs font-bold text-white tracking-wide">
-                                {opt.label}
-                              </span>
-                            </div>
-                            {opt.count > 0 && (
-                              <span className="text-[10px] font-mono font-bold text-white/60 bg-white/10 px-2 py-0.5 rounded-full">
-                                {opt.count} server
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Movie Title in Middle */}
-                          <div className="relative z-10 my-1">
-                            <p className="text-sm sm:text-base font-extrabold text-white line-clamp-1 drop-shadow-md">
-                              {film?.name || film?.origin_name || "The Odyssey"}
-                            </p>
-                          </div>
-
-                          {/* Bottom Action Pill Button */}
-                          <div className="relative z-10 flex items-center justify-between pt-1">
-                            {isActive ? (
-                              <span className="inline-flex items-center gap-1.5 bg-white text-black font-black text-xs px-3.5 py-1.5 rounded-lg shadow-lg">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                                Đang xem
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 bg-white text-black font-bold text-xs px-3.5 py-1.5 rounded-lg shadow hover:bg-neutral-200 transition-colors">
-                                Xem bản này
-                              </span>
-                            )}
-                            {!hasItems && (
-                              <span className="text-[10px] text-amber-400 font-bold">
-                                Chưa có
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
 
-                  {/* ── Server Mirror Nodes under selected version ── */}
+                  {/* ── Sleek Server Provider Pills ── */}
                   {activeGroup.length > 0 && (
-                    <div className="pt-2">
-                      <p className="text-[11px] font-mono font-bold text-neutral-400 uppercase tracking-wider mb-2">
-                        Nguồn phát ({activeGroup.length} Server dự phòng):
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {activeGroup.map((ep) => {
-                          const i = episodes.indexOf(ep);
-                          const isActive = i === currentServer;
-                          const hasFailed = failedServers.includes(i);
+                    <div className="pt-2 border-t border-white/[0.08] flex flex-wrap items-center gap-2 text-xs">
+                      <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mr-1">
+                        Nguồn phát:
+                      </span>
+                      {activeGroup.map((ep) => {
+                        const i = episodes.indexOf(ep);
+                        const isActive = i === currentServer;
+                        const hasFailed = failedServers.includes(i);
 
-                          return (
-                            <button
-                              key={i}
-                              disabled={hasFailed}
-                              onClick={() => {
-                                setVidsrcManuallySelected(
-                                  ep._source === "vidsrc",
+                        return (
+                          <button
+                            key={i}
+                            disabled={hasFailed}
+                            onClick={() => {
+                              setVidsrcManuallySelected(
+                                ep._source === "vidsrc",
+                              );
+                              setCurrentServer(i);
+                              setCurrentTypeServer(i);
+                              const matchedEpisode = findMatchingEpisode(
+                                ep.server_data,
+                                currentEpData?.slug ||
+                                  currentEpData?.name ||
+                                  currentEp,
+                              );
+                              const matchedEpisodeId =
+                                matchedEpisode?.slug || matchedEpisode?.name;
+                              setPlayerEngine(
+                                matchedEpisode?.link_m3u8 ? "hls" : "iframe",
+                              );
+                              if (matchedEpisodeId) {
+                                router.push(
+                                  watchUrlForEpisode(matchedEpisodeId),
                                 );
-                                setCurrentServer(i);
-                                setCurrentTypeServer(i);
-                                const matchedEpisode = findMatchingEpisode(
-                                  ep.server_data,
-                                  currentEpData?.slug ||
-                                    currentEpData?.name ||
-                                    currentEp,
-                                );
-                                const matchedEpisodeId =
-                                  matchedEpisode?.slug || matchedEpisode?.name;
-                                setPlayerEngine(
-                                  matchedEpisode?.link_m3u8 ? "hls" : "iframe",
-                                );
-                                if (matchedEpisodeId)
-                                  router.push(
-                                    watchUrlForEpisode(matchedEpisodeId),
-                                  );
-                              }}
-                              className={cn(
-                                "inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer select-none",
-                                isActive
-                                  ? "bg-white text-black border-white font-black shadow-md"
-                                  : "bg-white/[0.04] border-white/10 text-neutral-300 hover:text-white hover:bg-white/10",
-                                hasFailed &&
-                                  "cursor-not-allowed border-white/10 bg-white/[0.02] text-neutral-600 opacity-40 line-through",
-                              )}
-                            >
-                              <Server size={13} />
-                              <span>{ep.server_name}</span>
-                              {isActive && isFallbacking && (
-                                <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
+                              }
+                            }}
+                            className={cn(
+                              "px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer select-none active:scale-95 border text-xs flex items-center gap-1.5",
+                              isActive
+                                ? "bg-red-600 text-white border-red-500 shadow-md"
+                                : "bg-white/[0.05] hover:bg-white/[0.12] text-neutral-300 border-white/10 hover:border-white/20",
+                              hasFailed && "opacity-30 cursor-not-allowed line-through",
+                            )}
+                          >
+                            <span>
+                              {ep._source ? `[${ep._source.toUpperCase()}] ` : ""}
+                              {ep.server_name || `Server ${i + 1}`}
+                            </span>
+                            {isActive && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
