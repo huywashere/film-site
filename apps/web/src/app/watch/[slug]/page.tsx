@@ -1403,6 +1403,8 @@ export default function WatchPage() {
     }
   }, [episodes, searchParams]);
 
+  const DISABLE_ARTPLAYER = true;
+
   useEffect(() => {
     setFailedServers([]);
     setIsFallbacking(false);
@@ -1412,7 +1414,7 @@ export default function WatchPage() {
     fallbackInProgressRef.current = false;
     lastKnownPlaybackTimeRef.current = resumeAt;
     clearIframeLoadTimeout();
-    setPlayerEngine(m3u8Url ? "hls" : "iframe");
+    setPlayerEngine(DISABLE_ARTPLAYER ? "iframe" : m3u8Url ? "hls" : "iframe");
     // A new episode intentionally resets source failures; changing source for
     // the same episode must retain them so fallback never retries a bad server.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1420,8 +1422,10 @@ export default function WatchPage() {
 
   useEffect(() => {
     playerLoadStartedAtRef.current = Date.now();
-    if (m3u8Url) {
+    if (!DISABLE_ARTPLAYER && m3u8Url) {
       setPlayerEngine("hls");
+    } else {
+      setPlayerEngine("iframe");
     }
   }, [currentServer, m3u8Url]);
 
@@ -1444,7 +1448,7 @@ export default function WatchPage() {
     if (first) {
       const gIdx = episodes.indexOf(first);
       setCurrentServer(gIdx >= 0 ? gIdx : 0);
-      setPlayerEngine(first.server_data?.[0]?.link_m3u8 ? "hls" : "iframe");
+      setPlayerEngine(DISABLE_ARTPLAYER ? "iframe" : first.server_data?.[0]?.link_m3u8 ? "hls" : "iframe");
     }
   }, [activeServerType, episodes, serversByType]);
 
@@ -1805,7 +1809,7 @@ export default function WatchPage() {
               )}
               {videoUrl ? (
                 <>
-                  {playerEngine === "hls" && m3u8Url ? (
+                  {!DISABLE_ARTPLAYER && playerEngine === "hls" && m3u8Url ? (
                     <HlsVideoPlayer
                       key={`hls:${server?._source || "unknown"}:${currentServer}:${currentEpData?.slug || currentEpData?.name || ""}`}
                       src={m3u8Url}
