@@ -733,8 +733,8 @@ export default function CountryPage() {
           </div>
         ) : films.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
-            {films.map((f) => (
-              <FilmCard key={f.slug} film={f} />
+            {dedupeFilmsList(films).map((f, idx) => (
+              <FilmCard key={`${f.slug || f._id || idx}-${idx}`} film={f} />
             ))}
           </div>
         ) : (
