@@ -238,7 +238,7 @@ function FeaturedActorsRow({ film }: { film?: FilmItem }) {
   );
 }
 
-// 100% Netflix-Authentic Spotlight Hero Banner
+// 100% Netflix-Authentic Spotlight Hero Banner with Background Video Trailer
 function NetflixHeroBanner({
   film,
   countryName,
@@ -248,12 +248,14 @@ function NetflixHeroBanner({
 }) {
   const [isMuted, setIsMuted] = useState(true);
 
-  const { bestBackdrop } = useTmdb({
+  const { bestBackdrop, trailer, bestLogo } = useTmdb({
     film,
     enabled: !!film,
     fetchCredits: false,
-    fetchVideos: false,
+    fetchVideos: true,
   });
+
+  const trailerKey = trailer?.key;
 
   if (!film) {
     return (
@@ -270,12 +272,27 @@ function NetflixHeroBanner({
     resolveImageUrl(film.thumb_url) ||
     resolveImageUrl(film.poster_url);
 
+  const logoUrl = bestLogo?.file_path
+    ? `https://image.tmdb.org/t/p/w500${bestLogo.file_path}`
+    : null;
+
   const filmTitle = film.name || film.title || "Phim Hay";
 
   return (
-    <section className="relative w-full h-[62vh] sm:h-[68vh] min-h-[460px] max-h-[700px] overflow-hidden bg-black select-none">
-      {/* Background Image / Media */}
-      {backdrop && (
+    <section className="relative w-full h-[65vh] sm:h-[75vh] min-h-[480px] max-h-[750px] overflow-hidden bg-black select-none">
+      {/* Autoplay Video Trailer or Backdrop Image Fallback */}
+      {trailerKey ? (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&mute=${
+              isMuted ? 1 : 0
+            }&controls=0&loop=1&playlist=${trailerKey}&playsinline=1&enablejsapi=1&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1`}
+            allow="autoplay; encrypted-media"
+            className="w-[300%] h-[300%] -top-[100%] -left-[100%] absolute object-cover scale-125 brightness-[0.8] opacity-90 transition-opacity duration-1000"
+            title={filmTitle}
+          />
+        </div>
+      ) : backdrop ? (
         <NextImage
           src={backdrop}
           alt={filmTitle}
@@ -285,11 +302,11 @@ function NetflixHeroBanner({
           priority
           unoptimized
         />
-      )}
+      ) : null}
 
       {/* Netflix Multi-layer Gradient Overlays for 100% Authentic Vignette */}
       <div
-        className="absolute inset-0 z-10"
+        className="absolute inset-0 z-10 pointer-events-none"
         style={{
           background: `
             linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 40%, transparent 80%),
@@ -309,12 +326,24 @@ function NetflixHeroBanner({
             </span>
           </div>
 
-          {/* Title Logo / Heading */}
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-tight tracking-tight drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
-            {filmTitle}
-          </h1>
+          {/* Official Title Logo PNG or Styled Heading */}
+          {logoUrl ? (
+            <div className="relative w-72 sm:w-96 h-24 sm:h-32 mb-2">
+              <NextImage
+                src={logoUrl}
+                alt={filmTitle}
+                fill
+                className="object-contain object-left drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)]"
+                unoptimized
+              />
+            </div>
+          ) : (
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-tight tracking-tight drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
+              {filmTitle}
+            </h1>
+          )}
 
-          {film.origin_name && film.origin_name !== filmTitle && (
+          {film.origin_name && film.origin_name !== filmTitle && !logoUrl && (
             <p className="text-sm sm:text-lg font-bold text-neutral-300 italic drop-shadow">
               {film.origin_name}
             </p>
@@ -498,27 +527,35 @@ export default function CountryPage() {
 
   return (
     <div className={`${cardFont.className} min-h-screen w-full bg-[#141414] text-foreground`}>
-      {/* ── Netflix Spotlight Hero Banner ── */}
+      {/* ── Netflix Spotlight Hero Banner with Background Video Trailer ── */}
       <NetflixHeroBanner film={heroFilm} countryName={label} />
 
-      {/* ── Content Rows (Positioned cleanly below hero without any overlap) ── */}
+      {/* ── Content Rows matching Screenshot 2 ── */}
       <div className="relative z-20 px-4 sm:px-12 md:px-16 lg:px-24 pt-8 sm:pt-12 pb-16 space-y-6">
-        {/* Top Picks For You Today (Landscape Cards) */}
+        {/* Row 1: Phải thoát khỏi đây! */}
         <CountryCategoryRow
-          title="Lựa chọn hàng đầu hôm nay cho bạn"
+          title={isKoreanPage ? "Phải thoát khỏi đây!" : "Phim Nổi Bật Hôm Nay"}
           films={films.slice(0, 12)}
           isLoading={mainLoading}
           variant="landscape"
         />
 
-        {/* Romantic K-Dramas Row */}
+        {/* Row 2: Có thể bạn chưa xem */}
+        <CountryCategoryRow
+          title="Có thể bạn chưa xem"
+          films={films.slice(6, 18)}
+          isLoading={mainLoading}
+          variant="landscape"
+        />
+
+        {/* Row 3: Romantic K-Dramas */}
         <CountryCategoryRow
           title={isKoreanPage ? "Phim Hàn Tình Cảm & Lãng Mạn hay nhất" : "Phim Tình Cảm & Lãng Mạn"}
           films={romanceFilms.slice(0, 14)}
           isLoading={romanceLoading}
         />
 
-        {/* Binge-Worthy Thriller Row (Landscape Cards) */}
+        {/* Row 4: Binge-Worthy Thrillers */}
         <CountryCategoryRow
           title={isKoreanPage ? "Series Phim Hàn kịch tính đáng xem liên tục" : "Phim Hành Động & Kịch Tính"}
           films={actionFilms.slice(0, 14)}
@@ -526,14 +563,14 @@ export default function CountryPage() {
           variant="landscape"
         />
 
-        {/* Historical / Period K-Dramas */}
+        {/* Row 5: Historical / Period K-Dramas */}
         <CountryCategoryRow
           title={isKoreanPage ? "Phim Hàn Cổ Trang & Thần Thoại" : "Phim Cổ Trang"}
           films={coTrangFilms.slice(0, 14)}
           isLoading={coTrangLoading}
         />
 
-        {/* Crime & Mystery K-Dramas */}
+        {/* Row 6: Crime & Mystery */}
         <CountryCategoryRow
           title={isKoreanPage ? "Phim Hàn Hình Sự & Trinh Thám" : "Phim Hình Sự & Trinh Thám"}
           films={crimeFilms.slice(0, 14)}
