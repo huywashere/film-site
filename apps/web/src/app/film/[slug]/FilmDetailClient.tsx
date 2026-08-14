@@ -26,6 +26,7 @@ import {
   Monitor,
   ChevronRight as ChevronRightIcon,
   ArrowLeft,
+  Clapperboard,
 } from "lucide-react";
 import { movieApi, watchlistApi, ratingsApi, reviewsApi } from "@/lib/api";
 import { FilmNotFound } from "@/components/film/FilmNotFound";
@@ -108,6 +109,95 @@ function ResilientDetailImage({
       referrerPolicy="no-referrer"
       onError={() => setSourceIndex((index) => index + 1)}
     />
+  );
+}
+
+function DetailPosterCard({
+  candidates,
+  filmName,
+  className,
+}: {
+  candidates: string[];
+  filmName: string;
+  className?: string;
+}) {
+  const [candidateIdx, setCandidateIdx] = useState(0);
+
+  useEffect(() => {
+    setCandidateIdx(0);
+  }, [candidates]);
+
+  const src = candidates[candidateIdx];
+
+  if (!src) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-gradient-to-b from-neutral-800 to-black">
+        <Clapperboard className="w-8 h-8 text-amber-500/80 mb-1" />
+        <span className="text-[10px] font-bold text-white leading-tight line-clamp-2">
+          {filmName}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      key={`${filmName}-${candidateIdx}`}
+      src={src}
+      alt={filmName}
+      referrerPolicy="no-referrer"
+      loading="eager"
+      decoding="async"
+      className={className}
+      onError={() => {
+        if (candidateIdx < candidates.length - 1) {
+          setCandidateIdx((i) => i + 1);
+        }
+      }}
+    />
+  );
+}
+
+function GalleryBackdropCard({
+  filePath,
+  alt,
+}: {
+  filePath: string;
+  alt: string;
+}) {
+  const candidateUrls = useMemo(() => {
+    return [
+      tmdbBackdrop(filePath, "w780"),
+      tmdbBackdrop(filePath, "w1280"),
+      tmdbBackdrop(filePath, "original"),
+    ].filter((url): url is string => Boolean(url));
+  }, [filePath]);
+
+  const [candidateIdx, setCandidateIdx] = useState(0);
+
+  const src = candidateUrls[candidateIdx];
+
+  if (!src) return null;
+
+  return (
+    <div className="relative aspect-video rounded-xl overflow-hidden border border-white/10 bg-neutral-900 group shadow-lg">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        key={`${filePath}-${candidateIdx}`}
+        src={src}
+        alt={alt}
+        referrerPolicy="no-referrer"
+        loading="lazy"
+        decoding="async"
+        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        onError={() => {
+          if (candidateIdx < candidateUrls.length - 1) {
+            setCandidateIdx((i) => i + 1);
+          }
+        }}
+      />
+    </div>
   );
 }
 
@@ -724,6 +814,30 @@ export default function FilmDetailPage() {
     ? tmdbBackdrop(bestBackdrop.file_path, "w1280")
     : null;
 
+  const heroPosterCandidates = useMemo(() => {
+    const list: string[] = [];
+    const add = (url?: unknown) => {
+      const resolved = resolveImageUrl(url);
+      if (resolved && !list.includes(resolved)) list.push(resolved);
+    };
+
+    if (tmdbPosterUrl) add(tmdbPosterUrl);
+    if (providerPosterUrl) add(providerPosterUrl);
+    if (providerBackdropUrl) add(providerBackdropUrl);
+    if (tmdbBackdropUrl) add(tmdbBackdropUrl);
+
+    const primary = film?.poster_url || film?.thumb_url;
+    if (primary && typeof primary === "string") {
+      if (primary.includes("/uploads/movies/")) {
+        add(primary.replace("/uploads/movies/", "/upload/vod/"));
+      } else if (primary.includes("/upload/vod/")) {
+        add(primary.replace("/upload/vod/", "/uploads/movies/"));
+      }
+    }
+
+    return list;
+  }, [film?.poster_url, film?.thumb_url, providerBackdropUrl, providerPosterUrl, tmdbBackdropUrl, tmdbPosterUrl]);
+
   // Watchlist status check
   useEffect(() => {
     if (!slug || isNotFound) return;
@@ -1061,75 +1175,80 @@ export default function FilmDetailPage() {
           </span>
         </div>
 
-        {/* ── Top Hero Area ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Hero Title & Info Section */}
+        {/* ── Top Hero Area (Mobile & Desktop Cinema Layout) ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+          {/* Main Info Section (With Poster on Mobile/Tablet) */}
           <div className="lg:col-span-8 flex flex-col space-y-4 md:space-y-5">
-            {/* Title - Clean Vietnamese typography without forced uppercase */}
-            <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight leading-snug drop-shadow-xl">
-              {film.name}
-            </h1>
+            {/* Header info with Poster on mobile/tablet */}
+            <div className="flex gap-4 sm:gap-6 items-start">
+              {/* Mobile/Tablet Poster */}
+              <div className="lg:hidden w-28 sm:w-36 aspect-[2/3] rounded-xl sm:rounded-2xl overflow-hidden border border-white/15 bg-neutral-900 shadow-2xl flex-shrink-0 relative group">
+                <DetailPosterCard
+                  candidates={heroPosterCandidates}
+                  filmName={film.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
 
-            {/* Subtitle Original Name */}
-            {film.origin_name && (
-              <p className="text-xs sm:text-base text-neutral-300 font-medium tracking-wide -mt-2 italic">
-                {film.origin_name}
-              </p>
-            )}
+              {/* Title & metadata */}
+              <div className="flex flex-col space-y-2 sm:space-y-3 min-w-0 flex-1">
+                {/* Title - Clean Vietnamese typography without forced uppercase */}
+                <h1 className="text-xl sm:text-3xl md:text-5xl font-extrabold text-white tracking-tight leading-snug drop-shadow-xl line-clamp-3">
+                  {film.name}
+                </h1>
 
-            {/* Metadata Tags Row (Matching Reference Image 1) */}
-            <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
-              {film.quality && (
-                <span className="rounded-md border border-white/15 bg-white/[0.06] px-2.5 py-0.5 text-[11px] font-bold text-neutral-200">
-                  {film.quality}
-                </span>
-              )}
-              {film.lang && (
-                <span className="rounded-md border border-white/15 bg-white/[0.06] px-2.5 py-0.5 text-[11px] font-bold text-neutral-200">
-                  {film.lang}
-                </span>
-              )}
-              {film.year && (
-                <span className="bg-white/10 text-neutral-300 px-2.5 py-0.5 rounded-md text-[11px] font-semibold">
-                  {film.year}
-                </span>
-              )}
-              {tmdbRatingLabel && (
-                <span
-                  className="rounded-md border border-white/15 bg-black/20 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-200"
-                  title={
-                    tmdbVoteCount > 0
-                      ? `${tmdbVoteCount.toLocaleString("vi-VN")} lượt đánh giá trên TMDB`
-                      : "Điểm TMDB"
-                  }
-                >
-                  <span className="text-neutral-500">TMDB</span>{" "}
-                  {tmdbRatingLabel}/10
-                  {tmdbVoteLabel && (
-                    <span className="ml-1 font-normal text-neutral-500">
-                      · {tmdbVoteLabel}
+                {/* Subtitle Original Name */}
+                {film.origin_name && (
+                  <p className="text-xs sm:text-base text-neutral-300 font-medium tracking-wide italic line-clamp-2">
+                    {film.origin_name}
+                  </p>
+                )}
+
+                {/* Metadata Tags Row (Matching Reference Image 1) */}
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs font-bold pt-1">
+                  {film.quality && (
+                    <span className="rounded-md border border-white/15 bg-white/[0.06] px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-neutral-200">
+                      {film.quality}
                     </span>
                   )}
-                </span>
-              )}
-              {imdbRatingLabel && (
-                <span
-                  className="rounded-md border border-white/15 bg-black/20 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-200"
-                  title={
-                    imdbVoteCount > 0
-                      ? `${imdbVoteCount.toLocaleString("vi-VN")} lượt đánh giá trên IMDb`
-                      : "Điểm IMDb"
-                  }
-                >
-                  <span className="text-neutral-500">IMDb</span>{" "}
-                  {imdbRatingLabel}/10
-                  {imdbVoteLabel && (
-                    <span className="ml-1 font-normal text-neutral-500">
-                      · {imdbVoteLabel}
+                  {film.lang && (
+                    <span className="rounded-md border border-white/15 bg-white/[0.06] px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-neutral-200">
+                      {film.lang}
                     </span>
                   )}
-                </span>
-              )}
+                  {film.year && (
+                    <span className="bg-white/10 text-neutral-300 px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-semibold">
+                      {film.year}
+                    </span>
+                  )}
+                  {tmdbRatingLabel && (
+                    <span
+                      className="rounded-md border border-white/15 bg-black/20 px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold text-neutral-200"
+                      title={
+                        tmdbVoteCount > 0
+                          ? `${tmdbVoteCount.toLocaleString("vi-VN")} lượt đánh giá trên TMDB`
+                          : "Điểm TMDB"
+                      }
+                    >
+                      <span className="text-neutral-500">TMDB</span>{" "}
+                      {tmdbRatingLabel}/10
+                    </span>
+                  )}
+                  {imdbRatingLabel && (
+                    <span
+                      className="rounded-md border border-white/15 bg-black/20 px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold text-neutral-200"
+                      title={
+                        imdbVoteCount > 0
+                          ? `${imdbVoteCount.toLocaleString("vi-VN")} lượt đánh giá trên IMDb`
+                          : "Điểm IMDb"
+                      }
+                    >
+                      <span className="text-neutral-500">IMDb</span>{" "}
+                      {imdbRatingLabel}/10
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Play and Action Widgets */}
@@ -1239,22 +1358,14 @@ export default function FilmDetailPage() {
             </div>
           </div>
 
-          {/* Right Hero Poster Box */}
+          {/* Right Hero Poster Box (Desktop) */}
           <div className="lg:col-span-4 hidden lg:flex justify-end">
-            <div className="w-64 aspect-[2/3] rounded-2xl overflow-hidden border border-white/10 bg-neutral-950/60 shadow-2xl relative group">
-              {(posterUrl || tmdbPosterUrl) && (
-                <ResilientDetailImage
-                  candidates={[
-                    providerPosterUrl,
-                    tmdbPosterUrl,
-                    providerBackdropUrl,
-                    tmdbBackdropUrl,
-                  ]}
-                  alt={film.name}
-                  sizes="256px"
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-              )}
+            <div className="w-64 aspect-[2/3] rounded-2xl overflow-hidden border border-white/15 bg-neutral-950/60 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative group">
+              <DetailPosterCard
+                candidates={heroPosterCandidates}
+                filmName={film.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
             </div>
           </div>
         </div>
@@ -1449,19 +1560,11 @@ export default function FilmDetailPage() {
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {backdrops.slice(0, 8).map((bg, idx) => (
-                  <div
-                    key={idx}
-                    className="relative aspect-video rounded-xl overflow-hidden border border-white/10 bg-neutral-900 group shadow-lg"
-                  >
-                    <NextImage
-                      src={tmdbBackdrop(bg.file_path, "w780") || ""}
-                      alt={`Ảnh phim ${idx + 1}`}
-                      fill
-                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      unoptimized
-                    />
-                  </div>
+                  <GalleryBackdropCard
+                    key={`${bg.file_path}-${idx}`}
+                    filePath={bg.file_path}
+                    alt={`Ảnh phim ${idx + 1}`}
+                  />
                 ))}
               </div>
             </section>
