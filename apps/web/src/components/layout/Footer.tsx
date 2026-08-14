@@ -43,17 +43,6 @@ const FOOTER_COLUMNS = [
 ];
 
 // Social icon components
-function IconGoogle() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
-      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-    </svg>
-  );
-}
-
 function IconFacebook() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
@@ -62,10 +51,10 @@ function IconFacebook() {
   );
 }
 
-function IconApple() {
+function IconTelegram() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
-      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
     </svg>
   );
 }
@@ -78,11 +67,35 @@ function IconTikTok() {
   );
 }
 
+function IconEmail() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="w-4 h-4 sm:w-5 sm:h-5"
+    >
+      <rect width="20" height="16" x="2" y="4" rx="2" />
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+    </svg>
+  );
+}
+
 const SOCIAL_LINKS = [
-  { href: "https://google.com", icon: IconGoogle, label: "Google" },
   { href: "https://facebook.com", icon: IconFacebook, label: "Facebook" },
-  { href: "https://apple.com", icon: IconApple, label: "Apple" },
+  { href: "https://t.me/netphim_official", icon: IconTelegram, label: "Telegram" },
   { href: "https://tiktok.com", icon: IconTikTok, label: "TikTok" },
+  { href: "mailto:contact@netphim.app", icon: IconEmail, label: "Email" },
+];
+
+const CAT_MASCOTS = [
+  { src: "/images/cat1.gif", alt: "Mèo NetPhim 1" },
+  { src: "/images/cat2.gif", alt: "Mèo NetPhim 2" },
+  { src: "/images/cat3.gif", alt: "Mèo NetPhim 3" },
+  { src: "/images/cat4.gif", alt: "Mèo NetPhim 4" },
 ];
 
 export function Footer() {
@@ -145,8 +158,8 @@ export function Footer() {
         {/* Divider */}
         <div className="h-px w-full bg-white/[0.06]" />
 
-        {/* Bottom row: Socials + Disclaimer & Copyright */}
-        <div className="flex flex-col items-center gap-4 py-8 pb-28 sm:pb-10">
+        {/* Bottom row: Socials + Disclaimer + Copyright + Cats */}
+        <div className="flex flex-col items-center gap-4 py-8 pb-32 sm:pb-12">
           {/* Social icons */}
           <div className="flex items-center gap-5 sm:gap-6">
             {SOCIAL_LINKS.map(({ href, icon: Icon, label }) => (
@@ -156,7 +169,7 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={label}
-                className="text-neutral-400 transition-colors duration-150 hover:text-white"
+                className="text-neutral-400 transition-all duration-200 hover:text-violet-400 hover:scale-110"
               >
                 <Icon />
               </a>
@@ -172,6 +185,27 @@ export function Footer() {
           <p className="text-center text-[11px] sm:text-xs text-neutral-400 font-medium">
             © {year} NetPhim. Cảm ơn bạn đã đồng hành và ủng hộ cộng đồng yêu phim.
           </p>
+
+          {/* Cute Cat Mascots */}
+          <div className="mt-1 flex items-center justify-center gap-3 sm:gap-5 select-none">
+            {CAT_MASCOTS.map((cat, idx) => (
+              <div
+                key={idx}
+                className="group relative cursor-pointer"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={cat.src}
+                  alt={cat.alt}
+                  loading="lazy"
+                  className="h-8 w-auto sm:h-10 object-contain transition-all duration-300 group-hover:scale-125 drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)]"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </footer>
