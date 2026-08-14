@@ -195,25 +195,19 @@ export function Footer() {
             © {year} NetPhim. Cảm ơn bạn đã đồng hành và ủng hộ cộng đồng yêu phim.
           </p>
 
-          {/* 1 Random Bigger Cat Mascot (changes on reload/visit) */}
-          <div className="mt-1 flex items-center justify-center select-none">
-            <button
-              type="button"
-              onClick={() => setCatIndex((prev) => (prev + 1) % CAT_MASCOTS.length)}
-              className="group cursor-pointer rounded-2xl p-1 transition-transform duration-300 hover:scale-110 active:scale-95 focus:outline-none"
-              title="Nhấn để đổi bạn mèo khác! 🐱"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={randomCat.src}
-                alt={randomCat.alt}
-                loading="lazy"
-                className="h-16 w-auto sm:h-20 max-w-[130px] rounded-xl object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.7)]"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = "none";
-                }}
-              />
-            </button>
+          {/* 1 Random Cat Mascot (Compact, no hover effects or tooltips, random on reload) */}
+          <div className="mt-0.5 flex items-center justify-center select-none pointer-events-none">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={randomCat.src}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              className="h-11 w-auto sm:h-13 max-w-[90px] rounded-lg object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
+            />
           </div>
         </div>
       </div>
