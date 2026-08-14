@@ -95,42 +95,42 @@ export function Footer() {
     >
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-10">
         {/* Main section */}
-        <div className="flex flex-col gap-6 py-8 sm:py-12 md:flex-row md:items-start md:justify-between lg:gap-12">
-          {/* Logo & Tagline */}
-          <div className="shrink-0 md:max-w-[200px]">
-            <Link href="/" className="inline-flex items-center gap-2 group">
+        <div className="flex flex-col gap-8 py-10 sm:py-12 md:flex-row md:items-start md:justify-between lg:gap-14">
+          {/* Logo & Tagline (Bigger Logo as requested) */}
+          <div className="shrink-0 md:max-w-[240px]">
+            <Link href="/" className="inline-flex items-center gap-2.5 group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/cinephim-logo.png"
                 alt="NetPhim Logo"
-                className="h-7 w-auto object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_0_10px_rgba(168,85,247,0.25)]"
+                className="h-9 w-auto sm:h-10 object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_0_12px_rgba(168,85,247,0.3)]"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).style.display = "none";
                 }}
               />
-              <span className="text-base font-extrabold lowercase tracking-tight text-white">
+              <span className="text-xl sm:text-2xl font-black lowercase tracking-tight text-white">
                 net<span className="text-violet-400">phim</span>
               </span>
             </Link>
-            <p className="mt-2 text-[11px] sm:text-[12px] leading-relaxed text-neutral-400 sm:text-neutral-500">
+            <p className="mt-3 text-xs sm:text-[13px] leading-relaxed text-neutral-400">
               Nền tảng xem phim trực tuyến miễn phí, chất lượng cao.
             </p>
           </div>
 
           {/* 4 Balanced Link Columns (2x2 on mobile, 4 columns on tablet/desktop) */}
-          <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-4 sm:gap-6 md:flex-1 md:gap-8">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-4 sm:gap-6 md:flex-1 md:gap-8">
             {FOOTER_COLUMNS.map((column) => (
               <div key={column.heading} className="min-w-0">
-                <p className="mb-2.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-neutral-300">
+                <p className="mb-3 text-[11px] sm:text-[12px] font-bold uppercase tracking-wider text-neutral-200">
                   {column.heading}
                 </p>
-                <ul className="space-y-1.5 sm:space-y-2">
+                <ul className="space-y-2 sm:space-y-2.5">
                   {column.links.map((link) => (
                     <li key={link.label}>
                       <Link
                         href={link.href}
                         data-footer-link="true"
-                        className="text-[12px] text-neutral-400 transition-colors duration-150 hover:text-white"
+                        className="text-[12px] sm:text-[13px] text-neutral-400 transition-colors duration-150 hover:text-white"
                       >
                         {link.label}
                       </Link>
@@ -145,8 +145,8 @@ export function Footer() {
         {/* Divider */}
         <div className="h-px w-full bg-white/[0.06]" />
 
-        {/* Bottom row: Socials + Legal / Copyright */}
-        <div className="flex flex-col items-center gap-3.5 py-6 pb-24 sm:pb-8">
+        {/* Bottom row: Socials + Disclaimer & Copyright */}
+        <div className="flex flex-col items-center gap-4 py-8 pb-28 sm:pb-10">
           {/* Social icons */}
           <div className="flex items-center gap-5 sm:gap-6">
             {SOCIAL_LINKS.map(({ href, icon: Icon, label }) => (
@@ -156,16 +156,21 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={label}
-                className="text-neutral-500 transition-colors duration-150 hover:text-white"
+                className="text-neutral-400 transition-colors duration-150 hover:text-white"
               >
                 <Icon />
               </a>
             ))}
           </div>
 
-          {/* Copyright */}
-          <p className="text-center text-[11px] sm:text-[12px] text-neutral-500">
-            © {year} NetPhim. Nội dung được tổng hợp từ các nguồn công khai.
+          {/* Disclaimer text */}
+          <p className="max-w-3xl text-center text-[11px] sm:text-xs leading-relaxed text-neutral-400">
+            NetPhim là nền tảng tổng hợp và giới thiệu thông tin phim ảnh phục vụ cộng đồng người xem tại Việt Nam. Chúng tôi không lưu trữ bất kỳ tệp video nào trên máy chủ riêng; toàn bộ dữ liệu và nội dung đều được dẫn nguồn, liên kết tự động từ các dịch vụ bên thứ ba công khai trên Internet.
+          </p>
+
+          {/* Copyright & Appreciation */}
+          <p className="text-center text-[11px] sm:text-xs text-neutral-400 font-medium">
+            © {year} NetPhim. Cảm ơn bạn đã đồng hành và ủng hộ cộng đồng yêu phim.
           </p>
         </div>
       </div>
