@@ -218,17 +218,6 @@ function GoogleLinkSection({ user }: { user: any }) {
   );
 }
 
-const PRESET_AVATARS = [
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400&auto=format&fit=crop",
-  "https://api.dicebear.com/7.x/bottts/svg?seed=huy1",
-  "https://api.dicebear.com/7.x/avataaars/svg?seed=huy2",
-  "https://api.dicebear.com/7.x/adventurer/svg?seed=huy3",
-  "https://api.dicebear.com/7.x/big-smile/svg?seed=huy4",
-  "https://api.dicebear.com/7.x/personas/svg?seed=huy5",
-];
-
 type TabType =
   "account" | "stats" | "security" | "watchlist" | "history" | "settings";
 

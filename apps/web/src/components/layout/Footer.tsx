@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { cardFont } from "@/lib/fonts";
 
 const FOOTER_COLUMNS = [
@@ -100,6 +101,14 @@ const CAT_MASCOTS = [
 
 export function Footer() {
   const year = new Date().getFullYear();
+  const [catIndex, setCatIndex] = useState(0);
+
+  // Random 1 of 4 cat mascots on page load/reload
+  useEffect(() => {
+    setCatIndex(Math.floor(Math.random() * CAT_MASCOTS.length));
+  }, []);
+
+  const randomCat = CAT_MASCOTS[catIndex] || CAT_MASCOTS[0];
 
   return (
     <footer
@@ -108,7 +117,7 @@ export function Footer() {
     >
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-10">
         {/* Main section */}
-        <div className="flex flex-col gap-8 py-10 sm:py-12 md:flex-row md:items-start md:justify-between lg:gap-14">
+        <div className="flex flex-col gap-8 py-8 sm:py-10 md:flex-row md:items-start md:justify-between lg:gap-14">
           {/* Logo & Tagline (Bigger Logo as requested) */}
           <div className="shrink-0 md:max-w-[240px]">
             <Link href="/" className="inline-flex items-center gap-2.5 group">
@@ -158,8 +167,8 @@ export function Footer() {
         {/* Divider */}
         <div className="h-px w-full bg-white/[0.06]" />
 
-        {/* Bottom row: Socials + Disclaimer + Copyright + Cats */}
-        <div className="flex flex-col items-center gap-4 py-8 pb-32 sm:pb-12">
+        {/* Bottom row: Socials + Disclaimer + Copyright + 1 Random Bigger Cat Mascot */}
+        <div className="flex flex-col items-center gap-3.5 pt-6 pb-20 sm:pb-6 text-center">
           {/* Social icons */}
           <div className="flex items-center gap-5 sm:gap-6">
             {SOCIAL_LINKS.map(({ href, icon: Icon, label }) => (
@@ -177,34 +186,34 @@ export function Footer() {
           </div>
 
           {/* Disclaimer text */}
-          <p className="max-w-3xl text-center text-[11px] sm:text-xs leading-relaxed text-neutral-400">
+          <p className="max-w-3xl text-[11px] sm:text-xs leading-relaxed text-neutral-400">
             NetPhim là nền tảng tổng hợp và giới thiệu thông tin phim ảnh phục vụ cộng đồng người xem tại Việt Nam. Chúng tôi không lưu trữ bất kỳ tệp video nào trên máy chủ riêng; toàn bộ dữ liệu và nội dung đều được dẫn nguồn, liên kết tự động từ các dịch vụ bên thứ ba công khai trên Internet.
           </p>
 
           {/* Copyright & Appreciation */}
-          <p className="text-center text-[11px] sm:text-xs text-neutral-400 font-medium">
+          <p className="text-[11px] sm:text-xs text-neutral-400 font-medium">
             © {year} NetPhim. Cảm ơn bạn đã đồng hành và ủng hộ cộng đồng yêu phim.
           </p>
 
-          {/* Cute Cat Mascots */}
-          <div className="mt-1 flex items-center justify-center gap-3 sm:gap-5 select-none">
-            {CAT_MASCOTS.map((cat, idx) => (
-              <div
-                key={idx}
-                className="group relative cursor-pointer"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={cat.src}
-                  alt={cat.alt}
-                  loading="lazy"
-                  className="h-8 w-auto sm:h-10 object-contain transition-all duration-300 group-hover:scale-125 drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)]"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              </div>
-            ))}
+          {/* 1 Random Bigger Cat Mascot (changes on reload/visit) */}
+          <div className="mt-1 flex items-center justify-center select-none">
+            <button
+              type="button"
+              onClick={() => setCatIndex((prev) => (prev + 1) % CAT_MASCOTS.length)}
+              className="group cursor-pointer rounded-2xl p-1 transition-transform duration-300 hover:scale-110 active:scale-95 focus:outline-none"
+              title="Nhấn để đổi bạn mèo khác! 🐱"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={randomCat.src}
+                alt={randomCat.alt}
+                loading="lazy"
+                className="h-16 w-auto sm:h-20 max-w-[130px] rounded-xl object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.7)]"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
+              />
+            </button>
           </div>
         </div>
       </div>
