@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect, memo } from "react";
 import { Bookmark, Play, Clapperboard, Star } from "lucide-react";
 import { watchlistApi, movieApi } from "@/lib/api";
@@ -254,12 +255,20 @@ function FilmCardComponent({
           )}
         >
           {imageSrc ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
+            <Image
               src={imageSrc}
               alt={title}
+              fill
+              sizes={
+                variant === "landscape"
+                  ? "(max-width: 640px) 78vw, (max-width: 1024px) 38vw, 320px"
+                  : `(max-width: 640px) 42vw, (max-width: 1024px) 24vw, ${width || 220}px`
+              }
+              quality={75}
+              priority={priority}
               className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
               loading={priority ? "eager" : "lazy"}
+              decoding="async"
               onError={handleImageError}
             />
           ) : (

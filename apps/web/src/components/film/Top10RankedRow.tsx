@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { Montserrat } from "next/font/google";
 import { useRef, useState, useEffect } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -83,11 +84,15 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
       <div className="relative pl-10 sm:pl-14 md:pl-16 z-10">
         <div className="relative w-[130px] sm:w-[160px] md:w-[185px] aspect-[2/3] rounded-2xl overflow-hidden border border-white/15 shadow-2xl group-hover/item:border-white/40 group-hover/item:scale-105 transition-all duration-300 bg-neutral-900">
           {imgSrc ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
+            <Image
               src={imgSrc}
               alt={filmTitle}
+              fill
+              sizes="(max-width: 640px) 130px, (max-width: 768px) 160px, 185px"
+              quality={75}
               className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105"
+              loading="lazy"
+              decoding="async"
               onError={() => {
                 if (imgSrc && !imgSrc.startsWith("/api/image-proxy")) {
                   setImgSrc(`/api/image-proxy?url=${encodeURIComponent(imgSrc)}`);
