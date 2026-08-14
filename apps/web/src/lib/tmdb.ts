@@ -73,7 +73,10 @@ async function fetchTmdb<T>(
         ? window.location.origin
         : "http://localhost:3000",
     );
-    url.searchParams.set("language", "vi-VN");
+    const isMedia = endpoint.includes("videos") || endpoint.includes("images");
+    if (!isMedia) {
+      url.searchParams.set("language", "vi-VN");
+    }
     if (params) {
       Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
     }

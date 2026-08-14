@@ -7,7 +7,7 @@ import { FilmItem } from "@/components/film/FilmCard";
 import { cardFont } from "@/lib/fonts";
 
 interface TrailerModalProps {
-  film?: FilmItem | null;
+  film?: (FilmItem & { trailer_url?: string }) | null;
   isOpen: boolean;
   onClose: () => void;
   /** Render within a positioned Hero instead of above the entire document. */
@@ -63,23 +63,39 @@ export function TrailerModal({
   // Resolve YouTube first, then Vimeo as a secondary official video source.
   let youtubeKey = tmdbVideoKey || trailer?.key;
   let vimeoKey = videos.find((video) => video.site === "Vimeo")?.key;
-  if (!youtubeKey && trailerUrl) {
-    const match = trailerUrl.match(
+  const rawUrl = trailerUrl || film?.trailer_url || "";
+
+  if (!youtubeKey && rawUrl) {
+    const match = rawUrl.match(
       /(?:youtu\.be\/|youtube\.com\/(?:embed\/|shorts\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/,
     );
     if (match) youtubeKey = match[1];
-    if (!youtubeKey && /^[\w-]{11}$/.test(trailerUrl.trim())) {
-      youtubeKey = trailerUrl.trim();
+    if (!youtubeKey && /^[\w-]{11}$/.test(rawUrl.trim())) {
+      youtubeKey = rawUrl.trim();
     }
-    const vimeoMatch = trailerUrl.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+    const vimeoMatch = rawUrl.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
     if (!vimeoKey && vimeoMatch) vimeoKey = vimeoMatch[1];
   }
+
+  // If TMDB provided videos array with any youtube entry, pick first
+  if (!youtubeKey && !vimeoKey && videos.length > 0) {
+    const yt = videos.find((v) => v.site === "YouTube" && v.key);
+    if (yt) youtubeKey = yt.key;
+  }
+
+  // Fallback to official YouTube search embed if no direct ID is known
+  const searchEmbedSrc = `https://www.youtube-nocookie.com/embed?listType=search&list=${encodeURIComponent(
+    `${displayName} official trailer`,
+  )}&autoplay=1&playsinline=1&rel=0`;
 
   const embedSrc = youtubeKey
     ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtubeKey)}?autoplay=1&playsinline=1&rel=0`
     : vimeoKey
       ? `https://player.vimeo.com/video/${encodeURIComponent(vimeoKey)}?autoplay=1&title=0&byline=0`
-      : null;
+      : !videosLoading
+        ? searchEmbedSrc
+        : null;
+
   const youtubeSearchHref = `https://www.youtube.com/results?search_query=${encodeURIComponent(
     `${displayName} official trailer`,
   )}`;
@@ -91,7 +107,7 @@ export function TrailerModal({
 
   return (
     <div
-      className={`${cardFont.className} ${presentation === "hero" ? "absolute" : "fixed"} inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 md:p-10 animate-in fade-in duration-200`}
+      className={`${cardFont.className} ${presentation === "hero" ? "absolute" : "fixed"} inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 md:p-10 animate-in fade-in duration-200`}
     >
       {/* Dark backdrop overlay */}
       <div
