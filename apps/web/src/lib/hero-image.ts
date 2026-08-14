@@ -58,11 +58,9 @@ function normalizeMovieImage(value?: string): string | null {
 /**
  * Build a deterministic fallback chain for a full-width hero image.
  *
- * TMDB is fetched directly first because its public image CDN is faster and
- * avoids consuming a serverless image-proxy invocation. Other providers stay
- * behind the allowlisted proxy. `strict=1` is important: it makes the proxy
- * emit an error instead of a portrait placeholder so the browser can advance
- * to the next real image.
+ * Direct CDN hosts (image.tmdb.org, phimimg.com, img.phimapi.com, etc.) are fetched
+ * directly first because their edge CDN is fastest, highly available, and avoids
+ * serverless proxy latency or rate limits.
  */
 export function buildHeroImageCandidates(input: {
   heroBackdrop?: string;
@@ -74,9 +72,7 @@ export function buildHeroImageCandidates(input: {
     if (candidate && !candidates.includes(candidate)) candidates.push(candidate);
   };
 
-  // Landscape thumbnails are normally optimized to w1280 and should beat an
-  // original-size backdrop on slow or cold serverless connections.
-  for (const value of [input.thumbUrl, input.heroBackdrop, input.posterUrl]) {
+  for (const value of [input.heroBackdrop, input.thumbUrl, input.posterUrl]) {
     const normalized = normalizeMovieImage(value);
     if (!normalized) continue;
 
@@ -84,28 +80,30 @@ export function buildHeroImageCandidates(input: {
     if (proxiedRaw && isTmdbImage(proxiedRaw)) {
       add(preferTmdbBackdropSize(proxiedRaw));
       add(proxiedRaw);
-      add(strictProxyUrl(normalized));
       continue;
     }
 
     if (isTmdbImage(normalized)) {
       add(preferTmdbBackdropSize(normalized));
       add(normalized);
-      add(
-        `${IMAGE_PROXY_PATH}?url=${encodeURIComponent(normalized)}&strict=1`,
-      );
       continue;
     }
 
-    if (normalized.startsWith(IMAGE_PROXY_PATH)) {
-      add(strictProxyUrl(normalized));
-    } else {
-      add(
-        `${IMAGE_PROXY_PATH}?url=${encodeURIComponent(normalized)}&strict=1`,
-      );
-      if (normalized.startsWith("https://")) {
-        add(normalized);
+    if (!normalized.startsWith(IMAGE_PROXY_PATH)) {
+      // Direct CDN first
+      add(normalized);
+
+      // Alternate KKPhim paths (uploads/movies <-> upload/vod)
+      if (normalized.includes("/uploads/movies/")) {
+        add(normalized.replace("/uploads/movies/", "/upload/vod/"));
+      } else if (normalized.includes("/upload/vod/")) {
+        add(normalized.replace("/upload/vod/", "/uploads/movies/"));
       }
+
+      // Proxy as backup fallback
+      add(`${IMAGE_PROXY_PATH}?url=${encodeURIComponent(normalized)}&strict=1`);
+    } else {
+      add(strictProxyUrl(normalized));
     }
   }
 

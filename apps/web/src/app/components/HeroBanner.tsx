@@ -169,7 +169,7 @@ function resolveDirectImageUrl(url?: unknown): string | null {
 
   if (resolved.startsWith("/api/")) return resolved;
 
-  if (/^https:\/\/image\.tmdb\.org\/t\/p\//i.test(resolved)) {
+  if (/^https?:\/\/image\.tmdb\.org\/t\/p\//i.test(resolved)) {
     return resolved;
   }
 
@@ -180,9 +180,12 @@ function resolveDirectImageUrl(url?: unknown): string | null {
     !resolved.startsWith("https://")
   ) {
     const cleanPath = resolved.startsWith("/") ? resolved.slice(1) : resolved;
-    resolved = `https://img.phimapi.com/${cleanPath}`;
+    resolved = `https://phimimg.com/${cleanPath}`;
+  } else if (resolved.startsWith("http://")) {
+    resolved = resolved.replace(/^http:\/\//i, "https://");
   }
-  return `/api/image-proxy?url=${encodeURIComponent(resolved)}`;
+
+  return resolved.replace("img.phimapi.com/", "phimimg.com/");
 }
 
 function toHeroFilm(movie: TmdbMovie): HeroFilm | null {
@@ -421,25 +424,19 @@ function HeroMovieTitle({
 
   return (
     <div className="relative flex min-h-16 w-full items-center justify-center sm:min-h-24 md:min-h-28">
+      {/* Cinematic Text Title - Always rendered cleanly so no blank flash */}
       <h1
         className={cn(
-          showLogo && "sr-only",
-          !showLogo &&
-            "max-w-2xl line-clamp-2 text-xl font-extrabold uppercase leading-tight tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl",
+          "max-w-2xl line-clamp-2 text-xl font-black uppercase leading-tight tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl transition-opacity duration-300",
+          showLogo && logoLoaded ? "sr-only" : "opacity-100",
         )}
-        style={
-          !showLogo
-            ? { fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }
-            : undefined
-        }
+        style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }}
       >
         {title}
       </h1>
 
       {showLogo && (
-        // TMDB title artwork has variable transparent bounds, so intrinsic
-        // object containment is more reliable here than a cropped Image fill.
-        // eslint-disable-next-line @next/next/no-img-element
+        /* eslint-disable-next-line @next/next/no-img-element */
         <img
           key={film.titleLogo}
           src={film.titleLogo}
@@ -456,11 +453,129 @@ function HeroMovieTitle({
           }}
           className={cn(
             "max-h-16 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-opacity duration-300 sm:max-h-24 sm:max-w-[34rem] md:max-h-28",
-            logoLoaded ? "opacity-100" : "opacity-0",
+            logoLoaded ? "opacity-100" : "opacity-0 absolute",
           )}
         />
       )}
     </div>
+  );
+}
+
+function HeroFanCardImage({
+  film,
+  className,
+}: {
+  film: HeroFilm;
+  className?: string;
+}) {
+  const primary =
+    resolveDirectImageUrl(film.poster_url) ||
+    resolveDirectImageUrl(film.thumb_url);
+  const alt1 = resolveDirectImageUrl(film.thumb_url);
+  const alt2 =
+    primary && primary.includes("/upload/vod/")
+      ? primary.replace("/upload/vod/", "/uploads/movies/")
+      : primary && primary.includes("/uploads/movies/")
+        ? primary.replace("/uploads/movies/", "/upload/vod/")
+        : null;
+
+  const [currentSrc, setCurrentSrc] = useState<string | null>(primary);
+  const [hasFailed, setHasFailed] = useState(false);
+
+  useEffect(() => {
+    setCurrentSrc(primary);
+    setHasFailed(false);
+  }, [primary, film.slug]);
+
+  const handleError = () => {
+    if (currentSrc === primary && alt1 && alt1 !== primary) {
+      setCurrentSrc(alt1);
+    } else if (currentSrc !== alt2 && alt2) {
+      setCurrentSrc(alt2);
+    } else {
+      setHasFailed(true);
+    }
+  };
+
+  if (!currentSrc || hasFailed) {
+    return (
+      <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-950 flex flex-col items-center justify-center p-3 text-center">
+        <Film className="w-8 h-8 text-neutral-600 mb-1" />
+        <span className="text-[10px] font-bold text-neutral-300 line-clamp-2">
+          {film.name}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={currentSrc}
+      alt={film.name}
+      loading="eager"
+      decoding="async"
+      onError={handleError}
+      className={className}
+    />
+  );
+}
+
+function HeroThumbnailImage({
+  film,
+  className,
+}: {
+  film: HeroFilm;
+  className?: string;
+}) {
+  const primary =
+    resolveDirectImageUrl(film.thumb_url) ||
+    resolveDirectImageUrl(film.poster_url) ||
+    (film.heroBackdrop ? resolveDirectImageUrl(film.heroBackdrop) : null);
+  const alt1 = resolveDirectImageUrl(film.poster_url);
+  const alt2 =
+    primary && primary.includes("/upload/vod/")
+      ? primary.replace("/upload/vod/", "/uploads/movies/")
+      : primary && primary.includes("/uploads/movies/")
+        ? primary.replace("/uploads/movies/", "/upload/vod/")
+        : null;
+
+  const [currentSrc, setCurrentSrc] = useState<string | null>(primary);
+  const [hasFailed, setHasFailed] = useState(false);
+
+  useEffect(() => {
+    setCurrentSrc(primary);
+    setHasFailed(false);
+  }, [primary, film.slug]);
+
+  const handleError = () => {
+    if (currentSrc === primary && alt1 && alt1 !== primary) {
+      setCurrentSrc(alt1);
+    } else if (currentSrc !== alt2 && alt2) {
+      setCurrentSrc(alt2);
+    } else {
+      setHasFailed(true);
+    }
+  };
+
+  if (!currentSrc || hasFailed) {
+    return (
+      <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-950 flex items-center justify-center text-[9px] text-neutral-300 font-bold px-1 text-center truncate">
+        {film.name}
+      </div>
+    );
+  }
+
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={currentSrc}
+      alt={film.name}
+      loading="eager"
+      decoding="async"
+      onError={handleError}
+      className={className}
+    />
   );
 }
 
@@ -849,88 +964,59 @@ export default function HeroBanner({ films }: HeroBannerProps) {
     }
     return [];
   }, [films]);
-  const fallbackFeaturedRef = useRef(fallbackFeatured);
 
-  useEffect(() => {
-    fallbackFeaturedRef.current = fallbackFeatured;
-  }, [fallbackFeatured]);
+  const [enrichedFilms, setEnrichedFilms] = useState<HeroFilm[]>([]);
 
-  const featured = useMemo(
-    () =>
-      tmdbFeatured && tmdbFeatured.length > 0 ? tmdbFeatured : fallbackFeatured,
-    [fallbackFeatured, tmdbFeatured],
-  );
+  const featured = useMemo(() => {
+    if (enrichedFilms.length > 0) return enrichedFilms;
+    if (fallbackFeatured.length > 0) return fallbackFeatured;
+    if (tmdbFeatured && tmdbFeatured.length > 0) return tmdbFeatured;
+    return [];
+  }, [enrichedFilms, fallbackFeatured, tmdbFeatured]);
 
+  // Enrich initial featured films with TMDB backdrops & title logos smoothly in the background
   useEffect(() => {
     let active = true;
+
+    if (fallbackFeatured.length > 0) {
+      enrichHeroTitleLogos(fallbackFeatured).then((withLogos) => {
+        if (!active) return;
+        setEnrichedFilms(withLogos);
+      });
+      return () => {
+        active = false;
+      };
+    }
+
+    // Only if no films were passed from server/props, fetch fresh TMDB fallback
     const loadPlaylist = async () => {
       const existingPlaylist = cachedHeroPlaylist || readStoredHeroPlaylist();
-      if (existingPlaylist) {
+      if (existingPlaylist && existingPlaylist.length > 0) {
         const playlistWithLogos = await retainPlayableHeroes(
           await enrichHeroTitleLogos(existingPlaylist),
         );
         if (!active) return;
-        if (!playlistWithLogos.length) {
-          cachedHeroPlaylist = null;
-          try {
-            window.sessionStorage.removeItem(HERO_SESSION_KEY);
-          } catch {}
-        } else {
-          const existingIndex = cachedHeroPlaylist
-            ? cachedHeroIndex
-            : readStoredHeroIndex(playlistWithLogos.length);
-          storeHeroPlaylist(playlistWithLogos);
-          cachedHeroIndex = Math.min(
-            existingIndex,
-            playlistWithLogos.length - 1,
-          );
+        if (playlistWithLogos.length > 0) {
           setTmdbFeatured(playlistWithLogos);
-          setCurrent(cachedHeroIndex);
           return;
         }
       }
 
-      let playlist: HeroFilm[] = [];
       try {
-        playlist = await loadFreshTmdbPlaylist();
-
-        if (playlist.length !== 6) {
-          const groups = await Promise.all(
-            HERO_MARKETS.map(async (market) => {
-              const response = await tmdbApi.discoverMovies({
-                page: 1 + Math.floor(Math.random() * 5),
-                region: market.region,
-                with_origin_country: market.code,
-                with_original_language: market.language,
-                "vote_count.gte": 500,
-              });
-              return (response?.results || []).filter(isFreshTmdbHero);
-            }),
-          );
-          playlist = await retainPlayableHeroes(
-            await enrichHeroTitleLogos(selectRandomFilms(groups)),
-          );
+        const playlist = await loadFreshTmdbPlaylist();
+        if (!active) return;
+        if (playlist.length > 0) {
+          storeHeroPlaylist(playlist);
+          setTmdbFeatured(playlist);
         }
-      } catch {
-        playlist = [];
-      }
-
-      if (!active) return;
-      if (playlist.length > 0) {
-        storeHeroPlaylist(playlist);
-        cachedHeroIndex = 0;
-        setTmdbFeatured(playlist);
-        setCurrent(0);
-      } else if (fallbackFeaturedRef.current.length > 0) {
-        setTmdbFeatured(null);
-      }
+      } catch {}
     };
 
     void loadPlaylist();
     return () => {
       active = false;
     };
-  }, []);
+  }, [fallbackFeatured]);
 
   useEffect(() => {
     setCurrent((index) => (index >= featured.length ? 0 : index));
@@ -1225,16 +1311,10 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                   }}
                 >
                   <div className="aspect-[2/3] overflow-hidden bg-[#131822] relative group">
-                    {poster ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={poster}
-                        alt={cardFilm.name}
-                        loading="lazy"
-                        decoding="async"
-                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : null}
+                    <HeroFanCardImage
+                      film={cardFilm}
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
 
                     {/* Poster Title Scrim Gradient */}
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent p-3 text-left">
@@ -1573,20 +1653,10 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                       : "border-white/20 opacity-50 hover:opacity-90 hover:border-white/60 hover:scale-105",
                   )}
                 >
-                  {cardImg ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={cardImg}
-                      alt={item.name}
-                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
-                      loading="eager"
-                      decoding="async"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-neutral-900 flex items-center justify-center text-[9px] text-neutral-400 font-bold px-1 text-center truncate">
-                      {item.name}
-                    </div>
-                  )}
+                  <HeroThumbnailImage
+                    film={item as HeroFilm}
+                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                  />
                 </button>
               </div>
             );
