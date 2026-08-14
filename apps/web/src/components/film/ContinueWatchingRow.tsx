@@ -113,6 +113,7 @@ function HistoryArtwork({
       alt=""
       aria-label={`Ảnh phim ${title}`}
       className={className}
+      referrerPolicy="no-referrer"
       loading="lazy"
       decoding="async"
       onError={() => {

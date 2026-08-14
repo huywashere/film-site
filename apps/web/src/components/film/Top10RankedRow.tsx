@@ -93,6 +93,8 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
               className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105"
               loading="lazy"
               decoding="async"
+              unoptimized
+              referrerPolicy="no-referrer"
               onError={() => {
                 if (imgSrc && !imgSrc.startsWith("/api/image-proxy")) {
                   setImgSrc(`/api/image-proxy?url=${encodeURIComponent(imgSrc)}`);

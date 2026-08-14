@@ -163,50 +163,61 @@ function AutoNextOverlay({
 
 // ── Sidebar Film Card Component with TMDB Artwork Resolution ──
 function SidebarFilmCard({ film, slug }: { film: any; slug: string }) {
-  const initialPoster =
-    resolveImageUrl(film?.poster_url, film?.thumb_url) ||
-    resolveImageUrl(film?.thumb_url);
-
-  const [imgSrc, setImgSrc] = useState<string | null>(initialPoster);
-
   const { posterUrl: tmdbPosterUrl, backdropUrl: tmdbBackdropUrl } = useTmdbArtwork(
     film,
-    !imgSrc || imgSrc.startsWith("/api/image-proxy"),
+    true,
   );
 
-  const preferredTmdb = tmdbPosterUrl || tmdbBackdropUrl;
+  const candidateUrls = useMemo(() => {
+    const list: string[] = [];
+    const add = (url?: unknown) => {
+      const resolved = resolveImageUrl(url);
+      if (resolved && !list.includes(resolved)) list.push(resolved);
+    };
+
+    if (tmdbPosterUrl) add(tmdbPosterUrl);
+    if (film?.poster_url) add(film.poster_url);
+    if (film?.thumb_url) add(film.thumb_url);
+    if (tmdbBackdropUrl) add(tmdbBackdropUrl);
+
+    // Alternate path for KKPhim
+    const primary = film?.poster_url || film?.thumb_url;
+    if (primary && typeof primary === "string") {
+      if (primary.includes("/uploads/movies/")) {
+        add(primary.replace("/uploads/movies/", "/upload/vod/"));
+      } else if (primary.includes("/upload/vod/")) {
+        add(primary.replace("/upload/vod/", "/uploads/movies/"));
+      }
+    }
+
+    return list;
+  }, [film?.poster_url, film?.thumb_url, tmdbBackdropUrl, tmdbPosterUrl]);
+
+  const [candidateIdx, setCandidateIdx] = useState(0);
 
   useEffect(() => {
-    if (initialPoster) {
-      setImgSrc(initialPoster);
-    } else if (preferredTmdb) {
-      setImgSrc(preferredTmdb);
-    }
-  }, [initialPoster, preferredTmdb]);
+    setCandidateIdx(0);
+  }, [film?.slug, candidateUrls]);
 
-  useEffect(() => {
-    if (preferredTmdb && (!imgSrc || imgSrc.startsWith("/api/image-proxy"))) {
-      setImgSrc(preferredTmdb);
-    }
-  }, [preferredTmdb, imgSrc]);
+  const src = candidateUrls[candidateIdx];
 
   return (
     <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 space-y-3">
       <div className="flex gap-3">
         <div className="relative w-16 h-24 rounded-lg overflow-hidden flex-shrink-0 ring-1 ring-white/[0.08] bg-neutral-900">
-          {imgSrc ? (
+          {src ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
-              src={imgSrc}
+              key={`${film?.slug}-${candidateIdx}`}
+              src={src}
               alt={film?.name || "Poster"}
+              referrerPolicy="no-referrer"
+              loading="eager"
+              decoding="async"
               className="w-full h-full object-cover"
               onError={() => {
-                if (preferredTmdb && imgSrc !== preferredTmdb) {
-                  setImgSrc(preferredTmdb);
-                } else if (imgSrc && !imgSrc.startsWith("/api/image-proxy")) {
-                  setImgSrc(`/api/image-proxy?url=${encodeURIComponent(imgSrc)}`);
-                } else {
-                  setImgSrc(null);
+                if (candidateIdx < candidateUrls.length - 1) {
+                  setCandidateIdx((i) => i + 1);
                 }
               }}
             />
@@ -255,32 +266,43 @@ function SidebarFilmCard({ film, slug }: { film: any; slug: string }) {
 
 // ── Recommendation Item Component with TMDB Artwork Resolution ──
 function RecMovieItem({ item }: { item: any }) {
-  const initialThumb =
-    resolveImageUrl(item.poster_url, item.thumb_url) ||
-    resolveImageUrl(item.thumb_url);
-
-  const [imgSrc, setImgSrc] = useState<string | null>(initialThumb);
-
   const { posterUrl: tmdbPosterUrl, backdropUrl: tmdbBackdropUrl } = useTmdbArtwork(
     item,
-    !imgSrc || imgSrc.startsWith("/api/image-proxy"),
+    true,
   );
 
-  const preferredTmdb = tmdbPosterUrl || tmdbBackdropUrl;
+  const candidateUrls = useMemo(() => {
+    const list: string[] = [];
+    const add = (url?: unknown) => {
+      const resolved = resolveImageUrl(url);
+      if (resolved && !list.includes(resolved)) list.push(resolved);
+    };
+
+    if (tmdbPosterUrl) add(tmdbPosterUrl);
+    if (item?.poster_url) add(item.poster_url);
+    if (item?.thumb_url) add(item.thumb_url);
+    if (tmdbBackdropUrl) add(tmdbBackdropUrl);
+
+    // Alternate path for KKPhim
+    const primary = item?.poster_url || item?.thumb_url;
+    if (primary && typeof primary === "string") {
+      if (primary.includes("/uploads/movies/")) {
+        add(primary.replace("/uploads/movies/", "/upload/vod/"));
+      } else if (primary.includes("/upload/vod/")) {
+        add(primary.replace("/upload/vod/", "/uploads/movies/"));
+      }
+    }
+
+    return list;
+  }, [item?.poster_url, item?.thumb_url, tmdbBackdropUrl, tmdbPosterUrl]);
+
+  const [candidateIdx, setCandidateIdx] = useState(0);
 
   useEffect(() => {
-    if (initialThumb) {
-      setImgSrc(initialThumb);
-    } else if (preferredTmdb) {
-      setImgSrc(preferredTmdb);
-    }
-  }, [initialThumb, preferredTmdb]);
+    setCandidateIdx(0);
+  }, [item?.slug, candidateUrls]);
 
-  useEffect(() => {
-    if (preferredTmdb && (!imgSrc || imgSrc.startsWith("/api/image-proxy"))) {
-      setImgSrc(preferredTmdb);
-    }
-  }, [preferredTmdb, imgSrc]);
+  const src = candidateUrls[candidateIdx];
 
   return (
     <Link
@@ -288,19 +310,19 @@ function RecMovieItem({ item }: { item: any }) {
       className="flex gap-2.5 group hover:bg-white/[0.03] -mx-1 px-1 py-1 rounded-lg transition-colors"
     >
       <div className="relative w-12 h-[68px] rounded-lg bg-neutral-900 flex-shrink-0 overflow-hidden border border-white/10">
-        {imgSrc ? (
+        {src ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
-            src={imgSrc}
+            key={`${item.slug}-${candidateIdx}`}
+            src={src}
             alt={item.name}
+            referrerPolicy="no-referrer"
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             onError={() => {
-              if (preferredTmdb && imgSrc !== preferredTmdb) {
-                setImgSrc(preferredTmdb);
-              } else if (imgSrc && !imgSrc.startsWith("/api/image-proxy")) {
-                setImgSrc(`/api/image-proxy?url=${encodeURIComponent(imgSrc)}`);
-              } else {
-                setImgSrc(null);
+              if (candidateIdx < candidateUrls.length - 1) {
+                setCandidateIdx((i) => i + 1);
               }
             }}
           />
