@@ -91,7 +91,7 @@ export function Footer() {
   return (
     <footer
       data-site-footer="true"
-      className={`${cardFont.className} relative z-20 w-full border-t border-white/[0.06] bg-[#121316]`}
+      className={`${cardFont.className} relative z-20 w-full border-t border-white/[0.06] bg-[#141414]`}
     >
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-10">
         {/* Main section */}
