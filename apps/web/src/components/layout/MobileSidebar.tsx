@@ -84,14 +84,14 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/cinephim-logo.png"
-              alt="CinePhim Logo"
+              alt="NetPhim Logo"
               className="h-7 w-auto object-contain"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).src = "/logo.png";
               }}
             />
             <span className="text-white text-lg font-black tracking-tight lowercase font-sans">
-              cinephim
+              net<span className="text-violet-400">phim</span>
             </span>
           </Link>
           <button

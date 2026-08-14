@@ -375,7 +375,7 @@ function FilmCardComponent({
                   )}
                 </div>
                 <div className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">
-                  {categoryName || "CinePhim"}
+                  {categoryName || "NetPhim"}
                 </div>
               </div>
             )}

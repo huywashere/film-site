@@ -40,7 +40,7 @@ export const vi = {
     viewAll: "Xem tất cả",
     tvshows: "TV Shows Phổ Biến",
     heroDesc:
-      "Chào mừng bạn đến với phiên bản đặc biệt của CineVerse. Xem phim trực tuyến chất lượng cao, cập nhật liên tục các nguồn phim KKPhim, OPhim và NguồnC nhanh nhất hiện nay.",
+      "Chào mừng bạn đến với phiên bản đặc biệt của NetPhim. Xem phim trực tuyến chất lượng cao, cập nhật liên tục các nguồn phim KKPhim, OPhim và NguồnC nhanh nhất hiện nay.",
   },
   common: {
     retry: "Thử lại",
@@ -48,7 +48,7 @@ export const vi = {
     loading: "Đang tải...",
     offlineTitle: "Mất Kết Nối Internet",
     offlineDesc:
-      "Ứng dụng CineVerse hiện không thể kết nối tới máy chủ. Vui lòng kiểm tra lại kết nối Wifi hoặc dữ liệu di động của bạn.",
+      "Ứng dụng NetPhim hiện không thể kết nối tới máy chủ. Vui lòng kiểm tra lại kết nối Wifi hoặc dữ liệu di động của bạn.",
   },
   genres_list: {
     "hanh-dong": "Hành Động",

@@ -21,6 +21,8 @@ import { AuthSessionBridge } from "@/components/auth/AuthSessionBridge";
 import { LazyAuthModalHost } from "@/components/auth/LazyAuthModalHost";
 import { AntiDevTools } from "@/components/security/AntiDevTools";
 import { safeJsonLd } from "@/lib/safe-json-ld";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { ScrollToTopButton } from "@/components/layout/ScrollToTop";
 
 export const viewport: Viewport = {
   themeColor: "#141414",
@@ -31,8 +33,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "CinePhim — Xem Phim Online",
-    template: "%s | CinePhim",
+    default: "NetPhim — Xem Phim Online",
+    template: "%s | NetPhim",
   },
   description:
     "Nền tảng xem phim online chất lượng cao 4K. Phim bộ, phim lẻ, hoạt hình, TV Shows với phụ đề tiếng Việt.",
@@ -42,7 +44,7 @@ export const metadata: Metadata = {
     "phim bộ",
     "phim lẻ",
     "hoạt hình",
-    "CinePhim",
+    "NetPhim",
   ],
   icons: {
     icon: "/cinephim-logo.png",
@@ -52,19 +54,16 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: "CinePhim",
+    title: "NetPhim",
     statusBarStyle: "black-translucent",
   },
   formatDetection: { telephone: false },
   openGraph: {
-    title: "CinePhim — Xem Phim Online",
+    title: "NetPhim — Xem Phim Online",
     description: "Nền tảng xem phim online chất lượng cao",
     type: "website",
   },
 };
-
-import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
-import { ScrollToTopButton } from "@/components/layout/ScrollToTop";
 
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ["vietnamese", "latin"],
@@ -99,13 +98,12 @@ export default function RootLayout({
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "CinePhim",
-    alternateName: "CinePhim Xem Phim Online 4K",
-    url: "https://cineverse-movie.vercel.app",
+    name: "NetPhim",
+    alternateName: "NetPhim Xem Phim Online 4K",
+    url: "https://netphim.app",
     potentialAction: {
       "@type": "SearchAction",
-      target:
-        "https://cineverse-movie.vercel.app/search?q={search_term_string}",
+      target: "https://netphim.app/search?q={search_term_string}",
       "query-input": "required name=search_term_string",
     },
   };

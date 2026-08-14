@@ -1466,7 +1466,7 @@ export default function WatchPage() {
 
   useEffect(() => {
     if (typeof document !== "undefined" && film?.name) {
-      document.title = `Xem Phim ${film.name} ${currentEpData?.name ? `- Tập ${currentEpData.name}` : ""} Vietsub HD | CineVerse`;
+      document.title = `Xem Phim ${film.name} ${currentEpData?.name ? `- Tập ${currentEpData.name}` : ""} Vietsub HD | NetPhim`;
     }
   }, [film?.name, currentEpData?.name]);
 

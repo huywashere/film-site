@@ -182,13 +182,13 @@ function AnimatedNavbarLogo() {
   return (
     <Link
       href="/"
-      aria-label="CinePhim - Trang chủ"
+      aria-label="NetPhim - Trang chủ"
       className="group flex select-none items-center space-x-2.5"
     >
       <div className="relative flex cursor-pointer items-center justify-center active:scale-95">
         <NextImage
           src="/cinephim-logo.png"
-          alt="CinePhim Logo"
+          alt="NetPhim Logo"
           width={36}
           height={36}
           priority
@@ -201,7 +201,7 @@ function AnimatedNavbarLogo() {
 
       <div className="navbar-logo-reveal navbar-logo-reveal--wordmark relative overflow-hidden">
         <span className="block font-sans text-xl font-black lowercase tracking-tight text-white transition-opacity duration-200 group-hover:opacity-80 sm:text-2xl">
-          cinephim
+          net<span className="text-violet-400">phim</span>
         </span>
       </div>
     </Link>

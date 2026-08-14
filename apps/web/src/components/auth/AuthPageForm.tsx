@@ -528,7 +528,7 @@ export function AuthPageForm({
                   >
                     <Image
                       src="/cinephim-logo.png"
-                      alt="CinePhim Logo"
+                      alt="NetPhim Logo"
                       width={160}
                       height={50}
                       priority

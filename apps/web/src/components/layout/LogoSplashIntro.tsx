@@ -46,7 +46,7 @@ export function LogoSplashIntro() {
               { }
               <motion.img
                 src="/cinephim-logo.png"
-                alt="CinePhim Logo"
+                alt="NetPhim Logo"
                 animate={{ rotate: [0, 4, -4, 0] }}
                 transition={{
                   duration: 2.2,
@@ -64,7 +64,7 @@ export function LogoSplashIntro() {
               className="flex items-center gap-1 text-2xl sm:text-4xl font-black lowercase tracking-tight"
             >
               <span className="bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(168,85,247,0.6)] font-sans">
-                cinephim
+                netphim
               </span>
             </motion.div>
 

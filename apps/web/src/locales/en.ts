@@ -40,7 +40,7 @@ export const en = {
     viewAll: "View all",
     tvshows: "Popular TV Shows",
     heroDesc:
-      "Welcome to the CineVerse special edition. Watch high-quality movies online, instantly updated from KKPhim, OPhim and NguonC servers.",
+      "Welcome to the NetPhim special edition. Watch high-quality movies online, instantly updated from KKPhim, OPhim and NguonC servers.",
   },
   common: {
     retry: "Retry",
@@ -48,7 +48,7 @@ export const en = {
     loading: "Loading...",
     offlineTitle: "Offline Mode",
     offlineDesc:
-      "CineVerse is currently unable to connect to the server. Please check your Wifi or mobile data connection.",
+      "NetPhim is currently unable to connect to the server. Please check your Wifi or mobile data connection.",
   },
   genres_list: {
     "hanh-dong": "Action",

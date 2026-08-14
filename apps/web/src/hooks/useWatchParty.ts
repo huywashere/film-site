@@ -59,12 +59,12 @@ export function useWatchParty(movieSlug: string, episodeName: string) {
   const roomIdRef = useRef<string | null>(null);
   const identityRef = useRef({
     userId: user?.id || getGuestId(),
-    name: user?.displayName || user?.username || "Khách Cineverse",
+    name: user?.displayName || user?.username || "Khách NetPhim",
     avatar: user?.avatarUrl,
   });
   identityRef.current = {
     userId: user?.id || getGuestId(),
-    name: user?.displayName || user?.username || "Khách Cineverse",
+    name: user?.displayName || user?.username || "Khách NetPhim",
     avatar: user?.avatarUrl,
   };
 

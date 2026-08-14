@@ -102,14 +102,14 @@ export function Footer() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/cinephim-logo.png"
-                alt="CinePhim Logo"
+                alt="NetPhim Logo"
                 className="h-7 w-auto object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_0_10px_rgba(168,85,247,0.25)]"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).style.display = "none";
                 }}
               />
               <span className="text-base font-extrabold lowercase tracking-tight text-white">
-                cine<span className="text-violet-400">phim</span>
+                net<span className="text-violet-400">phim</span>
               </span>
             </Link>
             <p className="mt-2 text-[11px] sm:text-[12px] leading-relaxed text-neutral-400 sm:text-neutral-500">
@@ -165,7 +165,7 @@ export function Footer() {
 
           {/* Copyright */}
           <p className="text-center text-[11px] sm:text-[12px] text-neutral-500">
-            © {year} CinePhim. Nội dung được tổng hợp từ các nguồn công khai.
+            © {year} NetPhim. Nội dung được tổng hợp từ các nguồn công khai.
           </p>
         </div>
       </div>
