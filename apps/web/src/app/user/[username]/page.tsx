@@ -1507,7 +1507,7 @@ export default function UserDashboardPage() {
               {/* Avatar Presets Grid */}
               <div className="space-y-3">
                 <label className="text-xs font-bold text-neutral-300 uppercase tracking-wider">
-                  Bộ sưu tập Avatar VIP (Binance, OKX, Crypto, Mèo NetPhim)
+                  Bộ sưu tập Avatar Phẳng Hệ Thống (Flat Avatars)
                 </label>
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5">
                   {PRESET_AVATARS.map((av) => {

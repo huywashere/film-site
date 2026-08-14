@@ -1,219 +1,394 @@
 export interface PresetAvatar {
   id: string;
   name: string;
-  category: "crypto" | "cats" | "cinema" | "cyber";
+  category: "male" | "female" | "style" | "system";
   url: string;
 }
 
-// Binance Style Golden Diamond Avatar (High-Resolution SVG)
-const BINANCE_AVATAR = `data:image/svg+xml;utf8,${encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-  <defs>
-    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#1e2329"/>
-      <stop offset="100%" stop-color="#0b0e11"/>
-    </radialGradient>
-    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FCD535"/>
-      <stop offset="100%" stop-color="#F0B90B"/>
-    </linearGradient>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="6" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
-  </defs>
-  <rect width="200" height="200" rx="100" fill="url(#bg)"/>
-  <circle cx="100" cy="100" r="92" fill="none" stroke="url(#gold)" stroke-width="3" opacity="0.4"/>
-  <g transform="translate(100,100) scale(1.4)" filter="url(#glow)">
-    <path fill="url(#gold)" d="M0-35 L12-23 L0-11 L-12-23 Z"/>
-    <path fill="url(#gold)" d="M-23-12 L-11 0 L-23 12 L-35 0 Z"/>
-    <path fill="url(#gold)" d="M23-12 L35 0 L23 12 L11 0 Z"/>
-    <path fill="url(#gold)" d="M0 11 L12 23 L0 35 L-12 23 Z"/>
-    <path fill="url(#gold)" d="M0-8 L8 0 L0 8 L-8 0 Z"/>
-  </g>
-</svg>
-`)}`;
+// Helper to construct URL-encoded SVG data URIs
+function makeSvgDataUri(svgContent: string): string {
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svgContent.trim())}`;
+}
 
-// OKX Style Matrix Block Avatar (High-Resolution SVG)
-const OKX_AVATAR = `data:image/svg+xml;utf8,${encodeURIComponent(`
+// 1. Chàng trai Năng động (Indigo)
+const FLAT_GUY_INDIGO = makeSvgDataUri(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
   <defs>
-    <radialGradient id="okxbg" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#141416"/>
-      <stop offset="100%" stop-color="#000000"/>
-    </radialGradient>
-    <linearGradient id="neon" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00FF66"/>
-      <stop offset="100%" stop-color="#00E0FF"/>
+    <linearGradient id="bg_indigo" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#4338CA"/>
     </linearGradient>
   </defs>
-  <rect width="200" height="200" rx="100" fill="url(#okxbg)"/>
-  <circle cx="100" cy="100" r="92" fill="none" stroke="url(#neon)" stroke-width="2.5" opacity="0.5"/>
-  <g transform="translate(48,48) scale(1.05)">
-    <!-- OKX 3x3 signature matrix -->
-    <rect x="0" y="0" width="28" height="28" rx="6" fill="#FFFFFF"/>
-    <rect x="72" y="0" width="28" height="28" rx="6" fill="#FFFFFF"/>
-    <rect x="36" y="36" width="28" height="28" rx="6" fill="url(#neon)"/>
-    <rect x="0" y="72" width="28" height="28" rx="6" fill="#FFFFFF"/>
-    <rect x="72" y="72" width="28" height="28" rx="6" fill="#FFFFFF"/>
-  </g>
+  <rect width="200" height="200" rx="100" fill="url(#bg_indigo)"/>
+  <!-- Body / Shirt -->
+  <path d="M40 200 C40 152 70 142 100 142 C130 142 160 152 160 200 Z" fill="#1E1B4B"/>
+  <path d="M85 142 L100 162 L115 142 Z" fill="#FBD5C3"/>
+  <!-- Neck -->
+  <rect x="88" y="118" width="24" height="28" rx="6" fill="#FBD5C3"/>
+  <!-- Head -->
+  <ellipse cx="100" cy="85" rx="34" ry="38" fill="#FBD5C3"/>
+  <!-- Hair (Short modern) -->
+  <path d="M64 78 C64 46 80 40 100 40 C120 40 136 46 136 78 C136 82 132 72 124 70 C110 66 90 66 76 70 C68 72 64 82 64 78 Z" fill="#2E1B10"/>
+  <!-- Ears -->
+  <circle cx="66" cy="86" r="7" fill="#F5C0A7"/>
+  <circle cx="134" cy="86" r="7" fill="#F5C0A7"/>
+  <!-- Eyes -->
+  <circle cx="87" cy="84" r="3.5" fill="#2E1B10"/>
+  <circle cx="113" cy="84" r="3.5" fill="#2E1B10"/>
+  <!-- Eyebrows -->
+  <rect x="80" y="75" width="14" height="2.5" rx="1.25" fill="#2E1B10" transform="rotate(-3 87 76)"/>
+  <rect x="106" y="75" width="14" height="2.5" rx="1.25" fill="#2E1B10" transform="rotate(3 113 76)"/>
+  <!-- Smile -->
+  <path d="M92 98 Q100 105 108 98" stroke="#D0886B" stroke-width="2.5" stroke-linecap="round" fill="none"/>
 </svg>
-`)}`;
+`);
 
-// Bitcoin Gold VIP Avatar
-const BITCOIN_AVATAR = `data:image/svg+xml;utf8,${encodeURIComponent(`
+// 2. Cô gái Thanh lịch (Rose)
+const FLAT_GIRL_ROSE = makeSvgDataUri(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
   <defs>
-    <radialGradient id="btcbg" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#2a1805"/>
-      <stop offset="100%" stop-color="#0d0802"/>
-    </radialGradient>
-    <linearGradient id="btcgold" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFA800"/>
-      <stop offset="100%" stop-color="#F7931A"/>
+    <linearGradient id="bg_rose" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FB7185"/>
+      <stop offset="100%" stop-color="#E11D48"/>
     </linearGradient>
   </defs>
-  <rect width="200" height="200" rx="100" fill="url(#btcbg)"/>
-  <circle cx="100" cy="100" r="80" fill="url(#btcgold)"/>
-  <circle cx="100" cy="100" r="72" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.3"/>
-  <text x="100" y="132" font-family="Arial, Helvetica, sans-serif" font-size="95" font-weight="900" fill="#FFFFFF" text-anchor="middle">₿</text>
+  <rect width="200" height="200" rx="100" fill="url(#bg_rose)"/>
+  <!-- Long Hair Back -->
+  <path d="M60 70 C60 40 140 40 140 70 L145 155 C145 165 130 168 125 145 L125 90 L75 90 L75 145 C70 168 55 165 55 155 Z" fill="#1C1917"/>
+  <!-- Body / Dress -->
+  <path d="M42 200 C42 152 70 142 100 142 C130 142 158 152 158 200 Z" fill="#FFE4E6"/>
+  <path d="M82 142 Q100 160 118 142 Z" fill="#FCE7F3"/>
+  <!-- Neck -->
+  <rect x="89" y="118" width="22" height="26" rx="5" fill="#FDDFCE"/>
+  <!-- Head -->
+  <ellipse cx="100" cy="85" rx="32" ry="36" fill="#FDDFCE"/>
+  <!-- Hair Front Bangs -->
+  <path d="M66 75 C66 45 80 42 100 42 C120 42 134 45 134 75 C130 60 118 55 100 55 C82 55 70 60 66 75 Z" fill="#1C1917"/>
+  <!-- Ears & Earrings -->
+  <circle cx="68" cy="88" r="6" fill="#F9C9B4"/>
+  <circle cx="132" cy="88" r="6" fill="#F9C9B4"/>
+  <circle cx="68" cy="95" r="2.5" fill="#FBBF24"/>
+  <circle cx="132" cy="95" r="2.5" fill="#FBBF24"/>
+  <!-- Eyes & Lashes -->
+  <circle cx="88" cy="85" r="3.5" fill="#1C1917"/>
+  <circle cx="112" cy="85" r="3.5" fill="#1C1917"/>
+  <path d="M84 81 Q88 78 92 81" stroke="#1C1917" stroke-width="1.8" fill="none"/>
+  <path d="M108 81 Q112 78 116 81" stroke="#1C1917" stroke-width="1.8" fill="none"/>
+  <!-- Blush -->
+  <circle cx="81" cy="93" r="4.5" fill="#FDA4AF" opacity="0.6"/>
+  <circle cx="119" cy="93" r="4.5" fill="#FDA4AF" opacity="0.6"/>
+  <!-- Smile -->
+  <path d="M93 99 Q100 106 107 99" stroke="#E11D48" stroke-width="2.5" stroke-linecap="round" fill="none"/>
 </svg>
-`)}`;
+`);
 
-// Ethereum Crystal Avatar
-const ETHEREUM_AVATAR = `data:image/svg+xml;utf8,${encodeURIComponent(`
+// 3. Chàng trai Đeo kính (Emerald)
+const FLAT_GUY_GLASSES = makeSvgDataUri(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
   <defs>
-    <radialGradient id="ethbg" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#1a1c30"/>
-      <stop offset="100%" stop-color="#0b0c16"/>
-    </radialGradient>
-    <linearGradient id="ethgrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#A3B8FF"/>
-      <stop offset="100%" stop-color="#627EEA"/>
+    <linearGradient id="bg_emerald" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#059669"/>
     </linearGradient>
   </defs>
-  <rect width="200" height="200" rx="100" fill="url(#ethbg)"/>
-  <circle cx="100" cy="100" r="92" fill="none" stroke="#627EEA" stroke-width="2" opacity="0.4"/>
-  <g transform="translate(100,100) scale(1.1)">
-    <polygon points="0,-60 40,-5 0,16" fill="#8A92B2" opacity="0.8"/>
-    <polygon points="0,-60 -40,-5 0,16" fill="#A3B8FF"/>
-    <polygon points="0,23 40,3 0,60" fill="#8A92B2" opacity="0.8"/>
-    <polygon points="0,23 -40,3 0,60" fill="#A3B8FF"/>
-    <polygon points="0,16 40,-5 0,-25" fill="#627EEA" opacity="0.9"/>
-    <polygon points="0,16 -40,-5 0,-25" fill="#C4D1FF"/>
-  </g>
+  <rect width="200" height="200" rx="100" fill="url(#bg_emerald)"/>
+  <!-- Body / Sweater -->
+  <path d="M40 200 C40 152 70 142 100 142 C130 142 160 152 160 200 Z" fill="#064E3B"/>
+  <path d="M85 142 C85 152 115 152 115 142 Z" fill="#FBD5C3"/>
+  <!-- Neck -->
+  <rect x="88" y="118" width="24" height="28" rx="6" fill="#FBD5C3"/>
+  <!-- Head -->
+  <ellipse cx="100" cy="85" rx="33" ry="37" fill="#FBD5C3"/>
+  <!-- Hair (Neat side part) -->
+  <path d="M65 75 C65 42 85 38 102 38 C122 38 135 46 135 75 C135 78 128 64 105 64 C82 64 70 70 65 75 Z" fill="#3B2616"/>
+  <!-- Ears -->
+  <circle cx="67" cy="86" r="6.5" fill="#F5C0A7"/>
+  <circle cx="133" cy="86" r="6.5" fill="#F5C0A7"/>
+  <!-- Glasses (Round modern frames) -->
+  <circle cx="85" cy="84" r="11" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+  <circle cx="115" cy="84" r="11" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+  <line x1="96" y1="84" x2="104" y2="84" stroke="#1E293B" stroke-width="2.5"/>
+  <line x1="68" y1="83" x2="74" y2="83" stroke="#1E293B" stroke-width="2"/>
+  <line x1="126" y1="83" x2="132" y2="83" stroke="#1E293B" stroke-width="2"/>
+  <!-- Eyes inside glasses -->
+  <circle cx="85" cy="84" r="3" fill="#1E293B"/>
+  <circle cx="115" cy="84" r="3" fill="#1E293B"/>
+  <!-- Smile -->
+  <path d="M93 100 Q100 106 107 100" stroke="#C27A5D" stroke-width="2.5" stroke-linecap="round" fill="none"/>
 </svg>
-`)}`;
+`);
 
-// Solana Aurora Neon Avatar
-const SOLANA_AVATAR = `data:image/svg+xml;utf8,${encodeURIComponent(`
+// 4. Nữ sinh Buộc tóc Ponytail (Amber)
+const FLAT_GIRL_PONYTAIL = makeSvgDataUri(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
   <defs>
-    <radialGradient id="solbg" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#170d24"/>
-      <stop offset="100%" stop-color="#08030e"/>
-    </radialGradient>
-    <linearGradient id="solgrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#9945FF"/>
-      <stop offset="50%" stop-color="#14F195"/>
-      <stop offset="100%" stop-color="#00FFA3"/>
+    <linearGradient id="bg_amber" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#D97706"/>
     </linearGradient>
   </defs>
-  <rect width="200" height="200" rx="100" fill="url(#solbg)"/>
-  <circle cx="100" cy="100" r="92" fill="none" stroke="url(#solgrad)" stroke-width="2.5" opacity="0.5"/>
-  <g transform="translate(45,55)">
-    <path fill="url(#solgrad)" d="M100 0 L10 0 L0 18 L90 18 Z"/>
-    <path fill="url(#solgrad)" d="M0 36 L90 36 L100 54 L10 54 Z"/>
-    <path fill="url(#solgrad)" d="M100 72 L10 72 L0 90 L90 90 Z"/>
-  </g>
+  <rect width="200" height="200" rx="100" fill="url(#bg_amber)"/>
+  <!-- Ponytail side tail -->
+  <path d="M125 55 C150 40 165 75 155 110 C150 120 140 115 142 100 C145 80 135 65 125 55 Z" fill="#451A03"/>
+  <circle cx="127" cy="55" r="5" fill="#EF4444"/>
+  <!-- Body -->
+  <path d="M42 200 C42 152 70 142 100 142 C130 142 158 152 158 200 Z" fill="#78350F"/>
+  <path d="M85 142 L100 158 L115 142 Z" fill="#FDDFCE"/>
+  <!-- Neck -->
+  <rect x="89" y="118" width="22" height="26" rx="5" fill="#FDDFCE"/>
+  <!-- Head -->
+  <ellipse cx="100" cy="85" rx="32" ry="36" fill="#FDDFCE"/>
+  <!-- Hair Front -->
+  <path d="M68 76 C68 46 82 40 102 40 C122 40 134 48 134 76 C134 76 122 56 102 56 C82 56 68 76 68 76 Z" fill="#451A03"/>
+  <!-- Ears -->
+  <circle cx="68" cy="88" r="6" fill="#F9C9B4"/>
+  <!-- Eyes -->
+  <circle cx="87" cy="85" r="3.5" fill="#451A03"/>
+  <circle cx="113" cy="85" r="3.5" fill="#451A03"/>
+  <!-- Smile -->
+  <path d="M92 98 Q100 106 108 98" stroke="#D97706" stroke-width="2.5" stroke-linecap="round" fill="none"/>
 </svg>
-`)}`;
+`);
 
-// Cinema 3D Popcorn VIP Avatar
-const POPCORN_AVATAR = `data:image/svg+xml;utf8,${encodeURIComponent(`
+// 5. Gamer Đeo tai nghe (Violet)
+const FLAT_GAMER_VIOLET = makeSvgDataUri(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
   <defs>
-    <radialGradient id="popbg" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#2d1537"/>
-      <stop offset="100%" stop-color="#110517"/>
-    </radialGradient>
-  </defs>
-  <rect width="200" height="200" rx="100" fill="url(#popbg)"/>
-  <circle cx="100" cy="100" r="92" fill="none" stroke="#e50914" stroke-width="2" opacity="0.4"/>
-  <text x="100" y="130" font-size="80" text-anchor="middle">🍿</text>
-</svg>
-`)}`;
-
-// Royal VIP Gold Crown Avatar
-const CROWN_AVATAR = `data:image/svg+xml;utf8,${encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-  <defs>
-    <radialGradient id="crownbg" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#2b2006"/>
-      <stop offset="100%" stop-color="#0d0a02"/>
-    </radialGradient>
-    <linearGradient id="crownGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFE259"/>
-      <stop offset="100%" stop-color="#FFA751"/>
+    <linearGradient id="bg_violet" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A78BFA"/>
+      <stop offset="100%" stop-color="#6D28D9"/>
     </linearGradient>
   </defs>
-  <rect width="200" height="200" rx="100" fill="url(#crownbg)"/>
-  <circle cx="100" cy="100" r="92" fill="none" stroke="url(#crownGrad)" stroke-width="3" opacity="0.6"/>
-  <g transform="translate(100,105) scale(1.3)">
-    <path fill="url(#crownGrad)" d="M-35 15 L35 15 L40 -20 L15 -5 L0 -35 L-15 -5 L-40 -20 Z"/>
-    <circle cx="-40" cy="-22" r="4" fill="#FFFFFF"/>
-    <circle cx="0" cy="-37" r="4.5" fill="#FFFFFF"/>
-    <circle cx="40" cy="-22" r="4" fill="#FFFFFF"/>
-    <circle cx="-18" cy="8" r="3" fill="#e50914"/>
-    <circle cx="0" cy="8" r="3" fill="#3b82f6"/>
-    <circle cx="18" cy="8" r="3" fill="#10b981"/>
-  </g>
+  <rect width="200" height="200" rx="100" fill="url(#bg_violet)"/>
+  <!-- Body / Hoodie -->
+  <path d="M40 200 C40 150 68 140 100 140 C132 140 160 150 160 200 Z" fill="#2E1065"/>
+  <path d="M78 140 C78 165 122 165 122 140 Z" fill="#4C1D95"/>
+  <!-- Neck -->
+  <rect x="88" y="118" width="24" height="26" rx="6" fill="#FBD5C3"/>
+  <!-- Head -->
+  <ellipse cx="100" cy="85" rx="33" ry="37" fill="#FBD5C3"/>
+  <!-- Hair (Cool spiky) -->
+  <path d="M66 72 C66 42 82 36 100 36 C118 36 134 42 134 72 C125 58 112 55 100 55 C88 55 75 58 66 72 Z" fill="#0F172A"/>
+  <!-- Headphones Headband -->
+  <path d="M62 85 C60 40 140 40 138 85" stroke="#1E1B4B" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <!-- Headphone Earcups -->
+  <rect x="58" y="73" width="12" height="26" rx="6" fill="#A855F7" stroke="#1E1B4B" stroke-width="2"/>
+  <rect x="130" y="73" width="12" height="26" rx="6" fill="#A855F7" stroke="#1E1B4B" stroke-width="2"/>
+  <!-- Eyes -->
+  <circle cx="87" cy="84" r="3.5" fill="#0F172A"/>
+  <circle cx="113" cy="84" r="3.5" fill="#0F172A"/>
+  <!-- Smile -->
+  <path d="M92 98 Q100 105 108 98" stroke="#7C3AED" stroke-width="2.5" stroke-linecap="round" fill="none"/>
 </svg>
-`)}`;
+`);
 
-// Cyberpunk Neon Samurai Avatar
-const CYBERPUNK_AVATAR = `data:image/svg+xml;utf8,${encodeURIComponent(`
+// 6. Cô gái Tóc ngắn Bob (Cyan)
+const FLAT_GIRL_CYAN = makeSvgDataUri(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
   <defs>
-    <radialGradient id="cybbg" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#0f2027"/>
-      <stop offset="50%" stop-color="#203a43"/>
-      <stop offset="100%" stop-color="#2c5364"/>
-    </radialGradient>
-    <linearGradient id="cybgrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#FF007A"/>
-      <stop offset="100%" stop-color="#00F0FF"/>
+    <linearGradient id="bg_cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="100%" stop-color="#0891B2"/>
     </linearGradient>
   </defs>
-  <rect width="200" height="200" rx="100" fill="url(#cybbg)"/>
-  <circle cx="100" cy="100" r="92" fill="none" stroke="url(#cybgrad)" stroke-width="3"/>
-  <g transform="translate(100,100)">
-    <!-- Helmet / Visor -->
-    <path d="M-40 -20 C-40 -50, 40 -50, 40 -20 L35 30 L0 45 L-35 30 Z" fill="#12161A" stroke="url(#cybgrad)" stroke-width="3"/>
-    <!-- Glowing Visor -->
-    <path d="M-30 -5 L30 -5 L25 15 L-25 15 Z" fill="url(#cybgrad)"/>
-    <line x1="-35" y1="22" x2="35" y2="22" stroke="#00F0FF" stroke-width="2"/>
-  </g>
+  <rect width="200" height="200" rx="100" fill="url(#bg_cyan)"/>
+  <!-- Bob Hair Behind -->
+  <path d="M60 65 C60 35 140 35 140 65 L144 110 C144 122 135 125 125 115 L125 90 L75 90 L75 115 C65 125 56 122 56 110 Z" fill="#312E81"/>
+  <!-- Body -->
+  <path d="M42 200 C42 152 70 142 100 142 C130 142 158 152 158 200 Z" fill="#164E63"/>
+  <path d="M85 142 L100 160 L115 142 Z" fill="#FDDFCE"/>
+  <!-- Neck -->
+  <rect x="89" y="118" width="22" height="26" rx="5" fill="#FDDFCE"/>
+  <!-- Head -->
+  <ellipse cx="100" cy="85" rx="32" ry="36" fill="#FDDFCE"/>
+  <!-- Front Bangs -->
+  <path d="M64 70 C64 45 80 40 100 40 C120 40 136 45 136 70 C130 55 115 52 100 52 C85 52 70 55 64 70 Z" fill="#312E81"/>
+  <!-- Eyes -->
+  <circle cx="87" cy="85" r="3.5" fill="#1E1B4B"/>
+  <circle cx="113" cy="85" r="3.5" fill="#1E1B4B"/>
+  <!-- Blush -->
+  <circle cx="80" cy="93" r="4.5" fill="#F472B6" opacity="0.5"/>
+  <circle cx="120" cy="93" r="4.5" fill="#F472B6" opacity="0.5"/>
+  <!-- Smile -->
+  <path d="M93 99 Q100 106 107 99" stroke="#0891B2" stroke-width="2.5" stroke-linecap="round" fill="none"/>
 </svg>
-`)}`;
+`);
+
+// 7. Quý ông Công sở / Vest (Slate)
+const FLAT_GUY_SUIT = makeSvgDataUri(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bg_slate" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#64748B"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="100" fill="url(#bg_slate)"/>
+  <!-- Body / Suit -->
+  <path d="M40 200 C40 152 70 142 100 142 C130 142 160 152 160 200 Z" fill="#0F172A"/>
+  <!-- White Shirt V -->
+  <polygon points="100,142 84,142 92,185 108,185 116,142" fill="#F8FAFC"/>
+  <!-- Tie -->
+  <polygon points="100,146 104,152 100,185 96,152" fill="#DC2626"/>
+  <!-- Neck -->
+  <rect x="88" y="118" width="24" height="28" rx="6" fill="#FBD5C3"/>
+  <!-- Head -->
+  <ellipse cx="100" cy="85" rx="33" ry="37" fill="#FBD5C3"/>
+  <!-- Slicked Hair -->
+  <path d="M66 75 C66 42 85 36 102 36 C124 36 135 44 135 75 C130 62 110 58 98 58 C84 58 72 62 66 75 Z" fill="#18181B"/>
+  <!-- Ears -->
+  <circle cx="67" cy="86" r="6.5" fill="#F5C0A7"/>
+  <circle cx="133" cy="86" r="6.5" fill="#F5C0A7"/>
+  <!-- Eyes -->
+  <circle cx="87" cy="84" r="3.5" fill="#18181B"/>
+  <circle cx="113" cy="84" r="3.5" fill="#18181B"/>
+  <!-- Smile -->
+  <path d="M93 100 Q100 106 107 100" stroke="#B45309" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+</svg>
+`);
+
+// 8. Chàng trai Mũ len Beanie (Orange)
+const FLAT_GUY_BEANIE = makeSvgDataUri(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bg_orange" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FB923C"/>
+      <stop offset="100%" stop-color="#EA580C"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="100" fill="url(#bg_orange)"/>
+  <!-- Body / Street Hoodie -->
+  <path d="M40 200 C40 152 70 142 100 142 C130 142 160 152 160 200 Z" fill="#431407"/>
+  <path d="M85 142 L100 160 L115 142 Z" fill="#FBD5C3"/>
+  <!-- Neck -->
+  <rect x="88" y="118" width="24" height="28" rx="6" fill="#FBD5C3"/>
+  <!-- Head -->
+  <ellipse cx="100" cy="88" rx="33" ry="36" fill="#FBD5C3"/>
+  <!-- Beanie Hat -->
+  <path d="M64 78 C64 42 80 34 100 34 C120 34 136 42 136 78 Z" fill="#1E293B"/>
+  <rect x="62" y="70" width="76" height="14" rx="5" fill="#334155"/>
+  <!-- Ears -->
+  <circle cx="67" cy="90" r="6.5" fill="#F5C0A7"/>
+  <circle cx="133" cy="90" r="6.5" fill="#F5C0A7"/>
+  <!-- Eyes -->
+  <circle cx="87" cy="88" r="3.5" fill="#1E293B"/>
+  <circle cx="113" cy="88" r="3.5" fill="#1E293B"/>
+  <!-- Smile -->
+  <path d="M92 102 Q100 108 108 102" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+</svg>
+`);
+
+// 9. Cô gái Tóc xoăn (Fuchsia)
+const FLAT_GIRL_CURLY = makeSvgDataUri(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bg_fuchsia" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E879F9"/>
+      <stop offset="100%" stop-color="#C026D3"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="100" fill="url(#bg_fuchsia)"/>
+  <!-- Curly Hair Behind -->
+  <circle cx="65" cy="70" r="22" fill="#3B0764"/>
+  <circle cx="135" cy="70" r="22" fill="#3B0764"/>
+  <circle cx="60" cy="100" r="20" fill="#3B0764"/>
+  <circle cx="140" cy="100" r="20" fill="#3B0764"/>
+  <circle cx="100" cy="50" r="26" fill="#3B0764"/>
+  <!-- Body -->
+  <path d="M42 200 C42 152 70 142 100 142 C130 142 158 152 158 200 Z" fill="#701A75"/>
+  <path d="M85 142 L100 160 L115 142 Z" fill="#FDDFCE"/>
+  <!-- Neck -->
+  <rect x="89" y="118" width="22" height="26" rx="5" fill="#FDDFCE"/>
+  <!-- Head -->
+  <ellipse cx="100" cy="85" rx="32" ry="36" fill="#FDDFCE"/>
+  <!-- Eyes -->
+  <circle cx="87" cy="85" r="3.5" fill="#3B0764"/>
+  <circle cx="113" cy="85" r="3.5" fill="#3B0764"/>
+  <!-- Blush -->
+  <circle cx="80" cy="93" r="4.5" fill="#F472B6" opacity="0.5"/>
+  <circle cx="120" cy="93" r="4.5" fill="#F472B6" opacity="0.5"/>
+  <!-- Smile -->
+  <path d="M93 99 Q100 106 107 99" stroke="#C026D3" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+</svg>
+`);
+
+// 10. Chàng trai Thư thái / Chill Blue (Blue)
+const FLAT_GUY_BLUE = makeSvgDataUri(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bg_blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60A5FA"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="100" fill="url(#bg_blue)"/>
+  <!-- Body -->
+  <path d="M40 200 C40 152 70 142 100 142 C130 142 160 152 160 200 Z" fill="#172554"/>
+  <path d="M85 142 L100 160 L115 142 Z" fill="#FBD5C3"/>
+  <!-- Neck -->
+  <rect x="88" y="118" width="24" height="28" rx="6" fill="#FBD5C3"/>
+  <!-- Head -->
+  <ellipse cx="100" cy="85" rx="33" ry="37" fill="#FBD5C3"/>
+  <!-- Hair (Messy top) -->
+  <path d="M65 75 C65 42 80 38 100 38 C120 38 135 44 135 75 C128 62 115 58 100 58 C85 58 72 62 65 75 Z" fill="#422006"/>
+  <!-- Ears -->
+  <circle cx="67" cy="86" r="6.5" fill="#F5C0A7"/>
+  <circle cx="133" cy="86" r="6.5" fill="#F5C0A7"/>
+  <!-- Eyes -->
+  <circle cx="87" cy="84" r="3.5" fill="#422006"/>
+  <circle cx="113" cy="84" r="3.5" fill="#422006"/>
+  <!-- Smile -->
+  <path d="M92 98 Q100 105 108 98" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+</svg>
+`);
+
+// 11. Người dùng Hệ thống Xanh Dương (Minimalist System Default Blue)
+const FLAT_SYSTEM_BLUE = makeSvgDataUri(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bg_sys_blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="100" fill="url(#bg_sys_blue)"/>
+  <!-- Minimalist Flat Silhouette -->
+  <circle cx="100" cy="80" r="36" fill="#FFFFFF" opacity="0.95"/>
+  <path d="M38 190 C38 145 68 135 100 135 C132 135 162 145 162 190 Z" fill="#FFFFFF" opacity="0.95"/>
+</svg>
+`);
+
+// 12. Người dùng Hệ thống Tối giản Than chì (Graphite Dark Minimal)
+const FLAT_SYSTEM_DARK = makeSvgDataUri(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bg_sys_dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#27272A"/>
+      <stop offset="100%" stop-color="#18181B"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="100" fill="url(#bg_sys_dark)"/>
+  <circle cx="100" cy="100" r="92" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.12"/>
+  <!-- Minimalist Flat Silhouette -->
+  <circle cx="100" cy="80" r="36" fill="#A1A1AA"/>
+  <path d="M38 190 C38 145 68 135 100 135 C132 135 162 145 162 190 Z" fill="#A1A1AA"/>
+</svg>
+`);
 
 export const PRESET_AVATARS: PresetAvatar[] = [
-  // Crypto & Web3 Style
-  { id: "binance", name: "Binance VIP", category: "crypto", url: BINANCE_AVATAR },
-  { id: "okx", name: "OKX Matrix", category: "crypto", url: OKX_AVATAR },
-  { id: "bitcoin", name: "Bitcoin Gold", category: "crypto", url: BITCOIN_AVATAR },
-  { id: "ethereum", name: "Ethereum Crystal", category: "crypto", url: ETHEREUM_AVATAR },
-  { id: "solana", name: "Solana Neon", category: "crypto", url: SOLANA_AVATAR },
+  // Flat Human Characters
+  { id: "flat_guy_indigo", name: "Chàng trai Indigo", category: "male", url: FLAT_GUY_INDIGO },
+  { id: "flat_girl_rose", name: "Cô gái Rose", category: "female", url: FLAT_GIRL_ROSE },
+  { id: "flat_guy_glasses", name: "Thư sinh Đeo kính", category: "male", url: FLAT_GUY_GLASSES },
+  { id: "flat_girl_ponytail", name: "Nữ sinh Năng động", category: "female", url: FLAT_GIRL_PONYTAIL },
+  { id: "flat_gamer_violet", name: "Gamer Tai nghe", category: "style", url: FLAT_GAMER_VIOLET },
+  { id: "flat_girl_cyan", name: "Cô gái Tóc ngắn", category: "female", url: FLAT_GIRL_CYAN },
+  { id: "flat_guy_suit", name: "Quý ông Công sở", category: "male", url: FLAT_GUY_SUIT },
+  { id: "flat_guy_beanie", name: "Chàng trai Mũ len", category: "style", url: FLAT_GUY_BEANIE },
+  { id: "flat_girl_curly", name: "Cô gái Tóc xoăn", category: "female", url: FLAT_GIRL_CURLY },
+  { id: "flat_guy_blue", name: "Chàng trai Hoodie", category: "male", url: FLAT_GUY_BLUE },
 
-  // Cat Mascots
-  { id: "cat1", name: "Mèo NetPhim 1", category: "cats", url: "/images/cat1.gif" },
-  { id: "cat2", name: "Mèo NetPhim 2", category: "cats", url: "/images/cat2.gif" },
-  { id: "cat3", name: "Mèo NetPhim 3", category: "cats", url: "/images/cat3.gif" },
-  { id: "cat4", name: "Mèo NetPhim 4", category: "cats", url: "/images/cat4.gif" },
-
-  // Cinema & Special
-  { id: "crown", name: "VIP Hoàng Gia", category: "cinema", url: CROWN_AVATAR },
-  { id: "popcorn", name: "Bỏng Ngô 3D", category: "cinema", url: POPCORN_AVATAR },
-  { id: "cyber", name: "Cyber Samurai", category: "cyber", url: CYBERPUNK_AVATAR },
+  // System Minimalist Silhouettes
+  { id: "flat_system_blue", name: "Hệ thống Tiêu chuẩn", category: "system", url: FLAT_SYSTEM_BLUE },
+  { id: "flat_system_dark", name: "Hệ thống Tối giản", category: "system", url: FLAT_SYSTEM_DARK },
 ];
