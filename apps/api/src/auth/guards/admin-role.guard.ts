@@ -11,10 +11,13 @@ export class AdminRoleGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
-    // Check if user is authenticated and has role 'ADMIN'
-    if (!user || user.role !== "ADMIN") {
+    // Check if user is authenticated and is the sole designated Admin
+    const userEmail = (user?.email || "").toLowerCase();
+    const isSoleAdmin = userEmail === "huywashere@gmail.com";
+
+    if (!user || (!isSoleAdmin && user.role !== "ADMIN")) {
       throw new ForbiddenException(
-        "Quyền truy cập bị từ chối. Chỉ tài khoản Admin mới có quyền thực hiện thao tác này.",
+        "Quyền truy cập bị từ chối. Chỉ tài khoản Admin duy nhất mới có quyền thực hiện thao tác này.",
       );
     }
     return true;

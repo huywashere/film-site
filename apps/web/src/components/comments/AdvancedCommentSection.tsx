@@ -316,10 +316,10 @@ export function AdvancedCommentSection({
           {comments.map((comment) => {
             const isRevealed = revealedSpoilers[comment.id];
             const isAdminComment =
-              comment.user.name.toLowerCase().includes("huy") ||
-              comment.user.name === "Phu Huy Nguyen" ||
+              (comment as any).user?.email?.toLowerCase() ===
+                "huywashere@gmail.com" ||
               comment.user.name === "huywashere" ||
-              (comment as any).user?.role === "admin";
+              comment.user.name === "Phu Huy Nguyen";
 
             return (
               <div

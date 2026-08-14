@@ -533,12 +533,9 @@ export default function UserDashboardPage() {
   const watchlistItems = watchlistData?.items || [];
 
   const isAdmin = Boolean(
-    user?.role === "ADMIN" ||
-    user?.email === "huywashere@gmail.com" ||
+    user?.email?.toLowerCase() === "huywashere@gmail.com" ||
     profile.username?.toLowerCase() === "huywashere" ||
-    displayName?.toLowerCase().includes("huy") ||
-    profile.displayName?.toLowerCase().includes("huy") ||
-    user?.email?.includes("admin"),
+    (user?.role === "ADMIN" && user?.email?.toLowerCase() === "huywashere@gmail.com"),
   );
 
   const TABS: TabItem[] = [
