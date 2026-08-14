@@ -350,7 +350,13 @@ function FilmSection({
                 ))
               : films.map((film, idx) => (
                   <SwiperSlide key={film._id || film.slug || idx}>
-                    <FilmCard film={film} priority={idx < 8} />
+                    <FilmCard
+                      film={film}
+                      priority={idx < 8}
+                      preferHighQuality={
+                        title === "Phim Mới Cập Nhật" && idx < 8
+                      }
+                    />
                   </SwiperSlide>
                 ))}
           </Swiper>
@@ -921,7 +927,7 @@ export default function HomePage() {
         <Top10RankedRow films={top10List} />
 
         {/* ── 16:9 LANDSCAPE WATCH HISTORY / RECENTLY WATCHED ROW ── */}
-        <ContinueWatchingRow fallbackFilms={top10List} />
+        <ContinueWatchingRow />
 
         {/* ── PHIM MỚI CẬP NHẬT (NEWLY UPDATED MOVIES ROW) ── */}
         <LazySection>
@@ -972,7 +978,7 @@ export default function HomePage() {
 
         {/* ── Ultra-Minimal Show More Sections Button ── */}
         {!showMoreSections ? (
-          <div className="w-full my-6 flex justify-center px-1">
+          <div className="my-3 flex w-full justify-center px-1 sm:my-5 lg:my-6">
             <button
               onClick={handleShowMore}
               disabled={isLoadingMore}

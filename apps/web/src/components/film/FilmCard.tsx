@@ -13,6 +13,7 @@ import type { MovieSource } from "@/lib/movie-normalizer";
 import { guestDataStorage } from "@/lib/user-data";
 import { cardFont } from "@/lib/fonts";
 import { normalizeMovieArtworkUrl } from "@/lib/movie-image-url";
+import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
 
 export interface FilmItem {
   _id?: string;
@@ -58,6 +59,7 @@ interface FilmCardProps {
   variant?: "standard" | "landscape";
   hideDetails?: boolean;
   priority?: boolean;
+  preferHighQuality?: boolean;
 }
 
 // Helper: resolve image URL securely and normalize KKPhim/PhimImg CDN hosts
@@ -84,7 +86,9 @@ export function resolveImageUrl(
 
   const fallback = normalizeUpstreamImageUrl(fallbackUrl);
   const fallbackQuery =
-    fallback && fallback !== resolved && !fallback.startsWith("/api/image-proxy")
+    fallback &&
+    fallback !== resolved &&
+    !fallback.startsWith("/api/image-proxy")
       ? `&fallback=${encodeURIComponent(fallback)}`
       : "";
   return `/api/image-proxy?url=${encodeURIComponent(resolved)}${fallbackQuery}`;
@@ -97,11 +101,13 @@ function FilmCardComponent({
   variant = "standard",
   hideDetails = false,
   priority = false,
+  preferHighQuality = false,
 }: FilmCardProps) {
   const { user } = useAuthStore();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [saved, setSaved] = useState(false);
+  const [watchlistPending, setWatchlistPending] = useState(false);
 
   const slug = film.slug;
   const title = film.name || film.title || "Chưa có tên";
@@ -111,6 +117,8 @@ function FilmCardComponent({
         resolveImageUrl(film.poster_url)
       : resolveImageUrl(film.poster_url, film.thumb_url) ||
         resolveImageUrl(film.thumb_url);
+
+  const { posterUrl: tmdbPosterUrl } = useTmdbArtwork(film, preferHighQuality);
 
   const [imageSrc, setImageSrc] = useState<string | null>(initialPosterUrl);
 
@@ -122,8 +130,18 @@ function FilmCardComponent({
         : resolveImageUrl(film.poster_url, film.thumb_url) ||
           resolveImageUrl(film.thumb_url);
 
-    setImageSrc(url);
-  }, [film.poster_url, film.thumb_url, variant]);
+    setImageSrc(
+      preferHighQuality && variant === "standard" && tmdbPosterUrl
+        ? tmdbPosterUrl
+        : url,
+    );
+  }, [
+    film.poster_url,
+    film.thumb_url,
+    preferHighQuality,
+    tmdbPosterUrl,
+    variant,
+  ]);
 
   useEffect(() => {
     let active = true;
@@ -137,7 +155,8 @@ function FilmCardComponent({
     const cachedWatchlist = queryClient.getQueryData<any>(["watchlist"]);
     if (cachedWatchlist) {
       const items =
-        cachedWatchlist.items || (Array.isArray(cachedWatchlist) ? cachedWatchlist : []);
+        cachedWatchlist.items ||
+        (Array.isArray(cachedWatchlist) ? cachedWatchlist : []);
       const isSavedInCache = items.some(
         (item: any) => item.movieId === slug || item.slug === slug,
       );
@@ -160,6 +179,66 @@ function FilmCardComponent({
       active = false;
     };
   }, [slug, user, queryClient]);
+
+  useEffect(() => {
+    const syncSavedState = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          movieId?: string;
+          action?: "add" | "remove";
+        }>
+      ).detail;
+      if (detail?.movieId !== slug) return;
+      setSaved(detail.action === "add");
+    };
+    window.addEventListener("cineverse_watchlist_changed", syncSavedState);
+    return () =>
+      window.removeEventListener("cineverse_watchlist_changed", syncSavedState);
+  }, [slug]);
+
+  const toggleWatchlist = async () => {
+    if (watchlistPending) return;
+    const previous = saved;
+    const next = !previous;
+    const movieData = {
+      title,
+      titleEn: film.origin_name,
+      posterUrl: film.poster_url,
+      thumbUrl: film.thumb_url,
+      type: film.type,
+      year: film.year,
+    };
+
+    setSaved(next);
+    setWatchlistPending(true);
+    try {
+      if (!user) {
+        if (next) guestDataStorage.addWatchlist(slug, movieData);
+        else guestDataStorage.removeWatchlist(slug);
+      } else if (next) {
+        await watchlistApi.add(slug, movieData);
+      } else {
+        await watchlistApi.remove(slug);
+      }
+
+      if (user) {
+        window.dispatchEvent(
+          new CustomEvent("cineverse_watchlist_changed", {
+            detail: { movieId: slug, action: next ? "add" : "remove" },
+          }),
+        );
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["watchlist"] });
+      await queryClient.invalidateQueries({ queryKey: ["user-watchlist"] });
+      toast(next ? "Đã thêm vào Xem sau" : "Đã xóa khỏi Xem sau", "success");
+    } catch {
+      setSaved(previous);
+      toast("Chưa thể cập nhật Xem sau, vui lòng thử lại", "error");
+    } finally {
+      setWatchlistPending(false);
+    }
+  };
 
   const handleImageError = () => {
     const posterResolved = normalizeUpstreamImageUrl(film.poster_url);
@@ -243,96 +322,121 @@ function FilmCardComponent({
       )}
       onMouseEnter={prefetchFilmDetail}
     >
-      <Link
-        href={`/film/${slug}`}
-        className="block relative overflow-hidden rounded-xl border border-white/10 group-hover/card:border-white/30 transition-all duration-300 shadow-lg bg-neutral-900"
-      >
-        {/* Poster Container Aspect Ratio */}
-        <div
-          className={cn(
-            "relative w-full overflow-hidden bg-neutral-900",
-            variant === "landscape" ? "aspect-video" : "aspect-[2/3]",
-          )}
+      <div className="relative">
+        <Link
+          href={`/film/${slug}`}
+          className="block relative overflow-hidden rounded-xl border border-white/10 group-hover/card:border-white/30 transition-all duration-300 shadow-lg bg-neutral-900"
         >
-          {imageSrc ? (
-            <Image
-              src={imageSrc}
-              alt={title}
-              fill
-              sizes={
-                variant === "landscape"
-                  ? "(max-width: 640px) 78vw, (max-width: 1024px) 38vw, 320px"
-                  : `(max-width: 640px) 42vw, (max-width: 1024px) 24vw, ${width || 220}px`
-              }
-              quality={75}
-              priority={priority}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
-              loading={priority ? "eager" : "lazy"}
-              decoding="async"
-              onError={handleImageError}
-            />
-          ) : (
-            /* Clean, Movie-Specific Title Card (when image is completely missing from all upstreams & TMDB) */
-            <div className="w-full h-full flex flex-col items-center justify-between p-4 bg-gradient-to-b from-neutral-800 via-neutral-900 to-black text-center relative">
-              <div className="w-full flex justify-between items-center text-[10px] text-neutral-400 font-bold">
-                <span>{film.year || 2026}</span>
-                <span>{qualityBadge}</span>
-              </div>
-              <div className="flex flex-col items-center gap-2 my-auto px-1">
-                <Clapperboard className="w-8 h-8 text-neutral-600 mb-1" />
-                <h3 className="text-sm font-extrabold text-white line-clamp-3 leading-snug">
-                  {title}
-                </h3>
-                {film.origin_name && (
-                  <p className="text-[11px] text-neutral-400 font-medium line-clamp-1 italic">
-                    {film.origin_name}
-                  </p>
-                )}
-              </div>
-              <div className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">
-                {categoryName || "CinePhim"}
-              </div>
-            </div>
-          )}
-
-          {/* Top Gradient Overlay */}
-          <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/70 to-transparent pointer-events-none z-10" />
-
-          {/* Bottom Gradient Overlay */}
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none z-10" />
-
-          {/* Badges Container Top */}
-          <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between z-20 pointer-events-none">
-            {langBadge ? (
-              <span className="bg-black/65 border border-white/10 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">
-                {langBadge}
-              </span>
-            ) : <span />}
-
-            {qualityBadge && (
-              <span className="bg-white/95 text-black text-[10px] font-black px-1.5 py-0.5 rounded shadow">
-                {qualityBadge}
-              </span>
+          {/* Poster Container Aspect Ratio */}
+          <div
+            className={cn(
+              "relative w-full overflow-hidden bg-neutral-900",
+              variant === "landscape" ? "aspect-video" : "aspect-[2/3]",
             )}
-          </div>
+          >
+            {imageSrc ? (
+              <Image
+                src={imageSrc}
+                alt={title}
+                fill
+                sizes={
+                  variant === "landscape"
+                    ? "(max-width: 640px) 78vw, (max-width: 1024px) 38vw, 320px"
+                    : `(max-width: 640px) 42vw, (max-width: 1024px) 24vw, ${preferHighQuality ? 300 : width || 220}px`
+                }
+                quality={preferHighQuality ? 85 : 75}
+                priority={priority}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
+                loading={priority ? "eager" : "lazy"}
+                decoding="async"
+                onError={handleImageError}
+              />
+            ) : (
+              /* Clean, Movie-Specific Title Card (when image is completely missing from all upstreams & TMDB) */
+              <div className="w-full h-full flex flex-col items-center justify-between p-4 bg-gradient-to-b from-neutral-800 via-neutral-900 to-black text-center relative">
+                <div className="w-full flex justify-between items-center text-[10px] text-neutral-400 font-bold">
+                  <span>{film.year || 2026}</span>
+                  <span>{qualityBadge}</span>
+                </div>
+                <div className="flex flex-col items-center gap-2 my-auto px-1">
+                  <Clapperboard className="w-8 h-8 text-neutral-600 mb-1" />
+                  <h3 className="text-sm font-extrabold text-white line-clamp-3 leading-snug">
+                    {title}
+                  </h3>
+                  {film.origin_name && (
+                    <p className="text-[11px] text-neutral-400 font-medium line-clamp-1 italic">
+                      {film.origin_name}
+                    </p>
+                  )}
+                </div>
+                <div className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">
+                  {categoryName || "CinePhim"}
+                </div>
+              </div>
+            )}
 
-          {/* Episode Badge Bottom Left inside Poster */}
-          {film.episode_current && (
-            <div className="absolute bottom-2.5 left-2.5 z-20 pointer-events-none">
-              <span className="bg-black/80 border border-white/15 backdrop-blur-md text-white/90 text-[10px] font-bold px-2 py-0.5 rounded shadow">
-                {film.episode_current}
-              </span>
-            </div>
-          )}
+            {/* Top Gradient Overlay */}
+            <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/70 to-transparent pointer-events-none z-10" />
 
-          {/* Hover Overlay Play Icon */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/40 backdrop-blur-[2px]">
-            <div className="w-11 h-11 rounded-full bg-white text-black flex items-center justify-center shadow-xl transform scale-75 group-hover/card:scale-100 transition-transform">
-              <Play size={20} fill="currentColor" className="ml-0.5" />
+            {/* Bottom Gradient Overlay */}
+            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none z-10" />
+
+            {/* Badges Container Top */}
+            <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between z-20 pointer-events-none">
+              {langBadge ? (
+                <span className="bg-black/65 border border-white/10 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">
+                  {langBadge}
+                </span>
+              ) : (
+                <span />
+              )}
+
+              {qualityBadge && (
+                <span className="bg-white/95 text-black text-[10px] font-black px-1.5 py-0.5 rounded shadow">
+                  {qualityBadge}
+                </span>
+              )}
+            </div>
+
+            {/* Episode Badge Bottom Left inside Poster */}
+            {film.episode_current && (
+              <div className="absolute bottom-2.5 left-2.5 z-20 pointer-events-none">
+                <span className="bg-black/80 border border-white/15 backdrop-blur-md text-white/90 text-[10px] font-bold px-2 py-0.5 rounded shadow">
+                  {film.episode_current}
+                </span>
+              </div>
+            )}
+
+            {/* Hover Overlay Play Icon */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/40 backdrop-blur-[2px]">
+              <div className="w-11 h-11 rounded-full bg-white text-black flex items-center justify-center shadow-xl transform scale-75 group-hover/card:scale-100 transition-transform">
+                <Play size={20} fill="currentColor" className="ml-0.5" />
+              </div>
             </div>
           </div>
-        </div>
-      </Link>
+        </Link>
+
+        {showActions && (
+          <button
+            type="button"
+            onClick={toggleWatchlist}
+            disabled={watchlistPending}
+            aria-label={
+              saved ? `Xóa ${title} khỏi Xem sau` : `Thêm ${title} vào Xem sau`
+            }
+            aria-pressed={saved}
+            title={saved ? "Xóa khỏi Xem sau" : "Thêm vào Xem sau"}
+            className={cn(
+              "absolute bottom-3 right-3 z-30 flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur-md transition-all duration-200 hover:scale-105 active:scale-95 disabled:cursor-wait disabled:opacity-60",
+              saved
+                ? "border-white bg-white text-black shadow-lg"
+                : "border-white/20 bg-black/65 text-white hover:bg-white/20",
+            )}
+          >
+            <Bookmark size={16} fill={saved ? "currentColor" : "none"} />
+          </button>
+        )}
+      </div>
 
       {/* Details Footer below Card */}
       {!hideDetails && (

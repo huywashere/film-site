@@ -63,7 +63,7 @@ export function CuratedSpotlightSection({
 
   if (isLoading) {
     return (
-      <div className="mb-14 h-[560px] w-full animate-pulse rounded-[28px] border border-white/10 bg-white/[0.03]" />
+      <div className="mb-5 h-[560px] w-full animate-pulse rounded-[28px] border border-white/10 bg-white/[0.03] sm:mb-10 lg:mb-14" />
     );
   }
 
@@ -78,7 +78,7 @@ export function CuratedSpotlightSection({
   return (
     <section
       data-cinematic-section="true"
-      className={`${cardFont.className} relative mb-14 w-full select-none`}
+      className={`${cardFont.className} relative mb-5 w-full select-none sm:mb-10 lg:mb-14`}
     >
       {/* Section Header */}
       <div className="mb-4 flex flex-col gap-2 px-1 sm:flex-row sm:items-end sm:justify-between">

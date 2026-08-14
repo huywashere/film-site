@@ -58,13 +58,13 @@ export const guestDataStorage = {
     };
     write(WATCHLIST_KEY, [item, ...items]);
 
-    import("@/lib/api").then(({ api }) => {
-      api.put("/users/me/watchlist", {
-        movieId,
-        title: movieData.title,
-        thumbUrl: movieData.thumbUrl || movieData.posterUrl,
-      }).catch(() => {});
-    }).catch(() => {});
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("cineverse_watchlist_changed", {
+          detail: { movieId, action: "add" },
+        }),
+      );
+    }
 
     return item;
   },
@@ -82,10 +82,6 @@ export const guestDataStorage = {
         }),
       );
     }
-
-    import("@/lib/api").then(({ api }) => {
-      api.put("/users/me/watchlist/remove", { movieId }).catch(() => {});
-    }).catch(() => {});
   },
 
   getHistory(): WatchProgressEntry[] {

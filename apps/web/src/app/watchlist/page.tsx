@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Bookmark, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { watchlistApi } from "@/lib/api";
@@ -14,7 +13,6 @@ import { cardFont } from "@/lib/fonts";
 
 export default function WatchlistPage() {
   const { user } = useAuthStore();
-  const router = useRouter();
   const [page, setPage] = useState(1);
   const [guestItems, setGuestItems] = useState<GuestWatchlistItem[]>([]);
   const [removedSlugs, setRemovedSlugs] = useState<string[]>([]);
@@ -25,15 +23,26 @@ export default function WatchlistPage() {
 
     const handleWatchlistChanged = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      if (detail && detail.action === "remove" && detail.movieId) {
-        setRemovedSlugs((prev) => [...new Set([...prev, detail.movieId])]);
-        setGuestItems((items) => items.filter((i) => i.movieId !== detail.movieId));
+      if (detail?.movieId) {
+        const movieId = String(detail.movieId);
+        setGuestItems(guestDataStorage.getWatchlist());
+        setRemovedSlugs((prev) =>
+          detail.action === "remove"
+            ? [...new Set([...prev, movieId])]
+            : prev.filter((slug) => slug !== movieId),
+        );
       }
     };
 
-    window.addEventListener("cineverse_watchlist_changed", handleWatchlistChanged);
+    window.addEventListener(
+      "cineverse_watchlist_changed",
+      handleWatchlistChanged,
+    );
     return () => {
-      window.removeEventListener("cineverse_watchlist_changed", handleWatchlistChanged);
+      window.removeEventListener(
+        "cineverse_watchlist_changed",
+        handleWatchlistChanged,
+      );
     };
   }, []);
 

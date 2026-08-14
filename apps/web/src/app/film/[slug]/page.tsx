@@ -41,6 +41,7 @@ import { tmdbBackdrop, tmdbProfile, tmdbPoster } from "@/lib/tmdb";
 import { TrailerModal } from "@/components/film/TrailerModal";
 import { safeJsonLd } from "@/lib/safe-json-ld";
 import { cardFont } from "@/lib/fonts";
+import { guestDataStorage } from "@/lib/user-data";
 
 function formatRating(value: number) {
   return Number.isFinite(value) && value > 0 ? value.toFixed(1) : null;
@@ -577,6 +578,7 @@ export default function FilmDetailPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [inWatchlist, setInWatchlist] = useState(false);
+  const [watchlistPending, setWatchlistPending] = useState(false);
   const [myRating, setMyRating] = useState(0);
   const [showTrailer, setShowTrailer] = useState(false);
   const [secondaryReady, setSecondaryReady] = useState(false);
@@ -667,14 +669,45 @@ export default function FilmDetailPage() {
 
   // Watchlist status check
   useEffect(() => {
-    if (user && slug && !isNotFound) {
-      watchlistApi
-        .check(slug)
-        .then((res) => {
-          setInWatchlist(!!res.data?.inWatchlist);
-        })
-        .catch(() => {});
+    if (!slug || isNotFound) return;
+
+    const syncWatchlistState = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          movieId?: string;
+          action?: "add" | "remove";
+        }>
+      ).detail;
+      if (detail?.movieId !== slug) return;
+      setInWatchlist(detail.action === "add");
+    };
+
+    window.addEventListener("cineverse_watchlist_changed", syncWatchlistState);
+
+    if (!user) {
+      setInWatchlist(guestDataStorage.isWatchlisted(slug));
+      return () =>
+        window.removeEventListener(
+          "cineverse_watchlist_changed",
+          syncWatchlistState,
+        );
     }
+
+    let active = true;
+    void watchlistApi
+      .check(slug)
+      .then((res) => {
+        if (active) setInWatchlist(!!res.data?.inWatchlist);
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+      window.removeEventListener(
+        "cineverse_watchlist_changed",
+        syncWatchlistState,
+      );
+    };
   }, [user, slug, isNotFound]);
 
   const prefetchWatchData = () => {
@@ -697,27 +730,46 @@ export default function FilmDetailPage() {
   if (isNotFound || !film) return <FilmNotFound querySlug={slug} />;
 
   const handleWatchlist = async () => {
-    if (!user) {
-      toast("Bạn cần đăng nhập", "error");
-      return;
-    }
+    if (watchlistPending) return;
+    const previous = inWatchlist;
+    const next = !previous;
+    const movieData = {
+      title: film?.name || film?.title || slug,
+      titleEn: film?.origin_name,
+      posterUrl,
+      thumbUrl: backdropUrl,
+      type: film?.type,
+      year: film?.year,
+    };
+
+    setInWatchlist(next);
+    setWatchlistPending(true);
     try {
-      if (inWatchlist) {
+      if (!user) {
+        if (next) guestDataStorage.addWatchlist(slug, movieData);
+        else guestDataStorage.removeWatchlist(slug);
+      } else if (!next) {
         await watchlistApi.remove(slug);
-        setInWatchlist(false);
-        toast("Đã xóa khỏi watchlist");
       } else {
-        await watchlistApi.add(slug, {
-          title: film?.name || slug,
-          thumbUrl: posterUrl,
-          type: film?.type,
-          year: film?.year,
-        });
-        setInWatchlist(true);
-        toast("Đã thêm vào watchlist!", "success");
+        await watchlistApi.add(slug, movieData);
       }
+
+      if (user) {
+        window.dispatchEvent(
+          new CustomEvent("cineverse_watchlist_changed", {
+            detail: { movieId: slug, action: next ? "add" : "remove" },
+          }),
+        );
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["watchlist"] });
+      await queryClient.invalidateQueries({ queryKey: ["user-watchlist"] });
+      toast(next ? "Đã thêm vào Xem sau" : "Đã xóa khỏi Xem sau", "success");
     } catch {
-      toast("Có lỗi xảy ra", "error");
+      setInWatchlist(previous);
+      toast("Chưa thể cập nhật Xem sau, vui lòng thử lại", "error");
+    } finally {
+      setWatchlistPending(false);
     }
   };
 
@@ -1042,8 +1094,13 @@ export default function FilmDetailPage() {
                 <div className="flex flex-col items-center gap-1 group">
                   <button
                     onClick={handleWatchlist}
+                    disabled={watchlistPending}
+                    aria-pressed={inWatchlist}
+                    aria-label={
+                      inWatchlist ? "Xóa khỏi Xem sau" : "Thêm vào Xem sau"
+                    }
                     className={cn(
-                      "w-9 h-9 rounded-full border flex items-center justify-center backdrop-blur-md transition-all cursor-pointer",
+                      "w-9 h-9 rounded-full border flex items-center justify-center backdrop-blur-md transition-all cursor-pointer disabled:cursor-wait disabled:opacity-60",
                       inWatchlist
                         ? "border-white/30 bg-white/10 text-white"
                         : "bg-white/5 border-white/10 text-neutral-300 hover:text-white hover:border-white/30",

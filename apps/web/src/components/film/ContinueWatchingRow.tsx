@@ -258,6 +258,10 @@ export function ContinueWatchingRow({
   const hasHistory = historyEntries.length > 0;
   const sectionTitle = "Lịch Sử Xem Gần Đây";
 
+  // Do not fill an empty history row with suggested movies. The section only
+  // becomes visible after the viewer has actually opened a movie to watch.
+  if (!hasHistory) return null;
+
   // Remove single local item from watch progress
   const handleRemoveItem = (
     e: React.MouseEvent,
