@@ -33,6 +33,7 @@ import type { User as FirebaseUser } from "firebase/auth";
 import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
 import { tmdbApi, tmdbBackdrop, tmdbPoster, type TmdbMovie } from "@/lib/tmdb";
 import { cardFont } from "@/lib/fonts";
+import { useGoogleOneTap } from "@/hooks/useGoogleOneTap";
 
 function getGoogleAuthErrorMessage(error: unknown) {
   const serverMsg =
@@ -152,6 +153,14 @@ export function AuthPageForm({
   const [tempToken, setTempToken] = useState("");
   const [otp, setOtp] = useState("");
   const [verifying2FA, setVerifying2FA] = useState(false);
+
+  // Google One Tap fast login integration
+  useGoogleOneTap({
+    enabled: !isForgotMode,
+    onSuccess: () => {
+      router.push("/");
+    },
+  });
 
   // TMDB supplies a fresh image per page load. Local artwork remains available
   // when TMDB or its image CDN cannot be reached.

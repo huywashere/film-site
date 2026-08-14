@@ -39,6 +39,7 @@ import { establishFirebaseSession } from "@/lib/auth-session";
 
 import { CinematicAuthBackground } from "@/components/auth/CinematicAuthBackground";
 import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
+import { useGoogleOneTap } from "@/hooks/useGoogleOneTap";
 
 export function AuthModal() {
   const router = useRouter();
@@ -59,6 +60,15 @@ export function AuthModal() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Google One Tap fast login integration
+  useGoogleOneTap({
+    enabled: isOpen && !isForgotMode,
+    onSuccess: () => {
+      closeModal();
+      router.push("/");
+    },
+  });
 
   const handleFirebaseUserSuccess = async (fbUser: any) => {
     const user = await establishFirebaseSession(fbUser);
