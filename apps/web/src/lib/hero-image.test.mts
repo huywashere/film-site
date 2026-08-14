@@ -14,17 +14,15 @@ test("prefers a direct w1280 TMDB backdrop over the original proxy URL", () => {
     candidates[0],
     "https://image.tmdb.org/t/p/w1280/backdrop.jpg",
   );
-  assert.ok(candidates.some((candidate) => candidate.includes("strict=1")));
   assert.equal(candidates.at(-1), HERO_LOCAL_FALLBACK);
 });
 
-test("keeps provider images behind a strict proxy and always has a local fallback", () => {
+test("prefers direct provider CDN images and always has a local fallback", () => {
   const candidates = buildHeroImageCandidates({
     thumbUrl: "https://phimimg.com/upload/movie.jpg",
   });
 
-  assert.match(candidates[0], /^\/api\/image-proxy\?/);
-  assert.match(candidates[0], /strict=1/);
+  assert.equal(candidates[0], "https://phimimg.com/upload/movie.jpg");
   assert.equal(candidates.at(-1), HERO_LOCAL_FALLBACK);
 });
 
