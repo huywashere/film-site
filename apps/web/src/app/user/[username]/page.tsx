@@ -51,43 +51,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { AccountPageTabs } from "@/components/account/AccountPageTabs";
 import { cardFont } from "@/lib/fonts";
-
-const PRESET_AVATARS = [
-  { id: "cat1", label: "Mèo 1", url: "/images/cat1.gif" },
-  { id: "cat2", label: "Mèo 2", url: "/images/cat2.gif" },
-  { id: "cat3", label: "Mèo 3", url: "/images/cat3.gif" },
-  { id: "cat4", label: "Mèo 4", url: "/images/cat4.gif" },
-  {
-    id: "popcorn",
-    label: "Bỏng Ngô",
-    url: "https://api.dicebear.com/7.x/bottts/svg?seed=NetPhimPopcorn&backgroundColor=8b5cf6",
-  },
-  {
-    id: "hero1",
-    label: "Chiến Binh",
-    url: "https://api.dicebear.com/7.x/adventurer/svg?seed=HeroAlex&backgroundColor=ec4899",
-  },
-  {
-    id: "hero2",
-    label: "Nữ Hiệp",
-    url: "https://api.dicebear.com/7.x/adventurer/svg?seed=HeroMaya&backgroundColor=3b82f6",
-  },
-  {
-    id: "hero3",
-    label: "Thám Tử",
-    url: "https://api.dicebear.com/7.x/adventurer/svg?seed=HeroChloe&backgroundColor=f59e0b",
-  },
-  {
-    id: "hero4",
-    label: "Ảo Thuật",
-    url: "https://api.dicebear.com/7.x/adventurer/svg?seed=HeroLeo&backgroundColor=10b981",
-  },
-  {
-    id: "cyber",
-    label: "Cyberpunk",
-    url: "https://api.dicebear.com/7.x/bottts/svg?seed=NetPhimCyber&backgroundColor=06b6d4",
-  },
-];
+import { PRESET_AVATARS, type PresetAvatar } from "@/lib/default-avatars";
 
 interface Session {
   id: string;
@@ -718,8 +682,36 @@ export default function UserDashboardPage() {
         </div>
 
         {/* ── MAIN WORKSPACE ── */}
-        <div className="flex gap-8 py-8 pb-28">
-          {/* ── LEFT SIDEBAR ── */}
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 py-6 pb-28">
+          {/* ── MOBILE IN-FLOW TAB BAR (Placed cleanly under profile header, not fixed at bottom) ── */}
+          <div className="lg:hidden w-full overflow-x-auto scrollbar-none flex gap-2 pb-2 mb-2 border-b border-white/[0.08]">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => startTransition(() => setActiveTab(tab.id))}
+                  className={cn(
+                    "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all shrink-0 active:scale-95",
+                    isActive
+                      ? "text-white bg-white/[0.12] border border-white/20 shadow-md"
+                      : "text-neutral-400 hover:text-white bg-white/[0.03] border border-white/[0.06]",
+                  )}
+                >
+                  <Icon
+                    size={14}
+                    className={
+                      isActive ? "text-violet-400" : "text-neutral-400"
+                    }
+                  />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* ── LEFT SIDEBAR (Desktop) ── */}
           <aside className="hidden lg:block w-56 shrink-0 sticky top-24 self-start">
             <div className="space-y-5 rounded-2xl border border-white/10 bg-black p-4 shadow-2xl">
               {/* Profile group */}
@@ -779,27 +771,6 @@ export default function UserDashboardPage() {
               </div>
             </div>
           </aside>
-
-          {/* ── MOBILE TAB BAR ── */}
-          <div className="lg:hidden w-full fixed bottom-0 left-0 z-40 bg-[#141414]/95 backdrop-blur border-t border-white/[0.07] flex overflow-x-auto px-2 py-2 gap-1">
-            {TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn(
-                    "flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-medium whitespace-nowrap cursor-pointer transition-colors shrink-0",
-                    isActive ? "text-white bg-white/10" : "text-neutral-600"
-                  )}
-                >
-                  <Icon size={16} />
-                  <span>{tab.label.split(" ")[0]}</span>
-                </button>
-              );
-            })}
-          </div>
 
           {/* ── RIGHT CONTENT PANEL ── */}
           <div className="flex-1 min-w-0">
@@ -1349,11 +1320,11 @@ export default function UserDashboardPage() {
               </div>
 
               {/* Avatar Presets Grid */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <label className="text-xs font-bold text-neutral-300 uppercase tracking-wider">
-                  Avatar mặc định NetPhim
+                  Bộ sưu tập Avatar VIP (Binance, OKX, Crypto, Mèo NetPhim)
                 </label>
-                <div className="grid grid-cols-5 gap-3">
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5">
                   {PRESET_AVATARS.map((av) => {
                     const isSelected =
                       (selectedAvatar || user?.avatarUrl) === av.url;
@@ -1366,24 +1337,32 @@ export default function UserDashboardPage() {
                           setCustomAvatarInput("");
                         }}
                         className={cn(
-                          "relative aspect-square rounded-xl overflow-hidden border-2 transition-all p-1 group cursor-pointer hover:scale-105",
+                          "flex flex-col items-center gap-1.5 p-1.5 rounded-xl border transition-all group cursor-pointer hover:scale-105 active:scale-95",
                           isSelected
-                            ? "border-violet-500 bg-violet-500/20 ring-2 ring-violet-500/40"
-                            : "border-white/10 bg-black/40 hover:border-white/30",
+                            ? "border-violet-500 bg-violet-500/20 ring-2 ring-violet-500/50"
+                            : "border-white/10 bg-black/40 hover:border-white/25 hover:bg-white/5",
                         )}
-                        title={av.label}
+                        title={av.name}
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={av.url}
-                          alt={av.label}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                        {isSelected && (
-                          <div className="absolute top-1 right-1 bg-violet-500 rounded-full p-0.5 shadow-md">
-                            <Check size={10} className="text-white" />
-                          </div>
-                        )}
+                        <div className="relative aspect-square w-full rounded-lg overflow-hidden flex items-center justify-center bg-black/50">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={av.url}
+                            alt={av.name}
+                            className="w-full h-full object-cover"
+                          />
+                          {isSelected && (
+                            <div className="absolute top-1 right-1 bg-violet-500 rounded-full p-0.5 shadow-md">
+                              <Check
+                                size={10}
+                                className="text-white stroke-[3]"
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-medium text-neutral-300 truncate w-full text-center group-hover:text-white">
+                          {av.name}
+                        </span>
                       </button>
                     );
                   })}
