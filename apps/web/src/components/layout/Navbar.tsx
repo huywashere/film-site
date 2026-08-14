@@ -538,150 +538,152 @@ export function Navbar() {
               </DropdownMenu>
 
               {user ? (
-                /* YouTube-style Profile menu dropdown */
-                <DropdownMenu modal={false}>
-                  <DropdownMenuTrigger className="flex items-center space-x-1 focus:outline-none cursor-pointer group">
-                    {user.avatarUrl ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={user.avatarUrl}
-                        alt={user.displayName || user.username}
-                        referrerPolicy="no-referrer"
-                        className="w-8 h-8 rounded-full object-cover border border-white/20 group-hover:border-emerald-400 transition-all shadow-md"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src =
-                            `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=10b981&color=ffffff&size=64`;
-                        }}
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-bold text-xs flex items-center justify-center shadow-md group-hover:border-emerald-400 transition-colors">
-                        {(user.displayName || user.username || "U")
-                          .slice(0, 2)
-                          .toUpperCase()}
-                      </div>
-                    )}
-                    <ChevronDown
-                      size={13}
-                      className="text-neutral-400 group-hover:text-white transition-colors"
-                    />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    alignOffset={-32}
-                    sideOffset={10}
-                    collisionPadding={{ right: 32 }}
-                    className={cn(
-                      "w-72 -translate-x-6 sm:-translate-x-8 p-2.5 bg-[#090c15]/75 backdrop-blur-3xl border border-white/15 text-neutral-200 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.7)] z-50 divide-y divide-white/10 ring-1 ring-white/10",
-                      cardFont.className,
-                    )}
-                  >
-                    {/* Top User Profile Header */}
-                    <div className="p-2 flex items-center space-x-3 pb-3">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={
-                          user.avatarUrl ||
-                          `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=10b981&color=ffffff&size=80`
-                        }
-                        alt={user.displayName || user.username}
-                        referrerPolicy="no-referrer"
-                        className="h-10 w-10 rounded-full object-cover border border-white/20 shadow-md shrink-0"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src =
-                            `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=10b981&color=ffffff&size=80`;
-                        }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm text-white truncate">
-                          {user.displayName || user.username}
-                        </p>
-                        <p className="text-xs text-neutral-400 truncate">
-                          @{user.username}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Section 1: Main Quick Access Shortcuts */}
-                    <div className="py-1.5 space-y-0.5">
-                      <DropdownMenuItem
-                        onClick={() =>
-                          router.push(
-                            user.username
-                              ? `/user/${encodeURIComponent(user.username)}`
-                              : "/user",
-                          )
-                        }
-                        className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
-                      >
-                        <User size={16} className="mr-3 text-neutral-300" />
-                        <span>Trang cá nhân</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => router.push("/settings")}
-                        className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
-                      >
-                        <Settings size={16} className="mr-3 text-neutral-300" />
-                        <span>Cài đặt</span>
-                      </DropdownMenuItem>
-                    </div>
-
-                    {/* Section 2: Preferences & Settings */}
-                    <div className="py-1.5 space-y-0.5">
-                      <DropdownMenuItem
-                        onClick={toggleTheme}
-                        className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center justify-between py-2.5 px-3 text-xs font-semibold"
-                      >
-                        <div className="flex items-center">
-                          {mounted && theme === "light" ? (
-                            <Moon size={16} className="mr-3 text-neutral-400" />
-                          ) : (
-                            <Sun size={16} className="mr-3 text-neutral-400" />
-                          )}
-                          <span>
-                            Giao diện: {theme === "light" ? "Sáng" : "Tối"}
-                          </span>
+                /* YouTube-style Profile menu dropdown (Desktop only — Mobile accesses profile from bottom nav & drawer) */
+                <div className="hidden lg:block">
+                  <DropdownMenu modal={false}>
+                    <DropdownMenuTrigger className="flex items-center space-x-1 focus:outline-none cursor-pointer group">
+                      {user.avatarUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={user.avatarUrl}
+                          alt={user.displayName || user.username}
+                          referrerPolicy="no-referrer"
+                          className="w-8 h-8 rounded-full object-cover border border-white/20 group-hover:border-violet-400 transition-all shadow-md"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src =
+                              `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=64`;
+                          }}
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-violet-500/20 border border-violet-400/40 text-violet-300 font-bold text-xs flex items-center justify-center shadow-md group-hover:border-violet-400 transition-colors">
+                          {(user.displayName || user.username || "U")
+                            .slice(0, 2)
+                            .toUpperCase()}
                         </div>
-                        <ChevronRight size={14} className="text-neutral-500" />
-                      </DropdownMenuItem>
-
-                      {/* Language Switcher Modal Item */}
-                      <DropdownMenuItem
-                        onClick={() => setLang(lang === "vi" ? "en" : "vi")}
-                        className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center justify-between py-2.5 px-3 text-xs font-semibold"
-                      >
-                        <div className="flex items-center">
-                          <Languages
-                            size={16}
-                            className="mr-3 text-neutral-400"
-                          />
-                          <span>
-                            Ngôn ngữ:{" "}
-                            {lang === "vi"
-                              ? "Tiếng Việt"
-                              : lang === "en"
-                                ? "English"
-                                : lang.toUpperCase()}
-                          </span>
+                      )}
+                      <ChevronDown
+                        size={13}
+                        className="text-neutral-400 group-hover:text-white transition-colors"
+                      />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      alignOffset={-32}
+                      sideOffset={10}
+                      collisionPadding={{ right: 32 }}
+                      className={cn(
+                        "w-72 -translate-x-6 sm:-translate-x-8 p-2.5 bg-[#090c15]/75 backdrop-blur-3xl border border-white/15 text-neutral-200 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.7)] z-50 divide-y divide-white/10 ring-1 ring-white/10",
+                        cardFont.className,
+                      )}
+                    >
+                      {/* Top User Profile Header */}
+                      <div className="p-2 flex items-center space-x-3 pb-3">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={
+                            user.avatarUrl ||
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=80`
+                          }
+                          alt={user.displayName || user.username}
+                          referrerPolicy="no-referrer"
+                          className="h-10 w-10 rounded-full object-cover border border-white/20 shadow-md shrink-0"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src =
+                              `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=80`;
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm text-white truncate">
+                            {user.displayName || user.username}
+                          </p>
+                          <p className="text-xs text-neutral-400 truncate">
+                            @{user.username}
+                          </p>
                         </div>
-                        <ChevronRight size={14} className="text-neutral-500" />
-                      </DropdownMenuItem>
-                    </div>
+                      </div>
 
-                    {/* Section 3: Logout Session */}
-                    <div className="pt-1.5">
-                      <DropdownMenuItem
-                        onClick={() => {
-                          logout();
-                          router.push("/");
-                        }}
-                        className="hover:bg-red-500/10 text-red-400 hover:text-red-300 rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-bold"
-                      >
-                        <LogOut size={16} className="mr-3 text-red-400" />
-                        <span>Đăng xuất</span>
-                      </DropdownMenuItem>
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      {/* Section 1: Main Quick Access Shortcuts */}
+                      <div className="py-1.5 space-y-0.5">
+                        <DropdownMenuItem
+                          onClick={() =>
+                            router.push(
+                              user.username
+                                ? `/user/${encodeURIComponent(user.username)}`
+                                : "/user",
+                            )
+                          }
+                          className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
+                        >
+                          <User size={16} className="mr-3 text-neutral-300" />
+                          <span>Trang cá nhân</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => router.push("/settings")}
+                          className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
+                        >
+                          <Settings size={16} className="mr-3 text-neutral-300" />
+                          <span>Cài đặt</span>
+                        </DropdownMenuItem>
+                      </div>
+
+                      {/* Section 2: Preferences & Settings */}
+                      <div className="py-1.5 space-y-0.5">
+                        <DropdownMenuItem
+                          onClick={toggleTheme}
+                          className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center justify-between py-2.5 px-3 text-xs font-semibold"
+                        >
+                          <div className="flex items-center">
+                            {mounted && theme === "light" ? (
+                              <Moon size={16} className="mr-3 text-neutral-400" />
+                            ) : (
+                              <Sun size={16} className="mr-3 text-neutral-400" />
+                            )}
+                            <span>
+                              Giao diện: {theme === "light" ? "Sáng" : "Tối"}
+                            </span>
+                          </div>
+                          <ChevronRight size={14} className="text-neutral-500" />
+                        </DropdownMenuItem>
+
+                        {/* Language Switcher Modal Item */}
+                        <DropdownMenuItem
+                          onClick={() => setLang(lang === "vi" ? "en" : "vi")}
+                          className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center justify-between py-2.5 px-3 text-xs font-semibold"
+                        >
+                          <div className="flex items-center">
+                            <Languages
+                              size={16}
+                              className="mr-3 text-neutral-400"
+                            />
+                            <span>
+                              Ngôn ngữ:{" "}
+                              {lang === "vi"
+                                ? "Tiếng Việt"
+                                : lang === "en"
+                                  ? "English"
+                                  : lang.toUpperCase()}
+                            </span>
+                          </div>
+                          <ChevronRight size={14} className="text-neutral-500" />
+                        </DropdownMenuItem>
+                      </div>
+
+                      {/* Section 3: Logout Session */}
+                      <div className="pt-1.5">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            logout();
+                            router.push("/");
+                          }}
+                          className="hover:bg-red-500/10 text-red-400 hover:text-red-300 rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-bold"
+                        >
+                          <LogOut size={16} className="mr-3 text-red-400" />
+                          <span>Đăng xuất</span>
+                        </DropdownMenuItem>
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               ) : (
                 /* Desktop Guest Login User Icon Button (Navigates to /login) */
                 <Link

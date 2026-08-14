@@ -364,8 +364,16 @@ export function AuthPageForm({
       const name =
         firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User";
       const loggedUser: AuthUser = await establishFirebaseSession(firebaseUser);
-      useAuthStore.getState().setUser(loggedUser);
-      toast(`Chào mừng, ${name}!`, "success");
+      const avatarUrl =
+        loggedUser.avatarUrl || firebaseUser.photoURL || undefined;
+      const displayName =
+        loggedUser.displayName || firebaseUser.displayName || name;
+      useAuthStore.getState().setUser({
+        ...loggedUser,
+        avatarUrl,
+        displayName,
+      });
+      toast(`Chào mừng, ${displayName}!`, "success");
       router.replace("/");
     },
     [router, toast],

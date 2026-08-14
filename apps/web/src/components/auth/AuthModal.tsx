@@ -62,10 +62,16 @@ export function AuthModal() {
 
   const handleFirebaseUserSuccess = async (fbUser: any) => {
     const user = await establishFirebaseSession(fbUser);
-    setUser(user);
+    const avatarUrl = user.avatarUrl || fbUser.photoURL || undefined;
+    const displayName = user.displayName || fbUser.displayName || user.username;
+    setUser({
+      ...user,
+      avatarUrl,
+      displayName,
+    });
 
     toast(
-      `Đăng nhập thành công! Chào mừng ${user.displayName || user.username}.`,
+      `Đăng nhập thành công! Chào mừng ${displayName}.`,
       "success",
     );
     closeModal();

@@ -121,7 +121,10 @@ export const useAuthStore = create<AuthState>()(
         try {
           const { data } = await authApi.getMe();
           if (data && (data.id || data.username || data.email)) {
-            get().setUser(data);
+            const currentUser = get().user;
+            const avatarUrl =
+              data.avatarUrl || currentUser?.avatarUrl || undefined;
+            get().setUser({ ...data, avatarUrl });
             return;
           }
         } catch {

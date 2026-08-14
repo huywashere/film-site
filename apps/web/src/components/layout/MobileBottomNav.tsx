@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import NextImage from "next/image";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 import { useMotionValueEvent, useScroll } from "framer-motion";
@@ -109,21 +108,37 @@ export function MobileBottomNav() {
                 : "text-neutral-400 hover:text-neutral-200",
             )}
           >
-            <NextImage
-              src={
-                user.avatarUrl ||
-                `https://ui-avatars.com/api/?name=${user.username}&background=2c3440&color=ffffff&size=24`
-              }
-              alt={user.username}
-              width={16}
-              height={16}
-              className={cn(
-                "h-4 w-4 rounded-full object-cover border border-white/20 transition-transform",
-                (pathname.startsWith("/user/") || pathname.startsWith("/profile/")) &&
-                  "scale-110 border-white ring-2 ring-white/30",
-              )}
-              unoptimized
-            />
+            {user.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={user.avatarUrl}
+                alt={user.displayName || user.username}
+                referrerPolicy="no-referrer"
+                className={cn(
+                  "h-5 w-5 rounded-full object-cover border border-white/20 transition-transform",
+                  (pathname.startsWith("/user/") ||
+                    pathname.startsWith("/profile/")) &&
+                    "scale-110 border-white ring-2 ring-violet-400/50",
+                )}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src =
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=64`;
+                }}
+              />
+            ) : (
+              <div
+                className={cn(
+                  "flex h-5 w-5 items-center justify-center rounded-full border border-violet-400/40 bg-violet-600/30 text-[9px] font-black text-violet-200 transition-transform",
+                  (pathname.startsWith("/user/") ||
+                    pathname.startsWith("/profile/")) &&
+                    "scale-110 border-white ring-2 ring-violet-400/50",
+                )}
+              >
+                {(user.displayName || user.username || "U")
+                  .slice(0, 2)
+                  .toUpperCase()}
+              </div>
+            )}
             <span className="mt-0.5 tracking-tight">Cá nhân</span>
           </Link>
         ) : (

@@ -40,6 +40,7 @@ import {
   Monitor,
   Smartphone,
   ArrowLeft,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
@@ -50,6 +51,43 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { AccountPageTabs } from "@/components/account/AccountPageTabs";
 import { cardFont } from "@/lib/fonts";
+
+const PRESET_AVATARS = [
+  { id: "cat1", label: "Mèo 1", url: "/images/cat1.gif" },
+  { id: "cat2", label: "Mèo 2", url: "/images/cat2.gif" },
+  { id: "cat3", label: "Mèo 3", url: "/images/cat3.gif" },
+  { id: "cat4", label: "Mèo 4", url: "/images/cat4.gif" },
+  {
+    id: "popcorn",
+    label: "Bỏng Ngô",
+    url: "https://api.dicebear.com/7.x/bottts/svg?seed=NetPhimPopcorn&backgroundColor=8b5cf6",
+  },
+  {
+    id: "hero1",
+    label: "Chiến Binh",
+    url: "https://api.dicebear.com/7.x/adventurer/svg?seed=HeroAlex&backgroundColor=ec4899",
+  },
+  {
+    id: "hero2",
+    label: "Nữ Hiệp",
+    url: "https://api.dicebear.com/7.x/adventurer/svg?seed=HeroMaya&backgroundColor=3b82f6",
+  },
+  {
+    id: "hero3",
+    label: "Thám Tử",
+    url: "https://api.dicebear.com/7.x/adventurer/svg?seed=HeroChloe&backgroundColor=f59e0b",
+  },
+  {
+    id: "hero4",
+    label: "Ảo Thuật",
+    url: "https://api.dicebear.com/7.x/adventurer/svg?seed=HeroLeo&backgroundColor=10b981",
+  },
+  {
+    id: "cyber",
+    label: "Cyberpunk",
+    url: "https://api.dicebear.com/7.x/bottts/svg?seed=NetPhimCyber&backgroundColor=06b6d4",
+  },
+];
 
 interface Session {
   id: string;
@@ -1287,6 +1325,156 @@ export default function UserDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* ── MODAL: AVATAR PICKER ── */}
+      <AnimatePresence>
+        {showAvatarPicker && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="max-w-lg w-full bg-[#16171d] border border-white/15 rounded-2xl p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-violet-500/20 text-violet-400">
+                    <Camera size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">
+                      Chọn ảnh đại diện
+                    </h3>
+                    <p className="text-xs text-neutral-400">
+                      Chọn avatar có sẵn hoặc nhập link ảnh tuỳ chọn
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAvatarPicker(false)}
+                  className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Avatar Presets Grid */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-neutral-300 uppercase tracking-wider">
+                  Avatar mặc định NetPhim
+                </label>
+                <div className="grid grid-cols-5 gap-3">
+                  {PRESET_AVATARS.map((av) => {
+                    const isSelected =
+                      (selectedAvatar || user?.avatarUrl) === av.url;
+                    return (
+                      <button
+                        key={av.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedAvatar(av.url);
+                          setCustomAvatarInput("");
+                        }}
+                        className={cn(
+                          "relative aspect-square rounded-xl overflow-hidden border-2 transition-all p-1 group cursor-pointer hover:scale-105",
+                          isSelected
+                            ? "border-violet-500 bg-violet-500/20 ring-2 ring-violet-500/40"
+                            : "border-white/10 bg-black/40 hover:border-white/30",
+                        )}
+                        title={av.label}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={av.url}
+                          alt={av.label}
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                        {isSelected && (
+                          <div className="absolute top-1 right-1 bg-violet-500 rounded-full p-0.5 shadow-md">
+                            <Check size={10} className="text-white" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom Image URL Input */}
+              <div className="space-y-2 pt-2 border-t border-white/10">
+                <label className="text-xs font-bold text-neutral-300 uppercase tracking-wider">
+                  Hoặc nhập link ảnh tuỳ chỉnh (URL)
+                </label>
+                <input
+                  type="url"
+                  value={customAvatarInput}
+                  onChange={(e) => {
+                    setCustomAvatarInput(e.target.value);
+                    if (e.target.value.trim()) {
+                      setSelectedAvatar(e.target.value.trim());
+                    }
+                  }}
+                  placeholder="https://example.com/my-photo.jpg"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-neutral-500 outline-none focus:border-violet-400"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAvatarPicker(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-white/10 bg-white/5 text-neutral-300 hover:text-white text-xs font-semibold"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const avatarToSave =
+                      customAvatarInput.trim() || selectedAvatar;
+                    if (!avatarToSave) return;
+                    setUpdatingProfile(true);
+                    try {
+                      const { data } = await authApi.updateProfile({
+                        displayName,
+                        avatarUrl: avatarToSave,
+                        bio,
+                      });
+                      useAuthStore.getState().setUser({
+                        ...user!,
+                        displayName: data?.displayName || displayName,
+                        avatarUrl: data?.avatarUrl || avatarToSave,
+                        bio: data?.bio || bio,
+                      });
+                      toast("Đã cập nhật ảnh đại diện!", "success");
+                      setShowAvatarPicker(false);
+                    } catch (err) {
+                      useAuthStore.getState().setUser({
+                        ...user!,
+                        avatarUrl: avatarToSave,
+                      });
+                      toast("Đã lưu ảnh đại diện!", "success");
+                      setShowAvatarPicker(false);
+                    } finally {
+                      setUpdatingProfile(false);
+                    }
+                  }}
+                  disabled={updatingProfile}
+                  className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {updatingProfile ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    "Lưu ảnh đại diện"
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
