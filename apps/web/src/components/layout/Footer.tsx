@@ -130,8 +130,8 @@ export function Footer() {
                   (e.currentTarget as HTMLImageElement).style.display = "none";
                 }}
               />
-              <span className="text-xl sm:text-2xl font-black lowercase tracking-tight text-white">
-                net<span className="text-violet-400">phim</span>
+              <span className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                Net<span className="text-violet-400">Phim</span>
               </span>
             </Link>
             <p className="mt-3 text-xs sm:text-[13px] leading-relaxed text-neutral-400">

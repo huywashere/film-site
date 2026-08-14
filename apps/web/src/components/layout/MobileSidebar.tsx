@@ -90,8 +90,8 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 (e.currentTarget as HTMLImageElement).src = "/logo.png";
               }}
             />
-            <span className="text-white text-lg font-black tracking-tight lowercase font-sans">
-              net<span className="text-violet-400">phim</span>
+            <span className="text-white text-lg font-black tracking-tight font-sans">
+              Net<span className="text-violet-400">Phim</span>
             </span>
           </Link>
           <button

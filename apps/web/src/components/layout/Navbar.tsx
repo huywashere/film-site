@@ -200,8 +200,8 @@ function AnimatedNavbarLogo() {
       </div>
 
       <div className="navbar-logo-reveal navbar-logo-reveal--wordmark relative overflow-hidden">
-        <span className="block font-sans text-xl font-black lowercase tracking-tight text-white transition-opacity duration-200 group-hover:opacity-80 sm:text-2xl">
-          net<span className="text-violet-400">phim</span>
+        <span className="block font-sans text-xl font-black tracking-tight text-white transition-opacity duration-200 group-hover:opacity-80 sm:text-2xl">
+          Net<span className="text-violet-400">Phim</span>
         </span>
       </div>
     </Link>

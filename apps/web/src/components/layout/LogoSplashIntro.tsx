@@ -61,10 +61,10 @@ export function LogoSplashIntro() {
               initial={{ y: 14, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.25, duration: 0.55 }}
-              className="flex items-center gap-1 text-2xl sm:text-4xl font-black lowercase tracking-tight"
+              className="flex items-center gap-1 text-2xl sm:text-4xl font-black tracking-tight"
             >
               <span className="bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(168,85,247,0.6)] font-sans">
-                netphim
+                NetPhim
               </span>
             </motion.div>
 
