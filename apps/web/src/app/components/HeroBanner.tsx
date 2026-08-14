@@ -352,8 +352,9 @@ function getSpotlightBadge(film: HeroFilm, index: number) {
 
 function getBestTitleLogo(logos: TmdbImage[]): TmdbImage | null {
   const languagePriority = (language?: string | null) => {
-    if (language === "vi") return 3;
-    if (language === "en") return 2;
+    if (language === "vi") return 4;
+    if (language === "en") return 3;
+    if (language === "zh" || language === "ko" || language === "ja") return 2;
     if (!language) return 1;
     return 0;
   };
@@ -378,29 +379,67 @@ function getBestTitleLogo(logos: TmdbImage[]): TmdbImage | null {
 async function enrichHeroTitleLogos(playlist: HeroFilm[]): Promise<HeroFilm[]> {
   return Promise.all(
     playlist.map(async (film) => {
-      if (film.titleLogoResolved) return film;
+      if (film.titleLogoResolved && film.titleLogo) return film;
 
-      const rawTmdbId = film.tmdb?.id || film.slug.match(/^tmdb-(\d+)$/)?.[1];
-      const tmdbId = Number(rawTmdbId);
-      if (!Number.isFinite(tmdbId) || tmdbId <= 0) {
-        return { ...film, titleLogoResolved: true };
-      }
-
-      const type =
+      let tmdbId = Number(
+        film.tmdb?.id || (film as any).tmdb_id || film.slug.match(/^tmdb-(\d+)$/)?.[1],
+      );
+      let mediaType: "movie" | "tv" =
         film.tmdb?.type === "tv" ||
         film.type === "series" ||
         film.type === "tvshows"
           ? "tv"
           : "movie";
-      const images = await tmdbApi.getImages(type, tmdbId);
-      if (!images) return film;
 
-      const bestLogo = getBestTitleLogo(images.logos || []);
-      return {
-        ...film,
-        titleLogo: tmdbLogo(bestLogo?.file_path, "w500") || undefined,
-        titleLogoResolved: true,
-      };
+      // 1. If no TMDB id, look up movie detail
+      if (!Number.isFinite(tmdbId) || tmdbId <= 0) {
+        try {
+          const detailRes = await movieApi.getDetail(film.slug);
+          const detailData =
+            (detailRes.data as any)?.movie || (detailRes.data as any)?.data?.item;
+          if (detailData?.tmdb?.id) {
+            tmdbId = Number(detailData.tmdb.id);
+            if (detailData.tmdb.type) mediaType = detailData.tmdb.type as any;
+          }
+        } catch {}
+      }
+
+      // 2. If still no TMDB id, search TMDB by English/Original/Vietnamese name
+      if (!Number.isFinite(tmdbId) || tmdbId <= 0) {
+        try {
+          const query = film.origin_name || film.name;
+          const searchResult = await tmdbApi.searchMulti(query);
+          const match = searchResult?.results?.[0];
+          if (match?.id) {
+            tmdbId = match.id;
+            mediaType = (match.media_type as any) === "tv" ? "tv" : "movie";
+          }
+        } catch {}
+      }
+
+      if (!Number.isFinite(tmdbId) || tmdbId <= 0) {
+        return { ...film, titleLogoResolved: true };
+      }
+
+      try {
+        const images = await tmdbApi.getImages(mediaType, tmdbId);
+        if (!images) return { ...film, titleLogoResolved: true };
+
+        const bestLogo = getBestTitleLogo(images.logos || []);
+        const bestBackdrop = images.backdrops?.[0]?.file_path
+          ? tmdbBackdrop(images.backdrops[0].file_path, "w1280")
+          : undefined;
+
+        return {
+          ...film,
+          tmdb: { ...film.tmdb, id: String(tmdbId), type: mediaType },
+          titleLogo: tmdbLogo(bestLogo?.file_path, "w500") || film.titleLogo || undefined,
+          heroBackdrop: bestBackdrop || film.heroBackdrop,
+          titleLogoResolved: true,
+        };
+      } catch {
+        return { ...film, titleLogoResolved: true };
+      }
     }),
   );
 }

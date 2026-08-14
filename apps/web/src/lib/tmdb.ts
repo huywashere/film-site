@@ -233,12 +233,12 @@ export const tmdbApi = {
   // ── Hình ảnh ──
   getMovieImages: (tmdbId: number) =>
     fetchTmdb<TmdbImages>(`movie/${tmdbId}/images`, {
-      include_image_language: "vi,en,null",
+      include_image_language: "vi,en,zh,ko,ja,null",
     }),
 
   getTvImages: (tmdbId: number) =>
     fetchTmdb<TmdbImages>(`tv/${tmdbId}/images`, {
-      include_image_language: "vi,en,null",
+      include_image_language: "vi,en,zh,ko,ja,null",
     }),
 
   getImages: (type: "movie" | "tv", tmdbId: number | string) =>
