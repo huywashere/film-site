@@ -1331,46 +1331,34 @@ export default function HeroBanner({ films }: HeroBannerProps) {
           {fanCards.map((cardFilm, index) => {
             const isHovered = hoveredCardIndex === index;
 
-            // Staggered horizontal cascade with clear visibility for all 3 cards:
+            // Staggered horizontal cascade with clean poster visibility:
             const fanConfigs = [
               {
                 x: 0,
                 y: 0,
-                rotate: 0,
                 scale: 1.0,
                 brightness: 1.0,
                 shadow: "shadow-[0_20px_50px_rgba(0,0,0,0.9)]",
                 border: "border-amber-400/80 ring-2 ring-amber-400/30",
                 zIndex: 30,
-                badge: "▶ Đang xem",
-                badgeClass:
-                  "bg-gradient-to-r from-red-600 to-amber-600 text-white font-black",
               },
               {
                 x: 105,
                 y: 18,
-                rotate: 0,
                 scale: 0.94,
                 brightness: 0.88,
                 shadow: "shadow-[0_15px_35px_rgba(0,0,0,0.8)]",
                 border: "border-white/30",
                 zIndex: 20,
-                badge: "#2 Kế tiếp",
-                badgeClass:
-                  "bg-black/80 border border-white/20 text-white/90 font-bold",
               },
               {
                 x: 210,
                 y: 36,
-                rotate: 0,
                 scale: 0.88,
                 brightness: 0.76,
                 shadow: "shadow-[0_12px_28px_rgba(0,0,0,0.7)]",
                 border: "border-white/20",
                 zIndex: 10,
-                badge: "#3 Kế tiếp",
-                badgeClass:
-                  "bg-black/80 border border-white/20 text-white/80 font-bold",
               },
             ];
 
@@ -1420,18 +1408,6 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                       film={cardFilm}
                       className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-
-                    {/* Top Pill Badge */}
-                    <div className="absolute top-2 left-2 z-20 pointer-events-none">
-                      <span
-                        className={cn(
-                          "px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider backdrop-blur-md shadow",
-                          config.badgeClass,
-                        )}
-                      >
-                        {config.badge}
-                      </span>
-                    </div>
 
                     {/* Poster Title Scrim Gradient */}
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-3 text-left">
