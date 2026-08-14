@@ -519,11 +519,11 @@ function HeroMovieTitle({
 
   return (
     <div className="relative flex min-h-16 w-full items-center justify-center sm:min-h-24 md:min-h-28">
-      {/* Cinematic Text Title - Always rendered cleanly as fallback */}
+      {/* Cinematic Text Title - Only rendered visibly if NO logo exists */}
       <h1
         className={cn(
           "max-w-2xl line-clamp-2 text-xl font-black uppercase leading-tight tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl transition-opacity duration-300",
-          logoLoaded ? "sr-only" : "opacity-100",
+          hasLogoCandidate ? "sr-only" : "opacity-100",
         )}
         style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }}
       >
@@ -553,7 +553,7 @@ function HeroMovieTitle({
           }}
           className={cn(
             "max-h-16 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-opacity duration-300 sm:max-h-24 sm:max-w-[34rem] md:max-h-28",
-            logoLoaded ? "opacity-100" : "opacity-0 absolute",
+            logoLoaded ? "opacity-100" : "opacity-0",
           )}
         />
       )}
