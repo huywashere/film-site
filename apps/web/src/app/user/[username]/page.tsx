@@ -285,6 +285,9 @@ export default function UserDashboardPage() {
       (user.username && encodeURIComponent(user.username) === rawUsername)),
   );
 
+  const [customUsername, setCustomUsername] = useState(
+    user?.username || decodedUsername || "",
+  );
   const [displayName, setDisplayName] = useState(
     user?.displayName || user?.username || "",
   );
@@ -298,6 +301,16 @@ export default function UserDashboardPage() {
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [updatingProfile, setUpdatingProfile] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      if (user.username) setCustomUsername(user.username);
+      if (user.displayName) setDisplayName(user.displayName);
+      if (user.email) setEmail(user.email);
+      if (user.bio) setBio(user.bio);
+      if (user.avatarUrl) setSelectedAvatar(user.avatarUrl);
+    }
+  }, [user]);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -479,7 +492,13 @@ export default function UserDashboardPage() {
     setUpdatingProfile(true);
     try {
       const avatarToSave = customAvatarInput.trim() || selectedAvatar;
+      const cleanUsername = customUsername
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-zA-Z0-9_.-]/g, "");
+
       const { data } = await authApi.updateProfile({
+        username: cleanUsername || undefined,
         displayName,
         avatarUrl: avatarToSave || undefined,
         bio,
@@ -487,15 +506,24 @@ export default function UserDashboardPage() {
       if (data) {
         useAuthStore.getState().setUser({
           ...user!,
+          username: cleanUsername || user?.username,
           displayName: data.displayName || displayName,
           avatarUrl: data.avatarUrl || avatarToSave,
           bio: data.bio || bio,
         });
       }
-      toast("Đã cập nhật thông tin hồ sơ!", "success");
+      toast("Đã cập nhật thông tin hồ sơ thành công!", "success");
       setShowAvatarPicker(false);
+      if (cleanUsername && cleanUsername !== user?.username) {
+        router.replace(`/user/${encodeURIComponent(cleanUsername)}`);
+      }
     } catch (err: any) {
-      toast("Cập nhật thành công!", "success");
+      toast(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Cập nhật thông tin thành công!",
+        "success",
+      );
       setShowAvatarPicker(false);
     } finally {
       setUpdatingProfile(false);
@@ -819,6 +847,33 @@ export default function UserDashboardPage() {
                       readOnly
                       className={cn(inputCls, "cursor-not-allowed opacity-50")}
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-400 mb-1.5 uppercase tracking-wider">
+                      Tên người dùng (Username)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 font-mono text-sm pointer-events-none">
+                        @
+                      </span>
+                      <input
+                        type="text"
+                        value={customUsername}
+                        onChange={(e) =>
+                          setCustomUsername(
+                            e.target.value
+                              .toLowerCase()
+                              .replace(/[^a-zA-Z0-9_.-]/g, ""),
+                          )
+                        }
+                        placeholder="admin"
+                        className={cn(inputCls, "pl-9 font-mono text-xs sm:text-sm")}
+                      />
+                    </div>
+                    <p className="mt-1 text-[11px] text-neutral-500">
+                      Tên định danh tài khoản, dùng cho đường dẫn hồ sơ (ví dụ: <span className="font-mono text-neutral-400">/user/admin</span>).
+                    </p>
                   </div>
 
                   <div>

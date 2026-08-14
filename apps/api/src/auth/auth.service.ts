@@ -551,8 +551,15 @@ export class AuthService {
 
     const randomPass = "google_oauth_" + randomBytes(16).toString("hex");
     const hash = await bcrypt.hash(randomPass, 12);
-    const suffix = randomBytes(4).toString("hex");
-    const username = `${normalizedEmail.split("@")[0]}_${suffix}`;
+    const baseUsername =
+      normalizedEmail.split("@")[0].toLowerCase().replace(/[^a-zA-Z0-9_.-]/g, "") ||
+      "user";
+    const existingWithUsername = await this.prisma.user.findUnique({
+      where: { username: baseUsername },
+    });
+    const username = existingWithUsername
+      ? `${baseUsername}_${randomBytes(3).toString("hex")}`
+      : baseUsername;
 
     user = await this.prisma.user.create({
       data: {
@@ -618,8 +625,16 @@ export class AuthService {
       });
     } else {
       const randomPass = `firebase_oauth_${randomBytes(16).toString("hex")}`;
-      const suffix = randomBytes(4).toString("hex");
-      const username = `${email.split("@")[0]}_${suffix}`;
+      const baseUsername =
+        email.split("@")[0].toLowerCase().replace(/[^a-zA-Z0-9_.-]/g, "") ||
+        "user";
+      const existingUser = await this.prisma.user.findUnique({
+        where: { username: baseUsername },
+      });
+      const username = existingUser
+        ? `${baseUsername}_${randomBytes(3).toString("hex")}`
+        : baseUsername;
+
       user = await this.prisma.user.create({
         data: {
           email,

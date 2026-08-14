@@ -993,6 +993,7 @@ export const authApi = {
 
   // Profile & Password Endpoints
   updateProfile: (data: {
+    username?: string;
     displayName?: string;
     avatarUrl?: string;
     bio?: string;

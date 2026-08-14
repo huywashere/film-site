@@ -31,8 +31,28 @@ export class UsersService {
 
   async updateMe(
     userId: string,
-    dto: { displayName?: string; bio?: string; avatarUrl?: string },
+    dto: {
+      username?: string;
+      displayName?: string;
+      bio?: string;
+      avatarUrl?: string;
+    },
   ) {
+    if (dto.username) {
+      const normalizedUsername = dto.username.trim().toLowerCase();
+      // Check if another user has this username
+      const existing = await this.prisma.user.findFirst({
+        where: {
+          username: { equals: normalizedUsername, mode: "insensitive" },
+          NOT: { id: userId },
+        },
+      });
+      if (existing) {
+        throw new Error("Tên người dùng (username) này đã có người sử dụng");
+      }
+      dto.username = normalizedUsername;
+    }
+
     return this.prisma.user.update({
       where: { id: userId },
       data: dto,
