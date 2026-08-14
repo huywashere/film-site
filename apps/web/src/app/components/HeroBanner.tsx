@@ -396,10 +396,17 @@ async function enrichHeroTitleLogos(playlist: HeroFilm[]): Promise<HeroFilm[]> {
         try {
           const detailRes = await movieApi.getDetail(film.slug);
           const detailData =
-            (detailRes.data as any)?.movie || (detailRes.data as any)?.data?.item;
-          if (detailData?.tmdb?.id) {
-            tmdbId = Number(detailData.tmdb.id);
-            if (detailData.tmdb.type) mediaType = detailData.tmdb.type as any;
+            (detailRes.data as any)?.movie ||
+            (detailRes.data as any)?.data?.item ||
+            (detailRes.data as any)?.item;
+          const foundId =
+            detailData?.tmdb?.id ||
+            detailData?.tmdb_id ||
+            (detailRes.data as any)?.item?.tmdb?.id ||
+            (detailRes.data as any)?.movie?.tmdb?.id;
+          if (foundId) {
+            tmdbId = Number(foundId);
+            if (detailData?.tmdb?.type) mediaType = detailData.tmdb.type as any;
           }
         } catch {}
       }
@@ -407,12 +414,19 @@ async function enrichHeroTitleLogos(playlist: HeroFilm[]): Promise<HeroFilm[]> {
       // 2. If still no TMDB id, search TMDB by English/Original/Vietnamese name
       if (!Number.isFinite(tmdbId) || tmdbId <= 0) {
         try {
-          const query = film.origin_name || film.name;
-          const searchResult = await tmdbApi.searchMulti(query);
-          const match = searchResult?.results?.[0];
-          if (match?.id) {
-            tmdbId = match.id;
-            mediaType = (match.media_type as any) === "tv" ? "tv" : "movie";
+          const searchNames = [film.origin_name, film.name].filter(
+            (n): n is string => Boolean(n),
+          );
+          for (const rawName of searchNames) {
+            const query = rawName.replace(/\(\d{4}\)/g, "").trim();
+            if (!query) continue;
+            const searchResult = await tmdbApi.searchMulti(query);
+            const match = searchResult?.results?.[0];
+            if (match?.id) {
+              tmdbId = match.id;
+              mediaType = (match.media_type as any) === "tv" ? "tv" : "movie";
+              break;
+            }
           }
         } catch {}
       }
@@ -451,45 +465,73 @@ function HeroMovieTitle({
   film: HeroFilm;
   onReady: () => void;
 }) {
-  const [failedLogoSlug, setFailedLogoSlug] = useState<string | null>(null);
-  const [loadedLogoSlug, setLoadedLogoSlug] = useState<string | null>(null);
-  const title = film.origin_name || film.name;
-  const showLogo = Boolean(film.titleLogo && failedLogoSlug !== film.slug);
-  const logoLoaded = loadedLogoSlug === film.slug;
+  const candidateLogos = useMemo(() => {
+    if (!film.titleLogo) return [];
+    const list: string[] = [];
+    const add = (url?: string) => {
+      if (url && !list.includes(url)) {
+        list.push(url);
+        if (url.startsWith("http")) {
+          const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(url)}`;
+          if (!list.includes(wsrv)) list.push(wsrv);
+          const proxy = `/api/image-proxy?url=${encodeURIComponent(url)}`;
+          if (!list.includes(proxy)) list.push(proxy);
+        }
+      }
+    };
+    add(film.titleLogo);
+    return list;
+  }, [film.titleLogo]);
+
+  const [candidateIdx, setCandidateIdx] = useState(0);
+  const [logoLoaded, setLogoLoaded] = useState(false);
 
   useEffect(() => {
-    if (!showLogo) onReady();
-  }, [film.slug, onReady, showLogo]);
+    setCandidateIdx(0);
+    setLogoLoaded(false);
+  }, [film.slug, film.titleLogo]);
+
+  const title = film.origin_name || film.name;
+  const currentLogoSrc = candidateLogos[candidateIdx];
+  const hasLogoCandidate = Boolean(currentLogoSrc);
+
+  useEffect(() => {
+    if (!hasLogoCandidate) onReady();
+  }, [hasLogoCandidate, onReady]);
 
   return (
     <div className="relative flex min-h-16 w-full items-center justify-center sm:min-h-24 md:min-h-28">
-      {/* Cinematic Text Title - Always rendered cleanly so no blank flash */}
+      {/* Cinematic Text Title - Always rendered cleanly as fallback */}
       <h1
         className={cn(
           "max-w-2xl line-clamp-2 text-xl font-black uppercase leading-tight tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl transition-opacity duration-300",
-          showLogo && logoLoaded ? "sr-only" : "opacity-100",
+          logoLoaded ? "sr-only" : "opacity-100",
         )}
         style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }}
       >
         {title}
       </h1>
 
-      {showLogo && (
+      {hasLogoCandidate && (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
-          key={film.titleLogo}
-          src={film.titleLogo}
+          key={`${film.slug}-${candidateIdx}`}
+          src={currentLogoSrc}
           alt={title}
           referrerPolicy="no-referrer"
           decoding="async"
           loading="eager"
           onLoad={() => {
-            setLoadedLogoSlug(film.slug);
+            setLogoLoaded(true);
             onReady();
           }}
           onError={() => {
-            setFailedLogoSlug(film.slug);
-            onReady();
+            if (candidateIdx < candidateLogos.length - 1) {
+              setCandidateIdx((i) => i + 1);
+            } else {
+              setLogoLoaded(false);
+              onReady();
+            }
           }}
           className={cn(
             "max-h-16 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-opacity duration-300 sm:max-h-24 sm:max-w-[34rem] md:max-h-28",
