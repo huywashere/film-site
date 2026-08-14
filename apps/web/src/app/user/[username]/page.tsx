@@ -669,29 +669,8 @@ export default function UserDashboardPage() {
               )}
             </div>
 
-            {/* Quick stats + actions */}
+            {/* Actions */}
             <div className="flex items-center gap-3 flex-wrap">
-              {/* Stats */}
-              <div className="flex items-center gap-px rounded-xl overflow-hidden border border-white/10 bg-white/[0.03]">
-                <div className="px-4 py-2 text-center min-w-[72px]">
-                  <div className="text-base font-bold text-white">
-                    {watchlistItems.length}
-                  </div>
-                  <div className="text-[10px] text-neutral-400 font-medium">
-                    Tủ phim
-                  </div>
-                </div>
-                <div className="px-4 py-2 text-center min-w-[72px] border-l border-white/10">
-                  <div className="text-base font-bold text-white">
-                    {historyItems.length}
-                  </div>
-                  <div className="text-[10px] text-neutral-400 font-medium">
-                    Đã xem
-                  </div>
-                </div>
-              </div>
-
-              {/* Actions */}
               <button
                 type="button"
                 onClick={() => {

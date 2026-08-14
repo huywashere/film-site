@@ -15,6 +15,13 @@ import { Top10RankedRow } from "@/components/film/Top10RankedRow";
 import { ContinueWatchingRow } from "@/components/film/ContinueWatchingRow";
 import { Pagination } from "@/components/film/Pagination";
 import { useTmdb } from "@/hooks/useTmdb";
+import { TrailerModal } from "@/components/film/TrailerModal";
+import { cn } from "@/lib/utils";
+import {
+  CURATED_KOREAN_HERO_POOL,
+  CURATED_CHINESE_HERO_POOL,
+  AsianHeroItem,
+} from "@/lib/curated-asian-hero";
 import {
   getYoutubeTrailer,
   resolveTmdbHeroAssets,
@@ -303,190 +310,448 @@ function FeaturedActorsRow({ film }: { film?: FilmItem }) {
   );
 }
 
-function NetflixHeroBanner({
-  film,
-  countryName,
-  heroAssets,
-}: {
-  film?: FilmItem;
-  countryName: string;
-  heroAssets?: any;
-}) {
-  const [isMuted, setIsMuted] = useState(true);
-  const [frameReady, setFrameReady] = useState(false);
+function KoreanCuratedHeroBanner() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const [logoFailed, setLogoFailed] = useState(false);
-  const [backdropFailed, setBackdropFailed] = useState(false);
 
-  const fallbackTmdb = useTmdb({
-    film,
-    enabled: !!film && !heroAssets,
-    fetchCredits: false,
-    fetchVideos: true,
-  });
+  const curatedList = CURATED_KOREAN_HERO_POOL;
 
-  const assetBackdrops = heroAssets?.images?.backdrops || [];
-  const assetLogos = heroAssets?.images?.logos || [];
-  const bestBackdrop =
-    assetBackdrops[0] ||
-    (heroAssets?.backdrop_path
-      ? { file_path: heroAssets.backdrop_path }
-      : fallbackTmdb.bestBackdrop);
-  const bestLogo = assetLogos[0] || fallbackTmdb.bestLogo;
-  const trailer = heroAssets
-    ? getYoutubeTrailer(heroAssets?.videos?.results || [])
-    : fallbackTmdb.trailer;
-
-  const trailerKey = trailer?.key;
-
+  // Auto slide every 7 seconds
   useEffect(() => {
-    setFrameReady(false);
-    setLogoFailed(false);
-    setBackdropFailed(false);
-  }, [film?.slug, trailerKey]);
+    if (curatedList.length <= 1 || isPaused) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % curatedList.length);
+      setLogoFailed(false);
+    }, 7000);
+    return () => clearInterval(interval);
+  }, [curatedList.length, isPaused]);
 
-  if (!film) {
-    return (
-      <section className="relative w-full h-[68vh] min-h-[500px] max-h-[780px] bg-[#141414] overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(120deg,#141414_20%,#1f1f1f_48%,#141414_76%)] animate-pulse" />
-      </section>
-    );
-  }
-
-  const providerBackdrop =
-    resolveImageUrl(film.thumb_url, film.poster_url) ||
-    resolveImageUrl(film.poster_url);
-  const tmdbBackdropUrl = bestBackdrop?.file_path
-    ? `https://image.tmdb.org/t/p/w1280${bestBackdrop.file_path}`
-    : null;
-  const backdrop = backdropFailed
-    ? providerBackdrop
-    : tmdbBackdropUrl || providerBackdrop;
-
-  const logoUrl = bestLogo?.file_path
-    ? `https://image.tmdb.org/t/p/w500${bestLogo.file_path}`
-    : null;
-
-  const filmTitle = film.name || film.title || "Phim Hay";
+  const currentItem = curatedList[currentIndex] || curatedList[0];
+  const backdropUrl = currentItem.thumb_url || currentItem.poster_url;
 
   return (
-    <section className="relative w-full h-[85vh] sm:h-[92vh] lg:h-[96vh] min-h-[620px] max-h-[960px] overflow-hidden bg-black select-none">
-      {/* High-Resolution Backdrop Image Layer (Always visible underneath) */}
-      {backdrop && (
+    <section
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      className="relative w-full min-h-[680px] sm:min-h-[760px] lg:min-h-[840px] h-[92vh] sm:h-[96vh] lg:h-[100vh] max-h-[1080px] overflow-hidden bg-[#141414] select-none"
+    >
+      {/* ── Wide Key Visual Artwork (Official TMDB Korean Drama Backdrop) ── */}
+      {backdropUrl && (
         <NextImage
-          src={backdrop}
-          alt={filmTitle}
+          key={`hero-bg-${currentItem.slug}`}
+          src={backdropUrl}
+          alt={currentItem.name}
           fill
           sizes="100vw"
-          className="object-cover object-center brightness-[0.8] scale-105 transition-transform duration-1000"
+          className="object-cover object-center md:object-right brightness-[0.8] transition-opacity duration-700 animate-in fade-in"
           priority
           unoptimized
-          onError={() => setBackdropFailed(true)}
         />
       )}
 
-      {/* Autoplay Video Trailer Layer (Fades in smoothly ONLY AFTER buffering finishes, hiding YouTube play/pause bezel) */}
-      {trailerKey && (
-        <div className="absolute inset-0 pointer-events-none select-none overflow-hidden z-0">
-          <iframe
-            key={`${film.slug}-${trailerKey}`}
-            src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(
-              trailerKey,
-            )}?autoplay=1&mute=${
-              isMuted ? 1 : 0
-            }&controls=0&showinfo=0&autohide=1&loop=1&playlist=${encodeURIComponent(
-              trailerKey,
-            )}&playsinline=1&enablejsapi=1&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0`}
-            allow="autoplay; encrypted-media; picture-in-picture"
-            onLoad={() => {
-              setTimeout(() => setFrameReady(true), 600);
-            }}
-            className={`absolute left-1/2 top-1/2 h-[56.25vw] min-h-full w-[100vw] min-w-[177.78vh] -translate-x-1/2 -translate-y-1/2 border-0 object-cover scale-110 brightness-[0.85] transition-opacity duration-1000 ease-out pointer-events-none select-none ${
-              frameReady ? "opacity-100" : "opacity-0"
-            }`}
-            title={filmTitle}
-            tabIndex={-1}
-          />
-        </div>
-      )}
-
-      {/* Netflix Multi-layer Gradient Overlays for 100% Authentic Vignette */}
+      {/* ── Cinematic Multi-layer Gradient Overlays for Vignette & Bottom Blending ── */}
       <div
         className="absolute inset-0 z-10 pointer-events-none"
         style={{
           background: `
-            linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 40%, transparent 80%),
-            linear-gradient(to top, #141414 0%, rgba(20,20,20,0.6) 20%, transparent 60%),
-            linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 25%)
+            linear-gradient(to right, rgba(20,20,20,0.95) 0%, rgba(20,20,20,0.7) 40%, rgba(20,20,20,0.2) 70%, transparent 100%),
+            linear-gradient(to top, #141414 0%, rgba(20,20,20,0.85) 15%, transparent 45%),
+            linear-gradient(to bottom, rgba(20,20,20,0.7) 0%, transparent 20%)
           `,
         }}
       />
 
-      {/* Left Content Overlay */}
-      <div className="absolute inset-0 z-20 flex items-center pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-4 sm:pr-8">
-        <div className="max-w-xl space-y-4 sm:space-y-6 pt-16">
-          {/* Official Title Logo PNG or Styled Heading */}
-          {logoUrl && !logoFailed ? (
-            <div className="relative w-72 sm:w-96 h-24 sm:h-32 mb-2">
+      {/* ── Left Content Overlay (Typography, Badges & Play Button) ── */}
+      <div className="absolute inset-0 z-20 flex flex-col justify-center px-6 sm:px-14 md:px-20 lg:px-24">
+        <div className="max-w-2xl space-y-4 sm:space-y-5 pt-8">
+          {/* Official Title Logo PNG or Calligraphy Title */}
+          {currentItem.logoUrl && !logoFailed ? (
+            <div className="relative w-64 sm:w-80 md:w-[420px] h-20 sm:h-28">
               <NextImage
-                src={logoUrl}
-                alt={filmTitle}
+                src={currentItem.logoUrl}
+                alt={currentItem.name}
                 fill
-                className="object-contain object-left drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)]"
+                className="object-contain object-left drop-shadow-[0_10px_25px_rgba(0,0,0,0.95)]"
                 unoptimized
                 onError={() => setLogoFailed(true)}
               />
             </div>
           ) : (
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-tight tracking-tight drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
-              {filmTitle}
+            <h1
+              className="text-4xl sm:text-6xl md:text-7xl font-bold text-white tracking-wide leading-tight drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)]"
+              style={{
+                fontFamily: "'Playfair Display', 'Dancing Script', Georgia, serif",
+                fontStyle: "italic",
+              }}
+            >
+              {currentItem.calligraphyTitle || currentItem.name}
             </h1>
           )}
 
-          {film.origin_name && film.origin_name !== filmTitle && !logoUrl && (
-            <p className="text-sm sm:text-lg font-bold text-neutral-300 italic drop-shadow">
-              {film.origin_name}
-            </p>
-          )}
-
-          {/* Tagline / Summary */}
-          <p className="text-xs sm:text-sm md:text-base font-medium text-neutral-200 line-clamp-3 leading-relaxed drop-shadow max-w-lg">
-            {film.content ||
-              `Trải nghiệm đỉnh cao của điện ảnh ${countryName} với những thước phim kịch tính, lãng mạn và hấp dẫn nhất.`}
+          {/* Subtitle / Vietnamese or English name */}
+          <p className="text-xs sm:text-sm text-neutral-300 font-semibold italic -mt-2 drop-shadow">
+            {currentItem.name} {currentItem.origin_name ? `(${currentItem.origin_name})` : ""}
           </p>
 
-          {/* Action Buttons (Netflix Style) */}
+          {/* Metadata Row: TOP 10 | Year | Country | Total Episodes */}
+          <div className="flex flex-wrap items-center gap-2.5 text-xs font-semibold text-neutral-200">
+            {currentItem.topBadge && (
+              <span className="bg-red-600 text-white font-extrabold text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded font-mono shadow-md uppercase">
+                {currentItem.topBadge}
+              </span>
+            )}
+            {currentItem.year && (
+              <span className="text-white font-bold">{currentItem.year}</span>
+            )}
+            <span className="text-neutral-400">|</span>
+            <span className="text-neutral-300">Hàn Quốc</span>
+            {currentItem.totalEpisodesText && (
+              <>
+                <span className="text-neutral-400">|</span>
+                <span className="text-neutral-300">{currentItem.totalEpisodesText}</span>
+              </>
+            )}
+            {currentItem.quality && (
+              <>
+                <span className="text-neutral-400">|</span>
+                <span className="text-amber-400 font-bold">{currentItem.quality}</span>
+              </>
+            )}
+          </div>
+
+          {/* Genre Tags (Solid neutral style, no glass) */}
+          {currentItem.genres && currentItem.genres.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              {currentItem.genres.map((genre) => (
+                <span
+                  key={genre}
+                  className="px-3 py-1 rounded bg-neutral-800 text-neutral-300 text-[11px] sm:text-xs font-semibold"
+                >
+                  {genre}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* 2-line Description */}
+          <p className="text-xs sm:text-sm text-neutral-300 font-normal line-clamp-3 leading-relaxed drop-shadow max-w-lg pt-1">
+            {currentItem.content}
+          </p>
+
+          {/* Action Buttons (Solid Netflix style, no glass) */}
           <div className="flex items-center gap-3 pt-2">
             <Link
-              href={`/watch/${film.slug}`}
-              className="flex items-center gap-2.5 bg-white hover:bg-neutral-200 text-black font-black px-7 py-3 rounded-md text-sm sm:text-base shadow-2xl transition-all hover:scale-105 cursor-pointer active:scale-95"
+              href={`/watch/${currentItem.slug}`}
+              className="inline-flex items-center gap-2.5 bg-white hover:bg-neutral-200 text-black font-extrabold px-8 py-3 rounded-md text-sm sm:text-base transition-all hover:scale-105 active:scale-95 shadow-2xl cursor-pointer"
             >
-              <Play size={20} fill="currentColor" className="ml-0.5" />
-              <span>Phát</span>
+              <Play size={18} fill="currentColor" className="ml-0.5" />
+              <span>Xem Ngay</span>
             </Link>
             <Link
-              href={`/film/${film.slug}`}
-              className="flex items-center gap-2.5 bg-white/20 hover:bg-white/30 text-white font-bold px-6 py-3 rounded-md text-sm sm:text-base backdrop-blur-md border border-white/20 transition-all cursor-pointer active:scale-95"
+              href={`/film/${currentItem.slug}`}
+              className="inline-flex items-center gap-2 bg-[#6d6d6e]/80 hover:bg-[#6d6d6e] text-white font-bold px-7 py-3 rounded-md text-sm sm:text-base transition-all cursor-pointer active:scale-95 shadow-lg"
             >
-              <Info size={20} />
-              <span>Thông tin khác</span>
+              <Info size={18} />
+              <span>Chi Tiết</span>
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Right Controls (Volume Toggle & Maturity Badge) */}
-      <div className="absolute right-0 bottom-36 sm:bottom-44 z-20 flex items-center gap-3">
-        <button
-          onClick={() => setIsMuted(!isMuted)}
-          className="w-10 h-10 rounded-full bg-black/40 border border-white/30 text-white flex items-center justify-center hover:bg-black/60 transition-all backdrop-blur-md cursor-pointer"
-          title={isMuted ? "Bật âm thanh" : "Tắt âm thanh"}
-        >
-          {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-        </button>
+      {/* ── Left / Right Carousel Navigation Arrows (Solid clean dark style) ── */}
+      {curatedList.length > 1 && (
+        <>
+          <button
+            onClick={() => {
+              setCurrentIndex(
+                (prev) => (prev - 1 + curatedList.length) % curatedList.length,
+              );
+              setLogoFailed(false);
+            }}
+            aria-label="Slide trước"
+            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer shadow-2xl"
+          >
+            <ChevronLeft size={22} />
+          </button>
 
-        <div className="bg-black/60 border-l-3 border-white text-white font-bold text-xs sm:text-sm px-3.5 py-1 backdrop-blur-md pr-6">
-          {film.quality || "T18"}
+          <button
+            onClick={() => {
+              setCurrentIndex((prev) => (prev + 1) % curatedList.length);
+              setLogoFailed(false);
+            }}
+            aria-label="Slide tiếp theo"
+            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer shadow-2xl"
+          >
+            <ChevronRight size={22} />
+          </button>
+        </>
+      )}
+
+      {/* ── Bottom Right Pagination Dots (Clean white indicators) ── */}
+      {curatedList.length > 1 && (
+        <div className="absolute right-6 sm:right-14 bottom-32 sm:bottom-44 z-30 flex items-center gap-2">
+          {curatedList.map((item, idx) => (
+            <button
+              key={item._id}
+              onClick={() => {
+                setCurrentIndex(idx);
+                setLogoFailed(false);
+              }}
+              aria-label={`Chuyển đến phim ${item.name}`}
+              className={cn(
+                "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
+                idx === currentIndex
+                  ? "w-7 bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]"
+                  : "w-1.5 bg-white/30 hover:bg-white/60",
+              )}
+            />
+          ))}
         </div>
+      )}
+    </section>
+  );
+}
+
+function ChineseImperialHeroBanner() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [logoFailed, setLogoFailed] = useState(false);
+
+  const curatedList = CURATED_CHINESE_HERO_POOL;
+
+  // Auto slide every 7 seconds
+  useEffect(() => {
+    if (curatedList.length <= 1 || isPaused) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % curatedList.length);
+      setLogoFailed(false);
+    }, 7000);
+    return () => clearInterval(interval);
+  }, [curatedList.length, isPaused]);
+
+  const currentItem = curatedList[currentIndex] || curatedList[0];
+  const backdropUrl = currentItem.thumb_url || currentItem.poster_url;
+
+  return (
+    <section
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      className="relative w-full min-h-[680px] sm:min-h-[760px] lg:min-h-[840px] h-[92vh] sm:h-[96vh] lg:h-[100vh] max-h-[1080px] overflow-hidden bg-[#141414] select-none"
+    >
+      {/* ── Wide Key Visual Artwork (Official TMDB Chinese Drama Backdrop) ── */}
+      {backdropUrl && (
+        <NextImage
+          key={`hero-bg-${currentItem.slug}`}
+          src={backdropUrl}
+          alt={currentItem.name}
+          fill
+          sizes="100vw"
+          className="object-cover object-center md:object-right brightness-[0.8] transition-opacity duration-700 animate-in fade-in"
+          priority
+          unoptimized
+        />
+      )}
+
+      {/* ── Oriental Atmospheric Mist & Vignette Gradient Overlays ── */}
+      <div
+        className="absolute inset-0 z-10 pointer-events-none"
+        style={{
+          background: `
+            linear-gradient(to right, rgba(18,18,18,0.96) 0%, rgba(18,18,18,0.75) 38%, rgba(18,18,18,0.2) 70%, transparent 100%),
+            linear-gradient(to top, #141414 0%, rgba(20,20,20,0.85) 15%, transparent 45%),
+            linear-gradient(to bottom, rgba(20,20,20,0.7) 0%, transparent 20%)
+          `,
+        }}
+      />
+
+      {/* ── Left Content Overlay (Typography, Badges & Action Buttons) ── */}
+      <div className="absolute inset-0 z-20 flex flex-col justify-center px-6 sm:px-14 md:px-20 lg:px-24">
+        <div className="max-w-2xl space-y-4 sm:space-y-5 pt-8">
+          {/* Official 3D Gold / Transparent Title Logo PNG or Calligraphy Title */}
+          {currentItem.logoUrl && !logoFailed ? (
+            <div className="relative w-64 sm:w-80 md:w-[440px] h-20 sm:h-28">
+              <NextImage
+                src={currentItem.logoUrl}
+                alt={currentItem.name}
+                fill
+                className="object-contain object-left drop-shadow-[0_10px_25px_rgba(0,0,0,0.95)]"
+                unoptimized
+                onError={() => setLogoFailed(true)}
+              />
+            </div>
+          ) : (
+            <h1
+              className="text-4xl sm:text-6xl md:text-7xl font-bold text-white tracking-wide leading-tight drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)]"
+              style={{
+                fontFamily: "'Playfair Display', 'Dancing Script', Georgia, serif",
+                fontStyle: "italic",
+              }}
+            >
+              {currentItem.calligraphyTitle || currentItem.name}
+            </h1>
+          )}
+
+          {/* Subtitle / Vietnamese or English name */}
+          <p className="text-xs sm:text-sm text-neutral-300 font-semibold italic -mt-2 drop-shadow">
+            {currentItem.name} {currentItem.origin_name ? `(${currentItem.origin_name})` : ""}
+          </p>
+
+          {/* Imperial Badge Row: Jade/Amber Badge | Year | Country | Total Episodes */}
+          <div className="flex flex-wrap items-center gap-2.5 text-xs font-semibold text-neutral-200">
+            {currentItem.topBadge && (
+              <span className="bg-gradient-to-r from-amber-600 via-amber-700 to-red-700 text-white font-extrabold text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded font-mono shadow-md uppercase tracking-wider border border-amber-400/30">
+                {currentItem.topBadge}
+              </span>
+            )}
+            {currentItem.year && (
+              <span className="text-white font-bold">{currentItem.year}</span>
+            )}
+            <span className="text-neutral-400">|</span>
+            <span className="text-neutral-300">Trung Quốc</span>
+            {currentItem.totalEpisodesText && (
+              <>
+                <span className="text-neutral-400">|</span>
+                <span className="text-neutral-300">{currentItem.totalEpisodesText}</span>
+              </>
+            )}
+            {currentItem.quality && (
+              <>
+                <span className="text-neutral-400">|</span>
+                <span className="text-amber-400 font-bold">{currentItem.quality}</span>
+              </>
+            )}
+          </div>
+
+          {/* Genre Tags (Solid neutral style, no glass) */}
+          {currentItem.genres && currentItem.genres.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              {currentItem.genres.map((genre) => (
+                <span
+                  key={genre}
+                  className="px-3 py-1 rounded bg-neutral-800 text-neutral-300 text-[11px] sm:text-xs font-semibold"
+                >
+                  {genre}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* 2-line Description */}
+          <p className="text-xs sm:text-sm text-neutral-300 font-normal line-clamp-3 leading-relaxed drop-shadow max-w-lg pt-1">
+            {currentItem.content}
+          </p>
+
+          {/* Action Buttons (Solid Netflix style, no glass) */}
+          <div className="flex items-center gap-3 pt-2">
+            <Link
+              href={`/watch/${currentItem.slug}`}
+              className="inline-flex items-center gap-2.5 bg-white hover:bg-neutral-200 text-black font-extrabold px-8 py-3 rounded-md text-sm sm:text-base transition-all hover:scale-105 active:scale-95 shadow-2xl cursor-pointer"
+            >
+              <Play size={18} fill="currentColor" className="ml-0.5" />
+              <span>Xem Ngay</span>
+            </Link>
+            <Link
+              href={`/film/${currentItem.slug}`}
+              className="inline-flex items-center gap-2 bg-[#6d6d6e]/80 hover:bg-[#6d6d6e] text-white font-bold px-7 py-3 rounded-md text-sm sm:text-base transition-all cursor-pointer active:scale-95 shadow-lg"
+            >
+              <Info size={18} />
+              <span>Chi Tiết</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Left / Right Carousel Navigation Arrows (Solid clean dark style) ── */}
+      {curatedList.length > 1 && (
+        <>
+          <button
+            onClick={() => {
+              setCurrentIndex(
+                (prev) => (prev - 1 + curatedList.length) % curatedList.length,
+              );
+              setLogoFailed(false);
+            }}
+            aria-label="Slide trước"
+            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer shadow-2xl"
+          >
+            <ChevronLeft size={22} />
+          </button>
+
+          <button
+            onClick={() => {
+              setCurrentIndex((prev) => (prev + 1) % curatedList.length);
+              setLogoFailed(false);
+            }}
+            aria-label="Slide tiếp theo"
+            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer shadow-2xl"
+          >
+            <ChevronRight size={22} />
+          </button>
+        </>
+      )}
+
+      {/* ── Bottom Right Pagination Dots (Clean white indicators) ── */}
+      {curatedList.length > 1 && (
+        <div className="absolute right-6 sm:right-14 bottom-32 sm:bottom-44 z-30 flex items-center gap-2">
+          {curatedList.map((item, idx) => (
+            <button
+              key={item._id}
+              onClick={() => {
+                setCurrentIndex(idx);
+                setLogoFailed(false);
+              }}
+              aria-label={`Chuyển đến phim ${item.name}`}
+              className={cn(
+                "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
+                idx === currentIndex
+                  ? "w-7 bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]"
+                  : "w-1.5 bg-white/30 hover:bg-white/60",
+              )}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function DefaultCountryHeroBanner({
+  film,
+  countryName,
+}: {
+  film?: FilmItem;
+  countryName: string;
+}) {
+  if (!film) return null;
+  const providerBackdrop =
+    resolveImageUrl(film.thumb_url, film.poster_url) ||
+    resolveImageUrl(film.poster_url);
+
+  return (
+    <section className="relative w-full min-h-[500px] h-[75vh] max-h-[800px] overflow-hidden bg-black select-none">
+      {providerBackdrop && (
+        <NextImage
+          src={providerBackdrop}
+          alt={film.name}
+          fill
+          sizes="100vw"
+          className="object-cover object-center brightness-[0.75]"
+          priority
+          unoptimized
+        />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent z-10" />
+      <div className="absolute inset-0 z-20 flex flex-col justify-center px-6 sm:px-16 max-w-2xl space-y-4">
+        <h1 className="text-3xl sm:text-5xl font-black text-white">{film.name}</h1>
+        <p className="text-xs sm:text-sm text-neutral-300 line-clamp-3">{film.content}</p>
+        <Link
+          href={`/watch/${film.slug}`}
+          className="inline-flex items-center gap-2 bg-white hover:bg-neutral-200 text-black font-extrabold px-8 py-3 rounded-md text-sm w-fit transition-transform hover:scale-105"
+        >
+          <Play size={16} fill="currentColor" />
+          <span>Xem Ngay</span>
+        </Link>
       </div>
     </section>
   );
@@ -556,11 +821,10 @@ export default function CountryPage() {
         return await Promise.any(
           heroCandidates.map(async (candidate) => {
             const assets = await resolveTmdbHeroAssets(candidate);
-            const trailer = getYoutubeTrailer(assets?.videos?.results || []);
-            if (assets?.backdrop_path && trailer?.key) {
+            if (assets?.backdrop_path) {
               return { film: candidate, assets };
             }
-            throw new Error("Hero assets incomplete");
+            throw new Error("Hero backdrop incomplete");
           }),
         );
       } catch {
@@ -770,19 +1034,32 @@ export default function CountryPage() {
     globalSeenSlugs,
   ).slice(0, 14);
 
+  const isChinesePage = slug === "trung-quoc";
+  const isCustomHeroPage = isKoreanPage || isChinesePage;
+
   return (
     <div
       className={`${cardFont.className} min-h-screen w-full bg-[#141414] text-foreground -mt-20 sm:-mt-24`}
     >
-      {/* ── Netflix Spotlight Hero Banner with Background Video Trailer ── */}
-      <NetflixHeroBanner
-        film={heroFilm}
-        countryName={label}
-        heroAssets={resolvedHero?.assets}
-      />
+      {/* ── Curated Hero Banner for Korean and Chinese tabs, Default for others ── */}
+      {isKoreanPage ? (
+        <KoreanCuratedHeroBanner />
+      ) : isChinesePage ? (
+        <ChineseImperialHeroBanner />
+      ) : (
+        <DefaultCountryHeroBanner
+          film={heroFilm}
+          countryName={label}
+        />
+      )}
 
-      {/* ── Content Rows (Negative top margin to overlap full screen video trailer matching Netflix screenshot) ── */}
-      <div className="relative z-20 -mt-32 sm:-mt-44 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6">
+      {/* ── Content Rows (Negative top margin to overlap hero banner) ── */}
+      <div
+        className={cn(
+          "relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6",
+          isCustomHeroPage ? "-mt-24 sm:-mt-36 lg:-mt-48" : "-mt-6 sm:-mt-12",
+        )}
+      >
         {/* Row 1: Phải thoát khỏi đây! */}
         <CountryCategoryRow
           title={isKoreanPage ? "Phải thoát khỏi đây!" : "Phim Nổi Bật Hôm Nay"}

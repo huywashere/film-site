@@ -158,14 +158,14 @@ function scoreFilm(
   }
 
   // ── 6. Multi-source boost (phim phổ biến hơn) ──
-  score += (film._duplicateCount - 1) * WEIGHTS.multiSource;
+  score += ((film._duplicateCount || 1) - 1) * WEIGHTS.multiSource;
 
   // ── 7. Year boost (phim mới hơn) ──
   if (film.year && film.year > 2010) {
     score += Math.min((film.year - 2010) * 0.5, WEIGHTS.yearBoost);
   }
 
-  return { ...film, _searchScore: score, _matchType: matchType };
+  return { ...film, _searchScore: isNaN(score) ? 0 : score, _matchType: matchType };
 }
 
 // ── Main ranking function ─────────────────────────────────────────

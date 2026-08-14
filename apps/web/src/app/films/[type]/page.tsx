@@ -104,19 +104,19 @@ export default function FilmsTypePage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 md:gap-6 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-y-6 sm:gap-y-8">
           {Array.from({ length: 24 }).map((_, i) => (
             <FilmCardSkeleton key={i} />
           ))}
         </div>
       ) : films.length > 0 ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 md:gap-6 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-y-6 sm:gap-y-8">
           {films.map((film, idx) => (
             <FilmCard
               key={`${film.slug || film._id || (film as any).id}-${idx}`}
               film={film}
-              priority={idx < 6}
-              preferHighQuality={idx < 6}
+              priority={idx < 8}
+              preferHighQuality={idx < 8}
             />
           ))}
         </div>

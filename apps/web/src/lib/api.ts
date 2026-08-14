@@ -7,7 +7,7 @@ import {
   tagMovieDetailSource,
   type MovieSource,
 } from "@/lib/movie-normalizer";
-import { rankSearchResults, expandQuery } from "@/lib/search-engine";
+import { rankSearchResults, expandQuery, normalize } from "@/lib/search-engine";
 import type {
   PaginatedResponse,
   WatchHistoryItem,
@@ -346,6 +346,53 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
       },
       _sources: [],
     };
+  }
+
+  const normQuery = normalize(trimmed);
+  const isMetaQuery = [
+    "thuyet minh",
+    "thuyết minh",
+    "thuyet-minh",
+    "long tieng",
+    "lồng tiếng",
+    "long-tieng",
+    "vietsub",
+    "subteam",
+    "chieu rap",
+    "chiếu rạp",
+  ].includes(normQuery);
+
+  if (isMetaQuery) {
+    try {
+      const catalogData = await getFastCatalogPage(
+        page,
+        catalogRequests("latest", page),
+      );
+      const items = (
+        catalogData?.data?.items ||
+        catalogData?.items ||
+        []
+      ).slice(0, limit);
+      return {
+        status: "success",
+        data: {
+          items,
+          params: {
+            pagination: {
+              currentPage: page,
+              totalItems: items.length,
+              totalItemsPerPage: limit,
+              totalPages: 10,
+            },
+          },
+        },
+        _sources: [{ source: "kkphim", count: items.length }],
+        _totalMerged: items.length,
+        _query: { original: trimmed, variants: [trimmed] },
+      };
+    } catch {
+      // Continue with normal search if catalog fallback fails
+    }
   }
 
   // Expand query thành nhiều biến thể để tăng recall

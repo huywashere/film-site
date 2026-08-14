@@ -26,6 +26,7 @@ import {
 } from "@/components/search/SearchHistory";
 import { cardFont } from "@/lib/fonts";
 import { FilmNotFound } from "@/components/film/FilmNotFound";
+import { cn } from "@/lib/utils";
 
 // ── Shared Lists ──────────────────────────────────────────────────
 const GENRES_LIST = [
@@ -125,7 +126,7 @@ function CustomSelect({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full bg-[#0b0e11] border border-white/10 hover:border-white/20 rounded-xl px-2.5 py-1.5 text-xs text-neutral-200 flex items-center justify-between cursor-pointer focus:outline-none transition-colors select-none"
+        className="w-full bg-[#141414] border border-white/10 hover:border-white/20 rounded-xl px-3 py-2 text-xs text-neutral-200 flex items-center justify-between cursor-pointer focus:outline-none transition-colors select-none"
       >
         <span className="truncate">
           {selectedOption ? selectedOption.label : placeholder}
@@ -137,13 +138,13 @@ function CustomSelect({
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-[#12161a] border border-white/15 rounded-xl py-1 shadow-2xl max-h-60 overflow-y-auto scrollbar-none">
+        <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-[#181818] border border-white/15 rounded-xl py-1 shadow-2xl max-h-60 overflow-y-auto scrollbar-none">
           <div
             onClick={() => {
               onChange("");
               setOpen(false);
             }}
-            className={`px-3 py-1.5 text-xs cursor-pointer transition-colors flex items-center justify-between ${
+            className={`px-3 py-2 text-xs cursor-pointer transition-colors flex items-center justify-between ${
               !value
                 ? "bg-white/15 text-white font-bold"
                 : "text-neutral-400 hover:bg-white/10 hover:text-white"
@@ -161,7 +162,7 @@ function CustomSelect({
                   onChange(opt.value);
                   setOpen(false);
                 }}
-                className={`px-3 py-1.5 text-xs cursor-pointer transition-colors flex items-center justify-between ${
+                className={`px-3 py-2 text-xs cursor-pointer transition-colors flex items-center justify-between ${
                   isSelected
                     ? "bg-white/15 text-white font-bold"
                     : "text-neutral-300 hover:bg-white/10 hover:text-white"
@@ -207,6 +208,7 @@ function SearchContent() {
   const year = searchParams.get("year") || "";
   const genre = searchParams.get("genre") || "";
   const country = searchParams.get("country") || "";
+  const status = searchParams.get("status") || "";
   const sort = searchParams.get("sort") || "modified.time desc";
 
   useEffect(() => {
@@ -216,30 +218,53 @@ function SearchContent() {
 
   const isFilterOnly =
     !query &&
-    Boolean(type || year || genre || country || sort !== "modified.time desc");
+    Boolean(
+      type ||
+        year ||
+        genre ||
+        country ||
+        status ||
+        sort !== "modified.time desc",
+    );
 
   const { data, isLoading } = useQuery({
-    queryKey: ["search-v3", query, type, year, genre, country, sort, page],
-    queryFn: () => {
-      if (isFilterOnly) {
-        return movieApi
-          .getFiltered({
+    queryKey: [
+      "search-v3",
+      query,
+      type,
+      year,
+      genre,
+      country,
+      status,
+      sort,
+      page,
+    ],
+    queryFn: async () => {
+      try {
+        if (isFilterOnly) {
+          const res = await movieApi.getFiltered({
             type: type || undefined,
             year: year ? Number(year) : undefined,
             category: genre || undefined,
             country: country || undefined,
+            status: status || undefined,
             sort_field: sort.includes("year") ? "year" : "modified.time",
             sort_type: sort.endsWith("asc") ? "asc" : "desc",
             page,
-          })
-          .then((r) => r.data);
+          });
+          return res.data;
+        }
+        const res = await movieApi.search(query, page, 36);
+        return res.data;
+      } catch (err) {
+        console.warn("Search query error fallback:", err);
+        return { items: [], params: { pagination: { totalPages: 1 } } };
       }
-      return movieApi.search(query, page, 36).then((r) => r.data);
     },
     enabled: mounted && (Boolean(query) || isFilterOnly),
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
-    retry: false,
+    retry: 1,
     refetchOnWindowFocus: false,
   });
 
@@ -300,7 +325,7 @@ function SearchContent() {
   };
 
   return (
-    <div className={`${cardFont.className} container mx-auto max-w-7xl px-4 pb-16 pt-24 md:px-8`}>
+    <div className={cn(cardFont.className, "min-h-screen w-full bg-[#141414] text-white pt-20 sm:pt-24 pb-20 px-4 sm:px-8 max-w-7xl mx-auto select-none")}>
       {/* Search Header & Form Container */}
       <div className="max-w-3xl mx-auto mb-8 md:mb-12">
         <h1 className="text-2xl md:text-4xl font-extrabold text-white text-center mb-2 tracking-tight">
@@ -315,7 +340,7 @@ function SearchContent() {
           onSubmit={handleFormSubmit}
           className="relative mb-5 max-w-2xl mx-auto"
         >
-          <div className="relative flex items-center rounded-xl border border-white/10 bg-[#15171b] p-1.5 transition-colors hover:border-white/20 focus-within:border-white/30">
+          <div className="relative flex items-center rounded-2xl border border-white/10 bg-[#161618] p-1.5 transition-all hover:border-white/20 focus-within:border-white/30 focus-within:bg-[#181818] shadow-xl">
             <Search size={18} className="ml-3 text-neutral-400 shrink-0" />
             <input
               type="text"
@@ -338,7 +363,7 @@ function SearchContent() {
               <button
                 type="submit"
                 aria-label="Tìm kiếm"
-                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-white text-xs font-bold text-[#111317] transition-colors hover:bg-neutral-200 sm:w-auto sm:px-4"
+                className="flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.16] border border-white/10 text-xs font-bold text-white transition-all px-4 active:scale-95 shadow-sm"
               >
                 <Search size={14} />
                 <span className="hidden sm:inline">Tìm kiếm</span>
@@ -348,7 +373,7 @@ function SearchContent() {
         </form>
 
         {/* Filter Bar */}
-        <div className="mx-auto max-w-2xl rounded-xl border border-white/10 bg-[#15171b] p-3.5">
+        <div className="mx-auto max-w-2xl rounded-2xl border border-white/10 bg-[#161618] p-4 shadow-xl">
           <div className="flex items-center justify-between border-b border-white/10 pb-2.5 mb-3">
             <div className="flex items-center space-x-2 text-xs font-bold text-neutral-300">
               <Filter size={13} className="text-neutral-400" />
@@ -456,35 +481,32 @@ function SearchContent() {
       {/* Results Section */}
       {(query || isFilterOnly) && (
         <div className="flex flex-col space-y-6">
-          <div className="border-b border-white/10 pb-3 flex items-center justify-between">
-            <p className="text-xs text-neutral-400 font-bold uppercase tracking-wider">
-              {isLoading || !mounted ? (
-                <span className="flex items-center space-x-1.5">
-                  <Loader2
-                    size={12}
-                    className="animate-spin text-neutral-400"
-                  />
-                  <span>Đang tải kết quả tìm kiếm...</span>
-                </span>
-              ) : query ? (
-                `Kết quả tìm kiếm cho "${query}" (${films.length} phim)`
-              ) : (
-                `Kết quả lọc phim (${films.length} phim)`
-              )}
-            </p>
-          </div>
-
           {isLoading || !mounted ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-6 md:gap-6">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <FilmCardSkeleton key={i} />
-              ))}
-            </div>
+            <>
+              <div className="border-b border-white/10 pb-3">
+                <p className="text-xs text-neutral-400 font-bold uppercase tracking-wider flex items-center space-x-1.5">
+                  <Loader2 size={12} className="animate-spin text-neutral-400" />
+                  <span>Đang tải kết quả tìm kiếm...</span>
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-y-6 sm:gap-y-8">
+                {Array.from({ length: 14 }).map((_, i) => (
+                  <FilmCardSkeleton key={i} />
+                ))}
+              </div>
+            </>
           ) : films.length === 0 ? (
             <FilmNotFound querySlug={query} title="Không tìm thấy kết quả nào phù hợp" />
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-3 animate-in fade-in duration-300 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 md:gap-6 lg:grid-cols-6">
+              <div className="border-b border-white/10 pb-3 flex items-center justify-between">
+                <p className="text-xs text-neutral-400 font-bold uppercase tracking-wider">
+                  {query
+                    ? `Kết quả tìm kiếm cho "${query}" (${films.length} phim)`
+                    : `Kết quả lọc phim (${films.length} phim)`}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 animate-in fade-in duration-300 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-y-6 sm:gap-y-8">
                 {films.map((film, idx) => (
                   <FilmCard key={`${film.slug || film._id || (film as any).id}-${idx}`} film={film} />
                 ))}
@@ -516,8 +538,8 @@ export default function SearchPage() {
       fallback={
         <div className="container mx-auto px-4 md:px-8 max-w-7xl pt-24 pb-16 flex flex-col space-y-6">
           <div className="h-6 bg-white/5 rounded w-48 animate-pulse" />
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 md:gap-6 lg:grid-cols-6">
-            {Array.from({ length: 12 }).map((_, i) => (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-y-6 sm:gap-y-8">
+            {Array.from({ length: 14 }).map((_, i) => (
               <FilmCardSkeleton key={i} />
             ))}
           </div>

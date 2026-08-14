@@ -129,14 +129,6 @@ export const COUNTRIES_LIST = [
   { label: "Ấn Độ", slug: "an-do", code: "in" },
 ];
 
-export function getCountryEmoji(code?: string): string {
-  if (!code || code === "un") return "🌐";
-  const upper = code.toUpperCase();
-  if (upper.length !== 2) return "🌐";
-  const codePoints = [...upper].map((char) => 127397 + char.charCodeAt(0));
-  return String.fromCodePoint(...codePoints);
-}
-
 export function CountryFlagImage({
   code,
   label,
@@ -146,24 +138,43 @@ export function CountryFlagImage({
   label: string;
   className?: string;
 }) {
-  const emoji = getCountryEmoji(code);
+  const [imgError, setImgError] = useState(false);
+  const flagCode = code?.toLowerCase();
+
+  if (!flagCode || flagCode === "un" || imgError) {
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center justify-center text-xs leading-none shrink-0",
+          className,
+        )}
+        role="img"
+        aria-label={label}
+      >
+        🌐
+      </span>
+    );
+  }
 
   return (
-    <span
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`https://flagcdn.com/w40/${flagCode}.png`}
+      srcSet={`https://flagcdn.com/w80/${flagCode}.png 2x`}
+      alt={label}
+      width={20}
+      height={14}
       className={cn(
-        "inline-flex items-center justify-center leading-none",
+        "w-5 h-3.5 object-cover rounded-[3px] border border-white/20 shrink-0 shadow-sm",
         className,
       )}
-      role="img"
-      aria-label={label}
-    >
-      {emoji}
-    </span>
+      onError={() => setImgError(true)}
+      loading="lazy"
+    />
   );
 }
 
 const LISTS_CATALOG = [
-  { label: "Bộ Sưu Tập Phim", href: "/lists" },
   { label: "Phim Mới", href: "/search?sort=modified.time%20desc" },
   { label: "Phim Bộ", href: "/films/series" },
   { label: "Phim Lẻ", href: "/films/single" },
