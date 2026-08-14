@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -93,34 +93,94 @@ type AuthFeaturedMovie = {
   objectPosition: string;
 };
 
-const AUTH_FALLBACK_MOVIES: AuthFeaturedMovie[] = [
+const TMDB_FEATURED_MOVIES: AuthFeaturedMovie[] = [
   {
-    title: "Avengers: Infinity War",
+    title: "Avengers: Endgame",
     studio: "Marvel Studios",
-    backdropUrl: "/images/wp3533664-avengers-infinity-war-4k-wallpapers.jpg",
-    objectPosition: "52% center",
+    backdropUrl: "https://image.tmdb.org/t/p/w1280/or06FN3Dka5tukK1e9sl16pB3iy.jpg",
+    objectPosition: "center top",
   },
   {
-    title: "Avengers",
-    studio: "Marvel Studios",
-    backdropUrl: "/images/wp4300709-avengers-4k-wallpapers.jpg",
-    objectPosition: "50% center",
+    title: "Spider-Man: Across the Spider-Verse",
+    studio: "Sony Pictures / Marvel",
+    backdropUrl: "https://image.tmdb.org/t/p/w1280/4HodYYKEIsGOdinkGi2Ucz6X9i0.jpg",
+    objectPosition: "center",
   },
   {
-    title: "Zack Snyder's Justice League",
-    studio: "DC",
-    backdropUrl:
-      "/images/zack-snyders-justice-league-dc-superheroes-dc-comics-2021-3840x2160-4980.jpg",
-    objectPosition: "52% center",
-  },
-  {
-    title: "The Odyssey",
+    title: "Oppenheimer",
     studio: "Universal Pictures",
-    backdropUrl:
-      "/images/MV5BN2MyYjk2MWMtODMyZS00MDUyLW-8113-3732-1766460989.webp",
-    objectPosition: "50% center",
+    backdropUrl: "https://image.tmdb.org/t/p/w1280/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg",
+    objectPosition: "center",
+  },
+  {
+    title: "Dune: Part Two",
+    studio: "Warner Bros. Pictures",
+    backdropUrl: "https://image.tmdb.org/t/p/w1280/xOMo8BRK7PfcJv9JCnx7s520b4a.jpg",
+    objectPosition: "center",
+  },
+  {
+    title: "Interstellar",
+    studio: "Paramount Pictures",
+    backdropUrl: "https://image.tmdb.org/t/p/w1280/xJHokMbljvjADYdit5fK5VQsXEG.jpg",
+    objectPosition: "center",
+  },
+  {
+    title: "Avatar: The Way of Water",
+    studio: "20th Century Studios",
+    backdropUrl: "https://image.tmdb.org/t/p/w1280/ovM06PdF36CfeK00pcipAawNV7W.jpg",
+    objectPosition: "center",
   },
 ];
+
+function AuthBackdropImage({
+  movie,
+}: {
+  movie: AuthFeaturedMovie;
+}) {
+  const candidateUrls = useMemo(() => {
+    const list: string[] = [];
+    const add = (url?: string) => {
+      if (url && !list.includes(url)) {
+        list.push(url);
+        if (url.startsWith("http")) {
+          const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(url)}`;
+          if (!list.includes(wsrv)) list.push(wsrv);
+          const proxy = `/api/image-proxy?url=${encodeURIComponent(url)}`;
+          if (!list.includes(proxy)) list.push(proxy);
+        }
+      }
+    };
+    add(movie.backdropUrl);
+    return list;
+  }, [movie.backdropUrl]);
+
+  const [candidateIdx, setCandidateIdx] = useState(0);
+
+  useEffect(() => {
+    setCandidateIdx(0);
+  }, [movie.backdropUrl]);
+
+  const src = candidateUrls[candidateIdx] || movie.backdropUrl;
+
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      key={`${movie.backdropUrl}-${candidateIdx}`}
+      src={src}
+      alt={`Ảnh phim ${movie.title}`}
+      referrerPolicy="no-referrer"
+      loading="eager"
+      decoding="async"
+      className="w-full h-full object-cover brightness-[0.72] transition-all duration-700"
+      style={{ objectPosition: movie.objectPosition }}
+      onError={() => {
+        if (candidateIdx < candidateUrls.length - 1) {
+          setCandidateIdx((i) => i + 1);
+        }
+      }}
+    />
+  );
+}
 
 export function AuthPageForm({
   initialMode = "login",
@@ -162,19 +222,15 @@ export function AuthPageForm({
     },
   });
 
-  // TMDB supplies a fresh image per page load. Local artwork remains available
-  // when TMDB or its image CDN cannot be reached.
-  const [randomMovie, setRandomMovie] = useState<AuthFeaturedMovie>(
-    AUTH_FALLBACK_MOVIES[0],
-  );
+  // TMDB supplies a fresh random image per page load directly from TMDB
+  const [randomMovie, setRandomMovie] = useState<AuthFeaturedMovie>(() => {
+    return TMDB_FEATURED_MOVIES[
+      Math.floor(Math.random() * TMDB_FEATURED_MOVIES.length)
+    ];
+  });
 
   useEffect(() => {
     let cancelled = false;
-    const fallback =
-      AUTH_FALLBACK_MOVIES[
-        Math.floor(Math.random() * AUTH_FALLBACK_MOVIES.length)
-      ];
-    setRandomMovie(fallback);
 
     tmdbApi
       .getTrending("movie", "week")
@@ -182,7 +238,7 @@ export function AuthPageForm({
         if (cancelled) return;
         const candidates = (response?.results || []).filter(
           (movie: TmdbMovie) =>
-            Boolean(movie?.poster_path || movie?.backdrop_path) &&
+            Boolean(movie?.backdrop_path || movie?.poster_path) &&
             Boolean(movie?.title || movie?.original_title || movie?.name),
         );
         if (candidates.length === 0) return;
@@ -190,34 +246,27 @@ export function AuthPageForm({
         const movie = candidates[
           Math.floor(Math.random() * candidates.length)
         ] as TmdbMovie;
-        const posterUrl = tmdbPoster(movie.poster_path, "w780");
-        const backdropUrl = tmdbBackdrop(movie.backdrop_path, "w1280");
-        const imageUrl = posterUrl || backdropUrl;
+        const backdrop = movie.backdrop_path
+          ? tmdbBackdrop(movie.backdrop_path, "w1280")
+          : null;
+        const poster = movie.poster_path
+          ? tmdbPoster(movie.poster_path, "w780")
+          : null;
+        const imageUrl = backdrop || poster;
         if (!imageUrl) return;
 
-        // Do not replace a working local background with an image that has
-        // not loaded yet. This was visible in production as an empty panel
-        // while the TMDB/serverless image request was still pending.
-        const preload = new window.Image();
-        preload.decoding = "async";
-        preload.onload = () => {
-          if (cancelled) return;
-          setRandomMovie({
-            title:
-              movie.title ||
-              movie.original_title ||
-              movie.name ||
-              "TMDB Trending",
-            studio: "TMDB Trending",
-            backdropUrl: imageUrl,
-            objectPosition: posterUrl ? "center top" : "center",
-          });
-        };
-        preload.src = imageUrl;
+        setRandomMovie({
+          title:
+            movie.title ||
+            movie.original_title ||
+            movie.name ||
+            "TMDB Trending",
+          studio: "TMDB Trending",
+          backdropUrl: imageUrl,
+          objectPosition: backdrop ? "center" : "center top",
+        });
       })
-      .catch(() => {
-        // The already-selected local fallback remains visible.
-      });
+      .catch(() => {});
 
     return () => {
       cancelled = true;
@@ -505,31 +554,7 @@ export function AuthPageForm({
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.7, ease: "easeOut" }}
                   >
-                    <Image
-                      src={randomMovie.backdropUrl}
-                      alt={`Ảnh phim ${randomMovie.title}`}
-                      fill
-                      priority
-                      // Local files and TMDB are already correctly sized;
-                      // bypassing the optimizer removes a production-only
-                      // server round trip and keeps the local fallback instant.
-                      unoptimized
-                      sizes="(min-width: 768px) 45vw, 0px"
-                      className="object-cover brightness-[0.68]"
-                      style={{ objectPosition: randomMovie.objectPosition }}
-                      onError={() => {
-                        setRandomMovie((prev) => {
-                          const idx = AUTH_FALLBACK_MOVIES.findIndex(
-                            (m) => m.backdropUrl === prev.backdropUrl,
-                          );
-                          const nextIdx =
-                            (idx + 1) % AUTH_FALLBACK_MOVIES.length;
-                          return AUTH_FALLBACK_MOVIES[
-                            nextIdx >= 0 ? nextIdx : 0
-                          ];
-                        });
-                      }}
-                    />
+                    <AuthBackdropImage movie={randomMovie} />
                   </motion.div>
                 </AnimatePresence>
                 {/* Gradient overlay: dark at bottom for text, subtle at top */}
