@@ -460,15 +460,21 @@ export default function HomePage() {
     }, 450);
   };
 
-  // ── Initial 4 Sections Data (Prioritizing Hollywood/Western Live-Action Movies) ──
-  // 1. Phim kỹ xảo (Hollywood VFX & Fantasy)
+  // ── Initial 4 Sections Data (Prioritizing Hollywood/Western Live-Action & Fantasy Movies) ──
+  // 1. Phim kỹ xảo (VFX, Fantasy & Myth Movies)
+  const { data: vfxGenreData } = useQuery({
+    queryKey: ["vfx-movies-genre"],
+    queryFn: () => movieApi.getByGenre("than-thoai", 1).then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+    enabled: catalogReady,
+  });
   const { data: vfxUsUkData } = useQuery({
     queryKey: ["vfx-movies-us-uk"],
     queryFn: () =>
       movieApi
         .getFiltered({
           country: "au-my",
-          category: "than-thoai",
+          category: "vien-tuong",
           page: 1,
           limit: 24,
         })
@@ -476,14 +482,11 @@ export default function HomePage() {
     staleTime: 1000 * 60 * 10,
     enabled: catalogReady,
   });
-  const { data: vfxData, isLoading: vfxLoading } = useQuery({
-    queryKey: ["vfx-movies"],
-    queryFn: () => movieApi.getByGenre("than-thoai", 1).then((r) => r.data),
+  const { data: vfxMoreData, isLoading: vfxLoading } = useQuery({
+    queryKey: ["vfx-movies-genre-p2"],
+    queryFn: () => movieApi.getByGenre("than-thoai", 2).then((r) => r.data),
     staleTime: 1000 * 60 * 10,
-    enabled:
-      catalogReady &&
-      Boolean(vfxUsUkData) &&
-      catalogItemCount(vfxUsUkData) === 0,
+    enabled: catalogReady,
   });
 
   // 2. Series Âu-Mỹ (Hollywood TV Series)
@@ -513,13 +516,10 @@ export default function HomePage() {
         })
         .then((r) => r.data),
     staleTime: 1000 * 60 * 10,
-    enabled:
-      catalogReady &&
-      Boolean(usUkSeriesData) &&
-      catalogItemCount(usUkSeriesData) < 12,
+    enabled: catalogReady,
   });
 
-  // 3. Phim hành động (Hollywood Action Movies)
+  // 3. Phim hành động (Hollywood & International Action Movies)
   const { data: actionUsUkData } = useQuery({
     queryKey: ["action-movies-us-uk"],
     queryFn: () =>
@@ -538,10 +538,7 @@ export default function HomePage() {
     queryKey: ["action-movies"],
     queryFn: () => movieApi.getByGenre("hanh-dong", 1).then((r) => r.data),
     staleTime: 1000 * 60 * 10,
-    enabled:
-      catalogReady &&
-      Boolean(actionUsUkData) &&
-      catalogItemCount(actionUsUkData) === 0,
+    enabled: catalogReady,
   });
 
   // 4. Phim khoa học viễn tưởng bom tấn (Hollywood Sci-Fi Blockbusters)
@@ -563,10 +560,7 @@ export default function HomePage() {
     queryKey: ["scifi-movies"],
     queryFn: () => movieApi.getByGenre("vien-tuong", 1).then((r) => r.data),
     staleTime: 1000 * 60 * 10,
-    enabled:
-      catalogReady &&
-      Boolean(scifiUsUkData) &&
-      catalogItemCount(scifiUsUkData) === 0,
+    enabled: catalogReady,
   });
 
   // ── Lazy Loaded 10 Sections Data (Loaded after clicking Xem Thêm) ──
@@ -693,10 +687,11 @@ export default function HomePage() {
 
   // ── Process arrays with STRICT Live-Action filtering for Hollywood rows ──
   const vfxFilms = useMemo(() => {
-    const usUkList = vfxUsUkData?.data?.items || vfxUsUkData?.items || [];
-    const genList = vfxData?.data?.items || vfxData?.items || [];
-    return filterLiveActionOnly(deduplicate([...usUkList, ...genList]));
-  }, [vfxUsUkData, vfxData]);
+    const list1 = vfxGenreData?.data?.items || vfxGenreData?.items || [];
+    const list2 = vfxUsUkData?.data?.items || vfxUsUkData?.items || [];
+    const list3 = vfxMoreData?.data?.items || vfxMoreData?.items || [];
+    return filterLiveActionOnly(deduplicate([...list1, ...list2, ...list3]));
+  }, [vfxGenreData, vfxUsUkData, vfxMoreData]);
 
   const usUkSeriesFilms = useMemo(() => {
     const firstPage =
