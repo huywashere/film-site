@@ -849,7 +849,7 @@ const configuredApiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(
 );
 const defaultApiBase =
   process.env.NODE_ENV === "production"
-    ? "/api/v1"
+    ? "https://victorious-possibility-production-aba7.up.railway.app/api/v1"
     : "http://localhost:3001/api/v1";
 
 // The Nest application has a fixed `/api/v1` prefix. Older local env files

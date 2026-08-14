@@ -7,9 +7,9 @@ export function proxy(request: NextRequest) {
     try {
       return process.env.NEXT_PUBLIC_API_URL
         ? new URL(process.env.NEXT_PUBLIC_API_URL).origin
-        : "";
+        : "https://victorious-possibility-production-aba7.up.railway.app";
     } catch {
-      return "";
+      return "https://victorious-possibility-production-aba7.up.railway.app";
     }
   })();
 
@@ -25,7 +25,7 @@ export function proxy(request: NextRequest) {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: blob: https://image.tmdb.org https://phimimg.com https://img.phimapi.com https://img.ophim.live https://images.nguonc.com https://vsmov.com https://ui-avatars.com https://upload.wikimedia.org https://flagcdn.com",
     "font-src 'self' data: https://fonts.gstatic.com",
-    `connect-src 'self'${apiOrigin ? ` ${apiOrigin}` : ""}${
+    `connect-src 'self' https://victorious-possibility-production-aba7.up.railway.app wss://victorious-possibility-production-aba7.up.railway.app${apiOrigin && apiOrigin !== "https://victorious-possibility-production-aba7.up.railway.app" ? ` ${apiOrigin}` : ""}${
       isDevelopment
         ? " http://localhost:3001 http://127.0.0.1:3001 ws://localhost:3001 ws://127.0.0.1:3001"
         : ""

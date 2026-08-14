@@ -37,7 +37,7 @@ function cleanProperties(properties: TelemetryProperties = {}) {
 function telemetryEndpoint() {
   const fallbackBase =
     process.env.NODE_ENV === "production"
-      ? "/api/v1"
+      ? "https://victorious-possibility-production-aba7.up.railway.app/api/v1"
       : "http://localhost:3001/api/v1";
   const rawBase = (process.env.NEXT_PUBLIC_API_URL || fallbackBase).replace(
     /\/+$/,

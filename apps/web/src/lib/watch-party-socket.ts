@@ -68,17 +68,16 @@ export interface SocketAck {
 function getSocketOrigin() {
   const configured = process.env.NEXT_PUBLIC_API_URL;
   if (!configured) {
-    if (typeof window !== "undefined") return window.location.origin;
     return process.env.NODE_ENV === "production"
-      ? "http://127.0.0.1"
+      ? "https://victorious-possibility-production-aba7.up.railway.app"
       : "http://localhost:3001";
   }
   try {
     return new URL(configured).origin;
   } catch {
-    return typeof window !== "undefined"
-      ? window.location.origin
-      : "http://127.0.0.1";
+    return process.env.NODE_ENV === "production"
+      ? "https://victorious-possibility-production-aba7.up.railway.app"
+      : "http://localhost:3001";
   }
 }
 
