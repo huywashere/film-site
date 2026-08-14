@@ -507,36 +507,32 @@ function HeroFanCardImage({
   film: HeroFilm;
   className?: string;
 }) {
-  const primary =
-    resolveDirectImageUrl(film.poster_url) ||
-    resolveDirectImageUrl(film.thumb_url);
-  const alt1 = resolveDirectImageUrl(film.thumb_url);
-  const alt2 =
-    primary && primary.includes("/upload/vod/")
-      ? primary.replace("/upload/vod/", "/uploads/movies/")
-      : primary && primary.includes("/uploads/movies/")
-        ? primary.replace("/uploads/movies/", "/upload/vod/")
-        : null;
+  const candidateUrls = useMemo(() => {
+    const list: string[] = [];
+    const add = (url?: unknown) => {
+      const resolved = resolveDirectImageUrl(url);
+      if (resolved && !list.includes(resolved)) list.push(resolved);
+    };
+    add(film.poster_url);
+    add(film.thumb_url);
+    add(film.heroBackdrop);
+    if (film.poster_url?.includes("/uploads/movies/")) {
+      add(film.poster_url.replace("/uploads/movies/", "/upload/vod/"));
+    } else if (film.poster_url?.includes("/upload/vod/")) {
+      add(film.poster_url.replace("/upload/vod/", "/uploads/movies/"));
+    }
+    return list;
+  }, [film.heroBackdrop, film.poster_url, film.thumb_url]);
 
-  const [currentSrc, setCurrentSrc] = useState<string | null>(primary);
-  const [hasFailed, setHasFailed] = useState(false);
+  const [candidateIdx, setCandidateIdx] = useState(0);
 
   useEffect(() => {
-    setCurrentSrc(primary);
-    setHasFailed(false);
-  }, [primary, film.slug]);
+    setCandidateIdx(0);
+  }, [film.slug, candidateUrls]);
 
-  const handleError = () => {
-    if (currentSrc === primary && alt1 && alt1 !== primary) {
-      setCurrentSrc(alt1);
-    } else if (currentSrc !== alt2 && alt2) {
-      setCurrentSrc(alt2);
-    } else {
-      setHasFailed(true);
-    }
-  };
+  const src = candidateUrls[candidateIdx];
 
-  if (!currentSrc || hasFailed) {
+  if (!src) {
     return (
       <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-950 flex flex-col items-center justify-center p-3 text-center">
         <Film className="w-8 h-8 text-neutral-600 mb-1" />
@@ -550,11 +546,16 @@ function HeroFanCardImage({
   return (
     /* eslint-disable-next-line @next/next/no-img-element */
     <img
-      src={currentSrc}
+      key={`${film.slug}-${candidateIdx}`}
+      src={src}
       alt={film.name}
       loading="eager"
       decoding="async"
-      onError={handleError}
+      onError={() => {
+        if (candidateIdx < candidateUrls.length - 1) {
+          setCandidateIdx((i) => i + 1);
+        }
+      }}
       className={className}
     />
   );
@@ -567,37 +568,32 @@ function HeroThumbnailImage({
   film: HeroFilm;
   className?: string;
 }) {
-  const primary =
-    resolveDirectImageUrl(film.thumb_url) ||
-    resolveDirectImageUrl(film.poster_url) ||
-    (film.heroBackdrop ? resolveDirectImageUrl(film.heroBackdrop) : null);
-  const alt1 = resolveDirectImageUrl(film.poster_url);
-  const alt2 =
-    primary && primary.includes("/upload/vod/")
-      ? primary.replace("/upload/vod/", "/uploads/movies/")
-      : primary && primary.includes("/uploads/movies/")
-        ? primary.replace("/uploads/movies/", "/upload/vod/")
-        : null;
+  const candidateUrls = useMemo(() => {
+    const list: string[] = [];
+    const add = (url?: unknown) => {
+      const resolved = resolveDirectImageUrl(url);
+      if (resolved && !list.includes(resolved)) list.push(resolved);
+    };
+    add(film.thumb_url);
+    add(film.poster_url);
+    add(film.heroBackdrop);
+    if (film.thumb_url?.includes("/uploads/movies/")) {
+      add(film.thumb_url.replace("/uploads/movies/", "/upload/vod/"));
+    } else if (film.thumb_url?.includes("/upload/vod/")) {
+      add(film.thumb_url.replace("/upload/vod/", "/uploads/movies/"));
+    }
+    return list;
+  }, [film.heroBackdrop, film.poster_url, film.thumb_url]);
 
-  const [currentSrc, setCurrentSrc] = useState<string | null>(primary);
-  const [hasFailed, setHasFailed] = useState(false);
+  const [candidateIdx, setCandidateIdx] = useState(0);
 
   useEffect(() => {
-    setCurrentSrc(primary);
-    setHasFailed(false);
-  }, [primary, film.slug]);
+    setCandidateIdx(0);
+  }, [film.slug, candidateUrls]);
 
-  const handleError = () => {
-    if (currentSrc === primary && alt1 && alt1 !== primary) {
-      setCurrentSrc(alt1);
-    } else if (currentSrc !== alt2 && alt2) {
-      setCurrentSrc(alt2);
-    } else {
-      setHasFailed(true);
-    }
-  };
+  const src = candidateUrls[candidateIdx];
 
-  if (!currentSrc || hasFailed) {
+  if (!src) {
     return (
       <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-950 flex items-center justify-center text-[9px] text-neutral-300 font-bold px-1 text-center truncate">
         {film.name}
@@ -608,11 +604,16 @@ function HeroThumbnailImage({
   return (
     /* eslint-disable-next-line @next/next/no-img-element */
     <img
-      src={currentSrc}
+      key={`${film.slug}-${candidateIdx}`}
+      src={src}
       alt={film.name}
       loading="eager"
       decoding="async"
-      onError={handleError}
+      onError={() => {
+        if (candidateIdx < candidateUrls.length - 1) {
+          setCandidateIdx((i) => i + 1);
+        }
+      }}
       className={className}
     />
   );
