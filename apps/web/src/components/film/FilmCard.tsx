@@ -349,6 +349,11 @@ function FilmCardComponent({
                 className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
                 loading={priority ? "eager" : "lazy"}
                 decoding="async"
+                referrerPolicy="no-referrer"
+                // Movie artwork is already resized by its CDN. Avoid making
+                // production wait for a second Vercel image-optimizer fetch;
+                // onError below retains the guarded same-origin fallback.
+                unoptimized
                 onError={handleImageError}
               />
             ) : (

@@ -36,8 +36,7 @@ import { cardFont } from "@/lib/fonts";
 
 function getGoogleAuthErrorMessage(error: unknown) {
   const serverMsg =
-    (error as any)?.response?.data?.message ||
-    (error as any)?.data?.message;
+    (error as any)?.response?.data?.message || (error as any)?.data?.message;
 
   if (serverMsg) {
     return Array.isArray(serverMsg) ? serverMsg.join(", ") : String(serverMsg);
@@ -68,7 +67,11 @@ function getGoogleAuthErrorMessage(error: unknown) {
       return "Cấu hình Firebase cho Google Sign-In không hợp lệ.";
     default: {
       const rawMsg = (error as any)?.message;
-      if (rawMsg && typeof rawMsg === "string" && !rawMsg.includes("ERR_BAD_RESPONSE")) {
+      if (
+        rawMsg &&
+        typeof rawMsg === "string" &&
+        !rawMsg.includes("ERR_BAD_RESPONSE")
+      ) {
         return rawMsg;
       }
       return "Không thể xác thực tài khoản Google. Vui lòng thử lại hoặc sử dụng đăng nhập bằng Email.";
@@ -160,7 +163,7 @@ export function AuthPageForm({
     let cancelled = false;
     const fallback =
       AUTH_FALLBACK_MOVIES[
-      Math.floor(Math.random() * AUTH_FALLBACK_MOVIES.length)
+        Math.floor(Math.random() * AUTH_FALLBACK_MOVIES.length)
       ];
     setRandomMovie(fallback);
 
@@ -183,16 +186,25 @@ export function AuthPageForm({
         const imageUrl = posterUrl || backdropUrl;
         if (!imageUrl) return;
 
-        setRandomMovie({
-          title:
-            movie.title ||
-            movie.original_title ||
-            movie.name ||
-            "TMDB Trending",
-          studio: "TMDB Trending",
-          backdropUrl: imageUrl,
-          objectPosition: posterUrl ? "center top" : "center",
-        });
+        // Do not replace a working local background with an image that has
+        // not loaded yet. This was visible in production as an empty panel
+        // while the TMDB/serverless image request was still pending.
+        const preload = new window.Image();
+        preload.decoding = "async";
+        preload.onload = () => {
+          if (cancelled) return;
+          setRandomMovie({
+            title:
+              movie.title ||
+              movie.original_title ||
+              movie.name ||
+              "TMDB Trending",
+            studio: "TMDB Trending",
+            backdropUrl: imageUrl,
+            objectPosition: posterUrl ? "center top" : "center",
+          });
+        };
+        preload.src = imageUrl;
       })
       .catch(() => {
         // The already-selected local fallback remains visible.
@@ -210,7 +222,7 @@ export function AuthPageForm({
     useAuthStore
       .getState()
       .fetchMe()
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -254,7 +266,7 @@ export function AuthPageForm({
     } catch (err: any) {
       toast(
         err.message ||
-        "Không thể gửi email khôi phục. Vui lòng kiểm tra lại email.",
+          "Không thể gửi email khôi phục. Vui lòng kiểm tra lại email.",
         "error",
       );
     } finally {
@@ -481,7 +493,10 @@ export function AuthPageForm({
                       alt={`Ảnh phim ${randomMovie.title}`}
                       fill
                       priority
-                      unoptimized={randomMovie.backdropUrl.startsWith("/")}
+                      // Local files and TMDB are already correctly sized;
+                      // bypassing the optimizer removes a production-only
+                      // server round trip and keeps the local fallback instant.
+                      unoptimized
                       sizes="(min-width: 768px) 45vw, 0px"
                       className="object-cover brightness-[0.68]"
                       style={{ objectPosition: randomMovie.objectPosition }}
@@ -490,8 +505,11 @@ export function AuthPageForm({
                           const idx = AUTH_FALLBACK_MOVIES.findIndex(
                             (m) => m.backdropUrl === prev.backdropUrl,
                           );
-                          const nextIdx = (idx + 1) % AUTH_FALLBACK_MOVIES.length;
-                          return AUTH_FALLBACK_MOVIES[nextIdx >= 0 ? nextIdx : 0];
+                          const nextIdx =
+                            (idx + 1) % AUTH_FALLBACK_MOVIES.length;
+                          return AUTH_FALLBACK_MOVIES[
+                            nextIdx >= 0 ? nextIdx : 0
+                          ];
                         });
                       }}
                     />
@@ -504,7 +522,10 @@ export function AuthPageForm({
 
                 {/* Logo only — positioned neatly in top-left corner */}
                 <div className="relative z-10">
-                  <Link href="/" className="inline-block transition-transform duration-200 hover:scale-105">
+                  <Link
+                    href="/"
+                    className="inline-block transition-transform duration-200 hover:scale-105"
+                  >
                     <Image
                       src="/cinephim-logo.png"
                       alt="CinePhim Logo"

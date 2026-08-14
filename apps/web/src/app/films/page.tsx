@@ -117,6 +117,10 @@ export default function BrowseFilmsPage() {
       return res.data;
     },
     staleTime: 5 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+    placeholderData: (previousData) => previousData,
   });
 
   const rawItems: Array<Record<string, unknown>> = (data?.items ||
@@ -345,7 +349,12 @@ export default function BrowseFilmsPage() {
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {films.map((film, idx) => (
-              <FilmCard key={film._id || idx} film={film} />
+              <FilmCard
+                key={film._id || idx}
+                film={film}
+                priority={idx < 6}
+                preferHighQuality={idx < 6}
+              />
             ))}
           </div>
 

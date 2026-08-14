@@ -630,31 +630,68 @@ async function getFastCatalogPage(
   page: number,
   requests: CatalogSourceRequest[],
 ): Promise<any> {
-  return Promise.any(
-    requests.map(async ({ source, request }) => {
-      const data = await request();
-      const rawItems = extractFilmItems(data);
-      if (!rawItems.length) throw new Error(`${source} returned no films`);
-      const items = dedupeFilmsBySource([{ source, items: rawItems }]);
-      if (!items.length) throw new Error(`${source} returned unusable films`);
+  const resolveFirstHealthy = (tier: CatalogSourceRequest[]) =>
+    Promise.any(
+      tier.map(async ({ source, request }) => {
+        const data = await request();
+        const rawItems = extractFilmItems(data);
+        if (!rawItems.length) throw new Error(`${source} returned no films`);
+        const items = dedupeFilmsBySource([{ source, items: rawItems }]);
+        if (!items.length) throw new Error(`${source} returned unusable films`);
 
-      const pagination = {
-        currentPage: page,
-        totalItems: items.length,
-        totalItemsPerPage: items.length,
-        totalPages: 1,
-      };
-      return {
-        status: true,
-        items,
-        params: { pagination },
-        pagination,
-        data: { items, params: { pagination } },
-        _sources: [{ source, count: items.length }],
-        _fast: true,
-      };
-    }),
+        const sourceData = data as any;
+        const sourcePagination =
+          sourceData?.data?.params?.pagination ||
+          sourceData?.params?.pagination ||
+          sourceData?.pagination ||
+          sourceData?.paginate ||
+          sourceData?.data?.paginate ||
+          {};
+        const pagination = {
+          currentPage:
+            Number(sourcePagination.currentPage) ||
+            Number(sourcePagination.current_page) ||
+            page,
+          totalItems:
+            Number(sourcePagination.totalItems) ||
+            Number(sourcePagination.total_items) ||
+            items.length,
+          totalItemsPerPage:
+            Number(sourcePagination.totalItemsPerPage) ||
+            Number(sourcePagination.items_per_page) ||
+            items.length,
+          totalPages:
+            Number(sourcePagination.totalPages) ||
+            Number(sourcePagination.total_page) ||
+            1,
+        };
+        return {
+          status: true,
+          items,
+          params: { pagination },
+          pagination,
+          data: { items, params: { pagination } },
+          _sources: [{ source, count: items.length }],
+          _fast: true,
+        };
+      }),
+    );
+
+  // KKPhim and OPhim are normally the fastest and carry the richest list
+  // metadata. Do not start the slower providers unless both primary sources
+  // are unavailable; this avoids dozens of long-lived requests on home pages.
+  const primary = requests.filter(
+    ({ source }) => source === "kkphim" || source === "ophim",
   );
+  const fallback = requests.filter(
+    ({ source }) => source !== "kkphim" && source !== "ophim",
+  );
+
+  try {
+    return await resolveFirstHealthy(primary.length ? primary : requests);
+  } catch {
+    return resolveFirstHealthy(fallback.length ? fallback : requests);
+  }
 }
 
 function catalogRequests(
@@ -747,25 +784,25 @@ function catalogRequests(
 // ── movieApi (alias for component compatibility) ──────────────────
 export const movieApi = {
   getLatest: (page = 1) =>
-    getMergedCatalogPage(page, catalogRequests("latest", page)).then(
-      (data) => ({ data }),
-    ),
+    getFastCatalogPage(page, catalogRequests("latest", page)).then((data) => ({
+      data,
+    })),
   getSeries: (page = 1) =>
-    getMergedCatalogPage(page, catalogRequests("series", page)).then(
-      (data) => ({ data }),
-    ),
+    getFastCatalogPage(page, catalogRequests("series", page)).then((data) => ({
+      data,
+    })),
   getSingle: (page = 1) =>
-    getMergedCatalogPage(page, catalogRequests("single", page)).then(
-      (data) => ({ data }),
-    ),
+    getFastCatalogPage(page, catalogRequests("single", page)).then((data) => ({
+      data,
+    })),
   getAnime: (page = 1) =>
-    getMergedCatalogPage(page, catalogRequests("anime", page)).then((data) => ({
+    getFastCatalogPage(page, catalogRequests("anime", page)).then((data) => ({
       data,
     })),
   getTvShows: (page = 1) =>
-    getMergedCatalogPage(page, catalogRequests("tvshows", page)).then(
-      (data) => ({ data }),
-    ),
+    getFastCatalogPage(page, catalogRequests("tvshows", page)).then((data) => ({
+      data,
+    })),
   getDetail: (slug: string, preferredSource?: MovieSource) =>
     getDetailFromAnySource(slug, preferredSource).then((data) => ({ data })),
   getDetailFromSource: (source: MovieSource, slug: string) =>
@@ -775,11 +812,11 @@ export const movieApi = {
   search: (keyword: string, page = 1, limit = 24) =>
     searchAllSources(keyword, page, limit).then((data) => ({ data })),
   getByGenre: (slug: string, page = 1) =>
-    getMergedCatalogPage(page, catalogRequests("genre", page, slug)).then(
+    getFastCatalogPage(page, catalogRequests("genre", page, slug)).then(
       (data) => ({ data }),
     ),
   getByCountry: (slug: string, page = 1) =>
-    getMergedCatalogPage(page, catalogRequests("country", page, slug)).then(
+    getFastCatalogPage(page, catalogRequests("country", page, slug)).then(
       (data) => ({ data }),
     ),
   getByCountryFast: (slug: string, page = 1) =>

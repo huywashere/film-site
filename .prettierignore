@@ -1,0 +1,10 @@
+node_modules
+.next
+.next-dev
+dist
+.turbo
+coverage
+.terraform
+.vercel
+data
+*.log

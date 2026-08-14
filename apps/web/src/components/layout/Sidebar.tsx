@@ -138,60 +138,47 @@ export function Sidebar() {
     }
   };
 
-  const warmRoute = useCallback((href: string) => {
-    if (href.startsWith("http")) return;
-    try {
-      router.prefetch(href);
-    } catch (_e) {
-      // ignore prefetch errors
-    }
+  const warmRoute = useCallback(
+    (href: string) => {
+      if (href.startsWith("http")) return;
+      try {
+        router.prefetch(href);
+      } catch (_e) {
+        // ignore prefetch errors
+      }
 
-    if (warmedRoutesRef.current.has(href)) return;
-    warmedRoutesRef.current.add(href);
+      if (warmedRoutesRef.current.has(href)) return;
+      warmedRoutesRef.current.add(href);
 
-    const countrySlug = href.match(/^\/country\/([^/?]+)/)?.[1];
-    if (countrySlug) {
-      void queryClient.prefetchQuery({
-        queryKey: ["country-fast", countrySlug, 1, ""],
-        queryFn: () =>
-          movieApi.getByCountryFast(countrySlug, 1).then((response) => response.data),
-        staleTime: 1000 * 60 * 60,
-        gcTime: 1000 * 60 * 60 * 24,
-      });
-    }
-
-    if (href === "/genres") {
-      for (const topic of MOVIE_WORLD_PREFETCH) {
+      const countrySlug = href.match(/^\/country\/([^/?]+)/)?.[1];
+      if (countrySlug) {
         void queryClient.prefetchQuery({
-          queryKey: ["movie-world-topic", topic.slug, topic.discover],
-          queryFn: async () => {
-            const response = await tmdbApi.discoverMovies(topic.discover);
-            return response?.results || [];
-          },
+          queryKey: ["country-fast", countrySlug, 1, ""],
+          queryFn: () =>
+            movieApi
+              .getByCountryFast(countrySlug, 1)
+              .then((response) => response.data),
           staleTime: 1000 * 60 * 60,
-          gcTime: 1000 * 60 * 60 * 6,
+          gcTime: 1000 * 60 * 60 * 24,
         });
       }
-    }
-  }, [queryClient, router]);
 
-  useEffect(() => {
-    const warmPrimaryTabs = () => {
-      warmRoute("/country/han-quoc");
-      warmRoute("/country/trung-quoc");
-      warmRoute("/genres");
-    };
-
-    if ("requestIdleCallback" in window) {
-      const idleId = window.requestIdleCallback(warmPrimaryTabs, {
-        timeout: 2500,
-      });
-      return () => window.cancelIdleCallback(idleId);
-    }
-
-    const timer = globalThis.setTimeout(warmPrimaryTabs, 1200);
-    return () => globalThis.clearTimeout(timer);
-  }, [warmRoute]);
+      if (href === "/genres") {
+        for (const topic of MOVIE_WORLD_PREFETCH) {
+          void queryClient.prefetchQuery({
+            queryKey: ["movie-world-topic", topic.slug, topic.discover],
+            queryFn: async () => {
+              const response = await tmdbApi.discoverMovies(topic.discover);
+              return response?.results || [];
+            },
+            staleTime: 1000 * 60 * 60,
+            gcTime: 1000 * 60 * 60 * 6,
+          });
+        }
+      }
+    },
+    [queryClient, router],
+  );
 
   const isVisible = !hasHeroBanner || scrolledPastBanner;
 
@@ -261,8 +248,8 @@ export function Sidebar() {
                   className={cn(
                     "relative z-10 transition-transform group-hover:scale-110",
                     item.isSpecial &&
-                    !isActive &&
-                    "text-[#229ED9] group-hover:text-[#38bdf8]",
+                      !isActive &&
+                      "text-[#229ED9] group-hover:text-[#38bdf8]",
                   )}
                 />
 

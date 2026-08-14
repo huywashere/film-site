@@ -34,6 +34,11 @@ function deduplicate(films: FilmItem[]): FilmItem[] {
   });
 }
 
+function catalogItemCount(data: any): number {
+  const items = data?.data?.items || data?.items || [];
+  return Array.isArray(items) ? items.length : 0;
+}
+
 // Fallback riêng cho hàng Top 10. Hero không còn dùng bộ banner tĩnh này.
 const HOLLYWOOD_TOP10_POOL: FilmItem[] = [
   {
@@ -475,7 +480,10 @@ export default function HomePage() {
     queryKey: ["vfx-movies"],
     queryFn: () => movieApi.getByGenre("than-thoai", 1).then((r) => r.data),
     staleTime: 1000 * 60 * 10,
-    enabled: catalogReady,
+    enabled:
+      catalogReady &&
+      Boolean(vfxUsUkData) &&
+      catalogItemCount(vfxUsUkData) === 0,
   });
 
   // 2. Series Âu-Mỹ (Hollywood TV Series)
@@ -505,7 +513,10 @@ export default function HomePage() {
         })
         .then((r) => r.data),
     staleTime: 1000 * 60 * 10,
-    enabled: catalogReady,
+    enabled:
+      catalogReady &&
+      Boolean(usUkSeriesData) &&
+      catalogItemCount(usUkSeriesData) < 12,
   });
 
   // 3. Phim hành động (Hollywood Action Movies)
@@ -527,7 +538,10 @@ export default function HomePage() {
     queryKey: ["action-movies"],
     queryFn: () => movieApi.getByGenre("hanh-dong", 1).then((r) => r.data),
     staleTime: 1000 * 60 * 10,
-    enabled: catalogReady,
+    enabled:
+      catalogReady &&
+      Boolean(actionUsUkData) &&
+      catalogItemCount(actionUsUkData) === 0,
   });
 
   // 4. Phim khoa học viễn tưởng bom tấn (Hollywood Sci-Fi Blockbusters)
@@ -549,7 +563,10 @@ export default function HomePage() {
     queryKey: ["scifi-movies"],
     queryFn: () => movieApi.getByGenre("vien-tuong", 1).then((r) => r.data),
     staleTime: 1000 * 60 * 10,
-    enabled: catalogReady,
+    enabled:
+      catalogReady &&
+      Boolean(scifiUsUkData) &&
+      catalogItemCount(scifiUsUkData) === 0,
   });
 
   // ── Lazy Loaded 10 Sections Data (Loaded after clicking Xem Thêm) ──

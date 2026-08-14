@@ -37,7 +37,12 @@ import { cn } from "@/lib/utils";
 import { useTranslation } from "@/store/langStore";
 import { Button } from "@/components/ui/button";
 import { useTmdb, useTmdbPerson } from "@/hooks/useTmdb";
-import { tmdbBackdrop, tmdbProfile, tmdbPoster } from "@/lib/tmdb";
+import {
+  tmdbBackdrop,
+  tmdbImageProxyUrl,
+  tmdbProfile,
+  tmdbPoster,
+} from "@/lib/tmdb";
 import { TrailerModal } from "@/components/film/TrailerModal";
 import { safeJsonLd } from "@/lib/safe-json-ld";
 import { cardFont } from "@/lib/fonts";
@@ -56,6 +61,54 @@ function formatVoteCount(value: number) {
     return `${(value / 1_000).toFixed(value >= 100_000 ? 0 : 1).replace(".0", "")} nghìn`;
   }
   return String(Math.round(value));
+}
+
+function ResilientDetailImage({
+  candidates,
+  alt,
+  className,
+  sizes,
+  priority = false,
+}: {
+  candidates: Array<string | null | undefined>;
+  alt: string;
+  className: string;
+  sizes: string;
+  priority?: boolean;
+}) {
+  const sources = useMemo(() => {
+    const result: string[] = [];
+    for (const source of candidates) {
+      if (!source) continue;
+      if (!result.includes(source)) result.push(source);
+      if (/^https:\/\//i.test(source)) {
+        const proxy = tmdbImageProxyUrl(source);
+        if (!result.includes(proxy)) result.push(proxy);
+      }
+    }
+    return result;
+  }, [candidates]);
+  const sourceKey = sources.join("|");
+  const [sourceIndex, setSourceIndex] = useState(0);
+
+  useEffect(() => setSourceIndex(0), [sourceKey]);
+
+  const source = sources[sourceIndex];
+  if (!source) return null;
+
+  return (
+    <NextImage
+      src={source}
+      alt={alt}
+      fill
+      sizes={sizes}
+      className={className}
+      priority={priority}
+      unoptimized
+      referrerPolicy="no-referrer"
+      onError={() => setSourceIndex((index) => index + 1)}
+    />
+  );
 }
 
 // ── Cast Card (Only renders actors with actual photos) ──────
@@ -116,13 +169,11 @@ function CastCard({
       title={`${cleanName}${role ? ` (${role})` : ""}`}
     >
       <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-neutral-900 transition-[border-color,transform] duration-200 group-hover:scale-[1.03] group-hover:border-white/30 md:h-20 md:w-20">
-        <NextImage
-          src={realPhotoUrl}
+        <ResilientDetailImage
+          candidates={[realPhotoUrl]}
           alt={cleanName}
-          fill
           sizes="80px"
           className="object-cover"
-          unoptimized
         />
       </div>
       <div className="w-full truncate px-1">
@@ -666,6 +717,12 @@ export default function FilmDetailPage() {
     providerBackdropUrl ||
     (bestBackdrop ? tmdbBackdrop(bestBackdrop.file_path, "w1280") : null) ||
     undefined;
+  const tmdbPosterUrl = bestPoster
+    ? tmdbPoster(bestPoster.file_path, "w500")
+    : null;
+  const tmdbBackdropUrl = bestBackdrop
+    ? tmdbBackdrop(bestBackdrop.file_path, "w1280")
+    : null;
 
   // Watchlist status check
   useEffect(() => {
@@ -933,13 +990,17 @@ export default function FilmDetailPage() {
       {/* ── Giant Backdrop Banner (Plex Style Left-to-Right Blended Layout) ── */}
       {(backdropUrl || posterUrl) && (
         <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[86vh] min-h-[720px] w-full select-none overflow-hidden md:h-[105vh] md:max-h-[1040px]">
-          <NextImage
-            src={backdropUrl || posterUrl || ""}
+          <ResilientDetailImage
+            candidates={[
+              providerBackdropUrl,
+              tmdbBackdropUrl,
+              providerPosterUrl,
+              tmdbPosterUrl,
+              "/images/cinema-hall-with-red-seat-wide-white-screen.jpg",
+            ]}
             alt=""
-            fill
             sizes="100vw"
             className="scale-[1.03] object-cover object-top opacity-55"
-            unoptimized
             priority
           />
           <div className="absolute inset-0 bg-[#0d0f12]/55" />
@@ -1181,14 +1242,17 @@ export default function FilmDetailPage() {
           {/* Right Hero Poster Box */}
           <div className="lg:col-span-4 hidden lg:flex justify-end">
             <div className="w-64 aspect-[2/3] rounded-2xl overflow-hidden border border-white/10 bg-neutral-950/60 shadow-2xl relative group">
-              {posterUrl && (
-                <NextImage
-                  src={posterUrl}
+              {(posterUrl || tmdbPosterUrl) && (
+                <ResilientDetailImage
+                  candidates={[
+                    providerPosterUrl,
+                    tmdbPosterUrl,
+                    providerBackdropUrl,
+                    tmdbBackdropUrl,
+                  ]}
                   alt={film.name}
-                  fill
                   sizes="256px"
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  unoptimized
                 />
               )}
             </div>

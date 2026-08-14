@@ -23,7 +23,13 @@ const TMDB_POSTERS = [
 
 export function CinematicAuthBackground() {
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+    <div
+      className="absolute inset-0 overflow-hidden pointer-events-none z-0 bg-cover bg-center"
+      style={{
+        backgroundImage:
+          "url('/images/cinema-hall-with-red-seat-wide-white-screen.jpg')",
+      }}
+    >
       {/* TMDB Movie Posters Collage Grid Wall */}
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 scale-105 opacity-75 filter saturate-110">
         {TMDB_POSTERS.concat(TMDB_POSTERS).map((url, idx) => (
@@ -36,7 +42,9 @@ export function CinematicAuthBackground() {
               src={url}
               alt="TMDB Cinema Background"
               className="w-full h-full object-cover"
-              loading="lazy"
+              loading={idx < 12 ? "eager" : "lazy"}
+              decoding="async"
+              referrerPolicy="no-referrer"
             />
           </div>
         ))}

@@ -7,11 +7,16 @@ const TMDB_PROXY = "/api/tmdb";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
 
 function tmdbImageUrl(path: string, size: string): string {
-  const upstream = `${TMDB_IMAGE_BASE}/${size}${path}`;
-  // Some production browsers/networks fail image.tmdb.org while the Vercel
-  // origin can reach it reliably. Always use the cached same-origin proxy so
-  // components never bounce between a failed direct URL and its proxy.
-  return `/api/image-proxy?url=${encodeURIComponent(upstream)}`;
+  // Use TMDB's public image CDN as the primary path. Sending every image
+  // through a serverless function added a cold-start + DNS lookup to each
+  // poster and caused production grids to time out before the image arrived.
+  // Components that need it can still fall back to /api/image-proxy on error.
+  return `${TMDB_IMAGE_BASE}/${size}${path}`;
+}
+
+export function tmdbImageProxyUrl(url: string): string {
+  if (!url || url.startsWith("/api/image-proxy")) return url;
+  return `/api/image-proxy?url=${encodeURIComponent(url)}`;
 }
 
 // ── Image URL helpers ─────────────────────────────────────────────

@@ -1,5 +1,5 @@
 "use client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import NextImage from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -146,27 +146,19 @@ export function CountryFlagImage({
   label: string;
   className?: string;
 }) {
-  const [imgError, setImgError] = useState(false);
   const emoji = getCountryEmoji(code);
 
-  if (imgError) {
-    return (
-      <span className="shrink-0 text-xs leading-none" role="img" aria-label={label}>
-        {emoji}
-      </span>
-    );
-  }
-
   return (
-    /* eslint-disable-next-line @next/next/no-img-element */
-    <img
-      src={`/api/image-proxy?url=${encodeURIComponent(`https://flagcdn.com/w40/${code}.png`)}`}
-      alt={label}
-      className={className}
-      loading="lazy"
-      decoding="async"
-      onError={() => setImgError(true)}
-    />
+    <span
+      className={cn(
+        "inline-flex items-center justify-center leading-none",
+        className,
+      )}
+      role="img"
+      aria-label={label}
+    >
+      {emoji}
+    </span>
   );
 }
 
@@ -207,9 +199,7 @@ function AnimatedNavbarLogo() {
         />
       </div>
 
-      <div
-        className="navbar-logo-reveal navbar-logo-reveal--wordmark relative overflow-hidden"
-      >
+      <div className="navbar-logo-reveal navbar-logo-reveal--wordmark relative overflow-hidden">
         <span className="block font-sans text-xl font-black lowercase tracking-tight text-white transition-opacity duration-200 group-hover:opacity-80 sm:text-2xl">
           cinephim
         </span>
@@ -221,29 +211,6 @@ function AnimatedNavbarLogo() {
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const queryClient = useQueryClient();
-
-  // Prefetch Korean & Chinese movie hub routes & data in memory on mount for INSTANT 0ms tab switching
-  useEffect(() => {
-    try {
-      router.prefetch("/country/han-quoc");
-      router.prefetch("/country/trung-quoc");
-      queryClient.prefetchQuery({
-        queryKey: ["country-fast", "han-quoc", 1, ""],
-        queryFn: () =>
-          movieApi.getByCountryFast("han-quoc", 1).then((r) => r.data),
-        staleTime: 1000 * 60 * 60,
-      });
-      queryClient.prefetchQuery({
-        queryKey: ["country-fast", "trung-quoc", 1, ""],
-        queryFn: () =>
-          movieApi.getByCountryFast("trung-quoc", 1).then((r) => r.data),
-        staleTime: 1000 * 60 * 60,
-      });
-    } catch (_e) {
-      // ignore prefetch errors
-    }
-  }, [queryClient, router]);
 
   const { user, logout } = useAuthStore();
   const openAuthModal = useAuthModalStore((state) => state.openModal);
@@ -254,6 +221,7 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   // Notifications State & References (Live Auto-Fetched from Third-Party APIs)
   const [notifications, setNotifications] = useState<
@@ -278,7 +246,8 @@ export function Navbar() {
     queryKey: ["navbar-latest-notifications"],
     queryFn: () => movieApi.getLatest(1).then((r) => r.data),
     staleTime: 1000 * 60 * 5,
-    refetchInterval: 1000 * 60 * 5, // Auto-check for new updates every 5 minutes
+    enabled: notificationsOpen,
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {
@@ -409,7 +378,9 @@ export function Navbar() {
                   <Link
                     key={item.slug}
                     href={`/country/${item.slug}`}
-                    onMouseEnter={() => router.prefetch(`/country/${item.slug}`)}
+                    onMouseEnter={() =>
+                      router.prefetch(`/country/${item.slug}`)
+                    }
                     className="px-3 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 flex items-center gap-2.5 truncate group/flag"
                   >
                     <CountryFlagImage
@@ -495,7 +466,7 @@ export function Navbar() {
             {/* Profile / Actions */}
             <div className="flex items-center space-x-1 sm:space-x-3">
               {/* Notifications Bell Dropdown (Visible next to Avatar/User button) */}
-              <DropdownMenu modal={false}>
+              <DropdownMenu modal={false} onOpenChange={setNotificationsOpen}>
                 <DropdownMenuTrigger className="relative flex h-10 w-10 items-center justify-center rounded-xl text-neutral-300 hover:bg-white/[0.06] hover:text-white transition-colors focus:outline-none cursor-pointer">
                   <Bell size={20} className="stroke-[2.2]" />
                   {unreadCount > 0 && (
@@ -578,7 +549,8 @@ export function Navbar() {
                         referrerPolicy="no-referrer"
                         className="w-8 h-8 rounded-full object-cover border border-white/20 group-hover:border-emerald-400 transition-all shadow-md"
                         onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=10b981&color=ffffff&size=64`;
+                          (e.currentTarget as HTMLImageElement).src =
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=10b981&color=ffffff&size=64`;
                         }}
                       />
                     ) : (
@@ -615,7 +587,8 @@ export function Navbar() {
                         referrerPolicy="no-referrer"
                         className="h-10 w-10 rounded-full object-cover border border-white/20 shadow-md shrink-0"
                         onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=10b981&color=ffffff&size=80`;
+                          (e.currentTarget as HTMLImageElement).src =
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=10b981&color=ffffff&size=80`;
                         }}
                       />
                       <div className="flex-1 min-w-0">

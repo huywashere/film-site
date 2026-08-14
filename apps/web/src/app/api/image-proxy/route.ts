@@ -9,9 +9,9 @@ export const dynamic = "force-dynamic";
 /** Refuse to relay anything larger than this (bytes). */
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 /** Abort slow upstreams so a request can't pin a serverless function open. */
-const FETCH_TIMEOUT_MS = 2200;
+const FETCH_TIMEOUT_MS = 4500;
 /** A broken poster must never hold a card request for tens of seconds. */
-const TOTAL_FALLBACK_BUDGET_MS = 5000;
+const TOTAL_FALLBACK_BUDGET_MS = 9000;
 const FALLBACK_BATCH_SIZE = 3;
 const MAX_REDIRECTS = 3;
 
