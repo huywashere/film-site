@@ -32,18 +32,23 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://film-site-web.vercel.app",
+  ),
   title: {
-    default: "NetPhim — Xem Phim Online",
+    default: "NetPhim — Xem Phim Online Miễn Phí Full HD 4K",
     template: "%s | NetPhim",
   },
   description:
-    "Nền tảng xem phim online chất lượng cao 4K. Phim bộ, phim lẻ, hoạt hình, TV Shows với phụ đề tiếng Việt.",
+    "Nền tảng xem phim online chất lượng cao 4K. Phim bộ, phim lẻ, anime, TV Shows với phụ đề tiếng Việt và thuyết minh cập nhật liên tục.",
   keywords: [
     "xem phim",
     "phim online",
     "phim bộ",
     "phim lẻ",
     "hoạt hình",
+    "anime vietsub",
+    "phim thuyết minh",
     "NetPhim",
   ],
   icons: {
@@ -59,9 +64,28 @@ export const metadata: Metadata = {
   },
   formatDetection: { telephone: false },
   openGraph: {
-    title: "NetPhim — Xem Phim Online",
-    description: "Nền tảng xem phim online chất lượng cao",
+    title: "NetPhim — Xem Phim Online Miễn Phí Full HD 4K",
+    description:
+      "Nền tảng xem phim online chất lượng cao 4K. Phim bộ, phim lẻ, anime với phụ đề tiếng Việt và thuyết minh.",
+    url: "https://film-site-web.vercel.app",
+    siteName: "NetPhim",
+    locale: "vi_VN",
     type: "website",
+    images: [
+      {
+        url: "/cinephim-logo.png",
+        width: 1200,
+        height: 630,
+        alt: "NetPhim — Xem Phim Online",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "NetPhim — Xem Phim Online Miễn Phí Full HD 4K",
+    description:
+      "Nền tảng xem phim online chất lượng cao 4K với hàng ngàn bộ phim bom tấn mới nhất.",
+    images: ["/cinephim-logo.png"],
   },
 };
 

@@ -506,7 +506,7 @@ export default function UserDashboardPage() {
       if (data) {
         useAuthStore.getState().setUser({
           ...user!,
-          username: cleanUsername || user?.username,
+          username: cleanUsername || user?.username || "",
           displayName: data.displayName || displayName,
           avatarUrl: data.avatarUrl || avatarToSave,
           bio: data.bio || bio,
@@ -655,8 +655,12 @@ export default function UserDashboardPage() {
               </div>
               <p className="text-xs sm:text-sm text-neutral-400">
                 @{profile.username}
-                <span className="mx-2 text-neutral-600">·</span>
-                <span>{user?.email || `${profile.username}@gmail.com`}</span>
+                {isOwnProfile && user?.email && (
+                  <>
+                    <span className="mx-2 text-neutral-600">·</span>
+                    <span>{user.email}</span>
+                  </>
+                )}
               </p>
               {profile.bio && (
                 <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed max-w-md line-clamp-2 pt-0.5">
