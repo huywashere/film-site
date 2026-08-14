@@ -403,14 +403,23 @@ function FilmCardComponent({
               )}
             </div>
 
-            {/* Episode Badge Bottom Left inside Poster */}
-            {film.episode_current && (
-              <div className="absolute bottom-2.5 left-2.5 z-20 pointer-events-none">
+            {/* Bottom Badges Container inside Poster (Episode left, Rating right) */}
+            <div className="absolute bottom-2.5 inset-x-2.5 flex items-center justify-between z-20 pointer-events-none gap-1.5">
+              {film.episode_current ? (
                 <span className="bg-black/80 border border-white/15 backdrop-blur-md text-white/90 text-[10px] font-bold px-2 py-0.5 rounded shadow">
                   {film.episode_current}
                 </span>
-              </div>
-            )}
+              ) : (
+                <span />
+              )}
+
+              {displayRating && (
+                <span className="flex items-center gap-1 bg-black/80 border border-amber-400/30 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] font-black text-amber-400 shadow">
+                  <Star size={10} fill="currentColor" />
+                  <span>{displayRating}</span>
+                </span>
+              )}
+            </div>
 
             {/* Hover Overlay Play Icon */}
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/40 backdrop-blur-[2px]">
@@ -420,50 +429,21 @@ function FilmCardComponent({
             </div>
           </div>
         </Link>
-
-        {showActions && (
-          <button
-            type="button"
-            onClick={toggleWatchlist}
-            disabled={watchlistPending}
-            aria-label={
-              saved ? `Xóa ${title} khỏi Xem sau` : `Thêm ${title} vào Xem sau`
-            }
-            aria-pressed={saved}
-            title={saved ? "Xóa khỏi Xem sau" : "Thêm vào Xem sau"}
-            className={cn(
-              "absolute bottom-3 right-3 z-30 flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur-md transition-all duration-200 hover:scale-105 active:scale-95 disabled:cursor-wait disabled:opacity-60",
-              saved
-                ? "border-white bg-white text-black shadow-lg"
-                : "border-white/20 bg-black/65 text-white hover:bg-white/20",
-            )}
-          >
-            <Bookmark size={16} fill={saved ? "currentColor" : "none"} />
-          </button>
-        )}
       </div>
 
       {/* Details Footer below Card */}
       {!hideDetails && (
         <div className="mt-2.5 flex flex-col px-0.5">
-          <div className="flex items-center justify-between gap-1.5">
-            <Link
-              href={`/film/${slug}`}
-              className="font-extrabold text-sm text-white hover:text-blue-400 transition-colors truncate line-clamp-1 flex-1"
-            >
-              {title}
-            </Link>
-
-            {displayRating && (
-              <div className="flex items-center gap-1 shrink-0 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded text-[11px] font-extrabold text-amber-400">
-                <Star size={11} fill="currentColor" />
-                <span>{displayRating}</span>
-              </div>
-            )}
-          </div>
+          <Link
+            href={`/film/${slug}`}
+            className="font-extrabold text-sm text-white hover:text-violet-400 transition-colors truncate block"
+            title={title}
+          >
+            {title}
+          </Link>
 
           <div className="flex items-center justify-between mt-1 text-[12px] text-neutral-400 font-medium">
-            <span className="truncate max-w-[140px]">
+            <span className="truncate">
               {film.origin_name || categoryName || `Năm ${film.year || 2026}`}
             </span>
           </div>
