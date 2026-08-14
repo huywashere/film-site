@@ -925,11 +925,7 @@ export default function HomePage() {
   return (
     <div className="bg-background min-h-screen text-foreground overflow-hidden pb-12">
       {/* Hero Banner slider */}
-      {showBannerSkeleton ? (
-        <div className="min-h-[100dvh] w-full bg-gradient-to-br from-neutral-950 via-[#10141a] to-neutral-900 animate-pulse" />
-      ) : (
-        <HeroBanner films={bannerFilms} />
-      )}
+      <HeroBanner />
 
       {/* Main Content Area */}
       <div

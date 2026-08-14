@@ -26,9 +26,10 @@ import {
   type TmdbImage,
   type TmdbMovie,
 } from "@/lib/tmdb";
+import { getRandomCuratedHeroSet } from "@/lib/curated-hero-pool";
 
 interface HeroBannerProps {
-  films: FilmItem[];
+  films?: FilmItem[];
 }
 
 interface HeroFilm extends FilmItem {
@@ -318,27 +319,41 @@ function getFilmDetailMeta(film: HeroFilm) {
 }
 
 function getSpotlightBadge(film: HeroFilm, index: number) {
+  if ((film as any).spotlightBadge) {
+    const colors = [
+      "from-red-600/90 to-amber-600/90 text-white border-red-500/40",
+      "from-amber-600/90 to-yellow-500/90 text-white border-amber-400/40",
+      "from-violet-600/90 to-purple-500/90 text-white border-purple-400/40",
+      "from-blue-600/90 to-indigo-600/90 text-white border-blue-400/40",
+      "from-emerald-600/90 to-teal-500/90 text-white border-emerald-400/40",
+      "from-rose-600/90 to-pink-600/90 text-white border-rose-500/40",
+    ];
+    return {
+      label: (film as any).spotlightBadge,
+      color: colors[index % colors.length],
+    };
+  }
   const badges = [
     {
       label: "🔥 #1 THỊNH HÀNH HÔM NAY",
       color: "from-red-600/90 to-amber-600/90 text-white border-red-500/40",
     },
     {
-      label: "🏆 TOP 10 PHIM BỘ TUẦN NÀY",
+      label: "🏆 SIÊU PHẨM HOLLYWOOD 4K",
       color:
         "from-amber-600/90 to-yellow-500/90 text-white border-amber-400/40",
     },
     {
-      label: "✨ SIÊU PHẨM BẢN QUYỀN 4K",
+      label: "✨ BOM TẤN CHIẾU RẠP",
       color:
         "from-violet-600/90 to-purple-500/90 text-white border-purple-400/40",
     },
     {
-      label: "🍿 PHIM CHIẾU RẠP HOT",
+      label: "🍿 VŨ TRỤ ĐIỆN ẢNH ĐỈNH CAO",
       color: "from-rose-600/90 to-pink-600/90 text-white border-rose-500/40",
     },
     {
-      label: "⚡ MỚI CẬP NHẬT TẬP MỚI",
+      label: "⚡ BẢN QUYỀN CHẤT LƯỢNG CAO",
       color:
         "from-emerald-600/90 to-teal-500/90 text-white border-emerald-400/40",
     },
@@ -1029,10 +1044,11 @@ async function loadFreshTmdbPlaylist(): Promise<HeroFilm[]> {
 }
 
 export default function HeroBanner({ films }: HeroBannerProps) {
-  const [current, setCurrent] = useState(cachedHeroIndex);
-  const [tmdbFeatured, setTmdbFeatured] = useState<HeroFilm[] | null>(
-    cachedHeroPlaylist,
-  );
+  const [current, setCurrent] = useState(0);
+  const [featured, setFeatured] = useState<HeroFilm[]>(() => {
+    if (films && films.length > 0) return films.slice(0, 6) as HeroFilm[];
+    return getRandomCuratedHeroSet(6) as HeroFilm[];
+  });
   const [trailerModalFilm, setTrailerModalFilm] = useState<FilmItem | null>(
     null,
   );
@@ -1060,65 +1076,26 @@ export default function HeroBanner({ films }: HeroBannerProps) {
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  const fallbackFeatured = useMemo(() => {
-    if (films && films.length > 0) {
-      return films.slice(0, 6);
-    }
-    return [];
-  }, [films]);
-
-  const [enrichedFilms, setEnrichedFilms] = useState<HeroFilm[]>([]);
-
-  const featured = useMemo(() => {
-    if (enrichedFilms.length > 0) return enrichedFilms;
-    if (fallbackFeatured.length > 0) return fallbackFeatured;
-    if (tmdbFeatured && tmdbFeatured.length > 0) return tmdbFeatured;
-    return [];
-  }, [enrichedFilms, fallbackFeatured, tmdbFeatured]);
-
   // Enrich initial featured films with TMDB backdrops & title logos smoothly in the background
   useEffect(() => {
     let active = true;
 
-    if (fallbackFeatured.length > 0) {
-      enrichHeroTitleLogos(fallbackFeatured).then((withLogos) => {
-        if (!active) return;
-        setEnrichedFilms(withLogos);
-      });
-      return () => {
-        active = false;
-      };
-    }
+    enrichHeroTitleLogos(featured).then((withLogos) => {
+      if (!active) return;
+      setFeatured((prev) =>
+        prev.map((film, idx) => ({
+          ...film,
+          titleLogo: withLogos[idx]?.titleLogo || film.titleLogo,
+          heroBackdrop: withLogos[idx]?.heroBackdrop || film.heroBackdrop,
+          titleLogoResolved: true,
+        })),
+      );
+    });
 
-    // Only if no films were passed from server/props, fetch fresh TMDB fallback
-    const loadPlaylist = async () => {
-      const existingPlaylist = cachedHeroPlaylist || readStoredHeroPlaylist();
-      if (existingPlaylist && existingPlaylist.length > 0) {
-        const playlistWithLogos = await retainPlayableHeroes(
-          await enrichHeroTitleLogos(existingPlaylist),
-        );
-        if (!active) return;
-        if (playlistWithLogos.length > 0) {
-          setTmdbFeatured(playlistWithLogos);
-          return;
-        }
-      }
-
-      try {
-        const playlist = await loadFreshTmdbPlaylist();
-        if (!active) return;
-        if (playlist.length > 0) {
-          storeHeroPlaylist(playlist);
-          setTmdbFeatured(playlist);
-        }
-      } catch {}
-    };
-
-    void loadPlaylist();
     return () => {
       active = false;
     };
-  }, [fallbackFeatured]);
+  }, []);
 
   useEffect(() => {
     setCurrent((index) => (index >= featured.length ? 0 : index));
