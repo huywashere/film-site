@@ -282,12 +282,12 @@ function FilmCardComponent({
     }
   };
 
-  // Extract top-left badge (Thuyết Minh / Vietsub)
+  // Extract top-left badge (T.Minh / Vietsub / L.Tiếng)
   const langBadge = film.lang
     ? film.lang.includes("Thuyết Minh")
-      ? "Thuyết Minh"
+      ? "T.Minh"
       : film.lang.includes("Lồng Tiếng")
-        ? "Lồng Tiếng"
+        ? "L.Tiếng"
         : "Vietsub"
     : null;
 
@@ -301,6 +301,19 @@ function FilmCardComponent({
           ? "HD"
           : film.quality
     : "HD";
+
+  // Normalize episode text to short, clean single-line label (e.g. "8/8", "Full", "T.12")
+  const episodeBadge = (() => {
+    const raw = film.episode_current?.trim();
+    if (!raw) return null;
+    const match = raw.match(/\((\d+\/\d+)\)/) || raw.match(/(\d+\/\d+)/);
+    if (match) return match[1];
+    const lower = raw.toLowerCase();
+    if (lower === "full" || lower.includes("hoàn tất") || lower.includes("trọn bộ")) {
+      return "Full";
+    }
+    return raw.replace(/^Tập\s+/i, "T.");
+  })();
 
   // Calculate rating
   const rawRating =
@@ -381,15 +394,15 @@ function FilmCardComponent({
             )}
 
             {/* Top Gradient Overlay */}
-            <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/70 to-transparent pointer-events-none z-10" />
+            <div className="absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-black/60 to-transparent pointer-events-none z-10" />
 
             {/* Bottom Gradient Overlay */}
-            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none z-10" />
+            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none z-10" />
 
-            {/* Badges Container Top */}
-            <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between z-20 pointer-events-none">
+            {/* Badges Container Top (Sleek, Compact, Single-line) */}
+            <div className="absolute top-2 inset-x-2 flex items-center justify-between z-20 pointer-events-none gap-1">
               {langBadge ? (
-                <span className="bg-black/65 border border-white/10 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">
+                <span className="whitespace-nowrap bg-black/60 border border-white/10 backdrop-blur-md text-white/90 text-[9px] font-bold px-1.5 py-0.5 rounded-[4px] shadow-sm leading-none">
                   {langBadge}
                 </span>
               ) : (
@@ -397,25 +410,25 @@ function FilmCardComponent({
               )}
 
               {qualityBadge && (
-                <span className="bg-white/95 text-black text-[10px] font-black px-1.5 py-0.5 rounded shadow">
+                <span className="whitespace-nowrap bg-white/90 text-black text-[9px] font-black px-1.5 py-0.5 rounded-[4px] shadow-sm leading-none">
                   {qualityBadge}
                 </span>
               )}
             </div>
 
-            {/* Bottom Badges Container inside Poster (Episode left, Rating right) */}
-            <div className="absolute bottom-2.5 inset-x-2.5 flex items-center justify-between z-20 pointer-events-none gap-1.5">
-              {film.episode_current ? (
-                <span className="bg-black/80 border border-white/15 backdrop-blur-md text-white/90 text-[10px] font-bold px-2 py-0.5 rounded shadow">
-                  {film.episode_current}
+            {/* Bottom Badges Container inside Poster (Sleek, Single-line) */}
+            <div className="absolute bottom-2 inset-x-2 flex items-center justify-between z-20 pointer-events-none gap-1">
+              {episodeBadge ? (
+                <span className="whitespace-nowrap bg-black/70 border border-white/15 backdrop-blur-md text-white/90 text-[9px] font-bold px-1.5 py-0.5 rounded-[4px] shadow-sm leading-none">
+                  {episodeBadge}
                 </span>
               ) : (
                 <span />
               )}
 
               {displayRating && (
-                <span className="flex items-center gap-1 bg-black/80 border border-amber-400/30 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] font-black text-amber-400 shadow">
-                  <Star size={10} fill="currentColor" />
+                <span className="whitespace-nowrap flex items-center gap-0.5 bg-black/70 border border-amber-400/30 backdrop-blur-md px-1.5 py-0.5 rounded-[4px] text-[9px] font-black text-amber-400 shadow-sm leading-none">
+                  <Star size={9} fill="currentColor" />
                   <span>{displayRating}</span>
                 </span>
               )}
@@ -423,8 +436,8 @@ function FilmCardComponent({
 
             {/* Hover Overlay Play Icon */}
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/40 backdrop-blur-[2px]">
-              <div className="w-11 h-11 rounded-full bg-white text-black flex items-center justify-center shadow-xl transform scale-75 group-hover/card:scale-100 transition-transform">
-                <Play size={20} fill="currentColor" className="ml-0.5" />
+              <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-xl transform scale-75 group-hover/card:scale-100 transition-transform">
+                <Play size={18} fill="currentColor" className="ml-0.5" />
               </div>
             </div>
           </div>

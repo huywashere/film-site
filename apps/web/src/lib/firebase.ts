@@ -90,6 +90,8 @@ export {
   firebaseAuth,
   googleProvider,
   facebookProvider,
+  GoogleAuthProvider,
+  FacebookAuthProvider,
   signInWithPopup,
   signInWithRedirect,
   signInWithCredential,
