@@ -400,9 +400,9 @@ function FilmCardComponent({
             <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none z-10" />
 
             {/* Badges Container Top (Sleek, Compact, Single-line) */}
-            <div className="absolute top-2 inset-x-2 flex items-center justify-between z-20 pointer-events-none gap-1">
+            <div className="absolute top-1.5 sm:top-2 inset-x-1.5 sm:inset-x-2 flex items-center justify-between z-20 pointer-events-none gap-0.5 sm:gap-1">
               {langBadge ? (
-                <span className="whitespace-nowrap bg-black/60 border border-white/10 backdrop-blur-md text-white/90 text-[9px] font-bold px-1.5 py-0.5 rounded-[4px] shadow-sm leading-none">
+                <span className="whitespace-nowrap bg-black/60 border border-white/10 backdrop-blur-md text-white/90 text-[8px] sm:text-[9px] font-bold px-1 sm:px-1.5 py-0.5 rounded-[3px] sm:rounded-[4px] shadow-sm leading-none">
                   {langBadge}
                 </span>
               ) : (
@@ -410,16 +410,16 @@ function FilmCardComponent({
               )}
 
               {qualityBadge && (
-                <span className="whitespace-nowrap bg-white/90 text-black text-[9px] font-black px-1.5 py-0.5 rounded-[4px] shadow-sm leading-none">
+                <span className="whitespace-nowrap bg-white/90 text-black text-[8px] sm:text-[9px] font-black px-1 sm:px-1.5 py-0.5 rounded-[3px] sm:rounded-[4px] shadow-sm leading-none">
                   {qualityBadge}
                 </span>
               )}
             </div>
 
             {/* Bottom Badges Container inside Poster (Sleek, Single-line) */}
-            <div className="absolute bottom-2 inset-x-2 flex items-center justify-between z-20 pointer-events-none gap-1">
+            <div className="absolute bottom-1.5 sm:bottom-2 inset-x-1.5 sm:inset-x-2 flex items-center justify-between z-20 pointer-events-none gap-0.5 sm:gap-1">
               {episodeBadge ? (
-                <span className="whitespace-nowrap bg-black/70 border border-white/15 backdrop-blur-md text-white/90 text-[9px] font-bold px-1.5 py-0.5 rounded-[4px] shadow-sm leading-none">
+                <span className="whitespace-nowrap bg-black/70 border border-white/15 backdrop-blur-md text-white/90 text-[8px] sm:text-[9px] font-bold px-1 sm:px-1.5 py-0.5 rounded-[3px] sm:rounded-[4px] shadow-sm leading-none">
                   {episodeBadge}
                 </span>
               ) : (
@@ -427,8 +427,8 @@ function FilmCardComponent({
               )}
 
               {displayRating && (
-                <span className="whitespace-nowrap flex items-center gap-0.5 bg-black/70 border border-amber-400/30 backdrop-blur-md px-1.5 py-0.5 rounded-[4px] text-[9px] font-black text-amber-400 shadow-sm leading-none">
-                  <Star size={9} fill="currentColor" />
+                <span className="whitespace-nowrap flex items-center gap-0.5 bg-black/70 border border-amber-400/30 backdrop-blur-md px-1 sm:px-1.5 py-0.5 rounded-[3px] sm:rounded-[4px] text-[8px] sm:text-[9px] font-black text-amber-400 shadow-sm leading-none">
+                  <Star size={8} className="sm:w-[9px] sm:h-[9px]" fill="currentColor" />
                   <span>{displayRating}</span>
                 </span>
               )}
@@ -446,16 +446,16 @@ function FilmCardComponent({
 
       {/* Details Footer below Card */}
       {!hideDetails && (
-        <div className="mt-2.5 flex flex-col px-0.5">
+        <div className="mt-1.5 sm:mt-2.5 flex flex-col px-0.5">
           <Link
             href={`/film/${slug}`}
-            className="font-extrabold text-sm text-white hover:text-violet-400 transition-colors truncate block"
+            className="font-bold sm:font-extrabold text-[11px] sm:text-sm text-white hover:text-violet-400 transition-colors truncate block leading-tight"
             title={title}
           >
             {title}
           </Link>
 
-          <div className="flex items-center justify-between mt-1 text-[12px] text-neutral-400 font-medium">
+          <div className="flex items-center justify-between mt-0.5 sm:mt-1 text-[10px] sm:text-[12px] text-neutral-400 font-medium">
             <span className="truncate">
               {film.origin_name || categoryName || `Năm ${film.year || 2026}`}
             </span>

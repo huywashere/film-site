@@ -335,15 +335,16 @@ function FilmSection({
                 swiper.params.navigation.nextEl = nextRef.current;
               }
             }}
-            spaceBetween={12}
-            slidesPerView={2.5}
+            spaceBetween={8}
+            slidesPerView={3.8}
             freeMode={{ enabled: true, momentumRatio: 0.8 }}
             breakpoints={{
-              480: { slidesPerView: 3.6, spaceBetween: 12 },
-              640: { slidesPerView: 4.5, spaceBetween: 14 },
-              768: { slidesPerView: 5.5, spaceBetween: 14 },
-              1024: { slidesPerView: 6.8, spaceBetween: 16 },
-              1280: { slidesPerView: 7.5, spaceBetween: 16 },
+              360: { slidesPerView: 3.8, spaceBetween: 8 },
+              480: { slidesPerView: 4.5, spaceBetween: 10 },
+              640: { slidesPerView: 5.2, spaceBetween: 12 },
+              768: { slidesPerView: 6.0, spaceBetween: 14 },
+              1024: { slidesPerView: 7.0, spaceBetween: 16 },
+              1280: { slidesPerView: 7.8, spaceBetween: 16 },
             }}
             className="w-full !py-1"
           >
