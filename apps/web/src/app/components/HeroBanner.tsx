@@ -397,7 +397,10 @@ async function enrichHeroTitleLogos(playlist: HeroFilm[]): Promise<HeroFilm[]> {
       if (film.titleLogoResolved && film.titleLogo) return film;
 
       let tmdbId = Number(
-        film.tmdb?.id || (film as any).tmdb_id || film.slug.match(/^tmdb-(\d+)$/)?.[1],
+        (film as any).tmdbId ||
+        film.tmdb?.id ||
+        (film as any).tmdb_id ||
+        film.slug.match(/^tmdb-(\d+)$/)?.[1],
       );
       let mediaType: "movie" | "tv" =
         film.tmdb?.type === "tv" ||

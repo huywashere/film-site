@@ -653,7 +653,14 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
  * with NO stale jumps, fully hydrated with TMDB high-res assets.
  */
 export function getRandomCuratedHeroSet(count = 6): CuratedHeroMovie[] {
-  const pool = [...CURATED_HERO_FRANCHISE_POOL];
+  const pool = CURATED_HERO_FRANCHISE_POOL.map((item) => ({
+    ...item,
+    tmdb: {
+      id: String(item.tmdbId),
+      type: (item.mediaType || "movie") as "movie" | "tv",
+      vote_average: item.vote_average,
+    },
+  }));
   // Fisher-Yates shuffle
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

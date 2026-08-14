@@ -37,9 +37,18 @@ export async function GET(
     TMDB_TOKEN !== "your-read-access-token-here" &&
     TMDB_TOKEN.startsWith("eyJ");
 
-  // Them language mac dinh neu chua co
-  if (!searchParams.has("language")) {
+  // Them language mac dinh neu chua co (tru cac endpoint anh/video de khong bi chan logo quoc te)
+  const isMediaAssetEndpoint =
+    path.endsWith("/images") ||
+    path.endsWith("/videos") ||
+    path.includes("/images/") ||
+    path.includes("/videos/");
+
+  if (!searchParams.has("language") && !isMediaAssetEndpoint) {
     searchParams.set("language", "vi-VN");
+  }
+  if (isMediaAssetEndpoint && !searchParams.has("include_image_language")) {
+    searchParams.set("include_image_language", "en,vi,null,ja,zh,ko");
   }
 
   // Neu khong dung Bearer token hop le, them api_key vao query
