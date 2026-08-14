@@ -1323,51 +1323,54 @@ export default function HeroBanner({ films }: HeroBannerProps) {
         }}
       />
 
-      {/* 🎴 3-Card Fan / Cascade Deck (Left side desktop) */}
+      {/* 🎴 3-Card Cascading Cinema Deck (Left side desktop) */}
       <div
-        className={`${cardFont.className} absolute left-6 top-1/2 z-30 hidden w-[380px] h-[340px] -translate-y-1/2 xl:block 2xl:left-14 pointer-events-none`}
+        className={`${cardFont.className} absolute left-6 top-1/2 z-30 hidden w-[420px] h-[300px] -translate-y-1/2 xl:block 2xl:left-14 pointer-events-none`}
       >
         <div className="relative w-full h-full pointer-events-auto">
           {fanCards.map((cardFilm, index) => {
-            const poster =
-              resolveDirectImageUrl(cardFilm.poster_url) ||
-              resolveDirectImageUrl(cardFilm.thumb_url);
             const isHovered = hoveredCardIndex === index;
 
-            // User specified exact fan parameters:
-            // Card 1 (Active/Front): Frontmost, largest, offset left slightly, rotate -5°, brightness 1.0
-            // Card 2 (Middle): Behind, shift right 80px, shift up -20px, rotate +5°, scale 0.88, brightness 0.80
-            // Card 3 (Back): Deepest, shift right 150px, shift down +30px, rotate +10°, scale 0.80, brightness 0.65
+            // Staggered horizontal cascade with clear visibility for all 3 cards:
             const fanConfigs = [
               {
-                x: -10,
-                y: 10,
-                rotate: -5,
+                x: 0,
+                y: 0,
+                rotate: 0,
                 scale: 1.0,
                 brightness: 1.0,
-                shadow: "shadow-[0_25px_60px_rgba(0,0,0,0.85)]",
-                border: "border-white/35",
+                shadow: "shadow-[0_20px_50px_rgba(0,0,0,0.9)]",
+                border: "border-amber-400/80 ring-2 ring-amber-400/30",
                 zIndex: 30,
+                badge: "▶ Đang xem",
+                badgeClass:
+                  "bg-gradient-to-r from-red-600 to-amber-600 text-white font-black",
               },
               {
-                x: 80,
-                y: -20,
-                rotate: 5,
-                scale: 0.88,
-                brightness: 0.8,
-                shadow: "shadow-[0_18px_45px_rgba(0,0,0,0.7)]",
-                border: "border-white/20",
+                x: 105,
+                y: 18,
+                rotate: 0,
+                scale: 0.94,
+                brightness: 0.88,
+                shadow: "shadow-[0_15px_35px_rgba(0,0,0,0.8)]",
+                border: "border-white/30",
                 zIndex: 20,
+                badge: "#2 Kế tiếp",
+                badgeClass:
+                  "bg-black/80 border border-white/20 text-white/90 font-bold",
               },
               {
-                x: 150,
-                y: 30,
-                rotate: 10,
-                scale: 0.8,
-                brightness: 0.65,
-                shadow: "shadow-[0_12px_35px_rgba(0,0,0,0.6)]",
-                border: "border-white/15",
+                x: 210,
+                y: 36,
+                rotate: 0,
+                scale: 0.88,
+                brightness: 0.76,
+                shadow: "shadow-[0_12px_28px_rgba(0,0,0,0.7)]",
+                border: "border-white/20",
                 zIndex: 10,
+                badge: "#3 Kế tiếp",
+                badgeClass:
+                  "bg-black/80 border border-white/20 text-white/80 font-bold",
               },
             ];
 
@@ -1379,17 +1382,17 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                   initial={reduceMotion ? false : { opacity: 0, y: 20 }}
                   animate={{
                     opacity: 1,
-                    x: isHovered ? config.x + 6 : config.x,
-                    y: isHovered ? config.y - 8 : config.y,
-                    rotate: isHovered ? 0 : config.rotate,
-                    scale: isHovered ? config.scale * 1.06 : config.scale,
+                    x: config.x,
+                    y: isHovered ? config.y - 12 : config.y,
+                    rotate: 0,
+                    scale: isHovered ? config.scale * 1.05 : config.scale,
                     filter: isHovered
-                      ? "brightness(1.05)"
+                      ? "brightness(1.1)"
                       : `brightness(${config.brightness})`,
                   }}
                   transition={{
                     type: "spring",
-                    stiffness: 260,
+                    stiffness: 280,
                     damping: 24,
                   }}
                   onMouseEnter={() => setHoveredCardIndex(index)}
@@ -1401,7 +1404,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                     if (targetIndex !== -1) setCurrent(targetIndex);
                   }}
                   className={cn(
-                    "absolute left-0 top-0 w-[165px] overflow-hidden rounded-2xl border bg-[#0d1017] cursor-pointer transition-all duration-300",
+                    "absolute left-0 top-0 w-[155px] overflow-hidden rounded-2xl border bg-[#0d1017] cursor-pointer transition-all duration-300",
                     config.shadow,
                     isHovered
                       ? "border-white/90 ring-2 ring-white/80 shadow-[0_0_35px_rgba(255,255,255,0.4)] z-50"
@@ -1418,67 +1421,40 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                       className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
 
+                    {/* Top Pill Badge */}
+                    <div className="absolute top-2 left-2 z-20 pointer-events-none">
+                      <span
+                        className={cn(
+                          "px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider backdrop-blur-md shadow",
+                          config.badgeClass,
+                        )}
+                      >
+                        {config.badge}
+                      </span>
+                    </div>
+
                     {/* Poster Title Scrim Gradient */}
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent p-3 text-left">
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-3 text-left">
                       <p className="text-[11px] font-extrabold text-white leading-snug line-clamp-1">
                         {cardFilm.origin_name || cardFilm.name}
                       </p>
-                      {cardFilm.year && (
-                        <p className="text-[9px] font-mono text-neutral-300 font-bold mt-0.5 flex items-center gap-1">
-                          <span>{cardFilm.year}</span>
-                          <span>•</span>
-                          <span className="text-amber-400">
-                            ★ {cardFilm.vote_average || 8.5}
+                      <div className="text-[10px] font-mono text-neutral-300 font-bold mt-1 flex items-center justify-between">
+                        <span className="text-amber-400 flex items-center gap-0.5">
+                          ★ {cardFilm.vote_average || 8.5}
+                        </span>
+                        {isHovered ? (
+                          <span className="text-[9px] text-rose-400 font-bold uppercase tracking-wide">
+                            Xem ▶
                           </span>
-                        </p>
-                      )}
+                        ) : cardFilm.year ? (
+                          <span className="text-neutral-400">
+                            {cardFilm.year}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                 </motion.article>
-
-                {/* Floating Preview Tooltip on Hover */}
-                <AnimatePresence>
-                  {isHovered && (
-                    <motion.div
-                      initial={{ opacity: 0, x: -10, scale: 0.95 }}
-                      animate={{ opacity: 1, x: 0, scale: 1 }}
-                      exit={{ opacity: 0, x: -10, scale: 0.95 }}
-                      transition={{ duration: 0.18 }}
-                      className="absolute left-[180px] z-[60] w-[240px] p-3.5 rounded-2xl bg-[#0b0e17]/95 border border-white/20 backdrop-blur-2xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] pointer-events-none space-y-1.5 text-left"
-                      style={{ top: `${config.y - 10}px` }}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/30 text-amber-400 text-[10px] font-mono font-bold">
-                          ★ {cardFilm.vote_average || 8.5}
-                        </span>
-                        {cardFilm.year && (
-                          <span className="text-[10px] font-mono text-neutral-400 font-bold">
-                            {cardFilm.year}
-                          </span>
-                        )}
-                        <span className="ml-auto text-[9px] font-mono font-bold text-rose-400 uppercase">
-                          Xem ngay ▶
-                        </span>
-                      </div>
-
-                      <h4
-                        className={`${cardFont.className} text-xs font-black text-white leading-snug line-clamp-1`}
-                      >
-                        {cardFilm.name}
-                      </h4>
-                      {cardFilm.origin_name && (
-                        <p className="text-[10px] text-neutral-400 font-mono line-clamp-1">
-                          {cardFilm.origin_name}
-                        </p>
-                      )}
-
-                      <p className="text-[10px] text-neutral-300 leading-relaxed line-clamp-2 pt-0.5">
-                        {cardFilm.content ||
-                          "Chuyển sang xem trailer & thông tin bộ phim bom tấn này."}
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
             );
           })}
