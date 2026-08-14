@@ -135,9 +135,12 @@ export default function RootLayout({
   return (
     <html lang="vi" suppressHydrationWarning>
       <head>
+        <meta name="referrer" content="no-referrer" />
         <link rel="icon" href="/cinephim-logo.png" type="image/png" />
         <link rel="shortcut icon" href="/cinephim-logo.png" type="image/png" />
         <link rel="apple-touch-icon" href="/cinephim-logo.png" />
+        <link rel="preconnect" href="https://wsrv.nl" />
+        <link rel="dns-prefetch" href="https://wsrv.nl" />
         <link rel="preconnect" href="https://img.phimapi.com" />
         <link rel="dns-prefetch" href="https://img.phimapi.com" />
         <link rel="preconnect" href="https://phimimg.com" />

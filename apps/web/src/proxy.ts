@@ -23,13 +23,13 @@ export function proxy(request: NextRequest) {
     } https://apis.google.com https://www.gstatic.com https://www.google.com https://challenges.cloudflare.com`,
     "script-src-attr 'none'",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "img-src 'self' data: blob: https://image.tmdb.org https://phimimg.com https://img.phimapi.com https://img.ophim.live https://images.nguonc.com https://vsmov.com https://ui-avatars.com https://upload.wikimedia.org https://flagcdn.com",
+    "img-src 'self' data: blob: https: http:",
     "font-src 'self' data: https://fonts.gstatic.com",
-    `connect-src 'self' https://victorious-possibility-production-aba7.up.railway.app wss://victorious-possibility-production-aba7.up.railway.app${apiOrigin && apiOrigin !== "https://victorious-possibility-production-aba7.up.railway.app" ? ` ${apiOrigin}` : ""}${
+    `connect-src 'self' https: wss: https://victorious-possibility-production-aba7.up.railway.app wss://victorious-possibility-production-aba7.up.railway.app${apiOrigin && apiOrigin !== "https://victorious-possibility-production-aba7.up.railway.app" ? ` ${apiOrigin}` : ""}${
       isDevelopment
         ? " http://localhost:3001 http://127.0.0.1:3001 ws://localhost:3001 ws://127.0.0.1:3001"
         : ""
-    } https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com wss://*.firebaseio.com`,
+    } https://challenges.cloudflare.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com wss://*.firebaseio.com`,
     "frame-src 'self' https://accounts.google.com https://*.firebaseapp.com https://www.google.com https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://vidsrc.to https://vidsrc.in https://vidsrc.pm https://vidsrc.me https://vidsrc.sbs https://*.phimapi.com https://*.kkphimplayer7.com https://*.ophim.live https://ophim1.com https://*.opstream12.com https://*.nguonc.com https://*.streamc.xyz https://*.vsmov.com https://*.streamvsmov.com",
     "media-src 'self' blob:",
     "worker-src 'self' blob:",

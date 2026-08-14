@@ -96,8 +96,11 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
               unoptimized
               referrerPolicy="no-referrer"
               onError={() => {
-                if (imgSrc && !imgSrc.startsWith("/api/image-proxy")) {
-                  setImgSrc(`/api/image-proxy?url=${encodeURIComponent(imgSrc)}`);
+                if (imgSrc && !imgSrc.startsWith("https://wsrv.nl") && !imgSrc.startsWith("/api/image-proxy")) {
+                  setImgSrc(`https://wsrv.nl/?url=${encodeURIComponent(imgSrc)}`);
+                } else if (imgSrc && imgSrc.startsWith("https://wsrv.nl")) {
+                  const original = new URL(imgSrc).searchParams.get("url");
+                  setImgSrc(original ? `/api/image-proxy?url=${encodeURIComponent(original)}` : null);
                 } else {
                   setImgSrc(null);
                 }

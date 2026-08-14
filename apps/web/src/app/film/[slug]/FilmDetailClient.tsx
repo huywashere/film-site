@@ -121,13 +121,29 @@ function DetailPosterCard({
   filmName: string;
   className?: string;
 }) {
+  const robustCandidates = useMemo(() => {
+    const list: string[] = [];
+    candidates.forEach((url) => {
+      if (url && !list.includes(url)) {
+        list.push(url);
+        if (url.startsWith("http")) {
+          const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(url)}`;
+          if (!list.includes(wsrv)) list.push(wsrv);
+          const proxy = `/api/image-proxy?url=${encodeURIComponent(url)}`;
+          if (!list.includes(proxy)) list.push(proxy);
+        }
+      }
+    });
+    return list;
+  }, [candidates]);
+
   const [candidateIdx, setCandidateIdx] = useState(0);
 
   useEffect(() => {
     setCandidateIdx(0);
-  }, [candidates]);
+  }, [robustCandidates]);
 
-  const src = candidates[candidateIdx];
+  const src = robustCandidates[candidateIdx];
 
   if (!src) {
     return (
@@ -151,7 +167,7 @@ function DetailPosterCard({
       decoding="async"
       className={className}
       onError={() => {
-        if (candidateIdx < candidates.length - 1) {
+        if (candidateIdx < robustCandidates.length - 1) {
           setCandidateIdx((i) => i + 1);
         }
       }}
@@ -167,11 +183,23 @@ function GalleryBackdropCard({
   alt: string;
 }) {
   const candidateUrls = useMemo(() => {
-    return [
+    const rawList = [
       tmdbBackdrop(filePath, "w780"),
       tmdbBackdrop(filePath, "w1280"),
       tmdbBackdrop(filePath, "original"),
     ].filter((url): url is string => Boolean(url));
+
+    const list: string[] = [];
+    rawList.forEach((url) => {
+      if (!list.includes(url)) {
+        list.push(url);
+        const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(url)}`;
+        if (!list.includes(wsrv)) list.push(wsrv);
+        const proxy = `/api/image-proxy?url=${encodeURIComponent(url)}`;
+        if (!list.includes(proxy)) list.push(proxy);
+      }
+    });
+    return list;
   }, [filePath]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);

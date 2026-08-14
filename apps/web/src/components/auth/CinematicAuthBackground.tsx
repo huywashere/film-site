@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 
 const TMDB_POSTERS = [
   "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
@@ -21,6 +22,34 @@ const TMDB_POSTERS = [
   "https://image.tmdb.org/t/p/w500/nV99ACeAa8fFFso0tQZ3HktEf5X.jpg",
 ];
 
+function AuthPosterItem({ url, idx }: { url: string; idx: number }) {
+  const candidates = [
+    url,
+    `https://wsrv.nl/?url=${encodeURIComponent(url)}`,
+    `/api/image-proxy?url=${encodeURIComponent(url)}`,
+  ];
+  const [candidateIdx, setCandidateIdx] = useState(0);
+
+  return (
+    <div className="aspect-[2/3] rounded-xl overflow-hidden bg-neutral-900 shadow-xl">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={candidates[candidateIdx]}
+        alt="TMDB Cinema Background"
+        className="w-full h-full object-cover"
+        loading={idx < 12 ? "eager" : "lazy"}
+        decoding="async"
+        referrerPolicy="no-referrer"
+        onError={() => {
+          if (candidateIdx < candidates.length - 1) {
+            setCandidateIdx((i) => i + 1);
+          }
+        }}
+      />
+    </div>
+  );
+}
+
 export function CinematicAuthBackground() {
   return (
     <div
@@ -33,20 +62,7 @@ export function CinematicAuthBackground() {
       {/* TMDB Movie Posters Collage Grid Wall */}
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 scale-105 opacity-75 filter saturate-110">
         {TMDB_POSTERS.concat(TMDB_POSTERS).map((url, idx) => (
-          <div
-            key={idx}
-            className="aspect-[2/3] rounded-xl overflow-hidden bg-neutral-900 shadow-xl"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={url}
-              alt="TMDB Cinema Background"
-              className="w-full h-full object-cover"
-              loading={idx < 12 ? "eager" : "lazy"}
-              decoding="async"
-              referrerPolicy="no-referrer"
-            />
-          </div>
+          <AuthPosterItem key={idx} url={url} idx={idx} />
         ))}
       </div>
 

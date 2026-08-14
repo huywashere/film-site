@@ -512,7 +512,15 @@ function HeroFanCardImage({
     const list: string[] = [];
     const add = (url?: unknown) => {
       const resolved = resolveDirectImageUrl(url);
-      if (resolved && !list.includes(resolved)) list.push(resolved);
+      if (resolved && !list.includes(resolved)) {
+        list.push(resolved);
+        if (resolved.startsWith("http")) {
+          const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(resolved)}`;
+          if (!list.includes(wsrv)) list.push(wsrv);
+          const proxy = `/api/image-proxy?url=${encodeURIComponent(resolved)}`;
+          if (!list.includes(proxy)) list.push(proxy);
+        }
+      }
     };
     add(film.poster_url);
     add(film.thumb_url);
@@ -574,7 +582,15 @@ function HeroThumbnailImage({
     const list: string[] = [];
     const add = (url?: unknown) => {
       const resolved = resolveDirectImageUrl(url);
-      if (resolved && !list.includes(resolved)) list.push(resolved);
+      if (resolved && !list.includes(resolved)) {
+        list.push(resolved);
+        if (resolved.startsWith("http")) {
+          const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(resolved)}`;
+          if (!list.includes(wsrv)) list.push(wsrv);
+          const proxy = `/api/image-proxy?url=${encodeURIComponent(resolved)}`;
+          if (!list.includes(proxy)) list.push(proxy);
+        }
+      }
     };
     add(film.thumb_url);
     add(film.poster_url);

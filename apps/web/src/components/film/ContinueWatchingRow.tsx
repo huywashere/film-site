@@ -71,7 +71,13 @@ function HistoryArtwork({
   const candidates = useMemo(() => {
     const result: string[] = [];
     const add = (value?: string | null) => {
-      if (value && !result.includes(value)) result.push(value);
+      if (value && !result.includes(value)) {
+        result.push(value);
+        if (value.startsWith("http")) {
+          const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(value)}`;
+          if (!result.includes(wsrv)) result.push(wsrv);
+        }
+      }
     };
 
     add(primary);

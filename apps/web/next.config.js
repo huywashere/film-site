@@ -10,12 +10,6 @@ const configuredApiOrigin = (() => {
     return "";
   }
 })();
-const apiConnectSources = [
-  configuredApiOrigin,
-  ...(isDev ? ["http://localhost:3001", "http://127.0.0.1:3001"] : []),
-]
-  .filter(Boolean)
-  .join(" ");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -97,6 +91,9 @@ const nextConfig = {
       { protocol: "https", hostname: "**.motphim.net" },
       // TMDB
       { protocol: "https", hostname: "image.tmdb.org" },
+      // Global CDN Image Proxy (Cloudflare Edge)
+      { protocol: "https", hostname: "wsrv.nl" },
+      { protocol: "https", hostname: "**.wsrv.nl" },
     ],
     localPatterns: [
       { pathname: "/api/image-proxy" },
@@ -127,7 +124,7 @@ const nextConfig = {
           },
           {
             key: "Referrer-Policy",
-            value: "strict-origin-when-cross-origin",
+            value: "no-referrer",
           },
           {
             key: "Permissions-Policy",
@@ -144,8 +141,6 @@ const nextConfig = {
         ],
       },
       {
-        // FIX #7: Restrict CORS to same-origin instead of wildcard *
-        // The KKPhim proxy should only be called from our own frontend
         source: "/api/kkphim/:path*",
         headers: [
           {
@@ -160,4 +155,3 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
-

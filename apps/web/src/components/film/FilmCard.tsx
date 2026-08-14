@@ -257,18 +257,30 @@ function FilmCardComponent({
       return;
     }
 
-    // If direct CDN URL failed, try its same-origin proxy once.
+    // If direct CDN URL failed, try wsrv.nl first, then same-origin proxy.
     if (
       imageSrc &&
+      !imageSrc.startsWith("https://wsrv.nl") &&
       !imageSrc.startsWith("/api/image-proxy") &&
       !imageSrc.startsWith("data:")
     ) {
-      const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(imageSrc)}`;
-      setImageSrc(proxyUrl);
+      setImageSrc(`https://wsrv.nl/?url=${encodeURIComponent(imageSrc)}`);
       return;
     }
 
-    // Both provider attempts failed; render the stable title fallback.
+    if (imageSrc && imageSrc.startsWith("https://wsrv.nl")) {
+      try {
+        const original = new URL(imageSrc).searchParams.get("url");
+        if (original) {
+          setImageSrc(`/api/image-proxy?url=${encodeURIComponent(original)}`);
+          return;
+        }
+      } catch {
+        // proceed to null
+      }
+    }
+
+    // All provider and proxy attempts failed; render the stable title fallback.
     setImageSrc(null);
   };
 
