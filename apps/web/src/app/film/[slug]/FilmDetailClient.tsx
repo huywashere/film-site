@@ -1138,7 +1138,7 @@ export default function FilmDetailPage() {
               tmdbBackdropUrl,
               providerPosterUrl,
               tmdbPosterUrl,
-              "/images/cinema-hall-with-red-seat-wide-white-screen.jpg",
+              "/images/wp3533664-avengers-infinity-war-4k-wallpapers.jpg",
             ]}
             alt=""
             sizes="100vw"

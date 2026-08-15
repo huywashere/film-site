@@ -1,7 +1,7 @@
 const IMAGE_PROXY_PATH = "/api/image-proxy";
 
 export const HERO_LOCAL_FALLBACK =
-  "/images/cinema-hall-with-red-seat-wide-white-screen.jpg";
+  "/images/wp3533664-avengers-infinity-war-4k-wallpapers.jpg";
 
 function isTmdbImage(url: string): boolean {
   try {

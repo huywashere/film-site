@@ -56,7 +56,7 @@ export function CinematicAuthBackground() {
       className="absolute inset-0 overflow-hidden pointer-events-none z-0 bg-cover bg-center"
       style={{
         backgroundImage:
-          "url('/images/cinema-hall-with-red-seat-wide-white-screen.jpg')",
+          "url('/images/wp4300709-avengers-4k-wallpapers.jpg')",
       }}
     >
       {/* TMDB Movie Posters Collage Grid Wall */}

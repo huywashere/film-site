@@ -37,7 +37,7 @@ const topics = [
   {
     title: "Cày Phim Cuối Tuần",
     href: "/search?q=weekend",
-    image: "/images/cinema-hall-with-red-seat-wide-white-screen.jpg",
+    image: "/images/zack-snyders-justice-league-dc-superheroes-dc-comics-2021-3840x2160-4980.jpg",
     description: "Lên lịch xem phim cuối tuần với những suất chiếu đáng chú ý.",
   },
 ];
