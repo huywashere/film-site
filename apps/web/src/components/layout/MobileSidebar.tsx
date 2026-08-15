@@ -18,9 +18,11 @@ import {
   LogOut,
   Clapperboard,
   Globe,
+  Languages,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
+import { useTranslation } from "@/store/langStore";
 import { GENRES_LIST, COUNTRIES_LIST, CountryFlagImage } from "./Navbar";
 import { cardFont } from "@/lib/fonts";
 
@@ -29,26 +31,27 @@ interface MobileSidebarProps {
   onClose: () => void;
 }
 
-const SIDEBAR_MAIN_ITEMS = [
-  { title: "Trang chủ", href: "/", icon: Home },
-  { title: "Phim Bộ", href: "/films/series", icon: Tv },
-  { title: "Phim Lẻ", href: "/films/single", icon: FilmIcon },
-  { title: "Hoạt Hình", href: "/films/anime", icon: Clapperboard },
-  { title: "Xem Chung", href: "/watch-party", icon: Users },
-  { title: "Diễn Viên", href: "/actors", icon: User },
-];
-
-const SIDEBAR_PERSONAL_ITEMS = [
-  { title: "Tủ phim", href: "/watchlist", icon: BookmarkCheck },
-  { title: "Thư viện", href: "/library", icon: BookOpen },
-  { title: "Lịch sử xem", href: "/history", icon: History },
-];
-
 export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
+  const { t, lang, setLang } = useTranslation();
   const [showGenres, setShowGenres] = useState(false);
   const [showCountries, setShowCountries] = useState(false);
+
+  const mainItems = [
+    { title: t("nav.home"), href: "/", icon: Home },
+    { title: t("nav.series"), href: "/films/series", icon: Tv },
+    { title: t("nav.single"), href: "/films/single", icon: FilmIcon },
+    { title: t("nav.anime"), href: "/films/anime", icon: Clapperboard },
+    { title: lang === "en" ? "Watch Party" : "Xem Chung", href: "/watch-party", icon: Users },
+    { title: t("nav.actors"), href: "/actors", icon: User },
+  ];
+
+  const personalItems = [
+    { title: t("nav.watchlist"), href: "/watchlist", icon: BookmarkCheck },
+    { title: lang === "en" ? "Library" : "Thư viện", href: "/library", icon: BookOpen },
+    { title: t("nav.history"), href: "/history", icon: History },
+  ];
 
   // Lock background body scroll when mobile menu is open
   useEffect(() => {
@@ -97,7 +100,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           <button
             type="button"
             onClick={onClose}
-            aria-label="Đóng menu"
+            aria-label={t("nav.closeSearch", "Đóng")}
             className="flex h-10 w-10 items-center justify-center rounded-xl text-neutral-400 hover:text-white hover:bg-white/10 transition-colors active:scale-95 cursor-pointer"
           >
             <X size={20} />
@@ -105,7 +108,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         </div>
 
         {/* User Profile Card (Visible when logged in) */}
-        {user && (
+        {user ? (
           <div className="p-4 border-b border-white/10 bg-white/[0.02]">
             <div className="flex flex-col space-y-3">
               <div className="flex items-center space-x-3">
@@ -138,7 +141,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                   onClick={onClose}
                 >
                   <User size={13} />
-                  <span>Cá nhân</span>
+                  <span>{t("nav.profile")}</span>
                 </Link>
                 <button
                   type="button"
@@ -149,29 +152,74 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                   className="flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-neutral-300 hover:bg-white/10 hover:text-white transition-all text-center active:scale-95 cursor-pointer"
                 >
                   <LogOut size={13} />
-                  <span>Thoát</span>
+                  <span>{t("nav.logout")}</span>
                 </button>
               </div>
             </div>
           </div>
+        ) : (
+          <div className="p-4 border-b border-white/10 bg-white/[0.02]">
+            <Link
+              href="/login"
+              onClick={onClose}
+              className="flex items-center justify-center space-x-2 w-full py-2.5 px-4 rounded-xl bg-white text-black font-extrabold text-xs shadow-md active:scale-95 transition-all"
+            >
+              <User size={15} />
+              <span>{t("nav.login")} / {t("nav.register")}</span>
+            </Link>
+          </div>
         )}
+
+        {/* Language Selection Bar in Mobile Drawer */}
+        <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+          <span className="text-xs font-bold text-neutral-400 flex items-center gap-2">
+            <Languages size={15} />
+            <span>{t("nav.language")}:</span>
+          </span>
+          <div className="flex items-center bg-white/[0.06] border border-white/10 p-0.5 rounded-full text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => setLang("vi")}
+              className={cn(
+                "px-2.5 py-1 rounded-full transition-all cursor-pointer",
+                lang === "vi"
+                  ? "bg-white text-black font-extrabold shadow-sm"
+                  : "text-neutral-400 hover:text-white",
+              )}
+            >
+              🇻🇳 VI
+            </button>
+            <button
+              type="button"
+              onClick={() => setLang("en")}
+              className={cn(
+                "px-2.5 py-1 rounded-full transition-all cursor-pointer",
+                lang === "en"
+                  ? "bg-white text-black font-extrabold shadow-sm"
+                  : "text-neutral-400 hover:text-white",
+              )}
+            >
+              🇬🇧 EN
+            </button>
+          </div>
+        </div>
 
         {/* Scrollable Navigation List */}
         <nav className="px-3 py-4 space-y-5 pb-36">
           {/* Main Navigation Group */}
           <div>
             <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-neutral-500">
-              Khám phá
+              {t("nav.browseBy", "Khám phá")}
             </p>
             <div className="space-y-1">
-              {SIDEBAR_MAIN_ITEMS.map((item) => {
+              {mainItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
                   (item.href !== "/" && pathname.startsWith(item.href));
 
                 return (
                   <Link
-                    key={item.title}
+                    key={item.href}
                     href={item.href}
                     className={cn(
                       "flex min-h-11 items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all",
@@ -198,15 +246,15 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           {/* Personal Group */}
           <div>
             <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-neutral-500">
-              Thư viện cá nhân
+              {lang === "en" ? "My Library" : "Thư viện cá nhân"}
             </p>
             <div className="space-y-1">
-              {SIDEBAR_PERSONAL_ITEMS.map((item) => {
+              {personalItems.map((item) => {
                 const isActive = pathname === item.href;
 
                 return (
                   <Link
-                    key={item.title}
+                    key={item.href}
                     href={item.href}
                     className={cn(
                       "flex min-h-11 items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all",
@@ -239,7 +287,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             >
               <div className="flex items-center space-x-3">
                 <Sparkles size={17} className="text-neutral-400" />
-                <span>Thể loại phim</span>
+                <span>{t("nav.genres")}</span>
               </div>
               <ChevronDown
                 size={15}
@@ -264,7 +312,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                     )}
                     onClick={onClose}
                   >
-                    {genre.label}
+                    {t(`genres_list.${genre.slug}`, genre.label)}
                   </Link>
                 ))}
               </div>
@@ -280,7 +328,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             >
               <div className="flex items-center space-x-3">
                 <Globe size={17} className="text-neutral-400" />
-                <span>Quốc gia</span>
+                <span>{t("nav.country")}</span>
               </div>
               <ChevronDown
                 size={15}
@@ -307,10 +355,12 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                   >
                     <CountryFlagImage
                       code={c.code}
-                      label={c.label}
+                      label={t(`countries_list.${c.slug}`, c.label)}
                       className="w-4 h-3 object-cover rounded-[2px] shrink-0"
                     />
-                    <span className="truncate">{c.label}</span>
+                    <span className="truncate">
+                      {t(`countries_list.${c.slug}`, c.label)}
+                    </span>
                   </Link>
                 ))}
               </div>

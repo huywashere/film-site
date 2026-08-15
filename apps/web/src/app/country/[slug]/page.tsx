@@ -28,6 +28,7 @@ import {
   tmdbProfile,
 } from "@/lib/tmdb";
 import { cardFont } from "@/lib/fonts";
+import { useTranslation } from "@/store/langStore";
 import { useAuthStore } from "@/store/authStore";
 import {
   Play,
@@ -154,6 +155,7 @@ function CountryCategoryRow({
   href?: string;
   variant?: "standard" | "landscape";
 }) {
+  const { t } = useTranslation();
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
 
@@ -172,7 +174,7 @@ function CountryCategoryRow({
             href={href}
             className="text-xs text-neutral-400 hover:text-white font-bold uppercase tracking-wider flex items-center space-x-1 transition-colors"
           >
-            <span>Xem tất cả</span>
+            <span>{t("home.viewAll", "Xem tất cả")}</span>
             <ChevronRight size={14} />
           </Link>
         )}
@@ -787,6 +789,7 @@ export default function CountryPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t, lang } = useTranslation();
   const slug = params.slug as string;
   const page = Number(searchParams.get("page") || 1);
   const selectedGenre = searchParams.get("category") || "";
@@ -1090,8 +1093,8 @@ export default function CountryPage() {
         <CountryCategoryRow
           title={
             isKoreanPage
-              ? "Phim Hàn Quốc Đang Thịnh Hành"
-              : "Phim Nổi Bật Hôm Nay"
+              ? t("country_sections.koreanTrending", "Phim Hàn Quốc Đang Thịnh Hành")
+              : t("country_sections.featuredToday", "Phim Nổi Bật Hôm Nay")
           }
           films={row1Films}
           isLoading={mainLoading}
@@ -1102,8 +1105,8 @@ export default function CountryPage() {
         <CountryCategoryRow
           title={
             isKoreanPage
-              ? "Tuyệt phẩm K-Drama lãng mạn khiến trái tim tan chảy"
-              : "Phim Tình Cảm & Lãng Mạn"
+              ? t("country_sections.koreanRomance", "Tuyệt phẩm K-Drama lãng mạn khiến trái tim tan chảy")
+              : t("country_sections.romanceTitle", "Phim Tình Cảm & Lãng Mạn")
           }
           films={row2Films}
           isLoading={romanceLoading}
@@ -1111,7 +1114,7 @@ export default function CountryPage() {
 
         {/* Row 3: Có thể bạn chưa xem */}
         <CountryCategoryRow
-          title="Có thể bạn chưa xem"
+          title={t("country_sections.koreanMaybeMissed", "Có thể bạn chưa xem")}
           films={row3Films}
           isLoading={page2Loading || mainLoading}
           variant="landscape"
@@ -1121,8 +1124,8 @@ export default function CountryPage() {
         <CountryCategoryRow
           title={
             isKoreanPage
-              ? "Series Phim Hàn kịch tính & giật gân đáng xem liên tục"
-              : "Phim Hành Động & Kịch Tính"
+              ? t("country_sections.koreanThriller", "Series Phim Hàn kịch tính & giật gân đáng xem liên tục")
+              : t("country_sections.actionTitle", "Phim Hành Động & Kịch Tính")
           }
           films={row4Films}
           isLoading={actionLoading}
@@ -1133,8 +1136,8 @@ export default function CountryPage() {
         <CountryCategoryRow
           title={
             isKoreanPage
-              ? "Phim Hàn Cổ Trang & Thần Thoại Kỳ Ảo Đỉnh Cao"
-              : "Phim Cổ Trang"
+              ? t("country_sections.koreanHistorical", "Phim Hàn Cổ Trang & Thần Thoại Kỳ Ảo Đỉnh Cao")
+              : t("country_sections.historicalTitle", "Phim Cổ Trang & Thần Thoại")
           }
           films={row5Films}
           isLoading={coTrangLoading}
@@ -1144,8 +1147,8 @@ export default function CountryPage() {
         <CountryCategoryRow
           title={
             isKoreanPage
-              ? "Phim Hàn Hài Hước & Giải Trí Sảng Khoái"
-              : "Phim Hài Hước Đặc Sắc"
+              ? t("country_sections.koreanComedy", "Phim Hàn Hài Hước & Giải Trí Sảng Khoái")
+              : t("country_sections.comedyTitle", "Phim Hài Hước Đặc Sắc")
           }
           films={row6Films}
           isLoading={comedyLoading}
@@ -1156,8 +1159,8 @@ export default function CountryPage() {
         <CountryCategoryRow
           title={
             isKoreanPage
-              ? "Phim Hàn Hình Sự, Trinh Thám & Phá Án Hồi Hộp"
-              : "Phim Hình Sự & Trinh Thám"
+              ? t("country_sections.koreanCrime", "Phim Hàn Hình Sự, Trinh Thám & Phá Án Hồi Hộp")
+              : t("country_sections.crimeTitle", "Phim Hình Sự & Trinh Thám")
           }
           films={row7Films}
           isLoading={crimeLoading}
@@ -1167,8 +1170,8 @@ export default function CountryPage() {
         <CountryCategoryRow
           title={
             isKoreanPage
-              ? "Top Phim Tâm Lý & Đời Thường Chạm Đến Cảm Xúc"
-              : "Phim Tâm Lý Chọn Lọc"
+              ? t("country_sections.koreanDrama", "Top Phim Tâm Lý & Đời Thường Chạm Đến Cảm Xúc")
+              : t("country_sections.dramaTitle", "Phim Tâm Lý Chọn Lọc")
           }
           films={row8Films}
           isLoading={dramaLoading}
@@ -1178,15 +1181,15 @@ export default function CountryPage() {
         <div className="mt-14 mb-8 pt-8 border-t border-white/10 flex flex-col md:flex-row md:items-end justify-between gap-2">
           <div>
             <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
-              Tất Cả Phim {label} {selectedGenre ? `• ${activeGenreLabel}` : ""}
+              {t("country_sections.allMoviesOf", "Tất Cả Phim")} {t(`countries_list.${slug}`, label)} {selectedGenre ? `• ${activeGenreLabel}` : ""}
             </h2>
             <p className="text-xs text-neutral-400 font-semibold mt-1">
-              Kho phim điện ảnh và series truyền hình chọn lọc sản xuất tại{" "}
-              {label}
+              {t("country_sections.curatedDescription", "Kho phim điện ảnh và series truyền hình chọn lọc sản xuất tại")}{" "}
+              {t(`countries_list.${slug}`, label)}
             </p>
           </div>
           <div className="text-xs font-bold text-neutral-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 self-start md:self-auto">
-            Trang <span className="text-white font-extrabold">{page}</span> /{" "}
+            {t("common.page", "Trang")} <span className="text-white font-extrabold">{page}</span> /{" "}
             {totalPages}
           </div>
         </div>
@@ -1206,7 +1209,7 @@ export default function CountryPage() {
           </div>
         ) : (
           <div className="py-20 text-center text-neutral-500 font-semibold text-sm">
-            Chưa tìm thấy bộ phim nào phù hợp.
+            {t("search.noResults", "Chưa tìm thấy bộ phim nào phù hợp.")}
           </div>
         )}
 

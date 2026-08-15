@@ -15,6 +15,7 @@ import {
 import { FilmItem } from "@/components/film/FilmCard";
 import { TmdbArtwork } from "@/components/film/TmdbArtwork";
 import { cardFont } from "@/lib/fonts";
+import { useTranslation } from "@/store/langStore";
 
 interface HeroShowcaseSectionProps {
   title: string;
@@ -42,6 +43,7 @@ export function HeroShowcaseSection({
   isLoading,
   href,
 }: HeroShowcaseSectionProps) {
+  const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
   const reduceMotion = useReducedMotion();
   const shortlist = useMemo(() => films.slice(0, 16), [films]);
@@ -86,7 +88,7 @@ export function HeroShowcaseSection({
             href={href}
             className="inline-flex w-fit items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-[11px] font-semibold text-neutral-300 transition-all hover:bg-white/[0.1] hover:text-white"
           >
-            Xem tất cả <ArrowUpRight size={13} />
+            {t("home.viewAll", "Xem tất cả")} <ArrowUpRight size={13} />
           </Link>
         )}
       </div>

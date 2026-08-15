@@ -1504,7 +1504,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                   >
                     <div className="flex items-center gap-1.5 text-xs font-black tracking-wide uppercase">
                       <Play size={14} className="fill-black" />
-                      <span>Xem tiếp {formatProgressTime(progressSecs)}</span>
+                      <span>{t("home.resumeWatch", "Xem tiếp")} {formatProgressTime(progressSecs)}</span>
                     </div>
                     {progressPct > 0 && (
                       <div className="w-full bg-neutral-300 h-1 rounded-full overflow-hidden mt-1">
@@ -1521,7 +1521,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                     className={`${cardFont.className} flex items-center gap-1.5 sm:gap-2 bg-white hover:bg-neutral-200 text-black px-5 py-2.5 sm:px-7 sm:py-3 rounded-full text-xs font-black tracking-wide uppercase transition-all duration-200 shadow-2xl hover:scale-105 active:scale-95`}
                   >
                     <Play size={14} className="fill-black" />
-                    <span>Xem ngay</span>
+                    <span>{t("home.watchNow", "Xem ngay")}</span>
                   </Link>
                 )}
 
@@ -1531,13 +1531,13 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                   className={`${cardFont.className} flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/15 bg-[#181c24]/80 px-4 py-2.5 sm:px-5 sm:py-3 text-xs font-bold text-neutral-200 shadow-xl transition-all duration-200 hover:scale-105 hover:bg-white/20 hover:text-white active:scale-95 cursor-pointer`}
                 >
                   <Film size={14} className="text-neutral-300" />
-                  <span>Trailer</span>
+                  <span>{t("home.trailer", "Trailer")}</span>
                 </button>
 
                 {/* Bookmark CTA with hover tooltip */}
                 <div className="relative group">
                   <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-black/90 border border-white/20 backdrop-blur-md text-[10px] font-bold text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 shadow-2xl z-40 translate-y-1 group-hover:translate-y-0">
-                    Lưu vào tủ phim
+                    {t("home.saveWatchlist", "Lưu vào tủ phim")}
                   </span>
                   <button
                     type="button"
@@ -1553,7 +1553,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                       if (!user) {
                         guestDataStorage.addWatchlist(film.slug, movieData);
                         toast(
-                          "Đã lưu vào tủ phim (trên thiết bị này)",
+                          t("home.savedWatchlistLocal", "Đã lưu vào tủ phim (trên thiết bị này)"),
                           "success",
                         );
                         return;
@@ -1562,7 +1562,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                         .add(film.slug, movieData)
                         .then(() =>
                           toast(
-                            `Đã thêm "${film.name}" vào tủ phim`,
+                            `${t("home.savedWatchlist", "Đã lưu vào tủ phim")}: ${film.name}`,
                             "success",
                           ),
                         )

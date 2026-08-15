@@ -27,6 +27,7 @@ import {
 import { cardFont } from "@/lib/fonts";
 import { FilmNotFound } from "@/components/film/FilmNotFound";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/store/langStore";
 
 // ── Shared Lists ──────────────────────────────────────────────────
 const GENRES_LIST = [
@@ -181,13 +182,6 @@ function CustomSelect({
   );
 }
 
-const TYPE_OPTIONS = [
-  { value: "single", label: "Phim Lẻ" },
-  { value: "series", label: "Phim Bộ" },
-  { value: "anime", label: "Hoạt Hình" },
-  { value: "tvshows", label: "TV Shows" },
-];
-
 const YEAR_OPTIONS = Array.from({ length: 15 }, (_, i) => 2024 - i).map(
   (y) => ({
     value: String(y),
@@ -198,6 +192,7 @@ const YEAR_OPTIONS = Array.from({ length: 15 }, (_, i) => 2024 - i).map(
 function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { t, lang } = useTranslation();
 
   const [mounted, setMounted] = useState(false);
   const [input, setInput] = useState("");
@@ -251,61 +246,58 @@ function SearchContent() {
             sort_field: sort.includes("year") ? "year" : "modified.time",
             sort_type: sort.endsWith("asc") ? "asc" : "desc",
             page,
+            limit: 24,
           });
           return res.data;
         }
-        const res = await movieApi.search(query, page, 36);
+        const res = await movieApi.search(query, page, 24);
         return res.data;
       } catch (err) {
         console.warn("Search query error fallback:", err);
         return { items: [], params: { pagination: { totalPages: 1 } } };
       }
     },
-    enabled: mounted && (Boolean(query) || isFilterOnly),
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
-    retry: 1,
+    enabled: mounted && (Boolean(query.trim()) || isFilterOnly),
+    staleTime: 1000 * 60 * 3,
     refetchOnWindowFocus: false,
   });
 
-  const rawFilms: FilmItem[] = useMemo(
-    () => data?.data?.items || data?.items || [],
-    [data],
-  );
+  const rawFilms: FilmItem[] = useMemo(() => {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    if (data.items && Array.isArray(data.items)) return data.items;
+    if (data.data?.items && Array.isArray(data.data.items))
+      return data.data.items;
+    return [];
+  }, [data]);
 
-  const films: FilmItem[] = useMemo(() => {
-    const seen = new Set<string>();
-    return rawFilms.filter((f) => {
-      const uniqueId =
-        f._canonicalKey ||
-        (f.tmdb?.id ? `tmdb:${f.tmdb.type || f.type}:${f.tmdb.id}` : null) ||
-        f.slug ||
-        f._id ||
-        (f as any).id;
-      if (!uniqueId || seen.has(uniqueId)) return false;
-      seen.add(uniqueId);
-      return true;
-    });
-  }, [rawFilms]);
+  const paginationInfo = (data as any)?.params?.pagination || {};
+  const totalPages =
+    paginationInfo.totalPages ||
+    Math.ceil(
+      (paginationInfo.totalItems || rawFilms.length) /
+        (paginationInfo.totalItemsPerPage || 24),
+    ) ||
+    1;
 
-  const rawTotal =
-    data?.data?.params?.pagination?.totalPages ||
-    data?.params?.pagination?.totalPages ||
-    data?.paginate?.total_page;
-  const totalPages: number =
-    rawTotal && rawTotal > 1 ? rawTotal : films.length > 0 ? 50 : 1;
+  // Filter client-side if additional fields were not handled by backend
+  const films = useMemo(() => {
+    let result = rawFilms;
+    if (year) {
+      result = result.filter(
+        (f) => String(f.year) === String(year),
+      );
+    }
+    return result;
+  }, [rawFilms, year]);
 
-  const handleSearchSubmit = (searchQuery: string) => {
-    if (!searchQuery.trim()) return;
-    const clean = searchQuery.trim();
-    searchHistoryStorage.add(clean);
-    setInput(clean);
-
-    const params = new URLSearchParams();
-    params.set("q", clean);
-    if (type) params.set("type", type);
-    if (year) params.set("year", year);
-    if (sort) params.set("sort", sort);
+  const handleSearchSubmit = (searchVal: string) => {
+    const trimmed = searchVal.trim();
+    if (!trimmed) return;
+    searchHistoryStorage.add(trimmed);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("q", trimmed);
+    params.set("page", "1");
     router.push(`/search?${params.toString()}`);
   };
 
@@ -314,9 +306,9 @@ function SearchContent() {
     handleSearchSubmit(input);
   };
 
-  const handleVoiceResult = (text: string) => {
-    setInput(text);
-    handleSearchSubmit(text);
+  const handleVoiceResult = (transcript: string) => {
+    setInput(transcript);
+    handleSearchSubmit(transcript);
   };
 
   const handleResetFilters = () => {
@@ -324,15 +316,22 @@ function SearchContent() {
     router.push("/search");
   };
 
+  const localizedTypeOptions = [
+    { value: "single", label: lang === "en" ? "Movies" : "Phim Lẻ" },
+    { value: "series", label: lang === "en" ? "TV Series" : "Phim Bộ" },
+    { value: "anime", label: lang === "en" ? "Anime & Animation" : "Hoạt Hình" },
+    { value: "tvshows", label: lang === "en" ? "TV Shows" : "TV Shows" },
+  ];
+
   return (
     <div className={cn(cardFont.className, "min-h-screen w-full bg-[#141414] text-white pt-20 sm:pt-24 pb-20 px-4 sm:px-8 max-w-7xl mx-auto select-none")}>
       {/* Search Header & Form Container */}
       <div className="max-w-3xl mx-auto mb-8 md:mb-12">
         <h1 className="text-2xl md:text-4xl font-extrabold text-white text-center mb-2 tracking-tight">
-          Khám phá Phim
+          {t("search.discoverMovies", "Khám phá Phim")}
         </h1>
         <p className="text-center text-neutral-400 max-w-xl mx-auto mb-6 text-xs sm:text-sm">
-          Tìm phim theo tên, diễn viên hoặc bộ lọc nâng cao
+          {t("search.searchSubtitle", "Tìm phim theo tên, diễn viên hoặc bộ lọc nâng cao")}
         </p>
 
         {/* Compact Search Bar */}
@@ -346,7 +345,7 @@ function SearchContent() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Tìm phim, diễn viên..."
+              placeholder={t("search.placeholder", "Tìm phim, diễn viên...")}
               className="w-full bg-transparent px-3 py-2 text-sm text-white placeholder:text-neutral-500 focus:outline-none"
             />
             <div className="flex items-center space-x-1.5 pr-1 shrink-0">
@@ -362,11 +361,11 @@ function SearchContent() {
               )}
               <button
                 type="submit"
-                aria-label="Tìm kiếm"
+                aria-label={t("search.searchBtn", "Tìm kiếm")}
                 className="flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.16] border border-white/10 text-xs font-bold text-white transition-all px-4 active:scale-95 shadow-sm"
               >
                 <Search size={14} />
-                <span className="hidden sm:inline">Tìm kiếm</span>
+                <span className="hidden sm:inline">{t("search.searchBtn", "Tìm kiếm")}</span>
               </button>
             </div>
           </div>
@@ -377,7 +376,7 @@ function SearchContent() {
           <div className="flex items-center justify-between border-b border-white/10 pb-2.5 mb-3">
             <div className="flex items-center space-x-2 text-xs font-bold text-neutral-300">
               <Filter size={13} className="text-neutral-400" />
-              <span>Bộ lọc tìm kiếm</span>
+              <span>{t("search.filterTitle", "Bộ lọc tìm kiếm")}</span>
             </div>
             <button
               type="button"
@@ -385,7 +384,7 @@ function SearchContent() {
               className="text-[11px] font-semibold text-neutral-400 hover:text-white transition-colors flex items-center space-x-1 cursor-pointer"
             >
               <RotateCcw size={11} />
-              <span>Xóa bộ lọc</span>
+              <span>{t("search.clearFilter", "Xóa bộ lọc")}</span>
             </button>
           </div>
 
@@ -393,12 +392,12 @@ function SearchContent() {
             {/* Loại Phim */}
             <div>
               <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
-                Loại Phim
+                {t("search.movieType", "Loại Phim")}
               </label>
               <CustomSelect
                 value={type}
-                placeholder="Tất cả loại phim"
-                options={TYPE_OPTIONS}
+                placeholder={t("search.allTypes", "Tất cả loại phim")}
+                options={localizedTypeOptions}
                 onChange={(newVal) => {
                   const params = new URLSearchParams(searchParams.toString());
                   if (newVal) params.set("type", newVal);
@@ -411,14 +410,14 @@ function SearchContent() {
             {/* Thể Loại */}
             <div>
               <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
-                Thể Loại
+                {t("search.genre", "Thể Loại")}
               </label>
               <CustomSelect
                 value={genre}
-                placeholder="Tất cả thể loại"
+                placeholder={t("search.allGenres", "Tất cả thể loại")}
                 options={GENRES_LIST.map((g) => ({
                   value: g.slug,
-                  label: g.label,
+                  label: t(`genres_list.${g.slug}`, g.label),
                 }))}
                 onChange={(newVal) => {
                   const params = new URLSearchParams(searchParams.toString());
@@ -432,14 +431,14 @@ function SearchContent() {
             {/* Quốc Gia */}
             <div>
               <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
-                Quốc Gia
+                {t("search.country", "Quốc Gia")}
               </label>
               <CustomSelect
                 value={country}
-                placeholder="Tất cả quốc gia"
+                placeholder={t("search.allCountries", "Tất cả quốc gia")}
                 options={COUNTRIES_LIST.map((c) => ({
                   value: c.slug,
-                  label: c.label,
+                  label: t(`countries_list.${c.slug}`, c.label),
                 }))}
                 onChange={(newVal) => {
                   const params = new URLSearchParams(searchParams.toString());
@@ -453,11 +452,11 @@ function SearchContent() {
             {/* Năm Phát Hành */}
             <div>
               <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
-                Năm Phát Hành
+                {t("search.releaseYear", "Năm Phát Hành")}
               </label>
               <CustomSelect
                 value={year}
-                placeholder="Tất cả các năm"
+                placeholder={t("search.allYears", "Tất cả các năm")}
                 options={YEAR_OPTIONS}
                 onChange={(newVal) => {
                   const params = new URLSearchParams(searchParams.toString());
@@ -486,7 +485,7 @@ function SearchContent() {
               <div className="border-b border-white/10 pb-3">
                 <p className="text-xs text-neutral-400 font-bold uppercase tracking-wider flex items-center space-x-1.5">
                   <Loader2 size={12} className="animate-spin text-neutral-400" />
-                  <span>Đang tải kết quả tìm kiếm...</span>
+                  <span>{t("search.loading", "Đang tải kết quả tìm kiếm...")}</span>
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-y-6 sm:gap-y-8">
@@ -496,14 +495,14 @@ function SearchContent() {
               </div>
             </>
           ) : films.length === 0 ? (
-            <FilmNotFound querySlug={query} title="Không tìm thấy kết quả nào phù hợp" />
+            <FilmNotFound querySlug={query} title={t("search.noResults", "Không tìm thấy kết quả nào phù hợp")} />
           ) : (
             <>
               <div className="border-b border-white/10 pb-3 flex items-center justify-between">
                 <p className="text-xs text-neutral-400 font-bold uppercase tracking-wider">
                   {query
-                    ? `Kết quả tìm kiếm cho "${query}" (${films.length} phim)`
-                    : `Kết quả lọc phim (${films.length} phim)`}
+                    ? (lang === "en" ? `Search results for "${query}" (${films.length} films)` : `Kết quả tìm kiếm cho "${query}" (${films.length} phim)`)
+                    : (lang === "en" ? `Filtered results (${films.length} films)` : `Kết quả lọc phim (${films.length} phim)`)}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3 animate-in fade-in duration-300 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-y-6 sm:gap-y-8">

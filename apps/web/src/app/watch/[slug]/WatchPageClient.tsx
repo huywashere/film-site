@@ -375,7 +375,7 @@ export default function WatchPage() {
   const router = useRouter();
   const { toast } = useToast();
   const user = useAuthStore((s) => s.user);
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
 
   const rawSlug = (params.slug as string) || "";
   const slug = useMemo(() => rawSlug.replace(/_/g, "-"), [rawSlug]);
@@ -1974,7 +1974,7 @@ export default function WatchPage() {
                     }}
                     className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white/50 bg-white/[0.04] border border-white/[0.08] rounded-lg hover:text-white hover:bg-white/[0.08] transition-colors"
                   >
-                    <ChevronLeft size={13} /> Trước
+                    <ChevronLeft size={13} /> {t("watch.prevEpisode", "Tập trước")}
                   </button>
                 )}
                 {currentEpIndex >= 0 &&
@@ -1986,7 +1986,7 @@ export default function WatchPage() {
                       }}
                       className="flex items-center gap-1 rounded-lg bg-white px-4 py-1.5 text-xs font-semibold text-[#111317] transition-colors hover:bg-neutral-200"
                     >
-                      Tập tiếp <ChevronRight size={13} />
+                      {t("watch.nextEpisode", "Tập tiếp")} <ChevronRight size={13} />
                     </button>
                   )}
               </div>
@@ -2017,14 +2017,14 @@ export default function WatchPage() {
               const subOptions = [
                 {
                   id: "vietsub",
-                  label: "Phụ Đề (Vietsub)",
+                  label: lang === "en" ? "Subtitled" : "Phụ Đề (Vietsub)",
                   icon: MessageSquare,
                   count: subEps.length,
                   eps: subEps,
                 },
                 {
                   id: "thuyet-minh",
-                  label: "Thuyết Minh",
+                  label: lang === "en" ? "Dubbed / Voiceover" : "Thuyết Minh",
                   icon: Mic,
                   count: dubEps.length,
                   eps: dubEps,
@@ -2033,7 +2033,7 @@ export default function WatchPage() {
                   ? [
                       {
                         id: "engsub",
-                        label: "Engsub (Phụ đề Anh)",
+                        label: "Engsub (English)",
                         icon: Globe,
                         count: engsubEps.length,
                         eps: engsubEps,
@@ -2044,7 +2044,7 @@ export default function WatchPage() {
                   ? [
                       {
                         id: "raw",
-                        label: "Bản Gốc / Raw",
+                        label: lang === "en" ? "Raw / Original" : "Bản Gốc / Raw",
                         icon: Film,
                         count: rawEps.length,
                         eps: rawEps,
@@ -2058,8 +2058,8 @@ export default function WatchPage() {
                   {/* ── Version & Audio Selection Tabs ── */}
                   <div className="space-y-2">
                     <div className="text-[11px] font-extrabold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Subtitles size={13} className="text-white/60" />
-                      <span>Phiên bản Âm thanh & Phụ đề</span>
+                      <Sparkles size={13} className="text-white/60" />
+                      <span>{lang === "en" ? "Audio & Subtitle Versions" : "Phiên bản Âm thanh & Phụ đề"}</span>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
@@ -2133,7 +2133,7 @@ export default function WatchPage() {
                     <div className="pt-3 border-t border-white/[0.08] space-y-2">
                       <div className="text-[11px] font-extrabold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
                         <Server size={13} className="text-white/60" />
-                        <span>Máy chủ Nguồn phát ({activeGroup.length} Server)</span>
+                        <span>{lang === "en" ? `Stream Servers (${activeGroup.length} Mirrors)` : `Máy chủ Nguồn phát (${activeGroup.length} Server)`}</span>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
@@ -2217,7 +2217,7 @@ export default function WatchPage() {
                   <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.05]">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-white/80">
-                        Danh sách tập{" "}
+                        {t("watch.episodeListTitle", "Danh sách tập")}{" "}
                         <span className="text-white/40">
                           ({" "}
                           <span className="text-white font-extrabold">
@@ -2241,7 +2241,7 @@ export default function WatchPage() {
                           />
                           <input
                             type="text"
-                            placeholder="Tìm tập..."
+                            placeholder={lang === "en" ? "Find episode..." : "Tìm tập..."}
                             value={episodeSearch}
                             onChange={(e) => setEpisodeSearch(e.target.value)}
                             className="bg-white/[0.04] border border-white/[0.06] pl-7 pr-3 py-1 text-[11px] text-white placeholder-white/25 rounded-lg focus:outline-none focus:border-white/20 w-28 transition-colors"
@@ -2251,7 +2251,7 @@ export default function WatchPage() {
 
                       {/* Toggle Switch: Hiện ảnh / Ẩn ảnh */}
                       <label className="flex items-center gap-2 text-xs text-white/60 cursor-pointer select-none">
-                        <span>{showEpThumbnails ? "Ẩn ảnh" : "Hiện ảnh"}</span>
+                        <span>{showEpThumbnails ? (lang === "en" ? "Hide thumbnails" : "Ẩn ảnh") : (lang === "en" ? "Show thumbnails" : "Hiện ảnh")}</span>
                         <button
                           type="button"
                           onClick={() => setShowEpThumbnails(!showEpThumbnails)}

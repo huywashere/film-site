@@ -202,14 +202,18 @@ function dedupeTop10(films: FilmItem[]): FilmItem[] {
   return result.slice(0, 10);
 }
 
+import { useTranslation } from "@/store/langStore";
+
 export function Top10RankedRow({
   films,
-  title = "TOP 10 Đang Được Xem Nhiều",
+  title,
 }: Top10RankedRowProps) {
+  const { t } = useTranslation();
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
+  const displayTitle = title || t("home.top10Title", "TOP 10 Đang Được Xem Nhiều");
   const top10 = dedupeTop10(films || []);
   if (top10.length === 0) return null;
 
@@ -217,7 +221,7 @@ export function Top10RankedRow({
     <section className="mb-10 relative group/section">
       <div className="flex items-center justify-between mb-4">
         <h2 className={`${cardFont.className} text-lg md:text-xl font-extrabold text-white flex items-center gap-2`}>
-          <span>{title}</span>
+          <span>{displayTitle}</span>
         </h2>
 
         {/* Custom Navigation */}

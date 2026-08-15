@@ -744,7 +744,7 @@ export default function FilmDetailPage() {
   const slug = params.slug as string;
   const { user } = useAuthStore();
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const queryClient = useQueryClient();
   const [inWatchlist, setInWatchlist] = useState(false);
   const [watchlistPending, setWatchlistPending] = useState(false);
@@ -1015,14 +1015,14 @@ export default function FilmDetailPage() {
     String(film?.episode_current || "")
       .toLowerCase()
       .includes("full")
-      ? "Đã hoàn thành"
-      : film?.episode_current || "Đang cập nhật";
+      ? (lang === "en" ? "Completed" : "Đã hoàn thành")
+      : film?.episode_current || (lang === "en" ? "Updating" : "Đang cập nhật");
   const typeLabel =
     film?.type === "series" || film?.type === "tv"
-      ? "Phim Bộ"
+      ? (lang === "en" ? "TV Series" : "Phim Bộ")
       : film?.type === "hoat-hinh"
-        ? "Hoạt Hình"
-        : "Phim Lẻ";
+        ? (lang === "en" ? "Animation" : "Hoạt Hình")
+        : (lang === "en" ? "Movie" : "Phim Lẻ");
 
   const filmName = film?.name || film?.title || slug;
   const originName = film?.origin_name || "";
@@ -1151,9 +1151,7 @@ export default function FilmDetailPage() {
         </div>
       )}
 
-      {/* ── Main Content Container ── */}
       <div className="relative z-10 container mx-auto px-4 md:px-12 pt-24 sm:pt-28">
-        {/* ── 1. Back Button & Breadcrumb Bar ── */}
         <div className="flex items-center gap-2 text-xs font-semibold text-neutral-400 mb-5 flex-wrap">
           <button
             type="button"
@@ -1161,13 +1159,13 @@ export default function FilmDetailPage() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold transition-all text-xs border border-white/15 shadow-sm active:scale-95 cursor-pointer mr-1"
           >
             <ArrowLeft size={13} />
-            <span>Quay lại</span>
+            <span>{t("watch.back", "Quay lại")}</span>
           </button>
           <Link
             href="/"
             className="hover:text-white transition-colors flex items-center gap-1"
           >
-            Trang chủ
+            {t("common.goHome", "Trang chủ")}
           </Link>
           <ChevronRightIcon size={12} className="text-neutral-600" />
           {genres[0]?.name && (
@@ -1176,7 +1174,7 @@ export default function FilmDetailPage() {
                 href={`/genre/${genres[0].slug}`}
                 className="hover:text-white transition-colors"
               >
-                {genres[0].name}
+                {t(`genres_list.${genres[0].slug}`, genres[0].name)}
               </Link>
               <ChevronRightIcon size={12} className="text-neutral-600" />
             </>
@@ -1193,7 +1191,7 @@ export default function FilmDetailPage() {
                 href={`/country/${countries[0].slug}`}
                 className="hover:text-white transition-colors"
               >
-                {countries[0].name}
+                {t(`countries_list.${countries[0].slug}`, countries[0].name)}
               </Link>
               <ChevronRightIcon size={12} className="text-neutral-600" />
             </>
@@ -1203,13 +1201,9 @@ export default function FilmDetailPage() {
           </span>
         </div>
 
-        {/* ── Top Hero Area (Mobile & Desktop Cinema Layout) ── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-          {/* Main Info Section (With Poster on Mobile/Tablet) */}
           <div className="lg:col-span-8 flex flex-col space-y-4 md:space-y-5">
-            {/* Header info with Poster on mobile/tablet */}
             <div className="flex gap-4 sm:gap-6 items-start">
-              {/* Mobile/Tablet Poster */}
               <div className="lg:hidden w-28 sm:w-36 aspect-[2/3] rounded-xl sm:rounded-2xl overflow-hidden border border-white/15 bg-neutral-900 shadow-2xl flex-shrink-0 relative group">
                 <DetailPosterCard
                   candidates={heroPosterCandidates}
@@ -1218,21 +1212,17 @@ export default function FilmDetailPage() {
                 />
               </div>
 
-              {/* Title & metadata */}
               <div className="flex flex-col space-y-2 sm:space-y-3 min-w-0 flex-1">
-                {/* Title - Clean Vietnamese typography without forced uppercase */}
                 <h1 className="text-xl sm:text-3xl md:text-5xl font-extrabold text-white tracking-tight leading-snug drop-shadow-xl line-clamp-3">
                   {film.name}
                 </h1>
 
-                {/* Subtitle Original Name */}
                 {film.origin_name && (
                   <p className="text-xs sm:text-base text-neutral-300 font-medium tracking-wide italic line-clamp-2">
                     {film.origin_name}
                   </p>
                 )}
 
-                {/* Metadata Tags Row (Matching Reference Image 1) */}
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs font-bold pt-1">
                   {film.quality && (
                     <span className="rounded-md border border-white/15 bg-white/[0.06] px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-neutral-200">
@@ -1249,13 +1239,18 @@ export default function FilmDetailPage() {
                       {film.year}
                     </span>
                   )}
+                  {film.time && (
+                    <span className="bg-white/10 text-neutral-300 px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-semibold">
+                      {film.time}
+                    </span>
+                  )}
                   {tmdbRatingLabel && (
                     <span
                       className="rounded-md border border-white/15 bg-black/20 px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold text-neutral-200"
                       title={
                         tmdbVoteCount > 0
-                          ? `${tmdbVoteCount.toLocaleString("vi-VN")} lượt đánh giá trên TMDB`
-                          : "Điểm TMDB"
+                          ? `${tmdbVoteCount.toLocaleString("vi-VN")} ${t("film.votes", "lượt đánh giá trên TMDB")}`
+                          : t("film.tmdbScore", "Điểm TMDB")
                       }
                     >
                       <span className="text-neutral-500">TMDB</span>{" "}
@@ -1267,8 +1262,8 @@ export default function FilmDetailPage() {
                       className="rounded-md border border-white/15 bg-black/20 px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold text-neutral-200"
                       title={
                         imdbVoteCount > 0
-                          ? `${imdbVoteCount.toLocaleString("vi-VN")} lượt đánh giá trên IMDb`
-                          : "Điểm IMDb"
+                          ? `${imdbVoteCount.toLocaleString("vi-VN")} ${t("film.votes", "lượt đánh giá trên IMDb")}`
+                          : t("film.imdbScore", "Điểm IMDb")
                       }
                     >
                       <span className="text-neutral-500">IMDb</span>{" "}
@@ -1279,7 +1274,6 @@ export default function FilmDetailPage() {
               </div>
             </div>
 
-            {/* Play and Action Widgets */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link
                 href={watchLink}
@@ -1297,7 +1291,6 @@ export default function FilmDetailPage() {
                 {t("film.trailer", "Trailer")}
               </button>
 
-              {/* Action Circle Buttons */}
               <div className="flex items-center space-x-3 ml-2">
                 <div className="flex flex-col items-center gap-1 group">
                   <button
@@ -1305,7 +1298,7 @@ export default function FilmDetailPage() {
                     disabled={watchlistPending}
                     aria-pressed={inWatchlist}
                     aria-label={
-                      inWatchlist ? "Xóa khỏi Xem sau" : "Thêm vào Xem sau"
+                      inWatchlist ? t("film.removeFromWatchlist", "Xóa khỏi Xem sau") : t("film.addToWatchlist", "Thêm vào Xem sau")
                     }
                     className={cn(
                       "w-9 h-9 rounded-full border flex items-center justify-center backdrop-blur-md transition-all cursor-pointer disabled:cursor-wait disabled:opacity-60",
@@ -1329,11 +1322,11 @@ export default function FilmDetailPage() {
                   <button
                     onClick={() => {
                       if (!user) {
-                        toast("Bạn cần đăng nhập để theo dõi tập mới", "error");
+                        toast(t("toast.loginToTrack", "Bạn cần đăng nhập để theo dõi tập mới"), "error");
                         return;
                       }
                       toast(
-                        `Đã đăng ký nhận thông báo khi có tập mới của ${film?.name}!`,
+                        t("toast.subscribed", `Đã đăng ký nhận thông báo khi có tập mới của ${film?.name}!`),
                         "success",
                       );
                     }}
@@ -1342,7 +1335,7 @@ export default function FilmDetailPage() {
                     <Bell size={15} />
                   </button>
                   <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider group-hover:text-neutral-300 transition-colors">
-                    Theo dõi
+                    {t("watch.follow", "Theo dõi")}
                   </span>
                 </div>
 
@@ -1386,7 +1379,6 @@ export default function FilmDetailPage() {
             </div>
           </div>
 
-          {/* Right Hero Poster Box (Desktop) */}
           <div className="lg:col-span-4 hidden lg:flex justify-end">
             <div className="w-64 aspect-[2/3] rounded-2xl overflow-hidden border border-white/15 bg-neutral-950/60 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative group">
               <DetailPosterCard
@@ -1398,17 +1390,15 @@ export default function FilmDetailPage() {
           </div>
         </div>
 
-        {/* ── 2. Compact metadata rail ── */}
         <div className="mt-8 space-y-8">
           <section
-            aria-label="Thông tin phim"
+            aria-label={t("home.details", "Thông tin phim")}
             className="grid grid-cols-2 overflow-hidden rounded-[14px] border border-white/10 bg-[#0d0f12]/65 shadow-[0_14px_50px_rgba(0,0,0,0.18)] backdrop-blur-xl sm:grid-cols-3 sm:divide-x sm:divide-white/10"
           >
-            {/* Card 1: Thể Loại */}
             <div className="border-b border-r border-white/10 px-3.5 py-3 sm:border-b-0 sm:border-r-0">
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-                  Thể loại
+                  {t("film.genres", "Thể loại")}
                 </h2>
                 <span className="text-[10px] font-semibold text-neutral-600">
                   {genres.length}
@@ -1422,22 +1412,21 @@ export default function FilmDetailPage() {
                       href={genre.slug ? `/genre/${genre.slug}` : "#"}
                       className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] font-medium text-neutral-300 transition-colors hover:border-white/20 hover:text-white"
                     >
-                      {genre.name}
+                      {t(`genres_list.${genre.slug}`, genre.name)}
                     </Link>
                   ))
                 ) : (
                   <span className="text-xs text-neutral-500">
-                    Đang cập nhật
+                    {t("common.noData", "Đang cập nhật")}
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Card 2: Quốc gia */}
             <div className="border-b border-white/10 px-3.5 py-3 sm:border-b-0">
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-                  Quốc gia
+                  {t("film.country", "Quốc gia")}
                 </h2>
                 <span className="text-[10px] font-semibold text-neutral-600">
                   {countries.length}
@@ -1451,22 +1440,21 @@ export default function FilmDetailPage() {
                       href={country.slug ? `/country/${country.slug}` : "#"}
                       className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] font-medium text-neutral-300 transition-colors hover:border-white/20 hover:text-white"
                     >
-                      {country.name}
+                      {t(`countries_list.${country.slug}`, country.name)}
                     </Link>
                   ))
                 ) : (
                   <span className="text-xs text-neutral-500">
-                    Đang cập nhật
+                    {t("common.noData", "Đang cập nhật")}
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Card 3: Thông tin tập & thời lượng */}
             <div className="col-span-2 px-3.5 py-3 sm:col-span-1">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <h2 className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-                  Thông tin
+                  {t("home.details", "Thông tin")}
                 </h2>
                 <span className="max-w-[55%] truncate rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[9px] font-semibold text-neutral-400">
                   {statusLabel}
@@ -1474,23 +1462,22 @@ export default function FilmDetailPage() {
               </div>
               <dl className="space-y-1 text-[11px]">
                 <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-500">Thời lượng</dt>
+                  <dt className="text-neutral-500">{t("film.duration", "Thời lượng")}</dt>
                   <dd className="truncate font-semibold text-neutral-200">
-                    {film.time || "22 phút/tập"}
+                    {film.time || t("film.defaultDuration", "22 phút/tập")}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-500">Tập hiện tại</dt>
+                  <dt className="text-neutral-500">{t("film.episodes", "Tập hiện tại")}</dt>
                   <dd className="truncate font-semibold text-neutral-200">
                     {film.episode_current ||
-                      (episodeCount ? `Tập ${episodeCount}` : "Full")}
+                      (episodeCount ? t("film.episodeCount", `Tập ${episodeCount}`) : "Full")}
                   </dd>
                 </div>
               </dl>
             </div>
           </section>
 
-          {/* ── 3. Cast & Crew Avatars Row (Matching Reference Image 1) ── */}
           {(directors.length > 0 ||
             actors.length > 0 ||
             (tmdbCast && tmdbCast.length > 0)) && (
@@ -1499,14 +1486,14 @@ export default function FilmDetailPage() {
                 id="film-credits-title"
                 className="text-xs font-black uppercase tracking-widest text-neutral-400 flex items-center gap-2"
               >
-                <span>Đạo diễn và diễn viên</span>
+                <span>{t("film.cast", "Đạo diễn và diễn viên")}</span>
               </h2>
               <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide">
                 {directors.map((director, idx) => (
                   <CastCard
                     key={`director-${director}-${idx}`}
                     name={director}
-                    role="Đạo diễn"
+                    role={t("film.director", "Đạo diễn")}
                   />
                 ))}
                 {tmdbCast && tmdbCast.length > 0
@@ -1514,7 +1501,7 @@ export default function FilmDetailPage() {
                       <CastCard
                         key={`tmdb-cast-${c.id}`}
                         name={c.name}
-                        role={c.character || "Acting"}
+                        role={c.character || t("film.castMember", "Diễn viên")}
                         profilePath={c.profile_path}
                         personId={c.id}
                       />
@@ -1523,23 +1510,21 @@ export default function FilmDetailPage() {
                       <CastCard
                         key={`actor-${actor}-${idx}`}
                         name={actor}
-                        role="Diễn viên"
+                        role={t("film.characters", "Diễn viên")}
                       />
                     ))}
               </div>
             </section>
           )}
 
-          {/* ── 4. Nội Dung Phim Section (With Red Accent Line 1:1) ── */}
           <section className="space-y-3 pt-4 border-t border-white/5">
             <h2 className="text-base sm:text-lg font-bold text-white flex items-center">
-              <span>Nội dung phim</span>
+              <span>{t("film.synopsis", "Nội dung phim")}</span>
             </h2>
 
-            {/* Alternative Names Line */}
             {film.origin_name && (
               <p className="text-xs text-neutral-400 leading-relaxed font-medium">
-                <span className="font-bold text-white mr-1.5">Tên khác:</span>
+                <span className="font-bold text-white mr-1.5">{t("film.originName", "Tên gốc")}:</span>
                 <span>{film.origin_name}</span>
               </p>
             )}
@@ -1551,12 +1536,11 @@ export default function FilmDetailPage() {
             )}
           </section>
 
-          {/* ── 5. Từ Khóa Tags Section (With Red Accent Line 1:1) ── */}
           <section className="space-y-3 pt-4 border-t border-white/5">
             <h2 className="text-base sm:text-lg font-bold text-white flex items-center">
-              <span>Từ khóa</span>
+              <span>{t("film.tags", "Từ khóa")}</span>
               <span className="ml-2 text-xs font-normal text-neutral-400">
-                ({genres.length + 2} từ khóa)
+                ({genres.length + 2} {t("film.tagsCount", "từ khóa")})
               </span>
             </h2>
             <div className="flex flex-wrap gap-2">
@@ -1577,13 +1561,12 @@ export default function FilmDetailPage() {
             </div>
           </section>
 
-          {/* ── 6. Hình Ảnh Gallery Section (With Red Accent Line 1:1) ── */}
           {backdrops && backdrops.length > 0 && (
             <section className="space-y-3 pt-4 border-t border-white/5">
               <h2 className="text-base sm:text-lg font-bold text-white flex items-center">
-                <span>Hình ảnh</span>
+                <span>{t("film.gallery", "Hình ảnh")}</span>
                 <span className="ml-2 text-xs font-normal text-neutral-400">
-                  ({backdrops.length} ảnh)
+                  ({backdrops.length} {t("film.imagesCount", "ảnh")})
                 </span>
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">

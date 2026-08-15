@@ -58,7 +58,7 @@ const NAV_LINKS = [
   { href: "/films/series", key: "nav.series" },
   { href: "/films/single", key: "nav.single" },
   { href: "/films/anime", key: "nav.anime" },
-  { href: "/actors", label: "Diễn Viên" },
+  { href: "/actors", key: "nav.actors", label: "Diễn Viên" },
 ];
 
 export const GENRES_LIST = [
@@ -240,18 +240,18 @@ export function CountryFlagImage({
 }
 
 const LISTS_CATALOG = [
-  { label: "Phim Mới", href: "/search?sort=modified.time%20desc" },
-  { label: "Phim Bộ", href: "/films/series" },
-  { label: "Phim Lẻ", href: "/films/single" },
-  { label: "Shows", href: "/films/tvshows" },
-  { label: "Hoạt Hình", href: "/films/anime" },
-  { label: "Phim Vietsub", href: "/search?q=vietsub" },
-  { label: "Phim Thuyết Minh", href: "/search?q=thuyet%20minh" },
-  { label: "Phim Lồng Tiếng", href: "/search?q=long%20tieng" },
-  { label: "Phim Bộ Đang Chiếu", href: "/search?status=ongoing" },
-  { label: "Phim Bộ Đã Hoàn Thành", href: "/search?status=completed" },
-  { label: "Subteam", href: "/search?q=subteam" },
-  { label: "Phim Chiếu Rạp", href: "/search?q=chieu%20rap" },
+  { label: "Phim Mới", labelEn: "New Releases", href: "/search?sort=modified.time%20desc" },
+  { label: "Phim Bộ", labelEn: "TV Series", href: "/films/series" },
+  { label: "Phim Lẻ", labelEn: "Feature Films", href: "/films/single" },
+  { label: "Shows", labelEn: "TV Shows", href: "/films/tvshows" },
+  { label: "Hoạt Hình", labelEn: "Anime / Animation", href: "/films/anime" },
+  { label: "Phim Vietsub", labelEn: "Subtitled Movies", href: "/search?q=vietsub" },
+  { label: "Phim Thuyết Minh", labelEn: "Dubbed Movies", href: "/search?q=thuyet%20minh" },
+  { label: "Phim Lồng Tiếng", labelEn: "Voiceover Movies", href: "/search?q=long%20tieng" },
+  { label: "Phim Bộ Đang Chiếu", labelEn: "Ongoing Series", href: "/search?status=ongoing" },
+  { label: "Phim Bộ Đã Hoàn Thành", labelEn: "Completed Series", href: "/search?status=completed" },
+  { label: "Subteam", labelEn: "Subteam Releases", href: "/search?q=subteam" },
+  { label: "Phim Chiếu Rạp", labelEn: "Theatrical Releases", href: "/search?q=chieu%20rap" },
 ];
 
 function AnimatedNavbarLogo() {
@@ -284,6 +284,45 @@ function AnimatedNavbarLogo() {
   );
 }
 
+function LanguageSwitcher() {
+  const { lang, setLang } = useTranslation();
+
+  return (
+    <div className="flex items-center bg-white/[0.06] border border-white/10 p-0.5 rounded-full text-[11px] font-bold shrink-0">
+      <button
+        type="button"
+        onClick={() => setLang("vi")}
+        className={cn(
+          "flex items-center gap-1 px-2 py-0.5 rounded-full transition-all cursor-pointer",
+          lang === "vi"
+            ? "bg-white text-black font-extrabold shadow-sm"
+            : "text-neutral-400 hover:text-white",
+        )}
+        aria-label="Tiếng Việt"
+        title="Tiếng Việt"
+      >
+        <span>🇻🇳</span>
+        <span className="hidden sm:inline text-[10px]">VI</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => setLang("en")}
+        className={cn(
+          "flex items-center gap-1 px-2 py-0.5 rounded-full transition-all cursor-pointer",
+          lang === "en"
+            ? "bg-white text-black font-extrabold shadow-sm"
+            : "text-neutral-400 hover:text-white",
+        )}
+        aria-label="English"
+        title="English"
+      >
+        <span>🇬🇧</span>
+        <span className="hidden sm:inline text-[10px]">EN</span>
+      </button>
+    </div>
+  );
+}
+
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -299,7 +338,6 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-  // Notifications State & References (Live Auto-Fetched from Third-Party APIs)
   const [notifications, setNotifications] = useState<
     Array<{
       id: string | number;
@@ -317,7 +355,6 @@ export function Navbar() {
     },
   ]);
 
-  // Fetch live updated movies from providers every 5 minutes to generate real notifications
   const { data: latestNotificationRes } = useQuery({
     queryKey: ["navbar-latest-notifications"],
     queryFn: () => movieApi.getLatest(1).then((r) => r.data),
@@ -364,18 +401,17 @@ export function Navbar() {
     }
   };
 
-  // Keep the header transparent at the top and introduce glass only after scroll.
   useEffect(() => {
     let frameId: number | null = null;
-    const update = () => {
-      frameId = null;
-      setScrolled(window.scrollY > 30);
-    };
     const onScroll = () => {
-      if (frameId === null) frameId = window.requestAnimationFrame(update);
+      if (frameId !== null) return;
+      frameId = window.requestAnimationFrame(() => {
+        setScrolled(window.scrollY > 20);
+        frameId = null;
+      });
     };
-    update();
     window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
     return () => {
       window.removeEventListener("scroll", onScroll);
       if (frameId !== null) window.cancelAnimationFrame(frameId);
@@ -386,7 +422,6 @@ export function Navbar() {
     setMounted(true);
   }, []);
 
-  // Global Ctrl/Cmd+K shortcut to open Spotlight search from anywhere
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
@@ -415,9 +450,7 @@ export function Navbar() {
             <AnimatedNavbarLogo />
           </div>
 
-          {/* Center Block: Desktop Navigation Links (Absolute 100% Centered in Header) */}
           <nav className="hidden lg:flex items-center justify-center space-x-4 xl:space-x-6 text-sm font-medium text-neutral-200 absolute left-1/2 -translate-x-1/2 z-10">
-            {/* Thể Loại Dropdown */}
             <div className="relative group py-5">
               <button className="flex items-center space-x-1 text-neutral-200 hover:text-white transition-colors focus:outline-none font-semibold">
                 <span>{t("nav.genres")}</span>
@@ -434,13 +467,12 @@ export function Navbar() {
                     onMouseEnter={() => router.prefetch(`/genre/${item.slug}`)}
                     className="px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 block truncate"
                   >
-                    {item.label}
+                    {t(`genres_list.${item.slug}`, item.label)}
                   </Link>
                 ))}
               </div>
             </div>
 
-            {/* Quốc Gia Dropdown */}
             <div className="relative group py-5">
               <button className="flex items-center space-x-1 text-neutral-200 hover:text-white transition-colors focus:outline-none font-semibold">
                 <span>{t("nav.country")}</span>
@@ -461,16 +493,17 @@ export function Navbar() {
                   >
                     <CountryFlagImage
                       code={item.code}
-                      label={item.label}
+                      label={t(`countries_list.${item.slug}`, item.label)}
                       className="w-5 h-3.5 object-cover rounded-[3px] border border-white/20 shrink-0 group-hover/flag:scale-110 transition-transform shadow-sm"
                     />
-                    <span className="truncate">{item.label}</span>
+                    <span className="truncate">
+                      {t(`countries_list.${item.slug}`, item.label)}
+                    </span>
                   </Link>
                 ))}
               </div>
             </div>
 
-            {/* Danh Sách Dropdown */}
             <div className="relative group py-5">
               <button className="flex items-center space-x-1 text-neutral-200 hover:text-white transition-colors focus:outline-none font-semibold">
                 <span>{t("nav.list")}</span>
@@ -482,12 +515,12 @@ export function Navbar() {
               <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[500px] p-4 bg-[#090c15]/65 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.6)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-3 gap-y-1.5 gap-x-2 z-50">
                 {LISTS_CATALOG.map((item) => (
                   <Link
-                    key={item.label}
+                    key={item.href}
                     href={item.href}
                     onMouseEnter={() => router.prefetch(item.href)}
                     className="px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 block truncate"
                   >
-                    {item.label}
+                    {lang === "en" ? item.labelEn || item.label : item.label}
                   </Link>
                 ))}
               </div>
@@ -504,49 +537,46 @@ export function Navbar() {
                     : "text-neutral-200",
                 )}
               >
-                {link.label || t(link.key!)}
+                {link.key ? t(link.key, link.label || "") : link.label}
               </Link>
             ))}
           </nav>
 
-          {/* Right Block: Search & Actions & Profile */}
-          <div className="flex shrink-0 items-center justify-end space-x-1 sm:space-x-3">
-            {/* ── Search Pill Button — desktop ── */}
+          <div className="flex shrink-0 items-center justify-end space-x-1.5 sm:space-x-3">
             <button
               id="navbar-search-btn"
               onClick={() => setIsSpotlightOpen(true)}
-              aria-label="Tìm kiếm phim"
-              title="Tìm kiếm (Ctrl + K)"
-              className={`${cardFont.className} group hidden min-w-[200px] cursor-pointer items-center gap-2.5 rounded-full border border-white/10 bg-[#111317]/90 py-2 pl-3.5 pr-3 text-xs transition-colors duration-200 hover:border-white/25 hover:bg-[#181b20] sm:flex lg:min-w-[260px]`}
+              aria-label={t("nav.searchBtn")}
+              title={`${t("nav.searchBtn")} (Ctrl + K)`}
+              className={`${cardFont.className} group hidden min-w-[200px] cursor-pointer items-center gap-2.5 rounded-full border border-white/10 bg-[#111317]/90 py-2 pl-3.5 pr-3 text-xs transition-colors duration-200 hover:border-white/25 hover:bg-[#181b20] sm:flex lg:min-w-[240px]`}
             >
               <Search
                 size={14}
                 className="text-neutral-400 group-hover:text-white transition-colors flex-shrink-0"
               />
-              <span className="flex-1 text-left font-medium text-neutral-400 group-hover:text-neutral-200 transition-colors">
-                Tìm kiếm phim, diễn viên...
+              <span className="flex-1 text-left font-medium text-neutral-400 group-hover:text-neutral-200 transition-colors truncate">
+                {t("nav.searchPlaceholder")}
               </span>
               <kbd className="flex items-center gap-0.5 bg-white/[0.06] border border-white/10 rounded-md px-1.5 py-0.5 text-[10px] font-mono text-neutral-500 group-hover:text-neutral-400 flex-shrink-0">
                 <span className="text-[11px]">⌘</span>K
               </kbd>
             </button>
-            {/* Mobile search icon only */}
             <button
               onClick={() => setIsSpotlightOpen(true)}
-              aria-label="Tìm kiếm"
+              aria-label={t("nav.searchBtn")}
               className="flex h-10 w-10 items-center justify-center rounded-xl text-neutral-400 hover:bg-white/[0.06] hover:text-white transition-colors sm:hidden"
             >
               <Search size={20} />
             </button>
 
-            {/* Profile / Actions */}
-            <div className="flex items-center space-x-1 sm:space-x-3">
-              {/* Notifications Bell Dropdown (Visible next to Avatar/User button) */}
+            <LanguageSwitcher />
+
+            <div className="flex items-center space-x-1 sm:space-x-2">
               <DropdownMenu modal={false} onOpenChange={setNotificationsOpen}>
-                <DropdownMenuTrigger className="relative flex h-10 w-10 items-center justify-center rounded-xl text-neutral-300 hover:bg-white/[0.06] hover:text-white transition-colors focus:outline-none cursor-pointer">
-                  <Bell size={20} className="stroke-[2.2]" />
+                <DropdownMenuTrigger className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl text-neutral-300 hover:bg-white/[0.06] hover:text-white transition-colors focus:outline-none cursor-pointer">
+                  <Bell size={19} className="stroke-[2.2]" />
                   {unreadCount > 0 && (
-                    <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-white" />
+                    <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500 shadow-sm" />
                   )}
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
@@ -559,14 +589,14 @@ export function Navbar() {
                 >
                   <div className="flex items-center justify-between px-2 py-1.5 border-b border-white/10 mb-1.5">
                     <span className="font-bold text-white text-sm">
-                      Thông báo
+                      {lang === "en" ? "Notifications" : "Thông báo"}
                     </span>
                     {unreadCount > 0 && (
                       <button
                         onClick={markAllRead}
                         className="text-[10px] text-neutral-400 hover:text-white transition-colors cursor-pointer"
                       >
-                        Đánh dấu đã đọc
+                        {lang === "en" ? "Mark all as read" : "Đánh dấu đã đọc"}
                       </button>
                     )}
                   </div>
@@ -576,7 +606,9 @@ export function Navbar() {
                   >
                     {activeNotifications.length === 0 ? (
                       <div className="p-6 text-center text-xs text-neutral-500">
-                        Chưa có thông báo nào (hoặc đã tắt trong Cài Đặt)
+                        {lang === "en"
+                          ? "No notifications yet"
+                          : "Chưa có thông báo nào (hoặc đã tắt trong Cài Đặt)"}
                       </div>
                     ) : (
                       activeNotifications.map((n) => (
@@ -614,7 +646,6 @@ export function Navbar() {
               </DropdownMenu>
 
               {user ? (
-                /* YouTube-style Profile menu dropdown (Desktop only — Mobile accesses profile from bottom nav & drawer) */
                 <div className="hidden lg:block">
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger className="flex items-center space-x-1 focus:outline-none cursor-pointer group">
@@ -652,9 +683,7 @@ export function Navbar() {
                         cardFont.className,
                       )}
                     >
-                      {/* Top User Profile Header */}
                       <div className="p-2 flex items-center space-x-3 pb-3">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={
                             user.avatarUrl ||
@@ -678,7 +707,6 @@ export function Navbar() {
                         </div>
                       </div>
 
-                      {/* Section 1: Main Quick Access Shortcuts */}
                       <div className="py-1.5 space-y-0.5">
                         <DropdownMenuItem
                           onClick={() =>
@@ -691,7 +719,21 @@ export function Navbar() {
                           className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
                         >
                           <User size={16} className="mr-3 text-neutral-300" />
-                          <span>Trang cá nhân</span>
+                          <span>{t("nav.profile")}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => router.push("/watchlist")}
+                          className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
+                        >
+                          <Bookmark size={16} className="mr-3 text-neutral-300" />
+                          <span>{t("nav.watchlist")}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => router.push("/history")}
+                          className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
+                        >
+                          <History size={16} className="mr-3 text-neutral-300" />
+                          <span>{t("nav.history")}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => router.push("/settings")}

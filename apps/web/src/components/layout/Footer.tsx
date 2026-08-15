@@ -3,45 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { cardFont } from "@/lib/fonts";
-
-const FOOTER_COLUMNS = [
-  {
-    heading: "Khám phá",
-    links: [
-      { label: "Phim mới nhất", href: "/films" },
-      { label: "Phim bộ", href: "/films/series" },
-      { label: "Phim lẻ", href: "/films/single" },
-      { label: "Hoạt hình", href: "/films/hoat-hinh" },
-    ],
-  },
-  {
-    heading: "Thể loại",
-    links: [
-      { label: "Hành động", href: "/genre/hanh-dong" },
-      { label: "Tình cảm", href: "/genre/tinh-cam" },
-      { label: "Khoa học viễn tưởng", href: "/genre/khoa-hoc-vien-tuong" },
-      { label: "Kinh dị", href: "/genre/kinh-di" },
-    ],
-  },
-  {
-    heading: "Quốc gia",
-    links: [
-      { label: "Hàn Quốc", href: "/country/han-quoc" },
-      { label: "Trung Quốc", href: "/country/trung-quoc" },
-      { label: "Âu Mỹ", href: "/country/au-my" },
-      { label: "Nhật Bản", href: "/country/nhat-ban" },
-    ],
-  },
-  {
-    heading: "Hỗ trợ",
-    links: [
-      { label: "Báo cáo nội dung", href: "/report" },
-      { label: "Quyền riêng tư", href: "/privacy" },
-      { label: "Điều khoản", href: "/terms" },
-      { label: "Liên hệ", href: "/contact" },
-    ],
-  },
-];
+import { useTranslation } from "@/store/langStore";
 
 // Social icon components
 function IconFacebook() {
@@ -102,6 +64,46 @@ const CAT_MASCOTS = [
 export function Footer() {
   const year = new Date().getFullYear();
   const [catIndex, setCatIndex] = useState(0);
+  const { t, lang } = useTranslation();
+
+  const footerColumns = [
+    {
+      heading: t("footer.quickLinks", "Khám phá"),
+      links: [
+        { label: t("sections.latest", "Phim mới nhất"), href: "/films" },
+        { label: t("nav.series", "Phim bộ"), href: "/films/series" },
+        { label: t("nav.single", "Phim lẻ"), href: "/films/single" },
+        { label: t("nav.anime", "Hoạt hình"), href: "/films/anime" },
+      ],
+    },
+    {
+      heading: t("footer.genres", "Thể loại"),
+      links: [
+        { label: t("genres_list.hanh-dong", "Hành động"), href: "/genre/hanh-dong" },
+        { label: t("genres_list.tinh-cam", "Tình cảm"), href: "/genre/tinh-cam" },
+        { label: t("genres_list.khoa-hoc-vien-tuong", "Khoa học viễn tưởng"), href: "/genre/khoa-hoc-vien-tuong" },
+        { label: t("genres_list.kinh-di", "Kinh dị"), href: "/genre/kinh-di" },
+      ],
+    },
+    {
+      heading: t("nav.country", "Quốc gia"),
+      links: [
+        { label: t("countries_list.han-quoc", "Hàn Quốc"), href: "/country/han-quoc" },
+        { label: t("countries_list.trung-quoc", "Trung Quốc"), href: "/country/trung-quoc" },
+        { label: t("countries_list.au-my", "Âu Mỹ"), href: "/country/au-my" },
+        { label: t("countries_list.nhat-ban", "Nhật Bản"), href: "/country/nhat-ban" },
+      ],
+    },
+    {
+      heading: t("footer.support", "Hỗ trợ"),
+      links: [
+        { label: t("watch.report", "Báo cáo nội dung"), href: "/report" },
+        { label: t("footer.privacy", "Quyền riêng tư"), href: "/privacy" },
+        { label: t("footer.terms", "Điều khoản"), href: "/terms" },
+        { label: t("footer.contact", "Liên hệ"), href: "/contact" },
+      ],
+    },
+  ];
 
   // Random 1 of 4 cat mascots on page load/reload
   useEffect(() => {
@@ -118,8 +120,8 @@ export function Footer() {
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-10">
         {/* Main section */}
         <div className="flex flex-col gap-8 py-8 sm:py-10 md:flex-row md:items-start md:justify-between lg:gap-14">
-          {/* Logo & Tagline (Bigger Logo as requested) */}
-          <div className="shrink-0 md:max-w-[240px]">
+          {/* Logo & Tagline */}
+          <div className="shrink-0 md:max-w-[260px]">
             <Link href="/" className="inline-flex items-center gap-2.5 group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -135,13 +137,13 @@ export function Footer() {
               </span>
             </Link>
             <p className="mt-3 text-xs sm:text-[13px] leading-relaxed text-neutral-400">
-              Nền tảng xem phim trực tuyến miễn phí, chất lượng cao.
+              {t("footer.description", "Nền tảng xem phim trực tuyến miễn phí, chất lượng cao Full HD & 4K Ultra HD.")}
             </p>
           </div>
 
-          {/* 4 Balanced Link Columns (2x2 on mobile, 4 columns on tablet/desktop) */}
+          {/* 4 Balanced Link Columns */}
           <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-4 sm:gap-6 md:flex-1 md:gap-8">
-            {FOOTER_COLUMNS.map((column) => (
+            {footerColumns.map((column) => (
               <div key={column.heading} className="min-w-0">
                 <p className="mb-3 text-[11px] sm:text-[12px] font-bold uppercase tracking-wider text-neutral-200">
                   {column.heading}
@@ -167,7 +169,7 @@ export function Footer() {
         {/* Divider */}
         <div className="h-px w-full bg-white/[0.06]" />
 
-        {/* Bottom row: Socials + Disclaimer + Copyright + 1 Random Bigger Cat Mascot */}
+        {/* Bottom row: Socials + Disclaimer + Copyright + 1 Random Cat Mascot */}
         <div className="flex flex-col items-center gap-3.5 pt-6 pb-20 sm:pb-6 text-center">
           {/* Social icons */}
           <div className="flex items-center gap-5 sm:gap-6">
@@ -187,15 +189,17 @@ export function Footer() {
 
           {/* Disclaimer text */}
           <p className="max-w-3xl text-[11px] sm:text-xs leading-relaxed text-neutral-400">
-            NetPhim là nền tảng tổng hợp và giới thiệu thông tin phim ảnh phục vụ cộng đồng người xem tại Việt Nam. Chúng tôi không lưu trữ bất kỳ tệp video nào trên máy chủ riêng; toàn bộ dữ liệu và nội dung đều được dẫn nguồn, liên kết tự động từ các dịch vụ bên thứ ba công khai trên Internet.
+            {lang === "en"
+              ? "NetPhim is a movie catalog and streaming discovery platform serving the community. We do not host any media files on our own servers; all metadata and streams are indexed automatically from public third-party services on the internet."
+              : "NetPhim là nền tảng tổng hợp và giới thiệu thông tin phim ảnh phục vụ cộng đồng người xem tại Việt Nam. Chúng tôi không lưu trữ bất kỳ tệp video nào trên máy chủ riêng; toàn bộ dữ liệu và nội dung đều được dẫn nguồn, liên kết tự động từ các dịch vụ bên thứ ba công khai trên Internet."}
           </p>
 
-          {/* Copyright & Appreciation */}
+          {/* Copyright */}
           <p className="text-[11px] sm:text-xs text-neutral-400 font-medium">
-            © {year} NetPhim. Cảm ơn bạn đã đồng hành và ủng hộ cộng đồng yêu phim.
+            © {year} NetPhim. {lang === "en" ? "Thank you for supporting our film enthusiast community." : "Cảm ơn bạn đã đồng hành và ủng hộ cộng đồng yêu phim."}
           </p>
 
-          {/* 1 Random Cat Mascot (Compact, no hover effects or tooltips, random on reload) */}
+          {/* 1 Random Cat Mascot */}
           <div className="mt-0.5 flex items-center justify-center select-none pointer-events-none">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

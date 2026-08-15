@@ -273,6 +273,7 @@ function FilmSection({
   isLoading: boolean;
   href?: string;
 }) {
+  const { t } = useTranslation();
   const [swiper, setSwiper] = useState<any>(null);
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -302,7 +303,7 @@ function FilmSection({
               data-film-section-action="true"
               className={`${cardFont.className} inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.12] text-white/90 hover:text-white text-xs font-medium transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95 ml-1`}
             >
-              <span>Xem tất cả</span>
+              <span>{t("home.viewAll", "Xem tất cả")}</span>
               <ChevronRight size={12} strokeWidth={2.5} />
             </Link>
           )}
@@ -941,7 +942,7 @@ export default function HomePage() {
         {/* ── PHIM MỚI CẬP NHẬT (NEWLY UPDATED MOVIES ROW) ── */}
         <LazySection>
           <FilmSection
-            title="Phim Mới Cập Nhật"
+            title={t("sections.latest", "Phim Mới Cập Nhật")}
             films={latestRowList}
             isLoading={latestLoading}
             href="/films"
@@ -951,7 +952,7 @@ export default function HomePage() {
         {/* ── Initial 4 Movie Sections ── */}
         <LazySection>
           <FilmSection
-            title="Phim Thần Thoại & Kỹ Xảo"
+            title={t("sections.vfx", "Phim Thần Thoại & Kỹ Xảo")}
             films={vfxRowList}
             isLoading={vfxLoading}
             href="/genre/than-thoai"
@@ -960,7 +961,7 @@ export default function HomePage() {
 
         <LazySection>
           <HeroShowcaseSection
-            title="Series Âu-Mỹ"
+            title={t("sections.usUkSeries", "Series Âu-Mỹ Đỉnh Cao")}
             films={usUkSeriesRowList}
             isLoading={usUkSeriesLoading}
             href="/search?type=series&country=au-my"
@@ -969,7 +970,7 @@ export default function HomePage() {
 
         <LazySection>
           <FilmSection
-            title="Phim Hành Động"
+            title={t("sections.action", "Phim Hành Động Kịch Tính")}
             films={actionRowList}
             isLoading={actionLoading}
             href="/genre/hanh-dong"
@@ -978,7 +979,7 @@ export default function HomePage() {
 
         <LazySection>
           <CuratedSpotlightSection
-            title="Phim Khoa Học Viễn Tưởng Bom Tấn"
+            title={t("sections.scifi", "Tuyệt Tác Khoa Học Viễn Tưởng")}
             films={scifiRowList}
             isLoading={scifiLoading}
             href="/genre/vien-tuong"
@@ -993,7 +994,7 @@ export default function HomePage() {
               disabled={isLoadingMore}
               className={`${cardFont.className} group inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold text-neutral-300 hover:text-white bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 shadow-lg transition-all cursor-pointer active:scale-95`}
             >
-              <span className="font-semibold tracking-wide">Xem thêm phim</span>
+              <span className="font-semibold tracking-wide">{t("common.viewMore", "Xem thêm phim")}</span>
               {isLoadingMore ? (
                 <Loader2 size={13} className="animate-spin text-white" />
               ) : (
@@ -1009,7 +1010,7 @@ export default function HomePage() {
             {/* ── 10 Lazy Loaded Sections ── */}
             <LazySection>
               <FilmSection
-                title="Phim Âu-Mỹ Đáng Xem"
+                title={t("sections.nextWatch", "Gợi Ý Phim Tiếp Theo")}
                 films={nextWatchRowList}
                 isLoading={nextWatchLoading}
                 href="/country/au-my"
@@ -1018,7 +1019,7 @@ export default function HomePage() {
 
             <LazySection>
               <FilmSection
-                title="Series Quốc Tế"
+                title={t("sections.series", "Phim Bộ Đặc Sắc")}
                 films={seriesRowList}
                 isLoading={seriesLoading}
                 href="/films/series"
@@ -1027,7 +1028,7 @@ export default function HomePage() {
 
             <LazySection>
               <FilmSection
-                title="Anime & Hoạt Hình"
+                title={t("sections.anime", "Thế Giới Anime & Hoạt Hình")}
                 films={animeRowList}
                 isLoading={animeLoading}
                 href="/films/anime"
@@ -1036,7 +1037,7 @@ export default function HomePage() {
 
             <LazySection>
               <FilmSection
-                title="Phim Phiêu Lưu Mạo Hiểm"
+                title={t("sections.adventure", "Phim Phiêu Lưu & Khám Phá")}
                 films={adventureRowList}
                 isLoading={adventureLoading}
                 href="/genre/phieu-luu"
@@ -1045,7 +1046,7 @@ export default function HomePage() {
 
             <LazySection>
               <FilmSection
-                title="Phim Lẻ Âu-Mỹ Chất Lượng Cao"
+                title={t("sections.single", "Phim Lẻ Tuyển Chọn")}
                 films={singleRowList}
                 isLoading={singleLoading}
                 href="/films/single"
@@ -1054,7 +1055,7 @@ export default function HomePage() {
 
             <LazySection>
               <FilmSection
-                title="Phim Chính Kịch"
+                title={t("sections.drama", "Phim Tâm Lý & Xã Hội")}
                 films={dramaRowList}
                 isLoading={dramaLoading}
                 href="/genre/chinh-kich"
@@ -1063,7 +1064,7 @@ export default function HomePage() {
 
             <LazySection>
               <FilmSection
-                title="Phim Kinh Dị & Sinh Tồn"
+                title={t("sections.disaster", "Phim Thảm Họa & Sinh Tồn")}
                 films={disasterRowList}
                 isLoading={disasterLoading}
                 href="/genre/kinh-di"
@@ -1072,7 +1073,7 @@ export default function HomePage() {
 
             <LazySection>
               <FilmSection
-                title="Thể Loại Chiến Tranh Và Gai Góc"
+                title={t("sections.war", "Phim Chiến Tranh & Lịch Sử")}
                 films={warRowList}
                 isLoading={warLoading}
                 href="/genre/chien-tranh"
@@ -1081,7 +1082,7 @@ export default function HomePage() {
 
             <LazySection>
               <FilmSection
-                title="Phim Hài"
+                title={t("sections.comedy", "Phim Hài Hước & Gia Đình")}
                 films={comedyRowList}
                 isLoading={comedyLoading}
                 href="/genre/hai-huoc"
@@ -1090,7 +1091,7 @@ export default function HomePage() {
 
             <LazySection>
               <FilmSection
-                title="Phim Tình Cảm"
+                title={t("sections.romance", "Phim Lãng Mạn & Tình Cảm")}
                 films={romanceRowList}
                 isLoading={romanceLoading}
                 href="/genre/tinh-cam"

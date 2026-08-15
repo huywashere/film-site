@@ -13,6 +13,7 @@ import { FilmItem, resolveImageUrl } from "./FilmCard";
 import { DashPagination } from "./DashPagination";
 import { cardFont } from "@/lib/fonts";
 import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
+import { useTranslation } from "@/store/langStore";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -262,8 +263,9 @@ export function ContinueWatchingRow({
     });
   }, [localEntries, serverItems]);
 
+  const { t } = useTranslation();
   const hasHistory = historyEntries.length > 0;
-  const sectionTitle = "Lịch Sử Xem Gần Đây";
+  const sectionTitle = t("home.continueWatching", "Tiếp Tục Xem");
 
   // Do not fill an empty history row with suggested movies. The section only
   // becomes visible after the viewer has actually opened a movie to watch.
@@ -301,7 +303,7 @@ export function ContinueWatchingRow({
               data-history-action="true"
               className={`${cardFont.className} inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.12] text-white/90 hover:text-white text-xs font-medium transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95 ml-1`}
             >
-              <span>Xem tất cả</span>
+              <span>{t("home.viewAll", "Xem tất cả")}</span>
               <ChevronRight size={12} strokeWidth={2.5} />
             </Link>
           )}
