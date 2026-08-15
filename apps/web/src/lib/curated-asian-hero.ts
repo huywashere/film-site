@@ -443,7 +443,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     rating: 9.2,
     totalEpisodesText: "Trọn bộ 16 tập",
     genres: ["Lập Nghiệp", "Kịch Tính", "Tuổi Trẻ", "Báo Thù"],
-    poster_url: "https://image.tmdb.org/t/p/w780/28fP1yM3u6bBfq9K1d1c1v1lM1c.jpg",
+    poster_url: "https://phimimg.com/upload/vod/20231207-1/c1bb63db8d7f6b22ee4eb025f879171a.jpg",
     thumb_url: "https://image.tmdb.org/t/p/w1280/rtYQCa2NzX8RspbOmwfAla6BemO.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/fe405KMt75BP1xx31UKmfOAfX0q.png",
     content:

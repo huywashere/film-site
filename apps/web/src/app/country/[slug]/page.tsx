@@ -310,6 +310,50 @@ function FeaturedActorsRow({ film }: { film?: FilmItem }) {
   );
 }
 
+function ResilientAsianHeroBackdrop({
+  item,
+  fallbackLocal,
+}: {
+  item: AsianHeroItem;
+  fallbackLocal: string;
+}) {
+  const candidates = useMemo(() => {
+    return [
+      item.thumb_url,
+      item.poster_url,
+      fallbackLocal,
+      "/images/wp3533664-avengers-infinity-war-4k-wallpapers.jpg",
+    ].filter(Boolean) as string[];
+  }, [item.poster_url, item.thumb_url, fallbackLocal]);
+
+  const [candidateIdx, setCandidateIdx] = useState(0);
+
+  useEffect(() => {
+    setCandidateIdx(0);
+  }, [item.slug]);
+
+  const src = candidates[candidateIdx] || fallbackLocal;
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      key={`${item.slug}-${candidateIdx}`}
+      src={src}
+      alt={item.name}
+      referrerPolicy="no-referrer"
+      loading="eager"
+      decoding="async"
+      fetchPriority="high"
+      onError={() => {
+        if (candidateIdx < candidates.length - 1) {
+          setCandidateIdx((i) => i + 1);
+        }
+      }}
+      className="absolute inset-0 w-full h-full object-cover object-center md:object-right brightness-[0.95] transition-opacity duration-700 animate-in fade-in"
+    />
+  );
+}
+
 function KoreanCuratedHeroBanner() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -328,7 +372,6 @@ function KoreanCuratedHeroBanner() {
   }, [curatedList.length, isPaused]);
 
   const currentItem = curatedList[currentIndex] || curatedList[0];
-  const backdropUrl = currentItem.thumb_url || currentItem.poster_url;
 
   return (
     <section
@@ -337,27 +380,19 @@ function KoreanCuratedHeroBanner() {
       className="relative w-full min-h-[680px] sm:min-h-[760px] lg:min-h-[840px] h-[92vh] sm:h-[96vh] lg:h-[100vh] max-h-[1080px] overflow-hidden bg-[#141414] select-none"
     >
       {/* ── Wide Key Visual Artwork (Official TMDB Korean Drama Backdrop) ── */}
-      {backdropUrl && (
-        <NextImage
-          key={`hero-bg-${currentItem.slug}`}
-          src={backdropUrl}
-          alt={currentItem.name}
-          fill
-          sizes="100vw"
-          className="object-cover object-center md:object-right brightness-[0.8] transition-opacity duration-700 animate-in fade-in"
-          priority
-          unoptimized
-        />
-      )}
+      <ResilientAsianHeroBackdrop
+        item={currentItem}
+        fallbackLocal="/images/wp4300709-avengers-4k-wallpapers.jpg"
+      />
 
       {/* ── Cinematic Multi-layer Gradient Overlays for Vignette & Bottom Blending ── */}
       <div
         className="absolute inset-0 z-10 pointer-events-none"
         style={{
           background: `
-            linear-gradient(to right, rgba(20,20,20,0.95) 0%, rgba(20,20,20,0.7) 40%, rgba(20,20,20,0.2) 70%, transparent 100%),
-            linear-gradient(to top, #141414 0%, rgba(20,20,20,0.85) 15%, transparent 45%),
-            linear-gradient(to bottom, rgba(20,20,20,0.7) 0%, transparent 20%)
+            linear-gradient(to right, rgba(16,16,16,0.92) 0%, rgba(16,16,16,0.6) 38%, rgba(16,16,16,0.1) 68%, transparent 100%),
+            linear-gradient(to top, #141414 0%, rgba(20,20,20,0.7) 18%, transparent 45%),
+            linear-gradient(to bottom, rgba(16,16,16,0.6) 0%, transparent 22%)
           `,
         }}
       />
@@ -531,7 +566,6 @@ function ChineseImperialHeroBanner() {
   }, [curatedList.length, isPaused]);
 
   const currentItem = curatedList[currentIndex] || curatedList[0];
-  const backdropUrl = currentItem.thumb_url || currentItem.poster_url;
 
   return (
     <section
@@ -540,27 +574,19 @@ function ChineseImperialHeroBanner() {
       className="relative w-full min-h-[680px] sm:min-h-[760px] lg:min-h-[840px] h-[92vh] sm:h-[96vh] lg:h-[100vh] max-h-[1080px] overflow-hidden bg-[#141414] select-none"
     >
       {/* ── Wide Key Visual Artwork (Official TMDB Chinese Drama Backdrop) ── */}
-      {backdropUrl && (
-        <NextImage
-          key={`hero-bg-${currentItem.slug}`}
-          src={backdropUrl}
-          alt={currentItem.name}
-          fill
-          sizes="100vw"
-          className="object-cover object-center md:object-right brightness-[0.8] transition-opacity duration-700 animate-in fade-in"
-          priority
-          unoptimized
-        />
-      )}
+      <ResilientAsianHeroBackdrop
+        item={currentItem}
+        fallbackLocal="/images/phim_co_trang_trung_quoc_50_573c11fea1.jpg"
+      />
 
       {/* ── Oriental Atmospheric Mist & Vignette Gradient Overlays ── */}
       <div
         className="absolute inset-0 z-10 pointer-events-none"
         style={{
           background: `
-            linear-gradient(to right, rgba(18,18,18,0.96) 0%, rgba(18,18,18,0.75) 38%, rgba(18,18,18,0.2) 70%, transparent 100%),
-            linear-gradient(to top, #141414 0%, rgba(20,20,20,0.85) 15%, transparent 45%),
-            linear-gradient(to bottom, rgba(20,20,20,0.7) 0%, transparent 20%)
+            linear-gradient(to right, rgba(16,16,16,0.94) 0%, rgba(16,16,16,0.65) 36%, rgba(16,16,16,0.1) 68%, transparent 100%),
+            linear-gradient(to top, #141414 0%, rgba(20,20,20,0.7) 18%, transparent 45%),
+            linear-gradient(to bottom, rgba(16,16,16,0.6) 0%, transparent 22%)
           `,
         }}
       />
@@ -1060,9 +1086,13 @@ export default function CountryPage() {
           isCustomHeroPage ? "-mt-24 sm:-mt-36 lg:-mt-48" : "-mt-6 sm:-mt-12",
         )}
       >
-        {/* Row 1: Phải thoát khỏi đây! */}
+        {/* Row 1: Phim Hàn Quốc Đang Thịnh Hành */}
         <CountryCategoryRow
-          title={isKoreanPage ? "Phải thoát khỏi đây!" : "Phim Nổi Bật Hôm Nay"}
+          title={
+            isKoreanPage
+              ? "Phim Hàn Quốc Đang Thịnh Hành"
+              : "Phim Nổi Bật Hôm Nay"
+          }
           films={row1Films}
           isLoading={mainLoading}
           variant="landscape"

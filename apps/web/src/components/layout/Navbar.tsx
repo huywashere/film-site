@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import NextImage from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
   Search,
@@ -129,6 +129,44 @@ export const COUNTRIES_LIST = [
   { label: "Ấn Độ", slug: "an-do", code: "in" },
 ];
 
+const COUNTRY_EMOJIS: Record<string, string> = {
+  gb: "🇬🇧",
+  pl: "🇵🇱",
+  br: "🇧🇷",
+  pt: "🇵🇹",
+  ca: "🇨🇦",
+  za: "🇿🇦",
+  nl: "🇳🇱",
+  kr: "🇰🇷",
+  hk: "🇭🇰",
+  id: "🇮🇩",
+  my: "🇲🇾",
+  mx: "🇲🇽",
+  no: "🇳🇴",
+  ru: "🇷🇺",
+  jp: "🇯🇵",
+  ph: "🇵🇭",
+  fr: "🇫🇷",
+  un: "🌐",
+  th: "🇹🇭",
+  tr: "🇹🇷",
+  ch: "🇨🇭",
+  se: "🇸🇪",
+  cn: "🇨🇳",
+  es: "🇪🇸",
+  ae: "🇦🇪",
+  ua: "🇺🇦",
+  vn: "🇻🇳",
+  us: "🇺🇸",
+  au: "🇦🇺",
+  it: "🇮🇹",
+  dk: "🇩🇰",
+  tw: "🇹🇼",
+  de: "🇩🇪",
+  sa: "🇸🇦",
+  in: "🇮🇳",
+};
+
 export function CountryFlagImage({
   code,
   label,
@@ -138,38 +176,65 @@ export function CountryFlagImage({
   label: string;
   className?: string;
 }) {
-  const [imgError, setImgError] = useState(false);
   const flagCode = code?.toLowerCase();
+  const candidates = useMemo(() => {
+    if (!flagCode || flagCode === "un") return [];
+    return [
+      `https://flagcdn.com/w40/${flagCode}.png`,
+      `https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/flags/4x3/${flagCode}.svg`,
+      `https://raw.githubusercontent.com/lipis/flag-icons/main/flags/4x3/${flagCode}.svg`,
+    ];
+  }, [flagCode]);
 
-  if (!flagCode || flagCode === "un" || imgError) {
+  const [srcIndex, setSrcIndex] = useState(0);
+  const [allFailed, setAllFailed] = useState(false);
+
+  useEffect(() => {
+    setSrcIndex(0);
+    setAllFailed(false);
+  }, [flagCode]);
+
+  if (!flagCode || flagCode === "un" || allFailed || candidates.length === 0) {
+    const emoji = flagCode ? COUNTRY_EMOJIS[flagCode] || "🌐" : "🌐";
     return (
       <span
         className={cn(
-          "inline-flex items-center justify-center text-xs leading-none shrink-0",
+          "inline-flex items-center justify-center text-sm leading-none shrink-0 select-none",
           className,
         )}
         role="img"
         aria-label={label}
       >
-        🌐
+        {emoji}
       </span>
     );
   }
 
+  const currentSrc = candidates[srcIndex];
+
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={`https://flagcdn.com/w40/${flagCode}.png`}
-      srcSet={`https://flagcdn.com/w80/${flagCode}.png 2x`}
+      key={`${flagCode}-${srcIndex}`}
+      src={currentSrc}
       alt={label}
       width={20}
       height={14}
+      referrerPolicy="no-referrer"
+      crossOrigin="anonymous"
       className={cn(
         "w-5 h-3.5 object-cover rounded-[3px] border border-white/20 shrink-0 shadow-sm",
         className,
       )}
-      onError={() => setImgError(true)}
+      onError={() => {
+        if (srcIndex < candidates.length - 1) {
+          setSrcIndex((prev) => prev + 1);
+        } else {
+          setAllFailed(true);
+        }
+      }}
       loading="lazy"
+      decoding="async"
     />
   );
 }

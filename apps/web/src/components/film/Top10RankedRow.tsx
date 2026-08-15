@@ -171,6 +171,8 @@ function getBaseTitle(name: string): string {
     .trim();
 }
 
+import { CURATED_HERO_FRANCHISE_POOL } from "@/lib/curated-hero-pool";
+
 function dedupeTop10(films: FilmItem[]): FilmItem[] {
   const seenBase = new Set<string>();
   const result: FilmItem[] = [];
@@ -183,9 +185,21 @@ function dedupeTop10(films: FilmItem[]): FilmItem[] {
     if (baseTitle && seenBase.has(baseTitle)) continue;
     if (baseTitle) seenBase.add(baseTitle);
     result.push(film);
+    if (result.length >= 10) break;
   }
 
-  return result;
+  // If fewer than 10, backfill from curated blockbuster pool to guarantee full 10
+  if (result.length < 10) {
+    for (const poolFilm of CURATED_HERO_FRANCHISE_POOL) {
+      const baseTitle = getBaseTitle(poolFilm.name || poolFilm.title || "");
+      if (baseTitle && seenBase.has(baseTitle)) continue;
+      if (baseTitle) seenBase.add(baseTitle);
+      result.push(poolFilm as FilmItem);
+      if (result.length >= 10) break;
+    }
+  }
+
+  return result.slice(0, 10);
 }
 
 export function Top10RankedRow({
@@ -196,9 +210,8 @@ export function Top10RankedRow({
   const nextRef = useRef<HTMLButtonElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  if (!films || films.length === 0) return null;
-
-  const top10 = dedupeTop10(films).slice(0, 10);
+  const top10 = dedupeTop10(films || []);
+  if (top10.length === 0) return null;
 
   return (
     <section className="mb-10 relative group/section">
