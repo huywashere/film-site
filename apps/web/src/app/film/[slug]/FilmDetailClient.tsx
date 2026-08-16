@@ -27,6 +27,9 @@ import {
   ChevronRight as ChevronRightIcon,
   ArrowLeft,
   Clapperboard,
+  Trophy,
+  DollarSign,
+  ExternalLink,
 } from "lucide-react";
 import { movieApi, watchlistApi, ratingsApi, reviewsApi } from "@/lib/api";
 import { FilmNotFound } from "@/components/film/FilmNotFound";
@@ -48,6 +51,7 @@ import { TrailerModal } from "@/components/film/TrailerModal";
 import { safeJsonLd } from "@/lib/safe-json-ld";
 import { cardFont } from "@/lib/fonts";
 import { guestDataStorage } from "@/lib/user-data";
+import { useOmdb } from "@/hooks/useOmdb";
 
 function formatRating(value: number) {
   return Number.isFinite(value) && value > 0 ? value.toFixed(1) : null;
@@ -819,6 +823,9 @@ export default function FilmDetailPage() {
     fetchVideos: secondaryReady || showTrailer,
   });
 
+  // OMDB data — ratings IMDb/RT/Metacritic + awards + box office
+  const { omdb } = useOmdb(film, !!film && secondaryReady);
+
   const providerPosterUrl = film
     ? resolveImageUrl(film.poster_url, film.thumb_url) ||
       resolveImageUrl(film.thumb_url)
@@ -1002,10 +1009,12 @@ export default function FilmDetailPage() {
     film?.tmdb?.vote_average || film?.vote_average || film?.rating || 0,
   );
   const tmdbVoteCount = Number(film?.tmdb?.vote_count || film?.vote_count || 0);
+  // Prefer OMDB real IMDb rating over provider-provided one
   const imdbRating = Number(
+    omdb?.imdbRating ||
     film?.imdb?.vote_average || film?.imdb_rating || film?.imdb?.rating || 0,
   );
-  const imdbVoteCount = Number(film?.imdb?.vote_count || 0);
+  const imdbVoteCount = Number(omdb?.imdbVotes?.replace(/,/g, "") || film?.imdb?.vote_count || 0);
   const tmdbRatingLabel = formatRating(tmdbRating);
   const imdbRatingLabel = formatRating(imdbRating);
   const tmdbVoteLabel = formatVoteCount(tmdbVoteCount);
@@ -1535,6 +1544,151 @@ export default function FilmDetailPage() {
               </p>
             )}
           </section>
+
+          {/* ── OMDB Ratings & Awards ── */}
+          {omdb && (
+            <section
+              aria-label="Đánh giá và giải thưởng"
+              className="space-y-3 pt-4 border-t border-white/5"
+            >
+              <h2 className="text-xs font-black uppercase tracking-widest text-neutral-400">
+                Đánh giá &amp; Giải thưởng
+              </h2>
+
+              {/* ── Rating Chips Row ── */}
+              <div className="flex flex-wrap gap-2">
+
+                {/* IMDb chip */}
+                {omdb.imdbRating && (
+                  <a
+                    href={omdb.imdbId ? `https://www.imdb.com/title/${omdb.imdbId}` : undefined}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center gap-2 rounded-lg border border-[#f5c518]/25 bg-[#f5c518]/8 px-3 py-2 hover:border-[#f5c518]/50 transition-all"
+                  >
+                    {/* IMDb SVG wordmark */}
+                    <svg viewBox="0 0 64 32" width="36" height="18" aria-label="IMDb">
+                      <rect width="64" height="32" rx="4" fill="#F5C518"/>
+                      <text x="5" y="23" fontFamily="Arial Black, sans-serif" fontWeight="900" fontSize="20" fill="#000">IMDb</text>
+                    </svg>
+                    <span className="text-sm font-black text-white">
+                      {omdb.imdbRating}
+                      <span className="text-neutral-500 font-normal text-xs">/10</span>
+                    </span>
+                    {omdb.imdbVotes && (
+                      <span className="text-[10px] text-neutral-500 hidden sm:inline">
+                        ({omdb.imdbVotes})
+                      </span>
+                    )}
+                  </a>
+                )}
+
+                {/* Rotten Tomatoes chip */}
+                {omdb.rottenTomatoes && (() => {
+                  const pct = parseInt(omdb.rottenTomatoes!);
+                  const isFresh = pct >= 60;
+                  return (
+                    <div className={cn(
+                      "flex items-center gap-2 rounded-lg border px-3 py-2 transition-all",
+                      isFresh
+                        ? "border-red-500/25 bg-red-500/8"
+                        : "border-white/10 bg-white/[0.03]"
+                    )}>
+                      {/* RT SVG logo */}
+                      <svg viewBox="0 0 32 32" width="18" height="18" aria-label="Rotten Tomatoes">
+                        {isFresh ? (
+                          <>
+                            <circle cx="16" cy="18" r="12" fill="#FA320A"/>
+                            <ellipse cx="16" cy="8" rx="4" ry="6" fill="#22C55E"/>
+                            <ellipse cx="20" cy="6" rx="2.5" ry="5" fill="#16A34A" transform="rotate(20 20 6)"/>
+                            <circle cx="12" cy="20" r="3" fill="#fff" opacity="0.25"/>
+                          </>
+                        ) : (
+                          <>
+                            <circle cx="16" cy="16" r="13" fill="#6B7280"/>
+                            <text x="16" y="21" textAnchor="middle" fontFamily="sans-serif" fontSize="14" fill="#fff" fontWeight="bold">☔</text>
+                          </>
+                        )}
+                      </svg>
+                      <span className={cn(
+                        "text-sm font-black",
+                        isFresh ? "text-red-400" : "text-neutral-400"
+                      )}>
+                        {omdb.rottenTomatoes}
+                      </span>
+                      <span className={cn(
+                        "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+                        isFresh
+                          ? "bg-red-500/20 text-red-400"
+                          : "bg-neutral-700/60 text-neutral-500"
+                      )}>
+                        {isFresh ? "Fresh" : "Rotten"}
+                      </span>
+                    </div>
+                  );
+                })()}
+
+                {/* Metacritic chip */}
+                {omdb.metacritic && (() => {
+                  const score = parseInt(omdb.metacritic!);
+                  const color = score >= 61 ? "#43d45a" : score >= 40 ? "#ffbd3f" : "#ff4c4c";
+                  return (
+                    <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+                      {/* Metacritic score box */}
+                      <span
+                        className="text-xs font-black w-8 h-7 rounded flex items-center justify-center leading-none"
+                        style={{ background: color, color: "#000" }}
+                      >
+                        {score}
+                      </span>
+                      <div className="flex flex-col leading-tight">
+                        <span className="text-[10px] font-bold text-neutral-300">Metacritic</span>
+                        <span className="text-[9px] text-neutral-600">/ 100</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* ── Awards ── */}
+              {omdb.awards && (
+                <div className="flex items-start gap-2 text-sm">
+                  <Trophy size={13} className="text-amber-400 shrink-0 mt-0.5" />
+                  <span className="text-neutral-400 leading-snug">{omdb.awards}</span>
+                </div>
+              )}
+
+              {/* ── Meta info row ── */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-neutral-500">
+                {omdb.boxOffice && (
+                  <span className="flex items-center gap-1.5">
+                    <DollarSign size={11} className="text-neutral-600" />
+                    <span className="text-neutral-400 font-medium">{omdb.boxOffice}</span>
+                  </span>
+                )}
+                {omdb.rated && (
+                  <span className="flex items-center gap-1.5">
+                    <span className="border border-white/20 text-neutral-400 px-1.5 py-px rounded text-[10px] font-bold tracking-wider">
+                      {omdb.rated}
+                    </span>
+                  </span>
+                )}
+                {omdb.language && (
+                  <span className="flex items-center gap-1.5">
+                    <Globe size={11} className="text-neutral-600" />
+                    <span>{omdb.language}</span>
+                  </span>
+                )}
+                {omdb.country && (
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-neutral-600">·</span>
+                    <span>{omdb.country}</span>
+                  </span>
+                )}
+              </div>
+            </section>
+          )}
+
 
           <section className="space-y-3 pt-4 border-t border-white/5">
             <h2 className="text-base sm:text-lg font-bold text-white flex items-center">

@@ -569,7 +569,7 @@ export function Navbar() {
               <Search size={20} />
             </button>
 
-            <LanguageSwitcher />
+
 
             <div className="flex items-center space-x-1 sm:space-x-2">
               <DropdownMenu modal={false} onOpenChange={setNotificationsOpen}>

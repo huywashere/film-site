@@ -13,11 +13,13 @@ type HlsVideoPlayerProps = {
   poster?: string;
   initialTime?: number;
   autoPlay?: boolean;
-  onReady?: () => void;
+  onReady?: (player: any) => void;
   onPlaying?: () => void;
   onProgress?: (currentTime: number, duration: number) => void;
   onEnded?: () => void;
   onError: (error: HlsPlaybackError) => void;
+  isTheaterMode?: boolean;
+  onTheaterModeToggle?: (active: boolean) => void;
 };
 
 /**
@@ -35,6 +37,8 @@ export function HlsVideoPlayer({
   onProgress,
   onEnded,
   onError,
+  isTheaterMode = false,
+  onTheaterModeToggle,
 }: HlsVideoPlayerProps) {
   return (
     <div className="w-full h-full relative">
@@ -44,10 +48,12 @@ export function HlsVideoPlayer({
         poster={poster}
         initialTime={initialTime}
         autoplay={autoPlay}
-        onReady={() => {
-          onReady?.();
+        isTheaterMode={isTheaterMode}
+        onTheaterModeToggle={onTheaterModeToggle}
+        onReady={(player) => {
+          onReady?.(player);
         }}
-        onPlaybackStart={() => {
+        onPlaybackStart={(player) => {
           onPlaying?.();
         }}
         onProgress={onProgress}
