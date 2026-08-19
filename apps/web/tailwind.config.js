@@ -58,13 +58,13 @@ module.exports = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["Be Vietnam Pro", "var(--font-sans)", ...fontFamily.sans],
-        primary: ["Be Vietnam Pro", ...fontFamily.sans],
-        display: ["Manrope", "Be Vietnam Pro", ...fontFamily.sans],
-        ui: ["Inter", "Be Vietnam Pro", ...fontFamily.sans],
-        manrope: ["Manrope", ...fontFamily.sans],
-        inter: ["Inter", ...fontFamily.sans],
-        "be-vietnam": ["Be Vietnam Pro", ...fontFamily.sans],
+        sans: ["var(--font-manrope)", "var(--font-be-vietnam)", ...fontFamily.sans],
+        primary: ["var(--font-be-vietnam)", "var(--font-manrope)", ...fontFamily.sans],
+        display: ["var(--font-manrope)", "var(--font-be-vietnam)", ...fontFamily.sans],
+        ui: ["var(--font-manrope)", ...fontFamily.sans],
+        manrope: ["var(--font-manrope)", ...fontFamily.sans],
+        inter: ["var(--font-manrope)", ...fontFamily.sans],
+        "be-vietnam": ["var(--font-be-vietnam)", ...fontFamily.sans],
       },
       keyframes: {
         "accordion-down": {
