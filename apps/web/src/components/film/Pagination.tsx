@@ -69,13 +69,13 @@ export function Pagination({
           disabled={currentPageClamped <= 1}
           aria-label="Trang trước"
           title="Trang trước"
-          className="w-10 h-10 rounded-full bg-[#1e2330] hover:bg-[#282f42] text-white/70 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-lg disabled:opacity-25 disabled:pointer-events-none active:scale-95 border border-white/[0.08]"
+          className="w-10 h-10 rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-md disabled:opacity-20 disabled:pointer-events-none active:scale-95 border border-white/[0.08]"
         >
           <ChevronLeft size={18} />
         </button>
 
         {/* Thanh con nhộng ở giữa hiển thị Trang [ hiện tại ] / tổng số */}
-        <div className="flex items-center gap-3 px-6 py-2 rounded-full bg-[#1e2330] border border-white/[0.08] shadow-lg text-sm font-bold text-white">
+        <div className="flex items-center gap-3 px-6 py-2 rounded-full bg-white/[0.04] border border-white/[0.08] shadow-md text-sm font-bold text-white">
           <span className="text-white font-extrabold tracking-wide">Trang</span>
 
           {isEditing ? (
@@ -99,7 +99,7 @@ export function Pagination({
                 setIsEditing(true);
               }}
               title="Bấm để nhập số trang cần đến"
-              className="px-3.5 py-1 rounded-xl border border-white/20 bg-white/[0.04] hover:bg-white/[0.1] text-white font-black text-sm min-w-[36px] text-center shadow-inner transition-colors cursor-pointer"
+              className="px-3 py-0.5 rounded-lg border border-white/20 bg-white/[0.06] hover:bg-white/[0.12] text-white font-black text-sm min-w-[34px] text-center shadow-inner transition-colors cursor-pointer"
             >
               {currentPageClamped}
             </button>
@@ -115,7 +115,7 @@ export function Pagination({
           disabled={currentPageClamped >= totalPages}
           aria-label="Trang tiếp"
           title="Trang tiếp"
-          className="w-10 h-10 rounded-full bg-[#1e2330] hover:bg-[#282f42] text-white/70 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-lg disabled:opacity-25 disabled:pointer-events-none active:scale-95 border border-white/[0.08]"
+          className="w-10 h-10 rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-md disabled:opacity-20 disabled:pointer-events-none active:scale-95 border border-white/[0.08]"
         >
           <ChevronRight size={18} />
         </button>
