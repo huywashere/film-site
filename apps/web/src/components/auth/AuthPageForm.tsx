@@ -544,47 +544,42 @@ export function AuthPageForm({
             <div className="grid md:grid-cols-[0.9fr_1.1fr]">
               {/* ── LEFT panel ─────────────────────────────────── */}
               <div className="relative hidden min-h-[620px] flex-col justify-between overflow-hidden border-r border-white/[0.08] p-8 md:flex lg:p-10">
-                <div className="absolute inset-0 z-0">
-                  <img
-                    src="/images/auth_banner_art.jpg"
-                    alt="NetPhim Cinema Art"
-                    className="w-full h-full object-cover object-top scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#11141a] via-[#11141a]/40 to-black/50" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#11141a]/90" />
-                </div>
+                {/* TMDB artwork with a local fallback for reliable loading. */}
+                <AnimatePresence initial={false}>
+                  <motion.div
+                    key={randomMovie.backdropUrl}
+                    className="absolute inset-0 scale-[1.03]"
+                    initial={{ opacity: 0, scale: 1.055 }}
+                    animate={{ opacity: 1, scale: 1.03 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.7, ease: "easeOut" }}
+                  >
+                    <AuthBackdropImage movie={randomMovie} />
+                  </motion.div>
+                </AnimatePresence>
+                {/* Gradient overlay: dark at bottom for text, subtle at top */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/70 to-[#141414]/30" />
+                {/* Right-edge fade to blend into form panel */}
+                <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-r from-transparent to-[#141414]/90" />
 
-                {/* Logo top-left */}
+                {/* Logo only — positioned neatly in top-left corner */}
                 <div className="relative z-10">
-                  <Link href="/" className="inline-flex items-center gap-2">
-                    <span className="text-2xl font-black tracking-tight text-white flex items-center font-[family-name:var(--font-manrope)]">
-                      Net<span className="text-[#ff9bc8] drop-shadow-[0_0_12px_rgba(255,155,200,0.6)]">Phim</span>
-                    </span>
+                  <Link
+                    href="/"
+                    className="inline-block transition-transform duration-200 hover:scale-105"
+                  >
+                    <Image
+                      src="/cinephim-logo.png"
+                      alt="NetPhim Logo"
+                      width={160}
+                      height={50}
+                      priority
+                      className="h-10 sm:h-12 w-auto object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "/logo.png";
+                      }}
+                    />
                   </Link>
-                </div>
-
-                {/* Bottom Redesigned Aesthetic Text Card */}
-                <div className="relative z-10">
-                  <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-black/45 p-4.5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-                    <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#ff9bc8]/70 to-transparent" />
-                    
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#ff9bc8]/20 text-[#ff9bc8]">
-                        ✨
-                      </span>
-                      <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#ff9bc8]">
-                        Thế giới điện ảnh 4K
-                      </span>
-                    </div>
-
-                    <h4 className="text-sm font-extrabold text-white leading-snug font-[family-name:var(--font-manrope)]">
-                      Lưu phim yêu thích &amp; xem tiếp mọi lúc
-                    </h4>
-
-                    <p className="mt-1.5 text-[11px] font-medium leading-relaxed text-neutral-300">
-                      Đồng bộ lịch sử xem đa thiết bị, cập nhật nhanh các bộ phim bom tấn mới nhất với phụ đề chuẩn!
-                    </p>
-                  </div>
                 </div>
               </div>
 
