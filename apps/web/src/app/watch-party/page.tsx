@@ -279,13 +279,15 @@ export default function WatchPartyListPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Tìm kiếm phim để mở phòng xem ngay..."
+                  aria-label="Tìm kiếm phim để mở phòng xem ngay"
                   className="h-11 w-full rounded-full border border-white/[0.12] bg-black/60 pl-10 pr-10 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30"
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1"
+                    aria-label="Xóa từ khóa tìm kiếm"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1 cursor-pointer"
                   >
                     <X size={14} />
                   </button>
@@ -314,10 +316,12 @@ export default function WatchPartyListPage() {
                 value={inputRoomCode}
                 onChange={(e) => setInputRoomCode(e.target.value)}
                 placeholder="Dán liên kết hoặc mã phòng..."
+                aria-label="Dán liên kết hoặc mã phòng"
                 className="h-11 flex-1 rounded-full border border-white/[0.12] bg-black/60 px-4 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30"
               />
               <button
                 type="submit"
+                aria-label="Vào phòng xem chung"
                 className="inline-flex h-11 items-center justify-center gap-1.5 rounded-full bg-white hover:bg-neutral-200 px-5 text-xs sm:text-sm font-extrabold text-black transition-all active:scale-95 cursor-pointer shadow-md shrink-0"
               >
                 <span>Vào phòng</span>
