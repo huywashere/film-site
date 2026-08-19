@@ -10,7 +10,6 @@ import {
   ArrowRight,
   Check,
   CircleDot,
-  Clock3,
   Film,
   Link2,
   Loader2,
@@ -22,8 +21,6 @@ import {
   X,
   Sparkles,
   Play,
-  Zap,
-  ShieldCheck,
   Flame,
 } from "lucide-react";
 import { movieApi } from "@/lib/api";
@@ -40,6 +37,7 @@ import {
   type WatchPartyLobbyRoom,
 } from "@/lib/watch-party-socket";
 import { cardFont } from "@/lib/fonts";
+import { cn } from "@/lib/utils";
 
 type LobbyState = "connecting" | "online" | "offline";
 
@@ -50,31 +48,61 @@ export default function WatchPartyListPage() {
   const [rooms, setRooms] = useState<WatchPartyLobbyRoom[]>([]);
   const [lobbyState, setLobbyState] = useState<LobbyState>("connecting");
   const [inputRoomCode, setInputRoomCode] = useState("");
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedMovie, setSelectedMovie] = useState<FilmItem | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [selectedMovie, setSelectedMovie] = useState<FilmItem | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [customRoomName, setCustomRoomName] = useState("");
 
+  // Debounce search input for snappy UX
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery.trim());
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Default trending/latest movies for watch party
   const {
     data: trendingData,
     isLoading: trendingLoading,
     refetch,
   } = useQuery({
-    queryKey: ["watch-party-movies"],
-    queryFn: () => movieApi.getLatest(1).then((response) => response.data),
+    queryKey: ["watch-party-trending-pool"],
+    queryFn: () => movieApi.getLatest(1).then((res) => res?.data || res),
+    staleTime: 1000 * 60 * 5,
   });
 
-  const movies: FilmItem[] =
-    trendingData?.data?.items || trendingData?.items || [];
-  const filteredMovies = movies.filter((movie) => {
-    const query = searchQuery.trim().toLocaleLowerCase("vi");
+  // Live search query when user types
+  const { data: searchResultsData, isLoading: isSearching } = useQuery({
+    queryKey: ["watch-party-search", debouncedQuery],
+    queryFn: () =>
+      movieApi
+        .search(debouncedQuery, 1, 24)
+        .then((res: any) => res?.data?.items || res?.items || res?.data || []),
+    enabled: Boolean(debouncedQuery),
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const defaultMovies: FilmItem[] = useMemo(() => {
+    return trendingData?.items || trendingData?.data?.items || trendingData || [];
+  }, [trendingData]);
+
+  const searchMovies: FilmItem[] = useMemo(() => {
+    if (!debouncedQuery) return [];
+    if (Array.isArray(searchResultsData)) return searchResultsData;
     return (
-      !query ||
-      movie.name.toLocaleLowerCase("vi").includes(query) ||
-      movie.origin_name?.toLocaleLowerCase("vi").includes(query)
+      searchResultsData?.items ||
+      searchResultsData?.data?.items ||
+      searchResultsData?.data ||
+      []
     );
-  });
+  }, [debouncedQuery, searchResultsData]);
 
+  const displayMovies = debouncedQuery ? searchMovies : defaultMovies;
+  const isListLoading = debouncedQuery ? isSearching : trendingLoading;
+
+  // Socket lobby room updates
   useEffect(() => {
     let active = true;
 
@@ -121,19 +149,33 @@ export default function WatchPartyListPage() {
   const handleJoinByLink = (event: React.FormEvent) => {
     event.preventDefault();
     const invite = inputRoomCode.trim();
-    if (!invite) return toast("Hãy dán liên kết mời vào ô này.", "error");
+    if (!invite) return toast("Hãy dán liên kết hoặc mã phòng.", "error");
+
     try {
-      const url = new URL(invite, window.location.origin);
-      const roomId = url.searchParams.get("room");
-      if (!roomId || !url.pathname.startsWith("/watch/")) throw new Error();
-      router.push(`${url.pathname}${url.search}`);
+      if (invite.startsWith("http://") || invite.startsWith("https://")) {
+        const url = new URL(invite);
+        const roomId = url.searchParams.get("room");
+        if (!roomId || !url.pathname.startsWith("/watch/")) throw new Error();
+        router.push(`${url.pathname}${url.search}`);
+        return;
+      }
+
+      // If room ID directly
+      const activeRoom = rooms.find(
+        (r) => r.id.toLowerCase() === invite.toLowerCase(),
+      );
+      if (activeRoom) {
+        router.push(`/watch/${activeRoom.movie.slug}?room=${activeRoom.id}`);
+      } else {
+        toast("Không tìm thấy phòng tương ứng với mã này.", "error");
+      }
     } catch {
-      toast("Liên kết mời không hợp lệ.", "error");
+      toast("Liên kết phòng không hợp lệ.", "error");
     }
   };
 
   const openCreateModal = (movie?: FilmItem) => {
-    setSelectedMovie(movie || movies[0] || null);
+    setSelectedMovie(movie || defaultMovies[0] || null);
     setShowCreateModal(true);
   };
 
@@ -162,289 +204,275 @@ export default function WatchPartyListPage() {
 
   return (
     <main
-      className={`${cardFont.className} relative min-h-[100dvh] overflow-x-hidden bg-[#121212] pb-16 pl-4 pr-4 pt-16 text-white select-none lg:pl-24 lg:pr-8`}
+      className={cn(
+        cardFont.className,
+        "bg-background min-h-screen text-foreground overflow-hidden pb-16 pt-20 sm:pt-24",
+      )}
     >
-      {/* Hero */}
-      <section className="relative mx-auto max-w-[1320px] pb-7 pt-4 sm:pt-5">
-        <Link
-          href="/"
-          className="mb-5 inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 transition-colors hover:text-white"
-        >
-          <ArrowLeft size={14} /> Quay lại trang chủ
-        </Link>
+      {/* Aligned Grid Container */}
+      <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 relative z-30 max-w-[1400px] mx-auto space-y-7">
+        {/* Top Breadcrumb */}
+        <nav className="flex items-center justify-between gap-2 text-xs text-neutral-400">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.12] text-white/90 hover:text-white text-xs font-medium transition-all"
+          >
+            <ArrowLeft size={12} />
+            Trang chủ
+          </Link>
 
-        <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#171717]">
-          <div className="grid lg:grid-cols-[minmax(0,1.12fr)_minmax(360px,0.88fr)]">
-            <div className="relative px-5 py-7 sm:px-8 sm:py-8 lg:px-10 lg:py-9">
-              <div className="mb-3 inline-flex items-center gap-2 text-xs font-semibold text-violet-300">
-                <Radio size={14} />
-                <span>Xem phim cùng bạn bè</span>
-              </div>
-
-              <h1 className="max-w-[620px] text-3xl font-extrabold leading-[1.12] tracking-[-0.03em] text-white sm:text-4xl lg:text-[42px]">
-                Cùng xem một bộ phim, dù đang ở xa
-              </h1>
-
-              <p className="mt-3 max-w-[560px] text-xs font-medium leading-6 text-neutral-400 sm:text-sm">
-                Tạo phòng riêng, chia sẻ liên kết và đồng bộ phát phim theo thời
-                gian thực với những người bạn của bạn.
-              </p>
-            </div>
-
-            <div className="flex items-center border-t border-white/[0.08] bg-[#141414] p-5 sm:p-6 lg:border-l lg:border-t-0 lg:p-7">
-              <div className="w-full">
-                <div className="mb-4 flex items-start justify-between gap-4">
-                  <div>
-                    <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
-                      <Link2 size={16} />
-                    </div>
-                    <h2 className="text-base font-bold tracking-tight text-white">
-                      Tham gia bằng liên kết
-                    </h2>
-                    <p className="mt-1 text-xs leading-5 text-neutral-500">
-                      Dán liên kết phòng được bạn bè chia sẻ.
-                    </p>
-                  </div>
-                  <span
-                    className={`mt-1 inline-flex items-center gap-2 text-xs font-semibold ${
-                      lobbyState === "online"
-                        ? "text-emerald-400"
-                        : lobbyState === "connecting"
-                          ? "text-amber-300"
-                          : "text-neutral-500"
-                    }`}
-                  >
-                    <span
-                      className={`h-2 w-2 rounded-full ${
-                        lobbyState === "online"
-                          ? "bg-emerald-400"
-                          : lobbyState === "connecting"
-                            ? "animate-pulse bg-amber-300"
-                            : "bg-neutral-600"
-                      }`}
-                    />
-                    {lobbyState === "online"
-                      ? "Sẵn sàng"
-                      : lobbyState === "connecting"
-                        ? "Đang kết nối"
-                        : "Mất kết nối"}
-                  </span>
-                </div>
-
-                <form onSubmit={handleJoinByLink} className="space-y-3">
-                  <label className="relative block">
-                    <Link2
-                      size={17}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500"
-                    />
-                    <input
-                      value={inputRoomCode}
-                      onChange={(event) => setInputRoomCode(event.target.value)}
-                      placeholder="Dán liên kết phòng xem chung"
-                      className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] pl-11 pr-4 text-xs text-white outline-none transition-colors placeholder:text-neutral-600 focus:border-violet-400/60"
-                    />
-                  </label>
-                  <button
-                    type="submit"
-                    className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-white px-5 text-xs font-bold text-black transition-colors hover:bg-neutral-200 active:scale-[0.98]"
-                  >
-                    Vào phòng <ArrowRight size={15} />
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid border-t border-white/[0.08] sm:grid-cols-3">
-            {[
-              [
-                ShieldCheck,
-                "Đồng bộ thời gian thực",
-                "Phát, dừng và tua cùng nhau",
-              ],
-              [Zap, "Thiết lập nhanh", "Chọn phim và gửi liên kết"],
-              [Sparkles, "Tương tác trong phòng", "Trò chuyện và gửi biểu cảm"],
-            ].map(([Icon, title, description], index) => (
-              <div
-                key={String(title)}
-                className={`flex items-start gap-2.5 px-5 py-4 sm:px-6 ${index ? "border-t border-white/[0.08] sm:border-l sm:border-t-0" : ""}`}
-              >
-                <Icon size={15} className="mt-0.5 shrink-0 text-violet-300" />
-                <div>
-                  <p className="text-xs font-semibold text-neutral-200">
-                    {String(title)}
-                  </p>
-                  <p className="mt-0.5 text-[11px] leading-5 text-neutral-500">
-                    {String(description)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Live rooms */}
-      <section className="relative mx-auto mt-3 max-w-[1320px] border-t border-white/[0.08] pt-7">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 text-violet-300">
-              <CircleDot size={15} />
-              <span className="text-xs font-semibold">
-                Phòng đang hoạt động
-              </span>
-            </div>
-            <h2 className="mt-1.5 text-xl font-bold tracking-tight text-white sm:text-2xl">
-              Tham gia phòng xem chung
-            </h2>
-          </div>
-          <div className="flex gap-2.5">
-            <button
-              onClick={refreshLobby}
-              className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 text-sm font-semibold text-neutral-300 transition-colors hover:bg-white/[0.08] active:scale-[0.98]"
-            >
-              <RefreshCw
-                size={14}
-                className={lobbyState === "connecting" ? "animate-spin" : ""}
-              />{" "}
-              Làm mới
-            </button>
-            <button
-              onClick={() => openCreateModal()}
-              className="flex h-10 items-center gap-2 rounded-xl bg-white px-5 text-sm font-bold text-black transition-colors hover:bg-neutral-200 active:scale-[0.98]"
-            >
-              <Plus size={16} /> Tạo phòng mới
-            </button>
-          </div>
-        </div>
-
-        {/* Rooms Grid */}
-        {lobbyState === "connecting" && rooms.length === 0 ? (
-          <div className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-[#171717] text-neutral-400">
-            <Loader2 size={22} className="animate-spin text-violet-300" />
-            <p className="text-xs font-medium">
-              Đang cập nhật danh sách phòng...
-            </p>
-          </div>
-        ) : rooms.length === 0 ? (
-          <div className="grid min-h-48 place-items-center rounded-2xl border border-white/[0.08] bg-[#171717] px-5 py-8 text-center">
-            <div>
-              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/15 text-violet-300">
-                <Film size={19} />
-              </div>
-              <h3 className="text-sm font-bold text-white">
-                Chưa có phòng công khai
-              </h3>
-              <p className="mx-auto mt-1.5 max-w-sm text-xs leading-5 text-neutral-500">
-                Chọn một bộ phim bên dưới để mở phòng và mời bạn bè tham gia.
-              </p>
-              <button
-                onClick={() => openCreateModal()}
-                className="mt-4 inline-flex h-9 items-center gap-2 rounded-xl bg-white px-4 text-xs font-bold text-black transition-colors hover:bg-neutral-200 active:scale-[0.98]"
-              >
-                <Plus size={15} /> Tạo phòng đầu tiên
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {rooms.map((room, index) => (
-              <motion.button
-                key={room.id}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-                onClick={() =>
-                  router.push(`/watch/${room.movie.slug}?room=${room.id}`)
-                }
-                className={`group relative min-h-52 overflow-hidden rounded-2xl border border-white/10 bg-[#171717] text-left transition-all duration-300 hover:-translate-y-1 hover:border-violet-300/40 cursor-pointer ${
-                  index === 0 && rooms.length > 2 ? "md:col-span-2" : ""
-                }`}
-              >
-                {room.movie.posterUrl ? (
-                  <img
-                    src={room.movie.posterUrl}
-                    alt={room.movie.name}
-                    className="absolute inset-0 h-full w-full object-cover opacity-35 transition-transform duration-700 group-hover:scale-105"
-                  />
-                ) : null}
-                <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/80 to-transparent z-10" />
-
-                <div className="relative z-20 flex h-full min-h-52 flex-col justify-between p-5">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 rounded-lg bg-violet-500/20 px-2.5 py-1 text-[10px] font-bold text-violet-200 backdrop-blur-md">
-                      <Radio size={11} /> Đang chiếu
-                    </span>
-                    <span className="flex items-center gap-1.5 rounded-lg bg-black/60 px-2.5 py-1 text-[11px] font-semibold text-neutral-300 backdrop-blur-md">
-                      <Users size={13} /> {room.participantCount} đang xem
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="mb-1 block text-xs font-medium text-neutral-400">
-                      Trưởng phòng: {room.hostName}
-                    </span>
-                    <h3 className="line-clamp-1 text-lg font-bold leading-tight text-white sm:text-xl">
-                      {room.name}
-                    </h3>
-                    <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-xs text-neutral-300 font-medium">
-                      <span className="truncate pr-4 flex items-center gap-1.5">
-                        <Play
-                          size={12}
-                          className="text-white fill-current shrink-0"
-                        />
-                        <span className="truncate">{room.movie.name}</span>
-                      </span>
-                      <span className="flex shrink-0 items-center gap-1 font-bold text-white group-hover:translate-x-1 transition-transform">
-                        Vào phòng{" "}
-                        <ArrowRight size={14} className="text-neutral-400" />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </motion.button>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Movie picker */}
-      <section className="relative mx-auto mt-10 max-w-[1320px] border-t border-white/[0.08] pt-7">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="mb-1 flex items-center gap-2 text-violet-300">
-              <Flame size={15} />
-              <span className="text-xs font-semibold">Gợi ý dành cho bạn</span>
-            </div>
-            <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
-              Chọn phim và mở phòng
-            </h2>
-          </div>
-          <span className="hidden items-center gap-2 text-xs font-medium text-neutral-500 sm:flex">
-            <Clock3 size={15} /> Mở phòng ngay sau khi chọn phim
+          {/* Server Status indicator */}
+          <span
+            className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border backdrop-blur-md",
+              lobbyState === "online"
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                : lobbyState === "connecting"
+                  ? "border-amber-500/30 bg-amber-500/10 text-amber-300 animate-pulse"
+                  : "border-neutral-700 bg-neutral-800 text-neutral-400",
+            )}
+          >
+            <span
+              className={cn(
+                "h-2 w-2 rounded-full",
+                lobbyState === "online"
+                  ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                  : lobbyState === "connecting"
+                    ? "bg-amber-300"
+                    : "bg-neutral-500",
+              )}
+            />
+            {lobbyState === "online"
+              ? "Máy chủ sẵn sàng"
+              : lobbyState === "connecting"
+                ? "Đang kết nối..."
+                : "Mất kết nối"}
           </span>
+        </nav>
+
+        {/* ── Compact Header & Direct Actions ── */}
+        <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-4 sm:gap-6 items-stretch">
+          {/* Left: Title & Quick Search Bar */}
+          <div className="rounded-3xl border border-white/[0.08] bg-[#0e1017]/90 backdrop-blur-2xl p-5 sm:p-7 flex flex-col justify-between shadow-2xl">
+            <div>
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-pink-500/30 bg-pink-500/10 px-3 py-1 text-xs font-semibold text-pink-300 mb-2.5">
+                <Radio size={13} className="text-pink-400" />
+                <span>Xem Phim Trực Tuyến Cùng Nhau</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight bg-gradient-to-r from-pink-400 via-rose-300 to-purple-300 bg-clip-text text-transparent">
+                Phòng Xem Chung
+              </h1>
+              <p className="mt-1 text-xs sm:text-sm text-neutral-400 leading-relaxed">
+                Đồng bộ phát video và trò chuyện trực tiếp theo thời gian thực cùng bạn bè.
+              </p>
+            </div>
+
+            {/* Live Search Movie Input */}
+            <div className="mt-5">
+              <label className="relative block">
+                <Search
+                  size={16}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400"
+                />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Tìm kiếm phim để mở phòng xem ngay..."
+                  className="h-11 w-full rounded-full border border-white/[0.12] bg-black/60 pl-10 pr-10 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </label>
+            </div>
+          </div>
+
+          {/* Right: Join Room Form Card */}
+          <div className="rounded-3xl border border-white/[0.08] bg-[#0e1017]/90 backdrop-blur-2xl p-5 sm:p-7 flex flex-col justify-between shadow-2xl">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1">
+                <Link2 size={15} className="text-cyan-400" />
+                <span>Tham gia phòng có sẵn</span>
+              </div>
+              <h2 className="text-lg sm:text-xl font-extrabold text-white">
+                Vào Phòng Bằng Liên Kết
+              </h2>
+              <p className="mt-1 text-xs text-neutral-400 leading-relaxed">
+                Dán đường dẫn mời hoặc mã phòng được bạn bè chia sẻ để tham gia ngay.
+              </p>
+            </div>
+
+            <form onSubmit={handleJoinByLink} className="mt-5 flex gap-2">
+              <input
+                value={inputRoomCode}
+                onChange={(e) => setInputRoomCode(e.target.value)}
+                placeholder="Dán liên kết hoặc mã phòng..."
+                className="h-11 flex-1 rounded-full border border-white/[0.12] bg-black/60 px-4 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30"
+              />
+              <button
+                type="submit"
+                className="inline-flex h-11 items-center justify-center gap-1.5 rounded-full bg-white hover:bg-neutral-200 px-5 text-xs sm:text-sm font-extrabold text-black transition-all active:scale-95 cursor-pointer shadow-md shrink-0"
+              >
+                <span>Vào phòng</span>
+                <ArrowRight size={14} />
+              </button>
+            </form>
+          </div>
         </div>
 
-        {trendingLoading ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
-            {Array.from({ length: 12 }).map((_, index) => (
-              <FilmCardSkeleton key={index} />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
-            {movies.slice(0, 12).map((movie) => (
+        {/* ── Section: Active Live Public Rooms (if any) ── */}
+        <section className="space-y-4 pt-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CircleDot size={16} className="text-pink-400 animate-pulse" />
+              <h2 className="text-lg sm:text-xl font-extrabold text-white">
+                Phòng Đang Chiếu Trực Tiếp
+              </h2>
+              {rooms.length > 0 && (
+                <span className="rounded-full bg-pink-500/20 px-2.5 py-0.5 text-xs font-bold text-pink-300">
+                  {rooms.length}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
               <button
-                key={movie.slug}
-                onClick={() => openCreateModal(movie)}
-                className="text-left group transition-transform duration-300 hover:-translate-y-1.5 cursor-pointer"
+                type="button"
+                onClick={refreshLobby}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.08] text-xs font-semibold text-neutral-300 transition-all cursor-pointer active:scale-95"
               >
-                <FilmCard film={movie} />
+                <RefreshCw
+                  size={12}
+                  className={lobbyState === "connecting" ? "animate-spin" : ""}
+                />
+                Làm mới
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => openCreateModal()}
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white text-black hover:bg-neutral-200 text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
+              >
+                <Plus size={13} strokeWidth={2.5} />
+                Tạo phòng mới
+              </button>
+            </div>
           </div>
-        )}
-      </section>
+
+          {lobbyState === "connecting" && rooms.length === 0 ? (
+            <div className="flex min-h-32 flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-[#0e1017]/60 text-neutral-400">
+              <Loader2 size={20} className="animate-spin text-pink-400" />
+              <p className="text-xs font-medium">Đang tải danh sách phòng...</p>
+            </div>
+          ) : rooms.length === 0 ? (
+            <div className="rounded-2xl border border-white/[0.08] bg-[#0e1017]/60 p-6 text-center">
+              <p className="text-xs text-neutral-400">
+                Hiện tại chưa có phòng công khai nào. Hãy tìm phim bên dưới và tạo phòng đầu tiên để mời bạn bè!
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {rooms.map((room) => (
+                <button
+                  key={room.id}
+                  type="button"
+                  onClick={() =>
+                    router.push(`/watch/${room.movie.slug}?room=${room.id}`)
+                  }
+                  className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0e1017] p-4 text-left transition-all hover:border-pink-500/50 hover:scale-[1.01] cursor-pointer shadow-lg"
+                >
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-pink-500/20 px-2 py-0.5 text-[10px] font-bold text-pink-300">
+                      <Radio size={10} /> Live
+                    </span>
+                    <span className="flex items-center gap-1 text-[11px] font-semibold text-neutral-400">
+                      <Users size={12} /> {room.participantCount} người xem
+                    </span>
+                  </div>
+
+                  <h3 className="line-clamp-1 text-sm font-bold text-white group-hover:text-pink-300 transition-colors">
+                    {room.name || `Xem cùng ${room.hostName}`}
+                  </h3>
+                  <p className="mt-1 line-clamp-1 text-xs text-neutral-400 flex items-center gap-1">
+                    <Film size={11} className="text-pink-400 shrink-0" />
+                    <span>{room.movie.name}</span>
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* ── Section: Movie Selector / Live Search Results ── */}
+        <section className="space-y-4 pt-4 border-t border-white/[0.08]">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Flame size={18} className="text-amber-400" />
+              <h2 className="text-lg sm:text-xl font-extrabold bg-gradient-to-r from-cyan-400 to-indigo-300 bg-clip-text text-transparent">
+                {debouncedQuery
+                  ? `Kết quả tìm kiếm cho "${debouncedQuery}"`
+                  : "Chọn Phim Để Bắt Đầu Phòng Xem"}
+              </h2>
+            </div>
+            {debouncedQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="text-xs text-neutral-400 hover:text-white underline cursor-pointer"
+              >
+                Xóa tìm kiếm
+              </button>
+            )}
+          </div>
+
+          {isListLoading ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <FilmCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : displayMovies.length === 0 ? (
+            <div className="rounded-2xl border border-white/[0.08] bg-[#0e1017]/60 p-10 text-center space-y-2">
+              <Film size={28} className="text-neutral-500 mx-auto" />
+              <p className="text-sm font-bold text-white">Không tìm thấy bộ phim phù hợp</p>
+              <p className="text-xs text-neutral-400">
+                Hãy thử tìm kiếm với tên phim không dấu hoặc tên gốc tiếng Anh.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+              {displayMovies.slice(0, 24).map((movie) => (
+                <div
+                  key={movie.slug}
+                  className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0e1017] p-2 hover:border-pink-500/50 hover:shadow-lg transition-all"
+                >
+                  <button
+                    type="button"
+                    onClick={() => openCreateModal(movie)}
+                    className="text-left w-full cursor-pointer"
+                  >
+                    <FilmCard film={movie} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openCreateModal(movie)}
+                    className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl bg-white/[0.06] hover:bg-pink-600 hover:text-white py-2 text-xs font-bold text-neutral-200 transition-all cursor-pointer active:scale-95"
+                  >
+                    <Play size={11} className="fill-current" />
+                    <span>Mở phòng</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
 
       {/* ── CREATE ROOM MODAL ── */}
       <AnimatePresence>
@@ -454,109 +482,89 @@ export default function WatchPartyListPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className="w-full max-w-xl overflow-hidden rounded-2xl border border-white/10 bg-[#171717] p-4 shadow-2xl shadow-black/80 sm:p-5"
+              transition={{ duration: 0.15 }}
+              className="w-full max-w-lg overflow-hidden rounded-3xl border border-white/[0.12] bg-[#0e1017] p-5 sm:p-6 shadow-2xl shadow-black/90"
             >
-              <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
+              <div className="flex items-start justify-between gap-4 border-b border-white/[0.08] pb-4">
                 <div>
-                  <span className="flex items-center gap-1.5 text-xs font-semibold text-violet-300">
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-pink-400">
                     <Radio size={14} /> Tạo phòng mới
                   </span>
-                  <h3 className="mt-1 text-xl font-bold tracking-tight text-white">
-                    Chọn phim và đặt tên phòng
+                  <h3 className="mt-1 text-lg sm:text-xl font-extrabold text-white">
+                    Xác Nhận Mở Phòng Xem Chung
                   </h3>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="rounded-xl border border-white/10 p-2 text-neutral-400 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+                  className="rounded-full border border-white/10 p-2 text-neutral-400 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
                   aria-label="Đóng"
                 >
-                  <X size={18} />
+                  <X size={16} />
                 </button>
               </div>
 
-              {/* Search input */}
-              <label className="relative mt-5 block">
-                <Search
-                  size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400"
-                />
-                <input
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Tìm kiếm phim để xem cùng..."
-                  className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] pl-10 pr-4 text-sm text-white outline-none transition-colors placeholder:text-neutral-600 focus:border-violet-400/60"
-                />
-              </label>
-
-              {/* Movie selector grid */}
-              <div className="mt-3 grid max-h-64 grid-cols-2 gap-2.5 overflow-y-auto pr-1 sm:grid-cols-3 scrollbar-thin scrollbar-thumb-white/20">
-                {filteredMovies.map((movie) => {
-                  const selected = selectedMovie?.slug === movie.slug;
-                  const image =
-                    resolveImageUrl(movie.thumb_url) ||
-                    resolveImageUrl(movie.poster_url);
-                  return (
-                    <button
-                      key={movie.slug}
-                      onClick={() => setSelectedMovie(movie)}
-                      className={`relative aspect-video overflow-hidden rounded-xl border text-left transition-all cursor-pointer ${
-                        selected
-                          ? "border-violet-300 ring-2 ring-violet-400/25"
-                          : "border-white/10 hover:border-white/30"
-                      }`}
-                    >
-                      {image ? (
-                        <img
-                          src={image}
-                          alt={movie.name}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : null}
-                      <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-                      <span className="absolute inset-x-2 bottom-2 truncate text-[11px] font-bold text-white">
-                        {movie.name}
-                      </span>
-                      {selected ? (
-                        <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-lg bg-violet-300 text-black font-black">
-                          <Check size={14} strokeWidth={3} />
-                        </span>
-                      ) : null}
-                    </button>
-                  );
-                })}
-              </div>
+              {/* Selected Movie Info */}
+              {selectedMovie && (
+                <div className="mt-4 flex items-center gap-3.5 p-3 rounded-2xl border border-white/[0.08] bg-white/[0.03]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={
+                      resolveImageUrl(selectedMovie.thumb_url) ||
+                      resolveImageUrl(selectedMovie.poster_url)
+                    }
+                    alt={selectedMovie.name}
+                    className="h-16 w-12 rounded-xl object-cover border border-white/10 shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-pink-400">
+                      Phim đã chọn
+                    </span>
+                    <h4 className="font-extrabold text-sm text-white truncate">
+                      {selectedMovie.name}
+                    </h4>
+                    <p className="text-xs text-neutral-400 truncate">
+                      {selectedMovie.origin_name || `${selectedMovie.year || 2026}`}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Custom Room Name */}
-              <label className="mt-5 block text-xs font-bold text-neutral-300">
-                Tên phòng chiếu (Không bắt buộc)
+              <div className="mt-4">
+                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-300 mb-1.5">
+                  Tên phòng chiếu (Tùy chọn)
+                </label>
                 <input
                   value={customRoomName}
-                  maxLength={90}
-                  onChange={(event) => setCustomRoomName(event.target.value)}
+                  maxLength={80}
+                  onChange={(e) => setCustomRoomName(e.target.value)}
                   placeholder={
                     selectedMovie
-                      ? `Xem chung: ${selectedMovie.name}`
-                      : "Ví dụ: Tối nay xem phim cùng nhóm bạn"
+                      ? `Phòng xem: ${selectedMovie.name}`
+                      : "Ví dụ: Xem phim cuối tuần..."
                   }
-                  className="mt-2 h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 text-sm text-white outline-none transition-colors placeholder:text-neutral-600 focus:border-violet-400/60"
+                  className="h-11 w-full rounded-xl border border-white/[0.12] bg-black/60 px-4 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30 transition-all"
                 />
-              </label>
+              </div>
 
-              {/* Modal footer */}
-              <div className="mt-6 flex justify-end gap-3 border-t border-white/10 pt-4">
+              {/* Modal Actions */}
+              <div className="mt-6 flex items-center justify-end gap-2.5 border-t border-white/[0.08] pt-4">
                 <button
+                  type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="h-11 rounded-xl border border-white/10 px-5 text-sm font-semibold text-neutral-300 transition-colors hover:bg-white/10 cursor-pointer"
+                  className="rounded-full border border-white/10 px-5 py-2.5 text-xs font-semibold text-neutral-300 hover:bg-white/10 transition-colors cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
+                  type="button"
                   onClick={handleCreateRoom}
                   disabled={!selectedMovie}
-                  className="flex h-11 items-center gap-2 rounded-xl bg-white px-6 text-sm font-bold text-black transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer active:scale-[0.98]"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white hover:bg-neutral-200 px-6 py-2.5 text-xs font-extrabold text-black transition-all active:scale-95 cursor-pointer shadow-md disabled:opacity-40"
                 >
-                  <Plus size={15} /> Mở Phòng Chiếu Trực Tiếp
+                  <Play size={13} className="fill-black" />
+                  <span>Bắt đầu phòng chiếu</span>
                 </button>
               </div>
             </motion.div>
