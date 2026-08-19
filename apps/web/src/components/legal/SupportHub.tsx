@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   HelpCircle,
   ShieldCheck,
@@ -10,7 +10,6 @@ import {
   Mail,
   ArrowLeft,
   ChevronRight,
-  Sparkles,
   Film,
   Laptop,
   CheckCircle2,
@@ -44,11 +43,11 @@ interface SupportHubProps {
   initialTab?: SupportTab;
 }
 
-const TABS: { id: SupportTab; label: string; icon: React.ElementType }[] = [
-  { id: "report", label: "Báo lỗi", icon: HelpCircle },
-  { id: "privacy", label: "Chính sách bảo mật", icon: ShieldCheck },
-  { id: "terms", label: "Điều khoản sử dụng", icon: FileText },
-  { id: "contact", label: "Liên hệ", icon: Mail },
+const TABS: { id: SupportTab; label: string; icon: React.ElementType; color: string }[] = [
+  { id: "report", label: "Báo lỗi", icon: HelpCircle, color: "from-pink-500 to-rose-500" },
+  { id: "privacy", label: "Chính sách bảo mật", icon: ShieldCheck, color: "from-cyan-500 to-blue-600" },
+  { id: "terms", label: "Điều khoản sử dụng", icon: FileText, color: "from-amber-400 to-orange-500" },
+  { id: "contact", label: "Liên hệ", icon: Mail, color: "from-violet-500 to-purple-600" },
 ];
 
 const ISSUE_CATEGORIES = [
@@ -69,7 +68,6 @@ const CONTACT_TOPICS = [
 ];
 
 export function SupportHub({ initialTab = "report" }: SupportHubProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
@@ -166,47 +164,53 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
     }, 900);
   };
 
+  const currentTab = TABS.find((t) => t.id === activeTab) || TABS[0];
+
   return (
     <div
       className={cn(
         cardFont.className,
-        "min-h-[100dvh] w-full bg-[#0c0d14] text-neutral-200 pt-20 sm:pt-24 pb-20",
+        "bg-background min-h-screen text-foreground overflow-hidden pb-16 pt-20 sm:pt-24",
       )}
     >
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+      {/* Container aligned with Home Page Grid (pl-4 lg:pl-24 pr-4 md:pr-10) */}
+      <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 relative z-30 max-w-[1400px] mx-auto">
         {/* Top Breadcrumb */}
-        <nav className="mb-6 flex items-center gap-2 text-xs text-neutral-400">
+        <nav className="mb-5 flex items-center gap-2 text-xs text-neutral-400">
           <Link
             href="/"
-            className="flex items-center gap-1 font-medium text-neutral-400 transition-colors hover:text-white"
+            className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.12] text-white/90 hover:text-white text-xs font-medium transition-all"
           >
-            <ArrowLeft size={13} />
+            <ArrowLeft size={12} />
             Trang chủ
           </Link>
           <ChevronRight size={13} className="text-neutral-600" />
           <span className="text-neutral-400">Hỗ trợ & Bản quyền</span>
           <ChevronRight size={13} className="text-neutral-600" />
-          <span className="font-semibold text-violet-400">
-            {TABS.find((t) => t.id === activeTab)?.label}
+          <span className="font-semibold text-white">
+            {currentTab.label}
           </span>
         </nav>
 
-        {/* Header Title Section */}
-        <div className="mb-8">
-          <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-semibold text-violet-300">
-            <Sparkles size={13} />
-            <span>Trung Tâm Hỗ Trợ & Pháp Lý</span>
+        {/* Section Header Title matching Home Page Gradient Style */}
+        <div className="mb-7 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <h1
+              className={cn(
+                cardFont.className,
+                "bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-300 bg-clip-text text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-[-0.025em] text-transparent leading-tight",
+              )}
+            >
+              Hỗ Trợ & Bản Quyền
+            </h1>
+            <p className="mt-1.5 text-xs sm:text-sm text-neutral-400 leading-relaxed">
+              Báo cáo sự cố phát video, tìm hiểu chính sách bảo mật dữ liệu, điều khoản bản quyền DMCA hoặc gửi thư trực tiếp đến NetPhim.
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white font-[family-name:var(--font-manrope)]">
-            Hỗ Trợ & Bản Quyền
-          </h1>
-          <p className="mt-2 text-xs sm:text-sm text-neutral-400 leading-relaxed max-w-2xl">
-            Báo cáo sự cố phát video, tìm hiểu chính sách bảo mật dữ liệu, điều khoản bản quyền DMCA hoặc gửi thư liên hệ trực tiếp đến NetPhim.
-          </p>
         </div>
 
-        {/* ── 4 Main Tabs Switcher (Identical design to Home / Site components) ── */}
-        <div className="mb-8 flex flex-wrap gap-2 rounded-2xl border border-white/[0.08] bg-[#141824] p-1.5 shadow-xl">
+        {/* ── 4 Pill Tabs Switcher (Identical design to Home page filters & buttons) ── */}
+        <div className="mb-8 flex flex-wrap items-center gap-2 p-1.5 rounded-2xl sm:rounded-full bg-white/[0.05] border border-white/[0.08] backdrop-blur-md">
           {TABS.map((tab) => {
             const isSelected = activeTab === tab.id;
             return (
@@ -215,49 +219,49 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                 type="button"
                 onClick={() => switchTab(tab.id)}
                 className={cn(
-                  "relative flex flex-1 min-w-[130px] items-center justify-center gap-2 rounded-xl py-3 px-3 text-xs sm:text-sm font-bold transition-all cursor-pointer select-none",
+                  "inline-flex items-center gap-2 px-4 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none",
                   isSelected
-                    ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30 font-extrabold"
-                    : "text-neutral-400 hover:text-white hover:bg-white/[0.04]",
+                    ? "bg-white text-black font-extrabold shadow-lg shadow-white/10 scale-[1.02]"
+                    : "text-neutral-400 hover:text-white hover:bg-white/[0.08]",
                 )}
               >
-                <tab.icon size={16} className={isSelected ? "text-white" : "text-neutral-400"} />
+                <tab.icon size={15} className={isSelected ? "text-black" : "text-neutral-400"} />
                 <span>{tab.label}</span>
               </button>
             );
           })}
         </div>
 
-        {/* ── Tab Content Panels ── */}
-        <div className="rounded-3xl border border-white/[0.08] bg-[#141824] p-5 sm:p-8 md:p-10 shadow-2xl">
+        {/* ── Content Container: Sleek Dark Card matching Home layout ── */}
+        <div className="rounded-3xl border border-white/[0.08] bg-[#0e1017]/90 backdrop-blur-2xl p-5 sm:p-8 md:p-10 shadow-2xl">
           {/* ════════ TAB 1: BÁO LỖI ════════ */}
           {activeTab === "report" && (
-            <div className="space-y-8 animate-in fade-in duration-200">
+            <div className="space-y-8 animate-in fade-in duration-150">
               {/* Quick Troubleshooting Banner */}
-              <div className="rounded-2xl border border-violet-500/25 bg-violet-500/[0.06] p-5 sm:p-6">
-                <h3 className="text-sm sm:text-base font-bold text-white mb-3 flex items-center gap-2">
-                  <HelpCircle className="w-5 h-5 text-violet-400" />
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 sm:p-6">
+                <h3 className="text-sm sm:text-base font-extrabold bg-gradient-to-r from-pink-400 to-rose-300 bg-clip-text text-transparent mb-3 flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-pink-400" />
                   Mẹo khắc phục nhanh trước khi gửi báo cáo:
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-neutral-300">
-                  <div className="p-3 rounded-xl bg-[#1b2030] border border-white/[0.06]">
-                    <strong className="text-violet-300 block mb-1">1. Đổi Server phát</strong>
+                  <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                    <strong className="text-white block mb-1">1. Đổi Server phát</strong>
                     Bấm chọn Server 2 hoặc Server VIP ngay dưới khung video.
                   </div>
-                  <div className="p-3 rounded-xl bg-[#1b2030] border border-white/[0.06]">
-                    <strong className="text-violet-300 block mb-1">2. Xóa Cache nhanh</strong>
-                    Nhấn phím <kbd className="px-1 py-0.5 rounded bg-neutral-800 text-[10px]">Ctrl + F5</kbd> để tải lại toàn bộ luồng phát.
+                  <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                    <strong className="text-white block mb-1">2. Xóa Cache nhanh</strong>
+                    Nhấn phím <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-[10px] font-mono">Ctrl + F5</kbd> để tải lại toàn bộ luồng phát.
                   </div>
-                  <div className="p-3 rounded-xl bg-[#1b2030] border border-white/[0.06]">
-                    <strong className="text-violet-300 block mb-1">3. Tắt chặn quảng cáo</strong>
-                    Một số adblocker có thể chặn nhầm tệp phụ đề Vietsub .vtt.
+                  <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                    <strong className="text-white block mb-1">3. Tắt chặn quảng cáo</strong>
+                    Một số extension adblock có thể vô tình chặn luồng phụ đề Vietsub .vtt.
                   </div>
                 </div>
               </div>
 
               {/* Form Section */}
               <div>
-                <h2 className="text-lg sm:text-xl font-bold text-white mb-1.5">
+                <h2 className="text-lg sm:text-xl font-extrabold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-1.5">
                   Biểu Mẫu Gửi Báo Cáo Sự Cố
                 </h2>
                 <p className="text-xs sm:text-sm text-neutral-400 mb-6">
@@ -277,7 +281,7 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                         setReportSubmitted(false);
                         setReportDesc("");
                       }}
-                      className="mt-2 inline-flex items-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 px-5 py-2.5 text-xs font-bold text-white transition-all cursor-pointer"
+                      className="mt-2 inline-flex items-center gap-2 rounded-full bg-white text-black hover:bg-neutral-200 px-5 py-2.5 text-xs font-bold transition-all cursor-pointer shadow-md active:scale-95"
                     >
                       <RefreshCw size={13} />
                       Gửi báo cáo khác
@@ -287,8 +291,8 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                   <form onSubmit={handleReportSubmit} className="space-y-5">
                     {/* Category Selector */}
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-300 mb-2">
-                        1. Loại sự cố gặp phải <span className="text-violet-400">*</span>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">
+                        1. Loại sự cố gặp phải <span className="text-pink-400">*</span>
                       </label>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {ISSUE_CATEGORIES.map((cat) => {
@@ -299,13 +303,13 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                               type="button"
                               onClick={() => setReportCategory(cat.id)}
                               className={cn(
-                                "flex items-center gap-2 p-3 rounded-xl border text-xs font-semibold transition-all text-left cursor-pointer",
+                                "flex items-center gap-2.5 p-3 rounded-xl border text-xs font-semibold transition-all text-left cursor-pointer",
                                 isSelected
-                                  ? "border-violet-500 bg-violet-600/20 text-violet-200 shadow-sm"
-                                  : "border-white/[0.06] bg-[#1b2030] text-neutral-400 hover:text-white hover:border-neutral-600",
+                                  ? "border-pink-500/80 bg-pink-500/15 text-pink-200 shadow-sm font-bold"
+                                  : "border-white/[0.08] bg-white/[0.03] text-neutral-400 hover:text-white hover:bg-white/[0.06] hover:border-white/20",
                               )}
                             >
-                              <cat.icon size={15} className={isSelected ? "text-violet-400" : "text-neutral-500"} />
+                              <cat.icon size={15} className={isSelected ? "text-pink-400" : "text-neutral-400"} />
                               <span className="truncate">{cat.label}</span>
                             </button>
                           );
@@ -316,7 +320,7 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                     {/* Movie & Episode */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-neutral-300 mb-1.5">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5">
                           2. Tên phim gặp sự cố
                         </label>
                         <input
@@ -324,11 +328,11 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                           value={filmTitle}
                           onChange={(e) => setFilmTitle(e.target.value)}
                           placeholder="Ví dụ: Spider-Man, Avengers..."
-                          className="w-full rounded-xl border border-white/[0.1] bg-[#1b2030] px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 transition-all"
+                          className="w-full rounded-xl border border-white/[0.1] bg-black/50 px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-neutral-300 mb-1.5">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5">
                           Tập phim / Mốc thời gian
                         </label>
                         <input
@@ -336,7 +340,7 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                           value={episode}
                           onChange={(e) => setEpisode(e.target.value)}
                           placeholder="Ví dụ: Tập 03, phút 15:20..."
-                          className="w-full rounded-xl border border-white/[0.1] bg-[#1b2030] px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 transition-all"
+                          className="w-full rounded-xl border border-white/[0.1] bg-black/50 px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                         />
                       </div>
                     </div>
@@ -344,13 +348,13 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                     {/* Device info */}
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
-                        <label className="block text-xs font-bold uppercase tracking-wider text-neutral-300">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400">
                           3. Thiết bị & Trình duyệt
                         </label>
                         <button
                           type="button"
                           onClick={handleAutoDetectDevice}
-                          className="text-[11px] text-violet-400 hover:text-violet-300 font-semibold inline-flex items-center gap-1 cursor-pointer"
+                          className="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold inline-flex items-center gap-1 cursor-pointer"
                         >
                           <Laptop size={12} />
                           Tự nhận diện
@@ -361,14 +365,14 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                         value={deviceInfo}
                         onChange={(e) => setDeviceInfo(e.target.value)}
                         placeholder="Chrome trên Windows 11, Safari iPhone..."
-                        className="w-full rounded-xl border border-white/[0.1] bg-[#1b2030] px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 transition-all"
+                        className="w-full rounded-xl border border-white/[0.1] bg-black/50 px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                       />
                     </div>
 
                     {/* Description */}
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-300 mb-1.5">
-                        4. Mô tả chi tiết vấn đề <span className="text-violet-400">*</span>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5">
+                        4. Mô tả chi tiết vấn đề <span className="text-pink-400">*</span>
                       </label>
                       <textarea
                         rows={4}
@@ -376,13 +380,13 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                         value={reportDesc}
                         onChange={(e) => setReportDesc(e.target.value)}
                         placeholder="Mô tả cụ thể sự cố bạn gặp phải (ví dụ: màn hình đen khi tua, phụ đề bị nhảy dòng, âm thanh bị rè...)"
-                        className="w-full rounded-xl border border-white/[0.1] bg-[#1b2030] p-3.5 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 transition-all resize-y"
+                        className="w-full rounded-xl border border-white/[0.1] bg-black/50 p-3.5 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all resize-y"
                       />
                     </div>
 
                     {/* Email */}
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-300 mb-1.5">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5">
                         5. Email nhận thông báo kết quả (tùy chọn)
                       </label>
                       <input
@@ -390,23 +394,23 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                         value={reportEmail}
                         onChange={(e) => setReportEmail(e.target.value)}
                         placeholder="email@example.com"
-                        className="w-full rounded-xl border border-white/[0.1] bg-[#1b2030] px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 transition-all"
+                        className="w-full rounded-xl border border-white/[0.1] bg-black/50 px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                       />
                     </div>
 
                     <button
                       type="submit"
                       disabled={isSubmittingReport}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 px-7 py-3.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-violet-600/30 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-white hover:bg-neutral-200 text-black px-8 py-3.5 text-xs sm:text-sm font-extrabold shadow-lg shadow-white/10 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
                     >
                       {isSubmittingReport ? (
                         <>
-                          <Loader2 size={16} className="animate-spin" />
+                          <Loader2 size={16} className="animate-spin text-black" />
                           <span>Đang gửi báo cáo...</span>
                         </>
                       ) : (
                         <>
-                          <Send size={16} />
+                          <Send size={15} />
                           <span>Gửi Báo Cáo Sự Cố</span>
                         </>
                       )}
@@ -419,9 +423,9 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
 
           {/* ════════ TAB 2: CHÍNH SÁCH BẢO MẬT ════════ */}
           {activeTab === "privacy" && (
-            <div className="space-y-8 text-neutral-300 text-xs sm:text-sm leading-relaxed animate-in fade-in duration-200">
-              <div className="rounded-2xl border border-violet-500/30 bg-violet-500/[0.06] p-5 sm:p-6">
-                <div className="flex items-center gap-2 text-violet-300 font-bold text-sm mb-2">
+            <div className="space-y-8 text-neutral-300 text-xs sm:text-sm leading-relaxed animate-in fade-in duration-150">
+              <div className="rounded-2xl border border-cyan-500/25 bg-cyan-500/[0.06] p-5 sm:p-6">
+                <div className="flex items-center gap-2 text-cyan-300 font-extrabold text-sm mb-2">
                   <FileCheck size={18} />
                   <span>Tóm tắt nhanh chính sách bảo mật (TL;DR)</span>
                 </div>
@@ -433,22 +437,22 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
               </div>
 
               <section className="space-y-3">
-                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <span className="text-violet-400 font-extrabold">1.</span> Thông tin thu thập
+                <h3 className="text-base sm:text-lg font-extrabold bg-gradient-to-r from-cyan-400 to-sky-300 bg-clip-text text-transparent flex items-center gap-2">
+                  <span className="text-cyan-400 font-extrabold">1.</span> Thông tin thu thập
                 </h3>
                 <p>
                   Chúng tôi chỉ thu thập dữ liệu tối thiểu cần thiết gồm: Email, Username, Tên hiển thị, Lịch sử xem gần đây (để hỗ trợ tua tiếp), và Danh sách phim yêu thích của bạn.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <div className="p-3.5 rounded-xl border border-white/[0.06] bg-[#1b2030]">
+                  <div className="p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02]">
                     <strong className="text-white block mb-1 flex items-center gap-1.5 text-xs">
-                      <UserCheck size={14} className="text-violet-400" /> Tài khoản cá nhân
+                      <UserCheck size={14} className="text-cyan-400" /> Tài khoản cá nhân
                     </strong>
                     <span className="text-neutral-400 text-xs">Email, tên tài khoản và mật khẩu đã mã hóa.</span>
                   </div>
-                  <div className="p-3.5 rounded-xl border border-white/[0.06] bg-[#1b2030]">
+                  <div className="p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02]">
                     <strong className="text-white block mb-1 flex items-center gap-1.5 text-xs">
-                      <Database size={14} className="text-violet-400" /> Tiến trình xem phim
+                      <Database size={14} className="text-cyan-400" /> Tiến trình xem phim
                     </strong>
                     <span className="text-neutral-400 text-xs">Thời điểm dừng phim để bạn có thể xem tiếp đa thiết bị.</span>
                   </div>
@@ -456,8 +460,8 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
               </section>
 
               <section className="space-y-3">
-                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <span className="text-violet-400 font-extrabold">2.</span> Bảo mật & Mã hóa đường truyền
+                <h3 className="text-base sm:text-lg font-extrabold bg-gradient-to-r from-cyan-400 to-sky-300 bg-clip-text text-transparent flex items-center gap-2">
+                  <span className="text-cyan-400 font-extrabold">2.</span> Bảo mật & Mã hóa đường truyền
                 </h3>
                 <p>
                   Mọi kết nối giữa thiết bị của bạn và hệ thống máy chủ NetPhim đều được mã hóa bằng chuẩn <strong>SSL/TLS 1.3</strong>. Mật khẩu không bao giờ được lưu dưới dạng văn bản thô.
@@ -465,8 +469,8 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
               </section>
 
               <section className="space-y-3">
-                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <span className="text-violet-400 font-extrabold">3.</span> Cookie & Bộ nhớ trình duyệt
+                <h3 className="text-base sm:text-lg font-extrabold bg-gradient-to-r from-cyan-400 to-sky-300 bg-clip-text text-transparent flex items-center gap-2">
+                  <span className="text-cyan-400 font-extrabold">3.</span> Cookie & Bộ nhớ trình duyệt
                 </h3>
                 <p>
                   NetPhim sử dụng Cookie và LocalStorage để lưu phiên đăng nhập an toàn, âm lượng mặc định và tùy chọn phụ đề của bạn. Bạn có thể xóa dữ liệu này trong Cài đặt trình duyệt bất cứ lúc nào.
@@ -474,11 +478,11 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
               </section>
 
               <section className="space-y-3">
-                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <span className="text-violet-400 font-extrabold">4.</span> Quyền của người dùng
+                <h3 className="text-base sm:text-lg font-extrabold bg-gradient-to-r from-cyan-400 to-sky-300 bg-clip-text text-transparent flex items-center gap-2">
+                  <span className="text-cyan-400 font-extrabold">4.</span> Quyền của người dùng
                 </h3>
                 <p>
-                  Bạn có toàn quyền chỉnh sửa thông tin, yêu cầu trích xuất dữ liệu lịch sử hoặc xóa vĩnh viễn tài khoản qua trang Cài Đặt hoặc liên hệ qua email <a href="mailto:privacy@netphim.tv" className="text-violet-400 underline font-semibold">privacy@netphim.tv</a>.
+                  Bạn có toàn quyền chỉnh sửa thông tin, yêu cầu trích xuất dữ liệu lịch sử hoặc xóa vĩnh viễn tài khoản qua trang Cài Đặt hoặc liên hệ qua email <a href="mailto:privacy@netphim.tv" className="text-cyan-400 underline font-semibold">privacy@netphim.tv</a>.
                 </p>
               </section>
             </div>
@@ -486,9 +490,9 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
 
           {/* ════════ TAB 3: ĐIỀU KHOẢN SỬ DỤNG ════════ */}
           {activeTab === "terms" && (
-            <div className="space-y-8 text-neutral-300 text-xs sm:text-sm leading-relaxed animate-in fade-in duration-200">
-              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/[0.06] p-5 sm:p-6">
-                <div className="flex items-center gap-2 text-amber-300 font-bold text-sm mb-2">
+            <div className="space-y-8 text-neutral-300 text-xs sm:text-sm leading-relaxed animate-in fade-in duration-150">
+              <div className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] p-5 sm:p-6">
+                <div className="flex items-center gap-2 text-amber-300 font-extrabold text-sm mb-2">
                   <AlertTriangle size={18} />
                   <span>Tuyên bố miễn trừ trách nhiệm nội dung</span>
                 </div>
@@ -498,8 +502,8 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
               </div>
 
               <section className="space-y-3">
-                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <span className="text-violet-400 font-extrabold">1.</span> Chấp thuận điều khoản
+                <h3 className="text-base sm:text-lg font-extrabold bg-gradient-to-r from-amber-300 to-orange-400 bg-clip-text text-transparent flex items-center gap-2">
+                  <span className="text-amber-400 font-extrabold">1.</span> Chấp thuận điều khoản
                 </h3>
                 <p>
                   Bằng việc truy cập hoặc sử dụng NetPhim, bạn đồng ý tuân thủ toàn bộ các điều khoản và quy định tại đây. Nếu không đồng ý, vui lòng dừng sử dụng dịch vụ.
@@ -507,20 +511,20 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
               </section>
 
               <section className="space-y-3">
-                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <span className="text-violet-400 font-extrabold">2.</span> Chính sách bản quyền & DMCA Takedown
+                <h3 className="text-base sm:text-lg font-extrabold bg-gradient-to-r from-amber-300 to-orange-400 bg-clip-text text-transparent flex items-center gap-2">
+                  <span className="text-amber-400 font-extrabold">2.</span> Chính sách bản quyền & DMCA Takedown
                 </h3>
                 <p>
                   Nếu bạn là chủ sở hữu bản quyền hợp pháp và phát hiện nội dung vi phạm, vui lòng gửi email yêu cầu gỡ bỏ tới hòm thư chuyên trách:
                 </p>
-                <div className="p-4 rounded-xl border border-white/[0.06] bg-[#1b2030] flex items-center justify-between gap-4">
+                <div className="p-4 rounded-xl border border-white/[0.08] bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <span className="text-xs text-neutral-400 block">Hòm thư tiếp nhận khiếu nại bản quyền:</span>
-                    <strong className="text-violet-400 text-sm">dmca@netphim.tv</strong>
+                    <strong className="text-amber-300 text-sm">dmca@netphim.tv</strong>
                   </div>
                   <a
                     href="mailto:dmca@netphim.tv"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs transition-colors"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-black font-bold text-xs transition-colors hover:bg-neutral-200"
                   >
                     Gửi email DMCA
                   </a>
@@ -528,15 +532,15 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
               </section>
 
               <section className="space-y-3">
-                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <span className="text-violet-400 font-extrabold">3.</span> Quy tắc ứng xử của thành viên
+                <h3 className="text-base sm:text-lg font-extrabold bg-gradient-to-r from-amber-300 to-orange-400 bg-clip-text text-transparent flex items-center gap-2">
+                  <span className="text-amber-400 font-extrabold">3.</span> Quy tắc ứng xử của thành viên
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-start gap-2.5 p-3 rounded-xl border border-red-500/20 bg-red-500/[0.04]">
+                  <div className="flex items-start gap-2.5 p-3.5 rounded-xl border border-red-500/20 bg-red-500/[0.04]">
                     <Ban size={16} className="text-red-400 shrink-0 mt-0.5" />
                     <span>Không spam quảng cáo, cờ bạc, lừa đảo trong phần bình luận.</span>
                   </div>
-                  <div className="flex items-start gap-2.5 p-3 rounded-xl border border-red-500/20 bg-red-500/[0.04]">
+                  <div className="flex items-start gap-2.5 p-3.5 rounded-xl border border-red-500/20 bg-red-500/[0.04]">
                     <Ban size={16} className="text-red-400 shrink-0 mt-0.5" />
                     <span>Không xúc phạm thành viên khác, phân biệt vùng miền hay quấy rối.</span>
                   </div>
@@ -547,13 +551,13 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
 
           {/* ════════ TAB 4: LIÊN HỆ ════════ */}
           {activeTab === "contact" && (
-            <div className="space-y-8 animate-in fade-in duration-200">
+            <div className="space-y-8 animate-in fade-in duration-150">
               {/* Channels Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="rounded-2xl border border-white/[0.06] bg-[#1b2030] p-5 space-y-2 hover:border-violet-500/40 transition-all">
+                <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 space-y-2 hover:border-violet-400/40 transition-all">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600/20 text-violet-400">
-                      <Mail size={20} />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600/20 text-violet-400">
+                      <Mail size={18} />
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-white">Email Ban Quản Trị</h4>
@@ -569,10 +573,10 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                   </a>
                 </div>
 
-                <div className="rounded-2xl border border-white/[0.06] bg-[#1b2030] p-5 space-y-2 hover:border-violet-500/40 transition-all">
+                <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 space-y-2 hover:border-sky-400/40 transition-all">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/20 text-sky-400">
-                      <MessageCircle size={20} />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-500/20 text-sky-400">
+                      <MessageCircle size={18} />
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-white">Telegram Trực Tuyến 24/7</h4>
@@ -593,7 +597,7 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
 
               {/* Message Form */}
               <div>
-                <h2 className="text-lg sm:text-xl font-bold text-white mb-1.5">
+                <h2 className="text-lg sm:text-xl font-extrabold bg-gradient-to-r from-violet-400 to-fuchsia-300 bg-clip-text text-transparent mb-1.5">
                   Gửi Tin Nhắn Đến Ban Quản Trị
                 </h2>
                 <p className="text-xs sm:text-sm text-neutral-400 mb-6">
@@ -613,7 +617,7 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                         setContactSubmitted(false);
                         setContactMessage("");
                       }}
-                      className="mt-2 inline-flex items-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 px-5 py-2.5 text-xs font-bold text-white transition-all cursor-pointer"
+                      className="mt-2 inline-flex items-center gap-2 rounded-full bg-white text-black hover:bg-neutral-200 px-5 py-2.5 text-xs font-bold transition-all cursor-pointer shadow-md active:scale-95"
                     >
                       <SendHorizontal size={13} />
                       Gửi tin nhắn khác
@@ -623,7 +627,7 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                   <form onSubmit={handleContactSubmit} className="space-y-5">
                     {/* Topic */}
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-300 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">
                         Chủ đề liên hệ <span className="text-violet-400">*</span>
                       </label>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -637,8 +641,8 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                               className={cn(
                                 "p-3 rounded-xl border text-xs font-semibold transition-all text-left truncate cursor-pointer",
                                 isSelected
-                                  ? "border-violet-500 bg-violet-600/20 text-violet-200 shadow-sm"
-                                  : "border-white/[0.06] bg-[#1b2030] text-neutral-400 hover:text-white hover:border-neutral-600",
+                                  ? "border-violet-500/80 bg-violet-500/15 text-violet-200 shadow-sm font-bold"
+                                  : "border-white/[0.08] bg-white/[0.03] text-neutral-400 hover:text-white hover:bg-white/[0.06] hover:border-white/20",
                               )}
                             >
                               {t.label}
@@ -651,7 +655,7 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                     {/* Name & Email */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-neutral-300 mb-1.5">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5">
                           Họ và tên
                         </label>
                         <input
@@ -659,11 +663,11 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                           value={contactName}
                           onChange={(e) => setContactName(e.target.value)}
                           placeholder="Nguyễn Văn A"
-                          className="w-full rounded-xl border border-white/[0.1] bg-[#1b2030] px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 transition-all"
+                          className="w-full rounded-xl border border-white/[0.1] bg-black/50 px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-neutral-300 mb-1.5">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5">
                           Email nhận phản hồi <span className="text-violet-400">*</span>
                         </label>
                         <input
@@ -672,14 +676,14 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                           value={contactEmail}
                           onChange={(e) => setContactEmail(e.target.value)}
                           placeholder="name@example.com"
-                          className="w-full rounded-xl border border-white/[0.1] bg-[#1b2030] px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 transition-all"
+                          className="w-full rounded-xl border border-white/[0.1] bg-black/50 px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                         />
                       </div>
                     </div>
 
                     {/* Subject */}
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-300 mb-1.5">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5">
                         Tiêu đề thư
                       </label>
                       <input
@@ -687,13 +691,13 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                         value={contactSubject}
                         onChange={(e) => setContactSubject(e.target.value)}
                         placeholder="Tóm tắt ngắn gọn nội dung liên hệ..."
-                        className="w-full rounded-xl border border-white/[0.1] bg-[#1b2030] px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 transition-all"
+                        className="w-full rounded-xl border border-white/[0.1] bg-black/50 px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                       />
                     </div>
 
                     {/* Message */}
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-300 mb-1.5">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5">
                         Nội dung chi tiết <span className="text-violet-400">*</span>
                       </label>
                       <textarea
@@ -702,23 +706,23 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                         value={contactMessage}
                         onChange={(e) => setContactMessage(e.target.value)}
                         placeholder="Nhập nội dung lời nhắn, câu hỏi hoặc đề xuất hợp tác của bạn..."
-                        className="w-full rounded-xl border border-white/[0.1] bg-[#1b2030] p-3.5 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 transition-all resize-y"
+                        className="w-full rounded-xl border border-white/[0.1] bg-black/50 p-3.5 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all resize-y"
                       />
                     </div>
 
                     <button
                       type="submit"
                       disabled={isSubmittingContact}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 px-7 py-3.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-violet-600/30 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-white hover:bg-neutral-200 text-black px-8 py-3.5 text-xs sm:text-sm font-extrabold shadow-lg shadow-white/10 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
                     >
                       {isSubmittingContact ? (
                         <>
-                          <Loader2 size={16} className="animate-spin" />
+                          <Loader2 size={16} className="animate-spin text-black" />
                           <span>Đang gửi tin nhắn...</span>
                         </>
                       ) : (
                         <>
-                          <Send size={16} />
+                          <Send size={15} />
                           <span>Gửi Tin Nhắn</span>
                         </>
                       )}
