@@ -55,7 +55,7 @@ function ActorCard({ person }: { person: any }) {
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-neutral-800">
-            <span className="text-lg font-extrabold text-neutral-400 font-[family-name:var(--font-manrope)]">
+            <span className="text-lg font-extrabold text-neutral-400">
               {initials}
             </span>
           </div>
@@ -66,7 +66,7 @@ function ActorCard({ person }: { person: any }) {
 
       {/* Name */}
       <div className="text-center w-full">
-        <h3 className={`w-full text-center line-clamp-2 leading-snug transition-colors duration-200 group-hover:text-white font-[family-name:var(--font-manrope)] ${
+        <h3 className={`w-full text-center line-clamp-2 leading-snug transition-colors duration-200 group-hover:text-white ${
             isNativeScript
               ? "text-[11px] font-medium text-neutral-500 italic"
               : "text-xs sm:text-[13px] font-bold text-neutral-200"
@@ -144,12 +144,12 @@ export default function ActorsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-5">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <TrendingUp size={14} className="text-violet-400" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-violet-400">
+              <TrendingUp size={14} className="text-amber-400" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-400">
                 Nổi tiếng nhất
               </span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white font-[family-name:var(--font-manrope)]">
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">
               Diễn Viên
             </h1>
             <p className="mt-1 text-xs text-neutral-500">
@@ -173,7 +173,7 @@ export default function ActorsPage() {
                 setSearchInput(e.target.value);
                 if (e.target.value.trim().length < 2) setSearchQuery("");
               }}
-              className="w-full bg-neutral-900/80 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-white/30 transition-colors font-[family-name:var(--font-manrope)]"
+              className="w-full bg-neutral-900/80 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-white/30 transition-colors"
             />
           </form>
         </div>
@@ -193,7 +193,7 @@ export default function ActorsPage() {
         ) : (
           <div className="py-20 text-center bg-neutral-900/30 border border-white/5 rounded-2xl max-w-sm mx-auto">
             <UserX size={28} className="mx-auto text-neutral-600 mb-3" />
-            <h3 className="text-sm font-bold text-white mb-1 font-[family-name:var(--font-manrope)]">
+            <h3 className="text-sm font-bold text-white mb-1">
               Không tìm thấy
             </h3>
             <p className="text-xs text-neutral-600">Thử tìm kiếm tên khác</p>

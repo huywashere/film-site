@@ -32,7 +32,7 @@ export default function ActorDetailPage() {
   if (!detail) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <p className="text-white font-bold font-[family-name:var(--font-manrope)]">
+        <p className="text-white font-bold">
           Không tìm thấy diễn viên
         </p>
         <button
@@ -103,7 +103,7 @@ export default function ActorDetailPage() {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <span className="text-4xl font-bold text-neutral-600 font-[family-name:var(--font-manrope)]">
+                  <span className="text-4xl font-bold text-neutral-600">
                     {displayName[0]}
                   </span>
                 </div>
@@ -115,12 +115,12 @@ export default function ActorDetailPage() {
           <div className="flex-1 space-y-5">
             {/* Name */}
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-violet-400 mb-1">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-400 mb-1">
                 {detail.known_for_department === "Acting"
                   ? "Diễn viên"
                   : detail.known_for_department || "Diễn viên"}
               </p>
-              <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight font-[family-name:var(--font-manrope)]">
+              <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
                 {displayName}
               </h1>
               {/* Native name if different */}
@@ -166,7 +166,7 @@ export default function ActorDetailPage() {
                   {detail.also_known_as.slice(0, 5).map((name: string, i: number) => (
                     <span
                       key={i}
-                      className="text-[11px] text-neutral-400 bg-white/[0.04] border border-white/8 px-2.5 py-1 rounded-lg font-[family-name:var(--font-manrope)]"
+                      className="text-[11px] text-neutral-400 bg-white/[0.04] border border-white/8 px-2.5 py-1 rounded-lg"
                     >
                       {name}
                     </span>
@@ -181,7 +181,7 @@ export default function ActorDetailPage() {
                 <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-600 mb-2">
                   Tiểu sử
                 </p>
-                <p className="text-[13px] text-neutral-400 leading-relaxed line-clamp-6 font-[family-name:var(--font-be-vietnam)]">
+                <p className="text-[13px] text-neutral-400 leading-relaxed line-clamp-6">
                   {detail.biography}
                 </p>
               </div>
@@ -199,6 +199,7 @@ export default function ActorDetailPage() {
                   <rect width="64" height="32" rx="4" fill="#F5C518" />
                   <text x="5" y="23" fontFamily="Arial Black, sans-serif" fontWeight="900" fontSize="20" fill="#000">IMDb</text>
                 </svg>
+                <span>Hồ sơ IMDb</span>
                 <ExternalLink size={10} />
               </a>
             )}
@@ -229,29 +230,30 @@ export default function ActorDetailPage() {
           </section>
         )}
 
-        {/* Known for films */}
+        {/* Known For Movies */}
         {knownFor.length > 0 && (
-          <section>
-            <h2 className="text-[10px] font-black uppercase tracking-[0.16em] text-neutral-600 border-b border-white/5 pb-2.5 mb-5 flex items-center gap-2">
-              <Film size={11} />
-              Phim nổi bật
-            </h2>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-3">
-              {knownFor.map((movie: any) => {
-                const poster = tmdbPoster(movie.poster_path, "w342");
-                const title = movie.title || movie.name;
-                const year = (
-                  movie.release_date ||
-                  movie.first_air_date ||
-                  ""
-                ).slice(0, 4);
+          <section className="mb-14">
+            <div className="flex items-center gap-2 mb-6">
+              <Film size={16} className="text-neutral-400" />
+              <h2 className="text-lg font-bold text-white">
+                Phim đã tham gia
+              </h2>
+              <span className="text-xs text-neutral-600 font-medium">({knownFor.length})</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+              {knownFor.map((item: any) => {
+                const poster = tmdbPoster(item.poster_path, "w342");
+                const title = item.title || item.name || "";
+                const year = (item.release_date || item.first_air_date || "").slice(0, 4);
+
                 return (
                   <Link
-                    key={movie.id}
+                    key={`${item.media_type || "movie"}-${item.id}`}
                     href={`/search?q=${encodeURIComponent(title)}`}
                     className="group flex flex-col gap-2"
                   >
-                    <div className="aspect-[2/3] rounded-xl overflow-hidden bg-neutral-900 border border-white/8 group-hover:border-white/25 transition-all duration-300 shadow-lg group-hover:shadow-xl group-hover:-translate-y-0.5">
+                    <div className="aspect-[2/3] rounded-xl overflow-hidden bg-neutral-900 border border-white/8 group-hover:border-white/20 transition-all duration-300 relative shadow-md">
                       {poster ? (
                         <img
                           src={poster}
@@ -266,7 +268,7 @@ export default function ActorDetailPage() {
                       )}
                     </div>
                     <div>
-                      <p className="text-[11px] font-semibold text-neutral-400 group-hover:text-white transition-colors line-clamp-2 leading-snug font-[family-name:var(--font-manrope)]">
+                      <p className="text-[11px] font-semibold text-neutral-400 group-hover:text-white transition-colors line-clamp-2 leading-snug">
                         {title}
                       </p>
                       {year && (

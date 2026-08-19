@@ -1,11 +1,7 @@
 import "./globals.css";
 import "./light-theme.css";
 import type { Metadata, Viewport } from "next";
-import {
-  Be_Vietnam_Pro,
-  Manrope,
-  Roboto_Condensed,
-} from "next/font/google";
+import { Be_Vietnam_Pro } from "next/font/google";
 import { ConditionalNavbar } from "@/components/layout/ConditionalNavbar";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -87,26 +83,10 @@ export const metadata: Metadata = {
 
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ["vietnamese", "latin"],
-  weight: ["400", "600", "700", "800"],
-  style: ["normal"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  style: ["normal", "italic"],
   display: "swap",
   variable: "--font-be-vietnam",
-  preload: true,
-});
-
-const manrope = Manrope({
-  subsets: ["latin", "vietnamese"],
-  weight: ["400", "500", "600", "700", "800"],
-  display: "swap",
-  variable: "--font-manrope",
-  preload: true,
-});
-
-const robotoCondensed = Roboto_Condensed({
-  subsets: ["latin", "vietnamese"],
-  weight: ["600", "700", "800", "900"],
-  display: "swap",
-  variable: "--font-cinema",
   preload: true,
 });
 
@@ -154,7 +134,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${beVietnamPro.variable} ${manrope.variable} ${robotoCondensed.variable} font-sans antialiased`}
+        className={`${beVietnamPro.variable} font-sans antialiased`}
         suppressHydrationWarning
       >
         <ThemeWatcher />

@@ -1,15 +1,10 @@
-import { Inter, Noto_Serif } from "next/font/google";
+import { Be_Vietnam_Pro } from "next/font/google";
 
-export const cardFont = Inter({
+export const cardFont = Be_Vietnam_Pro({
   subsets: ["latin", "vietnamese"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
   display: "swap",
   preload: true,
 });
 
-export const heroSerifFont = Noto_Serif({
-  subsets: ["latin", "vietnamese"],
-  weight: ["400", "600", "700"],
-  display: "swap",
-  preload: true,
-});
+export const heroSerifFont = cardFont;
