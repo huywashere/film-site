@@ -211,6 +211,8 @@ export interface TmdbPersonDetail {
   known_for_department?: string;
   popularity?: number;
   also_known_as?: string[];
+  imdb_id?: string | null;
+  homepage?: string | null;
 }
 
 export interface TmdbPersonCredits {
