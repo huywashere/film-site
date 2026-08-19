@@ -6,7 +6,6 @@ import {
   Manrope,
   Roboto_Condensed,
 } from "next/font/google";
-import dynamic from "next/dynamic";
 import { ConditionalNavbar } from "@/components/layout/ConditionalNavbar";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -19,28 +18,7 @@ import { AuthSessionBridge } from "@/components/auth/AuthSessionBridge";
 import { LazyAuthModalHost } from "@/components/auth/LazyAuthModalHost";
 import { safeJsonLd } from "@/lib/safe-json-ld";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
-
-// Defer non-critical background services to reduce initial JS execution
-const RegisterSW = dynamic(
-  () => import("@/components/layout/RegisterSW").then((mod) => mod.RegisterSW),
-  { ssr: false },
-);
-const OfflineDetector = dynamic(
-  () => import("@/components/layout/OfflineDetector").then((mod) => mod.OfflineDetector),
-  { ssr: false },
-);
-const ClientTelemetry = dynamic(
-  () => import("@/components/layout/ClientTelemetry").then((mod) => mod.ClientTelemetry),
-  { ssr: false },
-);
-const AntiDevTools = dynamic(
-  () => import("@/components/security/AntiDevTools").then((mod) => mod.AntiDevTools),
-  { ssr: false },
-);
-const ScrollToTopButton = dynamic(
-  () => import("@/components/layout/ScrollToTop").then((mod) => mod.ScrollToTopButton),
-  { ssr: false },
-);
+import { ClientBackgroundServices } from "@/components/layout/ClientBackgroundServices";
 
 export const viewport: Viewport = {
   themeColor: "#141414",
@@ -181,14 +159,10 @@ export default function RootLayout({
       >
         <ThemeWatcher />
         <ThemeColorSync />
-        <RegisterSW />
-        <AntiDevTools />
-        <ClientTelemetry />
         <QueryProvider>
           <ToastProvider>
             <AuthSessionBridge />
             <LazyAuthModalHost />
-            <OfflineDetector />
             <ScrollProvider>
               <div data-site-chrome>
                 <ConditionalNavbar />
@@ -205,9 +179,7 @@ export default function RootLayout({
               <div data-site-chrome>
                 <MobileBottomNav />
               </div>
-              <div data-site-chrome>
-                <ScrollToTopButton />
-              </div>
+              <ClientBackgroundServices />
             </ScrollProvider>
           </ToastProvider>
         </QueryProvider>
