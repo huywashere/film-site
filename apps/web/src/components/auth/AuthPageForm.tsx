@@ -1035,6 +1035,5 @@ export function AuthPageForm({
           </div>
         </div>
       </div>
-    </div>
   );
 }
