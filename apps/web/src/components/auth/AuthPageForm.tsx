@@ -527,13 +527,16 @@ export function AuthPageForm({
   }
 
   return (
-    // Outer wrapper — clean solid dark viewport
+    // Outer wrapper — clean viewport with cinematic poster background
     <div
       className={cn(
         cardFont.className,
-        "relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-x-hidden bg-[#0a0c10] p-4 sm:p-6",
+        "relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden bg-[#07080b] p-4 sm:p-6",
       )}
     >
+      {/* Background Movie Posters Collage Grid */}
+      <CinematicAuthBackground />
+
       {/* ── Main content: centered (full screen) ──────────────────────── */}
       <div className="relative z-10 w-full max-w-[1000px] my-auto">
         {/* Solid Dark Auth Card (Non-glass, clean, modern) */}

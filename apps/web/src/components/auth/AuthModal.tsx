@@ -39,6 +39,7 @@ import {
 } from "@/lib/firebase";
 import { establishFirebaseSession } from "@/lib/auth-session";
 import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
+import { CinematicAuthBackground } from "@/components/auth/CinematicAuthBackground";
 import { useGoogleOneTap } from "@/hooks/useGoogleOneTap";
 import { cn } from "@/lib/utils";
 
@@ -344,10 +345,13 @@ export function AuthModal() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
-      {/* Clean Dark Backdrop Overlay (No overlapping poster collage in background) */}
+      {/* Background Movie Posters Collage Grid */}
+      <CinematicAuthBackground />
+
+      {/* Dark Backdrop Overlay */}
       <div
         onClick={closeModal}
-        className="fixed inset-0 bg-black/80 backdrop-blur-md cursor-pointer z-0"
+        className="fixed inset-0 bg-black/75 backdrop-blur-[4px] cursor-pointer z-0"
       />
 
       {/* Main 2-Column Modal Card (Solid, Non-Glass, Clean) */}
