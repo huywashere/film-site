@@ -1117,26 +1117,42 @@ export default function HeroBanner({ films }: HeroBannerProps) {
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  // Enrich initial featured films with TMDB backdrops & title logos smoothly in the background
+  // Client-side session restoration & 100-film randomization:
+  // Randomize from 100 curated movies on fresh session visit, but preserve exact playlist on in-session reloads / page switches!
   useEffect(() => {
-    let active = true;
+    if (films && films.length > 0) return;
 
-    enrichHeroTitleLogos(featured).then((withLogos) => {
+    let initialPlaylist: HeroFilm[];
+    const stored = readStoredHeroPlaylist();
+
+    if (stored && stored.length > 0) {
+      initialPlaylist = stored;
+      setFeatured(stored);
+      const savedIndex = readStoredHeroIndex(stored.length);
+      setCurrent(savedIndex);
+    } else {
+      initialPlaylist = getRandomCuratedHeroSet(6) as HeroFilm[];
+      setFeatured(initialPlaylist);
+      storeHeroPlaylist(initialPlaylist);
+    }
+
+    let active = true;
+    enrichHeroTitleLogos(initialPlaylist).then((withLogos) => {
       if (!active) return;
-      setFeatured((prev) =>
-        prev.map((film, idx) => ({
-          ...film,
-          titleLogo: withLogos[idx]?.titleLogo || film.titleLogo,
-          heroBackdrop: withLogos[idx]?.heroBackdrop || film.heroBackdrop,
-          titleLogoResolved: true,
-        })),
-      );
+      const enriched = initialPlaylist.map((film, idx) => ({
+        ...film,
+        titleLogo: withLogos[idx]?.titleLogo || film.titleLogo,
+        heroBackdrop: withLogos[idx]?.heroBackdrop || film.heroBackdrop,
+        titleLogoResolved: true,
+      }));
+      setFeatured(enriched);
+      storeHeroPlaylist(enriched);
     });
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [films]);
 
   // Preload all title logos and backdrop images across all hero slides upfront
   useEffect(() => {
