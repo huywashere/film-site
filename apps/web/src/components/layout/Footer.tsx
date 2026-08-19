@@ -95,11 +95,11 @@ export function Footer() {
       ],
     },
     {
-      heading: t("footer.support", "Hỗ trợ"),
+      heading: t("footer.support", "Hỗ trợ & Bản quyền"),
       links: [
-        { label: t("watch.report", "Báo cáo nội dung"), href: "/report" },
-        { label: t("footer.privacy", "Quyền riêng tư"), href: "/privacy" },
-        { label: t("footer.terms", "Điều khoản"), href: "/terms" },
+        { label: t("footer.report", "Báo lỗi"), href: "/report" },
+        { label: t("footer.privacy", "Chính sách bảo mật"), href: "/privacy" },
+        { label: t("footer.terms", "Điều khoản sử dụng"), href: "/terms" },
         { label: t("footer.contact", "Liên hệ"), href: "/contact" },
       ],
     },

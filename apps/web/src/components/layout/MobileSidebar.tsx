@@ -19,6 +19,10 @@ import {
   Clapperboard,
   Globe,
   Languages,
+  HelpCircle,
+  Shield,
+  FileText,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
@@ -369,6 +373,46 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Support & Legal Group */}
+          <div>
+            <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-neutral-500">
+              {t("footer.support", "Hỗ trợ & Bản quyền")}
+            </p>
+            <div className="space-y-1">
+              {[
+                { title: "Báo lỗi", href: "/report", icon: HelpCircle },
+                { title: "Chính sách bảo mật", href: "/privacy", icon: Shield },
+                { title: "Điều khoản sử dụng", href: "/terms", icon: FileText },
+                { title: "Liên hệ", href: "/contact", icon: Mail },
+              ].map((item) => {
+                const isActive = pathname.startsWith(item.href);
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex min-h-11 items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all",
+                      isActive
+                        ? "bg-violet-600/20 border border-violet-500/30 text-violet-300 font-bold shadow-sm"
+                        : "text-neutral-300 hover:bg-white/5 hover:text-white",
+                    )}
+                    onClick={onClose}
+                  >
+                    <item.icon
+                      size={17}
+                      className={cn(
+                        isActive ? "text-violet-400" : "text-neutral-400",
+                      )}
+                      strokeWidth={2}
+                    />
+                    <span>{item.title}</span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </nav>
       </aside>
