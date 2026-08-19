@@ -16,6 +16,7 @@ import { FilmItem } from "@/components/film/FilmCard";
 import { TmdbArtwork } from "@/components/film/TmdbArtwork";
 import { cardFont } from "@/lib/fonts";
 import { useTranslation } from "@/store/langStore";
+import { deduplicateSectionRow } from "@/lib/recommendation-engine";
 
 interface HeroShowcaseSectionProps {
   title: string;
@@ -46,7 +47,7 @@ export function HeroShowcaseSection({
   const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
   const reduceMotion = useReducedMotion();
-  const shortlist = useMemo(() => films.slice(0, 16), [films]);
+  const shortlist = useMemo(() => deduplicateSectionRow(films).slice(0, 16), [films]);
   const activeFilm = shortlist[activeIndex % Math.max(shortlist.length, 1)];
 
   useEffect(() => {

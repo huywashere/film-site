@@ -16,6 +16,7 @@ import { FilmItem } from "@/components/film/FilmCard";
 import { TmdbArtwork } from "@/components/film/TmdbArtwork";
 import { cardFont } from "@/lib/fonts";
 import { useTranslation } from "@/store/langStore";
+import { deduplicateSectionRow } from "@/lib/recommendation-engine";
 
 interface CuratedSpotlightSectionProps {
   title: string;
@@ -51,7 +52,7 @@ export function CuratedSpotlightSection({
   const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
   const reduceMotion = useReducedMotion();
-  const spotlightList = useMemo(() => films.slice(0, 7), [films]);
+  const spotlightList = useMemo(() => deduplicateSectionRow(films).slice(0, 7), [films]);
   const activeFilm =
     spotlightList[activeIndex % Math.max(spotlightList.length, 1)];
 

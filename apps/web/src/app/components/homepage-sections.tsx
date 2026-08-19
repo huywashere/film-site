@@ -22,16 +22,10 @@ const TopicBanners = dynamic(() => import("./TopicBanners"), {
   ssr: false,
 });
 
+import { deduplicateSectionRow } from "@/lib/recommendation-engine";
+
 // Deduplication helper
-const deduplicate = (films: FilmItem[]) => {
-  const seen = new Set();
-  return (films || []).filter((film) => {
-    if (!film || !film.slug) return false;
-    const isDuplicate = seen.has(film.slug);
-    seen.add(film.slug);
-    return !isDuplicate;
-  });
-};
+const deduplicate = (films: FilmItem[]) => deduplicateSectionRow(films);
 
 // ── Hero Banner Wrapper với Hollywood US/UK Blockbusters & Randomization ──
 export function HeroBannerWrapper() {

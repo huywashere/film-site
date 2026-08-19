@@ -1,36 +1,79 @@
 import { movieApi } from "@/lib/api";
 import { FilmItem } from "@/components/film/FilmCard";
 
-// Clean title helper to deduplicate franchise titles (e.g. "Jack Ryan (Phần 1)" -> "jack ryan")
-export const getFranchiseBaseName = (name: string): string => {
-  if (!name) return "";
-  return name
-    .toLowerCase()
-    .replace(/\s*\([^)]*\)/g, "")
-    .replace(/\s*season\s*\d+/gi, "")
-    .replace(/\s*phần\s*\d+/gi, "")
-    .replace(/\s*tập\s*\d+/gi, "")
-    .replace(/\s*part\s*\d+/gi, "")
-    .trim();
+// Clean title helper to deduplicate franchise titles (e.g. "Jack Ryan (Phần 1)" -> "jack ryan", "Cuộc Chiến Sinh Tử II" -> "cuoc chien sinh tu")
+export const getFranchiseKeys = (film: {
+  name?: string;
+  title?: string;
+  origin_name?: string;
+  slug?: string;
+}): string[] => {
+  const keys: string[] = [];
+
+  const cleanText = (text?: string) => {
+    if (!text) return "";
+    return text
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "d")
+      .replace(/\s*\([^)]*\)/g, " ") // remove (Phần 1), (Season 2), (2024), etc.
+      .replace(/[-:]\s*(phan|season|part|tap|ss|mua)\s*\d+/gi, " ")
+      .replace(/\s+(phan|season|part|tap|ss|mua)\s*\d+/gi, " ")
+      .replace(/\s+(i{1,3}|iv|v|vi{1,3}|ix|x)$/gi, " ") // Roman numerals at end
+      .replace(/\s+\d+$/g, " ") // Trailing numbers like "Deadpool 2" -> "deadpool"
+      .replace(/[^\w\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+
+  const cleanSlug = (s?: string) => {
+    if (!s) return "";
+    return s
+      .toLowerCase()
+      .replace(/-phan-\d+/gi, "")
+      .replace(/-season-\d+/gi, "")
+      .replace(/-part-\d+/gi, "")
+      .replace(/-ss\d+/gi, "")
+      .replace(/-tap-\d+/gi, "")
+      .replace(/-mua-\d+/gi, "")
+      .replace(/-(i{1,3}|iv|v|vi{1,3}|ix|x)$/gi, "")
+      .replace(/-\d+$/g, "")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
+      .trim();
+  };
+
+  const nameKey = cleanText(film.name || film.title);
+  const originKey = cleanText(film.origin_name);
+  const slugKey = cleanSlug(film.slug);
+
+  if (nameKey && nameKey.length >= 3) keys.push(`name:${nameKey}`);
+  if (originKey && originKey.length >= 3) keys.push(`origin:${originKey}`);
+  if (slugKey && slugKey.length >= 3) keys.push(`slug:${slugKey}`);
+
+  return keys;
 };
 
 // Deduplicate films in a single row by slug and limit 1 season per franchise
 export const deduplicateSectionRow = (films: FilmItem[]): FilmItem[] => {
   const seenSlugs = new Set<string>();
-  const seenFranchises = new Set<string>();
+  const seenFranchiseKeys = new Set<string>();
 
   return (films || []).filter((film) => {
-    if (!film || !film.slug || !film.name) return false;
+    if (!film || !film.slug || (!film.name && !film.title)) return false;
     const cleanSlug = film.slug.toLowerCase();
     if (seenSlugs.has(cleanSlug)) return false;
 
-    const baseName = getFranchiseBaseName(film.name);
-    if (baseName.length > 3 && seenFranchises.has(baseName)) {
-      return false; // Exclude multiple seasons of the same show in the same section
+    const keys = getFranchiseKeys(film);
+    const hasDuplicateFranchise = keys.some((k) => seenFranchiseKeys.has(k));
+    if (hasDuplicateFranchise) {
+      return false; // Exclude multiple seasons/parts of the same show in the same section
     }
 
     seenSlugs.add(cleanSlug);
-    if (baseName.length > 3) seenFranchises.add(baseName);
+    keys.forEach((k) => seenFranchiseKeys.add(k));
     return true;
   });
 };
@@ -45,8 +88,8 @@ export const excludePreviousSectionSlugs = (
     const cleanSlug = f.slug.toLowerCase();
     if (usedSlugs.has(cleanSlug)) return false;
 
-    const baseName = getFranchiseBaseName(f.name);
-    if (baseName.length > 3 && usedSlugs.has(`franchise:${baseName}`)) {
+    const keys = getFranchiseKeys(f);
+    if (keys.some((k) => usedSlugs.has(`franchise:${k}`))) {
       return false;
     }
     return true;

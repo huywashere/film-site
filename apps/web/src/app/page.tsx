@@ -23,13 +23,75 @@ import { cardFont } from "@/lib/fonts";
 import "swiper/css";
 import "swiper/css/navigation";
 
-// Helper: loại bỏ phim trùng lặp theo ID/slug
+// Helper: Làm sạch và trích xuất các khóa nhận diện thương hiệu/franchise (tránh đề xuất Phần 1, Phần 2, Phần 3 cùng lúc)
+function getFranchiseTokens(film: FilmItem): string[] {
+  const tokens: string[] = [];
+
+  const clean = (text?: string) => {
+    if (!text) return "";
+    return text
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "d")
+      .replace(/\s*\([^)]*\)/g, " ") // Bỏ ngoặc (Phần 1), (Season 2), (2024), etc.
+      .replace(/[-:]\s*(phan|season|part|tap|ss|mua)\s*\d+/gi, " ")
+      .replace(/\s+(phan|season|part|tap|ss|mua)\s*\d+/gi, " ")
+      .replace(/\s+(i{1,3}|iv|v|vi{1,3}|ix|x)$/gi, " ") // Số La Mã ở cuối
+      .replace(/\s+\d+$/g, " ") // Số ở cuối như "Mortal Kombat 2" -> "mortal kombat"
+      .replace(/[^\w\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+
+  const cleanSlug = (s?: string) => {
+    if (!s) return "";
+    return s
+      .toLowerCase()
+      .replace(/-phan-\d+/gi, "")
+      .replace(/-season-\d+/gi, "")
+      .replace(/-part-\d+/gi, "")
+      .replace(/-ss\d+/gi, "")
+      .replace(/-tap-\d+/gi, "")
+      .replace(/-mua-\d+/gi, "")
+      .replace(/-(i{1,3}|iv|v|vi{1,3}|ix|x)$/gi, "")
+      .replace(/-\d+$/g, "")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
+      .trim();
+  };
+
+  const nameToken = clean(film.name || film.title);
+  const originToken = clean(film.origin_name);
+  const slugToken = cleanSlug(film.slug);
+
+  if (nameToken && nameToken.length >= 3) tokens.push(`name:${nameToken}`);
+  if (originToken && originToken.length >= 3) tokens.push(`origin:${originToken}`);
+  if (slugToken && slugToken.length >= 3) tokens.push(`slug:${slugToken}`);
+
+  return tokens;
+}
+
+// Helper: Loại bỏ phim trùng lặp theo ID/slug VÀ chỉ giữ 1 phần đại diện duy nhất cho mỗi phim/series
 function deduplicate(films: FilmItem[]): FilmItem[] {
-  const seen = new Set<string>();
-  return films.filter((f) => {
-    const key = f._id || f.slug || f.name;
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
+  const seenIds = new Set<string>();
+  const seenFranchiseTokens = new Set<string>();
+
+  return (films || []).filter((film) => {
+    if (!film) return false;
+    const exactKey = film._id || film.slug;
+    if (exactKey && seenIds.has(exactKey.toLowerCase())) return false;
+
+    const tokens = getFranchiseTokens(film);
+    // Nếu phim này cùng tên franchise/series với phim đã có trong danh sách -> Bỏ qua phần trùng
+    const hasDuplicateFranchise = tokens.some((token) =>
+      seenFranchiseTokens.has(token),
+    );
+    if (hasDuplicateFranchise) return false;
+
+    if (exactKey) seenIds.add(exactKey.toLowerCase());
+    tokens.forEach((token) => seenFranchiseTokens.add(token));
     return true;
   });
 }

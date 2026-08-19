@@ -18,6 +18,7 @@ import {
   rankFilmsByUserTaste,
   buildUserTasteVector,
 } from "@/lib/user-taste-algorithm";
+import { deduplicateSectionRow } from "@/lib/recommendation-engine";
 
 export function SmartRecommendationSection() {
   const user = useAuthStore((s) => s.user);
@@ -57,7 +58,7 @@ export function SmartRecommendationSection() {
 
   // 2. Rank candidate films using our personalized user taste scoring algorithm
   const rankedFilms = useMemo(() => {
-    return rankFilmsByUserTaste(rawFilms, userVector, false);
+    return deduplicateSectionRow(rankFilmsByUserTaste(rawFilms, userVector, false));
   }, [rawFilms, userVector]);
 
   const handleRefresh = () => {
