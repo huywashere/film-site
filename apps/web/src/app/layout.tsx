@@ -6,23 +6,41 @@ import {
   Manrope,
   Roboto_Condensed,
 } from "next/font/google";
+import dynamic from "next/dynamic";
 import { ConditionalNavbar } from "@/components/layout/ConditionalNavbar";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { ToastProvider } from "@/providers/ToastProvider";
-import { RegisterSW } from "@/components/layout/RegisterSW";
 import { ThemeWatcher } from "@/components/layout/ThemeWatcher";
 import { ThemeColorSync } from "@/components/layout/ThemeColorSync";
 import { ScrollProvider } from "@/providers/ScrollProvider";
-import { OfflineDetector } from "@/components/layout/OfflineDetector";
-import { ClientTelemetry } from "@/components/layout/ClientTelemetry";
 import { AuthSessionBridge } from "@/components/auth/AuthSessionBridge";
 import { LazyAuthModalHost } from "@/components/auth/LazyAuthModalHost";
-import { AntiDevTools } from "@/components/security/AntiDevTools";
 import { safeJsonLd } from "@/lib/safe-json-ld";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
-import { ScrollToTopButton } from "@/components/layout/ScrollToTop";
+
+// Defer non-critical background services to reduce initial JS execution
+const RegisterSW = dynamic(
+  () => import("@/components/layout/RegisterSW").then((mod) => mod.RegisterSW),
+  { ssr: false },
+);
+const OfflineDetector = dynamic(
+  () => import("@/components/layout/OfflineDetector").then((mod) => mod.OfflineDetector),
+  { ssr: false },
+);
+const ClientTelemetry = dynamic(
+  () => import("@/components/layout/ClientTelemetry").then((mod) => mod.ClientTelemetry),
+  { ssr: false },
+);
+const AntiDevTools = dynamic(
+  () => import("@/components/security/AntiDevTools").then((mod) => mod.AntiDevTools),
+  { ssr: false },
+);
+const ScrollToTopButton = dynamic(
+  () => import("@/components/layout/ScrollToTop").then((mod) => mod.ScrollToTopButton),
+  { ssr: false },
+);
 
 export const viewport: Viewport = {
   themeColor: "#141414",
@@ -91,8 +109,8 @@ export const metadata: Metadata = {
 
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ["vietnamese", "latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  style: ["normal", "italic"],
+  weight: ["400", "600", "700", "800"],
+  style: ["normal"],
   display: "swap",
   variable: "--font-be-vietnam",
   preload: true,
@@ -108,7 +126,7 @@ const manrope = Manrope({
 
 const robotoCondensed = Roboto_Condensed({
   subsets: ["latin", "vietnamese"],
-  weight: ["400", "500", "600", "700", "800", "900"],
+  weight: ["600", "700", "800", "900"],
   display: "swap",
   variable: "--font-cinema",
   preload: true,

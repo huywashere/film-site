@@ -682,9 +682,13 @@ export default function HomePage() {
   const { data: trendingData } = useQuery({
     queryKey: ["weekly-trending-movies"],
     queryFn: () =>
-      api.get<FilmItem[]>("/movies/trending?limit=30").then((r) => r.data),
+      api
+        .get<FilmItem[]>("/movies/trending?limit=30")
+        .then((r) => r.data)
+        .catch(() => []),
     staleTime: 1000 * 60 * 10,
-    retry: 1,
+    retry: false,
+    enabled: catalogReady,
   });
 
   // ── Process arrays with STRICT Live-Action filtering for Hollywood rows ──

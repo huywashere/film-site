@@ -786,7 +786,9 @@ function HeroBackdropImage({
         onError={tryNextCandidate}
         className={cn(
           "h-full w-full object-cover object-center brightness-[0.72] transition-opacity duration-500",
-          loadedSrc === src && revealed ? "opacity-100" : "opacity-0",
+          isActive || (loadedSrc === src && revealed)
+            ? "opacity-100"
+            : "opacity-0",
         )}
       />
     </>
