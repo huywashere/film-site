@@ -350,23 +350,20 @@ export function AuthModal() {
         className="fixed inset-0 bg-black/80 backdrop-blur-md cursor-pointer z-0"
       />
 
-      {/* Main 2-Column Modal Card */}
-      <div className="relative w-full max-w-4xl max-h-[94vh] overflow-y-auto sm:overflow-hidden bg-[#10141a]/98 backdrop-blur-3xl border border-white/[0.12] rounded-2xl sm:rounded-3xl shadow-[0_0_100px_rgba(0,0,0,0.98),0_0_40px_rgba(229,9,20,0.12)] z-10 my-auto flex flex-col md:flex-row [scrollbar-width:none] [&::-webkit-scrollbar]:hidden font-primary">
+      {/* Main 2-Column Modal Card (Solid, Non-Glass, Clean) */}
+      <div className="relative w-full max-w-4xl max-h-[94vh] overflow-y-auto sm:overflow-hidden bg-[#151923] border border-neutral-800 rounded-2xl sm:rounded-3xl shadow-[0_30px_90px_rgba(0,0,0,0.95)] z-10 my-auto flex flex-col md:flex-row [scrollbar-width:none] [&::-webkit-scrollbar]:hidden font-primary">
         
-        {/* Subtle top red glow accent */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 h-px w-2/3 bg-gradient-to-r from-transparent via-red-500/50 to-transparent z-30" />
-
         {/* Close Button */}
         <button
           onClick={closeModal}
-          className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-white/[0.07] hover:bg-white/[0.15] text-neutral-400 hover:text-white flex items-center justify-center transition-all cursor-pointer z-30 border border-white/10"
+          className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white flex items-center justify-center transition-all cursor-pointer z-30 border border-neutral-700"
           aria-label="Đóng"
         >
           <X size={16} />
         </button>
 
         {/* ── Left Column: Random Marvel / DC Blockbuster Artwork ── */}
-        <div className="relative hidden md:flex md:w-[44%] flex-col justify-between overflow-hidden bg-neutral-950 p-6 min-h-[560px]">
+        <div className="relative hidden md:flex md:w-[44%] flex-col justify-between overflow-hidden bg-black p-6 min-h-[560px] border-r border-neutral-800">
           {/* Poster Image */}
           <div className="absolute inset-0 z-0">
             <img
@@ -692,7 +689,7 @@ export function AuthModal() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold tracking-wide transition-all shadow-lg shadow-red-600/20 active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-1"
+                      className="w-full py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold tracking-wide transition-all shadow-lg shadow-red-600/25 active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
                     >
                       {loading ? (
                         <>
@@ -719,11 +716,11 @@ export function AuthModal() {
 
           {/* Divider */}
           <div className="relative flex items-center justify-center my-4">
-            <div className="flex-grow border-t border-white/[0.08]" />
-            <span className="px-3 text-[11px] font-medium text-neutral-500">
+            <div className="flex-grow border-t border-neutral-800" />
+            <span className="px-3 text-[11px] font-medium text-neutral-500 uppercase tracking-wider">
               hoặc đăng nhập bằng
             </span>
-            <div className="flex-grow border-t border-white/[0.08]" />
+            <div className="flex-grow border-t border-neutral-800" />
           </div>
 
           {/* Social Buttons */}
@@ -732,7 +729,7 @@ export function AuthModal() {
               type="button"
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.04] py-2.5 px-3 transition-all hover:bg-white/[0.09] hover:border-white/20 cursor-pointer text-xs font-semibold text-neutral-200 disabled:opacity-50 active:scale-[0.98]"
+              className="flex items-center justify-center gap-2 rounded-xl border border-neutral-700 bg-[#1b202a] py-2.5 px-3 transition-all hover:bg-[#202632] hover:border-neutral-600 cursor-pointer text-xs font-semibold text-neutral-200 disabled:opacity-50 active:scale-[0.98]"
             >
               <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -747,7 +744,7 @@ export function AuthModal() {
               type="button"
               onClick={handleFacebookLogin}
               disabled={loading}
-              className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.04] py-2.5 px-3 transition-all hover:bg-white/[0.09] hover:border-white/20 cursor-pointer text-xs font-semibold text-neutral-200 disabled:opacity-50 active:scale-[0.98]"
+              className="flex items-center justify-center gap-2 rounded-xl border border-neutral-700 bg-[#1b202a] py-2.5 px-3 transition-all hover:bg-[#202632] hover:border-neutral-600 cursor-pointer text-xs font-semibold text-neutral-200 disabled:opacity-50 active:scale-[0.98]"
             >
               <svg className="w-4 h-4 fill-[#1877F2] shrink-0" viewBox="0 0 24 24">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />

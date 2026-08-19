@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
+import { useAuthModalStore } from "@/store/authModalStore";
 import { useTranslation } from "@/store/langStore";
 import { GENRES_LIST, COUNTRIES_LIST, CountryFlagImage } from "./Navbar";
 import { cardFont } from "@/lib/fonts";
@@ -159,14 +160,17 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           </div>
         ) : (
           <div className="p-4 border-b border-white/10 bg-white/[0.02]">
-            <Link
-              href="/login"
-              onClick={onClose}
-              className="flex items-center justify-center space-x-2 w-full py-2.5 px-4 rounded-xl bg-white text-black font-extrabold text-xs shadow-md active:scale-95 transition-all"
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                useAuthModalStore.getState().openModal("login");
+              }}
+              className="flex items-center justify-center space-x-2 w-full py-2.5 px-4 rounded-xl bg-white text-black font-extrabold text-xs shadow-md active:scale-95 transition-all cursor-pointer"
             >
               <User size={15} />
               <span>{t("nav.login")} / {t("nav.register")}</span>
-            </Link>
+            </button>
           </div>
         )}
 

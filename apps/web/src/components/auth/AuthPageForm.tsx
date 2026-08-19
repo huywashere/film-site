@@ -510,9 +510,9 @@ export function AuthPageForm({
     }
   };
 
-  // Compact input rhythm keeps login usable without vertical scrolling.
+  // Crisp solid input styling without blurry glass
   const inputCls =
-    "w-full rounded-xl border border-white/10 bg-[#18191e] px-3.5 py-3 text-[13px] text-white outline-none transition-[border-color,background-color,box-shadow] placeholder:text-neutral-600 hover:bg-[#1b1c22] focus:border-red-400/60 focus:bg-[#1b1c22] focus:ring-2 focus:ring-red-500/10";
+    "w-full rounded-xl border border-neutral-700/70 bg-[#1b202a] px-3.5 py-3 text-[13px] text-white outline-none transition-[border-color,background-color,box-shadow] placeholder:text-neutral-500 hover:bg-[#202632] hover:border-neutral-600 focus:border-red-500/80 focus:bg-[#202632] focus:ring-2 focus:ring-red-500/15";
 
   if (currentUser) {
     return (
@@ -527,132 +527,136 @@ export function AuthPageForm({
   }
 
   return (
-    // Outer wrapper — full viewport, cinematic bg
+    // Outer wrapper — clean solid dark viewport
     <div
       className={cn(
         cardFont.className,
-        "relative flex min-h-[100dvh] w-full flex-col overflow-x-hidden bg-[#090a0d]",
+        "relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-x-hidden bg-[#0a0c10] p-4 sm:p-6",
       )}
     >
-      <CinematicAuthBackground />
-
       {/* ── Main content: centered (full screen) ──────────────────────── */}
-      <div className="relative z-10 flex flex-1 items-center justify-center px-4 py-5 sm:px-6">
-        <div className="w-full max-w-[1020px]">
-          {/* Glassmorphic Auth Card */}
-          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#121316]/95 shadow-[0_24px_80px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
-            <div className="grid md:grid-cols-[0.9fr_1.1fr]">
-              {/* ── LEFT panel ─────────────────────────────────── */}
-              <div className="relative hidden min-h-[620px] flex-col justify-between overflow-hidden border-r border-white/[0.08] p-8 md:flex lg:p-10">
-                {/* TMDB artwork with a local fallback for reliable loading. */}
-                <AnimatePresence initial={false}>
-                  <motion.div
-                    key={randomMovie.backdropUrl}
-                    className="absolute inset-0 scale-[1.03]"
-                    initial={{ opacity: 0, scale: 1.055 }}
-                    animate={{ opacity: 1, scale: 1.03 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.7, ease: "easeOut" }}
-                  >
-                    <AuthBackdropImage movie={randomMovie} />
-                  </motion.div>
-                </AnimatePresence>
-                {/* Gradient overlay: dark at bottom for text, subtle at top */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/70 to-[#141414]/30" />
-                {/* Right-edge fade to blend into form panel */}
-                <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-r from-transparent to-[#141414]/90" />
+      <div className="relative z-10 w-full max-w-[1000px] my-auto">
+        {/* Solid Dark Auth Card (Non-glass, clean, modern) */}
+        <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-[#151923] shadow-[0_30px_90px_rgba(0,0,0,0.9)]">
+          <div className="grid md:grid-cols-[1fr_1.1fr]">
+            {/* ── LEFT panel: Marvel / DC / Hollywood Blockbuster Artwork ── */}
+            <div className="relative hidden min-h-[620px] flex-col justify-between overflow-hidden border-r border-neutral-800 p-8 md:flex lg:p-10 bg-black">
+              {/* Poster Image */}
+              <AnimatePresence initial={false}>
+                <motion.div
+                  key={randomMovie.backdropUrl}
+                  className="absolute inset-0 scale-[1.03]"
+                  initial={{ opacity: 0, scale: 1.055 }}
+                  animate={{ opacity: 1, scale: 1.03 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.7, ease: "easeOut" }}
+                >
+                  <AuthBackdropImage movie={randomMovie} />
+                </motion.div>
+              </AnimatePresence>
+              
+              {/* Solid Gradient overlays */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#151923] via-[#151923]/40 to-black/50" />
+              <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-r from-transparent to-[#151923]" />
 
-                {/* Logo only — positioned neatly in top-left corner */}
-                <div className="relative z-10">
-                  <Link
-                    href="/"
-                    className="inline-block transition-transform duration-200 hover:scale-105"
-                  >
-                    <Image
-                      src="/cinephim-logo.png"
-                      alt="NetPhim Logo"
-                      width={160}
-                      height={50}
-                      priority
-                      className="h-10 sm:h-12 w-auto object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = "/logo.png";
-                      }}
-                    />
-                  </Link>
-                </div>
+              {/* Logo top-left */}
+              <div className="relative z-10">
+                <Link href="/" className="inline-flex items-center gap-2">
+                  <span className="text-2xl font-black tracking-tight text-white flex items-center font-[family-name:var(--font-manrope)]">
+                    Net<span className="text-red-500 drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]">Phim</span>
+                  </span>
+                </Link>
               </div>
 
-              {/* ── RIGHT panel (form) ─────────────────────────── */}
-              <div className="flex min-h-[620px] flex-col overflow-y-auto p-6 [scrollbar-width:none] sm:p-8 md:p-9 [&::-webkit-scrollbar]:hidden">
-                <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center">
-                  {/* Back to home button */}
-                  <Link
-                    href="/"
-                    className="group mb-4 inline-flex items-center gap-1.5 self-start text-[11px] text-neutral-500 transition-colors hover:text-white"
+              {/* Bottom Spotlight Movie Card */}
+              <div className="relative z-10">
+                <div className="rounded-2xl border border-white/15 bg-black/75 p-4 shadow-2xl">
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-red-400 flex items-center gap-1">
+                      <Clapperboard size={12} />
+                      {randomMovie.studio || "Hollywood Blockbuster"}
+                    </span>
+                    <span className="text-[11px] font-bold text-amber-400 flex items-center gap-0.5">
+                      ★ 8.8
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-extrabold text-white leading-snug line-clamp-1 font-[family-name:var(--font-manrope)]">
+                    {randomMovie.title}
+                  </h4>
+                  <p className="mt-1 text-[11px] font-medium text-neutral-300">
+                    Xem phim 4K không giới hạn, đồng bộ đa thiết bị.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* ── RIGHT panel (form) ─────────────────────────── */}
+            <div className="flex min-h-[620px] flex-col overflow-y-auto p-6 sm:p-8 md:p-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden bg-[#151923]">
+              <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center">
+                {/* Back to home button */}
+                <Link
+                  href="/"
+                  className="group mb-5 inline-flex items-center gap-1.5 self-start text-xs font-semibold text-neutral-400 transition-colors hover:text-white"
+                >
+                  <ArrowLeft
+                    size={14}
+                    className="group-hover:-translate-x-0.5 transition-transform"
+                  />
+                  <span>Trang chủ</span>
+                </Link>
+
+                {/* Mode title */}
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.h1
+                    key={isForgotMode ? "forgot-title" : mode}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="mb-1 text-2xl font-extrabold tracking-tight text-white font-[family-name:var(--font-manrope)]"
                   >
-                    <ArrowLeft
-                      size={12}
-                      className="group-hover:-translate-x-0.5 transition-transform"
-                    />
-                    <span>Trang chủ</span>
-                  </Link>
-
-                  {/* Section label */}
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
-                    Tài khoản Netphim
-                  </p>
-
-                  {/* Mode title */}
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.h1
-                      key={isForgotMode ? "forgot-title" : mode}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="mb-1 text-[22px] font-bold tracking-[-0.025em] text-white"
-                    >
-                      {isForgotMode
-                        ? "Quên mật khẩu"
-                        : mode === "login"
-                          ? "Đăng nhập"
-                          : "Tạo tài khoản"}
-                    </motion.h1>
-                  </AnimatePresence>
-                  <p className="mb-5 text-[12px] leading-5 text-neutral-500">
                     {isForgotMode
-                      ? "Nhập email để nhận liên kết khôi phục mật khẩu."
+                      ? "Quên mật khẩu"
                       : mode === "login"
-                        ? "Đăng nhập và tiếp tục xem trên mọi thiết bị."
-                        : "Tạo tài khoản và bắt đầu xem phim miễn phí."}
-                  </p>
+                        ? "Chào mừng trở lại"
+                        : "Tạo tài khoản"}
+                  </motion.h1>
+                </AnimatePresence>
+                <p className="mb-6 text-xs leading-relaxed text-neutral-400">
+                  {isForgotMode
+                    ? "Nhập email để nhận liên kết khôi phục mật khẩu."
+                    : mode === "login"
+                      ? "Đăng nhập và tiếp tục xem trên mọi thiết bị."
+                      : "Tạo tài khoản và bắt đầu xem phim miễn phí."}
+                </p>
 
-                  {/* Mode tabs (only when not forgot) */}
-                  {!isForgotMode && (
-                    <div className="mb-5 flex gap-1 rounded-xl bg-[#0c0d10] p-1">
-                      {(["login", "register"] as const).map((m) => (
-                        <button
-                          key={m}
-                          type="button"
-                          onClick={() => switchMode(m)}
-                          className={cn(
-                            "relative flex flex-1 select-none items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all",
-                            mode === m
-                              ? "bg-white/10 text-white shadow-sm"
-                              : "text-neutral-500 hover:text-neutral-300",
-                          )}
-                        >
-                          {m === "login" ? (
-                            <LogIn size={13} />
-                          ) : (
-                            <UserPlus size={13} />
-                          )}
+                {/* Mode tabs (only when not forgot) */}
+                {!isForgotMode && (
+                  <div className="mb-6 flex gap-1 rounded-xl bg-[#0d1017] p-1 border border-neutral-800">
+                    {(["login", "register"] as const).map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => switchMode(m)}
+                        className={cn(
+                          "relative flex flex-1 select-none items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-bold transition-all cursor-pointer",
+                          mode === m
+                            ? "bg-red-600 text-white shadow-md shadow-red-600/30"
+                            : "text-neutral-400 hover:text-neutral-200",
+                        )}
+                      >
+                        {m === "login" ? (
+                          <LogIn size={14} />
+                        ) : (
+                          <UserPlus size={14} />
+                        )}
+                        <span>
                           {m === "login" ? "Đăng nhập" : "Tạo tài khoản"}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                   {/* ── Form body ─────────────────────────────────── */}
                   <AnimatePresence mode="wait" initial={false}>
@@ -983,7 +987,7 @@ export function AuthPageForm({
                           type="button"
                           onClick={handleGoogleLogin}
                           disabled={googleLoading}
-                          className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-[#18191e] px-3 py-2.5 text-xs font-medium text-neutral-300 transition-colors hover:bg-[#1e2026] disabled:opacity-60"
+                          className="flex items-center justify-center gap-2 rounded-xl border border-neutral-700 bg-[#1b202a] px-3 py-2.5 text-xs font-semibold text-neutral-200 transition-colors hover:bg-[#202632] hover:border-neutral-600 disabled:opacity-60 cursor-pointer active:scale-[0.98]"
                         >
                           <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                             <path
@@ -1010,7 +1014,7 @@ export function AuthPageForm({
                           type="button"
                           onClick={handleFacebookLogin}
                           disabled={facebookLoading}
-                          className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-[#18191e] px-3 py-2.5 text-xs font-medium text-neutral-300 transition-colors hover:bg-[#1e2026] disabled:opacity-60"
+                          className="flex items-center justify-center gap-2 rounded-xl border border-neutral-700 bg-[#1b202a] px-3 py-2.5 text-xs font-semibold text-neutral-200 transition-colors hover:bg-[#202632] hover:border-neutral-600 disabled:opacity-60 cursor-pointer active:scale-[0.98]"
                         >
                           <svg
                             className="w-4 h-4 fill-[#1877F2] shrink-0"
