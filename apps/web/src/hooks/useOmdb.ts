@@ -21,7 +21,44 @@ export interface OmdbData {
   type: string | null;
 }
 
-async function fetchOmdbData(film: any): Promise<OmdbData | null> {
+// In-memory instant client cache for 0ms tab switching
+const omdbMemoryCache = new Map<string, OmdbData>();
+
+function getCacheKey(imdbId: string | null | undefined, title: string, year?: string | number): string {
+  if (imdbId) return `imdb:${imdbId}`;
+  return `title:${title.toLowerCase().trim()}:${year || ""}`;
+}
+
+function readClientCachedOmdb(key: string): OmdbData | null {
+  if (omdbMemoryCache.has(key)) {
+    return omdbMemoryCache.get(key)!;
+  }
+  if (typeof window !== "undefined") {
+    try {
+      const stored = sessionStorage.getItem(`omdb_cache_${key}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        omdbMemoryCache.set(key, parsed);
+        return parsed;
+      }
+    } catch {}
+  }
+  return null;
+}
+
+function writeClientCachedOmdb(key: string, data: OmdbData) {
+  omdbMemoryCache.set(key, data);
+  if (typeof window !== "undefined") {
+    try {
+      sessionStorage.setItem(`omdb_cache_${key}`, JSON.stringify(data));
+    } catch {}
+  }
+}
+
+async function fetchOmdbData(film: any, cacheKey: string): Promise<OmdbData | null> {
+  const cached = readClientCachedOmdb(cacheKey);
+  if (cached) return cached;
+
   const { imdbId } = extractTmdbInfo(film);
   const title = film?.origin_name || film?.name || film?.title || "";
   const year = film?.year ? String(film.year) : undefined;
@@ -38,23 +75,34 @@ async function fetchOmdbData(film: any): Promise<OmdbData | null> {
     return null;
   }
 
-  const res = await fetch(`/api/omdb?${params.toString()}`);
-  if (!res.ok) return null;
-  const json = await res.json();
-  return json;
+  try {
+    const res = await fetch(`/api/omdb?${params.toString()}`);
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (json) {
+      writeClientCachedOmdb(cacheKey, json);
+    }
+    return json;
+  } catch {
+    return null;
+  }
 }
 
 /**
- * Hook để fetch dữ liệu OMDB cho một bộ phim.
+ * Hook để fetch dữ liệu OMDB cho một bộ phim với bộ nhớ đệm tức thì.
  * Sẽ tìm bằng IMDb ID (nếu có) hoặc tiêu đề gốc + năm.
  */
 export function useOmdb(film: any, enabled = true) {
   const { imdbId } = extractTmdbInfo(film ?? {});
   const title = film?.origin_name || film?.name || film?.title || "";
+  const cacheKey = getCacheKey(imdbId, title, film?.year);
+
+  const initialCached = readClientCachedOmdb(cacheKey);
 
   const query = useQuery<OmdbData | null>({
-    queryKey: ["omdb", imdbId || title, film?.year],
-    queryFn: () => fetchOmdbData(film),
+    queryKey: ["omdb", cacheKey],
+    queryFn: () => fetchOmdbData(film, cacheKey),
+    initialData: initialCached || undefined,
     enabled: enabled && !!film && !!(imdbId || title),
     staleTime: 1000 * 60 * 60 * 24,    // 24h
     gcTime: 1000 * 60 * 60 * 24 * 7,   // 7 days
@@ -64,6 +112,6 @@ export function useOmdb(film: any, enabled = true) {
 
   return {
     ...query,
-    omdb: query.data ?? null,
+    omdb: query.data ?? initialCached ?? null,
   };
 }

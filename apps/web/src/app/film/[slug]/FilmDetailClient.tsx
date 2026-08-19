@@ -824,7 +824,7 @@ export default function FilmDetailPage() {
   });
 
   // OMDB data — ratings IMDb/RT/Metacritic + awards + box office
-  const { omdb } = useOmdb(film, !!film && secondaryReady);
+  const { omdb } = useOmdb(film, !!film);
 
   const providerPosterUrl = film
     ? resolveImageUrl(film.poster_url, film.thumb_url) ||

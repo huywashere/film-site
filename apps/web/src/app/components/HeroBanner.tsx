@@ -479,6 +479,8 @@ async function enrichHeroTitleLogos(playlist: HeroFilm[]): Promise<HeroFilm[]> {
   );
 }
 
+const preloadedHeroLogos = new Set<string>();
+
 function HeroMovieTitle({
   film,
   onReady,
@@ -505,15 +507,33 @@ function HeroMovieTitle({
   }, [film.titleLogo]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
-  const [logoLoaded, setLogoLoaded] = useState(false);
+  const currentLogoSrc = candidateLogos[candidateIdx];
+  const [logoLoaded, setLogoLoaded] = useState(() => {
+    return currentLogoSrc ? preloadedHeroLogos.has(currentLogoSrc) : false;
+  });
+  const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     setCandidateIdx(0);
-    setLogoLoaded(false);
-  }, [film.slug, film.titleLogo]);
+    const firstSrc = candidateLogos[0];
+    if (firstSrc && preloadedHeroLogos.has(firstSrc)) {
+      setLogoLoaded(true);
+      onReady();
+    } else {
+      setLogoLoaded(false);
+    }
+  }, [film.slug, film.titleLogo, candidateLogos, onReady]);
+
+  // Check if browser already has image in cache
+  useEffect(() => {
+    if (imgRef.current?.complete && imgRef.current.naturalWidth > 0 && currentLogoSrc) {
+      preloadedHeroLogos.add(currentLogoSrc);
+      setLogoLoaded(true);
+      onReady();
+    }
+  }, [currentLogoSrc, onReady]);
 
   const title = film.origin_name || film.name;
-  const currentLogoSrc = candidateLogos[candidateIdx];
   const hasLogoCandidate = Boolean(currentLogoSrc);
 
   useEffect(() => {
@@ -525,7 +545,7 @@ function HeroMovieTitle({
       {/* Cinematic Text Title - Only rendered visibly if NO logo exists */}
       <h1
         className={cn(
-          "max-w-2xl line-clamp-2 text-xl font-black uppercase leading-tight tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl transition-opacity duration-300",
+          "max-w-2xl line-clamp-2 text-xl font-black uppercase leading-tight tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl transition-opacity duration-150",
           hasLogoCandidate ? "sr-only" : "opacity-100",
         )}
         style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }}
@@ -536,13 +556,16 @@ function HeroMovieTitle({
       {hasLogoCandidate && (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
+          ref={imgRef}
           key={`${film.slug}-${candidateIdx}`}
           src={currentLogoSrc}
           alt={title}
           referrerPolicy="no-referrer"
           decoding="async"
           loading="eager"
+          fetchPriority="high"
           onLoad={() => {
+            if (currentLogoSrc) preloadedHeroLogos.add(currentLogoSrc);
             setLogoLoaded(true);
             onReady();
           }}
@@ -555,7 +578,7 @@ function HeroMovieTitle({
             }
           }}
           className={cn(
-            "max-h-16 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-opacity duration-300 sm:max-h-24 sm:max-w-[34rem] md:max-h-28",
+            "max-h-16 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-opacity duration-150 sm:max-h-24 sm:max-w-[34rem] md:max-h-28",
             logoLoaded ? "opacity-100" : "opacity-0",
           )}
         />
@@ -597,14 +620,16 @@ function HeroFanCardImage({
   }, [film.heroBackdrop, film.poster_url, film.thumb_url]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     setCandidateIdx(0);
+    setHasError(false);
   }, [film.slug, candidateUrls]);
 
   const src = candidateUrls[candidateIdx];
 
-  if (!src) {
+  if (!src || hasError) {
     return (
       <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-950 flex flex-col items-center justify-center p-3 text-center">
         <Film className="w-8 h-8 text-neutral-600 mb-1" />
@@ -627,6 +652,8 @@ function HeroFanCardImage({
       onError={() => {
         if (candidateIdx < candidateUrls.length - 1) {
           setCandidateIdx((i) => i + 1);
+        } else {
+          setHasError(true);
         }
       }}
       className={className}
@@ -667,17 +694,20 @@ function HeroThumbnailImage({
   }, [film.heroBackdrop, film.poster_url, film.thumb_url]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     setCandidateIdx(0);
+    setHasError(false);
   }, [film.slug, candidateUrls]);
 
   const src = candidateUrls[candidateIdx];
 
-  if (!src) {
+  if (!src || hasError) {
     return (
-      <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-950 flex items-center justify-center text-[9px] text-neutral-300 font-bold px-1 text-center truncate">
-        {film.name}
+      <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-950 flex flex-col items-center justify-center text-[9px] text-neutral-300 font-bold px-1 text-center truncate">
+        <Film className="w-4 h-4 text-neutral-500 mb-0.5" />
+        <span className="truncate max-w-full">{film.name}</span>
       </div>
     );
   }
@@ -694,6 +724,8 @@ function HeroThumbnailImage({
       onError={() => {
         if (candidateIdx < candidateUrls.length - 1) {
           setCandidateIdx((i) => i + 1);
+        } else {
+          setHasError(true);
         }
       }}
       className={className}
@@ -1105,6 +1137,32 @@ export default function HeroBanner({ films }: HeroBannerProps) {
       active = false;
     };
   }, []);
+
+  // Preload all title logos and backdrop images across all hero slides upfront
+  useEffect(() => {
+    if (typeof window === "undefined" || !featured.length) return;
+    featured.forEach((item) => {
+      if (item.titleLogo) {
+        const img = new window.Image();
+        img.src = item.titleLogo;
+        img.onload = () => {
+          preloadedHeroLogos.add(item.titleLogo!);
+        };
+      }
+      if (item.heroBackdrop) {
+        const img = new window.Image();
+        img.src = item.heroBackdrop;
+      }
+      if (item.thumb_url) {
+        const img = new window.Image();
+        img.src = item.thumb_url;
+      }
+      if (item.poster_url) {
+        const img = new window.Image();
+        img.src = item.poster_url;
+      }
+    });
+  }, [featured]);
 
   useEffect(() => {
     setCurrent((index) => (index >= featured.length ? 0 : index));
@@ -1703,6 +1761,15 @@ export default function HeroBanner({ films }: HeroBannerProps) {
           })}
         </div>
       </div>
+
+      {/* Official Trailer Modal */}
+      {trailerModalFilm && (
+        <TrailerModal
+          isOpen={Boolean(trailerModalFilm)}
+          film={trailerModalFilm}
+          onClose={() => setTrailerModalFilm(null)}
+        />
+      )}
     </section>
   );
 }
