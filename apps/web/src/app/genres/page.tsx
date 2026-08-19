@@ -138,6 +138,24 @@ const TOPICS: MovieTopic[] = [
     accent: "#f0abfc",
     discover: { with_genres: "10402", sort_by: "popularity.desc" },
   },
+  {
+    slug: "phim-han-quoc",
+    title: "Điện Ảnh Hàn Quốc",
+    description: "K-Drama lãng mạn, kịch tính và các siêu phẩm truyền hình xứ kim chi.",
+    href: "/country/han-quoc",
+    tone: "#2d1b28",
+    accent: "#f472b6",
+    discover: { with_origin_country: "KR", sort_by: "popularity.desc" },
+  },
+  {
+    slug: "phim-trung-quoc",
+    title: "Điện Ảnh Trung Quốc",
+    description: "Cổ trang tiên hiệp, ngôn tình lãng mạn và bom tấn kiếm hiệp đỉnh cao.",
+    href: "/country/trung-quoc",
+    tone: "#2f1b18",
+    accent: "#fb923c",
+    discover: { with_origin_country: "CN", sort_by: "popularity.desc" },
+  },
 ];
 
 function buildTopicArtwork(
@@ -220,71 +238,73 @@ export default function GenresTopicsPage() {
           </p>
         </header>
 
-        <section aria-labelledby="movie-topics-title">
-          <h2 id="movie-topics-title" className="sr-only">
-            Danh sách chủ đề phim
-          </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:gap-5">
-            {TOPICS.map((topic, index) => {
-              const image = topicArtwork[index];
+        <section
+          aria-label="Danh sách chủ đề phim"
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+        >
+          {TOPICS.map((topic, index) => {
+            const artworkUrl = topicArtwork[index];
+            const isLoaded = Boolean(artworkUrl);
 
-              return (
-                <Link
-                  key={topic.slug}
-                  href={topic.href}
-                  aria-label={`Xem chủ đề ${topic.title}`}
-                  className="group relative isolate min-h-[205px] overflow-hidden rounded-2xl border border-white/[0.09] transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_22px_55px_rgba(0,0,0,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-                  style={{ backgroundColor: topic.tone }}
-                >
+            return (
+              <Link
+                key={topic.slug}
+                href={topic.href}
+                className="group relative flex min-h-[220px] flex-col justify-between overflow-hidden rounded-[24px] border border-white/10 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-white/25 hover:shadow-[0_16px_40px_rgba(0,0,0,0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
+                style={{
+                  background: `linear-gradient(135deg, ${topic.tone} 0%, rgba(10,12,16,0.95) 100%)`,
+                }}
+              >
+                {/* Background Artwork */}
+                {artworkUrl && (
                   <div
+                    className="pointer-events-none absolute inset-0 overflow-hidden opacity-25 transition-all duration-500 group-hover:scale-105 group-hover:opacity-40"
                     aria-hidden="true"
-                    className="absolute inset-y-0 right-0 w-[68%] overflow-hidden"
-                    style={{
-                      WebkitMaskImage:
-                        "linear-gradient(to left, black 58%, transparent 100%)",
-                      maskImage:
-                        "linear-gradient(to left, black 58%, transparent 100%)",
-                    }}
                   >
-                    {image ? (
-                      <Image
-                        src={image}
-                        alt=""
-                        fill
-                        sizes="(min-width: 1280px) 22vw, (min-width: 640px) 46vw, 68vw"
-                        priority={index < 4}
-                        className="object-cover object-top opacity-90 transition-transform duration-500 ease-out group-hover:scale-[1.035]"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 animate-pulse bg-white/[0.035] motion-reduce:animate-none" />
-                    )}
+                    <Image
+                      src={artworkUrl}
+                      alt=""
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      className="object-cover object-top"
+                      priority={index < 4}
+                      unoptimized
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0c10] via-black/40 to-transparent" />
                   </div>
+                )}
 
+                {/* Shimmer Placeholder if not loaded */}
+                {!isLoaded && (
                   <div
+                    className="pointer-events-none absolute inset-0 animate-pulse bg-white/[0.02]"
                     aria-hidden="true"
-                    className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"
                   />
+                )}
 
-                  <div className="relative z-10 flex min-h-[205px] max-w-[72%] flex-col justify-end p-5 sm:p-6">
-                    <span
-                      className="mb-3 h-1 w-8 rounded-full"
-                      style={{ backgroundColor: topic.accent }}
-                    />
-                    <h3 className="text-lg font-extrabold leading-[1.2] tracking-[-0.025em] text-white sm:text-xl">
-                      {topic.title}
-                    </h3>
-                    <p className="mt-2 line-clamp-2 text-[12px] leading-[1.55] text-neutral-300/80">
-                      {topic.description}
-                    </p>
-                    <ArrowUpRight
-                      size={18}
-                      className="absolute bottom-5 right-5 translate-y-1 text-white/50 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:text-white group-hover:opacity-100"
-                    />
+                {/* Top Accent Pill + Arrow */}
+                <div className="relative z-10 flex items-center justify-between">
+                  <span
+                    className="inline-block h-2 w-8 rounded-full transition-all duration-300 group-hover:w-12"
+                    style={{ backgroundColor: topic.accent }}
+                  />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/60 transition-all duration-300 group-hover:bg-white group-hover:text-black group-hover:shadow-[0_0_12px_rgba(255,255,255,0.4)]">
+                    <ArrowUpRight size={16} />
                   </div>
-                </Link>
-              );
-            })}
-          </div>
+                </div>
+
+                {/* Title & Description */}
+                <div className="relative z-10 mt-auto pt-8">
+                  <h2 className="text-xl font-bold tracking-[-0.03em] text-white transition-colors duration-200 group-hover:text-white">
+                    {topic.title}
+                  </h2>
+                  <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-neutral-400">
+                    {topic.description}
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
         </section>
       </div>
     </main>

@@ -14,6 +14,7 @@ import {
   LayoutGrid,
   TvMinimalPlay,
   MonitorPlay,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -44,8 +45,8 @@ function TelegramIcon({
 
 const SIDEBAR_ITEMS = [
   { title: "Trang chủ", href: "/", icon: Home },
-  { title: "Phim Hàn", href: "/country/han-quoc", icon: TvMinimalPlay },
-  { title: "Phim Trung", href: "/country/trung-quoc", icon: MonitorPlay },
+  { title: "Lịch Chiếu", href: "/schedule", icon: CalendarDays },
+  { title: "TV Shows", href: "/films/tvshows", icon: TvMinimalPlay },
   { title: "Thế Giới Phim", href: "/genres", icon: LayoutGrid },
   { title: "Xem Chung", href: "/watch-party", icon: Popcorn },
   { title: "Bộ Sưu Tập", href: "/watchlist", icon: Layers },
