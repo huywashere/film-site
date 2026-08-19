@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { Bookmark, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Bookmark, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { watchlistApi } from "@/lib/api";
 import { FilmCard } from "@/components/film/FilmCard";
+import { Pagination } from "@/components/film/Pagination";
 import type { WatchlistItem } from "@/types/movie";
 import { guestDataStorage, type GuestWatchlistItem } from "@/lib/user-data";
 import { cardFont } from "@/lib/fonts";
@@ -134,29 +135,11 @@ export default function WatchlistPage() {
               })}
             </div>
             {user && totalPages > 1 && (
-              <div className="mt-10 flex items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  disabled={page === 1}
-                  className="rounded-xl border border-white/15 px-4 py-2 text-sm text-white disabled:opacity-40"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <span className="text-sm text-neutral-400">
-                  Trang {page}/{totalPages}
-                </span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setPage((current) => Math.min(totalPages, current + 1))
-                  }
-                  disabled={page === totalPages}
-                  className="rounded-xl border border-white/15 px-4 py-2 text-sm text-white disabled:opacity-40"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+              />
             )}
           </>
         ) : (

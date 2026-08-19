@@ -18,6 +18,7 @@ import {
 import { useAuthStore } from "@/store/authStore";
 import { reviewsApi, watchHistoryApi, watchlistApi } from "@/lib/api";
 import { FilmCard, resolveImageUrl } from "@/components/film/FilmCard";
+import { Pagination } from "@/components/film/Pagination";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/providers/ToastProvider";
 import type { WatchHistoryItem, WatchlistItem } from "@/types/movie";
@@ -284,34 +285,11 @@ export default function LibraryPage() {
           />
         )}
         {activeTab !== "reviews" && activeTotalPages > 1 && (
-          <nav
-            aria-label="Phân trang thư viện"
-            className="mt-10 flex items-center justify-center gap-3"
-          >
-            <button
-              type="button"
-              onClick={() => setActivePage((page) => Math.max(1, page - 1))}
-              disabled={activePage === 1}
-              className="rounded-xl border border-white/15 p-2 text-white disabled:opacity-40"
-              aria-label="Trang trước"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <span className="text-sm text-neutral-400">
-              Trang {activePage}/{activeTotalPages}
-            </span>
-            <button
-              type="button"
-              onClick={() =>
-                setActivePage((page) => Math.min(activeTotalPages, page + 1))
-              }
-              disabled={activePage === activeTotalPages}
-              className="rounded-xl border border-white/15 p-2 text-white disabled:opacity-40"
-              aria-label="Trang sau"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </nav>
+          <Pagination
+            currentPage={activePage}
+            totalPages={activeTotalPages}
+            onPageChange={setActivePage}
+          />
         )}
       </main>
     </div>

@@ -61,24 +61,29 @@ export default function FilmsTypePage() {
 
   const films: FilmItem[] = data?.data?.items || data?.items || [];
 
-  // Robust totalPages extraction from API response
+  const totalItems =
+    Number(data?.data?.params?.pagination?.totalItems) ||
+    Number(data?.params?.pagination?.totalItems) ||
+    Number(data?.pagination?.totalItems) ||
+    Number(data?.data?.paginate?.total_items) ||
+    undefined;
+
   const rawTotal =
-    data?.data?.params?.pagination?.totalPages ||
-    data?.params?.pagination?.totalPages ||
-    data?.pagination?.totalPages ||
-    data?.paginate?.total_page ||
-    data?.data?.paginate?.total_page ||
-    (data?.data?.params?.pagination?.totalItems
+    Number(data?.data?.params?.pagination?.totalPages) ||
+    Number(data?.params?.pagination?.totalPages) ||
+    Number(data?.pagination?.totalPages) ||
+    Number(data?.paginate?.total_page) ||
+    Number(data?.data?.paginate?.total_page) ||
+    (totalItems
       ? Math.ceil(
-          data.data.params.pagination.totalItems /
-            (data.data.params.pagination.totalItemsPerPage || 36),
+          totalItems /
+            (Number(data?.data?.params?.pagination?.totalItemsPerPage) ||
+              Number(data?.params?.pagination?.totalItemsPerPage) ||
+              24),
         )
       : undefined);
 
-  const totalPages =
-    rawTotal && rawTotal > 1 ? rawTotal : films.length > 0 ? 50 : 1;
-  const totalItems =
-    data?.data?.params?.pagination?.totalItems || data?.pagination?.totalItems;
+  const totalPages = Math.max(1, rawTotal || (films.length > 0 ? 1 : 1));
 
   const handlePageChange = (newPage: number) => {
     router.push(`/films/${type}?page=${newPage}`);

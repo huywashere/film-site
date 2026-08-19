@@ -989,22 +989,29 @@ export default function CountryPage() {
   const dramaFilms: FilmItem[] =
     dramaData?.data?.items || dramaData?.items || [];
 
+  const totalItems =
+    Number(mainData?.data?.params?.pagination?.totalItems) ||
+    Number(mainData?.params?.pagination?.totalItems) ||
+    Number(mainData?.pagination?.totalItems) ||
+    Number(mainData?.data?.paginate?.total_items) ||
+    undefined;
+
   const rawTotal =
-    mainData?.data?.params?.pagination?.totalPages ||
-    mainData?.params?.pagination?.totalPages ||
-    mainData?.pagination?.totalPages ||
-    (mainData?.data?.params?.pagination?.totalItems
+    Number(mainData?.data?.params?.pagination?.totalPages) ||
+    Number(mainData?.params?.pagination?.totalPages) ||
+    Number(mainData?.pagination?.totalPages) ||
+    Number(mainData?.paginate?.total_page) ||
+    Number(mainData?.data?.paginate?.total_page) ||
+    (totalItems
       ? Math.ceil(
-          mainData.data.params.pagination.totalItems /
-            (mainData.data.params.pagination.totalItemsPerPage || 24),
+          totalItems /
+            (Number(mainData?.data?.params?.pagination?.totalItemsPerPage) ||
+              Number(mainData?.params?.pagination?.totalItemsPerPage) ||
+              24),
         )
       : undefined);
 
-  const totalPages =
-    rawTotal && rawTotal > 1 ? rawTotal : films.length > 0 ? 50 : 1;
-  const totalItems =
-    mainData?.data?.params?.pagination?.totalItems ||
-    mainData?.pagination?.totalItems;
+  const totalPages = Math.max(1, rawTotal || (films.length > 0 ? 1 : 1));
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());

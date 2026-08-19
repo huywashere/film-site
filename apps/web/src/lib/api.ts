@@ -748,23 +748,38 @@ async function getFastCatalogPage(
           sourceData?.paginate ||
           sourceData?.data?.paginate ||
           {};
+
+        const totalItems =
+          Number(sourcePagination.totalItems) ||
+          Number(sourcePagination.total_items) ||
+          Number(sourcePagination.total) ||
+          items.length;
+
+        const totalItemsPerPage =
+          Number(sourcePagination.totalItemsPerPage) ||
+          Number(sourcePagination.items_per_page) ||
+          Number(sourcePagination.limit) ||
+          24;
+
+        let totalPages =
+          Number(sourcePagination.totalPages) ||
+          Number(sourcePagination.total_page) ||
+          Number(sourcePagination.total_pages) ||
+          0;
+
+        if (!totalPages && totalItems > 0 && totalItemsPerPage > 0) {
+          totalPages = Math.ceil(totalItems / totalItemsPerPage);
+        }
+        if (!totalPages) totalPages = 1;
+
         const pagination = {
           currentPage:
             Number(sourcePagination.currentPage) ||
             Number(sourcePagination.current_page) ||
             page,
-          totalItems:
-            Number(sourcePagination.totalItems) ||
-            Number(sourcePagination.total_items) ||
-            items.length,
-          totalItemsPerPage:
-            Number(sourcePagination.totalItemsPerPage) ||
-            Number(sourcePagination.items_per_page) ||
-            items.length,
-          totalPages:
-            Number(sourcePagination.totalPages) ||
-            Number(sourcePagination.total_page) ||
-            1,
+          totalItems,
+          totalItemsPerPage,
+          totalPages,
         };
         return {
           status: true,

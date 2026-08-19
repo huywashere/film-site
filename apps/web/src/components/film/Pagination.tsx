@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface PaginationProps {
   currentPage: number;
@@ -16,58 +17,26 @@ export function Pagination({
   currentPage,
   totalPages: propTotalPages,
   totalItems,
-  pageSize = 36,
+  pageSize = 24,
   onPageChange,
   className = "",
 }: PaginationProps) {
-  // Recompute total pages if totalItems is provided, ensuring safe positive integer
+  const [isEditing, setIsEditing] = useState(false);
+  const [inputVal, setInputVal] = useState("");
+
+  // Correctly extract and sanitize positive totalPages
   const totalPages = useMemo(() => {
+    if (propTotalPages && propTotalPages > 0) {
+      return Math.max(1, propTotalPages);
+    }
     if (totalItems !== undefined && totalItems > 0 && pageSize > 0) {
       return Math.max(1, Math.ceil(totalItems / pageSize));
     }
-    return Math.max(1, propTotalPages || 1);
+    return 1;
   }, [propTotalPages, totalItems, pageSize]);
 
   // Clamp current 1-based page between 1 and totalPages
   const currentPageClamped = Math.max(1, Math.min(currentPage, totalPages));
-
-  // Generate page range with ellipsis (...) standing in for collapsed range
-  const pageRange = useMemo(() => {
-    const pages: (number | "ellipsis")[] = [];
-
-    if (totalPages <= 5) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      if (currentPageClamped <= 3) {
-        pages.push(1, 2, 3, "ellipsis", totalPages);
-      } else if (currentPageClamped >= totalPages - 2) {
-        pages.push(1, "ellipsis", totalPages - 2, totalPages - 1, totalPages);
-      } else {
-        pages.push(
-          1,
-          "ellipsis",
-          currentPageClamped - 1,
-          currentPageClamped,
-          currentPageClamped + 1,
-          "ellipsis",
-          totalPages,
-        );
-      }
-    }
-    return pages;
-  }, [currentPageClamped, totalPages]);
-
-  // Calculate 5 dot indicators for visual progress (matching Image 1)
-  const numDots = Math.min(5, totalPages);
-  const activeDotIndex = useMemo(() => {
-    if (totalPages <= 1) return 0;
-    if (totalPages <= 5) return currentPageClamped - 1;
-    const ratio = (currentPageClamped - 1) / (totalPages - 1);
-    return Math.min(
-      numDots - 1,
-      Math.max(0, Math.round(ratio * (numDots - 1))),
-    );
-  }, [currentPageClamped, totalPages, numDots]);
 
   if (totalPages <= 1) return null;
 
@@ -77,61 +46,76 @@ export function Pagination({
     }
   };
 
+  const handleInputSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = parseInt(inputVal, 10);
+    if (!isNaN(parsed) && parsed >= 1 && parsed <= totalPages) {
+      onPageChange(parsed);
+    }
+    setIsEditing(false);
+    setInputVal("");
+  };
+
   return (
-    <div className={`w-full flex justify-center py-6 ${className}`}>
+    <div className={cn("w-full flex justify-center py-8", className)}>
       <nav
-        aria-label="pagination"
-        className="flex items-center space-x-1 sm:space-x-1.5"
+        aria-label="Chuyển trang"
+        className="flex items-center gap-3 sm:gap-4 select-none"
       >
-        {/* Previous Page Link */}
+        {/* Nút lùi trang tròn */}
         <button
+          type="button"
           onClick={() => handlePageClick(currentPageClamped - 1)}
-          disabled={currentPageClamped === 1}
+          disabled={currentPageClamped <= 1}
           aria-label="Trang trước"
           title="Trang trước"
-          className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 disabled:opacity-20 disabled:pointer-events-none transition-colors duration-150 cursor-pointer"
+          className="w-10 h-10 rounded-full bg-[#1e2330] hover:bg-[#282f42] text-white/70 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-lg disabled:opacity-25 disabled:pointer-events-none active:scale-95 border border-white/[0.08]"
         >
           <ChevronLeft size={18} />
         </button>
 
-        {/* Page Numbers & Ellipsis */}
-        {pageRange.map((item, idx) => {
-          if (item === "ellipsis") {
-            return (
-              <span
-                key={`ellipsis-${idx}`}
-                aria-hidden="true"
-                className="w-7 h-9 sm:w-8 sm:h-10 flex items-center justify-center text-neutral-500 font-bold text-xs select-none"
-              >
-                ...
-              </span>
-            );
-          }
+        {/* Thanh con nhộng ở giữa hiển thị Trang [ hiện tại ] / tổng số */}
+        <div className="flex items-center gap-3 px-6 py-2 rounded-full bg-[#1e2330] border border-white/[0.08] shadow-lg text-sm font-bold text-white">
+          <span className="text-white font-extrabold tracking-wide">Trang</span>
 
-          const isCurrent = item === currentPageClamped;
-          return (
+          {isEditing ? (
+            <form onSubmit={handleInputSubmit} className="inline-block">
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                autoFocus
+                value={inputVal}
+                onChange={(e) => setInputVal(e.target.value)}
+                onBlur={() => setIsEditing(false)}
+                className="w-12 px-1.5 py-0.5 rounded-lg border border-white/40 bg-white/10 text-white font-black text-sm text-center focus:outline-none focus:ring-1 focus:ring-amber-400"
+              />
+            </form>
+          ) : (
             <button
-              key={item}
-              onClick={() => handlePageClick(item)}
-              aria-current={isCurrent ? "page" : undefined}
-              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer flex items-center justify-center ${
-                isCurrent
-                  ? "bg-white/15 text-white border border-white/20 shadow-md font-extrabold"
-                  : "text-neutral-400 hover:text-white hover:bg-white/10"
-              }`}
+              type="button"
+              onClick={() => {
+                setInputVal(String(currentPageClamped));
+                setIsEditing(true);
+              }}
+              title="Bấm để nhập số trang cần đến"
+              className="px-3.5 py-1 rounded-xl border border-white/20 bg-white/[0.04] hover:bg-white/[0.1] text-white font-black text-sm min-w-[36px] text-center shadow-inner transition-colors cursor-pointer"
             >
-              {item}
+              {currentPageClamped}
             </button>
-          );
-        })}
+          )}
 
-        {/* Next Page Link */}
+          <span className="text-neutral-400 font-bold">/ {totalPages}</span>
+        </div>
+
+        {/* Nút tới trang tròn */}
         <button
+          type="button"
           onClick={() => handlePageClick(currentPageClamped + 1)}
-          disabled={currentPageClamped === totalPages}
+          disabled={currentPageClamped >= totalPages}
           aria-label="Trang tiếp"
           title="Trang tiếp"
-          className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 disabled:opacity-20 disabled:pointer-events-none transition-colors duration-150 cursor-pointer"
+          className="w-10 h-10 rounded-full bg-[#1e2330] hover:bg-[#282f42] text-white/70 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-lg disabled:opacity-25 disabled:pointer-events-none active:scale-95 border border-white/[0.08]"
         >
           <ChevronRight size={18} />
         </button>
