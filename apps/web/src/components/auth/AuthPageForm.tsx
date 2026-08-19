@@ -512,15 +512,16 @@ export function AuthPageForm({
 
   // Crisp solid input styling without blurry glass
   const inputCls =
-    "w-full rounded-xl border border-neutral-700/70 bg-[#1b202a] px-3.5 py-3 text-[13px] text-white outline-none transition-[border-color,background-color,box-shadow] placeholder:text-neutral-500 hover:bg-[#202632] hover:border-neutral-600 focus:border-red-500/80 focus:bg-[#202632] focus:ring-2 focus:ring-red-500/15";
+    "w-full rounded-xl border border-neutral-700/70 bg-[#1b202a] px-3.5 py-3 text-[13px] text-white outline-none transition-[border-color,background-color,box-shadow] placeholder:text-neutral-500 hover:bg-[#202632] hover:border-neutral-600 focus:border-violet-500/80 focus:bg-[#202632] focus:ring-2 focus:ring-violet-500/15";
 
   if (currentUser) {
     return (
       <div className="min-h-[100dvh] w-full bg-[#040508] flex items-center justify-center relative overflow-hidden">
         <CinematicAuthBackground />
-        <div className="relative z-10 flex items-center gap-3 text-white text-sm font-semibold bg-[#111318]/90 border border-white/10 px-6 py-4 rounded-2xl backdrop-blur-xl shadow-2xl">
-          <Loader2 className="w-5 h-5 animate-spin text-amber-400" />
-          <span>Đang chuyển hướng đến trang cá nhân...</span>
+        <div className="relative z-10 text-center">
+          <p className="text-sm font-semibold text-neutral-300">
+            Bạn đã đăng nhập. Đang chuyển hướng...
+          </p>
         </div>
       </div>
     );
@@ -566,7 +567,7 @@ export function AuthPageForm({
               <div className="relative z-10">
                 <Link href="/" className="inline-flex items-center gap-2">
                   <span className="text-2xl font-black tracking-tight text-white flex items-center font-[family-name:var(--font-manrope)]">
-                    Net<span className="text-red-500 drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]">Phim</span>
+                    Net<span className="text-violet-400 drop-shadow-[0_0_12px_rgba(167,139,250,0.6)]">Phim</span>
                   </span>
                 </Link>
               </div>
@@ -575,7 +576,7 @@ export function AuthPageForm({
               <div className="relative z-10">
                 <div className="rounded-2xl border border-white/15 bg-black/75 p-4 shadow-2xl">
                   <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-red-400 flex items-center gap-1">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-violet-400 flex items-center gap-1">
                       <Clapperboard size={12} />
                       {randomMovie.studio || "Hollywood Blockbuster"}
                     </span>
@@ -644,7 +645,7 @@ export function AuthPageForm({
                         className={cn(
                           "relative flex flex-1 select-none items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-bold transition-all cursor-pointer",
                           mode === m
-                            ? "bg-red-600 text-white shadow-md shadow-red-600/30"
+                            ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
                             : "text-neutral-400 hover:text-neutral-200",
                         )}
                       >
@@ -939,9 +940,9 @@ export function AuthPageForm({
                                 onChange={(event) =>
                                   setRememberMe(event.target.checked)
                                 }
-                                className="size-4 appearance-none rounded-[4px] border border-neutral-600 bg-transparent transition-colors checked:border-red-500 checked:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/30"
+                                className="size-4 appearance-none rounded-[4px] border border-neutral-600 bg-transparent transition-colors checked:border-violet-500 checked:bg-violet-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 cursor-pointer"
                               />
-                              <span className="text-xs text-neutral-500 group-hover:text-neutral-300 transition-colors">
+                              <span className="text-xs text-neutral-400 group-hover:text-neutral-200 transition-colors">
                                 Ghi nhớ đăng nhập trong 30 ngày
                               </span>
                             </label>
@@ -956,7 +957,7 @@ export function AuthPageForm({
                           <button
                             type="submit"
                             disabled={isLoading || !turnstileToken}
-                            className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 py-3 text-xs font-bold tracking-wide text-white shadow-lg shadow-red-950/25 transition-[background-color,transform,opacity] hover:bg-red-500 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-45"
+                            className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 py-3 text-xs font-bold tracking-wide text-white shadow-lg shadow-violet-950/25 transition-[background-color,transform,opacity] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-45 cursor-pointer"
                           >
                             {isLoading ? (
                               <>

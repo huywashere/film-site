@@ -384,7 +384,7 @@ export function AuthModal() {
           <div className="relative z-10">
             <Link href="/" className="inline-flex items-center gap-2">
               <span className="text-2xl font-black tracking-tight text-white flex items-center font-[family-name:var(--font-manrope)]">
-                Net<span className="text-red-500 drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]">Phim</span>
+                Net<span className="text-violet-400 drop-shadow-[0_0_12px_rgba(167,139,250,0.6)]">Phim</span>
               </span>
             </Link>
           </div>
@@ -393,7 +393,7 @@ export function AuthModal() {
           <div className="relative z-10">
             <div className="rounded-xl border border-white/15 bg-black/60 p-3.5 backdrop-blur-md shadow-2xl">
               <div className="flex items-center justify-between gap-2 mb-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-red-400 flex items-center gap-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-violet-400 flex items-center gap-1">
                   <Clapperboard size={12} />
                   {featuredMovie.universe}
                 </span>
@@ -434,15 +434,15 @@ export function AuthModal() {
 
           {!isForgotMode && (
             /* Mode Switching Tabs */
-            <div className="flex gap-1 mb-5 rounded-xl border border-white/[0.08] bg-white/[0.03] p-1">
+            <div className="flex gap-1 mb-5 rounded-xl border border-neutral-800 bg-[#0d1017] p-1">
               <button
                 type="button"
                 onClick={() => {
                   setIsForgotMode(false);
                   setMode("login");
                 }}
-                className={`relative flex flex-1 items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${mode === "login"
-                  ? "bg-red-600 text-white shadow-md shadow-red-600/30"
+                className={`relative flex flex-1 items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${mode === "login"
+                  ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
                   : "text-neutral-400 hover:text-neutral-200"
                   }`}
               >
@@ -456,8 +456,8 @@ export function AuthModal() {
                   setIsForgotMode(false);
                   setMode("register");
                 }}
-                className={`relative flex flex-1 items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${mode === "register"
-                  ? "bg-red-600 text-white shadow-md shadow-red-600/30"
+                className={`relative flex flex-1 items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${mode === "register"
+                  ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
                   : "text-neutral-400 hover:text-neutral-200"
                   }`}
               >
@@ -509,7 +509,7 @@ export function AuthModal() {
                           value={emailOrUsername}
                           onChange={(e) => setEmailOrUsername(e.target.value)}
                           placeholder="email"
-                          className="w-full rounded-xl border border-white/[0.1] bg-white/[0.05] pl-9 pr-3.5 py-2.5 text-xs text-white placeholder:text-neutral-600 outline-none transition-all focus:border-red-500/60 focus:bg-white/[0.08] focus:ring-1 focus:ring-red-500/20 sm:text-sm"
+                          className="w-full rounded-xl border border-neutral-700/70 bg-[#1b202a] pl-9 pr-3.5 py-2.5 text-xs text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-500/80 focus:bg-[#202632] focus:ring-1 focus:ring-violet-500/20 sm:text-sm"
                         />
                       </div>
                     </div>
@@ -517,7 +517,7 @@ export function AuthModal() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold tracking-wide transition-all shadow-lg shadow-red-600/20 active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold tracking-wide transition-all shadow-lg shadow-violet-600/20 active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       {loading ? (
                         <>
@@ -560,7 +560,7 @@ export function AuthModal() {
                               value={displayName}
                               onChange={(e) => setDisplayName(e.target.value)}
                               placeholder="Nguyễn Văn A"
-                              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.05] pl-9 pr-3.5 py-2.5 text-xs text-white placeholder:text-neutral-600 outline-none transition-all focus:border-red-500/60 focus:bg-white/[0.08] focus:ring-1 focus:ring-red-500/20 sm:text-sm"
+                              className="w-full rounded-xl border border-neutral-700/70 bg-[#1b202a] pl-9 pr-3.5 py-2.5 text-xs text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-500/80 focus:bg-[#202632] focus:ring-1 focus:ring-violet-500/20 sm:text-sm"
                             />
                           </div>
                         </div>
@@ -577,7 +577,7 @@ export function AuthModal() {
                               value={username}
                               onChange={(e) => setUsername(e.target.value)}
                               placeholder="tentaikhoan"
-                              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.05] pl-9 pr-3.5 py-2.5 text-xs text-white placeholder:text-neutral-600 outline-none transition-all focus:border-red-500/60 focus:bg-white/[0.08] focus:ring-1 focus:ring-red-500/20 sm:text-sm"
+                              className="w-full rounded-xl border border-neutral-700/70 bg-[#1b202a] pl-9 pr-3.5 py-2.5 text-xs text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-500/80 focus:bg-[#202632] focus:ring-1 focus:ring-violet-500/20 sm:text-sm"
                             />
                           </div>
                         </div>
@@ -598,7 +598,7 @@ export function AuthModal() {
                           value={emailOrUsername}
                           onChange={(e) => setEmailOrUsername(e.target.value)}
                           placeholder={mode === "login" ? "email hoặc @username" : "email"}
-                          className="w-full rounded-xl border border-white/[0.1] bg-white/[0.05] pl-9 pr-3.5 py-2.5 text-xs text-white placeholder:text-neutral-600 outline-none transition-all focus:border-red-500/60 focus:bg-white/[0.08] focus:ring-1 focus:ring-red-500/20 sm:text-sm"
+                          className="w-full rounded-xl border border-neutral-700/70 bg-[#1b202a] pl-9 pr-3.5 py-2.5 text-xs text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-500/80 focus:bg-[#202632] focus:ring-1 focus:ring-violet-500/20 sm:text-sm"
                         />
                       </div>
                     </div>
@@ -613,7 +613,7 @@ export function AuthModal() {
                           <button
                             type="button"
                             onClick={() => setIsForgotMode(true)}
-                            className="text-[10px] text-red-400 hover:text-red-300 font-semibold transition-colors cursor-pointer"
+                            className="text-[10px] text-violet-400 hover:text-violet-300 font-semibold transition-colors cursor-pointer"
                           >
                             Quên mật khẩu?
                           </button>
@@ -627,7 +627,7 @@ export function AuthModal() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="••••••••••••"
-                            className="w-full rounded-xl border border-white/[0.1] bg-white/[0.05] pl-9 pr-10 py-2.5 text-xs text-white placeholder:text-neutral-600 outline-none transition-all focus:border-red-500/60 focus:bg-white/[0.08] focus:ring-1 focus:ring-red-500/20 sm:text-sm"
+                            className="w-full rounded-xl border border-neutral-700/70 bg-[#1b202a] pl-9 pr-10 py-2.5 text-xs text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-500/80 focus:bg-[#202632] focus:ring-1 focus:ring-violet-500/20 sm:text-sm"
                           />
                           <button
                             type="button"
@@ -654,7 +654,7 @@ export function AuthModal() {
                               value={password}
                               onChange={(e) => setPassword(e.target.value)}
                               placeholder="Tối thiểu 6 ký tự"
-                              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.05] pl-9 pr-3 py-2.5 text-[11px] text-white placeholder:text-neutral-600 outline-none transition-all focus:border-red-500/60 focus:bg-white/[0.08] focus:ring-1 focus:ring-red-500/20"
+                              className="w-full rounded-xl border border-neutral-700/70 bg-[#1b202a] pl-9 pr-3 py-2.5 text-[11px] text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-500/80 focus:bg-[#202632] focus:ring-1 focus:ring-violet-500/20"
                             />
                           </div>
                         </div>
@@ -672,7 +672,7 @@ export function AuthModal() {
                               value={confirmPassword}
                               onChange={(e) => setConfirmPassword(e.target.value)}
                               placeholder="Nhắc lại"
-                              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.05] pl-9 pr-3 py-2.5 text-[11px] text-white placeholder:text-neutral-600 outline-none transition-all focus:border-red-500/60 focus:bg-white/[0.08] focus:ring-1 focus:ring-red-500/20"
+                              className="w-full rounded-xl border border-neutral-700/70 bg-[#1b202a] pl-9 pr-3 py-2.5 text-[11px] text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-500/80 focus:bg-[#202632] focus:ring-1 focus:ring-violet-500/20"
                             />
                           </div>
                         </div>
@@ -693,7 +693,7 @@ export function AuthModal() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold tracking-wide transition-all shadow-lg shadow-red-600/25 active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+                      className="w-full py-3.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold tracking-wide transition-all shadow-lg shadow-violet-600/25 active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
                     >
                       {loading ? (
                         <>
