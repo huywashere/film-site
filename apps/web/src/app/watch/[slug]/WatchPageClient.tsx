@@ -1064,10 +1064,10 @@ export default function WatchPage() {
       title: film?.name || slug,
       titleEn: film?.origin_name,
       posterUrl: film
-        ? resolveImageUrl(film?.poster_url || film?.thumb_url)
+        ? resolveImageUrl(film?.poster_url || film?.thumb_url) || undefined
         : undefined,
       thumbUrl: film
-        ? resolveImageUrl(film?.thumb_url || film?.poster_url)
+        ? resolveImageUrl(film?.thumb_url || film?.poster_url) || undefined
         : undefined,
       type: film?.type,
       year: film?.year,

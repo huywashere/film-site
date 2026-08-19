@@ -532,7 +532,8 @@ export default function WatchPartyListPage() {
                   <img
                     src={
                       resolveImageUrl(selectedMovie.thumb_url) ||
-                      resolveImageUrl(selectedMovie.poster_url)
+                      resolveImageUrl(selectedMovie.poster_url) ||
+                      ""
                     }
                     alt={selectedMovie.name}
                     className="h-16 w-12 rounded-xl object-cover border border-white/10 shrink-0"

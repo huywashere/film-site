@@ -58,7 +58,7 @@ export function SmartRecommendationSection() {
 
   // 2. Rank candidate films using our personalized user taste scoring algorithm
   const rankedFilms = useMemo(() => {
-    return deduplicateSectionRow(rankFilmsByUserTaste(rawFilms, userVector, false));
+    return rankFilmsByUserTaste(rawFilms, userVector, false);
   }, [rawFilms, userVector]);
 
   const handleRefresh = () => {
