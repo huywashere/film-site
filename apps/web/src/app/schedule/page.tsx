@@ -105,38 +105,35 @@ export default function SchedulePage() {
         <nav className="flex items-center justify-between gap-3 text-xs text-neutral-400">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.08] text-white/90 hover:text-white text-xs font-semibold transition-all shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-white/90 hover:text-white text-xs font-semibold transition-all shadow-sm"
           >
             <ArrowLeft size={13} />
             <span>Trang chủ</span>
           </Link>
 
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-pink-500/30 bg-pink-500/10 text-pink-300 text-xs font-bold shadow-sm">
-            <Radio size={13} className="text-pink-400 animate-pulse" />
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-xs font-bold shadow-sm">
+            <Radio size={13} className="text-emerald-400 animate-pulse" />
             <span>Cập nhật liên tục 24/7</span>
           </span>
         </nav>
 
-        {/* ── Header Banner ── */}
-        <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-gradient-to-b from-[#161c28] via-[#0e1118] to-[#0a0c10] p-6 sm:p-8 md:p-10 shadow-2xl">
-          <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-violet-600/20 blur-[100px]" />
-          <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-cyan-600/15 blur-[100px]" />
-
+        {/* ── Header Section (Seamlessly blended into page background) ── */}
+        <div className="relative space-y-6 pb-6 border-b border-white/[0.08]">
           <div className="relative z-10 max-w-3xl space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3.5 py-1 text-xs font-bold text-violet-300 shadow-sm">
-              <CalendarDays size={13} className="text-violet-400" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1 text-xs font-bold text-amber-300 shadow-sm">
+              <CalendarDays size={13} className="text-amber-400" />
               <span>Lịch Phát Sóng & Cập Nhật Tập Mới</span>
             </div>
-            <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-white">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white">
               Lịch Chiếu Phim
             </h1>
-            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed max-w-2xl">
+            <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed max-w-2xl">
               Theo dõi lịch phát sóng các tập phim mới nhất trong tuần của phim bộ, anime và các chương trình truyền hình thực tế hot nhất.
             </p>
           </div>
 
           {/* ── Days of Week Bar ── */}
-          <div className="relative z-10 mt-8 flex flex-wrap items-center gap-2 border-t border-white/[0.08] pt-6">
+          <div className="relative z-10 flex flex-wrap items-center gap-2 pt-2">
             {DAYS_OF_WEEK.map((day) => {
               const isSelected = selectedDay === day.id;
               return (
@@ -147,8 +144,8 @@ export default function SchedulePage() {
                   className={cn(
                     "inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95",
                     isSelected
-                      ? "bg-white text-black shadow-[0_0_16px_rgba(255,255,255,0.3)]"
-                      : "bg-white/[0.05] hover:bg-white/[0.12] text-neutral-300 border border-white/[0.08]",
+                      ? "bg-white text-black shadow-[0_0_16px_rgba(255,255,255,0.25)]"
+                      : "bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 border border-white/[0.08]",
                   )}
                 >
                   <Calendar size={13} className={isSelected ? "text-black" : "text-neutral-400"} />
@@ -172,8 +169,8 @@ export default function SchedulePage() {
                   className={cn(
                     "px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer",
                     isSelected
-                      ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
-                      : "bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.08]",
+                      ? "bg-white text-black font-extrabold shadow-sm"
+                      : "bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.08] border border-white/[0.06]",
                   )}
                 >
                   {cat.label}
@@ -197,7 +194,7 @@ export default function SchedulePage() {
               ))}
             </div>
           ) : allReleases.length === 0 ? (
-            <div className="rounded-3xl border border-white/[0.08] bg-[#0e1017]/60 p-12 text-center space-y-3">
+            <div className="rounded-3xl border border-white/[0.08] bg-white/[0.02] p-12 text-center space-y-3">
               <Clock size={32} className="text-neutral-500 mx-auto" />
               <h3 className="text-base font-bold text-white">Chưa có tập phim mới vào khung giờ này</h3>
               <p className="text-xs text-neutral-400 max-w-md mx-auto">
