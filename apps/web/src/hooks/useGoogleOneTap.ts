@@ -132,18 +132,27 @@ export function useGoogleOneTap(options: UseGoogleOneTapOptions = {}) {
       }
     };
 
-    // Load Google Identity Services script if not already present
-    const existingScript = document.getElementById("google-identity-script");
-    if (!existingScript) {
-      const script = document.createElement("script");
-      script.id = "google-identity-script";
-      script.src = "https://accounts.google.com/gsi/client";
-      script.async = true;
-      script.defer = true;
-      script.onload = initializeOneTap;
-      document.head.appendChild(script);
-    } else if (window.google?.accounts?.id) {
-      initializeOneTap();
+    // Load Google Identity Services script after idle to avoid blocking LCP & main thread
+    const loadScript = () => {
+      const existingScript = document.getElementById("google-identity-script");
+      if (!existingScript) {
+        const script = document.createElement("script");
+        script.id = "google-identity-script";
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+        script.onload = initializeOneTap;
+        document.head.appendChild(script);
+      } else if (window.google?.accounts?.id) {
+        initializeOneTap();
+      }
+    };
+
+    let idleHandle: any;
+    if ("requestIdleCallback" in window) {
+      idleHandle = window.requestIdleCallback(loadScript, { timeout: 3000 });
+    } else {
+      idleHandle = setTimeout(loadScript, 2500);
     }
 
     return () => {

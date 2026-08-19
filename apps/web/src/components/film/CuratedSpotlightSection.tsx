@@ -236,6 +236,7 @@ export function CuratedSpotlightSection({
                   type="button"
                   key={`${film.slug}-${index}`}
                   onClick={() => setActiveIndex(index)}
+                  aria-label={`Chọn phim ${film.name}`}
                   className={`group relative flex w-[72px] shrink-0 flex-col items-center gap-0 overflow-hidden rounded-xl border text-left transition-all cursor-pointer lg:w-full lg:flex-row lg:items-center lg:gap-3 lg:p-2.5 lg:rounded-xl ${
                     isActive
                       ? "border-orange-400/60 bg-orange-400/[0.08] lg:border-orange-400/60"

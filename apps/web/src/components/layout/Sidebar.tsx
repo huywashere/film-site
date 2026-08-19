@@ -267,6 +267,8 @@ export function Sidebar() {
                   href={item.href}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label={item.title}
+                  title={item.title}
                   className={cn(
                     "relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 group cursor-pointer text-white/40 hover:text-white",
                   )}
@@ -281,6 +283,8 @@ export function Sidebar() {
                 key={item.href}
                 href={item.href}
                 prefetch={true}
+                aria-label={item.title}
+                title={item.title}
                 onMouseEnter={() => warmRoute(item.href)}
                 onFocus={() => warmRoute(item.href)}
                 onTouchStart={() => warmRoute(item.href)}

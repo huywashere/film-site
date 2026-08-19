@@ -407,7 +407,8 @@ export function ContinueWatchingRow({
                                 handleRemoveItem(e, item.slug, item.epSlug)
                               }
                               title="Xóa khỏi lịch sử xem"
-                              className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-red-600 text-white/70 hover:text-white transition-all opacity-0 group-hover/card:opacity-100 z-30"
+                              aria-label="Xóa khỏi lịch sử xem"
+                              className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-red-600 text-white/70 hover:text-white transition-all opacity-0 group-hover/card:opacity-100 z-30 cursor-pointer"
                             >
                               <X size={13} />
                             </button>
@@ -592,14 +593,16 @@ export function ContinueWatchingRow({
         <div className="hidden sm:flex flex-col justify-center gap-3 shrink-0 px-1 my-auto">
           <button
             ref={nextRef}
-            aria-label="Next slide"
+            aria-label="Xem tiếp slide sau"
+            title="Xem tiếp slide sau"
             className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
           >
             <ChevronRight size={22} strokeWidth={2.5} />
           </button>
           <button
             ref={prevRef}
-            aria-label="Previous slide"
+            aria-label="Xem tiếp slide trước"
+            title="Xem tiếp slide trước"
             className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
           >
             <ChevronLeft size={22} strokeWidth={2.5} />

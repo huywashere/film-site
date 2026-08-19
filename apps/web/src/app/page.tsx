@@ -374,8 +374,8 @@ function FilmSection({
           <button
             ref={nextRef}
             disabled={isLoading}
-            aria-label="Next slide"
-            title="Xem phim tiếp theo"
+            aria-label={`Chuyển sang phải cho ${title}`}
+            title={`Xem phim tiếp theo trong ${title}`}
             className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
           >
             <ChevronRight size={22} strokeWidth={2.5} />
@@ -384,8 +384,8 @@ function FilmSection({
           <button
             ref={prevRef}
             disabled={isLoading}
-            aria-label="Previous slide"
-            title="Xem phim trước"
+            aria-label={`Chuyển sang trái cho ${title}`}
+            title={`Xem phim trước trong ${title}`}
             className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
           >
             <ChevronLeft size={22} strokeWidth={2.5} />

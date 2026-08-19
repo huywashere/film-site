@@ -573,7 +573,10 @@ export function Navbar() {
 
             <div className="flex items-center space-x-1 sm:space-x-2">
               <DropdownMenu modal={false} onOpenChange={setNotificationsOpen}>
-                <DropdownMenuTrigger className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl text-neutral-300 hover:bg-white/[0.06] hover:text-white transition-colors focus:outline-none cursor-pointer">
+                <DropdownMenuTrigger
+                  aria-label={lang === "en" ? "Notifications" : "Thông báo"}
+                  className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl text-neutral-300 hover:bg-white/[0.06] hover:text-white transition-colors focus:outline-none cursor-pointer"
+                >
                   <Bell size={19} className="stroke-[2.2]" />
                   {unreadCount > 0 && (
                     <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500 shadow-sm" />

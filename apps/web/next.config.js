@@ -37,7 +37,10 @@ const nextConfig = {
 
   // ── PERFORMANCE OPTIMIZATIONS ──────────────────────────────────
   reactStrictMode: true,
-  // SWC minification is enabled by default.
+  compress: true,
+  httpAgentOptions: {
+    keepAlive: true,
+  },
 
   // Optimize bundle splitting
   modularizeImports: {
@@ -49,9 +52,11 @@ const nextConfig = {
   // Enable experimental features for better performance
   experimental: {
     optimizePackageImports: [
+      "lucide-react",
       "framer-motion",
       "swiper",
       "@tanstack/react-query",
+      "zustand",
     ],
   },
 
