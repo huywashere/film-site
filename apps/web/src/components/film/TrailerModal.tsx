@@ -79,22 +79,18 @@ export function TrailerModal({
 
   // If TMDB provided videos array with any youtube entry, pick first
   if (!youtubeKey && !vimeoKey && videos.length > 0) {
-    const yt = videos.find((v) => v.site === "YouTube" && v.key);
+    const yt =
+      videos.find((v) => v.site === "YouTube" && v.type === "Trailer" && v.key) ||
+      videos.find((v) => v.site === "YouTube" && v.key);
     if (yt) youtubeKey = yt.key;
   }
 
-  // Fallback to official YouTube search embed if no direct ID is known
-  const searchEmbedSrc = `https://www.youtube-nocookie.com/embed?listType=search&list=${encodeURIComponent(
-    `${displayName} official trailer`,
-  )}&autoplay=1&playsinline=1&rel=0`;
-
+  // Only embed when a valid video key exists. Search embeds are blocked by YouTube (Error 153)
   const embedSrc = youtubeKey
-    ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtubeKey)}?autoplay=1&playsinline=1&rel=0`
+    ? `https://www.youtube.com/embed/${encodeURIComponent(youtubeKey)}?autoplay=1&rel=0&playsinline=1&enablejsapi=1`
     : vimeoKey
       ? `https://player.vimeo.com/video/${encodeURIComponent(vimeoKey)}?autoplay=1&title=0&byline=0`
-      : !videosLoading
-        ? searchEmbedSrc
-        : null;
+      : null;
 
   const youtubeSearchHref = `https://www.youtube.com/results?search_query=${encodeURIComponent(
     `${displayName} official trailer`,

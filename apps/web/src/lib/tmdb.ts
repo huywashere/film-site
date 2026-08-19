@@ -340,12 +340,11 @@ export function extractTmdbInfo(film: any): {
   type: "movie" | "tv";
   imdbId: string | null;
 } {
+  const rawId = film?.tmdb?.id ?? film?.tmdb_id ?? film?.tmdbId;
   const tmdbId =
-    film?.tmdb?.id && film.tmdb.id !== "0"
-      ? Number(film.tmdb.id)
-      : film?.tmdb_id
-        ? Number(film.tmdb_id)
-        : null;
+    rawId && rawId !== "0" && Number.isFinite(Number(rawId))
+      ? Number(rawId)
+      : null;
 
   const type: "movie" | "tv" =
     film?.tmdb?.type === "tv" ||
