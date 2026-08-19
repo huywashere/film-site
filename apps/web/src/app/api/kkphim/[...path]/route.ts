@@ -9,7 +9,7 @@ const KKPHIM_ORIGINS = resolveMovieApiOrigins(
 );
 
 function getTtl(path: string): number {
-  if (path.includes("phim-moi-cap-nhat")) return 120;
+  if (path.includes("phim-moi-cap-nhat")) return 180;
   if (path.includes("phim/") || path.includes("phim-")) return 600;
   if (
     path.includes("the-loai") ||
@@ -17,7 +17,7 @@ function getTtl(path: string): number {
     path.includes("nam-phat-hanh")
   )
     return 3600;
-  if (path.includes("tim-kiem")) return 60;
+  if (path.includes("tim-kiem")) return 600; // 10 minutes cache for fast search
   return 300;
 }
 

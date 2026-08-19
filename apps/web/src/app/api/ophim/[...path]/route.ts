@@ -80,7 +80,7 @@ function getTtl(path: string): number {
     path.includes("dang-chieu") ||
     path.includes("phim-moi")
   )
-    return 120; // 2 phút cho phim mới
+    return 180; // 3 phút cho phim mới
   if (path.startsWith("phim/")) return 600; // 10 phút cho chi tiết
   if (
     path.includes("the-loai") ||
@@ -88,7 +88,7 @@ function getTtl(path: string): number {
     path.includes("nam-phat-hanh")
   )
     return 3600; // 1 giờ cho filter
-  if (path.includes("tim-kiem")) return 60; // 1 phút cho tìm kiếm
+  if (path.includes("tim-kiem")) return 600; // 10 phút cho tìm kiếm
   return 300;
 }
 

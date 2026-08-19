@@ -15,6 +15,11 @@ import type {
 } from "@/types/movie";
 import { recordTelemetry } from "@/lib/telemetry";
 
+// ── Search In-Memory Cache & Deduping ─────────────────────────────
+const SEARCH_CACHE_MAX_AGE_MS = 1000 * 60 * 10; // 10 phút
+const globalSearchCache = new Map<string, { data: any; timestamp: number }>();
+const globalPendingSearches = new Map<string, Promise<any>>();
+
 // ── KKPhim API Configuration ──────────────────────────────────────
 const KKPHIM_PROXY = "/api/kkphim";
 
@@ -126,52 +131,101 @@ export const kkphimApi = {
   getKeywords: (tmdbType: "tv" | "movie", tmdbId: string) =>
     fetchKKPhim(`/phim/keywords?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`),
 
-  // Tìm kiếm với cơ chế tự động Fallback không dấu & Multi-Provider
+  // Tìm kiếm siêu tốc với Bộ nhớ đệm Client (LRU Cache), Khử trùng lặp Request & Truy vấn song song
   search: async (keyword: string, page = 1, limit = 36) => {
     const cleanKw = (keyword || "").trim();
     if (!cleanKw) return { data: { items: [] } };
 
-    // 1. Tìm theo từ khóa gốc trên KKPhim
-    try {
-      const res = await fetchKKPhim(
-        `/v1/api/tim-kiem?keyword=${encodeURIComponent(cleanKw)}&page=${page}&limit=${limit}`,
-      );
-      if (res?.data?.items?.length > 0 || res?.items?.length > 0) return res;
-    } catch (_err) {
-      // Fallback search strategy
+    const cacheKey = `search:${cleanKw.toLowerCase()}:${page}:${limit}`;
+    const now = Date.now();
+
+    // 1. Kiểm tra Client In-Memory Cache (0ms response)
+    const cached = globalSearchCache.get(cacheKey);
+    if (cached && now - cached.timestamp < SEARCH_CACHE_MAX_AGE_MS) {
+      return cached.data;
     }
 
-    // 2. Tìm không dấu nếu từ khóa gốc có dấu (ví dụ: "bố già" -> "bo gia")
-    const unaccented = cleanKw
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/đ/g, "d")
-      .replace(/Đ/g, "D");
+    // 2. Tránh duplicate requests nếu query đang được fetch
+    if (globalPendingSearches.has(cacheKey)) {
+      return globalPendingSearches.get(cacheKey)!;
+    }
 
-    if (unaccented !== cleanKw.toLowerCase()) {
+    const executeSearch = async () => {
+      const unaccented = cleanKw
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d")
+        .replace(/Đ/g, "D");
+
+      const hasAccents = unaccented !== cleanKw.toLowerCase();
+
       try {
-        const res = await fetchKKPhim(
-          `/v1/api/tim-kiem?keyword=${encodeURIComponent(unaccented)}&page=${page}&limit=${limit}`,
-        );
-        if (res?.data?.items?.length > 0 || res?.items?.length > 0) return res;
+        if (!hasAccents) {
+          // Từ khóa không dấu: Gửi trực tiếp đến KKPhim
+          const res = await fetchKKPhim(
+            `/v1/api/tim-kiem?keyword=${encodeURIComponent(cleanKw)}&page=${page}&limit=${limit}`,
+          );
+          if (res?.data?.items?.length > 0 || res?.items?.length > 0) {
+            globalSearchCache.set(cacheKey, { data: res, timestamp: Date.now() });
+            return res;
+          }
+        } else {
+          // Từ khóa có dấu: Truy vấn SONG SONG cả 2 bản (có dấu + không dấu) để đạt tốc độ tối đa
+          const [origResSettled, unaccResSettled] = await Promise.allSettled([
+            fetchKKPhim(
+              `/v1/api/tim-kiem?keyword=${encodeURIComponent(cleanKw)}&page=${page}&limit=${limit}`,
+            ),
+            fetchKKPhim(
+              `/v1/api/tim-kiem?keyword=${encodeURIComponent(unaccented)}&page=${page}&limit=${limit}`,
+            ),
+          ]);
+
+          const origRes =
+            origResSettled.status === "fulfilled" ? origResSettled.value : null;
+          const unaccRes =
+            unaccResSettled.status === "fulfilled"
+              ? unaccResSettled.value
+              : null;
+
+          if (origRes?.data?.items?.length > 0 || origRes?.items?.length > 0) {
+            globalSearchCache.set(cacheKey, { data: origRes, timestamp: Date.now() });
+            return origRes;
+          }
+
+          if (unaccRes?.data?.items?.length > 0 || unaccRes?.items?.length > 0) {
+            globalSearchCache.set(cacheKey, { data: unaccRes, timestamp: Date.now() });
+            return unaccRes;
+          }
+        }
       } catch (_err) {
-        // Fallback search strategy
+        // Fallback
       }
-    }
 
-    // 3. Fallback qua API OPhim nếu KKPhim không tìm thấy
-    try {
-      const ophimRes = await fetchOphim(
-        `/tim-kiem?keyword=${encodeURIComponent(cleanKw)}`,
-      );
-      if (ophimRes?.data?.items?.length > 0) return ophimRes;
-    } catch (_err) {
-      // Fallback search strategy
-    }
+      // 3. Fallback nhanh qua OPhim nếu KKPhim không có kết quả
+      try {
+        const ophimRes = await fetchOphim(
+          `/tim-kiem?keyword=${encodeURIComponent(cleanKw)}`,
+        );
+        if (ophimRes?.data?.items?.length > 0) {
+          globalSearchCache.set(cacheKey, { data: ophimRes, timestamp: Date.now() });
+          return ophimRes;
+        }
+      } catch (_err) {
+        // Fallback
+      }
 
-    return fetchKKPhim(
-      `/v1/api/tim-kiem?keyword=${encodeURIComponent(cleanKw)}&page=${page}&limit=${limit}`,
-    );
+      // 4. Trả về kết quả rỗng có cấu trúc nếu không tìm thấy
+      const emptyResult = { data: { items: [], params: { pagination: { totalPages: 1 } } } };
+      globalSearchCache.set(cacheKey, { data: emptyResult, timestamp: Date.now() });
+      return emptyResult;
+    };
+
+    const searchPromise = executeSearch().finally(() => {
+      globalPendingSearches.delete(cacheKey);
+    });
+
+    globalPendingSearches.set(cacheKey, searchPromise);
+    return searchPromise;
   },
 
   // Thể loại

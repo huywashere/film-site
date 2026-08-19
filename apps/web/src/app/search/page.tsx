@@ -225,7 +225,7 @@ function SearchContent() {
   const { data, isLoading } = useQuery({
     queryKey: [
       "search-v3",
-      query,
+      query.trim(),
       type,
       year,
       genre,
@@ -237,7 +237,7 @@ function SearchContent() {
     queryFn: async () => {
       try {
         if (isFilterOnly) {
-          const res = await movieApi.getFiltered({
+          const res: any = await movieApi.getFiltered({
             type: type || undefined,
             year: year ? Number(year) : undefined,
             category: genre || undefined,
@@ -248,17 +248,18 @@ function SearchContent() {
             page,
             limit: 24,
           });
-          return res.data;
+          return res?.data || res;
         }
-        const res = await movieApi.search(query, page, 24);
-        return res.data;
+        const res: any = await movieApi.search(query, page, 24);
+        return res?.data || res;
       } catch (err) {
         console.warn("Search query error fallback:", err);
         return { items: [], params: { pagination: { totalPages: 1 } } };
       }
     },
-    enabled: mounted && (Boolean(query.trim()) || isFilterOnly),
-    staleTime: 1000 * 60 * 3,
+    enabled: Boolean(query.trim()) || isFilterOnly,
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
   });
 
