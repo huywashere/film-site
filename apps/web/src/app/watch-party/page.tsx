@@ -36,6 +36,7 @@ import {
   type SocketAck,
   type WatchPartyLobbyRoom,
 } from "@/lib/watch-party-socket";
+import { deduplicateSectionRow } from "@/lib/recommendation-engine";
 import { cardFont } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 
@@ -85,18 +86,19 @@ export default function WatchPartyListPage() {
   });
 
   const defaultMovies: FilmItem[] = useMemo(() => {
-    return trendingData?.items || trendingData?.data?.items || trendingData || [];
+    const list = trendingData?.items || trendingData?.data?.items || trendingData || [];
+    return deduplicateSectionRow(Array.isArray(list) ? list : []);
   }, [trendingData]);
 
   const searchMovies: FilmItem[] = useMemo(() => {
     if (!debouncedQuery) return [];
-    if (Array.isArray(searchResultsData)) return searchResultsData;
-    return (
-      searchResultsData?.items ||
-      searchResultsData?.data?.items ||
-      searchResultsData?.data ||
-      []
-    );
+    const list = Array.isArray(searchResultsData)
+      ? searchResultsData
+      : searchResultsData?.items ||
+        searchResultsData?.data?.items ||
+        searchResultsData?.data ||
+        [];
+    return deduplicateSectionRow(Array.isArray(list) ? list : []);
   }, [debouncedQuery, searchResultsData]);
 
   const displayMovies = debouncedQuery ? searchMovies : defaultMovies;
@@ -206,25 +208,25 @@ export default function WatchPartyListPage() {
     <main
       className={cn(
         cardFont.className,
-        "bg-background min-h-screen text-foreground overflow-hidden pb-16 pt-20 sm:pt-24",
+        "bg-background min-h-screen text-foreground pb-20 pt-20 sm:pt-24",
       )}
     >
-      {/* Aligned Grid Container */}
-      <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 relative z-30 max-w-[1400px] mx-auto space-y-7">
-        {/* Top Breadcrumb */}
-        <nav className="flex items-center justify-between gap-2 text-xs text-neutral-400">
+      {/* Aligned Grid Container matching standard site layout */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
+        {/* Top Breadcrumb & Status */}
+        <nav className="flex items-center justify-between gap-3 text-xs text-neutral-400">
           <Link
             href="/"
-            className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.12] text-white/90 hover:text-white text-xs font-medium transition-all"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.08] text-white/90 hover:text-white text-xs font-semibold transition-all shadow-sm"
           >
-            <ArrowLeft size={12} />
-            Trang chủ
+            <ArrowLeft size={13} />
+            <span>Trang chủ</span>
           </Link>
 
           {/* Server Status indicator */}
           <span
             className={cn(
-              "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border backdrop-blur-md",
+              "inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border backdrop-blur-md shadow-sm",
               lobbyState === "online"
                 ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
                 : lobbyState === "connecting"
@@ -250,26 +252,40 @@ export default function WatchPartyListPage() {
           </span>
         </nav>
 
-        {/* ── Compact Header & Direct Actions ── */}
-        <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-4 sm:gap-6 items-stretch">
-          {/* Left: Title & Quick Search Bar */}
-          <div className="rounded-3xl border border-white/[0.08] bg-[#0e1017]/90 backdrop-blur-2xl p-5 sm:p-7 flex flex-col justify-between shadow-2xl">
-            <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-pink-500/30 bg-pink-500/10 px-3 py-1 text-xs font-semibold text-pink-300 mb-2.5">
-                <Radio size={13} className="text-pink-400" />
-                <span>Xem Phim Trực Tuyến Cùng Nhau</span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight bg-gradient-to-r from-pink-400 via-rose-300 to-purple-300 bg-clip-text text-transparent">
-                Phòng Xem Chung
-              </h1>
-              <p className="mt-1 text-xs sm:text-sm text-neutral-400 leading-relaxed">
-                Đồng bộ phát video và trò chuyện trực tiếp theo thời gian thực cùng bạn bè.
-              </p>
-            </div>
+        {/* ── Hero Section ── */}
+        <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-gradient-to-b from-[#141822] via-[#0d1017] to-[#0a0c10] p-6 sm:p-8 md:p-10 shadow-2xl">
+          {/* Ambient Glow */}
+          <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-pink-600/20 blur-[100px]" />
+          <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-cyan-600/15 blur-[100px]" />
 
-            {/* Live Search Movie Input */}
-            <div className="mt-5">
-              <label className="relative block">
+          <div className="relative z-10 max-w-3xl space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-pink-500/30 bg-pink-500/10 px-3.5 py-1 text-xs font-bold text-pink-300 shadow-sm">
+              <Radio size={13} className="text-pink-400 animate-pulse" />
+              <span>Rạp Chiếu Phim Trực Tuyến</span>
+            </div>
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-white">
+              Phòng Xem Chung
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed max-w-2xl">
+              Cùng bạn bè thưởng thức những bộ phim điện ảnh bom tấn và series yêu thích với tính năng đồng bộ phát video và trò chuyện trực tiếp theo thời gian thực.
+            </p>
+          </div>
+
+          {/* ── Control Actions Row: 2 Balanced Cards ── */}
+          <div className="relative z-10 mt-8 grid gap-4 md:grid-cols-2">
+            {/* Card 1: Search & Create Room */}
+            <div className="rounded-2xl border border-white/[0.08] bg-black/40 backdrop-blur-md p-4 sm:p-5 flex flex-col justify-between space-y-3">
+              <div>
+                <div className="flex items-center gap-2 text-xs font-bold text-pink-400 uppercase tracking-wider">
+                  <Sparkles size={14} />
+                  <span>Mở phòng chiếu mới</span>
+                </div>
+                <p className="mt-1 text-xs text-neutral-400">
+                  Tìm kiếm phim theo tên hoặc chọn từ danh sách bên dưới để bắt đầu.
+                </p>
+              </div>
+
+              <div className="relative w-full">
                 <Search
                   size={16}
                   className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400"
@@ -278,9 +294,9 @@ export default function WatchPartyListPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Tìm kiếm phim để mở phòng xem ngay..."
-                  aria-label="Tìm kiếm phim để mở phòng xem ngay"
-                  className="h-11 w-full rounded-full border border-white/[0.12] bg-black/60 pl-10 pr-10 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30"
+                  placeholder="Tìm kiếm phim để mở phòng ngay..."
+                  aria-label="Tìm kiếm phim để mở phòng ngay"
+                  className="h-11 w-full rounded-xl border border-white/[0.12] bg-white/[0.04] pl-10 pr-10 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-pink-500 focus:bg-black/60 focus:ring-1 focus:ring-pink-500/30"
                 />
                 {searchQuery && (
                   <button
@@ -292,51 +308,48 @@ export default function WatchPartyListPage() {
                     <X size={14} />
                   </button>
                 )}
-              </label>
-            </div>
-          </div>
-
-          {/* Right: Join Room Form Card */}
-          <div className="rounded-3xl border border-white/[0.08] bg-[#0e1017]/90 backdrop-blur-2xl p-5 sm:p-7 flex flex-col justify-between shadow-2xl">
-            <div>
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1">
-                <Link2 size={15} className="text-cyan-400" />
-                <span>Tham gia phòng có sẵn</span>
               </div>
-              <h2 className="text-lg sm:text-xl font-extrabold text-white">
-                Vào Phòng Bằng Liên Kết
-              </h2>
-              <p className="mt-1 text-xs text-neutral-400 leading-relaxed">
-                Dán đường dẫn mời hoặc mã phòng được bạn bè chia sẻ để tham gia ngay.
-              </p>
             </div>
 
-            <form onSubmit={handleJoinByLink} className="mt-5 flex gap-2">
-              <input
-                value={inputRoomCode}
-                onChange={(e) => setInputRoomCode(e.target.value)}
-                placeholder="Dán liên kết hoặc mã phòng..."
-                aria-label="Dán liên kết hoặc mã phòng"
-                className="h-11 flex-1 rounded-full border border-white/[0.12] bg-black/60 px-4 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30"
-              />
-              <button
-                type="submit"
-                aria-label="Vào phòng xem chung"
-                className="inline-flex h-11 items-center justify-center gap-1.5 rounded-full bg-white hover:bg-neutral-200 px-5 text-xs sm:text-sm font-extrabold text-black transition-all active:scale-95 cursor-pointer shadow-md shrink-0"
-              >
-                <span>Vào phòng</span>
-                <ArrowRight size={14} />
-              </button>
-            </form>
+            {/* Card 2: Join Room via Link / Code */}
+            <div className="rounded-2xl border border-white/[0.08] bg-black/40 backdrop-blur-md p-4 sm:p-5 flex flex-col justify-between space-y-3">
+              <div>
+                <div className="flex items-center gap-2 text-xs font-bold text-cyan-400 uppercase tracking-wider">
+                  <Link2 size={14} />
+                  <span>Tham gia phòng có sẵn</span>
+                </div>
+                <p className="mt-1 text-xs text-neutral-400">
+                  Dán đường dẫn mời hoặc mã phòng được bạn bè chia sẻ để tham gia.
+                </p>
+              </div>
+
+              <form onSubmit={handleJoinByLink} className="flex gap-2">
+                <input
+                  value={inputRoomCode}
+                  onChange={(e) => setInputRoomCode(e.target.value)}
+                  placeholder="Dán liên kết hoặc mã phòng..."
+                  aria-label="Dán liên kết hoặc mã phòng"
+                  className="h-11 flex-1 rounded-xl border border-white/[0.12] bg-white/[0.04] px-3.5 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-cyan-400 focus:bg-black/60 focus:ring-1 focus:ring-cyan-400/30"
+                />
+                <button
+                  type="submit"
+                  aria-label="Vào phòng xem chung"
+                  className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-white hover:bg-neutral-200 px-4 sm:px-5 text-xs sm:text-sm font-extrabold text-black transition-all active:scale-95 cursor-pointer shadow-md shrink-0"
+                >
+                  <span>Vào phòng</span>
+                  <ArrowRight size={14} />
+                </button>
+              </form>
+            </div>
           </div>
         </div>
 
-        {/* ── Section: Active Live Public Rooms (if any) ── */}
-        <section className="space-y-4 pt-2">
+        {/* ── Section: Active Live Public Rooms ── */}
+        <section className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <CircleDot size={16} className="text-pink-400 animate-pulse" />
-              <h2 className="text-lg sm:text-xl font-extrabold text-white">
+              <h2 className="text-lg sm:text-xl font-black text-white">
                 Phòng Đang Chiếu Trực Tiếp
               </h2>
               {rooms.length > 0 && (
@@ -350,13 +363,13 @@ export default function WatchPartyListPage() {
               <button
                 type="button"
                 onClick={refreshLobby}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.08] text-xs font-semibold text-neutral-300 transition-all cursor-pointer active:scale-95"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.08] text-xs font-semibold text-neutral-300 transition-all cursor-pointer active:scale-95"
               >
                 <RefreshCw
                   size={12}
                   className={lobbyState === "connecting" ? "animate-spin" : ""}
                 />
-                Làm mới
+                <span>Làm mới</span>
               </button>
               <button
                 type="button"
@@ -364,20 +377,23 @@ export default function WatchPartyListPage() {
                 className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white text-black hover:bg-neutral-200 text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
               >
                 <Plus size={13} strokeWidth={2.5} />
-                Tạo phòng mới
+                <span>Tạo phòng</span>
               </button>
             </div>
           </div>
 
           {lobbyState === "connecting" && rooms.length === 0 ? (
-            <div className="flex min-h-32 flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-[#0e1017]/60 text-neutral-400">
+            <div className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-[#0e1017]/60 text-neutral-400 p-6">
               <Loader2 size={20} className="animate-spin text-pink-400" />
               <p className="text-xs font-medium">Đang tải danh sách phòng...</p>
             </div>
           ) : rooms.length === 0 ? (
-            <div className="rounded-2xl border border-white/[0.08] bg-[#0e1017]/60 p-6 text-center">
-              <p className="text-xs text-neutral-400">
-                Hiện tại chưa có phòng công khai nào. Hãy tìm phim bên dưới và tạo phòng đầu tiên để mời bạn bè!
+            <div className="rounded-2xl border border-white/[0.08] bg-[#0e1017]/60 p-6 sm:p-8 text-center space-y-1">
+              <p className="text-xs sm:text-sm font-semibold text-neutral-300">
+                Hiện tại chưa có phòng công khai nào.
+              </p>
+              <p className="text-xs text-neutral-500">
+                Hãy chọn một bộ phim bên dưới để tạo phòng chiếu đầu tiên và mời bạn bè cùng xem!
               </p>
             </div>
           ) : (
@@ -389,7 +405,7 @@ export default function WatchPartyListPage() {
                   onClick={() =>
                     router.push(`/watch/${room.movie.slug}?room=${room.id}`)
                   }
-                  className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0e1017] p-4 text-left transition-all hover:border-pink-500/50 hover:scale-[1.01] cursor-pointer shadow-lg"
+                  className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0e1017] p-4 text-left transition-all hover:border-pink-500/50 hover:bg-white/[0.02] cursor-pointer shadow-lg"
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <span className="inline-flex items-center gap-1 rounded-md bg-pink-500/20 px-2 py-0.5 text-[10px] font-bold text-pink-300">
@@ -418,7 +434,7 @@ export default function WatchPartyListPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Flame size={18} className="text-amber-400" />
-              <h2 className="text-lg sm:text-xl font-extrabold bg-gradient-to-r from-cyan-400 to-indigo-300 bg-clip-text text-transparent">
+              <h2 className="text-lg sm:text-xl font-black text-white">
                 {debouncedQuery
                   ? `Kết quả tìm kiếm cho "${debouncedQuery}"`
                   : "Chọn Phim Để Bắt Đầu Phòng Xem"}
@@ -436,7 +452,7 @@ export default function WatchPartyListPage() {
           </div>
 
           {isListLoading ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {Array.from({ length: 12 }).map((_, i) => (
                 <FilmCardSkeleton key={i} />
               ))}
@@ -450,26 +466,27 @@ export default function WatchPartyListPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {displayMovies.slice(0, 24).map((movie) => (
                 <div
                   key={movie.slug}
-                  className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0e1017] p-2 hover:border-pink-500/50 hover:shadow-lg transition-all"
+                  className="group relative overflow-hidden rounded-2xl transition-transform duration-300 hover:scale-[1.02]"
                 >
+                  <FilmCard film={movie} />
+                  {/* Click overlay interceptor to trigger watch party modal */}
                   <button
                     type="button"
-                    onClick={() => openCreateModal(movie)}
-                    className="text-left w-full cursor-pointer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      openCreateModal(movie);
+                    }}
+                    className="absolute inset-0 z-20 flex flex-col items-center justify-end p-3 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 cursor-pointer"
                   >
-                    <FilmCard film={movie} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openCreateModal(movie)}
-                    className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl bg-white/[0.06] hover:bg-pink-600 hover:text-white py-2 text-xs font-bold text-neutral-200 transition-all cursor-pointer active:scale-95"
-                  >
-                    <Play size={11} className="fill-current" />
-                    <span>Mở phòng</span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-pink-600 hover:bg-pink-500 px-4 py-1.5 text-xs font-black text-white shadow-xl transition-transform active:scale-95">
+                      <Play size={12} className="fill-white" />
+                      <span>Mở phòng chiếu</span>
+                    </span>
                   </button>
                 </div>
               ))}
