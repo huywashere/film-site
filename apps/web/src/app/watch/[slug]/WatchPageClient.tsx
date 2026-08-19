@@ -466,7 +466,7 @@ function ReportStreamModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-[#0f1218] border border-white/15 rounded-2xl p-5 shadow-2xl space-y-4">
+      <div className="w-full max-w-md bg-[#141414] border border-white/10 rounded-2xl p-5 shadow-2xl space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-white/10">
           <div className="flex items-center gap-2 text-white font-bold text-sm">
             <span className="text-amber-400">🚨</span>

@@ -105,14 +105,14 @@ export default function SchedulePage() {
         <nav className="flex items-center justify-between gap-3 text-xs text-neutral-400">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-white/90 hover:text-white text-xs font-semibold transition-all shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-neutral-300 hover:text-white text-xs font-semibold transition-all"
           >
             <ArrowLeft size={13} />
             <span>Trang chủ</span>
           </Link>
 
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-xs font-bold shadow-sm">
-            <Radio size={13} className="text-emerald-400 animate-pulse" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.04] text-neutral-400 text-xs font-medium">
+            <Radio size={13} className="text-neutral-400 animate-pulse" />
             <span>Cập nhật liên tục 24/7</span>
           </span>
         </nav>
@@ -120,8 +120,8 @@ export default function SchedulePage() {
         {/* ── Header Section (Seamlessly blended into page background) ── */}
         <div className="relative space-y-6 pb-6 border-b border-white/[0.08]">
           <div className="relative z-10 max-w-3xl space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1 text-xs font-bold text-amber-300 shadow-sm">
-              <CalendarDays size={13} className="text-amber-400" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-3.5 py-1 text-xs font-semibold text-neutral-400">
+              <CalendarDays size={13} className="text-neutral-400" />
               <span>Lịch Phát Sóng & Cập Nhật Tập Mới</span>
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white">
@@ -142,9 +142,9 @@ export default function SchedulePage() {
                   type="button"
                   onClick={() => setSelectedDay(day.id)}
                   className={cn(
-                    "inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-extrabold transition-all cursor-pointer shadow-sm active:scale-95",
+                    "inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer",
                     isSelected
-                      ? "bg-white text-black shadow-[0_0_16px_rgba(255,255,255,0.25)]"
+                      ? "bg-white text-black font-extrabold shadow-sm"
                       : "bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 border border-white/[0.08]",
                   )}
                 >
@@ -180,8 +180,8 @@ export default function SchedulePage() {
           </div>
 
           <div className="text-xs text-neutral-400 flex items-center gap-1.5">
-            <Sparkles size={14} className="text-amber-400" />
-            <span>Hiển thị <strong>{allReleases.length}</strong> phim cập nhật</span>
+            <Film size={13} className="text-neutral-500" />
+            <span>Hiển thị <strong className="text-white">{allReleases.length}</strong> phim cập nhật</span>
           </div>
         </div>
 
