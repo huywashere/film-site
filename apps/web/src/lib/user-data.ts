@@ -19,6 +19,7 @@ export interface GuestWatchlistItem {
 }
 
 const WATCHLIST_KEY = "cineverse_guest_watchlist";
+const FAVORITES_KEY = "cineverse_guest_favorites";
 
 function read<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -44,6 +45,47 @@ export const guestDataStorage = {
 
   isWatchlisted(movieId: string) {
     return this.getWatchlist().some((item) => item.movieId === movieId);
+  },
+
+  getFavorites(): GuestWatchlistItem[] {
+    return read<GuestWatchlistItem[]>(FAVORITES_KEY, []).sort(
+      (a, b) => b.addedAt - a.addedAt,
+    );
+  },
+
+  isFavorite(movieId: string) {
+    return this.getFavorites().some((item) => item.movieId === movieId);
+  },
+
+  toggleFavorite(movieId: string, movieData: StoredMovieData): boolean {
+    const isFav = this.isFavorite(movieId);
+    if (isFav) {
+      write(
+        FAVORITES_KEY,
+        this.getFavorites().filter((item) => item.movieId !== movieId),
+      );
+    } else {
+      const items = this.getFavorites().filter(
+        (item) => item.movieId !== movieId,
+      );
+      const item: GuestWatchlistItem = {
+        id: `guest-fav-${movieId}`,
+        movieId,
+        movieData,
+        addedAt: Date.now(),
+      };
+      write(FAVORITES_KEY, [item, ...items]);
+    }
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("cineverse_favorites_changed", {
+          detail: { movieId, isFavorite: !isFav },
+        }),
+      );
+    }
+
+    return !isFav;
   },
 
   addWatchlist(movieId: string, movieData: StoredMovieData) {
