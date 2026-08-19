@@ -340,7 +340,7 @@ export function ContinueWatchingRow({
             className="w-full !pb-3 !pt-1 !pl-0.5"
           >
             {hasHistory
-              ? historyEntries.map((item: any) => {
+              ? historyEntries.map((item: any, idx: number) => {
                   const {
                     title,
                     originName,
@@ -364,7 +364,7 @@ export function ContinueWatchingRow({
                       : 0;
 
                   return (
-                    <SwiperSlide key={item.slug} className="!w-auto">
+                    <SwiperSlide key={`continue-${item.slug}-${item.epSlug || ''}-${idx}`} className="!w-auto">
                       <div className="w-[240px] sm:w-[280px] md:w-[310px] shrink-0">
                         <Link
                           href={`/watch/${item.slug}${
@@ -469,7 +469,7 @@ export function ContinueWatchingRow({
                     </SwiperSlide>
                   );
                 })
-              : fallbackFilms.slice(0, 10).map((film) => {
+              : fallbackFilms.slice(0, 10).map((film, idx) => {
                   const posterUrl =
                     resolveImageUrl(film.poster_url) ||
                     resolveImageUrl(film.thumb_url);
@@ -487,7 +487,7 @@ export function ContinueWatchingRow({
                   } = getHistoryCardMeta(film);
 
                   return (
-                    <SwiperSlide key={film.slug} className="!w-auto">
+                    <SwiperSlide key={`continue-fallback-${film.slug}-${idx}`} className="!w-auto">
                       <div className="w-[240px] sm:w-[280px] md:w-[310px] shrink-0">
                         <Link
                           href={`/film/${film.slug}`}

@@ -356,7 +356,7 @@ function FilmSection({
                   </SwiperSlide>
                 ))
               : films.map((film, idx) => (
-                  <SwiperSlide key={film._id || film.slug || idx}>
+                  <SwiperSlide key={`slide-${title}-${film._id || film.slug || 'film'}-${idx}`}>
                     <FilmCard
                       film={film}
                       priority={idx < 8}

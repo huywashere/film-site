@@ -26,7 +26,10 @@ import {
   type TmdbImage,
   type TmdbMovie,
 } from "@/lib/tmdb";
-import { getRandomCuratedHeroSet } from "@/lib/curated-hero-pool";
+import {
+  CURATED_HERO_FRANCHISE_POOL,
+  getRandomCuratedHeroSet,
+} from "@/lib/curated-hero-pool";
 
 interface HeroBannerProps {
   films?: FilmItem[];
@@ -1048,9 +1051,10 @@ async function loadFreshTmdbPlaylist(): Promise<HeroFilm[]> {
 
 export default function HeroBanner({ films }: HeroBannerProps) {
   const [current, setCurrent] = useState(0);
+  // Use deterministic initial 6 curated films for SSR hydration safety
   const [featured, setFeatured] = useState<HeroFilm[]>(() => {
     if (films && films.length > 0) return films.slice(0, 6) as HeroFilm[];
-    return getRandomCuratedHeroSet(6) as HeroFilm[];
+    return CURATED_HERO_FRANCHISE_POOL.slice(0, 6) as HeroFilm[];
   });
   const [trailerModalFilm, setTrailerModalFilm] = useState<FilmItem | null>(
     null,
@@ -1264,7 +1268,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
 
           return (
             <div
-              key={item.slug || idx}
+              key={`backdrop-${item.slug || idx}-${idx}`}
               className={cn(
                 "absolute inset-0 w-full h-full transition-all duration-1000 ease-[cubic-bezier(0.25,1,0.5,1)] will-change-[opacity,transform] pointer-events-none",
                 isActive
@@ -1586,7 +1590,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
               <div className="flex sm:hidden items-center justify-center gap-1.5 pt-2">
                 {featured.slice(0, 6).map((_, i) => (
                   <button
-                    key={i}
+                    key={`mobile-dot-${i}`}
                     type="button"
                     onClick={() => setCurrent(i)}
                     aria-label={`Chuyển đến phim ${i + 1}`}
@@ -1663,7 +1667,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
             const isActive = i === current;
 
             return (
-              <div key={item.slug || i} className="relative group">
+              <div key={`hero-thumb-${item.slug || i}-${i}`} className="relative group">
                 {/* Floating Preview Tooltip on Hover */}
                 <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-black/90 border border-white/20 backdrop-blur-md text-[11px] font-bold text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 shadow-2xl z-40 translate-y-1 group-hover:translate-y-0 text-center">
                   <p className="line-clamp-1 max-w-[150px]">

@@ -803,15 +803,16 @@ export function Navbar() {
                   </DropdownMenu>
                 </div>
               ) : (
-                /* Desktop Guest Login User Icon Button (Navigates to /login) */
-                <Link
-                  href="/login"
+                /* Desktop Guest Login User Icon Button (Opens Auth Modal) */
+                <button
+                  type="button"
+                  onClick={() => openAuthModal("login")}
                   aria-label="Đăng nhập"
                   title="Đăng nhập"
                   className="hidden lg:flex items-center justify-center p-1.5 text-neutral-300 hover:text-white transition-colors cursor-pointer active:scale-95"
                 >
                   <User size={20} className="stroke-[2.2]" />
-                </Link>
+                </button>
               )}
             </div>
 

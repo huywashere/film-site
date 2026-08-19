@@ -272,7 +272,7 @@ export function Top10RankedRow({
           className="!py-4 !pl-8 sm:!pl-12 md:!pl-16 !pr-4"
         >
           {top10.map((film, index) => (
-            <SwiperSlide key={film.slug || index} className="!w-auto">
+            <SwiperSlide key={`top10-${film.slug || 'item'}-${index}`} className="!w-auto">
               <Top10Item film={film} rank={index + 1} />
             </SwiperSlide>
           ))}
