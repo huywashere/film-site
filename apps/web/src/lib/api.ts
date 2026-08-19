@@ -131,7 +131,7 @@ export const kkphimApi = {
   getKeywords: (tmdbType: "tv" | "movie", tmdbId: string) =>
     fetchKKPhim(`/phim/keywords?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`),
 
-  // Tìm kiếm siêu tốc với Bộ nhớ đệm Client (LRU Cache), Khử trùng lặp Request & Truy vấn song song
+  // Tìm kiếm siêu tốc thông minh với Multi-Alias, Bộ nhớ đệm Client & Truy vấn song song
   search: async (keyword: string, page = 1, limit = 36) => {
     const cleanKw = (keyword || "").trim();
     if (!cleanKw) return { data: { items: [] } };
@@ -151,67 +151,87 @@ export const kkphimApi = {
     }
 
     const executeSearch = async () => {
-      const unaccented = cleanKw
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/đ/g, "d")
-        .replace(/Đ/g, "D");
+      // Dynamic import smart search to prevent circular deps
+      const { getExpandedSearchTerms, searchLocalFilms } = await import("@/lib/smart-search");
+      const candidateTerms = getExpandedSearchTerms(cleanKw);
 
-      const hasAccents = unaccented !== cleanKw.toLowerCase();
+      const allItems: any[] = [];
+      const seenSlugs = new Set<string>();
 
+      // 1. Truy vấn song song đồng thời các từ khóa mở rộng (Anh + Việt + Tên gốc) qua KKPhim
+      const searchPromises = candidateTerms.slice(0, 3).map((term) =>
+        fetchKKPhim(
+          `/v1/api/tim-kiem?keyword=${encodeURIComponent(term)}&page=${page}&limit=${limit}`,
+        ).catch(() => null),
+      );
+
+      const kkResults = await Promise.allSettled(searchPromises);
+      for (const res of kkResults) {
+        if (res.status === "fulfilled" && res.value) {
+          const items = res.value?.data?.items || res.value?.items || [];
+          for (const item of items) {
+            if (item?.slug && !seenSlugs.has(item.slug)) {
+              seenSlugs.add(item.slug);
+              allItems.push(item);
+            }
+          }
+        }
+      }
+
+      // Nếu KKPhim trả về kết quả, lưu cache và trả về ngay
+      if (allItems.length > 0) {
+        const result = {
+          data: {
+            items: allItems,
+            params: { pagination: { totalPages: 1 } },
+          },
+        };
+        globalSearchCache.set(cacheKey, { data: result, timestamp: Date.now() });
+        return result;
+      }
+
+      // 2. Fallback nhanh qua OPhim với các từ khóa ứng viên
       try {
-        if (!hasAccents) {
-          // Từ khóa không dấu: Gửi trực tiếp đến KKPhim
-          const res = await fetchKKPhim(
-            `/v1/api/tim-kiem?keyword=${encodeURIComponent(cleanKw)}&page=${page}&limit=${limit}`,
-          );
-          if (res?.data?.items?.length > 0 || res?.items?.length > 0) {
-            globalSearchCache.set(cacheKey, { data: res, timestamp: Date.now() });
-            return res;
+        const ophimPromises = candidateTerms.slice(0, 2).map((term) =>
+          fetchOphim(`/tim-kiem?keyword=${encodeURIComponent(term)}`).catch(() => null),
+        );
+        const ophimResults = await Promise.allSettled(ophimPromises);
+        for (const res of ophimResults) {
+          if (res.status === "fulfilled" && res.value) {
+            const items = res.value?.data?.items || res.value?.items || [];
+            for (const item of items) {
+              if (item?.slug && !seenSlugs.has(item.slug)) {
+                seenSlugs.add(item.slug);
+                allItems.push(item);
+              }
+            }
           }
-        } else {
-          // Từ khóa có dấu: Truy vấn SONG SONG cả 2 bản (có dấu + không dấu) để đạt tốc độ tối đa
-          const [origResSettled, unaccResSettled] = await Promise.allSettled([
-            fetchKKPhim(
-              `/v1/api/tim-kiem?keyword=${encodeURIComponent(cleanKw)}&page=${page}&limit=${limit}`,
-            ),
-            fetchKKPhim(
-              `/v1/api/tim-kiem?keyword=${encodeURIComponent(unaccented)}&page=${page}&limit=${limit}`,
-            ),
-          ]);
-
-          const origRes =
-            origResSettled.status === "fulfilled" ? origResSettled.value : null;
-          const unaccRes =
-            unaccResSettled.status === "fulfilled"
-              ? unaccResSettled.value
-              : null;
-
-          if (origRes?.data?.items?.length > 0 || origRes?.items?.length > 0) {
-            globalSearchCache.set(cacheKey, { data: origRes, timestamp: Date.now() });
-            return origRes;
-          }
-
-          if (unaccRes?.data?.items?.length > 0 || unaccRes?.items?.length > 0) {
-            globalSearchCache.set(cacheKey, { data: unaccRes, timestamp: Date.now() });
-            return unaccRes;
-          }
+        }
+        if (allItems.length > 0) {
+          const result = {
+            data: {
+              items: allItems,
+              params: { pagination: { totalPages: 1 } },
+            },
+          };
+          globalSearchCache.set(cacheKey, { data: result, timestamp: Date.now() });
+          return result;
         }
       } catch (_err) {
         // Fallback
       }
 
-      // 3. Fallback nhanh qua OPhim nếu KKPhim không có kết quả
-      try {
-        const ophimRes = await fetchOphim(
-          `/tim-kiem?keyword=${encodeURIComponent(cleanKw)}`,
-        );
-        if (ophimRes?.data?.items?.length > 0) {
-          globalSearchCache.set(cacheKey, { data: ophimRes, timestamp: Date.now() });
-          return ophimRes;
-        }
-      } catch (_err) {
-        // Fallback
+      // 3. Fallback thông minh cuối cùng: Quét kho 100 phim bom tấn tuyển chọn
+      const localMatches = searchLocalFilms(cleanKw);
+      if (localMatches.length > 0) {
+        const result = {
+          data: {
+            items: localMatches,
+            params: { pagination: { totalPages: 1 } },
+          },
+        };
+        globalSearchCache.set(cacheKey, { data: result, timestamp: Date.now() });
+        return result;
       }
 
       // 4. Trả về kết quả rỗng có cấu trúc nếu không tìm thấy

@@ -174,29 +174,29 @@ function AutoNextOverlay({
 // ── Sidebar Film Card Component with Direct TMDB / CDN Resolution ──
 function SidebarFilmCard({ film, slug }: { film: any; slug: string }) {
   return (
-    <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 space-y-3">
+    <div className="space-y-3 pb-4 border-b border-white/[0.08]">
       <div className="flex gap-3">
-        <div className="relative w-16 h-24 rounded-lg overflow-hidden flex-shrink-0 ring-1 ring-white/[0.08] bg-neutral-900 shadow-md">
+        <div className="relative w-16 h-24 rounded-lg overflow-hidden flex-shrink-0 border border-white/[0.08] bg-neutral-900 shadow-md">
           <TmdbArtwork film={film} kind="poster" className="w-full h-full object-cover" alt={film?.name} />
         </div>
         <div className="space-y-1 min-w-0 flex-1">
-          <h2 className="text-xs font-bold text-white leading-snug line-clamp-2">
+          <h2 className="text-xs sm:text-sm font-bold text-white leading-snug line-clamp-2">
             {film?.name}
           </h2>
           {film?.origin_name && film.origin_name !== film.name && (
-            <p className="text-[10px] text-white/30 line-clamp-1">
+            <p className="text-[11px] text-neutral-400 line-clamp-1">
               {film.origin_name}
             </p>
           )}
-          <p className="text-[10px] text-white/30">{film?.year}</p>
+          <p className="text-[11px] text-neutral-400 font-medium">{film?.year}</p>
           <div className="flex flex-wrap gap-1 pt-0.5">
             {film?.quality && (
-              <span className="text-[9px] font-bold bg-white/8 text-white/60 px-1.5 py-0.5 rounded border border-white/[0.08]">
+              <span className="text-[9px] font-bold bg-white/[0.06] text-neutral-300 px-1.5 py-0.5 rounded border border-white/[0.06]">
                 {film.quality}
               </span>
             )}
             {film?.lang && (
-              <span className="text-[9px] font-bold bg-emerald-500/10 text-emerald-400/80 px-1.5 py-0.5 rounded border border-emerald-500/20">
+              <span className="text-[9px] font-bold bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/20">
                 {film.lang}
               </span>
             )}
@@ -205,9 +205,9 @@ function SidebarFilmCard({ film, slug }: { film: any; slug: string }) {
       </div>
       <Link
         href={`/film/${slug}`}
-        className="flex items-center justify-center gap-1.5 w-full py-1.5 text-[11px] font-medium text-white/40 bg-white/[0.03] border border-white/[0.06] rounded-lg hover:text-white/70 hover:bg-white/[0.06] transition-colors"
+        className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-semibold text-neutral-300 bg-white/[0.04] border border-white/[0.06] rounded-xl hover:text-white hover:bg-white/[0.08] transition-colors"
       >
-        <Info size={11} /> Chi tiết phim
+        <Info size={13} /> Chi tiết phim
       </Link>
     </div>
   );
@@ -612,13 +612,14 @@ function RecMovieItem({ item }: { item: any }) {
   }, [item?.slug, candidateUrls]);
 
   const src = candidateUrls[candidateIdx];
+  const rating = Number(item?.tmdb?.vote_average || item?.vote_average || item?.rating || 0);
 
   return (
     <Link
       href={`/film/${item.slug}`}
-      className="flex gap-2.5 group hover:bg-white/[0.03] -mx-1 px-1 py-1 rounded-lg transition-colors"
+      className="flex gap-3 group p-2 rounded-xl hover:bg-white/[0.04] transition-all duration-200 cursor-pointer"
     >
-      <div className="relative w-12 h-[68px] rounded-lg bg-neutral-900 flex-shrink-0 overflow-hidden border border-white/10">
+      <div className="relative w-16 h-24 rounded-lg bg-neutral-900 flex-shrink-0 overflow-hidden border border-white/[0.08] group-hover:border-white/25 shadow-md">
         {src ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
@@ -636,27 +637,36 @@ function RecMovieItem({ item }: { item: any }) {
             }}
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center p-1 text-center bg-gradient-to-b from-neutral-800 to-black">
-            <Clapperboard size={14} className="text-amber-500/80 mb-0.5" />
-            <span className="text-[8px] font-bold text-white leading-tight line-clamp-2">
+          <div className="w-full h-full flex flex-col items-center justify-center p-1 text-center bg-neutral-900 text-neutral-500">
+            <Clapperboard size={18} className="mb-0.5" />
+            <span className="text-[9px] font-bold text-neutral-300 leading-tight line-clamp-2">
               {item.name}
             </span>
           </div>
         )}
       </div>
-      <div className="flex-1 min-w-0 py-0.5 space-y-0.5">
-        <p className="text-[11px] font-semibold text-white/70 group-hover:text-white line-clamp-2 leading-snug transition-colors">
-          {item.name}
-        </p>
-        <div className="flex items-center gap-1.5 text-[10px] text-white/25">
-          <span>{item.year}</span>
-          {typeof item?.tmdb?.vote_average === "number" && item.tmdb.vote_average > 0 && (
-            <>
-              <span>·</span>
-              <span className="flex items-center gap-0.5 text-amber-400/60 font-bold">
-                ★ {item.tmdb.vote_average.toFixed(1)}
-              </span>
-            </>
+      <div className="flex-1 min-w-0 py-0.5 flex flex-col justify-between">
+        <div className="space-y-0.5">
+          <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-amber-400 line-clamp-1 transition-colors">
+            {item.name}
+          </h4>
+          {item.origin_name && (
+            <p className="text-[11px] text-neutral-400 truncate">
+              {item.origin_name}
+            </p>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          {item.year && (
+            <span className="text-[11px] text-neutral-400 font-medium">
+              {item.year}
+            </span>
+          )}
+          {rating > 0 && (
+            <span className="flex items-center gap-1 text-[10px] font-extrabold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/20">
+              ★ {rating.toFixed(1)}
+            </span>
           )}
         </div>
       </div>
@@ -711,6 +721,7 @@ export default function WatchPage() {
     useState<ServerType>("vietsub");
   const [currentTypeServer, setCurrentTypeServer] = useState(0);
   const [vidsrcManuallySelected, setVidsrcManuallySelected] = useState(false);
+  const [userManuallySelectedServer, setUserManuallySelectedServer] = useState(false);
 
   // Fallback state
   const [isFallbacking, setIsFallbacking] = useState(false);
@@ -804,6 +815,12 @@ export default function WatchPage() {
   const applyingRemoteStateRef = useRef(false);
   const [epRangeIndex, setEpRangeIndex] = useState(0);
   const epGridRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (theaterMode && typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [theaterMode]);
 
   useEffect(() => {
     const fallbackTimer = window.setTimeout(
@@ -1127,9 +1144,12 @@ export default function WatchPage() {
   const sourceSlugFor = useCallback(
     (source: MovieSource) => {
       if (primarySource === source) return sourceSlug;
-      return matchedSourceRecord?._sourceSlugs?.[source] || "";
+      return (
+        matchedSourceRecord?._sourceSlugs?.[source] ||
+        (sourceSlug || slug)
+      );
     },
-    [matchedSourceRecord, primarySource, sourceSlug],
+    [matchedSourceRecord, primarySource, slug, sourceSlug],
   );
 
   const kkphimSlug = sourceSlugFor("kkphim");
@@ -1224,46 +1244,96 @@ export default function WatchPage() {
     return kws.find((kw) => rawTitle.includes(kw));
   }, [rawTitle]);
 
+  // ── TMDB Smart Recommendations Engine (AI & Graph-Based) ──
+  const effectiveTmdbId = film?.tmdb?.id || film?.tmdbId;
+  const effectiveMediaType =
+    film?.tmdb?.type || (film?.type === "series" ? "tv" : "movie");
+
   const { data: recsData } = useQuery({
-    queryKey: ["recs", slug, filmCategory, matchedKeyword],
+    queryKey: ["smart-recs-v2", slug, effectiveTmdbId, effectiveMediaType, filmCategory],
     queryFn: async () => {
       const items: any[] = [];
-      if (matchedKeyword) {
+      const seenSlugs = new Set<string>();
+      if (slug) seenSlugs.add(slug);
+
+      // 1. Cấp độ 1: TMDB Intelligent Recommendation API (AI graph-based recommendation)
+      if (effectiveTmdbId) {
         try {
-          const r: any = await movieApi.search(matchedKeyword, 1, 15);
-          items.push(...(r?.data?.items || r?.data?.data?.items || []));
+          const tmdbEndpoint = `/api/tmdb/${effectiveMediaType === "tv" ? "tv" : "movie"}/${effectiveTmdbId}/recommendations`;
+          const res = await fetch(tmdbEndpoint);
+          if (res.ok) {
+            const tmdbJson = await res.json();
+            const tmdbRecs = tmdbJson?.results || [];
+            for (const item of tmdbRecs) {
+              const itemSlug = (item.title || item.name || "")
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^a-z0-9\s]/g, "")
+                .replace(/\s+/g, "-");
+              if (itemSlug && !seenSlugs.has(itemSlug)) {
+                seenSlugs.add(itemSlug);
+                items.push({
+                  _id: String(item.id),
+                  name: item.title || item.name,
+                  origin_name: item.original_title || item.original_name,
+                  slug: itemSlug,
+                  poster_url: item.poster_path ? `https://image.tmdb.org/t/p/w342${item.poster_path}` : undefined,
+                  thumb_url: item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : undefined,
+                  year: (item.release_date || item.first_air_date || "").slice(0, 4),
+                  vote_average: item.vote_average,
+                  type: effectiveMediaType === "tv" ? "series" : "single",
+                  tmdb: {
+                    id: String(item.id),
+                    vote_average: item.vote_average,
+                    type: effectiveMediaType,
+                  },
+                });
+              }
+            }
+          }
         } catch {
-          // Recommendation source is optional.
+          // TMDB error fallback
         }
       }
-      if (filmCategory) {
+
+      // 2. Cấp độ 2: Kho 100 phim bom tấn tuyển chọn (Khớp franchise/từ khóa)
+      try {
+        const { searchLocalFilms } = await import("@/lib/smart-search");
+        const titleKeywords = (film?.name || film?.origin_name || slug || "").split(" ")[0] || "";
+        const localMatches = searchLocalFilms(titleKeywords);
+        for (const item of localMatches) {
+          if (item?.slug && !seenSlugs.has(item.slug)) {
+            seenSlugs.add(item.slug);
+            items.push(item);
+          }
+        }
+      } catch {
+        // Fallback
+      }
+
+      // 3. Cấp độ 3: Khớp theo thể loại từ KKPhim
+      if (filmCategory && items.length < 8) {
         try {
           const r: any = await movieApi.getByGenre(filmCategory, 1);
-          items.push(...(r?.data?.data?.items || r?.data?.items || []));
+          const genreItems = r?.data?.data?.items || r?.data?.items || [];
+          for (const item of genreItems) {
+            if (item?.slug && !seenSlugs.has(item.slug)) {
+              seenSlugs.add(item.slug);
+              items.push(item);
+            }
+          }
         } catch {
-          // Recommendation source is optional.
+          // Fallback
         }
       }
-      try {
-        const r: any = await movieApi.getLatest(1);
-        items.push(...(r?.data?.items || r?.data?.data?.items || []));
-      } catch {
-        // Recommendation source is optional.
-      }
-      const seen = new Set<string>();
+
       return {
-        items: items
-          .filter(
-            (i: any) =>
-              i?.slug &&
-              i.slug !== slug &&
-              !seen.has(i.slug) &&
-              seen.add(i.slug),
-          )
-          .slice(0, 10),
+        items: items.slice(0, 10),
       };
     },
-    enabled: backgroundDataReady && !!slug,
+    enabled: !!slug,
+    staleTime: 1000 * 60 * 30, // 30 phút cache
   });
 
   const { data: resumeData } = useQuery({
@@ -1520,6 +1590,16 @@ export default function WatchPage() {
     resolveImageUrl(film?.poster_url) ||
     undefined;
 
+  // Auto-sync active episode range for long series (e.g. One Piece, Conan with 500-1100+ episodes)
+  useEffect(() => {
+    if (currentEpIndex >= 0 && serverData.length > 0) {
+      const rSize =
+        serverData.length > 500 ? 100 : serverData.length > 100 ? 50 : 40;
+      const targetRange = Math.floor(currentEpIndex / rSize);
+      setEpRangeIndex(targetRange);
+    }
+  }, [currentEpIndex, serverData.length]);
+
   // Auto-record Watch History for BOTH Guest & Logged-in Users
   useEffect(() => {
     if (film && (film.name || film.origin_name) && slug) {
@@ -1677,9 +1757,12 @@ export default function WatchPage() {
 
   // Navigation
   const watchUrlForEpisode = useCallback(
-    (episode: string) => {
+    (episode: string, srvIdx?: number) => {
       const nextParams = new URLSearchParams(searchParams.toString());
       nextParams.set("ep", episode);
+      if (typeof srvIdx === "number") {
+        nextParams.set("server", String(srvIdx));
+      }
       nextParams.delete("party");
       nextParams.delete("roomName");
       return `/watch/${slug}?${nextParams.toString()}`;
@@ -1821,11 +1904,13 @@ export default function WatchPage() {
 
   const startIframeLoadTimeout = useCallback(() => {
     clearIframeLoadTimeout();
+    // Do not trigger automatic fallback loops if the user explicitly selected a server
+    if (vidsrcManuallySelected || userManuallySelectedServer) return;
     iframeLoadTimerRef.current = setTimeout(() => {
       iframeLoadTimerRef.current = null;
       tryNextServer("iframe-timeout");
-    }, 12_000);
-  }, [clearIframeLoadTimeout, tryNextServer]);
+    }, 20_000);
+  }, [clearIframeLoadTimeout, tryNextServer, userManuallySelectedServer, vidsrcManuallySelected]);
 
   const handlePlayerFailure = useCallback(
     (reason: string) => {
@@ -2029,7 +2114,7 @@ export default function WatchPage() {
       <main className={cn(
         "pt-20 lg:pt-22 mx-auto px-3 md:px-5 pb-10 transition-all duration-300",
         theaterMode
-          ? "w-full lg:pl-24 max-w-none"
+          ? "w-full lg:pl-20 max-w-none"
           : "max-w-screen-2xl lg:pl-24",
       )}>
         <div className={cn(
@@ -2039,7 +2124,7 @@ export default function WatchPage() {
             : "grid-cols-1 xl:grid-cols-[1fr_300px]",
         )}>
           {/* ───── LEFT COLUMN ───── */}
-          <div className="space-y-4 min-w-0">
+          <div className={cn("space-y-4 min-w-0", theaterMode ? "max-w-6xl mx-auto w-full" : "")}>
             {/* ── BREADCRUMB & QUICK CONTROLS BAR — Above Video ── */}
             <div className="flex items-center justify-between gap-2 py-1.5 px-3 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-white/50">
               <div className="flex items-center gap-2 min-w-0">
@@ -2258,14 +2343,17 @@ export default function WatchPage() {
               onPointerUp={handleOuterPointerUp}
               onPointerLeave={handleOuterPointerUp}
               className={cn(
-                "bg-black aspect-video rounded-xl overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none transition-all duration-300",
+                "bg-black rounded-2xl overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none transition-all duration-300 flex items-center justify-center",
+                theaterMode
+                  ? "w-full aspect-video max-h-[calc(100vh-140px)] min-h-[340px] sm:min-h-[420px] md:min-h-[480px] mx-auto"
+                  : "w-full aspect-video",
                 lightOff ? "relative z-50 ring-1 ring-white/20 shadow-2xl" : "",
               )}
             >
               {/* ── Universal 2x Speed Hold Top HUD Banner ── */}
               {isOuterSpeedBoosted && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-black/90 border border-amber-500/50 text-amber-400 font-extrabold text-xs px-4 py-1.5 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-2 animate-pulse pointer-events-none">
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-black/90 border border-purple-500/50 text-purple-400 font-extrabold text-xs px-4 py-1.5 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-2 animate-pulse pointer-events-none">
+                  <span className="w-2 h-2 rounded-full bg-purple-400 animate-ping" />
                   <span>⏩ Tua Nhanh 2X (Đang Giữ)</span>
                 </div>
               )}
@@ -2355,9 +2443,10 @@ export default function WatchPage() {
                       <iframe
                         key={`iframe:${server?._source || "unknown"}:${currentServer}:${currentEpData?.slug || currentEpData?.name || ""}`}
                         src={iframeUrl}
-                        className="w-full h-full"
+                        className="w-full h-full border-0"
                         allowFullScreen
-                        allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                        allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer"
+                        referrerPolicy="no-referrer-when-downgrade"
                         sandbox={iframeSandbox}
                         title={`${film?.name} - ${currentEpData?.name}`}
                         onLoad={() => {
@@ -2389,7 +2478,11 @@ export default function WatchPage() {
                               "unknown",
                           });
                         }}
-                        onError={() => handlePlayerFailure("iframe-error")}
+                        onError={() => {
+                          if (!userManuallySelectedServer) {
+                            handlePlayerFailure("iframe-error");
+                          }
+                        }}
                       />
                     </div>
                   ) : (
@@ -2479,7 +2572,7 @@ export default function WatchPage() {
                   className={cn(
                     "inline-flex items-center gap-1.5 transition-all cursor-pointer select-none active:scale-95",
                     autoNextConfig
-                      ? "text-amber-400 font-bold"
+                      ? "text-purple-400 font-bold"
                       : "text-neutral-400 hover:text-neutral-200",
                   )}
                   title="Tự động phát tập tiếp theo khi kết thúc video"
@@ -2487,7 +2580,7 @@ export default function WatchPage() {
                   <SkipForward
                     size={13}
                     className={
-                      autoNextConfig ? "text-amber-400" : "text-neutral-400"
+                      autoNextConfig ? "text-purple-400" : "text-neutral-400"
                     }
                   />
                   <span className="hidden sm:inline">Tự động chuyển tập</span>
@@ -2496,7 +2589,7 @@ export default function WatchPage() {
                     className={cn(
                       "text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider",
                       autoNextConfig
-                        ? "bg-amber-400 text-black font-extrabold shadow-sm"
+                        ? "bg-purple-600 text-white font-extrabold shadow-sm"
                         : "bg-white/10 text-neutral-400",
                     )}
                   >
@@ -2511,7 +2604,7 @@ export default function WatchPage() {
                   className={cn(
                     "inline-flex items-center gap-1.5 transition-all cursor-pointer select-none active:scale-95",
                     autoSkipIntro
-                      ? "text-amber-400 font-bold"
+                      ? "text-purple-400 font-bold"
                       : "text-neutral-400 hover:text-neutral-200",
                   )}
                   title="Tự động bỏ qua 85 giây intro mở đầu phim"
@@ -2519,7 +2612,7 @@ export default function WatchPage() {
                   <FastForward
                     size={13}
                     className={
-                      autoSkipIntro ? "text-amber-400" : "text-neutral-400"
+                      autoSkipIntro ? "text-purple-400" : "text-neutral-400"
                     }
                   />
                   <span className="hidden sm:inline">Auto skip intro</span>
@@ -2528,7 +2621,7 @@ export default function WatchPage() {
                     className={cn(
                       "text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider",
                       autoSkipIntro
-                        ? "bg-amber-400 text-black font-extrabold shadow-sm"
+                        ? "bg-purple-600 text-white font-extrabold shadow-sm"
                         : "bg-white/10 text-neutral-400",
                     )}
                   >
@@ -2552,7 +2645,7 @@ export default function WatchPage() {
                   className={cn(
                     "inline-flex items-center gap-1.5 transition-all cursor-pointer select-none active:scale-95",
                     theaterMode
-                      ? "text-amber-400 font-bold"
+                      ? "text-purple-400 font-bold"
                       : "text-neutral-400 hover:text-neutral-200",
                   )}
                   title="Mở rộng khung chiếu rạp phim"
@@ -2560,7 +2653,7 @@ export default function WatchPage() {
                   <Clapperboard
                     size={13}
                     className={
-                      theaterMode ? "text-amber-400" : "text-neutral-400"
+                      theaterMode ? "text-purple-400" : "text-neutral-400"
                     }
                   />
                   <span>Rạp phim</span>
@@ -2568,7 +2661,7 @@ export default function WatchPage() {
                     className={cn(
                       "text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider",
                       theaterMode
-                        ? "bg-amber-400 text-black font-extrabold shadow-sm"
+                        ? "bg-purple-600 text-white font-extrabold shadow-sm"
                         : "bg-white/10 text-neutral-400",
                     )}
                   >
@@ -2583,7 +2676,7 @@ export default function WatchPage() {
                   className="inline-flex items-center gap-1.5 text-neutral-300 hover:text-white transition-colors cursor-pointer active:scale-95"
                   title="Báo lỗi link phim hoặc đổi server nhanh"
                 >
-                  <Bug size={13} className="text-amber-400/80" />
+                  <Bug size={13} className="text-purple-400" />
                   <span>Báo lỗi</span>
                 </button>
 
@@ -2594,7 +2687,7 @@ export default function WatchPage() {
                   className={cn(
                     "w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer active:scale-95 border",
                     showShortcutsGuide
-                      ? "bg-amber-400 text-black border-amber-300 shadow-sm"
+                      ? "bg-purple-600 text-white border-purple-400 shadow-sm"
                       : "bg-white/[0.08] hover:bg-white/20 text-neutral-300 hover:text-white border-white/10",
                   )}
                   title="Hướng dẫn phím tắt & cử chỉ"
@@ -2808,12 +2901,11 @@ export default function WatchPage() {
               ];
 
               return (
-                <div className="space-y-3.5 bg-[#12151c]/95 p-4 sm:p-4.5 rounded-2xl border border-white/10 shadow-2xl backdrop-blur-xl">
+                <div className="space-y-4 pt-1">
                   {/* ── Version & Audio Selection Tabs ── */}
                   <div className="space-y-2">
-                    <div className="text-[11px] font-extrabold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Sparkles size={13} className="text-white/60" />
-                      <span>{lang === "en" ? "Audio & Subtitle Versions" : "Phiên bản Âm thanh & Phụ đề"}</span>
+                    <div className="text-[11px] font-extrabold text-neutral-400 uppercase tracking-wider">
+                      {lang === "en" ? "Audio & Subtitle Versions" : "Phiên bản Âm thanh & Phụ đề"}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
@@ -2846,7 +2938,8 @@ export default function WatchPage() {
                                     ),
                                   ) || opt.eps[0];
                                 const idx = episodes.indexOf(first);
-                                setCurrentServer(idx >= 0 ? idx : 0);
+                                const targetIdx = idx >= 0 ? idx : 0;
+                                setCurrentServer(targetIdx);
                                 const matchedEpisode = findMatchingEpisode(
                                   first?.server_data,
                                   targetEpisode,
@@ -2857,8 +2950,8 @@ export default function WatchPage() {
                                   matchedEpisode?.link_m3u8 ? "hls" : "iframe",
                                 );
                                 if (matchedEpisodeId)
-                                  router.push(
-                                    watchUrlForEpisode(matchedEpisodeId),
+                                  router.replace(
+                                    watchUrlForEpisode(matchedEpisodeId, targetIdx),
                                   );
                               }
                             }}
@@ -2885,9 +2978,8 @@ export default function WatchPage() {
                   {/* ── Server Provider Mirrors ── */}
                   {activeGroup.length > 0 && (
                     <div className="pt-3 border-t border-white/[0.08] space-y-2">
-                      <div className="text-[11px] font-extrabold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <Server size={13} className="text-white/60" />
-                        <span>{lang === "en" ? `Stream Servers (${activeGroup.length} Mirrors)` : `Máy chủ Nguồn phát (${activeGroup.length} Server)`}</span>
+                      <div className="text-[11px] font-extrabold text-neutral-400 uppercase tracking-wider">
+                        {lang === "en" ? `Stream Servers (${activeGroup.length} Mirrors)` : `Máy chủ Nguồn phát (${activeGroup.length} Server)`}
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
@@ -2905,6 +2997,7 @@ export default function WatchPage() {
                               key={i}
                               disabled={hasFailed}
                               onClick={() => {
+                                setUserManuallySelectedServer(true);
                                 setVidsrcManuallySelected(
                                   ep._source === "vidsrc",
                                 );
@@ -2922,8 +3015,8 @@ export default function WatchPage() {
                                   matchedEpisode?.link_m3u8 ? "hls" : "iframe",
                                 );
                                 if (matchedEpisodeId) {
-                                  router.push(
-                                    watchUrlForEpisode(matchedEpisodeId),
+                                  router.replace(
+                                    watchUrlForEpisode(matchedEpisodeId, i),
                                   );
                                 }
                               }}
@@ -2951,11 +3044,16 @@ export default function WatchPage() {
 
             {/* 4. EPISODE LIST — matching exact reference images with range scroll & toggle switch */}
             {(() => {
-              const rangeSize = 40;
+              const rangeSize =
+                serverData.length > 500 ? 100 : serverData.length > 100 ? 50 : 40;
               const totalRanges = Math.ceil(serverData.length / rangeSize);
-              const rangeStart = epRangeIndex * rangeSize;
+              const safeRangeIndex = Math.max(
+                0,
+                Math.min(epRangeIndex, totalRanges - 1),
+              );
+              const rangeStart = safeRangeIndex * rangeSize;
               const rangeEnd = Math.min(
-                (epRangeIndex + 1) * rangeSize,
+                (safeRangeIndex + 1) * rangeSize,
                 serverData.length,
               );
 
@@ -2966,9 +3064,9 @@ export default function WatchPage() {
                   : filteredEps;
 
               return (
-                <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl overflow-hidden">
+                <div className="space-y-3 pt-3 border-t border-white/[0.08]">
                   {/* Header: Danh sách tập ( X / Y ) + Toggle Switch */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.05]">
+                  <div className="flex items-center justify-between py-1">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-white/80">
                         {t("watch.episodeListTitle", "Danh sách tập")}{" "}
@@ -3024,47 +3122,69 @@ export default function WatchPage() {
 
                   {/* Range Navigation Bar for Movies with >30 Episodes */}
                   {serverData.length > 30 && !episodeSearch && (
-                    <div className="flex items-center gap-1.5 px-4 py-2 bg-white/[0.015] border-b border-white/[0.04] overflow-x-auto scrollbar-hide">
-                      <span className="text-[10px] font-bold text-white/30 uppercase tracking-wider shrink-0 mr-1">
+                    <div className="flex flex-wrap items-center gap-2 py-1">
+                      <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider shrink-0">
                         Khoảng tập:
                       </span>
-                      {Array.from({ length: totalRanges }).map((_, rIdx) => {
-                        const start = rIdx * rangeSize + 1;
-                        const end = Math.min(
-                          (rIdx + 1) * rangeSize,
-                          serverData.length,
-                        );
-                        const isCurrentRange = rIdx === epRangeIndex;
-                        const containsActiveEp =
-                          currentEpIndex >= start - 1 &&
-                          currentEpIndex <= end - 1;
 
-                        return (
-                          <button
-                            key={rIdx}
-                            type="button"
-                            onClick={() => setEpRangeIndex(rIdx)}
-                            className={cn(
-                              "px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 cursor-pointer border",
-                              isCurrentRange
-                                ? "bg-white border-white text-black shadow-sm"
-                                : containsActiveEp
-                                  ? "bg-white/10 border-white/30 text-white"
-                                  : "bg-white/[0.03] border-white/[0.06] text-white/50 hover:bg-white/[0.07] hover:text-white",
-                            )}
-                          >
-                            {start} - {end}
-                            {containsActiveEp && (
-                              <span className="ml-1 w-1.5 h-1.5 rounded-full bg-white inline-block animate-pulse" />
-                            )}
-                          </button>
-                        );
-                      })}
+                      {/* Quick Dropdown Jump for 1000+ episodes like One Piece */}
+                      {totalRanges > 4 && (
+                        <select
+                          value={safeRangeIndex}
+                          onChange={(e) => setEpRangeIndex(Number(e.target.value))}
+                          className="bg-neutral-900 border border-white/15 text-white text-xs rounded-lg px-2.5 py-1 font-bold focus:outline-none focus:border-white/40 cursor-pointer"
+                        >
+                          {Array.from({ length: totalRanges }).map((_, rIdx) => {
+                            const start = rIdx * rangeSize + 1;
+                            const end = Math.min((rIdx + 1) * rangeSize, serverData.length);
+                            return (
+                              <option key={rIdx} value={rIdx} className="bg-neutral-900 text-white font-medium">
+                                Tập {start} - {end}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      )}
+
+                      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 pb-1 max-w-full">
+                        {Array.from({ length: totalRanges }).map((_, rIdx) => {
+                          const start = rIdx * rangeSize + 1;
+                          const end = Math.min(
+                            (rIdx + 1) * rangeSize,
+                            serverData.length,
+                          );
+                          const isCurrentRange = rIdx === safeRangeIndex;
+                          const containsActiveEp =
+                            currentEpIndex >= start - 1 &&
+                            currentEpIndex <= end - 1;
+
+                          return (
+                            <button
+                              key={rIdx}
+                              type="button"
+                              onClick={() => setEpRangeIndex(rIdx)}
+                              className={cn(
+                                "px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 cursor-pointer border",
+                                isCurrentRange
+                                  ? "bg-white border-white text-black shadow-sm"
+                                  : containsActiveEp
+                                    ? "bg-white/10 border-white/30 text-white"
+                                    : "bg-white/[0.03] border-white/[0.06] text-white/50 hover:bg-white/[0.07] hover:text-white",
+                              )}
+                            >
+                              {start} - {end}
+                              {containsActiveEp && (
+                                <span className="ml-1 w-1.5 h-1.5 rounded-full bg-white inline-block animate-pulse" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
 
                   {/* Episodes Container */}
-                  <div className="p-3">
+                  <div className="pt-1">
                     {!showEpThumbnails ? (
                       /* ── MODE 1: Pill Grid Mode ── */
                       <div
@@ -3197,13 +3317,13 @@ export default function WatchPage() {
 
             {/* Recommendations */}
             {recsData?.items && recsData.items.length > 0 && (
-              <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 space-y-3">
-                <p className="text-[10px] font-semibold text-white/30 uppercase tracking-widest">
+              <div className="space-y-3 pt-2">
+                <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wider px-1">
                   {matchedKeyword
                     ? `Thêm về "${matchedKeyword}"`
                     : "Phim tương tự"}
-                </p>
-                <div className="space-y-2.5">
+                </h3>
+                <div className="space-y-1">
                   {recsData.items.slice(0, 8).map((item: any) => (
                     <RecMovieItem key={item._id || item.slug} item={item} />
                   ))}

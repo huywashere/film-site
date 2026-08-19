@@ -215,17 +215,12 @@ export default function GenresTopicsPage() {
     <main
       className={`${cardFont.className} relative min-h-[100dvh] overflow-hidden bg-background px-4 pb-28 pt-24 text-white md:pr-8 lg:pl-24`}
     >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-[420px] bg-[radial-gradient(circle_at_28%_0%,rgba(62,124,155,0.15),transparent_60%)]"
-      />
-
       <div className="relative mx-auto w-full max-w-[1720px]">
         <header className="mb-9 sm:mb-11">
           <button
             type="button"
             onClick={() => router.back()}
-            className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-neutral-400 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
+            className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-neutral-400 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
           >
             <ArrowLeft size={16} /> Quay lại
           </button>
@@ -250,15 +245,12 @@ export default function GenresTopicsPage() {
               <Link
                 key={topic.slug}
                 href={topic.href}
-                className="group relative flex min-h-[220px] flex-col justify-between overflow-hidden rounded-[24px] border border-white/10 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-white/25 hover:shadow-[0_16px_40px_rgba(0,0,0,0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
-                style={{
-                  background: `linear-gradient(135deg, ${topic.tone} 0%, rgba(10,12,16,0.95) 100%)`,
-                }}
+                className="group relative flex min-h-[220px] flex-col justify-between overflow-hidden rounded-[24px] border border-white/[0.08] bg-white/[0.02] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.04] hover:shadow-[0_16px_40px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
               >
                 {/* Background Artwork */}
                 {artworkUrl && (
                   <div
-                    className="pointer-events-none absolute inset-0 overflow-hidden opacity-25 transition-all duration-500 group-hover:scale-105 group-hover:opacity-40"
+                    className="pointer-events-none absolute inset-0 overflow-hidden opacity-20 transition-all duration-500 group-hover:scale-105 group-hover:opacity-35"
                     aria-hidden="true"
                   >
                     <Image
@@ -270,7 +262,7 @@ export default function GenresTopicsPage() {
                       priority={index < 4}
                       unoptimized
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0c10] via-black/40 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/70 to-transparent" />
                   </div>
                 )}
 
@@ -285,11 +277,10 @@ export default function GenresTopicsPage() {
                 {/* Top Accent Pill + Arrow */}
                 <div className="relative z-10 flex items-center justify-between">
                   <span
-                    className="inline-block h-2 w-8 rounded-full transition-all duration-300 group-hover:w-12"
-                    style={{ backgroundColor: topic.accent }}
+                    className="inline-block h-1.5 w-7 rounded-full bg-white/40 transition-all duration-300 group-hover:w-10 group-hover:bg-white"
                   />
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/60 transition-all duration-300 group-hover:bg-white group-hover:text-black group-hover:shadow-[0_0_12px_rgba(255,255,255,0.4)]">
-                    <ArrowUpRight size={16} />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.06] text-white/70 transition-all duration-300 group-hover:bg-white group-hover:text-black group-hover:shadow-[0_0_12px_rgba(255,255,255,0.4)]">
+                    <ArrowUpRight size={15} />
                   </div>
                 </div>
 

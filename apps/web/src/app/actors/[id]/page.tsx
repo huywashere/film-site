@@ -13,7 +13,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useTmdbPerson } from "@/hooks/useTmdb";
-import { tmdbProfile, tmdbPoster, tmdbBackdrop } from "@/lib/tmdb";
+import { tmdbProfile, tmdbPoster } from "@/lib/tmdb";
 
 export default function ActorDetailPage() {
   const params = useParams();
@@ -68,18 +68,6 @@ export default function ActorDetailPage() {
 
   return (
     <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 pt-20 sm:pt-24 pb-20 bg-background min-h-screen text-foreground relative">
-      {/* Backdrop blur */}
-      {knownFor[0]?.backdrop_path && (
-        <div className="absolute top-0 left-0 right-0 h-80 overflow-hidden z-0 pointer-events-none">
-          <img
-            src={tmdbBackdrop(knownFor[0].backdrop_path, "w1280") || ""}
-            alt=""
-            className="w-full h-full object-cover object-top brightness-[0.25]"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/70 to-background" />
-        </div>
-      )}
-
       <div className="relative z-10 w-full pt-2 max-w-6xl mx-auto">
         {/* Back */}
         <button
