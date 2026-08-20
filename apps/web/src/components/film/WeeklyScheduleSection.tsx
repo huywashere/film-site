@@ -73,18 +73,15 @@ export function WeeklyScheduleSection({
   if (!items || items.length === 0) return null;
 
   return (
-    <section className="space-y-4 pt-4">
+    <section className="space-y-3 pt-2 pb-9 sm:pb-11">
       {/* Header bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.08] pb-3">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse" />
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-              <CalendarDays size={20} className="text-purple-400" />
-              <span>{title}</span>
-            </h2>
-          </div>
-          <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-white/[0.08] pb-2.5">
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-1.5">
+            <CalendarDays size={18} className="text-purple-400" />
+            <span>{title}</span>
+          </h2>
+          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300">
             {selectedDay.fullLabel}
           </span>
         </div>
@@ -99,7 +96,7 @@ export function WeeklyScheduleSection({
       </div>
 
       {/* Weekday Switcher Strip */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
         {DAYS.map((day) => {
           const isSelected = activeDayId === day.id;
           const isToday = day.dayIndex === currentDayIndex;
@@ -110,7 +107,7 @@ export function WeeklyScheduleSection({
               type="button"
               onClick={() => setActiveDayId(day.id)}
               className={cn(
-                "flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer border select-none",
+                "flex items-center gap-1 px-3 py-1 rounded-lg text-[11px] font-bold transition-all shrink-0 cursor-pointer border select-none active:scale-[0.98]",
                 isSelected
                   ? "bg-purple-600 text-white border-purple-500 font-extrabold shadow-md scale-[1.03]"
                   : isToday
@@ -133,15 +130,15 @@ export function WeeklyScheduleSection({
 
       {/* Films list for the selected day */}
       {dayFilms.length === 0 ? (
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-8 text-center text-xs text-neutral-400">
+        <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-6 text-center text-xs text-neutral-400">
           Chưa có tập phim mới vào ngày {selectedDay.fullLabel}.
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(142px,190px))] gap-x-3 gap-y-4">
           {dayFilms.map((film, index) => {
             const timeSlot = TIME_SLOTS[index % TIME_SLOTS.length];
             return (
-              <div key={film.slug} className="space-y-1.5">
+              <div key={film.slug} className="min-w-0 space-y-1.5">
                 <div className="flex items-center justify-between text-[10px] font-semibold text-neutral-400 px-1">
                   <span className="inline-flex items-center gap-1 text-purple-400 font-extrabold">
                     <Clock size={10} />
