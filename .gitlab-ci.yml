@@ -116,7 +116,7 @@ build:api:
     - docker build --target api --tag "$REGISTRY_IMAGE/api:$IMAGE_TAG" --tag "$REGISTRY_IMAGE/api:latest" --cache-from "$REGISTRY_IMAGE/api:latest" --build-arg BUILDKIT_INLINE_CACHE=1 .
     - docker push "$REGISTRY_IMAGE/api:$IMAGE_TAG"
     - docker push "$REGISTRY_IMAGE/api:latest"
-    - echo "✅ API image pushed: $REGISTRY_IMAGE/api:$IMAGE_TAG"
+    - 'echo "✅ API image pushed: $REGISTRY_IMAGE/api:$IMAGE_TAG"'
 
 build:web:
   <<: *build_base
@@ -125,7 +125,7 @@ build:web:
     - docker build --target web --tag "$REGISTRY_IMAGE/web:$IMAGE_TAG" --tag "$REGISTRY_IMAGE/web:latest" --cache-from "$REGISTRY_IMAGE/web:latest" --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" --build-arg NEXT_PUBLIC_APP_NAME="CineVerse" --build-arg NEXT_PUBLIC_FIREBASE_API_KEY="$NEXT_PUBLIC_FIREBASE_API_KEY" --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN" --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID="$NEXT_PUBLIC_FIREBASE_PROJECT_ID" --build-arg NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="$NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET" --build-arg NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="$NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID" --build-arg NEXT_PUBLIC_FIREBASE_APP_ID="$NEXT_PUBLIC_FIREBASE_APP_ID" --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY="$NEXT_PUBLIC_TURNSTILE_SITE_KEY" --build-arg KKPHIM_API_BASE="${KKPHIM_API_BASE:-https://phimapi.com}" --build-arg OPHIM_API_BASE="${OPHIM_API_BASE:-https://ophim1.com}" --build-arg NGUONC_API_BASE="${NGUONC_API_BASE:-https://phim.nguonc.com/api}" --build-arg VSMOV_API_BASE="${VSMOV_API_BASE:-https://vsmov.com/api}" .
     - docker push "$REGISTRY_IMAGE/web:$IMAGE_TAG"
     - docker push "$REGISTRY_IMAGE/web:latest"
-    - echo "✅ Web image pushed: $REGISTRY_IMAGE/web:$IMAGE_TAG"
+    - 'echo "✅ Web image pushed: $REGISTRY_IMAGE/web:$IMAGE_TAG"'
 
 # ══════════════════════════════════════════════════════
 # STAGE 3: DEPLOY
@@ -173,7 +173,10 @@ deploy:production:
     max: 1
     when:
       - runner_system_failure
-      - stuck_or_timeout_failure
+      - stuck_pending_with_matching_runners
+      - stuck_pending_no_matching_runners
+      - no_updates_running
+      - no_updates_canceling
 # Scan the checked-out tree without publishing historical secret values in logs.
 secret-scan:
   stage: test
