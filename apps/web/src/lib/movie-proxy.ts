@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "ioredis";
 import { CircuitBreaker, CircuitOpenError } from "@/lib/circuit-breaker";
-import { signHlsUrlsInPayload } from "@/lib/hls-proxy-signature";
+import { addSignedHlsFallbacksInPayload } from "@/lib/hls-proxy-signature";
 
 type CacheEntry = { data: unknown; expiry: number };
 
@@ -206,9 +206,9 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
     const path = pathSegments.join("/");
     const searchParams = request.nextUrl.searchParams.toString();
     const upstreamUrl = `${config.baseUrl}/${path}${searchParams ? `?${searchParams}` : ""}`;
-    // Versioned so pre-hardening cache entries containing unsigned HLS URLs
-    // cannot be served after deployment.
-    const cacheKey = `security-v2:${config.cachePrefix}:${upstreamUrl}`;
+    // Versioned so the previous proxy-only HLS payload cannot remain cached
+    // after switching to direct-first playback with a signed proxy fallback.
+    const cacheKey = `playback-v3:${config.cachePrefix}:${upstreamUrl}`;
     const ttlSeconds = config.getTtl(path);
     const client = getRedisClient();
 
@@ -263,7 +263,7 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
             const transformed = config.transform
               ? config.transform(rawData, path)
               : rawData;
-            return signHlsUrlsInPayload(transformed);
+            return addSignedHlsFallbacksInPayload(transformed);
           } catch (e) {
             lastError = e instanceof Error ? e : new Error(String(e));
             // Tiếp tục thử URL tiếp theo

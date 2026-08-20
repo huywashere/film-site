@@ -53,20 +53,26 @@ export function verifySignedHlsProxyUrl(
   );
 }
 
-export function signHlsUrlsInPayload(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(signHlsUrlsInPayload);
+export function addSignedHlsFallbacksInPayload(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(addSignedHlsFallbacksInPayload);
   if (!value || typeof value !== "object") return value;
 
-  return Object.fromEntries(
-    Object.entries(value as Record<string, unknown>).map(([key, child]) => {
-      if (
-        key === "link_m3u8" &&
-        typeof child === "string" &&
-        /^https?:\/\//i.test(child)
-      ) {
-        return [key, createSignedHlsProxyUrl(child)];
-      }
-      return [key, signHlsUrlsInPayload(child)];
-    }),
+  const source = value as Record<string, unknown>;
+  const result = Object.fromEntries(
+    Object.entries(source).map(([key, child]) => [
+      key,
+      addSignedHlsFallbacksInPayload(child),
+    ]),
   );
+
+  // Browsers should fetch the provider stream directly first. Forcing every
+  // byte through a serverless region is slower and some media CDNs block
+  // datacenter IPs even though they allow browser playback. Keep a signed,
+  // SSRF-protected proxy URL solely as a CORS/network fallback.
+  const hlsUrl = source.link_m3u8;
+  if (typeof hlsUrl === "string" && /^https?:\/\//i.test(hlsUrl)) {
+    result.link_m3u8_proxy = createSignedHlsProxyUrl(hlsUrl);
+  }
+
+  return result;
 }

@@ -1661,6 +1661,7 @@ export default function WatchPage() {
     findMatchingEpisode(serverData, currentEp) || serverData[0];
 
   const m3u8Url: string = currentEpData?.link_m3u8 || "";
+  const m3u8ProxyUrl: string = currentEpData?.link_m3u8_proxy || "";
   const embedUrl: string = currentEpData?.link_embed || "";
 
   const iframeUrl =
@@ -2484,6 +2485,7 @@ export default function WatchPage() {
                     <HlsVideoPlayer
                       key={`hls:${server?._source || "unknown"}:${currentServer}:${currentEpData?.slug || currentEpData?.name || ""}`}
                       src={m3u8Url}
+                      proxySrc={m3u8ProxyUrl}
                       poster={posterUrl}
                       initialTime={lastKnownPlaybackTimeRef.current || resumeAt}
                       autoPlay={autoPlayConfig}

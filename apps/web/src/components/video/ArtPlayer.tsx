@@ -30,6 +30,7 @@ const ART_STATE_ICON = `
 
 export interface ArtPlayerProps {
   url: string;
+  fallbackUrl?: string;
   type?: "hls" | "mp4" | "auto";
   poster?: string;
   title?: string;
@@ -57,6 +58,7 @@ export interface ArtPlayerProps {
 
 export default function ArtPlayer({
   url,
+  fallbackUrl,
   type = "auto",
   poster,
   title,
@@ -302,10 +304,12 @@ export default function ArtPlayer({
           if (!data.fatal) return;
           if (
             data.type === Hls.ErrorTypes.NETWORK_ERROR &&
-            !activeStreamUrl.startsWith("/api/hls-proxy")
+            fallbackUrl &&
+            fallbackUrl !== activeStreamUrl &&
+            fallbackUrl.startsWith("/api/hls-proxy?")
           ) {
             networkRecoveries += 1;
-            activeStreamUrl = `/api/hls-proxy?url=${encodeURIComponent(streamUrl)}`;
+            activeStreamUrl = fallbackUrl;
             hls.loadSource(activeStreamUrl);
             return;
           }
@@ -835,9 +839,9 @@ export default function ArtPlayer({
         clearInterval(drawInterval);
       }
     };
-    // Only re-run when url or type changes (the source stream). Other props use refs.
+    // Recreate only when the primary/fallback transport changes. Other props use refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url, type]);
+  }, [url, fallbackUrl, type]);
 
   // Dynamically update the Theater Mode button UI in the player controls
   useEffect(() => {

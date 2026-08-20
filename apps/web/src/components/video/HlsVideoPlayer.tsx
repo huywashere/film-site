@@ -11,6 +11,7 @@ export type HlsPlaybackError = {
 
 type HlsVideoPlayerProps = {
   src: string;
+  proxySrc?: string;
   poster?: string;
   initialTime?: number;
   autoPlay?: boolean;
@@ -30,6 +31,7 @@ type HlsVideoPlayerProps = {
  */
 export const HlsVideoPlayer = memo(function HlsVideoPlayer({
   src,
+  proxySrc,
   poster,
   initialTime = 0,
   autoPlay = false,
@@ -45,6 +47,7 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
     <div className="w-full h-full relative">
       <ArtPlayer
         url={src}
+        fallbackUrl={proxySrc}
         type="hls"
         poster={poster}
         initialTime={initialTime}

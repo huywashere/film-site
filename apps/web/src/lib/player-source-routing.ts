@@ -5,6 +5,7 @@ export type EpisodeItem = {
   slug?: string;
   link_embed?: string;
   link_m3u8?: string;
+  link_m3u8_proxy?: string;
 };
 
 export type SourceServer = {
