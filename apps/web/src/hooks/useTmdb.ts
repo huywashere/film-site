@@ -261,14 +261,26 @@ export function useTmdbPerson(personId: number | null) {
     staleTime: 1000 * 60 * 60 * 24,
   });
 
-  const knownFor = [...(credits?.cast || [])]
-    .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0))
-    .slice(0, 12);
+  const rawCast = credits?.cast || [];
+  const seenIds = new Set<number>();
+  const allFilms = rawCast
+    .filter((item) => {
+      if (seenIds.has(item.id)) return false;
+      seenIds.add(item.id);
+      return Boolean(item.title || item.name);
+    })
+    .sort((a, b) => {
+      const dateA = a.release_date || a.first_air_date || "";
+      const dateB = b.release_date || b.first_air_date || "";
+      if (dateA && dateB) return dateB.localeCompare(dateA);
+      return ((b as any).popularity || b.vote_average || 0) - ((a as any).popularity || a.vote_average || 0);
+    });
 
   return {
     detail,
     credits,
-    knownFor,
+    knownFor: allFilms,
+    allFilms,
     images: imagesData?.profiles || [],
     isLoading: detailLoading || creditsLoading || imagesLoading,
   };

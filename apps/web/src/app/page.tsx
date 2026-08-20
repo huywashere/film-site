@@ -17,6 +17,7 @@ import { ContinueWatchingRow } from "@/components/film/ContinueWatchingRow";
 import { DashPagination } from "@/components/film/DashPagination";
 import { HeroShowcaseSection } from "@/components/film/HeroShowcaseSection";
 import { CuratedSpotlightSection } from "@/components/film/CuratedSpotlightSection";
+import { WeeklyScheduleSection } from "@/components/film/WeeklyScheduleSection";
 import HeroBanner from "@/app/components/HeroBanner";
 import { cardFont } from "@/lib/fonts";
 
@@ -1004,6 +1005,11 @@ export default function HomePage() {
 
         {/* ── 16:9 LANDSCAPE WATCH HISTORY / RECENTLY WATCHED ROW ── */}
         <ContinueWatchingRow />
+
+        {/* ── LỊCH CHIẾU PHIM HÔM NAY (WEEKLY SCHEDULE STRIP) ── */}
+        <LazySection>
+          <WeeklyScheduleSection items={seriesFilms} />
+        </LazySection>
 
         {/* ── PHIM MỚI CẬP NHẬT (NEWLY UPDATED MOVIES ROW) ── */}
         <LazySection>

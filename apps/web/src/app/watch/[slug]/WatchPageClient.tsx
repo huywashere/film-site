@@ -7,6 +7,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   ArrowLeft,
   Clapperboard,
   Star,
@@ -41,8 +43,12 @@ import {
   HelpCircle,
   SkipForward,
   Bug,
+  Smartphone,
+  Volume2,
+  SlidersHorizontal,
 } from "lucide-react";
-import { movieApi, watchHistoryApi } from "@/lib/api";
+import { kkphimApi, movieApi, watchHistoryApi } from "@/lib/api";
+import { extractFilmItems, normalizeText } from "@/lib/movie-normalizer";
 import { resolveImageUrl } from "@/components/film/FilmCard";
 import { TmdbArtwork } from "@/components/film/TmdbArtwork";
 import { cn } from "@/lib/utils";
@@ -54,8 +60,6 @@ import { useTmdb } from "@/hooks/useTmdb";
 import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
 import { tmdbBackdrop } from "@/lib/tmdb";
 import { cardFont } from "@/lib/fonts";
-import { WatchPartyPanel } from "@/components/watch/WatchPartyPanel";
-import { AdvancedCommentSection } from "@/components/comments/AdvancedCommentSection";
 import dynamic from "next/dynamic";
 import { watchProgressStorage } from "@/lib/watch-progress";
 import { guestDataStorage } from "@/lib/user-data";
@@ -93,6 +97,27 @@ const HlsVideoPlayer = dynamic(
     ssr: false,
     loading: () => (
       <div className="h-full w-full animate-pulse bg-[#0b0d12]" />
+    ),
+  },
+);
+
+const WatchPartyPanel = dynamic(
+  () =>
+    import("@/components/watch/WatchPartyPanel").then(
+      (module) => module.WatchPartyPanel,
+    ),
+  { ssr: false },
+);
+
+const AdvancedCommentSection = dynamic(
+  () =>
+    import("@/components/comments/AdvancedCommentSection").then(
+      (module) => module.AdvancedCommentSection,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-32 w-full animate-pulse rounded-2xl bg-white/[0.02]" />
     ),
   },
 );
@@ -788,6 +813,23 @@ export default function WatchPage() {
     return false;
   });
 
+  const [isQuickSettingsCollapsed, setIsQuickSettingsCollapsed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("cineverse_quick_settings_collapsed") === "true";
+    }
+    return false;
+  });
+
+  const toggleQuickSettingsCollapsed = useCallback(() => {
+    setIsQuickSettingsCollapsed((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("cineverse_quick_settings_collapsed", String(next));
+      }
+      return next;
+    });
+  }, []);
+
   const toggleAutoSkipIntro = useCallback(() => {
     setAutoSkipIntro((prev) => {
       const next = !prev;
@@ -1263,32 +1305,82 @@ export default function WatchPage() {
           const res = await fetch(tmdbEndpoint);
           if (res.ok) {
             const tmdbJson = await res.json();
-            const tmdbRecs = tmdbJson?.results || [];
-            for (const item of tmdbRecs) {
-              const itemSlug = (item.title || item.name || "")
-                .toLowerCase()
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "")
-                .replace(/[^a-z0-9\s]/g, "")
-                .replace(/\s+/g, "-");
-              if (itemSlug && !seenSlugs.has(itemSlug)) {
-                seenSlugs.add(itemSlug);
-                items.push({
-                  _id: String(item.id),
-                  name: item.title || item.name,
-                  origin_name: item.original_title || item.original_name,
-                  slug: itemSlug,
-                  poster_url: item.poster_path ? `https://image.tmdb.org/t/p/w342${item.poster_path}` : undefined,
-                  thumb_url: item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : undefined,
-                  year: (item.release_date || item.first_air_date || "").slice(0, 4),
-                  vote_average: item.vote_average,
-                  type: effectiveMediaType === "tv" ? "series" : "single",
+            // TMDB has metadata but does not know the provider slug consumed
+            // by /film and /watch. Only render recommendations that resolve to
+            // a real catalogue entry, otherwise the generated English slug
+            // leads to a guaranteed "Không tìm thấy phim" page.
+            const tmdbRecs = (tmdbJson?.results || []).slice(0, 10);
+            const resolved = await Promise.allSettled(
+              tmdbRecs.map(async (tmdbItem: any) => {
+                const title =
+                  tmdbItem.original_title ||
+                  tmdbItem.original_name ||
+                  tmdbItem.title ||
+                  tmdbItem.name ||
+                  "";
+                if (!title) return null;
+
+                const response = await kkphimApi.search(title, 1, 10);
+                const candidates = extractFilmItems(response) as any[];
+                const tmdbId = String(tmdbItem.id);
+                const year = String(
+                  tmdbItem.release_date || tmdbItem.first_air_date || "",
+                ).slice(0, 4);
+                const normalizedTitles = new Set(
+                  [
+                    tmdbItem.title,
+                    tmdbItem.name,
+                    tmdbItem.original_title,
+                    tmdbItem.original_name,
+                  ]
+                    .filter(Boolean)
+                    .map((value) => normalizeText(String(value))),
+                );
+                const exact = candidates.find(
+                  (candidate) => String(candidate?.tmdb?.id || "") === tmdbId,
+                );
+                const titleMatch = candidates.find((candidate) => {
+                  const sameTitle = [candidate?.name, candidate?.origin_name]
+                    .filter(Boolean)
+                    .map((value) => normalizeText(String(value)))
+                    .some((value) => normalizedTitles.has(value));
+                  return (
+                    sameTitle &&
+                    (!year || !candidate?.year || String(candidate.year) === year)
+                  );
+                });
+                const providerItem = exact || titleMatch;
+                if (!providerItem?.slug) return null;
+
+                return {
+                  ...providerItem,
+                  poster_url:
+                    providerItem.poster_url ||
+                    (tmdbItem.poster_path
+                      ? `https://image.tmdb.org/t/p/w342${tmdbItem.poster_path}`
+                      : undefined),
+                  thumb_url:
+                    providerItem.thumb_url ||
+                    (tmdbItem.backdrop_path
+                      ? `https://image.tmdb.org/t/p/w780${tmdbItem.backdrop_path}`
+                      : undefined),
+                  vote_average:
+                    providerItem.vote_average || tmdbItem.vote_average,
                   tmdb: {
-                    id: String(item.id),
-                    vote_average: item.vote_average,
+                    ...(providerItem.tmdb || {}),
+                    id: tmdbId,
+                    vote_average: tmdbItem.vote_average,
                     type: effectiveMediaType,
                   },
-                });
+                };
+              }),
+            );
+
+            for (const result of resolved) {
+              const item = result.status === "fulfilled" ? result.value : null;
+              if (item?.slug && !seenSlugs.has(item.slug)) {
+                seenSlugs.add(item.slug);
+                items.push(item);
               }
             }
           }
@@ -1969,7 +2061,7 @@ export default function WatchPage() {
     }
   }, [episodes, searchParams]);
 
-  const DISABLE_ARTPLAYER = true;
+  const DISABLE_ARTPLAYER = false;
 
   useEffect(() => {
     setFailedServers([]);
@@ -2155,23 +2247,6 @@ export default function WatchPage() {
                 )}
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                {/* Theater Mode Button */}
-                <button
-                  onClick={() => setTheaterMode(!theaterMode)}
-                  className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border",
-                    theaterMode
-                      ? "bg-violet-500/20 text-violet-300 border-violet-500/40 shadow-sm"
-                      : "bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-transparent",
-                  )}
-                  title="Chế độ Rạp phim (T)"
-                >
-                  <Maximize2 size={14} className={theaterMode ? "text-violet-300" : "text-neutral-400"} />
-                  <span className="hidden sm:inline">
-                    {theaterMode ? "Thu nhỏ" : "Rạp Phim"}
-                  </span>
-                </button>
-
                 {/* Cinema Light-Off Button */}
                 <button
                   onClick={() => setLightOff(!lightOff)}
@@ -2554,190 +2629,212 @@ export default function WatchPage() {
                 </button>
               </div>
 
-              {/* Right: Quick Player Controls + Report + Help */}
-              <div className="flex items-center flex-wrap gap-3 sm:gap-5">
-                {/* Tự động chuyển tập */}
+              {/* Right: Quick Player Controls + Report + Help + Collapse/Expand */}
+              <div className="flex items-center flex-wrap gap-2.5 sm:gap-4">
+                {!isQuickSettingsCollapsed && (
+                  <>
+                    {/* Rạp phim mở rộng (Theater Mode) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = !theaterMode;
+                        setTheaterMode(next);
+                        toast(
+                          next
+                            ? "Đã bật chế độ Rạp phim mở rộng"
+                            : "Đã tắt chế độ Rạp phim",
+                          "info",
+                        );
+                      }}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 transition-all cursor-pointer select-none active:scale-95",
+                        theaterMode
+                          ? "text-purple-400 font-bold"
+                          : "text-neutral-400 hover:text-neutral-200",
+                      )}
+                      title="Chế độ rạp phim (mở rộng player cực đại)"
+                    >
+                      <Maximize2
+                        size={13}
+                        className={
+                          theaterMode ? "text-purple-400" : "text-neutral-400"
+                        }
+                      />
+                      <span className="hidden sm:inline">Rạp phim</span>
+                      <span className="sm:hidden">Rạp</span>
+                      <span
+                        className={cn(
+                          "text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider",
+                          theaterMode
+                            ? "bg-purple-600 text-white font-extrabold shadow-sm"
+                            : "bg-white/10 text-neutral-400",
+                        )}
+                      >
+                        {theaterMode ? "ON" : "OFF"}
+                      </span>
+                    </button>
+
+                    {/* Tự động chuyển tập */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = !autoNextConfig;
+                        setAutoNextConfig(next);
+                        toast(
+                          next
+                            ? "Đã bật Tự động chuyển tập"
+                            : "Đã tắt Tự động chuyển tập",
+                          "info",
+                        );
+                      }}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 transition-all cursor-pointer select-none active:scale-95",
+                        autoNextConfig
+                          ? "text-purple-400 font-bold"
+                          : "text-neutral-400 hover:text-neutral-200",
+                      )}
+                      title="Tự động phát tập tiếp theo khi kết thúc video"
+                    >
+                      <SkipForward
+                        size={13}
+                        className={
+                          autoNextConfig ? "text-purple-400" : "text-neutral-400"
+                        }
+                      />
+                      <span className="hidden sm:inline">Tự động chuyển tập</span>
+                      <span className="sm:hidden">Tập tiếp</span>
+                      <span
+                        className={cn(
+                          "text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider",
+                          autoNextConfig
+                            ? "bg-purple-600 text-white font-extrabold shadow-sm"
+                            : "bg-white/10 text-neutral-400",
+                        )}
+                      >
+                        {autoNextConfig ? "ON" : "OFF"}
+                      </span>
+                    </button>
+
+                    {/* Auto skip intro */}
+                    <button
+                      type="button"
+                      onClick={toggleAutoSkipIntro}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 transition-all cursor-pointer select-none active:scale-95",
+                        autoSkipIntro
+                          ? "text-purple-400 font-bold"
+                          : "text-neutral-400 hover:text-neutral-200",
+                      )}
+                      title="Tự động bỏ qua 85 giây intro mở đầu phim"
+                    >
+                      <FastForward
+                        size={13}
+                        className={
+                          autoSkipIntro ? "text-purple-400" : "text-neutral-400"
+                        }
+                      />
+                      <span className="hidden sm:inline">Auto skip intro</span>
+                      <span className="sm:hidden">Skip intro</span>
+                      <span
+                        className={cn(
+                          "text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider",
+                          autoSkipIntro
+                            ? "bg-purple-600 text-white font-extrabold shadow-sm"
+                            : "bg-white/10 text-neutral-400",
+                        )}
+                      >
+                        {autoSkipIntro ? "ON" : "OFF"}
+                      </span>
+                    </button>
+
+                    {/* Báo lỗi */}
+                    <button
+                      type="button"
+                      onClick={() => setShowReportModal(true)}
+                      className="inline-flex items-center gap-1.5 text-neutral-300 hover:text-white transition-colors cursor-pointer active:scale-95"
+                      title="Báo lỗi link phim hoặc đổi server nhanh"
+                    >
+                      <Bug size={13} className="text-purple-400" />
+                      <span>Báo lỗi</span>
+                    </button>
+
+                    {/* Help / Shortcuts (?) */}
+                    <button
+                      type="button"
+                      onClick={() => setShowShortcutsGuide((prev) => !prev)}
+                      className={cn(
+                        "w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer active:scale-95 border",
+                        showShortcutsGuide
+                          ? "bg-purple-600 text-white border-purple-400 shadow-sm"
+                          : "bg-white/[0.08] hover:bg-white/20 text-neutral-300 hover:text-white border-white/10",
+                      )}
+                      title="Hướng dẫn phím tắt & cử chỉ"
+                    >
+                      <HelpCircle size={13} />
+                    </button>
+                  </>
+                )}
+
+                {/* Nút Thu gọn / Mở rộng toàn bộ Cài đặt */}
                 <button
                   type="button"
-                  onClick={() => {
-                    const next = !autoNextConfig;
-                    setAutoNextConfig(next);
-                    toast(
-                      next
-                        ? "Đã bật Tự động chuyển tập"
-                        : "Đã tắt Tự động chuyển tập",
-                      "info",
-                    );
-                  }}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 transition-all cursor-pointer select-none active:scale-95",
-                    autoNextConfig
-                      ? "text-purple-400 font-bold"
-                      : "text-neutral-400 hover:text-neutral-200",
-                  )}
-                  title="Tự động phát tập tiếp theo khi kết thúc video"
+                  onClick={toggleQuickSettingsCollapsed}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-neutral-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all cursor-pointer select-none active:scale-95"
+                  title={
+                    isQuickSettingsCollapsed
+                      ? "Mở rộng cài đặt trình phát"
+                      : "Thu gọn tất cả cài đặt trình phát"
+                  }
                 >
-                  <SkipForward
-                    size={13}
-                    className={
-                      autoNextConfig ? "text-purple-400" : "text-neutral-400"
-                    }
-                  />
-                  <span className="hidden sm:inline">Tự động chuyển tập</span>
-                  <span className="sm:hidden">Tập tiếp</span>
-                  <span
+                  <SlidersHorizontal size={12} className="text-neutral-400" />
+                  <span>{isQuickSettingsCollapsed ? "Cài đặt" : "Thu gọn"}</span>
+                  <ChevronDown
+                    size={12}
                     className={cn(
-                      "text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider",
-                      autoNextConfig
-                        ? "bg-purple-600 text-white font-extrabold shadow-sm"
-                        : "bg-white/10 text-neutral-400",
+                      "transition-transform duration-200",
+                      !isQuickSettingsCollapsed && "rotate-180",
                     )}
-                  >
-                    {autoNextConfig ? "ON" : "OFF"}
-                  </span>
-                </button>
-
-                {/* Auto skip intro */}
-                <button
-                  type="button"
-                  onClick={toggleAutoSkipIntro}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 transition-all cursor-pointer select-none active:scale-95",
-                    autoSkipIntro
-                      ? "text-purple-400 font-bold"
-                      : "text-neutral-400 hover:text-neutral-200",
-                  )}
-                  title="Tự động bỏ qua 85 giây intro mở đầu phim"
-                >
-                  <FastForward
-                    size={13}
-                    className={
-                      autoSkipIntro ? "text-purple-400" : "text-neutral-400"
-                    }
                   />
-                  <span className="hidden sm:inline">Auto skip intro</span>
-                  <span className="sm:hidden">Skip intro</span>
-                  <span
-                    className={cn(
-                      "text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider",
-                      autoSkipIntro
-                        ? "bg-purple-600 text-white font-extrabold shadow-sm"
-                        : "bg-white/10 text-neutral-400",
-                    )}
-                  >
-                    {autoSkipIntro ? "ON" : "OFF"}
-                  </span>
-                </button>
-
-                {/* Rạp phim (Theater mode) */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = !theaterMode;
-                    setTheaterMode(next);
-                    toast(
-                      next
-                        ? "Đã bật Chế độ rạp phim"
-                        : "Đã tắt Chế độ rạp phim",
-                      "info",
-                    );
-                  }}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 transition-all cursor-pointer select-none active:scale-95",
-                    theaterMode
-                      ? "text-purple-400 font-bold"
-                      : "text-neutral-400 hover:text-neutral-200",
-                  )}
-                  title="Mở rộng khung chiếu rạp phim"
-                >
-                  <Clapperboard
-                    size={13}
-                    className={
-                      theaterMode ? "text-purple-400" : "text-neutral-400"
-                    }
-                  />
-                  <span>Rạp phim</span>
-                  <span
-                    className={cn(
-                      "text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider",
-                      theaterMode
-                        ? "bg-purple-600 text-white font-extrabold shadow-sm"
-                        : "bg-white/10 text-neutral-400",
-                    )}
-                  >
-                    {theaterMode ? "ON" : "OFF"}
-                  </span>
-                </button>
-
-                {/* Báo lỗi */}
-                <button
-                  type="button"
-                  onClick={() => setShowReportModal(true)}
-                  className="inline-flex items-center gap-1.5 text-neutral-300 hover:text-white transition-colors cursor-pointer active:scale-95"
-                  title="Báo lỗi link phim hoặc đổi server nhanh"
-                >
-                  <Bug size={13} className="text-purple-400" />
-                  <span>Báo lỗi</span>
-                </button>
-
-                {/* Help / Shortcuts (?) */}
-                <button
-                  type="button"
-                  onClick={() => setShowShortcutsGuide((prev) => !prev)}
-                  className={cn(
-                    "w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer active:scale-95 border",
-                    showShortcutsGuide
-                      ? "bg-purple-600 text-white border-purple-400 shadow-sm"
-                      : "bg-white/[0.08] hover:bg-white/20 text-neutral-300 hover:text-white border-white/10",
-                  )}
-                  title="Hướng dẫn phím tắt & cử chỉ"
-                >
-                  <HelpCircle size={13} />
                 </button>
               </div>
             </div>
 
-            {/* ── EXPANDABLE SHORTCUTS & GESTURE GUIDE (1:1 with User Image 2) ── */}
+            {/* ── EXPANDABLE SHORTCUTS & GESTURE GUIDE (Premium Clean Cinema Standard) ── */}
             {showShortcutsGuide && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 sm:p-5 bg-[#0e1017] border border-white/[0.08] rounded-2xl animate-in fade-in zoom-in-95 duration-150 shadow-2xl">
-                {/* Column 1: Desktop */}
-                <div className="space-y-2.5 p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.04]">
-                  <div className="flex items-center gap-2 text-xs font-bold text-amber-400">
-                    <span>⌨️ Desktop</span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 p-4 sm:p-5 bg-neutral-900/90 border border-white/10 rounded-2xl animate-in fade-in zoom-in-95 duration-200 shadow-2xl backdrop-blur-xl">
+                {/* Column 1: Desktop Keyboard */}
+                <div className="space-y-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                  <div className="flex items-center gap-2 text-xs font-bold text-white tracking-wide">
+                    <Monitor size={15} className="text-[#23ade5]" />
+                    <span>Bàn Phím (Desktop)</span>
                   </div>
                   <div className="space-y-2 text-xs text-neutral-300">
-                    <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
-                      <span className="text-neutral-400">Phát / tạm dừng</span>
+                    <div className="flex items-center justify-between py-1 border-b border-white/[0.05]">
+                      <span className="text-neutral-400">Phát / Tạm dừng</span>
                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
-                        Space
+                        Space / K
                       </kbd>
                     </div>
-                    <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
+                    <div className="flex items-center justify-between py-1 border-b border-white/[0.05]">
                       <span className="text-neutral-400">Toàn màn hình</span>
                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
                         F
                       </kbd>
                     </div>
-                    <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
-                      <span className="text-neutral-400">
-                        Tua lùi / tới 10 giây
-                      </span>
+                    <div className="flex items-center justify-between py-1 border-b border-white/[0.05]">
+                      <span className="text-neutral-400">Tua lùi / Tới 10s</span>
                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
                         ← / →
                       </kbd>
                     </div>
-                    <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
-                      <span className="text-neutral-400">
-                        Tăng / giảm âm lượng
-                      </span>
+                    <div className="flex items-center justify-between py-1 border-b border-white/[0.05]">
+                      <span className="text-neutral-400">Tăng / Giảm âm lượng</span>
                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
                         ↑ / ↓
                       </kbd>
                     </div>
                     <div className="flex items-center justify-between py-1">
-                      <span className="text-neutral-400">
-                        Chuyển tập kế tiếp
-                      </span>
+                      <span className="text-neutral-400">Chuyển tập kế tiếp</span>
                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
                         N
                       </kbd>
@@ -2745,51 +2842,58 @@ export default function WatchPage() {
                   </div>
                 </div>
 
-                {/* Column 2: Mobile */}
-                <div className="space-y-2.5 p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.04]">
-                  <div className="flex items-center gap-2 text-xs font-bold text-amber-400">
-                    <span>📱 Mobile</span>
+                {/* Column 2: Mobile Gestures */}
+                <div className="space-y-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                  <div className="flex items-center gap-2 text-xs font-bold text-white tracking-wide">
+                    <Smartphone size={15} className="text-[#23ade5]" />
+                    <span>Cử Chỉ (Mobile)</span>
                   </div>
                   <div className="space-y-2.5 text-xs text-neutral-300">
-                    <div className="flex items-start gap-2 py-1 border-b border-white/[0.04]">
-                      <span className="text-amber-400 shrink-0">❇️</span>
-                      <span>Chạm một lần để hiện / ẩn thanh điều khiển</span>
+                    <div className="flex items-start gap-2.5 py-1 border-b border-white/[0.05]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#23ade5] mt-1.5 shrink-0" />
+                      <span className="leading-relaxed">Chạm 1 lần để hiện hoặc ẩn thanh điều khiển</span>
                     </div>
-                    <div className="flex items-start gap-2 py-1 border-b border-white/[0.04]">
-                      <span className="text-amber-400 shrink-0">❇️</span>
-                      <span>Chạm đúp bên trái / phải để tua 10 giây</span>
+                    <div className="flex items-start gap-2.5 py-1 border-b border-white/[0.05]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#23ade5] mt-1.5 shrink-0" />
+                      <span className="leading-relaxed">Chạm đúp bên trái hoặc phải để tua 10 giây</span>
                     </div>
-                    <div className="flex items-start gap-2 py-1">
-                      <span className="text-amber-400 shrink-0">❇️</span>
-                      <span>
-                        Nhấn giữ trên video để tua nhanh 2x, thả tay để trở lại
-                        tốc độ cũ
+                    <div className="flex items-start gap-2.5 py-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#23ade5] mt-1.5 shrink-0" />
+                      <span className="leading-relaxed">
+                        Nhấn giữ video để kích hoạt <b className="text-white font-semibold">Tốc độ 2x</b>, thả tay để về 1x
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Column 3: Nút dưới video */}
-                <div className="space-y-2.5 p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.04]">
-                  <div className="flex items-center gap-2 text-xs font-bold text-amber-400">
-                    <span>❓ Nút dưới video</span>
+                {/* Column 3: Quick Action Functions */}
+                <div className="space-y-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                  <div className="flex items-center gap-2 text-xs font-bold text-white tracking-wide">
+                    <SlidersHorizontal size={15} className="text-[#23ade5]" />
+                    <span>Tính Năng Phím Nhanh</span>
                   </div>
-                  <div className="space-y-1.5 text-xs text-neutral-300">
-                    <div className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.04] flex items-center justify-between">
-                      <span>▷| Tự động chuyển tập</span>
+                  <div className="space-y-2 text-xs text-neutral-300">
+                    <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05] flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <SkipForward size={13} className="text-[#23ade5]" />
+                        <span>Tự động chuyển tập</span>
+                      </span>
+                      <span className="text-[10px] font-bold text-neutral-400 font-mono">Auto Next</span>
                     </div>
-                    <div className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.04] flex items-center justify-between">
-                      <span>&gt;| Tự động bỏ qua intro</span>
+                    <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05] flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <FastForward size={13} className="text-[#23ade5]" />
+                        <span>Tự động bỏ qua intro</span>
+                      </span>
+                      <span className="text-[10px] font-bold text-neutral-400 font-mono">Auto Skip</span>
                     </div>
-                    <div className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.04] flex items-center justify-between">
-                      <span>🎬 Chế độ rạp phim</span>
+                    <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05] flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <Bug size={13} className="text-purple-400" />
+                        <span>Báo lỗi link phim</span>
+                      </span>
+                      <span className="text-[10px] font-bold text-neutral-400 font-mono">Report</span>
                     </div>
-                    <div className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.04] flex items-center justify-between">
-                      <span>🪲 Báo lỗi phim</span>
-                    </div>
-                    <p className="text-[11px] text-amber-400 font-bold pt-1">
-                      Vàng = đang bật
-                    </p>
                   </div>
                 </div>
               </div>

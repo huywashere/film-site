@@ -140,12 +140,12 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
         </div>
 
         {/* Movie Title Below Card */}
-        <div className="mt-2 text-center max-w-[130px] sm:max-w-[160px] md:max-w-[185px]">
-          <p className={`${cardFont.className} text-xs font-bold text-neutral-200 line-clamp-1 group-hover/item:text-amber-400 transition-colors`}>
+        <div className="mt-2 text-center max-w-[130px] sm:max-w-[160px] md:max-w-[185px] px-0.5">
+          <p className={`${cardFont.className} text-[11px] sm:text-xs font-bold text-neutral-200 line-clamp-1 group-hover/item:text-white transition-colors leading-snug tracking-normal`}>
             {filmTitle}
           </p>
           {film.origin_name && (
-            <p className="text-[10px] text-neutral-400 line-clamp-1 italic font-medium">
+            <p className="text-[10px] text-neutral-400 line-clamp-1 font-medium mt-0.5">
               {film.origin_name}
             </p>
           )}

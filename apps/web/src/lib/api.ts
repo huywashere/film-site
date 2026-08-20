@@ -190,35 +190,37 @@ export const kkphimApi = {
         return result;
       }
 
-      // 2. Fallback nhanh qua OPhim với các từ khóa ứng viên
-      try {
-        const ophimPromises = candidateTerms.slice(0, 2).map((term) =>
-          fetchOphim(`/tim-kiem?keyword=${encodeURIComponent(term)}`).catch(() => null),
-        );
-        const ophimResults = await Promise.allSettled(ophimPromises);
-        for (const res of ophimResults) {
-          if (res.status === "fulfilled" && res.value) {
-            const items = res.value?.data?.items || res.value?.items || [];
-            for (const item of items) {
-              if (item?.slug && !seenSlugs.has(item.slug)) {
-                seenSlugs.add(item.slug);
-                allItems.push(item);
+      // 2. Fallback nhanh qua OPhim với các từ khóa ứng viên (nếu bật)
+      if (ENABLE_OPHIM) {
+        try {
+          const ophimPromises = candidateTerms.slice(0, 2).map((term) =>
+            fetchOphim(`/tim-kiem?keyword=${encodeURIComponent(term)}`).catch(() => null),
+          );
+          const ophimResults = await Promise.allSettled(ophimPromises);
+          for (const res of ophimResults) {
+            if (res.status === "fulfilled" && res.value) {
+              const items = res.value?.data?.items || res.value?.items || [];
+              for (const item of items) {
+                if (item?.slug && !seenSlugs.has(item.slug)) {
+                  seenSlugs.add(item.slug);
+                  allItems.push(item);
+                }
               }
             }
           }
+          if (allItems.length > 0) {
+            const result = {
+              data: {
+                items: allItems,
+                params: { pagination: { totalPages: 1 } },
+              },
+            };
+            globalSearchCache.set(cacheKey, { data: result, timestamp: Date.now() });
+            return result;
+          }
+        } catch (_err) {
+          // Fallback
         }
-        if (allItems.length > 0) {
-          const result = {
-            data: {
-              items: allItems,
-              params: { pagination: { totalPages: 1 } },
-            },
-          };
-          globalSearchCache.set(cacheKey, { data: result, timestamp: Date.now() });
-          return result;
-        }
-      } catch (_err) {
-        // Fallback
       }
 
       // 3. Fallback thông minh cuối cùng: Quét kho 100 phim bom tấn tuyển chọn
@@ -267,14 +269,16 @@ export const kkphimApi = {
     fetchKKPhim(`/nam-phat-hanh/${year}?page=${page}&limit=${limit}`),
 };
 
+// ── Feature Flag: Tạm thời ẩn API OPhim do server ngưng hoạt động ──────
+export const ENABLE_OPHIM = false;
+
 // ── OPhim, NguonC & VSMOV Proxies ──────────────────────────────
 const fetchOphim = async (endpoint: string) => {
+  if (!ENABLE_OPHIM) {
+    return { status: false, msg: "OPhim API is disabled", items: [], data: { items: [] } };
+  }
   const response = await trackedMovieFetch(`/api/ophim${endpoint}`);
   const json = await response.json();
-
-  // NOTE: Image URL normalization is now handled at the proxy layer
-  // (apps/web/src/app/api/ophim/[...path]/route.ts normalizeOphimImages)
-  // This function just returns the already-normalized JSON.
   return json;
 };
 
@@ -483,12 +487,16 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
       source: "kkphim",
       request: () => kkphimApi.search(primaryKeyword, page, limit),
     },
-    {
-      // OPhim dùng /tim-kiem (không phải /v1/api/tim-kiem)
-      source: "ophim",
-      request: () =>
-        fetchOphim(`/tim-kiem?keyword=${encodedKeyword}&page=${page}`),
-    },
+    ...(ENABLE_OPHIM
+      ? [
+          {
+            // OPhim dùng /tim-kiem (không phải /v1/api/tim-kiem)
+            source: "ophim" as MovieSource,
+            request: () =>
+              fetchOphim(`/tim-kiem?keyword=${encodedKeyword}&page=${page}`),
+          },
+        ]
+      : []),
     {
       source: "nguonc",
       request: () =>
@@ -599,10 +607,14 @@ async function getDetailFromAnySource(
       source: "kkphim",
       request: () => kkphimApi.getDetail(slug),
     },
-    {
-      source: "ophim",
-      request: () => fetchOphim(`/phim/${slug}`),
-    },
+    ...(ENABLE_OPHIM
+      ? [
+          {
+            source: "ophim" as MovieSource,
+            request: () => fetchOphim(`/phim/${slug}`),
+          },
+        ]
+      : []),
     {
       source: "nguonc",
       request: () => fetchNguonc(`/film/${slug}`),
@@ -813,14 +825,12 @@ async function getFastCatalogPage(
       }),
     );
 
-  // KKPhim and OPhim are normally the fastest and carry the richest list
-  // metadata. Do not start the slower providers unless both primary sources
-  // are unavailable; this avoids dozens of long-lived requests on home pages.
+  // KKPhim and healthy sources are fastest.
   const primary = requests.filter(
-    ({ source }) => source === "kkphim" || source === "ophim",
+    ({ source }) => source === "kkphim" || (ENABLE_OPHIM && source === "ophim"),
   );
   const fallback = requests.filter(
-    ({ source }) => source !== "kkphim" && source !== "ophim",
+    ({ source }) => source !== "kkphim" && (!ENABLE_OPHIM || source !== "ophim"),
   );
 
   try {
@@ -883,10 +893,10 @@ function catalogRequests(
         return vsmovApi.getByType("tv-shows", page);
       },
     },
-    ...(kind !== "tvshows"
+    ...(ENABLE_OPHIM && kind !== "tvshows"
       ? [
           {
-            source: "ophim",
+            source: "ophim" as MovieSource,
             request: () => {
               if (kind === "latest")
                 return fetchOphim(`/danh-sach/phim-moi-cap-nhat?page=${page}`);

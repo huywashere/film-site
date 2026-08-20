@@ -4,18 +4,17 @@ import Link from "next/link";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Play, Star, Film, ChevronDown, Bookmark } from "lucide-react";
+import dynamic from "next/dynamic";
 import { FilmItem } from "@/components/film/FilmCard";
-import { TrailerModal } from "@/components/film/TrailerModal";
 import { useTranslation } from "@/store/langStore";
 import { useAuthStore } from "@/store/authStore";
 import { useQuery } from "@tanstack/react-query";
 import { movieApi, watchlistApi, watchHistoryApi } from "@/lib/api";
 import { useToast } from "@/providers/ToastProvider";
 import { cn } from "@/lib/utils";
-import { heroSerifFont } from "@/lib/fonts";
+import { heroSerifFont, cardFont } from "@/lib/fonts";
 import { guestDataStorage } from "@/lib/user-data";
 import { buildHeroImageCandidates } from "@/lib/hero-image";
-import { cardFont } from "@/lib/fonts";
 import {
   tmdbApi,
   tmdbBackdrop,
@@ -30,6 +29,11 @@ import {
   CURATED_HERO_FRANCHISE_POOL,
   getRandomCuratedHeroSet,
 } from "@/lib/curated-hero-pool";
+
+const TrailerModal = dynamic(
+  () => import("@/components/film/TrailerModal").then((m) => m.TrailerModal),
+  { ssr: false },
+);
 
 interface HeroBannerProps {
   films?: FilmItem[];
@@ -542,11 +546,11 @@ function HeroMovieTitle({
 
   return (
     <div className="relative flex min-h-16 w-full items-center justify-center sm:min-h-24 md:min-h-28">
-      {/* Cinematic Text Title - Only rendered visibly if NO logo exists */}
+      {/* Cinematic Text Title - Rendered immediately so user never sees a blank gap */}
       <h1
         className={cn(
-          "max-w-2xl line-clamp-2 text-xl font-black uppercase leading-tight tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl transition-opacity duration-150",
-          hasLogoCandidate ? "sr-only" : "opacity-100",
+          "max-w-2xl line-clamp-2 text-xl font-black uppercase leading-tight tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl transition-opacity duration-300",
+          logoLoaded ? "opacity-0 absolute pointer-events-none" : "opacity-100 relative",
         )}
         style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }}
       >
@@ -578,8 +582,8 @@ function HeroMovieTitle({
             }
           }}
           className={cn(
-            "max-h-16 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-opacity duration-150 sm:max-h-24 sm:max-w-[34rem] md:max-h-28",
-            logoLoaded ? "opacity-100" : "opacity-0",
+            "max-h-16 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-opacity duration-300 sm:max-h-24 sm:max-w-[34rem] md:max-h-28",
+            logoLoaded ? "opacity-100 relative" : "opacity-0 absolute pointer-events-none",
           )}
         />
       )}
@@ -733,6 +737,8 @@ function HeroThumbnailImage({
   );
 }
 
+const preloadedHeroBackdrops = new Set<string>();
+
 function HeroBackdropImage({
   film,
   isActive,
@@ -754,37 +760,19 @@ function HeroBackdropImage({
     [film.heroBackdrop, film.poster_url, film.thumb_url],
   );
   const [candidateIndex, setCandidateIndex] = useState(0);
-  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
+  const src = candidates[candidateIndex] || candidates[0];
+
   useEffect(() => {
-    setCandidateIndex(0);
-  }, [film.slug, candidates]);
+    onReady();
+  }, [onReady]);
 
   const tryNextCandidate = () => {
-    setLoadedSrc(null);
-    setCandidateIndex((index) =>
-      Math.min(index + 1, Math.max(candidates.length - 1, 0)),
-    );
-  };
-
-  const src = candidates[candidateIndex];
-
-  useEffect(() => {
-    const image = imageRef.current;
-    if (!src || !image?.complete || image.naturalWidth <= 0) return;
-    if (
-      image.naturalWidth === 300 &&
-      image.naturalHeight === 450 &&
-      candidateIndex < candidates.length - 1
-    ) {
-      setLoadedSrc(null);
-      setCandidateIndex((index) => Math.min(index + 1, candidates.length - 1));
-      return;
+    if (candidateIndex < candidates.length - 1) {
+      setCandidateIndex((index) => index + 1);
     }
-    setLoadedSrc(src);
-    onReady();
-  }, [candidateIndex, candidates.length, onReady, src]);
+  };
 
   if (!src) return null;
 
@@ -794,34 +782,18 @@ function HeroBackdropImage({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imageRef}
-        key={`${film.slug}-${candidateIndex}`}
         src={src}
         alt={film.name}
         referrerPolicy="no-referrer"
-        loading={isActive ? "eager" : "lazy"}
+        loading="eager"
         decoding="async"
         fetchPriority={isActive ? "high" : "low"}
-        onLoad={(event) => {
-          // The legacy proxy placeholder is exactly 300x450. Treat stale
-          // cached copies as failures as well, then advance to a real source.
-          if (
-            event.currentTarget.naturalWidth === 300 &&
-            event.currentTarget.naturalHeight === 450 &&
-            candidateIndex < candidates.length - 1
-          ) {
-            tryNextCandidate();
-            return;
-          }
-          setLoadedSrc(src);
+        onLoad={() => {
+          preloadedHeroBackdrops.add(src);
           onReady();
         }}
         onError={tryNextCandidate}
-        className={cn(
-          "h-full w-full object-cover object-center brightness-[0.72] transition-opacity duration-500",
-          isActive || (loadedSrc === src && revealed)
-            ? "opacity-100"
-            : "opacity-0",
-        )}
+        className="h-full w-full object-cover object-center brightness-[0.72] transition-transform duration-1000 ease-out"
       />
     </>
   );
@@ -1002,7 +974,8 @@ function isStoredHeroPlaylist(value: unknown): value is HeroFilm[] {
         typeof film === "object" &&
         film !== null &&
         typeof (film as HeroFilm).slug === "string" &&
-        typeof (film as HeroFilm).heroBackdrop === "string",
+        typeof (film as HeroFilm).heroBackdrop === "string" &&
+        !(film as HeroFilm).heroBackdrop?.includes("phimimg.com/upload/vod/"),
     )
   );
 }
@@ -1139,14 +1112,24 @@ export default function HeroBanner({ films }: HeroBannerProps) {
     let active = true;
     enrichHeroTitleLogos(initialPlaylist).then((withLogos) => {
       if (!active) return;
-      const enriched = initialPlaylist.map((film, idx) => ({
-        ...film,
-        titleLogo: withLogos[idx]?.titleLogo || film.titleLogo,
-        heroBackdrop: withLogos[idx]?.heroBackdrop || film.heroBackdrop,
-        titleLogoResolved: true,
-      }));
-      setFeatured(enriched);
-      storeHeroPlaylist(enriched);
+      setFeatured((prev) => {
+        return prev.map((film, idx) => {
+          const logo = withLogos[idx]?.titleLogo;
+          const backdrop = withLogos[idx]?.heroBackdrop;
+          if (
+            film.titleLogo === (logo || film.titleLogo) &&
+            film.heroBackdrop === (backdrop || film.heroBackdrop)
+          ) {
+            return film;
+          }
+          return {
+            ...film,
+            titleLogo: logo || film.titleLogo,
+            heroBackdrop: backdrop || film.heroBackdrop,
+            titleLogoResolved: true,
+          };
+        });
+      });
     });
 
     return () => {
@@ -1165,18 +1148,18 @@ export default function HeroBanner({ films }: HeroBannerProps) {
           preloadedHeroLogos.add(item.titleLogo!);
         };
       }
-      if (item.heroBackdrop) {
+      const candidates = buildHeroImageCandidates({
+        heroBackdrop: item.heroBackdrop,
+        thumbUrl: item.thumb_url,
+        posterUrl: item.poster_url,
+      });
+      candidates.slice(0, 2).forEach((url) => {
         const img = new window.Image();
-        img.src = item.heroBackdrop;
-      }
-      if (item.thumb_url) {
-        const img = new window.Image();
-        img.src = item.thumb_url;
-      }
-      if (item.poster_url) {
-        const img = new window.Image();
-        img.src = item.poster_url;
-      }
+        img.src = url;
+        img.onload = () => {
+          preloadedHeroBackdrops.add(url);
+        };
+      });
     });
   }, [featured]);
 

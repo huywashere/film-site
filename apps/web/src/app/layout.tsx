@@ -147,7 +147,6 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://images.nguonc.com" />
         <link rel="preconnect" href="https://image.tmdb.org" />
         <link rel="dns-prefetch" href="https://image.tmdb.org" />
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteSchema) }}

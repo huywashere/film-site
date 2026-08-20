@@ -260,8 +260,8 @@ export function AuthPageForm({
             movie.title ||
             movie.original_title ||
             movie.name ||
-            "TMDB Trending",
-          studio: "TMDB Trending",
+            "Phim Thịnh Hành",
+          studio: "Phim Thịnh Hành",
           backdropUrl: imageUrl,
           objectPosition: backdrop ? "center" : "center top",
         });
@@ -565,7 +565,18 @@ export function AuthPageForm({
 
               {/* Logo top-left */}
               <div className="relative z-10">
-                <Link href="/" className="inline-flex items-center gap-2">
+                <Link href="/" className="inline-flex items-center gap-2.5 group">
+                  <Image
+                    src="/cinephim-logo.png"
+                    alt="NetPhim Logo"
+                    width={32}
+                    height={32}
+                    priority
+                    className="h-8 w-8 object-contain transition-transform group-hover:scale-105"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = "/logo.png";
+                    }}
+                  />
                   <span className="text-2xl font-black tracking-tight text-white flex items-center font-[family-name:var(--font-manrope)]">
                     Net<span className="text-violet-400 drop-shadow-[0_0_12px_rgba(167,139,250,0.6)]">Phim</span>
                   </span>
@@ -578,7 +589,7 @@ export function AuthPageForm({
                   <div className="flex items-center justify-between gap-2 mb-1.5">
                     <span className="text-[10px] font-black uppercase tracking-wider text-violet-400 flex items-center gap-1">
                       <Clapperboard size={12} />
-                      {randomMovie.studio || "Hollywood Blockbuster"}
+                      {randomMovie.studio || "Phim Thịnh Hành"}
                     </span>
                     <span className="text-[11px] font-bold text-amber-400 flex items-center gap-0.5">
                       ★ 8.8

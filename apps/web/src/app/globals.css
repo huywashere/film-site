@@ -176,9 +176,9 @@ pre,
   background: #3b4458;
 }
 
-/* Smooth scroll behavior */
+/* Base html styling - scroll-behavior: auto prevents SPA route jump */
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   background: var(--background);
 }
 
@@ -286,11 +286,6 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
   contain-intrinsic-size: 1px 320px;
 }
 
-/* Smooth scrolling without main thread thrashes */
-html {
-  scroll-behavior: smooth;
-}
-
 /* ── Loading States ────────────────────────────────────────────── */
 .skeleton {
   @apply animate-pulse bg-white/5;
@@ -365,160 +360,95 @@ html {
   animation: beam-shine 2.5s ease-in-out infinite;
 }
 
-/* ── Ultra-Luxury Cinematic ArtPlayer Overrides ───────────────── */
+/* ── ArtPlayer Native Styling ──────────────────────────────────── */
 .art-video-player {
-  border-radius: 16px !important;
+  border-radius: 12px !important;
   overflow: hidden !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 25px 65px rgba(0, 0, 0, 0.95), 0 0 30px rgba(245, 158, 11, 0.05) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8) !important;
   font-family: var(--font-primary), system-ui, sans-serif !important;
 }
 
-/* Bottom Control Bar Glassmorphism */
-.art-video-player .art-bottom {
-  background: linear-gradient(to top, rgba(8, 9, 13, 0.96) 0%, rgba(8, 9, 13, 0.75) 70%, transparent 100%) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  padding: 0 16px 8px !important;
+.art-video-player .art-setting-item-hotkey,
+.art-video-player [data-for="hotkey"] {
+  display: none !important;
 }
 
-.art-video-player .art-controls {
-  height: 52px !important;
+/* Custom play/pause language: crisp solid controls below and a softer,
+   TV-player-style action in the center of the video. */
+.art-video-player .art-icon-custom-play,
+.art-video-player .art-icon-custom-pause {
+  width: 32px !important;
+  height: 32px !important;
+  color: #f3f5f7;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.7));
 }
 
-/* Sleek Progress Bar */
-.art-video-player .art-control-progress {
-  height: 14px !important;
+.art-video-player .art-icon-custom-play svg,
+.art-video-player .art-icon-custom-pause svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
 }
 
-.art-video-player .art-control-progress .art-control-progress-inner {
-  height: 5px !important;
-  border-radius: 9999px !important;
-  background: rgba(255, 255, 255, 0.18) !important;
-  transition: height 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+.art-video-player .art-control:hover .art-icon-custom-play,
+.art-video-player .art-control:hover .art-icon-custom-pause {
+  color: #ffffff;
 }
 
-.art-video-player .art-control-progress:hover .art-control-progress-inner {
-  height: 8px !important;
+.art-video-player .art-icon-custom-state {
+  width: 72px !important;
+  height: 72px !important;
+  border: 0;
+  border-radius: 9999px;
+  color: #20282f;
+  background: rgba(238, 241, 243, 0.72);
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.2);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition:
+    transform 120ms ease,
+    background-color 120ms ease;
 }
 
-.art-video-player .art-progress-played {
-  background: linear-gradient(90deg, #f59e0b 0%, #ef4444 100%) !important;
-  border-radius: 9999px !important;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.6) !important;
+.art-video-player .art-icon-custom-state svg {
+  width: 32px;
+  height: 32px;
+  fill: currentColor;
+  filter: none;
+}
+
+.art-video-player .art-state:hover .art-icon-custom-state {
+  transform: scale(1.04);
+  background: rgba(250, 251, 252, 0.82);
+}
+
+.art-video-player .art-state:active .art-icon-custom-state {
+  transform: scale(0.96);
+}
+
+.art-video-player .art-progress-played,
+.art-video-player .art-volume-loaded,
+.art-video-player .art-volume-indicator {
+  background-color: #20b9e8 !important;
 }
 
 .art-video-player .art-progress-indicator {
-  width: 14px !important;
-  height: 14px !important;
-  background: #ffffff !important;
-  border-radius: 50% !important;
-  box-shadow: 0 0 14px rgba(245, 158, 11, 0.9), 0 0 4px rgba(255, 255, 255, 0.8) !important;
-  transform: scale(0) !important;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  background: #20b9e8 !important;
+  border: 0 !important;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
-.art-video-player .art-control-progress:hover .art-progress-indicator {
-  transform: scale(1) !important;
-}
+@media (max-width: 640px) {
+  .art-video-player .art-icon-custom-state {
+    width: 60px !important;
+    height: 60px !important;
+    border-radius: 9999px;
+  }
 
-/* Center Big Play Button */
-.art-video-player .art-state {
-  pointer-events: auto !important;
-}
-
-.art-video-player .art-state .art-icon-state {
-  width: 76px !important;
-  height: 76px !important;
-  border-radius: 50% !important;
-  background: rgba(15, 17, 23, 0.65) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.3) !important;
-  box-shadow: 0 0 35px rgba(245, 158, 11, 0.35), inset 0 0 15px rgba(255, 255, 255, 0.1) !important;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, box-shadow 0.3s !important;
-}
-
-.art-video-player .art-state:hover .art-icon-state {
-  transform: scale(1.12) !important;
-  border-color: rgba(245, 158, 11, 0.8) !important;
-  box-shadow: 0 0 45px rgba(245, 158, 11, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.2) !important;
-}
-
-/* Hide ugly default top-left "Pause" text badge */
-.art-video-player .art-state-pause {
-  display: none !important;
-}
-
-/* Control Buttons (Play, Volume, Settings, Fullscreen, etc.) */
-.art-video-player .art-control-icon {
-  width: 38px !important;
-  height: 38px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  border-radius: 10px !important;
-  transition: background-color 0.2s, transform 0.2s !important;
-}
-
-.art-video-player .art-control-icon:hover {
-  background-color: rgba(255, 255, 255, 0.12) !important;
-  transform: scale(1.1) !important;
-}
-
-.art-video-player .art-control-icon svg {
-  width: 22px !important;
-  height: 22px !important;
-  fill: #ffffff !important;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)) !important;
-}
-
-/* Floating Settings & Context Menu */
-.art-video-player .art-setting {
-  background: rgba(15, 17, 23, 0.94) !important;
-  backdrop-filter: blur(24px) !important;
-  -webkit-backdrop-filter: blur(24px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: 14px !important;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9) !important;
-  padding: 8px !important;
-}
-
-.art-video-player .art-setting-item {
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-  font-size: 13px !important;
-  padding: 8px 12px !important;
-  transition: background-color 0.2s, color 0.2s !important;
-}
-
-.art-video-player .art-setting-item:hover {
-  background-color: rgba(245, 158, 11, 0.18) !important;
-  color: #fbbf24 !important;
-}
-
-/* Tooltips */
-.art-video-player .art-tooltip {
-  background: rgba(0, 0, 0, 0.88) !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  backdrop-filter: blur(12px) !important;
-  border-radius: 8px !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  padding: 4px 10px !important;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7) !important;
-}
-
-/* Hide Hotkey menu item & Web Fullscreen / Theater controls */
-.art-video-player .art-control-fullscreenWeb,
-.art-video-player .art-control-web-fullscreen,
-.art-video-player .art-icon-fullscreenWeb,
-.art-video-player .art-icon-theater,
-.art-video-player .art-control-theater-mode,
-.art-video-player .art-setting-item-hotkey,
-.art-video-player [data-for="fullscreenWeb"],
-.art-video-player [data-for="hotkey"] {
-  display: none !important;
+  .art-video-player .art-icon-custom-state svg {
+    width: 29px;
+    height: 29px;
+  }
 }
 
 /* Stable web glass for the mobile dock. The solid fill keeps it readable over
@@ -543,6 +473,3 @@ html {
     backdrop-filter: none;
   }
 }
-
-
-

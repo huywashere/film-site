@@ -438,7 +438,7 @@ export function ContinueWatchingRow({
                             {/* Title & 3-line Detailed Metadata Block */}
                             <div className="flex-1 min-w-0 pt-0.5 space-y-0.5">
                               {/* Main Title */}
-                              <h3 className={`${cardFont.className} text-xs sm:text-sm font-extrabold text-white leading-snug line-clamp-1 group-hover/card:text-blue-400 transition-colors`}>
+                              <h3 className={`${cardFont.className} text-xs sm:text-sm font-bold text-neutral-200 leading-snug line-clamp-1 group-hover/card:text-white transition-colors tracking-normal`}>
                                 {title}
                               </h3>
 
@@ -554,7 +554,7 @@ export function ContinueWatchingRow({
                             {/* Title & 3-line Detailed Metadata Block */}
                             <div className="flex-1 min-w-0 pt-0.5 space-y-0.5">
                               {/* Main Title */}
-                              <h3 className={`${cardFont.className} text-xs sm:text-sm font-extrabold text-white leading-snug line-clamp-1 group-hover/card:text-blue-400 transition-colors`}>
+                              <h3 className={`${cardFont.className} text-xs sm:text-sm font-bold text-neutral-200 leading-snug line-clamp-1 group-hover/card:text-white transition-colors tracking-normal`}>
                                 {title}
                               </h3>
 

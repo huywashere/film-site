@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import NextImage from "next/image";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Play,
@@ -24,6 +24,8 @@ import {
   Subtitles,
   Mic,
   Monitor,
+  ChevronLeft,
+  ChevronRight,
   ChevronRight as ChevronRightIcon,
   ArrowLeft,
   Clapperboard,
@@ -310,6 +312,111 @@ function CastCard({
   }
 
   return cardContent;
+}
+
+// ── Smooth Drag & Button Cast Scroller Component ─────────────
+function CastScroller({ children }: { children: React.ReactNode }) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const isMouseDown = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftStart = useRef(0);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 10);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    // Initial check after paint
+    const timer = setTimeout(() => {
+      checkScroll();
+    }, 200);
+    const handleResize = () => checkScroll();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [checkScroll]);
+
+  const handleScroll = (direction: "left" | "right") => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const scrollAmount = el.clientWidth * 0.75;
+    el.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    isMouseDown.current = true;
+    startX.current = e.pageX - el.offsetLeft;
+    scrollLeftStart.current = el.scrollLeft;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isMouseDown.current) return;
+    const el = scrollerRef.current;
+    if (!el) return;
+    e.preventDefault();
+    const x = e.pageX - el.offsetLeft;
+    const walk = (x - startX.current) * 1.3;
+    el.scrollLeft = scrollLeftStart.current - walk;
+  };
+
+  const handleMouseUp = () => {
+    isMouseDown.current = false;
+  };
+
+  return (
+    <div className="relative group/scroller">
+      {/* Left Scroll Button */}
+      {canScrollLeft && (
+        <button
+          type="button"
+          onClick={() => handleScroll("left")}
+          className="hidden md:flex absolute -left-3 top-1/2 -translate-y-5 z-30 w-9 h-9 rounded-full bg-black/85 hover:bg-black border border-white/20 text-white items-center justify-center backdrop-blur-md shadow-2xl transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer"
+          aria-label="Cuộn sang trái"
+        >
+          <ChevronLeft size={18} />
+        </button>
+      )}
+
+      {/* Right Scroll Button */}
+      {canScrollRight && (
+        <button
+          type="button"
+          onClick={() => handleScroll("right")}
+          className="hidden md:flex absolute -right-3 top-1/2 -translate-y-5 z-30 w-9 h-9 rounded-full bg-black/85 hover:bg-black border border-white/20 text-white items-center justify-center backdrop-blur-md shadow-2xl transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer"
+          aria-label="Cuộn sang phải"
+        >
+          <ChevronRight size={18} />
+        </button>
+      )}
+
+      {/* Cast Scroll Track */}
+      <div
+        ref={scrollerRef}
+        onScroll={checkScroll}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        className="flex gap-3 overflow-x-auto pb-3 pt-1 px-1 touch-pan-x select-none cursor-grab active:cursor-grabbing scrollbar-thin scrollbar-track-white/5 scrollbar-thumb-white/20 hover:scrollbar-thumb-white/40"
+      >
+        {children}
+      </div>
+    </div>
+  );
 }
 
 // ── Server type detection (same logic as watch page) ──
@@ -1627,7 +1734,7 @@ export default function FilmDetailPage() {
               >
                 <span>{t("film.cast", "Đạo diễn và diễn viên")}</span>
               </h2>
-              <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide">
+              <CastScroller>
                 {directors.map((director, idx) => (
                   <CastCard
                     key={`director-${director}-${idx}`}
@@ -1652,7 +1759,7 @@ export default function FilmDetailPage() {
                         role={t("film.characters", "Diễn viên")}
                       />
                     ))}
-              </div>
+              </CastScroller>
             </section>
           )}
 

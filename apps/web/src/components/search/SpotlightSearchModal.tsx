@@ -570,7 +570,7 @@ export function SpotlightSearchModal({
                             <SearchCardImage film={film} />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <h4 className="truncate text-xs sm:text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
+                            <h4 className="truncate text-xs sm:text-sm font-bold text-neutral-200 group-hover:text-white transition-colors">
                               <HighlightMatch
                                 text={film.name || film.title || ""}
                                 query={debouncedQuery}

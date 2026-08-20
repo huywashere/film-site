@@ -461,13 +461,13 @@ function FilmCardComponent({
         <div className="mt-1.5 sm:mt-2.5 flex flex-col px-0.5">
           <Link
             href={`/film/${slug}`}
-            className="font-bold sm:font-extrabold text-[11px] sm:text-sm text-white hover:text-violet-400 transition-colors truncate block leading-tight"
+            className="font-bold text-[11px] sm:text-sm text-neutral-200 hover:text-white transition-colors truncate block leading-snug tracking-normal"
             title={title}
           >
             {title}
           </Link>
 
-          <div className="flex items-center justify-between mt-0.5 sm:mt-1 text-[10px] sm:text-[12px] text-neutral-400 font-medium">
+          <div className="flex items-center justify-between mt-0.5 sm:mt-1 text-[10px] sm:text-[11.5px] text-neutral-400 font-medium">
             <span className="truncate">
               {film.origin_name || categoryName || `Năm ${film.year || 2026}`}
             </span>

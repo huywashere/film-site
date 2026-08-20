@@ -4,6 +4,29 @@ import Artplayer from "artplayer";
 import Hls from "hls.js";
 import { cn } from "@/lib/utils";
 import { useSettingsStore } from "@/store/settingsStore";
+import { isLikelyAdUrl, filterHlsManifest } from "@/lib/hls-ad-filter";
+
+const ART_PLAY_ICON = `
+  <div class="art-icon art-icon-custom-play" aria-hidden="true">
+    <svg viewBox="0 0 24 24" focusable="false">
+      <path d="M7.35 4.82a1.35 1.35 0 0 1 2.02-1.17l9.15 5.72a3.08 3.08 0 0 1 0 5.26l-9.15 5.72a1.35 1.35 0 0 1-2.02-1.17V4.82Z" />
+    </svg>
+  </div>`;
+
+const ART_PAUSE_ICON = `
+  <div class="art-icon art-icon-custom-pause" aria-hidden="true">
+    <svg viewBox="0 0 24 24" focusable="false">
+      <rect x="6.25" y="4" width="4.25" height="16" rx="1.35" />
+      <rect x="13.5" y="4" width="4.25" height="16" rx="1.35" />
+    </svg>
+  </div>`;
+
+const ART_STATE_ICON = `
+  <div class="art-icon art-icon-custom-state" aria-hidden="true">
+    <svg viewBox="0 0 24 24" focusable="false">
+      <path d="M8.15 5.42a1.18 1.18 0 0 1 1.77-1.02l8.08 5.05a2.98 2.98 0 0 1 0 5.1L9.92 19.6a1.18 1.18 0 0 1-1.77-1.02V5.42Z" />
+    </svg>
+  </div>`;
 
 export interface ArtPlayerProps {
   url: string;
@@ -59,9 +82,6 @@ export default function ArtPlayer({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playerRef = useRef<Artplayer | null>(null);
 
-  const [isFloating, setIsFloating] = useState(false);
-  const [showSkipIntro, setShowSkipIntro] = useState(false);
-  const [showSkipOutro, setShowSkipOutro] = useState(false);
   const [isDimmed, setIsDimmed] = useState(false); // Chế độ rạp tắt đèn
   const [pipActive, setPipActive] = useState(false); // Picture-in-Picture
 
@@ -79,6 +99,20 @@ export default function ArtPlayer({
   isTheaterModeRef.current = isTheaterMode;
   onTheaterModeToggleRef.current = onTheaterModeToggle;
 
+  const detectedAdRangesRef = useRef<
+    Array<{ start: number; end: number; duration: number }>
+  >([]);
+
+  const initialTimeRef = useRef(initialTime);
+  const progressKeyRef = useRef(progressKey);
+  const dbProgressRef = useRef(dbProgress);
+  const skipIntroStartRef = useRef(skipIntroStart);
+  const skipIntroEndRef = useRef(skipIntroEnd);
+  const skipOutroStartRef = useRef(skipOutroStart);
+  skipIntroStartRef.current = skipIntroStart;
+  skipIntroEndRef.current = skipIntroEnd;
+  skipOutroStartRef.current = skipOutroStart;
+
   const onReadyRef = useRef(onReady);
   const onEndedRef = useRef(onEnded);
   const onProgressRef = useRef(onProgress);
@@ -92,27 +126,6 @@ export default function ArtPlayer({
   onPlaybackStartRef.current = onPlaybackStart;
   onPlaybackStateChangeRef.current = onPlaybackStateChange;
 
-  // ── Scroll Observer for Floating Mini-Player ──────────────────────
-  useEffect(() => {
-    const el = wrapperRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // Auto-dock into Floating Mini-Player when main player scrolls out of view
-        if (!entry.isIntersecting && entry.boundingClientRect.top < 0) {
-          setIsFloating(true);
-        } else {
-          setIsFloating(false);
-        }
-      },
-      { threshold: 0.25 },
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
   useEffect(() => {
     if (!containerRef.current || !url) return;
 
@@ -125,6 +138,7 @@ export default function ArtPlayer({
     let hlsInstance: Hls | null = null;
     let networkRecoveries = 0;
     let mediaRecoveries = 0;
+    let stallRecoveryTimer: ReturnType<typeof setInterval> | null = null;
     const qualityLevels: { default: boolean; html: string; url: string }[] = [];
 
     // HLS.js is attached directly to ArtPlayer's video element. The playback
@@ -132,17 +146,109 @@ export default function ArtPlayer({
     // type dispatch is not a dependable place to initialize HLS.
     const attachHls = (video: HTMLVideoElement, streamUrl: string) => {
       if (Hls.isSupported()) {
-        video.crossOrigin = "anonymous";
         const hls = new Hls({
           enableWorker: true,
-          backBufferLength: 30,
-          maxBufferLength: 30,
-          maxMaxBufferLength: 60,
+          backBufferLength: 60,
+          maxBufferLength: 60,
+          maxMaxBufferLength: 120,
+          maxBufferSize: 120 * 1000 * 1000,
+          maxBufferHole: 0.5,
+          highBufferWatchdogPeriod: 1,
+          nudgeMaxRetry: 5,
+          nudgeOffset: 0.15,
+          abrBandWidthFactor: 0.8,
+          abrBandWidthUpFactor: 0.6,
           capLevelToPlayerSize: true,
-          startLevel: -1,
+          pLoader: class ManifestFilterLoader extends (Hls.DefaultConfig.loader as any) {
+            load(context: any, config: any, callbacks: any) {
+              const originalOnSuccess = callbacks.onSuccess;
+              callbacks.onSuccess = (
+                response: any,
+                stats: any,
+                ctx: any,
+                networkDetails: any,
+              ) => {
+                if (
+                  typeof response.data === "string" &&
+                  (ctx.type === "manifest" || ctx.type === "level")
+                ) {
+                  try {
+                    const filtered = filterHlsManifest(response.data, ctx.url);
+                    response.data = filtered.manifest;
+                  } catch (e) {
+                    // Fallback to raw response if filtering errors
+                  }
+                }
+                originalOnSuccess(response, stats, ctx, networkDetails);
+              };
+              super.load(context, config, callbacks);
+            }
+          } as any,
         });
         hlsInstance = hls;
         let activeStreamUrl = streamUrl;
+
+        // Auto-detect spliced ad blocks (EXT-X-DISCONTINUITY) and betting/casino ad segments
+        hls.on(Hls.Events.LEVEL_LOADED, (_e, data) => {
+          const frags = data.details?.fragments || [];
+          if (!frags.length) return;
+
+          const adRanges: Array<{ start: number; end: number; duration: number }> = [];
+
+          type Block = {
+            cc: number;
+            start: number;
+            end: number;
+            duration: number;
+            hasAdUrl: boolean;
+          };
+          const blocks: Block[] = [];
+          let currentBlock: Block = {
+            cc: frags[0].cc ?? 0,
+            start: frags[0].start,
+            end: frags[0].start + frags[0].duration,
+            duration: frags[0].duration,
+            hasAdUrl: isLikelyAdUrl(frags[0].url || ""),
+          };
+
+          for (let i = 1; i < frags.length; i++) {
+            const f = frags[i];
+            const isAd = isLikelyAdUrl(f.url || "");
+            if (f.cc === currentBlock.cc) {
+              currentBlock.end = f.start + f.duration;
+              currentBlock.duration = currentBlock.end - currentBlock.start;
+              if (isAd) currentBlock.hasAdUrl = true;
+            } else {
+              blocks.push(currentBlock);
+              currentBlock = {
+                cc: f.cc,
+                start: f.start,
+                end: f.start + f.duration,
+                duration: f.duration,
+                hasAdUrl: isAd,
+              };
+            }
+          }
+          blocks.push(currentBlock);
+
+          for (const b of blocks) {
+            const isShortAdDuration = b.duration >= 4 && b.duration <= 95;
+            if (b.hasAdUrl || (isShortAdDuration && blocks.length > 1)) {
+              const alreadyAdded = adRanges.some(
+                (r) => Math.abs(r.start - b.start) < 1 && Math.abs(r.end - b.end) < 1,
+              );
+              if (!alreadyAdded) {
+                adRanges.push({
+                  start: b.start,
+                  end: b.end,
+                  duration: b.duration,
+                });
+              }
+            }
+          }
+
+          detectedAdRangesRef.current = adRanges;
+        });
 
         hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
           const levels = data.levels ?? [];
@@ -223,6 +329,45 @@ export default function ArtPlayer({
         hls.loadSource(streamUrl);
         hls.attachMedia(video);
         (video as HTMLVideoElement & { hls: Hls }).hls = hls;
+
+        // Non-fatal HLS stalls do not reach the page-level fallback handler.
+        // Recover an empty buffer in stages and only switch provider after a
+        // sustained stall, avoiding both endless spinners and premature jumps.
+        let stalledSince = 0;
+        let stallRecoveries = 0;
+        stallRecoveryTimer = setInterval(() => {
+          if (
+            video.paused ||
+            video.ended ||
+            video.seeking ||
+            video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA
+          ) {
+            stalledSince = 0;
+            stallRecoveries = 0;
+            return;
+          }
+
+          const now = Date.now();
+          if (!stalledSince) stalledSince = now;
+          const stalledFor = now - stalledSince;
+
+          if (stalledFor >= 5_000 && stallRecoveries === 0) {
+            stallRecoveries = 1;
+            if (hls.autoLevelEnabled && hls.loadLevel > 0) {
+              hls.nextAutoLevel = hls.loadLevel - 1;
+            }
+            hls.startLoad(video.currentTime);
+          } else if (stalledFor >= 12_000 && stallRecoveries === 1) {
+            stallRecoveries = 2;
+            hls.recoverMediaError();
+          } else if (stalledFor >= 20_000 && stallRecoveries === 2) {
+            stallRecoveries = 3;
+            onErrorRef.current?.({
+              type: "HLS_STALL_TIMEOUT",
+              details: { currentTime: video.currentTime },
+            });
+          }
+        }, 1_000);
       } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
         video.src = streamUrl;
       } else {
@@ -247,12 +392,13 @@ export default function ArtPlayer({
       autoMini: false,
       screenshot: true,
       setting: true,
+      pip: true,
       loop: false,
       flip: true,
       playbackRate: true,
       aspectRatio: true,
       fullscreen: true,
-      fullscreenWeb: false,
+      fullscreenWeb: true,
       subtitleOffset: true,
       miniProgressBar: true,
       mutex: true,
@@ -260,8 +406,22 @@ export default function ArtPlayer({
       playsInline: true,
       autoPlayback: true,
       airplay: true,
-      theme: "#f59e0b",
+      theme: "#20b9e8",
+      cssVar: {
+        "--art-progress-height": "4px",
+        "--art-progress-color": "rgba(255, 255, 255, 0.24)",
+        "--art-loaded-color": "rgba(255, 255, 255, 0.42)",
+        "--art-indicator-size": "18px",
+      },
       lang: "vi",
+      icons: {
+        play: ART_PLAY_ICON,
+        pause: ART_PAUSE_ICON,
+        state: ART_STATE_ICON,
+      },
+      moreVideoAttr: {
+        crossOrigin: "anonymous",
+      },
 
       // Hotkey settings (handing via custom event listener)
       hotkey: false,
@@ -342,40 +502,6 @@ export default function ArtPlayer({
           },
         },
       ],
-
-      layers: [],
-
-      controls: [
-        {
-          name: "pip-btn",
-          position: "right",
-          html: `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="cursor:pointer"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="12" y="10" width="9" height="7" rx="1" fill="currentColor" stroke="none"/></svg>`,
-          tooltip: "Picture-in-Picture (P)",
-          click: function () {
-            const video = player.video;
-            if (!video) return;
-            if (document.pictureInPictureElement) {
-              document.exitPictureInPicture().catch(() => {});
-              setPipActive(false);
-            } else if (video.requestPictureInPicture) {
-              video
-                .requestPictureInPicture()
-                .then(() => setPipActive(true))
-                .catch(() => {
-                  player.notice.show = "Trình duyệt không hỗ trợ PiP";
-                });
-            }
-          },
-        },
-      ],
-
-      icons: {
-        loading:
-          '<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"><animate attributeName="stroke-dasharray" dur="1.5s" repeatCount="indefinite" values="1,200;89,200;89,200" /><animate attributeName="stroke-dashoffset" dur="1.5s" repeatCount="indefinite" values="0;-35;-124" /></circle></svg>',
-        play: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>',
-        pause:
-          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>',
-      },
     } as unknown as ConstructorParameters<typeof Artplayer>[0]);
 
     playerRef.current = player;
@@ -404,6 +530,37 @@ export default function ArtPlayer({
         didStartPlayback = true;
         onPlaybackStartRef.current?.(player);
       }
+    });
+
+    // Continuous ad skipping engine: works during normal playback, seeking, and replaying
+    const checkAndSkipAd = (time: number): boolean => {
+      const activeAd = detectedAdRangesRef.current.find(
+        (ad) => time >= ad.start - 0.05 && time < ad.end - 0.15,
+      );
+      if (activeAd) {
+        const target = activeAd.end + 0.15;
+        if (Math.abs(player.currentTime - target) > 0.2) {
+          player.currentTime = target;
+          return true;
+        }
+      }
+      return false;
+    };
+
+    player.on("video:timeupdate", () => {
+      checkAndSkipAd(player.currentTime);
+    });
+
+    player.on("video:seeking", () => {
+      checkAndSkipAd(player.currentTime);
+    });
+
+    player.on("video:seeked", () => {
+      checkAndSkipAd(player.currentTime);
+    });
+
+    player.on("seek", (time: number) => {
+      checkAndSkipAd(time);
     });
 
     const handlePlayerHotkeys = (e: KeyboardEvent) => {
@@ -547,15 +704,7 @@ export default function ArtPlayer({
       }
     };
 
-    const handleWindowBlur = () => {
-      const video = player.video;
-      if (video && !video.paused) {
-        video.pause();
-      }
-    };
-
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("blur", handleWindowBlur);
 
     // -- Ready callback & Ambilight canvas draw loop --
     let drawInterval: NodeJS.Timeout | null = null;
@@ -603,16 +752,17 @@ export default function ArtPlayer({
     });
 
     // -- Resume: restore saved position using progressKey (slug+ep) or dbProgress --
-    const savedKey = progressKey ? `wp_${progressKey}` : null;
-    let startTime = initialTime || 0;
+    const currentProgressKey = progressKeyRef.current;
+    const savedKey = currentProgressKey ? `wp_${currentProgressKey}` : null;
+    let startTime = initialTimeRef.current || 0;
     if (savedKey) {
       const saved = localStorage.getItem(savedKey);
       if (saved) {
         startTime = parseFloat(saved);
       }
     }
-    if (startTime === 0 && dbProgress) {
-      startTime = dbProgress;
+    if (startTime === 0 && dbProgressRef.current) {
+      startTime = dbProgressRef.current;
     }
 
     if (startTime > 5) {
@@ -626,6 +776,7 @@ export default function ArtPlayer({
 
     // -- Save progress + Skip Intro/Outro detection --
     let lastSave = 0;
+    let didAutoSkipIntro = false;
     player.on("video:timeupdate", () => {
       const now = Date.now();
       const ct = player.currentTime;
@@ -637,15 +788,19 @@ export default function ArtPlayer({
         }
         onProgressRef.current?.(ct, dur);
 
-        // Skip Intro detection
-        if (skipIntroStart !== undefined && skipIntroEnd !== undefined) {
-          setShowSkipIntro(ct >= skipIntroStart && ct < skipIntroEnd);
-        }
-        // Skip Outro detection (30s cuối)
-        if (skipOutroStart !== undefined) {
-          setShowSkipOutro(ct >= skipOutroStart);
-        } else if (dur > 60) {
-          setShowSkipOutro(ct >= dur - 90 && ct < dur - 5);
+        // Auto-skip Intro if setting enabled and starting from beginning
+        const isAutoSkipEnabled =
+          useSettingsStore.getState().autoSkipIntro ||
+          (typeof window !== "undefined" &&
+            localStorage.getItem("cineverse_auto_skip_intro") === "true");
+
+        if (!didAutoSkipIntro && isAutoSkipEnabled && dur > 120) {
+          if (ct >= 0 && ct < 3 && startTime < 5) {
+            didAutoSkipIntro = true;
+            const targetIntro = skipIntroEndRef.current ?? 85;
+            player.currentTime = targetIntro;
+            player.notice.show = `⚡ Đã tự động bỏ qua Intro (+${Math.round(targetIntro)}s)`;
+          }
         }
       }
     });
@@ -664,7 +819,6 @@ export default function ArtPlayer({
     return () => {
       window.removeEventListener("keydown", handlePlayerHotkeys, true);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("blur", handleWindowBlur);
       if (playerRef.current) {
         const video = playerRef.current.video;
         if (video && (video as any).hls) {
@@ -674,13 +828,16 @@ export default function ArtPlayer({
         playerRef.current = null;
       }
       hlsInstance?.destroy();
+      if (stallRecoveryTimer) {
+        clearInterval(stallRecoveryTimer);
+      }
       if (drawInterval) {
         clearInterval(drawInterval);
       }
     };
-    // Only re-run when url changes (the source). Other props use refs.
+    // Only re-run when url or type changes (the source stream). Other props use refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url, progressKey, initialTime]);
+  }, [url, type]);
 
   // Dynamically update the Theater Mode button UI in the player controls
   useEffect(() => {
@@ -781,145 +938,33 @@ export default function ArtPlayer({
         />
       )}
 
-      <style jsx global>{`
-        .art-video-player {
-          --art-theme: #e5a93b;
-          font-family: var(--font-primary), system-ui, sans-serif;
-        }
-        .art-video-player .art-control-progress-inner {
-          background: #e5a93b;
-        }
-        .art-video-player .art-icon:hover,
-        .art-video-player .art-control:hover,
-        .art-video-player .art-control-theater-mode:hover {
-          color: #e5a93b;
-        }
-        .art-video-player .art-bottom {
-          background: linear-gradient(
-            to top,
-            rgba(0, 0, 0, 0.9) 0%,
-            transparent 100%
-          );
-        }
-        .art-video-player .art-setting,
-        .art-video-player .art-contextmenu {
-          background: rgba(20, 24, 28, 0.95);
-          backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 12px;
-        }
-        .art-video-player .art-setting-item:hover,
-        .art-video-player .art-contextmenu-item:hover {
-          background: rgba(229, 169, 59, 0.15);
-          color: #e5a93b;
-        }
-        .art-video-player .art-notice {
-          background: rgba(20, 24, 28, 0.9);
-          backdrop-filter: blur(8px);
-          border-radius: 8px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          padding: 0.75rem 1.25rem;
-          font-size: 0.875rem;
-        }
-        .art-video-player .art-loading {
-          color: #e5a93b;
-        }
-      `}</style>
-
       <div
         ref={wrapperRef}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
-        className={cn(
-          "relative w-full h-full min-h-[400px] select-none",
-          isFloating
-            ? "fixed bottom-6 right-6 z-50 w-80 md:w-[380px] h-[215px] min-h-0 rounded-2xl shadow-2xl border border-white/20 overflow-hidden backdrop-blur-xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-5"
-            : "",
-        )}
+        className="relative w-full h-full min-h-[400px] select-none"
       >
         {/* ── Holding 2x Speed Boost Top HUD Banner ── */}
         {isSpeedBoosted && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 bg-black/85 border border-amber-500/40 text-amber-400 font-extrabold text-xs px-4 py-1.5 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-2 animate-pulse">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 bg-black/90 border border-[#23ade5]/50 text-[#23ade5] font-extrabold text-xs px-4 py-1.5 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-2 animate-pulse">
+            <span className="w-2 h-2 rounded-full bg-[#23ade5] animate-ping" />
             <span>⏩ Tua Nhanh 2X (Đang Giữ)</span>
           </div>
         )}
 
         {/* ── Double Tap Rewind HUD (-10s) ── */}
         {doubleTapHud === "rewind" && (
-          <div className="absolute left-10 top-1/2 -translate-y-1/2 z-40 bg-black/80 text-white font-black text-sm px-5 py-3 rounded-full border border-white/20 backdrop-blur-md animate-in zoom-in-50 duration-200 flex items-center gap-2">
+          <div className="absolute left-10 top-1/2 -translate-y-1/2 z-40 bg-black/85 text-white font-black text-sm px-5 py-3 rounded-full border border-white/20 backdrop-blur-md animate-in zoom-in-50 duration-200 flex items-center gap-2 shadow-2xl">
             <span>⏪</span> -10s
           </div>
         )}
 
         {/* ── Double Tap Fast-Forward HUD (+10s) ── */}
         {doubleTapHud === "forward" && (
-          <div className="absolute right-10 top-1/2 -translate-y-1/2 z-40 bg-black/80 text-white font-black text-sm px-5 py-3 rounded-full border border-white/20 backdrop-blur-md animate-in zoom-in-50 duration-200 flex items-center gap-2">
+          <div className="absolute right-10 top-1/2 -translate-y-1/2 z-40 bg-black/85 text-white font-black text-sm px-5 py-3 rounded-full border border-white/20 backdrop-blur-md animate-in zoom-in-50 duration-200 flex items-center gap-2 shadow-2xl">
             +10s <span>⏩</span>
           </div>
-        )}
-        {/* Floating Mini-player Header Bar */}
-        {isFloating && (
-          <div className="absolute top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md px-3 py-1.5 flex items-center justify-between text-white text-xs border-b border-white/10">
-            <span className="font-bold truncate max-w-[200px]">
-              {title || "Đang phát"}
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                className="hover:text-amber-400 text-neutral-300 transition-colors p-1 font-bold"
-                title="Quay lại trình phát chính"
-              >
-                ↑
-              </button>
-              <button
-                onClick={() => setIsFloating(false)}
-                className="hover:text-red-400 text-neutral-300 transition-colors p-1 font-bold"
-                title="Đóng mini player"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        )}
-        {/* ── Skip Intro button ── */}
-        {showSkipIntro && (
-          <button
-            onClick={() => {
-              if (playerRef.current && skipIntroEnd !== undefined) {
-                playerRef.current.currentTime = skipIntroEnd;
-                playerRef.current.notice.show = "⏩ Đã bỏ qua intro";
-                setShowSkipIntro(false);
-              }
-            }}
-            className="absolute bottom-16 right-4 z-30 flex items-center gap-2 bg-black/80 hover:bg-black/95 text-white border border-white/30 hover:border-white/60 px-4 py-2 rounded-xl text-xs font-bold transition-all backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-300"
-          >
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <path d="M5.5 5C5.5 4.17 6.42 3.68 7.1 4.15l10.5 7c.6.4.6 1.3 0 1.7l-10.5 7C6.42 20.32 5.5 19.83 5.5 19V5z" />
-              <rect x="17" y="4" width="2" height="16" rx="1" />
-            </svg>
-            Bỏ qua intro
-          </button>
-        )}
-
-        {/* ── Skip Outro button ── */}
-        {showSkipOutro && (
-          <button
-            onClick={() => {
-              if (playerRef.current) {
-                playerRef.current.currentTime = playerRef.current.duration - 2;
-                setShowSkipOutro(false);
-              }
-            }}
-            className="absolute bottom-16 right-4 z-30 flex items-center gap-2 bg-black/80 hover:bg-black/95 text-white border border-white/30 hover:border-white/60 px-4 py-2 rounded-xl text-xs font-bold transition-all backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-300"
-          >
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <path d="M5.5 5C5.5 4.17 6.42 3.68 7.1 4.15l10.5 7c.6.4.6 1.3 0 1.7l-10.5 7C6.42 20.32 5.5 19.83 5.5 19V5z" />
-              <rect x="17" y="4" width="2" height="16" rx="1" />
-            </svg>
-            Bỏ qua outro
-          </button>
         )}
 
         {/* ── PiP active indicator ── */}

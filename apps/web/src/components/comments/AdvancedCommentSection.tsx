@@ -9,8 +9,11 @@ import {
   EyeOff,
   MessageCircle,
   Send,
+  Clock,
+  LogIn,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { useAuthModalStore } from "@/store/authModalStore";
 import { useToast } from "@/providers/ToastProvider";
 import { cn } from "@/lib/utils";
 import { checkCommentRateLimit } from "@/lib/rate-limiter";
@@ -61,6 +64,7 @@ export function AdvancedCommentSection({
   onSeekToTimestamp,
 }: AdvancedCommentSectionProps) {
   const currentUser = useAuthStore((s) => s.user);
+  const openAuthModal = useAuthModalStore((s) => s.openModal);
   const { toast } = useToast();
 
   const [rating, setRating] = useState<number>(5);
@@ -207,81 +211,92 @@ export function AdvancedCommentSection({
         )}
       </div>
 
-      {/* Write Comment Form */}
-      <form onSubmit={handleSubmit} className="space-y-3">
-        {/* Rating row + Insert Timestamp Button */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-white/40">Đánh giá:</span>
-            <div className="flex items-center gap-0.5">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  type="button"
-                  key={star}
-                  onClick={() => setRating(star)}
-                  onMouseEnter={() => setHoverRating(star)}
-                  onMouseLeave={() => setHoverRating(0)}
-                  className="p-0.5 hover:scale-110 transition-transform"
-                >
-                  <Star
-                    size={16}
-                    className={cn(
-                      "transition-colors",
-                      (hoverRating || rating) >= star
-                        ? "fill-amber-400 text-amber-400"
-                        : "text-white/15",
-                    )}
-                  />
-                </button>
-              ))}
+      {/* Write Comment Form / Login Prompt */}
+      {!currentUser ? (
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3 text-left w-full sm:w-auto">
+            <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-neutral-300 shrink-0">
+              <MessageCircle size={18} />
             </div>
-            <span className="text-xs text-amber-400/80 font-medium">
-              {rating}.0
-            </span>
+            <div>
+              <p className="text-xs font-bold text-white">Bạn cần đăng nhập để bình luận</p>
+              <p className="text-[11px] text-neutral-400 mt-0.5">
+                Đăng nhập để đánh giá phim, chia sẻ cảm nghĩ và thảo luận cùng cộng đồng.
+              </p>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => openAuthModal("login")}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-neutral-200 text-black text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer shrink-0 select-none"
+          >
+            <LogIn size={14} />
+            <span>Đăng nhập để bình luận</span>
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-3">
+          {/* Rating row + Insert Timestamp Button */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-white/40">Đánh giá:</span>
+              <div className="flex items-center gap-0.5">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    type="button"
+                    key={star}
+                    onClick={() => setRating(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="p-0.5 hover:scale-110 transition-transform"
+                  >
+                    <Star
+                      size={16}
+                      className={cn(
+                        "transition-colors",
+                        (hoverRating || rating) >= star
+                          ? "fill-amber-400 text-amber-400"
+                          : "text-white/15",
+                      )}
+                    />
+                  </button>
+                ))}
+              </div>
+              <span className="text-xs text-amber-400/80 font-medium">
+                {rating}.0
+              </span>
+            </div>
 
-          {/* Instant Timestamp Insert Button */}
-          {currentUser && (
+            {/* Instant Timestamp Insert Button */}
             <button
               type="button"
               onClick={insertCurrentTimestamp}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/30 text-xs font-bold transition-all cursor-pointer active:scale-95"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.06] hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 text-xs font-semibold transition-all cursor-pointer active:scale-95 shadow-sm"
               title="Gắn số phút/giây đang xem vào ô bình luận"
             >
-              <span>⏱ Chèn mốc time ({formatSecondsToTimestamp(currentVideoTimeSeconds)})</span>
+              <Clock size={12} className="text-purple-400" />
+              <span>Chèn mốc ({formatSecondsToTimestamp(currentVideoTimeSeconds)})</span>
             </button>
-          )}
-        </div>
+          </div>
 
-        {/* Textarea */}
-        <div className="relative">
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder={
-              currentUser
-                ? "Chia sẻ suy nghĩ của bạn (ví dụ: 'Đoạn 05:20 xem hay quá!')..."
-                : "Đăng nhập để bình luận"
-            }
-            disabled={!currentUser}
-            rows={3}
-            className={cn(
-              "w-full bg-white/[0.03] border border-white/[0.07] rounded-xl px-4 py-3",
-              "text-sm text-white placeholder-white/25 outline-none resize-none",
-              "focus:border-white/20 focus:bg-white/[0.05] transition-all",
-              !currentUser && "opacity-50 cursor-not-allowed",
-            )}
-          />
-        </div>
+          {/* Textarea */}
+          <div className="relative">
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Chia sẻ suy nghĩ của bạn (ví dụ: 'Đoạn 05:20 xem hay quá!')..."
+              rows={3}
+              className="w-full bg-white/[0.03] border border-white/[0.07] rounded-xl px-4 py-3 text-sm text-white placeholder-white/25 outline-none resize-none focus:border-white/20 focus:bg-white/[0.05] transition-all"
+            />
+          </div>
 
-        {/* Submit */}
-        {currentUser && (
+          {/* Submit */}
           <div className="flex justify-end gap-2">
             {content.trim() && (
               <button
                 type="button"
                 onClick={() => setContent("")}
-                className="px-3 py-1.5 text-xs text-white/40 hover:text-white transition-colors rounded-lg"
+                className="px-3 py-1.5 text-xs text-white/40 hover:text-white transition-colors rounded-lg cursor-pointer"
               >
                 Hủy
               </button>
@@ -290,9 +305,9 @@ export function AdvancedCommentSection({
               type="submit"
               disabled={!content.trim()}
               className={cn(
-                "flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg transition-all",
+                "flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer",
                 content.trim()
-                  ? "bg-white/10 hover:bg-white/15 text-white border border-white/15"
+                  ? "bg-white/10 hover:bg-white/15 text-white border border-white/15 active:scale-95"
                   : "bg-white/5 text-white/25 cursor-not-allowed",
               )}
             >
@@ -300,8 +315,8 @@ export function AdvancedCommentSection({
               Gửi
             </button>
           </div>
-        )}
-      </form>
+        </form>
+      )}
 
       {/* Comment list */}
       {comments.length === 0 ? (

@@ -10,6 +10,7 @@ import { cardFont } from "@/lib/fonts";
 import {
   tmdbApi,
   tmdbPoster,
+  tmdbBackdrop,
   type TmdbDiscoverOptions,
   type TmdbMovie,
 } from "@/lib/tmdb";
@@ -21,6 +22,7 @@ type MovieTopic = {
   href: string;
   tone: string;
   accent: string;
+  staticImage?: string;
   discover: TmdbDiscoverOptions;
 };
 
@@ -145,6 +147,7 @@ const TOPICS: MovieTopic[] = [
     href: "/country/han-quoc",
     tone: "#2d1b28",
     accent: "#f472b6",
+    staticImage: "/korean-cinema-banner.jpg",
     discover: { with_origin_country: "KR", sort_by: "popularity.desc" },
   },
   {
@@ -154,6 +157,7 @@ const TOPICS: MovieTopic[] = [
     href: "/country/trung-quoc",
     tone: "#2f1b18",
     accent: "#fb923c",
+    staticImage: "/chinese-cinema-banner.jpg",
     discover: { with_origin_country: "CN", sort_by: "popularity.desc" },
   },
 ];
@@ -164,8 +168,12 @@ function buildTopicArtwork(
   const usedMovieIds = new Set<number>();
 
   return topicResults.map((items, topicIndex) => {
+    const topic = TOPICS[topicIndex] as typeof TOPICS[number] & { staticImage?: string };
+    if (topic?.staticImage) {
+      return topic.staticImage;
+    }
     const candidates = (items || []).filter((item) =>
-      Boolean(item.poster_path),
+      Boolean(item.backdrop_path || item.poster_path),
     );
     if (!candidates.length) return null;
 
@@ -177,6 +185,10 @@ function buildTopicArtwork(
       rotated[0];
 
     usedMovieIds.add(movie.id);
+    // Prefer wide 16:9 backdrop for landscape genre cards
+    if (movie.backdrop_path) {
+      return tmdbBackdrop(movie.backdrop_path, "w780");
+    }
     return tmdbPoster(movie.poster_path, "w500");
   });
 }
@@ -204,7 +216,7 @@ export default function GenresTopicsPage() {
       },
       staleTime: 60 * 60 * 1000,
       gcTime: 6 * 60 * 60 * 1000,
-      enabled: index < 4 || loadRemainingTopics,
+      enabled: index < 6 || loadRemainingTopics,
     })),
   });
   const topicArtwork = buildTopicArtwork(
@@ -245,12 +257,12 @@ export default function GenresTopicsPage() {
               <Link
                 key={topic.slug}
                 href={topic.href}
-                className="group relative flex min-h-[220px] flex-col justify-between overflow-hidden rounded-[24px] border border-white/[0.08] bg-white/[0.02] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.04] hover:shadow-[0_16px_40px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                className="group relative flex min-h-[220px] flex-col justify-between overflow-hidden rounded-[24px] border border-white/[0.1] bg-[#12141a] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-white/25 hover:shadow-[0_16px_40px_rgba(0,0,0,0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
               >
-                {/* Background Artwork */}
+                {/* Background Artwork (Vivid & Clearly Visible) */}
                 {artworkUrl && (
                   <div
-                    className="pointer-events-none absolute inset-0 overflow-hidden opacity-20 transition-all duration-500 group-hover:scale-105 group-hover:opacity-35"
+                    className="pointer-events-none absolute inset-0 overflow-hidden"
                     aria-hidden="true"
                   >
                     <Image
@@ -258,18 +270,18 @@ export default function GenresTopicsPage() {
                       alt=""
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                      className="object-cover object-top"
-                      priority={index < 4}
+                      className="object-cover object-center opacity-65 brightness-[0.9] transition-all duration-500 group-hover:scale-105 group-hover:opacity-85 group-hover:brightness-105"
+                      priority={index < 6}
                       unoptimized
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/70 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0c0e14] via-[#0c0e14]/65 to-black/20 group-hover:from-[#0c0e14]/90 group-hover:via-[#0c0e14]/40 group-hover:to-transparent transition-colors duration-300" />
                   </div>
                 )}
 
                 {/* Shimmer Placeholder if not loaded */}
                 {!isLoaded && (
                   <div
-                    className="pointer-events-none absolute inset-0 animate-pulse bg-white/[0.02]"
+                    className="pointer-events-none absolute inset-0 animate-pulse bg-white/[0.04]"
                     aria-hidden="true"
                   />
                 )}
@@ -277,19 +289,20 @@ export default function GenresTopicsPage() {
                 {/* Top Accent Pill + Arrow */}
                 <div className="relative z-10 flex items-center justify-between">
                   <span
-                    className="inline-block h-1.5 w-7 rounded-full bg-white/40 transition-all duration-300 group-hover:w-10 group-hover:bg-white"
+                    className="inline-block h-1.5 w-8 rounded-full transition-all duration-300 group-hover:w-12 shadow-sm"
+                    style={{ backgroundColor: topic.accent }}
                   />
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.06] text-white/70 transition-all duration-300 group-hover:bg-white group-hover:text-black group-hover:shadow-[0_0_12px_rgba(255,255,255,0.4)]">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white/90 transition-all duration-300 group-hover:bg-white group-hover:text-black group-hover:shadow-[0_0_12px_rgba(255,255,255,0.4)]">
                     <ArrowUpRight size={15} />
                   </div>
                 </div>
 
                 {/* Title & Description */}
                 <div className="relative z-10 mt-auto pt-8">
-                  <h2 className="text-xl font-bold tracking-[-0.03em] text-white transition-colors duration-200 group-hover:text-white">
+                  <h2 className="text-xl font-black tracking-[-0.03em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] transition-colors duration-200">
                     {topic.title}
                   </h2>
-                  <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-neutral-400">
+                  <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-neutral-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
                     {topic.description}
                   </p>
                 </div>

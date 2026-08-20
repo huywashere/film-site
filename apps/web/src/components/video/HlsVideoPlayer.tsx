@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import ArtPlayer from "@/components/video/ArtPlayer";
 
 export type HlsPlaybackError = {
@@ -27,7 +28,7 @@ type HlsVideoPlayerProps = {
  * Renders feature-rich ArtPlayer for M3U8 streams with full playback controls,
  * speed toggles, quality selection, and HLS error recovery.
  */
-export function HlsVideoPlayer({
+export const HlsVideoPlayer = memo(function HlsVideoPlayer({
   src,
   poster,
   initialTime = 0,
@@ -67,4 +68,4 @@ export function HlsVideoPlayer({
       />
     </div>
   );
-}
+});

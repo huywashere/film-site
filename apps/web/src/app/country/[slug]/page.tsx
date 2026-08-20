@@ -269,7 +269,7 @@ function FeaturedActorsRow({ film }: { film?: FilmItem }) {
         </h2>
       </div>
 
-      <div className="flex items-center gap-6 overflow-x-auto pb-4 scrollbar-none px-1">
+      <div className="flex items-center gap-6 overflow-x-auto pb-4 scrollbar-thin scrollbar-track-white/5 scrollbar-thumb-white/20 hover:scrollbar-thumb-white/40 px-1 touch-pan-x select-none">
         {creditsLoading
           ? Array.from({ length: 6 }).map((_, index) => (
               <div

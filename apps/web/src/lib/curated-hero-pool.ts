@@ -20,18 +20,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "oppenheimer",
     "type": "single",
     "tmdbId": 872585,
-    "tmdb": { "id": "872585", "type": "movie" },
+    "tmdb": {
+      "id": "872585",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=uYPbbksJxIg",
-    "poster_url": "https://phimimg.com/upload/vod/oppenheimer-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/oppenheimer-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/oppenheimer-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2023,
     "vote_average": 8.9,
     "rating": 8.9,
     "content": "Câu chuyện về cuộc đời và sự nghiệp của nhà vật lý lý thuyết J. Robert Oppenheimer, người lãnh đạo Dự án Manhattan phát triển bom nguyên tử.",
-    "spotlightBadge": "🏆 ĐẠT 7 TƯỢNG VÀNG OSCAR"
+    "spotlightBadge": "🏆 ĐẠT 7 TƯỢNG VÀNG OSCAR",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/5tZwcZjAH4tPrWvc6hAdlc6pnjF.png"
   },
   {
     "_id": "nguoi-ve-tu-coi-chet",
@@ -40,18 +44,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "nguoi-ve-tu-coi-chet",
     "type": "single",
     "tmdbId": 281957,
-    "tmdb": { "id": "281957", "type": "movie" },
+    "tmdb": {
+      "id": "281957",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=LoebZZ8Krs8",
-    "poster_url": "https://phimimg.com/upload/vod/nguoi-ve-tu-coi-chet-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/nguoi-ve-tu-coi-chet-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/nguoi-ve-tu-coi-chet-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/ji3ecJphATlVgWNY0B0RVXZizdf.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/hEQYZq2CDB2LSJVxxlazdBOKeyW.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/hEQYZq2CDB2LSJVxxlazdBOKeyW.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2015,
     "vote_average": 8,
     "rating": 8,
     "content": "Hành trình sinh tồn phi thường của người thợ săn Hugh Glass nơi vùng hoang dã băng giá sau khi bị gấu tấn công và đồng đội bỏ mặc.",
-    "spotlightBadge": "🏆 OSCAR NAM CHÍNH XUẤT SẮC"
+    "spotlightBadge": "🏆 OSCAR NAM CHÍNH XUẤT SẮC",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/7CUlDF2JgKppdApJeuZX31j6nhS.png"
   },
   {
     "_id": "soi-gia-pho-wall",
@@ -60,18 +68,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "soi-gia-pho-wall",
     "type": "single",
     "tmdbId": 106646,
-    "tmdb": { "id": "106646", "type": "movie" },
+    "tmdb": {
+      "id": "106646",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=iszwuX1AK6A",
-    "poster_url": "https://phimimg.com/upload/vod/soi-gia-pho-wall-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/soi-gia-pho-wall-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/soi-gia-pho-wall-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/kW9LmvYHAaS9iA0tHmZVq8hQYoq.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/7Nwnmyzrtd0FkcRyPqmdzTPppQa.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/7Nwnmyzrtd0FkcRyPqmdzTPppQa.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2013,
     "vote_average": 8.2,
     "rating": 8.2,
     "content": "Cuộc đời thăng trầm đầy điên rồ và xa hoa của Jordan Belfort, một nhà môi giới chứng khoán khét tiếng tại New York.",
-    "spotlightBadge": "💰 SIÊU PHẨM TÀI CHÍNH KINH ĐIỂN"
+    "spotlightBadge": "💰 SIÊU PHẨM TÀI CHÍNH KINH ĐIỂN",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/mCn3JT0FHgUaDpud79djjfF9wnX.png"
   },
   {
     "_id": "chuyen-ngay-xua-o-hollywood",
@@ -80,18 +92,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "chuyen-ngay-xua-o-hollywood",
     "type": "single",
     "tmdbId": 466272,
-    "tmdb": { "id": "466272", "type": "movie" },
+    "tmdb": {
+      "id": "466272",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=ELeMaP8PbBM",
-    "poster_url": "https://phimimg.com/upload/vod/chuyen-ngay-xua-o-hollywood-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/chuyen-ngay-xua-o-hollywood-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/chuyen-ngay-xua-o-hollywood-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/8j58iEBw9pOXFD2L0nt0ZXeHviB.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/xwgBHC2FgoIrQitl8jZwXXdsR9u.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/xwgBHC2FgoIrQitl8jZwXXdsR9u.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2019,
     "vote_average": 7.6,
     "rating": 7.6,
     "content": "Bức tranh hoài niệm về thời kỳ hoàng kim của điện ảnh Los Angeles cuối thập niên 1960 cùng bộ đôi diễn viên - cascadeur huyền thoại.",
-    "spotlightBadge": "🎬 KIỆT TÁC QUENTIN TARANTINO"
+    "spotlightBadge": "🎬 KIỆT TÁC QUENTIN TARANTINO",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/5z6WuO1x5LgGfDYMZGj7rgD47Sq.png"
   },
   {
     "_id": "nguoi-dan-ong-xu-ireland",
@@ -100,18 +116,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "nguoi-dan-ong-xu-ireland",
     "type": "single",
     "tmdbId": 398978,
-    "tmdb": { "id": "398978", "type": "movie" },
+    "tmdb": {
+      "id": "398978",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=WHXxVmeGQUc",
-    "poster_url": "https://phimimg.com/upload/vod/nguoi-dan-ong-xu-ireland-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/nguoi-dan-ong-xu-ireland-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/nguoi-dan-ong-xu-ireland-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/mbm8k3GFhXS0ROd9AD1gqYbIFbM.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/1RDto0tLo8Fhq7OcwgDaM7nECb7.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/1RDto0tLo8Fhq7OcwgDaM7nECb7.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2019,
     "vote_average": 7.8,
     "rating": 7.8,
     "content": "Bản trường ca tội phạm tái hiện cuộc đời sát thủ Frank Sheeran và mối liên hệ với gia đình mafia Bufalino cùng sự mất tích của Jimmy Hoffa.",
-    "spotlightBadge": "🎩 ĐỈNH CAO TỘI PHẠM MAFIA"
+    "spotlightBadge": "🎩 ĐỈNH CAO TỘI PHẠM MAFIA",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/dwGgp4AsCWtpc1f13ZVdVnxJ4pv.png"
   },
   {
     "_id": "ke-di-san",
@@ -120,18 +140,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "ke-di-san",
     "type": "single",
     "tmdbId": 1422,
-    "tmdb": { "id": "1422", "type": "movie" },
+    "tmdb": {
+      "id": "1422",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=iojhqm0JTW4",
-    "poster_url": "https://phimimg.com/upload/vod/ke-di-san-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/ke-di-san-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/ke-di-san-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/nT97ifVT2J1yMQmeq20Qblg61T.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/6WRrGYalXXveItfpnipYdayFkQB.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/6WRrGYalXXveItfpnipYdayFkQB.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2006,
     "vote_average": 8.5,
     "rating": 8.5,
     "content": "Cuộc đấu trí nghẹt thở giữa một cảnh sát chìm thâm nhập vào băng nhóm tội phạm và một tên gián điệp của mafia cài vào sở cảnh sát Boston.",
-    "spotlightBadge": "🏆 CHIẾN THẮNG 4 GIẢI OSCAR"
+    "spotlightBadge": "🏆 CHIẾN THẮNG 4 GIẢI OSCAR",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/hgwPIc6SntSABkOcVby7inDKRSw.png"
   },
   {
     "_id": "ky-phung-dich-thu",
@@ -140,18 +164,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "ky-phung-dich-thu",
     "type": "single",
     "tmdbId": 949,
-    "tmdb": { "id": "949", "type": "movie" },
+    "tmdb": {
+      "id": "949",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=2GfZl4yV81w",
-    "poster_url": "https://phimimg.com/upload/vod/ky-phung-dich-thu-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/ky-phung-dich-thu-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/ky-phung-dich-thu-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/umSVjVdbVwtx5ryCA2QXL44Durm.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/xKsnZDERG1dk95wuZ5q9iks3OL3.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/xKsnZDERG1dk95wuZ5q9iks3OL3.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 1995,
     "vote_average": 8.3,
     "rating": 8.3,
     "content": "Cuộc chạm trán kinh điển giữa một tên cướp ngân hàng chuyên nghiệp và một viên thanh tra cảnh sát mẫn cán tại Los Angeles.",
-    "spotlightBadge": "🔥 HUYỀN THOẠI ĐẤU SÚNG ĐỈNH CAO"
+    "spotlightBadge": "🔥 HUYỀN THOẠI ĐẤU SÚNG ĐỈNH CAO",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/EVVVHh1xHxGQN5dNrMeBxAamRa.svg"
   },
   {
     "_id": "mat-seo",
@@ -160,18 +188,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "mat-seo",
     "type": "single",
     "tmdbId": 111,
-    "tmdb": { "id": "111", "type": "movie" },
+    "tmdb": {
+      "id": "111",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=7pQQHnqBa2E",
-    "poster_url": "https://phimimg.com/upload/vod/mat-seo-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/mat-seo-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/mat-seo-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/iQ5ztdjvteGeboxtmRdXEChJOHh.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/1qM2BYNE11Viby8ImC9LC00DgDr.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/1qM2BYNE11Viby8ImC9LC00DgDr.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 1983,
     "vote_average": 8.3,
     "rating": 8.3,
     "content": "Hành trình vươn lên thành ông trùm ma túy tàn bạo của người tị nạn Cuba Tony Montana tại Miami những năm 1980.",
-    "spotlightBadge": "👑 BIỂU TƯỢNG VĂN HÓA ĐIỆN ẢNH"
+    "spotlightBadge": "👑 BIỂU TƯỢNG VĂN HÓA ĐIỆN ẢNH",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/zQGDFzjfXC47foVucagHYIxRUfW.png"
   },
   {
     "_id": "hao-han",
@@ -180,18 +212,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "hao-han",
     "type": "single",
     "tmdbId": 769,
-    "tmdb": { "id": "769", "type": "movie" },
+    "tmdb": {
+      "id": "769",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=qo5jJpHtI1Y",
-    "poster_url": "https://phimimg.com/upload/vod/hao-han-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/hao-han-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/hao-han-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/9OkCLM73MIU2CrKZbqiT8Ln1wY2.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/gILte6Zd7m1YneIr6MVhh30S9pr.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/gILte6Zd7m1YneIr6MVhh30S9pr.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 1990,
     "vote_average": 8.7,
     "rating": 8.7,
     "content": "Câu chuyện chân thực và sống động về cuộc đời của Henry Hill cùng sự thăng trầm trong thế giới ngầm mafia New York.",
-    "spotlightBadge": "🌟 TOP PHIM MAFIA XUẤT SẮC NHẤT"
+    "spotlightBadge": "🌟 TOP PHIM MAFIA XUẤT SẮC NHẤT",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/jsRyKKKYLPU4vUmlRJPlRFrKNN0.png"
   },
   {
     "_id": "bo-gia",
@@ -200,18 +236,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "bo-gia",
     "type": "single",
     "tmdbId": 238,
-    "tmdb": { "id": "238", "type": "movie" },
+    "tmdb": {
+      "id": "238",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=UaVTIH8mujA",
-    "poster_url": "https://phimimg.com/upload/vod/bo-gia-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/bo-gia-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/bo-gia-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/tSPT36ZKlP2WVHJLM4cQPLSzv3b.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/tSPT36ZKlP2WVHJLM4cQPLSzv3b.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 1972,
     "vote_average": 9.2,
     "rating": 9.2,
     "content": "Bi kịch và quyền lực của gia tộc mafia Corleone khi quyền kiểm soát đế chế được chuyển giao cho người con trai út Michael.",
-    "spotlightBadge": "🏆 KIỆT TÁC ĐIỆN ẢNH SỐ 1 MỌI THỜI ĐẠI"
+    "spotlightBadge": "🏆 KIỆT TÁC ĐIỆN ẢNH SỐ 1 MỌI THỜI ĐẠI",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/go316CQeTX9yPYbhBPDhmtFwNhj.png"
   },
   {
     "_id": "bo-gia-phan-2",
@@ -220,18 +260,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "bo-gia-phan-2",
     "type": "single",
     "tmdbId": 240,
-    "tmdb": { "id": "240", "type": "movie" },
+    "tmdb": {
+      "id": "240",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=9O1Iy9od7-A",
-    "poster_url": "https://phimimg.com/upload/vod/bo-gia-phan-2-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/bo-gia-phan-2-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/bo-gia-phan-2-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/sSuQTCZwqKrNBNIsksO9IAUoWP9.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/kGzFbGhp99zva6oZODW5atUtnqi.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/kGzFbGhp99zva6oZODW5atUtnqi.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 1974,
     "vote_average": 9,
     "rating": 9,
     "content": "Sự song hành giữa quá khứ lập nghiệp của Vito Corleone thời trẻ và quá trình củng cố quyền lực tàn nhẫn của Michael Corleone.",
-    "spotlightBadge": "🏆 PHẦN TIẾP NỐI XUẤT SẮC NHẤT LỊCH SỬ"
+    "spotlightBadge": "🏆 PHẦN TIẾP NỐI XUẤT SẮC NHẤT LỊCH SỬ",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/gEfwCTLbcX7jvIHLTXfVW1idZby.png"
   },
   {
     "_id": "xa-hoi-den-my",
@@ -240,18 +284,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "xa-hoi-den-my",
     "type": "single",
     "tmdbId": 4982,
-    "tmdb": { "id": "4982", "type": "movie" },
+    "tmdb": {
+      "id": "4982",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=BV_nssS6Zkg",
-    "poster_url": "https://phimimg.com/upload/vod/xa-hoi-den-my-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/xa-hoi-den-my-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/xa-hoi-den-my-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/sX9idXDqRUxE5ffww3n3RV5gL55.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/dLL90vskYFn1S89RZp5TUguK9wl.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/dLL90vskYFn1S89RZp5TUguK9wl.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2007,
     "vote_average": 7.8,
     "rating": 7.8,
     "content": "Cuộc đối đầu kịch tính giữa trùm ma túy khét tiếng Frank Lucas của Harlem và thám tử liêm chính Richie Roberts.",
-    "spotlightBadge": "⚡ CUỘC CHIẾN ĐẾ CHẾ MA TÚY"
+    "spotlightBadge": "⚡ CUỘC CHIẾN ĐẾ CHẾ MA TÚY",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/yEM7OGidkNoQjewoDtK1aNT20w7.png"
   },
   {
     "_id": "ranh-gioi-bao-luc",
@@ -260,18 +308,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "ranh-gioi-bao-luc",
     "type": "single",
     "tmdbId": 273481,
-    "tmdb": { "id": "273481", "type": "movie" },
+    "tmdb": {
+      "id": "273481",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=G8tlEcnrGnU",
-    "poster_url": "https://phimimg.com/upload/vod/ranh-gioi-bao-luc-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/ranh-gioi-bao-luc-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/ranh-gioi-bao-luc-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/lz8vNyXeidqqOdJW9ZjnDAMb5Vr.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/fKPgObonYgPgCdu88yjV7Hpn7Dp.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/fKPgObonYgPgCdu88yjV7Hpn7Dp.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2015,
     "vote_average": 7.7,
     "rating": 7.7,
     "content": "Nữ đặc vụ FBI được điều động vào đội đặc nhiệm bí mật tại biên giới Mỹ - Mexico đối đầu trực diện với thế lực băng đảng ma túy tàn bạo.",
-    "spotlightBadge": "🎯 CĂNG THẲNG ĐẾN NGHẸT THỞ"
+    "spotlightBadge": "🎯 CĂNG THẲNG ĐẾN NGHẸT THỞ",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/995VQDIxH5nKRLt5qXqmMdPj0kz.png"
   },
   {
     "_id": "lan-theo-dau-vet",
@@ -280,18 +332,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "lan-theo-dau-vet",
     "type": "single",
     "tmdbId": 146233,
-    "tmdb": { "id": "146233", "type": "movie" },
+    "tmdb": {
+      "id": "146233",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=bpXfcT61pvA",
-    "poster_url": "https://phimimg.com/upload/vod/lan-theo-dau-vet-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/lan-theo-dau-vet-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/lan-theo-dau-vet-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/uhviyknTT5cEQXbn6vWIqfM4vGm.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/3RFmTz5h2UuFWEV4oH00XICBR9y.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/3RFmTz5h2UuFWEV4oH00XICBR9y.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2013,
     "vote_average": 8.1,
     "rating": 8.1,
     "content": "Khi hai bé gái bị bắt cóc mất tích, người cha tuyệt vọng quyết định tự mình dấn thân vào con đường tăm tối để tìm lại con gái.",
-    "spotlightBadge": "🔍 TRINH THÁM TÂM LÝ KỊCH TÍNH"
+    "spotlightBadge": "🔍 TRINH THÁM TÂM LÝ KỊCH TÍNH",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/pFGlTEXGEIms4mlSf6zjqjW1IXV.png"
   },
   {
     "_id": "co-gai-mat-tich",
@@ -300,18 +356,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "co-gai-mat-tich",
     "type": "single",
     "tmdbId": 210577,
-    "tmdb": { "id": "210577", "type": "movie" },
+    "tmdb": {
+      "id": "210577",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=2-_-1nJf8Vg",
-    "poster_url": "https://phimimg.com/upload/vod/co-gai-mat-tich-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/co-gai-mat-tich-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/co-gai-mat-tich-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/ts996lKsxvjkO2yiYG0ht4qAicO.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/iWak7wT0j6ycCc8lKr4NBz9c7n5.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/iWak7wT0j6ycCc8lKr4NBz9c7n5.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2014,
     "vote_average": 8.1,
     "rating": 8.1,
     "content": "Vào ngày kỷ niệm 5 năm ngày cưới, người vợ biến mất bí ẩn, khiến người chồng trở thành tâm điểm nghi vấn số một của toàn xã hội.",
-    "spotlightBadge": "🧠 ĐỈNH CAO THAO TÚNG TÂM LÝ"
+    "spotlightBadge": "🧠 ĐỈNH CAO THAO TÚNG TÂM LÝ",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/9XppjJk4i9tk8q4NWIPcs4pVm0w.png"
   },
   {
     "_id": "dao-kinh-hoang",
@@ -320,18 +380,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "dao-kinh-hoang",
     "type": "single",
     "tmdbId": 11324,
-    "tmdb": { "id": "11324", "type": "movie" },
+    "tmdb": {
+      "id": "11324",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=v8yrZSkKxTA",
-    "poster_url": "https://phimimg.com/upload/vod/dao-kinh-hoang-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/dao-kinh-hoang-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/dao-kinh-hoang-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/nrmXQ0zcZUL8jFLrakWc90IR8z9.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/rbZvGN1A1QyZuoKzhCw8QPmf2q0.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/rbZvGN1A1QyZuoKzhCw8QPmf2q0.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2010,
     "vote_average": 8.2,
     "rating": 8.2,
     "content": "Hai đặc vụ tư pháp Mỹ đến điều tra sự biến mất của một nữ bệnh nhân tâm thần nguy hiểm trên một hòn đảo biệt lập đầy cạm bẫy.",
-    "spotlightBadge": "🌀 CÚ TWIST CHẤN ĐỘNG ĐIỆN ẢNH"
+    "spotlightBadge": "🌀 CÚ TWIST CHẤN ĐỘNG ĐIỆN ẢNH",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/hRtb8ju7S4xNP3s6RtDqyR1wn8j.png"
   },
   {
     "_id": "bay-toi-loi-chet-nguoi",
@@ -340,18 +404,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "bay-toi-loi-chet-nguoi",
     "type": "single",
     "tmdbId": 807,
-    "tmdb": { "id": "807", "type": "movie" },
+    "tmdb": {
+      "id": "807",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=znmZoVkCjpI",
-    "poster_url": "https://phimimg.com/upload/vod/bay-toi-loi-chet-nguoi-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/bay-toi-loi-chet-nguoi-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/bay-toi-loi-chet-nguoi-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/191nKfP0ehp3uIvWqgPbFmI4lv9.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/i5H7zusQGsysGQ8i6P361Vnr0n2.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/i5H7zusQGsysGQ8i6P361Vnr0n2.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 1995,
     "vote_average": 8.6,
     "rating": 8.6,
     "content": "Hai thám tử cảnh sát lần theo dấu vết của một kẻ giết người hàng loạt thực hiện các vụ án mạng rùng rợn dựa trên 7 đại tội.",
-    "spotlightBadge": "⚡ SIÊU PHẨM TRINH THÁM TỘI PHẠM"
+    "spotlightBadge": "⚡ SIÊU PHẨM TRINH THÁM TỘI PHẠM",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/zVyZvT1zVO7GIk65RlcOx5KdAN.png"
   },
   {
     "_id": "ho-so-sat-nhan",
@@ -360,18 +428,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "ho-so-sat-nhan",
     "type": "single",
     "tmdbId": 1949,
-    "tmdb": { "id": "1949", "type": "movie" },
+    "tmdb": {
+      "id": "1949",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=yNncHPl1UXg",
-    "poster_url": "https://phimimg.com/upload/vod/ho-so-sat-nhan-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/ho-so-sat-nhan-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/ho-so-sat-nhan-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/6YmeO4pB7XTh8P8F960O1uA14JO.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/3zCPI4JFc54xvLaJ71oI2KoP3az.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/3zCPI4JFc54xvLaJ71oI2KoP3az.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2007,
     "vote_average": 7.7,
     "rating": 7.7,
     "content": "Hành trình điều tra đầy ám ảnh của các nhà báo và thám tử truy tìm tung tích tên sát nhân Zodiac gieo rắc kinh hoàng khắp San Francisco.",
-    "spotlightBadge": "🔎 VỤ ÁN BÍ ẨN BẬC NHẤT LỊCH SỬ"
+    "spotlightBadge": "🔎 VỤ ÁN BÍ ẨN BẬC NHẤT LỊCH SỬ",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/5h6mucS4CvaiNs8aXIvcCG3HfhC.png"
   },
   {
     "_id": "ke-san-tin-den",
@@ -380,18 +452,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "ke-san-tin-den",
     "type": "single",
     "tmdbId": 242582,
-    "tmdb": { "id": "242582", "type": "movie" },
+    "tmdb": {
+      "id": "242582",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=X8kYDQanReo",
-    "poster_url": "https://phimimg.com/upload/vod/ke-san-tin-den-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/ke-san-tin-den-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/ke-san-tin-den-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/j9HrX8f7GbZQm1BrBiR40uFQZSb.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/bdI6U1mT0kCdTJ6TWtiFxQ42GSn.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/bdI6U1mT0kCdTJ6TWtiFxQ42GSn.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2014,
     "vote_average": 7.9,
     "rating": 7.9,
     "content": "Một gã thanh niên thất nghiệp bước chân vào thế giới săn tin đêm tội phạm nguy hiểm tại Los Angeles và dần đánh mất nhân tính.",
-    "spotlightBadge": "📹 GÓC KHUẤT TỐI TĂM CỦA TRUYỀN THÔNG"
+    "spotlightBadge": "📹 GÓC KHUẤT TỐI TĂM CỦA TRUYỀN THÔNG",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/kmZFcvkIOMKLU6H7sPUB761fS2o.png"
   },
   {
     "_id": "khong-chon-dung-than",
@@ -400,18 +476,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "khong-chon-dung-than",
     "type": "single",
     "tmdbId": 6977,
-    "tmdb": { "id": "6977", "type": "movie" },
+    "tmdb": {
+      "id": "6977",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=38A__WT3-o0",
-    "poster_url": "https://phimimg.com/upload/vod/khong-chon-dung-than-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/khong-chon-dung-than-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/khong-chon-dung-than-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/6d5XOczc226jECq0LIX0siKtgHR.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/gddUsvfyySrM5k8B8wwJy2VRlBx.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/gddUsvfyySrM5k8B8wwJy2VRlBx.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2007,
     "vote_average": 8.2,
     "rating": 8.2,
     "content": "Cuộc rượt đuổi đẫm máu trên sa mạc Texas khi một gã thợ săn vô tình nhặt được vali tiền triệu đô và bị tên sát thủ máu lạnh Anton Chigurh săn lùng.",
-    "spotlightBadge": "🏆 OSCAR PHIM XUẤT SẮC NHẤT 2007"
+    "spotlightBadge": "🏆 OSCAR PHIM XUẤT SẮC NHẤT 2007",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/6u3WGSBwqmsG3tooD2B5eMKkxKU.png"
   },
   {
     "_id": "1917",
@@ -420,18 +500,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "1917",
     "type": "single",
     "tmdbId": 530915,
-    "tmdb": { "id": "530915", "type": "movie" },
+    "tmdb": {
+      "id": "530915",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=YqNYrYUiMfg",
-    "poster_url": "https://phimimg.com/upload/vod/1917-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/1917-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/1917-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/iZf0KyrE25z1sage4SYFLCCrMi9.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/2lBOQK06tltt8SQaswgb8d657Mv.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/2lBOQK06tltt8SQaswgb8d657Mv.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2019,
     "vote_average": 8.3,
     "rating": 8.3,
     "content": "Hai người lính trẻ nhận nhiệm vụ bất khả thi: băng qua phòng tuyến địch trong Thế chiến I để chuyển thông điệp cứu sống 1.600 đồng đội.",
-    "spotlightBadge": "🎖️ KỸ THUẬT QUAY ONE-SHOT KINH ĐIỂN"
+    "spotlightBadge": "🎖️ KỸ THUẬT QUAY ONE-SHOT KINH ĐIỂN",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/wwSU87KF5cqBLI4ani5vOnYIErh.png"
   },
   {
     "_id": "cuoc-di-tan-dunkirk",
@@ -440,18 +524,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "cuoc-di-tan-dunkirk",
     "type": "single",
     "tmdbId": 374720,
-    "tmdb": { "id": "374720", "type": "movie" },
+    "tmdb": {
+      "id": "374720",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=F-eMt3SrfFU",
-    "poster_url": "https://phimimg.com/upload/vod/cuoc-di-tan-dunkirk-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/cuoc-di-tan-dunkirk-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/cuoc-di-tan-dunkirk-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/b4Oe15CGLL61Ped0RAS9JpqdmCt.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/ddIkmH3TpR6XSc47jj0BrGK5Rbz.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/ddIkmH3TpR6XSc47jj0BrGK5Rbz.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2017,
     "vote_average": 7.9,
     "rating": 7.9,
     "content": "Bản hùng ca chân thực về chiến dịch sơ tán thần kỳ giải cứu hàng trăm nghìn binh lính Đồng minh bị bao vây tại bãi biển Dunkirk.",
-    "spotlightBadge": "🌊 TRẬN CHIẾN LỊCH SỬ HÙNG TRÁNG"
+    "spotlightBadge": "🌊 TRẬN CHIẾN LỊCH SỬ HÙNG TRÁNG",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/d23hHJ9S84b1vtXXOCE0VI17ckD.png"
   },
   {
     "_id": "giai-cuu-binh-nhi-ryan",
@@ -460,18 +548,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "giai-cuu-binh-nhi-ryan",
     "type": "single",
     "tmdbId": 857,
-    "tmdb": { "id": "857", "type": "movie" },
+    "tmdb": {
+      "id": "857",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=zwhP5b4tD6g",
-    "poster_url": "https://phimimg.com/upload/vod/giai-cuu-binh-nhi-ryan-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/giai-cuu-binh-nhi-ryan-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/giai-cuu-binh-nhi-ryan-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/uqx37cS8cpHg8U35f9U5IBlrCV3.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/bdD39MpSVhKjxarTxLSfX6baoMP.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/bdD39MpSVhKjxarTxLSfX6baoMP.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 1998,
     "vote_average": 8.6,
     "rating": 8.6,
     "content": "Đại úy Miller dẫn đầu một tiểu đội băng qua chiến trường khốc liệt sau ngày đổ bộ Normandy để tìm kiếm và đưa một binh nhì sống sót trở về.",
-    "spotlightBadge": "🏆 ĐỈNH CAO PHIM CHIẾN TRANH MỌI THỜI ĐẠI"
+    "spotlightBadge": "🏆 ĐỈNH CAO PHIM CHIẾN TRANH MỌI THỜI ĐẠI",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/5FugxW5ZEz7XU9h4K8JdDrUoaQY.png"
   },
   {
     "_id": "cuong-no",
@@ -480,18 +572,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "cuong-no",
     "type": "single",
     "tmdbId": 228150,
-    "tmdb": { "id": "228150", "type": "movie" },
+    "tmdb": {
+      "id": "228150",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=-OGvZoIrXpg",
-    "poster_url": "https://phimimg.com/upload/vod/cuong-no-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/cuong-no-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/cuong-no-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/pfte7wdMobMF4CVHuOxyu6oqeeA.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/95ckrV6wQgbffurAVmETQ5YKASL.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/95ckrV6wQgbffurAVmETQ5YKASL.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2014,
     "vote_average": 7.6,
     "rating": 7.6,
     "content": "Trung sĩ Wardaddy chỉ huy một cỗ xe tăng Sherman cùng tổ lái 5 người thực hiện đợt tấn công cảm tử vào hậu phương Đức Quốc Xã.",
-    "spotlightBadge": "🛡️ TRẬN CHIẾN XE TĂNG NGHẸT THỞ"
+    "spotlightBadge": "🛡️ TRẬN CHIẾN XE TĂNG NGHẸT THỞ",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/kEcGWpNcsdwgVuI3BiGtk27uvQF.png"
   },
   {
     "_id": "nguoi-hung-khong-sung",
@@ -500,18 +596,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "nguoi-hung-khong-sung",
     "type": "single",
     "tmdbId": 324786,
-    "tmdb": { "id": "324786", "type": "movie" },
+    "tmdb": {
+      "id": "324786",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=s2-1hz1juBI",
-    "poster_url": "https://phimimg.com/upload/vod/nguoi-hung-khong-sung-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/nguoi-hung-khong-sung-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/nguoi-hung-khong-sung-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/fnOMP6mjmOmZwmlC1n0K7ivrzt1.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/vDKRMZGFTKP9nQolzeSB1rB1w6p.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/vDKRMZGFTKP9nQolzeSB1rB1w6p.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2016,
     "vote_average": 8.1,
     "rating": 8.1,
     "content": "Câu chuyện có thật đầy cảm động về Desmond Doss, quân y từ chối cầm súng nhưng đã một mình cứu sống 75 đồng đội trong trận chiến Okinawa.",
-    "spotlightBadge": "🎖️ CÂU CHUYỆN ANH HÙNG CÓ THẬT"
+    "spotlightBadge": "🎖️ CÂU CHUYỆN ANH HÙNG CÓ THẬT",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/gAv138RfAa2oWd7xAQqE9mwt2sU.png"
   },
   {
     "_id": "dieu-hau-gay-canh",
@@ -520,18 +620,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "dieu-hau-gay-canh",
     "type": "single",
     "tmdbId": 423,
-    "tmdb": { "id": "423", "type": "movie" },
+    "tmdb": {
+      "id": "423",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=2GfBkC345c8",
-    "poster_url": "https://phimimg.com/upload/vod/dieu-hau-gay-canh-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/dieu-hau-gay-canh-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/dieu-hau-gay-canh-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/2hFvxCCWrTmCYwfy7yum0GKRi3Y.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/c0fB9xk7D1aVb3Bg2rk2SVJcGn.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/c0fB9xk7D1aVb3Bg2rk2SVJcGn.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2001,
     "vote_average": 7.7,
     "rating": 7.7,
     "content": "Trận chiến đẫm máu của lực lượng đặc nhiệm Mỹ tại thủ đô Mogadishu sau khi hai trực thăng Black Hawk bị bắn rơi.",
-    "spotlightBadge": "🔥 CHIẾN DỊCH QUÂN SỰ NẢY LỬA"
+    "spotlightBadge": "🔥 CHIẾN DỊCH QUÂN SỰ NẢY LỬA",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/xLresrupcXIq7AfeMc5V6XHCxd5.png"
   },
   {
     "_id": "song-sot",
@@ -540,18 +644,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "song-sot",
     "type": "single",
     "tmdbId": 193756,
-    "tmdb": { "id": "193756", "type": "movie" },
+    "tmdb": {
+      "id": "193756",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=yoLFk4JK_cc",
-    "poster_url": "https://phimimg.com/upload/vod/song-sot-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/song-sot-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/song-sot-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/zaBIrloyhGK7iNTZMb3f9SARsl8.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/hmEbQB5UlcwobldcSDNlLZiUnmA.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/hmEbQB5UlcwobldcSDNlLZiUnmA.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2013,
     "vote_average": 7.5,
     "rating": 7.5,
     "content": "Bốn lính biệt kích Hải quân SEALs bị phục kích cô lập giữa vòng vây hàng trăm tay súng Taliban trên đỉnh núi hiểm trở Afghanistan.",
-    "spotlightBadge": "🎯 CUỘC CHIẾN ĐẶC NHIỆM QUẢ CẢM"
+    "spotlightBadge": "🎯 CUỘC CHIẾN ĐẶC NHIỆM QUẢ CẢM",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/fDhdAMA7bNq5XnjZHzkSmavuwBS.png"
   },
   {
     "_id": "linh-ban-tia-my",
@@ -560,18 +668,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "linh-ban-tia-my",
     "type": "single",
     "tmdbId": 190859,
-    "tmdb": { "id": "190859", "type": "movie" },
+    "tmdb": {
+      "id": "190859",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=99k3u9ay1hs",
-    "poster_url": "https://phimimg.com/upload/vod/linh-ban-tia-my-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/linh-ban-tia-my-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/linh-ban-tia-my-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/i1U46OwMc6vlm7OoSUKfqUH615e.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/rl95VDEP3nsUQmGzE0S1S7y6T0N.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/rl95VDEP3nsUQmGzE0S1S7y6T0N.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2014,
     "vote_average": 7.3,
     "rating": 7.3,
     "content": "Cuộc đời của Chris Kyle, xạ thủ bắn tỉa nguy hiểm nhất lịch sử quân sự Mỹ, cùng những vết thương tâm lý nặng nề sau các đợt tham chiến.",
-    "spotlightBadge": "🎯 XẠ THỦ HUYỀN THOẠI"
+    "spotlightBadge": "🎯 XẠ THỦ HUYỀN THOẠI",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/6aytdNlbaWgLdJOr0ZV5ye58l9H.png"
   },
   {
     "_id": "khe-uoc-sinh-tu",
@@ -580,18 +692,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "khe-uoc-sinh-tu",
     "type": "single",
     "tmdbId": 882569,
-    "tmdb": { "id": "882569", "type": "movie" },
+    "tmdb": {
+      "id": "882569",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=02PPMPArNEQ",
-    "poster_url": "https://phimimg.com/upload/vod/khe-uoc-sinh-tu-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/khe-uoc-sinh-tu-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/khe-uoc-sinh-tu-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/kVG8zFFYrpyYLoHChuEeOGAd6Ru.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/eTvN54pd83TrSEOz6wbsXEJktCV.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/eTvN54pd83TrSEOz6wbsXEJktCV.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2023,
     "vote_average": 7.8,
     "rating": 7.8,
     "content": "Sau khi được một thông dịch viên địa phương cứu mạng, Trung sĩ Kinley bất chấp mọi nguy hiểm quay trở lại vùng chiến sự để giải cứu ân nhân.",
-    "spotlightBadge": "🤝 TÌNH ĐỒNG ĐỘI SINH TỬ"
+    "spotlightBadge": "🤝 TÌNH ĐỒNG ĐỘI SINH TỬ",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/3CjMi5T3Om7TLVh0gOYxSlrrmxe.png"
   },
   {
     "_id": "noi-chien-my",
@@ -600,18 +716,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "noi-chien-my",
     "type": "single",
     "tmdbId": 929590,
-    "tmdb": { "id": "929590", "type": "movie" },
+    "tmdb": {
+      "id": "929590",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=aDyQxtg0V2w",
-    "poster_url": "https://phimimg.com/upload/vod/noi-chien-my-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/noi-chien-my-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/noi-chien-my-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/sh7Rg8Er3tFcN9BpKIPOMvALgZd.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/t2SXZ7KLriaLyf5QT8Iar6fSOGp.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/t2SXZ7KLriaLyf5QT8Iar6fSOGp.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2024,
     "vote_average": 7.1,
     "rating": 7.1,
     "content": "Nhóm phóng viên chiến trường chạy đua với thời gian băng qua nước Mỹ đang chìm trong ngọn lửa nội chiến khốc liệt hướng về Washington D.C.",
-    "spotlightBadge": "⚡ BOM TẤN HÀNH ĐỘNG GIẢ TƯỞNG 2024"
+    "spotlightBadge": "⚡ BOM TẤN HÀNH ĐỘNG GIẢ TƯỞNG 2024",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/gmyE6rZWJUIhflDbls6Tk2l4qCG.png"
   },
   {
     "_id": "nam-dai-hoa-2012",
@@ -620,18 +740,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "nam-dai-hoa-2012",
     "type": "single",
     "tmdbId": 14160,
-    "tmdb": { "id": "14160", "type": "movie" },
+    "tmdb": {
+      "id": "14160",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=sFXGrTng0gQ",
-    "poster_url": "https://phimimg.com/upload/vod/nam-dai-hoa-2012-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/nam-dai-hoa-2012-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/nam-dai-hoa-2012-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/mFvoEwSfLqbcWwFsDjQebn9bzFe.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/hGGC9gKo7CFE3fW07RA587e5kol.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/hGGC9gKo7CFE3fW07RA587e5kol.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2009,
     "vote_average": 6.8,
     "rating": 6.8,
     "content": "Khi lớp vỏ Trái Đất bất ổn kích hoạt hàng loạt thảm họa diệt vong toàn cầu, một nhà văn dốc toàn lực để bảo vệ gia đình lên con tàu cứu rỗi.",
-    "spotlightBadge": "🌋 SIÊU THẢM HỌA TẬN THẾ KINH HOÀNG"
+    "spotlightBadge": "🌋 SIÊU THẢM HỌA TẬN THẾ KINH HOÀNG",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/xi23eSwoibr5XeuZWBkTIBcA8O2.png"
   },
   {
     "_id": "khe-nut-san-andreas",
@@ -640,18 +764,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "khe-nut-san-andreas",
     "type": "single",
     "tmdbId": 254128,
-    "tmdb": { "id": "254128", "type": "movie" },
+    "tmdb": {
+      "id": "254128",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=23VflsU3kZE",
-    "poster_url": "https://phimimg.com/upload/vod/khe-nut-san-andreas-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/khe-nut-san-andreas-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/khe-nut-san-andreas-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/2Gfjn962aaFSD6eST6QU3oLDZTo.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/zcySy6dnSmyqiichtDgO7AEeZoq.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/zcySy6dnSmyqiichtDgO7AEeZoq.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2015,
     "vote_average": 6.9,
     "rating": 6.9,
     "content": "Một phi công cứu hộ cùng vợ cũ thực hiện hành trình gian khổ băng qua bang California đổ nát sau trận động đất thế kỷ để tìm kiếm con gái.",
-    "spotlightBadge": "💥 ĐẠI ĐỊA CHẤN TẬN THẾ"
+    "spotlightBadge": "💥 ĐẠI ĐỊA CHẤN TẬN THẾ",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/zCYP0A2q7FCEppQOKOXsdaJ9ne9.png"
   },
   {
     "_id": "tham-hoa-thien-thach",
@@ -660,18 +788,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "tham-hoa-thien-thach",
     "type": "single",
     "tmdbId": 524047,
-    "tmdb": { "id": "524047", "type": "movie" },
+    "tmdb": {
+      "id": "524047",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=vz-GDc4BQ8A",
-    "poster_url": "https://phimimg.com/upload/vod/tham-hoa-thien-thach-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/tham-hoa-thien-thach-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/tham-hoa-thien-thach-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/bNo2mcvSwIvnx8K6y1euAc1TLVq.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/2Fk3AB8E9dYIBc2ywJkxk8BTyhc.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/2Fk3AB8E9dYIBc2ywJkxk8BTyhc.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2020,
     "vote_average": 7,
     "rating": 7,
     "content": "Gia đình John Garrity tìm mọi cách tiếp cận hầm trú ẩn ngầm ở Greenland khi thiên thạch khổng lồ đâm vào Trái Đất đe dọa sự sống loài người.",
-    "spotlightBadge": "☄️ CUỘC CHẠY ĐUA TÌM ĐƯỜNG SỐNG"
+    "spotlightBadge": "☄️ CUỘC CHẠY ĐUA TÌM ĐƯỜNG SỐNG",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/us4CpsCcsJmMoAwjqMcoSlVasx2.png"
   },
   {
     "_id": "sieu-bao-dia-cau",
@@ -680,18 +812,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "sieu-bao-dia-cau",
     "type": "single",
     "tmdbId": 274857,
-    "tmdb": { "id": "274857", "type": "movie" },
+    "tmdb": {
+      "id": "274857",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=EuOlYPSEzSc",
-    "poster_url": "https://phimimg.com/upload/vod/sieu-bao-dia-cau-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/sieu-bao-dia-cau-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/sieu-bao-dia-cau-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/9kKXH6eJpzoFGhCbTN3FVwSQK3n.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/sVkjgKq8cwKm95LCyfrLldLbQIG.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/sVkjgKq8cwKm95LCyfrLldLbQIG.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2017,
     "vote_average": 6.5,
     "rating": 6.5,
     "content": "Khi hệ thống vệ tinh điều khiển thời tiết toàn cầu bị tin tặc chiếm quyền kiểm soát, Trái Đất đứng trước nguy cơ xảy ra siêu bão hủy diệt.",
-    "spotlightBadge": "🌪️ BÃO KHÍ HẬU TOÀN CẦU"
+    "spotlightBadge": "🌪️ BÃO KHÍ HẬU TOÀN CẦU",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/7jZAqfVNeGxRmxZ9x3MOR6BXFxd.png"
   },
   {
     "_id": "ngay-kinh-hoang",
@@ -700,18 +836,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "ngay-kinh-hoang",
     "type": "single",
     "tmdbId": 2059,
-    "tmdb": { "id": "2059", "type": "movie" },
+    "tmdb": {
+      "id": "2059",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=Ku_IseOj3tc",
-    "poster_url": "https://phimimg.com/upload/vod/ngay-kinh-hoang-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/ngay-kinh-hoang-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/ngay-kinh-hoang-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/pxL6E4GBOPUG6CdkO9cUQN5VMwI.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/9EnZD3ZWjpJy4IPoQkqTzxvZrso.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/9EnZD3ZWjpJy4IPoQkqTzxvZrso.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2004,
     "vote_average": 7.1,
     "rating": 7.1,
     "content": "Hiện tượng biến đổi khí hậu toàn cầu đột ngột đẩy bán cầu bắc vào một kỷ băng hà mới, biến New York thành đại dương băng giá.",
-    "spotlightBadge": "❄️ KỶ BĂNG HÀ TRỞ LẠI"
+    "spotlightBadge": "❄️ KỶ BĂNG HÀ TRỞ LẠI",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/zmX977yilVr7j4ll5Sozjy9Ixfi.png"
   },
   {
     "_id": "loc-xoay-tu-than",
@@ -720,18 +860,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "loc-xoay-tu-than",
     "type": "single",
     "tmdbId": 718821,
-    "tmdb": { "id": "718821", "type": "movie" },
+    "tmdb": {
+      "id": "718821",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=Jb8g1V_0iGs",
-    "poster_url": "https://phimimg.com/upload/vod/loc-xoay-tu-than-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/loc-xoay-tu-than-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/loc-xoay-tu-than-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/pjnD08FlMAIXsfOLKQbvmO0f0MD.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/58D6ZAvOKxlHjyX9S8qNKSBE9Y.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/58D6ZAvOKxlHjyX9S8qNKSBE9Y.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2024,
     "vote_average": 7.2,
     "rating": 7.2,
     "content": "Nhóm chuyên gia săn bão dấn thân vào tâm điểm đợt bão lốc xoáy hung bạo và chưa từng có trong lịch sử tại Oklahoma.",
-    "spotlightBadge": "🌪️ BOM TẤN THẢM HỌA 2024"
+    "spotlightBadge": "🌪️ BOM TẤN THẢM HỌA 2024",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/kmMWzQZZysoMdL4Na15cvdgx6UN.png"
   },
   {
     "_id": "tham-hoa-huy-diet",
@@ -740,18 +884,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "tham-hoa-huy-diet",
     "type": "single",
     "tmdbId": 8656,
-    "tmdb": { "id": "8656", "type": "movie" },
+    "tmdb": {
+      "id": "8656",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=xV5vKzW4j9Y",
-    "poster_url": "https://phimimg.com/upload/vod/tham-hoa-huy-diet-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/tham-hoa-huy-diet-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/tham-hoa-huy-diet-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/a3vQS7JKqlOb3MdVJHuTCP9s7Mg.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/pWmJBkdb0EMb3PSd2f9wjza0krb.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/pWmJBkdb0EMb3PSd2f9wjza0krb.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 1998,
     "vote_average": 6.9,
     "rating": 6.9,
     "content": "Nhân loại nỗ lực cử phi hành đoàn lên phá hủy sao chổi khổng lồ đang lao thẳng vào Trái Đất trước khi thảm họa xảy ra.",
-    "spotlightBadge": "☄️ THIÊN THẠCH VA CHẠM TRÁI ĐẤT"
+    "spotlightBadge": "☄️ THIÊN THẠCH VA CHẠM TRÁI ĐẤT",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/x91Wo1b4GhW0BrAzxSWkvFlQ3TR.png"
   },
   {
     "_id": "ngay-tan-the",
@@ -760,18 +908,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "ngay-tan-the",
     "type": "single",
     "tmdbId": 95,
-    "tmdb": { "id": "95", "type": "movie" },
+    "tmdb": {
+      "id": "95",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=kg_jH47u480",
-    "poster_url": "https://phimimg.com/upload/vod/ngay-tan-the-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/ngay-tan-the-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/ngay-tan-the-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/eTM3qtGhDU8cvjpoa6KEt5E2auU.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/1cO6OQJxz7YhTZ4V1OlkYfebeJa.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/1cO6OQJxz7YhTZ4V1OlkYfebeJa.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 1998,
     "vote_average": 7.4,
     "rating": 7.4,
     "content": "Một nhóm thợ khoan dầu chuyên nghiệp được NASA đào tạo khẩn cấp để bay lên không gian khoan nổ hạt nhân cứu Trái Đất khỏi tiểu hành tinh.",
-    "spotlightBadge": "🚀 BẢN HÙNG CA KHÔNG GIAN BẤT HỦ"
+    "spotlightBadge": "🚀 BẢN HÙNG CA KHÔNG GIAN BẤT HỦ",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/j3neFP0IJzqmYUBUdRvmQVTFcbG.png"
   },
   {
     "_id": "ngay-doc-lap",
@@ -780,18 +932,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "ngay-doc-lap",
     "type": "single",
     "tmdbId": 602,
-    "tmdb": { "id": "602", "type": "movie" },
+    "tmdb": {
+      "id": "602",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=kA2WzBi2KAk",
-    "poster_url": "https://phimimg.com/upload/vod/ngay-doc-lap-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/ngay-doc-lap-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/ngay-doc-lap-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/p0BPQGSPoSa8Ml0DAf2mB2kCU0R.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/uw4SnKFZ453Gxmj5XR5Susj8TNo.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/uw4SnKFZ453Gxmj5XR5Susj8TNo.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 1996,
     "vote_average": 7.5,
     "rating": 7.5,
     "content": "Toàn bộ nhân loại cùng đoàn kết đứng lên phản công lực lượng tàu mẹ ngoài hành tinh xâm lược Trái Đất đúng vào ngày 4 tháng 7.",
-    "spotlightBadge": "🛸 CHIẾN TRANH NGƯỜI NGOÀI HÀNH TINH"
+    "spotlightBadge": "🛸 CHIẾN TRANH NGƯỜI NGOÀI HÀNH TINH",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/mwoCHwBuWrEd9RLPrktHV33esnT.png"
   },
   {
     "_id": "dai-chien-the-gioi",
@@ -800,18 +956,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "dai-chien-the-gioi",
     "type": "single",
     "tmdbId": 74,
-    "tmdb": { "id": "74", "type": "movie" },
+    "tmdb": {
+      "id": "74",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=MJYnHA2Oz90",
-    "poster_url": "https://phimimg.com/upload/vod/dai-chien-the-gioi-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/dai-chien-the-gioi-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/dai-chien-the-gioi-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/6Biy7R9LfumYshur3YKhpj56MpB.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/bInicBgSHfQiWLbnRT5jxw9Grvm.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/bInicBgSHfQiWLbnRT5jxw9Grvm.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2005,
     "vote_average": 7.2,
     "rating": 7.2,
     "content": "Một người cha nỗ lực bảo vệ hai con nhỏ chạy trốn khỏi các cỗ máy hủy diệt 3 chân khổng lồ của người ngoài hành tinh trỗi dậy từ lòng đất.",
-    "spotlightBadge": "👾 CƠN ÁC MỘNG NGOÀI HÀNH TINH"
+    "spotlightBadge": "👾 CƠN ÁC MỘNG NGOÀI HÀNH TINH",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/fzB3khU5ZlLo52jzoWfLgjmyjna.png"
   },
   {
     "_id": "hanh-tinh-chet",
@@ -820,18 +980,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "hanh-tinh-chet",
     "type": "single",
     "tmdbId": 70981,
-    "tmdb": { "id": "70981", "type": "movie" },
+    "tmdb": {
+      "id": "70981",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=34cEo0Vzmg4",
-    "poster_url": "https://phimimg.com/upload/vod/hanh-tinh-chet-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/hanh-tinh-chet-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/hanh-tinh-chet-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/qsYQflQhOuhDpQ0W2aOcwqgDAeI.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/qDG5SlGkWNsjSJWiGTBMFI8DpzA.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/qDG5SlGkWNsjSJWiGTBMFI8DpzA.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2012,
     "vote_average": 7.2,
     "rating": 7.2,
     "content": "Phi hành đoàn tàu Prometheus tiến vào vùng không gian sâu để tìm kiếm Đấng Sáng Tạo nhưng phát hiện ra một vũ khí sinh học hủy diệt.",
-    "spotlightBadge": "🌌 KHÁM PHÁ NGUỒN GỐC LOÀI NGƯỜI"
+    "spotlightBadge": "🌌 KHÁM PHÁ NGUỒN GỐC LOÀI NGƯỜI",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/g5EwoJVOOYkeXZcUwzKfIj0aW9V.png"
   },
   {
     "_id": "quai-vat-khong-gian-khe-uoc",
@@ -840,18 +1004,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "quai-vat-khong-gian-khe-uoc",
     "type": "single",
     "tmdbId": 282035,
-    "tmdb": { "id": "282035", "type": "movie" },
+    "tmdb": {
+      "id": "282035",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=svnAD0TApb8",
-    "poster_url": "https://phimimg.com/upload/vod/quai-vat-khong-gian-khe-uoc-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/quai-vat-khong-gian-khe-uoc-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/quai-vat-khong-gian-khe-uoc-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/zxkY8byBnCsXodEYpK8tmwEGXBI.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/i4ZougHEyBAboDpi6jsaTUDTjUl.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/i4ZougHEyBAboDpi6jsaTUDTjUl.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2017,
     "vote_average": 6.9,
     "rating": 6.9,
     "content": "Tàu định cư Covenant chuyển hướng đến một hành tinh thiên đường chưa được khai phá, nơi ẩn chứa loài quái vật khát máu tột cùng.",
-    "spotlightBadge": "👾 KINH HOÀNG XENOMORPH"
+    "spotlightBadge": "👾 KINH HOÀNG XENOMORPH",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/cz7Nbmxq0wjRPyYsLQJyfxVflb4.png"
   },
   {
     "_id": "quai-thu-vo-hinh",
@@ -860,18 +1028,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "quai-thu-vo-hinh",
     "type": "single",
     "tmdbId": 106,
-    "tmdb": { "id": "106", "type": "movie" },
+    "tmdb": {
+      "id": "106",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=X2hBYGwKh3I",
-    "poster_url": "https://phimimg.com/upload/vod/quai-thu-vo-hinh-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/quai-thu-vo-hinh-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/quai-thu-vo-hinh-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/k3mW4qfJo6SKqe6laRyNGnbB9n5.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/YL3GPOiDcNraIJOVDCZsoOBoDy.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/YL3GPOiDcNraIJOVDCZsoOBoDy.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 1987,
     "vote_average": 7.8,
     "rating": 7.8,
     "content": "Đội đặc nhiệm của Thiếu tá Dutch bị một sinh vật ngoài hành tinh sở hữu công nghệ tàng hình tối tân săn lùng từng người trong rừng rậm.",
-    "spotlightBadge": "👽 HUYỀN THOẠI HÀNH ĐỘNG SINH TỒN"
+    "spotlightBadge": "👽 HUYỀN THOẠI HÀNH ĐỘNG SINH TỒN",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/wnGqljuqb2KBNJQ0GCEoUjcAnTU.png"
   },
   {
     "_id": "quai-thu-vo-hinh-con-moi",
@@ -880,18 +1052,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "quai-thu-vo-hinh-con-moi",
     "type": "single",
     "tmdbId": 766507,
-    "tmdb": { "id": "766507", "type": "movie" },
+    "tmdb": {
+      "id": "766507",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=wZ7LytagKlc",
-    "poster_url": "https://phimimg.com/upload/vod/quai-thu-vo-hinh-con-moi-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/quai-thu-vo-hinh-con-moi-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/quai-thu-vo-hinh-con-moi-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/2FKjLRt7oK1bRRIrxgWmthbBdFh.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/7ZO9yoEU2fAHKhmJWfAc2QIPWJg.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/7ZO9yoEU2fAHKhmJWfAc2QIPWJg.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2022,
     "vote_average": 7.3,
     "rating": 7.3,
     "content": "Naru, nữ chiến binh trẻ người Comanche, vận dụng trí tuệ và sự dũng cảm để đối đầu với quái thú Predator công nghệ vượt trội năm 1719.",
-    "spotlightBadge": "🏹 SĂN QUÁI THÚ THỜI NGUYÊN THỦY"
+    "spotlightBadge": "🏹 SĂN QUÁI THÚ THỜI NGUYÊN THỦY",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/sPHlSlFQ0ykVqXQclTADMYreg43.png"
   },
   {
     "_id": "cuoc-chien-tuong-lai",
@@ -900,18 +1076,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "cuoc-chien-tuong-lai",
     "type": "single",
     "tmdbId": 588228,
-    "tmdb": { "id": "588228", "type": "movie" },
+    "tmdb": {
+      "id": "588228",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=QPistcpGB8o",
-    "poster_url": "https://phimimg.com/upload/vod/cuoc-chien-tuong-lai-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/cuoc-chien-tuong-lai-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/cuoc-chien-tuong-lai-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/34nDCQZwaEvsy4CFO5hkGRFDCVU.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/yizL4cEKsVvl17Wc1mGEIrQtM2F.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/yizL4cEKsVvl17Wc1mGEIrQtM2F.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2021,
     "vote_average": 7.1,
     "rating": 7.1,
     "content": "Nhân loại được tuyển mộ du hành tới năm 2051 để tham gia trận chiến sống còn chống lại chủng tộc sinh vật ngoài hành tinh Whitespikes.",
-    "spotlightBadge": "⏳ DU HÀNH CỨU THẾ GIỚI"
+    "spotlightBadge": "⏳ DU HÀNH CỨU THẾ GIỚI",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/hby1wdYEbBqRLrccse3IXq0VnFQ.png"
   },
   {
     "_id": "bi-mat-trai-dat-diet-vong",
@@ -920,18 +1100,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "bi-mat-trai-dat-diet-vong",
     "type": "single",
     "tmdbId": 75612,
-    "tmdb": { "id": "75612", "type": "movie" },
+    "tmdb": {
+      "id": "75612",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=XmIIgE756Wk",
-    "poster_url": "https://phimimg.com/upload/vod/bi-mat-trai-dat-diet-vong-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/bi-mat-trai-dat-diet-vong-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/bi-mat-trai-dat-diet-vong-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/bYLM3GpNUZnoFElPXp1zlhDPdtv.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/2kVt8oj1cSz4GAP0Hi8SESOiH0T.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/2kVt8oj1cSz4GAP0Hi8SESOiH0T.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2013,
     "vote_average": 7,
     "rating": 7,
     "content": "Một kỹ thuật viên sửa chữa máy bay không người lái trên Trái Đất hoang tàn phát hiện ra sự thật kinh hoàng về cuộc chiến ngoài hành tinh.",
-    "spotlightBadge": "🛸 VIỄN TƯỞNG HẬU TẬN THẾ MÃN NHÃN"
+    "spotlightBadge": "🛸 VIỄN TƯỞNG HẬU TẬN THẾ MÃN NHÃN",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/fzfW9xqgktnAdvEDCupBeJPHwBf.png"
   },
   {
     "_id": "ky-nguyen-elysium",
@@ -940,18 +1124,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "ky-nguyen-elysium",
     "type": "single",
     "tmdbId": 68724,
-    "tmdb": { "id": "68724", "type": "movie" },
+    "tmdb": {
+      "id": "68724",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=QILNSgou5BY",
-    "poster_url": "https://phimimg.com/upload/vod/ky-nguyen-elysium-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/ky-nguyen-elysium-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/ky-nguyen-elysium-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/aRjuJuPXHtVs6YegfeeQWXGRs1E.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/oo9GyiNKvR4CU1etuYl081UJ1LE.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/oo9GyiNKvR4CU1etuYl081UJ1LE.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2013,
     "vote_average": 6.9,
     "rating": 6.9,
     "content": "Trong tương lai năm 2154, một người đàn ông ở Trái Đất nghèo khổ liều mình đột nhập vào trạm không gian Elysium xa hoa của giới thượng lưu.",
-    "spotlightBadge": "⚡ CUỘC CHIẾN GIAI CẤP KHÔNG GIAN"
+    "spotlightBadge": "⚡ CUỘC CHIẾN GIAI CẤP KHÔNG GIAN",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/gfJV3cDD1Tbp2QOrdQshSdz8bIf.png"
   },
   {
     "_id": "khu-vuc-9",
@@ -960,18 +1148,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "khu-vuc-9",
     "type": "single",
     "tmdbId": 17654,
-    "tmdb": { "id": "17654", "type": "movie" },
+    "tmdb": {
+      "id": "17654",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=DyLUwOcR5pk",
-    "poster_url": "https://phimimg.com/upload/vod/khu-vuc-9-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/khu-vuc-9-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/khu-vuc-9-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/tuGlQkqLxnodDSk6mp5c2wvxUEd.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/jhM3wgWUrrOkz9r4xwV5cV5RhI4.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/jhM3wgWUrrOkz9r4xwV5cV5RhI4.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2009,
     "vote_average": 8,
     "rating": 8,
     "content": "Một nhân viên chính phủ bị phơi nhiễm công nghệ sinh học của người ngoài hành tinh sống tị nạn tại khu ổ chuột District 9 ở Nam Phi.",
-    "spotlightBadge": "🏆 TUYỆT TÁC SCI-FI ĐOẠT GIẢI"
+    "spotlightBadge": "🏆 TUYỆT TÁC SCI-FI ĐOẠT GIẢI",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/gneH6YMq0WKVBLBXO8rzf1YBerp.png"
   },
   {
     "_id": "alita-thien-than-chien-binh",
@@ -980,18 +1172,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "alita-thien-than-chien-binh",
     "type": "single",
     "tmdbId": 399579,
-    "tmdb": { "id": "399579", "type": "movie" },
+    "tmdb": {
+      "id": "399579",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=w7pYhpJaJW8",
-    "poster_url": "https://phimimg.com/upload/vod/alita-thien-than-chien-binh-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/alita-thien-than-chien-binh-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/alita-thien-than-chien-binh-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/xRWht48C2V8XNfzvPehyClOvDni.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/jXDselREPq8TOVGM4dzBBUM7xVk.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/jXDselREPq8TOVGM4dzBBUM7xVk.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2019,
     "vote_average": 7.3,
     "rating": 7.3,
     "content": "Một cyborg nữ được hồi sinh từ đống phế liệu khám phá ra thân phận chiến binh huyền thoại của mình và chiến đấu bảo vệ công lý.",
-    "spotlightBadge": "⚔️ KỸ XẢO CYBORG ĐỈNH CAO"
+    "spotlightBadge": "⚔️ KỸ XẢO CYBORG ĐỈNH CAO",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/97AapmS6CAhg3ZZgYQgsmstulNX.png"
   },
   {
     "_id": "tro-choi-ao-giac",
@@ -1000,18 +1196,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "tro-choi-ao-giac",
     "type": "single",
     "tmdbId": 20526,
-    "tmdb": { "id": "20526", "type": "movie" },
+    "tmdb": {
+      "id": "20526",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=L9szn1QQfas",
-    "poster_url": "https://phimimg.com/upload/vod/tro-choi-ao-giac-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/tro-choi-ao-giac-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/tro-choi-ao-giac-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/8Nc6R8k7bG8frSiDJo0oLucF7dN.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/uUa6jgSr5BQpcBhhaz1PV1JhSa4.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/uUa6jgSr5BQpcBhhaz1PV1JhSa4.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2010,
     "vote_average": 6.9,
     "rating": 6.9,
     "content": "Sam Flynn dấn thân vào thế giới kỹ thuật số ảo diệu The Grid để tìm kiếm người cha mất tích 20 năm của mình.",
-    "spotlightBadge": "🌐 THẾ GIỚI KỸ THUẬT SỐ ĐỈNH CAO"
+    "spotlightBadge": "🌐 THẾ GIỚI KỸ THUẬT SỐ ĐỈNH CAO",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/eLKars9d7u2z7YeGM3I7TXVHqm4.png"
   },
   {
     "_id": "deadpool-va-wolverine",
@@ -1020,18 +1220,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "deadpool-va-wolverine",
     "type": "single",
     "tmdbId": 533535,
-    "tmdb": { "id": "533535", "type": "movie" },
+    "tmdb": {
+      "id": "533535",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=73_1biulkYk",
-    "poster_url": "https://phimimg.com/upload/vod/deadpool-va-wolverine-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/deadpool-va-wolverine-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/deadpool-va-wolverine-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/by8z9Fe8y7p4jo2YlW2SZDnptyT.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/by8z9Fe8y7p4jo2YlW2SZDnptyT.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2024,
     "vote_average": 7.6,
     "rating": 7.6,
     "content": "Wade Wilson tái hợp cùng Wolverine trong một hành trình cứu rỗi dòng thời gian đầy hài hước và những pha hành động mãn nhãn.",
-    "spotlightBadge": "🔥 #1 BOM TẤN MARVEL 4K"
+    "spotlightBadge": "🔥 #1 BOM TẤN MARVEL 4K",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/2o48U3kMXGIqRAkKZQ3n5OTWSBy.png"
   },
   {
     "_id": "biet-doi-sieu-anh-hung-4-hoi-ket",
@@ -1040,18 +1244,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "biet-doi-sieu-anh-hung-4-hoi-ket",
     "type": "single",
     "tmdbId": 299534,
-    "tmdb": { "id": "299534", "type": "movie" },
+    "tmdb": {
+      "id": "299534",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=TcMBFSGVi1c",
-    "poster_url": "https://phimimg.com/upload/vod/biet-doi-sieu-anh-hung-4-hoi-ket-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/biet-doi-sieu-anh-hung-4-hoi-ket-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/biet-doi-sieu-anh-hung-4-hoi-ket-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/ulzhLuWrPK07P1YkdWQLZnQh1JL.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2019,
     "vote_average": 8.2,
     "rating": 8.2,
     "content": "Các siêu anh hùng Avengers tập hợp cho một trận chiến vượt thời gian cuối cùng để đảo ngược hành động hủy diệt của Thanos.",
-    "spotlightBadge": "🏆 HUYỀN THOẠI AVENGERS"
+    "spotlightBadge": "🏆 HUYỀN THOẠI AVENGERS",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/oYx8PrqrXipAb0cDY9Q7OijttfP.png"
   },
   {
     "_id": "biet-doi-sieu-anh-hung-3-cuoc-chien-vo-cuc",
@@ -1060,18 +1268,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "biet-doi-sieu-anh-hung-3-cuoc-chien-vo-cuc",
     "type": "single",
     "tmdbId": 299536,
-    "tmdb": { "id": "299536", "type": "movie" },
+    "tmdb": {
+      "id": "299536",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=6ZfuNTqbHE8",
-    "poster_url": "https://phimimg.com/upload/vod/biet-doi-sieu-anh-hung-3-cuoc-chien-vo-cuc-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/biet-doi-sieu-anh-hung-3-cuoc-chien-vo-cuc-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/biet-doi-sieu-anh-hung-3-cuoc-chien-vo-cuc-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/mDfJG3LC3Dqb67AZ52x3Z0jU0uB.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/mDfJG3LC3Dqb67AZ52x3Z0jU0uB.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2018,
     "vote_average": 8.2,
     "rating": 8.2,
     "content": "Trận chiến quy tụ toàn bộ vũ trụ điện ảnh Marvel ngăn chặn Thanos thu thập 6 Viên Đá Vô Cực để xóa sổ một nửa sự sống.",
-    "spotlightBadge": "💎 SIÊU PHẨM CHIẾU RẠP"
+    "spotlightBadge": "💎 SIÊU PHẨM CHIẾU RẠP",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/iiFFPJduveJnb6D2TYKL4AFJIFn.png"
   },
   {
     "_id": "nguoi-nhen-khong-con-nha",
@@ -1080,18 +1292,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "nguoi-nhen-khong-con-nha",
     "type": "single",
     "tmdbId": 634649,
-    "tmdb": { "id": "634649", "type": "movie" },
+    "tmdb": {
+      "id": "634649",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=JfVOs4VSpmA",
-    "poster_url": "https://phimimg.com/upload/vod/nguoi-nhen-khong-con-nha-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/nguoi-nhen-khong-con-nha-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/nguoi-nhen-khong-con-nha-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/uyrOU4BDm2kbVxFsMiDFIHDhc4d.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/uyrOU4BDm2kbVxFsMiDFIHDhc4d.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2021,
     "vote_average": 7.9,
     "rating": 7.9,
     "content": "Lời nguyền bị phá vỡ mở ra đa vũ trụ, buộc Spider-Man phải đối mặt với các phản diện huyền thoại từ các dòng thời gian khác.",
-    "spotlightBadge": "✨ ĐA VŨ TRỤ SPIDER-MAN"
+    "spotlightBadge": "✨ ĐA VŨ TRỤ SPIDER-MAN",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/tAKAjcy83LOBdhhqSwHDkT0cXOe.png"
   },
   {
     "_id": "nguoi-doi-2022",
@@ -1100,18 +1316,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "nguoi-doi-2022",
     "type": "single",
     "tmdbId": 414906,
-    "tmdb": { "id": "414906", "type": "movie" },
+    "tmdb": {
+      "id": "414906",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=mqqft2x_Aa4",
-    "poster_url": "https://phimimg.com/upload/vod/nguoi-doi-2022-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/nguoi-doi-2022-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/nguoi-doi-2022-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/74xTEgt7R36Fpooo50r9T25onhq.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/IYUD7rAIXzBM91TT3Z5fILUS7n.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/IYUD7rAIXzBM91TT3Z5fILUS7n.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2022,
     "vote_average": 8.5,
     "rating": 8.5,
     "content": "Batman lần theo dấu vết của kẻ giết người hàng loạt The Riddler và khám phá ra mạng lưới tham nhũng sâu sắc ở thành phố Gotham.",
-    "spotlightBadge": "🍿 TRINH THÁM TÂM LÝ ĐỈNH CAO"
+    "spotlightBadge": "🍿 TRINH THÁM TÂM LÝ ĐỈNH CAO",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/feJw5OvuutgHt4G9jZQibO8j4Gu.png"
   },
   {
     "_id": "joker",
@@ -1120,18 +1340,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "joker",
     "type": "single",
     "tmdbId": 475557,
-    "tmdb": { "id": "475557", "type": "movie" },
+    "tmdb": {
+      "id": "475557",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=zAGVQLHvwOY",
-    "poster_url": "https://phimimg.com/upload/vod/joker-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/joker-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/joker-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/rlay2M5QYvi6igbGcFjq8jxeusY.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/rlay2M5QYvi6igbGcFjq8jxeusY.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2019,
     "vote_average": 8.4,
     "rating": 8.4,
     "content": "Hành trình biến đổi đầy bi kịch của Arthur Fleck từ một diễn viên hài bị xã hội ruồng bỏ trở thành biểu tượng tội phạm Joker.",
-    "spotlightBadge": "🃏 KIỆT TÁC TÂM LÝ XUẤT THẦN"
+    "spotlightBadge": "🃏 KIỆT TÁC TÂM LÝ XUẤT THẦN",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/uACD19MjHdpLBlzmFSztlwsW5Q6.png"
   },
   {
     "_id": "nguoi-dan-ong-thep",
@@ -1140,18 +1364,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "nguoi-dan-ong-thep",
     "type": "single",
     "tmdbId": 49521,
-    "tmdb": { "id": "49521", "type": "movie" },
+    "tmdb": {
+      "id": "49521",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=T6DJcgm3wNY",
-    "poster_url": "https://phimimg.com/upload/vod/nguoi-dan-ong-thep-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/nguoi-dan-ong-thep-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/nguoi-dan-ong-thep-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/8GFtkImmK0K1VaUChR0n9O61CFU.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/j2MlEEpA3wgwQiJB6p1UHC50oiw.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/j2MlEEpA3wgwQiJB6p1UHC50oiw.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2013,
     "vote_average": 7.5,
     "rating": 7.5,
     "content": "Clark Kent khám phá nguồn gốc ngoài hành tinh của mình và chấp nhận số phận trở thành người hùng bảo vệ Trái Đất trước Tướng Zod.",
-    "spotlightBadge": "⚡ KHỞI ĐẦU SIÊU NHÂN DC"
+    "spotlightBadge": "⚡ KHỞI ĐẦU SIÊU NHÂN DC",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/qBtAryVKg11iEOmxeb31fxIHuvN.png"
   },
   {
     "_id": "ky-si-bong-dem",
@@ -1160,18 +1388,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "ky-si-bong-dem",
     "type": "single",
     "tmdbId": 155,
-    "tmdb": { "id": "155", "type": "movie" },
+    "tmdb": {
+      "id": "155",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=EXeTwQWrcwY",
-    "poster_url": "https://phimimg.com/upload/vod/ky-si-bong-dem-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/ky-si-bong-dem-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/ky-si-bong-dem-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/9FE5eD92WfVCiivM9Pq9GVSrlWk.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/9FE5eD92WfVCiivM9Pq9GVSrlWk.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2008,
     "vote_average": 9,
     "rating": 9,
     "content": "Cuộc đối đầu kinh điển giữa Người Dơi và ác nhân The Joker khi hắn gieo rắc sự hỗn loạn tột cùng lên thành phố Gotham.",
-    "spotlightBadge": "🏆 TOP #1 IMDB HUYỀN THOẠI"
+    "spotlightBadge": "🏆 TOP #1 IMDB HUYỀN THOẠI",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/nO5Uix3Qr4WjOyU1BMPv0okyNWm.png"
   },
   {
     "_id": "ve-binh-dai-ngan-ha-3",
@@ -1180,18 +1412,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "ve-binh-dai-ngan-ha-3",
     "type": "single",
     "tmdbId": 447365,
-    "tmdb": { "id": "447365", "type": "movie" },
+    "tmdb": {
+      "id": "447365",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=u3V5KDHRQvk",
-    "poster_url": "https://phimimg.com/upload/vod/ve-binh-dai-ngan-ha-3-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/ve-binh-dai-ngan-ha-3-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/ve-binh-dai-ngan-ha-3-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/r2J02Z2OpNTctfOSN1Ydgii51I3.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/5YZbUmjbMa3ClvSW1Wj3D6XGolb.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/5YZbUmjbMa3ClvSW1Wj3D6XGolb.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2023,
     "vote_average": 7.9,
     "rating": 7.9,
     "content": "Biệt đội Vệ binh dải ngân hà cùng nhau thực hiện nhiệm vụ bảo vệ vũ trụ và giải cứu người bạn thân thiết Rocket Raccoon.",
-    "spotlightBadge": "🦝 BẢN HÙNG CA ĐẦY CẢM XÚC"
+    "spotlightBadge": "🦝 BẢN HÙNG CA ĐẦY CẢM XÚC",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/yrZkQffWfFG16U9XnpcpQQLJvE2.png"
   },
   {
     "_id": "phu-thuy-toi-thuong-trong-da-vu-tru-hon-loan",
@@ -1200,18 +1436,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "phu-thuy-toi-thuong-trong-da-vu-tru-hon-loan",
     "type": "single",
     "tmdbId": 453395,
-    "tmdb": { "id": "453395", "type": "movie" },
+    "tmdb": {
+      "id": "453395",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=aWzlQ2N6ucg",
-    "poster_url": "https://phimimg.com/upload/vod/phu-thuy-toi-thuong-trong-da-vu-tru-hon-loan-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/phu-thuy-toi-thuong-trong-da-vu-tru-hon-loan-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/phu-thuy-toi-thuong-trong-da-vu-tru-hon-loan-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/ddJcSKbcp4rKZTmuyWaMhuwcfMz.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/lv3TXqhpaIxkclIHbhN2MRMOemQ.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/lv3TXqhpaIxkclIHbhN2MRMOemQ.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2022,
     "vote_average": 7.3,
     "rating": 7.3,
     "content": "Doctor Strange du hành xuyên các chiều không gian nguy hiểm để bảo vệ cô bé America Chavez khỏi sự săn đuổi của Scarlet Witch.",
-    "spotlightBadge": "🌀 KỲ QUAN ĐA VŨ TRỤ"
+    "spotlightBadge": "🌀 KỲ QUAN ĐA VŨ TRỤ",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/bbbQnfSEFN3amYn2pVCKUiKGL2G.png"
   },
   {
     "_id": "hanh-tinh-cat-phan-hai",
@@ -1220,18 +1460,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "hanh-tinh-cat-phan-hai",
     "type": "single",
     "tmdbId": 693134,
-    "tmdb": { "id": "693134", "type": "movie" },
+    "tmdb": {
+      "id": "693134",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=Way9Dexny3w",
-    "poster_url": "https://phimimg.com/upload/vod/hanh-tinh-cat-phan-hai-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/hanh-tinh-cat-phan-hai-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/hanh-tinh-cat-phan-hai-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/6izwz7rsy95ARzTR3poZ8H6c5pp.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/eZ239CUp1d6OryZEBPnO2n87gMG.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/eZ239CUp1d6OryZEBPnO2n87gMG.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2024,
     "vote_average": 8.5,
     "rating": 8.5,
     "content": "Paul Atreides hợp sức cùng người Fremen dấy lên cuộc chiến vĩ đại giải phóng hành tinh sa mạc Arrakis và báo thù cho gia tộc.",
-    "spotlightBadge": "🔥 SIÊU PHẨM VIỄN TƯỞNG 2024"
+    "spotlightBadge": "🔥 SIÊU PHẨM VIỄN TƯỞNG 2024",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/eYvF1LhPKuoBxOAmWjFTAK7EPWl.png"
   },
   {
     "_id": "ho-den-tu-than",
@@ -1240,18 +1484,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "ho-den-tu-than",
     "type": "single",
     "tmdbId": 157336,
-    "tmdb": { "id": "157336", "type": "movie" },
+    "tmdb": {
+      "id": "157336",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=zSWdZVtXT7E",
-    "poster_url": "https://phimimg.com/upload/vod/ho-den-tu-than-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/ho-den-tu-than-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/ho-den-tu-than-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/5XNQBqnBwPA9yT0jZ0p3s8bbLh0.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/5XNQBqnBwPA9yT0jZ0p3s8bbLh0.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2014,
     "vote_average": 8.7,
     "rating": 8.7,
     "content": "Nhóm nhà thám hiểm không gian vượt qua lỗ sâu vũ trụ để tìm kiếm ngôi nhà mới cho nhân loại khi Trái Đất dần cạn kiệt sự sống.",
-    "spotlightBadge": "🌌 KIỆT TÁC KHOA HỌC KHÔNG GIAN"
+    "spotlightBadge": "🌌 KIỆT TÁC KHOA HỌC KHÔNG GIAN",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/zEewiIVx9rDfc1HahWPNk4uyJdP.png"
   },
   {
     "_id": "avatar-dong-chay-cua-nuoc",
@@ -1260,18 +1508,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "avatar-dong-chay-cua-nuoc",
     "type": "single",
     "tmdbId": 76600,
-    "tmdb": { "id": "76600", "type": "movie" },
+    "tmdb": {
+      "id": "76600",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=d9MyW72ELq0",
-    "poster_url": "https://phimimg.com/upload/vod/avatar-dong-chay-cua-nuoc-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/avatar-dong-chay-cua-nuoc-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/avatar-dong-chay-cua-nuoc-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/t6HIqrRAclMCA60NsSmeqe9RmNV.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/kJsPVzdyBrYHLomuNv5SJDXUQ2f.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/kJsPVzdyBrYHLomuNv5SJDXUQ2f.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2022,
     "vote_average": 7.6,
     "rating": 7.6,
     "content": "Gia đình Jake Sully tìm nơi ẩn náu tại bộ tộc đại dương Metkayina và chiến đấu bảo vệ thế giới tươi đẹp Pandora.",
-    "spotlightBadge": "🌊 KỶ LỤC PHÒNG VÉ THẾ GIỚI"
+    "spotlightBadge": "🌊 KỶ LỤC PHÒNG VÉ THẾ GIỚI",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/yJ7iw3A1gMqerb3IyysQeVkgNXx.png"
   },
   {
     "_id": "toi-pham-nhan-ban-2049",
@@ -1280,18 +1532,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "toi-pham-nhan-ban-2049",
     "type": "single",
     "tmdbId": 335984,
-    "tmdb": { "id": "335984", "type": "movie" },
+    "tmdb": {
+      "id": "335984",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=gCcx85zbxz4",
-    "poster_url": "https://phimimg.com/upload/vod/toi-pham-nhan-ban-2049-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/toi-pham-nhan-ban-2049-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/toi-pham-nhan-ban-2049-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2017,
     "vote_average": 8,
     "rating": 8,
     "content": "Sĩ quan K khám phá một bí mật chôn giấu lâu năm có thể đẩy xã hội loài người và người nhân bản vào vòng xoáy hỗn loạn.",
-    "spotlightBadge": "🌃 TUYỆT TÁC CYBERPUNK 4K"
+    "spotlightBadge": "🌃 TUYỆT TÁC CYBERPUNK 4K",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/9YaX6xrmc1zAAjsZ2zwx6wJZnB2.png"
   },
   {
     "_id": "nguoi-ve-tu-sao-hoa",
@@ -1300,18 +1556,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "nguoi-ve-tu-sao-hoa",
     "type": "single",
     "tmdbId": 286217,
-    "tmdb": { "id": "286217", "type": "movie" },
+    "tmdb": {
+      "id": "286217",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=ej3ioOneTy8",
-    "poster_url": "https://phimimg.com/upload/vod/nguoi-ve-tu-sao-hoa-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/nguoi-ve-tu-sao-hoa-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/nguoi-ve-tu-sao-hoa-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/fASz8A0yFE3QB6LgGoOfwvFSseV.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/lzMS0CI3FLQYC5EgJoWeIaEt0lm.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/lzMS0CI3FLQYC5EgJoWeIaEt0lm.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2015,
     "vote_average": 8,
     "rating": 8,
     "content": "Nhà thực vật học Mark Watney vận dụng toàn bộ kiến thức khoa học để sinh tồn trên sao Hỏa sau khi bị đoàn thám hiểm bỏ lại.",
-    "spotlightBadge": "🚀 BẢN LĨNH SINH TỒN SAO HỎA"
+    "spotlightBadge": "🚀 BẢN LĨNH SINH TỒN SAO HỎA",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/7v2v9WdCPZCHWrWZwsIvooZty7k.png"
   },
   {
     "_id": "ke-danh-cap-giac-mo",
@@ -1320,18 +1580,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "ke-danh-cap-giac-mo",
     "type": "single",
     "tmdbId": 27205,
-    "tmdb": { "id": "27205", "type": "movie" },
+    "tmdb": {
+      "id": "27205",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=YoHD9XEInc0",
-    "poster_url": "https://phimimg.com/upload/vod/ke-danh-cap-giac-mo-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/ke-danh-cap-giac-mo-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/ke-danh-cap-giac-mo-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/xlaY2zyzMfkhk0HSC5VUwzoZPU1.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2010,
     "vote_average": 8.8,
     "rating": 8.8,
     "content": "Một đạo tặc chuyên nghiệp đánh cắp bí mật từ tiềm thức nhận nhiệm vụ bất khả thi: gieo một ý tưởng vào tâm trí người khác.",
-    "spotlightBadge": "💭 SIÊU PHẨM TÂM LÝ TẦNG LỚP"
+    "spotlightBadge": "💭 SIÊU PHẨM TÂM LÝ TẦNG LỚP",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/iXYh7y0vI1DZR0taTuvrr8PSnOd.png"
   },
   {
     "_id": "nguyen-ly-tenet",
@@ -1340,18 +1604,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "nguyen-ly-tenet",
     "type": "single",
     "tmdbId": 577922,
-    "tmdb": { "id": "577922", "type": "movie" },
+    "tmdb": {
+      "id": "577922",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=L3pk_TBkihU",
-    "poster_url": "https://phimimg.com/upload/vod/nguyen-ly-tenet-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/nguyen-ly-tenet-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/nguyen-ly-tenet-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/aCIFMriQh8rvhxpN1IWGgvH0Tlg.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/mQOUyqDybTqxl73hO5LujCZsM1o.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/mQOUyqDybTqxl73hO5LujCZsM1o.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2020,
     "vote_average": 7.4,
     "rating": 7.4,
     "content": "Một điệp viên được trang bị chỉ một từ 'Tenet' bước vào cuộc chiến xuyên thời gian để ngăn chặn Thế chiến III bùng nổ.",
-    "spotlightBadge": "⏳ NGHỊCH ĐẢO THỜI GIAN"
+    "spotlightBadge": "⏳ NGHỊCH ĐẢO THỜI GIAN",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/kzG6oo1JhVapC8kMQHdNVGI9ROp.png"
   },
   {
     "_id": "dau-truong-ao",
@@ -1360,18 +1628,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "dau-truong-ao",
     "type": "single",
     "tmdbId": 333339,
-    "tmdb": { "id": "333339", "type": "movie" },
+    "tmdb": {
+      "id": "333339",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=cSp1dM2Vj48",
-    "poster_url": "https://phimimg.com/upload/vod/dau-truong-ao-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/dau-truong-ao-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/dau-truong-ao-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/pU1ULUq8D3iRxl1fdX2lZIzdHuI.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/5a7lMDn3nAj2ByO0X1fg6BhUphR.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/5a7lMDn3nAj2ByO0X1fg6BhUphR.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2018,
     "vote_average": 7.5,
     "rating": 7.5,
     "content": "Chàng thanh niên Wade Watts tham gia cuộc săn tìm Trứng Phục Sinh trong thế giới ảo OASIS để giành quyền kiểm soát tương lai.",
-    "spotlightBadge": "🕹️ VŨ TRỤ THỰC TẾ ẢO OASIS"
+    "spotlightBadge": "🕹️ VŨ TRỤ THỰC TẾ ẢO OASIS",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/sKLqXYCvWdbMM91CVMXEVZqYE6Z.png"
   },
   {
     "_id": "ke-kien-tao",
@@ -1380,18 +1652,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "ke-kien-tao",
     "type": "single",
     "tmdbId": 670292,
-    "tmdb": { "id": "670292", "type": "movie" },
+    "tmdb": {
+      "id": "670292",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=ex3C1-5Dhb8",
-    "poster_url": "https://phimimg.com/upload/vod/ke-kien-tao-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/ke-kien-tao-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/ke-kien-tao-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/3dSivDtOuyxLDxPH4v2tcNG1fP7.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/kjQBrc00fB2RjHZB3PGR4w9ibpz.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/kjQBrc00fB2RjHZB3PGR4w9ibpz.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2023,
     "vote_average": 7.1,
     "rating": 7.1,
     "content": "Giữa cuộc chiến tàn khốc giữa nhân loại và AI, một cựu đặc vụ được giao nhiệm vụ tiêu diệt vũ khí bí mật nhưng phát hiện đó là một đứa trẻ.",
-    "spotlightBadge": "🤖 CUỘC CHIẾN TRÍ TUỆ NHÂN TẠO"
+    "spotlightBadge": "🤖 CUỘC CHIẾN TRÍ TUỆ NHÂN TẠO",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/kVynoZgIklNXOUq4PypdEJLKVak.png"
   },
   {
     "_id": "cuoc-chien-luan-hoi",
@@ -1400,18 +1676,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "cuoc-chien-luan-hoi",
     "type": "single",
     "tmdbId": 137113,
-    "tmdb": { "id": "137113", "type": "movie" },
+    "tmdb": {
+      "id": "137113",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=vw61gCe2oqI",
-    "poster_url": "https://phimimg.com/upload/vod/cuoc-chien-luan-hoi-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/cuoc-chien-luan-hoi-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/cuoc-chien-luan-hoi-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/nBM9MMa2WCwvMG4IJ3eiGUdbPe6.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/4V1yIoAKPMRQwGBaSses8Bp2nsi.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/4V1yIoAKPMRQwGBaSses8Bp2nsi.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2014,
     "vote_average": 7.9,
     "rating": 7.9,
     "content": "Một sĩ quan bị kẹt trong vòng lặp thời gian, liên tục tái sinh sau khi chết trong trận chiến chống người ngoài hành tinh Mimics.",
-    "spotlightBadge": "🔄 VÒNG LẶP THỜI GIAN KỊCH TÍNH"
+    "spotlightBadge": "🔄 VÒNG LẶP THỜI GIAN KỊCH TÍNH",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/yxga8TOfu0t3QIuFFz2CjyaXk5Y.png"
   },
   {
     "_id": "sat-thu-john-wick-phan-4",
@@ -1420,18 +1700,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "sat-thu-john-wick-phan-4",
     "type": "single",
     "tmdbId": 603692,
-    "tmdb": { "id": "603692", "type": "movie" },
+    "tmdb": {
+      "id": "603692",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=qEVUtrk8_B4",
-    "poster_url": "https://phimimg.com/upload/vod/sat-thu-john-wick-phan-4-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/sat-thu-john-wick-phan-4-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/sat-thu-john-wick-phan-4-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/vZloFAK7NmvMGKE7VkF5UHaz0I.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/7I6VUdPj6tQECNHdviJkUHD2u89.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/7I6VUdPj6tQECNHdviJkUHD2u89.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2023,
     "vote_average": 7.8,
     "rating": 7.8,
     "content": "John Wick tìm ra con đường đánh bại Hội Tối Thượng nhưng phải đối đầu với những sát thủ tinh nhuệ nhất toàn cầu.",
-    "spotlightBadge": "💥 ĐỈNH CAO HÀNH ĐỘNG GUN-FU"
+    "spotlightBadge": "💥 ĐỈNH CAO HÀNH ĐỘNG GUN-FU",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/24dIhRKjLnYRanA2Mo0ycZfObUp.png"
   },
   {
     "_id": "nhiem-vu-bat-kha-thi-sup-do",
@@ -1440,18 +1724,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "nhiem-vu-bat-kha-thi-sup-do",
     "type": "single",
     "tmdbId": 353081,
-    "tmdb": { "id": "353081", "type": "movie" },
+    "tmdb": {
+      "id": "353081",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=wb49-oV0F78",
-    "poster_url": "https://phimimg.com/upload/vod/nhiem-vu-bat-kha-thi-sup-do-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/nhiem-vu-bat-kha-thi-sup-do-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/nhiem-vu-bat-kha-thi-sup-do-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/AkJQpZp9WoNdj7pLYSj1L0RcMMN.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/3IzR3VhZAyhxVnuRRUHFLkfK4hT.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/3IzR3VhZAyhxVnuRRUHFLkfK4hT.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2018,
     "vote_average": 7.8,
     "rating": 7.8,
     "content": "Ethan Hunt và đội IMF chạy đua với thời gian để ngăn chặn một tổ chức khủng bố kích nổ ba quả bom hạt nhân.",
-    "spotlightBadge": "🕶️ ĐIỆP VIÊN HÀNH ĐỘNG ĐỈNH CAO"
+    "spotlightBadge": "🕶️ ĐIỆP VIÊN HÀNH ĐỘNG ĐỈNH CAO",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/zmNDyebaa4BDhehqXj5SF85vu8I.png"
   },
   {
     "_id": "nhiem-vu-bat-kha-thi-nghiep-bao",
@@ -1460,18 +1748,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "nhiem-vu-bat-kha-thi-nghiep-bao",
     "type": "single",
     "tmdbId": 575264,
-    "tmdb": { "id": "575264", "type": "movie" },
+    "tmdb": {
+      "id": "575264",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=avz0AhwECuQ",
-    "poster_url": "https://phimimg.com/upload/vod/nhiem-vu-bat-kha-thi-nghiep-bao-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/nhiem-vu-bat-kha-thi-nghiep-bao-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/nhiem-vu-bat-kha-thi-nghiep-bao-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/NNxYkU70HPurnNCSiCjYAmacwm.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/628Dep6AxEtDxjZoGP78TsOxYbK.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/628Dep6AxEtDxjZoGP78TsOxYbK.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2023,
     "vote_average": 7.6,
     "rating": 7.6,
     "content": "Ethan Hunt đối đầu với một thực thể AI nguy hiểm có khả năng thao túng sự thật và định hình vận mệnh thế giới.",
-    "spotlightBadge": "💣 ĐỐI ĐẦU TRÍ TUỆ NHÂN TẠO AI"
+    "spotlightBadge": "💣 ĐỐI ĐẦU TRÍ TUỆ NHÂN TẠO AI",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/5nhr1VPcWA8mlNDdLQ3iSYSOL5E.png"
   },
   {
     "_id": "thien-ac-doi-dau-3",
@@ -1480,18 +1772,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "thien-ac-doi-dau-3",
     "type": "single",
     "tmdbId": 926393,
-    "tmdb": { "id": "926393", "type": "movie" },
+    "tmdb": {
+      "id": "926393",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=19ikl8vy4zs",
-    "poster_url": "https://phimimg.com/upload/vod/thien-ac-doi-dau-3-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/thien-ac-doi-dau-3-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/thien-ac-doi-dau-3-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/b0Ej6fnXAP8fK75hlyi2jKqdhHz.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/gystuaqp5AkVqqu3Nf0564zeOv4.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/gystuaqp5AkVqqu3Nf0564zeOv4.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2023,
     "vote_average": 7.3,
     "rating": 7.3,
     "content": "Robert McCall tìm thấy sự bình yên tại miền nam nước Ý nhưng buộc phải tái xuất để bảo vệ bạn bè khỏi băng mafia địa phương.",
-    "spotlightBadge": "⚖️ CÔNG LÝ BÓNG ĐÊM"
+    "spotlightBadge": "⚖️ CÔNG LÝ BÓNG ĐÊM",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/pX0jtutyXGF5EzluOJ6F6zPvFM.png"
   },
   {
     "_id": "ke-vo-danh",
@@ -1500,18 +1796,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "ke-vo-danh",
     "type": "single",
     "tmdbId": 615457,
-    "tmdb": { "id": "615457", "type": "movie" },
+    "tmdb": {
+      "id": "615457",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=wZti8QKBWPo",
-    "poster_url": "https://phimimg.com/upload/vod/ke-vo-danh-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/ke-vo-danh-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/ke-vo-danh-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/oBgWY00bEFeZ9N25wWVyuQddbAo.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/61MrK5U4w4MVL1vfwoG12zYPJ8B.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/61MrK5U4w4MVL1vfwoG12zYPJ8B.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2021,
     "vote_average": 7.4,
     "rating": 7.4,
     "content": "Một người cha hiền lành bình thường bộc lộ quá khứ sát thủ chết người sau khi gia đình bị hai tên trộm đột nhập.",
-    "spotlightBadge": "🔥 BÙNG NỔ HÀNH ĐỘNG BẤT NGỜ"
+    "spotlightBadge": "🔥 BÙNG NỔ HÀNH ĐỘNG BẤT NGỜ",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/pqsEpPXSWFgm3eSyV404VnjsUHq.png"
   },
   {
     "_id": "sat-thu-doi-dau",
@@ -1520,18 +1820,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "sat-thu-doi-dau",
     "type": "single",
     "tmdbId": 718930,
-    "tmdb": { "id": "718930", "type": "movie" },
+    "tmdb": {
+      "id": "718930",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=0IOsk2Vlc4o",
-    "poster_url": "https://phimimg.com/upload/vod/sat-thu-doi-dau-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/sat-thu-doi-dau-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/sat-thu-doi-dau-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/j8szC8OgrejDQjjMKSVXyaAjw3V.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/y2Ca1neKke2mGPMaHzlCNDVZqsK.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/y2Ca1neKke2mGPMaHzlCNDVZqsK.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2022,
     "vote_average": 7.3,
     "rating": 7.3,
     "content": "Năm sát thủ cùng có mặt trên chuyến tàu cao tốc nhanh nhất Nhật Bản và phát hiện nhiệm vụ của họ có mối liên hệ chết người.",
-    "spotlightBadge": "🚅 CHUYẾN TÀU TỐC HÀNH TỬ THẦN"
+    "spotlightBadge": "🚅 CHUYẾN TÀU TỐC HÀNH TỬ THẦN",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/oxwZOCr4GU8wRmIQGJtM9AxUGpI.png"
   },
   {
     "_id": "mat-vu-kingsman-2014",
@@ -1540,18 +1844,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "mat-vu-kingsman-2014",
     "type": "single",
     "tmdbId": 207703,
-    "tmdb": { "id": "207703", "type": "movie" },
+    "tmdb": {
+      "id": "207703",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=kl8F-8tR8to",
-    "poster_url": "https://phimimg.com/upload/vod/mat-vu-kingsman-2014-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/mat-vu-kingsman-2014-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/mat-vu-kingsman-2014-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/17i5YPTfHOjXoieArpATWGRhLj1.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/qzUIOTk0E3F1zjvYjcBRTKUTgf9.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/qzUIOTk0E3F1zjvYjcBRTKUTgf9.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2014,
     "vote_average": 7.7,
     "rating": 7.7,
     "content": "Một tổ chức điệp viên quý tộc đào tạo cậu thanh niên đường phố Eggsy để ngăn chặn âm mưu thanh lọc nhân loại của gã tỷ phú điên.",
-    "spotlightBadge": "🤵 ĐIỆP VIÊN HOÀNG GIA ĐẲNG CẤP"
+    "spotlightBadge": "🤵 ĐIỆP VIÊN HOÀNG GIA ĐẲNG CẤP",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/iBSqLtHA9ZerSVviA0GFFdFKeg2.png"
   },
   {
     "_id": "nhiem-vu-giai-cuu-2",
@@ -1560,18 +1868,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "nhiem-vu-giai-cuu-2",
     "type": "single",
     "tmdbId": 697843,
-    "tmdb": { "id": "697843", "type": "movie" },
+    "tmdb": {
+      "id": "697843",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=Y274jZs5s7s",
-    "poster_url": "https://phimimg.com/upload/vod/nhiem-vu-giai-cuu-2-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/nhiem-vu-giai-cuu-2-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/nhiem-vu-giai-cuu-2-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/7gKI9hpEMcZUQpNgKrkDzJpbnNS.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/wRxLAw4l17LqiFcPLkobriPTZAw.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/wRxLAw4l17LqiFcPLkobriPTZAw.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2023,
     "vote_average": 7.5,
     "rating": 7.5,
     "content": "Tyler Rake trở lại nhận nhiệm vụ giải cứu gia đình của một trùm giang hồ Gruzia tàn bạo khỏi nhà tù kiên cố nhất.",
-    "spotlightBadge": "🔥 HÀNH ĐỘNG NGHẸT THỞ MỘT CÚ BẤM MÁY"
+    "spotlightBadge": "🔥 HÀNH ĐỘNG NGHẸT THỞ MỘT CÚ BẤM MÁY",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/jWC7V4ILCoGNviwfqsjOeo0eEgq.png"
   },
   {
     "_id": "max-dien-con-duong-tu-than",
@@ -1580,18 +1892,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "max-dien-con-duong-tu-than",
     "type": "single",
     "tmdbId": 76341,
-    "tmdb": { "id": "76341", "type": "movie" },
+    "tmdb": {
+      "id": "76341",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=hEJnMQG562U",
-    "poster_url": "https://phimimg.com/upload/vod/max-dien-con-duong-tu-than-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/max-dien-con-duong-tu-than-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/max-dien-con-duong-tu-than-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/ulcAi4dKpAjHwYGS08vNyx9H6I9.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/uT895WNwm0aIJRtGizcQhrejWUo.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/uT895WNwm0aIJRtGizcQhrejWUo.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2015,
     "vote_average": 8.1,
     "rating": 8.1,
     "content": "Max Điên cùng Nữ tướng Furiosa thực hiện cuộc tẩu thoát nghẹt thở băng qua sa mạc hoang tàn khỏi bạo chúa Immortan Joe.",
-    "spotlightBadge": "🏜️ ĐẠI CHIẾN SA MẠC ĐOẠT 6 OSCAR"
+    "spotlightBadge": "🏜️ ĐẠI CHIẾN SA MẠC ĐOẠT 6 OSCAR",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/716PghhNUi3y8YMaRvvmkJtbiRt.png"
   },
   {
     "_id": "furiosa-cau-chuyen-tu-max-dien",
@@ -1600,18 +1916,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "furiosa-cau-chuyen-tu-max-dien",
     "type": "single",
     "tmdbId": 786892,
-    "tmdb": { "id": "786892", "type": "movie" },
+    "tmdb": {
+      "id": "786892",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=XJMuhwVlca4",
-    "poster_url": "https://phimimg.com/upload/vod/furiosa-cau-chuyen-tu-max-dien-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/furiosa-cau-chuyen-tu-max-dien-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/furiosa-cau-chuyen-tu-max-dien-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/iADOJ8Zymht2JPMoy3R7xceZprc.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/raph7qjAGTMXaIjVxt6ZDSXRzUr.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/raph7qjAGTMXaIjVxt6ZDSXRzUr.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2024,
     "vote_average": 7.6,
     "rating": 7.6,
     "content": "Hành trình trưởng thành đầy máu và nước mắt của nữ chiến binh Furiosa khi cô bị bắt cóc khỏi Vùng Xanh và thề tìm đường về nhà.",
-    "spotlightBadge": "⚡ HUYỀN THOẠI NỮ TƯỚNG TẬN THẾ"
+    "spotlightBadge": "⚡ HUYỀN THOẠI NỮ TƯỚNG TẬN THẾ",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/z1wMCU7yPf6YELf46S2ml8XFDdR.png"
   },
   {
     "_id": "godzilla-x-kong-de-che-moi",
@@ -1620,18 +1940,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "godzilla-x-kong-de-che-moi",
     "type": "single",
     "tmdbId": 823464,
-    "tmdb": { "id": "823464", "type": "movie" },
+    "tmdb": {
+      "id": "823464",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=lV1OOlGwExM",
-    "poster_url": "https://phimimg.com/upload/vod/godzilla-x-kong-de-che-moi-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/godzilla-x-kong-de-che-moi-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/godzilla-x-kong-de-che-moi-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/z1p34vh7dEOnLDmyCrlUVLuoDzd.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/gvLG3Fnznkxl4SmYfcK8gUuqxM8.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/gvLG3Fnznkxl4SmYfcK8gUuqxM8.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2024,
     "vote_average": 7.1,
     "rating": 7.1,
     "content": "Kong và Godzilla hợp lực đối đầu với Skar King hung bạo đe dọa sự sống của Trái Đất Rỗng và thế giới mặt đất.",
-    "spotlightBadge": "⚡ ĐẠI CHIẾN QUÁI THÚ TITAN"
+    "spotlightBadge": "⚡ ĐẠI CHIẾN QUÁI THÚ TITAN",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/4skeKFtpdXvHFj7ab86cU20nju0.png"
   },
   {
     "_id": "chua-te-godzilla",
@@ -1640,18 +1964,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "chua-te-godzilla",
     "type": "single",
     "tmdbId": 373571,
-    "tmdb": { "id": "373571", "type": "movie" },
+    "tmdb": {
+      "id": "373571",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=wVDtmouV9kM",
-    "poster_url": "https://phimimg.com/upload/vod/chua-te-godzilla-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/chua-te-godzilla-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/chua-te-godzilla-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/mzOHg7Q5q9yUmY0b9Esu8Qe6Nnm.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/mzRJpkWPjXdXak0WCc8ZxVH4hug.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/mzRJpkWPjXdXak0WCc8ZxVH4hug.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2019,
     "vote_average": 6.7,
     "rating": 6.7,
     "content": "Godzilla trỗi dậy đại chiến các quái thú cổ đại Mothra, Rodan và kẻ thù tối thượng Rồng ba đầu King Ghidorah.",
-    "spotlightBadge": "🦖 ĐẠI CHIẾN QUÁI THÚ HUYỀN THOẠI"
+    "spotlightBadge": "🦖 ĐẠI CHIẾN QUÁI THÚ HUYỀN THOẠI",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/bsXIWV5jaKvRwYEyjkito8khUfe.png"
   },
   {
     "_id": "sieu-dai-chien-thai-binh-duong",
@@ -1660,18 +1988,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "sieu-dai-chien-thai-binh-duong",
     "type": "single",
     "tmdbId": 68726,
-    "tmdb": { "id": "68726", "type": "movie" },
+    "tmdb": {
+      "id": "68726",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=5guMumPFBag",
-    "poster_url": "https://phimimg.com/upload/vod/sieu-dai-chien-thai-binh-duong-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/sieu-dai-chien-thai-binh-duong-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/sieu-dai-chien-thai-binh-duong-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/8wo4eN8dWKaKlxhSvBz19uvj8gA.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/9X7Im1YuBhyHYVD8r7CAONPJR5k.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/9X7Im1YuBhyHYVD8r7CAONPJR5k.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2013,
     "vote_average": 7,
     "rating": 7,
     "content": "Loài người chế tạo những cỗ máy robot khổng lồ Jaeger do hai phi công điều khiển để chống lại quái vật Kaiju từ đáy đại dương.",
-    "spotlightBadge": "🤖 ROBOT JAEGER ĐẠI CHIẾN KAIJU"
+    "spotlightBadge": "🤖 ROBOT JAEGER ĐẠI CHIẾN KAIJU",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/vEJKowxLkU1DpGXfhRRNkzbVGix.png"
   },
   {
     "_id": "the-gioi-khung-long",
@@ -1680,18 +2012,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "the-gioi-khung-long",
     "type": "single",
     "tmdbId": 135397,
-    "tmdb": { "id": "135397", "type": "movie" },
+    "tmdb": {
+      "id": "135397",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=RFinNxS5GE4",
-    "poster_url": "https://phimimg.com/upload/vod/the-gioi-khung-long-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/the-gioi-khung-long-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/the-gioi-khung-long-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/rhr4y79GpxQF9IsfJItRXVaoGs4.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/dF6FjTZzRTENfB4R17HDN20jLT2.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/dF6FjTZzRTENfB4R17HDN20jLT2.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2015,
     "vote_average": 7,
     "rating": 7,
     "content": "Công viên khủng long Isla Nublar rơi vào hỗn loạn khi loài khủng long lai đột biến gen Indominus Rex trốn thoát khỏi lồng giam.",
-    "spotlightBadge": "🦖 CÔNG VIÊN KHỦNG LONG TRỞ LẠI"
+    "spotlightBadge": "🦖 CÔNG VIÊN KHỦNG LONG TRỞ LẠI",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/vleUbBFlEGdxaazvzBMoZ5dHDoY.png"
   },
   {
     "_id": "kong-dao-dau-lau",
@@ -1700,18 +2036,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "kong-dao-dau-lau",
     "type": "single",
     "tmdbId": 293167,
-    "tmdb": { "id": "293167", "type": "movie" },
+    "tmdb": {
+      "id": "293167",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=44LdLqgOpjo",
-    "poster_url": "https://phimimg.com/upload/vod/kong-dao-dau-lau-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/kong-dao-dau-lau-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/kong-dao-dau-lau-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/r2517Vz9EhDhj88qwbDVj8DCRZN.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/nVodCGKYLpqNC8YwQAbivKlWCgZ.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/nVodCGKYLpqNC8YwQAbivKlWCgZ.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2017,
     "vote_average": 6.9,
     "rating": 6.9,
     "content": "Một đoàn thám hiểm khoa học và quân sự tiến vào hòn đảo bí ẩn tại Thái Bình Dương và đánh thức Chúa tể Kong cùng các loài quái vật.",
-    "spotlightBadge": "🌴 BOM TẤN QUAY TẠI VIỆT NAM"
+    "spotlightBadge": "🌴 BOM TẤN QUAY TẠI VIỆT NAM",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/auoso7QuNtcrqb8FB8djDqdVEih.png"
   },
   {
     "_id": "ca-map-sieu-bao-chua-2",
@@ -1720,18 +2060,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "ca-map-sieu-bao-chua-2",
     "type": "single",
     "tmdbId": 615656,
-    "tmdb": { "id": "615656", "type": "movie" },
+    "tmdb": {
+      "id": "615656",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=dG91B3hHyY4",
-    "poster_url": "https://phimimg.com/upload/vod/ca-map-sieu-bao-chua-2-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/ca-map-sieu-bao-chua-2-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/ca-map-sieu-bao-chua-2-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/4m1Au3YkjqsxF8iwQy0fPYSxE0h.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/5mzr6JZbrqnqD8rCEvPhuCE5Fw2.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/5mzr6JZbrqnqD8rCEvPhuCE5Fw2.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2023,
     "vote_average": 6.7,
     "rating": 6.7,
     "content": "Jonas Taylor dẫn đầu nhóm nghiên cứu lặn sâu xuống rãnh đại dương và chạm trán bầy cá mập Megalodon khổng lồ hung tợn.",
-    "spotlightBadge": "🦈 ĐẠI CHIẾN THỦY QUÁI TIỀN SỬ"
+    "spotlightBadge": "🦈 ĐẠI CHIẾN THỦY QUÁI TIỀN SỬ",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/iQDrbgBPGuY7WGpxSKzvU5Nt3i1.png"
   },
   {
     "_id": "am-anh-kinh-hoang",
@@ -1740,18 +2084,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "am-anh-kinh-hoang",
     "type": "single",
     "tmdbId": 138843,
-    "tmdb": { "id": "138843", "type": "movie" },
+    "tmdb": {
+      "id": "138843",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=k10ETZ41q5o",
-    "poster_url": "https://phimimg.com/upload/vod/am-anh-kinh-hoang-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/am-anh-kinh-hoang-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/am-anh-kinh-hoang-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/wVYREutTvI2tmxr6ujrHT704wGF.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/ecKQlAEG95k62SMGhvX83oEqANK.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/ecKQlAEG95k62SMGhvX83oEqANK.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2013,
     "vote_average": 7.5,
     "rating": 7.5,
     "content": "Cặp vợ chồng chuyên gia tâm linh Ed và Lorraine Warren đến điều tra ngôi nhà trang trại bị quỷ ám khủng khiếp của gia đình Perron.",
-    "spotlightBadge": "👻 VŨ TRỤ KINH DỊ SỐ 1 THẾ GIỚI"
+    "spotlightBadge": "👻 VŨ TRỤ KINH DỊ SỐ 1 THẾ GIỚI",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/5qjvxFhRZtvm4mcV90X9QNYLZVj.png"
   },
   {
     "_id": "chu-he-ma-quai",
@@ -1760,18 +2108,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "chu-he-ma-quai",
     "type": "single",
     "tmdbId": 346364,
-    "tmdb": { "id": "346364", "type": "movie" },
+    "tmdb": {
+      "id": "346364",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=FnCdOmshSoo",
-    "poster_url": "https://phimimg.com/upload/vod/chu-he-ma-quai-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/chu-he-ma-quai-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/chu-he-ma-quai-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/9E2y5Q7WlCVNEhP5GiVTjhEhx1o.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/qVGpxnjrGlHaSTCqTQI6viBDSfp.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/qVGpxnjrGlHaSTCqTQI6viBDSfp.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2017,
     "vote_average": 7.3,
     "rating": 7.3,
     "content": "Nhóm những đứa trẻ bị bắt nạt tại thị trấn Derry hợp lực đối đầu với ác quỷ Pennywise chuyên bắt cóc trẻ em sau mỗi 27 năm.",
-    "spotlightBadge": "🎈 ÁC MỘNG PENNYWISE"
+    "spotlightBadge": "🎈 ÁC MỘNG PENNYWISE",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/nxUlI9IPiieWnzHviapG0akZkz8.png"
   },
   {
     "_id": "vung-dat-cam-lang",
@@ -1780,18 +2132,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "vung-dat-cam-lang",
     "type": "single",
     "tmdbId": 447332,
-    "tmdb": { "id": "447332", "type": "movie" },
+    "tmdb": {
+      "id": "447332",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=WR7cc5t7tv8",
-    "poster_url": "https://phimimg.com/upload/vod/vung-dat-cam-lang-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/vung-dat-cam-lang-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/vung-dat-cam-lang-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/nAU74GmpUk7t5iklEp3bufwDq4n.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/nHRUtBwFNnNN70vcQ7lAsjc2T6S.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/nHRUtBwFNnNN70vcQ7lAsjc2T6S.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2018,
     "vote_average": 7.5,
     "rating": 7.5,
     "content": "Một gia đình phải sống trong sự im lặng tuyệt đối để tránh bị những sinh vật mù ngoài hành tinh săn mồi bằng thính giác tiêu diệt.",
-    "spotlightBadge": "🤫 TUYỆT ĐỐI KHÔNG PHÁT RA TIẾNG ĐỘNG"
+    "spotlightBadge": "🤫 TUYỆT ĐỐI KHÔNG PHÁT RA TIẾNG ĐỘNG",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/tDExNNBwEbAhUzFvjY7OrFJbW5B.png"
   },
   {
     "_id": "cuoi",
@@ -1800,18 +2156,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "cuoi",
     "type": "single",
     "tmdbId": 882598,
-    "tmdb": { "id": "882598", "type": "movie" },
+    "tmdb": {
+      "id": "882598",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=BcDK7lkZZsU",
-    "poster_url": "https://phimimg.com/upload/vod/cuoi-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/cuoi-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/cuoi-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/aPqcQwu4VGEewPhagWNncDbJ9Xp.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/kMZIMqEXO5MFd5Y1Ha2jZZF4pvF.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/kMZIMqEXO5MFd5Y1Ha2jZZF4pvF.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2022,
     "vote_average": 6.8,
     "rating": 6.8,
     "content": "Một bác sĩ tâm thần bắt đầu chứng kiến những ảo ảnh kinh hoàng sau khi chứng kiến cái chết kỳ quái của một bệnh nhân.",
-    "spotlightBadge": "😈 NỤ CƯỜI TỬ THẦN ÁM ẢNH"
+    "spotlightBadge": "😈 NỤ CƯỜI TỬ THẦN ÁM ẢNH",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/pCDfOpEvsXfDktrnY2h28tAJaHg.png"
   },
   {
     "_id": "ac-quy-ma-so-2",
@@ -1820,18 +2180,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "ac-quy-ma-so-2",
     "type": "single",
     "tmdbId": 968051,
-    "tmdb": { "id": "968051", "type": "movie" },
+    "tmdb": {
+      "id": "968051",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=QF-oyCwaArU",
-    "poster_url": "https://phimimg.com/upload/vod/ac-quy-ma-so-2-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/ac-quy-ma-so-2-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/ac-quy-ma-so-2-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/5gzzkR7y3hnY8AD1wXjCnVlHba5.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/27jtaS1oCiLK5Y7P6iOXG2yj1Nc.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/27jtaS1oCiLK5Y7P6iOXG2yj1Nc.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2023,
     "vote_average": 6.8,
     "rating": 6.8,
     "content": "Sơ Irene một lần nữa phải đối mặt với ác quỷ Valak tại một trường nội trú ở Pháp sau hàng loạt cái chết bí ẩn của các linh mục.",
-    "spotlightBadge": "✝️ SỰ TRỞ LẠI CỦA VALAK"
+    "spotlightBadge": "✝️ SỰ TRỞ LẠI CỦA VALAK",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/k8RauXaOjYiO7UNTFpAWgkTV4tD.png"
   },
   {
     "_id": "quai-vat-khong-gian-romulus",
@@ -1840,18 +2204,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "quai-vat-khong-gian-romulus",
     "type": "single",
     "tmdbId": 945961,
-    "tmdb": { "id": "945961", "type": "movie" },
+    "tmdb": {
+      "id": "945961",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=x0XDEhP4MQs",
-    "poster_url": "https://phimimg.com/upload/vod/quai-vat-khong-gian-romulus-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/quai-vat-khong-gian-romulus-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/quai-vat-khong-gian-romulus-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/2uSWRTtCG336nuBiG8jOTEUKSy8.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/iYqSQaWDttQIQzsxg9xHyg0bttG.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/iYqSQaWDttQIQzsxg9xHyg0bttG.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2024,
     "vote_average": 7.3,
     "rating": 7.3,
     "content": "Nhóm người trẻ lục lọi trạm vũ trụ bỏ hoang và chạm trán dạng sống ngoài hành tinh đáng sợ nhất vũ trụ.",
-    "spotlightBadge": "👾 BOM TẤN KINH DỊ KHÔNG GIAN 2024"
+    "spotlightBadge": "👾 BOM TẤN KINH DỊ KHÔNG GIAN 2024",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/iHSu9iO0AmhPeGmHGoXAhc7rCBi.png"
   },
   {
     "_id": "the-chien-z",
@@ -1860,18 +2228,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "the-chien-z",
     "type": "single",
     "tmdbId": 72190,
-    "tmdb": { "id": "72190", "type": "movie" },
+    "tmdb": {
+      "id": "72190",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=HcwTxRuq-uk",
-    "poster_url": "https://phimimg.com/upload/vod/the-chien-z-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/the-chien-z-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/the-chien-z-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/aCnVdvExw6UWSeQfr0tUH3jr4qG.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/kg2FOT2Oe5PSCgs3L4vLel6B7ck.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/kg2FOT2Oe5PSCgs3L4vLel6B7ck.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2013,
     "vote_average": 7.4,
     "rating": 7.4,
     "content": "Cựu điều tra viên Liên Hợp Quốc Gerry Lane chạy đua khắp thế giới để tìm nguồn gốc và phương thuốc ngăn chặn đại dịch zombie.",
-    "spotlightBadge": "🧟 ĐẠI DỊCH ZOMBIE TOÀN CẦU"
+    "spotlightBadge": "🧟 ĐẠI DỊCH ZOMBIE TOÀN CẦU",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/36awC0NBa3014VDOKxaxDMRisX9.png"
   },
   {
     "_id": "toi-la-huyen-thoai",
@@ -1880,18 +2252,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "toi-la-huyen-thoai",
     "type": "single",
     "tmdbId": 6479,
-    "tmdb": { "id": "6479", "type": "movie" },
+    "tmdb": {
+      "id": "6479",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=dtKMEAXyPkg",
-    "poster_url": "https://phimimg.com/upload/vod/toi-la-huyen-thoai-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/toi-la-huyen-thoai-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/toi-la-huyen-thoai-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/iPDkaSdKk2jRLTM65UOEoKtsIZ8.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/ePgD1cwmklyrFBjl6z96IuixuSY.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/ePgD1cwmklyrFBjl6z96IuixuSY.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2007,
     "vote_average": 7.7,
     "rating": 7.7,
     "content": "Nhà khoa học Robert Neville cùng chú chó trung thành là những người sống sót duy nhất tại New York sau đại dịch biến nhân loại thành quái vật.",
-    "spotlightBadge": "🐕 NGƯỜI SỐNG SÓT CUỐI CÙNG"
+    "spotlightBadge": "🐕 NGƯỜI SỐNG SÓT CUỐI CÙNG",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/5ffl0wnYvirnyEDut48ClJazV6z.png"
   },
   {
     "_id": "28-nam-sau",
@@ -1900,18 +2276,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "28-nam-sau",
     "type": "single",
     "tmdbId": 1214484,
-    "tmdb": { "id": "1214484", "type": "movie" },
+    "tmdb": {
+      "id": "1214484",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=bVqfBvXfS-M",
-    "poster_url": "https://phimimg.com/upload/vod/28-nam-sau-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/28-nam-sau-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/28-nam-sau-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/hIJRqqAaMUtQ13mZL6lCE6myhXH.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/lk2V8WFnAoXa44q8vqVeYyK6WJK.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/lk2V8WFnAoXa44q8vqVeYyK6WJK.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2025,
     "vote_average": 7.2,
     "rating": 7.2,
     "content": "Chương tiếp theo đầy ám ảnh sau nhiều thập kỷ kể từ khi virus Rage bùng phát, thế giới bước vào kỷ nguyên sinh tồn mới.",
-    "spotlightBadge": "☣️ HUYỀN THOẠI VIRUS THỊNH NỘ"
+    "spotlightBadge": "☣️ HUYỀN THOẠI VIRUS THỊNH NỘ",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/jS6QnXBLTUjLX8jDgIyBEojxpD4.png"
   },
   {
     "_id": "chua-te-nhan-su-tro-ve-cua-nha-vua",
@@ -1920,18 +2300,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "chua-te-nhan-su-tro-ve-cua-nha-vua",
     "type": "single",
     "tmdbId": 122,
-    "tmdb": { "id": "122", "type": "movie" },
+    "tmdb": {
+      "id": "122",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=r5X-hFf6Bwo",
-    "poster_url": "https://phimimg.com/upload/vod/chua-te-nhan-su-tro-ve-cua-nha-vua-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/chua-te-nhan-su-tro-ve-cua-nha-vua-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/chua-te-nhan-su-tro-ve-cua-nha-vua-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/rCzpDGLbOoPwLjy3OAm5NUPOTrC.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/2u7zbn8EudG6kLlBzUYqP8RyFU4.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/2u7zbn8EudG6kLlBzUYqP8RyFU4.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2003,
     "vote_average": 9,
     "rating": 9,
     "content": "Trận chiến cuối cùng bảo vệ Trung Địa tại Minas Tirith khi Frodo và Sam tiến vào ngọn núi Doom để tiêu hủy Chiếc Nhẫn Chúa.",
-    "spotlightBadge": "🏆 THẮNG TUYỆT ĐỐI 11 TƯỢNG VÀNG OSCAR"
+    "spotlightBadge": "🏆 THẮNG TUYỆT ĐỐI 11 TƯỢNG VÀNG OSCAR",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/mZtF6SOsVddoK3I3VLi2oTZ5BR2.png"
   },
   {
     "_id": "harry-potter-va-bao-boi-tu-than-phan-2",
@@ -1940,18 +2324,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "harry-potter-va-bao-boi-tu-than-phan-2",
     "type": "single",
     "tmdbId": 12445,
-    "tmdb": { "id": "12445", "type": "movie" },
+    "tmdb": {
+      "id": "12445",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=mObK5XD8wdk",
-    "poster_url": "https://phimimg.com/upload/vod/harry-potter-va-bao-boi-tu-than-phan-2-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/harry-potter-va-bao-boi-tu-than-phan-2-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/harry-potter-va-bao-boi-tu-than-phan-2-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/c54HpQmuwXjHq2C9wmoACjxoom3.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/cbcpDn6XJaIGoOil1bKuskU8ds4.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/cbcpDn6XJaIGoOil1bKuskU8ds4.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2011,
     "vote_average": 8.1,
     "rating": 8.1,
     "content": "Harry Potter cùng các đồng minh bước vào trận quyết chiến cuối cùng chống lại Chúa tể Hắc ám Voldemort tại lâu đài Hogwarts.",
-    "spotlightBadge": "⚡ ĐẠI CHIẾN PHÁP THUẬT HOGWARTS"
+    "spotlightBadge": "⚡ ĐẠI CHIẾN PHÁP THUẬT HOGWARTS",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/yAwJVq4puCSlflRmCXB6DdRGRBg.png"
   },
   {
     "_id": "cuop-bien-vung-caribbean-chiec-ruong-tu-than",
@@ -1960,18 +2348,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "cuop-bien-vung-caribbean-chiec-ruong-tu-than",
     "type": "single",
     "tmdbId": 58,
-    "tmdb": { "id": "58", "type": "movie" },
+    "tmdb": {
+      "id": "58",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=rnM5iFkKj1E",
-    "poster_url": "https://phimimg.com/upload/vod/cuop-bien-vung-caribbean-chiec-ruong-tu-than-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/cuop-bien-vung-caribbean-chiec-ruong-tu-than-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/cuop-bien-vung-caribbean-chiec-ruong-tu-than-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/uXEqmloGyP7UXAiphJUu2v2pcuE.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/vr6n6ZFUZvedvIlhfYcbCWcaKyW.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/vr6n6ZFUZvedvIlhfYcbCWcaKyW.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2006,
     "vote_average": 7.8,
     "rating": 7.8,
     "content": "Jack Sparrow tìm cách lấy lại trái tim của Davy Jones để giải thoát bản thân khỏi món nợ máu với con quái vật Kraken.",
-    "spotlightBadge": "🏴‍☠️ THỦY THẦN DAVY JONES"
+    "spotlightBadge": "🏴‍☠️ THỦY THẦN DAVY JONES",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/vEQROv1sAh6K2RWN1J59ZM7HduQ.png"
   },
   {
     "_id": "vo-si-giac-dau-2",
@@ -1980,18 +2372,22 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "vo-si-giac-dau-2",
     "type": "single",
     "tmdbId": 558449,
-    "tmdb": { "id": "558449", "type": "movie" },
+    "tmdb": {
+      "id": "558449",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=4rgYUipGJNo",
-    "poster_url": "https://phimimg.com/upload/vod/vo-si-giac-dau-2-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/vo-si-giac-dau-2-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/vo-si-giac-dau-2-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/2cxhvwyEwRlysAmRH4iodkvo0z5.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/tOqIwliWMovSIZ9DyvHcHI7p2im.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/tOqIwliWMovSIZ9DyvHcHI7p2im.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2024,
     "vote_average": 7.2,
     "rating": 7.2,
     "content": "Lucius, cháu trai của Hoàng đế Marcus Aurelius, bước vào đấu trường Colosseum để chiến đấu giành lại tự do và vinh quang cho La Mã.",
-    "spotlightBadge": "⚔️ TRỞ LẠI ĐẤU TRƯỜNG LA MÃ 2024"
+    "spotlightBadge": "⚔️ TRỞ LẠI ĐẤU TRƯỜNG LA MÃ 2024",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/zu0AMNi99dSlnhGKJh31vu8G1Ie.png"
   },
   {
     "_id": "phi-cong-sieu-dang-maverick",
@@ -2000,21 +2396,24 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "slug": "phi-cong-sieu-dang-maverick",
     "type": "single",
     "tmdbId": 361743,
-    "tmdb": { "id": "361743", "type": "movie" },
+    "tmdb": {
+      "id": "361743",
+      "type": "movie"
+    },
     "trailer_url": "https://www.youtube.com/watch?v=giXco2jaZ_4",
-    "poster_url": "https://phimimg.com/upload/vod/phi-cong-sieu-dang-maverick-poster.jpg",
-    "thumb_url": "https://phimimg.com/upload/vod/phi-cong-sieu-dang-maverick-thumb.jpg",
-    "heroBackdrop": "https://phimimg.com/upload/vod/phi-cong-sieu-dang-maverick-backdrop.jpg",
+    "poster_url": "https://image.tmdb.org/t/p/w500/n0YuM4f5lvGAP6MAW2kBIzugXnc.jpg",
+    "thumb_url": "https://image.tmdb.org/t/p/w1280/AaV1YIdWKnjAIAOe8UUKBFm327v.jpg",
+    "heroBackdrop": "https://image.tmdb.org/t/p/w1280/AaV1YIdWKnjAIAOe8UUKBFm327v.jpg",
     "quality": "4K",
     "lang": "Vietsub + Thuyết Minh",
     "year": 2022,
     "vote_average": 8.3,
     "rating": 8.3,
     "content": "Hơn 30 năm phục vụ, phi công huyền thoại Maverick huấn luyện một đội phi công trẻ thực hiện nhiệm vụ ném bom tuyệt mật bất khả thi.",
-    "spotlightBadge": "✈️ ĐỈNH CAO KHÔNG CHIẾN 4K"
+    "spotlightBadge": "✈️ ĐỈNH CAO KHÔNG CHIẾN 4K",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/xGumNgL4pw3bdXDlhzAG2X4eo2I.png"
   }
 ];
-
 export function getRandomCuratedHeroSet(count = 6): CuratedHeroMovie[] {
   const shuffled = [...CURATED_HERO_FRANCHISE_POOL].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, Math.min(count, shuffled.length));

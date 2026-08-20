@@ -168,23 +168,23 @@ export function TurnstileWidget({
   }, [action, attempt, onTokenChange, siteKey]);
 
   return (
-    <div aria-label="Xác minh chống bot" className="w-full my-1">
-      {/* Official Cloudflare Turnstile with bottom test strip cleanly cropped out */}
-      <div className="w-full h-[52px] max-h-[52px] overflow-hidden rounded-xl border border-neutral-700/70 bg-[#1b202a] flex items-start justify-center">
+    <div aria-label="Xác minh chống bot" className="w-full my-1.5 flex flex-col items-center justify-center">
+      {/* Official Cloudflare Turnstile native container */}
+      <div className="w-full min-h-[65px] flex items-center justify-center">
         <div
           ref={containerRef}
-          className="w-full flex items-start justify-center pt-0"
+          className="flex items-center justify-center"
         />
       </div>
 
       {status === "loading" && (
-        <p className="-mt-[52px] flex h-[52px] items-center justify-center gap-2 rounded-xl border border-neutral-700/70 bg-[#1b202a] text-[11px] text-neutral-400">
-          <Loader2 size={14} className="animate-spin text-violet-400" /> Đang tải xác minh...
+        <p className="-mt-[65px] flex h-[65px] w-full items-center justify-center gap-2 rounded-xl border border-neutral-700/70 bg-[#1b202a] text-[11px] text-neutral-400">
+          <Loader2 size={14} className="animate-spin text-violet-400" /> Đang tải xác minh bảo mật...
         </p>
       )}
 
       {status === "error" && (
-        <div className="-mt-[51px] flex min-h-[51px] items-center justify-between gap-3 rounded-xl border border-amber-300/20 bg-[#1d1912] px-3 text-left text-[11px] leading-4 text-amber-100">
+        <div className="-mt-[65px] flex min-h-[65px] w-full items-center justify-between gap-3 rounded-xl border border-amber-300/20 bg-[#1d1912] px-3 text-left text-[11px] leading-4 text-amber-100">
           <span className="flex items-start gap-2">
             <TriangleAlert
               size={15}

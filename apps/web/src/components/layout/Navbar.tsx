@@ -1,9 +1,10 @@
 "use client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import NextImage from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import {
   Search,
@@ -43,7 +44,11 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { MobileSidebar } from "./MobileSidebar";
+
+const MobileSidebar = dynamic(
+  () => import("./MobileSidebar").then((mod) => mod.MobileSidebar),
+  { ssr: false },
+);
 
 // Lazy-load SpotlightSearchModal to avoid server-side issues
 const SpotlightSearchModal = dynamic(
@@ -326,6 +331,7 @@ function LanguageSwitcher() {
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const { user, logout } = useAuthStore();
   const openAuthModal = useAuthModalStore((state) => state.openModal);
@@ -338,22 +344,112 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-  const [notifications, setNotifications] = useState<
+  const prefetchNav = useCallback(
+    (href: string) => {
+      router.prefetch(href);
+      if (href === "/films/series") {
+        void queryClient.prefetchQuery({
+          queryKey: ["films-type", "series", 1],
+          queryFn: () => movieApi.getSeries(1).then((r) => r.data),
+          staleTime: 15 * 60 * 1000,
+        });
+      } else if (href === "/films/single") {
+        void queryClient.prefetchQuery({
+          queryKey: ["films-type", "single", 1],
+          queryFn: () => movieApi.getSingle(1).then((r) => r.data),
+          staleTime: 15 * 60 * 1000,
+        });
+      } else if (href === "/films/anime") {
+        void queryClient.prefetchQuery({
+          queryKey: ["films-type", "anime", 1],
+          queryFn: () => movieApi.getAnime(1).then((r) => r.data),
+          staleTime: 15 * 60 * 1000,
+        });
+      } else if (href === "/schedule") {
+        void queryClient.prefetchQuery({
+          queryKey: ["schedule-ongoing-series"],
+          queryFn: () => movieApi.getSeries(1).then((r) => r.data),
+          staleTime: 15 * 60 * 1000,
+        });
+        void queryClient.prefetchQuery({
+          queryKey: ["schedule-latest-releases"],
+          queryFn: () => movieApi.getLatest(1).then((r) => r.data),
+          staleTime: 15 * 60 * 1000,
+        });
+      }
+    },
+    [queryClient, router],
+  );
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      prefetchNav("/films/series");
+      prefetchNav("/films/single");
+      prefetchNav("/films/anime");
+      prefetchNav("/schedule");
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [prefetchNav]);
+
+  const [notifTab, setNotifTab] = useState<"system" | "movies">("system");
+
+  const [systemNotifications, setSystemNotifications] = useState<
+    Array<{
+      id: string;
+      title: string;
+      message: string;
+      time: string;
+      tag?: string;
+      read: boolean;
+      link?: string;
+    }>
+  >([
+    {
+      id: "sys-1",
+      title: "Chào mừng bạn đến với CineVerse",
+      message: "Xem phim chuẩn 4K siêu nét, tự động lọc sạch quảng cáo nhà cái từ gốc M3U8.",
+      time: "Hôm nay",
+      tag: "Hệ thống",
+      read: false,
+    },
+    {
+      id: "sys-2",
+      title: "Chế độ Rạp Phim Mở Rộng",
+      message: "Tính năng mở rộng khung hình cực đại (bấm nút 'Rạp phim' hoặc phím tắt 'T').",
+      time: "Mới",
+      tag: "Tính năng",
+      read: false,
+    },
+    {
+      id: "sys-3",
+      title: "Phòng Xem Chung (Watch Party)",
+      message: "Tạo phòng xem cùng bạn bè, đồng bộ tua phim và trò chuyện trực tiếp mượt mà.",
+      time: "Cộng đồng",
+      tag: "Watch Party",
+      read: false,
+    },
+    {
+      id: "sys-4",
+      title: "Bộ Lọc Luồng Tự Động",
+      message: "Hệ thống tự động định tuyến máy chủ m3u8 tối ưu nhất cho từng tập phim.",
+      time: "Tối ưu",
+      tag: "Hệ thống",
+      read: false,
+    },
+  ]);
+
+  const [movieNotifications, setMovieNotifications] = useState<
     Array<{
       id: string | number;
+      name?: string;
+      episode?: string;
+      poster?: string;
       message: string;
       time: string;
       slug?: string;
       read: boolean;
     }>
-  >([
-    {
-      id: "default-1",
-      message: "Hệ thống tự động đồng bộ phim mới nhất từ các nhà cung cấp.",
-      time: "Hệ thống",
-      read: false,
-    },
-  ]);
+  >([]);
 
   const { data: latestNotificationRes } = useQuery({
     queryKey: ["navbar-latest-notifications"],
@@ -367,34 +463,43 @@ export function Navbar() {
     const rawItems =
       latestNotificationRes?.items || latestNotificationRes?.data?.items || [];
     if (rawItems.length > 0) {
-      const liveItems = rawItems.slice(0, 5).map((item: any, idx: number) => ({
+      const liveItems = rawItems.slice(0, 8).map((item: any, idx: number) => ({
         id: item.slug || `live-${idx}`,
+        name: item.name || "Phim mới cập nhật",
+        episode: item.episode_current || item.quality || "Tập mới",
+        poster: item.poster_url || item.thumb_url,
         message: `Phim "${item.name}" vừa cập nhật (${item.episode_current || item.quality || "Tập mới"})`,
         time: "Vừa cập nhật",
         slug: item.slug,
         read: false,
       }));
-      setNotifications(liveItems);
+      setMovieNotifications(liveItems);
     }
   }, [latestNotificationRes]);
 
   const { newMovieNotifications, commentNotifications } = useSettingsStore();
 
-  const activeNotifications = notifications.filter((n) => {
-    if ((n as any).type === "comment" && !commentNotifications) return false;
-    if ((n as any).type !== "comment" && !newMovieNotifications) return false;
-    return true;
-  });
-
-  const unreadCount = activeNotifications.filter((n) => !n.read).length;
+  const unreadSystem = systemNotifications.filter((n) => !n.read).length;
+  const unreadMovies = movieNotifications.filter((n) => !n.read).length;
+  const unreadCount = unreadSystem + unreadMovies;
 
   const markAllRead = () => {
-    setNotifications(notifications.map((n) => ({ ...n, read: true })));
+    if (notifTab === "system") {
+      setSystemNotifications(systemNotifications.map((n) => ({ ...n, read: true })));
+    } else {
+      setMovieNotifications(movieNotifications.map((n) => ({ ...n, read: true })));
+    }
   };
 
-  const markAsRead = (id: string | number, slug?: string) => {
-    setNotifications(
-      notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
+  const markSystemAsRead = (id: string) => {
+    setSystemNotifications(
+      systemNotifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
+    );
+  };
+
+  const markMovieAsRead = (id: string | number, slug?: string) => {
+    setMovieNotifications(
+      movieNotifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
     );
     if (slug) {
       router.push(`/film/${slug}`);
@@ -450,13 +555,13 @@ export function Navbar() {
             <AnimatedNavbarLogo />
           </div>
 
-          <nav className="hidden lg:flex items-center justify-center space-x-4 xl:space-x-6 text-sm font-medium text-neutral-200 absolute left-1/2 -translate-x-1/2 z-10">
+          <nav className="hidden lg:flex items-center justify-center space-x-1.5 xl:space-x-2 text-sm font-semibold text-neutral-200 absolute left-1/2 -translate-x-1/2 z-10">
             <div className="relative group py-5">
-              <button className="flex items-center space-x-1 text-neutral-200 hover:text-white transition-colors focus:outline-none font-semibold">
+              <button className="flex items-center space-x-1 text-sm font-semibold text-neutral-300 hover:text-white transition-colors focus:outline-none px-3 py-1.5">
                 <span>{t("nav.genres")}</span>
                 <ChevronDown
                   size={14}
-                  className="transition-transform duration-200 group-hover:rotate-180 text-neutral-300"
+                  className="transition-transform duration-200 group-hover:rotate-180 text-neutral-400"
                 />
               </button>
               <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[520px] p-4 bg-[#090c15]/65 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.6)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-3 gap-y-1.5 gap-x-2 z-50">
@@ -474,11 +579,11 @@ export function Navbar() {
             </div>
 
             <div className="relative group py-5">
-              <button className="flex items-center space-x-1 text-neutral-200 hover:text-white transition-colors focus:outline-none font-semibold">
+              <button className="flex items-center space-x-1 text-sm font-semibold text-neutral-300 hover:text-white transition-colors focus:outline-none px-3 py-1.5">
                 <span>{t("nav.country")}</span>
                 <ChevronDown
                   size={14}
-                  className="transition-transform duration-200 group-hover:rotate-180 text-neutral-300"
+                  className="transition-transform duration-200 group-hover:rotate-180 text-neutral-400"
                 />
               </button>
               <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[640px] p-4 bg-[#090c15]/65 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.6)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-4 gap-y-1.5 gap-x-2 z-50 max-h-[75vh] overflow-y-auto scrollbar-thin">
@@ -505,11 +610,11 @@ export function Navbar() {
             </div>
 
             <div className="relative group py-5">
-              <button className="flex items-center space-x-1 text-neutral-200 hover:text-white transition-colors focus:outline-none font-semibold">
+              <button className="flex items-center space-x-1 text-sm font-semibold text-neutral-300 hover:text-white transition-colors focus:outline-none px-3 py-1.5">
                 <span>{t("nav.list")}</span>
                 <ChevronDown
                   size={14}
-                  className="transition-transform duration-200 group-hover:rotate-180 text-neutral-300"
+                  className="transition-transform duration-200 group-hover:rotate-180 text-neutral-400"
                 />
               </button>
               <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[500px] p-4 bg-[#090c15]/65 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.6)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-3 gap-y-1.5 gap-x-2 z-50">
@@ -526,20 +631,32 @@ export function Navbar() {
               </div>
             </div>
 
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "hover:text-white transition-colors font-semibold",
-                  pathname === link.href
-                    ? "text-white font-black"
-                    : "text-neutral-200",
-                )}
-              >
-                {link.key ? t(link.key, link.label || "") : link.label}
-              </Link>
-            ))}
+            {NAV_LINKS.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onMouseEnter={() => prefetchNav(link.href)}
+                  onTouchStart={() => prefetchNav(link.href)}
+                  className={cn(
+                    "relative px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all duration-150 select-none",
+                    isActive
+                      ? "text-white font-bold"
+                      : "text-neutral-300 hover:text-white hover:bg-white/[0.05]",
+                  )}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="navbarActivePill"
+                      className="absolute inset-0 rounded-full bg-white/10 border border-white/20 shadow-sm backdrop-blur-md -z-10"
+                      transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
+                    />
+                  )}
+                  <span>{link.key ? t(link.key, link.label || "") : link.label}</span>
+                </Link>
+              );
+            })}
           </nav>
 
           <div className="flex shrink-0 items-center justify-end space-x-1.5 sm:space-x-3">
@@ -588,59 +705,159 @@ export function Navbar() {
                   sideOffset={8}
                   collisionPadding={{ right: 12, left: 12 }}
                   onWheel={(e) => e.stopPropagation()}
-                  className={`${cardFont.className} pointer-events-auto z-50 w-[calc(100vw-24px)] max-w-[360px] rounded-2xl border border-white/10 bg-[#15171b] p-3.5 text-xs text-neutral-300 shadow-[0_22px_55px_rgba(0,0,0,0.42)] sm:w-88`}
+                  className={`${cardFont.className} pointer-events-auto z-50 w-[calc(100vw-24px)] max-w-[380px] sm:w-96 rounded-2xl border border-white/10 bg-[#121418] p-4 text-xs text-neutral-300 shadow-[0_20px_50px_rgba(0,0,0,0.6)]`}
                 >
-                  <div className="flex items-center justify-between px-2 py-1.5 border-b border-white/10 mb-1.5">
-                    <span className="font-bold text-white text-sm">
+                  {/* Top Header */}
+                  <div className="flex items-center justify-between px-1 mb-3">
+                    <span className="font-bold text-white text-sm tracking-tight">
                       {lang === "en" ? "Notifications" : "Thông báo"}
                     </span>
                     {unreadCount > 0 && (
                       <button
                         onClick={markAllRead}
-                        className="text-[10px] text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                        className="text-[11px] font-medium text-neutral-400 hover:text-white transition-colors cursor-pointer select-none"
                       >
-                        {lang === "en" ? "Mark all as read" : "Đánh dấu đã đọc"}
+                        {lang === "en" ? "Mark all read" : "Đã đọc tất cả"}
                       </button>
                     )}
                   </div>
-                  <div
-                    onWheel={(e) => e.stopPropagation()}
-                    className="max-h-[60vh] sm:max-h-72 overflow-y-auto overscroll-contain touch-pan-y space-y-1.5 pr-1 scrollbar-thin pointer-events-auto"
-                  >
-                    {activeNotifications.length === 0 ? (
-                      <div className="p-6 text-center text-xs text-neutral-500">
-                        {lang === "en"
-                          ? "No notifications yet"
-                          : "Chưa có thông báo nào (hoặc đã tắt trong Cài Đặt)"}
-                      </div>
-                    ) : (
-                      activeNotifications.map((n) => (
-                        <div
-                          key={n.id}
-                          onClick={() => markAsRead(n.id, n.slug)}
+
+                  {/* Clean Monochrome Segmented Tabs */}
+                  <div className="grid grid-cols-2 p-1 bg-black/50 rounded-xl border border-white/[0.08] gap-1 mb-3.5">
+                    <button
+                      type="button"
+                      onClick={() => setNotifTab("system")}
+                      className={cn(
+                        "flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none",
+                        notifTab === "system"
+                          ? "bg-neutral-800 text-white font-bold shadow-sm"
+                          : "text-neutral-400 hover:text-white",
+                      )}
+                    >
+                      <span>Hệ thống</span>
+                      {unreadSystem > 0 && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setNotifTab("movies")}
+                      className={cn(
+                        "flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none",
+                        notifTab === "movies"
+                          ? "bg-neutral-800 text-white font-bold shadow-sm"
+                          : "text-neutral-400 hover:text-white",
+                      )}
+                    >
+                      <span>Phim mới</span>
+                      {movieNotifications.length > 0 && (
+                        <span
                           className={cn(
-                            "p-2.5 rounded-xl text-[11px] cursor-pointer hover:bg-white/15 hover:backdrop-blur-md transition-all flex items-start space-x-2.5 border border-white/5",
-                            n.read
-                              ? "opacity-60 bg-white/[0.02]"
-                              : "bg-white/[0.06] shadow-sm",
+                            "text-[10px] px-1.5 py-0.2 rounded-full font-bold",
+                            notifTab === "movies"
+                              ? "bg-neutral-700 text-white"
+                              : "bg-neutral-800 text-neutral-400",
                           )}
                         >
-                          <span
+                          {movieNotifications.length}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Notification List Body */}
+                  <div
+                    onWheel={(e) => e.stopPropagation()}
+                    className="max-h-[60vh] sm:max-h-80 overflow-y-auto overscroll-contain touch-pan-y space-y-2 pr-1 scrollbar-thin pointer-events-auto"
+                  >
+                    {notifTab === "system" ? (
+                      systemNotifications.length === 0 ? (
+                        <div className="p-8 text-center text-xs text-neutral-500">
+                          Chưa có thông báo hệ thống nào
+                        </div>
+                      ) : (
+                        systemNotifications.map((n) => (
+                          <div
+                            key={n.id}
+                            onClick={() => markSystemAsRead(n.id)}
                             className={cn(
-                              "w-2 h-2 rounded-full mt-1 flex-shrink-0 shadow",
+                              "p-3 rounded-xl cursor-pointer transition-all border block",
                               n.read
-                                ? "bg-neutral-600"
-                                : "bg-red-500 shadow-red-500/50",
+                                ? "bg-[#14161a]/60 border-white/[0.04] opacity-60 hover:opacity-100 hover:bg-[#181b20]"
+                                : "bg-[#181a20] border-white/[0.08] hover:bg-[#20232b] hover:border-white/15 shadow-sm",
                             )}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-white leading-snug break-words font-medium">
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                {!n.read && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
+                                )}
+                                <p className="text-white text-xs font-bold leading-snug truncate">
+                                  {n.title}
+                                </p>
+                              </div>
+                              {n.tag && (
+                                <span className="text-[9.5px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400 font-medium border border-white/[0.06] shrink-0">
+                                  {n.tag}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-neutral-400 text-[11.5px] leading-relaxed">
                               {n.message}
                             </p>
-                            <span className="text-[9px] text-neutral-400 font-semibold block mt-0.5">
+                            <span className="text-[10px] text-neutral-500 font-medium block mt-1.5">
                               {n.time}
                             </span>
                           </div>
+                        ))
+                      )
+                    ) : movieNotifications.length === 0 ? (
+                      <div className="p-8 text-center text-xs text-neutral-500">
+                        {lang === "en"
+                          ? "No new movie updates"
+                          : "Chưa có thông báo phim mới"}
+                      </div>
+                    ) : (
+                      movieNotifications.map((n) => (
+                        <div
+                          key={n.id}
+                          onClick={() => markMovieAsRead(n.id, n.slug)}
+                          className={cn(
+                            "p-2.5 rounded-xl cursor-pointer transition-all flex items-center gap-3 border",
+                            n.read
+                              ? "bg-[#14161a]/60 border-white/[0.04] opacity-60 hover:opacity-100 hover:bg-[#181b20]"
+                              : "bg-[#181a20] border-white/[0.08] hover:bg-[#20232b] hover:border-white/15 shadow-sm",
+                          )}
+                        >
+                          <div className="w-9 h-12 rounded-lg bg-neutral-800 border border-white/10 flex items-center justify-center shrink-0 overflow-hidden relative shadow-sm">
+                            {n.poster ? (
+                              <img
+                                src={resolveImageUrl(n.poster) || n.poster}
+                                alt={n.name || "Movie"}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-neutral-800" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white text-xs font-bold leading-snug truncate">
+                              {n.name || n.message}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-neutral-800 text-neutral-300 font-semibold border border-white/[0.08]">
+                                {n.episode || "Tập mới"}
+                              </span>
+                              <span className="text-[10px] text-neutral-500 font-medium">
+                                {n.time}
+                              </span>
+                            </div>
+                          </div>
+                          {!n.read && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
+                          )}
                         </div>
                       ))
                     )}

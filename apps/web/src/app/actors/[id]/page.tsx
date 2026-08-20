@@ -1,6 +1,7 @@
 // actor detail
 "use client";
 
+import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -11,6 +12,7 @@ import {
   Loader2,
   Star,
   ExternalLink,
+  Play,
 } from "lucide-react";
 import { useTmdbPerson } from "@/hooks/useTmdb";
 import { tmdbProfile, tmdbPoster } from "@/lib/tmdb";
@@ -20,6 +22,22 @@ export default function ActorDetailPage() {
   const router = useRouter();
   const personId = Number(params.id);
   const { detail, knownFor, images, isLoading } = useTmdbPerson(personId);
+
+  const [filterType, setFilterType] = useState<"all" | "movie" | "tv">("all");
+  const [movieQuery, setMovieQuery] = useState("");
+
+  const moviesCount = useMemo(() => knownFor.filter((m: any) => (m.media_type || "movie") === "movie").length, [knownFor]);
+  const tvCount = useMemo(() => knownFor.filter((m: any) => m.media_type === "tv").length, [knownFor]);
+
+  const filteredMovies = useMemo(() => {
+    return knownFor.filter((item: any) => {
+      const type = item.media_type || "movie";
+      const matchesType = filterType === "all" || type === filterType;
+      const title = (item.title || item.name || "").toLowerCase();
+      const matchesSearch = !movieQuery.trim() || title.includes(movieQuery.toLowerCase().trim());
+      return matchesType && matchesSearch;
+    });
+  }, [knownFor, filterType, movieQuery]);
 
   if (isLoading) {
     return (
@@ -72,7 +90,7 @@ export default function ActorDetailPage() {
         {/* Back */}
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-white transition-colors mb-8 group"
+          className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-white transition-colors mb-8 group cursor-pointer"
         >
           <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform" />
           Quay lại
@@ -198,10 +216,10 @@ export default function ActorDetailPage() {
         {images.length > 0 && (
           <section className="mb-12">
             <h2 className="text-[10px] font-black uppercase tracking-[0.16em] text-neutral-600 border-b border-white/5 pb-2.5 mb-4">
-              Hình ảnh
+              Hình ảnh ({images.length})
             </h2>
             <div className="flex gap-2.5 overflow-x-auto pb-3 scrollbar-hide">
-              {images.slice(0, 12).map((img: any, i: number) => (
+              {images.slice(0, 15).map((img: any, i: number) => (
                 <div
                   key={i}
                   className="flex-shrink-0 w-20 h-28 rounded-xl overflow-hidden border border-white/8 bg-neutral-900 hover:border-white/25 transition-colors"
@@ -218,55 +236,153 @@ export default function ActorDetailPage() {
           </section>
         )}
 
-        {/* Known For Movies */}
+        {/* Full Filmography Section */}
         {knownFor.length > 0 && (
-          <section className="mb-14">
-            <div className="flex items-center gap-2 mb-6">
-              <Film size={16} className="text-neutral-400" />
-              <h2 className="text-lg font-bold text-white">
-                Phim đã tham gia
-              </h2>
-              <span className="text-xs text-neutral-600 font-medium">({knownFor.length})</span>
-            </div>
+          <section className="mb-14 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+              <div className="flex items-center gap-2.5">
+                <Film size={18} className="text-purple-400" />
+                <h2 className="text-xl font-bold text-white tracking-tight">
+                  Tất cả phim đã tham gia
+                </h2>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-bold border border-purple-400/30">
+                  {filteredMovies.length} / {knownFor.length}
+                </span>
+              </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-              {knownFor.map((item: any) => {
-                const poster = tmdbPoster(item.poster_path, "w342");
-                const title = item.title || item.name || "";
-                const year = (item.release_date || item.first_air_date || "").slice(0, 4);
-
-                return (
-                  <Link
-                    key={`${item.media_type || "movie"}-${item.id}`}
-                    href={`/search?q=${encodeURIComponent(title)}`}
-                    className="group flex flex-col gap-2"
+              {/* Filters & Search */}
+              <div className="flex items-center flex-wrap gap-2.5">
+                <div className="flex items-center p-0.5 bg-black/40 border border-white/10 rounded-xl text-xs font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setFilterType("all")}
+                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      filterType === "all"
+                        ? "bg-purple-600 text-white shadow-sm font-extrabold"
+                        : "text-neutral-400 hover:text-white"
+                    }`}
                   >
-                    <div className="aspect-[2/3] rounded-xl overflow-hidden bg-neutral-900 border border-white/8 group-hover:border-white/20 transition-all duration-300 relative shadow-md">
-                      {poster ? (
-                        <img
-                          src={poster}
-                          alt={title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Film size={20} className="text-neutral-700" />
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-semibold text-neutral-400 group-hover:text-white transition-colors line-clamp-2 leading-snug">
-                        {title}
-                      </p>
-                      {year && (
-                        <p className="text-[10px] text-neutral-700 mt-0.5">{year}</p>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
+                    Tất cả ({knownFor.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterType("movie")}
+                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      filterType === "movie"
+                        ? "bg-purple-600 text-white shadow-sm font-extrabold"
+                        : "text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    Phim lẻ ({moviesCount})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterType("tv")}
+                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      filterType === "tv"
+                        ? "bg-purple-600 text-white shadow-sm font-extrabold"
+                        : "text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    Series ({tvCount})
+                  </button>
+                </div>
+
+                {/* Movie search in actor filmography */}
+                <input
+                  type="text"
+                  placeholder="Lọc tên phim..."
+                  value={movieQuery}
+                  onChange={(e) => setMovieQuery(e.target.value)}
+                  className="bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-purple-500/50 w-36 transition-all"
+                />
+              </div>
             </div>
+
+            {/* Movie Grid with Direct Watch Links */}
+            {filteredMovies.length === 0 ? (
+              <div className="p-12 text-center text-xs text-neutral-500">
+                Không tìm thấy phim phù hợp với bộ lọc.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+                {filteredMovies.map((item: any) => {
+                  const poster = tmdbPoster(item.poster_path, "w342");
+                  const title = item.title || item.name || "";
+                  const year = (item.release_date || item.first_air_date || "").slice(0, 4);
+                  const isTv = item.media_type === "tv";
+                  const character = item.character;
+
+                  return (
+                    <Link
+                      key={`${item.media_type || "movie"}-${item.id}`}
+                      href={`/search?q=${encodeURIComponent(title)}`}
+                      className="group flex flex-col gap-2 relative transition-all duration-300 select-none"
+                      title={`Xem phim ${title}`}
+                    >
+                      <div className="aspect-[2/3] rounded-xl overflow-hidden bg-neutral-900 border border-white/10 group-hover:border-white/30 transition-all duration-300 relative shadow-lg">
+                        {poster ? (
+                          <img
+                            src={poster}
+                            alt={title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Film size={20} className="text-neutral-700" />
+                          </div>
+                        )}
+
+                        {/* Top Gradient Overlay */}
+                        <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-black/60 to-transparent pointer-events-none z-10" />
+
+                        {/* Bottom Gradient Overlay */}
+                        <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/80 to-transparent pointer-events-none z-10" />
+
+                        {/* Top Media Type Badge */}
+                        <div className="absolute top-1.5 left-1.5 z-20">
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-md text-white/90 border border-white/10">
+                            {isTv ? "Series" : "Phim Lẻ"}
+                          </span>
+                        </div>
+
+                        {/* Rating Badge */}
+                        {item.vote_average > 0 && (
+                          <div className="absolute top-1.5 right-1.5 z-20 flex items-center gap-0.5 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded border border-white/10 text-[9px] font-bold text-amber-400">
+                            <Star size={9} fill="currentColor" />
+                            <span>{item.vote_average.toFixed(1)}</span>
+                          </div>
+                        )}
+
+                        {/* Minimalist Frosted Glass Hover Play Icon */}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none z-20">
+                          <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/40 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                            <Play size={16} fill="currentColor" className="ml-0.5 text-white" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="px-0.5">
+                        <p className="text-xs font-bold text-neutral-200 group-hover:text-purple-400 transition-colors line-clamp-1 leading-snug">
+                          {title}
+                        </p>
+                        <div className="flex items-center justify-between text-[11px] text-neutral-400 mt-0.5">
+                          {character ? (
+                            <span className="truncate max-w-[110px] text-neutral-400">
+                              {character}
+                            </span>
+                          ) : (
+                            <span className="text-neutral-500">{isTv ? "Truyền hình" : "Điện ảnh"}</span>
+                          )}
+                          {year && <span className="shrink-0 text-neutral-500 font-medium">{year}</span>}
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </section>
         )}
       </div>
