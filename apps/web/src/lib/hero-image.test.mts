@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  buildHeroCardImageCandidates,
   buildHeroImageCandidates,
   HERO_LOCAL_FALLBACK,
 } from "./hero-image.ts";
@@ -15,6 +16,39 @@ test("prefers a direct w1280 TMDB backdrop over the original proxy URL", () => {
     "https://image.tmdb.org/t/p/w1280/backdrop.jpg",
   );
   assert.equal(candidates.at(-1), HERO_LOCAL_FALLBACK);
+});
+
+test("uses compact TMDB artwork for above-the-fold hero cards", () => {
+  const poster = buildHeroCardImageCandidates(
+    { posterUrl: "https://image.tmdb.org/t/p/w500/poster.jpg" },
+    "poster",
+  );
+  const thumbnail = buildHeroCardImageCandidates(
+    { thumbUrl: "https://image.tmdb.org/t/p/w1280/backdrop.jpg" },
+    "thumbnail",
+  );
+
+  assert.equal(poster[0], "https://image.tmdb.org/t/p/w342/poster.jpg");
+  assert.equal(
+    thumbnail[0],
+    "https://image.tmdb.org/t/p/w300/backdrop.jpg",
+  );
+});
+
+test("tries every direct card source before relay fallbacks", () => {
+  const candidates = buildHeroCardImageCandidates(
+    {
+      posterUrl: "https://phimimg.com/missing.jpg",
+      thumbUrl: "https://img.ophim.live/working.jpg",
+    },
+    "poster",
+  );
+
+  assert.deepEqual(candidates.slice(0, 2), [
+    "https://phimimg.com/missing.jpg",
+    "https://img.ophim.live/working.jpg",
+  ]);
+  assert.match(candidates[2], /^https:\/\/wsrv\.nl\//);
 });
 
 test("prefers direct provider CDN images and always has a local fallback", () => {

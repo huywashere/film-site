@@ -18,6 +18,13 @@ function preferTmdbBackdropSize(url: string): string {
   );
 }
 
+function preferTmdbCardSize(url: string, size: "w300" | "w342"): string {
+  return url.replace(
+    /\/t\/p\/(?:original|w92|w154|w185|w300|w342|w500|w780|w1280)\//i,
+    `/t/p/${size}/`,
+  );
+}
+
 function rawProxyUrl(value: string): string | null {
   if (!value.startsWith(IMAGE_PROXY_PATH)) return null;
 
@@ -109,4 +116,56 @@ export function buildHeroImageCandidates(input: {
 
   add(HERO_LOCAL_FALLBACK);
   return candidates;
+}
+
+/**
+ * Build lightweight image candidates for the small cards inside the hero.
+ * Direct sources are exhausted before slower relay services, preventing one
+ * broken poster from delaying a valid thumb/backdrop by several round trips.
+ */
+export function buildHeroCardImageCandidates(
+  input: {
+    heroBackdrop?: string;
+    thumbUrl?: string;
+    posterUrl?: string;
+  },
+  variant: "poster" | "thumbnail",
+): string[] {
+  const direct: string[] = [];
+  const addDirect = (value?: string) => {
+    const normalized = normalizeMovieImage(value);
+    if (!normalized || normalized.startsWith(IMAGE_PROXY_PATH)) return;
+    const sized = isTmdbImage(normalized)
+      ? preferTmdbCardSize(normalized, variant === "poster" ? "w342" : "w300")
+      : normalized;
+    if (!direct.includes(sized)) direct.push(sized);
+  };
+
+  const ordered =
+    variant === "poster"
+      ? [input.posterUrl, input.thumbUrl, input.heroBackdrop]
+      : [input.thumbUrl, input.posterUrl, input.heroBackdrop];
+
+  for (const value of ordered) {
+    addDirect(value);
+    if (value?.includes("/uploads/movies/")) {
+      addDirect(value.replace("/uploads/movies/", "/upload/vod/"));
+    } else if (value?.includes("/upload/vod/")) {
+      addDirect(value.replace("/upload/vod/", "/uploads/movies/"));
+    }
+  }
+
+  const fallbacks: string[] = [];
+  for (const url of direct) {
+    // TMDB's edge supports CORS and card-specific sizes reliably. Provider
+    // images retain two relay fallbacks for regional CDN failures.
+    if (!isTmdbImage(url)) {
+      fallbacks.push(`https://wsrv.nl/?url=${encodeURIComponent(url)}`);
+    }
+    fallbacks.push(
+      `${IMAGE_PROXY_PATH}?url=${encodeURIComponent(url)}&strict=1`,
+    );
+  }
+
+  return [...direct, ...fallbacks.filter((url, index, all) => all.indexOf(url) === index)];
 }

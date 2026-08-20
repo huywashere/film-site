@@ -14,7 +14,10 @@ import { useToast } from "@/providers/ToastProvider";
 import { cn } from "@/lib/utils";
 import { heroSerifFont, cardFont } from "@/lib/fonts";
 import { guestDataStorage } from "@/lib/user-data";
-import { buildHeroImageCandidates } from "@/lib/hero-image";
+import {
+  buildHeroCardImageCandidates,
+  buildHeroImageCandidates,
+} from "@/lib/hero-image";
 import {
   tmdbApi,
   tmdbBackdrop,
@@ -599,28 +602,14 @@ function HeroFanCardImage({
   className?: string;
 }) {
   const candidateUrls = useMemo(() => {
-    const list: string[] = [];
-    const add = (url?: unknown) => {
-      const resolved = resolveDirectImageUrl(url);
-      if (resolved && !list.includes(resolved)) {
-        list.push(resolved);
-        if (resolved.startsWith("http")) {
-          const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(resolved)}`;
-          if (!list.includes(wsrv)) list.push(wsrv);
-          const proxy = `/api/image-proxy?url=${encodeURIComponent(resolved)}`;
-          if (!list.includes(proxy)) list.push(proxy);
-        }
-      }
-    };
-    add(film.poster_url);
-    add(film.thumb_url);
-    add(film.heroBackdrop);
-    if (film.poster_url?.includes("/uploads/movies/")) {
-      add(film.poster_url.replace("/uploads/movies/", "/upload/vod/"));
-    } else if (film.poster_url?.includes("/upload/vod/")) {
-      add(film.poster_url.replace("/upload/vod/", "/uploads/movies/"));
-    }
-    return list;
+    return buildHeroCardImageCandidates(
+      {
+        heroBackdrop: resolveDirectImageUrl(film.heroBackdrop) || undefined,
+        posterUrl: resolveDirectImageUrl(film.poster_url) || undefined,
+        thumbUrl: resolveDirectImageUrl(film.thumb_url) || undefined,
+      },
+      "poster",
+    );
   }, [film.heroBackdrop, film.poster_url, film.thumb_url]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
@@ -667,34 +656,22 @@ function HeroFanCardImage({
 
 function HeroThumbnailImage({
   film,
+  isActive,
   className,
 }: {
   film: HeroFilm;
+  isActive: boolean;
   className?: string;
 }) {
   const candidateUrls = useMemo(() => {
-    const list: string[] = [];
-    const add = (url?: unknown) => {
-      const resolved = resolveDirectImageUrl(url);
-      if (resolved && !list.includes(resolved)) {
-        list.push(resolved);
-        if (resolved.startsWith("http")) {
-          const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(resolved)}`;
-          if (!list.includes(wsrv)) list.push(wsrv);
-          const proxy = `/api/image-proxy?url=${encodeURIComponent(resolved)}`;
-          if (!list.includes(proxy)) list.push(proxy);
-        }
-      }
-    };
-    add(film.thumb_url);
-    add(film.poster_url);
-    add(film.heroBackdrop);
-    if (film.thumb_url?.includes("/uploads/movies/")) {
-      add(film.thumb_url.replace("/uploads/movies/", "/upload/vod/"));
-    } else if (film.thumb_url?.includes("/upload/vod/")) {
-      add(film.thumb_url.replace("/upload/vod/", "/uploads/movies/"));
-    }
-    return list;
+    return buildHeroCardImageCandidates(
+      {
+        heroBackdrop: resolveDirectImageUrl(film.heroBackdrop) || undefined,
+        posterUrl: resolveDirectImageUrl(film.poster_url) || undefined,
+        thumbUrl: resolveDirectImageUrl(film.thumb_url) || undefined,
+      },
+      "thumbnail",
+    );
   }, [film.heroBackdrop, film.poster_url, film.thumb_url]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
@@ -723,7 +700,8 @@ function HeroThumbnailImage({
       src={src}
       alt={film.name}
       referrerPolicy="no-referrer"
-      loading="eager"
+      loading={isActive ? "eager" : "lazy"}
+      fetchPriority={isActive ? "high" : "low"}
       decoding="async"
       onError={() => {
         if (candidateIdx < candidateUrls.length - 1) {
@@ -785,7 +763,7 @@ function HeroBackdropImage({
         src={src}
         alt={film.name}
         referrerPolicy="no-referrer"
-        loading="eager"
+        loading={isActive ? "eager" : "lazy"}
         decoding="async"
         fetchPriority={isActive ? "high" : "low"}
         onLoad={() => {
@@ -1137,10 +1115,15 @@ export default function HeroBanner({ films }: HeroBannerProps) {
     };
   }, [films]);
 
-  // Preload all title logos and backdrop images across all hero slides upfront
+  // Warm only the visible and next slide. Preloading every w1280 backdrop at
+  // once starved the small, above-the-fold card artwork on cold production loads.
   useEffect(() => {
     if (typeof window === "undefined" || !featured.length) return;
-    featured.forEach((item) => {
+    const preloadItems = [
+      featured[current],
+      featured[(current + 1) % featured.length],
+    ].filter(Boolean);
+    preloadItems.forEach((item) => {
       if (item.titleLogo) {
         const img = new window.Image();
         img.src = item.titleLogo;
@@ -1153,7 +1136,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
         thumbUrl: item.thumb_url,
         posterUrl: item.poster_url,
       });
-      candidates.slice(0, 2).forEach((url) => {
+      candidates.slice(0, 1).forEach((url) => {
         const img = new window.Image();
         img.src = url;
         img.onload = () => {
@@ -1161,7 +1144,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
         };
       });
     });
-  }, [featured]);
+  }, [current, featured]);
 
   useEffect(() => {
     setCurrent((index) => (index >= featured.length ? 0 : index));
@@ -1324,6 +1307,12 @@ export default function HeroBanner({ films }: HeroBannerProps) {
         {featured.map((item, idx) => {
           const isActive = idx === current;
           const visualReady = Boolean(visualReadiness[item.slug]?.backdrop);
+          const slideCount = featured.length;
+          const circularDistance = Math.min(
+            (idx - current + slideCount) % slideCount,
+            (current - idx + slideCount) % slideCount,
+          );
+          const shouldLoadBackdrop = circularDistance <= 1;
 
           return (
             <div
@@ -1335,12 +1324,14 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                   : "opacity-0 scale-[1.02] z-0",
               )}
             >
-              <HeroBackdropImage
-                film={item as HeroFilm}
-                isActive={isActive}
-                revealed={visualReady}
-                onReady={() => markVisualReady(item.slug, "backdrop")}
-              />
+              {shouldLoadBackdrop && (
+                <HeroBackdropImage
+                  film={item as HeroFilm}
+                  isActive={isActive}
+                  revealed={visualReady}
+                  onReady={() => markVisualReady(item.slug, "backdrop")}
+                />
+              )}
             </div>
           );
         })}
@@ -1752,6 +1743,7 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                 >
                   <HeroThumbnailImage
                     film={item as HeroFilm}
+                    isActive={isActive}
                     className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
                   />
                 </button>
