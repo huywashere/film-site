@@ -9,6 +9,7 @@ import {
   findMatchingEpisode,
   isAutomaticPlaybackSource,
   resolveSeasonNumber,
+  selectInitialHlsTransport,
   sourcePriority,
 } from "./player-source-routing.ts";
 import { rankHealthyCandidates } from "./player-source-health.ts";
@@ -63,6 +64,24 @@ test("prefers observable HLS transport over a higher-ranked iframe provider", ()
     "tap-01",
   );
   assert.ok(vsmovHls > kkphimIframe);
+});
+
+test("prefers same-origin HLS on mobile and preserves direct fallback", () => {
+  const direct = "https://stream.example/movie/master.m3u8";
+  const proxy = "/api/hls-proxy?url=signed";
+
+  assert.deepEqual(selectInitialHlsTransport(direct, proxy, true), {
+    primary: proxy,
+    fallback: direct,
+  });
+  assert.deepEqual(selectInitialHlsTransport(direct, proxy, false), {
+    primary: direct,
+    fallback: proxy,
+  });
+  assert.deepEqual(
+    selectInitialHlsTransport(direct, "https://evil.test/proxy", true),
+    { primary: direct, fallback: undefined },
+  );
 });
 
 test("only removes iframe sandbox for known VidSrc HTTPS hosts", () => {

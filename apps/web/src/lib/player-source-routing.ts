@@ -17,6 +17,22 @@ export type SourceServer = {
   priority?: number;
 };
 
+export function selectInitialHlsTransport(
+  directUrl: string,
+  proxyUrl: string | undefined,
+  preferSameOrigin: boolean,
+) {
+  const safeProxy = proxyUrl?.startsWith("/api/hls-proxy?") ? proxyUrl : "";
+  const primary =
+    preferSameOrigin && safeProxy ? safeProxy : directUrl || safeProxy;
+  const fallback = primary === safeProxy ? directUrl : safeProxy;
+
+  return {
+    primary,
+    fallback: fallback && fallback !== primary ? fallback : undefined,
+  };
+}
+
 const PROVIDER_PRIORITY: Record<string, number> = {
   kkphim: 40,
   nguonc: 35,
@@ -25,10 +41,7 @@ const PROVIDER_PRIORITY: Record<string, number> = {
   vidsrc: 5,
 };
 
-const UNSANDBOXED_VIDSRC_HOSTS = new Set([
-  "vidsrc.sbs",
-  "www.vidsrc.sbs",
-]);
+const UNSANDBOXED_VIDSRC_HOSTS = new Set(["vidsrc.sbs", "www.vidsrc.sbs"]);
 
 const VIDSRC_EMBED_ORIGIN = "https://vidsrc.sbs";
 

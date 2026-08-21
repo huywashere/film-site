@@ -5,6 +5,9 @@ import Hls from "hls.js";
 import { cn } from "@/lib/utils";
 import { useSettingsStore } from "@/store/settingsStore";
 import { isLikelyAdUrl, filterHlsManifest } from "@/lib/hls-ad-filter";
+import { selectInitialHlsTransport } from "@/lib/player-source-routing";
+
+const HLS_STARTUP_TIMEOUT_MS = 8_000;
 
 const ART_PLAY_ICON = `
   <div class="art-icon art-icon-custom-play" aria-hidden="true">
@@ -139,18 +142,46 @@ export default function ArtPlayer({
       type === "hls" ||
       url.includes(".m3u8") ||
       (type === "auto" && url.includes(".m3u8"));
+    const prefersSameOriginHls =
+      isHls &&
+      (window.matchMedia("(max-width: 1024px), (pointer: coarse)").matches ||
+        /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent));
+    const hlsTransport = selectInitialHlsTransport(
+      url,
+      fallbackUrl,
+      prefersSameOriginHls,
+    );
 
     // -- HLS quality levels (populated after manifest load) --
     let hlsInstance: Hls | null = null;
     let networkRecoveries = 0;
     let mediaRecoveries = 0;
     let stallRecoveryTimer: ReturnType<typeof setInterval> | null = null;
+    let startupTimer: ReturnType<typeof setTimeout> | null = null;
+    let startupVideo: HTMLVideoElement | null = null;
+    let startupReadyHandler: (() => void) | null = null;
     const qualityLevels: { default: boolean; html: string; url: string }[] = [];
+
+    const clearStartupTimer = () => {
+      if (startupTimer) {
+        clearTimeout(startupTimer);
+        startupTimer = null;
+      }
+    };
 
     // HLS.js is attached directly to ArtPlayer's video element. The playback
     // URL is a proxy route with query parameters, so extension-based custom
     // type dispatch is not a dependable place to initialize HLS.
-    const attachHls = (video: HTMLVideoElement, streamUrl: string) => {
+    const attachHls = (
+      video: HTMLVideoElement,
+      streamUrl: string,
+      alternateUrl?: string,
+    ) => {
+      startupVideo = video;
+      startupReadyHandler = clearStartupTimer;
+      video.addEventListener("loadedmetadata", startupReadyHandler);
+      video.addEventListener("canplay", startupReadyHandler);
+
       if (Hls.isSupported()) {
         const hls = new Hls({
           enableWorker: true,
@@ -194,6 +225,50 @@ export default function ArtPlayer({
         });
         hlsInstance = hls;
         let activeStreamUrl = streamUrl;
+        let transportFallbackUsed = false;
+
+        const armStartupWatchdog = () => {
+          clearStartupTimer();
+          startupTimer = setTimeout(() => {
+            if (video.readyState >= HTMLMediaElement.HAVE_METADATA) return;
+
+            if (
+              alternateUrl &&
+              alternateUrl !== activeStreamUrl &&
+              !transportFallbackUsed
+            ) {
+              transportFallbackUsed = true;
+              activeStreamUrl = alternateUrl;
+              hls.stopLoad();
+              hls.loadSource(activeStreamUrl);
+              hls.startLoad(-1);
+              armStartupWatchdog();
+              return;
+            }
+
+            onErrorRef.current?.({
+              type: "HLS_STARTUP_TIMEOUT",
+              details: { streamUrl: activeStreamUrl },
+            });
+          }, HLS_STARTUP_TIMEOUT_MS);
+        };
+
+        const switchTransport = () => {
+          if (
+            !alternateUrl ||
+            alternateUrl === activeStreamUrl ||
+            transportFallbackUsed
+          ) {
+            return false;
+          }
+          transportFallbackUsed = true;
+          activeStreamUrl = alternateUrl;
+          hls.stopLoad();
+          hls.loadSource(activeStreamUrl);
+          hls.startLoad(-1);
+          armStartupWatchdog();
+          return true;
+        };
 
         // Auto-detect spliced ad blocks (EXT-X-DISCONTINUITY) and betting/casino ad segments
         hls.on(Hls.Events.LEVEL_LOADED, (_e, data) => {
@@ -313,15 +388,8 @@ export default function ArtPlayer({
 
         hls.on(Hls.Events.ERROR, (_event, data) => {
           if (!data.fatal) return;
-          if (
-            data.type === Hls.ErrorTypes.NETWORK_ERROR &&
-            fallbackUrl &&
-            fallbackUrl !== activeStreamUrl &&
-            fallbackUrl.startsWith("/api/hls-proxy?")
-          ) {
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR && switchTransport()) {
             networkRecoveries += 1;
-            activeStreamUrl = fallbackUrl;
-            hls.loadSource(activeStreamUrl);
             return;
           }
           if (
@@ -343,6 +411,7 @@ export default function ArtPlayer({
 
         hls.loadSource(streamUrl);
         hls.attachMedia(video);
+        armStartupWatchdog();
         (video as HTMLVideoElement & { hls: Hls }).hls = hls;
 
         // Non-fatal HLS stalls do not reach the page-level fallback handler.
@@ -385,6 +454,21 @@ export default function ArtPlayer({
         }, 1_000);
       } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
         video.src = streamUrl;
+        video.load();
+        startupTimer = setTimeout(() => {
+          if (video.readyState >= HTMLMediaElement.HAVE_METADATA) return;
+          if (alternateUrl && alternateUrl !== streamUrl) {
+            video.src = alternateUrl;
+            video.load();
+            startupTimer = setTimeout(() => {
+              if (video.readyState < HTMLMediaElement.HAVE_METADATA) {
+                onErrorRef.current?.({ type: "HLS_STARTUP_TIMEOUT" });
+              }
+            }, HLS_STARTUP_TIMEOUT_MS);
+            return;
+          }
+          onErrorRef.current?.({ type: "HLS_STARTUP_TIMEOUT" });
+        }, HLS_STARTUP_TIMEOUT_MS);
       } else {
         onErrorRef.current?.({ type: "HLS_UNSUPPORTED" });
       }
@@ -392,11 +476,11 @@ export default function ArtPlayer({
 
     const player = new Artplayer({
       container: containerRef.current,
-      url: url,
+      url: isHls ? hlsTransport.primary : url,
       type: isHls ? "m3u8" : "auto",
       customType: {
         m3u8: function (video: HTMLVideoElement, streamUrl: string) {
-          attachHls(video, streamUrl);
+          attachHls(video, streamUrl, hlsTransport.fallback);
         },
       },
       poster,
@@ -854,6 +938,11 @@ export default function ArtPlayer({
         playerRef.current = null;
       }
       hlsInstance?.destroy();
+      clearStartupTimer();
+      if (startupVideo && startupReadyHandler) {
+        startupVideo.removeEventListener("loadedmetadata", startupReadyHandler);
+        startupVideo.removeEventListener("canplay", startupReadyHandler);
+      }
       if (stallRecoveryTimer) {
         clearInterval(stallRecoveryTimer);
       }

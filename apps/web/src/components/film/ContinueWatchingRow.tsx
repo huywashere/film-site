@@ -45,8 +45,14 @@ function HistoryArtwork({
   className: string;
 }) {
   const primary = landscape
-    ? resolveImageUrl(item.thumb || item.thumb_url, item.poster || item.poster_url)
-    : resolveImageUrl(item.poster || item.poster_url, item.thumb || item.thumb_url);
+    ? resolveImageUrl(
+        item.thumb || item.thumb_url,
+        item.poster || item.poster_url,
+      )
+    : resolveImageUrl(
+        item.poster || item.poster_url,
+        item.thumb || item.thumb_url,
+      );
   const alternate = landscape
     ? resolveImageUrl(item.poster || item.poster_url)
     : resolveImageUrl(item.thumb || item.thumb_url);
@@ -335,7 +341,8 @@ export function ContinueWatchingRow({
             speed={500}
             slidesPerGroup={2}
             freeMode={{ enabled: true, momentumRatio: 0.8 }}
-            spaceBetween={18}
+            spaceBetween={8}
+            breakpoints={{ 640: { spaceBetween: 18 } }}
             slidesPerView="auto"
             className="w-full !pb-3 !pt-1 !pl-0.5"
           >
@@ -364,8 +371,11 @@ export function ContinueWatchingRow({
                       : 0;
 
                   return (
-                    <SwiperSlide key={`continue-${item.slug}-${item.epSlug || ''}-${idx}`} className="!w-auto">
-                      <div className="w-[240px] sm:w-[280px] md:w-[310px] shrink-0">
+                    <SwiperSlide
+                      key={`continue-${item.slug}-${item.epSlug || ""}-${idx}`}
+                      className="!w-[31%] sm:!w-auto"
+                    >
+                      <div className="w-full sm:w-[280px] md:w-[310px] shrink-0">
                         <Link
                           href={`/watch/${item.slug}${
                             item.epSlug ? `?ep=${item.epSlug}` : ""
@@ -438,7 +448,9 @@ export function ContinueWatchingRow({
                             {/* Title & 3-line Detailed Metadata Block */}
                             <div className="flex-1 min-w-0 pt-0.5 space-y-0.5">
                               {/* Main Title */}
-                              <h3 className={`${cardFont.className} text-xs sm:text-sm font-bold text-neutral-200 leading-snug line-clamp-1 group-hover/card:text-white transition-colors tracking-normal`}>
+                              <h3
+                                className={`${cardFont.className} text-xs sm:text-sm font-bold text-neutral-200 leading-snug line-clamp-1 group-hover/card:text-white transition-colors tracking-normal`}
+                              >
                                 {title}
                               </h3>
 
@@ -488,8 +500,11 @@ export function ContinueWatchingRow({
                   } = getHistoryCardMeta(film);
 
                   return (
-                    <SwiperSlide key={`continue-fallback-${film.slug}-${idx}`} className="!w-auto">
-                      <div className="w-[240px] sm:w-[280px] md:w-[310px] shrink-0">
+                    <SwiperSlide
+                      key={`continue-fallback-${film.slug}-${idx}`}
+                      className="!w-[31%] sm:!w-auto"
+                    >
+                      <div className="w-full sm:w-[280px] md:w-[310px] shrink-0">
                         <Link
                           href={`/film/${film.slug}`}
                           className="group/card block relative select-none cursor-pointer"
@@ -554,7 +569,9 @@ export function ContinueWatchingRow({
                             {/* Title & 3-line Detailed Metadata Block */}
                             <div className="flex-1 min-w-0 pt-0.5 space-y-0.5">
                               {/* Main Title */}
-                              <h3 className={`${cardFont.className} text-xs sm:text-sm font-bold text-neutral-200 leading-snug line-clamp-1 group-hover/card:text-white transition-colors tracking-normal`}>
+                              <h3
+                                className={`${cardFont.className} text-xs sm:text-sm font-bold text-neutral-200 leading-snug line-clamp-1 group-hover/card:text-white transition-colors tracking-normal`}
+                              >
                                 {title}
                               </h3>
 

@@ -26,16 +26,16 @@ interface Top10RankedRowProps {
 }
 
 function getRankColorStyle(rank: number) {
-  // Chỉ ba vị trí dẫn đầu dùng màu huy chương. Hạng 4-10 giữ màu trung tính
+  // Chỉ ba vị trí dẫn đầu dùng màu nhấn riêng. Hạng 4-10 giữ màu trung tính
   // để thứ bậc thị giác tập trung đúng vào top 3.
   const colors: Record<number, { stroke: string; glow: string }> = {
-    1: { stroke: "#fbbf24", glow: "rgba(251, 191, 36, 0.55)" },
-    2: { stroke: "#cbd5e1", glow: "rgba(203, 213, 225, 0.32)" },
-    3: { stroke: "#c9783b", glow: "rgba(201, 120, 59, 0.42)" },
+    1: { stroke: "#ffd43b", glow: "rgba(255, 212, 59, 0.62)" },
+    2: { stroke: "#ff4d8d", glow: "rgba(255, 77, 141, 0.52)" },
+    3: { stroke: "#22d3ee", glow: "rgba(34, 211, 238, 0.48)" },
   };
 
   const style = colors[rank] || {
-    stroke: "#52525b",
+    stroke: "#3f3f46",
     glow: "rgba(0, 0, 0, 0)",
   };
 
@@ -62,7 +62,7 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
   return (
     <Link
       href={`/film/${film.slug}`}
-      className="flex flex-col group/item relative select-none cursor-pointer pt-4 pb-2 pr-2"
+      className="flex w-full flex-col group/item relative select-none cursor-pointer pt-4 pb-2 pr-1 sm:w-auto sm:pr-2"
     >
       {/* Bold Rank Number Peeking Behind the Top-Left of Poster Card */}
       <div
@@ -74,7 +74,7 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
         )}
       >
         <span
-          className={`${rankFont.className} block text-[98px] font-black leading-none tracking-[-0.09em] opacity-100 transition-transform duration-300 group-hover/item:scale-105 sm:text-[132px] md:text-[156px]`}
+          className={`${rankFont.className} block text-[76px] font-black leading-none tracking-[-0.09em] opacity-100 transition-transform duration-300 group-hover/item:scale-105 sm:text-[132px] md:text-[156px]`}
           style={getRankColorStyle(rank)}
         >
           {rank}
@@ -82,8 +82,8 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
       </div>
 
       {/* Poster Card Container Overlapping Rank Number (Creating 3D Depth Layer) */}
-      <div className="relative pl-10 sm:pl-14 md:pl-16 z-10">
-        <div className="relative w-[130px] sm:w-[160px] md:w-[185px] aspect-[2/3] rounded-2xl overflow-hidden border border-white/15 shadow-2xl group-hover/item:border-white/40 group-hover/item:scale-105 transition-all duration-300 bg-neutral-900">
+      <div className="relative z-10 pl-7 sm:pl-14 md:pl-16">
+        <div className="relative w-[78px] sm:w-[160px] md:w-[185px] aspect-[2/3] rounded-xl sm:rounded-2xl overflow-hidden border border-white/15 shadow-2xl group-hover/item:border-white/40 group-hover/item:scale-105 transition-all duration-300 bg-neutral-900">
           {imgSrc ? (
             <Image
               src={imgSrc}
@@ -151,7 +151,7 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
         </div>
 
         {/* Movie Title Below Card */}
-        <div className="mt-2 text-center max-w-[130px] sm:max-w-[160px] md:max-w-[185px] px-0.5">
+        <div className="mt-2 max-w-[78px] px-0.5 text-center sm:max-w-[160px] md:max-w-[185px]">
           <p
             className={`${cardFont.className} text-[11px] sm:text-xs font-bold text-neutral-200 line-clamp-1 group-hover/item:text-white transition-colors leading-snug tracking-normal`}
           >
@@ -283,14 +283,15 @@ export function Top10RankedRow({ films, title }: Top10RankedRowProps) {
           speed={600}
           slidesPerGroup={3}
           freeMode={{ enabled: true, momentumRatio: 0.8 }}
-          spaceBetween={16}
+          spaceBetween={8}
+          breakpoints={{ 640: { spaceBetween: 16 } }}
           slidesPerView="auto"
           className="!py-4 !pl-8 sm:!pl-12 md:!pl-16 !pr-4"
         >
           {top10.map((film, index) => (
             <SwiperSlide
               key={`top10-${film.slug || "item"}-${index}`}
-              className="!w-auto"
+              className="!w-[31%] sm:!w-auto"
             >
               <Top10Item film={film} rank={index + 1} />
             </SwiperSlide>
