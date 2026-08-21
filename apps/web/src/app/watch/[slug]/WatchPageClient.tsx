@@ -2822,227 +2822,256 @@ export default function WatchPage() {
               )}
             </div>
 
-            {/* ── UNDER-PLAYER ACTION TOOLBAR (Matching User Design & Functionality) ── */}
-            <div className="flex flex-wrap items-center justify-between gap-3 px-3.5 sm:px-4 py-2.5 bg-[#0a0c10] border border-white/[0.08] rounded-xl text-xs font-semibold select-none shadow-lg">
-              {/* Left: Yêu thích + Thêm vào */}
-              <div className="flex items-center gap-4 sm:gap-6">
-                <button
-                  type="button"
-                  onClick={handleToggleFavorite}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95",
-                    isFavorite
-                      ? "text-red-400 hover:text-red-300 font-bold"
-                      : "text-white/80 hover:text-white",
-                  )}
-                  title="Thêm vào danh sách yêu thích"
-                >
-                  <Heart
-                    size={14}
+            {/* ── UNDER-PLAYER ACTION TOOLBAR (Neat & Compact on Mobile + Desktop) ── */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 px-3.5 sm:px-4 py-2.5 bg-[#0a0c10] border border-white/[0.08] rounded-xl text-xs font-semibold select-none shadow-lg">
+              {/* Top Row on Mobile / Left on Desktop: Yêu thích + Thêm vào + Mobile Collapse Button */}
+              <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-6 w-full sm:w-auto">
+                <div className="flex items-center gap-3.5 sm:gap-6">
+                  <button
+                    type="button"
+                    onClick={handleToggleFavorite}
                     className={cn(
-                      "transition-transform",
+                      "inline-flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95 text-xs",
                       isFavorite
-                        ? "fill-red-500 text-red-500 scale-110"
-                        : "text-white/70",
+                        ? "text-red-400 hover:text-red-300 font-bold"
+                        : "text-white/80 hover:text-white",
                     )}
-                  />
-                  <span>{isFavorite ? "Đã thích" : "Yêu thích"}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleToggleWatchlist}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95",
-                    isInWatchlist
-                      ? "text-emerald-400 hover:text-emerald-300 font-bold"
-                      : "text-white/80 hover:text-white",
-                  )}
-                  title="Thêm vào tủ phim"
-                >
-                  {isInWatchlist ? (
-                    <Check size={14} className="text-emerald-400" />
-                  ) : (
-                    <Plus size={14} className="text-white/70" />
-                  )}
-                  <span>{isInWatchlist ? "Đã lưu" : "Thêm vào"}</span>
-                </button>
-              </div>
-
-              {/* Right: Quick Player Controls + Report + Help + Collapse/Expand */}
-              <div className="flex items-center flex-wrap gap-2.5 sm:gap-4">
-                {!isQuickSettingsCollapsed && (
-                  <>
-                    {/* Rạp phim mở rộng (Theater Mode) */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = !theaterMode;
-                        setTheaterMode(next);
-                        toast(
-                          next
-                            ? "Đã bật chế độ Rạp phim mở rộng"
-                            : "Đã tắt chế độ Rạp phim",
-                          "info",
-                        );
-                      }}
+                    title="Thêm vào danh sách yêu thích"
+                  >
+                    <Heart
+                      size={14}
                       className={cn(
-                        "inline-flex items-center gap-1.5 transition-all cursor-pointer select-none active:scale-95",
-                        theaterMode
-                          ? "text-purple-400 font-bold"
-                          : "text-neutral-400 hover:text-neutral-200",
+                        "transition-transform",
+                        isFavorite
+                          ? "fill-red-500 text-red-500 scale-110"
+                          : "text-white/70",
                       )}
-                      title="Chế độ rạp phim (mở rộng player cực đại)"
-                    >
-                      <Maximize2
-                        size={13}
-                        className={
-                          theaterMode ? "text-purple-400" : "text-neutral-400"
-                        }
-                      />
-                      <span className="hidden sm:inline">Rạp phim</span>
-                      <span className="sm:hidden">Rạp</span>
-                      <span
-                        className={cn(
-                          "text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider",
-                          theaterMode
-                            ? "bg-purple-600 text-white font-extrabold shadow-sm"
-                            : "bg-white/10 text-neutral-400",
-                        )}
-                      >
-                        {theaterMode ? "ON" : "OFF"}
-                      </span>
-                    </button>
+                    />
+                    <span>{isFavorite ? "Đã thích" : "Yêu thích"}</span>
+                  </button>
 
-                    {/* Tự động chuyển tập */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = !autoNextConfig;
-                        setAutoNextConfig(next);
-                        toast(
-                          next
-                            ? "Đã bật Tự động chuyển tập"
-                            : "Đã tắt Tự động chuyển tập",
-                          "info",
-                        );
-                      }}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 transition-all cursor-pointer select-none active:scale-95",
-                        autoNextConfig
-                          ? "text-purple-400 font-bold"
-                          : "text-neutral-400 hover:text-neutral-200",
-                      )}
-                      title="Tự động phát tập tiếp theo khi kết thúc video"
-                    >
-                      <SkipForward
-                        size={13}
-                        className={
-                          autoNextConfig
-                            ? "text-purple-400"
-                            : "text-neutral-400"
-                        }
-                      />
-                      <span className="hidden sm:inline">
-                        Tự động chuyển tập
-                      </span>
-                      <span className="sm:hidden">Tập tiếp</span>
-                      <span
-                        className={cn(
-                          "text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider",
-                          autoNextConfig
-                            ? "bg-purple-600 text-white font-extrabold shadow-sm"
-                            : "bg-white/10 text-neutral-400",
-                        )}
-                      >
-                        {autoNextConfig ? "ON" : "OFF"}
-                      </span>
-                    </button>
-
-                    {/* Auto skip intro */}
-                    <button
-                      type="button"
-                      onClick={toggleAutoSkipIntro}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 transition-all cursor-pointer select-none active:scale-95",
-                        autoSkipIntro
-                          ? "text-purple-400 font-bold"
-                          : "text-neutral-400 hover:text-neutral-200",
-                      )}
-                      title="Tự động bỏ qua 85 giây intro mở đầu phim"
-                    >
-                      <FastForward
-                        size={13}
-                        className={
-                          autoSkipIntro ? "text-purple-400" : "text-neutral-400"
-                        }
-                      />
-                      <span className="hidden sm:inline">Auto skip intro</span>
-                      <span className="sm:hidden">Skip intro</span>
-                      <span
-                        className={cn(
-                          "text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider",
-                          autoSkipIntro
-                            ? "bg-purple-600 text-white font-extrabold shadow-sm"
-                            : "bg-white/10 text-neutral-400",
-                        )}
-                      >
-                        {autoSkipIntro ? "ON" : "OFF"}
-                      </span>
-                    </button>
-
-                    {/* Báo lỗi */}
-                    <button
-                      type="button"
-                      onClick={() => setShowReportModal(true)}
-                      className="inline-flex items-center gap-1.5 text-neutral-300 hover:text-white transition-colors cursor-pointer active:scale-95"
-                      title="Báo lỗi link phim hoặc đổi server nhanh"
-                    >
-                      <Bug size={13} className="text-purple-400" />
-                      <span>Báo lỗi</span>
-                    </button>
-
-                    {/* Help / Shortcuts (?) */}
-                    <button
-                      type="button"
-                      onClick={() => setShowShortcutsGuide((prev) => !prev)}
-                      className={cn(
-                        "w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer active:scale-95 border",
-                        showShortcutsGuide
-                          ? "bg-purple-600 text-white border-purple-400 shadow-sm"
-                          : "bg-white/[0.08] hover:bg-white/20 text-neutral-300 hover:text-white border-white/10",
-                      )}
-                      title="Hướng dẫn phím tắt & cử chỉ"
-                    >
-                      <HelpCircle size={13} />
-                    </button>
-                  </>
-                )}
-
-                {/* Nút Thu gọn / Mở rộng toàn bộ Cài đặt */}
-                <button
-                  type="button"
-                  onClick={toggleQuickSettingsCollapsed}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-neutral-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all cursor-pointer select-none active:scale-95"
-                  title={
-                    isQuickSettingsCollapsed
-                      ? "Mở rộng cài đặt trình phát"
-                      : "Thu gọn tất cả cài đặt trình phát"
-                  }
-                >
-                  <SlidersHorizontal size={12} className="text-neutral-400" />
-                  <span>
-                    {isQuickSettingsCollapsed ? "Cài đặt" : "Thu gọn"}
-                  </span>
-                  <ChevronDown
-                    size={12}
+                  <button
+                    type="button"
+                    onClick={handleToggleWatchlist}
                     className={cn(
-                      "transition-transform duration-200",
-                      !isQuickSettingsCollapsed && "rotate-180",
+                      "inline-flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95 text-xs",
+                      isInWatchlist
+                        ? "text-emerald-400 hover:text-emerald-300 font-bold"
+                        : "text-white/80 hover:text-white",
                     )}
-                  />
-                </button>
+                    title="Thêm vào tủ phim"
+                  >
+                    {isInWatchlist ? (
+                      <Check size={14} className="text-emerald-400" />
+                    ) : (
+                      <Plus size={14} className="text-white/70" />
+                    )}
+                    <span>{isInWatchlist ? "Đã lưu" : "Thêm vào"}</span>
+                  </button>
+                </div>
+
+                {/* Collapse toggle button on mobile (right-aligned in top row) */}
+                <div className="sm:hidden">
+                  <button
+                    type="button"
+                    onClick={toggleQuickSettingsCollapsed}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold text-neutral-400 hover:text-white bg-white/[0.04] border border-white/[0.06] transition-all active:scale-95 cursor-pointer"
+                    title={
+                      isQuickSettingsCollapsed
+                        ? "Mở rộng cài đặt trình phát"
+                        : "Thu gọn tất cả cài đặt trình phát"
+                    }
+                  >
+                    <SlidersHorizontal size={11} className="text-neutral-400" />
+                    <span>{isQuickSettingsCollapsed ? "Cài đặt" : "Thu gọn"}</span>
+                    <ChevronDown
+                      size={11}
+                      className={cn(
+                        "transition-transform duration-200",
+                        !isQuickSettingsCollapsed && "rotate-180",
+                      )}
+                    />
+                  </button>
+                </div>
               </div>
+
+              {/* Quick Player Controls: Single horizontal scrollable row on mobile, spacious on desktop */}
+              {!isQuickSettingsCollapsed && (
+                <div className="flex items-center gap-2.5 sm:gap-4 overflow-x-auto no-scrollbar pt-1 sm:pt-0 border-t border-white/[0.04] sm:border-t-0 text-[11px] sm:text-xs">
+                  {/* Rạp phim mở rộng (Theater Mode) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !theaterMode;
+                      setTheaterMode(next);
+                      toast(
+                        next
+                          ? "Đã bật chế độ Rạp phim mở rộng"
+                          : "Đã tắt chế độ Rạp phim",
+                        "info",
+                      );
+                    }}
+                    className={cn(
+                      "inline-flex items-center gap-1 transition-all cursor-pointer select-none active:scale-95 shrink-0",
+                      theaterMode
+                        ? "text-purple-400 font-bold"
+                        : "text-neutral-400 hover:text-neutral-200",
+                    )}
+                    title="Chế độ rạp phim (mở rộng player cực đại)"
+                  >
+                    <Maximize2
+                      size={12}
+                      className={
+                        theaterMode ? "text-purple-400" : "text-neutral-400"
+                      }
+                    />
+                    <span className="hidden sm:inline">Rạp phim</span>
+                    <span className="sm:hidden">Rạp</span>
+                    <span
+                      className={cn(
+                        "text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider",
+                        theaterMode
+                          ? "bg-purple-600 text-white font-extrabold shadow-sm"
+                          : "bg-white/10 text-neutral-400",
+                      )}
+                    >
+                      {theaterMode ? "ON" : "OFF"}
+                    </span>
+                  </button>
+
+                  {/* Tự động chuyển tập */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !autoNextConfig;
+                      setAutoNextConfig(next);
+                      toast(
+                        next
+                          ? "Đã bật Tự động chuyển tập"
+                          : "Đã tắt Tự động chuyển tập",
+                        "info",
+                      );
+                    }}
+                    className={cn(
+                      "inline-flex items-center gap-1 transition-all cursor-pointer select-none active:scale-95 shrink-0",
+                      autoNextConfig
+                        ? "text-purple-400 font-bold"
+                        : "text-neutral-400 hover:text-neutral-200",
+                    )}
+                    title="Tự động phát tập tiếp theo khi kết thúc video"
+                  >
+                    <SkipForward
+                      size={12}
+                      className={
+                        autoNextConfig ? "text-purple-400" : "text-neutral-400"
+                      }
+                    />
+                    <span className="hidden sm:inline">Tự động chuyển tập</span>
+                    <span className="sm:hidden">Tập tiếp</span>
+                    <span
+                      className={cn(
+                        "text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider",
+                        autoNextConfig
+                          ? "bg-purple-600 text-white font-extrabold shadow-sm"
+                          : "bg-white/10 text-neutral-400",
+                      )}
+                    >
+                      {autoNextConfig ? "ON" : "OFF"}
+                    </span>
+                  </button>
+
+                  {/* Auto skip intro */}
+                  <button
+                    type="button"
+                    onClick={toggleAutoSkipIntro}
+                    className={cn(
+                      "inline-flex items-center gap-1 transition-all cursor-pointer select-none active:scale-95 shrink-0",
+                      autoSkipIntro
+                        ? "text-purple-400 font-bold"
+                        : "text-neutral-400 hover:text-neutral-200",
+                    )}
+                    title="Tự động bỏ qua 85 giây intro mở đầu phim"
+                  >
+                    <FastForward
+                      size={12}
+                      className={
+                        autoSkipIntro ? "text-purple-400" : "text-neutral-400"
+                      }
+                    />
+                    <span className="hidden sm:inline">Auto skip intro</span>
+                    <span className="sm:hidden">Skip intro</span>
+                    <span
+                      className={cn(
+                        "text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider",
+                        autoSkipIntro
+                          ? "bg-purple-600 text-white font-extrabold shadow-sm"
+                          : "bg-white/10 text-neutral-400",
+                      )}
+                    >
+                      {autoSkipIntro ? "ON" : "OFF"}
+                    </span>
+                  </button>
+
+                  {/* Báo lỗi */}
+                  <button
+                    type="button"
+                    onClick={() => setShowReportModal(true)}
+                    className="inline-flex items-center gap-1 text-neutral-300 hover:text-white transition-colors cursor-pointer active:scale-95 shrink-0"
+                    title="Báo lỗi link phim hoặc đổi server nhanh"
+                  >
+                    <Bug size={12} className="text-purple-400" />
+                    <span>Báo lỗi</span>
+                  </button>
+
+                  {/* Help / Shortcuts (?) */}
+                  <button
+                    type="button"
+                    onClick={() => setShowShortcutsGuide((prev) => !prev)}
+                    className={cn(
+                      "w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-all cursor-pointer active:scale-95 border shrink-0",
+                      showShortcutsGuide
+                        ? "bg-purple-600 text-white border-purple-400 shadow-sm"
+                        : "bg-white/[0.08] hover:bg-white/20 text-neutral-300 hover:text-white border-white/10",
+                    )}
+                    title="Hướng dẫn phím tắt & cử chỉ"
+                  >
+                    <HelpCircle size={12} />
+                  </button>
+
+                  {/* Desktop Collapse Button */}
+                  <div className="hidden sm:block">
+                    <button
+                      type="button"
+                      onClick={toggleQuickSettingsCollapsed}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-neutral-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all cursor-pointer select-none active:scale-95"
+                      title="Thu gọn tất cả cài đặt trình phát"
+                    >
+                      <SlidersHorizontal size={12} className="text-neutral-400" />
+                      <span>Thu gọn</span>
+                      <ChevronDown
+                        size={12}
+                        className="rotate-180 transition-transform duration-200"
+                      />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Desktop Expand Button when collapsed */}
+              {isQuickSettingsCollapsed && (
+                <div className="hidden sm:block">
+                  <button
+                    type="button"
+                    onClick={toggleQuickSettingsCollapsed}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-neutral-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all cursor-pointer select-none active:scale-95"
+                    title="Mở rộng cài đặt trình phát"
+                  >
+                    <SlidersHorizontal size={12} className="text-neutral-400" />
+                    <span>Cài đặt</span>
+                    <ChevronDown size={12} className="transition-transform duration-200" />
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* ── EXPANDABLE SHORTCUTS & GESTURE GUIDE (Premium Clean Cinema Standard) ── */}

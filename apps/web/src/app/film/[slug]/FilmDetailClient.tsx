@@ -1318,18 +1318,18 @@ export default function FilmDetailPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-          <div className="lg:col-span-8 flex flex-col space-y-4 md:space-y-5">
-            <div className="flex gap-4 sm:gap-6 items-start">
-              <div className="lg:hidden w-28 sm:w-36 aspect-[2/3] rounded-xl sm:rounded-2xl overflow-hidden border border-white/15 bg-neutral-900 shadow-2xl flex-shrink-0 relative group">
+          <div className="lg:col-span-8 flex flex-col space-y-4 md:space-y-5 items-center sm:items-start text-center sm:text-left">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center sm:items-start w-full">
+              <div className="lg:hidden w-36 sm:w-40 aspect-[2/3] rounded-2xl overflow-hidden border border-white/15 bg-neutral-900 shadow-2xl shrink-0 relative group mx-auto sm:mx-0">
                 <DetailPosterCard
                   candidates={heroPosterCandidates}
                   filmName={film.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
 
-              <div className="flex flex-col space-y-2 sm:space-y-3 min-w-0 flex-1">
-                <h1 className="text-xl sm:text-3xl md:text-5xl font-extrabold text-white tracking-tight leading-snug drop-shadow-xl line-clamp-3">
+              <div className="flex flex-col space-y-2 sm:space-y-3 min-w-0 flex-1 items-center sm:items-start">
+                <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold text-white tracking-tight leading-snug drop-shadow-xl line-clamp-3">
                   {film.name}
                 </h1>
 
@@ -1339,7 +1339,7 @@ export default function FilmDetailPage() {
                   </p>
                 )}
 
-                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs font-bold pt-1">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2 text-xs font-bold pt-1">
                   {film.quality && (
                     <span className="rounded-md border border-white/15 bg-white/[0.06] px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-neutral-200">
                       {film.quality}
@@ -1390,10 +1390,10 @@ export default function FilmDetailPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 pt-2">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2 w-full">
               <Link
                 href={watchLink}
-                className="flex items-center space-x-2 rounded-full bg-white px-7 py-2.5 text-xs font-extrabold text-[#111317] transition-colors hover:bg-neutral-200 active:scale-[0.98] sm:py-3"
+                className="flex items-center space-x-2 rounded-full bg-white px-7 py-2.5 text-xs font-extrabold text-[#111317] transition-colors hover:bg-neutral-200 active:scale-[0.98] sm:py-3 shadow-lg"
                 onMouseEnter={prefetchWatchData}
               >
                 <Play size={14} fill="currentColor" />
@@ -1402,12 +1402,12 @@ export default function FilmDetailPage() {
 
               <button
                 onClick={() => setShowTrailer(true)}
-                className="bg-white/10 hover:bg-white/20 text-white px-6 py-2.5 sm:py-3 rounded-full font-bold tracking-wider uppercase text-xs border border-white/15 backdrop-blur-md transition-colors cursor-pointer active:scale-95"
+                className="bg-white/10 hover:bg-white/20 text-white px-6 py-2.5 sm:py-3 rounded-full font-bold tracking-wider uppercase text-xs border border-white/15 backdrop-blur-md transition-colors cursor-pointer active:scale-95 shadow-md"
               >
                 {t("film.trailer", "Trailer")}
               </button>
 
-              <div className="flex items-center space-x-3 ml-2">
+              <div className="flex items-center space-x-3 sm:ml-2">
                 <div className="flex flex-col items-center gap-1 group">
                   <button
                     onClick={handleWatchlist}
@@ -1417,7 +1417,7 @@ export default function FilmDetailPage() {
                       inWatchlist ? t("film.removeFromWatchlist", "Xóa khỏi Xem sau") : t("film.addToWatchlist", "Thêm vào Xem sau")
                     }
                     className={cn(
-                      "w-9 h-9 rounded-full border flex items-center justify-center backdrop-blur-md transition-all cursor-pointer disabled:cursor-wait disabled:opacity-60",
+                      "w-9 h-9 rounded-full border flex items-center justify-center backdrop-blur-md transition-all cursor-pointer disabled:cursor-wait disabled:opacity-60 active:scale-95",
                       inWatchlist
                         ? "border-white/30 bg-white/10 text-white"
                         : "bg-white/5 border-white/10 text-neutral-300 hover:text-white hover:border-white/30",
@@ -1446,7 +1446,7 @@ export default function FilmDetailPage() {
                         "success",
                       );
                     }}
-                    className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5 text-neutral-300 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
+                    className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5 text-neutral-300 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white active:scale-95"
                   >
                     <Bell size={15} />
                   </button>
@@ -1458,7 +1458,7 @@ export default function FilmDetailPage() {
                 <div className="flex flex-col items-center gap-1 group">
                   <button
                     onClick={() => handleRate(5)}
-                    className="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 backdrop-blur-md transition-all text-neutral-300 hover:text-white cursor-pointer"
+                    className="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 backdrop-blur-md transition-all text-neutral-300 hover:text-white cursor-pointer active:scale-95"
                   >
                     <Star
                       size={15}
@@ -1483,7 +1483,7 @@ export default function FilmDetailPage() {
                         "success",
                       );
                     }}
-                    className="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 backdrop-blur-md transition-all text-neutral-300 hover:text-white cursor-pointer"
+                    className="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center bg-white/5 hover:bg-white/10 hover:border-white/30 backdrop-blur-md transition-all text-neutral-300 hover:text-white cursor-pointer active:scale-95"
                   >
                     <Share2 size={15} />
                   </button>
@@ -1496,7 +1496,7 @@ export default function FilmDetailPage() {
 
             {/* ── OMDB Ratings (below action buttons) ── */}
             {omdb && (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pt-3">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-2 pt-3 w-full">
                 {/* IMDb chip */}
                 {omdb.imdbRating && (
                   <a
@@ -1574,22 +1574,22 @@ export default function FilmDetailPage() {
 
                 {/* Awards */}
                 {omdb.awards && (
-                  <div className="flex items-center gap-1.5 w-full mt-0.5">
+                  <div className="flex items-center justify-center sm:justify-start gap-1.5 w-full mt-0.5">
                     <Trophy size={11} className="text-amber-400 shrink-0" />
                     <span className="text-[11px] text-neutral-500 leading-snug line-clamp-2">{omdb.awards}</span>
                   </div>
                 )}
 
                 {/* Meta row */}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-600 w-full">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-1 text-[11px] text-neutral-500 w-full pt-0.5">
                   {omdb.boxOffice && (
                     <span className="flex items-center gap-1">
                       <DollarSign size={10} />
-                      <span className="text-neutral-500">{omdb.boxOffice}</span>
+                      <span className="text-neutral-400">{omdb.boxOffice}</span>
                     </span>
                   )}
                   {omdb.rated && (
-                    <span className="border border-white/15 text-neutral-500 px-1.5 py-px rounded text-[10px] font-bold tracking-wider">
+                    <span className="border border-white/15 text-neutral-400 px-1.5 py-px rounded text-[10px] font-bold tracking-wider">
                       {omdb.rated}
                     </span>
                   )}
