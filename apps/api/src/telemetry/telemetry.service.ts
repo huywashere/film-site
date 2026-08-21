@@ -79,7 +79,9 @@ export class TelemetryService {
       });
     }
 
-    this.logger.debug({ ...tags, properties: event.properties });
+    if (level !== "info" || process.env.DEBUG_TELEMETRY === "true") {
+      this.logger.debug({ ...tags, properties: event.properties });
+    }
     // Routine Web Vitals and timings stay in the rolling dashboard buffer.
     // Sending all of them to Sentry adds ingestion and request overhead, so
     // only actionable warnings/errors leave the API process.
