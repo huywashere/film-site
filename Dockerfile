@@ -89,13 +89,14 @@ RUN cd apps/web && \
 
 # ── Stage 4: API Production Runtime ───────────────────
 FROM node:${NODE_VERSION}-alpine AS api
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl postgresql-client
 
 ENV NODE_ENV=production
 WORKDIR /app
 
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nestjs
+    adduser --system --uid 1001 nestjs && \
+    mkdir -p /app/backups && chown -R nestjs:nodejs /app/backups
 
 # Copy the portable production package built by pnpm deploy.
 COPY --from=api-builder --chown=nestjs:nodejs /prod/api ./apps/api

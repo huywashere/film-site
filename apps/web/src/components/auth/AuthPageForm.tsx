@@ -541,10 +541,10 @@ export function AuthPageForm({
       {/* ── Main content: centered (full screen) ──────────────────────── */}
       <div className="relative z-10 w-full max-w-[1000px] my-auto">
         {/* Solid Dark Auth Card (Non-glass, clean, modern) */}
-        <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-[#151923] shadow-[0_30px_90px_rgba(0,0,0,0.9)]">
-          <div className="grid md:grid-cols-[1fr_1.1fr]">
+        <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-[#151923] shadow-[0_30px_90px_rgba(0,0,0,0.9)] md:h-[calc(100dvh-3rem)] md:max-h-[742px]">
+          <div className="grid md:h-full md:grid-cols-[1fr_1.1fr]">
             {/* ── LEFT panel: Marvel / DC / Hollywood Blockbuster Artwork ── */}
-            <div className="relative hidden min-h-[620px] flex-col justify-between overflow-hidden border-r border-neutral-800 p-8 md:flex lg:p-10 bg-black">
+            <div className="relative hidden min-h-[620px] flex-col justify-between overflow-hidden border-r border-neutral-800 p-8 md:flex md:h-full md:min-h-0 lg:p-10 bg-black">
               {/* Poster Image */}
               <AnimatePresence initial={false}>
                 <motion.div
@@ -606,7 +606,7 @@ export function AuthPageForm({
             </div>
 
             {/* ── RIGHT panel (form) ─────────────────────────── */}
-            <div className="flex min-h-[620px] flex-col overflow-y-auto p-6 sm:p-8 md:p-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden bg-[#151923]">
+            <div className="flex min-h-[620px] flex-col overflow-y-auto p-6 sm:p-8 md:h-full md:min-h-0 md:p-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden bg-[#151923]">
               <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center">
                 {/* Back to home button */}
                 <Link

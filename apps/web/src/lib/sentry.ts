@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * CineVerse Sentry Error Tracking & Observability Module
+ * NetPhim Sentry Error Tracking & Observability Module
  * Safely captures client & server exceptions without breaking runtime navigation.
  */
 
@@ -63,7 +63,7 @@ export function captureException(error: unknown, context?: SentryErrorContext) {
       event_id: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
       timestamp: new Date().toISOString(),
       platform: "javascript",
-      sdk: { name: "cineverse.sentry", version: "1.0.0" },
+      sdk: { name: "netphim.sentry", version: "1.0.0" },
       exception: {
         values: [
           {

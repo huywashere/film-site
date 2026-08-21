@@ -183,6 +183,59 @@ export class RedisCacheService implements OnModuleDestroy {
     };
   }
 
+  async inspectNamespaces(limit = 5000) {
+    const counts = new Map<string, number>();
+    let scanned = 0;
+    if (this.isReady) {
+      let cursor = "0";
+      do {
+        const [next, keys] = await this.client!.scan(cursor, "COUNT", 250);
+        cursor = next;
+        for (const key of keys) {
+          const namespace = key.includes(":") ? key.split(":", 1)[0] : "other";
+          counts.set(namespace, (counts.get(namespace) || 0) + 1);
+        }
+        scanned += keys.length;
+      } while (cursor !== "0" && scanned < limit);
+    } else {
+      for (const key of this.mem.keys()) {
+        const namespace = key.includes(":") ? key.split(":", 1)[0] : "other";
+        counts.set(namespace, (counts.get(namespace) || 0) + 1);
+      }
+      scanned = this.mem.size;
+    }
+    return {
+      ...this.getStats(),
+      scanned,
+      namespaces: [...counts.entries()]
+        .map(([name, keys]) => ({ name, keys }))
+        .sort((a, b) => b.keys - a.keys),
+    };
+  }
+
+  async purgeNamespace(namespace: string) {
+    if (!/^[a-zA-Z0-9._-]{1,64}$/.test(namespace)) {
+      throw new Error("Cache namespace không hợp lệ");
+    }
+    let deleted = 0;
+    for (const key of [...this.mem.keys()]) {
+      if (key === namespace || key.startsWith(`${namespace}:`)) {
+        this.mem.delete(key);
+        deleted += 1;
+      }
+    }
+    if (this.isReady) {
+      let cursor = "0";
+      do {
+        const [next, keys] = await this.client!.scan(cursor, "MATCH", `${namespace}:*`, "COUNT", 250);
+        cursor = next;
+        if (keys.length) deleted += await this.client!.del(...keys);
+      } while (cursor !== "0");
+      if (await this.client!.exists(namespace)) deleted += await this.client!.del(namespace);
+    }
+    return { namespace, deleted };
+  }
+
   async onModuleDestroy() {
     if (this.client) {
       await this.client.quit().catch(() => this.client?.disconnect());

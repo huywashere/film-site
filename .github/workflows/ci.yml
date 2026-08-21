@@ -49,7 +49,7 @@ jobs:
         run: |
           pnpm --filter api exec tsc --noEmit
           pnpm --filter web exec tsc --noEmit
-          pnpm --filter @cineverse/admin-cms exec tsc --noEmit
+          pnpm --filter @netphim/admin-cms exec tsc --noEmit
 
       - name: Run lint
         run: |

@@ -35,9 +35,14 @@ import {
   IconUser,
   IconUsers,
   IconX,
+  IconDatabase,
+  IconChartBar,
+  IconTopologyStar3,
+  IconLogout,
 } from "@tabler/icons-react";
 import netphimLogo from "../../../../../apps/web/public/cinephim-logo.png";
 import { adminFetch } from "@/lib/admin-api";
+import { AdminDevToolsGuard } from "@/components/security/AdminDevToolsGuard";
 
 const nunito = Nunito({
   subsets: ["latin", "vietnamese"],
@@ -67,10 +72,14 @@ type AdminProfile = {
   avatarUrl?: string;
   role: string;
   twoFactorEnabled: boolean;
+  permissions?: string[];
 };
 const ROLE_LABELS: Record<string, string> = {
   ADMIN: "Quản trị viên",
   MODERATOR: "Kiểm duyệt viên",
+  CONTENT_EDITOR: "Biên tập nội dung",
+  OPERATIONS: "Vận hành hệ thống",
+  ANALYST: "Phân tích dữ liệu",
   USER: "Người dùng",
 };
 const roleLabel = (role?: string) =>
@@ -83,6 +92,7 @@ const NAV_GROUPS: Array<{
     label: LocalizedText;
     icon: typeof IconLayoutDashboard;
     badge?: string;
+    permission?: string;
   }>;
 }> = [
   {
@@ -102,6 +112,12 @@ const NAV_GROUPS: Array<{
         href: "/movies",
         label: { vi: "Thư viện phim", en: "Movie Library" },
         icon: IconMovie,
+      },
+      {
+        href: "/catalog",
+        label: { vi: "Dữ liệu & đồng bộ", en: "Catalog Operations" },
+        icon: IconTopologyStar3,
+        permission: "movies.write",
       },
       {
         href: "/playback",
@@ -138,6 +154,18 @@ const NAV_GROUPS: Array<{
         href: "/audit",
         label: { vi: "Nhật ký audit", en: "Audit Logs" },
         icon: IconFingerprint,
+      },
+      {
+        href: "/analytics",
+        label: { vi: "Analytics nâng cao", en: "Advanced Analytics" },
+        icon: IconChartBar,
+        permission: "analytics.read",
+      },
+      {
+        href: "/operations",
+        label: { vi: "Backup & vận hành", en: "Backup & Operations" },
+        icon: IconDatabase,
+        permission: "backups.manage",
       },
       {
         href: "/configuration",
@@ -206,6 +234,7 @@ export default function AdminRootLayout({
   }, []);
 
   useEffect(() => {
+    if (pathname === "/login") return;
     setDarkMode(document.documentElement.dataset.adminTheme === "dark");
     const storedLocale = localStorage.getItem("cineverse-admin-locale");
     const nextLocale: Locale = storedLocale === "en" ? "en" : "vi";
@@ -238,7 +267,7 @@ export default function AdminRootLayout({
       document.removeEventListener("fullscreenchange", onFullscreen);
       window.clearInterval(notificationTimer);
     };
-  }, [loadAdminProfile, loadNotifications]);
+  }, [loadAdminProfile, loadNotifications, pathname]);
 
   const markNotificationRead = async (item: AdminNotification) => {
     if (!item.readAt) {
@@ -336,6 +365,18 @@ export default function AdminRootLayout({
       .join("")
       .toUpperCase() || "AD";
 
+  if (pathname === "/login") {
+    return (
+      <html lang="vi" suppressHydrationWarning>
+        <head><title>Đăng nhập quản trị NetPhim</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="icon" href={netphimLogo.src} /></head>
+        <body className={nunito.variable}>
+          <AdminDevToolsGuard />
+          {children}
+        </body>
+      </html>
+    );
+  }
+
   return (
     <html lang="vi" suppressHydrationWarning>
       <head>
@@ -352,6 +393,7 @@ export default function AdminRootLayout({
         />
       </head>
       <body className={nunito.variable}>
+        <AdminDevToolsGuard />
         <div className="admin-shell min-h-screen bg-[var(--admin-sidebar)] lg:grid lg:grid-cols-[245px_minmax(0,1fr)]">
           <aside
             className={`fixed inset-y-0 left-0 z-40 flex w-[245px] flex-col bg-[var(--admin-sidebar)] text-slate-200 transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${mobileNavigationOpen ? "translate-x-0" : "-translate-x-full"}`}
@@ -391,7 +433,15 @@ export default function AdminRootLayout({
                     {group.label[locale]}
                   </p>
                   <div className="space-y-0.5">
-                    {group.items.map(({ href, label, icon: Icon, badge }) => {
+                    {group.items
+                      .filter(
+                        (item) =>
+                          !item.permission ||
+                          !adminProfile ||
+                          adminProfile.permissions?.includes("*") ||
+                          adminProfile.permissions?.includes(item.permission),
+                      )
+                      .map(({ href, label, icon: Icon, badge }) => {
                       const active = pathname === href;
                       return (
                         <Link
@@ -845,6 +895,17 @@ export default function AdminRootLayout({
                             <IconExternalLink size={17} />
                             {locale === "vi" ? "Mở NetPhim" : "Open NetPhim"}
                           </a>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
+                              window.location.assign("/login");
+                            }}
+                            className="admin-profile-link w-full"
+                          >
+                            <IconLogout size={17} />
+                            {locale === "vi" ? "Đăng xuất" : "Sign out"}
+                          </button>
                         </div>
                         <div className="grid grid-cols-2 gap-2 border-t border-[var(--admin-line)] p-3 lg:hidden">
                           <button

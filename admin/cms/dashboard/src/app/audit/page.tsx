@@ -56,7 +56,7 @@ export default function AuditPage() {
     );
     const a = document.createElement("a");
     a.href = url;
-    a.download = `cineverse-audit-${Date.now()}.csv`;
+    a.download = `netphim-audit-${Date.now()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };

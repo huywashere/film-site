@@ -1267,6 +1267,13 @@ export type PublicSiteConfiguration = {
   providerPriority: string[];
   autoSkipIntro: boolean;
   watchPartyEnabled: boolean;
+  homeTop10Slugs: string[];
+  homeSectionOrder: string[];
+  homeHiddenSections: string[];
+  homeFeaturedRows?: Record<string, unknown>;
+  seoTitle?: string;
+  seoDescription?: string;
+  cacheVersion: number;
   updatedAt?: string | null;
 };
 

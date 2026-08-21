@@ -15,8 +15,29 @@ enum Role {
   USER
   ADMIN
   MODERATOR
+  CONTENT_EDITOR
+  OPERATIONS
+  ANALYST
 
   @@map("role")
+}
+
+enum BackupStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  RESTORED
+
+  @@map("backup_status")
+}
+
+enum IncidentStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+
+  @@map("incident_status")
 }
 
 enum IssueStatus {
@@ -60,11 +81,14 @@ model User {
   updatedAt                DateTime       @updatedAt
   isEmailVerified          Boolean        @default(false)
   googleId                 String?        @unique
+  githubId                 String?        @unique
   twoFactorEnabled         Boolean        @default(false)
   twoFactorAuth            TwoFactorAuth?
   isLocked                 Boolean        @default(false)
   suspiciousToken          String?
   suspiciousTokenExpiresAt DateTime?
+  adminAccessEnabled       Boolean        @default(false)
+  adminPermissions         String[]       @default([])
 
   watchlist          Watchlist[]
   reviews            Review[]
@@ -76,8 +100,27 @@ model User {
   verificationTokens VerificationToken[]
   resetTokens        ResetPasswordToken[]
   watchHistories     WatchHistory[]
+  adminSessions      AdminSession[]
 
   @@map("users")
+}
+
+model AdminSession {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  ipAddress  String?
+  userAgent  String?   @db.Text
+  lastSeenAt DateTime  @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt, revokedAt])
+  @@map("admin_sessions")
 }
 
 model TwoFactorAuth {
@@ -255,6 +298,65 @@ model SyncJob {
   @@map("sync_jobs")
 }
 
+model SyncSchedule {
+  id          String   @id @default(cuid())
+  name        String
+  source      String
+  cron        String
+  pages       Int      @default(5)
+  enabled     Boolean  @default(true)
+  nextRunAt   DateTime
+  lastRunAt   DateTime?
+  lastJobId   String?
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([enabled, nextRunAt])
+  @@map("sync_schedules")
+}
+
+model DatabaseBackup {
+  id            String       @id @default(cuid())
+  status        BackupStatus @default(QUEUED)
+  filename      String?
+  fileSizeBytes BigInt?
+  checksum      String?
+  requestedBy   String
+  restoredBy    String?
+  errorMessage  String?      @db.Text
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  restoredAt    DateTime?
+  createdAt     DateTime     @default(now())
+
+  @@index([createdAt(sort: Desc)])
+  @@map("database_backups")
+}
+
+model SystemIncident {
+  id             String         @id @default(cuid())
+  fingerprint    String
+  source         String
+  title          String
+  message        String         @db.Text
+  severity       String         @default("warning")
+  status         IncidentStatus @default(OPEN)
+  occurrenceCount Int           @default(1)
+  metadata       Json?
+  acknowledgedBy String?
+  acknowledgedAt DateTime?
+  resolvedBy     String?
+  resolvedAt     DateTime?
+  lastSeenAt     DateTime       @default(now())
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([status, severity, lastSeenAt(sort: Desc)])
+  @@index([fingerprint, status])
+  @@map("system_incidents")
+}
+
 model SiteConfiguration {
   id                    String   @id @default("primary")
   maintenanceMode       Boolean  @default(false)
@@ -272,6 +374,13 @@ model SiteConfiguration {
   providerPriority      String[] @default(["kkphim", "ophim", "nguonc", "vsmov"])
   autoSkipIntro         Boolean  @default(false)
   watchPartyEnabled     Boolean  @default(true)
+  homeTop10Slugs        String[] @default([])
+  homeSectionOrder      String[] @default(["top10", "continue", "schedule", "latest", "vfx", "usuk-series", "action", "scifi"])
+  homeHiddenSections    String[] @default([])
+  homeFeaturedRows      Json?
+  seoTitle              String?  @default("NetPhim - Xem phim trực tuyến")
+  seoDescription        String?  @db.Text
+  cacheVersion          Int      @default(1)
   updatedBy             String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
@@ -345,6 +454,22 @@ model PlaybackEvent {
   @@index([movieId, occurredAt(sort: Desc)])
   @@index([provider, serverName, occurredAt(sort: Desc)])
   @@map("playback_events")
+}
+
+model SearchEvent {
+  id          String   @id @default(cuid())
+  query       String
+  normalized  String
+  resultCount Int      @default(0)
+  route       String?
+  sessionId   String?
+  userId      String?
+  deviceType  String?
+  occurredAt  DateTime @default(now())
+
+  @@index([occurredAt(sort: Desc)])
+  @@index([normalized, occurredAt(sort: Desc)])
+  @@map("search_events")
 }
 
 model AdminNotification {

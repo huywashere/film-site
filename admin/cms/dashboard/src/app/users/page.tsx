@@ -16,7 +16,7 @@ type UserRow = {
   email: string;
   username: string;
   displayName?: string;
-  role: "USER" | "MODERATOR" | "ADMIN";
+  role: "USER" | "MODERATOR" | "ADMIN" | "CONTENT_EDITOR" | "OPERATIONS" | "ANALYST";
   isBanned: boolean;
   isLocked?: boolean;
   isEmailVerified: boolean;
@@ -47,6 +47,9 @@ const roleLabels: Record<UserRow["role"], string> = {
   USER: "Người dùng",
   MODERATOR: "Kiểm duyệt viên",
   ADMIN: "Quản trị viên",
+  CONTENT_EDITOR: "Biên tập nội dung",
+  OPERATIONS: "Vận hành hệ thống",
+  ANALYST: "Phân tích dữ liệu",
 };
 
 export default function UsersPage() {
@@ -308,6 +311,9 @@ export default function UsersPage() {
                   >
                     <option value="USER">Người dùng</option>
                     <option value="MODERATOR">Kiểm duyệt viên</option>
+                    <option value="CONTENT_EDITOR">Biên tập nội dung</option>
+                    <option value="OPERATIONS">Vận hành hệ thống</option>
+                    <option value="ANALYST">Phân tích dữ liệu</option>
                     <option value="ADMIN">Quản trị viên</option>
                   </select>
                   <button

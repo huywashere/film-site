@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { Prisma } from "@prisma/client";
 
 const DEFAULT_CONFIGURATION = {
   maintenanceMode: false,
@@ -17,6 +18,13 @@ const DEFAULT_CONFIGURATION = {
   providerPriority: ["kkphim", "ophim", "nguonc", "vsmov"],
   autoSkipIntro: false,
   watchPartyEnabled: true,
+  homeTop10Slugs: [] as string[],
+  homeSectionOrder: ["top10", "continue", "schedule", "latest", "vfx", "usuk-series", "action", "scifi"],
+  homeHiddenSections: [] as string[],
+  homeFeaturedRows: {} as Prisma.InputJsonValue,
+  seoTitle: "NetPhim - Xem phim trực tuyến",
+  seoDescription: "Kho phim trực tuyến đa nguồn, cập nhật liên tục.",
+  cacheVersion: 1,
 };
 
 @Injectable()
@@ -48,6 +56,13 @@ export class SiteConfigService {
         : {}),
       ...(data.heroMovieSlugs ? { heroMovieSlugs: [...new Set(data.heroMovieSlugs.map((item) => item.trim()).filter(Boolean))] } : {}),
       ...(data.providerPriority ? { providerPriority: [...new Set(data.providerPriority)] } : {}),
+      ...(data.homeTop10Slugs ? { homeTop10Slugs: [...new Set(data.homeTop10Slugs.map((item) => item.trim()).filter(Boolean))] } : {}),
+      ...(data.homeSectionOrder ? { homeSectionOrder: [...new Set(data.homeSectionOrder.map((item) => item.trim()).filter(Boolean))] } : {}),
+      ...(data.homeHiddenSections ? { homeHiddenSections: [...new Set(data.homeHiddenSections.map((item) => item.trim()).filter(Boolean))] } : {}),
+      ...(data.homeFeaturedRows ? { homeFeaturedRows: data.homeFeaturedRows as Prisma.InputJsonValue } : {}),
+      ...(["heroMovieSlugs", "homeTop10Slugs", "homeSectionOrder", "homeHiddenSections", "homeFeaturedRows", "seoTitle", "seoDescription"].some((key) => key in data)
+        ? { cacheVersion: (previous.cacheVersion || 0) + 1 }
+        : {}),
       updatedBy,
     };
     return this.prisma.siteConfiguration.upsert({
@@ -75,6 +90,13 @@ export class SiteConfigService {
       providerPriority: config.providerPriority,
       autoSkipIntro: config.autoSkipIntro,
       watchPartyEnabled: config.watchPartyEnabled,
+      homeTop10Slugs: config.homeTop10Slugs,
+      homeSectionOrder: config.homeSectionOrder,
+      homeHiddenSections: config.homeHiddenSections,
+      homeFeaturedRows: config.homeFeaturedRows,
+      seoTitle: config.seoTitle,
+      seoDescription: config.seoDescription,
+      cacheVersion: config.cacheVersion,
       updatedAt: "updatedAt" in config ? config.updatedAt : null,
     };
   }

@@ -149,7 +149,7 @@ export class AuthController {
     res.redirect(frontendUrl);
   }
 
-  /** Exchange a verified Firebase ID token for the normal CineVerse cookie session. */
+  /** Exchange a verified Firebase ID token for the normal NetPhim cookie session. */
   @Post("firebase")
   @UseGuards(FirebaseAuthGuard)
   async firebaseAuth(

@@ -29,7 +29,7 @@ if (process.env.SENTRY_DSN) {
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    logger: new CleanLogger("CineVerse"),
+    logger: new CleanLogger("NetPhim"),
   });
 
   // ── Proxy trust ───────────────────────────────────────────────
@@ -236,7 +236,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3001;
   await app.listen(port, "0.0.0.0");
-  console.log(`🎬 CineVerse API running on: http://0.0.0.0:${port}/api/v1`);
+  console.log(`🎬 NetPhim API running on: http://0.0.0.0:${port}/api/v1`);
 }
 
 bootstrap();

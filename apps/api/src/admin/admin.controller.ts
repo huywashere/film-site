@@ -11,8 +11,8 @@ import {
   Req,
 } from "@nestjs/common";
 import { AdminService } from "./admin.service";
-import { FirebaseAuthGuard } from "../auth/guards/firebase-auth.guard";
-import { AdminRoleGuard } from "../auth/guards/admin-role.guard";
+import { AdminSessionGuard } from "./guards/admin-session.guard";
+import { AdminPermissionGuard } from "./guards/admin-permission.guard";
 import {
   ManualSyncDto,
   UpdateMovieMetadataDto,
@@ -24,7 +24,16 @@ import {
   BulkMovieVisibilityDto,
   ReplaceMoviePlaybackSourcesDto,
   UpdateReviewModerationDto,
+  CreateMovieDto,
+  MergeMoviesDto,
+  DeleteMovieDto,
+  SyncScheduleDto,
+  RestoreBackupDto,
+  UpdateIncidentDto,
+  PurgeCacheDto,
 } from "./admin.dto";
+import { AdminOperationsService } from "./admin-operations.service";
+import { RequireAdminPermissions } from "./admin-permissions";
 
 function paginationValue(
   value: string | undefined,
@@ -38,12 +47,16 @@ function paginationValue(
 }
 
 @Controller("admin")
-@UseGuards(FirebaseAuthGuard, AdminRoleGuard)
+@UseGuards(AdminSessionGuard, AdminPermissionGuard)
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly operations: AdminOperationsService,
+  ) {}
 
   // ── 1. Overview Dashboard ─────────────────────────────────────────
   @Get("stats")
+  @RequireAdminPermissions("analytics.read")
   getOverviewStats(@Query("range") range?: string) {
     return this.adminService.getOverviewStats(range);
   }
@@ -55,6 +68,7 @@ export class AdminController {
 
   // ── 2. Movie Management ───────────────────────────────────────────
   @Get("movies")
+  @RequireAdminPermissions("movies.read")
   getMovies(
     @Query("page") page?: string,
     @Query("limit") limit?: string,
@@ -72,12 +86,38 @@ export class AdminController {
     });
   }
 
+  @Post("movies")
+  @RequireAdminPermissions("movies.write")
+  createMovie(@Body() body: CreateMovieDto, @Req() req: any) {
+    return this.operations.createMovie(body as unknown as Record<string, unknown>, req.user);
+  }
+
+  @Get("movies/duplicates")
+  @RequireAdminPermissions("movies.read")
+  getMovieDuplicates() {
+    return this.operations.findDuplicateMovies();
+  }
+
+  @Post("movies/duplicates/merge")
+  @RequireAdminPermissions("movies.write")
+  mergeMovieDuplicates(@Body() body: MergeMoviesDto, @Req() req: any) {
+    return this.operations.mergeMovies(body.canonicalId, body.sourceIds, req.user);
+  }
+
+  @Delete("movies/:id")
+  @RequireAdminPermissions("movies.write")
+  deleteMovie(@Param("id") id: string, @Body() body: DeleteMovieDto, @Req() req: any) {
+    return this.operations.hardDeleteMovie(id, body.confirmation, req.user);
+  }
+
   @Patch("movies/:id/hide")
+  @RequireAdminPermissions("movies.write")
   toggleMovieHide(@Param("id") id: string, @Req() req: any) {
     return this.adminService.toggleMovieHide(id, req.user);
   }
 
   @Patch("movies/:id/metadata")
+  @RequireAdminPermissions("movies.write")
   updateMovieMetadata(
     @Param("id") id: string,
     @Body() body: UpdateMovieMetadataDto,
@@ -87,6 +127,7 @@ export class AdminController {
   }
 
   @Patch("movies/:id/sources")
+  @RequireAdminPermissions("movies.write")
   updateMovieSources(
     @Param("id") id: string,
     @Body() body: UpdateMovieSourcesDto,
@@ -101,6 +142,7 @@ export class AdminController {
   }
 
   @Patch("movies/:id/playback-sources")
+  @RequireAdminPermissions("playback.manage")
   replaceMoviePlaybackSources(
     @Param("id") id: string,
     @Body() body: ReplaceMoviePlaybackSourcesDto,
@@ -114,6 +156,7 @@ export class AdminController {
   }
 
   @Post("movies/sync")
+  @RequireAdminPermissions("sync.manage")
   triggerManualSync(@Body() body: ManualSyncDto, @Req() req: any) {
     return this.adminService.triggerManualSync(
       body.source,
@@ -123,12 +166,14 @@ export class AdminController {
   }
 
   @Post("sync-jobs/:id/retry")
+  @RequireAdminPermissions("sync.manage")
   retrySyncJob(@Param("id") id: string, @Req() req: any) {
     return this.adminService.retrySyncJob(id, req.user);
   }
 
   // ── 3. User Management ────────────────────────────────────────────
   @Get("users")
+  @RequireAdminPermissions("users.manage")
   getUsers(
     @Query("page") page?: string,
     @Query("limit") limit?: string,
@@ -144,16 +189,19 @@ export class AdminController {
   }
 
   @Get("users/:id")
+  @RequireAdminPermissions("users.manage")
   getUserDetail(@Param("id") id: string) {
     return this.adminService.getUserDetail(id);
   }
 
   @Patch("users/:id/ban")
+  @RequireAdminPermissions("users.manage")
   toggleUserBan(@Param("id") id: string, @Req() req: any) {
     return this.adminService.toggleUserBan(id, req.user);
   }
 
   @Patch("movies/bulk/visibility")
+  @RequireAdminPermissions("movies.write")
   updateMovieVisibilityBulk(
     @Body() body: BulkMovieVisibilityDto,
     @Req() req: any,
@@ -166,6 +214,7 @@ export class AdminController {
   }
 
   @Patch("users/:id/role")
+  @RequireAdminPermissions("users.manage")
   updateUserRole(
     @Param("id") id: string,
     @Body() body: UpdateUserRoleDto,
@@ -175,6 +224,7 @@ export class AdminController {
   }
 
   @Patch("users/:id/lock")
+  @RequireAdminPermissions("users.manage")
   updateUserLock(
     @Param("id") id: string,
     @Body() body: UpdateUserLockDto,
@@ -184,6 +234,7 @@ export class AdminController {
   }
 
   @Delete("users/:id/sessions/:sessionId")
+  @RequireAdminPermissions("users.manage")
   revokeUserSession(
     @Param("id") id: string,
     @Param("sessionId") sessionId: string,
@@ -193,6 +244,7 @@ export class AdminController {
   }
 
   @Patch("users/:id/verification")
+  @RequireAdminPermissions("users.manage")
   updateUserVerification(
     @Param("id") id: string,
     @Body() body: UpdateUserLockDto,
@@ -202,11 +254,13 @@ export class AdminController {
   }
 
   @Delete("users/:id/two-factor")
+  @RequireAdminPermissions("users.manage")
   resetUserTwoFactor(@Param("id") id: string, @Req() req: any) {
     return this.adminService.resetUserTwoFactor(id, req.user);
   }
 
   @Get("reports")
+  @RequireAdminPermissions("reports.manage")
   getReports(
     @Query("page") page?: string,
     @Query("limit") limit?: string,
@@ -222,6 +276,7 @@ export class AdminController {
   }
 
   @Patch("reports/:id")
+  @RequireAdminPermissions("reports.manage")
   updateReport(
     @Param("id") id: string,
     @Body() body: UpdateIssueReportDto,
@@ -231,11 +286,13 @@ export class AdminController {
   }
 
   @Get("reports/:id")
+  @RequireAdminPermissions("reports.manage")
   getReportDetail(@Param("id") id: string) {
     return this.adminService.getReportDetail(id);
   }
 
   @Get("reviews")
+  @RequireAdminPermissions("reviews.manage")
   getReviews(
     @Query("page") page?: string,
     @Query("limit") limit?: string,
@@ -249,11 +306,13 @@ export class AdminController {
   }
 
   @Delete("reviews/:id")
+  @RequireAdminPermissions("reviews.manage")
   deleteReview(@Param("id") id: string, @Req() req: any) {
     return this.adminService.deleteReview(id, req.user);
   }
 
   @Patch("reviews/:id/moderation")
+  @RequireAdminPermissions("reviews.manage")
   moderateReview(
     @Param("id") id: string,
     @Body() body: UpdateReviewModerationDto,
@@ -268,6 +327,7 @@ export class AdminController {
   }
 
   @Get("audit-logs")
+  @RequireAdminPermissions("audit.read")
   getAuditLogs(
     @Query("page") page?: string,
     @Query("limit") limit?: string,
@@ -281,16 +341,19 @@ export class AdminController {
   }
 
   @Get("sync-jobs")
+  @RequireAdminPermissions("sync.manage")
   getSyncJobs(@Query("limit") limit?: string) {
     return this.adminService.getSyncJobs(paginationValue(limit, 20, 100));
   }
 
   @Get("watch-parties")
+  @RequireAdminPermissions("watch-party.manage")
   getWatchParties() {
     return this.adminService.getWatchParties();
   }
 
   @Get("watch-party-archives")
+  @RequireAdminPermissions("watch-party.manage")
   getWatchPartyArchives(@Query("limit") limit?: string) {
     return this.adminService.getWatchPartyArchives(
       paginationValue(limit, 30, 100),
@@ -298,16 +361,19 @@ export class AdminController {
   }
 
   @Delete("watch-parties/:id")
+  @RequireAdminPermissions("watch-party.manage")
   closeWatchParty(@Param("id") id: string, @Req() req: any) {
     return this.adminService.closeWatchParty(id, req.user);
   }
 
   @Get("system")
+  @RequireAdminPermissions("analytics.read")
   getSystemHealth() {
     return this.adminService.getSystemHealth();
   }
 
   @Get("playback-analytics")
+  @RequireAdminPermissions("analytics.read")
   getPlaybackAnalytics(@Query("range") range?: string) {
     return this.adminService.getPlaybackAnalytics(range);
   }
@@ -331,11 +397,13 @@ export class AdminController {
   }
 
   @Get("configuration")
+  @RequireAdminPermissions("cms.manage")
   getConfiguration() {
     return this.adminService.getConfiguration();
   }
 
   @Patch("configuration")
+  @RequireAdminPermissions("cms.manage")
   updateConfiguration(
     @Body() body: UpdateSiteConfigurationDto,
     @Req() req: any,
@@ -344,6 +412,7 @@ export class AdminController {
   }
 
   @Get("configuration/revisions")
+  @RequireAdminPermissions("cms.manage")
   getConfigurationRevisions(@Query("limit") limit?: string) {
     return this.adminService.getConfigurationRevisions(
       paginationValue(limit, 20, 100),
@@ -351,7 +420,76 @@ export class AdminController {
   }
 
   @Post("configuration/revisions/:id/restore")
+  @RequireAdminPermissions("cms.manage")
   restoreConfigurationRevision(@Param("id") id: string, @Req() req: any) {
     return this.adminService.restoreConfigurationRevision(id, req.user);
+  }
+
+  @Get("sync-schedules")
+  @RequireAdminPermissions("sync.manage")
+  getSyncSchedules() { return this.operations.listSyncSchedules(); }
+
+  @Post("sync-schedules")
+  @RequireAdminPermissions("sync.manage")
+  createSyncSchedule(@Body() body: SyncScheduleDto, @Req() req: any) {
+    return this.operations.saveSyncSchedule(undefined, body, req.user);
+  }
+
+  @Patch("sync-schedules/:id")
+  @RequireAdminPermissions("sync.manage")
+  updateSyncSchedule(@Param("id") id: string, @Body() body: SyncScheduleDto, @Req() req: any) {
+    return this.operations.saveSyncSchedule(id, body, req.user);
+  }
+
+  @Delete("sync-schedules/:id")
+  @RequireAdminPermissions("sync.manage")
+  deleteSyncSchedule(@Param("id") id: string, @Req() req: any) {
+    return this.operations.deleteSyncSchedule(id, req.user);
+  }
+
+  @Get("backups")
+  @RequireAdminPermissions("backups.manage")
+  getBackups() { return this.operations.listBackups(); }
+
+  @Post("backups")
+  @RequireAdminPermissions("backups.manage")
+  createBackup(@Req() req: any) { return this.operations.requestBackup(req.user); }
+
+  @Post("backups/:id/restore")
+  @RequireAdminPermissions("backups.manage")
+  restoreBackup(@Param("id") id: string, @Body() body: RestoreBackupDto, @Req() req: any) {
+    return this.operations.restoreBackup(id, body.confirmation, req.user);
+  }
+
+  @Get("incidents")
+  @RequireAdminPermissions("incidents.manage")
+  getIncidents(@Query("status") status?: string) { return this.operations.listIncidents(status); }
+
+  @Patch("incidents/:id")
+  @RequireAdminPermissions("incidents.manage")
+  updateIncident(@Param("id") id: string, @Body() body: UpdateIncidentDto, @Req() req: any) {
+    return this.operations.updateIncident(id, body.status, req.user);
+  }
+
+  @Get("cache")
+  @RequireAdminPermissions("cache.manage")
+  getCache() { return this.operations.getCacheOverview(); }
+
+  @Delete("cache")
+  @RequireAdminPermissions("cache.manage")
+  purgeCache(@Body() body: PurgeCacheDto, @Req() req: any) {
+    return this.operations.purgeCache(body.namespace, req.user);
+  }
+
+  @Post("cache/revalidate")
+  @RequireAdminPermissions("cache.manage")
+  revalidateWeb(@Body() body: { paths?: string[] }, @Req() req: any) {
+    return this.operations.revalidateWeb(Array.isArray(body.paths) ? body.paths.slice(0, 20) : ["/"], req.user);
+  }
+
+  @Get("analytics/advanced")
+  @RequireAdminPermissions("analytics.read")
+  getAdvancedAnalytics(@Query("range") range?: string) {
+    return this.operations.getAdvancedAnalytics(range);
   }
 }

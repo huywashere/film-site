@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  adminUnauthorizedResponse,
-  isAdminRequestAuthorized,
-} from "../../../lib/admin-auth";
+import { hasAdminSession } from "../../../lib/admin-session";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +22,7 @@ function apiBaseUrl() {
 }
 
 export async function GET(request: NextRequest) {
-  if (!isAdminRequestAuthorized(request)) return adminUnauthorizedResponse();
+  if (!hasAdminSession(request)) return NextResponse.json({ message: "Phiên Admin đã hết hạn" }, { status: 401 });
   if (cached && cached.expiresAt > Date.now()) {
     return NextResponse.json(cached.payload);
   }

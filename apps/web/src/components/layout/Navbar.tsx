@@ -38,6 +38,11 @@ import { resolveImageUrl } from "@/components/film/FilmCard";
 import { cn } from "@/lib/utils";
 import { cardFont } from "@/lib/fonts";
 import {
+  NOTIFICATION_READ_STORAGE_KEY,
+  persistNotificationReadIds,
+  readNotificationReadState,
+} from "@/lib/notification-read-state";
+import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -406,7 +411,7 @@ export function Navbar() {
   >([
     {
       id: "sys-1",
-      title: "Chào mừng bạn đến với CineVerse",
+      title: "Chào mừng bạn đến với NetPhim",
       message: "Xem phim chuẩn 4K siêu nét, tự động lọc sạch quảng cáo nhà cái từ gốc M3U8.",
       time: "Hôm nay",
       tag: "Hệ thống",
@@ -460,19 +465,56 @@ export function Navbar() {
   });
 
   useEffect(() => {
+    const syncStoredReadState = () => {
+      const stored = readNotificationReadState(window.localStorage);
+      const systemIds = new Set(stored.system);
+      const movieIds = new Set(stored.movies);
+
+      setSystemNotifications((current) =>
+        current.map((notification) => ({
+          ...notification,
+          read: systemIds.has(String(notification.id)),
+        })),
+      );
+      setMovieNotifications((current) =>
+        current.map((notification) => ({
+          ...notification,
+          read: movieIds.has(String(notification.id)),
+        })),
+      );
+    };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === NOTIFICATION_READ_STORAGE_KEY) {
+        syncStoredReadState();
+      }
+    };
+
+    syncStoredReadState();
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  useEffect(() => {
     const rawItems =
       latestNotificationRes?.items || latestNotificationRes?.data?.items || [];
     if (rawItems.length > 0) {
-      const liveItems = rawItems.slice(0, 8).map((item: any, idx: number) => ({
-        id: item.slug || `live-${idx}`,
-        name: item.name || "Phim mới cập nhật",
-        episode: item.episode_current || item.quality || "Tập mới",
-        poster: item.poster_url || item.thumb_url,
-        message: `Phim "${item.name}" vừa cập nhật (${item.episode_current || item.quality || "Tập mới"})`,
-        time: "Vừa cập nhật",
-        slug: item.slug,
-        read: false,
-      }));
+      const readMovieIds = new Set(
+        readNotificationReadState(window.localStorage).movies,
+      );
+      const liveItems = rawItems.slice(0, 8).map((item: any, idx: number) => {
+        const id = item.slug || `live-${idx}`;
+        return {
+          id,
+          name: item.name || "Phim mới cập nhật",
+          episode: item.episode_current || item.quality || "Tập mới",
+          poster: item.poster_url || item.thumb_url,
+          message: `Phim "${item.name}" vừa cập nhật (${item.episode_current || item.quality || "Tập mới"})`,
+          time: "Vừa cập nhật",
+          slug: item.slug,
+          read: readMovieIds.has(String(id)),
+        };
+      });
       setMovieNotifications(liveItems);
     }
   }, [latestNotificationRes]);
@@ -484,23 +526,40 @@ export function Navbar() {
   const unreadCount = unreadSystem + unreadMovies;
 
   const markAllRead = () => {
-    if (notifTab === "system") {
-      setSystemNotifications(systemNotifications.map((n) => ({ ...n, read: true })));
-    } else {
-      setMovieNotifications(movieNotifications.map((n) => ({ ...n, read: true })));
-    }
+    setSystemNotifications((current) =>
+      current.map((notification) => ({ ...notification, read: true })),
+    );
+    setMovieNotifications((current) =>
+      current.map((notification) => ({ ...notification, read: true })),
+    );
+    persistNotificationReadIds(
+      window.localStorage,
+      "system",
+      systemNotifications.map((notification) => notification.id),
+    );
+    persistNotificationReadIds(
+      window.localStorage,
+      "movies",
+      movieNotifications.map((notification) => notification.id),
+    );
   };
 
   const markSystemAsRead = (id: string) => {
-    setSystemNotifications(
-      systemNotifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
+    setSystemNotifications((current) =>
+      current.map((notification) =>
+        notification.id === id ? { ...notification, read: true } : notification,
+      ),
     );
+    persistNotificationReadIds(window.localStorage, "system", [id]);
   };
 
   const markMovieAsRead = (id: string | number, slug?: string) => {
-    setMovieNotifications(
-      movieNotifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
+    setMovieNotifications((current) =>
+      current.map((notification) =>
+        notification.id === id ? { ...notification, read: true } : notification,
+      ),
     );
+    persistNotificationReadIds(window.localStorage, "movies", [id]);
     if (slug) {
       router.push(`/film/${slug}`);
     }

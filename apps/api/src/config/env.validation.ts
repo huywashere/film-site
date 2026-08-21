@@ -30,7 +30,7 @@ const REQUIRED_SECRETS = [
   "JWT_REFRESH_SECRET",
   "TOTP_ENCRYPTION_KEY",
   "ADMIN_METRICS_TOKEN",
-  "ADMIN_DASHBOARD_API_TOKEN",
+  "REVALIDATE_SECRET",
 ] as const;
 
 /**
@@ -91,6 +91,47 @@ export function validateEnv(
     problems.push(
       "TURNSTILE_SECRET_KEY is not set - credential authentication would be unprotected",
     );
+  }
+
+  const githubAdminKeys = [
+    "GITHUB_ADMIN_CLIENT_ID",
+    "GITHUB_ADMIN_CLIENT_SECRET",
+    "ADMIN_GITHUB_CALLBACK_URL",
+  ] as const;
+  const githubAdminConfigured = githubAdminKeys.some(
+    (key) => typeof config[key] === "string" && config[key].length > 0,
+  );
+  if (githubAdminConfigured) {
+    for (const key of githubAdminKeys) {
+      if (typeof config[key] !== "string" || config[key].length === 0) {
+        problems.push(`${key} is required when GitHub Admin OAuth is enabled`);
+      }
+    }
+    try {
+      const callback = new URL(String(config.ADMIN_GITHUB_CALLBACK_URL));
+      if (isProduction && callback.protocol !== "https:") {
+        problems.push("ADMIN_GITHUB_CALLBACK_URL must use HTTPS in production");
+      }
+    } catch {
+      problems.push("ADMIN_GITHUB_CALLBACK_URL is not a valid absolute URL");
+    }
+
+    const allowedGithubIds =
+      typeof config.ADMIN_GITHUB_ALLOWED_IDS === "string"
+        ? config.ADMIN_GITHUB_ALLOWED_IDS.split(",")
+            .map((value) => value.trim())
+            .filter(Boolean)
+        : [];
+    if (!allowedGithubIds.length) {
+      problems.push(
+        "ADMIN_GITHUB_ALLOWED_IDS is required when GitHub Admin OAuth is enabled",
+      );
+    }
+    if (allowedGithubIds.some((id) => !/^\d+$/.test(id))) {
+      problems.push(
+        "ADMIN_GITHUB_ALLOWED_IDS must contain comma-separated numeric GitHub IDs",
+      );
+    }
   }
 
   if (problems.length > 0) {

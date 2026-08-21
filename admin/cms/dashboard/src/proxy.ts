@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  adminUnauthorizedResponse,
-  isAdminRequestAuthorized,
-} from "./lib/admin-auth";
+import { ADMIN_SESSION_COOKIE } from "./lib/admin-session";
 
 export function proxy(request: NextRequest) {
-  if (!isAdminRequestAuthorized(request)) return adminUnauthorizedResponse();
+  const publicPath =
+    request.nextUrl.pathname === "/login" ||
+    request.nextUrl.pathname.startsWith("/api/auth/");
+  const authenticated = Boolean(request.cookies.get(ADMIN_SESSION_COOKIE)?.value);
+  if (!authenticated && !publicPath) {
+    const login = new URL("/login", request.url);
+    login.searchParams.set("next", request.nextUrl.pathname);
+    return NextResponse.redirect(login);
+  }
+  if (authenticated && request.nextUrl.pathname === "/login") {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
 
   const response = NextResponse.next();
   response.headers.set("Cache-Control", "no-store");

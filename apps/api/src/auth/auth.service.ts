@@ -859,6 +859,113 @@ export class AuthService {
     }
   }
 
+  async verifyAdminCredentials(input: {
+    email: string;
+    password: string;
+    code?: string;
+  }) {
+    const identifier = input.email.toLowerCase().trim();
+    const failKey = `admin_login_fail:${identifier}`;
+    const failCount = Number((await this.cache.get(failKey)) || 0);
+    if (failCount >= 8) {
+      throw new UnauthorizedException(
+        "Tài khoản quản trị tạm khóa trong 15 phút do đăng nhập sai nhiều lần.",
+      );
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: { OR: [{ email: identifier }, { username: input.email.trim() }] },
+      include: { twoFactorAuth: true },
+    });
+    const validPassword = user
+      ? await bcrypt.compare(input.password, user.passwordHash)
+      : false;
+    if (!user || !validPassword) {
+      await this.cache.set(failKey, String(failCount + 1), this.LOCKOUT_TTL);
+      throw new UnauthorizedException("Thông tin đăng nhập không hợp lệ");
+    }
+    this.assertAccountCanAuthenticate(user);
+    if (user.role === "USER" || (!user.adminAccessEnabled && user.role !== "ADMIN")) {
+      throw new UnauthorizedException("Tài khoản chưa được cấp quyền vào Admin");
+    }
+
+    const require2FA =
+      process.env.ADMIN_REQUIRE_2FA !== "false" &&
+      (process.env.NODE_ENV === "production" || process.env.ADMIN_REQUIRE_2FA === "true");
+    if (require2FA && (!user.twoFactorEnabled || !user.twoFactorAuth)) {
+      throw new UnauthorizedException(
+        "Admin bắt buộc bật xác thực 2 lớp trước khi đăng nhập.",
+      );
+    }
+    if (user.twoFactorEnabled && user.twoFactorAuth) {
+      if (!input.code) {
+        return { requires2FA: true as const };
+      }
+      const decryptedSecret = this.decrypt(user.twoFactorAuth.secret);
+      let validCode = Boolean(
+        await verify({ token: input.code, secret: decryptedSecret }),
+      );
+      if (!validCode) {
+        for (let index = 0; index < user.twoFactorAuth.backupCodes.length; index += 1) {
+          if (await bcrypt.compare(input.code, user.twoFactorAuth.backupCodes[index])) {
+            validCode = true;
+            await this.prisma.twoFactorAuth.update({
+              where: { userId: user.id },
+              data: {
+                backupCodes: user.twoFactorAuth.backupCodes.filter((_, codeIndex) => codeIndex !== index),
+              },
+            });
+            break;
+          }
+        }
+      }
+      if (!validCode) {
+        await this.cache.set(failKey, String(failCount + 1), this.LOCKOUT_TTL);
+        throw new UnauthorizedException("Mã OTP hoặc mã dự phòng không đúng");
+      }
+    }
+    await this.cache.del(failKey);
+    return { user };
+  }
+
+  async verifyAdminSecondFactor(userId: string, code: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { twoFactorAuth: true },
+    });
+    if (!user) throw new UnauthorizedException("Tài khoản quản trị không tồn tại");
+    this.assertAccountCanAuthenticate(user);
+    if (
+      user.role === "USER" ||
+      (!user.adminAccessEnabled && user.role !== "ADMIN") ||
+      !user.twoFactorEnabled ||
+      !user.twoFactorAuth
+    ) {
+      throw new UnauthorizedException("Tài khoản chưa sẵn sàng cho xác thực Admin 2FA");
+    }
+
+    const decryptedSecret = this.decrypt(user.twoFactorAuth.secret);
+    let validCode = Boolean(await verify({ token: code, secret: decryptedSecret }));
+    if (!validCode) {
+      for (let index = 0; index < user.twoFactorAuth.backupCodes.length; index += 1) {
+        if (await bcrypt.compare(code, user.twoFactorAuth.backupCodes[index])) {
+          validCode = true;
+          await this.prisma.twoFactorAuth.update({
+            where: { userId },
+            data: {
+              backupCodes: user.twoFactorAuth.backupCodes.filter(
+                (_, codeIndex) => codeIndex !== index,
+              ),
+            },
+          });
+          break;
+        }
+      }
+    }
+    if (!validCode) throw new UnauthorizedException("Mã OTP hoặc mã dự phòng không đúng");
+    return user;
+  }
+
   async getSessions(userId: string, currentSessionId?: string) {
     const tokens = await this.prisma.refreshToken.findMany({
       where: {

@@ -28,6 +28,7 @@ import { cardFont } from "@/lib/fonts";
 import { FilmNotFound } from "@/components/film/FilmNotFound";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/store/langStore";
+import { recordTelemetry } from "@/lib/telemetry";
 
 // ── Shared Lists ──────────────────────────────────────────────────
 const GENRES_LIST = [
@@ -291,6 +292,15 @@ function SearchContent() {
     }
     return result;
   }, [rawFilms, year]);
+
+  useEffect(() => {
+    if (!query.trim() || isLoading || !data) return;
+    recordTelemetry("search.completed", {
+      query: query.trim(),
+      result_count: films.length,
+      device_type: window.innerWidth < 768 ? "mobile" : "desktop",
+    });
+  }, [data, films.length, isLoading, query]);
 
   const handleSearchSubmit = (searchVal: string) => {
     const trimmed = searchVal.trim();

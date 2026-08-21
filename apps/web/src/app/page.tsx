@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { ChevronRight, ChevronLeft, ChevronDown, Loader2 } from "lucide-react";
-import { api, movieApi } from "@/lib/api";
+import { api, movieApi, siteConfigApi } from "@/lib/api";
 import {
   FilmCard,
   FilmCardSkeleton,
@@ -123,15 +123,7 @@ const HOLLYWOOD_TOP10_POOL: FilmItem[] = [
       "https://phimimg.com/upload/vod/20250821-1/45b6b9aad03ae0aa2aceb5d73419831a.jpg",
     thumb_url:
       "https://phimimg.com/upload/vod/20250821-1/1ec414f82adc729512410edd1b083996.jpg",
-    time: "128 phút",
-    episode_current: "Full",
     quality: "4K Ultra HD",
-    lang: "Vietsub + Thuyết Minh",
-    year: 2024,
-    vote_average: 8.5,
-    rating: 8.5,
-    content:
-      "Marvel Universe - Bộ đôi lầy lội Deadpool và Wolverine bắt tay trong phi vụ bảo vệ đa vũ trụ Marvel.",
   },
   {
     _id: "nguoi-nhen-khong-con-nha",
@@ -143,15 +135,7 @@ const HOLLYWOOD_TOP10_POOL: FilmItem[] = [
       "https://phimimg.com/upload/vod/20250828-1/08fd0a68865ce452e959ae2bf58b7a8c.jpg",
     thumb_url:
       "https://phimimg.com/upload/vod/20250828-1/db868e69da1af78d124ed464063b27a6.jpg",
-    time: "148 phút",
-    episode_current: "Full",
     quality: "4K Ultra HD",
-    lang: "Vietsub + Thuyết Minh",
-    year: 2021,
-    vote_average: 8.3,
-    rating: 8.3,
-    content:
-      "Marvel Cinematic Universe - Khi danh tính bị tiết lộ, Peter Parker nhờ Doctor Strange làm phép xé rách đa vũ trụ.",
   },
   {
     _id: "ky-si-bong-dem",
@@ -163,15 +147,7 @@ const HOLLYWOOD_TOP10_POOL: FilmItem[] = [
       "https://phimimg.com/upload/vod/20240104-1/2cae46be24f514793c9e873f6de0fc32.jpg",
     thumb_url:
       "https://phimimg.com/upload/vod/20240104-1/b2748e456090a1c43b246c014b60fa1a.jpg",
-    time: "152 phút",
-    episode_current: "Full",
     quality: "4K Ultra HD",
-    lang: "Vietsub + Thuyết Minh",
-    year: 2008,
-    vote_average: 9.0,
-    rating: 9.0,
-    content:
-      "DC Universe - Batman bước vào cuộc đụng độ khốc liệt nhất lịch sử Gotham chống lại tên tội phạm thiên tài Joker.",
   },
   {
     _id: "avatar-dong-chay-cua-nuoc",
@@ -183,15 +159,7 @@ const HOLLYWOOD_TOP10_POOL: FilmItem[] = [
       "https://phimimg.com/upload/vod/20250513-1/59fc5ffe0025ca40c99d48b070b59320.jpg",
     thumb_url:
       "https://phimimg.com/upload/vod/20250513-1/7b4e51db1a258ef9602558352066bfec.jpg",
-    time: "192 phút",
-    episode_current: "Full",
     quality: "4K Ultra HD",
-    lang: "Vietsub + Thuyết Minh",
-    year: 2022,
-    vote_average: 8.8,
-    rating: 8.8,
-    content:
-      "Sci-Fi Masterpiece - Jake Sully cùng gia đình Na'vi bảo vệ vùng biển đại dương Pandora huyền ảo.",
   },
   {
     _id: "avengers-tran-chien-cuoi-cung",
@@ -203,15 +171,7 @@ const HOLLYWOOD_TOP10_POOL: FilmItem[] = [
       "https://phimimg.com/upload/vod/20240128-1/4278b5bc228cbc7963f50547e6c76cff.jpg",
     thumb_url:
       "https://phimimg.com/upload/vod/20240128-1/72824a2b39de2fbb3e9617058b2f9eb3.jpg",
-    time: "181 phút",
-    episode_current: "Full",
     quality: "4K Ultra HD",
-    lang: "Vietsub + Thuyết Minh",
-    year: 2019,
-    vote_average: 8.9,
-    rating: 8.9,
-    content:
-      "Marvel Cinematic Universe - Các siêu anh hùng sống sót sau cú búng tay của Thanos cùng nhau tập hợp cho trận chiến quyết định vận mệnh vũ trụ.",
   },
   {
     _id: "ho-den-tu-than",
@@ -223,39 +183,9 @@ const HOLLYWOOD_TOP10_POOL: FilmItem[] = [
       "https://phimimg.com/upload/vod/20250302-1/4cee31c3afd0fbfd11ed4f14b1bfd816.jpg",
     thumb_url:
       "https://phimimg.com/upload/vod/20250302-1/6012710a981edf1b6209bdb7fa82d1a6.jpg",
-    time: "169 phút",
-    episode_current: "Full",
     quality: "4K Ultra HD",
-    lang: "Vietsub + Thuyết Minh",
-    year: 2014,
-    vote_average: 8.7,
-    rating: 8.7,
-    content:
-      "Sci-Fi / Khoa Học Viễn Tưởng - Nhóm phi hành gia du hành qua hố giun không gian để tìm kiếm ngôi nhà mới cho nhân loại trước nguy cơ diệt vong.",
   },
 ];
-
-const RETIRED_HERO_TITLES = [
-  "deadpool & wolverine",
-  "spider-man: no way home",
-  "the dark knight",
-  "avatar: the way of water",
-  "avengers: endgame",
-  "interstellar",
-  "joker",
-  "the batman",
-];
-
-function isRetiredHeroFilm(film: FilmItem): boolean {
-  const title = `${film.name || ""} ${film.origin_name || ""}`.toLowerCase();
-  return RETIRED_HERO_TITLES.some((retiredTitle) =>
-    title.includes(retiredTitle),
-  );
-}
-
-function hasHeroArtwork(film: FilmItem): boolean {
-  return Boolean(film.thumb_url && film.poster_url);
-}
 
 // Helper: Nhận diện phim Anime hoặc Hoạt hình 3D (Đấu La, Trảm Thần, Tiên Ni...)
 function isAnimationOrAnime(film: FilmItem): boolean {
@@ -511,6 +441,17 @@ export default function HomePage() {
   const [showMoreSections, setShowMoreSections] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [catalogReady, setCatalogReady] = useState(false);
+  const { data: publicConfig } = useQuery({
+    queryKey: ["public-site-configuration"],
+    queryFn: () => siteConfigApi.getPublic().then((response) => response.data),
+    staleTime: 60_000,
+    retry: false,
+  });
+  useEffect(() => {
+    if (publicConfig?.seoTitle) document.title = publicConfig.seoTitle;
+    const description = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+    if (description && publicConfig?.seoDescription) description.content = publicConfig.seoDescription;
+  }, [publicConfig?.seoDescription, publicConfig?.seoTitle]);
 
   // Let the hero become interactive before starting the below-the-fold
   // catalogue fan-out. This removes several competing requests from the LCP
@@ -858,17 +799,6 @@ export default function HomePage() {
     [trendingData],
   );
 
-  // Priority High-Interest & Top-Trending Movies for Hero Banner
-  const bannerFilms = useMemo(() => {
-    const trendingPool = filterLiveActionOnly(trendingFilms);
-    return deduplicate([...latestFilms, ...trendingPool])
-      .filter((film) => hasHeroArtwork(film) && !isRetiredHeroFilm(film))
-      .sort((a, b) => Number(b.year || 0) - Number(a.year || 0))
-      .slice(0, 6);
-  }, [latestFilms, trendingFilms]);
-
-  const showBannerSkeleton = false;
-
   // Deduplication registry & row limits
   const {
     top10List,
@@ -999,6 +929,87 @@ export default function HomePage() {
     romanceFilms,
   ]);
 
+  const configuredTop10List = useMemo(() => {
+    const slugs = publicConfig?.homeTop10Slugs || [];
+    if (!slugs.length) return top10List;
+    const pool = deduplicate([...top10List, ...trendingFilms, ...latestFilms]);
+    const selected = slugs
+      .map((slug) => pool.find((film) => film.slug === slug))
+      .filter((film): film is FilmItem => Boolean(film));
+    return deduplicate([...selected, ...pool]).slice(0, 10);
+  }, [latestFilms, publicConfig?.homeTop10Slugs, top10List, trendingFilms]);
+
+  const customFeaturedSections = useMemo(() => {
+    const rows = publicConfig?.homeFeaturedRows;
+    if (!rows || typeof rows !== "object" || Array.isArray(rows)) return {};
+
+    const filmPool = deduplicate([
+      ...latestFilms,
+      ...trendingFilms,
+      ...vfxFilms,
+      ...usUkSeriesFilms,
+      ...actionFilms,
+      ...scifiFilms,
+      ...seriesFilms,
+      ...animeFilms,
+      ...singleFilms,
+    ]);
+
+    return Object.fromEntries(
+      Object.entries(rows).flatMap(([rowId, rawRow]) => {
+        if (!rawRow || typeof rawRow !== "object" || Array.isArray(rawRow)) return [];
+        const row = rawRow as Record<string, unknown>;
+        const title = typeof row.title === "string" ? row.title.trim() : "";
+        const slugs = Array.isArray(row.slugs)
+          ? row.slugs.filter((slug): slug is string => typeof slug === "string")
+          : [];
+        const films = slugs
+          .map((slug) => filmPool.find((film) => film.slug === slug))
+          .filter((film): film is FilmItem => Boolean(film));
+        if (!title || !films.length) return [];
+        const href = typeof row.href === "string" ? row.href : "/films";
+        return [[
+          `featured:${rowId}`,
+          <LazySection key={rowId}>
+            <FilmSection title={title} films={films} isLoading={false} href={href} />
+          </LazySection>,
+        ]];
+      }),
+    ) as Record<string, React.ReactNode>;
+  }, [
+    actionFilms,
+    animeFilms,
+    latestFilms,
+    publicConfig?.homeFeaturedRows,
+    scifiFilms,
+    seriesFilms,
+    singleFilms,
+    trendingFilms,
+    usUkSeriesFilms,
+    vfxFilms,
+  ]);
+
+  const hiddenHomeSections = new Set(publicConfig?.homeHiddenSections || []);
+  const primarySections: Record<string, React.ReactNode> = {
+    top10: <Top10RankedRow films={configuredTop10List} />,
+    continue: <ContinueWatchingRow />,
+    schedule: <LazySection><WeeklyScheduleSection items={seriesFilms} /></LazySection>,
+    latest: <LazySection><FilmSection title={t("sections.latest", "Phim Mới Cập Nhật")} films={latestRowList} isLoading={latestLoading} href="/films" /></LazySection>,
+    vfx: <LazySection><FilmSection title={t("sections.vfx", "Phim Thần Thoại & Kỹ Xảo")} films={vfxRowList} isLoading={vfxLoading} href="/genre/than-thoai" /></LazySection>,
+    "usuk-series": <LazySection><HeroShowcaseSection title={t("sections.usUkSeries", "Series Âu-Mỹ Đỉnh Cao")} films={usUkSeriesRowList} isLoading={usUkSeriesLoading} href="/search?type=series&country=au-my" /></LazySection>,
+    action: <LazySection><FilmSection title={t("sections.action", "Phim Hành Động Kịch Tính")} films={actionRowList} isLoading={actionLoading} href="/genre/hanh-dong" /></LazySection>,
+    scifi: <LazySection><CuratedSpotlightSection title={t("sections.scifi", "Tuyệt Tác Khoa Học Viễn Tưởng")} films={scifiRowList} isLoading={scifiLoading} href="/genre/vien-tuong" /></LazySection>,
+    ...customFeaturedSections,
+  };
+  const defaultSectionOrder = ["top10", "continue", "schedule", "latest", "vfx", "usuk-series", "action", "scifi"];
+  const configuredSectionOrder = publicConfig?.homeSectionOrder?.length
+    ? publicConfig.homeSectionOrder
+    : defaultSectionOrder;
+  const primarySectionOrder = [
+    ...configuredSectionOrder,
+    ...Object.keys(customFeaturedSections).filter((sectionId) => !configuredSectionOrder.includes(sectionId)),
+  ];
+
   return (
     <div className="bg-background min-h-screen text-foreground overflow-hidden pb-12">
       <HomeAnnouncementPopup />
@@ -1010,63 +1021,9 @@ export default function HomePage() {
         data-home-content="true"
         className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 relative pt-6 md:pt-10 z-30"
       >
-        {/* ONLY TOP 10 RANKED MOVIES KEPT AT TOP */}
-        <Top10RankedRow films={top10List} />
-
-        {/* ── 16:9 LANDSCAPE WATCH HISTORY / RECENTLY WATCHED ROW ── */}
-        <ContinueWatchingRow />
-
-        {/* ── LỊCH CHIẾU PHIM HÔM NAY (WEEKLY SCHEDULE STRIP) ── */}
-        <LazySection>
-          <WeeklyScheduleSection items={seriesFilms} />
-        </LazySection>
-
-        {/* ── PHIM MỚI CẬP NHẬT (NEWLY UPDATED MOVIES ROW) ── */}
-        <LazySection>
-          <FilmSection
-            title={t("sections.latest", "Phim Mới Cập Nhật")}
-            films={latestRowList}
-            isLoading={latestLoading}
-            href="/films"
-          />
-        </LazySection>
-
-        {/* ── Initial 4 Movie Sections ── */}
-        <LazySection>
-          <FilmSection
-            title={t("sections.vfx", "Phim Thần Thoại & Kỹ Xảo")}
-            films={vfxRowList}
-            isLoading={vfxLoading}
-            href="/genre/than-thoai"
-          />
-        </LazySection>
-
-        <LazySection>
-          <HeroShowcaseSection
-            title={t("sections.usUkSeries", "Series Âu-Mỹ Đỉnh Cao")}
-            films={usUkSeriesRowList}
-            isLoading={usUkSeriesLoading}
-            href="/search?type=series&country=au-my"
-          />
-        </LazySection>
-
-        <LazySection>
-          <FilmSection
-            title={t("sections.action", "Phim Hành Động Kịch Tính")}
-            films={actionRowList}
-            isLoading={actionLoading}
-            href="/genre/hanh-dong"
-          />
-        </LazySection>
-
-        <LazySection>
-          <CuratedSpotlightSection
-            title={t("sections.scifi", "Tuyệt Tác Khoa Học Viễn Tưởng")}
-            films={scifiRowList}
-            isLoading={scifiLoading}
-            href="/genre/vien-tuong"
-          />
-        </LazySection>
+        {primarySectionOrder
+          .filter((sectionId) => !hiddenHomeSections.has(sectionId) && primarySections[sectionId])
+          .map((sectionId) => <div key={sectionId}>{primarySections[sectionId]}</div>)}
 
         {/* ── Ultra-Minimal Show More Sections Button ── */}
         {!showMoreSections ? (

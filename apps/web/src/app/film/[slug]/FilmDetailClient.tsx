@@ -1205,10 +1205,10 @@ export default function FilmDetailPage() {
 
   const jsonLdPayload = [jsonLd, breadcrumbJsonLd];
 
-  const seoTitle = `${filmName} ${originName ? `(${originName})` : ""} ${film?.year ? `- ${film.year}` : ""} Vietsub HD | CineVerse`;
+  const seoTitle = `${filmName} ${originName ? `(${originName})` : ""} ${film?.year ? `- ${film.year}` : ""} Vietsub HD | NetPhim`;
   const seoDescription = cleanContent
     ? cleanContent.slice(0, 160)
-    : `Xem phim ${filmName} (${originName}) chất lượng cao Vietsub Thuyết minh HD miễn phí trên CineVerse.`;
+    : `Xem phim ${filmName} (${originName}) chất lượng cao Vietsub Thuyết minh HD miễn phí trên NetPhim.`;
 
   return (
     <div

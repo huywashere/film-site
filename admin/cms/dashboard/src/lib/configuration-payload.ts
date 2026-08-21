@@ -13,6 +13,12 @@ export type EditableSiteConfiguration = {
   providerPriority: string[];
   autoSkipIntro: boolean;
   watchPartyEnabled: boolean;
+  homeTop10Slugs: string[];
+  homeSectionOrder: string[];
+  homeHiddenSections: string[];
+  homeFeaturedRows?: Record<string, unknown> | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
 };
 
 export function configurationUpdatePayload(config: EditableSiteConfiguration) {
@@ -31,5 +37,11 @@ export function configurationUpdatePayload(config: EditableSiteConfiguration) {
     providerPriority: config.providerPriority,
     autoSkipIntro: config.autoSkipIntro,
     watchPartyEnabled: config.watchPartyEnabled,
+    homeTop10Slugs: config.homeTop10Slugs,
+    homeSectionOrder: config.homeSectionOrder,
+    homeHiddenSections: config.homeHiddenSections,
+    homeFeaturedRows: config.homeFeaturedRows || {},
+    seoTitle: config.seoTitle || "",
+    seoDescription: config.seoDescription || "",
   };
 }

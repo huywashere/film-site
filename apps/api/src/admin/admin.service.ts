@@ -41,6 +41,17 @@ const RANGE_DAYS: Record<string, number> = {
   "1y": 365,
 };
 
+const DEFAULT_HOME_SECTION_ORDER = [
+  "top10",
+  "continue",
+  "schedule",
+  "latest",
+  "vfx",
+  "usuk-series",
+  "action",
+  "scifi",
+];
+
 function adminKey(actor: AdminActor) {
   return (actor.email || actor.uid).toLowerCase();
 }
@@ -194,6 +205,8 @@ export class AdminService implements OnModuleInit {
             avatarUrl: true,
             role: true,
             twoFactorEnabled: true,
+            adminAccessEnabled: true,
+            adminPermissions: true,
           },
         })
       : null;
@@ -208,6 +221,8 @@ export class AdminService implements OnModuleInit {
       avatarUrl: localUser?.avatarUrl || actor.picture || null,
       role: localUser?.role || actor.role || "ADMIN",
       twoFactorEnabled: localUser?.twoFactorEnabled || false,
+      adminAccessEnabled: localUser?.adminAccessEnabled ?? true,
+      permissions: (actor as any).permissions || localUser?.adminPermissions || [],
       internalDashboard: Boolean(actor.internalDashboard),
     };
   }
@@ -594,7 +609,7 @@ export class AdminService implements OnModuleInit {
       throw new NotFoundException(`Không tìm thấy người dùng ID: ${userId}`);
     const updated = await this.prisma.user.update({
       where: { id: userId },
-      data: { role },
+      data: { role, adminAccessEnabled: role !== Role.USER },
       select: { id: true, email: true, username: true, role: true },
     });
     await this.auditService.logAction({
@@ -1223,12 +1238,18 @@ export class AdminService implements OnModuleInit {
       providerPriority?: string[];
       autoSkipIntro?: boolean;
       watchPartyEnabled?: boolean;
+      homeTop10Slugs?: string[];
+      homeSectionOrder?: string[];
+      homeHiddenSections?: string[];
+      homeFeaturedRows?: Record<string, unknown>;
+      seoTitle?: string;
+      seoDescription?: string;
     },
     adminUser: AdminActor,
   ) {
     const previous = await this.siteConfig.getConfiguration();
     const updated = await this.siteConfig.updateConfiguration(
-      data,
+      data as any,
       adminUser.email || adminUser.uid,
     );
     await this.prisma.siteConfigurationRevision.create({
@@ -1283,6 +1304,12 @@ export class AdminService implements OnModuleInit {
           : [],
         autoSkipIntro: Boolean(snapshot.autoSkipIntro),
         watchPartyEnabled: snapshot.watchPartyEnabled !== false,
+        homeTop10Slugs: Array.isArray(snapshot.homeTop10Slugs) ? snapshot.homeTop10Slugs.map(String) : [],
+        homeSectionOrder: Array.isArray(snapshot.homeSectionOrder) ? snapshot.homeSectionOrder.map(String) : DEFAULT_HOME_SECTION_ORDER,
+        homeHiddenSections: Array.isArray(snapshot.homeHiddenSections) ? snapshot.homeHiddenSections.map(String) : [],
+        homeFeaturedRows: snapshot.homeFeaturedRows && typeof snapshot.homeFeaturedRows === "object" ? snapshot.homeFeaturedRows as Prisma.InputJsonValue : undefined,
+        seoTitle: String(snapshot.seoTitle || "NetPhim - Xem phim trực tuyến"),
+        seoDescription: String(snapshot.seoDescription || ""),
       },
       adminUser.email || adminUser.uid,
     );

@@ -9,7 +9,7 @@ test.describe("critical visitor flows", () => {
       id: "e2e-user-id",
       email: "member@cineverse.test",
       username: "cineverse_member",
-      displayName: "CineVerse Member",
+      displayName: "NetPhim Member",
       role: "USER",
     };
 

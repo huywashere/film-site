@@ -324,3 +324,25 @@ html[data-admin-theme="dark"] tbody tr:hover { background-color: #242730 !import
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+.admin-login-page { min-height: 100dvh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at 20% 10%, #2d3b50 0, transparent 34%), var(--admin-sidebar); }
+.admin-login-card { width: min(430px, 100%); padding: 28px; border: 1px solid color-mix(in srgb, var(--admin-line) 80%, transparent); border-radius: 10px; background: var(--admin-surface); box-shadow: 0 24px 70px rgba(8, 15, 28, .3); }
+.admin-login-brand, .admin-login-heading { display: flex; align-items: center; gap: 12px; }
+.admin-login-brand { padding-bottom: 22px; border-bottom: 1px solid var(--admin-line); }
+.admin-login-brand img { width: 46px; height: 46px; object-fit: contain; }
+.admin-login-brand strong { display: block; color: var(--admin-ink); font-size: 21px; font-weight: 800; }
+.admin-login-brand span { display: block; color: var(--admin-muted); font-size: 11px; }
+.admin-login-heading { margin: 24px 0 20px; align-items: flex-start; color: var(--admin-brand); }
+.admin-login-heading h1 { margin: 0; color: var(--admin-ink); font-size: 18px; }
+.admin-login-heading p { margin: 3px 0 0; color: var(--admin-muted); font-size: 11px; }
+.admin-login-form { display: grid; gap: 15px; }
+.admin-login-form label > span { display: block; margin-bottom: 6px; color: var(--admin-ink); font-size: 11px; font-weight: 700; }
+.admin-login-form label > div { display: flex; height: 42px; align-items: center; gap: 9px; padding: 0 12px; color: var(--admin-muted); border: 1px solid var(--admin-line); border-radius: 6px; background: var(--admin-surface-muted); }
+.admin-login-form input { min-width: 0; flex: 1; color: var(--admin-ink); border: 0; outline: 0; background: transparent; }
+.admin-login-form label > div:focus-within { border-color: var(--admin-brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--admin-brand) 12%, transparent); }
+.admin-login-error { margin: 0; padding: 10px 12px; color: #c43d5f; border: 1px solid color-mix(in srgb, var(--admin-danger) 35%, transparent); border-radius: 6px; background: color-mix(in srgb, var(--admin-danger) 8%, transparent); font-size: 11px; }
+.admin-login-divider { position: relative; margin: 18px 0; color: var(--admin-muted); text-align: center; font-size: 10px; text-transform: uppercase; }
+.admin-login-divider::before { position: absolute; top: 50%; right: 0; left: 0; height: 1px; content: ""; background: var(--admin-line); }
+.admin-login-divider span { position: relative; padding: 0 10px; background: var(--admin-surface); }
+.admin-github-button { display: flex; width: 100%; height: 42px; align-items: center; justify-content: center; gap: 9px; color: var(--admin-ink); border: 1px solid var(--admin-line); border-radius: 6px; background: var(--admin-surface-muted); font-size: 12px; font-weight: 700; transition: border-color 140ms ease, background 140ms ease; }
+.admin-github-button:hover { border-color: color-mix(in srgb, var(--admin-ink) 35%, var(--admin-line)); background: var(--admin-surface); }

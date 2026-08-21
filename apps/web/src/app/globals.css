@@ -39,24 +39,24 @@ html[data-netphim-intro="done"] #netphim-entry-splash {
   filter: saturate(.8) contrast(1.04);
 }
 
-.netphim-intro-poster:nth-child(1) { background-image: url("/images/splash/tmdb/01.webp"); }
-.netphim-intro-poster:nth-child(2) { background-image: url("/images/splash/tmdb/02.webp"); }
-.netphim-intro-poster:nth-child(3) { background-image: url("/images/splash/tmdb/03.webp"); }
-.netphim-intro-poster:nth-child(4) { background-image: url("/images/splash/tmdb/04.webp"); }
-.netphim-intro-poster:nth-child(5) { background-image: url("/images/splash/tmdb/05.webp"); }
-.netphim-intro-poster:nth-child(6) { background-image: url("/images/splash/tmdb/06.webp"); }
-.netphim-intro-poster:nth-child(7) { background-image: url("/images/splash/tmdb/07.webp"); }
-.netphim-intro-poster:nth-child(8) { background-image: url("/images/splash/tmdb/08.webp"); }
-.netphim-intro-poster:nth-child(9) { background-image: url("/images/splash/tmdb/09.webp"); }
-.netphim-intro-poster:nth-child(10) { background-image: url("/images/splash/tmdb/10.webp"); }
-.netphim-intro-poster:nth-child(11) { background-image: url("/images/splash/tmdb/11.webp"); }
-.netphim-intro-poster:nth-child(12) { background-image: url("/images/splash/tmdb/12.webp"); }
-.netphim-intro-poster:nth-child(13) { background-image: url("/images/splash/tmdb/13.webp"); }
-.netphim-intro-poster:nth-child(14) { background-image: url("/images/splash/tmdb/14.webp"); }
-.netphim-intro-poster:nth-child(15) { background-image: url("/images/splash/tmdb/15.webp"); }
-.netphim-intro-poster:nth-child(16) { background-image: url("/images/splash/tmdb/16.webp"); }
-.netphim-intro-poster:nth-child(17) { background-image: url("/images/splash/tmdb/17.webp"); }
-.netphim-intro-poster:nth-child(18) { background-image: url("/images/splash/tmdb/18.webp"); }
+.netphim-intro-poster:nth-child(1) { background-image: var(--netphim-intro-poster-1, url("/images/splash/tmdb/01.webp")); }
+.netphim-intro-poster:nth-child(2) { background-image: var(--netphim-intro-poster-2, url("/images/splash/tmdb/02.webp")); }
+.netphim-intro-poster:nth-child(3) { background-image: var(--netphim-intro-poster-3, url("/images/splash/tmdb/03.webp")); }
+.netphim-intro-poster:nth-child(4) { background-image: var(--netphim-intro-poster-4, url("/images/splash/tmdb/04.webp")); }
+.netphim-intro-poster:nth-child(5) { background-image: var(--netphim-intro-poster-5, url("/images/splash/tmdb/05.webp")); }
+.netphim-intro-poster:nth-child(6) { background-image: var(--netphim-intro-poster-6, url("/images/splash/tmdb/06.webp")); }
+.netphim-intro-poster:nth-child(7) { background-image: var(--netphim-intro-poster-7, url("/images/splash/tmdb/07.webp")); }
+.netphim-intro-poster:nth-child(8) { background-image: var(--netphim-intro-poster-8, url("/images/splash/tmdb/08.webp")); }
+.netphim-intro-poster:nth-child(9) { background-image: var(--netphim-intro-poster-9, url("/images/splash/tmdb/09.webp")); }
+.netphim-intro-poster:nth-child(10) { background-image: var(--netphim-intro-poster-10, url("/images/splash/tmdb/10.webp")); }
+.netphim-intro-poster:nth-child(11) { background-image: var(--netphim-intro-poster-11, url("/images/splash/tmdb/11.webp")); }
+.netphim-intro-poster:nth-child(12) { background-image: var(--netphim-intro-poster-12, url("/images/splash/tmdb/12.webp")); }
+.netphim-intro-poster:nth-child(13) { background-image: var(--netphim-intro-poster-13, url("/images/splash/tmdb/13.webp")); }
+.netphim-intro-poster:nth-child(14) { background-image: var(--netphim-intro-poster-14, url("/images/splash/tmdb/14.webp")); }
+.netphim-intro-poster:nth-child(15) { background-image: var(--netphim-intro-poster-15, url("/images/splash/tmdb/15.webp")); }
+.netphim-intro-poster:nth-child(16) { background-image: var(--netphim-intro-poster-16, url("/images/splash/tmdb/16.webp")); }
+.netphim-intro-poster:nth-child(17) { background-image: var(--netphim-intro-poster-17, url("/images/splash/tmdb/17.webp")); }
+.netphim-intro-poster:nth-child(18) { background-image: var(--netphim-intro-poster-18, url("/images/splash/tmdb/18.webp")); }
 
 .netphim-intro-brand {
   animation: netphim-intro-brand-reveal 620ms cubic-bezier(.16, 1, .3, 1) both;

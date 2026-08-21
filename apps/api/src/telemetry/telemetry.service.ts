@@ -73,6 +73,11 @@ export class TelemetryService {
         );
       });
     }
+    if (event.name === "search.completed") {
+      void this.persistSearchEvent(event).catch((error) => {
+        this.logger.debug(`Không thể lưu search event: ${error instanceof Error ? error.message : String(error)}`);
+      });
+    }
 
     this.logger.debug({ ...tags, properties: event.properties });
     // Routine Web Vitals and timings stay in the rolling dashboard buffer.
@@ -88,6 +93,24 @@ export class TelemetryService {
         Sentry.captureMessage(`Client telemetry: ${event.name}`, level);
       });
     }
+  }
+
+  private async persistSearchEvent(event: ClientTelemetryDto) {
+    const properties = event.properties || {};
+    const query = typeof properties.query === "string" ? properties.query.trim().slice(0, 180) : "";
+    if (!query) return;
+    const normalized = query.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+    await this.prisma.searchEvent.create({
+      data: {
+        query,
+        normalized,
+        resultCount: typeof properties.result_count === "number" ? Math.max(0, Math.round(properties.result_count)) : 0,
+        route: event.route,
+        sessionId: typeof properties.session_id === "string" ? properties.session_id.slice(0, 180) : undefined,
+        deviceType: typeof properties.device_type === "string" ? properties.device_type.slice(0, 80) : undefined,
+        occurredAt: event.timestamp ? new Date(event.timestamp) : new Date(),
+      },
+    });
   }
 
   private async persistPlaybackEvent(event: ClientTelemetryDto) {

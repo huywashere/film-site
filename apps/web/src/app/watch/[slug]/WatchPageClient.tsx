@@ -2322,7 +2322,7 @@ export default function WatchPage() {
       ep.name.toLowerCase().includes(episodeSearch.toLowerCase()),
   );
 
-  const watchSeoTitle = `Xem Phim ${film?.name || ""} ${currentEpData?.name ? `- Tập ${currentEpData.name}` : ""} Vietsub HD | CineVerse`;
+  const watchSeoTitle = `Xem Phim ${film?.name || ""} ${currentEpData?.name ? `- Tập ${currentEpData.name}` : ""} Vietsub HD | NetPhim`;
   const watchSeoDescription = `Xem phim ${film?.name || ""} ${currentEpData?.name ? `Tập ${currentEpData.name}` : ""} Vietsub Thuyết minh HD online mượt mà không quảng cáo độc hại.`;
 
   const watchJsonLd = [
@@ -2482,8 +2482,8 @@ export default function WatchPage() {
                       if (typeof navigator !== "undefined" && navigator.share) {
                         navigator
                           .share({
-                            title: film?.name || "CineVerse",
-                            text: `Xem phim ${film?.name || ""} miễn phí trên CineVerse!`,
+                            title: film?.name || "NetPhim",
+                            text: `Xem phim ${film?.name || ""} miễn phí trên NetPhim!`,
                             url: window.location.href,
                           })
                           .catch(() => setShowShareModal((p) => !p));
@@ -2556,7 +2556,7 @@ export default function WatchPage() {
 
                         {/* Twitter / X */}
                         <a
-                          href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(typeof window !== "undefined" ? window.location.href : "")}&text=${encodeURIComponent(`Xem phim ${film?.name || ""} trên CineVerse!`)}`}
+                          href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(typeof window !== "undefined" ? window.location.href : "")}&text=${encodeURIComponent(`Xem phim ${film?.name || ""} trên NetPhim!`)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 p-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white border border-white/10 transition-all active:scale-95"

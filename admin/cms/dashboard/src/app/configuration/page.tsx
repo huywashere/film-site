@@ -30,6 +30,13 @@ type Configuration = {
   providerPriority: string[];
   autoSkipIntro: boolean;
   watchPartyEnabled: boolean;
+  homeTop10Slugs: string[];
+  homeSectionOrder: string[];
+  homeHiddenSections: string[];
+  homeFeaturedRows?: Record<string, unknown> | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  cacheVersion?: number;
   updatedAt?: string;
 };
 type ConfigurationRevision = {
@@ -358,6 +365,48 @@ export default function ConfigurationPage() {
           placeholder={"slug-phim-1\nslug-phim-2"}
         />
       </section>
+      <section className="admin-card p-5">
+        <div className="flex items-center gap-2">
+          <SlidersHorizontal size={17} className="text-blue-600" />
+          <div>
+            <h2 className="text-[14px] font-bold text-slate-800">Bố cục và nội dung trang chủ</h2>
+            <p className="mt-1 text-[11px] text-slate-400">Điều khiển thứ tự section, Top 10, hàng nội dung và SEO. Mỗi lần lưu sẽ tăng cache version.</p>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-5 lg:grid-cols-2">
+          <ListField
+            label="Top 10 được ghim"
+            detail="Mỗi dòng một slug, tối đa 10. Các vị trí thiếu được tự bổ sung theo lượt xem."
+            value={config.homeTop10Slugs}
+            limit={10}
+            onChange={(value) => update("homeTop10Slugs", value)}
+          />
+          <ListField
+            label="Thứ tự section"
+            detail="ID hỗ trợ: top10, continue, schedule, latest, vfx, usuk-series, action, scifi và featured:<mã hàng>."
+            value={config.homeSectionOrder}
+            limit={30}
+            onChange={(value) => update("homeSectionOrder", value)}
+          />
+          <ListField
+            label="Ẩn section"
+            detail="Mỗi dòng một ID section cần tạm ẩn khỏi trang chủ."
+            value={config.homeHiddenSections}
+            limit={30}
+            onChange={(value) => update("homeHiddenSections", value)}
+          />
+          <JsonEditor
+            label="Hàng nội dung tùy chỉnh"
+            value={config.homeFeaturedRows || {}}
+            onChange={(value) => update("homeFeaturedRows", value)}
+          />
+          <p className="self-end text-[11px] leading-5 text-slate-400">
+            Mẫu: {`{"de-cu":{"title":"NetPhim đề cử","slugs":["slug-phim-1"],"href":"/films"}}`}. Hàng này có ID <code>featured:de-cu</code> để sắp xếp hoặc ẩn.
+          </p>
+          <Field label="SEO title trang chủ" value={config.seoTitle || ""} onChange={(value) => update("seoTitle", value)} maxLength={180} />
+          <Field label="SEO description" value={config.seoDescription || ""} onChange={(value) => update("seoDescription", value)} multiline maxLength={500} />
+        </div>
+      </section>
       <section className="admin-card overflow-hidden">
         <div className="border-b border-[var(--admin-line)] px-5 py-4">
           <h2 className="text-[14px] font-bold text-slate-800">
@@ -486,6 +535,45 @@ function Field({
           placeholder={placeholder}
         />
       )}
+    </label>
+  );
+}
+
+function ListField({ label, detail, value, limit, onChange }: { label: string; detail: string; value: string[]; limit: number; onChange: (value: string[]) => void }) {
+  return (
+    <label className="block">
+      <span className="text-[11px] font-bold text-slate-600">{label}</span>
+      <small className="mt-1 block text-[10px] text-slate-400">{detail}</small>
+      <textarea
+        value={value.join("\n")}
+        onChange={(event) => onChange(Array.from(new Set(event.target.value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean))).slice(0, limit))}
+        className="admin-control mt-2 min-h-32 w-full resize-y px-3 py-2 font-mono text-[11px]"
+      />
+    </label>
+  );
+}
+
+function JsonEditor({ label, value, onChange }: { label: string; value: Record<string, unknown>; onChange: (value: Record<string, unknown>) => void }) {
+  const [text, setText] = useState(() => JSON.stringify(value, null, 2));
+  const [invalid, setInvalid] = useState(false);
+  return (
+    <label className="block">
+      <span className="text-[11px] font-bold text-slate-600">{label}</span>
+      <small className="mt-1 block text-[10px] text-slate-400">JSON dành cho các hàng nội dung mở rộng.</small>
+      <textarea
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        onBlur={() => {
+          try {
+            const parsed = JSON.parse(text);
+            if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") throw new Error();
+            onChange(parsed);
+            setInvalid(false);
+          } catch { setInvalid(true); }
+        }}
+        className={`admin-control mt-2 min-h-32 w-full resize-y px-3 py-2 font-mono text-[11px] ${invalid ? "!border-rose-400" : ""}`}
+      />
+      {invalid && <small className="mt-1 block text-[10px] text-rose-600">JSON chưa hợp lệ, dữ liệu cũ chưa bị thay đổi.</small>}
     </label>
   );
 }

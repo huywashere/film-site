@@ -13,6 +13,9 @@ export async function adminFetch<T>(
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      window.location.assign(`/login?next=${encodeURIComponent(window.location.pathname)}`);
+    }
     throw new Error(payload?.message || `Yêu cầu thất bại (HTTP ${response.status})`);
   }
   return payload as T;

@@ -1,5 +1,5 @@
 /**
- * CineVerse XSS Security & Data Sanitization Module
+ * NetPhim XSS Security & Data Sanitization Module
  * Protects application against Cross-Site Scripting (XSS), HTML Injection & Malicious URLs.
  */
 

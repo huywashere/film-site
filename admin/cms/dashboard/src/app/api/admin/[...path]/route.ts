@@ -1,30 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  adminUnauthorizedResponse,
-  isAdminRequestAuthorized,
-} from "../../../../lib/admin-auth";
+  ADMIN_SESSION_COOKIE,
+  adminApiBaseUrl,
+} from "../../../../lib/admin-session";
 
 export const dynamic = "force-dynamic";
 
 const ALLOWED_METHODS = new Set(["GET", "POST", "PATCH", "DELETE"]);
 const TIMEOUT_MS = 15_000;
 
-function apiBaseUrl() {
-  const configured = process.env.CINEVERSE_API_URL || "http://127.0.0.1:3001/api/v1";
-  try {
-    const parsed = new URL(configured);
-    if (["http:", "https:"].includes(parsed.protocol)) {
-      return parsed.toString().replace(/\/$/, "");
-    }
-  } catch {}
-  return "http://127.0.0.1:3001/api/v1";
-}
-
 async function forward(
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> },
 ) {
-  if (!isAdminRequestAuthorized(request)) return adminUnauthorizedResponse();
+  const sessionToken = request.cookies.get(ADMIN_SESSION_COOKIE)?.value || "";
+  if (!sessionToken) {
+    return NextResponse.json({ message: "Phiên Admin đã hết hạn" }, { status: 401 });
+  }
   if (!ALLOWED_METHODS.has(request.method)) {
     return NextResponse.json({ message: "Phương thức không được hỗ trợ" }, { status: 405 });
   }
@@ -39,15 +31,7 @@ async function forward(
     return NextResponse.json({ message: "Đường dẫn admin không hợp lệ" }, { status: 400 });
   }
 
-  const token = process.env.ADMIN_DASHBOARD_API_TOKEN || "";
-  if (token.length < 32) {
-    return NextResponse.json(
-      { message: "ADMIN_DASHBOARD_API_TOKEN chưa được cấu hình an toàn" },
-      { status: 503 },
-    );
-  }
-
-  const target = new URL(`${apiBaseUrl()}/admin/${path.join("/")}`);
+  const target = new URL(`${adminApiBaseUrl()}/admin/${path.join("/")}`);
   request.nextUrl.searchParams.forEach((value, key) => target.searchParams.append(key, value));
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -61,9 +45,9 @@ async function forward(
       headers: {
         Accept: "application/json",
         "Content-Type": request.headers.get("content-type") || "application/json",
-        "x-admin-dashboard-token": token,
+        "x-admin-session-token": sessionToken,
         "x-forwarded-for": request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "",
-        "user-agent": request.headers.get("user-agent") || "CineVerse-Control-Room",
+        "user-agent": request.headers.get("user-agent") || "NetPhim-Control-Room",
       },
       body: body && body.byteLength ? body : undefined,
       signal: controller.signal,

@@ -11,6 +11,7 @@ import {
   Min,
   Max,
   IsObject,
+  Matches,
   ValidateNested,
   ArrayUnique,
 } from "class-validator";
@@ -98,6 +99,79 @@ export class UpdateMovieMetadataDto {
   @IsOptional()
   @IsObject()
   releaseSchedule?: Record<string, unknown>;
+}
+
+export class CreateMovieDto extends UpdateMovieMetadataDto {
+  @IsString()
+  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  @MaxLength(180)
+  id!: string;
+
+  @IsString()
+  @MaxLength(300)
+  declare title: string;
+
+  @IsString()
+  @MaxLength(40)
+  declare type: string;
+}
+
+export class MergeMoviesDto {
+  @IsString()
+  @MaxLength(180)
+  canonicalId!: string;
+
+  @IsArray()
+  @ArrayMaxSize(20)
+  @ArrayUnique()
+  @IsString({ each: true })
+  sourceIds!: string[];
+}
+
+export class DeleteMovieDto {
+  @IsString()
+  @MaxLength(300)
+  confirmation!: string;
+}
+
+export class SyncScheduleDto {
+  @IsString()
+  @MaxLength(120)
+  name!: string;
+
+  @IsString()
+  @IsIn(["kkphim", "ophim", "nguonc", "vsmov"])
+  source!: string;
+
+  @IsInt()
+  @Min(15)
+  @Max(43_200)
+  intervalMinutes!: number;
+
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  pages!: number;
+
+  @IsBoolean()
+  enabled!: boolean;
+}
+
+export class RestoreBackupDto {
+  @IsString()
+  @MaxLength(200)
+  confirmation!: string;
+}
+
+export class UpdateIncidentDto {
+  @IsIn(["ACKNOWLEDGED", "RESOLVED"])
+  status!: "ACKNOWLEDGED" | "RESOLVED";
+}
+
+export class PurgeCacheDto {
+  @IsString()
+  @Matches(/^[a-zA-Z0-9._-]{1,64}$/)
+  namespace!: string;
 }
 
 export class UpdateMovieSourcesDto {
@@ -235,8 +309,8 @@ export class UpdateIssueReportDto {
 }
 
 export class UpdateUserRoleDto {
-  @IsIn(["USER", "MODERATOR", "ADMIN"])
-  role: "USER" | "MODERATOR" | "ADMIN";
+  @IsIn(["USER", "MODERATOR", "ADMIN", "CONTENT_EDITOR", "OPERATIONS", "ANALYST"])
+  role: "USER" | "MODERATOR" | "ADMIN" | "CONTENT_EDITOR" | "OPERATIONS" | "ANALYST";
 }
 
 export class UpdateUserLockDto {
@@ -313,4 +387,42 @@ export class UpdateSiteConfigurationDto {
   @IsOptional()
   @IsBoolean()
   watchPartyEnabled?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @ArrayUnique()
+  @IsString({ each: true })
+  @MaxLength(200, { each: true })
+  homeTop10Slugs?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30)
+  @ArrayUnique()
+  @IsString({ each: true })
+  @MaxLength(80, { each: true })
+  homeSectionOrder?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30)
+  @ArrayUnique()
+  @IsString({ each: true })
+  @MaxLength(80, { each: true })
+  homeHiddenSections?: string[];
+
+  @IsOptional()
+  @IsObject()
+  homeFeaturedRows?: Record<string, unknown>;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(180)
+  seoTitle?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  seoDescription?: string;
 }

@@ -1,10 +1,10 @@
 {
-  "name": "cineverse",
+  "name": "netphim",
   "private": true,
   "packageManager": "pnpm@9.5.0",
   "scripts": {
     "dev": "turbo run dev",
-    "dev:admin": "pnpm --filter @cineverse/admin-cms dev",
+    "dev:admin": "pnpm --filter @netphim/admin-cms dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",

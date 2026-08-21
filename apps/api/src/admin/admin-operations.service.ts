@@ -1,0 +1,412 @@
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleDestroy,
+  OnModuleInit,
+} from "@nestjs/common";
+import { BackupStatus, IncidentStatus } from "@prisma/client";
+import { createHash } from "crypto";
+import { createReadStream, promises as fs } from "fs";
+import { spawn } from "child_process";
+import { resolve, sep } from "path";
+import { PrismaService } from "../prisma/prisma.service";
+import { RedisCacheService } from "../redis/redis.service";
+import { AuditService } from "../audit/audit.service";
+import { AdminService } from "./admin.service";
+
+type Actor = { uid: string; email?: string; ipAddress?: string; userAgent?: string };
+
+function normalizedTitle(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\b(phan|part|season|mua)\s*\d+\b/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+@Injectable()
+export class AdminOperationsService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(AdminOperationsService.name);
+  private timer?: NodeJS.Timeout;
+  private scheduleBusy = false;
+  private monitorBusy = false;
+  private readonly backupDir = resolve(process.env.BACKUP_DIR || "./backups");
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: RedisCacheService,
+    private readonly audit: AuditService,
+    private readonly admin: AdminService,
+  ) {}
+
+  onModuleInit() {
+    this.timer = setInterval(() => {
+      void this.runDueSchedules();
+      void this.monitorSystem();
+    }, 60_000);
+    this.timer.unref();
+    void this.runDueSchedules();
+  }
+
+  onModuleDestroy() {
+    if (this.timer) clearInterval(this.timer);
+  }
+
+  async createMovie(data: Record<string, unknown>, actor: Actor) {
+    const id = String(data.id);
+    const movie = await this.prisma.movie.create({
+      data: {
+        id,
+        title: String(data.title),
+        type: String(data.type),
+        posterUrl: data.posterUrl ? String(data.posterUrl) : undefined,
+        description: data.description ? String(data.description) : undefined,
+        originName: data.originName ? String(data.originName) : undefined,
+        year: typeof data.year === "number" ? data.year : undefined,
+        quality: data.quality ? String(data.quality) : undefined,
+        language: data.language ? String(data.language) : undefined,
+        trailerUrl: data.trailerUrl ? String(data.trailerUrl) : undefined,
+        genres: Array.isArray(data.genres) ? data.genres.map(String) : [],
+        countries: Array.isArray(data.countries) ? data.countries.map(String) : [],
+        actors: Array.isArray(data.actors) ? data.actors.map(String) : [],
+        directors: Array.isArray(data.directors) ? data.directors.map(String) : [],
+        sources: ["manual"],
+      },
+    });
+    await this.log(actor, "CREATE_MOVIE", id, `Tạo phim thủ công: ${movie.title}`);
+    return movie;
+  }
+
+  async hardDeleteMovie(id: string, confirmation: string, actor: Actor) {
+    const movie = await this.prisma.movie.findUnique({ where: { id } });
+    if (!movie) throw new NotFoundException("Không tìm thấy phim");
+    if (confirmation !== `DELETE ${id}`) {
+      throw new BadRequestException(`Nhập chính xác DELETE ${id} để xác nhận`);
+    }
+    await this.prisma.movie.delete({ where: { id } });
+    await this.log(actor, "DELETE_MOVIE", id, `Xóa vĩnh viễn phim: ${movie.title}`);
+    return { deleted: id };
+  }
+
+  async findDuplicateMovies() {
+    const movies = await this.prisma.movie.findMany({
+      take: 10_000,
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        originName: true,
+        year: true,
+        posterUrl: true,
+        sources: true,
+        _count: { select: { viewLogs: true, playbackSources: true } },
+      },
+    });
+    const groups = new Map<string, typeof movies>();
+    for (const movie of movies) {
+      const name = normalizedTitle(movie.originName || movie.title);
+      if (name.length < 3) continue;
+      const key = `${name}:${movie.year || "unknown"}`;
+      groups.set(key, [...(groups.get(key) || []), movie]);
+    }
+    return [...groups.entries()]
+      .filter(([, items]) => items.length > 1)
+      .map(([key, items]) => ({ key, confidence: items.every((item) => item.year === items[0].year) ? "high" : "medium", items }))
+      .sort((a, b) => b.items.length - a.items.length);
+  }
+
+  async mergeMovies(canonicalId: string, sourceIds: string[], actor: Actor) {
+    const duplicates = [...new Set(sourceIds)].filter((id) => id !== canonicalId);
+    if (!duplicates.length) throw new BadRequestException("Chưa chọn bản phim cần gộp");
+    const movies = await this.prisma.movie.findMany({ where: { id: { in: [canonicalId, ...duplicates] } } });
+    const canonical = movies.find((item) => item.id === canonicalId);
+    if (!canonical || movies.length !== duplicates.length + 1) throw new NotFoundException("Thiếu dữ liệu phim để gộp");
+    const sources = movies.filter((item) => item.id !== canonicalId);
+    await this.prisma.$transaction(async (tx) => {
+      const watchlists = await tx.watchlist.findMany({ where: { movieId: { in: duplicates } }, select: { userId: true } });
+      await tx.watchlist.createMany({ data: watchlists.map((item) => ({ userId: item.userId, movieId: canonicalId })), skipDuplicates: true });
+      await tx.watchlist.deleteMany({ where: { movieId: { in: duplicates } } });
+      const ratings = await tx.rating.findMany({ where: { movieId: { in: duplicates } }, select: { userId: true, score: true } });
+      await tx.rating.createMany({ data: ratings.map((item) => ({ ...item, movieId: canonicalId })), skipDuplicates: true });
+      await tx.rating.deleteMany({ where: { movieId: { in: duplicates } } });
+      const histories = await tx.watchHistory.findMany({ where: { movieId: { in: duplicates } } });
+      await tx.watchHistory.createMany({ data: histories.map(({ id: _id, updatedAt: _updatedAt, ...item }) => ({ ...item, movieId: canonicalId })), skipDuplicates: true });
+      await tx.watchHistory.deleteMany({ where: { movieId: { in: duplicates } } });
+      const playback = await tx.moviePlaybackSource.findMany({ where: { movieId: { in: duplicates } } });
+      await tx.moviePlaybackSource.createMany({ data: playback.map(({ id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...item }) => ({ ...item, movieId: canonicalId })), skipDuplicates: true });
+      await tx.moviePlaybackSource.deleteMany({ where: { movieId: { in: duplicates } } });
+      await tx.review.updateMany({ where: { movieId: { in: duplicates } }, data: { movieId: canonicalId } });
+      await tx.viewLog.updateMany({ where: { movieId: { in: duplicates } }, data: { movieId: canonicalId } });
+      await tx.playbackEvent.updateMany({ where: { movieId: { in: duplicates } }, data: { movieId: canonicalId } });
+      await tx.movie.update({
+        where: { id: canonicalId },
+        data: {
+          title: canonical.title || sources[0]?.title,
+          posterUrl: canonical.posterUrl || sources.find((item) => item.posterUrl)?.posterUrl,
+          thumbUrl: canonical.thumbUrl || sources.find((item) => item.thumbUrl)?.thumbUrl,
+          description: canonical.description || sources.find((item) => item.description)?.description,
+          sources: [...new Set(movies.flatMap((item) => item.sources))],
+          genres: [...new Set(movies.flatMap((item) => item.genres))],
+          countries: [...new Set(movies.flatMap((item) => item.countries))],
+          actors: [...new Set(movies.flatMap((item) => item.actors))],
+          directors: [...new Set(movies.flatMap((item) => item.directors))],
+        },
+      });
+      await tx.movie.deleteMany({ where: { id: { in: duplicates } } });
+    });
+    await this.log(actor, "MERGE_DUPLICATE_MOVIES", canonicalId, `Gộp ${duplicates.join(", ")} vào ${canonicalId}`);
+    return { canonicalId, merged: duplicates };
+  }
+
+  listSyncSchedules() {
+    return this.prisma.syncSchedule.findMany({ orderBy: { nextRunAt: "asc" } });
+  }
+
+  async saveSyncSchedule(id: string | undefined, data: { name: string; source: string; intervalMinutes: number; pages: number; enabled: boolean }, actor: Actor) {
+    const nextRunAt = new Date(Date.now() + data.intervalMinutes * 60_000);
+    const values = { name: data.name, source: data.source, cron: `every:${data.intervalMinutes}`, pages: data.pages, enabled: data.enabled, nextRunAt };
+    const schedule = id
+      ? await this.prisma.syncSchedule.update({ where: { id }, data: values })
+      : await this.prisma.syncSchedule.create({ data: { ...values, createdBy: actor.email || actor.uid } });
+    await this.log(actor, id ? "UPDATE_SYNC_SCHEDULE" : "CREATE_SYNC_SCHEDULE", schedule.id, `${schedule.name}: ${schedule.cron}`);
+    return schedule;
+  }
+
+  async deleteSyncSchedule(id: string, actor: Actor) {
+    await this.prisma.syncSchedule.delete({ where: { id } });
+    await this.log(actor, "DELETE_SYNC_SCHEDULE", id);
+    return { deleted: id };
+  }
+
+  async listBackups() {
+    const items = await this.prisma.databaseBackup.findMany({ take: 100, orderBy: { createdAt: "desc" } });
+    return items.map((item) => ({ ...item, fileSizeBytes: item.fileSizeBytes?.toString() || null }));
+  }
+
+  async requestBackup(actor: Actor) {
+    const backup = await this.prisma.databaseBackup.create({ data: { requestedBy: actor.email || actor.uid } });
+    void this.runBackup(backup.id);
+    await this.log(actor, "CREATE_DATABASE_BACKUP", backup.id);
+    return backup;
+  }
+
+  async restoreBackup(id: string, confirmation: string, actor: Actor) {
+    if (confirmation !== `RESTORE ${id}`) throw new BadRequestException(`Nhập chính xác RESTORE ${id} để xác nhận`);
+    const backup = await this.prisma.databaseBackup.findUnique({ where: { id } });
+    if (!backup?.filename || backup.status !== BackupStatus.COMPLETED) throw new BadRequestException("Bản backup chưa sẵn sàng");
+    const file = this.safeBackupPath(backup.filename);
+    await fs.access(file);
+    await this.runPgCommand("pg_restore", ["--clean", "--if-exists", "--no-owner", "--no-privileges", "--exit-on-error", ...this.pgConnectionArgs(), file]);
+    await this.prisma.databaseBackup.update({ where: { id }, data: { status: BackupStatus.RESTORED, restoredBy: actor.email || actor.uid, restoredAt: new Date() } });
+    await this.log(actor, "RESTORE_DATABASE_BACKUP", id);
+    return { restored: id };
+  }
+
+  listIncidents(status?: string) {
+    return this.prisma.systemIncident.findMany({
+      where: status && status !== "ALL" ? { status: status as IncidentStatus } : undefined,
+      take: 100,
+      orderBy: { lastSeenAt: "desc" },
+    });
+  }
+
+  async updateIncident(id: string, status: "ACKNOWLEDGED" | "RESOLVED", actor: Actor) {
+    const now = new Date();
+    const incident = await this.prisma.systemIncident.update({
+      where: { id },
+      data: status === "ACKNOWLEDGED"
+        ? { status, acknowledgedBy: actor.email || actor.uid, acknowledgedAt: now }
+        : { status, resolvedBy: actor.email || actor.uid, resolvedAt: now },
+    });
+    await this.log(actor, `${status}_INCIDENT`, id, incident.title);
+    return incident;
+  }
+
+  getCacheOverview() {
+    return this.cache.inspectNamespaces();
+  }
+
+  async purgeCache(namespace: string, actor: Actor) {
+    const result = await this.cache.purgeNamespace(namespace);
+    await this.log(actor, "PURGE_CACHE_NAMESPACE", namespace, `${result.deleted} keys`);
+    return result;
+  }
+
+  async revalidateWeb(paths: string[], actor: Actor) {
+    const base = (process.env.NETPHIM_WEB_URL || process.env.CINEVERSE_WEB_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
+    const token = process.env.REVALIDATE_SECRET || "";
+    if (token.length < 32) throw new BadRequestException("REVALIDATE_SECRET chưa được cấu hình an toàn");
+    const response = await fetch(`${base}/api/admin/revalidate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-revalidate-token": token },
+      body: JSON.stringify({ paths }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!response.ok) throw new BadRequestException(`Web revalidation trả về HTTP ${response.status}`);
+    await this.log(actor, "REVALIDATE_WEB", "web", paths.join(", "));
+    return response.json();
+  }
+
+  async getAdvancedAnalytics(range = "30d") {
+    const days = Math.min(365, Math.max(1, Number.parseInt(range, 10) || 30));
+    const since = new Date(Date.now() - days * 86_400_000);
+    const [views, searches, playbackErrors, buffers, providers, users] = await Promise.all([
+      this.prisma.viewLog.groupBy({ by: ["movieId"], where: { viewedAt: { gte: since } }, _count: { movieId: true }, orderBy: { _count: { movieId: "desc" } }, take: 20 }),
+      this.prisma.searchEvent.groupBy({ by: ["normalized"], where: { occurredAt: { gte: since } }, _count: { normalized: true }, _avg: { resultCount: true }, orderBy: { _count: { normalized: "desc" } }, take: 20 }),
+      this.prisma.playbackEvent.groupBy({ by: ["errorCode"], where: { occurredAt: { gte: since }, errorCode: { not: null } }, _count: { errorCode: true }, orderBy: { _count: { errorCode: "desc" } }, take: 12 }),
+      this.prisma.playbackEvent.aggregate({ where: { occurredAt: { gte: since }, bufferMs: { not: null } }, _avg: { bufferMs: true }, _max: { bufferMs: true }, _count: { bufferMs: true } }),
+      this.prisma.playbackEvent.groupBy({ by: ["provider"], where: { occurredAt: { gte: since }, provider: { not: null } }, _count: { provider: true }, _avg: { bufferMs: true }, orderBy: { _count: { provider: "desc" } } }),
+      this.prisma.refreshToken.groupBy({ by: ["userId"], where: { lastUsedAt: { gte: since } }, _count: { userId: true } }),
+    ]);
+    const movieIds = views.map((item) => item.movieId);
+    const movies = await this.prisma.movie.findMany({ where: { id: { in: movieIds } }, select: { id: true, title: true, posterUrl: true } });
+    return {
+      rangeDays: days,
+      activeUsers: users.length,
+      totalViews: views.reduce((sum, item) => sum + item._count.movieId, 0),
+      topMovies: views.map((item) => ({ ...movies.find((movie) => movie.id === item.movieId), id: item.movieId, views: item._count.movieId })),
+      searches: searches.map((item) => ({ query: item.normalized, count: item._count.normalized, averageResults: item._avg.resultCount || 0 })),
+      playbackErrors: playbackErrors.map((item) => ({ code: item.errorCode || "unknown", count: item._count.errorCode })),
+      buffering: { samples: buffers._count.bufferMs, averageMs: buffers._avg.bufferMs || 0, maxMs: buffers._max.bufferMs || 0 },
+      providers: providers.map((item) => ({ provider: item.provider || "unknown", events: item._count.provider, averageBufferMs: item._avg.bufferMs || 0 })),
+      cache: await this.cache.inspectNamespaces(),
+    };
+  }
+
+  private async runDueSchedules() {
+    if (this.scheduleBusy) return;
+    this.scheduleBusy = true;
+    try {
+      const due = await this.prisma.syncSchedule.findMany({ where: { enabled: true, nextRunAt: { lte: new Date() } }, take: 10 });
+      for (const schedule of due) {
+        const minutes = Number(schedule.cron.split(":")[1]) || 60;
+        const job = await this.admin.triggerManualSync(schedule.source, { uid: "sync-scheduler", email: schedule.createdBy }, schedule.pages);
+        await this.prisma.syncSchedule.update({ where: { id: schedule.id }, data: { lastRunAt: new Date(), lastJobId: job.id, nextRunAt: new Date(Date.now() + minutes * 60_000) } });
+      }
+    } catch (error) {
+      this.logger.error(`Scheduled sync failed: ${error instanceof Error ? error.message : String(error)}`);
+      await this.recordIncident("sync-scheduler", "Không chạy được lịch đồng bộ", error).catch((incidentError) => {
+        this.logger.error(`Could not persist sync incident: ${incidentError instanceof Error ? incidentError.message : String(incidentError)}`);
+      });
+    } finally {
+      this.scheduleBusy = false;
+    }
+  }
+
+  private async monitorSystem() {
+    if (this.monitorBusy) return;
+    this.monitorBusy = true;
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      await this.resolveIncident("database-offline");
+      const cache = this.cache.getStats();
+      if (cache.backend !== "redis") {
+        await this.recordIncident("redis-offline", "Redis đang dùng bộ nhớ dự phòng", new Error("Redis backend unavailable"), "critical");
+      } else {
+        await this.resolveIncident("redis-offline");
+      }
+    } catch (error) {
+      try {
+        await this.recordIncident("database-offline", "PostgreSQL không phản hồi", error, "critical");
+      } catch (persistError) {
+        this.logger.error(`PostgreSQL incident could not be persisted: ${persistError instanceof Error ? persistError.message : String(persistError)}`);
+        await this.sendAlert({
+          severity: "critical",
+          title: "PostgreSQL không phản hồi",
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    } finally {
+      this.monitorBusy = false;
+    }
+  }
+
+  private async recordIncident(fingerprint: string, title: string, reason: unknown, severity = "warning") {
+    const message = reason instanceof Error ? reason.message : String(reason);
+    const current = await this.prisma.systemIncident.findFirst({ where: { fingerprint, status: { in: [IncidentStatus.OPEN, IncidentStatus.ACKNOWLEDGED] } } });
+    const incident = current
+      ? await this.prisma.systemIncident.update({ where: { id: current.id }, data: { occurrenceCount: { increment: 1 }, lastSeenAt: new Date(), message, severity } })
+      : await this.prisma.systemIncident.create({ data: { fingerprint, source: "system-monitor", title, message, severity } });
+    if (!current) {
+      await this.prisma.adminNotification.create({ data: { type: "incident", title, message, severity, link: "/operations" } });
+      await this.sendAlert(incident);
+    }
+  }
+
+  private async resolveIncident(fingerprint: string) {
+    await this.prisma.systemIncident.updateMany({
+      where: { fingerprint, status: { in: [IncidentStatus.OPEN, IncidentStatus.ACKNOWLEDGED] } },
+      data: { status: IncidentStatus.RESOLVED, resolvedBy: "system-monitor", resolvedAt: new Date() },
+    });
+  }
+
+  private async sendAlert(incident: { title: string; message: string; severity: string }) {
+    const webhook = process.env.ADMIN_ALERT_WEBHOOK_URL;
+    if (webhook) {
+      await fetch(webhook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: `[${incident.severity.toUpperCase()}] ${incident.title}\n${incident.message}` }), signal: AbortSignal.timeout(5000) }).catch(() => undefined);
+    }
+    const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
+    const telegramChat = process.env.TELEGRAM_ALERT_CHAT_ID;
+    if (telegramToken && telegramChat) {
+      await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: telegramChat, text: `[${incident.severity.toUpperCase()}] ${incident.title}\n${incident.message}` }), signal: AbortSignal.timeout(5000) }).catch(() => undefined);
+    }
+  }
+
+  private async runBackup(id: string) {
+    try {
+      await fs.mkdir(this.backupDir, { recursive: true });
+      const filename = `${new Date().toISOString().replace(/[:.]/g, "-")}-${id}.dump`;
+      const file = this.safeBackupPath(filename);
+      await this.prisma.databaseBackup.update({ where: { id }, data: { status: BackupStatus.RUNNING, startedAt: new Date(), filename } });
+      await this.runPgCommand("pg_dump", ["--format=custom", "--no-owner", "--no-privileges", ...this.pgConnectionArgs(), "--file", file]);
+      const stat = await fs.stat(file);
+      const checksum = await this.fileChecksum(file);
+      await this.prisma.databaseBackup.update({ where: { id }, data: { status: BackupStatus.COMPLETED, fileSizeBytes: stat.size, checksum, finishedAt: new Date() } });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      await this.prisma.databaseBackup.update({ where: { id }, data: { status: BackupStatus.FAILED, errorMessage: message, finishedAt: new Date() } }).catch(() => undefined);
+      await this.recordIncident(`backup:${id}`, "Sao lưu PostgreSQL thất bại", error, "critical");
+    }
+  }
+
+  private pgConnectionArgs() {
+    const url = new URL(process.env.DATABASE_URL || "");
+    return ["--host", url.hostname, "--port", url.port || "5432", "--username", decodeURIComponent(url.username), "--dbname", url.pathname.replace(/^\//, "")];
+  }
+
+  private runPgCommand(command: string, args: string[]) {
+    const url = new URL(process.env.DATABASE_URL || "");
+    return new Promise<void>((resolvePromise, reject) => {
+      const child = spawn(command, args, { shell: false, env: { ...process.env, PGPASSWORD: decodeURIComponent(url.password) }, stdio: ["ignore", "ignore", "pipe"] });
+      let error = "";
+      child.stderr.on("data", (chunk) => { error = `${error}${chunk}`.slice(-8000); });
+      child.once("error", reject);
+      child.once("exit", (code) => code === 0 ? resolvePromise() : reject(new Error(`${command} exited ${code}: ${error}`)));
+    });
+  }
+
+  private safeBackupPath(filename: string) {
+    if (!/^[a-zA-Z0-9._-]+\.dump$/.test(filename)) throw new BadRequestException("Tên backup không hợp lệ");
+    const path = resolve(this.backupDir, filename);
+    if (!path.startsWith(`${this.backupDir}${sep}`) && path !== this.backupDir) throw new BadRequestException("Đường dẫn backup không hợp lệ");
+    return path;
+  }
+
+  private fileChecksum(path: string) {
+    return new Promise<string>((resolvePromise, reject) => {
+      const hash = createHash("sha256");
+      const input = createReadStream(path);
+      input.on("error", reject);
+      input.on("data", (chunk) => hash.update(chunk));
+      input.on("end", () => resolvePromise(hash.digest("hex")));
+    });
+  }
+
+  private log(actor: Actor, action: string, targetId?: string, details?: string) {
+    return this.audit.logAction({ adminId: actor.uid, adminEmail: actor.email, ipAddress: actor.ipAddress, userAgent: actor.userAgent, action, targetId, details });
+  }
+}

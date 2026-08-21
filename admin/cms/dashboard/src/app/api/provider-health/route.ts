@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  adminUnauthorizedResponse,
-  isAdminRequestAuthorized,
-} from "../../../lib/admin-auth";
+import { hasAdminSession } from "../../../lib/admin-session";
 
 export const dynamic = "force-dynamic";
 
@@ -145,7 +142,7 @@ async function probeProvider(
       cache: "no-store",
       headers: {
         Accept: "application/json",
-        "User-Agent": "CineVerse-Admin-Health/1.0",
+        "User-Agent": "NetPhim-Admin-Health/1.0",
       },
       signal: controller.signal,
     });
@@ -241,7 +238,7 @@ function buildPayload(providers: ProviderResult[], checkedAt: string) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!isAdminRequestAuthorized(request)) return adminUnauthorizedResponse();
+  if (!hasAdminSession(request)) return NextResponse.json({ message: "Phiên Admin đã hết hạn" }, { status: 401 });
   const force = request.nextUrl.searchParams.get("force") === "1";
   if (force && Date.now() - lastForcedProbeAt < 30_000) {
     return NextResponse.json(

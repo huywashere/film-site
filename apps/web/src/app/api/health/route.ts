@@ -9,7 +9,7 @@ export async function GET() {
   return NextResponse.json(
     {
       status: "ok",
-      service: "cineverse-web",
+      service: "netphim-web",
       timestamp: new Date().toISOString(),
     },
     {
