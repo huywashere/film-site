@@ -1,5 +1,6 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { ChevronRight, ChevronLeft, ChevronDown, Loader2 } from "lucide-react";
@@ -17,6 +18,14 @@ import { ContinueWatchingRow } from "@/components/film/ContinueWatchingRow";
 import { DashPagination } from "@/components/film/DashPagination";
 import { HeroShowcaseSection } from "@/components/film/HeroShowcaseSection";
 import { CuratedSpotlightSection } from "@/components/film/CuratedSpotlightSection";
+
+const HomeAnnouncementPopup = dynamic(
+  () =>
+    import("@/components/layout/HomeAnnouncementPopup").then(
+      (module) => module.HomeAnnouncementPopup,
+    ),
+  { ssr: false },
+);
 import { WeeklyScheduleSection } from "@/components/film/WeeklyScheduleSection";
 import HeroBanner from "@/app/components/HeroBanner";
 import { cardFont } from "@/lib/fonts";
@@ -992,6 +1001,7 @@ export default function HomePage() {
 
   return (
     <div className="bg-background min-h-screen text-foreground overflow-hidden pb-12">
+      <HomeAnnouncementPopup />
       {/* Hero Banner slider */}
       <HeroBanner />
 

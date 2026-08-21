@@ -217,7 +217,7 @@ async function bootstrap() {
   app.use("/api/v1/auth/login", authLimiter);
   app.use("/api/v1/auth/register", authLimiter);
   app.use("/api/v1/movies/search", searchLimiter);
-  app.use("/api/v1/movies/:id/reviews", reviewLimiter);
+  app.use("/api/v1/reviews", reviewLimiter);
   app.use("/api/v1/users/me/watch-history", watchHistoryLimiter);
 
   // ── Request body size cap ─────────────────────────────────────

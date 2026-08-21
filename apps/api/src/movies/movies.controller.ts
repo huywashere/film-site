@@ -2,6 +2,8 @@ import {
   BadRequestException,
   Controller,
   Get,
+  Post,
+  Body,
   Param,
   Query,
   UseGuards,
@@ -9,6 +11,7 @@ import {
 import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import { MoviesService } from "./movies.service";
 import { VidsrcService } from "./vidsrc.service";
+import { RecordMovieViewDto } from "./movies.dto";
 
 function boundedInt(value: unknown, fallback: number, min: number, max: number) {
   const parsed = Number(value);
@@ -42,6 +45,15 @@ export class MoviesController {
   @Get("trending")
   getTrending(@Query("limit") limit = 20) {
     return this.moviesService.getTrending(boundedInt(limit, 20, 1, 100));
+  }
+
+  @Post(":slug/view")
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  recordView(
+    @Param("slug") slug: string,
+    @Body() body: RecordMovieViewDto,
+  ) {
+    return this.moviesService.recordView(safeIdentifier(slug), body);
   }
 
   @Get("series")

@@ -6,7 +6,15 @@ import {
   IsString,
   IsUrl,
   MaxLength,
+  IsBoolean,
+  IsInt,
+  Min,
+  Max,
+  IsObject,
+  ValidateNested,
+  ArrayUnique,
 } from "class-validator";
+import { Type } from "class-transformer";
 
 export class UpdateMovieMetadataDto {
   @IsOptional()
@@ -23,6 +31,73 @@ export class UpdateMovieMetadataDto {
   @IsString()
   @MaxLength(20_000)
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  originName?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1888)
+  @Max(2200)
+  year?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  type?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  quality?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  language?: string;
+
+  @IsOptional()
+  @IsUrl({ protocols: ["https"], require_protocol: true })
+  @MaxLength(2048)
+  trailerUrl?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(40)
+  @ArrayUnique()
+  @IsString({ each: true })
+  @MaxLength(120, { each: true })
+  genres?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(40)
+  @ArrayUnique()
+  @IsString({ each: true })
+  @MaxLength(120, { each: true })
+  countries?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(100)
+  @ArrayUnique()
+  @IsString({ each: true })
+  @MaxLength(160, { each: true })
+  actors?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(40)
+  @ArrayUnique()
+  @IsString({ each: true })
+  @MaxLength(160, { each: true })
+  directors?: string[];
+
+  @IsOptional()
+  @IsObject()
+  releaseSchedule?: Record<string, unknown>;
 }
 
 export class UpdateMovieSourcesDto {
@@ -37,4 +112,205 @@ export class ManualSyncDto {
   @IsString()
   @IsIn(["kkphim", "ophim", "nguonc", "vsmov"])
   source: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  pages?: number;
+}
+
+export class PlaybackSourceDto {
+  @IsString()
+  @IsIn(["kkphim", "ophim", "nguonc", "vsmov", "vidsrc", "custom"])
+  provider: string;
+
+  @IsString()
+  @MaxLength(180)
+  providerSlug: string;
+
+  @IsString()
+  @MaxLength(100)
+  episodeKey: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  episodeName?: string;
+
+  @IsString()
+  @MaxLength(160)
+  serverName: string;
+
+  @IsOptional()
+  @IsUrl({ protocols: ["http", "https"], require_protocol: true })
+  @MaxLength(5000)
+  streamUrl?: string;
+
+  @IsOptional()
+  @IsObject()
+  subtitleUrls?: Record<string, string>;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  introStart?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  introEnd?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  outroStart?: number;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(40)
+  @ArrayUnique()
+  @IsInt({ each: true })
+  @Min(0, { each: true })
+  adCuePoints?: number[];
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(999)
+  priority?: number;
+}
+
+export class ReplaceMoviePlaybackSourcesDto {
+  @IsArray()
+  @ArrayMaxSize(1000)
+  @ValidateNested({ each: true })
+  @Type(() => PlaybackSourceDto)
+  items: PlaybackSourceDto[];
+}
+
+export class BulkMovieVisibilityDto {
+  @IsArray()
+  @ArrayMaxSize(200)
+  @IsString({ each: true })
+  ids: string[];
+
+  @IsBoolean()
+  hidden: boolean;
+}
+
+export class UpdateReviewModerationDto {
+  @IsBoolean()
+  hidden: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  note?: string;
+}
+
+export class UpdateIssueReportDto {
+  @IsOptional()
+  @IsIn(["NEW", "IN_PROGRESS", "RESOLVED", "REJECTED"])
+  status?: "NEW" | "IN_PROGRESS" | "RESOLVED" | "REJECTED";
+
+  @IsOptional()
+  @IsIn(["LOW", "NORMAL", "HIGH", "CRITICAL"])
+  priority?: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(10_000)
+  adminNote?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(320)
+  assignedTo?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(10_000)
+  resolutionMessage?: string;
+}
+
+export class UpdateUserRoleDto {
+  @IsIn(["USER", "MODERATOR", "ADMIN"])
+  role: "USER" | "MODERATOR" | "ADMIN";
+}
+
+export class UpdateUserLockDto {
+  @IsBoolean()
+  locked: boolean;
+}
+
+export class UpdateSiteConfigurationDto {
+  @IsOptional()
+  @IsBoolean()
+  maintenanceMode?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  maintenanceNotice?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  announcementText?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  announcementLink?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  homePopupEnabled?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(180)
+  homePopupTitle?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  homePopupBody?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  homePopupLink?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  homePopupLinkLabel?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  homePopupDismissLabel?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(12)
+  @IsString({ each: true })
+  @MaxLength(200, { each: true })
+  heroMovieSlugs?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsIn(["kkphim", "ophim", "nguonc", "vsmov"], { each: true })
+  providerPriority?: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  autoSkipIntro?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  watchPartyEnabled?: boolean;
 }

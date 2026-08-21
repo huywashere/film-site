@@ -85,14 +85,22 @@ export function buildHeroImageCandidates(input: {
 
     const proxiedRaw = rawProxyUrl(normalized);
     if (proxiedRaw && isTmdbImage(proxiedRaw)) {
-      add(preferTmdbBackdropSize(proxiedRaw));
+      const sized = preferTmdbBackdropSize(proxiedRaw);
+      add(sized);
       add(proxiedRaw);
+      add(`${IMAGE_PROXY_PATH}?url=${encodeURIComponent(sized)}&strict=1`);
+      add(strictProxyUrl(normalized));
       continue;
     }
 
     if (isTmdbImage(normalized)) {
-      add(preferTmdbBackdropSize(normalized));
+      const sized = preferTmdbBackdropSize(normalized);
+      add(sized);
       add(normalized);
+      // Some mobile networks intermittently fail to reach TMDB's image CDN.
+      // Relay the exact same film artwork before trying another film-owned
+      // source, so a network failure can never display an unrelated banner.
+      add(`${IMAGE_PROXY_PATH}?url=${encodeURIComponent(sized)}&strict=1`);
       continue;
     }
 
@@ -114,7 +122,6 @@ export function buildHeroImageCandidates(input: {
     }
   }
 
-  add(HERO_LOCAL_FALLBACK);
   return candidates;
 }
 

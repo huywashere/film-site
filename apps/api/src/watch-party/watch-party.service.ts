@@ -1,5 +1,6 @@
 import { Injectable, OnModuleDestroy } from "@nestjs/common";
 import { randomBytes, randomUUID } from "crypto";
+import { PrismaService } from "../prisma/prisma.service";
 import {
   CreateRoomPayload,
   PlaybackAction,
@@ -13,10 +14,13 @@ import {
 
 interface InternalRoom extends WatchPartyRoomSnapshot {
   participants: WatchPartyParticipant[];
+  peakParticipants: number;
 }
 
 @Injectable()
 export class WatchPartyService implements OnModuleDestroy {
+  constructor(private readonly prisma: PrismaService) {}
+
   private readonly maxRooms = 500;
   private readonly maxRoomsPerSocket = 3;
   private readonly maxParticipantsPerRoom = 50;
@@ -39,9 +43,7 @@ export class WatchPartyService implements OnModuleDestroy {
     if (this.rooms.size >= this.maxRooms) {
       throw new Error("Hệ thống đã đạt giới hạn phòng đang hoạt động.");
     }
-    if (
-      (this.socketRooms.get(socketId)?.size || 0) >= this.maxRoomsPerSocket
-    ) {
+    if ((this.socketRooms.get(socketId)?.size || 0) >= this.maxRoomsPerSocket) {
       throw new Error("Bạn đã đạt giới hạn số phòng có thể tạo.");
     }
     const now = new Date().toISOString();
@@ -65,6 +67,7 @@ export class WatchPartyService implements OnModuleDestroy {
       },
       hostId: socketId,
       participants: [participant],
+      peakParticipants: 1,
       messages: [
         this.systemMessage(
           `Phòng ${id} đã sẵn sàng. Gửi liên kết mời để xem cùng nhau.`,
@@ -92,6 +95,10 @@ export class WatchPartyService implements OnModuleDestroy {
     const now = new Date().toISOString();
     const participant = this.createParticipant(socketId, identity, false, now);
     room.participants.push(participant);
+    room.peakParticipants = Math.max(
+      room.peakParticipants,
+      room.participants.length,
+    );
     room.updatedAt = now;
     room.messages.push(
       this.systemMessage(`${participant.name} đã vào phòng.`, now),
@@ -114,6 +121,7 @@ export class WatchPartyService implements OnModuleDestroy {
     this.untrackSocketRoom(socketId, room.id);
 
     if (room.participants.length === 0) {
+      void this.archiveRoom(room, "Phòng trống", participant.name);
       this.rooms.delete(room.id);
       return { roomId: room.id, participant, room: null, deleted: true };
     }
@@ -236,6 +244,17 @@ export class WatchPartyService implements OnModuleDestroy {
       }));
   }
 
+  forceCloseRoom(roomId: string) {
+    const normalized = this.normalizeRoomId(roomId);
+    const room = this.rooms.get(normalized);
+    if (!room) return null;
+    for (const participant of room.participants) {
+      this.untrackSocketRoom(participant.id, normalized);
+    }
+    this.rooms.delete(normalized);
+    return this.snapshot(room);
+  }
+
   private requireRoom(roomId: string) {
     const room = this.rooms.get(this.normalizeRoomId(roomId));
     if (!room) throw new Error("Phòng không tồn tại hoặc đã kết thúc.");
@@ -341,8 +360,47 @@ export class WatchPartyService implements OnModuleDestroy {
         for (const participant of room.participants) {
           this.untrackSocketRoom(participant.id, roomId);
         }
+        void this.archiveRoom(room, "Hết hạn do không hoạt động");
         this.rooms.delete(roomId);
       }
+    }
+  }
+
+  private async archiveRoom(
+    room: InternalRoom,
+    closeReason: string,
+    hostFallback?: string,
+  ) {
+    const host = room.participants.find(
+      (participant) => participant.id === room.hostId,
+    );
+    try {
+      await this.prisma.watchPartyArchive.upsert({
+        where: { id: room.id },
+        create: {
+          id: room.id,
+          name: room.name,
+          movieSlug: room.movie.slug,
+          movieName: room.movie.name,
+          episode: room.movie.episode,
+          hostName: host?.name || hostFallback,
+          peakParticipants: room.peakParticipants,
+          messageCount: room.messages.length,
+          closeReason,
+          createdAt: new Date(room.createdAt),
+        },
+        update: {
+          peakParticipants: room.peakParticipants,
+          messageCount: room.messages.length,
+          closeReason,
+          endedAt: new Date(),
+        },
+      });
+    } catch (error) {
+      console.error(
+        `[WatchParty] Không thể lưu lịch sử phòng ${room.id}`,
+        error,
+      );
     }
   }
 }

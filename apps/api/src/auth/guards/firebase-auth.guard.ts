@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
   Logger,
 } from "@nestjs/common";
+import { timingSafeEqual } from "crypto";
 import {
   FirebaseTokenVerifier,
   FirebaseTokenError,
@@ -18,6 +19,32 @@ export class FirebaseAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
+    const dashboardToken = String(
+      request.headers["x-admin-dashboard-token"] || "",
+    );
+    const expectedDashboardToken = process.env.ADMIN_DASHBOARD_API_TOKEN || "";
+    if (
+      expectedDashboardToken.length >= 32 &&
+      dashboardToken.length === expectedDashboardToken.length &&
+      timingSafeEqual(
+        Buffer.from(dashboardToken),
+        Buffer.from(expectedDashboardToken),
+      )
+    ) {
+      const forwardedFor = String(request.headers["x-forwarded-for"] || "")
+        .split(",")[0]
+        .trim();
+      request.user = {
+        uid: "admin-dashboard-service",
+        email: process.env.ADMIN_DASHBOARD_EMAIL || "admin@cineverse.local",
+        name: "Quản trị NetPhim",
+        role: "ADMIN",
+        internalDashboard: true,
+        ipAddress: forwardedFor || request.ip || request.socket?.remoteAddress,
+        userAgent: String(request.headers["user-agent"] || "").slice(0, 1000),
+      };
+      return true;
+    }
     const authHeader = request.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -50,6 +77,13 @@ export class FirebaseAuthGuard implements CanActivate {
           claims.email?.toLowerCase() === "huywashere@gmail.com"
             ? "ADMIN"
             : "USER",
+        ipAddress:
+          String(request.headers["x-forwarded-for"] || "")
+            .split(",")[0]
+            .trim() ||
+          request.ip ||
+          request.socket?.remoteAddress,
+        userAgent: String(request.headers["user-agent"] || "").slice(0, 1000),
       };
 
       return true;

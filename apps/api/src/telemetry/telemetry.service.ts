@@ -2,6 +2,8 @@ import { Injectable, Logger } from "@nestjs/common";
 import * as Sentry from "@sentry/node";
 import { ClientTelemetryDto } from "./dto/client-telemetry.dto";
 import { RedisCacheService } from "../redis/redis.service";
+import { PrismaService } from "../prisma/prisma.service";
+import { Prisma } from "@prisma/client";
 
 type TelemetrySample = {
   name: string;
@@ -24,7 +26,10 @@ export class TelemetryService {
   private readonly logger = new Logger(TelemetryService.name);
   private readonly samples: TelemetrySample[] = [];
 
-  constructor(private readonly cache: RedisCacheService) {}
+  constructor(
+    private readonly cache: RedisCacheService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   captureMany(events: ClientTelemetryDto[]) {
     for (const event of events) this.capture(event);
@@ -51,10 +56,22 @@ export class TelemetryService {
       value: numeric("value"),
       durationMs: numeric("duration_ms"),
       status: numeric("status"),
-      cache: typeof properties.cache === "string" ? properties.cache : undefined,
+      cache:
+        typeof properties.cache === "string" ? properties.cache : undefined,
     });
     if (this.samples.length > 2_000) {
       this.samples.splice(0, this.samples.length - 2_000);
+    }
+
+    if (
+      event.name.startsWith("player.") ||
+      event.name.startsWith("watch_now.")
+    ) {
+      void this.persistPlaybackEvent(event).catch((error) => {
+        this.logger.debug(
+          `Không thể lưu playback event: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
     }
 
     this.logger.debug({ ...tags, properties: event.properties });
@@ -70,6 +87,74 @@ export class TelemetryService {
         });
         Sentry.captureMessage(`Client telemetry: ${event.name}`, level);
       });
+    }
+  }
+
+  private async persistPlaybackEvent(event: ClientTelemetryDto) {
+    const properties = event.properties || {};
+    const text = (key: string, max = 180) =>
+      typeof properties[key] === "string"
+        ? String(properties[key]).slice(0, max)
+        : undefined;
+    const number = (key: string) =>
+      typeof properties[key] === "number" && Number.isFinite(properties[key])
+        ? Math.max(0, Math.round(properties[key] as number))
+        : undefined;
+    const route = event.route || "";
+    const routeSlug = route.match(/\/watch\/([^/?#]+)/)?.[1];
+    const movieId = routeSlug
+      ? (
+          await this.prisma.movie.findUnique({
+            where: { id: decodeURIComponent(routeSlug) },
+            select: { id: true },
+          })
+        )?.id
+      : undefined;
+    await this.prisma.playbackEvent.create({
+      data: {
+        eventType: event.name,
+        movieId,
+        route: route.slice(0, 500) || undefined,
+        sessionId: text("session_id"),
+        userId: text("user_id"),
+        provider: text("source") || text("provider"),
+        serverName: text("server"),
+        episode: text("episode"),
+        quality: text("quality"),
+        deviceType: text("device_type"),
+        country: text("country", 10),
+        errorCode: text("error_kind") || text("error_code"),
+        bufferMs: number("buffer_ms"),
+        durationMs: number("start_time_ms") || number("duration_ms"),
+        fromSource: text("from_source"),
+        toSource: text("to_source"),
+        metadata: properties as Prisma.InputJsonValue,
+        occurredAt: event.timestamp ? new Date(event.timestamp) : new Date(),
+      },
+    });
+    if (movieId && (text("source") || text("provider"))) {
+      const failed = ["player.source_failed", "player.error"].includes(
+        event.name,
+      );
+      const succeeded = ["watch_now.success", "player.iframe_loaded"].includes(
+        event.name,
+      );
+      if (failed || succeeded) {
+        await this.prisma.moviePlaybackSource.updateMany({
+          where: {
+            movieId,
+            provider: text("source") || text("provider"),
+            ...(text("server") ? { serverName: text("server") } : {}),
+          },
+          data: {
+            healthStatus: failed ? "down" : "operational",
+            lastCheckedAt: new Date(),
+            lastError: failed
+              ? text("error_kind", 500) || "playback_error"
+              : null,
+          },
+        });
+      }
     }
   }
 

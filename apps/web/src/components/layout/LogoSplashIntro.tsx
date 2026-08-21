@@ -1,96 +1,138 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
+import { useEffect, useState } from "react";
+
+const MIN_VISIBLE_MS = 1_050;
+const MAX_VISIBLE_MS = 3_600;
+const EXIT_DURATION_MS = 560;
+
+const WALL_TILE_COUNT = 18;
 
 export function LogoSplashIntro() {
-  const [showIntro, setShowIntro] = useState(false);
+  const [visible, setVisible] = useState(true);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
-    // Show splash screen once per session load
-    if (typeof window !== "undefined") {
-      const hasSeen = sessionStorage.getItem("cinephim-intro-seen");
-      if (!hasSeen) {
-        setShowIntro(true);
-        sessionStorage.setItem("cinephim-intro-seen", "true");
-        const timer = setTimeout(() => {
-          setShowIntro(false);
-        }, 1500);
-        return () => clearTimeout(timer);
-      }
+    const root = document.documentElement;
+    if (root.dataset.netphimIntro !== "show") {
+      setVisible(false);
+      return;
     }
+
+    const startedAt = performance.now();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    let closeScheduled = false;
+    let closeTimer: number | undefined;
+    let removeTimer: number | undefined;
+    let observer: MutationObserver | undefined;
+    let watchedImage: HTMLImageElement | null = null;
+
+    const close = () => {
+      if (closeScheduled) return;
+      closeScheduled = true;
+      const remaining = Math.max(0, MIN_VISIBLE_MS - (performance.now() - startedAt));
+      closeTimer = window.setTimeout(() => {
+        setLeaving(true);
+        removeTimer = window.setTimeout(() => {
+          root.dataset.netphimIntro = "done";
+          document.body.style.overflow = previousOverflow;
+          setVisible(false);
+        }, EXIT_DURATION_MS);
+      }, remaining);
+    };
+
+    const checkHomepageReady = () => {
+      const hero = document.querySelector<HTMLElement>(
+        'section[data-hero-banner="true"]',
+      );
+      if (!hero || hero.getAttribute("aria-busy") === "true") return false;
+
+      const image = hero.querySelector<HTMLImageElement>("img");
+      if (!image) return false;
+      if (image.complete && image.naturalWidth > 0) {
+        close();
+        return true;
+      }
+      if (watchedImage !== image) {
+        watchedImage?.removeEventListener("load", close);
+        watchedImage = image;
+        watchedImage.addEventListener("load", close, { once: true });
+      }
+      return false;
+    };
+
+    if (window.location.pathname === "/") {
+      if (!checkHomepageReady()) {
+        observer = new MutationObserver(checkHomepageReady);
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ["aria-busy", "src"],
+        });
+      }
+    } else {
+      close();
+    }
+
+    const maximumTimer = window.setTimeout(close, MAX_VISIBLE_MS);
+    return () => {
+      observer?.disconnect();
+      watchedImage?.removeEventListener("load", close);
+      window.clearTimeout(maximumTimer);
+      if (closeTimer) window.clearTimeout(closeTimer);
+      if (removeTimer) window.clearTimeout(removeTimer);
+      document.body.style.overflow = previousOverflow;
+    };
   }, []);
 
+  if (!visible) return null;
+
   return (
-    <AnimatePresence>
-      {showIntro && (
-        <motion.div
-          initial={{ opacity: 1 }}
-          exit={{
-            opacity: 0,
-            transition: { duration: 0.45, ease: "easeInOut" },
-          }}
-          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0a0c10] select-none pointer-events-none contain-strict"
-        >
-          {/* Animated Purple Glow Background */}
-          <div className="absolute w-[320px] h-[320px] rounded-full bg-purple-600/25 blur-[110px] animate-pulse" />
+    <div
+      id="netphim-entry-splash"
+      role="status"
+      aria-live="polite"
+      aria-label="Đang mở NetPhim"
+      className={`fixed inset-0 z-[10000] overflow-hidden bg-[#07070b] transition-[opacity,filter] duration-500 ease-out ${leaving ? "pointer-events-none opacity-0 blur-sm" : "pointer-events-auto opacity-100"}`}
+    >
+      <div className="absolute -inset-[24%] overflow-hidden bg-[#06070a]">
+        <div className="netphim-intro-mosaic grid w-full grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-6">
+          {Array.from({ length: WALL_TILE_COUNT }, (_, index) => (
+            <div
+              key={index}
+              aria-hidden="true"
+              className="netphim-intro-poster relative aspect-[2/3] overflow-hidden rounded-[3px] bg-[#101116] ring-1 ring-white/[.04]"
+            />
+          ))}
+        </div>
+      </div>
 
-          {/* Central Animated Logo */}
-          <motion.div
-            initial={{ scale: 0.65, opacity: 0 }}
-            animate={{ scale: [0.65, 1.05, 1], opacity: 1 }}
-            transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col items-center gap-3.5 relative z-10"
-          >
-            <div className="relative">
-              { }
-              <motion.img
-                src="/cinephim-logo.png"
-                alt="NetPhim Logo"
-                animate={{ rotate: [0, 4, -4, 0] }}
-                transition={{
-                  duration: 2.2,
-                  ease: "easeInOut",
-                  repeat: Infinity,
-                }}
-                className="w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow-[0_0_40px_rgba(168,85,247,0.75)]"
-              />
-            </div>
+      <div className="absolute inset-0 bg-black/60" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(8,9,12,.34)_0%,rgba(6,7,10,.7)_48%,rgba(4,5,8,.96)_100%)]" />
+      <div className="netphim-intro-scan absolute inset-y-0 w-1/4 bg-gradient-to-r from-transparent via-white/[.035] to-transparent" />
 
-            <motion.div
-              initial={{ y: 14, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.25, duration: 0.55 }}
-              className="flex items-center gap-1 text-2xl sm:text-4xl font-black tracking-tight"
-            >
-              <span className="bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(168,85,247,0.6)] font-sans">
-                NetPhim
-              </span>
-            </motion.div>
-
-            {/* Subtle Loading Bouncing Dots */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="flex items-center gap-1.5 pt-1"
-            >
-              <span
-                className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce"
-                style={{ animationDelay: "0ms" }}
-              />
-              <span
-                className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce"
-                style={{ animationDelay: "150ms" }}
-              />
-              <span
-                className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce"
-                style={{ animationDelay: "300ms" }}
-              />
-            </motion.div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+      <div className="netphim-intro-brand relative flex h-full flex-col items-center justify-center px-6">
+        <div className="relative flex items-center gap-4 sm:gap-5">
+          <Image
+            src="/cinephim-logo.png"
+            alt=""
+            width={88}
+            height={88}
+            priority
+            className="h-[66px] w-[66px] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,.75)] sm:h-[84px] sm:w-[84px]"
+          />
+          <span className="text-[38px] font-black tracking-[-.065em] text-white drop-shadow-[0_8px_30px_rgba(0,0,0,.7)] sm:text-[58px]">
+            NetPhim
+          </span>
+        </div>
+        <div className="mt-7 h-[2px] w-36 overflow-hidden rounded-full bg-white/10 sm:w-44">
+          <span className="netphim-intro-progress block h-full rounded-full bg-white/70" />
+        </div>
+      </div>
+    </div>
   );
 }

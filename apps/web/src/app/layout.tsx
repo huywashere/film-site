@@ -19,6 +19,8 @@ import { LazyAuthModalHost } from "@/components/auth/LazyAuthModalHost";
 import { safeJsonLd } from "@/lib/safe-json-ld";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { ClientBackgroundServices } from "@/components/layout/ClientBackgroundServices";
+import { OperationalNotice } from "@/components/layout/OperationalNotice";
+import { LogoSplashIntro } from "@/components/layout/LogoSplashIntro";
 
 export const viewport: Viewport = {
   themeColor: "#141414",
@@ -131,6 +133,11 @@ export default function RootLayout({
   return (
     <html lang="vi" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var k="netphim-entry-intro-v2";var s=sessionStorage.getItem(k);document.documentElement.dataset.netphimIntro=s?"skip":"show";if(!s)sessionStorage.setItem(k,"1");}catch(e){document.documentElement.dataset.netphimIntro="show";}})();`,
+          }}
+        />
         <meta name="referrer" content="no-referrer" />
         <link rel="icon" href="/cinephim-logo.png" type="image/png" />
         <link rel="shortcut icon" href="/cinephim-logo.png" type="image/png" />
@@ -156,8 +163,10 @@ export default function RootLayout({
         className={`${beVietnamPro.variable} ${manrope.variable} ${robotoCondensed.variable} font-sans antialiased`}
         suppressHydrationWarning
       >
+        <LogoSplashIntro />
         <ThemeWatcher />
         <ThemeColorSync />
+        <OperationalNotice />
         <QueryProvider>
           <ToastProvider>
             <AuthSessionBridge />

@@ -47,7 +47,13 @@ import {
   Volume2,
   SlidersHorizontal,
 } from "lucide-react";
-import { kkphimApi, movieApi, watchHistoryApi } from "@/lib/api";
+import {
+  kkphimApi,
+  movieApi,
+  siteConfigApi,
+  viewApi,
+  watchHistoryApi,
+} from "@/lib/api";
 import { extractFilmItems, normalizeText } from "@/lib/movie-normalizer";
 import { resolveImageUrl } from "@/components/film/FilmCard";
 import { TmdbArtwork } from "@/components/film/TmdbArtwork";
@@ -95,9 +101,7 @@ const HlsVideoPlayer = dynamic(
     ),
   {
     ssr: false,
-    loading: () => (
-      <div className="h-full w-full animate-pulse bg-[#0b0d12]" />
-    ),
+    loading: () => <div className="h-full w-full animate-pulse bg-[#0b0d12]" />,
   },
 );
 
@@ -202,7 +206,12 @@ function SidebarFilmCard({ film, slug }: { film: any; slug: string }) {
     <div className="space-y-3 pb-4 border-b border-white/[0.08]">
       <div className="flex gap-3">
         <div className="relative w-16 h-24 rounded-lg overflow-hidden flex-shrink-0 border border-white/[0.08] bg-neutral-900 shadow-md">
-          <TmdbArtwork film={film} kind="poster" className="w-full h-full object-cover" alt={film?.name} />
+          <TmdbArtwork
+            film={film}
+            kind="poster"
+            className="w-full h-full object-cover"
+            alt={film?.name}
+          />
         </div>
         <div className="space-y-1 min-w-0 flex-1">
           <h2 className="text-xs sm:text-sm font-bold text-white leading-snug line-clamp-2">
@@ -213,7 +222,9 @@ function SidebarFilmCard({ film, slug }: { film: any; slug: string }) {
               {film.origin_name}
             </p>
           )}
-          <p className="text-[11px] text-neutral-400 font-medium">{film?.year}</p>
+          <p className="text-[11px] text-neutral-400 font-medium">
+            {film?.year}
+          </p>
           <div className="flex flex-wrap gap-1 pt-0.5">
             {film?.quality && (
               <span className="text-[9px] font-bold bg-white/[0.06] text-neutral-300 px-1.5 py-0.5 rounded border border-white/[0.06]">
@@ -258,10 +269,8 @@ function EpisodeThumbnail({
   isWatched: boolean;
   lang: string;
 }) {
-  const { backdropUrl: tmdbBackdropUrl, posterUrl: tmdbPosterUrl } = useTmdbArtwork(
-    film,
-    true,
-  );
+  const { backdropUrl: tmdbBackdropUrl, posterUrl: tmdbPosterUrl } =
+    useTmdbArtwork(film, true);
 
   const candidateUrls = useMemo(() => {
     const list: string[] = [];
@@ -358,14 +367,20 @@ function EpisodeThumbnail({
         )}
         {!isActive && isWatched && (
           <div className="bg-emerald-500/90 text-white font-bold text-[9px] px-1.5 py-0.5 rounded shadow flex items-center gap-0.5">
-            <Check size={9} strokeWidth={3} /> {lang === "en" ? "Watched" : "Đã xem"}
+            <Check size={9} strokeWidth={3} />{" "}
+            {lang === "en" ? "Watched" : "Đã xem"}
           </div>
         )}
       </div>
 
       {/* Episode Title & Play Icon */}
       <div className="absolute bottom-2 left-2.5 right-2.5 z-10 flex items-center justify-between">
-        <span className={cn("text-xs font-black drop-shadow-md", isActive ? "text-white" : "text-white/90")}>
+        <span
+          className={cn(
+            "text-xs font-black drop-shadow-md",
+            isActive ? "text-white" : "text-white/90",
+          )}
+        >
           Tập {epNum}
         </span>
         <div
@@ -396,16 +411,52 @@ function KeyboardShortcutsModal({
   if (!isOpen) return null;
 
   const shortcuts = [
-    { key: "Space / K", desc: lang === "en" ? "Play / Pause video" : "Phát / Tạm dừng video" },
-    { key: "F", desc: lang === "en" ? "Toggle Fullscreen" : "Bật / Tắt toàn màn hình" },
-    { key: "T", desc: lang === "en" ? "Toggle Theater Mode" : "Bật / Tắt chế độ rạp phim" },
-    { key: "M", desc: lang === "en" ? "Mute / Unmute audio" : "Tắt / Bật tiếng" },
-    { key: "← / →", desc: lang === "en" ? "Seek backward / forward 5s" : "Tua lùi / Tua tới 5 giây" },
-    { key: "↑ / ↓", desc: lang === "en" ? "Increase / Decrease volume 10%" : "Tăng / Giảm âm lượng 10%" },
-    { key: "N", desc: lang === "en" ? "Next episode" : "Chuyển sang tập kế tiếp" },
-    { key: "P", desc: lang === "en" ? "Previous episode" : "Quay lại tập trước" },
-    { key: "B", desc: lang === "en" ? "Skip Intro (+85s)" : "Bỏ qua đoạn mở đầu (+85s)" },
-    { key: "?", desc: lang === "en" ? "Show keyboard shortcuts" : "Mở bảng phím tắt" },
+    {
+      key: "Space / K",
+      desc: lang === "en" ? "Play / Pause video" : "Phát / Tạm dừng video",
+    },
+    {
+      key: "F",
+      desc: lang === "en" ? "Toggle Fullscreen" : "Bật / Tắt toàn màn hình",
+    },
+    {
+      key: "T",
+      desc: lang === "en" ? "Toggle Theater Mode" : "Bật / Tắt chế độ rạp phim",
+    },
+    {
+      key: "M",
+      desc: lang === "en" ? "Mute / Unmute audio" : "Tắt / Bật tiếng",
+    },
+    {
+      key: "← / →",
+      desc:
+        lang === "en"
+          ? "Seek backward / forward 5s"
+          : "Tua lùi / Tua tới 5 giây",
+    },
+    {
+      key: "↑ / ↓",
+      desc:
+        lang === "en"
+          ? "Increase / Decrease volume 10%"
+          : "Tăng / Giảm âm lượng 10%",
+    },
+    {
+      key: "N",
+      desc: lang === "en" ? "Next episode" : "Chuyển sang tập kế tiếp",
+    },
+    {
+      key: "P",
+      desc: lang === "en" ? "Previous episode" : "Quay lại tập trước",
+    },
+    {
+      key: "B",
+      desc: lang === "en" ? "Skip Intro (+85s)" : "Bỏ qua đoạn mở đầu (+85s)",
+    },
+    {
+      key: "?",
+      desc: lang === "en" ? "Show keyboard shortcuts" : "Mở bảng phím tắt",
+    },
   ];
 
   return (
@@ -414,7 +465,9 @@ function KeyboardShortcutsModal({
         <div className="flex items-center justify-between pb-3 border-b border-white/10">
           <div className="flex items-center gap-2 text-white font-bold text-sm">
             <span className="text-lg">⌨️</span>
-            <span>{lang === "en" ? "Keyboard Shortcuts" : "Phím Tắt Điều Khiển"}</span>
+            <span>
+              {lang === "en" ? "Keyboard Shortcuts" : "Phím Tắt Điều Khiển"}
+            </span>
           </div>
           <button
             onClick={onClose}
@@ -474,15 +527,44 @@ function ReportStreamModal({
   if (!isOpen) return null;
 
   const reasons = [
-    { id: "cannot_play", label: lang === "en" ? "Video won't play / Black screen" : "Video không phát / Màn hình đen" },
-    { id: "lag_buffering", label: lang === "en" ? "Lag / Continuous buffering" : "Giật lag / Tải chậm liên tục" },
-    { id: "audio_desync", label: lang === "en" ? "Audio or subtitle out of sync" : "Lệch âm thanh hoặc phụ đề" },
-    { id: "wrong_episode", label: lang === "en" ? "Wrong episode / Incomplete" : "Sai tập phim / Thiếu nội dung" },
+    {
+      id: "cannot_play",
+      label:
+        lang === "en"
+          ? "Video won't play / Black screen"
+          : "Video không phát / Màn hình đen",
+    },
+    {
+      id: "lag_buffering",
+      label:
+        lang === "en"
+          ? "Lag / Continuous buffering"
+          : "Giật lag / Tải chậm liên tục",
+    },
+    {
+      id: "audio_desync",
+      label:
+        lang === "en"
+          ? "Audio or subtitle out of sync"
+          : "Lệch âm thanh hoặc phụ đề",
+    },
+    {
+      id: "wrong_episode",
+      label:
+        lang === "en"
+          ? "Wrong episode / Incomplete"
+          : "Sai tập phim / Thiếu nội dung",
+    },
   ];
 
   const handleSubmitReport = () => {
     setSubmitted(true);
-    toast(lang === "en" ? "Thank you! Error report sent to engineers." : "Cảm ơn bạn! Đã gửi báo lỗi tới kỹ thuật viên.", "success");
+    toast(
+      lang === "en"
+        ? "Thank you! Error report sent to engineers."
+        : "Cảm ơn bạn! Đã gửi báo lỗi tới kỹ thuật viên.",
+      "success",
+    );
     setTimeout(() => {
       onClose();
       setSubmitted(false);
@@ -495,7 +577,11 @@ function ReportStreamModal({
         <div className="flex items-center justify-between pb-3 border-b border-white/10">
           <div className="flex items-center gap-2 text-white font-bold text-sm">
             <span className="text-amber-400">🚨</span>
-            <span>{lang === "en" ? "Report Stream & Quick Switch" : "Báo Lỗi Phim & Đổi Server Nhanh"}</span>
+            <span>
+              {lang === "en"
+                ? "Report Stream & Quick Switch"
+                : "Báo Lỗi Phim & Đổi Server Nhanh"}
+            </span>
           </div>
           <button
             onClick={onClose}
@@ -508,7 +594,9 @@ function ReportStreamModal({
         {/* Quick Server Switch Options */}
         <div className="space-y-2">
           <p className="text-xs font-semibold text-white/60">
-            {lang === "en" ? "Try switching to an alternate server:" : "Thử chuyển nhanh sang server dự phòng:"}
+            {lang === "en"
+              ? "Try switching to an alternate server:"
+              : "Thử chuyển nhanh sang server dự phòng:"}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {servers.map((srv, idx) => {
@@ -518,7 +606,12 @@ function ReportStreamModal({
                   key={idx}
                   onClick={() => {
                     onSwitchServer(idx);
-                    toast(lang === "en" ? `Switched to ${srv.server_name}` : `Đã chuyển sang ${srv.server_name}`, "success");
+                    toast(
+                      lang === "en"
+                        ? `Switched to ${srv.server_name}`
+                        : `Đã chuyển sang ${srv.server_name}`,
+                      "success",
+                    );
                     onClose();
                   }}
                   className={cn(
@@ -528,9 +621,13 @@ function ReportStreamModal({
                       : "bg-white/[0.03] border-white/[0.08] text-white/70 hover:bg-white/10 hover:text-white",
                   )}
                 >
-                  <span className="truncate">{srv.server_name || `Server #${idx + 1}`}</span>
+                  <span className="truncate">
+                    {srv.server_name || `Server #${idx + 1}`}
+                  </span>
                   {isCurrent ? (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-extrabold">Đang dùng</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-extrabold">
+                      Đang dùng
+                    </span>
                   ) : (
                     <RefreshCw size={11} className="text-white/40" />
                   )}
@@ -543,7 +640,9 @@ function ReportStreamModal({
         {/* Reason Selector */}
         <div className="space-y-2 pt-2 border-t border-white/10">
           <p className="text-xs font-semibold text-white/60">
-            {lang === "en" ? "Or report what went wrong:" : "Hoặc báo chi tiết vấn đề bạn gặp phải:"}
+            {lang === "en"
+              ? "Or report what went wrong:"
+              : "Hoặc báo chi tiết vấn đề bạn gặp phải:"}
           </p>
           <div className="space-y-1.5">
             {reasons.map((r) => (
@@ -582,7 +681,13 @@ function ReportStreamModal({
             disabled={submitted}
             className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs transition-all shadow-lg active:scale-95 cursor-pointer disabled:opacity-50"
           >
-            {submitted ? (lang === "en" ? "Sent ✓" : "Đã gửi ✓") : (lang === "en" ? "Submit Report" : "Gửi Báo Lỗi")}
+            {submitted
+              ? lang === "en"
+                ? "Sent ✓"
+                : "Đã gửi ✓"
+              : lang === "en"
+                ? "Submit Report"
+                : "Gửi Báo Lỗi"}
           </button>
         </div>
       </div>
@@ -592,10 +697,8 @@ function ReportStreamModal({
 
 // ── Recommendation Item Component with TMDB Artwork Resolution ──
 function RecMovieItem({ item }: { item: any }) {
-  const { posterUrl: tmdbPosterUrl, backdropUrl: tmdbBackdropUrl } = useTmdbArtwork(
-    item,
-    true,
-  );
+  const { posterUrl: tmdbPosterUrl, backdropUrl: tmdbBackdropUrl } =
+    useTmdbArtwork(item, true);
 
   const candidateUrls = useMemo(() => {
     const list: string[] = [];
@@ -637,7 +740,9 @@ function RecMovieItem({ item }: { item: any }) {
   }, [item?.slug, candidateUrls]);
 
   const src = candidateUrls[candidateIdx];
-  const rating = Number(item?.tmdb?.vote_average || item?.vote_average || item?.rating || 0);
+  const rating = Number(
+    item?.tmdb?.vote_average || item?.vote_average || item?.rating || 0,
+  );
 
   return (
     <Link
@@ -736,6 +841,13 @@ export default function WatchPage() {
   const [episodeSearch, setEpisodeSearch] = useState("");
   const [autoNextConfig, setAutoNextConfig] = useState(true);
   const [autoPlayConfig, setAutoPlayConfig] = useState(true);
+  const [providerPriority, setProviderPriority] = useState([
+    "kkphim",
+    "ophim",
+    "nguonc",
+    "vsmov",
+  ]);
+  const [watchPartyEnabled, setWatchPartyEnabled] = useState(true);
   const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(
     null,
   );
@@ -746,7 +858,8 @@ export default function WatchPage() {
     useState<ServerType>("vietsub");
   const [currentTypeServer, setCurrentTypeServer] = useState(0);
   const [vidsrcManuallySelected, setVidsrcManuallySelected] = useState(false);
-  const [userManuallySelectedServer, setUserManuallySelectedServer] = useState(false);
+  const [userManuallySelectedServer, setUserManuallySelectedServer] =
+    useState(false);
 
   // Fallback state
   const [isFallbacking, setIsFallbacking] = useState(false);
@@ -759,6 +872,7 @@ export default function WatchPage() {
   const autoNextTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const playerLoadStartedAtRef = useRef(Date.now());
   const playedSourceKeysRef = useRef(new Set<string>());
+  const recordedViewRef = useRef(false);
   const lastKnownPlaybackTimeRef = useRef(0);
   const lastProgressSyncRef = useRef(0);
 
@@ -788,7 +902,9 @@ export default function WatchPage() {
   useEffect(() => {
     if (theaterMode) document.body.dataset.theaterMode = "on";
     else delete document.body.dataset.theaterMode;
-    return () => { delete document.body.dataset.theaterMode; };
+    return () => {
+      delete document.body.dataset.theaterMode;
+    };
   }, [theaterMode]);
 
   const [subDelayOffset, setSubDelayOffset] = useState<number>(0);
@@ -813,18 +929,44 @@ export default function WatchPage() {
     return false;
   });
 
-  const [isQuickSettingsCollapsed, setIsQuickSettingsCollapsed] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("cineverse_quick_settings_collapsed") === "true";
-    }
-    return false;
-  });
+  useEffect(() => {
+    let active = true;
+    siteConfigApi
+      .getPublic()
+      .then(({ data }) => {
+        if (!active) return;
+        if (data.providerPriority?.length)
+          setProviderPriority(data.providerPriority);
+        setWatchPartyEnabled(data.watchPartyEnabled !== false);
+        if (localStorage.getItem("cineverse_auto_skip_intro") === null) {
+          setAutoSkipIntro(data.autoSkipIntro);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const [isQuickSettingsCollapsed, setIsQuickSettingsCollapsed] = useState(
+    () => {
+      if (typeof window !== "undefined") {
+        return (
+          localStorage.getItem("cineverse_quick_settings_collapsed") === "true"
+        );
+      }
+      return false;
+    },
+  );
 
   const toggleQuickSettingsCollapsed = useCallback(() => {
     setIsQuickSettingsCollapsed((prev) => {
       const next = !prev;
       if (typeof window !== "undefined") {
-        localStorage.setItem("cineverse_quick_settings_collapsed", String(next));
+        localStorage.setItem(
+          "cineverse_quick_settings_collapsed",
+          String(next),
+        );
       }
       return next;
     });
@@ -963,7 +1105,8 @@ export default function WatchPage() {
       if (e.code === "KeyN") {
         e.preventDefault();
         const videoEl = playerContainerRef.current?.querySelector("video");
-        if (videoEl) videoEl.currentTime = videoEl.duration || videoEl.currentTime;
+        if (videoEl)
+          videoEl.currentTime = videoEl.duration || videoEl.currentTime;
         return;
       }
 
@@ -1003,15 +1146,23 @@ export default function WatchPage() {
           artInstance.seek = Math.max(0, artInstance.currentTime - 5);
         } else {
           const videoEl = playerContainerRef.current?.querySelector("video");
-          if (videoEl) videoEl.currentTime = Math.max(0, videoEl.currentTime - 5);
+          if (videoEl)
+            videoEl.currentTime = Math.max(0, videoEl.currentTime - 5);
         }
       } else if (e.code === "ArrowRight") {
         e.preventDefault();
         if (artInstance) {
-          artInstance.seek = Math.min(artInstance.duration || 9999, artInstance.currentTime + 5);
+          artInstance.seek = Math.min(
+            artInstance.duration || 9999,
+            artInstance.currentTime + 5,
+          );
         } else {
           const videoEl = playerContainerRef.current?.querySelector("video");
-          if (videoEl) videoEl.currentTime = Math.min(videoEl.duration || 9999, videoEl.currentTime + 5);
+          if (videoEl)
+            videoEl.currentTime = Math.min(
+              videoEl.duration || 9999,
+              videoEl.currentTime + 5,
+            );
         }
       } else if (e.code === "ArrowUp") {
         e.preventDefault();
@@ -1032,7 +1183,10 @@ export default function WatchPage() {
         } else {
           const videoEl = playerContainerRef.current?.querySelector("video");
           if (videoEl) {
-            videoEl.currentTime = Math.min(videoEl.duration || 9999, videoEl.currentTime + 85);
+            videoEl.currentTime = Math.min(
+              videoEl.duration || 9999,
+              videoEl.currentTime + 85,
+            );
             toast("Đã bỏ qua Intro (+85s)", "info");
           }
         }
@@ -1186,10 +1340,7 @@ export default function WatchPage() {
   const sourceSlugFor = useCallback(
     (source: MovieSource) => {
       if (primarySource === source) return sourceSlug;
-      return (
-        matchedSourceRecord?._sourceSlugs?.[source] ||
-        (sourceSlug || slug)
-      );
+      return matchedSourceRecord?._sourceSlugs?.[source] || sourceSlug || slug;
     },
     [matchedSourceRecord, primarySource, slug, sourceSlug],
   );
@@ -1204,9 +1355,7 @@ export default function WatchPage() {
     queryFn: () =>
       movieApi.getDetailFromSource("kkphim", kkphimSlug).then((r) => r.data),
     enabled:
-      fallbackSourcesReady &&
-      Boolean(kkphimSlug) &&
-      primarySource !== "kkphim",
+      fallbackSourcesReady && Boolean(kkphimSlug) && primarySource !== "kkphim",
   });
   const { data: ophimFetchedData } = useQuery({
     queryKey: ["film-ophim", ophimSlug],
@@ -1220,9 +1369,7 @@ export default function WatchPage() {
     queryFn: () =>
       movieApi.getDetailFromSource("nguonc", nguoncSlug).then((r) => r.data),
     enabled:
-      fallbackSourcesReady &&
-      Boolean(nguoncSlug) &&
-      primarySource !== "nguonc",
+      fallbackSourcesReady && Boolean(nguoncSlug) && primarySource !== "nguonc",
   });
   const { data: vsmovFetchedData } = useQuery({
     queryKey: ["film-vsmov", vsmovSlug],
@@ -1292,7 +1439,13 @@ export default function WatchPage() {
     film?.tmdb?.type || (film?.type === "series" ? "tv" : "movie");
 
   const { data: recsData } = useQuery({
-    queryKey: ["smart-recs-v2", slug, effectiveTmdbId, effectiveMediaType, filmCategory],
+    queryKey: [
+      "smart-recs-v2",
+      slug,
+      effectiveTmdbId,
+      effectiveMediaType,
+      filmCategory,
+    ],
     queryFn: async () => {
       const items: any[] = [];
       const seenSlugs = new Set<string>();
@@ -1346,7 +1499,9 @@ export default function WatchPage() {
                     .some((value) => normalizedTitles.has(value));
                   return (
                     sameTitle &&
-                    (!year || !candidate?.year || String(candidate.year) === year)
+                    (!year ||
+                      !candidate?.year ||
+                      String(candidate.year) === year)
                   );
                 });
                 const providerItem = exact || titleMatch;
@@ -1392,7 +1547,8 @@ export default function WatchPage() {
       // 2. Cấp độ 2: Kho 100 phim bom tấn tuyển chọn (Khớp franchise/từ khóa)
       try {
         const { searchLocalFilms } = await import("@/lib/smart-search");
-        const titleKeywords = (film?.name || film?.origin_name || slug || "").split(" ")[0] || "";
+        const titleKeywords =
+          (film?.name || film?.origin_name || slug || "").split(" ")[0] || "";
         const localMatches = searchLocalFilms(titleKeywords);
         for (const item of localMatches) {
           if (item?.slug && !seenSlugs.has(item.slug)) {
@@ -1556,13 +1712,22 @@ export default function WatchPage() {
         };
       });
 
-    return [
+    const combined = [
       ...tagSource(kkphimEps, "KKPhim", "kkphim"),
       ...tagSource(nguoncEps, "NguonC", "nguonc"),
       ...tagSource(vsmovEps, "VSMov", "vsmov"),
       ...tagSource(ophimEps, "OPhim", "ophim"),
       ...tagSource(vidsrcEps, "VidSrc", "vidsrc"),
     ];
+    const rank = new Map(
+      providerPriority.map((source, index) => [source, index]),
+    );
+    return combined.sort(
+      (left, right) =>
+        (rank.get(left._source || "") ?? 999) -
+          (rank.get(right._source || "") ?? 999) ||
+        (right.priority ?? 0) - (left.priority ?? 0),
+    );
   }, [
     autoPlayConfig,
     currentEp,
@@ -1573,6 +1738,7 @@ export default function WatchPage() {
     tmdbMediaType,
     vidsrcSeason,
     vsmovData,
+    providerPriority,
   ]);
 
   const serversByType = useMemo(() => {
@@ -1758,6 +1924,7 @@ export default function WatchPage() {
   useEffect(() => {
     if (
       !shouldCreateParty ||
+      !watchPartyEnabled ||
       !film ||
       wp.roomId ||
       wp.connectionState !== "online" ||
@@ -1773,6 +1940,7 @@ export default function WatchPage() {
     createCurrentMovieParty,
     film,
     shouldCreateParty,
+    watchPartyEnabled,
     wp.connectionState,
     wp.roomId,
   ]);
@@ -2003,7 +2171,12 @@ export default function WatchPage() {
       iframeLoadTimerRef.current = null;
       tryNextServer("iframe-timeout");
     }, 20_000);
-  }, [clearIframeLoadTimeout, tryNextServer, userManuallySelectedServer, vidsrcManuallySelected]);
+  }, [
+    clearIframeLoadTimeout,
+    tryNextServer,
+    userManuallySelectedServer,
+    vidsrcManuallySelected,
+  ]);
 
   const handlePlayerFailure = useCallback(
     (reason: string) => {
@@ -2071,6 +2244,8 @@ export default function WatchPage() {
     playerLoadStartedAtRef.current = Date.now();
     fallbackAttemptRef.current = 0;
     fallbackInProgressRef.current = false;
+    recordedViewRef.current = false;
+    playedSourceKeysRef.current.clear();
     lastKnownPlaybackTimeRef.current = resumeAt;
     clearIframeLoadTimeout();
     setPlayerEngine(DISABLE_ARTPLAYER ? "iframe" : m3u8Url ? "hls" : "iframe");
@@ -2107,7 +2282,13 @@ export default function WatchPage() {
     if (first) {
       const gIdx = episodes.indexOf(first);
       setCurrentServer(gIdx >= 0 ? gIdx : 0);
-      setPlayerEngine(DISABLE_ARTPLAYER ? "iframe" : first.server_data?.[0]?.link_m3u8 ? "hls" : "iframe");
+      setPlayerEngine(
+        DISABLE_ARTPLAYER
+          ? "iframe"
+          : first.server_data?.[0]?.link_m3u8
+            ? "hls"
+            : "iframe",
+      );
     }
   }, [activeServerType, episodes, serversByType]);
 
@@ -2171,7 +2352,9 @@ export default function WatchPage() {
   ];
 
   return (
-    <div className={`${cardFont.className} relative min-h-screen bg-[#101114] text-white`}>
+    <div
+      className={`${cardFont.className} relative min-h-screen bg-[#101114] text-white`}
+    >
       {/* ── JSON-LD STRUCTURED DATA SCHEMA FOR GOOGLE SEO ── */}
       <script
         type="application/ld+json"
@@ -2186,9 +2369,7 @@ export default function WatchPage() {
         >
           <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#141414]/90 px-3 py-2 text-[11px] font-semibold text-neutral-300 shadow-lg backdrop-blur-md">
             <LightbulbOff size={14} className="text-neutral-400" />
-            <span>
-              Đang tắt đèn. Bấm ra ngoài video để bật lại.
-            </span>
+            <span>Đang tắt đèn. Bấm ra ngoài video để bật lại.</span>
           </div>
         </div>
       )}
@@ -2204,30 +2385,41 @@ export default function WatchPage() {
       <meta name="twitter:description" content={watchSeoDescription} />
 
       {/* ── MAIN — padded top for navbar (64px) + safe left padding for sidebar (96px) ── */}
-      <main className={cn(
-        "pt-20 lg:pt-22 mx-auto px-3 md:px-5 pb-10 transition-all duration-300",
-        theaterMode
-          ? "w-full lg:pl-20 max-w-none"
-          : "max-w-screen-2xl lg:pl-24",
-      )}>
-        <div className={cn(
-          "grid gap-5 transition-all duration-300",
+      <main
+        className={cn(
+          "pt-20 lg:pt-22 mx-auto px-3 md:px-5 pb-10 transition-all duration-300",
           theaterMode
-            ? "grid-cols-1"
-            : "grid-cols-1 xl:grid-cols-[1fr_300px]",
-        )}>
+            ? "w-full lg:pl-20 max-w-none"
+            : "max-w-screen-2xl lg:pl-24",
+        )}
+      >
+        <div
+          className={cn(
+            "grid gap-5 transition-all duration-300",
+            theaterMode
+              ? "grid-cols-1"
+              : "grid-cols-1 xl:grid-cols-[1fr_300px]",
+          )}
+        >
           {/* ───── LEFT COLUMN ───── */}
-          <div className={cn("space-y-4 min-w-0", theaterMode ? "max-w-6xl mx-auto w-full" : "")}>
+          <div
+            className={cn(
+              "space-y-4 min-w-0",
+              theaterMode ? "max-w-6xl mx-auto w-full" : "",
+            )}
+          >
             {/* ── BREADCRUMB & QUICK CONTROLS BAR — Above Video ── */}
             <div className="flex items-center justify-between gap-2 py-1.5 px-3 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-white/50">
               <div className="flex items-center gap-2 min-w-0">
-                <button
-                  onClick={() => router.back()}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold transition-all shrink-0 text-xs shadow-sm hover:scale-105 active:scale-95 cursor-pointer border border-white/15"
-                >
-                  <ArrowLeft size={13} />
-                  <span>Quay lại</span>
-                </button>
+                {watchPartyEnabled && (
+                  <button
+                    onClick={() => router.back()}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold transition-all shrink-0 text-xs shadow-sm hover:scale-105 active:scale-95 cursor-pointer border border-white/15"
+                  >
+                    <ArrowLeft size={13} />
+                    <span>Quay lại</span>
+                  </button>
+                )}
                 <ChevronRight size={11} className="text-white/20 shrink-0" />
                 <Link
                   href={`/film/${slug}`}
@@ -2268,8 +2460,6 @@ export default function WatchPage() {
                     {lightOff ? "Bật Đèn" : "Tắt Đèn"}
                   </span>
                 </button>
-
-
 
                 <button
                   onClick={async () => {
@@ -2509,7 +2699,37 @@ export default function WatchPage() {
                               Date.now() - playerLoadStartedAtRef.current,
                             engine: "hls",
                           });
+                          if (!recordedViewRef.current) {
+                            recordedViewRef.current = true;
+                            void viewApi
+                              .record(slug, {
+                                title: film?.name || slug,
+                                originName: film?.origin_name,
+                                posterUrl,
+                                year: Number(film?.year) || undefined,
+                                type: film?.type,
+                                episode:
+                                  currentEpData?.slug || currentEpData?.name,
+                                serverName: sourceCandidate.serverName,
+                                provider: sourceCandidate.source,
+                              })
+                              .catch(() => {
+                                recordedViewRef.current = false;
+                              });
+                          }
                         }
+                      }}
+                      onBuffering={(bufferMs) => {
+                        recordTelemetry("player.buffering", {
+                          source: sourceCandidate.source || "unknown",
+                          server: sourceCandidate.serverName || "unknown",
+                          episode:
+                            currentEpData?.slug ||
+                            currentEpData?.name ||
+                            "unknown",
+                          buffer_ms: bufferMs,
+                          engine: "hls",
+                        });
                       }}
                       onProgress={handlePlaybackProgress}
                       onEnded={handleVideoEnded}
@@ -2545,6 +2765,24 @@ export default function WatchPage() {
                                 Date.now() - playerLoadStartedAtRef.current,
                               engine: "iframe",
                             });
+                            if (!recordedViewRef.current) {
+                              recordedViewRef.current = true;
+                              void viewApi
+                                .record(slug, {
+                                  title: film?.name || slug,
+                                  originName: film?.origin_name,
+                                  posterUrl,
+                                  year: Number(film?.year) || undefined,
+                                  type: film?.type,
+                                  episode:
+                                    currentEpData?.slug || currentEpData?.name,
+                                  serverName: sourceCandidate.serverName,
+                                  provider: sourceCandidate.source,
+                                })
+                                .catch(() => {
+                                  recordedViewRef.current = false;
+                                });
+                            }
                           }
                           recordTelemetry("player.iframe_loaded", {
                             source: sourceCandidate.source || "unknown",
@@ -2700,10 +2938,14 @@ export default function WatchPage() {
                       <SkipForward
                         size={13}
                         className={
-                          autoNextConfig ? "text-purple-400" : "text-neutral-400"
+                          autoNextConfig
+                            ? "text-purple-400"
+                            : "text-neutral-400"
                         }
                       />
-                      <span className="hidden sm:inline">Tự động chuyển tập</span>
+                      <span className="hidden sm:inline">
+                        Tự động chuyển tập
+                      </span>
                       <span className="sm:hidden">Tập tiếp</span>
                       <span
                         className={cn(
@@ -2789,7 +3031,9 @@ export default function WatchPage() {
                   }
                 >
                   <SlidersHorizontal size={12} className="text-neutral-400" />
-                  <span>{isQuickSettingsCollapsed ? "Cài đặt" : "Thu gọn"}</span>
+                  <span>
+                    {isQuickSettingsCollapsed ? "Cài đặt" : "Thu gọn"}
+                  </span>
                   <ChevronDown
                     size={12}
                     className={cn(
@@ -2824,19 +3068,25 @@ export default function WatchPage() {
                       </kbd>
                     </div>
                     <div className="flex items-center justify-between py-1 border-b border-white/[0.05]">
-                      <span className="text-neutral-400">Tua lùi / Tới 10s</span>
+                      <span className="text-neutral-400">
+                        Tua lùi / Tới 10s
+                      </span>
                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
                         ← / →
                       </kbd>
                     </div>
                     <div className="flex items-center justify-between py-1 border-b border-white/[0.05]">
-                      <span className="text-neutral-400">Tăng / Giảm âm lượng</span>
+                      <span className="text-neutral-400">
+                        Tăng / Giảm âm lượng
+                      </span>
                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
                         ↑ / ↓
                       </kbd>
                     </div>
                     <div className="flex items-center justify-between py-1">
-                      <span className="text-neutral-400">Chuyển tập kế tiếp</span>
+                      <span className="text-neutral-400">
+                        Chuyển tập kế tiếp
+                      </span>
                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
                         N
                       </kbd>
@@ -2853,16 +3103,22 @@ export default function WatchPage() {
                   <div className="space-y-2.5 text-xs text-neutral-300">
                     <div className="flex items-start gap-2.5 py-1 border-b border-white/[0.05]">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#23ade5] mt-1.5 shrink-0" />
-                      <span className="leading-relaxed">Chạm 1 lần để hiện hoặc ẩn thanh điều khiển</span>
+                      <span className="leading-relaxed">
+                        Chạm 1 lần để hiện hoặc ẩn thanh điều khiển
+                      </span>
                     </div>
                     <div className="flex items-start gap-2.5 py-1 border-b border-white/[0.05]">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#23ade5] mt-1.5 shrink-0" />
-                      <span className="leading-relaxed">Chạm đúp bên trái hoặc phải để tua 10 giây</span>
+                      <span className="leading-relaxed">
+                        Chạm đúp bên trái hoặc phải để tua 10 giây
+                      </span>
                     </div>
                     <div className="flex items-start gap-2.5 py-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#23ade5] mt-1.5 shrink-0" />
                       <span className="leading-relaxed">
-                        Nhấn giữ video để kích hoạt <b className="text-white font-semibold">Tốc độ 2x</b>, thả tay để về 1x
+                        Nhấn giữ video để kích hoạt{" "}
+                        <b className="text-white font-semibold">Tốc độ 2x</b>,
+                        thả tay để về 1x
                       </span>
                     </div>
                   </div>
@@ -2880,21 +3136,27 @@ export default function WatchPage() {
                         <SkipForward size={13} className="text-[#23ade5]" />
                         <span>Tự động chuyển tập</span>
                       </span>
-                      <span className="text-[10px] font-bold text-neutral-400 font-mono">Auto Next</span>
+                      <span className="text-[10px] font-bold text-neutral-400 font-mono">
+                        Auto Next
+                      </span>
                     </div>
                     <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05] flex items-center justify-between">
                       <span className="flex items-center gap-2">
                         <FastForward size={13} className="text-[#23ade5]" />
                         <span>Tự động bỏ qua intro</span>
                       </span>
-                      <span className="text-[10px] font-bold text-neutral-400 font-mono">Auto Skip</span>
+                      <span className="text-[10px] font-bold text-neutral-400 font-mono">
+                        Auto Skip
+                      </span>
                     </div>
                     <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05] flex items-center justify-between">
                       <span className="flex items-center gap-2">
                         <Bug size={13} className="text-purple-400" />
                         <span>Báo lỗi link phim</span>
                       </span>
-                      <span className="text-[10px] font-bold text-neutral-400 font-mono">Report</span>
+                      <span className="text-[10px] font-bold text-neutral-400 font-mono">
+                        Report
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -2927,7 +3189,8 @@ export default function WatchPage() {
                     }}
                     className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white/50 bg-white/[0.04] border border-white/[0.08] rounded-lg hover:text-white hover:bg-white/[0.08] transition-colors"
                   >
-                    <ChevronLeft size={13} /> {t("watch.prevEpisode", "Tập trước")}
+                    <ChevronLeft size={13} />{" "}
+                    {t("watch.prevEpisode", "Tập trước")}
                   </button>
                 )}
                 {currentEpIndex >= 0 &&
@@ -2939,7 +3202,8 @@ export default function WatchPage() {
                       }}
                       className="flex items-center gap-1 rounded-lg bg-white px-4 py-1.5 text-xs font-semibold text-[#111317] transition-colors hover:bg-neutral-200"
                     >
-                      {t("watch.nextEpisode", "Tập tiếp")} <ChevronRight size={13} />
+                      {t("watch.nextEpisode", "Tập tiếp")}{" "}
+                      <ChevronRight size={13} />
                     </button>
                   )}
               </div>
@@ -2997,7 +3261,8 @@ export default function WatchPage() {
                   ? [
                       {
                         id: "raw",
-                        label: lang === "en" ? "Raw / Original" : "Bản Gốc / Raw",
+                        label:
+                          lang === "en" ? "Raw / Original" : "Bản Gốc / Raw",
                         icon: Film,
                         count: rawEps.length,
                         eps: rawEps,
@@ -3011,7 +3276,9 @@ export default function WatchPage() {
                   {/* ── Version & Audio Selection Tabs ── */}
                   <div className="space-y-2">
                     <div className="text-[11px] font-extrabold text-neutral-400 uppercase tracking-wider">
-                      {lang === "en" ? "Audio & Subtitle Versions" : "Phiên bản Âm thanh & Phụ đề"}
+                      {lang === "en"
+                        ? "Audio & Subtitle Versions"
+                        : "Phiên bản Âm thanh & Phụ đề"}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
@@ -3057,7 +3324,10 @@ export default function WatchPage() {
                                 );
                                 if (matchedEpisodeId)
                                   router.replace(
-                                    watchUrlForEpisode(matchedEpisodeId, targetIdx),
+                                    watchUrlForEpisode(
+                                      matchedEpisodeId,
+                                      targetIdx,
+                                    ),
                                   );
                               }
                             }}
@@ -3070,7 +3340,14 @@ export default function WatchPage() {
                                   : "opacity-40 cursor-not-allowed bg-white/[0.02] border-white/5 text-neutral-500",
                             )}
                           >
-                            <IconComponent size={14} className={isActive ? "text-black" : "text-neutral-400 group-hover:text-white"} />
+                            <IconComponent
+                              size={14}
+                              className={
+                                isActive
+                                  ? "text-black"
+                                  : "text-neutral-400 group-hover:text-white"
+                              }
+                            />
                             <span>{opt.label}</span>
                             {isActive && (
                               <span className="w-1.5 h-1.5 rounded-full bg-black ml-0.5" />
@@ -3085,7 +3362,9 @@ export default function WatchPage() {
                   {activeGroup.length > 0 && (
                     <div className="pt-3 border-t border-white/[0.08] space-y-2">
                       <div className="text-[11px] font-extrabold text-neutral-400 uppercase tracking-wider">
-                        {lang === "en" ? `Stream Servers (${activeGroup.length} Mirrors)` : `Máy chủ Nguồn phát (${activeGroup.length} Server)`}
+                        {lang === "en"
+                          ? `Stream Servers (${activeGroup.length} Mirrors)`
+                          : `Máy chủ Nguồn phát (${activeGroup.length} Server)`}
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
@@ -3094,9 +3373,15 @@ export default function WatchPage() {
                           const isActive = i === currentServer;
                           const hasFailed = failedServers.includes(i);
 
-                          const rawServerName = ep.server_name || `Server ${i + 1}`;
-                          const cleanServerName = rawServerName.replace(/^\[.*?\]\s*/, "");
-                          const sourceTag = ep._source ? ep._source.toUpperCase() : "";
+                          const rawServerName =
+                            ep.server_name || `Server ${i + 1}`;
+                          const cleanServerName = rawServerName.replace(
+                            /^\[.*?\]\s*/,
+                            "",
+                          );
+                          const sourceTag = ep._source
+                            ? ep._source.toUpperCase()
+                            : "";
 
                           return (
                             <button
@@ -3131,12 +3416,22 @@ export default function WatchPage() {
                                 isActive
                                   ? "bg-white text-black border-white font-extrabold shadow-md scale-[1.02]"
                                   : "bg-white/[0.04] hover:bg-white/[0.09] text-neutral-300 border-white/10 hover:border-white/20",
-                                hasFailed && "opacity-30 cursor-not-allowed line-through",
+                                hasFailed &&
+                                  "opacity-30 cursor-not-allowed line-through",
                               )}
                             >
-                              <Radio size={12} className={isActive ? "text-black animate-pulse" : "text-neutral-400"} />
+                              <Radio
+                                size={12}
+                                className={
+                                  isActive
+                                    ? "text-black animate-pulse"
+                                    : "text-neutral-400"
+                                }
+                              />
                               <span>
-                                {sourceTag ? `${sourceTag} • ${cleanServerName}` : cleanServerName}
+                                {sourceTag
+                                  ? `${sourceTag} • ${cleanServerName}`
+                                  : cleanServerName}
                               </span>
                             </button>
                           );
@@ -3151,7 +3446,11 @@ export default function WatchPage() {
             {/* 4. EPISODE LIST — matching exact reference images with range scroll & toggle switch */}
             {(() => {
               const rangeSize =
-                serverData.length > 500 ? 100 : serverData.length > 100 ? 50 : 40;
+                serverData.length > 500
+                  ? 100
+                  : serverData.length > 100
+                    ? 50
+                    : 40;
               const totalRanges = Math.ceil(serverData.length / rangeSize);
               const safeRangeIndex = Math.max(
                 0,
@@ -3199,7 +3498,9 @@ export default function WatchPage() {
                           />
                           <input
                             type="text"
-                            placeholder={lang === "en" ? "Find episode..." : "Tìm tập..."}
+                            placeholder={
+                              lang === "en" ? "Find episode..." : "Tìm tập..."
+                            }
                             value={episodeSearch}
                             onChange={(e) => setEpisodeSearch(e.target.value)}
                             className="bg-white/[0.04] border border-white/[0.06] pl-7 pr-3 py-1 text-[11px] text-white placeholder-white/25 rounded-lg focus:outline-none focus:border-white/20 w-28 transition-colors"
@@ -3209,7 +3510,15 @@ export default function WatchPage() {
 
                       {/* Toggle Switch: Hiện ảnh / Ẩn ảnh */}
                       <label className="flex items-center gap-2 text-xs text-white/60 cursor-pointer select-none">
-                        <span>{showEpThumbnails ? (lang === "en" ? "Hide thumbnails" : "Ẩn ảnh") : (lang === "en" ? "Show thumbnails" : "Hiện ảnh")}</span>
+                        <span>
+                          {showEpThumbnails
+                            ? lang === "en"
+                              ? "Hide thumbnails"
+                              : "Ẩn ảnh"
+                            : lang === "en"
+                              ? "Show thumbnails"
+                              : "Hiện ảnh"}
+                        </span>
                         <button
                           type="button"
                           onClick={() => setShowEpThumbnails(!showEpThumbnails)}
@@ -3237,18 +3546,29 @@ export default function WatchPage() {
                       {totalRanges > 4 && (
                         <select
                           value={safeRangeIndex}
-                          onChange={(e) => setEpRangeIndex(Number(e.target.value))}
+                          onChange={(e) =>
+                            setEpRangeIndex(Number(e.target.value))
+                          }
                           className="bg-neutral-900 border border-white/15 text-white text-xs rounded-lg px-2.5 py-1 font-bold focus:outline-none focus:border-white/40 cursor-pointer"
                         >
-                          {Array.from({ length: totalRanges }).map((_, rIdx) => {
-                            const start = rIdx * rangeSize + 1;
-                            const end = Math.min((rIdx + 1) * rangeSize, serverData.length);
-                            return (
-                              <option key={rIdx} value={rIdx} className="bg-neutral-900 text-white font-medium">
-                                Tập {start} - {end}
-                              </option>
-                            );
-                          })}
+                          {Array.from({ length: totalRanges }).map(
+                            (_, rIdx) => {
+                              const start = rIdx * rangeSize + 1;
+                              const end = Math.min(
+                                (rIdx + 1) * rangeSize,
+                                serverData.length,
+                              );
+                              return (
+                                <option
+                                  key={rIdx}
+                                  value={rIdx}
+                                  className="bg-neutral-900 text-white font-medium"
+                                >
+                                  Tập {start} - {end}
+                                </option>
+                              );
+                            },
+                          )}
                         </select>
                       )}
 
@@ -3304,9 +3624,16 @@ export default function WatchPage() {
                             episodes.indexOf(ep) === currentEpIndex;
                           const epNum = ep.name.replace(/^tập\s*/i, "");
                           const epIdentifier = ep.slug || ep.name;
-                          const isWatched = !isActive && watchProgressStorage
-                            .getHistoryEntries()
-                            .some((entry) => entry.slug === slug && entry.epSlug === epIdentifier && entry.currentTime > 30);
+                          const isWatched =
+                            !isActive &&
+                            watchProgressStorage
+                              .getHistoryEntries()
+                              .some(
+                                (entry) =>
+                                  entry.slug === slug &&
+                                  entry.epSlug === epIdentifier &&
+                                  entry.currentTime > 30,
+                              );
                           return (
                             <button
                               key={ep.slug || ep.name || i}
@@ -3325,13 +3652,21 @@ export default function WatchPage() {
                               )}
                             >
                               {isWatched && !isActive && (
-                                <Check size={9} strokeWidth={3} className="shrink-0 text-emerald-400" />
+                                <Check
+                                  size={9}
+                                  strokeWidth={3}
+                                  className="shrink-0 text-emerald-400"
+                                />
                               )}
                               {!isWatched && (
                                 <Play
                                   size={10}
                                   fill="currentColor"
-                                  className={isActive ? "text-black shrink-0" : "text-white/70 shrink-0"}
+                                  className={
+                                    isActive
+                                      ? "text-black shrink-0"
+                                      : "text-white/70 shrink-0"
+                                  }
                                 />
                               )}
                               <span>Tập {epNum}</span>
@@ -3353,9 +3688,16 @@ export default function WatchPage() {
                           const epNum = ep.name.replace(/^tập\s*/i, "");
                           // Determine if this ep has been watched using watch progress storage
                           const epIdentifier = ep.slug || ep.name;
-                          const isWatched = !isActive && watchProgressStorage
-                            .getHistoryEntries()
-                            .some((entry) => entry.slug === slug && entry.epSlug === epIdentifier && entry.currentTime > 30);
+                          const isWatched =
+                            !isActive &&
+                            watchProgressStorage
+                              .getHistoryEntries()
+                              .some(
+                                (entry) =>
+                                  entry.slug === slug &&
+                                  entry.epSlug === epIdentifier &&
+                                  entry.currentTime > 30,
+                              );
 
                           return (
                             <button
@@ -3417,26 +3759,26 @@ export default function WatchPage() {
 
           {/* ───── RIGHT SIDEBAR ───── */}
           {!theaterMode && (
-          <div className="space-y-4 min-w-0">
-            {/* Film Info */}
-            <SidebarFilmCard film={film} slug={slug} />
+            <div className="space-y-4 min-w-0">
+              {/* Film Info */}
+              <SidebarFilmCard film={film} slug={slug} />
 
-            {/* Recommendations */}
-            {recsData?.items && recsData.items.length > 0 && (
-              <div className="space-y-3 pt-2">
-                <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wider px-1">
-                  {matchedKeyword
-                    ? `Thêm về "${matchedKeyword}"`
-                    : "Phim tương tự"}
-                </h3>
-                <div className="space-y-1">
-                  {recsData.items.slice(0, 8).map((item: any) => (
-                    <RecMovieItem key={item._id || item.slug} item={item} />
-                  ))}
+              {/* Recommendations */}
+              {recsData?.items && recsData.items.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wider px-1">
+                    {matchedKeyword
+                      ? `Thêm về "${matchedKeyword}"`
+                      : "Phim tương tự"}
+                  </h3>
+                  <div className="space-y-1">
+                    {recsData.items.slice(0, 8).map((item: any) => (
+                      <RecMovieItem key={item._id || item.slug} item={item} />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
           )}
         </div>
       </main>
@@ -3454,7 +3796,7 @@ export default function WatchPage() {
       />
 
       {/* Watch Party Panel */}
-      {wp.isOpen && wp.roomId && (
+      {watchPartyEnabled && wp.isOpen && wp.roomId && (
         <WatchPartyPanel
           roomId={wp.roomId}
           isHost={wp.isHost}

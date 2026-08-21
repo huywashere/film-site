@@ -1,13 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Clock3,
-  RefreshCw,
-  ServerOff,
-} from "lucide-react";
+import { IconAlertTriangle as AlertTriangle, IconCircleCheck as CheckCircle2, IconClock as Clock3, IconRefresh as RefreshCw, IconServerOff as ServerOff } from "@tabler/icons-react";
 
 type ProviderStatus = "operational" | "degraded" | "down";
 

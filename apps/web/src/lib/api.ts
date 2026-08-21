@@ -152,18 +152,21 @@ export const kkphimApi = {
 
     const executeSearch = async () => {
       // Dynamic import smart search to prevent circular deps
-      const { getExpandedSearchTerms, searchLocalFilms } = await import("@/lib/smart-search");
+      const { getExpandedSearchTerms, searchLocalFilms } =
+        await import("@/lib/smart-search");
       const candidateTerms = getExpandedSearchTerms(cleanKw);
 
       const allItems: any[] = [];
       const seenSlugs = new Set<string>();
 
       // 1. Truy vấn song song đồng thời các từ khóa mở rộng (Anh + Việt + Tên gốc) qua KKPhim
-      const searchPromises = candidateTerms.slice(0, 3).map((term) =>
-        fetchKKPhim(
-          `/v1/api/tim-kiem?keyword=${encodeURIComponent(term)}&page=${page}&limit=${limit}`,
-        ).catch(() => null),
-      );
+      const searchPromises = candidateTerms
+        .slice(0, 3)
+        .map((term) =>
+          fetchKKPhim(
+            `/v1/api/tim-kiem?keyword=${encodeURIComponent(term)}&page=${page}&limit=${limit}`,
+          ).catch(() => null),
+        );
 
       const kkResults = await Promise.allSettled(searchPromises);
       for (const res of kkResults) {
@@ -186,16 +189,23 @@ export const kkphimApi = {
             params: { pagination: { totalPages: 1 } },
           },
         };
-        globalSearchCache.set(cacheKey, { data: result, timestamp: Date.now() });
+        globalSearchCache.set(cacheKey, {
+          data: result,
+          timestamp: Date.now(),
+        });
         return result;
       }
 
       // 2. Fallback nhanh qua OPhim với các từ khóa ứng viên (nếu bật)
       if (ENABLE_OPHIM) {
         try {
-          const ophimPromises = candidateTerms.slice(0, 2).map((term) =>
-            fetchOphim(`/tim-kiem?keyword=${encodeURIComponent(term)}`).catch(() => null),
-          );
+          const ophimPromises = candidateTerms
+            .slice(0, 2)
+            .map((term) =>
+              fetchOphim(`/tim-kiem?keyword=${encodeURIComponent(term)}`).catch(
+                () => null,
+              ),
+            );
           const ophimResults = await Promise.allSettled(ophimPromises);
           for (const res of ophimResults) {
             if (res.status === "fulfilled" && res.value) {
@@ -215,7 +225,10 @@ export const kkphimApi = {
                 params: { pagination: { totalPages: 1 } },
               },
             };
-            globalSearchCache.set(cacheKey, { data: result, timestamp: Date.now() });
+            globalSearchCache.set(cacheKey, {
+              data: result,
+              timestamp: Date.now(),
+            });
             return result;
           }
         } catch (_err) {
@@ -232,13 +245,21 @@ export const kkphimApi = {
             params: { pagination: { totalPages: 1 } },
           },
         };
-        globalSearchCache.set(cacheKey, { data: result, timestamp: Date.now() });
+        globalSearchCache.set(cacheKey, {
+          data: result,
+          timestamp: Date.now(),
+        });
         return result;
       }
 
       // 4. Trả về kết quả rỗng có cấu trúc nếu không tìm thấy
-      const emptyResult = { data: { items: [], params: { pagination: { totalPages: 1 } } } };
-      globalSearchCache.set(cacheKey, { data: emptyResult, timestamp: Date.now() });
+      const emptyResult = {
+        data: { items: [], params: { pagination: { totalPages: 1 } } },
+      };
+      globalSearchCache.set(cacheKey, {
+        data: emptyResult,
+        timestamp: Date.now(),
+      });
       return emptyResult;
     };
 
@@ -275,7 +296,12 @@ export const ENABLE_OPHIM = false;
 // ── OPhim, NguonC & VSMOV Proxies ──────────────────────────────
 const fetchOphim = async (endpoint: string) => {
   if (!ENABLE_OPHIM) {
-    return { status: false, msg: "OPhim API is disabled", items: [], data: { items: [] } };
+    return {
+      status: false,
+      msg: "OPhim API is disabled",
+      items: [],
+      data: { items: [] },
+    };
   }
   const response = await trackedMovieFetch(`/api/ophim${endpoint}`);
   const json = await response.json();
@@ -830,7 +856,8 @@ async function getFastCatalogPage(
     ({ source }) => source === "kkphim" || (ENABLE_OPHIM && source === "ophim"),
   );
   const fallback = requests.filter(
-    ({ source }) => source !== "kkphim" && (!ENABLE_OPHIM || source !== "ophim"),
+    ({ source }) =>
+      source !== "kkphim" && (!ENABLE_OPHIM || source !== "ophim"),
   );
 
   try {
@@ -1208,6 +1235,59 @@ export const reviewsApi = {
     api.post("/reviews", data),
   delete: (id: string) => api.delete(`/reviews/${id}`),
   like: (id: string) => api.post(`/reviews/${id}/like`),
+};
+
+export const reportsApi = {
+  create: (data: {
+    category: string;
+    filmTitle?: string;
+    movieSlug?: string;
+    episode?: string;
+    serverName?: string;
+    deviceInfo?: string;
+    screenshotUrl?: string;
+    description: string;
+    email?: string;
+  }) => api.post("/reports", data),
+};
+
+export type PublicSiteConfiguration = {
+  maintenanceMode: boolean;
+  maintenanceNotice?: string;
+  announcementText?: string;
+  announcementLink?: string;
+  homePopupEnabled: boolean;
+  homePopupTitle?: string;
+  homePopupBody?: string;
+  homePopupLink?: string;
+  homePopupLinkLabel?: string;
+  homePopupDismissLabel?: string;
+  homePopupVersion: number;
+  heroMovieSlugs: string[];
+  providerPriority: string[];
+  autoSkipIntro: boolean;
+  watchPartyEnabled: boolean;
+  updatedAt?: string | null;
+};
+
+export const siteConfigApi = {
+  getPublic: () => api.get<PublicSiteConfiguration>("/config/public"),
+};
+
+export const viewApi = {
+  record: (
+    slug: string,
+    data: {
+      title: string;
+      originName?: string;
+      posterUrl?: string;
+      year?: number;
+      type?: string;
+      episode?: string;
+      serverName?: string;
+      provider?: string;
+    },
+  ) => api.post(`/movies/${encodeURIComponent(slug)}/view`, data),
 };
 
 // ── Ratings API ────────────────────────────────────────────

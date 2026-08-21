@@ -17,6 +17,7 @@ type HlsVideoPlayerProps = {
   autoPlay?: boolean;
   onReady?: (player: any) => void;
   onPlaying?: () => void;
+  onBuffering?: (durationMs: number) => void;
   onProgress?: (currentTime: number, duration: number) => void;
   onEnded?: () => void;
   onError: (error: HlsPlaybackError) => void;
@@ -37,6 +38,7 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
   autoPlay = false,
   onReady,
   onPlaying,
+  onBuffering,
   onProgress,
   onEnded,
   onError,
@@ -60,6 +62,7 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
         onPlaybackStart={(player) => {
           onPlaying?.();
         }}
+        onBuffering={onBuffering}
         onProgress={onProgress}
         onEnded={onEnded}
         onError={(err) => {

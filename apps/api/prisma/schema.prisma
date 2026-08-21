@@ -19,6 +19,33 @@ enum Role {
   @@map("role")
 }
 
+enum IssueStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+
+  @@map("issue_status")
+}
+
+enum IssuePriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+
+  @@map("issue_priority")
+}
+
+enum SyncJobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+
+  @@map("sync_job_status")
+}
+
 model User {
   id                       String         @id @default(cuid())
   email                    String         @unique
@@ -49,7 +76,6 @@ model User {
   verificationTokens VerificationToken[]
   resetTokens        ResetPasswordToken[]
   watchHistories     WatchHistory[]
-  auditLogs          AuditLog[]           @relation("AdminAuditLogs")
 
   @@map("users")
 }
@@ -122,31 +148,39 @@ model Follow {
 }
 
 model Movie {
-  id            String   @id // kkphim slug
-  title         String
-  titleEn       String?
-  originName    String?
-  posterUrl     String?
-  thumbUrl      String?
-  year          Int?
-  type          String // "series" | "single" | "hoathinh" | "tvshows"
-  status        String? // "completed" | "ongoing"
-  totalEpisodes Int?
-  description   String?  @db.Text
-  quality       String?
-  language      String?
-  runtime       Int? // phút
-  imdbId        String?
-  isHidden      Boolean  @default(false)
-  sources       String[] @default([])
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String   @id // kkphim slug
+  title           String
+  titleEn         String?
+  originName      String?
+  posterUrl       String?
+  thumbUrl        String?
+  year            Int?
+  type            String // "series" | "single" | "hoathinh" | "tvshows"
+  status          String? // "completed" | "ongoing"
+  totalEpisodes   Int?
+  description     String?  @db.Text
+  quality         String?
+  language        String?
+  runtime         Int? // phút
+  imdbId          String?
+  trailerUrl      String?
+  genres          String[] @default([])
+  countries       String[] @default([])
+  actors          String[] @default([])
+  directors       String[] @default([])
+  releaseSchedule Json?
+  isHidden        Boolean  @default(false)
+  sources         String[] @default([])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  watchlist      Watchlist[]
-  reviews        Review[]
-  ratings        Rating[]
-  viewLogs       ViewLog[]
-  watchHistories WatchHistory[]
+  watchlist       Watchlist[]
+  reviews         Review[]
+  ratings         Rating[]
+  viewLogs        ViewLog[]
+  watchHistories  WatchHistory[]
+  playbackSources MoviePlaybackSource[]
+  playbackEvents  PlaybackEvent[]
 
   @@index([type, isHidden, year])
   @@index([isHidden, updatedAt(sort: Desc)])
@@ -165,11 +199,214 @@ model AuditLog {
   userAgent  String?  @db.Text
   createdAt  DateTime @default(now())
 
-  admin User @relation("AdminAuditLogs", fields: [adminId], references: [id], onDelete: Cascade)
-
   @@index([adminId])
   @@index([createdAt(sort: Desc)])
   @@map("audit_logs")
+}
+
+model IssueReport {
+  id                String             @id @default(cuid())
+  category          String
+  filmTitle         String?
+  movieSlug         String?
+  episode           String?
+  serverName        String?
+  deviceInfo        String?            @db.Text
+  description       String             @db.Text
+  email             String?
+  status            IssueStatus        @default(NEW)
+  priority          IssuePriority      @default(NORMAL)
+  adminNote         String?            @db.Text
+  screenshotUrl     String?
+  assignedTo        String?
+  resolvedBy        String?
+  resolutionMessage String?            @db.Text
+  resolvedAt        DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  events            IssueReportEvent[]
+
+  @@index([status, priority, createdAt(sort: Desc)])
+  @@index([movieSlug])
+  @@map("issue_reports")
+}
+
+model SyncJob {
+  id             String        @id @default(cuid())
+  source         String
+  status         SyncJobStatus @default(QUEUED)
+  processedCount Int           @default(0)
+  createdCount   Int           @default(0)
+  updatedCount   Int           @default(0)
+  failedCount    Int           @default(0)
+  requestedPages Int           @default(5)
+  currentPage    Int           @default(0)
+  retryCount     Int           @default(0)
+  heartbeatAt    DateTime?
+  errorMessage   String?       @db.Text
+  requestedBy    String
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([createdAt(sort: Desc)])
+  @@index([source, status])
+  @@map("sync_jobs")
+}
+
+model SiteConfiguration {
+  id                    String   @id @default("primary")
+  maintenanceMode       Boolean  @default(false)
+  maintenanceNotice     String?  @db.Text
+  announcementText      String?  @db.Text
+  announcementLink      String?
+  homePopupEnabled      Boolean  @default(false)
+  homePopupTitle        String?
+  homePopupBody         String?  @db.Text
+  homePopupLink         String?
+  homePopupLinkLabel    String?
+  homePopupDismissLabel String?
+  homePopupVersion      Int      @default(1)
+  heroMovieSlugs        String[] @default([])
+  providerPriority      String[] @default(["kkphim", "ophim", "nguonc", "vsmov"])
+  autoSkipIntro         Boolean  @default(false)
+  watchPartyEnabled     Boolean  @default(true)
+  updatedBy             String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("site_configuration")
+}
+
+model SiteConfigurationRevision {
+  id        String   @id @default(cuid())
+  snapshot  Json
+  changedBy String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt(sort: Desc)])
+  @@map("site_configuration_revisions")
+}
+
+model MoviePlaybackSource {
+  id            String    @id @default(cuid())
+  movieId       String
+  provider      String
+  providerSlug  String
+  episodeKey    String    @default("full")
+  episodeName   String?
+  serverName    String
+  streamUrl     String?   @db.Text
+  subtitleUrls  Json?
+  introStart    Int?
+  introEnd      Int?
+  outroStart    Int?
+  adCuePoints   Int[]     @default([])
+  priority      Int       @default(0)
+  healthStatus  String    @default("unknown")
+  lastCheckedAt DateTime?
+  lastError     String?   @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([movieId, provider, providerSlug, episodeKey, serverName])
+  @@index([movieId, episodeKey, priority])
+  @@index([provider, healthStatus])
+  @@map("movie_playback_sources")
+}
+
+model PlaybackEvent {
+  id         String   @id @default(cuid())
+  eventType  String
+  movieId    String?
+  sessionId  String?
+  userId     String?
+  route      String?
+  provider   String?
+  serverName String?
+  episode    String?
+  quality    String?
+  deviceType String?
+  country    String?
+  errorCode  String?
+  bufferMs   Int?
+  durationMs Int?
+  fromSource String?
+  toSource   String?
+  metadata   Json?
+  occurredAt DateTime @default(now())
+
+  movie Movie? @relation(fields: [movieId], references: [id], onDelete: SetNull)
+
+  @@index([occurredAt(sort: Desc), eventType])
+  @@index([movieId, occurredAt(sort: Desc)])
+  @@index([provider, serverName, occurredAt(sort: Desc)])
+  @@map("playback_events")
+}
+
+model AdminNotification {
+  id        String                  @id @default(cuid())
+  type      String
+  title     String
+  message   String                  @db.Text
+  severity  String                  @default("info")
+  link      String?
+  createdAt DateTime                @default(now())
+  expiresAt DateTime?
+  reads     AdminNotificationRead[]
+
+  @@index([createdAt(sort: Desc)])
+  @@map("admin_notifications")
+}
+
+model AdminNotificationRead {
+  notificationId String
+  adminKey       String
+  readAt         DateTime @default(now())
+
+  notification AdminNotification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@id([notificationId, adminKey])
+  @@index([adminKey, readAt(sort: Desc)])
+  @@map("admin_notification_reads")
+}
+
+model IssueReportEvent {
+  id         String       @id @default(cuid())
+  reportId   String
+  actorId    String
+  actorEmail String
+  action     String
+  fromStatus IssueStatus?
+  toStatus   IssueStatus?
+  note       String?      @db.Text
+  createdAt  DateTime     @default(now())
+
+  report IssueReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId, createdAt(sort: Desc)])
+  @@map("issue_report_events")
+}
+
+model WatchPartyArchive {
+  id               String   @id
+  name             String
+  movieSlug        String?
+  movieName        String?
+  episode          String?
+  hostName         String?
+  peakParticipants Int      @default(0)
+  messageCount     Int      @default(0)
+  closeReason      String?
+  createdAt        DateTime
+  endedAt          DateTime @default(now())
+
+  @@index([endedAt(sort: Desc)])
+  @@index([movieSlug])
+  @@map("watch_party_archives")
 }
 
 model Watchlist {
@@ -186,20 +423,25 @@ model Watchlist {
 }
 
 model Review {
-  id        String   @id @default(cuid())
-  userId    String
-  movieId   String
-  content   String   @db.Text
-  rating    Float? // 0.5 - 5.0 (half star)
-  likeCount Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String    @id @default(cuid())
+  userId         String
+  movieId        String
+  content        String    @db.Text
+  rating         Float? // 0.5 - 5.0 (half star)
+  likeCount      Int       @default(0)
+  isHidden       Boolean   @default(false)
+  moderationNote String?   @db.Text
+  moderatedBy    String?
+  moderatedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   movie Movie        @relation(fields: [movieId], references: [id], onDelete: Cascade)
   likes ReviewLike[]
 
   @@index([movieId, createdAt(sort: Desc)])
+  @@index([isHidden, createdAt(sort: Desc)])
   @@map("reviews")
 }
 

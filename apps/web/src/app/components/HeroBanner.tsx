@@ -9,7 +9,7 @@ import { FilmItem } from "@/components/film/FilmCard";
 import { useTranslation } from "@/store/langStore";
 import { useAuthStore } from "@/store/authStore";
 import { useQuery } from "@tanstack/react-query";
-import { movieApi, watchlistApi, watchHistoryApi } from "@/lib/api";
+import { movieApi, siteConfigApi, watchlistApi, watchHistoryApi } from "@/lib/api";
 import { useToast } from "@/providers/ToastProvider";
 import { cn } from "@/lib/utils";
 import { heroSerifFont, cardFont } from "@/lib/fonts";
@@ -49,7 +49,7 @@ interface HeroFilm extends FilmItem {
   tmdbOnly?: boolean;
 }
 
-const HERO_SESSION_KEY = "cineverse.tmdb-hero.v4";
+const HERO_SESSION_KEY = "cineverse.tmdb-hero.v5";
 const HERO_INDEX_SESSION_KEY = "cineverse.tmdb-hero-index.v2";
 
 // Trailer IDs are tiny and safe to retain for the current browser session.
@@ -476,7 +476,9 @@ async function enrichHeroTitleLogos(playlist: HeroFilm[]): Promise<HeroFilm[]> {
           ...film,
           tmdb: { ...film.tmdb, id: String(tmdbId), type: mediaType },
           titleLogo: tmdbLogo(bestLogo?.file_path, "w500") || film.titleLogo || undefined,
-          heroBackdrop: bestBackdrop || film.heroBackdrop,
+          // A curated/provider backdrop is already tied to this exact film.
+          // Logo enrichment must not replace it with a loose TMDB search hit.
+          heroBackdrop: film.heroBackdrop || bestBackdrop || undefined,
           titleLogoResolved: true,
         };
       } catch {
@@ -752,27 +754,27 @@ function HeroBackdropImage({
     }
   };
 
-  if (!src) return null;
-
   return (
     <>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_35%,rgba(50,58,72,0.3),transparent_44%),linear-gradient(135deg,#0b0e13_0%,#151a22_52%,#0b0d12_100%)]" />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        ref={imageRef}
-        src={src}
-        alt={film.name}
-        referrerPolicy="no-referrer"
-        loading={isActive ? "eager" : "lazy"}
-        decoding="async"
-        fetchPriority={isActive ? "high" : "low"}
-        onLoad={() => {
-          preloadedHeroBackdrops.add(src);
-          onReady();
-        }}
-        onError={tryNextCandidate}
-        className="h-full w-full object-cover object-center brightness-[0.72] transition-transform duration-1000 ease-out"
-      />
+      {src && (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          ref={imageRef}
+          src={src}
+          alt={film.name}
+          referrerPolicy="no-referrer"
+          loading={isActive ? "eager" : "lazy"}
+          decoding="async"
+          fetchPriority={isActive ? "high" : "low"}
+          onLoad={() => {
+            preloadedHeroBackdrops.add(src);
+            onReady();
+          }}
+          onError={tryNextCandidate}
+          className="h-full w-full object-cover object-center brightness-[0.72] transition-transform duration-1000 ease-out"
+        />
+      )}
     </>
   );
 }
@@ -1036,10 +1038,12 @@ async function loadFreshTmdbPlaylist(): Promise<HeroFilm[]> {
 
 export default function HeroBanner({ films }: HeroBannerProps) {
   const [current, setCurrent] = useState(0);
-  // Use deterministic initial 6 curated films for SSR hydration safety
+  // Keep SSR and the first client paint neutral. Rendering a curated playlist
+  // here used to flash unrelated films before the authoritative admin/session
+  // playlist arrived.
   const [featured, setFeatured] = useState<HeroFilm[]>(() => {
     if (films && films.length > 0) return films.slice(0, 6) as HeroFilm[];
-    return CURATED_HERO_FRANCHISE_POOL.slice(0, 6) as HeroFilm[];
+    return [];
   });
   const [trailerModalFilm, setTrailerModalFilm] = useState<FilmItem | null>(
     null,
@@ -1068,47 +1072,97 @@ export default function HeroBanner({ films }: HeroBannerProps) {
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  // Client-side session restoration & 100-film randomization:
-  // Randomize from 100 curated movies on fresh session visit, but preserve exact playlist on in-session reloads / page switches!
+  // Resolve one authoritative playlist before painting any film artwork.
+  // Priority: explicit props -> admin-pinned slugs -> stored session -> curated.
+  // Keeping this in one effect removes the former race between site config and
+  // session restoration that swapped banners shortly after every reload.
   useEffect(() => {
-    if (films && films.length > 0) return;
-
-    let initialPlaylist: HeroFilm[];
-    const stored = readStoredHeroPlaylist();
-
-    if (stored && stored.length > 0) {
-      initialPlaylist = stored;
-      setFeatured(stored);
-      const savedIndex = readStoredHeroIndex(stored.length);
-      setCurrent(savedIndex);
-    } else {
-      initialPlaylist = getRandomCuratedHeroSet(6) as HeroFilm[];
-      setFeatured(initialPlaylist);
-      storeHeroPlaylist(initialPlaylist);
-    }
-
     let active = true;
-    enrichHeroTitleLogos(initialPlaylist).then((withLogos) => {
-      if (!active) return;
-      setFeatured((prev) => {
-        return prev.map((film, idx) => {
-          const logo = withLogos[idx]?.titleLogo;
-          const backdrop = withLogos[idx]?.heroBackdrop;
-          if (
-            film.titleLogo === (logo || film.titleLogo) &&
-            film.heroBackdrop === (backdrop || film.heroBackdrop)
-          ) {
-            return film;
+    const initialize = async () => {
+      let playlist: HeroFilm[] = [];
+      let restoredIndex = 0;
+
+      if (films && films.length > 0) {
+        playlist = films.slice(0, 6) as HeroFilm[];
+      } else {
+        const stored = readStoredHeroPlaylist();
+        try {
+          const { data: config } = await siteConfigApi.getPublic();
+          if (!active) return;
+          const requestedSlugs = (config.heroMovieSlugs || [])
+            .map((slug) => slug.trim())
+            .filter(Boolean)
+            .slice(0, 6);
+
+          const storedMatchesPinned = Boolean(
+            stored &&
+              stored.length === requestedSlugs.length &&
+              requestedSlugs.every((slug, index) => stored[index]?.slug === slug),
+          );
+
+          if (requestedSlugs.length && storedMatchesPinned && stored) {
+            playlist = stored;
+            restoredIndex = readStoredHeroIndex(stored.length);
+          } else if (requestedSlugs.length) {
+            playlist = (
+              await Promise.all(
+                requestedSlugs.map(async (slug) => {
+                  const curated = CURATED_HERO_FRANCHISE_POOL.find(
+                    (film) => film.slug === slug,
+                  );
+                  if (curated) return curated as HeroFilm;
+                  try {
+                    const detail = (await movieApi.getDetail(slug)).data as any;
+                    const movie =
+                      detail?.movie ||
+                      detail?.data?.movie ||
+                      detail?.data?.item ||
+                      detail?.item;
+                    return movie?.name
+                      ? ({ ...movie, slug: movie.slug || slug } as HeroFilm)
+                      : null;
+                  } catch {
+                    return null;
+                  }
+                }),
+              )
+            ).filter((film): film is HeroFilm => Boolean(film));
+          } else if (stored?.length) {
+            playlist = stored;
+            restoredIndex = readStoredHeroIndex(stored.length);
           }
-          return {
-            ...film,
-            titleLogo: logo || film.titleLogo,
-            heroBackdrop: backdrop || film.heroBackdrop,
-            titleLogoResolved: true,
-          };
-        });
-      });
-    });
+        } catch {
+          if (stored?.length) {
+            playlist = stored;
+            restoredIndex = readStoredHeroIndex(stored.length);
+          }
+        }
+
+        if (!playlist.length) {
+          playlist = getRandomCuratedHeroSet(6) as HeroFilm[];
+        }
+      }
+
+      if (!active) return;
+      setFeatured(playlist);
+      setCurrent(
+        restoredIndex >= 0 && restoredIndex < playlist.length
+          ? restoredIndex
+          : 0,
+      );
+      storeHeroPlaylist(playlist);
+
+      const withLogos = await enrichHeroTitleLogos(playlist);
+      if (!active) return;
+      const enrichedBySlug = new Map(
+        withLogos.map((film) => [film.slug, film] as const),
+      );
+      setFeatured((currentPlaylist) =>
+        currentPlaylist.map((film) => enrichedBySlug.get(film.slug) || film),
+      );
+    };
+
+    void initialize();
 
     return () => {
       active = false;

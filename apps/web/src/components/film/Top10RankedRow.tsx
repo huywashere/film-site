@@ -26,21 +26,18 @@ interface Top10RankedRowProps {
 }
 
 function getRankColorStyle(rank: number) {
-  // Unique vibrant neon color palette for all 10 ranks (No duplicate colors!)
+  // Chỉ ba vị trí dẫn đầu dùng màu huy chương. Hạng 4-10 giữ màu trung tính
+  // để thứ bậc thị giác tập trung đúng vào top 3.
   const colors: Record<number, { stroke: string; glow: string }> = {
-    1: { stroke: "#fbbf24", glow: "rgba(251, 191, 36, 0.6)" },  // Gold
-    2: { stroke: "#f43f5e", glow: "rgba(244, 63, 94, 0.6)" },   // Crimson Red
-    3: { stroke: "#f97316", glow: "rgba(249, 115, 22, 0.6)" },  // Vibrant Orange
-    4: { stroke: "#38bdf8", glow: "rgba(56, 189, 248, 0.55)" }, // Electric Cyan
-    5: { stroke: "#a855f7", glow: "rgba(168, 85, 247, 0.55)" }, // Neon Purple
-    6: { stroke: "#10b981", glow: "rgba(16, 185, 129, 0.55)" }, // Emerald Green
-    7: { stroke: "#ec4899", glow: "rgba(236, 72, 153, 0.55)" }, // Hot Pink
-    8: { stroke: "#84cc16", glow: "rgba(132, 204, 22, 0.55)" }, // Lime Green
-    9: { stroke: "#6366f1", glow: "rgba(99, 102, 241, 0.55)" }, // Indigo Blue
-    10: { stroke: "#ff5252", glow: "rgba(255, 82, 82, 0.55)" }, // Coral Rose
+    1: { stroke: "#fbbf24", glow: "rgba(251, 191, 36, 0.55)" },
+    2: { stroke: "#cbd5e1", glow: "rgba(203, 213, 225, 0.32)" },
+    3: { stroke: "#c9783b", glow: "rgba(201, 120, 59, 0.42)" },
   };
 
-  const style = colors[rank] || { stroke: "#e5e7eb", glow: "rgba(255, 255, 255, 0.35)" };
+  const style = colors[rank] || {
+    stroke: "#52525b",
+    glow: "rgba(0, 0, 0, 0)",
+  };
 
   return {
     WebkitTextStroke: "3px " + style.stroke,
@@ -68,10 +65,14 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
       className="flex flex-col group/item relative select-none cursor-pointer pt-4 pb-2 pr-2"
     >
       {/* Bold Rank Number Peeking Behind the Top-Left of Poster Card */}
-      <div className={cn(
-        "absolute -top-4 sm:-top-6 z-0 pointer-events-none select-none",
-        rank === 1 ? "left-2 sm:left-4 md:left-5" : "left-0 sm:-left-2 md:-left-3"
-      )}>
+      <div
+        className={cn(
+          "absolute -top-4 sm:-top-6 z-0 pointer-events-none select-none",
+          rank === 1
+            ? "left-2 sm:left-4 md:left-5"
+            : "left-0 sm:-left-2 md:-left-3",
+        )}
+      >
         <span
           className={`${rankFont.className} block text-[98px] font-black leading-none tracking-[-0.09em] opacity-100 transition-transform duration-300 group-hover/item:scale-105 sm:text-[132px] md:text-[156px]`}
           style={getRankColorStyle(rank)}
@@ -96,11 +97,21 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
               unoptimized
               referrerPolicy="no-referrer"
               onError={() => {
-                if (imgSrc && !imgSrc.startsWith("https://wsrv.nl") && !imgSrc.startsWith("/api/image-proxy")) {
-                  setImgSrc(`https://wsrv.nl/?url=${encodeURIComponent(imgSrc)}`);
+                if (
+                  imgSrc &&
+                  !imgSrc.startsWith("https://wsrv.nl") &&
+                  !imgSrc.startsWith("/api/image-proxy")
+                ) {
+                  setImgSrc(
+                    `https://wsrv.nl/?url=${encodeURIComponent(imgSrc)}`,
+                  );
                 } else if (imgSrc && imgSrc.startsWith("https://wsrv.nl")) {
                   const original = new URL(imgSrc).searchParams.get("url");
-                  setImgSrc(original ? `/api/image-proxy?url=${encodeURIComponent(original)}` : null);
+                  setImgSrc(
+                    original
+                      ? `/api/image-proxy?url=${encodeURIComponent(original)}`
+                      : null,
+                  );
                 } else {
                   setImgSrc(null);
                 }
@@ -141,7 +152,9 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
 
         {/* Movie Title Below Card */}
         <div className="mt-2 text-center max-w-[130px] sm:max-w-[160px] md:max-w-[185px] px-0.5">
-          <p className={`${cardFont.className} text-[11px] sm:text-xs font-bold text-neutral-200 line-clamp-1 group-hover/item:text-white transition-colors leading-snug tracking-normal`}>
+          <p
+            className={`${cardFont.className} text-[11px] sm:text-xs font-bold text-neutral-200 line-clamp-1 group-hover/item:text-white transition-colors leading-snug tracking-normal`}
+          >
             {filmTitle}
           </p>
           {film.origin_name && (
@@ -204,23 +217,23 @@ function dedupeTop10(films: FilmItem[]): FilmItem[] {
 
 import { useTranslation } from "@/store/langStore";
 
-export function Top10RankedRow({
-  films,
-  title,
-}: Top10RankedRowProps) {
+export function Top10RankedRow({ films, title }: Top10RankedRowProps) {
   const { t } = useTranslation();
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const displayTitle = title || t("home.top10Title", "TOP 10 Đang Được Xem Nhiều");
+  const displayTitle =
+    title || t("home.top10Title", "TOP 10 Đang Được Xem Nhiều");
   const top10 = dedupeTop10(films || []);
   if (top10.length === 0) return null;
 
   return (
     <section className="mb-10 relative group/section">
       <div className="flex items-center justify-between mb-4">
-        <h2 className={`${cardFont.className} text-lg md:text-xl font-extrabold text-white flex items-center gap-2`}>
+        <h2
+          className={`${cardFont.className} text-lg md:text-xl font-extrabold text-white flex items-center gap-2`}
+        >
           <span>{displayTitle}</span>
         </h2>
 
@@ -255,7 +268,10 @@ export function Top10RankedRow({
           modules={[Navigation, FreeMode]}
           onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
           onBeforeInit={(swiper) => {
-            if (swiper.params.navigation && typeof swiper.params.navigation !== "boolean") {
+            if (
+              swiper.params.navigation &&
+              typeof swiper.params.navigation !== "boolean"
+            ) {
               swiper.params.navigation.prevEl = prevRef.current;
               swiper.params.navigation.nextEl = nextRef.current;
             }
@@ -272,7 +288,10 @@ export function Top10RankedRow({
           className="!py-4 !pl-8 sm:!pl-12 md:!pl-16 !pr-4"
         >
           {top10.map((film, index) => (
-            <SwiperSlide key={`top10-${film.slug || 'item'}-${index}`} className="!w-auto">
+            <SwiperSlide
+              key={`top10-${film.slug || "item"}-${index}`}
+              className="!w-auto"
+            >
               <Top10Item film={film} rank={index + 1} />
             </SwiperSlide>
           ))}

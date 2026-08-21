@@ -6,5 +6,6 @@ import { AuthModule } from "../auth/auth.module";
 @Module({
   imports: [AuthModule],
   providers: [WatchPartyGateway, WatchPartyService],
+  exports: [WatchPartyService],
 })
 export class WatchPartyModule {}

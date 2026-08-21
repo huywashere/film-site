@@ -43,6 +43,7 @@ export interface ArtPlayerProps {
   onProgress?: (currentTime: number, duration: number) => void;
   onReady?: (player: Artplayer) => void;
   onPlaybackStart?: (player: Artplayer) => void;
+  onBuffering?: (durationMs: number) => void;
   onError?: (error: unknown) => void;
   onPlaybackStateChange?: (state: {
     action: "play" | "pause" | "seek";
@@ -71,6 +72,7 @@ export default function ArtPlayer({
   onProgress,
   onReady,
   onPlaybackStart,
+  onBuffering,
   onError,
   onPlaybackStateChange,
   isTheaterMode = false,
@@ -120,12 +122,14 @@ export default function ArtPlayer({
   const onProgressRef = useRef(onProgress);
   const onErrorRef = useRef(onError);
   const onPlaybackStartRef = useRef(onPlaybackStart);
+  const onBufferingRef = useRef(onBuffering);
   const onPlaybackStateChangeRef = useRef(onPlaybackStateChange);
   onReadyRef.current = onReady;
   onEndedRef.current = onEnded;
   onProgressRef.current = onProgress;
   onErrorRef.current = onError;
   onPlaybackStartRef.current = onPlaybackStart;
+  onBufferingRef.current = onBuffering;
   onPlaybackStateChangeRef.current = onPlaybackStateChange;
 
   useEffect(() => {
@@ -161,7 +165,8 @@ export default function ArtPlayer({
           abrBandWidthFactor: 0.8,
           abrBandWidthUpFactor: 0.6,
           capLevelToPlayerSize: true,
-          pLoader: class ManifestFilterLoader extends (Hls.DefaultConfig.loader as any) {
+          pLoader: class ManifestFilterLoader extends (Hls.DefaultConfig
+            .loader as any) {
             load(context: any, config: any, callbacks: any) {
               const originalOnSuccess = callbacks.onSuccess;
               callbacks.onSuccess = (
@@ -195,7 +200,11 @@ export default function ArtPlayer({
           const frags = data.details?.fragments || [];
           if (!frags.length) return;
 
-          const adRanges: Array<{ start: number; end: number; duration: number }> = [];
+          const adRanges: Array<{
+            start: number;
+            end: number;
+            duration: number;
+          }> = [];
 
           type Block = {
             cc: number;
@@ -237,7 +246,9 @@ export default function ArtPlayer({
             const isShortAdDuration = b.duration >= 4 && b.duration <= 95;
             if (b.hasAdUrl || (isShortAdDuration && blocks.length > 1)) {
               const alreadyAdded = adRanges.some(
-                (r) => Math.abs(r.start - b.start) < 1 && Math.abs(r.end - b.end) < 1,
+                (r) =>
+                  Math.abs(r.start - b.start) < 1 &&
+                  Math.abs(r.end - b.end) < 1,
               );
               if (!alreadyAdded) {
                 adRanges.push({
@@ -529,7 +540,18 @@ export default function ArtPlayer({
       });
     });
     let didStartPlayback = false;
+    let bufferingStartedAt = 0;
+    player.on("video:waiting", () => {
+      if (!bufferingStartedAt) bufferingStartedAt = Date.now();
+    });
+    player.on("video:stalled", () => {
+      if (!bufferingStartedAt) bufferingStartedAt = Date.now();
+    });
     player.on("video:playing", () => {
+      if (bufferingStartedAt) {
+        onBufferingRef.current?.(Date.now() - bufferingStartedAt);
+        bufferingStartedAt = 0;
+      }
       if (!didStartPlayback) {
         didStartPlayback = true;
         onPlaybackStartRef.current?.(player);
@@ -947,7 +969,7 @@ export default function ArtPlayer({
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
-        className="relative w-full h-full min-h-[400px] select-none"
+        className="absolute inset-0 h-full min-h-0 w-full select-none overflow-hidden"
       >
         {/* ── Holding 2x Speed Boost Top HUD Banner ── */}
         {isSpeedBoosted && (
@@ -996,7 +1018,10 @@ export default function ArtPlayer({
           className="absolute -inset-4 w-[calc(100%+32px)] h-[calc(100%+32px)] -z-10 opacity-70 blur-[60px] pointer-events-none scale-[1.03] transition-all duration-700 ease-out"
           style={{ mixBlendMode: "normal" }}
         />
-        <div ref={containerRef} className="w-full h-full" />
+        <div
+          ref={containerRef}
+          className="absolute inset-0 h-full min-h-0 w-full"
+        />
       </div>
     </>
   );

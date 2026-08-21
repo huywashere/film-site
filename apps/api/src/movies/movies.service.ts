@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { RedisCacheService } from "../redis/redis.service";
 import { PrismaService } from "../prisma/prisma.service";
 import axios, { AxiosInstance } from "axios";
+import { RecordMovieViewDto } from "./movies.dto";
 
 @Injectable()
 export class MoviesService {
@@ -97,21 +98,25 @@ export class MoviesService {
     const result = ranked.flatMap((item) => {
       const movie = movieById.get(item.movieId);
       if (!movie) return [];
-      return [{
-        _id: movie.id,
-        slug: movie.id,
-        name: movie.title,
-        origin_name: movie.originName || movie.titleEn || undefined,
-        poster_url: movie.posterUrl || undefined,
-        thumb_url: movie.thumbUrl || undefined,
-        year: movie.year || undefined,
-        type: movie.type,
-        episode_current: movie.totalEpisodes ? `Tập ${movie.totalEpisodes}` : "Full",
-        quality: movie.quality || undefined,
-        lang: movie.language || undefined,
-        content: movie.description || undefined,
-        views: item._count.movieId,
-      }];
+      return [
+        {
+          _id: movie.id,
+          slug: movie.id,
+          name: movie.title,
+          origin_name: movie.originName || movie.titleEn || undefined,
+          poster_url: movie.posterUrl || undefined,
+          thumb_url: movie.thumbUrl || undefined,
+          year: movie.year || undefined,
+          type: movie.type,
+          episode_current: movie.totalEpisodes
+            ? `Tập ${movie.totalEpisodes}`
+            : "Full",
+          quality: movie.quality || undefined,
+          lang: movie.language || undefined,
+          content: movie.description || undefined,
+          views: item._count.movieId,
+        },
+      ];
     });
 
     // Cache for 5 minutes — trending doesn't need to be real-time
@@ -119,6 +124,62 @@ export class MoviesService {
     return result;
   }
 
+  async recordView(movieId: string, data: RecordMovieViewDto) {
+    await this.prisma.movie.upsert({
+      where: { id: movieId },
+      create: {
+        id: movieId,
+        title: data.title,
+        originName: data.originName,
+        posterUrl: data.posterUrl,
+        year: data.year,
+        type: data.type || "unknown",
+      },
+      update: {
+        title: data.title,
+        originName: data.originName,
+        posterUrl: data.posterUrl,
+        year: data.year,
+        type: data.type,
+      },
+    });
+    await this.prisma.viewLog.create({
+      data: {
+        movieId,
+        episode: data.episode,
+        serverName: data.serverName,
+      },
+    });
+    if (data.provider && data.serverName) {
+      await this.prisma.moviePlaybackSource.upsert({
+        where: {
+          movieId_provider_providerSlug_episodeKey_serverName: {
+            movieId,
+            provider: data.provider,
+            providerSlug: movieId,
+            episodeKey: data.episode || "full",
+            serverName: data.serverName,
+          },
+        },
+        create: {
+          movieId,
+          provider: data.provider,
+          providerSlug: movieId,
+          episodeKey: data.episode || "full",
+          serverName: data.serverName,
+          healthStatus: "operational",
+          lastCheckedAt: new Date(),
+        },
+        update: {
+          healthStatus: "operational",
+          lastCheckedAt: new Date(),
+          lastError: null,
+        },
+      });
+    }
+    await this.cache.del("movies:trending:20");
+    return { recorded: true };
+  }
 
   // GET /v1/api/danh-sach/phim-bo?page=1
   async getSeries(page = 1, limit = 24) {

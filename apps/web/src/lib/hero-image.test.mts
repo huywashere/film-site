@@ -3,7 +3,6 @@ import test from "node:test";
 import {
   buildHeroCardImageCandidates,
   buildHeroImageCandidates,
-  HERO_LOCAL_FALLBACK,
 } from "./hero-image.ts";
 
 test("prefers a direct w1280 TMDB backdrop over the original proxy URL", () => {
@@ -15,7 +14,7 @@ test("prefers a direct w1280 TMDB backdrop over the original proxy URL", () => {
     candidates[0],
     "https://image.tmdb.org/t/p/w1280/backdrop.jpg",
   );
-  assert.equal(candidates.at(-1), HERO_LOCAL_FALLBACK);
+  assert.match(candidates.at(-1) || "", /^\/api\/image-proxy\?/);
 });
 
 test("uses compact TMDB artwork for above-the-fold hero cards", () => {
@@ -51,13 +50,28 @@ test("tries every direct card source before relay fallbacks", () => {
   assert.match(candidates[2], /^https:\/\/wsrv\.nl\//);
 });
 
-test("prefers direct provider CDN images and always has a local fallback", () => {
+test("prefers direct provider CDN images and only falls back to the same artwork", () => {
   const candidates = buildHeroImageCandidates({
     thumbUrl: "https://phimimg.com/upload/movie.jpg",
   });
 
   assert.equal(candidates[0], "https://phimimg.com/upload/movie.jpg");
-  assert.equal(candidates.at(-1), HERO_LOCAL_FALLBACK);
+  assert.ok(
+    candidates.every(
+      (candidate) =>
+        candidate.includes("phimimg.com") ||
+        candidate.startsWith("/api/image-proxy?"),
+    ),
+  );
+});
+
+test("never uses an unrelated local movie as a hero fallback", () => {
+  const candidates = buildHeroImageCandidates({
+    heroBackdrop: "https://image.tmdb.org/t/p/w1280/fury.jpg",
+  });
+
+  assert.ok(candidates.length >= 2);
+  assert.ok(candidates.every((candidate) => !candidate.includes("avengers")));
 });
 
 test("deduplicates equivalent hero sources", () => {

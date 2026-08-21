@@ -2,13 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  Activity,
-  Database,
-  Gauge,
-  MemoryStick,
-  RefreshCw,
-  TriangleAlert,
-} from "lucide-react";
+  IconActivity as Activity,
+  IconDatabase as Database,
+  IconGauge as Gauge,
+  IconCpu as MemoryStick,
+  IconRefresh as RefreshCw,
+  IconAlertTriangle as TriangleAlert,
+} from "@tabler/icons-react";
 
 type Summary = { count: number; p50: number | null; p95: number | null };
 type Metrics = {
@@ -65,7 +65,7 @@ export function PerformancePanel() {
       setPayload({
         available: false,
         probeLatencyMs: 0,
-        message: "Không thể kết nối endpoint performance của dashboard",
+        message: "Không thể kết nối điểm đo hiệu suất của trang quản trị",
       });
     } finally {
       setLoading(false);
@@ -90,17 +90,17 @@ export function PerformancePanel() {
         {
           label: "API p95",
           value: ms(metrics.api.latency.p95),
-          detail: `${metrics.api.requests} request, ${percent(metrics.api.errorRate)} lỗi`,
+          detail: `${metrics.api.requests} yêu cầu, ${percent(metrics.api.errorRate)} lỗi`,
           Icon: Activity,
         },
         {
-          label: "Redis cache hit",
+          label: "Tỷ lệ trúng Redis",
           value: percent(metrics.cache.hitRate),
-          detail: `${metrics.cache.backend}, ${metrics.cache.hits} hit`,
+          detail: `${metrics.cache.backend}, ${metrics.cache.hits} lần trúng`,
           Icon: Database,
         },
         {
-          label: "API heap / RSS",
+          label: "Bộ nhớ API / RSS",
           value: megabytes(metrics.process.heapUsedBytes),
           detail: `RSS ${megabytes(metrics.process.rssBytes)}`,
           Icon: MemoryStick,
@@ -124,7 +124,7 @@ export function PerformancePanel() {
           onClick={() => void refresh()}
           disabled={loading}
           className="admin-icon-button !h-8 !w-8 disabled:opacity-50"
-          aria-label="Làm mới performance metrics"
+          aria-label="Làm mới số liệu hiệu suất"
         >
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
         </button>
@@ -133,13 +133,16 @@ export function PerformancePanel() {
       {!payload && loading ? (
         <div className="grid gap-3 p-5 sm:grid-cols-2 xl:grid-cols-4">
           {Array.from({ length: 4 }, (_, index) => (
-            <div key={index} className="h-24 animate-pulse rounded-xl bg-slate-100" />
+            <div
+              key={index}
+              className="h-24 animate-pulse rounded-xl bg-slate-100"
+            />
           ))}
         </div>
       ) : !payload?.available || !metrics ? (
         <div className="m-5 flex items-start gap-2 rounded-xl border border-amber-100 bg-amber-50 p-4 text-[11px] text-amber-800">
           <TriangleAlert size={16} className="mt-0.5 shrink-0" />
-          <span>{payload?.message || "Performance metrics chưa sẵn sàng"}</span>
+          <span>{payload?.message || "Số liệu hiệu suất chưa sẵn sàng"}</span>
         </div>
       ) : (
         <div className="grid gap-3 p-5 sm:grid-cols-2 xl:grid-cols-4">
@@ -165,9 +168,10 @@ export function PerformancePanel() {
       {metrics && (
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--admin-line)] px-5 py-3 text-[10px] text-slate-400">
           <span>
-            Player fallback: {percent(metrics.playback.fallbackRate)} · INP p95: {ms(metrics.webVitals.inp.p95)}
+            Tỷ lệ chuyển nguồn: {percent(metrics.playback.fallbackRate)} · INP
+            p95: {ms(metrics.webVitals.inp.p95)}
           </span>
-          <span>{metrics.samples} mẫu telemetry</span>
+          <span>{metrics.samples} mẫu đo lường</span>
         </div>
       )}
     </section>

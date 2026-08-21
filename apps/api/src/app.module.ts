@@ -18,10 +18,16 @@ import { AdminModule } from "./admin/admin.module";
 import { validateEnv } from "./config/env.validation";
 import { WatchPartyModule } from "./watch-party/watch-party.module";
 import { TelemetryModule } from "./telemetry/telemetry.module";
+import { ReportsModule } from "./reports/reports.module";
+import { SiteConfigModule } from "./site-config/site-config.module";
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: [".env.local", ".env"],
+      validate: validateEnv,
+    }),
     // Global Redis cache module – available to all feature modules
     RedisCacheModule,
     ThrottlerModule.forRootAsync({
@@ -56,6 +62,8 @@ import { TelemetryModule } from "./telemetry/telemetry.module";
     AdminModule,
     WatchPartyModule,
     TelemetryModule,
+    ReportsModule,
+    SiteConfigModule,
   ],
   providers: [
     // Applied globally through the DI container so ThrottlerGuard receives the

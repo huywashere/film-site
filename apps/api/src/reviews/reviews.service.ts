@@ -9,7 +9,7 @@ export class ReviewsService {
     const skip = (page - 1) * limit;
     const [reviews, total] = await Promise.all([
       this.prisma.review.findMany({
-        where: { movieId },
+        where: { movieId, isHidden: false },
         include: {
           user: {
             select: { username: true, displayName: true, avatarUrl: true },
@@ -19,7 +19,7 @@ export class ReviewsService {
         skip,
         take: limit,
       }),
-      this.prisma.review.count({ where: { movieId } }),
+      this.prisma.review.count({ where: { movieId, isHidden: false } }),
     ]);
     return { reviews, total, page, pages: Math.ceil(total / limit) };
   }
@@ -82,6 +82,7 @@ export class ReviewsService {
 
   async getRecent(page = 1, limit = 20) {
     return this.prisma.review.findMany({
+      where: { isHidden: false },
       include: {
         user: {
           select: { username: true, displayName: true, avatarUrl: true },
