@@ -2,18 +2,15 @@
 
 import { useEffect } from "react";
 
-const REDIRECT_TARGET = "/";
+const RICKROLL_URL =
+  "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1";
 
 /**
  * Enterprise Client-Side Anti-DevTools & Anti-Tamper Security Guard
  * Exclusively protecting the private Admin CMS Dashboard.
  *
- * Blocks:
- * 1. F12, Ctrl+Shift+I/J/C/K/E/S, Cmd+Option+I/J/C/U, Ctrl+U (View Source), Ctrl+S (Save), Shift+F10 (Context Menu Key)
- * 2. Right-click context menu & auxiliary click inspector triggers
- * 3. DevTools opening via browser menu (3-dots) using Debugger Timing Trap + Console Getter Trap
- * 4. DevTools docking via Window Outer/Inner Dimension Delta analysis
- * 5. Neutralizes and freezes console logging APIs to prevent memory inspection
+ * Automatically redirects anyone attempting to open DevTools, inspect,
+ * or bypass security to the Rickroll YouTube video.
  */
 export function AdminDevToolsGuard() {
   useEffect(() => {
@@ -23,49 +20,28 @@ export function AdminDevToolsGuard() {
       if (triggered) return;
       triggered = true;
 
-      // Clear DOM immediately so no admin data, state, or DOM nodes can be inspected
+      // Clear DOM immediately so no admin data or code can be viewed
       try {
         if (document.body) {
-          document.body.innerHTML =
-            "<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#ef4444;font-family:sans-serif;font-weight:bold;font-size:18px;'>Quyền truy cập bị từ chối / Access Denied</div>";
+          document.body.innerHTML = "";
         }
       } catch {
         // Ignore DOM wipe errors
       }
 
-      // Redirect away from admin dashboard
-      window.location.replace(REDIRECT_TARGET);
+      // Redirect immediately to Rickroll video
+      window.location.replace(RICKROLL_URL);
     };
 
-    // 1. Neutralize all console logging methods
-    try {
-      const noop = () => {};
-      const methods = [
-        "log",
-        "debug",
-        "info",
-        "warn",
-        "error",
-        "table",
-        "trace",
-        "dir",
-        "dirxml",
-        "group",
-        "groupEnd",
-        "time",
-        "timeEnd",
-        "assert",
-        "profile",
-      ] as const;
-
-      methods.forEach((method) => {
-        if (typeof window.console[method] === "function") {
-          window.console[method] = noop;
-        }
-      });
-    } catch {
-      // Ignore console override errors
-    }
+    // 1. Immediate Window Dimensions Check (Catches DevTools already docked before page load)
+    const checkDimensions = () => {
+      const widthThreshold = window.outerWidth - window.innerWidth > 160;
+      const heightThreshold = window.outerHeight - window.innerHeight > 160;
+      if (widthThreshold || heightThreshold) {
+        triggerProtection();
+      }
+    };
+    checkDimensions();
 
     // 2. Comprehensive Keyboard Shortcuts Blocker (Capture & Bubbling phase)
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -116,6 +92,7 @@ export function AdminDevToolsGuard() {
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
+        triggerProtection();
         return false;
       }
 
@@ -135,65 +112,95 @@ export function AdminDevToolsGuard() {
       return false;
     };
 
-    // 4. Debugger Timing Loop (Catches DevTools opened via 3-dots menu or external attach)
+    // 4. Web Worker Independent Thread Heartbeat (Detects if main thread is paused in debugger)
+    let worker: Worker | null = null;
+    try {
+      const workerBlob = new Blob(
+        [
+          `
+          let lastTime = Date.now();
+          setInterval(() => {
+            const now = Date.now();
+            postMessage({ now });
+            lastTime = now;
+          }, 150);
+        `,
+        ],
+        { type: "application/javascript" },
+      );
+      const workerUrl = URL.createObjectURL(workerBlob);
+      worker = new Worker(workerUrl);
+      let lastHeartbeat = Date.now();
+
+      worker.onmessage = () => {
+        const now = Date.now();
+        if (now - lastHeartbeat > 450) {
+          // Main thread was paused by DevTools debugger!
+          triggerProtection();
+        }
+        lastHeartbeat = now;
+      };
+    } catch {
+      // Ignore worker creation errors
+    }
+
+    // 5. Debugger Timing Loop (Catches DevTools opened via 3-dots menu or external attach)
     let debuggerInterval: NodeJS.Timeout | null = null;
     try {
       debuggerInterval = setInterval(() => {
         const start = performance.now();
-        // Evaluating debugger statement causes measurable delay when DevTools is active
         // eslint-disable-next-line no-debugger
         Function("debugger")();
         const end = performance.now();
-        if (end - start > 100) {
+        if (end - start > 80) {
           triggerProtection();
         }
-      }, 800);
+      }, 500);
     } catch {
       // Ignore debugger eval errors
     }
 
-    // 5. Console Object Getter Trap (Triggers when DevTools console formats output)
+    // 6. Console Object Getter & Regex Trap (Triggers when DevTools console formats output)
     let consoleInterval: NodeJS.Timeout | null = null;
     try {
       const detector = new Image();
       Object.defineProperty(detector, "id", {
         get: () => {
           triggerProtection();
-          return "protected";
+          return "";
         },
       });
+      const regex = /./;
+      regex.toString = () => {
+        triggerProtection();
+        return "";
+      };
 
       consoleInterval = setInterval(() => {
         // eslint-disable-next-line no-console
         console.log(detector);
         // eslint-disable-next-line no-console
+        console.log(regex);
+        // eslint-disable-next-line no-console
         console.clear();
-      }, 1500);
+      }, 800);
     } catch {
       // Ignore getter trap errors
     }
-
-    // 6. Docked Window Dimensions Delta Detection
-    const handleResize = () => {
-      const widthThreshold = window.outerWidth - window.innerWidth > 160;
-      const heightThreshold = window.outerHeight - window.innerHeight > 160;
-      if (widthThreshold || heightThreshold) {
-        triggerProtection();
-      }
-    };
 
     // Register all event listeners with capture phase for highest priority
     window.addEventListener("keydown", handleKeyDown, true);
     window.addEventListener("keyup", handleKeyDown, true);
     window.addEventListener("contextmenu", handleContextMenu, true);
-    window.addEventListener("resize", handleResize, { passive: true });
+    window.addEventListener("resize", checkDimensions, { passive: true });
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown, true);
       window.removeEventListener("keyup", handleKeyDown, true);
       window.removeEventListener("contextmenu", handleContextMenu, true);
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("resize", checkDimensions);
 
+      if (worker) worker.terminate();
       if (debuggerInterval) clearInterval(debuggerInterval);
       if (consoleInterval) clearInterval(consoleInterval);
     };
