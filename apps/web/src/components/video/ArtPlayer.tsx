@@ -70,15 +70,6 @@ export default function ArtPlayer({
   const [isDimmed, setIsDimmed] = useState(false); // Chế độ rạp tắt đèn
   const [pipActive, setPipActive] = useState(false); // Picture-in-Picture
 
-  // Gestures state
-  const [isSpeedBoosted, setIsSpeedBoosted] = useState(false);
-  const [doubleTapHud, setDoubleTapHud] = useState<"rewind" | "forward" | null>(
-    null,
-  );
-  const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastTapRef = useRef<number>(0);
-  const previousSpeedRef = useRef<number>(1);
-
   const isTheaterModeRef = useRef(isTheaterMode);
   const onTheaterModeToggleRef = useRef(onTheaterModeToggle);
   isTheaterModeRef.current = isTheaterMode;
@@ -216,8 +207,16 @@ export default function ArtPlayer({
 
         const armStartupWatchdog = () => {
           clearStartupTimer();
+          const isMobileDevice =
+            typeof navigator !== "undefined" &&
+            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+              navigator.userAgent,
+            );
+          const timeoutMs = isMobileDevice ? 20_000 : HLS_STARTUP_TIMEOUT_MS;
+
           startupTimer = setTimeout(() => {
             if (video.readyState >= HTMLMediaElement.HAVE_METADATA) return;
+            if (isMobileDevice && video.paused) return;
 
             if (
               alternateUrl &&
@@ -237,7 +236,7 @@ export default function ArtPlayer({
               type: "HLS_STARTUP_TIMEOUT",
               details: { streamUrl: activeStreamUrl },
             });
-          }, HLS_STARTUP_TIMEOUT_MS);
+          }, timeoutMs);
         };
 
         const switchTransport = () => {
@@ -465,11 +464,16 @@ export default function ArtPlayer({
         video.setAttribute("playsinline", "true");
         video.setAttribute("webkit-playsinline", "true");
         video.setAttribute("x5-playsinline", "true");
+        video.removeAttribute("crossorigin");
         video.src = streamUrl;
         video.load();
 
         const handleNativeError = () => {
-          if (alternateUrl && alternateUrl !== streamUrl && video.src !== alternateUrl) {
+          if (
+            alternateUrl &&
+            alternateUrl !== streamUrl &&
+            video.src !== alternateUrl
+          ) {
             video.src = alternateUrl;
             video.load();
             return;
@@ -478,6 +482,10 @@ export default function ArtPlayer({
         };
 
         video.addEventListener("error", handleNativeError, { once: true });
+        video.addEventListener("loadedmetadata", clearStartupTimer, {
+          once: true,
+        });
+        video.addEventListener("canplay", clearStartupTimer, { once: true });
       } else {
         onErrorRef.current?.({ type: "HLS_UNSUPPORTED" });
       }
@@ -491,6 +499,9 @@ export default function ArtPlayer({
         m3u8: function (video: HTMLVideoElement, streamUrl: string) {
           attachHls(video, streamUrl, hlsTransport.fallback);
         },
+        hls: function (video: HTMLVideoElement, streamUrl: string) {
+          attachHls(video, streamUrl, hlsTransport.fallback);
+        },
       },
       poster,
       title,
@@ -498,6 +509,9 @@ export default function ArtPlayer({
       autoplay,
       autoSize: false,
       autoMini: true,
+      autoOrientation: true,
+      fastForward: true,
+      lock: true,
       screenshot: true,
       setting: true,
       pip: true,
@@ -531,7 +545,6 @@ export default function ArtPlayer({
         },
       },
       moreVideoAttr: {
-        crossOrigin: "anonymous",
         playsInline: "true",
         "webkit-playsinline": "true",
         "x5-playsinline": "true",
@@ -1004,66 +1017,6 @@ export default function ArtPlayer({
     }
   }, [isTheaterMode]);
 
-  const handlePointerDown = (e: React.PointerEvent) => {
-    if (e.button !== 0) return;
-    const player = playerRef.current;
-    if (!player) return;
-
-    const target = e.target as HTMLElement;
-    if (
-      target.closest(".art-controls") ||
-      target.closest(".art-setting") ||
-      target.closest(".art-contextmenu") ||
-      target.closest("button")
-    ) {
-      return;
-    }
-
-    const now = Date.now();
-    const rect =
-      containerRef.current?.getBoundingClientRect() ||
-      e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const width = rect.width;
-
-    if (now - lastTapRef.current < 300) {
-      if (pressTimerRef.current) {
-        clearTimeout(pressTimerRef.current);
-        pressTimerRef.current = null;
-      }
-      if (clickX < width * 0.45) {
-        player.currentTime = Math.max(0, player.currentTime - 10);
-        setDoubleTapHud("rewind");
-        setTimeout(() => setDoubleTapHud(null), 800);
-      } else if (clickX > width * 0.55) {
-        player.currentTime = Math.min(player.duration, player.currentTime + 10);
-        setDoubleTapHud("forward");
-        setTimeout(() => setDoubleTapHud(null), 800);
-      }
-      lastTapRef.current = 0;
-      return;
-    }
-    lastTapRef.current = now;
-
-    pressTimerRef.current = setTimeout(() => {
-      previousSpeedRef.current = player.playbackRate;
-      player.playbackRate = 2.0;
-      setIsSpeedBoosted(true);
-    }, 280);
-  };
-
-  const handlePointerUp = () => {
-    if (pressTimerRef.current) {
-      clearTimeout(pressTimerRef.current);
-      pressTimerRef.current = null;
-    }
-    const player = playerRef.current;
-    if (isSpeedBoosted && player) {
-      player.playbackRate = previousSpeedRef.current || 1.0;
-      setIsSpeedBoosted(false);
-    }
-  };
-
   return (
     <>
       {/* ── Dimming overlay (tắt đèn) ── */}
@@ -1076,33 +1029,8 @@ export default function ArtPlayer({
 
       <div
         ref={wrapperRef}
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
         className="absolute inset-0 h-full min-h-0 w-full select-none overflow-hidden"
       >
-        {/* ── Holding 2x Speed Boost Top HUD Banner ── */}
-        {isSpeedBoosted && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 bg-black/90 border border-[#23ade5]/50 text-[#23ade5] font-extrabold text-xs px-4 py-1.5 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-2 animate-pulse">
-            <span className="w-2 h-2 rounded-full bg-[#23ade5] animate-ping" />
-            <span>⏩ Tua Nhanh 2X (Đang Giữ)</span>
-          </div>
-        )}
-
-        {/* ── Double Tap Rewind HUD (-10s) ── */}
-        {doubleTapHud === "rewind" && (
-          <div className="absolute left-10 top-1/2 -translate-y-1/2 z-40 bg-black/85 text-white font-black text-sm px-5 py-3 rounded-full border border-white/20 backdrop-blur-md animate-in zoom-in-50 duration-200 flex items-center gap-2 shadow-2xl">
-            <span>⏪</span> -10s
-          </div>
-        )}
-
-        {/* ── Double Tap Fast-Forward HUD (+10s) ── */}
-        {doubleTapHud === "forward" && (
-          <div className="absolute right-10 top-1/2 -translate-y-1/2 z-40 bg-black/85 text-white font-black text-sm px-5 py-3 rounded-full border border-white/20 backdrop-blur-md animate-in zoom-in-50 duration-200 flex items-center gap-2 shadow-2xl">
-            +10s <span>⏩</span>
-          </div>
-        )}
-
         {/* ── PiP active indicator ── */}
         {pipActive && (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
