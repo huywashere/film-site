@@ -9,14 +9,16 @@ const RICKROLL_URL =
  * Enterprise Client-Side Anti-DevTools & Anti-Tamper Security Guard
  * Exclusively protecting the private Admin CMS Dashboard.
  *
- * Intercepts DevTools shortcuts, context menu inspection, and debugger pauses,
- * immediately redirecting intruders to the Rickroll YouTube video without false positives.
+ * Triggers ONLY when DevTools is actually opened / shortcuts pressed,
+ * with ZERO false positives when switching or leaving tabs.
  */
 export function AdminDevToolsGuard() {
   useEffect(() => {
     let triggered = false;
 
     const triggerProtection = () => {
+      // Never trigger if tab is not focused/visible to avoid background throttling false-positives
+      if (document.hidden) return;
       if (triggered) return;
       triggered = true;
 
@@ -33,7 +35,7 @@ export function AdminDevToolsGuard() {
       window.location.replace(RICKROLL_URL);
     };
 
-    // 1. Comprehensive Keyboard Shortcuts Blocker (Capture & Bubbling phase)
+    // 1. Comprehensive Keyboard Shortcuts Blocker (F12, Ctrl+Shift+I/J/C, etc.)
     const handleKeyDown = (event: KeyboardEvent) => {
       const key = (event.key || "").toLowerCase();
       const code = (event.code || "").toLowerCase();
@@ -102,53 +104,27 @@ export function AdminDevToolsGuard() {
       return false;
     };
 
-    // 3. Web Worker Independent Thread Heartbeat (Detects if main thread is paused in debugger)
-    let worker: Worker | null = null;
+    // 3. Console Inspection Detector (Only triggers when DevTools formats output in an active tab)
+    let consoleInterval: NodeJS.Timeout | null = null;
     try {
-      const workerBlob = new Blob(
-        [
-          `
-          let lastTime = Date.now();
-          setInterval(() => {
-            const now = Date.now();
-            postMessage({ now });
-            lastTime = now;
-          }, 200);
-        `,
-        ],
-        { type: "application/javascript" },
-      );
-      const workerUrl = URL.createObjectURL(workerBlob);
-      worker = new Worker(workerUrl);
-      let lastHeartbeat = Date.now();
-
-      worker.onmessage = () => {
-        const now = Date.now();
-        if (now - lastHeartbeat > 600) {
-          // Main thread was paused by DevTools debugger!
+      const detector = /./;
+      detector.toString = () => {
+        if (!document.hidden && document.hasFocus()) {
           triggerProtection();
         }
-        lastHeartbeat = now;
+        return "";
       };
-    } catch {
-      // Ignore worker creation errors
-    }
 
-    // 4. Debugger Timing Loop (Catches DevTools opened via 3-dots menu or external attach)
-    let debuggerInterval: NodeJS.Timeout | null = null;
-    try {
-      debuggerInterval = setInterval(() => {
-        const start = performance.now();
-        // Evaluating debugger statement causes measurable delay when DevTools is active
-        // eslint-disable-next-line no-debugger
-        Function("debugger")();
-        const end = performance.now();
-        if (end - start > 200) {
-          triggerProtection();
-        }
+      consoleInterval = setInterval(() => {
+        // Skip check entirely if tab is in background / switching
+        if (document.hidden || !document.hasFocus()) return;
+        // eslint-disable-next-line no-console
+        console.log(detector);
+        // eslint-disable-next-line no-console
+        console.clear();
       }, 1000);
     } catch {
-      // Ignore debugger eval errors
+      // Ignore console trap setup errors
     }
 
     // Register all event listeners with capture phase for highest priority
@@ -161,8 +137,7 @@ export function AdminDevToolsGuard() {
       window.removeEventListener("keyup", handleKeyDown, true);
       window.removeEventListener("contextmenu", handleContextMenu, true);
 
-      if (worker) worker.terminate();
-      if (debuggerInterval) clearInterval(debuggerInterval);
+      if (consoleInterval) clearInterval(consoleInterval);
     };
   }, []);
 
