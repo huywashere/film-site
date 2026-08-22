@@ -876,9 +876,6 @@ export default function WatchPage() {
   const [vidsrcManuallySelected, setVidsrcManuallySelected] = useState(false);
   const [userManuallySelectedServer, setUserManuallySelectedServer] =
     useState(false);
-  const [resolvedEmbedStreams, setResolvedEmbedStreams] = useState<
-    Record<string, string>
-  >({});
 
   // Fallback state
   const [isFallbacking, setIsFallbacking] = useState(false);
@@ -1902,39 +1899,9 @@ export default function WatchPage() {
   const currentEpData: any =
     findMatchingEpisode(serverData, currentEp) || serverData[0];
 
-  const rawM3u8Url: string = currentEpData?.link_m3u8 || "";
-  const embedUrl: string = currentEpData?.link_embed || "";
-  const resolvedM3u8Url: string = embedUrl
-    ? resolvedEmbedStreams[embedUrl] || ""
-    : "";
-  const m3u8Url: string = rawM3u8Url || resolvedM3u8Url || "";
+  const m3u8Url: string = currentEpData?.link_m3u8 || "";
   const m3u8ProxyUrl: string = currentEpData?.link_m3u8_proxy || "";
-
-  // Auto-resolve NguonC & streamc embeds to direct pure M3U8 streams (bypassing all betting ads)
-  useEffect(() => {
-    if (
-      !rawM3u8Url &&
-      embedUrl &&
-      (embedUrl.includes("streamc.xyz") || embedUrl.includes("nguonc"))
-    ) {
-      if (resolvedEmbedStreams[embedUrl]) return;
-      let isMounted = true;
-      fetch(`/api/nguonc/resolve-stream?embed=${encodeURIComponent(embedUrl)}`)
-        .then((r) => r.json())
-        .then((data) => {
-          if (isMounted && data?.m3u8) {
-            setResolvedEmbedStreams((prev) => ({
-              ...prev,
-              [embedUrl]: data.m3u8,
-            }));
-          }
-        })
-        .catch(() => {});
-      return () => {
-        isMounted = false;
-      };
-    }
-  }, [embedUrl, rawM3u8Url, resolvedEmbedStreams]);
+  const embedUrl: string = currentEpData?.link_embed || "";
 
   const iframeUrl =
     embedUrl ||
