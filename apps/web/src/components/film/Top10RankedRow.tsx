@@ -209,6 +209,7 @@ function dedupeTop10(films: FilmItem[]): FilmItem[] {
 }
 
 import { useTranslation } from "@/store/langStore";
+import { EmotionBurningFlame } from "@/components/ui/EmotionBadges";
 
 export function Top10RankedRow({ films, title }: Top10RankedRowProps) {
   const { t } = useTranslation();
@@ -227,7 +228,8 @@ export function Top10RankedRow({ films, title }: Top10RankedRowProps) {
         <h2
           className={`${cardFont.className} text-lg md:text-xl font-extrabold text-white flex items-center gap-2`}
         >
-          <span>{displayTitle}</span>
+          <EmotionBurningFlame size={24} />
+          <span className="tracking-[-0.015em]">{displayTitle}</span>
         </h2>
 
         {/* Custom Navigation */}
