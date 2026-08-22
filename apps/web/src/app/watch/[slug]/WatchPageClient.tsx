@@ -855,7 +855,12 @@ export default function WatchPage() {
   const [currentServer, setCurrentServer] = useState(0);
   const [failedServers, setFailedServers] = useState<number[]>([]);
   const [episodeSearch, setEpisodeSearch] = useState("");
-  const [autoNextConfig, setAutoNextConfig] = useState(true);
+  const [autoNextConfig, setAutoNextConfig] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("cineverse_auto_next") !== "false";
+    }
+    return true;
+  });
   const [autoPlayConfig, setAutoPlayConfig] = useState(true);
   const [providerPriority, setProviderPriority] = useState([
     "kkphim",
@@ -992,6 +997,13 @@ export default function WatchPage() {
       if (typeof window !== "undefined") {
         localStorage.setItem("cineverse_auto_skip_intro", String(next));
       }
+      if (next && artInstance && typeof artInstance.currentTime === "number" && artInstance.currentTime < 85) {
+        hasSkippedIntroRef.current = true;
+        artInstance.currentTime = 85;
+        if (artInstance.notice) {
+          artInstance.notice.show = "Đã bỏ qua Intro (+85s)";
+        }
+      }
       toast(
         next
           ? "Đã bật tự động bỏ qua intro (85s)"
@@ -1000,13 +1012,19 @@ export default function WatchPage() {
       );
       return next;
     });
-  }, [toast]);
+  }, [artInstance, toast]);
 
   useEffect(() => {
     if (!slug) return;
     setIsFavorite(guestDataStorage.isFavorite(slug));
     setIsInWatchlist(guestDataStorage.isWatchlisted(slug));
   }, [slug]);
+
+  // Reset intro skip and auto-next countdown when episode / server / movie changes
+  useEffect(() => {
+    hasSkippedIntroRef.current = false;
+    setAutoNextCountdown(null);
+  }, [currentEp, currentServer, slug]);
 
   const joinedRoomRef = useRef<string | null>(null);
   const creatingRoomRef = useRef(false);
@@ -1015,10 +1033,26 @@ export default function WatchPage() {
   const epGridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (theaterMode && typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+    if (typeof window !== "undefined") {
+      if (theaterMode) {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      const t1 = setTimeout(() => {
+        if (artInstance && typeof artInstance.resize === "function") {
+          artInstance.resize();
+        }
+      }, 150);
+      const t2 = setTimeout(() => {
+        if (artInstance && typeof artInstance.resize === "function") {
+          artInstance.resize();
+        }
+      }, 380);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
     }
-  }, [theaterMode]);
+  }, [theaterMode, artInstance]);
 
   useEffect(() => {
     if (
@@ -2045,6 +2079,36 @@ export default function WatchPage() {
         return;
 
       lastKnownPlaybackTimeRef.current = currentTime;
+
+      // ── Auto Skip Intro Execution ──
+      if (
+        autoSkipIntro &&
+        !hasSkippedIntroRef.current &&
+        currentTime >= 0.5 &&
+        currentTime < 85
+      ) {
+        hasSkippedIntroRef.current = true;
+        if (artInstance && typeof artInstance.currentTime === "number") {
+          artInstance.currentTime = 85;
+          if (artInstance.notice) {
+            artInstance.notice.show = "Đã tự động bỏ qua mở đầu (Intro 85s)";
+          }
+        }
+        toast("Đã tự động bỏ qua mở đầu (Intro 85s)", "info");
+      }
+
+      // ── Auto Next Episode Countdown Trigger (within 3 seconds of ending) ──
+      if (
+        autoNextConfig &&
+        duration > 30 &&
+        currentTime >= duration - 3 &&
+        autoNextCountdown === null &&
+        currentEpIndex >= 0 &&
+        currentEpIndex < serverData.length - 1
+      ) {
+        setAutoNextCountdown(5);
+      }
+
       watchProgressStorage.saveProgress({
         slug,
         epSlug: currentEpData?.slug || currentEpData?.name || "01",
@@ -2078,13 +2142,20 @@ export default function WatchPage() {
         });
     },
     [
+      artInstance,
+      autoNextConfig,
+      autoNextCountdown,
+      autoSkipIntro,
       currentEpData,
+      currentEpIndex,
       epName,
       film?.name,
       film?.origin_name,
       posterUrl,
       server?.server_name,
+      serverData.length,
       slug,
+      toast,
       user,
     ],
   );
@@ -2130,6 +2201,91 @@ export default function WatchPage() {
     );
     return () => clearTimeout(t);
   }, [autoNextCountdown, goNextEpisode]);
+
+  // ── Global Keyboard Shortcuts Listener ──
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.code === "Space" || e.key === "k" || e.key === "K") {
+        e.preventDefault();
+        if (artInstance) {
+          if (artInstance.playing) {
+            artInstance.pause();
+          } else {
+            artInstance.play();
+          }
+        }
+      } else if (e.key === "f" || e.key === "F") {
+        e.preventDefault();
+        if (artInstance) {
+          artInstance.fullscreen = !artInstance.fullscreen;
+        }
+      } else if (e.key === "t" || e.key === "T") {
+        e.preventDefault();
+        setTheaterMode((prev) => {
+          const next = !prev;
+          toast(next ? "Đã bật chế độ rạp phim" : "Đã tắt chế độ rạp phim", "info");
+          return next;
+        });
+      } else if (e.key === "m" || e.key === "M") {
+        e.preventDefault();
+        if (artInstance) {
+          artInstance.muted = !artInstance.muted;
+        }
+      } else if (e.key === "ArrowLeft" || e.key === "j" || e.key === "J") {
+        e.preventDefault();
+        if (artInstance) {
+          artInstance.currentTime = Math.max(0, (artInstance.currentTime || 0) - 10);
+          if (artInstance.notice) artInstance.notice.show = "-10s";
+        }
+      } else if (e.key === "ArrowRight" || e.key === "l" || e.key === "L") {
+        e.preventDefault();
+        if (artInstance) {
+          artInstance.currentTime = (artInstance.currentTime || 0) + 10;
+          if (artInstance.notice) artInstance.notice.show = "+10s";
+        }
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (artInstance) {
+          artInstance.volume = Math.min(1, Math.round(((artInstance.volume || 1) + 0.1) * 10) / 10);
+          if (artInstance.notice) artInstance.notice.show = `Âm lượng: ${Math.round(artInstance.volume * 100)}%`;
+        }
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (artInstance) {
+          artInstance.volume = Math.max(0, Math.round(((artInstance.volume || 1) - 0.1) * 10) / 10);
+          if (artInstance.notice) artInstance.notice.show = `Âm lượng: ${Math.round(artInstance.volume * 100)}%`;
+        }
+      } else if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        goNextEpisode();
+      } else if (e.key === "i" || e.key === "I") {
+        e.preventDefault();
+        if (artInstance) {
+          hasSkippedIntroRef.current = true;
+          artInstance.currentTime = 85;
+          if (artInstance.notice) artInstance.notice.show = "Đã bỏ qua Intro (+85s)";
+          toast("Đã bỏ qua đoạn mở đầu (Intro)", "info");
+        }
+      } else if (e.key === "?") {
+        e.preventDefault();
+        setShowShortcutsGuide((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [artInstance, goNextEpisode, toast]);
 
   // ── Smart Fallback Engine ─────────────────────────────────────
   const tryNextServer = useCallback(
@@ -2455,7 +2611,7 @@ export default function WatchPage() {
           <div
             className={cn(
               "space-y-4 min-w-0",
-              theaterMode ? "max-w-6xl mx-auto w-full" : "",
+              theaterMode ? "w-full max-w-none" : "",
             )}
           >
             {/* ── BREADCRUMB & QUICK CONTROLS BAR — Above Video ── */}
@@ -2661,7 +2817,7 @@ export default function WatchPage() {
               className={cn(
                 "bg-black rounded-2xl overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none transition-all duration-300 flex items-center justify-center",
                 theaterMode
-                  ? "w-full aspect-video max-h-[calc(100vh-140px)] min-h-[340px] sm:min-h-[420px] md:min-h-[480px] mx-auto"
+                  ? "w-full aspect-[16/9] sm:aspect-auto sm:h-[72vh] lg:h-[78vh] min-h-[400px] max-h-[920px] mx-auto shadow-2xl ring-1 ring-purple-500/20"
                   : "w-full aspect-video",
                 lightOff ? "relative z-50 ring-1 ring-white/20 shadow-2xl" : "",
               )}
@@ -2844,6 +3000,29 @@ export default function WatchPage() {
                       <p className="text-xs">Không có nguồn video</p>
                     </div>
                   )}
+                  {/* Floating Skip Intro Pill Button on Player */}
+                  {lastKnownPlaybackTimeRef.current >= 2 &&
+                    lastKnownPlaybackTimeRef.current <= 85 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          hasSkippedIntroRef.current = true;
+                          if (artInstance) {
+                            artInstance.currentTime = 85;
+                            if (artInstance.notice) {
+                              artInstance.notice.show =
+                                "Đã bỏ qua Intro (+85s)";
+                            }
+                          }
+                          toast("Đã bỏ qua đoạn mở đầu (Intro)", "info");
+                        }}
+                        className="absolute bottom-16 right-5 z-40 bg-black/85 hover:bg-neutral-900 text-white border border-white/20 backdrop-blur-xl px-4 py-2 rounded-full font-bold text-xs shadow-2xl flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer animate-in fade-in zoom-in-95 duration-200"
+                      >
+                        <FastForward size={14} className="text-purple-400" />
+                        <span>Bỏ qua Intro (+85s)</span>
+                      </button>
+                    )}
                   {autoNextCountdown !== null && (
                     <AutoNextOverlay
                       seconds={autoNextCountdown}
@@ -2983,6 +3162,9 @@ export default function WatchPage() {
                     onClick={() => {
                       const next = !autoNextConfig;
                       setAutoNextConfig(next);
+                      if (typeof window !== "undefined") {
+                        localStorage.setItem("cineverse_auto_next", String(next));
+                      }
                       toast(
                         next
                           ? "Đã bật Tự động chuyển tập"
