@@ -17,6 +17,7 @@ import { Pagination } from "@/components/film/Pagination";
 import { useTmdb } from "@/hooks/useTmdb";
 import { TrailerModal } from "@/components/film/TrailerModal";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   CURATED_KOREAN_HERO_POOL,
   CURATED_CHINESE_HERO_POOL,
@@ -356,12 +357,20 @@ function ResilientAsianHeroBackdrop({
   );
 }
 
-function KoreanCuratedHeroBanner() {
+function AsianCuratedHeroBanner({
+  pool,
+  countryLabel,
+  fallbackLocal,
+}: {
+  pool: AsianHeroItem[];
+  countryLabel: string;
+  fallbackLocal: string;
+}) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [logoFailed, setLogoFailed] = useState(false);
 
-  const curatedList = CURATED_KOREAN_HERO_POOL;
+  const curatedList = pool;
 
   // Auto slide every 7 seconds
   useEffect(() => {
@@ -381,316 +390,144 @@ function KoreanCuratedHeroBanner() {
       onMouseLeave={() => setIsPaused(false)}
       className="relative w-full min-h-[680px] sm:min-h-[760px] lg:min-h-[840px] h-[92vh] sm:h-[96vh] lg:h-[100vh] max-h-[1080px] overflow-hidden bg-[#141414] select-none"
     >
-      {/* ── Wide Key Visual Artwork (Official TMDB Korean Drama Backdrop) ── */}
-      <ResilientAsianHeroBackdrop
-        item={currentItem}
-        fallbackLocal="/images/wp4300709-avengers-4k-wallpapers.jpg"
-      />
+      {/* ── High Resolution Dynamic Backdrop with Framer Motion Crossfade ── */}
+      <div className="absolute inset-0 w-full h-full">
+        <AnimatePresence initial={false}>
+          <motion.div
+            key={currentItem.slug || currentItem._id || currentIndex}
+            initial={{ opacity: 0, scale: 1.04 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.85, ease: [0.25, 1, 0.5, 1] }}
+            className="absolute inset-0 w-full h-full"
+          >
+            <ResilientAsianHeroBackdrop
+              item={currentItem}
+              fallbackLocal={fallbackLocal}
+            />
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
       {/* ── Cinematic Multi-layer Gradient Overlays for Vignette & Bottom Blending ── */}
       <div
         className="absolute inset-0 z-10 pointer-events-none"
         style={{
           background: `
-            linear-gradient(to right, rgba(16,16,16,0.92) 0%, rgba(16,16,16,0.6) 38%, rgba(16,16,16,0.1) 68%, transparent 100%),
+            linear-gradient(to right, rgba(16,16,16,0.94) 0%, rgba(16,16,16,0.65) 38%, rgba(16,16,16,0.1) 68%, transparent 100%),
             linear-gradient(to top, #141414 0%, rgba(20,20,20,0.7) 18%, transparent 45%),
             linear-gradient(to bottom, rgba(16,16,16,0.6) 0%, transparent 22%)
           `,
         }}
       />
 
-      {/* ── Left Content Overlay (Typography, Badges & Play Button) ── */}
+      {/* ── Left Content Overlay (Typography, Badges & Play Button with Framer Motion Transition) ── */}
       <div className="absolute inset-0 z-20 flex flex-col justify-center px-6 sm:px-14 md:px-20 lg:px-24">
-        <div className="max-w-2xl space-y-4 sm:space-y-5 pt-8">
-          {/* Official Title Logo PNG or Calligraphy Title */}
-          {currentItem.logoUrl && !logoFailed ? (
-            <div className="relative w-64 sm:w-80 md:w-[420px] h-20 sm:h-28">
-              <NextImage
-                src={currentItem.logoUrl}
-                alt={currentItem.name}
-                fill
-                className="object-contain object-left drop-shadow-[0_10px_25px_rgba(0,0,0,0.95)]"
-                unoptimized
-                onError={() => setLogoFailed(true)}
-              />
-            </div>
-          ) : (
-            <h1
-              className="text-4xl sm:text-6xl md:text-7xl font-bold text-white tracking-wide leading-tight drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)]"
-              style={{
-                fontFamily: "'Playfair Display', 'Dancing Script', Georgia, serif",
-                fontStyle: "italic",
-              }}
-            >
-              {currentItem.calligraphyTitle || currentItem.name}
-            </h1>
-          )}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentItem.slug || currentItem._id || currentIndex}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="max-w-2xl space-y-4 sm:space-y-5 pt-8"
+          >
+            {/* Official Title Logo PNG or Calligraphy Title */}
+            {currentItem.logoUrl && !logoFailed ? (
+              <div className="relative w-64 sm:w-80 md:w-[440px] h-20 sm:h-28">
+                <NextImage
+                  src={currentItem.logoUrl}
+                  alt={currentItem.name}
+                  fill
+                  className="object-contain object-left drop-shadow-[0_10px_25px_rgba(0,0,0,0.95)]"
+                  unoptimized
+                  onError={() => setLogoFailed(true)}
+                />
+              </div>
+            ) : (
+              <h1
+                className="text-4xl sm:text-6xl md:text-7xl font-bold text-white tracking-wide leading-tight drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)]"
+                style={{
+                  fontFamily: "'Playfair Display', 'Dancing Script', Georgia, serif",
+                  fontStyle: "italic",
+                }}
+              >
+                {currentItem.calligraphyTitle || currentItem.name}
+              </h1>
+            )}
 
-          {/* Subtitle / Vietnamese or English name */}
-          <p className="text-xs sm:text-sm text-neutral-300 font-semibold italic -mt-2 drop-shadow">
-            {currentItem.name} {currentItem.origin_name ? `(${currentItem.origin_name})` : ""}
-          </p>
+            {/* Subtitle / Vietnamese or English name */}
+            <p className="text-xs sm:text-sm text-neutral-300 font-semibold italic -mt-2 drop-shadow">
+              {currentItem.name} {currentItem.origin_name ? `(${currentItem.origin_name})` : ""}
+            </p>
 
-          {/* Metadata Row: TOP 10 | Year | Country | Total Episodes */}
-          <div className="flex flex-wrap items-center gap-2.5 text-xs font-semibold text-neutral-200">
-            {currentItem.topBadge && (
-              <span className="bg-red-600 text-white font-extrabold text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded font-mono shadow-md uppercase">
-                {currentItem.topBadge}
-              </span>
-            )}
-            {currentItem.year && (
-              <span className="text-white font-bold">{currentItem.year}</span>
-            )}
-            <span className="text-neutral-400">|</span>
-            <span className="text-neutral-300">Hàn Quốc</span>
-            {currentItem.totalEpisodesText && (
-              <>
-                <span className="text-neutral-400">|</span>
-                <span className="text-neutral-300">{currentItem.totalEpisodesText}</span>
-              </>
-            )}
-            {currentItem.quality && (
-              <>
-                <span className="text-neutral-400">|</span>
-                <span className="text-amber-400 font-bold">{currentItem.quality}</span>
-              </>
-            )}
-          </div>
-
-          {/* Genre Tags (Solid neutral style, no glass) */}
-          {currentItem.genres && currentItem.genres.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 pt-0.5">
-              {currentItem.genres.map((genre) => (
-                <span
-                  key={genre}
-                  className="px-3 py-1 rounded bg-neutral-800 text-neutral-300 text-[11px] sm:text-xs font-semibold"
-                >
-                  {genre}
+            {/* Metadata Row: TOP 10 | Year | Country | Total Episodes */}
+            <div className="flex flex-wrap items-center gap-2.5 text-xs font-semibold text-neutral-200">
+              {currentItem.topBadge && (
+                <span className="bg-gradient-to-r from-red-600 to-amber-600 text-white font-extrabold text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded font-mono shadow-md uppercase tracking-wider">
+                  {currentItem.topBadge}
                 </span>
-              ))}
-            </div>
-          )}
-
-          {/* 2-line Description */}
-          <p className="text-xs sm:text-sm text-neutral-300 font-normal line-clamp-3 leading-relaxed drop-shadow max-w-lg pt-1">
-            {currentItem.content}
-          </p>
-
-          {/* Action Buttons (Solid Netflix style, no glass) */}
-          <div className="flex items-center gap-3 pt-2">
-            <Link
-              href={`/watch/${currentItem.slug}`}
-              className="inline-flex items-center gap-2.5 bg-white hover:bg-neutral-200 text-black font-extrabold px-8 py-3 rounded-md text-sm sm:text-base transition-all hover:scale-105 active:scale-95 shadow-2xl cursor-pointer"
-            >
-              <Play size={18} fill="currentColor" className="ml-0.5" />
-              <span>Xem Ngay</span>
-            </Link>
-            <Link
-              href={`/film/${currentItem.slug}`}
-              className="inline-flex items-center gap-2 bg-[#6d6d6e]/80 hover:bg-[#6d6d6e] text-white font-bold px-7 py-3 rounded-md text-sm sm:text-base transition-all cursor-pointer active:scale-95 shadow-lg"
-            >
-              <Info size={18} />
-              <span>Chi Tiết</span>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Left / Right Carousel Navigation Arrows (Solid clean dark style) ── */}
-      {curatedList.length > 1 && (
-        <>
-          <button
-            onClick={() => {
-              setCurrentIndex(
-                (prev) => (prev - 1 + curatedList.length) % curatedList.length,
-              );
-              setLogoFailed(false);
-            }}
-            aria-label="Slide trước"
-            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer shadow-2xl"
-          >
-            <ChevronLeft size={22} />
-          </button>
-
-          <button
-            onClick={() => {
-              setCurrentIndex((prev) => (prev + 1) % curatedList.length);
-              setLogoFailed(false);
-            }}
-            aria-label="Slide tiếp theo"
-            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer shadow-2xl"
-          >
-            <ChevronRight size={22} />
-          </button>
-        </>
-      )}
-
-      {/* ── Bottom Right Pagination Dots (Clean white indicators) ── */}
-      {curatedList.length > 1 && (
-        <div className="absolute right-6 sm:right-14 bottom-32 sm:bottom-44 z-30 flex items-center gap-2">
-          {curatedList.map((item, idx) => (
-            <button
-              key={item._id}
-              onClick={() => {
-                setCurrentIndex(idx);
-                setLogoFailed(false);
-              }}
-              aria-label={`Chuyển đến phim ${item.name}`}
-              className={cn(
-                "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
-                idx === currentIndex
-                  ? "w-7 bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]"
-                  : "w-1.5 bg-white/30 hover:bg-white/60",
               )}
-            />
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function ChineseImperialHeroBanner() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const [logoFailed, setLogoFailed] = useState(false);
-
-  const curatedList = CURATED_CHINESE_HERO_POOL;
-
-  // Auto slide every 7 seconds
-  useEffect(() => {
-    if (curatedList.length <= 1 || isPaused) return;
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % curatedList.length);
-      setLogoFailed(false);
-    }, 7000);
-    return () => clearInterval(interval);
-  }, [curatedList.length, isPaused]);
-
-  const currentItem = curatedList[currentIndex] || curatedList[0];
-
-  return (
-    <section
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      className="relative w-full min-h-[680px] sm:min-h-[760px] lg:min-h-[840px] h-[92vh] sm:h-[96vh] lg:h-[100vh] max-h-[1080px] overflow-hidden bg-[#141414] select-none"
-    >
-      {/* ── Wide Key Visual Artwork (Official TMDB Chinese Drama Backdrop) ── */}
-      <ResilientAsianHeroBackdrop
-        item={currentItem}
-        fallbackLocal="/images/phim_co_trang_trung_quoc_50_573c11fea1.jpg"
-      />
-
-      {/* ── Oriental Atmospheric Mist & Vignette Gradient Overlays ── */}
-      <div
-        className="absolute inset-0 z-10 pointer-events-none"
-        style={{
-          background: `
-            linear-gradient(to right, rgba(16,16,16,0.94) 0%, rgba(16,16,16,0.65) 36%, rgba(16,16,16,0.1) 68%, transparent 100%),
-            linear-gradient(to top, #141414 0%, rgba(20,20,20,0.7) 18%, transparent 45%),
-            linear-gradient(to bottom, rgba(16,16,16,0.6) 0%, transparent 22%)
-          `,
-        }}
-      />
-
-      {/* ── Left Content Overlay (Typography, Badges & Action Buttons) ── */}
-      <div className="absolute inset-0 z-20 flex flex-col justify-center px-6 sm:px-14 md:px-20 lg:px-24">
-        <div className="max-w-2xl space-y-4 sm:space-y-5 pt-8">
-          {/* Official 3D Gold / Transparent Title Logo PNG or Calligraphy Title */}
-          {currentItem.logoUrl && !logoFailed ? (
-            <div className="relative w-64 sm:w-80 md:w-[440px] h-20 sm:h-28">
-              <NextImage
-                src={currentItem.logoUrl}
-                alt={currentItem.name}
-                fill
-                className="object-contain object-left drop-shadow-[0_10px_25px_rgba(0,0,0,0.95)]"
-                unoptimized
-                onError={() => setLogoFailed(true)}
-              />
+              {currentItem.year && (
+                <span className="text-white font-bold">{currentItem.year}</span>
+              )}
+              <span className="text-neutral-400">|</span>
+              <span className="text-neutral-300">{countryLabel}</span>
+              {currentItem.totalEpisodesText && (
+                <>
+                  <span className="text-neutral-400">|</span>
+                  <span className="text-neutral-300">{currentItem.totalEpisodesText}</span>
+                </>
+              )}
+              {currentItem.quality && (
+                <>
+                  <span className="text-neutral-400">|</span>
+                  <span className="text-amber-400 font-bold">{currentItem.quality}</span>
+                </>
+              )}
             </div>
-          ) : (
-            <h1
-              className="text-4xl sm:text-6xl md:text-7xl font-bold text-white tracking-wide leading-tight drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)]"
-              style={{
-                fontFamily: "'Playfair Display', 'Dancing Script', Georgia, serif",
-                fontStyle: "italic",
-              }}
-            >
-              {currentItem.calligraphyTitle || currentItem.name}
-            </h1>
-          )}
 
-          {/* Subtitle / Vietnamese or English name */}
-          <p className="text-xs sm:text-sm text-neutral-300 font-semibold italic -mt-2 drop-shadow">
-            {currentItem.name} {currentItem.origin_name ? `(${currentItem.origin_name})` : ""}
-          </p>
+            {/* Genre Tags */}
+            {currentItem.genres && currentItem.genres.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                {currentItem.genres.map((genre) => (
+                  <span
+                    key={genre}
+                    className="px-3 py-1 rounded bg-neutral-800/90 text-neutral-200 text-[11px] sm:text-xs font-semibold border border-white/10"
+                  >
+                    {genre}
+                  </span>
+                ))}
+              </div>
+            )}
 
-          {/* Imperial Badge Row: Jade/Amber Badge | Year | Country | Total Episodes */}
-          <div className="flex flex-wrap items-center gap-2.5 text-xs font-semibold text-neutral-200">
-            {currentItem.topBadge && (
-              <span className="bg-gradient-to-r from-amber-600 via-amber-700 to-red-700 text-white font-extrabold text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded font-mono shadow-md uppercase tracking-wider border border-amber-400/30">
-                {currentItem.topBadge}
-              </span>
-            )}
-            {currentItem.year && (
-              <span className="text-white font-bold">{currentItem.year}</span>
-            )}
-            <span className="text-neutral-400">|</span>
-            <span className="text-neutral-300">Trung Quốc</span>
-            {currentItem.totalEpisodesText && (
-              <>
-                <span className="text-neutral-400">|</span>
-                <span className="text-neutral-300">{currentItem.totalEpisodesText}</span>
-              </>
-            )}
-            {currentItem.quality && (
-              <>
-                <span className="text-neutral-400">|</span>
-                <span className="text-amber-400 font-bold">{currentItem.quality}</span>
-              </>
-            )}
-          </div>
+            {/* 2-line Description */}
+            <p className="text-xs sm:text-sm text-neutral-300 font-normal line-clamp-3 leading-relaxed drop-shadow max-w-lg pt-1">
+              {currentItem.content}
+            </p>
 
-          {/* Genre Tags (Solid neutral style, no glass) */}
-          {currentItem.genres && currentItem.genres.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 pt-0.5">
-              {currentItem.genres.map((genre) => (
-                <span
-                  key={genre}
-                  className="px-3 py-1 rounded bg-neutral-800 text-neutral-300 text-[11px] sm:text-xs font-semibold"
-                >
-                  {genre}
-                </span>
-              ))}
+            {/* Action Buttons */}
+            <div className="flex items-center gap-3 pt-2">
+              <Link
+                href={`/watch/${currentItem.slug}`}
+                className="inline-flex items-center gap-2.5 bg-white hover:bg-neutral-200 text-black font-extrabold px-8 py-3 rounded-md text-sm sm:text-base transition-all hover:scale-105 active:scale-95 shadow-2xl cursor-pointer"
+              >
+                <Play size={18} fill="currentColor" className="ml-0.5" />
+                <span>Xem Ngay</span>
+              </Link>
+              <Link
+                href={`/film/${currentItem.slug}`}
+                className="inline-flex items-center gap-2 bg-[#6d6d6e]/80 hover:bg-[#6d6d6e] text-white font-bold px-7 py-3 rounded-md text-sm sm:text-base transition-all cursor-pointer active:scale-95 shadow-lg"
+              >
+                <Info size={18} />
+                <span>Chi Tiết</span>
+              </Link>
             </div>
-          )}
-
-          {/* 2-line Description */}
-          <p className="text-xs sm:text-sm text-neutral-300 font-normal line-clamp-3 leading-relaxed drop-shadow max-w-lg pt-1">
-            {currentItem.content}
-          </p>
-
-          {/* Action Buttons (Solid Netflix style, no glass) */}
-          <div className="flex items-center gap-3 pt-2">
-            <Link
-              href={`/watch/${currentItem.slug}`}
-              className="inline-flex items-center gap-2.5 bg-white hover:bg-neutral-200 text-black font-extrabold px-8 py-3 rounded-md text-sm sm:text-base transition-all hover:scale-105 active:scale-95 shadow-2xl cursor-pointer"
-            >
-              <Play size={18} fill="currentColor" className="ml-0.5" />
-              <span>Xem Ngay</span>
-            </Link>
-            <Link
-              href={`/film/${currentItem.slug}`}
-              className="inline-flex items-center gap-2 bg-[#6d6d6e]/80 hover:bg-[#6d6d6e] text-white font-bold px-7 py-3 rounded-md text-sm sm:text-base transition-all cursor-pointer active:scale-95 shadow-lg"
-            >
-              <Info size={18} />
-              <span>Chi Tiết</span>
-            </Link>
-          </div>
-        </div>
+          </motion.div>
+        </AnimatePresence>
       </div>
 
-      {/* ── Left / Right Carousel Navigation Arrows (Solid clean dark style) ── */}
+      {/* ── Left / Right Carousel Navigation Arrows ── */}
       {curatedList.length > 1 && (
         <>
           <button
@@ -719,12 +556,12 @@ function ChineseImperialHeroBanner() {
         </>
       )}
 
-      {/* ── Bottom Right Pagination Dots (Clean white indicators) ── */}
+      {/* ── Bottom Right Pagination Dots ── */}
       {curatedList.length > 1 && (
         <div className="absolute right-6 sm:right-14 bottom-32 sm:bottom-44 z-30 flex items-center gap-2">
           {curatedList.map((item, idx) => (
             <button
-              key={item._id}
+              key={item._id || item.slug || idx}
               onClick={() => {
                 setCurrentIndex(idx);
                 setLogoFailed(false);
@@ -1079,9 +916,17 @@ export default function CountryPage() {
     >
       {/* ── Curated Hero Banner for Korean and Chinese tabs, Default for others ── */}
       {isKoreanPage ? (
-        <KoreanCuratedHeroBanner />
+        <AsianCuratedHeroBanner
+          pool={CURATED_KOREAN_HERO_POOL}
+          countryLabel="Hàn Quốc"
+          fallbackLocal="/images/wp4300709-avengers-4k-wallpapers.jpg"
+        />
       ) : isChinesePage ? (
-        <ChineseImperialHeroBanner />
+        <AsianCuratedHeroBanner
+          pool={CURATED_CHINESE_HERO_POOL}
+          countryLabel="Trung Quốc"
+          fallbackLocal="/images/phim_co_trang_trung_quoc_50_573c11fea1.jpg"
+        />
       ) : (
         <DefaultCountryHeroBanner
           film={heroFilm}
@@ -1096,89 +941,109 @@ export default function CountryPage() {
           isCustomHeroPage ? "-mt-24 sm:-mt-36 lg:-mt-48" : "-mt-6 sm:-mt-12",
         )}
       >
-        {/* Row 1: Phim Hàn Quốc Đang Thịnh Hành */}
+        {/* Row 1: Phim Thịnh Hành */}
         <CountryCategoryRow
           title={
             isKoreanPage
               ? t("country_sections.koreanTrending", "Phim Hàn Quốc Đang Thịnh Hành")
-              : t("country_sections.featuredToday", "Phim Nổi Bật Hôm Nay")
+              : isChinesePage
+                ? "Phim Trung Quốc Đang Thịnh Hành"
+                : t("country_sections.featuredToday", "Phim Nổi Bật Hôm Nay")
           }
           films={row1Films}
           isLoading={mainLoading}
           variant="landscape"
         />
 
-        {/* Row 2: Tuyệt phẩm K-Drama lãng mạn */}
+        {/* Row 2: Tình Cảm & Lãng Mạn */}
         <CountryCategoryRow
           title={
             isKoreanPage
               ? t("country_sections.koreanRomance", "Tuyệt phẩm K-Drama lãng mạn khiến trái tim tan chảy")
-              : t("country_sections.romanceTitle", "Phim Tình Cảm & Lãng Mạn")
+              : isChinesePage
+                ? "Ngôn Tình & Lãng Mạn Hoa Ngữ Ngọt Ngào"
+                : t("country_sections.romanceTitle", "Phim Tình Cảm & Lãng Mạn")
           }
           films={row2Films}
           isLoading={romanceLoading}
         />
 
-        {/* Row 3: Có thể bạn chưa xem */}
+        {/* Row 3: Tuyển chọn đặc sắc */}
         <CountryCategoryRow
-          title={t("country_sections.koreanMaybeMissed", "Có thể bạn chưa xem")}
+          title={
+            isKoreanPage
+              ? "Khám Phá K-Drama Đặc Sắc Tuyển Chọn"
+              : isChinesePage
+                ? "Khám Phá Phim Hoa Ngữ Tuyển Chọn"
+                : t("country_sections.koreanMaybeMissed", "Có thể bạn chưa xem")
+          }
           films={row3Films}
           isLoading={page2Loading || mainLoading}
           variant="landscape"
         />
 
-        {/* Row 4: Series Phim Hàn kịch tính & giật gân */}
+        {/* Row 4: Hành Động & Kịch Tính */}
         <CountryCategoryRow
           title={
             isKoreanPage
               ? t("country_sections.koreanThriller", "Series Phim Hàn kịch tính & giật gân đáng xem liên tục")
-              : t("country_sections.actionTitle", "Phim Hành Động & Kịch Tính")
+              : isChinesePage
+                ? "Phim Hành Động & Quyền Mưu Gay Cấn"
+                : t("country_sections.actionTitle", "Phim Hành Động & Kịch Tính")
           }
           films={row4Films}
           isLoading={actionLoading}
           variant="landscape"
         />
 
-        {/* Row 5: Phim Hàn Cổ Trang & Thần Thoại */}
+        {/* Row 5: Cổ Trang & Thần Thoại */}
         <CountryCategoryRow
           title={
             isKoreanPage
               ? t("country_sections.koreanHistorical", "Phim Hàn Cổ Trang & Thần Thoại Kỳ Ảo Đỉnh Cao")
-              : t("country_sections.historicalTitle", "Phim Cổ Trang & Thần Thoại")
+              : isChinesePage
+                ? "Cổ Trang Tiên Hiệp & Kiếm Hiệp Đỉnh Cao"
+                : t("country_sections.historicalTitle", "Phim Cổ Trang & Thần Thoại")
           }
           films={row5Films}
           isLoading={coTrangLoading}
         />
 
-        {/* Row 6: Phim Hài Hước & Giải Trí Sảng Khoái */}
+        {/* Row 6: Hài Hước & Giải Trí */}
         <CountryCategoryRow
           title={
             isKoreanPage
               ? t("country_sections.koreanComedy", "Phim Hàn Hài Hước & Giải Trí Sảng Khoái")
-              : t("country_sections.comedyTitle", "Phim Hài Hước Đặc Sắc")
+              : isChinesePage
+                ? "Phim Hài Hước & Gia Đình Trung Quốc"
+                : t("country_sections.comedyTitle", "Phim Hài Hước Đặc Sắc")
           }
           films={row6Films}
           isLoading={comedyLoading}
           variant="landscape"
         />
 
-        {/* Row 7: Phim Hình Sự & Trinh Thám */}
+        {/* Row 7: Hình Sự & Trinh Thám */}
         <CountryCategoryRow
           title={
             isKoreanPage
               ? t("country_sections.koreanCrime", "Phim Hàn Hình Sự, Trinh Thám & Phá Án Hồi Hộp")
-              : t("country_sections.crimeTitle", "Phim Hình Sự & Trinh Thám")
+              : isChinesePage
+                ? "Phim Hình Sự, Trinh Thám & Phá Án Hoa Ngữ"
+                : t("country_sections.crimeTitle", "Phim Hình Sự & Trinh Thám")
           }
           films={row7Films}
           isLoading={crimeLoading}
         />
 
-        {/* Row 8: Phim Tâm Lý & Đời Thường */}
+        {/* Row 8: Tâm Lý & Đời Thường */}
         <CountryCategoryRow
           title={
             isKoreanPage
               ? t("country_sections.koreanDrama", "Top Phim Tâm Lý & Đời Thường Chạm Đến Cảm Xúc")
-              : t("country_sections.dramaTitle", "Phim Tâm Lý Chọn Lọc")
+              : isChinesePage
+                ? "Phim Tâm Lý & Đời Thường Trung Quốc"
+                : t("country_sections.dramaTitle", "Phim Tâm Lý Chọn Lọc")
           }
           films={row8Films}
           isLoading={dramaLoading}

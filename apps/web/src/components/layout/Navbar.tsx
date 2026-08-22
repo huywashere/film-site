@@ -101,42 +101,8 @@ export const GENRES_LIST = [
 ];
 
 export const COUNTRIES_LIST = [
-  { label: "Anh", slug: "anh", code: "gb" },
-  { label: "Ba Lan", slug: "ba-lan", code: "pl" },
-  { label: "Brazil", slug: "brazil", code: "br" },
-  { label: "Bồ Đào Nha", slug: "bo-dao-nha", code: "pt" },
-  { label: "Canada", slug: "canada", code: "ca" },
-  { label: "Châu Phi", slug: "chau-phi", code: "za" },
-  { label: "Hà Lan", slug: "ha-lan", code: "nl" },
   { label: "Hàn Quốc", slug: "han-quoc", code: "kr" },
-  { label: "Hồng Kông", slug: "hong-kong", code: "hk" },
-  { label: "Indonesia", slug: "indonesia", code: "id" },
-  { label: "Malaysia", slug: "malaysia", code: "my" },
-  { label: "Mexico", slug: "mexico", code: "mx" },
-  { label: "Na Uy", slug: "na-uy", code: "no" },
-  { label: "Nam Phi", slug: "nam-phi", code: "za" },
-  { label: "Nga", slug: "nga", code: "ru" },
-  { label: "Nhật Bản", slug: "nhat-ban", code: "jp" },
-  { label: "Philippines", slug: "philippines", code: "ph" },
-  { label: "Pháp", slug: "phap", code: "fr" },
-  { label: "Quốc Gia Khác", slug: "quoc-gia-khac", code: "un" },
-  { label: "Thái Lan", slug: "thai-lan", code: "th" },
-  { label: "Thổ Nhĩ Kỳ", slug: "tho-nhi-ky", code: "tr" },
-  { label: "Thụy Sĩ", slug: "thuy-si", code: "ch" },
-  { label: "Thụy Điển", slug: "thuy-dien", code: "se" },
   { label: "Trung Quốc", slug: "trung-quoc", code: "cn" },
-  { label: "Tây Ban Nha", slug: "tay-ban-nha", code: "es" },
-  { label: "UAE", slug: "uae", code: "ae" },
-  { label: "Ukraina", slug: "ukraina", code: "ua" },
-  { label: "Việt Nam", slug: "viet-nam", code: "vn" },
-  { label: "Âu Mỹ", slug: "au-my", code: "us" },
-  { label: "Úc", slug: "uc", code: "au" },
-  { label: "Ý", slug: "y", code: "it" },
-  { label: "Đan Mạch", slug: "dan-mach", code: "dk" },
-  { label: "Đài Loan", slug: "dai-loan", code: "tw" },
-  { label: "Đức", slug: "duc", code: "de" },
-  { label: "Ả Rập Xê Út", slug: "a-rap-xe-ut", code: "sa" },
-  { label: "Ấn Độ", slug: "an-do", code: "in" },
 ];
 
 const COUNTRY_EMOJIS: Record<string, string> = {
@@ -644,7 +610,7 @@ export function Navbar() {
                   className="transition-transform duration-200 group-hover:rotate-180 text-neutral-400"
                 />
               </button>
-              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[640px] p-4 bg-[#090c15]/65 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.6)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-4 gap-y-1.5 gap-x-2 z-50 max-h-[75vh] overflow-y-auto scrollbar-thin">
+              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[240px] p-2.5 bg-[#090c15]/85 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.6)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-1 gap-1.5 z-50">
                 {COUNTRIES_LIST.map((item) => (
                   <Link
                     key={item.slug}
