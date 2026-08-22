@@ -50,7 +50,7 @@ const SIDEBAR_ITEMS = [
   { title: "Lịch Chiếu", href: "/schedule", icon: CalendarDays },
   {
     title: "Phim Song Ngữ",
-    href: "/films/bilingual",
+    href: "/song-ngu",
     icon: Languages,
     isBilingual: true,
     badge: "DUAL SUB",

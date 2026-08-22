@@ -14,7 +14,6 @@ import {
   Flame,
   Film,
   RotateCcw,
-  Sparkle,
 } from "lucide-react";
 import { movieApi } from "@/lib/api";
 import { FilmCard, FilmCardSkeleton, type FilmItem } from "@/components/film/FilmCard";
