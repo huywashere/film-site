@@ -29,12 +29,6 @@ function imageProxyFallback(url: string): string | null {
   return `/api/image-proxy?url=${encodeURIComponent(url)}`;
 }
 
-/**
- * History entries can outlive an upstream CDN URL. Keep the saved URL as the
- * fast path, then recover with its alternate URL, the image proxy and TMDB.
- * Rendering a title placeholder at the end also prevents the browser's broken
- * image icon/alt text from leaking into the card layout.
- */
 function HistoryArtwork({
   item,
   landscape,
@@ -119,7 +113,6 @@ function HistoryArtwork({
   }
 
   return (
-    // History artwork needs browser-level fallback control across several CDNs.
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}
@@ -138,70 +131,88 @@ function HistoryArtwork({
   );
 }
 
-function getHistoryCardMeta(item: any) {
+function getHistoryProgressDetails(item: any) {
   const title = item.title || item.name || "Phim đã xem";
-  const originName = item.originName || item.origin_name || item.titleEn || "";
 
-  const year =
-    item.year ||
-    (item.release_date ? String(item.release_date).slice(0, 4) : "2026");
+  // Parse current watched time safely in seconds
+  const currentSec = Math.max(
+    0,
+    Number(item.currentTime ?? item.progress ?? 0) || 0,
+  );
 
-  let ageRating = item.ageRating || item.content_rating || "T16";
-  const lowerTitle = (title + " " + originName).toLowerCase();
-  if (
-    lowerTitle.includes("ma ") ||
-    lowerTitle.includes("evil") ||
-    lowerTitle.includes("kinh dị") ||
-    lowerTitle.includes("địa ngục")
-  ) {
-    ageRating = "T18";
-  } else if (
-    lowerTitle.includes("spider") ||
-    lowerTitle.includes("nhện") ||
-    lowerTitle.includes("marvel")
-  ) {
-    ageRating = "T13";
-  } else if (
-    lowerTitle.includes("hoạt hình") ||
-    lowerTitle.includes("cưới") ||
-    lowerTitle.includes("gia đình")
-  ) {
-    ageRating = "P";
-  }
-
-  let durationStr = "";
-  if (item.currentTime && item.duration) {
-    const mins = Math.floor(item.duration / 60);
-    if (mins >= 60) {
-      const h = Math.floor(mins / 60);
-      const m = mins % 60;
-      durationStr = `${h}h ${m < 10 ? `0${m}` : m}m`;
-    } else if (mins > 0) {
-      durationStr = `${mins}m`;
+  // Parse total duration safely in seconds
+  let durationSec = Math.max(0, Number(item.duration ?? 0) || 0);
+  if (durationSec <= 100) {
+    if (typeof item.time === "string") {
+      const match = item.time.match(/(\d+)\s*(?:phút|min|p)/i);
+      if (match) {
+        durationSec = parseInt(match[1], 10) * 60;
+      } else {
+        durationSec = 5400; // 90 mins
+      }
     } else {
-      durationStr = item.epName || `Tập ${item.epSlug || 1}`;
+      durationSec = 5400; // 90 mins
     }
-  } else if (item.time && item.time !== "Đang cập nhật") {
-    durationStr = item.time;
-  } else if (item.epSlug || item.epName) {
-    durationStr = item.epName || `Tập ${item.epSlug}`;
-  } else {
-    durationStr = "1h 48m";
   }
 
-  let badge = "P.Sub";
+  // Format watched string e.g. "34p", "7p", "0p", "1g 15p"
+  const watchedMins = Math.floor(currentSec / 60);
+  let watchedStr = "";
+  if (watchedMins >= 60) {
+    const h = Math.floor(watchedMins / 60);
+    const m = watchedMins % 60;
+    watchedStr = `${h}g ${m}p`;
+  } else {
+    watchedStr = `${watchedMins}p`;
+  }
+
+  // Format total string in minutes e.g. "141p", "58p", "45p"
+  const totalMins = Math.max(1, Math.floor(durationSec / 60));
+  const totalStr = `${totalMins}p`;
+
+  // Percentage for red progress bar (clamped 0 to 100)
+  const percent =
+    durationSec > 0
+      ? Math.min(
+          100,
+          Math.max(
+            currentSec > 0 ? 3 : 0,
+            Math.round((currentSec / durationSec) * 100),
+          ),
+        )
+      : 0;
+
+  // Episode label e.g. "Tập 1", "Tập FULL", "Tập 2"
+  let epLabel = "Tập 1";
+  if (item.epName) {
+    const str = String(item.epName);
+    epLabel = str.toLowerCase().startsWith("tập") ? str : `Tập ${str}`;
+  } else if (item.epSlug) {
+    const str = String(item.epSlug);
+    epLabel = str.toLowerCase() === "full" ? "Tập FULL" : `Tập ${str}`;
+  }
+
+  // Quality badge e.g. "HD", "RDẼ", "Vietsub", "L.Tiếng"
+  let qualityBadge = "HD";
   const langLower = (item.lang || item.quality || "").toLowerCase();
   if (langLower.includes("lồng tiếng") || langLower.includes("l.tiếng")) {
-    badge = "L.Tiếng";
+    qualityBadge = "L.Tiếng";
   } else if (langLower.includes("thuyết minh")) {
-    badge = "P.Thuyết Minh";
+    qualityBadge = "Thuyết Minh";
   } else if (langLower.includes("vietsub") || langLower.includes("sub")) {
-    badge = "P.Sub";
+    qualityBadge = "Vietsub";
   } else if (item.quality) {
-    badge = item.quality;
+    qualityBadge = item.quality;
   }
 
-  return { title, originName, year, ageRating, durationStr, badge };
+  return {
+    title,
+    watchedStr: `Đã xem: ${watchedStr}`,
+    totalStr,
+    percent,
+    epLabel,
+    qualityBadge,
+  };
 }
 
 export function ContinueWatchingRow({
@@ -251,7 +262,7 @@ export function ContinueWatchingRow({
       lang: item.lang || item.movieLang,
       quality: item.quality || item.movieQuality,
       currentTime: item.progress || 0,
-      duration: item.duration || 100,
+      duration: item.duration || 5400,
       updatedAt: item.updatedAt
         ? new Date(item.updatedAt).getTime()
         : Date.now(),
@@ -271,10 +282,8 @@ export function ContinueWatchingRow({
 
   const { t } = useTranslation();
   const hasHistory = historyEntries.length > 0;
-  const sectionTitle = t("home.continueWatching", "Tiếp Tục Xem");
+  const sectionTitle = t("home.historyTitle", "Lịch sử xem");
 
-  // Do not fill an empty history row with suggested movies. The section only
-  // becomes visible after the viewer has actually opened a movie to watch.
   if (!hasHistory) return null;
 
   // Remove single local item from watch progress
@@ -294,12 +303,12 @@ export function ContinueWatchingRow({
       data-history-row="true"
       className={`${cardFont.className} w-full mb-10 relative group/section`}
     >
-      {/* Header with Title + Inline Pill Button + Right Dash Line Indicators */}
-      <div className="flex items-center justify-between mb-4 px-1">
+      {/* Header: "Lịch sử xem" + "Xem tất cả >" + Dash Pagination */}
+      <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2.5">
           <h2
             data-history-title="true"
-            className={`${cardFont.className} bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-300 bg-clip-text text-lg md:text-xl font-extrabold text-transparent tracking-tight`}
+            className={`${cardFont.className} text-lg md:text-xl font-extrabold text-white tracking-tight`}
           >
             {sectionTitle}
           </h2>
@@ -341,268 +350,111 @@ export function ContinueWatchingRow({
             speed={500}
             slidesPerGroup={2}
             freeMode={{ enabled: true, momentumRatio: 0.8 }}
-            spaceBetween={8}
-            breakpoints={{ 640: { spaceBetween: 18 } }}
-            slidesPerView="auto"
+            spaceBetween={10}
+            breakpoints={{
+              360: { slidesPerView: 1.8, spaceBetween: 10 },
+              480: { slidesPerView: 2.3, spaceBetween: 12 },
+              640: { slidesPerView: 3.2, spaceBetween: 14 },
+              768: { slidesPerView: 3.8, spaceBetween: 16 },
+              1024: { slidesPerView: 4.4, spaceBetween: 16 },
+              1280: { slidesPerView: 5.0, spaceBetween: 18 },
+            }}
             className="w-full !pb-3 !pt-1 !pl-0.5"
           >
-            {hasHistory
-              ? historyEntries.map((item: any, idx: number) => {
-                  const {
-                    title,
-                    originName,
-                    year,
-                    ageRating,
-                    durationStr,
-                    badge,
-                  } = getHistoryCardMeta(item);
+            {historyEntries.map((item: any, idx: number) => {
+              const {
+                title,
+                watchedStr,
+                totalStr,
+                percent,
+                epLabel,
+                qualityBadge,
+              } = getHistoryProgressDetails(item);
 
-                  const percent =
-                    item.duration > 0
-                      ? Math.min(
-                          100,
-                          Math.max(
-                            5,
-                            Math.round(
-                              (item.currentTime / item.duration) * 100,
-                            ),
-                          ),
-                        )
-                      : 0;
-
-                  return (
-                    <SwiperSlide
-                      key={`continue-${item.slug}-${item.epSlug || ""}-${idx}`}
-                      className="!w-[31%] sm:!w-auto"
+              return (
+                <SwiperSlide
+                  key={`continue-${item.slug}-${item.epSlug || ""}-${idx}`}
+                >
+                  <div className="w-full shrink-0">
+                    <Link
+                      href={`/watch/${item.slug}${
+                        item.epSlug ? `?ep=${item.epSlug}` : ""
+                      }`}
+                      className="group/card block relative select-none cursor-pointer"
                     >
-                      <div className="w-full sm:w-[280px] md:w-[310px] shrink-0">
-                        <Link
-                          href={`/watch/${item.slug}${
-                            item.epSlug ? `?ep=${item.epSlug}` : ""
-                          }`}
-                          className="group/card block relative select-none cursor-pointer"
-                        >
-                          {/* 16:9 Landscape Card Format */}
-                          <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 group-hover/card:border-white/40 group-hover/card:scale-[1.02] shadow-2xl bg-neutral-900 transition-all duration-300 relative">
-                            <HistoryArtwork
-                              item={item}
-                              landscape
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
+                      {/* 16:9 Landscape Card Image */}
+                      <div className="aspect-video w-full rounded-xl sm:rounded-2xl overflow-hidden border border-white/10 group-hover/card:border-white/40 group-hover/card:scale-[1.02] shadow-xl bg-neutral-900 transition-all duration-300 relative">
+                        <HistoryArtwork
+                          item={item}
+                          landscape
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
+                        />
+
+                        {/* Gradient Bottom Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover/card:opacity-50 transition-opacity" />
+
+                        {/* Badges in Bottom Left: [Tập 1] [HD] */}
+                        <div className="absolute bottom-2 left-2 z-20 flex items-center gap-1.5 pointer-events-none">
+                          <span className="bg-[#7c3aed] text-white text-[9.5px] font-black px-1.5 py-0.5 rounded shadow tracking-tight uppercase">
+                            {epLabel}
+                          </span>
+                          <span className="bg-black/75 border border-white/20 text-neutral-300 text-[9.5px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm shadow uppercase">
+                            {qualityBadge}
+                          </span>
+                        </div>
+
+                        {/* Play Button Icon on Hover */}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/30 backdrop-blur-[1px]">
+                          <div className="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform scale-75 group-hover/card:scale-100 transition-transform">
+                            <Play
+                              size={16}
+                              fill="currentColor"
+                              className="ml-0.5"
                             />
-
-                            {/* Gradient Bottom Overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent opacity-80 group-hover/card:opacity-60 transition-opacity" />
-
-                            {/* Language / Quality Badge inside Banner */}
-                            <div className="absolute bottom-2.5 right-2.5 z-20">
-                              <span className="bg-[#2a3853]/90 border border-white/15 text-blue-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded backdrop-blur-md shadow-md uppercase tracking-wider">
-                                {badge}
-                              </span>
-                            </div>
-
-                            {/* Play Button Icon on Hover */}
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/30 backdrop-blur-[1px]">
-                              <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform scale-75 group-hover/card:scale-100 transition-transform">
-                                <Play
-                                  size={18}
-                                  fill="currentColor"
-                                  className="ml-0.5"
-                                />
-                              </div>
-                            </div>
-
-                            {/* Remove Button on hover */}
-                            <button
-                              onClick={(e) =>
-                                handleRemoveItem(e, item.slug, item.epSlug)
-                              }
-                              title="Xóa khỏi lịch sử xem"
-                              aria-label="Xóa khỏi lịch sử xem"
-                              className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-red-600 text-white/70 hover:text-white transition-all opacity-0 group-hover/card:opacity-100 z-30 cursor-pointer"
-                            >
-                              <X size={13} />
-                            </button>
-
-                            {/* Red Progress Line Bar at Bottom Edge */}
-                            {percent > 0 && (
-                              <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-20">
-                                <div
-                                  className="h-full bg-[#e50914] transition-all duration-300"
-                                  style={{ width: `${percent}%` }}
-                                />
-                              </div>
-                            )}
                           </div>
+                        </div>
 
-                          {/* Overlapping Vertical Poster Thumbnail + Title & Detailed Metadata Lines */}
-                          <div className="flex items-start gap-2.5 mt-2.5 px-0.5 relative">
-                            {/* Overlapping Vertical Poster Thumbnail on Bottom Left */}
-                            <div className="relative -mt-6 shrink-0 w-11 sm:w-13 aspect-[2/3] rounded-xl overflow-hidden border-2 border-[#141414] shadow-2xl bg-neutral-800 z-20 transition-transform duration-300 group-hover/card:scale-105 group-hover/card:-translate-y-1">
-                              <HistoryArtwork
-                                item={item}
-                                landscape={false}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-
-                            {/* Title & 3-line Detailed Metadata Block */}
-                            <div className="flex-1 min-w-0 pt-0.5 space-y-0.5">
-                              {/* Main Title */}
-                              <h3
-                                className={`${cardFont.className} text-xs sm:text-sm font-bold text-neutral-200 leading-snug line-clamp-1 group-hover/card:text-white transition-colors tracking-normal`}
-                              >
-                                {title}
-                              </h3>
-
-                              {/* English / Original Title */}
-                              {originName ? (
-                                <p className="text-[11px] text-neutral-400 font-normal leading-tight line-clamp-1">
-                                  {originName}
-                                </p>
-                              ) : null}
-
-                              {/* Metadata Line: T18 • 2026 • 1h 50m */}
-                              <div className="flex items-center gap-1.5 text-[10px] font-mono text-neutral-400 font-bold pt-0.5 flex-wrap">
-                                <span className="text-neutral-300 font-extrabold">
-                                  {ageRating}
-                                </span>
-                                <span>•</span>
-                                <span>{year}</span>
-                                {durationStr ? (
-                                  <>
-                                    <span>•</span>
-                                    <span>{durationStr}</span>
-                                  </>
-                                ) : null}
-                              </div>
-                            </div>
-                          </div>
-                        </Link>
-                      </div>
-                    </SwiperSlide>
-                  );
-                })
-              : fallbackFilms.slice(0, 10).map((film, idx) => {
-                  const posterUrl =
-                    resolveImageUrl(film.poster_url) ||
-                    resolveImageUrl(film.thumb_url);
-                  const thumbUrl =
-                    resolveImageUrl(film.thumb_url) ||
-                    resolveImageUrl(film.poster_url);
-
-                  const {
-                    title,
-                    originName,
-                    year,
-                    ageRating,
-                    durationStr,
-                    badge,
-                  } = getHistoryCardMeta(film);
-
-                  return (
-                    <SwiperSlide
-                      key={`continue-fallback-${film.slug}-${idx}`}
-                      className="!w-[31%] sm:!w-auto"
-                    >
-                      <div className="w-full sm:w-[280px] md:w-[310px] shrink-0">
-                        <Link
-                          href={`/film/${film.slug}`}
-                          className="group/card block relative select-none cursor-pointer"
+                        {/* Remove Button on hover */}
+                        <button
+                          onClick={(e) =>
+                            handleRemoveItem(e, item.slug, item.epSlug)
+                          }
+                          title="Xóa khỏi lịch sử xem"
+                          aria-label="Xóa khỏi lịch sử xem"
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 hover:bg-red-600 text-white/70 hover:text-white transition-all opacity-0 group-hover/card:opacity-100 z-30 cursor-pointer shadow-md"
                         >
-                          {/* 16:9 Landscape Card Format */}
-                          <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 group-hover/card:border-white/40 group-hover/card:scale-[1.02] shadow-2xl bg-neutral-900 transition-all duration-300 relative">
-                            {thumbUrl ? (
-                              /* eslint-disable-next-line @next/next/no-img-element */
-                              <img
-                                src={thumbUrl}
-                                alt={film.name}
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-xs text-neutral-400 font-bold p-2 text-center">
-                                {film.name}
-                              </div>
-                            )}
-
-                            {/* Gradient Bottom Overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent opacity-80 group-hover/card:opacity-60 transition-opacity" />
-
-                            {/* Quality / Language Badge inside Banner */}
-                            <div className="absolute bottom-2.5 right-2.5 z-20">
-                              <span className="bg-[#2a3853]/90 border border-white/15 text-blue-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded backdrop-blur-md shadow-md uppercase tracking-wider">
-                                {badge}
-                              </span>
-                            </div>
-
-                            {/* Play Button Icon on Hover */}
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/30 backdrop-blur-[1px]">
-                              <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform scale-75 group-hover/card:scale-100 transition-transform">
-                                <Play
-                                  size={18}
-                                  fill="currentColor"
-                                  className="ml-0.5"
-                                />
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Overlapping Vertical Poster Thumbnail + Title & Detailed Metadata Lines */}
-                          <div className="flex items-start gap-2.5 mt-2.5 px-0.5 relative">
-                            {/* Overlapping Vertical Poster Thumbnail on Bottom Left */}
-                            <div className="relative -mt-6 shrink-0 w-11 sm:w-13 aspect-[2/3] rounded-xl overflow-hidden border-2 border-[#141414] shadow-2xl bg-neutral-800 z-20 transition-transform duration-300 group-hover/card:scale-105 group-hover/card:-translate-y-1">
-                              {posterUrl ? (
-                                /* eslint-disable-next-line @next/next/no-img-element */
-                                <img
-                                  src={posterUrl}
-                                  alt={title}
-                                  className="w-full h-full object-cover"
-                                  loading="lazy"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[9px] text-neutral-500 font-bold p-1 text-center">
-                                  {title}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Title & 3-line Detailed Metadata Block */}
-                            <div className="flex-1 min-w-0 pt-0.5 space-y-0.5">
-                              {/* Main Title */}
-                              <h3
-                                className={`${cardFont.className} text-xs sm:text-sm font-bold text-neutral-200 leading-snug line-clamp-1 group-hover/card:text-white transition-colors tracking-normal`}
-                              >
-                                {title}
-                              </h3>
-
-                              {/* English / Original Title */}
-                              {originName ? (
-                                <p className="text-[11px] text-neutral-400 font-normal leading-tight line-clamp-1">
-                                  {originName}
-                                </p>
-                              ) : null}
-
-                              {/* Metadata Line: T18 • 2026 • 1h 50m */}
-                              <div className="flex items-center gap-1.5 text-[10px] font-mono text-neutral-400 font-bold pt-0.5 flex-wrap">
-                                <span className="text-neutral-300 font-extrabold">
-                                  {ageRating}
-                                </span>
-                                <span>•</span>
-                                <span>{year}</span>
-                                {durationStr ? (
-                                  <>
-                                    <span>•</span>
-                                    <span>{durationStr}</span>
-                                  </>
-                                ) : null}
-                              </div>
-                            </div>
-                          </div>
-                        </Link>
+                          <X size={12} />
+                        </button>
                       </div>
-                    </SwiperSlide>
-                  );
-                })}
+
+                      {/* Content Underneath: Title + Info Row + Continuous Red Progress Bar */}
+                      <div className="mt-2 px-0.5 space-y-1">
+                        {/* Film Title */}
+                        <h3
+                          className={`${cardFont.className} text-xs sm:text-sm font-bold text-white leading-snug line-clamp-1 group-hover/card:text-red-400 transition-colors tracking-tight`}
+                        >
+                          {title}
+                        </h3>
+
+                        {/* Progress Meta Line: "Đã xem: 34p" ... "141p" */}
+                        <div className="flex items-center justify-between text-[11px] text-neutral-400 font-medium leading-none pt-0.5">
+                          <span>{watchedStr}</span>
+                          <span>{totalStr}</span>
+                        </div>
+
+                        {/* Continuous Red Progress Bar Line */}
+                        <div className="w-full h-[3px] bg-neutral-800 rounded-full overflow-hidden mt-1.5">
+                          <div
+                            className="h-full bg-[#e50914] rounded-full transition-all duration-300"
+                            style={{ width: `${percent}%` }}
+                          />
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                </SwiperSlide>
+              );
+            })}
           </Swiper>
         </div>
 
