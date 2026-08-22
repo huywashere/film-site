@@ -2,23 +2,88 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const OMDB_API_KEY = "df7557ba";
+const OMDB_API_KEY = process.env.OMDB_API_KEY || "df7557ba";
 const OMDB_BASE = "https://www.omdbapi.com";
+const OMDB_DAILY_LIMIT = 1000;
 
 // In-memory cache: key → { data, expiresAt }
 const cache = new Map<string, { data: any; expiresAt: number }>();
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
+// Daily request and cache tracking
+let currentUtcDay = new Date().toISOString().slice(0, 10);
+let dailyApiCalls = 0;
+let dailyCacheHits = 0;
+
+function syncDailyQuota() {
+  const today = new Date().toISOString().slice(0, 10);
+  if (today !== currentUtcDay) {
+    currentUtcDay = today;
+    dailyApiCalls = 0;
+    dailyCacheHits = 0;
+  }
+}
+
+export function getOmdbQuotaStats() {
+  syncDailyQuota();
+  const now = new Date();
+  const nextReset = new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() + 1,
+      0,
+      0,
+      0,
+      0,
+    ),
+  );
+  const diffMs = Math.max(0, nextReset.getTime() - now.getTime());
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+  const used = dailyApiCalls;
+  const remaining = Math.max(0, OMDB_DAILY_LIMIT - used);
+  const percentUsed = Math.min(100, Math.round((used / OMDB_DAILY_LIMIT) * 100));
+
+  return {
+    provider: "omdb",
+    dailyLimit: OMDB_DAILY_LIMIT,
+    usedToday: used,
+    remaining,
+    percentUsed,
+    cacheHits: dailyCacheHits,
+    currentUtcDay,
+    nextResetIso: nextReset.toISOString(),
+    resetCountdown: {
+      hours,
+      minutes,
+      seconds,
+      formatted: `${hours}h ${minutes}m nữa (07:00 sáng mai)`,
+    },
+    status:
+      remaining <= 0
+        ? "exhausted"
+        : remaining < 100
+          ? "low_quota"
+          : "operational",
+  };
+}
+
 async function fetchOmdb(params: Record<string, string>): Promise<any | null> {
+  syncDailyQuota();
   const qs = new URLSearchParams({ ...params, apikey: OMDB_API_KEY });
   const cacheKey = qs.toString();
 
   const cached = cache.get(cacheKey);
   if (cached && Date.now() < cached.expiresAt) {
+    dailyCacheHits++;
     return cached.data;
   }
 
   try {
+    dailyApiCalls++;
     const res = await fetch(`${OMDB_BASE}/?${qs.toString()}`, {
       next: { revalidate: 86400 },
       headers: { Accept: "application/json" },
@@ -26,7 +91,13 @@ async function fetchOmdb(params: Record<string, string>): Promise<any | null> {
     if (!res.ok) return null;
 
     const json = await res.json();
-    if (json.Response === "False") return null;
+    if (json.Response === "False") {
+      // Check if limit reached error returned by OMDb
+      if (json.Error && json.Error.toLowerCase().includes("limit")) {
+        dailyApiCalls = OMDB_DAILY_LIMIT;
+      }
+      return null;
+    }
 
     cache.set(cacheKey, { data: json, expiresAt: Date.now() + CACHE_TTL_MS });
     return json;
@@ -38,9 +109,18 @@ async function fetchOmdb(params: Record<string, string>): Promise<any | null> {
 /**
  * GET /api/omdb?imdbId=tt1234567
  * GET /api/omdb?title=Inception&year=2010&type=movie
+ * GET /api/omdb?stats=1 (Returns quota info)
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
+
+  // Return quota & stats directly
+  if (searchParams.get("stats") === "1") {
+    return NextResponse.json(getOmdbQuotaStats(), {
+      headers: { "Cache-Control": "private, no-cache" },
+    });
+  }
+
   const imdbId = searchParams.get("imdbId");
   const title = searchParams.get("title");
   const year = searchParams.get("year");
@@ -70,15 +150,23 @@ export async function GET(request: NextRequest) {
 
   // Parse and normalize ratings
   const ratings: { source: string; value: string }[] = (data.Ratings || []).map(
-    (r: { Source: string; Value: string }) => ({ source: r.Source, value: r.Value }),
+    (r: { Source: string; Value: string }) => ({
+      source: r.Source,
+      value: r.Value,
+    }),
   );
 
-  const imdbRating = data.imdbRating && data.imdbRating !== "N/A" ? data.imdbRating : null;
-  const imdbVotes = data.imdbVotes && data.imdbVotes !== "N/A" ? data.imdbVotes : null;
-  const rottenTomatoes = ratings.find((r) => r.source === "Rotten Tomatoes")?.value ?? null;
-  const metacritic = data.Metascore && data.Metascore !== "N/A" ? data.Metascore : null;
+  const imdbRating =
+    data.imdbRating && data.imdbRating !== "N/A" ? data.imdbRating : null;
+  const imdbVotes =
+    data.imdbVotes && data.imdbVotes !== "N/A" ? data.imdbVotes : null;
+  const rottenTomatoes =
+    ratings.find((r) => r.source === "Rotten Tomatoes")?.value ?? null;
+  const metacritic =
+    data.Metascore && data.Metascore !== "N/A" ? data.Metascore : null;
   const awards = data.Awards && data.Awards !== "N/A" ? data.Awards : null;
-  const boxOffice = data.BoxOffice && data.BoxOffice !== "N/A" ? data.BoxOffice : null;
+  const boxOffice =
+    data.BoxOffice && data.BoxOffice !== "N/A" ? data.BoxOffice : null;
   const rated = data.Rated && data.Rated !== "N/A" ? data.Rated : null;
   const runtime = data.Runtime && data.Runtime !== "N/A" ? data.Runtime : null;
 
@@ -98,6 +186,7 @@ export async function GET(request: NextRequest) {
     language: data.Language && data.Language !== "N/A" ? data.Language : null,
     country: data.Country && data.Country !== "N/A" ? data.Country : null,
     type: data.Type ?? null,
+    _quota: getOmdbQuotaStats(),
   };
 
   return NextResponse.json(result, {

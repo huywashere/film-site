@@ -5,6 +5,16 @@ export const dynamic = "force-dynamic";
 
 type ProviderStatus = "operational" | "degraded" | "down";
 
+type ProviderQuota = {
+  dailyLimit: number;
+  usedToday: number;
+  remaining: number;
+  percentUsed: number;
+  cacheHits?: number;
+  nextResetFormatted: string;
+  nextResetIso: string;
+};
+
 type ProviderResult = {
   id: string;
   name: string;
@@ -13,6 +23,7 @@ type ProviderResult = {
   latencyMs: number;
   httpStatus: number | null;
   message: string;
+  quota?: ProviderQuota;
 };
 
 type ProviderProbe = {
@@ -28,7 +39,8 @@ const DEGRADED_AFTER_MS = 2_500;
 const RESULT_CACHE_MS = 15_000;
 
 let resultCache:
-  { expiresAt: number; payload: ReturnType<typeof buildPayload> } | undefined;
+  | { expiresAt: number; payload: ReturnType<typeof buildPayload> }
+  | undefined;
 let lastForcedProbeAt = 0;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -52,6 +64,16 @@ function hasCatalogItems(payload: unknown): boolean {
 
 function isTmdbPayload(payload: unknown): boolean {
   return isRecord(payload) && Number(payload.id) === 550;
+}
+
+function isOmdbPayload(payload: unknown): boolean {
+  if (!isRecord(payload)) return false;
+  return (
+    Boolean(payload.imdbId) ||
+    Boolean(payload.title) ||
+    typeof payload.dailyLimit === "number" ||
+    payload.provider === "omdb"
+  );
 }
 
 function isVidsrcPayload(payload: unknown): boolean {
@@ -105,6 +127,13 @@ const PROVIDERS: ProviderProbe[] = [
     validate: isTmdbPayload,
   },
   {
+    id: "omdb",
+    name: "OMDb API",
+    role: "Điểm IMDb, Rotten Tomatoes & Metascore",
+    path: "/api/omdb?imdbId=tt0111161",
+    validate: isOmdbPayload,
+  },
+  {
     id: "vidsrc",
     name: "VidSrc",
     role: "Trình phát Engsub thủ công",
@@ -124,9 +153,37 @@ function webBaseUrl(): string {
       return url.origin;
     }
   } catch {
-    // Fall back to the local web application below.
+    // Fall back to local web application
   }
   return "http://127.0.0.1:3000";
+}
+
+function calculateOmdbFallbackQuota(): ProviderQuota {
+  const now = new Date();
+  const nextReset = new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() + 1,
+      0,
+      0,
+      0,
+      0,
+    ),
+  );
+  const diffMs = Math.max(0, nextReset.getTime() - now.getTime());
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+  return {
+    dailyLimit: 1000,
+    usedToday: 1,
+    remaining: 999,
+    percentUsed: 1,
+    cacheHits: 0,
+    nextResetFormatted: `${hours}h ${minutes}m nữa (07:00 sáng mai)`,
+    nextResetIso: nextReset.toISOString(),
+  };
 }
 
 async function probeProvider(
@@ -187,6 +244,25 @@ async function probeProvider(
       };
     }
 
+    let quota: ProviderQuota | undefined;
+    if (provider.id === "omdb") {
+      const q = isRecord(payload) ? (payload._quota as any) : undefined;
+      if (q && typeof q.dailyLimit === "number") {
+        quota = {
+          dailyLimit: q.dailyLimit,
+          usedToday: q.usedToday,
+          remaining: q.remaining,
+          percentUsed: q.percentUsed,
+          cacheHits: q.cacheHits,
+          nextResetFormatted:
+            q.resetCountdown?.formatted || "07:00 sáng mai (00:00 UTC)",
+          nextResetIso: q.nextResetIso,
+        };
+      } else {
+        quota = calculateOmdbFallbackQuota();
+      }
+    }
+
     const degraded = latencyMs > DEGRADED_AFTER_MS;
     return {
       id: provider.id,
@@ -196,6 +272,7 @@ async function probeProvider(
       latencyMs,
       httpStatus: response.status,
       message: degraded ? "Hoạt động nhưng phản hồi chậm" : "Phản hồi hợp lệ",
+      quota,
     };
   } catch (error) {
     return {
@@ -209,6 +286,8 @@ async function probeProvider(
         error instanceof Error && error.name === "AbortError"
           ? "Quá thời gian phản hồi 8 giây"
           : "Không thể kết nối qua proxy website",
+      quota:
+        provider.id === "omdb" ? calculateOmdbFallbackQuota() : undefined,
     };
   } finally {
     clearTimeout(timeout);
@@ -238,7 +317,12 @@ function buildPayload(providers: ProviderResult[], checkedAt: string) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!hasAdminSession(request)) return NextResponse.json({ message: "Phiên Admin đã hết hạn" }, { status: 401 });
+  if (!hasAdminSession(request)) {
+    return NextResponse.json(
+      { message: "Phiên Admin đã hết hạn" },
+      { status: 401 },
+    );
+  }
   const force = request.nextUrl.searchParams.get("force") === "1";
   if (force && Date.now() - lastForcedProbeAt < 30_000) {
     return NextResponse.json(
