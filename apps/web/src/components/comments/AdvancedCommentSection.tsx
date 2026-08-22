@@ -5,9 +5,6 @@ import {
   Star,
   ThumbsUp,
   ThumbsDown,
-  AlertTriangle,
-  Eye,
-  EyeOff,
   MessageCircle,
   Send,
   Clock,
@@ -154,8 +151,6 @@ export function AdvancedCommentSection({
   const [rating, setRating] = useState<number>(5);
   const [hoverRating, setHoverRating] = useState<number>(0);
   const [content, setContent] = useState<string>("");
-  const [isSpoiler, setIsSpoiler] = useState<boolean>(false);
-  const [revealedSpoilers, setRevealedSpoilers] = useState<Record<string, boolean>>({});
 
   // Reply state
   const [replyingToCommentId, setReplyingToCommentId] = useState<string | null>(null);
@@ -193,9 +188,6 @@ export function AdvancedCommentSection({
       // ignore
     }
   };
-
-  const toggleSpoilerReveal = (id: string) =>
-    setRevealedSpoilers((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const toggleRepliesExpansion = (id: string) =>
     setExpandedReplies((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -330,7 +322,6 @@ export function AdvancedCommentSection({
       },
       content: content.trim(),
       rating,
-      isSpoiler,
       likes: 0,
       dislikes: 0,
       createdAt: Date.now(),
@@ -341,7 +332,6 @@ export function AdvancedCommentSection({
     const updated = [newComment, ...comments];
     saveComments(updated);
     setContent("");
-    setIsSpoiler(false);
     toast("Đã đăng bình luận!", "success");
   };
 
@@ -582,41 +572,29 @@ export function AdvancedCommentSection({
           </div>
 
           {/* Submit Row */}
-          <div className="flex items-center justify-between pt-1">
-            <label className="inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={isSpoiler}
-                onChange={(e) => setIsSpoiler(e.target.checked)}
-                className="rounded bg-white/10 border-white/20 text-amber-500 focus:ring-0"
-              />
-              <span>Chứa Spoiler</span>
-            </label>
-
-            <div className="flex items-center gap-2">
-              {content.trim() && (
-                <button
-                  type="button"
-                  onClick={() => setContent("")}
-                  className="px-3 py-1.5 text-xs text-white/40 hover:text-white transition-colors rounded-lg cursor-pointer"
-                >
-                  Hủy
-                </button>
-              )}
+          <div className="flex items-center justify-end gap-2 pt-1">
+            {content.trim() && (
               <button
-                type="submit"
-                disabled={!content.trim()}
-                className={cn(
-                  "flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer",
-                  content.trim()
-                    ? "bg-white text-black hover:bg-neutral-200 active:scale-95 shadow-md"
-                    : "bg-white/5 text-white/20 cursor-not-allowed",
-                )}
+                type="button"
+                onClick={() => setContent("")}
+                className="px-3 py-1.5 text-xs text-white/40 hover:text-white transition-colors rounded-lg cursor-pointer"
               >
-                <Send size={12} />
-                <span>Gửi bình luận</span>
+                Hủy
               </button>
-            </div>
+            )}
+            <button
+              type="submit"
+              disabled={!content.trim()}
+              className={cn(
+                "flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer",
+                content.trim()
+                  ? "bg-white text-black hover:bg-neutral-200 active:scale-95 shadow-md"
+                  : "bg-white/5 text-white/20 cursor-not-allowed",
+              )}
+            >
+              <Send size={12} />
+              <span>Gửi bình luận</span>
+            </button>
           </div>
         </form>
       )}
@@ -630,7 +608,6 @@ export function AdvancedCommentSection({
       ) : (
         <div className="space-y-4">
           {sortedComments.map((comment) => {
-            const isRevealed = revealedSpoilers[comment.id];
             const isAdmin = isUserAdmin(comment.user);
             const replies = comment.replies || [];
             const isExpanded = expandedReplies[comment.id] !== false; // Default true
@@ -704,32 +681,11 @@ export function AdvancedCommentSection({
                   )}
                 </div>
 
-                {/* Comment Content */}
+                {/* Comment Content & Actions */}
                 <div className="pl-10 mt-1.5">
-                  {comment.isSpoiler && !isRevealed ? (
-                    <button
-                      onClick={() => toggleSpoilerReveal(comment.id)}
-                      className="flex items-center gap-2 text-xs text-amber-400/80 hover:text-amber-300 py-1 transition-colors cursor-pointer"
-                    >
-                      <AlertTriangle size={13} />
-                      <span>Chứa spoiler — Bấm để xem nội dung</span>
-                      <Eye size={13} />
-                    </button>
-                  ) : (
-                    <div>
-                      <div className="text-xs text-white/85 leading-relaxed font-normal">
-                        {renderCommentContent(comment.content)}
-                      </div>
-                      {comment.isSpoiler && isRevealed && (
-                        <button
-                          onClick={() => toggleSpoilerReveal(comment.id)}
-                          className="mt-1 text-[10px] text-white/30 hover:text-white/60 flex items-center gap-1"
-                        >
-                          <EyeOff size={10} /> Ẩn spoiler
-                        </button>
-                      )}
-                    </div>
-                  )}
+                  <div className="text-xs text-white/85 leading-relaxed font-normal">
+                    {renderCommentContent(comment.content)}
+                  </div>
 
                   {/* Actions Row: Likes, Dislikes, Reply, Admin Pin, Delete */}
                   <div className="flex items-center gap-4 mt-2.5 pt-1 text-[11px] text-white/40">
