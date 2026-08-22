@@ -7,6 +7,21 @@ html[data-netphim-intro="done"] #netphim-entry-splash {
   display: none !important;
 }
 
+@keyframes marquee-rtl {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee-rtl {
+  display: flex;
+  width: max-content;
+  animation: marquee-rtl 45s linear infinite;
+}
+
+.animate-marquee-rtl:hover {
+  animation-play-state: paused;
+}
+
 @keyframes netphim-intro-mosaic-drift {
   from { transform: rotate(-4deg) scale(1.04); }
   to { transform: rotate(-4deg) scale(1.075); }
