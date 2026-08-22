@@ -85,12 +85,12 @@ const TOPICS: TopicItem[] = [
     image: "https://image.tmdb.org/t/p/w1280/3yEHM2HT2vrUtO93YzTJNgEfiZG.jpg", // Hạ Cánh Nơi Anh
   },
   {
-    slug: "chua-lanh-tam-hon",
-    title: "Phim \"Chữa Lành Tâm Hồn\"",
-    description: "Nhẹ nhàng, ấm áp, bình yên & gia đình",
+    slug: "gia-dinh-doi-thuong",
+    title: "Gia Đình & Đời Thường",
+    description: "Nhẹ nhàng, ấm áp, gắn kết yêu thương & bình yên",
     href: "/genre/gia-dinh",
     accent: "#84cc16",
-    badge: "Healing",
+    badge: "Gia Đình",
     image: "https://image.tmdb.org/t/p/w1280/1QUrjFNKgVchKktX4N6DaegfPbP.jpg", // Đi Đến Nơi Có Gió
   },
   {
@@ -220,7 +220,7 @@ export default function GenresTopicsPage() {
           </div>
 
           <div className="pt-1 sm:pt-0">
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
               Thế Giới Phim
             </h1>
             <p className="mt-2 text-xs sm:text-sm text-neutral-400 max-w-xl mx-auto">
