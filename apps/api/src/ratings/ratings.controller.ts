@@ -7,16 +7,19 @@ import {
   UseGuards,
   Request,
 } from "@nestjs/common";
+import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import { AuthGuard } from "@nestjs/passport";
 import { RatingsService } from "./ratings.service";
 import { CreateRatingDto } from "./ratings.dto";
 
 @Controller("ratings")
+@UseGuards(ThrottlerGuard)
 export class RatingsController {
   constructor(private ratingsService: RatingsService) {}
 
   @Post()
   @UseGuards(AuthGuard("jwt"))
+  @Throttle({ default: { limit: 15, ttl: 60000 } }) // Max 15 ratings per minute to prevent score manipulation bots
   rate(@Request() req, @Body() dto: CreateRatingDto) {
     return this.ratingsService.rate(req.user.id, dto.movieId, dto.score);
   }

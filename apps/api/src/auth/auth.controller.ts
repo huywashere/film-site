@@ -169,6 +169,7 @@ export class AuthController {
 
   @Post("verify-email")
   @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   verifyEmail(@Body() dto: import("./dto/auth.dto").VerifyEmailDto) {
     return this.authService.verifyEmail(dto);
   }
