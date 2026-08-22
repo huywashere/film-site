@@ -214,24 +214,30 @@ export default function WatchPartyListPage() {
         </nav>
 
         {/* ── Visual Cinema Banner Hero Card ── */}
-        <div className="isolate relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-[#0b0c10] p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-6 min-h-[220px]">
-          <div className="absolute inset-0 -z-10">
+        <div className="isolate relative rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 shadow-[0_20px_60px_rgba(0,0,0,0.8)] bg-[#0b0c10] p-6 sm:p-10 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 min-h-[260px] sm:min-h-[300px] md:min-h-[320px] group">
+          <div className="absolute inset-0 -z-10 overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/cinema-hall-with-red-seat-wide-white-screen.jpg"
               alt="Cinema Theater"
-              className="w-full h-full object-cover object-bottom opacity-55"
+              className="w-full h-full object-cover object-[center_65%] sm:object-[center_60%] scale-110 sm:scale-120 group-hover:scale-125 transition-transform duration-1000 ease-out brightness-[1.05] contrast-[1.08] saturate-[1.2]"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/60 to-black/30" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/50" />
+            {/* Directional gradient: deep contrast on left for crisp readability, open on right for cinematic red seats */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#07080b]/95 via-[#07080b]/75 via-45% to-black/20" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#07080b]/90 via-transparent to-black/40" />
+            <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-red-600/10 to-transparent pointer-events-none" />
           </div>
 
-          <div className="space-y-2 max-w-lg relative z-10">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
+          <div className="space-y-3 max-w-xl relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-[11px] font-bold tracking-wide uppercase">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span>Rạp Phim Trực Tuyến • Đồng Bộ 4K</span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]">
               Phòng Xem Chung
             </h1>
-            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
-              Thưởng thức phim điện ảnh và series cùng bạn bè với tính năng đồng bộ phát video và trò chuyện trực tiếp theo thời gian thực.
+            <p className="text-xs sm:text-sm text-neutral-200 leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+              Thưởng thức phim điện ảnh và series cùng bạn bè với tính năng đồng bộ phát video tức thì, tua phim siêu tốc và trò chuyện trực tiếp không độ trễ.
             </p>
           </div>
 
@@ -239,9 +245,9 @@ export default function WatchPartyListPage() {
             <button
               type="button"
               onClick={() => openCreateModal()}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-neutral-200 text-black font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer active:scale-95 select-none"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white hover:bg-neutral-100 text-black font-extrabold text-xs sm:text-sm shadow-[0_10px_25px_rgba(255,255,255,0.2)] transition-all hover:scale-105 active:scale-95 cursor-pointer select-none"
             >
-              <Plus size={15} />
+              <Plus size={16} className="stroke-[2.5]" />
               <span>Tạo phòng ngay</span>
             </button>
           </div>

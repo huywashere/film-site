@@ -38,6 +38,7 @@ export interface WatchPartyPlayerState {
   episode: string;
   updatedAt: string;
   senderId: string;
+  serverTime?: number;
 }
 
 export interface WatchPartyRoomSnapshot {

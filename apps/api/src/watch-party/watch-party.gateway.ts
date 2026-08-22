@@ -33,6 +33,7 @@ export class WatchPartyGateway implements OnGatewayDisconnect, OnGatewayInit {
   private namespace!: Namespace;
 
   private readonly activity = new Map<string, Map<string, number[]>>();
+  private lobbyTimer: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly rooms: WatchPartyService,
@@ -205,7 +206,10 @@ export class WatchPartyGateway implements OnGatewayDisconnect, OnGatewayInit {
         Number(payload.currentTime || 0),
         String(payload.episode || ""),
       );
-      socket.to(this.channel(roomId)).emit("player:state", state);
+      socket.to(this.channel(roomId)).emit("player:state", {
+        ...state,
+        serverTime: Date.now(),
+      });
       return { state };
     });
   }
@@ -236,7 +240,11 @@ export class WatchPartyGateway implements OnGatewayDisconnect, OnGatewayInit {
   }
 
   private emitLobby() {
-    this.namespace.emit("rooms:changed", this.rooms.listRooms());
+    if (this.lobbyTimer) return;
+    this.lobbyTimer = setTimeout(() => {
+      this.lobbyTimer = null;
+      this.namespace.emit("rooms:changed", this.rooms.listRooms());
+    }, 1200);
   }
 
   private channel(roomId: string) {

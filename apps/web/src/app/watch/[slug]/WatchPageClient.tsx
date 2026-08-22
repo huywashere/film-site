@@ -1032,6 +1032,60 @@ export default function WatchPage() {
     }
   }, [joinWatchPartyRoom, roomCode, wp.roomId]);
 
+  // ── Watch Party: Host -> Room Playback Synchronization ──
+  const lastSyncActionRef = useRef<string>("");
+  const lastSyncTimeRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!artInstance || !wp.roomId || !wp.isHost) return;
+
+    const handlePlay = () => {
+      if (applyingRemoteStateRef.current) return;
+      lastSyncActionRef.current = "play";
+      lastSyncTimeRef.current = artInstance.currentTime || 0;
+      wp.syncPlayerState("play", artInstance.currentTime || 0);
+    };
+
+    const handlePause = () => {
+      if (applyingRemoteStateRef.current) return;
+      lastSyncActionRef.current = "pause";
+      lastSyncTimeRef.current = artInstance.currentTime || 0;
+      wp.syncPlayerState("pause", artInstance.currentTime || 0);
+    };
+
+    let seekTimer: NodeJS.Timeout | null = null;
+    const handleSeek = () => {
+      if (applyingRemoteStateRef.current) return;
+      if (seekTimer) clearTimeout(seekTimer);
+      seekTimer = setTimeout(() => {
+        lastSyncActionRef.current = "seek";
+        lastSyncTimeRef.current = artInstance.currentTime || 0;
+        wp.syncPlayerState("seek", artInstance.currentTime || 0);
+      }, 150);
+    };
+
+    // Periodic heartbeat to keep newly joined or drifting users in sync every 6 seconds
+    const heartbeat = setInterval(() => {
+      if (applyingRemoteStateRef.current) return;
+      if (artInstance.playing) {
+        wp.syncPlayerState("play", artInstance.currentTime || 0);
+      }
+    }, 6000);
+
+    artInstance.on("play", handlePlay);
+    artInstance.on("pause", handlePause);
+    artInstance.on("seek", handleSeek);
+
+    return () => {
+      if (seekTimer) clearTimeout(seekTimer);
+      clearInterval(heartbeat);
+      artInstance.off("play", handlePlay);
+      artInstance.off("pause", handlePause);
+      artInstance.off("seek", handleSeek);
+    };
+  }, [artInstance, wp.isHost, wp.roomId, wp.syncPlayerState]);
+
+  // ── Watch Party: Guest <- Room Playback Synchronization with Smart Drift Threshold ──
   useEffect(() => {
     const state = wp.remotePlayerState;
     if (!state || !artInstance || wp.isHost) return;
@@ -1045,18 +1099,38 @@ export default function WatchPage() {
     }
 
     applyingRemoteStateRef.current = true;
-    const drift = Math.abs((artInstance.currentTime || 0) - state.currentTime);
-    if (drift > 1.5 || state.action === "seek") {
-      artInstance.currentTime = state.currentTime;
+
+    // Compensate for network transmission latency
+    const latencySec = state.serverTime
+      ? Math.max(0, Math.min(2.5, (Date.now() - state.serverTime) / 1000))
+      : 0;
+    const targetTime =
+      state.action === "play"
+        ? state.currentTime + latencySec
+        : state.currentTime;
+
+    const current = artInstance.currentTime || 0;
+    const drift = Math.abs(current - targetTime);
+
+    // Only seek if drift exceeds 1.8s (or if host explicitly seeked) to prevent audio/video buffering stutter
+    if (drift > 1.8 || state.action === "seek") {
+      artInstance.currentTime = targetTime;
     }
+
     if (state.action === "play") {
-      artInstance.video?.play?.().catch?.(() => {});
+      if (!artInstance.playing) {
+        artInstance.video?.play?.().catch?.(() => {});
+      }
     } else if (state.action === "pause") {
-      artInstance.video?.pause?.();
+      if (artInstance.playing) {
+        artInstance.video?.pause?.();
+      }
     }
+
     const release = window.setTimeout(() => {
       applyingRemoteStateRef.current = false;
-    }, 800);
+    }, 400);
+
     return () => window.clearTimeout(release);
   }, [
     artInstance,
@@ -2656,7 +2730,8 @@ export default function WatchPage() {
                       poster={posterUrl}
                       initialTime={lastKnownPlaybackTimeRef.current || resumeAt}
                       autoPlay={autoPlayConfig}
-                      onReady={() => {
+                      onReady={(player) => {
+                        setArtInstance(player);
                         setIsFallbacking(false);
                         setFallbackMessage("");
                       }}

@@ -76,7 +76,7 @@ export function useWatchParty(movieSlug: string, episodeName: string) {
         senderName: reaction.senderName,
         left: Math.floor(Math.random() * 70) + 15,
       };
-      setFloatingReactions((current) => [...current, item]);
+      setFloatingReactions((current) => [...current.slice(-9), item]);
       window.setTimeout(
         () =>
           setFloatingReactions((current) =>
