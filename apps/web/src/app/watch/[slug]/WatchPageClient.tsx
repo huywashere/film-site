@@ -3459,10 +3459,13 @@ export default function WatchPage() {
                   {/* ── Server Provider Mirrors ── */}
                   {activeGroup.length > 0 && (
                     <div className="pt-3 border-t border-white/[0.08] space-y-2">
-                      <div className="text-[11px] font-extrabold text-neutral-400 uppercase tracking-wider">
-                        {lang === "en"
-                          ? `Stream Servers (${activeGroup.length} Mirrors)`
-                          : `Máy chủ Nguồn phát (${activeGroup.length} Server)`}
+                      <div className="flex items-center gap-1.5 text-xs font-extrabold text-neutral-300">
+                        <Server size={14} className="text-neutral-400" />
+                        <span>
+                          {lang === "en"
+                            ? `Server (${activeGroup.length}):`
+                            : "Máy chủ:"}
+                        </span>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
@@ -3513,11 +3516,11 @@ export default function WatchPage() {
                                   "opacity-30 cursor-not-allowed line-through",
                               )}
                             >
-                              <Radio
+                              <Server
                                 size={12}
                                 className={
                                   isActive
-                                    ? "text-black animate-pulse"
+                                    ? "text-black"
                                     : "text-neutral-400"
                                 }
                               />
