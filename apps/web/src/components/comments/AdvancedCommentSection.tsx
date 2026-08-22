@@ -139,89 +139,6 @@ function isUserAdmin(
   );
 }
 
-// Seed comments providing a vibrant community template like in user's screenshot
-function getInitialSeedComments(movieTitle?: string): CommentItem[] {
-  const now = Date.now();
-  const DAY_MS = 24 * 60 * 60 * 1000;
-
-  return [
-    {
-      id: "seed-admin-1",
-      user: {
-        name: "Cậu Be",
-        avatar: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150&auto=format&fit=crop&q=80",
-        role: "ADMIN",
-        gender: "male",
-        flairs: ["flame", "male"],
-      },
-      content: "song ngữ đang lên dần nha, còn lại xong hết r đó [05:20]",
-      rating: 5,
-      isPinned: true,
-      pinnedBy: "Admin",
-      likes: 6,
-      dislikes: 0,
-      createdAt: now - 15 * DAY_MS,
-      replies: [
-        {
-          id: "seed-reply-1",
-          user: {
-            name: "Baby Trần",
-            avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
-            role: "USER",
-            gender: "male",
-          },
-          content: "Love you cậu be, phải v chứ ❤️",
-          replyToUser: "Cậu Be",
-          likes: 1,
-          dislikes: 0,
-          createdAt: now - 15 * DAY_MS,
-        },
-        {
-          id: "seed-reply-2",
-          user: {
-            name: "Vinh Phuc Vo",
-            avatar: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80",
-            role: "USER",
-          },
-          content: "CODE THÊM CÁI PHẦN DIỄN VIÊN ĐI CẬU BE",
-          replyToUser: "Cậu Be",
-          likes: 0,
-          dislikes: 0,
-          createdAt: now - 13 * DAY_MS,
-        },
-        {
-          id: "seed-reply-3",
-          user: {
-            name: "Cậu Be",
-            avatar: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150&auto=format&fit=crop&q=80",
-            role: "ADMIN",
-            gender: "male",
-            flairs: ["flame", "male"],
-          },
-          content: "có sẵn r mà",
-          replyToUser: "Vinh Phuc Vo",
-          likes: 0,
-          dislikes: 0,
-          createdAt: now - 13 * DAY_MS,
-        },
-        {
-          id: "seed-reply-4",
-          user: {
-            name: "Vinh Phuc Vo",
-            avatar: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80",
-            role: "USER",
-          },
-          content: "riêng phim này xem ở đây nó mượt be ơi",
-          replyToUser: "Cậu Be",
-          likes: 0,
-          dislikes: 0,
-          createdAt: now - 3 * DAY_MS,
-        },
-      ],
-    },
-  ];
-}
-
 export function AdvancedCommentSection({
   movieSlug,
   episodeName,
@@ -244,9 +161,7 @@ export function AdvancedCommentSection({
   const [replyingToCommentId, setReplyingToCommentId] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState<string>("");
   const [replyTargetUser, setReplyTargetUser] = useState<string>("");
-  const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({
-    "seed-admin-1": true,
-  });
+  const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({});
 
   // Comments list with localStorage persistence
   const [comments, setComments] = useState<CommentItem[]>([]);
@@ -257,16 +172,18 @@ export function AdvancedCommentSection({
     try {
       const raw = localStorage.getItem(storageKey);
       if (raw) {
-        setComments(JSON.parse(raw));
+        const parsed = JSON.parse(raw);
+        const clean = Array.isArray(parsed)
+          ? parsed.filter((c: any) => !c.id?.startsWith("seed-"))
+          : [];
+        setComments(clean);
       } else {
-        const seed = getInitialSeedComments(movieSlug);
-        setComments(seed);
-        localStorage.setItem(storageKey, JSON.stringify(seed));
+        setComments([]);
       }
     } catch {
-      setComments(getInitialSeedComments(movieSlug));
+      setComments([]);
     }
-  }, [storageKey, movieSlug]);
+  }, [storageKey]);
 
   const saveComments = (newComments: CommentItem[]) => {
     setComments(newComments);
