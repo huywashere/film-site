@@ -15,7 +15,7 @@ html[data-netphim-intro="done"] #netphim-entry-splash {
 .animate-marquee-rtl {
   display: flex;
   width: max-content;
-  animation: marquee-rtl 45s linear infinite;
+  animation: marquee-rtl 95s linear infinite;
 }
 
 .animate-marquee-rtl:hover {
