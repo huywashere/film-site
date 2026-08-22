@@ -11,23 +11,22 @@ const HLS_STARTUP_TIMEOUT_MS = 8_000;
 
 const ART_PLAY_ICON = `
   <div class="art-icon art-icon-custom-play" aria-hidden="true">
-    <svg viewBox="0 0 24 24" focusable="false">
-      <path d="M7.35 4.82a1.35 1.35 0 0 1 2.02-1.17l9.15 5.72a3.08 3.08 0 0 1 0 5.26l-9.15 5.72a1.35 1.35 0 0 1-2.02-1.17V4.82Z" />
+    <svg viewBox="0 0 24 24" fill="currentColor">
+      <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"/>
     </svg>
   </div>`;
 
 const ART_PAUSE_ICON = `
   <div class="art-icon art-icon-custom-pause" aria-hidden="true">
-    <svg viewBox="0 0 24 24" focusable="false">
-      <rect x="6.25" y="4" width="4.25" height="16" rx="1.35" />
-      <rect x="13.5" y="4" width="4.25" height="16" rx="1.35" />
+    <svg viewBox="0 0 24 24" fill="currentColor">
+      <path d="M6 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm8 0h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/>
     </svg>
   </div>`;
 
 const ART_STATE_ICON = `
   <div class="art-icon art-icon-custom-state" aria-hidden="true">
-    <svg viewBox="0 0 24 24" focusable="false">
-      <path d="M8.15 5.42a1.18 1.18 0 0 1 1.77-1.02l8.08 5.05a2.98 2.98 0 0 1 0 5.1L9.92 19.6a1.18 1.18 0 0 1-1.77-1.02V5.42Z" />
+    <svg viewBox="0 0 24 24" fill="currentColor">
+      <path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11-6.86a1 1 0 0 0 0-1.72L9.5 4.28A1 1 0 0 0 8 5.14z"/>
     </svg>
   </div>`;
 
@@ -514,12 +513,13 @@ export default function ArtPlayer({
       playsInline: true,
       autoPlayback: true,
       airplay: true,
-      theme: "#20b9e8",
+      theme: "#E50914",
       cssVar: {
+        "--art-theme": "#E50914",
         "--art-progress-height": "4px",
-        "--art-progress-color": "rgba(255, 255, 255, 0.24)",
-        "--art-loaded-color": "rgba(255, 255, 255, 0.42)",
-        "--art-indicator-size": "18px",
+        "--art-progress-color": "rgba(255, 255, 255, 0.25)",
+        "--art-loaded-color": "rgba(255, 255, 255, 0.45)",
+        "--art-indicator-size": "14px",
       },
       lang: "vi",
       icons: {

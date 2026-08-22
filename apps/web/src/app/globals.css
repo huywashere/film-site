@@ -517,65 +517,204 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
 }
 
 .art-video-player .art-control:hover .art-icon-custom-play,
-.art-video-player .art-control:hover .art-icon-custom-pause,
-.art-video-player .art-control:hover .art-icon-custom-backward,
-.art-video-player .art-control:hover .art-icon-custom-forward {
-  color: #ffffff;
+/* ── NETFLIX-GRADE CINEMATIC VIDEO PLAYER STYLING ── */
+
+.art-video-player {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Netflix Sans", sans-serif !important;
+}
+
+/* Center Big Play / State Button (Netflix Glass Circle) */
+.art-video-player .art-state {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: auto !important;
 }
 
 .art-video-player .art-icon-custom-state {
-  width: 72px !important;
-  height: 72px !important;
-  border: 0;
-  border-radius: 9999px;
-  color: #20282f;
-  background: rgba(238, 241, 243, 0.72);
-  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.2);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  transition:
-    transform 120ms ease,
-    background-color 120ms ease;
+  width: 76px !important;
+  height: 76px !important;
+  border-radius: 50% !important;
+  background: rgba(14, 16, 20, 0.75) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 0, 0, 0.4) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  backdrop-filter: blur(16px) !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .art-video-player .art-icon-custom-state svg {
-  width: 32px;
-  height: 32px;
-  fill: currentColor;
-  filter: none;
+  width: 34px !important;
+  height: 34px !important;
+  fill: #ffffff !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)) !important;
+  margin-left: 3px !important;
 }
 
 .art-video-player .art-state:hover .art-icon-custom-state {
-  transform: scale(1.04);
-  background: rgba(250, 251, 252, 0.82);
+  transform: scale(1.12) !important;
+  background: rgba(229, 9, 20, 0.92) !important;
+  border-color: #e50914 !important;
+  box-shadow: 0 16px 40px rgba(229, 9, 20, 0.45), 0 0 30px rgba(229, 9, 20, 0.3) !important;
 }
 
 .art-video-player .art-state:active .art-icon-custom-state {
-  transform: scale(0.96);
+  transform: scale(0.95) !important;
+}
+
+/* Netflix Bottom Control Bar */
+.art-video-player .art-bottom {
+  padding: 0 20px 14px 20px !important;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.65) 55%, transparent 100%) !important;
+}
+
+.art-video-player .art-controls {
+  height: 52px !important;
+}
+
+/* Control Icons */
+.art-video-player .art-control {
+  color: rgba(255, 255, 255, 0.85) !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.art-video-player .art-control:hover,
+.art-video-player .art-control:hover .art-icon-custom-play,
+.art-video-player .art-control:hover .art-icon-custom-pause,
+.art-video-player .art-control:hover .art-icon-custom-backward,
+.art-video-player .art-control:hover .art-icon-custom-forward {
+  color: #ffffff !important;
+  transform: scale(1.14) !important;
+}
+
+/* Netflix Progress Bar & Scrubbing Line */
+.art-video-player .art-progress {
+  height: 4px !important;
+  border-radius: 4px !important;
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  transition: height 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  margin-bottom: 6px !important;
+}
+
+.art-video-player .art-progress:hover,
+.art-video-player .art-bottom:hover .art-progress {
+  height: 7px !important;
 }
 
 .art-video-player .art-progress-played,
 .art-video-player .art-volume-loaded,
 .art-video-player .art-volume-indicator {
-  background-color: #20b9e8 !important;
+  background: #e50914 !important;
+  border-radius: 4px !important;
+}
+
+.art-video-player .art-progress-loaded {
+  background: rgba(255, 255, 255, 0.42) !important;
+  border-radius: 4px !important;
 }
 
 .art-video-player .art-progress-indicator {
-  background: #20b9e8 !important;
-  border: 0 !important;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  width: 14px !important;
+  height: 14px !important;
+  background: #e50914 !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 10px rgba(229, 9, 20, 0.8), 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+  border-radius: 50% !important;
+  transform: scale(0);
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.art-video-player .art-progress:hover .art-progress-indicator,
+.art-video-player .art-bottom:hover .art-progress-indicator {
+  transform: scale(1) !important;
+}
+
+/* Netflix Time Text */
+.art-video-player .art-control-time {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  letter-spacing: 0.02em !important;
+}
+
+/* Subtitle (Elevated above Control Bar to avoid any overlap) */
+.art-video-player .art-subtitle,
+.art-video-player .art-subtitle-content {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Netflix Sans", sans-serif !important;
+  font-weight: 700 !important;
+  font-size: clamp(18px, 2.8vw, 32px) !important;
+  line-height: 1.35 !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 4px #000, 0 0 8px #000, 0 2px 4px #000, 2px 2px 2px #000 !important;
+  letter-spacing: 0.015em !important;
+  bottom: 40px !important;
+  transition: bottom 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none !important;
+}
+
+/* When Control Bar is active / hovered, elevate subtitle so it NEVER collides with scrubber */
+.art-video-player.art-hover .art-subtitle,
+.art-video-player:hover .art-subtitle {
+  bottom: 82px !important;
+}
+
+/* Settings & Context Menu Modal (Sleek Dark Glass) */
+.art-video-player .art-setting,
+.art-video-player .art-contextmenu {
+  background: rgba(14, 16, 20, 0.94) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 16px !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  backdrop-filter: blur(24px) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85) !important;
+  padding: 8px !important;
+}
+
+.art-video-player .art-setting-item:hover,
+.art-video-player .art-contextmenu-item:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+}
+
+.art-video-player .art-setting-item.art-current {
+  background: rgba(229, 9, 20, 0.2) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  border-radius: 8px !important;
+}
+
+/* HUD Notification Pill */
+.art-video-player .art-notice {
+  background: rgba(10, 12, 16, 0.88) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 9999px !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  backdrop-filter: blur(16px) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  font-size: 13px !important;
+  padding: 8px 18px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7) !important;
 }
 
 @media (max-width: 640px) {
   .art-video-player .art-icon-custom-state {
-    width: 60px !important;
-    height: 60px !important;
-    border-radius: 9999px;
+    width: 62px !important;
+    height: 62px !important;
   }
 
   .art-video-player .art-icon-custom-state svg {
-    width: 29px;
-    height: 29px;
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .art-video-player.art-hover .art-subtitle,
+  .art-video-player:hover .art-subtitle {
+    bottom: 68px !important;
   }
 }
 
