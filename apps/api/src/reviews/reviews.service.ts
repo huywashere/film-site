@@ -1,11 +1,19 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { RedisCacheService } from "../redis/redis.service";
 
 @Injectable()
 export class ReviewsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: RedisCacheService,
+  ) {}
 
   async getByMovie(movieId: string, page = 1, limit = 10) {
+    const cacheKey = `reviews:movie:${movieId}:${page}:${limit}`;
+    const cached = await this.cache.getJson<any>(cacheKey);
+    if (cached !== null) return cached;
+
     const skip = (page - 1) * limit;
     const [reviews, total] = await Promise.all([
       this.prisma.review.findMany({
@@ -21,7 +29,9 @@ export class ReviewsService {
       }),
       this.prisma.review.count({ where: { movieId, isHidden: false } }),
     ]);
-    return { reviews, total, page, pages: Math.ceil(total / limit) };
+    const payload = { reviews, total, page, pages: Math.ceil(total / limit) };
+    await this.cache.setJson(cacheKey, payload, 120); // 2 minutes cache
+    return payload;
   }
 
   async create(
@@ -35,7 +45,7 @@ export class ReviewsService {
       update: {},
     });
 
-    return this.prisma.review.create({
+    const result = await this.prisma.review.create({
       data: {
         userId,
         movieId: dto.movieId,
@@ -48,12 +58,20 @@ export class ReviewsService {
         },
       },
     });
+
+    await this.cache.purgeNamespace(`reviews:movie:${dto.movieId}`);
+    return result;
   }
 
   async delete(userId: string, reviewId: string) {
-    return this.prisma.review.deleteMany({
+    const review = await this.prisma.review.findUnique({ where: { id: reviewId }, select: { movieId: true } });
+    const result = await this.prisma.review.deleteMany({
       where: { id: reviewId, userId },
     });
+    if (review?.movieId) {
+      await this.cache.purgeNamespace(`reviews:movie:${review.movieId}`);
+    }
+    return result;
   }
 
   async toggleLike(userId: string, reviewId: string) {

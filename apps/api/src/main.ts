@@ -234,9 +234,22 @@ async function bootstrap() {
     }),
   );
 
+  // ── Global Timeout Protection (8-10s DDoS & hanging connection defense) ──
+  const requestTimeoutMs = Number(process.env.REQUEST_TIMEOUT_MS || 8000);
+  const { TimeoutInterceptor } = await import("./common/interceptors/timeout.interceptor");
+  app.useGlobalInterceptors(new TimeoutInterceptor(requestTimeoutMs));
+
   const port = process.env.PORT || 3001;
-  await app.listen(port, "0.0.0.0");
-  console.log(`🎬 NetPhim API running on: http://0.0.0.0:${port}/api/v1`);
+  const serverInstance = await app.listen(port, "0.0.0.0");
+
+  // ── Socket & Connection Timeouts ──────────────────────────────
+  if (serverInstance && typeof serverInstance.setTimeout === "function") {
+    serverInstance.setTimeout(10_000); // 10s socket inactivity timeout
+    serverInstance.keepAliveTimeout = 65_000;
+    serverInstance.headersTimeout = 66_000;
+  }
+
+  console.log(`🎬 NetPhim API running on: http://0.0.0.0:${port}/api/v1 (Timeout: ${requestTimeoutMs}ms)`);
 }
 
 bootstrap();

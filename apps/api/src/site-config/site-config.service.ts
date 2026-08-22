@@ -27,13 +27,25 @@ const DEFAULT_CONFIGURATION = {
   cacheVersion: 1,
 };
 
+import { RedisCacheService } from "../redis/redis.service";
+
+const CONFIG_CACHE_KEY = "site-config:primary";
+
 @Injectable()
 export class SiteConfigService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: RedisCacheService,
+  ) {}
 
   async getConfiguration() {
+    const cached = await this.cache.getJson<any>(CONFIG_CACHE_KEY);
+    if (cached) return cached;
+
     const stored = await this.prisma.siteConfiguration.findUnique({ where: { id: "primary" } });
-    return stored || { id: "primary", ...DEFAULT_CONFIGURATION };
+    const result = stored || { id: "primary", ...DEFAULT_CONFIGURATION };
+    await this.cache.setJson(CONFIG_CACHE_KEY, result, 3600);
+    return result;
   }
 
   async updateConfiguration(data: Partial<typeof DEFAULT_CONFIGURATION>, updatedBy: string) {
@@ -65,11 +77,13 @@ export class SiteConfigService {
         : {}),
       updatedBy,
     };
-    return this.prisma.siteConfiguration.upsert({
+    const updated = await this.prisma.siteConfiguration.upsert({
       where: { id: "primary" },
       create: { id: "primary", ...DEFAULT_CONFIGURATION, ...clean },
       update: clean,
     });
+    await this.cache.del(CONFIG_CACHE_KEY);
+    return updated;
   }
 
   async getPublicConfiguration() {

@@ -312,10 +312,28 @@ export class MoviesService {
 
   // GET /v1/api/tim-kiem?keyword=&page=1
   async search(keyword: string, page = 1, limit = 24) {
+    const normalized = (keyword || "").trim().toLowerCase();
+    if (!normalized) {
+      return {
+        status: "success",
+        msg: "OK",
+        data: {
+          items: [],
+          params: {
+            pagination: {
+              totalItems: 0,
+              totalItemsPerPage: limit,
+              currentPage: page,
+              pageRanges: 5,
+            },
+          },
+        },
+      };
+    }
     return this.cachedGet(
-      `search:${keyword}:${page}:${limit}`,
-      `/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`,
-      60,
+      `search:${normalized}:${page}:${limit}`,
+      `/v1/api/tim-kiem?keyword=${encodeURIComponent(normalized)}&page=${page}&limit=${limit}`,
+      300, // Cache 5 minutes in Redis (sub-millisecond instant responses under DDoS)
     );
   }
 
