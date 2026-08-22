@@ -15,18 +15,36 @@ import { clientIpFromRequest } from "@/lib/client-ip";
 const MAX_REDIRECTS = 3;
 const UPSTREAM_TIMEOUT_MS = 15_000;
 
+const DEFAULT_ALLOWED_HOST_PATTERNS = [
+  "*.phimapi.com",
+  "*.kkphimplayer*.com",
+  "*.ophim.live",
+  "*.ophim1.com",
+  "*.opstream*.com",
+  "*.nguonc.com",
+  "*.streamc.xyz",
+  "*.hihihoho*.top",
+  "*.vsmov.com",
+  "*.streamvsmov.com",
+];
+
 function hostIsAllowed(hostname: string): boolean {
   const configured = (process.env.HLS_PROXY_ALLOWED_HOSTS || "")
     .split(",")
     .map((host) => host.trim().toLowerCase())
     .filter(Boolean);
-  if (configured.length === 0) return process.env.NODE_ENV !== "production";
+  if (process.env.NODE_ENV !== "production" && configured.length === 0) return true;
+  const patterns = configured.length > 0 ? configured : DEFAULT_ALLOWED_HOST_PATTERNS;
   const host = hostname.toLowerCase();
-  return configured.some((pattern) =>
-    pattern.startsWith("*.")
-      ? host === pattern.slice(2) || host.endsWith(pattern.slice(1))
-      : host === pattern,
-  );
+  return patterns.some((pattern) => {
+    if (pattern.includes("*")) {
+      const regex = new RegExp(
+        `^${pattern.replace(/\./g, "\\.").replace(/\*/g, ".*")}$`,
+      );
+      return regex.test(host);
+    }
+    return host === pattern;
+  });
 }
 
 function isPrivateHost(hostname: string): boolean {
