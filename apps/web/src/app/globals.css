@@ -600,11 +600,11 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
   transform: scale(1.1) !important;
 }
 
-/* Progress Bar (Lavender Blue / Indigo Theme) */
+/* Progress Bar (Cinema Pure White Standard) */
 .art-video-player .art-progress {
   height: 4px !important;
   border-radius: 4px !important;
-  background-color: rgba(255, 255, 255, 0.22) !important;
+  background-color: rgba(255, 255, 255, 0.2) !important;
   transition: height 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
   margin-bottom: 8px !important;
 }
@@ -615,7 +615,7 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
 }
 
 .art-video-player .art-progress-played {
-  background: #818cf8 !important;
+  background: #ffffff !important;
   border-radius: 4px !important;
 }
 
@@ -628,8 +628,8 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
   width: 12px !important;
   height: 12px !important;
   background: #ffffff !important;
-  border: 2px solid #818cf8 !important;
-  box-shadow: 0 0 10px rgba(129, 140, 248, 0.9), 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.9), 0 2px 4px rgba(0, 0, 0, 0.6) !important;
   border-radius: 50% !important;
   transform: scale(0);
   transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -643,9 +643,10 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
 /* Time Indicator */
 .art-video-player .art-control-time {
   font-size: 13px !important;
-  font-weight: 500 !important;
-  color: #ffffff !important;
-  letter-spacing: 0.01em !important;
+  font-weight: 600 !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  letter-spacing: 0.02em !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
 }
 
 /* Volume Slider */
@@ -657,7 +658,7 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
 
 .art-video-player .art-volume-loaded,
 .art-video-player .art-volume-indicator {
-  background: #818cf8 !important;
+  background: #ffffff !important;
   border-radius: 4px !important;
 }
 

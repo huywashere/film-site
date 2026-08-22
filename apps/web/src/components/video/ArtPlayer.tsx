@@ -10,32 +10,30 @@ import { selectInitialHlsTransport } from "@/lib/player-source-routing";
 const HLS_STARTUP_TIMEOUT_MS = 8_000;
 
 const ART_PLAY_ICON = `
-  <div class="art-icon art-icon-custom-play" aria-hidden="true">
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" />
+  <div class="art-icon art-icon-custom-play" aria-hidden="true" title="Phát (Space/K)">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+      <path d="M7 4.5v15l13-7.5L7 4.5z"/>
     </svg>
   </div>`;
 
 const ART_PAUSE_ICON = `
-  <div class="art-icon art-icon-custom-pause" aria-hidden="true">
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <line x1="10" y1="15" x2="10" y2="9" stroke="currentColor" stroke-width="2.5" />
-      <line x1="14" y1="15" x2="14" y2="9" stroke="currentColor" stroke-width="2.5" />
+  <div class="art-icon art-icon-custom-pause" aria-hidden="true" title="Tạm dừng (Space/K)">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+      <rect x="6" y="4" width="4" height="16" rx="1"/>
+      <rect x="14" y="4" width="4" height="16" rx="1"/>
     </svg>
   </div>`;
 
 const ART_STATE_ICON = `
   <div class="art-icon art-icon-custom-state" aria-hidden="true">
-    <svg viewBox="0 0 24 24" width="68" height="68" fill="currentColor">
-      <polygon points="6 3 20 12 6 21 6 3" />
+    <svg viewBox="0 0 24 24" width="68" height="68" fill="rgba(255,255,255,0.92)">
+      <path d="M7.5 4.5v15l13-7.5-13-7.5z"/>
     </svg>
   </div>`;
 
 const ART_VOLUME_ICON = `
-  <div class="art-icon" aria-hidden="true">
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <div class="art-icon art-icon-custom-volume" aria-hidden="true" title="Âm lượng (M)">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/>
       <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
       <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
@@ -43,8 +41,8 @@ const ART_VOLUME_ICON = `
   </div>`;
 
 const ART_VOLUME_MUTED_ICON = `
-  <div class="art-icon" aria-hidden="true">
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <div class="art-icon art-icon-custom-volume" aria-hidden="true" title="Bật âm thanh (M)">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/>
       <line x1="23" y1="9" x2="17" y2="15"/>
       <line x1="17" y1="9" x2="23" y2="15"/>
@@ -52,31 +50,31 @@ const ART_VOLUME_MUTED_ICON = `
   </div>`;
 
 const ART_SETTING_ICON = `
-  <div class="art-icon" aria-hidden="true">
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <div class="art-icon art-icon-custom-setting" aria-hidden="true" title="Cài đặt">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
   </div>`;
 
 const ART_PIP_ICON = `
-  <div class="art-icon" aria-hidden="true">
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <div class="art-icon art-icon-custom-pip" aria-hidden="true" title="Hình trong hình (PiP)">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <rect x="2" y="4" width="20" height="16" rx="2"/>
-      <rect x="12" y="10" width="8" height="6" rx="1" fill="currentColor" fill-opacity="0.4"/>
+      <rect x="12" y="10" width="8" height="6" rx="1" fill="currentColor" fill-opacity="0.45"/>
     </svg>
   </div>`;
 
 const ART_FULLSCREEN_ON_ICON = `
-  <div class="art-icon" aria-hidden="true">
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <div class="art-icon art-icon-custom-fullscreen" aria-hidden="true" title="Toàn màn hình (F)">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
     </svg>
   </div>`;
 
 const ART_FULLSCREEN_OFF_ICON = `
-  <div class="art-icon" aria-hidden="true">
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <div class="art-icon art-icon-custom-fullscreen" aria-hidden="true" title="Thoát toàn màn hình (Esc/F)">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
     </svg>
   </div>`;
@@ -104,6 +102,9 @@ export interface ArtPlayerProps {
   }) => void;
   isTheaterMode?: boolean;
   onTheaterModeToggle?: (active: boolean) => void;
+  onNextEpisode?: () => void;
+  onToggleAudioTrack?: () => void;
+  onToggleEpisodeDrawer?: () => void;
   // Skip intro/outro timestamps (giây)
   skipIntroStart?: number;
   skipIntroEnd?: number;
@@ -130,6 +131,9 @@ export default function ArtPlayer({
   onPlaybackStateChange,
   isTheaterMode = false,
   onTheaterModeToggle,
+  onNextEpisode,
+  onToggleAudioTrack,
+  onToggleEpisodeDrawer,
   skipIntroStart,
   skipIntroEnd,
   skipOutroStart,
@@ -184,6 +188,13 @@ export default function ArtPlayer({
   onPlaybackStartRef.current = onPlaybackStart;
   onBufferingRef.current = onBuffering;
   onPlaybackStateChangeRef.current = onPlaybackStateChange;
+
+  const onNextEpisodeRef = useRef(onNextEpisode);
+  const onToggleAudioTrackRef = useRef(onToggleAudioTrack);
+  const onToggleEpisodeDrawerRef = useRef(onToggleEpisodeDrawer);
+  onNextEpisodeRef.current = onNextEpisode;
+  onToggleAudioTrackRef.current = onToggleAudioTrack;
+  onToggleEpisodeDrawerRef.current = onToggleEpisodeDrawer;
 
   useEffect(() => {
     if (!containerRef.current || !url) return;
@@ -564,12 +575,12 @@ export default function ArtPlayer({
       playsInline: true,
       autoPlayback: true,
       airplay: true,
-      theme: "#818cf8",
+      theme: "#ffffff",
       cssVar: {
-        "--art-theme": "#818cf8",
+        "--art-theme": "#ffffff",
         "--art-progress-height": "4px",
-        "--art-progress-color": "rgba(255, 255, 255, 0.2)",
-        "--art-loaded-color": "rgba(255, 255, 255, 0.4)",
+        "--art-progress-color": "rgba(255, 255, 255, 0.18)",
+        "--art-loaded-color": "rgba(255, 255, 255, 0.38)",
         "--art-indicator-size": "12px",
       },
       lang: "vi",
@@ -593,17 +604,17 @@ export default function ArtPlayer({
         "x5-video-player-fullscreen": "false",
       },
 
-      // Custom Rewind & Forward Controls on Control Bar
+      // Custom Controls for Cinema-Standard Player (Matching Exact Pro Spec)
       controls: [
         {
           name: "backward-10",
           position: "left",
           index: 12,
-          html: `<div class="art-icon art-icon-custom-backward" title="Tua lùi 10 giây">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          html: `<div class="art-icon art-icon-custom-backward" title="Tua lùi 10 giây (←/J)">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
               <path d="M3 3v5h5"/>
-              <text x="12" y="15.2" font-size="7.2" font-weight="900" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="currentColor" stroke="none" text-anchor="middle">10</text>
+              <text x="12" y="15.5" font-size="7.5" font-weight="900" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="currentColor" stroke="none" text-anchor="middle">10</text>
             </svg>
           </div>`,
           tooltip: "Tua lùi 10s",
@@ -615,11 +626,11 @@ export default function ArtPlayer({
           name: "forward-10",
           position: "left",
           index: 14,
-          html: `<div class="art-icon art-icon-custom-forward" title="Tua tới 10 giây">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          html: `<div class="art-icon art-icon-custom-forward" title="Tua tới 10 giây (→/L)">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
               <path d="M21 3v5h-5"/>
-              <text x="12" y="15.2" font-size="7.2" font-weight="900" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="currentColor" stroke="none" text-anchor="middle">10</text>
+              <text x="12" y="15.5" font-size="7.5" font-weight="900" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="currentColor" stroke="none" text-anchor="middle">10</text>
             </svg>
           </div>`,
           tooltip: "Tua tới 10s",
@@ -628,6 +639,56 @@ export default function ArtPlayer({
               player.duration,
               player.currentTime + 10,
             );
+          },
+        },
+        {
+          name: "next-episode",
+          position: "right",
+          index: 10,
+          html: `<div class="art-icon art-icon-custom-next" title="Tập tiếp theo (N)">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M5 4.5v15l10.5-7.5L5 4.5zM17.5 4.5h2v15h-2v-15z"/>
+            </svg>
+          </div>`,
+          tooltip: "Tập tiếp theo (N)",
+          click: function () {
+            onNextEpisodeRef.current?.();
+          },
+        },
+        {
+          name: "subtitles-toggle",
+          position: "right",
+          index: 20,
+          html: `<div class="art-icon art-icon-custom-cc" title="Phụ đề (C)">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="3"/>
+              <path d="M7 15h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H7v6zM13 15h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2v6z" stroke-width="1.8"/>
+            </svg>
+          </div>`,
+          tooltip: "Phụ đề (C)",
+          click: function () {
+            if (player.subtitle) {
+              player.subtitle.show = !player.subtitle.show;
+              player.notice.show = player.subtitle.show ? "Đã bật phụ đề" : "Đã tắt phụ đề";
+            }
+          },
+        },
+        {
+          name: "audio-track-toggle",
+          position: "right",
+          index: 25,
+          html: `<div class="art-icon art-icon-custom-audio" style="position:relative;display:inline-flex;align-items:center;justify-content:center;" title="Âm thanh / Song ngữ">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+            <span style="position:absolute;top:-4px;right:-7px;font-size:8px;font-weight:900;background:#ffffff;color:#000000;padding:1px 3px;border-radius:4px;line-height:1;letter-spacing:-0.5px;">Song</span>
+          </div>`,
+          tooltip: "Âm thanh / Song ngữ",
+          click: function () {
+            onToggleAudioTrackRef.current?.();
           },
         },
       ],
