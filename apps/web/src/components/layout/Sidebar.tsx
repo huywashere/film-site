@@ -15,6 +15,8 @@ import {
   TvMinimalPlay,
   MonitorPlay,
   CalendarDays,
+  Languages,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -46,7 +48,14 @@ function TelegramIcon({
 const SIDEBAR_ITEMS = [
   { title: "Trang chủ", href: "/", icon: Home },
   { title: "Lịch Chiếu", href: "/schedule", icon: CalendarDays },
-  { title: "TV Shows", href: "/films/tvshows", icon: TvMinimalPlay },
+  {
+    title: "Phim Song Ngữ",
+    href: "/films/bilingual",
+    icon: Languages,
+    isBilingual: true,
+    badge: "DUAL SUB",
+    tagline: "Phụ đề kép Anh - Việt • Luyện nghe 4K",
+  },
   { title: "Thế Giới Phim", href: "/genres", icon: LayoutGrid },
   { title: "Xem Chung", href: "/watch-party", icon: Popcorn },
   { title: "Bộ Sưu Tập", href: "/watchlist", icon: Layers },
@@ -225,19 +234,34 @@ export function Sidebar() {
                 (item.href !== "/" && pathname.startsWith(item.href)));
 
             const Icon = item.icon;
+            const isBilingual = Boolean((item as any).isBilingual);
 
             const content = (
               <>
                 {/* Active Indicator Bar */}
                 {isActive && (
                   <span
-                    className="absolute -left-1.5 top-1/2 -translate-y-1/2 rounded-r-full bg-white z-20"
-                    style={{ width: 3, height: 18 }}
+                    className={cn(
+                      "absolute -left-1.5 top-1/2 -translate-y-1/2 rounded-r-full z-20",
+                      isBilingual
+                        ? "bg-gradient-to-b from-cyan-400 to-violet-500 shadow-[0_0_10px_rgba(6,182,212,0.8)]"
+                        : "bg-white",
+                    )}
+                    style={{ width: 3, height: 20 }}
                   />
                 )}
 
-                {/* Active Background Pill */}
-                {isActive ? (
+                {/* Active/Default Background Pill */}
+                {isBilingual ? (
+                  <span
+                    className={cn(
+                      "absolute inset-0 rounded-xl transition-all duration-300 z-0",
+                      isActive
+                        ? "bg-gradient-to-br from-cyan-500/35 via-violet-600/30 to-blue-500/30 border border-cyan-400/70 shadow-[0_0_20px_rgba(6,182,212,0.5)]"
+                        : "bg-gradient-to-br from-cyan-500/20 via-violet-600/15 to-blue-500/15 border border-cyan-400/30 group-hover:border-cyan-400/80 group-hover:shadow-[0_0_16px_rgba(6,182,212,0.4)]",
+                    )}
+                  />
+                ) : isActive ? (
                   <span className="absolute inset-0 rounded-xl bg-white/10 z-0" />
                 ) : (
                   <span className="absolute inset-0 rounded-xl bg-transparent group-hover:bg-white/[0.06] transition-colors z-0" />
@@ -248,16 +272,43 @@ export function Sidebar() {
                   size={20}
                   className={cn(
                     "relative z-10 transition-transform group-hover:scale-110",
-                    item.isSpecial &&
-                      !isActive &&
-                      "text-[#229ED9] group-hover:text-[#38bdf8]",
+                    isBilingual
+                      ? "text-cyan-300 group-hover:text-cyan-100 drop-shadow-[0_0_8px_rgba(6,182,212,0.7)]"
+                      : item.isSpecial && !isActive
+                        ? "text-[#229ED9] group-hover:text-[#38bdf8]"
+                        : "",
                   )}
                 />
 
+                {/* Neon Dot for Bilingual tab */}
+                {isBilingual && (
+                  <span className="absolute -top-1 -right-1 z-20 flex h-3 w-3 items-center justify-center pointer-events-none">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400 shadow-[0_0_6px_#22d3ee]" />
+                  </span>
+                )}
+
                 {/* Floating Tooltip on Hover */}
-                <span className="absolute left-full ml-3.5 px-3 py-1.5 rounded-xl bg-neutral-950 border border-white/15 text-xs font-bold text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 shadow-2xl z-30 translate-x-1 group-hover:translate-x-0">
-                  {item.title}
-                </span>
+                {isBilingual ? (
+                  <div className="absolute left-full ml-3.5 px-3.5 py-2 rounded-2xl bg-neutral-950/95 border border-cyan-400/50 text-left whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 shadow-[0_10px_30px_rgba(0,0,0,0.8),0_0_20px_rgba(6,182,212,0.3)] z-30 translate-x-1 group-hover:translate-x-0 backdrop-blur-xl">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-white flex items-center gap-1.5">
+                        <Sparkles size={13} className="text-cyan-400" />
+                        Phim Song Ngữ
+                      </span>
+                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-cyan-400 to-violet-500 text-black shadow-sm">
+                        DUAL SUB
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-cyan-200/90 mt-0.5 font-medium">
+                      Phụ đề kép Anh - Việt • Luyện nghe 4K
+                    </p>
+                  </div>
+                ) : (
+                  <span className="absolute left-full ml-3.5 px-3 py-1.5 rounded-xl bg-neutral-950 border border-white/15 text-xs font-bold text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 shadow-2xl z-30 translate-x-1 group-hover:translate-x-0">
+                    {item.title}
+                  </span>
+                )}
               </>
             );
 
@@ -293,7 +344,9 @@ export function Sidebar() {
                   "relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 group cursor-pointer",
                   isActive
                     ? "text-white font-bold"
-                    : "text-white/40 hover:text-white",
+                    : isBilingual
+                      ? "text-cyan-300 hover:text-white"
+                      : "text-white/40 hover:text-white",
                 )}
               >
                 {content}

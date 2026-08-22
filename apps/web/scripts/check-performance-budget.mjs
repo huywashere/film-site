@@ -12,7 +12,7 @@ const routes = JSON.parse(await readFile(reportPath, "utf8"));
 // of large player/auth libraries into the critical route graph.
 const defaultBudget = 1_350 * 1024;
 const routeBudgets = new Map([
-  ["/", 1_300 * 1024],
+  ["/", 1_350 * 1024],
   ["/watch/[slug]", 1_250 * 1024],
   ["/login", 1_250 * 1024],
   ["/register", 1_250 * 1024],

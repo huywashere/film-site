@@ -251,9 +251,9 @@ export function CountryFlagImage({
 
 const LISTS_CATALOG = [
   { label: "Phim Mới", labelEn: "New Releases", href: "/search?sort=modified.time%20desc" },
+  { label: "Phim Song Ngữ", labelEn: "Bilingual Movies (Dual Sub)", href: "/films/bilingual" },
   { label: "Phim Bộ", labelEn: "TV Series", href: "/films/series" },
   { label: "Phim Lẻ", labelEn: "Feature Films", href: "/films/single" },
-  { label: "Shows", labelEn: "TV Shows", href: "/films/tvshows" },
   { label: "Hoạt Hình", labelEn: "Anime / Animation", href: "/films/anime" },
   { label: "Phim Vietsub", labelEn: "Subtitled Movies", href: "/search?q=vietsub" },
   { label: "Phim Thuyết Minh", labelEn: "Dubbed Movies", href: "/search?q=thuyet%20minh" },
