@@ -929,8 +929,6 @@ export default function WatchPage() {
   const [copied, setCopied] = useState(false);
   const [showEpThumbnails, setShowEpThumbnails] = useState(false);
   const [artInstance, setArtInstance] = useState<any>(null);
-  const [fallbackSourcesReady, setFallbackSourcesReady] = useState(false);
-  const [backgroundDataReady, setBackgroundDataReady] = useState(false);
   const hasSkippedIntroRef = useRef(false);
 
   // Under-player toolbar states
@@ -1021,21 +1019,6 @@ export default function WatchPage() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [theaterMode]);
-
-  useEffect(() => {
-    const fallbackTimer = window.setTimeout(
-      () => setFallbackSourcesReady(true),
-      450,
-    );
-    const backgroundTimer = window.setTimeout(
-      () => setBackgroundDataReady(true),
-      1100,
-    );
-    return () => {
-      window.clearTimeout(fallbackTimer);
-      window.clearTimeout(backgroundTimer);
-    };
-  }, []);
 
   useEffect(() => {
     if (
@@ -1405,7 +1388,7 @@ export default function WatchPage() {
   const { data: sourceLookupData } = useQuery({
     queryKey: ["watch-source-lookup", lookupTitle, film?.year],
     queryFn: () => movieApi.search(lookupTitle, 1, 30).then((r) => r.data),
-    enabled: fallbackSourcesReady && Boolean(lookupTitle),
+    enabled: Boolean(lookupTitle),
     staleTime: 1000 * 60 * 30,
   });
 
@@ -1444,29 +1427,29 @@ export default function WatchPage() {
     queryKey: ["film-kkphim", kkphimSlug],
     queryFn: () =>
       movieApi.getDetailFromSource("kkphim", kkphimSlug).then((r) => r.data),
-    enabled:
-      fallbackSourcesReady && Boolean(kkphimSlug) && primarySource !== "kkphim",
+    enabled: Boolean(kkphimSlug) && primarySource !== "kkphim",
+    staleTime: 1000 * 60 * 10,
   });
   const { data: ophimFetchedData } = useQuery({
     queryKey: ["film-ophim", ophimSlug],
     queryFn: () =>
       movieApi.getDetailFromSource("ophim", ophimSlug).then((r) => r.data),
-    enabled:
-      fallbackSourcesReady && Boolean(ophimSlug) && primarySource !== "ophim",
+    enabled: Boolean(ophimSlug) && primarySource !== "ophim",
+    staleTime: 1000 * 60 * 10,
   });
   const { data: nguoncFetchedData } = useQuery({
     queryKey: ["film-nguonc", nguoncSlug],
     queryFn: () =>
       movieApi.getDetailFromSource("nguonc", nguoncSlug).then((r) => r.data),
-    enabled:
-      fallbackSourcesReady && Boolean(nguoncSlug) && primarySource !== "nguonc",
+    enabled: Boolean(nguoncSlug) && primarySource !== "nguonc",
+    staleTime: 1000 * 60 * 10,
   });
   const { data: vsmovFetchedData } = useQuery({
     queryKey: ["film-vsmov", vsmovSlug],
     queryFn: () =>
       movieApi.getDetailFromSource("vsmov", vsmovSlug).then((r) => r.data),
-    enabled:
-      fallbackSourcesReady && Boolean(vsmovSlug) && primarySource !== "vsmov",
+    enabled: Boolean(vsmovSlug) && primarySource !== "vsmov",
+    staleTime: 1000 * 60 * 10,
   });
 
   const kkphimData = primarySource === "kkphim" ? data : kkphimFetchedData;
@@ -1494,7 +1477,7 @@ export default function WatchPage() {
 
   const { bestBackdrop, backdrops: tmdbBackdrops } = useTmdb({
     film,
-    enabled: !!film && backgroundDataReady,
+    enabled: !!film,
     fetchCredits: false,
     fetchVideos: false,
   });

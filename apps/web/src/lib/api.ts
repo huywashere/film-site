@@ -681,6 +681,7 @@ async function getDetailFromAnySource(
 }
 
 async function getDetailFromSource(source: MovieSource, slug: string) {
+  if (!slug) return null;
   const requests: Record<MovieSource, () => Promise<unknown>> = {
     kkphim: () => kkphimApi.getDetail(slug),
     ophim: () => fetchOphim(`/phim/${slug}`),
@@ -689,8 +690,15 @@ async function getDetailFromSource(source: MovieSource, slug: string) {
     vidsrc: () =>
       Promise.reject(new Error("VidSrc chỉ hỗ trợ trình phát bằng TMDB ID.")),
   };
-  const data = await requests[source]();
-  return tagMovieDetailSource(data, source);
+  try {
+    const data = await requests[source]();
+    if (isUsableMovieDetail(data)) {
+      return tagMovieDetailSource(data, source);
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 type CatalogSourceRequest = {
