@@ -498,10 +498,22 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
 
 .art-video-player .art-icon-custom-backward svg,
 .art-video-player .art-icon-custom-forward svg {
-  width: 22px;
-  height: 22px;
+  width: 22px !important;
+  height: 22px !important;
   overflow: visible !important;
   display: block;
+}
+
+.art-video-player .art-icon-custom-backward svg path,
+.art-video-player .art-icon-custom-forward svg path {
+  fill: none !important;
+  stroke: currentColor !important;
+}
+
+.art-video-player .art-icon-custom-backward svg text,
+.art-video-player .art-icon-custom-forward svg text {
+  fill: currentColor !important;
+  stroke: none !important;
 }
 
 .art-video-player .art-control:hover .art-icon-custom-play,
