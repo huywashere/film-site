@@ -95,8 +95,9 @@ export function Sidebar() {
   const warmedRoutesRef = useRef(new Set<string>());
 
   const isHomePage = pathname === "/";
-  const isCountryPage = pathname.startsWith("/country");
-  const hasHeroBanner = isHomePage || isCountryPage;
+  const isAsianCountryHeroPage =
+    pathname === "/country/han-quoc" || pathname === "/country/trung-quoc";
+  const hasHeroBanner = isHomePage || isAsianCountryHeroPage;
 
   const isAuthPage = pathname === "/login" || pathname === "/register";
   const isUserPage =

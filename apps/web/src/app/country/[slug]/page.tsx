@@ -581,46 +581,7 @@ function AsianCuratedHeroBanner({
   );
 }
 
-function DefaultCountryHeroBanner({
-  film,
-  countryName,
-}: {
-  film?: FilmItem;
-  countryName: string;
-}) {
-  if (!film) return null;
-  const providerBackdrop =
-    resolveImageUrl(film.thumb_url, film.poster_url) ||
-    resolveImageUrl(film.poster_url);
 
-  return (
-    <section className="relative w-full min-h-[500px] h-[75vh] max-h-[800px] overflow-hidden bg-black select-none">
-      {providerBackdrop && (
-        <NextImage
-          src={providerBackdrop}
-          alt={film.name}
-          fill
-          sizes="100vw"
-          className="object-cover object-center brightness-[0.75]"
-          priority
-          unoptimized
-        />
-      )}
-      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent z-10" />
-      <div className="absolute inset-0 z-20 flex flex-col justify-center px-6 sm:px-16 max-w-2xl space-y-4">
-        <h1 className="text-3xl sm:text-5xl font-black text-white">{film.name}</h1>
-        <p className="text-xs sm:text-sm text-neutral-300 line-clamp-3">{film.content}</p>
-        <Link
-          href={`/watch/${film.slug}`}
-          className="inline-flex items-center gap-2 bg-white hover:bg-neutral-200 text-black font-extrabold px-8 py-3 rounded-md text-sm w-fit transition-transform hover:scale-105"
-        >
-          <Play size={16} fill="currentColor" />
-          <span>Xem Ngay</span>
-        </Link>
-      </div>
-    </section>
-  );
-}
 
 export default function CountryPage() {
   const params = useParams();
@@ -912,9 +873,13 @@ export default function CountryPage() {
 
   return (
     <div
-      className={`${cardFont.className} min-h-screen w-full bg-[#141414] text-foreground -mt-20 sm:-mt-24`}
+      className={cn(
+        cardFont.className,
+        "min-h-screen w-full bg-[#141414] text-foreground",
+        isCustomHeroPage ? "-mt-20 sm:-mt-24" : "pt-20 sm:pt-24",
+      )}
     >
-      {/* ── Curated Hero Banner for Korean and Chinese tabs, Default for others ── */}
+      {/* ── Curated Hero Banner ONLY for Korean and Chinese pages ── */}
       {isKoreanPage ? (
         <AsianCuratedHeroBanner
           pool={CURATED_KOREAN_HERO_POOL}
@@ -927,18 +892,13 @@ export default function CountryPage() {
           countryLabel="Trung Quốc"
           fallbackLocal="/images/phim_co_trang_trung_quoc_50_573c11fea1.jpg"
         />
-      ) : (
-        <DefaultCountryHeroBanner
-          film={heroFilm}
-          countryName={label}
-        />
-      )}
+      ) : null}
 
-      {/* ── Content Rows (Negative top margin to overlap hero banner) ── */}
+      {/* ── Content Rows ── */}
       <div
         className={cn(
           "relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6",
-          isCustomHeroPage ? "-mt-24 sm:-mt-36 lg:-mt-48" : "-mt-6 sm:-mt-12",
+          isCustomHeroPage ? "-mt-24 sm:-mt-36 lg:-mt-48" : "pt-2 sm:pt-4",
         )}
       >
         {/* Row 1: Phim Thịnh Hành */}
