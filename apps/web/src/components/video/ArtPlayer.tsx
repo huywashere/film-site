@@ -356,10 +356,32 @@ export default function ArtPlayer({
             qualityLevels.push(quality as (typeof qualityLevels)[number]),
           );
 
+          const currentQualityHtml =
+            built.find((quality) => quality.default)?.html ?? "Tự động";
+
+          try {
+            player.controls.update({
+              name: "quality",
+              html: currentQualityHtml,
+              selector: qualityLevels.map((quality) => ({
+                default: quality.default,
+                html: quality.html,
+                url: quality.url,
+                level: (quality as { level?: number }).level ?? -1,
+              })),
+              onSelect(item: { level: number; html: string }) {
+                hls.currentLevel = item.level ?? -1;
+                return item.html;
+              },
+            } as any);
+          } catch {
+            // Ignore if controls not ready
+          }
+
           player.setting.update({
             name: "quality",
             html: "Chất lượng",
-            tooltip: built.find((quality) => quality.default)?.html ?? "Auto",
+            tooltip: currentQualityHtml,
             selector: qualityLevels.map((quality) => ({
               default: quality.default,
               html: quality.html,
@@ -475,18 +497,18 @@ export default function ArtPlayer({
       volume: 0.8,
       autoplay,
       autoSize: false,
-      autoMini: false,
+      autoMini: true,
       screenshot: true,
       setting: true,
       pip: true,
-      loop: false,
+      loop: true,
       flip: true,
       playbackRate: true,
       aspectRatio: true,
       fullscreen: true,
       fullscreenWeb: true,
       subtitleOffset: true,
-      miniProgressBar: false,
+      miniProgressBar: true,
       mutex: true,
       backdrop: true,
       playsInline: true,
@@ -502,6 +524,29 @@ export default function ArtPlayer({
         "x5-video-player-type": "h5",
         "x5-video-player-fullscreen": "false",
       },
+      controls: [
+        {
+          name: "quality",
+          position: "right",
+          index: 10,
+          html: "Chất lượng",
+          selector: qualityLevels,
+          onSelect: function (item: { level?: number; html: string }) {
+            return item.html;
+          },
+        },
+      ],
+      highlight: [
+        ...(skipIntroStart != null && skipIntroEnd != null
+          ? [
+              { time: skipIntroStart, text: "Bắt đầu Intro" },
+              { time: skipIntroEnd, text: "Hết Intro" },
+            ]
+          : []),
+        ...(skipOutroStart != null
+          ? [{ time: skipOutroStart, text: "Bắt đầu Outro" }]
+          : []),
+      ],
 
       // Hotkey settings (handing via custom event listener)
       hotkey: false,
