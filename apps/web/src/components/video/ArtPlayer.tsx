@@ -597,7 +597,6 @@ export default function ArtPlayer({
           ],
           onSelect(item: { value: number; html: string }) {
             player.playbackRate = item.value;
-            player.notice.show = `Tốc độ: ${item.html}`;
             return item.html;
           },
         },
@@ -618,7 +617,6 @@ export default function ArtPlayer({
               (
                 player.subtitle as typeof player.subtitle & { offset?: number }
               ).offset = item.offset;
-              player.notice.show = `Phụ đề: ${item.html}`;
             }
             return item.html;
           },
@@ -635,7 +633,6 @@ export default function ArtPlayer({
           onSelect(item: { color: string; html: string }) {
             if (player.subtitle) {
               player.subtitle.style("color", item.color);
-              player.notice.show = `Màu phụ đề: ${item.html}`;
             }
             return item.html;
           },
@@ -769,18 +766,12 @@ export default function ArtPlayer({
         case "ArrowUp":
           e.preventDefault();
           player.volume = Math.min(1, player.volume + 0.1);
-          player.notice.show = `🔊 ${Math.round(player.volume * 100)}%`;
           break;
 
         // ↓ — Giảm âm lượng
         case "ArrowDown":
           e.preventDefault();
           player.volume = Math.max(0, player.volume - 0.1);
-          player.notice.show = `🔉 ${Math.round(player.volume * 100)}%`;
-          break;
-          e.preventDefault();
-          player.volume = Math.max(0, player.volume - 0.1);
-          player.notice.show = `🔉 ${Math.round(player.volume * 100)}%`;
           break;
 
         // M — Mute/Unmute
@@ -788,7 +779,6 @@ export default function ArtPlayer({
         case "M":
           e.preventDefault();
           player.muted = !player.muted;
-          player.notice.show = player.muted ? "🔇 Tắt tiếng" : "🔊 Bật tiếng";
           break;
 
         // F — Fullscreen
@@ -824,10 +814,7 @@ export default function ArtPlayer({
         case "d":
         case "D":
           e.preventDefault();
-          setIsDimmed((prev) => {
-            player.notice.show = !prev ? "🌙 Đã tắt đèn" : "💡 Đã bật đèn";
-            return !prev;
-          });
+          setIsDimmed((prev) => !prev);
           break;
 
         // 0-9 — Seek theo %
@@ -836,7 +823,6 @@ export default function ArtPlayer({
             e.preventDefault();
             const pct = parseInt(e.key) / 10;
             player.currentTime = player.duration * pct;
-            player.notice.show = `⏱ ${e.key}0%`;
           }
           // , / . — Tốc độ phát
           if (e.key === ",") {
@@ -845,7 +831,6 @@ export default function ArtPlayer({
             const cur = rates.indexOf(player.playbackRate);
             const next = rates[Math.max(0, cur - 1)];
             player.playbackRate = next;
-            player.notice.show = `🐢 ${next}x`;
           }
           if (e.key === ".") {
             e.preventDefault();
@@ -853,7 +838,6 @@ export default function ArtPlayer({
             const cur = rates.indexOf(player.playbackRate);
             const next = rates[Math.min(rates.length - 1, cur + 1)];
             player.playbackRate = next;
-            player.notice.show = `🐇 ${next}x`;
           }
       }
     };
@@ -923,7 +907,6 @@ export default function ArtPlayer({
       player.on("ready", () => {
         if (startTime < player.duration - 10) {
           player.currentTime = startTime;
-          player.notice.show = `Tiếp tục từ ${formatTime(startTime)}`;
         }
       });
     }
@@ -953,7 +936,6 @@ export default function ArtPlayer({
             didAutoSkipIntro = true;
             const targetIntro = skipIntroEndRef.current ?? 85;
             player.currentTime = targetIntro;
-            player.notice.show = `⚡ Đã tự động bỏ qua Intro (+${Math.round(targetIntro)}s)`;
           }
         }
       }
@@ -1067,7 +1049,6 @@ export default function ArtPlayer({
       previousSpeedRef.current = player.playbackRate;
       player.playbackRate = 2.0;
       setIsSpeedBoosted(true);
-      player.notice.show = "⏩ Đang tua x2 (Đang giữ)";
     }, 280);
   };
 
@@ -1080,7 +1061,6 @@ export default function ArtPlayer({
     if (isSpeedBoosted && player) {
       player.playbackRate = previousSpeedRef.current || 1.0;
       setIsSpeedBoosted(false);
-      player.notice.show = "▶ Tốc độ 1x";
     }
   };
 

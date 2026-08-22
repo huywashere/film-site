@@ -519,34 +519,13 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
   border-radius: 8px !important;
 }
 
-/* HUD Notification Pill */
-.art-video-player .art-notice {
-  background: rgba(12, 14, 18, 0.9) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: 9999px !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  backdrop-filter: blur(16px) !important;
-  color: #ffffff !important;
-  font-weight: 700 !important;
-  font-size: 13px !important;
-  padding: 8px 18px !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75) !important;
-}
-
-@media (max-width: 640px) {
-  .art-video-player .art-bottom {
-    padding: 0 12px 10px 12px !important;
-  }
-
-  .art-video-player .art-icon-custom-state svg {
-    width: 54px !important;
-    height: 54px !important;
-  }
-
-  .art-video-player.art-hover .art-subtitle,
-  .art-video-player:hover .art-subtitle {
-    bottom: 72px !important;
-  }
+/* Completely disable all in-video notice bars */
+.art-video-player .art-notice,
+.art-video-player.art-notice-show .art-notice {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Stable web glass for the mobile dock. The solid fill keeps it readable over

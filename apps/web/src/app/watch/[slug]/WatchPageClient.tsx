@@ -1003,9 +1003,6 @@ export default function WatchPage() {
       if (next && artInstance && typeof artInstance.currentTime === "number" && artInstance.currentTime < 85) {
         hasSkippedIntroRef.current = true;
         artInstance.currentTime = 85;
-        if (artInstance.notice) {
-          artInstance.notice.show = "Đã bỏ qua Intro (+85s)";
-        }
       }
       toast(
         next
@@ -2093,9 +2090,6 @@ export default function WatchPage() {
         hasSkippedIntroRef.current = true;
         if (artInstance && typeof artInstance.currentTime === "number") {
           artInstance.currentTime = 85;
-          if (artInstance.notice) {
-            artInstance.notice.show = "Đã tự động bỏ qua mở đầu (Intro 85s)";
-          }
         }
         toast("Đã tự động bỏ qua mở đầu (Intro 85s)", "info");
       }
@@ -2249,25 +2243,21 @@ export default function WatchPage() {
         e.preventDefault();
         if (artInstance) {
           artInstance.currentTime = Math.max(0, (artInstance.currentTime || 0) - 10);
-          if (artInstance.notice) artInstance.notice.show = "-10s";
         }
       } else if (e.key === "ArrowRight" || e.key === "l" || e.key === "L") {
         e.preventDefault();
         if (artInstance) {
           artInstance.currentTime = (artInstance.currentTime || 0) + 10;
-          if (artInstance.notice) artInstance.notice.show = "+10s";
         }
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         if (artInstance) {
           artInstance.volume = Math.min(1, Math.round(((artInstance.volume || 1) + 0.1) * 10) / 10);
-          if (artInstance.notice) artInstance.notice.show = `Âm lượng: ${Math.round(artInstance.volume * 100)}%`;
         }
       } else if (e.key === "ArrowDown") {
         e.preventDefault();
         if (artInstance) {
           artInstance.volume = Math.max(0, Math.round(((artInstance.volume || 1) - 0.1) * 10) / 10);
-          if (artInstance.notice) artInstance.notice.show = `Âm lượng: ${Math.round(artInstance.volume * 100)}%`;
         }
       } else if (e.key === "n" || e.key === "N") {
         e.preventDefault();
@@ -2277,7 +2267,6 @@ export default function WatchPage() {
         if (artInstance) {
           hasSkippedIntroRef.current = true;
           artInstance.currentTime = 85;
-          if (artInstance.notice) artInstance.notice.show = "Đã bỏ qua Intro (+85s)";
           toast("Đã bỏ qua đoạn mở đầu (Intro)", "info");
         }
       } else if (e.key === "?") {
@@ -3015,10 +3004,6 @@ export default function WatchPage() {
                           hasSkippedIntroRef.current = true;
                           if (artInstance) {
                             artInstance.currentTime = 85;
-                            if (artInstance.notice) {
-                              artInstance.notice.show =
-                                "Đã bỏ qua Intro (+85s)";
-                            }
                           }
                           toast("Đã bỏ qua đoạn mở đầu (Intro)", "info");
                         }}
