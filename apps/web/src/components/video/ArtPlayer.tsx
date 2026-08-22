@@ -11,22 +11,73 @@ const HLS_STARTUP_TIMEOUT_MS = 8_000;
 
 const ART_PLAY_ICON = `
   <div class="art-icon art-icon-custom-play" aria-hidden="true">
-    <svg viewBox="0 0 24 24" fill="currentColor">
-      <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"/>
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" />
     </svg>
   </div>`;
 
 const ART_PAUSE_ICON = `
   <div class="art-icon art-icon-custom-pause" aria-hidden="true">
-    <svg viewBox="0 0 24 24" fill="currentColor">
-      <path d="M6 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm8 0h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/>
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <line x1="10" y1="15" x2="10" y2="9" stroke="currentColor" stroke-width="2.5" />
+      <line x1="14" y1="15" x2="14" y2="9" stroke="currentColor" stroke-width="2.5" />
     </svg>
   </div>`;
 
 const ART_STATE_ICON = `
   <div class="art-icon art-icon-custom-state" aria-hidden="true">
-    <svg viewBox="0 0 24 24" fill="currentColor">
-      <path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11-6.86a1 1 0 0 0 0-1.72L9.5 4.28A1 1 0 0 0 8 5.14z"/>
+    <svg viewBox="0 0 24 24" width="68" height="68" fill="currentColor">
+      <polygon points="6 3 20 12 6 21 6 3" />
+    </svg>
+  </div>`;
+
+const ART_VOLUME_ICON = `
+  <div class="art-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/>
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+    </svg>
+  </div>`;
+
+const ART_VOLUME_MUTED_ICON = `
+  <div class="art-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/>
+      <line x1="23" y1="9" x2="17" y2="15"/>
+      <line x1="17" y1="9" x2="23" y2="15"/>
+    </svg>
+  </div>`;
+
+const ART_SETTING_ICON = `
+  <div class="art-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  </div>`;
+
+const ART_PIP_ICON = `
+  <div class="art-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="4" width="20" height="16" rx="2"/>
+      <rect x="12" y="10" width="8" height="6" rx="1" fill="currentColor" fill-opacity="0.4"/>
+    </svg>
+  </div>`;
+
+const ART_FULLSCREEN_ON_ICON = `
+  <div class="art-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+    </svg>
+  </div>`;
+
+const ART_FULLSCREEN_OFF_ICON = `
+  <div class="art-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
     </svg>
   </div>`;
 
@@ -513,19 +564,25 @@ export default function ArtPlayer({
       playsInline: true,
       autoPlayback: true,
       airplay: true,
-      theme: "#E50914",
+      theme: "#818cf8",
       cssVar: {
-        "--art-theme": "#E50914",
+        "--art-theme": "#818cf8",
         "--art-progress-height": "4px",
         "--art-progress-color": "rgba(255, 255, 255, 0.2)",
         "--art-loaded-color": "rgba(255, 255, 255, 0.4)",
-        "--art-indicator-size": "14px",
+        "--art-indicator-size": "12px",
       },
       lang: "vi",
       icons: {
         play: ART_PLAY_ICON,
         pause: ART_PAUSE_ICON,
         state: ART_STATE_ICON,
+        volume: ART_VOLUME_ICON,
+        volumeClose: ART_VOLUME_MUTED_ICON,
+        setting: ART_SETTING_ICON,
+        pip: ART_PIP_ICON,
+        fullscreenOn: ART_FULLSCREEN_ON_ICON,
+        fullscreenOff: ART_FULLSCREEN_OFF_ICON,
       },
       moreVideoAttr: {
         crossOrigin: "anonymous",
@@ -543,10 +600,10 @@ export default function ArtPlayer({
           position: "left",
           index: 12,
           html: `<div class="art-icon art-icon-custom-backward" title="Tua lùi 10 giây">
-            <svg viewBox="0 0 24 24" width="22" height="22" style="display:block;overflow:visible;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" style="fill:none !important;stroke:currentColor !important;" stroke-width="2"/>
-              <path d="M3 3v5h5" style="fill:none !important;stroke:currentColor !important;" stroke-width="2"/>
-              <text x="12" y="15" font-size="7.5" font-weight="900" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" style="fill:currentColor !important;stroke:none !important;" text-anchor="middle">10</text>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+              <text x="12" y="15.2" font-size="7.2" font-weight="900" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="currentColor" stroke="none" text-anchor="middle">10</text>
             </svg>
           </div>`,
           tooltip: "Tua lùi 10s",
@@ -559,10 +616,10 @@ export default function ArtPlayer({
           position: "left",
           index: 14,
           html: `<div class="art-icon art-icon-custom-forward" title="Tua tới 10 giây">
-            <svg viewBox="0 0 24 24" width="22" height="22" style="display:block;overflow:visible;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" style="fill:none !important;stroke:currentColor !important;" stroke-width="2"/>
-              <path d="M21 3v5h-5" style="fill:none !important;stroke:currentColor !important;" stroke-width="2"/>
-              <text x="12" y="15" font-size="7.5" font-weight="900" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" style="fill:currentColor !important;stroke:none !important;" text-anchor="middle">10</text>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+              <path d="M21 3v5h-5"/>
+              <text x="12" y="15.2" font-size="7.2" font-weight="900" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="currentColor" stroke="none" text-anchor="middle">10</text>
             </svg>
           </div>`,
           tooltip: "Tua tới 10s",
