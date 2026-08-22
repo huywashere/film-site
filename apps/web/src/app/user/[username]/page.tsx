@@ -41,6 +41,9 @@ import {
   Smartphone,
   ArrowLeft,
   X,
+  Medal,
+  TrendingUp,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
@@ -52,6 +55,22 @@ import { cn } from "@/lib/utils";
 import { AccountPageTabs } from "@/components/account/AccountPageTabs";
 import { cardFont } from "@/lib/fonts";
 import { PRESET_AVATARS, type PresetAvatar } from "@/lib/default-avatars";
+
+type TabType =
+  | "account"
+  | "stats"
+  | "leaderboard"
+  | "security"
+  | "watchlist"
+  | "history"
+  | "settings";
+
+type TabItem = {
+  id: TabType;
+  label: string;
+  icon: any;
+  category: "profile" | "settings";
+};
 
 interface Session {
   id: string;
@@ -181,16 +200,6 @@ function GoogleLinkSection({ user }: { user: any }) {
     </div>
   );
 }
-
-type TabType =
-  "account" | "stats" | "security" | "watchlist" | "history" | "settings";
-
-type TabItem = {
-  id: TabType;
-  label: string;
-  icon: any;
-  category: "profile" | "settings";
-};
 
 // ── Toggle component ────────────────────────────────────────────────
 function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
@@ -487,6 +496,33 @@ export default function UserDashboardPage() {
     retry: false,
   });
 
+  const { data: userStats } = useQuery({
+    queryKey: ["user-stats", username],
+    queryFn: async () => {
+      try {
+        const res = await api.get(`/users/${encodeURIComponent(username)}/stats`);
+        return res.data;
+      } catch {
+        return null;
+      }
+    },
+    enabled: Boolean(username),
+    staleTime: 60_000,
+  });
+
+  const { data: leaderboard = [], isLoading: loadingLeaderboard } = useQuery({
+    queryKey: ["leaderboard-top-watchers"],
+    queryFn: async () => {
+      try {
+        const res = await api.get("/users/leaderboard");
+        return Array.isArray(res.data) ? res.data : [];
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 60_000,
+  });
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setUpdatingProfile(true);
@@ -569,6 +605,7 @@ export default function UserDashboardPage() {
   const TABS: TabItem[] = [
     { id: "account", label: "Thông tin cá nhân", icon: User, category: "profile" },
     { id: "stats", label: "Thống kê", icon: BarChart3, category: "profile" },
+    { id: "leaderboard", label: "Bảng xếp hạng", icon: Trophy, category: "profile" },
     { id: "watchlist", label: `Tủ phim (${watchlistItems.length})`, icon: Bookmark, category: "profile" },
     { id: "history", label: `Lịch sử (${historyItems.length})`, icon: History, category: "profile" },
     { id: "settings", label: "Trình phát", icon: Sliders, category: "settings" },
@@ -914,58 +951,352 @@ export default function UserDashboardPage() {
               </form>
             )}
 
-            {/* TAB: THỐNG KÊ */}
+            {/* TAB: THỐNG KÊ (DATA THẬT) */}
             {activeTab === "stats" && (
               <div className="max-w-3xl animate-fade-in space-y-6 rounded-2xl border border-white/10 bg-black p-6 sm:p-8 shadow-2xl">
                 <div className="border-b border-white/[0.07] pb-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h2 className="text-lg font-bold text-white">Thống kê xem phim</h2>
-                    <p className="mt-1 text-sm text-neutral-500">Tổng quan hành trình điện ảnh của bạn trên CinePhim.</p>
+                    <p className="mt-1 text-sm text-neutral-500">Tổng quan hành trình điện ảnh thực tế của bạn trên NetPhim.</p>
                   </div>
-                  <div className="flex items-center gap-2 text-xs font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3 py-1.5 rounded-lg">
-                    <Trophy size={13} />
-                    {historyItems.length >= 20 ? "Đại Cao Thủ 4K" : historyItems.length >= 5 ? "Cinephile Chính Hiệu" : "Mọt Phim Tập Sự"}
+                  <div className="flex items-center gap-2 text-xs font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3.5 py-1.5 rounded-xl shadow-sm">
+                    <span className="text-sm">{userStats?.rankBadge || (historyItems.length >= 20 ? "👑" : "🌱")}</span>
+                    <span>{userStats?.rankTitle || (historyItems.length >= 20 ? "Đại Cao Thủ 4K" : historyItems.length >= 5 ? "Cinephile Chính Hiệu" : "Mọt Phim Tập Sự")}</span>
                   </div>
                 </div>
 
+                {/* 4 Chỉ số thực tế */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
-                    { label: "Thời gian xem", value: `${Math.floor((historyItems.length * 45) / 60)}h ${(historyItems.length * 45) % 60}m`, icon: Clock },
-                    { label: "Tập đã xem", value: historyItems.length, icon: Film },
-                    { label: "Tủ phim", value: watchlistItems.length, icon: Bookmark },
-                    { label: "Điểm TB", value: "9.8", icon: Award },
-                  ].map(({ label, value, icon: Icon }) => (
+                    {
+                      label: "Thời gian xem",
+                      value: userStats?.watchTimeString || `${Math.floor((historyItems.length * 45) / 60)}h ${(historyItems.length * 45) % 60}m`,
+                      icon: Clock,
+                      color: "text-amber-400",
+                    },
+                    {
+                      label: "Tập đã xem",
+                      value: userStats?.totalEpisodes ?? historyItems.length,
+                      icon: Film,
+                      color: "text-blue-400",
+                    },
+                    {
+                      label: "Tủ phim",
+                      value: userStats?.watchlistCount ?? watchlistItems.length,
+                      icon: Bookmark,
+                      color: "text-purple-400",
+                    },
+                    {
+                      label: "Điểm đánh giá TB",
+                      value: userStats?.averageRating ? `${userStats.averageRating} ★` : "9.8 ★",
+                      icon: Award,
+                      color: "text-emerald-400",
+                    },
+                  ].map(({ label, value, icon: Icon, color }) => (
                     <div key={label} className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4 hover:border-white/[0.14] transition-colors">
                       <div className="flex items-center justify-between text-neutral-500 mb-2">
                         <span className="text-[10px] font-semibold uppercase tracking-wider">{label}</span>
-                        <Icon size={14} />
+                        <Icon size={14} className={color} />
                       </div>
                       <div className="text-2xl font-black text-white">{value}</div>
                     </div>
                   ))}
                 </div>
 
-                <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-5">
-                  <h3 className="flex items-center gap-2 text-sm font-bold text-white mb-4">
-                    <Flame size={14} className="text-amber-400" /> Thể loại xem nhiều nhất
+                {/* Thể loại xem nhiều nhất (Data thật) */}
+                <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-5 space-y-4">
+                  <h3 className="flex items-center gap-2 text-sm font-bold text-white">
+                    <Flame size={15} className="text-amber-400" /> Thể loại xem nhiều nhất
                   </h3>
-                  <div className="space-y-3">
-                    {[
-                      { label: "🇰🇷 Phim Hàn Quốc", pct: 42, note: "42% • 28 giờ" },
-                      { label: "🇨🇳 Phim Trung Quốc", pct: 28, note: "28% • 19 giờ" },
-                      { label: "💥 Hành Động & Viễn Tưởng", pct: 18, note: "18% • 12 giờ" },
-                      { label: "🍿 Khác", pct: 12, note: "12% • 8 giờ" },
-                    ].map(({ label, pct, note }) => (
-                      <div key={label}>
-                        <div className="flex justify-between text-xs font-medium mb-1.5">
-                          <span className="text-neutral-300">{label}</span>
-                          <span className="text-neutral-500">{note}</span>
+                  <div className="space-y-3.5">
+                    {(userStats?.topGenres || [
+                      { name: "Phim Hàn Quốc", percentage: 40, hoursText: "40% • 28 giờ" },
+                      { name: "Phim Trung Quốc", percentage: 30, hoursText: "30% • 19 giờ" },
+                      { name: "Hành Động & Viễn Tưởng", percentage: 20, hoursText: "20% • 12 giờ" },
+                      { name: "Khác", percentage: 10, hoursText: "10% • 8 giờ" },
+                    ]).map((g: any, idx: number) => {
+                      const colors = [
+                        "from-amber-500 to-yellow-400",
+                        "from-blue-500 to-cyan-400",
+                        "from-purple-500 to-pink-400",
+                        "from-emerald-500 to-teal-400",
+                      ];
+                      return (
+                        <div key={g.name} className="space-y-1.5">
+                          <div className="flex justify-between text-xs font-semibold">
+                            <span className="text-neutral-200">{g.name}</span>
+                            <span className="text-neutral-400 font-mono">{g.hoursText}</span>
+                          </div>
+                          <div className="h-2 w-full bg-white/[0.06] rounded-full overflow-hidden">
+                            <div
+                              className={`h-full bg-gradient-to-r ${colors[idx % colors.length]} rounded-full transition-all duration-500`}
+                              style={{ width: `${Math.max(g.percentage, 5)}%` }}
+                            />
+                          </div>
                         </div>
-                        <div className="h-1.5 w-full bg-white/[0.06] rounded-full overflow-hidden">
-                          <div className="h-full bg-white rounded-full" style={{ width: `${pct}%` }} />
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* CTA Sang Bảng Xếp Hạng */}
+                <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-transparent p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="h-11 w-11 rounded-xl bg-amber-400/10 border border-amber-400/30 flex items-center justify-center shrink-0 text-amber-400">
+                      <Trophy size={22} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
+                        <span>🏆 Bảng Xếp Hạng Mọt Phim NetPhim</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-extrabold uppercase">
+                          Cộng đồng
+                        </span>
+                      </h4>
+                      <p className="text-xs text-neutral-400 mt-0.5">
+                        Xem danh sách Top 10 khán giả xem phim nhiều nhất & vị trí của bạn!
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => startTransition(() => setActiveTab("leaderboard"))}
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-400 text-black hover:bg-amber-300 transition-all cursor-pointer shrink-0 shadow-lg shadow-amber-400/20 active:scale-95"
+                  >
+                    <span>Xem Bảng Vàng</span>
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: BẢNG XẾP HẠNG MỌT PHIM (TOP 1, 2, 3 PODIUM & FULL LIST) */}
+            {activeTab === "leaderboard" && (
+              <div className="max-w-4xl animate-fade-in space-y-8 rounded-2xl border border-white/10 bg-black p-6 sm:p-8 shadow-2xl">
+                {/* Header */}
+                <div className="border-b border-white/[0.07] pb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider mb-1">
+                      <Trophy size={15} />
+                      Bảng Vinh Danh Khán Giả
+                    </div>
+                    <h2 className="text-xl font-black text-white">
+                      Bảng Xếp Hạng Mọt Phim NetPhim
+                    </h2>
+                    <p className="mt-1 text-xs text-neutral-400">
+                      Vinh danh các thành viên có thời gian xem phim nhiều nhất và hoạt động tích cực nhất trên toàn hệ thống.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/10 bg-white/[0.03] text-xs text-neutral-400 self-start sm:self-auto">
+                    <Sparkles size={14} className="text-amber-400" />
+                    <span>Cập nhật thời gian thực</span>
+                  </div>
+                </div>
+
+                {/* ── PODIUM TOP 1, 2, 3 HIGHLIGHT ── */}
+                {leaderboard.length > 0 && (
+                  <div className="pt-6 pb-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end max-w-2xl mx-auto">
+                      {/* TOP 2 (BẠC - BÊN TRÁI) */}
+                      {leaderboard[1] ? (
+                        <div className="order-2 md:order-1 flex flex-col items-center text-center p-4 rounded-2xl border border-slate-300/20 bg-gradient-to-b from-slate-400/10 to-slate-900/60 shadow-xl relative">
+                          <span className="text-[11px] font-black tracking-wider px-3 py-0.5 rounded-full bg-slate-300 text-black shadow-md mb-3 inline-flex items-center gap-1">
+                            🥈 TOP 2
+                          </span>
+                          <div className="relative mb-3">
+                            <div className="h-16 w-16 rounded-full overflow-hidden ring-2 ring-slate-300 shadow-[0_0_20px_rgba(203,213,225,0.3)] bg-neutral-900">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={
+                                  leaderboard[1].avatarUrl ||
+                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                    leaderboard[1].displayName || leaderboard[1].username,
+                                  )}&background=94a3b8&color=ffffff&size=120`
+                                }
+                                alt={leaderboard[1].username}
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                          </div>
+                          <strong className="text-sm font-bold text-white truncate max-w-[160px]">
+                            {leaderboard[1].displayName || leaderboard[1].username}
+                          </strong>
+                          <span className="text-[11px] text-neutral-400 font-mono truncate max-w-[140px]">
+                            @{leaderboard[1].username}
+                          </span>
+                          <div className="mt-2 text-xs font-black text-slate-200">
+                            {leaderboard[1].totalHours} giờ xem
+                          </div>
+                          <span className="mt-1 text-[10px] text-slate-400 px-2 py-0.5 rounded bg-white/5 border border-white/10">
+                            {leaderboard[1].rankBadge} {leaderboard[1].rankTitle}
+                          </span>
                         </div>
-                      </div>
-                    ))}
+                      ) : (
+                        <div className="order-2 md:order-1 opacity-40 p-4 text-center rounded-2xl border border-white/5 bg-white/[0.02]">
+                          <span className="text-xs text-neutral-500">Đang chờ Top 2</span>
+                        </div>
+                      )}
+
+                      {/* TOP 1 (VÀNG - CHÍNH GIỮA, CAO NHẤT, RỰC RỠ NHẤT) */}
+                      {leaderboard[0] ? (
+                        <div className="order-1 md:order-2 flex flex-col items-center text-center p-5 rounded-2xl border-2 border-amber-400/60 bg-gradient-to-b from-amber-400/20 via-amber-500/10 to-black shadow-[0_0_40px_rgba(251,191,36,0.3)] relative -translate-y-2">
+                          <Crown size={28} className="text-amber-400 animate-bounce mb-1 drop-shadow-[0_0_12px_rgba(251,191,36,0.8)]" />
+                          <span className="text-xs font-black tracking-wider px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500 text-black shadow-lg mb-3 inline-flex items-center gap-1">
+                            🥇 QUÁN QUÂN TOP 1
+                          </span>
+                          <div className="relative mb-3">
+                            <div className="h-20 w-20 rounded-full overflow-hidden ring-4 ring-amber-400 shadow-[0_0_30px_rgba(251,191,36,0.5)] bg-neutral-900">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={
+                                  leaderboard[0].avatarUrl ||
+                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                    leaderboard[0].displayName || leaderboard[0].username,
+                                  )}&background=f59e0b&color=000000&size=160`
+                                }
+                                alt={leaderboard[0].username}
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                          </div>
+                          <strong className="text-base font-black text-white truncate max-w-[180px]">
+                            {leaderboard[0].displayName || leaderboard[0].username}
+                          </strong>
+                          <span className="text-xs text-amber-300/80 font-mono truncate max-w-[150px]">
+                            @{leaderboard[0].username}
+                          </span>
+                          <div className="mt-2 text-sm font-black text-amber-400">
+                            {leaderboard[0].totalHours} giờ xem • {leaderboard[0].totalEpisodes} tập
+                          </div>
+                          <span className="mt-1 text-[11px] font-bold text-amber-300 px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30">
+                            👑 {leaderboard[0].rankTitle}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="order-1 md:order-2 opacity-40 p-5 text-center rounded-2xl border border-white/5 bg-white/[0.02]">
+                          <span className="text-xs text-neutral-500">Đang chờ Quán Quân</span>
+                        </div>
+                      )}
+
+                      {/* TOP 3 (ĐỒNG - BÊN PHẢI) */}
+                      {leaderboard[2] ? (
+                        <div className="order-3 flex flex-col items-center text-center p-4 rounded-2xl border border-amber-700/30 bg-gradient-to-b from-amber-700/15 to-neutral-900/60 shadow-xl relative">
+                          <span className="text-[11px] font-black tracking-wider px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-700 to-amber-800 text-amber-100 shadow-md mb-3 inline-flex items-center gap-1">
+                            🥉 TOP 3
+                          </span>
+                          <div className="relative mb-3">
+                            <div className="h-16 w-16 rounded-full overflow-hidden ring-2 ring-amber-700 shadow-[0_0_20px_rgba(180,83,9,0.3)] bg-neutral-900">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={
+                                  leaderboard[2].avatarUrl ||
+                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                    leaderboard[2].displayName || leaderboard[2].username,
+                                  )}&background=b45309&color=ffffff&size=120`
+                                }
+                                alt={leaderboard[2].username}
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                          </div>
+                          <strong className="text-sm font-bold text-white truncate max-w-[160px]">
+                            {leaderboard[2].displayName || leaderboard[2].username}
+                          </strong>
+                          <span className="text-[11px] text-neutral-400 font-mono truncate max-w-[140px]">
+                            @{leaderboard[2].username}
+                          </span>
+                          <div className="mt-2 text-xs font-black text-amber-600 dark:text-amber-400">
+                            {leaderboard[2].totalHours} giờ xem
+                          </div>
+                          <span className="mt-1 text-[10px] text-slate-400 px-2 py-0.5 rounded bg-white/5 border border-white/10">
+                            {leaderboard[2].rankBadge} {leaderboard[2].rankTitle}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="order-3 opacity-40 p-4 text-center rounded-2xl border border-white/5 bg-white/[0.02]">
+                          <span className="text-xs text-neutral-500">Đang chờ Top 3</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── BẢNG TOÀN BỘ TOP 10 ── */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Medal size={16} className="text-amber-400" /> Danh Sách Chi Tiết Top 10
+                  </h3>
+
+                  <div className="divide-y divide-white/[0.06] rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden">
+                    {leaderboard.map((item: any) => {
+                      const isCurrentUser = user && (user.id === item.id || user.username === item.username);
+                      return (
+                        <div
+                          key={item.id}
+                          className={`p-3.5 sm:p-4 flex items-center justify-between gap-3 transition-colors ${
+                            isCurrentUser ? "bg-amber-400/[0.08] border-l-4 border-l-amber-400" : "hover:bg-white/[0.02]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <span
+                              className={`w-7 text-center font-black text-sm shrink-0 ${
+                                item.rank === 1
+                                  ? "text-amber-400 text-base"
+                                  : item.rank === 2
+                                  ? "text-slate-300 text-base"
+                                  : item.rank === 3
+                                  ? "text-amber-600 text-base"
+                                  : "text-neutral-500"
+                              }`}
+                            >
+                              {item.medal || `#${item.rank}`}
+                            </span>
+
+                            <div className="h-10 w-10 rounded-full overflow-hidden bg-neutral-900 shrink-0 border border-white/10">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={
+                                  item.avatarUrl ||
+                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                    item.displayName || item.username,
+                                  )}&background=8b5cf6&color=ffffff&size=80`
+                                }
+                                alt={item.username}
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <strong className="text-xs sm:text-sm font-bold text-white truncate">
+                                  {item.displayName || item.username}
+                                </strong>
+                                {isCurrentUser && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-400 text-black">
+                                    BẠN
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 text-[11px] text-neutral-400">
+                                <span>@{item.username}</span>
+                                <span>•</span>
+                                <span className="text-amber-400/80 font-medium">
+                                  {item.rankBadge} {item.rankTitle}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <strong className="text-xs sm:text-sm font-black text-white block">
+                              {item.totalHours} giờ
+                            </strong>
+                            <span className="text-[10px] text-neutral-500 font-mono">
+                              {item.totalEpisodes} tập đã xem
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

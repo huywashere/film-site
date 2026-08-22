@@ -20,6 +20,24 @@ import {
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
+  // ── 🏆 Leaderboard Top Watchers (Public & Cached) ─────────────────
+  @Get("leaderboard")
+  getLeaderboard() {
+    return this.usersService.getLeaderboard();
+  }
+
+  // ── 📊 Real User Stats ────────────────────────────────────────────
+  @Get("me/stats")
+  @UseGuards(AuthGuard("jwt"))
+  getMyStats(@Request() req) {
+    return this.usersService.getUserStats(req.user.id);
+  }
+
+  @Get(":username/stats")
+  getUserStats(@Param("username") username: string) {
+    return this.usersService.getUserStats(username);
+  }
+
   @Get(":username")
   getProfile(@Param("username") username: string) {
     return this.usersService.getProfile(username);
