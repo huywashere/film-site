@@ -1572,10 +1572,6 @@ export default function HeroBanner({ films }: HeroBannerProps) {
                   </span>
                 )}
 
-                <span className="bg-black/60 backdrop-blur-md border border-white/15 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-extrabold text-emerald-400 shadow-lg">
-                  {qualityBadge}
-                </span>
-
                 <span className="bg-black/60 backdrop-blur-md border border-white/15 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold text-purple-300 shadow-lg">
                   {langBadge}
                 </span>
