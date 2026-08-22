@@ -374,7 +374,16 @@ export default function AdminRootLayout({
   if (pathname === "/login") {
     return (
       <html lang="vi" suppressHydrationWarning>
-        <head><title>Đăng nhập quản trị NetPhim</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="icon" href={netphimLogo.src} /></head>
+        <head>
+          <title>Đăng nhập quản trị NetPhim</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <link rel="icon" href={netphimLogo.src} />
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(){try{var noop=function(){};['log','debug','info','warn','error','table','trace','dir'].forEach(function(m){try{window.console[m]=noop;}catch(e){}});window.addEventListener('keydown',function(e){var k=(e.key||'').toLowerCase();var ctrl=e.ctrlKey||e.metaKey;var shift=e.shiftKey;var alt=e.altKey;if(k==='f12'||(ctrl&&shift&&['i','j','c','k','e','s'].indexOf(k)!==-1)||(ctrl&&alt&&['i','j','c','u'].indexOf(k)!==-1)||(ctrl&&k==='u')||(shift&&k==='f10')||k==='contextmenu'){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();return false;}},true);window.addEventListener('contextmenu',function(e){e.preventDefault();e.stopPropagation();return false;},true);}catch(e){}})();`,
+            }}
+          />
+        </head>
         <body className={nunito.variable}>
           <AdminDevToolsGuard />
           {children}
@@ -394,7 +403,7 @@ export default function AdminRootLayout({
         <link rel="apple-touch-icon" href={netphimLogo.src} />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var saved=localStorage.getItem('cineverse-admin-theme');var theme=saved||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.adminTheme=theme;document.documentElement.style.colorScheme=theme;var locale=localStorage.getItem('cineverse-admin-locale')||'vi';document.documentElement.lang=locale;var accents={blue:['#2878ee','#236dc9'],violet:['#7b70ef','#695fcb'],teal:['#02a98d','#028a74'],rose:['#f7577e','#dc4168'],amber:['#eaa638','#c9871e']};var accent=accents[localStorage.getItem('cineverse-admin-accent')]||accents.blue;document.documentElement.style.setProperty('--admin-brand',accent[0]);document.documentElement.style.setProperty('--admin-brand-strong',accent[1])}catch(e){}})();`,
+            __html: `(function(){try{var noop=function(){};['log','debug','info','warn','error','table','trace','dir'].forEach(function(m){try{window.console[m]=noop;}catch(e){}});window.addEventListener('keydown',function(e){var k=(e.key||'').toLowerCase();var ctrl=e.ctrlKey||e.metaKey;var shift=e.shiftKey;var alt=e.altKey;if(k==='f12'||(ctrl&&shift&&['i','j','c','k','e','s'].indexOf(k)!==-1)||(ctrl&&alt&&['i','j','c','u'].indexOf(k)!==-1)||(ctrl&&k==='u')||(shift&&k==='f10')||k==='contextmenu'){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();return false;}},true);window.addEventListener('contextmenu',function(e){e.preventDefault();e.stopPropagation();return false;},true);}catch(e){}})();(function(){try{var saved=localStorage.getItem('cineverse-admin-theme');var theme=saved||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.adminTheme=theme;document.documentElement.style.colorScheme=theme;var locale=localStorage.getItem('cineverse-admin-locale')||'vi';document.documentElement.lang=locale;var accents={blue:['#2878ee','#236dc9'],violet:['#7b70ef','#695fcb'],teal:['#02a98d','#028a74'],rose:['#f7577e','#dc4168'],amber:['#eaa638','#c9871e']};var accent=accents[localStorage.getItem('cineverse-admin-accent')]||accents.blue;document.documentElement.style.setProperty('--admin-brand',accent[0]);document.documentElement.style.setProperty('--admin-brand-strong',accent[1])}catch(e){}})();`,
           }}
         />
       </head>
