@@ -18,32 +18,53 @@ interface TopicItem {
 
 const TOPICS: TopicItem[] = [
   {
-    slug: "tinh-yeu-lang-man",
-    title: "Tình Yêu & Lãng Mạn",
-    description: "Ngọt ngào, rung động trái tim",
-    href: "/genre/tinh-cam",
-    image: "https://image.tmdb.org/t/p/w780/3yEHM2HT2vrUtO93YzTJNgEfiZG.jpg", // Crash Landing on You
+    slug: "phim-han-quoc",
+    title: "Phim Hàn Quốc",
+    description: "K-Drama & K-Movie đỉnh cao xứ kim chi",
+    href: "/country/han-quoc",
+    image: "https://image.tmdb.org/t/p/w780/vbkpl0ps4s5tMTUnC7SFXNzWmVr.jpg", // Lovely Runner
   },
   {
-    slug: "co-trang-huyen-ao",
-    title: "Cổ trang huyền ảo",
-    description: "Tiên hiệp, kiếm hiệp kỳ ảo",
+    slug: "phim-trung-quoc",
+    title: "Phim Trung Quốc",
+    description: "Cổ trang tiên hiệp, kiếm hiệp & ngôn tình",
     href: "/country/trung-quoc",
     image: "https://image.tmdb.org/t/p/w780/aJxMvBSaUdbIkY8nqFkuEarrgcx.jpg", // Thương Lan Quyết
   },
   {
-    slug: "phim-han-quoc",
-    title: "Phim Hàn Quốc",
-    description: "K-Drama đỉnh cao xứ kim chi",
-    href: "/country/han-quoc",
-    image: "https://image.tmdb.org/t/p/w780/vbkpl0ps4s5tMTUnC7SFXNzWmVr.jpg", // Lovely Runner
+    slug: "dien-anh-au-my",
+    title: "Điện ảnh Âu Mỹ",
+    description: "Bom tấn Hollywood 4K đỉnh cao",
+    href: "/country/au-my",
+    image: "https://image.tmdb.org/t/p/w780/xJHokMbljvjADYdit5fK5VQsXEG.jpg", // Interstellar
+  },
+  {
+    slug: "anime-nhat-ban",
+    title: "Anime Nhật Bản",
+    description: "Thế giới hoạt hình xứ Phù Tang",
+    href: "/films/anime",
+    image: "https://image.tmdb.org/t/p/w780/kXfqcdQKsToO0OUXHcrrNCHDBzO.jpg", // Your Name
+  },
+  {
+    slug: "co-trang-huyen-ao",
+    title: "Cổ trang huyền ảo",
+    description: "Tiên hiệp kỳ ảo & huyền huyễn",
+    href: "/country/trung-quoc",
+    image: "https://image.tmdb.org/t/p/w780/ampkwvfwO7o5YMwYAVPKx1PLDaB.jpg", // Trần Tình Lệnh
   },
   {
     slug: "thanh-xuan-vuon-truong",
     title: "Thanh xuân",
     description: "Tuổi trẻ, tình bạn & hoài niệm",
     href: "/genre/tinh-cam",
-    image: "https://image.tmdb.org/t/p/w780/wNSLw756U5JQSpG6POYxHKL2KDH.jpg", // Tinh Hán Xán Lạn / Thanh xuân
+    image: "https://image.tmdb.org/t/p/w780/wNSLw756U5JQSpG6POYxHKL2KDH.jpg", // Tinh Hán Xán Lạn
+  },
+  {
+    slug: "tinh-yeu-lang-man",
+    title: "Tình Yêu & Lãng Mạn",
+    description: "Ngọt ngào, rung động trái tim",
+    href: "/genre/tinh-cam",
+    image: "https://image.tmdb.org/t/p/w780/3yEHM2HT2vrUtO93YzTJNgEfiZG.jpg", // Crash Landing on You
   },
   {
     slug: "chua-lanh-tam-hon",
@@ -142,22 +163,26 @@ export default function GenresTopicsPage() {
       )}
     >
       <div className="relative mx-auto w-full max-w-[1720px]">
-        {/* ── HEADER ── */}
-        <header className="mb-8">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="mb-4 inline-flex items-center gap-2 text-xs font-semibold text-neutral-400 transition-colors hover:text-white cursor-pointer px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08]"
-          >
-            <ArrowLeft size={14} /> Quay lại
-          </button>
+        {/* ── HEADER (CENTERED) ── */}
+        <header className="relative mb-10 text-center">
+          <div className="sm:absolute left-0 top-0 mb-4 sm:mb-0 text-left">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="inline-flex items-center gap-2 text-xs font-semibold text-neutral-400 transition-colors hover:text-white cursor-pointer px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08]"
+            >
+              <ArrowLeft size={14} /> Quay lại
+            </button>
+          </div>
 
-          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
-            Thế Giới Phim
-          </h1>
-          <p className="mt-2 text-xs sm:text-sm text-neutral-400 max-w-xl">
-            Khám phá các vũ trụ điện ảnh và chủ đề phim hấp dẫn theo phong cách riêng của bạn.
-          </p>
+          <div className="pt-1 sm:pt-0">
+            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
+              Thế Giới Phim
+            </h1>
+            <p className="mt-2 text-xs sm:text-sm text-neutral-400 max-w-xl mx-auto">
+              Khám phá các vũ trụ điện ảnh và chủ đề phim hấp dẫn theo phong cách riêng của bạn.
+            </p>
+          </div>
         </header>
 
         {/* ── CLEAN TOPIC CARDS GRID (AS IN REFERENCE) ── */}
