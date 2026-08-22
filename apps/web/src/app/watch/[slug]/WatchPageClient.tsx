@@ -225,15 +225,30 @@ function SidebarFilmCard({ film, slug }: { film: any; slug: string }) {
           <p className="text-[11px] text-neutral-400 font-medium">
             {film?.year}
           </p>
-          <div className="flex flex-wrap gap-1 pt-0.5">
+          <div className="flex flex-wrap gap-1.5 pt-0.5">
             {film?.quality && (
-              <span className="text-[9px] font-bold bg-white/[0.06] text-neutral-300 px-1.5 py-0.5 rounded border border-white/[0.06]">
+              <span className="text-[9px] font-black bg-[#00c5ff] text-black px-1.5 py-0.5 rounded shadow-sm">
                 {film.quality}
               </span>
             )}
             {film?.lang && (
-              <span className="text-[9px] font-bold bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/20">
+              <span
+                className={cn(
+                  "text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm",
+                  film.lang.toLowerCase().includes("song ngữ")
+                    ? "bg-[#c084fc] text-purple-950"
+                    : film.lang.toLowerCase().includes("thuyết minh") ||
+                        film.lang.toLowerCase().includes("lồng tiếng")
+                      ? "bg-[#fde047] text-amber-950"
+                      : "bg-[#86efac] text-emerald-950",
+                )}
+              >
                 {film.lang}
+              </span>
+            )}
+            {film?.year && (
+              <span className="text-[9px] font-black bg-white text-black px-1.5 py-0.5 rounded shadow-sm">
+                {film.year}
               </span>
             )}
           </div>

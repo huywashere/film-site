@@ -1341,49 +1341,91 @@ export default function FilmDetailPage() {
 
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2 text-xs font-bold pt-1">
                   {film.quality && (
-                    <span className="rounded-md border border-white/15 bg-white/[0.06] px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-neutral-200">
+                    <span
+                      className={cn(
+                        "rounded px-2 py-0.5 text-[10px] sm:text-[11px] font-black uppercase tracking-wide shadow-sm select-none",
+                        film.quality.toUpperCase().includes("4K")
+                          ? "bg-gradient-to-r from-amber-400 to-amber-500 text-black"
+                          : film.quality.toUpperCase().includes("FHD")
+                            ? "bg-[#00c5ff] text-black"
+                            : film.quality.toUpperCase().includes("HD")
+                              ? "bg-[#00b4d8] text-black"
+                              : "bg-cyan-500 text-black",
+                      )}
+                    >
                       {film.quality}
                     </span>
                   )}
                   {film.lang && (
-                    <span className="rounded-md border border-white/15 bg-white/[0.06] px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-neutral-200">
-                      {film.lang}
+                    <span
+                      className={cn(
+                        "rounded px-2 py-0.5 text-[10px] sm:text-[11px] font-black tracking-tight inline-flex items-center gap-1 shadow-sm select-none",
+                        film.lang.toLowerCase().includes("song ngữ")
+                          ? "bg-[#c084fc] text-purple-950"
+                          : film.lang.toLowerCase().includes("thuyết minh") ||
+                              film.lang.toLowerCase().includes("lồng tiếng")
+                            ? "bg-[#fde047] text-amber-950"
+                            : "bg-[#86efac] text-emerald-950",
+                      )}
+                    >
+                      {film.lang.toLowerCase().includes("song ngữ") ? (
+                        <span className="text-[9px] font-black bg-purple-950/20 px-1 py-0.2 rounded leading-none">
+                          文A
+                        </span>
+                      ) : film.lang.toLowerCase().includes("thuyết minh") ||
+                        film.lang.toLowerCase().includes("lồng tiếng") ? (
+                        <Mic size={11} className="stroke-[2.5]" />
+                      ) : (
+                        <Subtitles size={11} className="stroke-[2.5]" />
+                      )}
+                      <span>{film.lang}</span>
                     </span>
                   )}
+                  {film.episode_current &&
+                    film.episode_current !== "Full" &&
+                    film.episode_current !== "HD" && (
+                      <span className="bg-[#27272a] text-white border border-white/20 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold shadow-sm select-none">
+                        {film.episode_current}
+                      </span>
+                    )}
                   {film.year && (
-                    <span className="bg-white/10 text-neutral-300 px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-semibold">
+                    <span className="bg-white text-neutral-950 font-black px-2 py-0.5 rounded text-[10px] sm:text-[11px] shadow-sm select-none">
                       {film.year}
                     </span>
                   )}
                   {film.time && (
-                    <span className="bg-white/10 text-neutral-300 px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-semibold">
+                    <span className="bg-white/10 text-neutral-200 border border-white/15 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold backdrop-blur-sm shadow-sm select-none">
                       {film.time}
                     </span>
                   )}
                   {tmdbRatingLabel && (
                     <span
-                      className="rounded-md border border-white/15 bg-black/20 px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold text-neutral-200"
+                      className="inline-flex items-center gap-1.5 rounded bg-[#01b4e4]/15 border border-[#01b4e4]/40 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-cyan-300 shadow-sm select-none"
                       title={
                         tmdbVoteCount > 0
                           ? `${tmdbVoteCount.toLocaleString("vi-VN")} ${t("film.votes", "lượt đánh giá trên TMDB")}`
                           : t("film.tmdbScore", "Điểm TMDB")
                       }
                     >
-                      <span className="text-neutral-500">TMDB</span>{" "}
-                      {tmdbRatingLabel}/10
+                      <span className="bg-[#01b4e4] text-black font-black px-1 rounded text-[9px] leading-tight">
+                        TMDB
+                      </span>
+                      <span>{tmdbRatingLabel}/10</span>
                     </span>
                   )}
                   {imdbRatingLabel && (
                     <span
-                      className="rounded-md border border-white/15 bg-black/20 px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold text-neutral-200"
+                      className="inline-flex items-center gap-1.5 rounded bg-[#f5c518]/15 border border-[#f5c518]/40 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-amber-300 shadow-sm select-none"
                       title={
                         imdbVoteCount > 0
                           ? `${imdbVoteCount.toLocaleString("vi-VN")} ${t("film.votes", "lượt đánh giá trên IMDb")}`
                           : t("film.imdbScore", "Điểm IMDb")
                       }
                     >
-                      <span className="text-neutral-500">IMDb</span>{" "}
-                      {imdbRatingLabel}/10
+                      <span className="bg-[#f5c518] text-black font-black px-1 rounded text-[9px] leading-tight">
+                        IMDb
+                      </span>
+                      <span>{imdbRatingLabel}/10</span>
                     </span>
                   )}
                 </div>
