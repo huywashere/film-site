@@ -13,6 +13,8 @@ type HlsVideoPlayerProps = {
   src: string;
   proxySrc?: string;
   poster?: string;
+  title?: string;
+  subtitle?: string;
   initialTime?: number;
   autoPlay?: boolean;
   onReady?: (player: any) => void;
@@ -34,6 +36,8 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
   src,
   proxySrc,
   poster,
+  title,
+  subtitle,
   initialTime = 0,
   autoPlay = false,
   onReady,
@@ -52,6 +56,8 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
         fallbackUrl={proxySrc}
         type="hls"
         poster={poster}
+        title={title}
+        subtitle={subtitle}
         initialTime={initialTime}
         autoplay={autoPlay}
         isTheaterMode={isTheaterMode}

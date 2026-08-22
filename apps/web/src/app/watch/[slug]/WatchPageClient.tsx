@@ -2712,6 +2712,8 @@ export default function WatchPage() {
                       src={m3u8Url}
                       proxySrc={m3u8ProxyUrl}
                       poster={posterUrl}
+                      title={film?.name || film?.title || ""}
+                      subtitle={currentEpData?.name ? `Tập ${currentEpData.name}` : ""}
                       initialTime={lastKnownPlaybackTimeRef.current || resumeAt}
                       autoPlay={autoPlayConfig}
                       onReady={(player) => {

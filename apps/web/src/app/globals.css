@@ -517,13 +517,13 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
 }
 
 .art-video-player .art-control:hover .art-icon-custom-play,
-/* ── NETFLIX-GRADE CINEMATIC VIDEO PLAYER STYLING ── */
+/* ── LUXURY CINEMA VIDEO PLAYER STYLING (APPLE TV+ & NETFLIX FLAGSHIP) ── */
 
 .art-video-player {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Netflix Sans", sans-serif !important;
 }
 
-/* Center Big Play / State Button (Netflix Glass Circle) */
+/* Center Big Play / State Button (Apple Glass Sphere) */
 .art-video-player .art-state {
   display: flex !important;
   align-items: center !important;
@@ -532,48 +532,58 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
 }
 
 .art-video-player .art-icon-custom-state {
-  width: 76px !important;
-  height: 76px !important;
+  width: 84px !important;
+  height: 84px !important;
   border-radius: 50% !important;
-  background: rgba(14, 16, 20, 0.75) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+  background: rgba(16, 18, 24, 0.8) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.28) !important;
   color: #ffffff !important;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 0, 0, 0.4) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  backdrop-filter: blur(16px) !important;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.35) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
 }
 
 .art-video-player .art-icon-custom-state svg {
-  width: 34px !important;
-  height: 34px !important;
+  width: 36px !important;
+  height: 36px !important;
   fill: #ffffff !important;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)) !important;
-  margin-left: 3px !important;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6)) !important;
+  margin-left: 4px !important;
 }
 
 .art-video-player .art-state:hover .art-icon-custom-state {
-  transform: scale(1.12) !important;
-  background: rgba(229, 9, 20, 0.92) !important;
-  border-color: #e50914 !important;
-  box-shadow: 0 16px 40px rgba(229, 9, 20, 0.45), 0 0 30px rgba(229, 9, 20, 0.3) !important;
+  transform: scale(1.14) !important;
+  background: #e50914 !important;
+  border-color: #ff3b4b !important;
+  box-shadow: 0 20px 50px rgba(229, 9, 20, 0.6), 0 0 30px rgba(229, 9, 20, 0.4) !important;
 }
 
 .art-video-player .art-state:active .art-icon-custom-state {
   transform: scale(0.95) !important;
 }
 
-/* Netflix Bottom Control Bar */
+/* Floating Bottom Control Bar */
 .art-video-player .art-bottom {
-  padding: 0 20px 14px 20px !important;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.65) 55%, transparent 100%) !important;
+  padding: 0 28px 20px 28px !important;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.6) 45%, transparent 100%) !important;
 }
 
 .art-video-player .art-controls {
   height: 52px !important;
+}
+
+/* Top Header Bar */
+.art-video-player .art-top {
+  padding: 24px 28px !important;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%) !important;
+  font-weight: 800 !important;
+  font-size: 16px !important;
+  letter-spacing: -0.01em !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8) !important;
 }
 
 /* Control Icons */
@@ -588,44 +598,42 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
 .art-video-player .art-control:hover .art-icon-custom-backward,
 .art-video-player .art-control:hover .art-icon-custom-forward {
   color: #ffffff !important;
-  transform: scale(1.14) !important;
+  transform: scale(1.15) !important;
 }
 
-/* Netflix Progress Bar & Scrubbing Line */
+/* Luxury Floating Progress Bar */
 .art-video-player .art-progress {
-  height: 4px !important;
-  border-radius: 4px !important;
-  background-color: rgba(255, 255, 255, 0.25) !important;
-  transition: height 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  margin-bottom: 6px !important;
+  height: 5px !important;
+  border-radius: 9999px !important;
+  background-color: rgba(255, 255, 255, 0.22) !important;
+  transition: height 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  margin-bottom: 12px !important;
 }
 
 .art-video-player .art-progress:hover,
 .art-video-player .art-bottom:hover .art-progress {
-  height: 7px !important;
+  height: 8px !important;
 }
 
-.art-video-player .art-progress-played,
-.art-video-player .art-volume-loaded,
-.art-video-player .art-volume-indicator {
-  background: #e50914 !important;
-  border-radius: 4px !important;
+.art-video-player .art-progress-played {
+  background: linear-gradient(90deg, #b8050e 0%, #e50914 100%) !important;
+  border-radius: 9999px !important;
 }
 
 .art-video-player .art-progress-loaded {
-  background: rgba(255, 255, 255, 0.42) !important;
-  border-radius: 4px !important;
+  background: rgba(255, 255, 255, 0.38) !important;
+  border-radius: 9999px !important;
 }
 
 .art-video-player .art-progress-indicator {
-  width: 14px !important;
-  height: 14px !important;
+  width: 16px !important;
+  height: 16px !important;
   background: #e50914 !important;
-  border: 2px solid #ffffff !important;
-  box-shadow: 0 0 10px rgba(229, 9, 20, 0.8), 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+  border: 2.5px solid #ffffff !important;
+  box-shadow: 0 0 16px rgba(229, 9, 20, 0.95), 0 2px 8px rgba(0, 0, 0, 0.8) !important;
   border-radius: 50% !important;
   transform: scale(0);
-  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .art-video-player .art-progress:hover .art-progress-indicator,
@@ -633,7 +641,7 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
   transform: scale(1) !important;
 }
 
-/* Netflix Time Text */
+/* Time Indicator */
 .art-video-player .art-control-time {
   font-size: 13px !important;
   font-weight: 700 !important;
@@ -641,80 +649,97 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
   letter-spacing: 0.02em !important;
 }
 
+/* Volume Slider */
+.art-video-player .art-volume-slider {
+  height: 5px !important;
+  border-radius: 9999px !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+}
+
+.art-video-player .art-volume-loaded,
+.art-video-player .art-volume-indicator {
+  background: #e50914 !important;
+  border-radius: 9999px !important;
+}
+
 /* Subtitle (Elevated above Control Bar to avoid any overlap) */
 .art-video-player .art-subtitle,
 .art-video-player .art-subtitle-content {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Netflix Sans", sans-serif !important;
   font-weight: 700 !important;
-  font-size: clamp(18px, 2.8vw, 32px) !important;
+  font-size: clamp(20px, 2.6vw, 34px) !important;
   line-height: 1.35 !important;
   color: #ffffff !important;
   text-shadow: 0 0 4px #000, 0 0 8px #000, 0 2px 4px #000, 2px 2px 2px #000 !important;
   letter-spacing: 0.015em !important;
-  bottom: 40px !important;
+  bottom: 44px !important;
   transition: bottom 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
   user-select: none !important;
 }
 
-/* When Control Bar is active / hovered, elevate subtitle so it NEVER collides with scrubber */
+/* When Control Bar is active / hovered, elevate subtitle smoothly */
 .art-video-player.art-hover .art-subtitle,
 .art-video-player:hover .art-subtitle {
-  bottom: 82px !important;
+  bottom: 92px !important;
 }
 
 /* Settings & Context Menu Modal (Sleek Dark Glass) */
 .art-video-player .art-setting,
 .art-video-player .art-contextmenu {
-  background: rgba(14, 16, 20, 0.94) !important;
+  background: rgba(14, 16, 22, 0.94) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-radius: 16px !important;
-  -webkit-backdrop-filter: blur(24px) !important;
-  backdrop-filter: blur(24px) !important;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85) !important;
-  padding: 8px !important;
+  border-radius: 18px !important;
+  -webkit-backdrop-filter: blur(28px) !important;
+  backdrop-filter: blur(28px) !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.9) !important;
+  padding: 10px !important;
 }
 
 .art-video-player .art-setting-item:hover,
 .art-video-player .art-contextmenu-item:hover {
   background: rgba(255, 255, 255, 0.1) !important;
-  border-radius: 8px !important;
+  border-radius: 10px !important;
 }
 
 .art-video-player .art-setting-item.art-current {
   background: rgba(229, 9, 20, 0.2) !important;
   color: #ffffff !important;
   font-weight: 800 !important;
-  border-radius: 8px !important;
+  border-radius: 10px !important;
 }
 
 /* HUD Notification Pill */
 .art-video-player .art-notice {
-  background: rgba(10, 12, 16, 0.88) !important;
+  background: rgba(10, 12, 16, 0.9) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 9999px !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  backdrop-filter: blur(20px) !important;
   color: #ffffff !important;
   font-weight: 800 !important;
   font-size: 13px !important;
-  padding: 8px 18px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7) !important;
+  padding: 8px 20px !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8) !important;
 }
 
 @media (max-width: 640px) {
+  .art-video-player .art-bottom {
+    padding: 0 16px 12px 16px !important;
+  }
+
   .art-video-player .art-icon-custom-state {
-    width: 62px !important;
-    height: 62px !important;
+    width: 64px !important;
+    height: 64px !important;
   }
 
   .art-video-player .art-icon-custom-state svg {
-    width: 28px !important;
-    height: 28px !important;
+    width: 30px !important;
+    height: 30px !important;
   }
 
   .art-video-player.art-hover .art-subtitle,
   .art-video-player:hover .art-subtitle {
-    bottom: 68px !important;
+    bottom: 74px !important;
   }
 }
 
