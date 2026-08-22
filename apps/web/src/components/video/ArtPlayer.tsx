@@ -533,11 +533,11 @@ export default function ArtPlayer({
           name: "backward-10",
           position: "left",
           index: 12,
-          html: `<div class="art-icon art-icon-custom-backward" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;cursor:pointer;" title="Tua lùi 10 giây">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-              <path d="M3 3v5h5"/>
-              <text x="12" y="14.8" font-size="7" font-weight="800" font-family="system-ui, -apple-system, sans-serif" fill="currentColor" stroke="none" text-anchor="middle">10</text>
+          html: `<div class="art-icon art-icon-custom-backward" title="Tua lùi 10 giây">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3.5 12a8.5 8.5 0 1 0 8.5-8.5 9.2 9.2 0 0 0-6.36 2.58L3.5 8"/>
+              <path d="M3.5 3.5v4.5h4.5"/>
+              <text x="12" y="14.8" font-size="7" font-weight="900" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="currentColor" stroke="none" text-anchor="middle">10</text>
             </svg>
           </div>`,
           tooltip: "Tua lùi 10s",
@@ -549,11 +549,11 @@ export default function ArtPlayer({
           name: "forward-10",
           position: "left",
           index: 14,
-          html: `<div class="art-icon art-icon-custom-forward" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;cursor:pointer;" title="Tua tới 10 giây">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-              <path d="M21 3v5h-5"/>
-              <text x="12" y="14.8" font-size="7" font-weight="800" font-family="system-ui, -apple-system, sans-serif" fill="currentColor" stroke="none" text-anchor="middle">10</text>
+          html: `<div class="art-icon art-icon-custom-forward" title="Tua tới 10 giây">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.5 12a8.5 8.5 0 1 1-8.5-8.5 9.2 9.2 0 0 1 6.36 2.58L20.5 8"/>
+              <path d="M20.5 3.5v4.5h-4.5"/>
+              <text x="12" y="14.8" font-size="7" font-weight="900" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="currentColor" stroke="none" text-anchor="middle">10</text>
             </svg>
           </div>`,
           tooltip: "Tua tới 10s",

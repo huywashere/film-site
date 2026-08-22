@@ -2689,22 +2689,7 @@ export default function WatchPage() {
                 </div>
               )}
 
-              {/* Floating Skip Intro (+85s) Overlay */}
-              {artInstance &&
-                artInstance.currentTime > 5 &&
-                artInstance.currentTime < 150 && (
-                  <button
-                    onClick={() => {
-                      if (artInstance) {
-                        artInstance.seek = artInstance.currentTime + 85;
-                        toast("Đã bỏ qua Intro (+85s)", "info");
-                      }
-                    }}
-                    className="absolute bottom-16 right-5 z-40 flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/20 bg-[#15171b]/95 px-3.5 py-2 text-xs font-bold text-white transition-colors hover:bg-[#202329] active:scale-95"
-                  >
-                    <span>⏩ Bỏ qua Intro (+85s)</span>
-                  </button>
-                )}
+
 
               {/* Fallback overlay */}
               {isFallbacking && (
