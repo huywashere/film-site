@@ -12,10 +12,31 @@ import { AdminSessionGuard } from "./guards/admin-session.guard";
 import { AdminPermissionGuard } from "./guards/admin-permission.guard";
 import { AdminOperationsService } from "./admin-operations.service";
 
+import { MoviesModule } from "../movies/movies.module";
+import { AdsModule } from "../ads/ads.module";
+import { AdminSecurityService } from "./admin-security.service";
+import { AdminSyncSchedulerService } from "./admin-sync-scheduler.service";
+
 @Module({
-  imports: [PrismaModule, AuthModule, WatchPartyModule, SiteConfigModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    WatchPartyModule,
+    SiteConfigModule,
+    MoviesModule,
+    AdsModule,
+  ],
   controllers: [AdminController, AdminAuthController],
-  providers: [AdminService, AdminOperationsService, AuditService, AdminAccessService, AdminSessionGuard, AdminPermissionGuard],
-  exports: [AdminService, AuditService],
+  providers: [
+    AdminService,
+    AdminOperationsService,
+    AdminSecurityService,
+    AdminSyncSchedulerService,
+    AuditService,
+    AdminAccessService,
+    AdminSessionGuard,
+    AdminPermissionGuard,
+  ],
+  exports: [AdminService, AuditService, AdminSecurityService, AdminSyncSchedulerService],
 })
 export class AdminModule {}

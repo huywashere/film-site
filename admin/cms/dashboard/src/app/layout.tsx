@@ -39,6 +39,7 @@ import {
   IconChartBar,
   IconTopologyStar3,
   IconLogout,
+  IconSpeakerphone,
 } from "@tabler/icons-react";
 import netphimLogo from "../../../../../apps/web/public/cinephim-logo.png";
 import { adminFetch } from "@/lib/admin-api";
@@ -171,6 +172,11 @@ const NAV_GROUPS: Array<{
         href: "/configuration",
         label: { vi: "Cấu hình", en: "Configuration" },
         icon: IconSettings2,
+      },
+      {
+        href: "/configuration/ads",
+        label: { vi: "Vị trí quảng cáo", en: "Ads Management" },
+        icon: IconSpeakerphone,
       },
       {
         href: "/system",

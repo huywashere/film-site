@@ -20,6 +20,8 @@ import { WatchPartyModule } from "./watch-party/watch-party.module";
 import { TelemetryModule } from "./telemetry/telemetry.module";
 import { ReportsModule } from "./reports/reports.module";
 import { SiteConfigModule } from "./site-config/site-config.module";
+import { AdsModule } from "./ads/ads.module";
+import { IpBlacklistGuard } from "./common/guards/ip-blacklist.guard";
 
 @Module({
   imports: [
@@ -64,8 +66,14 @@ import { SiteConfigModule } from "./site-config/site-config.module";
     TelemetryModule,
     ReportsModule,
     SiteConfigModule,
+    AdsModule,
   ],
   providers: [
+    // Global IP Blacklist Guard (chống DDoS & chặn IP tức thì qua Redis)
+    {
+      provide: APP_GUARD,
+      useClass: IpBlacklistGuard,
+    },
     // Applied globally through the DI container so ThrottlerGuard receives the
     // Redis-backed storage above. Constructing the guard by hand in main.ts
     // silently gave it an empty storage object, disabling all rate limiting.

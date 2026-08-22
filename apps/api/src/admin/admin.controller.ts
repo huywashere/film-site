@@ -34,6 +34,9 @@ import {
 } from "./admin.dto";
 import { AdminOperationsService } from "./admin-operations.service";
 import { RequireAdminPermissions } from "./admin-permissions";
+import { AdminSecurityService } from "./admin-security.service";
+import { AdminSyncSchedulerService } from "./admin-sync-scheduler.service";
+import { AdsService } from "../ads/ads.service";
 
 function paginationValue(
   value: string | undefined,
@@ -52,6 +55,9 @@ export class AdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly operations: AdminOperationsService,
+    private readonly securityService: AdminSecurityService,
+    private readonly syncScheduler: AdminSyncSchedulerService,
+    private readonly adsService: AdsService,
   ) {}
 
   // ── 1. Overview Dashboard ─────────────────────────────────────────
@@ -491,5 +497,133 @@ export class AdminController {
   @RequireAdminPermissions("analytics.read")
   getAdvancedAnalytics(@Query("range") range?: string) {
     return this.operations.getAdvancedAnalytics(range);
+  }
+
+  // ── 9. Security & IP Blacklist ──────────────────────────────────────
+  @Get("security/blocked-ips")
+  @RequireAdminPermissions("system.manage")
+  getBlockedIps(
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
+    @Query("search") search?: string,
+  ) {
+    return this.securityService.getBlockedIps(
+      Number(page) || 1,
+      Number(limit) || 20,
+      search,
+    );
+  }
+
+  @Post("security/block-ip")
+  @RequireAdminPermissions("system.manage")
+  blockIp(
+    @Body() body: { ipAddress: string; reason?: string; durationHours?: number },
+    @Req() req: any,
+  ) {
+    return this.securityService.blockIp({
+      ipAddress: body.ipAddress,
+      reason: body.reason,
+      durationHours: body.durationHours,
+      blockedBy: req.user?.email || "Admin",
+    });
+  }
+
+  @Delete("security/unblock-ip/:id")
+  @RequireAdminPermissions("system.manage")
+  unblockIp(@Param("id") id: string) {
+    return this.securityService.unblockIp(id);
+  }
+
+  @Get("security/suspicious-ips")
+  @RequireAdminPermissions("system.manage")
+  getSuspiciousIps() {
+    return this.securityService.getSuspiciousIps();
+  }
+
+  // ── 10. Auto-Sync Scheduler ─────────────────────────────────────────
+  @Get("sync/schedules")
+  @RequireAdminPermissions("sync.manage")
+  getSyncSchedulesList() {
+    return this.syncScheduler.getSchedules();
+  }
+
+  @Post("sync/schedules")
+  @RequireAdminPermissions("sync.manage")
+  createSyncScheduleItem(
+    @Body()
+    body: {
+      name: string;
+      source: string;
+      cron: string;
+      pages: number;
+      enabled?: boolean;
+    },
+    @Req() req: any,
+  ) {
+    return this.syncScheduler.createSchedule({
+      ...body,
+      createdBy: req.user?.email || "Admin",
+    });
+  }
+
+  @Patch("sync/schedules/:id")
+  @RequireAdminPermissions("sync.manage")
+  updateSyncScheduleItem(@Param("id") id: string, @Body() body: any) {
+    return this.syncScheduler.updateSchedule(id, body);
+  }
+
+  @Post("sync/schedules/:id/toggle")
+  @RequireAdminPermissions("sync.manage")
+  toggleSyncScheduleItem(@Param("id") id: string) {
+    return this.syncScheduler.toggleSchedule(id);
+  }
+
+  @Post("sync/schedules/:id/run")
+  @RequireAdminPermissions("sync.manage")
+  runSyncScheduleItem(@Param("id") id: string, @Req() req: any) {
+    return this.syncScheduler.runScheduleNow(id, req.user?.email || "Admin");
+  }
+
+  @Delete("sync/schedules/:id")
+  @RequireAdminPermissions("sync.manage")
+  deleteSyncScheduleItem(@Param("id") id: string) {
+    return this.syncScheduler.deleteSchedule(id);
+  }
+
+  @Get("sync/stats")
+  @RequireAdminPermissions("sync.manage")
+  getSyncStats() {
+    return this.syncScheduler.getStats();
+  }
+
+  // ── 11. Ads Management ──────────────────────────────────────────────
+  @Get("ads")
+  @RequireAdminPermissions("cms.manage")
+  getAdsList() {
+    return this.adsService.getAllAdsAdmin();
+  }
+
+  @Post("ads")
+  @RequireAdminPermissions("cms.manage")
+  createAdItem(@Body() body: any) {
+    return this.adsService.createAd(body);
+  }
+
+  @Patch("ads/:id")
+  @RequireAdminPermissions("cms.manage")
+  updateAdItem(@Param("id") id: string, @Body() body: any) {
+    return this.adsService.updateAd(id, body);
+  }
+
+  @Post("ads/:id/toggle")
+  @RequireAdminPermissions("cms.manage")
+  toggleAdItem(@Param("id") id: string) {
+    return this.adsService.toggleAd(id);
+  }
+
+  @Delete("ads/:id")
+  @RequireAdminPermissions("cms.manage")
+  deleteAdItem(@Param("id") id: string) {
+    return this.adsService.deleteAd(id);
   }
 }

@@ -17,6 +17,9 @@ export const ADMIN_PERMISSIONS = [
   "sync.manage",
   "users.manage",
   "watch-party.manage",
+  "system.manage",
+  "security.manage",
+  "ads.manage",
 ] as const;
 
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
