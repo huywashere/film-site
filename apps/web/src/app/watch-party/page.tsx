@@ -228,11 +228,7 @@ export default function WatchPartyListPage() {
             <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-red-600/10 to-transparent pointer-events-none" />
           </div>
 
-          <div className="space-y-3 max-w-xl relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-[11px] font-bold tracking-wide uppercase">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <span>Rạp Phim Trực Tuyến • Đồng Bộ 4K</span>
-            </div>
+          <div className="space-y-2.5 max-w-xl relative z-10">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]">
               Phòng Xem Chung
             </h1>

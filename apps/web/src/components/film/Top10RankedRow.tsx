@@ -69,8 +69,8 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
         className={cn(
           "absolute -top-4 sm:-top-6 z-0 pointer-events-none select-none",
           rank === 1
-            ? "left-2 sm:left-4 md:left-5"
-            : "left-0 sm:-left-2 md:-left-3",
+            ? "left-3 sm:left-5 md:left-7"
+            : "left-0 sm:-left-1 md:-left-2",
         )}
       >
         <span
@@ -82,7 +82,7 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
       </div>
 
       {/* Poster Card Container Overlapping Rank Number (Creating 3D Depth Layer) */}
-      <div className="relative z-10 pl-7 sm:pl-14 md:pl-16">
+      <div className="relative z-10 pl-8 sm:pl-16 md:pl-20">
         <div className="relative w-[78px] sm:w-[160px] md:w-[185px] aspect-[2/3] rounded-xl sm:rounded-2xl overflow-hidden border border-white/15 shadow-2xl group-hover/item:border-white/40 group-hover/item:scale-105 transition-all duration-300 bg-neutral-900">
           {imgSrc ? (
             <Image
@@ -286,7 +286,7 @@ export function Top10RankedRow({ films, title }: Top10RankedRowProps) {
           spaceBetween={8}
           breakpoints={{ 640: { spaceBetween: 16 } }}
           slidesPerView="auto"
-          className="!py-4 !pl-8 sm:!pl-12 md:!pl-16 !pr-4"
+          className="!py-4 !pl-10 sm:!pl-16 md:!pl-20 lg:!pl-24 !pr-6"
         >
           {top10.map((film, index) => (
             <SwiperSlide
