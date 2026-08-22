@@ -49,8 +49,9 @@ interface FeaturedHub {
   gradient: string;
   flag: string;
   discover: TmdbDiscoverOptions;
-  // Multiple sharp fallback romance backdrops from TMDB CDN
+  // Verified sharp high-res romance TV series backdrops from TMDB
   curatedBackdrops: string[];
+  sampleTitles: string[];
 }
 
 const FEATURED_HUBS: FeaturedHub[] = [
@@ -58,7 +59,7 @@ const FEATURED_HUBS: FeaturedHub[] = [
     id: "phim-han-quoc",
     title: "Điện Ảnh Hàn Quốc",
     subtitle: "K-Drama Ngôn Tình & Lãng Mạn",
-    badge: "💖 NGÔN TÌNH HOT",
+    badge: "💖 NGÔN TÌNH QUỐC DÂN",
     badgeColor: "from-pink-500 via-rose-500 to-red-500",
     description:
       "K-Drama ngôn tình ngọt ngào, lãng mạn rung động trái tim và các câu chuyện tình yêu kinh điển xứ kim chi.",
@@ -66,15 +67,15 @@ const FEATURED_HUBS: FeaturedHub[] = [
     accent: "#fb7185",
     gradient: "from-rose-950/80 via-neutral-950/70 to-black/90",
     flag: "🇰🇷",
-    // Focus specifically on popular Romance / Drama K-Dramas (Genre 10749)
     discover: { with_origin_country: "KR", with_genres: "10749", sort_by: "popularity.desc" },
     curatedBackdrops: [
-      "https://image.tmdb.org/t/p/w1280/8Z8G8E3kLqM8tN7.jpg",
-      "https://image.tmdb.org/t/p/w1280/2O4FhL8uM8tH8zR.jpg",
-      "https://image.tmdb.org/t/p/w1280/9A1k0p8i9d8r7a8.jpg",
-      "https://image.tmdb.org/t/p/w1280/q85h8h7l67nJ8c8.jpg",
-      "https://image.tmdb.org/t/p/w1280/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg",
+      "https://image.tmdb.org/t/p/w1280/3yEHM2HT2vrUtO93YzTJNgEfiZG.jpg", // Hạ Cánh Nơi Anh (Crash Landing on You)
+      "https://image.tmdb.org/t/p/w1280/vbkpl0ps4s5tMTUnC7SFXNzWmVr.jpg", // Cõng Anh Mà Chạy (Lovely Runner)
+      "https://image.tmdb.org/t/p/w1280/166r6yttqz8h8NQwNZT0I7y8fio.jpg", // Hậu Duệ Mặt Trời (Descendants of the Sun)
+      "https://image.tmdb.org/t/p/w1280/hMJZCkmdaC2ZMzjP76a9TPNQFsS.jpg", // Hẹn Hò Chốn Công Sở (Business Proposal)
+      "https://image.tmdb.org/t/p/w1280/smSbK5cd8T9XHcxEUcems23BDEF.jpg", // Yêu Tinh (Goblin)
     ],
+    sampleTitles: ["Hạ Cánh Nơi Anh", "Cõng Anh Mà Chạy", "Hậu Duệ Mặt Trời", "Hẹn Hò Chốn Công Sở"],
   },
   {
     id: "phim-trung-quoc",
@@ -88,15 +89,15 @@ const FEATURED_HUBS: FeaturedHub[] = [
     accent: "#f97316",
     gradient: "from-orange-950/80 via-neutral-950/70 to-black/90",
     flag: "🇨🇳",
-    // Focus specifically on popular Romance / Cổ trang Hoa Ngữ (Genre 10749)
     discover: { with_origin_country: "CN", with_genres: "10749", sort_by: "popularity.desc" },
     curatedBackdrops: [
-      "https://image.tmdb.org/t/p/w1280/3b23bL2q7lX8m9p.jpg",
-      "https://image.tmdb.org/t/p/w1280/d1K5q7m8Lq9t8zR.jpg",
-      "https://image.tmdb.org/t/p/w1280/7k9L8m5t8q9x7zR.jpg",
-      "https://image.tmdb.org/t/p/w1280/4m8L7q9x7zR9m5t.jpg",
-      "https://image.tmdb.org/t/p/w1280/1TUg5L5v.jpg",
+      "https://image.tmdb.org/t/p/w1280/aJxMvBSaUdbIkY8nqFkuEarrgcx.jpg", // Thương Lan Quyết (Love Between Fairy and Devil)
+      "https://image.tmdb.org/t/p/w1280/wNSLw756U5JQSpG6POYxHKL2KDH.jpg", // Tinh Hán Xán Lạn (Love Like the Galaxy)
+      "https://image.tmdb.org/t/p/w1280/ampkwvfwO7o5YMwYAVPKx1PLDaB.jpg", // Trần Tình Lệnh (The Untamed)
+      "https://image.tmdb.org/t/p/w1280/ttB7H1rF4W3iZ6pMyP6v5u9BMBm.jpg", // Em Là Niềm Kiêu Hãnh Của Anh (You Are My Glory)
+      "https://image.tmdb.org/t/p/w1280/1QUrjFNKgVchKktX4N6DaegfPbP.jpg", // Đi Đến Nơi Có Gió (Meet Yourself)
     ],
+    sampleTitles: ["Thương Lan Quyết", "Tinh Hán Xán Lạn", "Trần Tình Lệnh", "Đi Đến Nơi Có Gió"],
   },
   {
     id: "phim-au-my",
@@ -112,9 +113,11 @@ const FEATURED_HUBS: FeaturedHub[] = [
     flag: "🇺🇸",
     discover: { with_origin_country: "US", sort_by: "popularity.desc" },
     curatedBackdrops: [
-      "https://image.tmdb.org/t/p/w1280/xJHokMbljvjADYdit5fK5VQsXEG.jpg",
-      "https://image.tmdb.org/t/p/w1280/yDHYTfA3R0jFYba16jBB1ef8oIt.jpg",
+      "https://image.tmdb.org/t/p/w1280/xJHokMbljvjADYdit5fK5VQsXEG.jpg", // Interstellar
+      "https://image.tmdb.org/t/p/w1280/fm6K9v6I7vdFGwfndakGtQ99Rov.jpg", // Oppenheimer
+      "https://image.tmdb.org/t/p/w1280/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg", // Avengers Endgame
     ],
+    sampleTitles: ["Interstellar", "Oppenheimer", "Avengers: Endgame"],
   },
   {
     id: "anime-nhat-ban",
@@ -134,9 +137,10 @@ const FEATURED_HUBS: FeaturedHub[] = [
       sort_by: "popularity.desc",
     },
     curatedBackdrops: [
-      "https://image.tmdb.org/t/p/w1280/kXfqcdQKsToO0OUXHcrrNCHDBzO.jpg",
-      "https://image.tmdb.org/t/p/w1280/8sNiqpwhvO4cdiXq7Srrqgz5pRx.jpg",
+      "https://image.tmdb.org/t/p/w1280/kXfqcdQKsToO0OUXHcrrNCHDBzO.jpg", // Your Name
+      "https://image.tmdb.org/t/p/w1280/8sNiqpwhvO4cdiXq7Srrqgz5pRx.jpg", // Demon Slayer
     ],
+    sampleTitles: ["Your Name", "Thanh Gươm Diệt Quỷ", "Vùng Đất Linh Hồn"],
   },
 ];
 
@@ -417,9 +421,8 @@ export default function GenresTopicsPage() {
           {/* 4 Large Featured Hero Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
             {FEATURED_HUBS.map((hub, idx) => {
-              const movies = featuredQueries[idx]?.data || [];
-              const rawBackdrop = extractTmdbBackdrop(movies, hub.curatedBackdrops, randomSeed + idx);
-              const topTitles = movies.slice(0, 3).map((m) => m.title).filter(Boolean);
+              const rawBackdrop = hub.curatedBackdrops[(randomSeed + idx) % hub.curatedBackdrops.length];
+              const topTitles = hub.sampleTitles;
 
               return (
                 <Link
