@@ -346,3 +346,25 @@ html[data-admin-theme="dark"] tbody tr:hover { background-color: #242730 !import
 .admin-login-divider span { position: relative; padding: 0 10px; background: var(--admin-surface); }
 .admin-github-button { display: flex; width: 100%; height: 42px; align-items: center; justify-content: center; gap: 9px; color: var(--admin-ink); border: 1px solid var(--admin-line); border-radius: 6px; background: var(--admin-surface-muted); font-size: 12px; font-weight: 700; transition: border-color 140ms ease, background 140ms ease; }
 .admin-github-button:hover { border-color: color-mix(in srgb, var(--admin-ink) 35%, var(--admin-line)); background: var(--admin-surface); }
+
+/* Anti-Screenshot & Anti-Print Enterprise Defense */
+@media print {
+  html, body, .admin-shell, .admin-login-page {
+    display: none !important;
+    visibility: hidden !important;
+  }
+}
+
+.admin-screenshot-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999999;
+  background-color: #000;
+  pointer-events: none;
+  animation: admin-curtain-fade 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes admin-curtain-fade {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
