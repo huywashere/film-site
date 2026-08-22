@@ -31,7 +31,8 @@ async function forward(
     return NextResponse.json({ message: "Đường dẫn admin không hợp lệ" }, { status: 400 });
   }
 
-  const target = new URL(`${adminApiBaseUrl()}/admin/${path.join("/")}`);
+  const targetUrlStr = `${adminApiBaseUrl()}/admin/${path.join("/")}`;
+  const target = new URL(targetUrlStr);
   request.nextUrl.searchParams.forEach((value, key) => target.searchParams.append(key, value));
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -39,31 +40,57 @@ async function forward(
     const body = ["GET", "HEAD"].includes(request.method)
       ? undefined
       : await request.arrayBuffer();
-    const response = await fetch(target, {
-      method: request.method,
-      cache: "no-store",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": request.headers.get("content-type") || "application/json",
-        "x-admin-session-token": sessionToken,
-        "x-forwarded-for": request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "",
-        "user-agent": request.headers.get("user-agent") || "NetPhim-Control-Room",
-      },
-      body: body && body.byteLength ? body : undefined,
-      signal: controller.signal,
-    });
+
+    let response: Response;
+    try {
+      response = await fetch(target, {
+        method: request.method,
+        cache: "no-store",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": request.headers.get("content-type") || "application/json",
+          "x-admin-session-token": sessionToken,
+          "x-forwarded-for": request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "",
+          "user-agent": request.headers.get("user-agent") || "NetPhim-Control-Room",
+        },
+        body: body && body.byteLength ? body : undefined,
+        signal: controller.signal,
+      });
+    } catch (primaryErr) {
+      // Fallback: If 127.0.0.1 failed, try localhost or vice-versa
+      const fallbackHost = target.hostname === "127.0.0.1" ? "localhost" : "127.0.0.1";
+      const fallbackUrl = new URL(target.toString());
+      fallbackUrl.hostname = fallbackHost;
+      response = await fetch(fallbackUrl, {
+        method: request.method,
+        cache: "no-store",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": request.headers.get("content-type") || "application/json",
+          "x-admin-session-token": sessionToken,
+          "x-forwarded-for": request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "",
+          "user-agent": request.headers.get("user-agent") || "NetPhim-Control-Room",
+        },
+        body: body && body.byteLength ? body : undefined,
+        signal: controller.signal,
+      });
+    }
+
     const contentType = response.headers.get("content-type") || "application/json";
     return new NextResponse(await response.arrayBuffer(), {
       status: response.status,
       headers: { "Content-Type": contentType, "Cache-Control": "no-store" },
     });
   } catch (error) {
+    console.error(`[Admin Proxy Error] ${request.method} ${targetUrlStr}:`, error);
     return NextResponse.json(
       {
         message:
           error instanceof Error && error.name === "AbortError"
             ? "API quản trị phản hồi quá thời gian"
-            : "Không thể kết nối API quản trị",
+            : error instanceof Error
+              ? error.message
+              : "Không thể kết nối API quản trị",
       },
       { status: 502 },
     );
