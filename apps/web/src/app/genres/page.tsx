@@ -171,20 +171,14 @@ export default function GenresTopicsPage() {
               href={topic.href}
               className="group relative flex min-h-[135px] sm:min-h-[145px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#181a20] hover:bg-[#1e2029] p-5 transition-all duration-300 hover:border-white/20 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(0,0,0,0.6)] cursor-pointer select-none"
             >
-              {/* Left Side: # Hashtag badge + Title & Subtitle */}
-              <div className="relative z-10 flex flex-col justify-between max-w-[62%] sm:max-w-[58%]">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/[0.06] text-xs font-black text-neutral-400 group-hover:text-white group-hover:bg-white/10 transition-colors">
-                    #
-                  </span>
-                </div>
-
-                <div className="mt-3">
+              {/* Left Side: Title & Subtitle */}
+              <div className="relative z-10 flex flex-col justify-center max-w-[62%] sm:max-w-[58%] my-auto">
+                <div>
                   <h2 className="text-base sm:text-[17px] font-bold text-white leading-snug group-hover:text-white transition-colors">
                     {topic.title}
                   </h2>
                   {topic.description && (
-                    <p className="mt-1 text-[11px] text-neutral-400 line-clamp-1">
+                    <p className="mt-1.5 text-[11px] text-neutral-400 line-clamp-1">
                       {topic.description}
                     </p>
                   )}
