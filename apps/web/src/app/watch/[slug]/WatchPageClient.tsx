@@ -2180,34 +2180,11 @@ export default function WatchPage() {
 
   const handlePlayerFailure = useCallback(
     (reason: string) => {
-      // HLS has observable manifest/segment/CORS errors. Before declaring a
-      // provider dead, give its maintained iframe implementation one chance.
-      if (playerEngine === "hls" && iframeUrl) {
-        setIsFallbacking(true);
-        setFallbackMessage("Đang chuyển sang trình phát dự phòng...");
-        recordTelemetry(
-          "player.transport_fallback",
-          {
-            source: server?._source || "unknown",
-            server: server?.server_name || "unknown",
-            transport: "hls",
-            error_kind: classifyPlayerError({ type: reason }),
-          },
-          "warning",
-        );
-        playerLoadStartedAtRef.current = Date.now();
-        setPlayerEngine("iframe");
-        return;
-      }
+      // Prioritize switching to the next healthy HLS mirror in our custom player
+      // to maintain a clean, ad-free, high-quality viewing experience on both mobile and desktop.
       tryNextServer(reason);
     },
-    [
-      iframeUrl,
-      playerEngine,
-      server?._source,
-      server?.server_name,
-      tryNextServer,
-    ],
+    [tryNextServer],
   );
 
   // A failed server may have scheduled a delayed router.replace. Cancel it

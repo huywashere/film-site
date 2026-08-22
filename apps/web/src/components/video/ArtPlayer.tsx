@@ -453,22 +453,22 @@ export default function ArtPlayer({
           }
         }, 1_000);
       } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        video.setAttribute("playsinline", "true");
+        video.setAttribute("webkit-playsinline", "true");
+        video.setAttribute("x5-playsinline", "true");
         video.src = streamUrl;
         video.load();
-        startupTimer = setTimeout(() => {
-          if (video.readyState >= HTMLMediaElement.HAVE_METADATA) return;
-          if (alternateUrl && alternateUrl !== streamUrl) {
+
+        const handleNativeError = () => {
+          if (alternateUrl && alternateUrl !== streamUrl && video.src !== alternateUrl) {
             video.src = alternateUrl;
             video.load();
-            startupTimer = setTimeout(() => {
-              if (video.readyState < HTMLMediaElement.HAVE_METADATA) {
-                onErrorRef.current?.({ type: "HLS_STARTUP_TIMEOUT" });
-              }
-            }, HLS_STARTUP_TIMEOUT_MS);
             return;
           }
-          onErrorRef.current?.({ type: "HLS_STARTUP_TIMEOUT" });
-        }, HLS_STARTUP_TIMEOUT_MS);
+          onErrorRef.current?.({ type: "HLS_NATIVE_ERROR" });
+        };
+
+        video.addEventListener("error", handleNativeError, { once: true });
       } else {
         onErrorRef.current?.({ type: "HLS_UNSUPPORTED" });
       }
@@ -520,6 +520,11 @@ export default function ArtPlayer({
       },
       moreVideoAttr: {
         crossOrigin: "anonymous",
+        playsInline: "true",
+        "webkit-playsinline": "true",
+        "x5-playsinline": "true",
+        "x5-video-player-type": "h5",
+        "x5-video-player-fullscreen": "false",
       },
 
       // Hotkey settings (handing via custom event listener)
