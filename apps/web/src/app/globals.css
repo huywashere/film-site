@@ -565,101 +565,13 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
   transform: scale(0.95) !important;
 }
 
-/* Bottom Control Bar */
-.art-video-player .art-bottom {
-  padding: 0 16px 12px 16px !important;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.45) 55%, transparent 100%) !important;
-}
-
-.art-video-player .art-controls {
-  height: 48px !important;
-}
-
-/* Top Header Bar */
-.art-video-player .art-top {
-  padding: 18px 20px !important;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.35) 60%, transparent 100%) !important;
-  font-weight: 700 !important;
-  font-size: 15px !important;
-  letter-spacing: -0.01em !important;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8) !important;
-}
-
 /* Control Icons */
 .art-video-player .art-control {
-  color: rgba(255, 255, 255, 0.9) !important;
   transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-.art-video-player .art-control:hover,
-.art-video-player .art-control:hover .art-icon-custom-play,
-.art-video-player .art-control:hover .art-icon-custom-pause,
-.art-video-player .art-control:hover .art-icon-custom-backward,
-.art-video-player .art-control:hover .art-icon-custom-forward {
-  color: #ffffff !important;
-  transform: scale(1.1) !important;
-}
-
-/* Progress Bar (Cinema Pure White Standard) */
-.art-video-player .art-progress {
-  height: 4px !important;
-  border-radius: 4px !important;
-  background-color: rgba(255, 255, 255, 0.2) !important;
-  transition: height 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  margin-bottom: 8px !important;
-}
-
-.art-video-player .art-progress:hover,
-.art-video-player .art-bottom:hover .art-progress {
-  height: 6px !important;
-}
-
-.art-video-player .art-progress-played {
-  background: #ffffff !important;
-  border-radius: 4px !important;
-}
-
-.art-video-player .art-progress-loaded {
-  background: rgba(255, 255, 255, 0.38) !important;
-  border-radius: 4px !important;
-}
-
-.art-video-player .art-progress-indicator {
-  width: 12px !important;
-  height: 12px !important;
-  background: #ffffff !important;
-  border: 2px solid #ffffff !important;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.9), 0 2px 4px rgba(0, 0, 0, 0.6) !important;
-  border-radius: 50% !important;
-  transform: scale(0);
-  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
-.art-video-player .art-progress:hover .art-progress-indicator,
-.art-video-player .art-bottom:hover .art-progress-indicator {
-  transform: scale(1) !important;
-}
-
-/* Time Indicator */
-.art-video-player .art-control-time {
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-  letter-spacing: 0.02em !important;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
-}
-
-/* Volume Slider */
-.art-video-player .art-volume-slider {
-  height: 4px !important;
-  border-radius: 4px !important;
-  background: rgba(255, 255, 255, 0.22) !important;
-}
-
-.art-video-player .art-volume-loaded,
-.art-video-player .art-volume-indicator {
-  background: #ffffff !important;
-  border-radius: 4px !important;
+.art-video-player .art-control:hover {
+  transform: scale(1.08) !important;
 }
 
 /* Subtitle (Elevated above Control Bar to avoid any overlap) */

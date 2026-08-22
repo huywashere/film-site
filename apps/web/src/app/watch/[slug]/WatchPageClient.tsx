@@ -933,8 +933,6 @@ export default function WatchPage() {
 
   const [subDelayOffset, setSubDelayOffset] = useState<number>(0);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
-  const [isScreenLocked, setIsScreenLocked] = useState(false);
-  const [showInPlayerEpDrawer, setShowInPlayerEpDrawer] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showEpThumbnails, setShowEpThumbnails] = useState(false);
@@ -1310,7 +1308,6 @@ export default function WatchPage() {
   }, [artInstance, toast, setTheaterMode, setShowShortcutsModal]);
 
   const handleOuterPointerDown = (e: React.PointerEvent) => {
-    if (isScreenLocked) return;
     if (e.button !== 0) return;
     const target = e.target as HTMLElement;
     if (
@@ -2867,56 +2864,6 @@ export default function WatchPage() {
                 </div>
               )}
 
-              {/* ── In-Player Cinema Top Header Bar ── */}
-              <div className="absolute top-0 left-0 right-0 z-30 px-4 sm:px-6 py-3.5 flex items-center justify-between pointer-events-none bg-gradient-to-b from-black/85 via-black/35 to-transparent transition-opacity duration-300">
-                <div className="flex items-center gap-2 pointer-events-auto min-w-0">
-                  <h2 className="text-xs sm:text-sm md:text-base font-bold text-white tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] truncate max-w-[200px] sm:max-w-md md:max-w-xl">
-                    {film?.name} {film?.year ? `(${film.year})` : ""} – {currentEpData?.name ? `Tập ${currentEpData.name.replace(/^tập\s*/i, "")}` : `Tập ${currentEp}`}
-                  </h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowInPlayerEpDrawer((p) => !p);
-                  }}
-                  className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/65 hover:bg-white/20 text-white text-[11px] sm:text-xs font-semibold border border-white/20 backdrop-blur-md transition-all shadow-lg active:scale-95 cursor-pointer shrink-0"
-                  title="Danh sách tất cả các tập phim"
-                >
-                  <Tv size={13} className="text-purple-400" />
-                  <span>Danh sách tập</span>
-                </button>
-              </div>
-
-              {/* ── Left Screen Lock Button ── */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsScreenLocked((locked) => {
-                    const next = !locked;
-                    toast(
-                      next ? "Đã khóa màn hình điều khiển" : "Đã mở khóa màn hình",
-                      "info",
-                    );
-                    return next;
-                  });
-                }}
-                className={cn(
-                  "absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 z-40 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-all cursor-pointer shadow-2xl active:scale-95 border",
-                  isScreenLocked
-                    ? "bg-purple-600/90 text-white border-purple-400 opacity-90 hover:opacity-100 ring-2 ring-purple-400/40"
-                    : "bg-black/60 hover:bg-black/85 text-white/80 hover:text-white border-white/20 opacity-0 group-hover:opacity-100 sm:opacity-0 sm:hover:opacity-100",
-                )}
-                title={isScreenLocked ? "Mở khóa màn hình" : "Khóa màn hình điều khiển"}
-              >
-                {isScreenLocked ? (
-                  <Lock size={15} className="text-white" />
-                ) : (
-                  <Unlock size={15} className="text-white/80" />
-                )}
-              </button>
-
               {videoUrl ? (
                 <>
                   {!DISABLE_ARTPLAYER && playerEngine === "hls" && m3u8Url ? (
@@ -2929,8 +2876,6 @@ export default function WatchPage() {
                       subtitle={currentEpData?.name ? `Tập ${currentEpData.name}` : ""}
                       initialTime={lastKnownPlaybackTimeRef.current || resumeAt}
                       autoPlay={autoPlayConfig}
-                      onNextEpisode={goNextEpisode}
-                      onToggleAudioTrack={() => setShowReportModal(true)}
                       onReady={(player) => {
                         setArtInstance(player);
                         setIsFallbacking(false);
@@ -3060,9 +3005,9 @@ export default function WatchPage() {
                     </div>
                   )}
 
-                  {/* ── Floating Skip Intro Pill (Exact Reference Pro Standard) ── */}
+                  {/* Floating Skip Intro Pill Button on Player */}
                   {lastKnownPlaybackTimeRef.current >= 2 &&
-                    lastKnownPlaybackTimeRef.current <= 90 && (
+                    lastKnownPlaybackTimeRef.current <= 85 && (
                       <button
                         type="button"
                         onClick={(e) => {
@@ -3072,15 +3017,15 @@ export default function WatchPage() {
                             artInstance.currentTime = 85;
                             if (artInstance.notice) {
                               artInstance.notice.show =
-                                "Đã bỏ qua giới thiệu (+85s)";
+                                "Đã bỏ qua Intro (+85s)";
                             }
                           }
-                          toast("Đã bỏ qua giới thiệu", "info");
+                          toast("Đã bỏ qua đoạn mở đầu (Intro)", "info");
                         }}
-                        className="absolute bottom-16 right-5 z-40 bg-white hover:bg-neutral-100 text-black font-extrabold text-xs px-4 py-2 rounded-lg shadow-2xl flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer tracking-wide border border-black/10 animate-in fade-in zoom-in-95 duration-200 select-none"
+                        className="absolute bottom-16 right-5 z-40 bg-black/85 hover:bg-neutral-900 text-white border border-white/20 backdrop-blur-xl px-4 py-2 rounded-full font-bold text-xs shadow-2xl flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer animate-in fade-in zoom-in-95 duration-200"
                       >
-                        <span>Bỏ qua giới thiệu</span>
-                        <FastForward size={14} className="text-black fill-black" />
+                        <FastForward size={14} className="text-purple-400" />
+                        <span>Bỏ qua Intro (+85s)</span>
                       </button>
                     )}
 
@@ -3090,83 +3035,6 @@ export default function WatchPage() {
                       onSkip={goNextEpisode}
                       onCancel={() => setAutoNextCountdown(null)}
                     />
-                  )}
-
-                  {/* ── In-Player Episode Selection Drawer ── */}
-                  {showInPlayerEpDrawer && (
-                    <div
-                      onClick={(e) => e.stopPropagation()}
-                      className="absolute inset-y-0 right-0 z-50 w-80 max-w-[85vw] bg-black/95 border-l border-white/15 backdrop-blur-2xl p-4 flex flex-col gap-3 shadow-2xl animate-in slide-in-from-right duration-200"
-                    >
-                      <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                        <div className="flex items-center gap-2">
-                          <Tv size={16} className="text-purple-400" />
-                          <span className="font-bold text-sm text-white">Danh sách tập</span>
-                          <span className="text-[10px] text-neutral-400 bg-white/10 px-2 py-0.5 rounded-full font-mono">
-                            {serverData.length} tập
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setShowInPlayerEpDrawer(false)}
-                          className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer text-xs"
-                        >
-                          ✕
-                        </button>
-                      </div>
-
-                      {/* Search in Drawer */}
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={episodeSearch}
-                          onChange={(e) => setEpisodeSearch(e.target.value)}
-                          placeholder="Tìm nhanh số tập..."
-                          className="w-full bg-white/[0.06] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none focus:border-purple-500/50"
-                        />
-                        {episodeSearch && (
-                          <button
-                            type="button"
-                            onClick={() => setEpisodeSearch("")}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white text-xs"
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Episode Grid in Drawer */}
-                      <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 custom-scrollbar">
-                        <div className="grid grid-cols-4 gap-1.5">
-                          {filteredEps.map((ep: any) => {
-                            const isActive =
-                              ep.name === currentEpData?.name ||
-                              ep.slug === currentEpData?.slug ||
-                              ep.name === currentEp ||
-                              ep.slug === currentEp;
-                            return (
-                              <button
-                                key={ep.slug || ep.name}
-                                type="button"
-                                onClick={() => {
-                                  setShowInPlayerEpDrawer(false);
-                                  router.push(watchUrlForEpisode(ep.slug || ep.name));
-                                }}
-                                className={cn(
-                                  "py-2 px-1 rounded-lg text-xs font-bold text-center transition-all cursor-pointer truncate border",
-                                  isActive
-                                    ? "bg-purple-600 text-white border-purple-400 shadow-md scale-105"
-                                    : "bg-white/[0.05] hover:bg-white/15 text-neutral-300 border-white/[0.08]",
-                                )}
-                                title={`Tập ${ep.name}`}
-                              >
-                                {ep.name.replace(/^tập\s*/i, "")}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
                   )}
                 </>
               ) : (

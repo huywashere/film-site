@@ -25,8 +25,6 @@ type HlsVideoPlayerProps = {
   onError: (error: HlsPlaybackError) => void;
   isTheaterMode?: boolean;
   onTheaterModeToggle?: (active: boolean) => void;
-  onNextEpisode?: () => void;
-  onToggleAudioTrack?: () => void;
 };
 
 /**
@@ -50,8 +48,6 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
   onError,
   isTheaterMode = false,
   onTheaterModeToggle,
-  onNextEpisode,
-  onToggleAudioTrack,
 }: HlsVideoPlayerProps) {
   return (
     <div className="w-full h-full relative">
@@ -66,8 +62,6 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
         autoplay={autoPlay}
         isTheaterMode={isTheaterMode}
         onTheaterModeToggle={onTheaterModeToggle}
-        onNextEpisode={onNextEpisode}
-        onToggleAudioTrack={onToggleAudioTrack}
         onReady={(player) => {
           onReady?.(player);
         }}
