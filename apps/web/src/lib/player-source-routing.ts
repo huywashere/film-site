@@ -33,6 +33,17 @@ export function selectInitialHlsTransport(
   };
 }
 
+export function getSourceAbbr(source?: string): string {
+  if (!source) return "KP";
+  const s = source.toLowerCase();
+  if (s.includes("kkphim") || s === "kp") return "KP";
+  if (s.includes("nguonc") || s === "nc") return "NC";
+  if (s.includes("vsmov") || s === "vs") return "VS";
+  if (s.includes("ophim") || s === "op") return "OP";
+  if (s.includes("vidsrc")) return "VidSrc";
+  return source.toUpperCase();
+}
+
 const PROVIDER_PRIORITY: Record<string, number> = {
   kkphim: 40,
   nguonc: 35,

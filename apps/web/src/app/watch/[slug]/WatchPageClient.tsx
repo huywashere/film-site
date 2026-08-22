@@ -86,6 +86,7 @@ import {
   detectServerType,
   episodeNumberFromLabel,
   findMatchingEpisode,
+  getSourceAbbr,
   isPlayableEpisode,
   isAutomaticPlaybackSource,
   resolveSeasonNumber,
@@ -1781,15 +1782,14 @@ export default function WatchPage() {
       }
     }
 
-    const tagSource = (arr: any[], sourceName: string, sourceKey: string) =>
-      arr.map((s, i): SourceServer => {
+    const tagSource = (arr: any[], sourceKey: string) => {
+      const sourceAbbr = getSourceAbbr(sourceKey);
+      return arr.map((s, i): SourceServer => {
         const originalName = String(s.server_name || "");
         const serverData = Array.isArray(s.server_data) ? s.server_data : [];
         return {
           ...s,
-          server_name: originalName
-            ? `[${sourceName}] ${originalName}`
-            : `${sourceName} #${i + 1}`,
+          server_name: `Server ${i + 1} (${sourceAbbr})`,
           server_data: serverData,
           _source: sourceKey,
           _type: detectServerType(
@@ -1800,13 +1800,14 @@ export default function WatchPage() {
           priority: sourcePriority(sourceKey, serverData, currentEp),
         };
       });
+    };
 
     const combined = [
-      ...tagSource(kkphimEps, "KKPhim", "kkphim"),
-      ...tagSource(nguoncEps, "NguonC", "nguonc"),
-      ...tagSource(vsmovEps, "VSMov", "vsmov"),
-      ...tagSource(ophimEps, "OPhim", "ophim"),
-      ...tagSource(vidsrcEps, "VidSrc", "vidsrc"),
+      ...tagSource(kkphimEps, "kkphim"),
+      ...tagSource(nguoncEps, "nguonc"),
+      ...tagSource(vsmovEps, "vsmov"),
+      ...tagSource(ophimEps, "ophim"),
+      ...tagSource(vidsrcEps, "vidsrc"),
     ];
     const rank = new Map(
       providerPriority.map((source, index) => [source, index]),
@@ -3449,20 +3450,15 @@ export default function WatchPage() {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
-                        {activeGroup.map((ep) => {
+                        {activeGroup.map((ep, groupIdx) => {
                           const i = episodes.indexOf(ep);
                           const isActive = i === currentServer;
                           const hasFailed = failedServers.includes(i);
 
-                          const rawServerName =
-                            ep.server_name || `Server ${i + 1}`;
-                          const cleanServerName = rawServerName.replace(
-                            /^\[.*?\]\s*/,
-                            "",
-                          );
-                          const sourceTag = ep._source
-                            ? ep._source.toUpperCase()
-                            : "";
+                          const sourceAbbr = getSourceAbbr(ep._source || "");
+                          const serverLabel =
+                            ep.server_name ||
+                            `Server ${groupIdx + 1} (${sourceAbbr})`;
 
                           return (
                             <button
@@ -3509,11 +3505,7 @@ export default function WatchPage() {
                                     : "text-neutral-400"
                                 }
                               />
-                              <span>
-                                {sourceTag
-                                  ? `${sourceTag} • ${cleanServerName}`
-                                  : cleanServerName}
-                              </span>
+                              <span>{serverLabel}</span>
                             </button>
                           );
                         })}

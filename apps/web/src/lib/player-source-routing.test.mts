@@ -7,6 +7,7 @@ import {
   detectServerType,
   episodeNumberFromLabel,
   findMatchingEpisode,
+  getSourceAbbr,
   isAutomaticPlaybackSource,
   resolveSeasonNumber,
   selectInitialHlsTransport,
@@ -149,4 +150,13 @@ test("derives VidSrc season and episode numbers from Vietnamese labels", () => {
   assert.equal(resolveSeasonNumber(undefined, "Không ghi mùa"), 1);
   assert.equal(episodeNumberFromLabel("Tập 007"), 7);
   assert.equal(episodeNumberFromLabel("Full Movie"), null);
+});
+
+test("formats provider abbreviations correctly", () => {
+  assert.equal(getSourceAbbr("kkphim"), "KP");
+  assert.equal(getSourceAbbr("nguonc"), "NC");
+  assert.equal(getSourceAbbr("vsmov"), "VS");
+  assert.equal(getSourceAbbr("ophim"), "OP");
+  assert.equal(getSourceAbbr("vidsrc"), "VidSrc");
+  assert.equal(getSourceAbbr(undefined), "KP");
 });
