@@ -28,7 +28,7 @@ const TOPICS: TopicItem[] = [
     href: "/country/han-quoc",
     accent: "#f43f5e",
     badge: "K-Drama Hot",
-    image: "https://image.tmdb.org/t/p/w1280/vbkpl0ps4s5tMTUnC7SFXNzWmVr.jpg", // Lovely Runner
+    image: "https://image.tmdb.org/t/p/w780/vbkpl0ps4s5tMTUnC7SFXNzWmVr.jpg", // Lovely Runner
   },
   {
     slug: "phim-trung-quoc",
@@ -37,7 +37,7 @@ const TOPICS: TopicItem[] = [
     href: "/country/trung-quoc",
     accent: "#f59e0b",
     badge: "Hoa Ngữ",
-    image: "https://image.tmdb.org/t/p/w1280/aJxMvBSaUdbIkY8nqFkuEarrgcx.jpg", // Thương Lan Quyết
+    image: "https://image.tmdb.org/t/p/w780/aJxMvBSaUdbIkY8nqFkuEarrgcx.jpg", // Thương Lan Quyết
   },
   {
     slug: "dien-anh-au-my",
@@ -46,7 +46,7 @@ const TOPICS: TopicItem[] = [
     href: "/country/au-my",
     accent: "#0ea5e9",
     badge: "Hollywood",
-    image: "https://image.tmdb.org/t/p/w1280/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg", // Avengers: Endgame
+    image: "https://image.tmdb.org/t/p/w780/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg", // Avengers: Endgame
   },
   {
     slug: "anime-nhat-ban",
@@ -55,7 +55,7 @@ const TOPICS: TopicItem[] = [
     href: "/films/anime",
     accent: "#a855f7",
     badge: "Anime 4K",
-    image: "https://image.tmdb.org/t/p/w1280/8x9iKH8kWA0zdkgNdpAew7OstYe.jpg", // Your Name
+    image: "https://image.tmdb.org/t/p/w780/8x9iKH8kWA0zdkgNdpAew7OstYe.jpg", // Your Name
   },
   {
     slug: "co-trang-tien-hiep",
@@ -64,7 +64,7 @@ const TOPICS: TopicItem[] = [
     href: "/country/trung-quoc",
     accent: "#10b981",
     badge: "Tiên Hiệp",
-    image: "https://image.tmdb.org/t/p/w1280/ampkwvfwO7o5YMwYAVPKx1PLDaB.jpg", // Trần Tình Lệnh
+    image: "https://image.tmdb.org/t/p/w780/ampkwvfwO7o5YMwYAVPKx1PLDaB.jpg", // Trần Tình Lệnh
   },
   {
     slug: "thanh-xuan-vuon-truong",
@@ -73,7 +73,7 @@ const TOPICS: TopicItem[] = [
     href: "/genre/tinh-cam",
     accent: "#14b8a6",
     badge: "Thanh Xuân",
-    image: "https://image.tmdb.org/t/p/w1280/wNSLw756U5JQSpG6POYxHKL2KDH.jpg", // Tinh Hán Xán Lạn
+    image: "https://image.tmdb.org/t/p/w780/wNSLw756U5JQSpG6POYxHKL2KDH.jpg", // Tinh Hán Xán Lạn
   },
   {
     slug: "tinh-yeu-lang-man",
@@ -82,7 +82,7 @@ const TOPICS: TopicItem[] = [
     href: "/genre/tinh-cam",
     accent: "#ec4899",
     badge: "Lãng Mạn",
-    image: "https://image.tmdb.org/t/p/w1280/3yEHM2HT2vrUtO93YzTJNgEfiZG.jpg", // Hạ Cánh Nơi Anh
+    image: "https://image.tmdb.org/t/p/w780/3yEHM2HT2vrUtO93YzTJNgEfiZG.jpg", // Hạ Cánh Nơi Anh
   },
   {
     slug: "gia-dinh-doi-thuong",
@@ -91,7 +91,7 @@ const TOPICS: TopicItem[] = [
     href: "/genre/gia-dinh",
     accent: "#84cc16",
     badge: "Gia Đình",
-    image: "https://image.tmdb.org/t/p/w1280/1QUrjFNKgVchKktX4N6DaegfPbP.jpg", // Đi Đến Nơi Có Gió
+    image: "https://image.tmdb.org/t/p/w780/1QUrjFNKgVchKktX4N6DaegfPbP.jpg", // Đi Đến Nơi Có Gió
   },
   {
     slug: "phim-cong-so",
@@ -100,7 +100,7 @@ const TOPICS: TopicItem[] = [
     href: "/genre/tam-ly",
     accent: "#6366f1",
     badge: "Đô Thị",
-    image: "https://image.tmdb.org/t/p/w1280/hMJZCkmdaC2ZMzjP76a9TPNQFsS.jpg", // Hẹn Hò Chốn Công Sở
+    image: "https://image.tmdb.org/t/p/w780/hMJZCkmdaC2ZMzjP76a9TPNQFsS.jpg", // Hẹn Hò Chốn Công Sở
   },
   {
     slug: "hinh-su-toi-pham",
@@ -109,7 +109,7 @@ const TOPICS: TopicItem[] = [
     href: "/genre/bi-an",
     accent: "#06b6d4",
     badge: "Trinh Thám",
-    image: "https://image.tmdb.org/t/p/w1280/i1SyUHsi45psSH1xy9sM0in8FKJ.jpg", // Taxi Driver
+    image: "https://image.tmdb.org/t/p/w780/i1SyUHsi45psSH1xy9sM0in8FKJ.jpg", // Taxi Driver
   },
   {
     slug: "phim-chieu-rap-4k",
@@ -118,7 +118,7 @@ const TOPICS: TopicItem[] = [
     href: "/search?q=chieu%20rap",
     accent: "#eab308",
     badge: "4K Cinema",
-    image: "https://image.tmdb.org/t/p/w1280/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg", // Oppenheimer
+    image: "https://image.tmdb.org/t/p/w780/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg", // Oppenheimer
   },
   {
     slug: "hanh-dong-nghet-tho",
@@ -127,7 +127,7 @@ const TOPICS: TopicItem[] = [
     href: "/genre/hanh-dong",
     accent: "#ef4444",
     badge: "Hành Động",
-    image: "https://image.tmdb.org/t/p/w1280/7I6VUdPj6tQECNHdviJkUHD2u89.jpg", // John Wick 4
+    image: "https://image.tmdb.org/t/p/w780/7I6VUdPj6tQECNHdviJkUHD2u89.jpg", // John Wick 4
   },
   {
     slug: "khoa-hoc-vien-tuong",
@@ -136,7 +136,7 @@ const TOPICS: TopicItem[] = [
     href: "/genre/vien-tuong",
     accent: "#3b82f6",
     badge: "Sci-Fi",
-    image: "https://image.tmdb.org/t/p/w1280/vgnoBSVzWAV9sNQUORaDGvDp7wx.jpg", // Interstellar
+    image: "https://image.tmdb.org/t/p/w780/vgnoBSVzWAV9sNQUORaDGvDp7wx.jpg", // Interstellar
   },
   {
     slug: "kinh-di-dem-khuya",
@@ -145,7 +145,7 @@ const TOPICS: TopicItem[] = [
     href: "/genre/kinh-di",
     accent: "#dc2626",
     badge: "Kinh Dị",
-    image: "https://image.tmdb.org/t/p/w1280/ecKQlAEG95k62SMGhvX83oEqANK.jpg", // The Conjuring
+    image: "https://image.tmdb.org/t/p/w780/ecKQlAEG95k62SMGhvX83oEqANK.jpg", // The Conjuring
   },
   {
     slug: "hai-huoc-xa-stress",
@@ -154,7 +154,7 @@ const TOPICS: TopicItem[] = [
     href: "/genre/hai-huoc",
     accent: "#f97316",
     badge: "Hài Hước",
-    image: "https://image.tmdb.org/t/p/w1280/by8z9Fe8y7p4jo2YlW2SZDnptyT.jpg", // Deadpool & Wolverine
+    image: "https://image.tmdb.org/t/p/w780/by8z9Fe8y7p4jo2YlW2SZDnptyT.jpg", // Deadpool & Wolverine
   },
   {
     slug: "tam-ly-chinh-kich",
@@ -163,7 +163,7 @@ const TOPICS: TopicItem[] = [
     href: "/genre/tam-ly",
     accent: "#d946ef",
     badge: "Chính Kịch",
-    image: "https://image.tmdb.org/t/p/w1280/5qVLF9WTdBDA08fsZ9H5clJ6umI.jpg", // Parasite
+    image: "https://image.tmdb.org/t/p/w780/5qVLF9WTdBDA08fsZ9H5clJ6umI.jpg", // Parasite
   },
 ];
 
@@ -287,7 +287,7 @@ export default function GenresTopicsPage() {
             <Link
               key={topic.slug}
               href={topic.href}
-              className="group relative flex flex-col justify-end min-h-[175px] sm:min-h-[195px] overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#16171e] p-5 transition-all duration-500 hover:-translate-y-1.5 hover:border-white/25 hover:shadow-[0_20px_45px_rgba(0,0,0,0.85)] cursor-pointer select-none"
+              className="group relative flex flex-col justify-end min-h-[175px] sm:min-h-[195px] overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#16171e] p-5 transition-all duration-500 hover:-translate-y-1.5 hover:border-white/25 hover:shadow-[0_20px_45px_rgba(0,0,0,0.85)] cursor-pointer select-none transform-gpu will-change-transform"
             >
               {/* Full-bleed HD Backdrop Artwork */}
               <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
@@ -296,7 +296,8 @@ export default function GenresTopicsPage() {
                   alt={topic.title}
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  className="object-cover object-center brightness-[0.72] contrast-[1.08] transition-all duration-700 group-hover:scale-110 group-hover:brightness-95"
+                  className="object-cover object-center brightness-[0.72] contrast-[1.08] transition-all duration-700 group-hover:scale-110 group-hover:brightness-95 transform-gpu"
+                  loading="lazy"
                   unoptimized
                 />
                 {/* Clean Bottom Gradient Scrim for crisp text contrast */}
@@ -330,10 +331,10 @@ export default function GenresTopicsPage() {
                     {topic.badge}
                   </span>
                 </div>
-                <h2 className="text-lg sm:text-[19px] font-extrabold text-white tracking-tight leading-snug drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] group-hover:text-white transition-colors">
+                <h2 className="text-lg sm:text-[19px] font-extrabold text-white tracking-tight leading-snug [text-shadow:_0_2px_8px_rgba(0,0,0,0.9)] group-hover:text-white transition-colors">
                   {topic.title}
                 </h2>
-                <p className="mt-1 text-[11px] leading-relaxed text-neutral-300 line-clamp-1 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
+                <p className="mt-1 text-[11px] leading-relaxed text-neutral-300 line-clamp-1 [text-shadow:_0_1px_4px_rgba(0,0,0,0.9)]">
                   {topic.description}
                 </p>
               </div>

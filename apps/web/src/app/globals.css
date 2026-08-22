@@ -8,13 +8,17 @@ html[data-netphim-intro="done"] #netphim-entry-splash {
 }
 
 @keyframes marquee-rtl {
-  0% { transform: translateX(0%); }
-  100% { transform: translateX(-50%); }
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
 }
 
 .animate-marquee-rtl {
   display: flex;
   width: max-content;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
   animation: marquee-rtl 95s linear infinite;
 }
 
