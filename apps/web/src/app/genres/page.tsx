@@ -213,7 +213,7 @@ export default function GenresTopicsPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="inline-flex items-center gap-2 text-xs font-semibold text-neutral-400 transition-colors hover:text-white cursor-pointer px-3 py-1.5 rounded-xl bg-[#1e2029] border border-white/[0.08] hover:bg-[#252834]"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-neutral-400 transition-colors hover:text-white cursor-pointer px-3 py-1.5 rounded-xl bg-[#181a20] border border-white/[0.08] hover:bg-[#20222a]"
             >
               <ArrowLeft size={14} /> Quay lại
             </button>
@@ -229,12 +229,12 @@ export default function GenresTopicsPage() {
           </div>
         </header>
 
-        {/* ── DẢI BĂNG CÁC PHIM ĐỀ XUẤT LIÊN QUAN CHẠY TỪ PHẢI QUA TRÁI (CHẬM & MƯỢT MÀ) ── */}
+        {/* ── DẢI BĂNG CÁC PHIM ĐỀ XUẤT LIÊN QUAN (ĐỒNG MÀU BACKGROUND WEB #141414) ── */}
         <section aria-label="Dải băng phim đề xuất" className="mb-10 overflow-hidden">
-          <div className="relative w-full overflow-hidden rounded-2xl border border-white/[0.08] bg-[#181a20] py-3">
-            {/* Smooth Edge Fades */}
-            <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-[#181a20] to-transparent z-10" />
-            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-[#181a20] to-transparent z-10" />
+          <div className="relative w-full overflow-hidden py-1 bg-transparent">
+            {/* Smooth Edge Fades matching Web Background #141414 */}
+            <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-[#141414] to-transparent z-10" />
+            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-[#141414] to-transparent z-10" />
 
             {/* Continuous Marquee Track (Slow Right to Left) */}
             <div className="animate-marquee-rtl gap-3 px-3">
@@ -251,9 +251,9 @@ export default function GenresTopicsPage() {
                   <Link
                     key={`${film.slug || idx}-${idx}`}
                     href={`/film/${film.slug}`}
-                    className="group flex items-center gap-3 px-3.5 py-1.5 rounded-xl bg-[#20232c] border border-white/[0.06] hover:bg-[#272b36] hover:border-white/20 transition-all flex-shrink-0 cursor-pointer"
+                    className="group flex items-center gap-3 px-3.5 py-1.5 rounded-xl bg-[#181a20] border border-white/[0.08] hover:bg-[#20222a] hover:border-white/20 transition-all flex-shrink-0 cursor-pointer"
                   >
-                    <div className="relative h-10 w-7 rounded-md overflow-hidden bg-neutral-800 flex-shrink-0">
+                    <div className="relative h-10 w-7 rounded-md overflow-hidden bg-neutral-900 flex-shrink-0 shadow-md">
                       <Image
                         src={poster}
                         alt={film.name || film.origin_name || "Phim"}
@@ -263,12 +263,12 @@ export default function GenresTopicsPage() {
                         unoptimized
                       />
                     </div>
-                    <div className="max-w-[155px] text-left">
-                      <p className="text-xs font-semibold text-neutral-200 truncate group-hover:text-white transition-colors">
+                    <div className="max-w-[160px] text-left">
+                      <p className="text-xs font-bold text-neutral-200 truncate group-hover:text-white transition-colors">
                         {film.name}
                       </p>
                       <p className="text-[10px] text-neutral-400 truncate mt-0.5">
-                        {film.year || film.origin_name || "Tuyển chọn"} • <span className="text-amber-400 font-medium">{film.quality || "HD"}</span>
+                        {film.year || film.origin_name || "Tuyển chọn"} • <span className="text-amber-400 font-semibold">{film.quality || "HD"}</span>
                       </p>
                     </div>
                   </Link>
