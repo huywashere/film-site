@@ -65,14 +65,7 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
       className="flex w-full flex-col group/item relative select-none cursor-pointer pt-4 pb-2 pr-1 sm:w-auto sm:pr-2"
     >
       {/* Bold Rank Number Peeking Behind the Top-Left of Poster Card */}
-      <div
-        className={cn(
-          "absolute -top-4 sm:-top-6 z-0 pointer-events-none select-none",
-          rank === 1
-            ? "left-8 sm:left-12 md:left-14"
-            : "left-2 sm:left-4 md:left-5",
-        )}
-      >
+      <div className="absolute -top-4 sm:-top-6 left-0 z-0 pointer-events-none select-none">
         <span
           className={`${rankFont.className} block text-[76px] font-black leading-none tracking-[-0.09em] opacity-100 transition-transform duration-300 group-hover/item:scale-105 sm:text-[132px] md:text-[156px]`}
           style={getRankColorStyle(rank)}
@@ -82,7 +75,7 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
       </div>
 
       {/* Poster Card Container Overlapping Rank Number (Creating 3D Depth Layer) */}
-      <div className="relative z-10 pl-14 sm:pl-24 md:pl-28">
+      <div className="relative z-10 pl-7 sm:pl-14 md:pl-16">
         <div className="relative w-[78px] sm:w-[160px] md:w-[185px] aspect-[2/3] rounded-xl sm:rounded-2xl overflow-hidden border border-white/15 shadow-2xl group-hover/item:border-white/40 group-hover/item:scale-105 transition-all duration-300 bg-neutral-900">
           {imgSrc ? (
             <Image
@@ -229,8 +222,8 @@ export function Top10RankedRow({ films, title }: Top10RankedRowProps) {
   if (top10.length === 0) return null;
 
   return (
-    <section className="mb-10 relative group/section pl-4 sm:pl-8 md:pl-12 lg:pl-16 pr-4 sm:pr-8">
-      <div className="flex items-center justify-between mb-4 pr-2 sm:pr-4">
+    <section className="mb-10 relative group/section">
+      <div className="flex items-center justify-between mb-4">
         <h2
           className={`${cardFont.className} text-lg md:text-xl font-extrabold text-white flex items-center gap-2`}
         >
@@ -286,7 +279,7 @@ export function Top10RankedRow({ films, title }: Top10RankedRowProps) {
           spaceBetween={8}
           breakpoints={{ 640: { spaceBetween: 16 } }}
           slidesPerView="auto"
-          className="!py-4 !pl-2 sm:!pl-4 md:!pl-6 !pr-6"
+          className="w-full !py-4 !pl-0 !pr-4"
         >
           {top10.map((film, index) => (
             <SwiperSlide
