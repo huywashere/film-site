@@ -48,14 +48,6 @@ function TelegramIcon({
 const SIDEBAR_ITEMS = [
   { title: "Trang chủ", href: "/", icon: Home },
   { title: "Lịch Chiếu", href: "/schedule", icon: CalendarDays },
-  {
-    title: "Phim Song Ngữ",
-    href: "/song-ngu",
-    icon: Languages,
-    isBilingual: true,
-    badge: "DUAL SUB",
-    tagline: "Phụ đề kép Anh - Việt • Luyện nghe 4K",
-  },
   { title: "Thế Giới Phim", href: "/genres", icon: LayoutGrid },
   { title: "Xem Chung", href: "/watch-party", icon: Popcorn },
   { title: "Bộ Sưu Tập", href: "/watchlist", icon: Layers },
