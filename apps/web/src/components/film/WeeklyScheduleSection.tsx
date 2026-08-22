@@ -96,7 +96,7 @@ export function WeeklyScheduleSection({
       </div>
 
       {/* Weekday Switcher Strip */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {DAYS.map((day) => {
           const isSelected = activeDayId === day.id;
           const isToday = day.dayIndex === currentDayIndex;
@@ -134,17 +134,20 @@ export function WeeklyScheduleSection({
           Chưa có tập phim mới vào ngày {selectedDay.fullLabel}.
         </div>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(142px,190px))] gap-x-3 gap-y-4">
+        <div className="flex overflow-x-auto gap-3 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory sm:grid sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 sm:overflow-visible">
           {dayFilms.map((film, index) => {
             const timeSlot = TIME_SLOTS[index % TIME_SLOTS.length];
             return (
-              <div key={film.slug} className="min-w-0 space-y-1.5">
+              <div
+                key={film.slug}
+                className="w-[140px] xs:w-[155px] sm:w-auto shrink-0 snap-start space-y-1.5"
+              >
                 <div className="flex items-center justify-between text-[10px] font-semibold text-neutral-400 px-1">
                   <span className="inline-flex items-center gap-1 text-purple-400 font-extrabold">
                     <Clock size={10} />
                     {timeSlot}
                   </span>
-                  <span className="text-neutral-500 text-[9px]">
+                  <span className="text-neutral-500 text-[9px] truncate max-w-[70px]">
                     {film.episode_current || "Tập mới"}
                   </span>
                 </div>
