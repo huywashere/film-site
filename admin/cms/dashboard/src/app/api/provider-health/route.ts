@@ -69,10 +69,10 @@ function isTmdbPayload(payload: unknown): boolean {
 function isOmdbPayload(payload: unknown): boolean {
   if (!isRecord(payload)) return false;
   return (
-    Boolean(payload.imdbId) ||
-    Boolean(payload.title) ||
+    payload.provider === "omdb" ||
     typeof payload.dailyLimit === "number" ||
-    payload.provider === "omdb"
+    Boolean(payload.imdbId) ||
+    Boolean(payload.title)
   );
 }
 
@@ -130,7 +130,7 @@ const PROVIDERS: ProviderProbe[] = [
     id: "omdb",
     name: "OMDb API",
     role: "Điểm IMDb, Rotten Tomatoes & Metascore",
-    path: "/api/omdb?imdbId=tt0111161",
+    path: "/api/omdb?stats=1",
     validate: isOmdbPayload,
   },
   {
@@ -246,17 +246,18 @@ async function probeProvider(
 
     let quota: ProviderQuota | undefined;
     if (provider.id === "omdb") {
-      const q = isRecord(payload) ? (payload._quota as any) : undefined;
-      if (q && typeof q.dailyLimit === "number") {
+      if (isRecord(payload) && typeof payload.dailyLimit === "number") {
+        const countdown = (payload.resetCountdown as any) || {};
         quota = {
-          dailyLimit: q.dailyLimit,
-          usedToday: q.usedToday,
-          remaining: q.remaining,
-          percentUsed: q.percentUsed,
-          cacheHits: q.cacheHits,
-          nextResetFormatted:
-            q.resetCountdown?.formatted || "07:00 sáng mai (00:00 UTC)",
-          nextResetIso: q.nextResetIso,
+          dailyLimit: Number(payload.dailyLimit),
+          usedToday: Number(payload.usedToday || 0),
+          remaining: Number(payload.remaining || 0),
+          percentUsed: Number(payload.percentUsed || 0),
+          cacheHits: Number(payload.cacheHits || 0),
+          nextResetFormatted: String(
+            countdown.formatted || "07:00 sáng mai (00:00 UTC)",
+          ),
+          nextResetIso: String(payload.nextResetIso || new Date().toISOString()),
         };
       } else {
         quota = calculateOmdbFallbackQuota();
