@@ -516,6 +516,20 @@ export default function ArtPlayer({
       airplay: true,
       theme: "#23ade5",
       lang: "vi",
+      i18n: {
+        vi: {
+          Pause: "",
+          Play: "",
+        },
+        en: {
+          Pause: "",
+          Play: "",
+        },
+        "zh-cn": {
+          Pause: "",
+          Play: "",
+        },
+      },
       moreVideoAttr: {
         crossOrigin: "anonymous",
         playsInline: "true",
@@ -632,16 +646,24 @@ export default function ArtPlayer({
     playerRef.current = player;
 
     player.on("video:play", () => {
+      if (player.notice) player.notice.show = "";
       onPlaybackStateChangeRef.current?.({
         action: "play",
         currentTime: player.currentTime,
       });
     });
     player.on("video:pause", () => {
+      if (player.notice) player.notice.show = "";
       onPlaybackStateChangeRef.current?.({
         action: "pause",
         currentTime: player.currentTime,
       });
+    });
+    player.on("pause", () => {
+      if (player.notice) player.notice.show = "";
+    });
+    player.on("play", () => {
+      if (player.notice) player.notice.show = "";
     });
     player.on("video:seeked", () => {
       onPlaybackStateChangeRef.current?.({
