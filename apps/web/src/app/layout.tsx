@@ -34,11 +34,11 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL || "https://film-site-web.vercel.app",
   ),
   title: {
-    default: "NetPhim — Xem Phim Online Miễn Phí Full HD 4K",
+    default: "NetPhim — Xem Phim Online",
     template: "%s | NetPhim",
   },
   description:
-    "Nền tảng xem phim online chất lượng cao 4K. Phim bộ, phim lẻ, anime, TV Shows với phụ đề tiếng Việt và thuyết minh cập nhật liên tục.",
+    "Nền tảng xem phim online chất lượng cao. Phim bộ, phim lẻ, anime, TV Shows với phụ đề tiếng Việt và thuyết minh cập nhật liên tục.",
   keywords: [
     "xem phim",
     "phim online",
@@ -57,14 +57,14 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: "NetPhim",
+    title: "NetPhim — Xem Phim Online",
     statusBarStyle: "black-translucent",
   },
   formatDetection: { telephone: false },
   openGraph: {
-    title: "NetPhim — Xem Phim Online Miễn Phí Full HD 4K",
+    title: "NetPhim — Xem Phim Online",
     description:
-      "Nền tảng xem phim online chất lượng cao 4K. Phim bộ, phim lẻ, anime với phụ đề tiếng Việt và thuyết minh.",
+      "Nền tảng xem phim online chất lượng cao. Phim bộ, phim lẻ, anime với phụ đề tiếng Việt và thuyết minh.",
     url: "https://film-site-web.vercel.app",
     siteName: "NetPhim",
     locale: "vi_VN",
@@ -80,9 +80,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "NetPhim — Xem Phim Online Miễn Phí Full HD 4K",
+    title: "NetPhim — Xem Phim Online",
     description:
-      "Nền tảng xem phim online chất lượng cao 4K với hàng ngàn bộ phim bom tấn mới nhất.",
+      "Nền tảng xem phim online chất lượng cao với hàng ngàn bộ phim bom tấn mới nhất.",
     images: ["/cinephim-logo.png"],
   },
 };
@@ -121,7 +121,7 @@ export default function RootLayout({
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "NetPhim",
-    alternateName: "NetPhim Xem Phim Online 4K",
+    alternateName: "NetPhim Xem Phim Online",
     url: "https://netphim.app",
     potentialAction: {
       "@type": "SearchAction",

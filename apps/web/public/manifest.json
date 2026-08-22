@@ -1,7 +1,7 @@
 {
-  "name": "NetPhim — Xem Phim Online 4K",
+  "name": "NetPhim — Xem Phim Online",
   "short_name": "NetPhim",
-  "description": "Nền tảng xem phim online chất lượng cao 4K. Phim bộ, phim lẻ, hoạt hình với phụ đề tiếng Việt.",
+  "description": "Nền tảng xem phim online chất lượng cao. Phim bộ, phim lẻ, hoạt hình với phụ đề tiếng Việt.",
   "start_url": "/",
   "scope": "/",
   "id": "/",

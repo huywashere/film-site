@@ -688,26 +688,30 @@ export default function ArtPlayer({
       const video = player.video;
       if (!video) return;
 
-      switch (e.key) {
-        // Space / K — Play/Pause
-        case " ":
-        case "k":
-        case "K":
-          e.preventDefault();
-          video.paused ? video.play().catch(() => {}) : video.pause();
-          player.notice.show = video.paused ? "▶ Phát" : "⏸ Tạm dừng";
-          break;
+      // Space / K — Play/Pause Toggle
+      if (
+        e.code === "Space" ||
+        e.key === " " ||
+        e.key === "Spacebar" ||
+        e.key === "k" ||
+        e.key === "K"
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        player.toggle();
+        return;
+      }
 
-        // ← / J — Tua lùi 10s
+      switch (e.key) {
+        // ← / J — Tua lùi 10s (không hiện popup thông báo)
         case "ArrowLeft":
         case "j":
         case "J":
           e.preventDefault();
           player.currentTime = Math.max(0, player.currentTime - 10);
-          player.notice.show = "⏪ -10 giây";
           break;
 
-        // → / L — Tua tới 10s
+        // → / L — Tua tới 10s (không hiện popup thông báo)
         case "ArrowRight":
         case "l":
         case "L":
@@ -716,7 +720,6 @@ export default function ArtPlayer({
             player.duration,
             player.currentTime + 10,
           );
-          player.notice.show = "⏩ +10 giây";
           break;
 
         // ↑ — Tăng âm lượng
@@ -728,6 +731,10 @@ export default function ArtPlayer({
 
         // ↓ — Giảm âm lượng
         case "ArrowDown":
+          e.preventDefault();
+          player.volume = Math.max(0, player.volume - 0.1);
+          player.notice.show = `🔉 ${Math.round(player.volume * 100)}%`;
+          break;
           e.preventDefault();
           player.volume = Math.max(0, player.volume - 0.1);
           player.notice.show = `🔉 ${Math.round(player.volume * 100)}%`;
@@ -809,17 +816,6 @@ export default function ArtPlayer({
     };
 
     window.addEventListener("keydown", handlePlayerHotkeys, true);
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        const video = player.video;
-        if (video && !video.paused) {
-          video.pause();
-        }
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     // -- Ready callback & Ambilight canvas draw loop --
     let drawInterval: NodeJS.Timeout | null = null;
@@ -933,7 +929,6 @@ export default function ArtPlayer({
 
     return () => {
       window.removeEventListener("keydown", handlePlayerHotkeys, true);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
       if (playerRef.current) {
         const video = playerRef.current.video;
         if (video && (video as any).hls) {
@@ -1014,12 +1009,10 @@ export default function ArtPlayer({
       if (clickX < width * 0.45) {
         player.currentTime = Math.max(0, player.currentTime - 10);
         setDoubleTapHud("rewind");
-        player.notice.show = "⏪ -10 giây";
         setTimeout(() => setDoubleTapHud(null), 800);
       } else if (clickX > width * 0.55) {
         player.currentTime = Math.min(player.duration, player.currentTime + 10);
         setDoubleTapHud("forward");
-        player.notice.show = "⏩ +10 giây";
         setTimeout(() => setDoubleTapHud(null), 800);
       }
       lastTapRef.current = 0;
