@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { X, Clapperboard, Loader2, ExternalLink } from "lucide-react";
 import { useTmdb } from "@/hooks/useTmdb";
 import { FilmItem } from "@/components/film/FilmCard";
@@ -17,6 +17,16 @@ interface TrailerModalProps {
   tmdbVideoKey?: string;
 }
 
+function extractYouTubeKeyFromUrl(url?: string): string | null {
+  if (!url) return null;
+  const match = url.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:embed\/|shorts\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/,
+  );
+  if (match) return match[1];
+  if (/^[\w-]{11}$/.test(url.trim())) return url.trim();
+  return null;
+}
+
 export function TrailerModal({
   film,
   isOpen,
@@ -26,6 +36,9 @@ export function TrailerModal({
   trailerUrl,
   tmdbVideoKey,
 }: TrailerModalProps) {
+  const [resolvedKey, setResolvedKey] = useState<string | null>(null);
+  const [isResolving, setIsResolving] = useState(false);
+
   const { trailer, videos, videosLoading } = useTmdb({
     film: film || undefined,
     enabled: isOpen && !!film && !tmdbVideoKey,
@@ -33,6 +46,26 @@ export function TrailerModal({
     fetchCredits: false,
     fetchVideos: true,
   });
+
+  const displayName =
+    directFilmName || film?.name || film?.title || "Phim Điện Ảnh";
+
+  // Check direct sources
+  const directKey = useMemo(() => {
+    return tmdbVideoKey || extractYouTubeKeyFromUrl(trailerUrl || film?.trailer_url);
+  }, [tmdbVideoKey, trailerUrl, film?.trailer_url]);
+
+  // If TMDB provided videos array with any youtube entry, pick first
+  const tmdbKey = useMemo(() => {
+    if (trailer?.key) return trailer.key;
+    if (videos.length > 0) {
+      const yt =
+        videos.find((v) => v.site === "YouTube" && v.type === "Trailer" && v.key) ||
+        videos.find((v) => v.site === "YouTube" && v.key);
+      if (yt) return yt.key;
+    }
+    return null;
+  }, [trailer, videos]);
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -55,39 +88,59 @@ export function TrailerModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
+  // Auto-resolve trailer from API if not yet found
+  useEffect(() => {
+    if (!isOpen) {
+      setResolvedKey(null);
+      setIsResolving(false);
+      return;
+    }
+
+    if (directKey || tmdbKey) return;
+
+    let active = true;
+    setIsResolving(true);
+
+    const title = film?.name || film?.title || directFilmName || "";
+    const originName = film?.origin_name || "";
+    const year = film?.year ? String(film.year) : "";
+    const rawUrl = trailerUrl || film?.trailer_url || "";
+
+    const params = new URLSearchParams();
+    if (title) params.set("title", title);
+    if (originName) params.set("originName", originName);
+    if (year) params.set("year", year);
+    if (rawUrl) params.set("trailerUrl", rawUrl);
+
+    fetch(`/api/trailer/resolve?${params.toString()}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (active && data.success && data.key) {
+          setResolvedKey(data.key);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setIsResolving(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isOpen, directKey, tmdbKey, film, directFilmName, trailerUrl]);
+
   if (!isOpen) return null;
 
-  const displayName =
-    directFilmName || film?.name || film?.title || "Phim Điện Ảnh";
+  const finalYouTubeKey = directKey || tmdbKey || resolvedKey;
+  const isLoading = (videosLoading || isResolving) && !finalYouTubeKey;
 
-  // Resolve YouTube first, then Vimeo as a secondary official video source.
-  let youtubeKey = tmdbVideoKey || trailer?.key;
-  let vimeoKey = videos.find((video) => video.site === "Vimeo")?.key;
-  const rawUrl = trailerUrl || film?.trailer_url || "";
+  // Vimeo secondary check if any
+  const vimeoKey = !finalYouTubeKey
+    ? videos.find((video) => video.site === "Vimeo")?.key
+    : null;
 
-  if (!youtubeKey && rawUrl) {
-    const match = rawUrl.match(
-      /(?:youtu\.be\/|youtube\.com\/(?:embed\/|shorts\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/,
-    );
-    if (match) youtubeKey = match[1];
-    if (!youtubeKey && /^[\w-]{11}$/.test(rawUrl.trim())) {
-      youtubeKey = rawUrl.trim();
-    }
-    const vimeoMatch = rawUrl.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
-    if (!vimeoKey && vimeoMatch) vimeoKey = vimeoMatch[1];
-  }
-
-  // If TMDB provided videos array with any youtube entry, pick first
-  if (!youtubeKey && !vimeoKey && videos.length > 0) {
-    const yt =
-      videos.find((v) => v.site === "YouTube" && v.type === "Trailer" && v.key) ||
-      videos.find((v) => v.site === "YouTube" && v.key);
-    if (yt) youtubeKey = yt.key;
-  }
-
-  // Only embed when a valid video key exists. Search embeds are blocked by YouTube (Error 153)
-  const embedSrc = youtubeKey
-    ? `https://www.youtube.com/embed/${encodeURIComponent(youtubeKey)}?autoplay=1&rel=0&playsinline=1&enablejsapi=1`
+  const embedSrc = finalYouTubeKey
+    ? `https://www.youtube.com/embed/${encodeURIComponent(finalYouTubeKey)}?autoplay=1&rel=0&playsinline=1&enablejsapi=1`
     : vimeoKey
       ? `https://player.vimeo.com/video/${encodeURIComponent(vimeoKey)}?autoplay=1&title=0&byline=0`
       : null;
@@ -95,8 +148,8 @@ export function TrailerModal({
   const youtubeSearchHref = `https://www.youtube.com/results?search_query=${encodeURIComponent(
     `${displayName} official trailer`,
   )}`;
-  const externalTrailerHref = youtubeKey
-    ? `https://www.youtube.com/watch?v=${encodeURIComponent(youtubeKey)}`
+  const externalTrailerHref = finalYouTubeKey
+    ? `https://www.youtube.com/watch?v=${encodeURIComponent(finalYouTubeKey)}`
     : vimeoKey
       ? `https://vimeo.com/${encodeURIComponent(vimeoKey)}`
       : youtubeSearchHref;
@@ -145,12 +198,12 @@ export function TrailerModal({
           </div>
         </div>
 
-        {/* Video Frame Box (No Borders) */}
+        {/* Video Frame Box */}
         <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black shadow-2xl flex items-center justify-center">
-          {videosLoading && !embedSrc ? (
+          {isLoading ? (
             <div className="flex flex-col items-center gap-2 text-neutral-400">
               <Loader2 size={24} className="animate-spin text-neutral-400" />
-              <p className="text-xs font-medium">Đang tải trailer...</p>
+              <p className="text-xs font-medium">Đang tìm trailer chính thức...</p>
             </div>
           ) : embedSrc ? (
             <iframe
@@ -163,9 +216,9 @@ export function TrailerModal({
           ) : (
             <div className="flex max-w-sm flex-col items-center gap-3 px-6 text-center text-neutral-300">
               <Clapperboard size={28} className="text-neutral-300" />
-              <p className="text-sm font-semibold">Trailer chưa có trên TMDB</p>
+              <p className="text-sm font-semibold">Chưa tìm thấy video trailer</p>
               <p className="text-xs leading-relaxed text-neutral-500">
-                Mở kết quả YouTube để xem trailer chính thức của phim này.
+                Mở kết quả YouTube để xem trailer của phim này.
               </p>
               <a
                 href={externalTrailerHref}
