@@ -1,4 +1,4 @@
-const CACHE_NAME = "cineverse-cache-v4";
+const CACHE_NAME = "cineverse-cache-v5";
 const OFFLINE_URL = "/offline";
 
 const ASSETS_TO_CACHE = ["/", "/offline", "/manifest.json"];
