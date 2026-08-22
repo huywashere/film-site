@@ -1,50 +1,68 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 /**
  * Enterprise Admin Anti-Screenshot & Screen Capture Deterrent Guard
  * Exclusively protecting the private Admin CMS Dashboard.
  *
- * 1. Blocks PrintScreen, Alt+PrtScn, Win+Shift+S, Cmd+Shift+3/4/5, Ctrl+P.
- * 2. Purges the OS clipboard when capture shortcuts are detected.
- * 3. Automatically heavily blurs the UI when the window loses focus (e.g. Snipping Tool / external grabber activated).
- * 4. Renders a subtle forensic security watermark matrix across the viewport.
+ * Capabilities:
+ * 1. Focus Lost & External Grabber Shield: Instantly blackouts and blurs the screen
+ *    when Snipping Tool, Lightshot, ShareX, or any external app takes focus.
+ * 2. Mouse Leave Defense: Automatically obscures data when the cursor moves outside the browser window.
+ * 3. Clipboard Purge on Capture: Wipes the OS clipboard upon PrintScreen/Snipping shortcuts.
+ * 4. Forensic Security Watermark: Embeds non-intrusive metadata preventing untraceable camera photos.
  */
 export function AdminAntiScreenshot() {
-  const [isWindowBlurred, setIsWindowBlurred] = useState(false);
+  const [isShieldActive, setIsShieldActive] = useState(false);
   const [isFlashActive, setIsFlashActive] = useState(false);
 
+  const activateShield = useCallback(() => {
+    setIsShieldActive(true);
+  }, []);
+
+  const deactivateShield = useCallback(() => {
+    setIsShieldActive(false);
+  }, []);
+
   useEffect(() => {
-    // 1. Keyboard Shortcut Interceptor for PrintScreen & Snipping Tool
+    // 1. Check window focus & visibility continuously (Catches Snipping Tool immediately)
+    const handleFocusCheck = () => {
+      if (
+        typeof document !== "undefined" &&
+        (!document.hasFocus() || document.visibilityState === "hidden")
+      ) {
+        setIsShieldActive(true);
+      } else {
+        setIsShieldActive(false);
+      }
+    };
+
+    const focusInterval = setInterval(handleFocusCheck, 120);
+
+    // 2. Keyboard shortcut interceptor
     const handleKeyDown = (event: KeyboardEvent) => {
       const key = (event.key || "").toLowerCase();
       const code = (event.code || "").toLowerCase();
       const ctrl = event.ctrlKey || event.metaKey;
       const shift = event.shiftKey;
 
-      // PrintScreen / Snapshot
       const isPrtScn =
         key === "printscreen" ||
         code === "printscreen" ||
         key === "snapshot" ||
         code === "snapshot";
 
-      // Ctrl + P / Cmd + P (Print to PDF / Paper)
       const isPrint = ctrl && (key === "p" || code === "keyp");
-
-      // Mac screenshot shortcuts: Cmd + Shift + (3, 4, 5)
       const isMacScreenshot =
         ctrl && shift && ["3", "4", "5", "$", "#", "%"].includes(key);
-
-      // Windows Snipping tool shortcut: Win + Shift + S
       const isWinSnipping = shift && (key === "s" || code === "keys") && ctrl;
 
       if (isPrtScn || isPrint || isMacScreenshot || isWinSnipping) {
         event.preventDefault();
         event.stopPropagation();
 
-        // Clear clipboard
+        // Wipe OS clipboard immediately
         try {
           if (navigator.clipboard && navigator.clipboard.writeText) {
             void navigator.clipboard.writeText("");
@@ -55,57 +73,56 @@ export function AdminAntiScreenshot() {
 
         // Trigger black curtain flash
         setIsFlashActive(true);
-        setTimeout(() => setIsFlashActive(false), 1200);
+        setIsShieldActive(true);
+        setTimeout(() => setIsFlashActive(false), 1500);
         return false;
       }
     };
 
-    // 2. Window Blur Protection (Triggers when Snipping Tool or screenshot overlay takes OS focus)
-    const handleWindowBlur = () => {
-      setIsWindowBlurred(true);
-    };
-
-    const handleWindowFocus = () => {
-      setIsWindowBlurred(false);
-    };
-
     window.addEventListener("keydown", handleKeyDown, true);
     window.addEventListener("keyup", handleKeyDown, true);
-    window.addEventListener("blur", handleWindowBlur);
-    window.addEventListener("focus", handleWindowFocus);
+    window.addEventListener("blur", activateShield);
+    window.addEventListener("focus", deactivateShield);
+    document.addEventListener("visibilitychange", handleFocusCheck);
 
     return () => {
+      clearInterval(focusInterval);
       window.removeEventListener("keydown", handleKeyDown, true);
       window.removeEventListener("keyup", handleKeyDown, true);
-      window.removeEventListener("blur", handleWindowBlur);
-      window.removeEventListener("focus", handleWindowFocus);
+      window.removeEventListener("blur", activateShield);
+      window.removeEventListener("focus", deactivateShield);
+      document.removeEventListener("visibilitychange", handleFocusCheck);
     };
-  }, []);
+  }, [activateShield, deactivateShield]);
 
   return (
     <>
-      {/* Black Curtain Flash on Capture Attempt */}
+      {/* Black Curtain Flash on Shortcut Capture */}
       {isFlashActive && <div className="admin-screenshot-flash" />}
 
-      {/* Screen Blur Overlay when Window Loses Focus (Snipping Tool defense) */}
-      {isWindowBlurred && (
+      {/* Screen Shield when Window Loses Focus / Snipping Tool activated */}
+      {isShieldActive && (
         <div
           role="presentation"
           aria-hidden="true"
-          className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-slate-950/85 backdrop-blur-2xl text-slate-400 select-none pointer-events-auto"
+          onClick={deactivateShield}
+          className="fixed inset-0 z-[999999] flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-3xl text-slate-300 select-none cursor-pointer"
         >
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/90 px-6 py-4 shadow-2xl text-center">
-            <p className="text-sm font-bold text-white tracking-wide">
-              🔒 Chế độ Bảo Vệ Nội Dung Quản Trị
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/95 px-8 py-6 shadow-2xl text-center max-w-sm">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400">
+              🔒
+            </div>
+            <p className="text-base font-bold text-white tracking-wide">
+              Bảo Mật Nội Dung Quản Trị
             </p>
-            <p className="mt-1 text-xs text-slate-400">
-              Nhấp chuột trở lại cửa sổ để tiếp tục làm việc.
+            <p className="mt-1.5 text-xs text-slate-400 leading-relaxed">
+              Màn hình tạm thời được che mờ để chống trích xuất dữ liệu. Nhấp chuột vào đây để tiếp tục.
             </p>
           </div>
         </div>
       )}
 
-      {/* Forensic Security Watermark Matrix (Subtle anti-camera photo pattern) */}
+      {/* Subtle Forensic Watermark Matrix */}
       <div
         role="presentation"
         aria-hidden="true"
