@@ -957,11 +957,11 @@ export function Navbar() {
                       sideOffset={10}
                       collisionPadding={{ right: 32 }}
                       className={cn(
-                        "w-72 -translate-x-6 sm:-translate-x-8 p-2.5 bg-[#090c15]/75 backdrop-blur-3xl border border-white/15 text-neutral-200 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.7)] z-50 divide-y divide-white/10 ring-1 ring-white/10",
+                        "w-60 -translate-x-4 sm:-translate-x-6 p-1.5 bg-[#090c15]/85 backdrop-blur-3xl border border-white/15 text-neutral-200 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 divide-y divide-white/10 ring-1 ring-white/10",
                         cardFont.className,
                       )}
                     >
-                      <div className="p-2 flex items-center space-x-3 pb-3">
+                      <div className="p-2 flex items-center space-x-2.5 pb-2">
                         <img
                           src={
                             user.avatarUrl ||
@@ -969,23 +969,23 @@ export function Navbar() {
                           }
                           alt={user.displayName || user.username}
                           referrerPolicy="no-referrer"
-                          className="h-10 w-10 rounded-full object-cover border border-white/20 shadow-md shrink-0"
+                          className="h-8 w-8 rounded-full object-cover border border-white/20 shadow-md shrink-0"
                           onError={(e) => {
                             (e.currentTarget as HTMLImageElement).src =
                               `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=80`;
                           }}
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm text-white truncate">
+                          <p className="font-bold text-xs text-white truncate">
                             {user.displayName || user.username}
                           </p>
-                          <p className="text-xs text-neutral-400 truncate">
+                          <p className="text-[11px] text-neutral-400 truncate">
                             @{user.username}
                           </p>
                         </div>
                       </div>
 
-                      <div className="py-1.5 space-y-0.5">
+                      <div className="py-1 space-y-0.5">
                         <DropdownMenuItem
                           onClick={() =>
                             router.push(
@@ -994,62 +994,62 @@ export function Navbar() {
                                 : "/user",
                             )
                           }
-                          className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
+                          className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
-                          <User size={16} className="mr-3 text-neutral-300" />
+                          <User size={14} className="mr-2 text-neutral-300 shrink-0" />
                           <span>{t("nav.profile")}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => router.push("/watchlist")}
-                          className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
+                          className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
-                          <Bookmark size={16} className="mr-3 text-neutral-300" />
+                          <Bookmark size={14} className="mr-2 text-neutral-300 shrink-0" />
                           <span>{t("nav.watchlist")}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => router.push("/history")}
-                          className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
+                          className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
-                          <History size={16} className="mr-3 text-neutral-300" />
+                          <History size={14} className="mr-2 text-neutral-300 shrink-0" />
                           <span>{t("nav.history")}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => router.push("/settings")}
-                          className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-semibold"
+                          className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
-                          <Settings size={16} className="mr-3 text-neutral-300" />
+                          <Settings size={14} className="mr-2 text-neutral-300 shrink-0" />
                           <span>Cài đặt</span>
                         </DropdownMenuItem>
                       </div>
 
                       {/* Section 2: Preferences & Settings */}
-                      <div className="py-1.5 space-y-0.5">
+                      <div className="py-1 space-y-0.5">
                         <DropdownMenuItem
                           onClick={toggleTheme}
-                          className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center justify-between py-2.5 px-3 text-xs font-semibold"
+                          className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center justify-between py-1.5 px-2.5 text-xs font-medium"
                         >
                           <div className="flex items-center">
                             {mounted && theme === "light" ? (
-                              <Moon size={16} className="mr-3 text-neutral-400" />
+                              <Moon size={14} className="mr-2 text-neutral-400 shrink-0" />
                             ) : (
-                              <Sun size={16} className="mr-3 text-neutral-400" />
+                              <Sun size={14} className="mr-2 text-neutral-400 shrink-0" />
                             )}
                             <span>
                               Giao diện: {theme === "light" ? "Sáng" : "Tối"}
                             </span>
                           </div>
-                          <ChevronRight size={14} className="text-neutral-500" />
+                          <ChevronRight size={12} className="text-neutral-500 shrink-0" />
                         </DropdownMenuItem>
 
                         {/* Language Switcher Modal Item */}
                         <DropdownMenuItem
                           onClick={() => setLang(lang === "vi" ? "en" : "vi")}
-                          className="hover:bg-white/15 hover:backdrop-blur-md hover:text-white transition-all rounded-xl cursor-pointer flex items-center justify-between py-2.5 px-3 text-xs font-semibold"
+                          className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center justify-between py-1.5 px-2.5 text-xs font-medium"
                         >
                           <div className="flex items-center">
                             <Languages
-                              size={16}
-                              className="mr-3 text-neutral-400"
+                              size={14}
+                              className="mr-2 text-neutral-400 shrink-0"
                             />
                             <span>
                               Ngôn ngữ:{" "}
@@ -1060,20 +1060,20 @@ export function Navbar() {
                                   : lang.toUpperCase()}
                             </span>
                           </div>
-                          <ChevronRight size={14} className="text-neutral-500" />
+                          <ChevronRight size={12} className="text-neutral-500 shrink-0" />
                         </DropdownMenuItem>
                       </div>
 
                       {/* Section 3: Logout Session */}
-                      <div className="pt-1.5">
+                      <div className="pt-1">
                         <DropdownMenuItem
                           onClick={() => {
                             logout();
                             router.push("/");
                           }}
-                          className="hover:bg-red-500/10 text-red-400 hover:text-red-300 rounded-xl cursor-pointer flex items-center py-2.5 px-3 text-xs font-bold"
+                          className="hover:bg-red-500/15 text-red-400 hover:text-red-300 rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-semibold"
                         >
-                          <LogOut size={16} className="mr-3 text-red-400" />
+                          <LogOut size={14} className="mr-2 text-red-400 shrink-0" />
                           <span>Đăng xuất</span>
                         </DropdownMenuItem>
                       </div>
