@@ -186,16 +186,25 @@ export default function ArtPlayer({
         const hls = new Hls({
           enableWorker: true,
           backBufferLength: 60,
-          maxBufferLength: 60,
-          maxMaxBufferLength: 120,
-          maxBufferSize: 120 * 1000 * 1000,
-          maxBufferHole: 0.5,
-          highBufferWatchdogPeriod: 1,
-          nudgeMaxRetry: 5,
-          nudgeOffset: 0.15,
-          abrBandWidthFactor: 0.8,
-          abrBandWidthUpFactor: 0.6,
+          maxBufferLength: 30,
+          maxMaxBufferLength: 60,
+          maxBufferSize: 60 * 1000 * 1000,
+          maxBufferHole: 1.5,
+          highBufferWatchdogPeriod: 2,
+          nudgeMaxRetry: 8,
+          nudgeOffset: 0.2,
+          startFragPrefetch: true,
+          progressive: true,
+          lowLatencyMode: false,
+          abrBandWidthFactor: 0.85,
+          abrBandWidthUpFactor: 0.7,
           capLevelToPlayerSize: true,
+          manifestLoadingTimeOut: 12_000,
+          manifestLoadingMaxRetry: 4,
+          levelLoadingTimeOut: 12_000,
+          levelLoadingMaxRetry: 4,
+          fragLoadingTimeOut: 20_000,
+          fragLoadingMaxRetry: 4,
           pLoader: class ManifestFilterLoader extends (Hls.DefaultConfig
             .loader as any) {
             load(context: any, config: any, callbacks: any) {
@@ -435,16 +444,16 @@ export default function ArtPlayer({
           if (!stalledSince) stalledSince = now;
           const stalledFor = now - stalledSince;
 
-          if (stalledFor >= 5_000 && stallRecoveries === 0) {
+          if (stalledFor >= 3_000 && stallRecoveries === 0) {
             stallRecoveries = 1;
             if (hls.autoLevelEnabled && hls.loadLevel > 0) {
               hls.nextAutoLevel = hls.loadLevel - 1;
             }
             hls.startLoad(video.currentTime);
-          } else if (stalledFor >= 12_000 && stallRecoveries === 1) {
+          } else if (stalledFor >= 7_000 && stallRecoveries === 1) {
             stallRecoveries = 2;
             hls.recoverMediaError();
-          } else if (stalledFor >= 20_000 && stallRecoveries === 2) {
+          } else if (stalledFor >= 14_000 && stallRecoveries === 2) {
             stallRecoveries = 3;
             onErrorRef.current?.({
               type: "HLS_STALL_TIMEOUT",

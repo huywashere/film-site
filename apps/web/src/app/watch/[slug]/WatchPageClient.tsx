@@ -1343,7 +1343,7 @@ export default function WatchPage() {
   const primarySource = String(
     data?._source || data?.movie?._source || preferredSource || "kkphim",
   );
-  const lookupTitle = film?.origin_name || film?.name || "";
+  const lookupTitle = film?.name || film?.origin_name || slug || "";
 
   const movieStoredData = useMemo(
     () => ({
