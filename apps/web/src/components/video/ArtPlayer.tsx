@@ -527,6 +527,45 @@ export default function ArtPlayer({
         "x5-video-player-fullscreen": "false",
       },
 
+      // Custom Rewind & Forward Controls on Control Bar
+      controls: [
+        {
+          name: "backward-10",
+          position: "left",
+          index: 12,
+          html: `<div class="art-icon art-icon-custom-backward" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;cursor:pointer;" title="Tua lùi 10 giây">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+              <text x="12" y="14.8" font-size="7" font-weight="800" font-family="system-ui, -apple-system, sans-serif" fill="currentColor" stroke="none" text-anchor="middle">10</text>
+            </svg>
+          </div>`,
+          tooltip: "Tua lùi 10s",
+          click: function () {
+            player.currentTime = Math.max(0, player.currentTime - 10);
+          },
+        },
+        {
+          name: "forward-10",
+          position: "left",
+          index: 14,
+          html: `<div class="art-icon art-icon-custom-forward" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;cursor:pointer;" title="Tua tới 10 giây">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+              <path d="M21 3v5h-5"/>
+              <text x="12" y="14.8" font-size="7" font-weight="800" font-family="system-ui, -apple-system, sans-serif" fill="currentColor" stroke="none" text-anchor="middle">10</text>
+            </svg>
+          </div>`,
+          tooltip: "Tua tới 10s",
+          click: function () {
+            player.currentTime = Math.min(
+              player.duration,
+              player.currentTime + 10,
+            );
+          },
+        },
+      ],
+
       // Hotkey settings (handing via custom event listener)
       hotkey: false,
 
