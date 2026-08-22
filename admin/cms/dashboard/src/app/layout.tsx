@@ -44,6 +44,7 @@ import {
 import netphimLogo from "../../../../../apps/web/public/cinephim-logo.png";
 import { adminFetch } from "@/lib/admin-api";
 import { AdminDevToolsGuard } from "@/components/security/AdminDevToolsGuard";
+import { AdminIdleLock } from "@/components/security/AdminIdleLock";
 
 const nunito = Nunito({
   subsets: ["latin", "vietnamese"],
@@ -409,6 +410,7 @@ export default function AdminRootLayout({
       </head>
       <body className={nunito.variable}>
         <AdminDevToolsGuard />
+        <AdminIdleLock />
         <div className="admin-shell min-h-screen bg-[var(--admin-sidebar)] lg:grid lg:grid-cols-[245px_minmax(0,1fr)]">
           <aside
             className={`fixed inset-y-0 left-0 z-40 flex w-[245px] flex-col bg-[var(--admin-sidebar)] text-slate-200 transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${mobileNavigationOpen ? "translate-x-0" : "-translate-x-full"}`}
