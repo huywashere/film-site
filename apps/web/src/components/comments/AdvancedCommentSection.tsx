@@ -7,25 +7,18 @@ import {
   ThumbsDown,
   MessageCircle,
   Send,
-  Clock,
   LogIn,
   Pin,
   CornerDownRight,
   ChevronDown,
   ChevronUp,
   Trash2,
-  MoreHorizontal,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useAuthModalStore } from "@/store/authModalStore";
 import { useToast } from "@/providers/ToastProvider";
 import { cn } from "@/lib/utils";
 import { checkCommentRateLimit } from "@/lib/rate-limiter";
-import {
-  EmotionAdminAvatar,
-  EmotionAdminBadge,
-  EmotionBurningFlame,
-} from "@/components/ui/EmotionBadges";
 
 export interface CommentUser {
   id?: string;
@@ -33,8 +26,6 @@ export interface CommentUser {
   avatar: string;
   role?: "ADMIN" | "USER" | "MODERATOR" | string;
   email?: string;
-  gender?: "male" | "female" | "other";
-  flairs?: string[];
 }
 
 export interface CommentItem {
@@ -42,14 +33,12 @@ export interface CommentItem {
   user: CommentUser;
   content: string;
   rating?: number;
-  isSpoiler?: boolean;
   isPinned?: boolean;
   pinnedBy?: string;
   likes: number;
   dislikes?: number;
   userReaction?: "like" | "dislike" | null;
   createdAt: number;
-  timestampString?: string;
   episode?: string;
   replyToUser?: string;
   replies?: CommentItem[];
@@ -71,16 +60,6 @@ function parseTimestampToSeconds(ts: string): number {
     return parts[0] * 60 + parts[1];
   }
   return 0;
-}
-
-function formatSecondsToTimestamp(totalSeconds: number): string {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = Math.floor(totalSeconds % 60);
-  if (h > 0) {
-    return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  }
-  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
 function formatTimeAgo(timestamp: number | string): string {
@@ -139,7 +118,6 @@ function isUserAdmin(
 export function AdvancedCommentSection({
   movieSlug,
   episodeName,
-  currentVideoTimeSeconds = 0,
   onSeekToTimestamp,
 }: AdvancedCommentSectionProps) {
   const currentUser = useAuthStore((s) => s.user);
@@ -196,7 +174,6 @@ export function AdvancedCommentSection({
   const handleReaction = (
     commentId: string,
     reactionType: "like" | "dislike",
-    parentCommentId?: string,
   ) => {
     const updateCommentList = (list: CommentItem[]): CommentItem[] => {
       return list.map((c) => {
@@ -249,10 +226,6 @@ export function AdvancedCommentSection({
     const updated = comments.map((c) => {
       if (c.id === commentId) {
         const nextPinned = !c.isPinned;
-        toast(
-          nextPinned ? "Đã ghim bình luận lên đầu trang!" : "Đã bỏ ghim bình luận.",
-          "success",
-        );
         return {
           ...c,
           isPinned: nextPinned,
@@ -263,62 +236,57 @@ export function AdvancedCommentSection({
     });
 
     saveComments(updated);
+    toast("Đã cập nhật trạng thái ghim!", "success");
   };
 
-  // Delete comment
-  const handleDeleteComment = (commentId: string, parentCommentId?: string) => {
-    if (parentCommentId) {
-      const updated = comments.map((c) => {
-        if (c.id === parentCommentId) {
-          return {
-            ...c,
-            replies: (c.replies || []).filter((r) => r.id !== commentId),
-          };
-        }
-        return c;
-      });
-      saveComments(updated);
-      toast("Đã xóa phản hồi", "info");
-    } else {
-      const updated = comments.filter((c) => c.id !== commentId);
-      saveComments(updated);
-      toast("Đã xóa bình luận", "info");
-    }
+  // Delete Comment (Author or Admin)
+  const handleDeleteComment = (commentId: string) => {
+    const deleteFromList = (list: CommentItem[]): CommentItem[] => {
+      return list
+        .filter((c) => c.id !== commentId)
+        .map((c) => ({
+          ...c,
+          replies: c.replies ? deleteFromList(c.replies) : [],
+        }));
+    };
+
+    const updated = deleteFromList(comments);
+    saveComments(updated);
+    toast("Đã xóa bình luận.", "info");
   };
 
-  const insertCurrentTimestamp = (isForReply = false) => {
-    const formatted = formatSecondsToTimestamp(currentVideoTimeSeconds);
-    if (isForReply) {
-      setReplyContent((prev) => `${prev} [${formatted}] `);
-    } else {
-      setContent((prev) => `${prev} [${formatted}] `);
-    }
-  };
-
+  // Submit new top-level comment
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
 
-    const rateCheck = checkCommentRateLimit(currentUser?.id || "guest");
-    if (!rateCheck.allowed) {
-      toast(`Bình luận quá nhanh. Thử lại sau ${rateCheck.retryAfterSeconds}s.`, "error");
+    if (!currentUser) {
+      openAuthModal("login");
+      return;
+    }
+
+    // Rate limiter check
+    const rateLimit = checkCommentRateLimit(currentUser.id || "guest");
+    if (!rateLimit.allowed) {
+      toast(
+        `Bạn đang bình luận quá nhanh. Vui lòng thử lại sau ${rateLimit.retryAfterSeconds}s.`,
+        "error",
+      );
       return;
     }
 
     const isAdmin = isUserAdmin(currentUser);
 
     const newComment: CommentItem = {
-      id: "comment-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+      id: `cmt_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
       user: {
         id: currentUser?.id,
         name: currentUser?.displayName || currentUser?.username || "Ẩn danh",
         avatar:
           currentUser?.avatarUrl ||
-          `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.displayName || currentUser?.username || "U")}&background=334155&color=fff`,
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.displayName || currentUser?.username || "U")}&background=1e293b&color=fff`,
         role: isAdmin ? "ADMIN" : currentUser?.role || "USER",
         email: currentUser?.email,
-        gender: "male",
-        flairs: isAdmin ? ["flame", "male"] : [],
       },
       content: content.trim(),
       rating,
@@ -335,249 +303,231 @@ export function AdvancedCommentSection({
     toast("Đã đăng bình luận!", "success");
   };
 
+  // Submit nested reply
   const handleSubmitReply = (parentCommentId: string) => {
     if (!replyContent.trim()) return;
 
-    const rateCheck = checkCommentRateLimit(currentUser?.id || "guest");
-    if (!rateCheck.allowed) {
-      toast(`Thao tác quá nhanh. Thử lại sau ${rateCheck.retryAfterSeconds}s.`, "error");
+    if (!currentUser) {
+      openAuthModal("login");
+      return;
+    }
+
+    const rateLimit = checkCommentRateLimit(currentUser.id || "guest");
+    if (!rateLimit.allowed) {
+      toast(
+        `Bạn đang bình luận quá nhanh. Vui lòng thử lại sau ${rateLimit.retryAfterSeconds}s.`,
+        "error",
+      );
       return;
     }
 
     const isAdmin = isUserAdmin(currentUser);
 
     const newReply: CommentItem = {
-      id: "reply-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+      id: `rep_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
       user: {
         id: currentUser?.id,
         name: currentUser?.displayName || currentUser?.username || "Ẩn danh",
         avatar:
           currentUser?.avatarUrl ||
-          `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.displayName || currentUser?.username || "U")}&background=334155&color=fff`,
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.displayName || currentUser?.username || "U")}&background=1e293b&color=fff`,
         role: isAdmin ? "ADMIN" : currentUser?.role || "USER",
         email: currentUser?.email,
-        gender: "male",
-        flairs: isAdmin ? ["flame", "male"] : [],
       },
       content: replyContent.trim(),
-      replyToUser: replyTargetUser || undefined,
+      replyToUser: replyTargetUser,
       likes: 0,
       dislikes: 0,
       createdAt: Date.now(),
-      episode: episodeName,
     };
 
-    const updated = comments.map((c) => {
-      if (c.id === parentCommentId) {
-        return {
-          ...c,
-          replies: [...(c.replies || []), newReply],
-        };
-      }
-      return c;
-    });
+    const addReplyToList = (list: CommentItem[]): CommentItem[] => {
+      return list.map((c) => {
+        if (c.id === parentCommentId) {
+          return {
+            ...c,
+            replies: [...(c.replies || []), newReply],
+          };
+        }
+        return c;
+      });
+    };
 
-    saveComments(updated);
+    saveComments(addReplyToList(comments));
     setReplyContent("");
     setReplyingToCommentId(null);
-    setReplyTargetUser("");
     setExpandedReplies((prev) => ({ ...prev, [parentCommentId]: true }));
-    toast("Đã gửi phản hồi!", "success");
+    toast("Đã gửi câu trả lời!", "success");
   };
 
-  // Render clickable timestamp pills & mentions (@Name)
-  const renderCommentContent = (text: string, replyToUser?: string) => {
-    // Regex for [05:20] or 12:45
-    const regex = /(?:\[)?\b(?:(\d{1,2}):)?(\d{1,2}):(\d{2})\b(?:\])?/g;
-    const parts = [];
+  // Render clickable timestamps inside comments (e.g. [05:20] -> seeks player)
+  const renderCommentContent = (text: string) => {
+    const timestampRegex = /\[(\d{1,2}:\d{2}(?::\d{2})?)\]/g;
+    const parts: Array<{ type: "text" | "ts"; value: string; seconds?: number }> = [];
     let lastIndex = 0;
-    let match;
+    let match: RegExpExecArray | null;
 
-    const fullText = text;
-
-    while ((match = regex.exec(fullText)) !== null) {
-      const matchIndex = match.index;
-      if (matchIndex > lastIndex) {
-        parts.push(fullText.substring(lastIndex, matchIndex));
+    while ((match = timestampRegex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push({
+          type: "text",
+          value: text.slice(lastIndex, match.index),
+        });
       }
-      const timeString = match[0].replace(/[\[\]]/g, "");
-      const seconds = parseTimestampToSeconds(timeString);
-
-      parts.push(
-        <button
-          key={`${timeString}-${matchIndex}`}
-          type="button"
-          onClick={() => {
-            if (onSeekToTimestamp) {
-              onSeekToTimestamp(seconds);
-              toast(`Đã chuyển tới mốc ${timeString}`, "info");
-            }
-          }}
-          className="inline-flex items-center gap-1 mx-1 px-2 py-0.5 rounded bg-sky-500/20 hover:bg-sky-500/35 text-sky-400 font-mono font-bold text-[11px] border border-sky-500/30 transition-all cursor-pointer shadow-sm active:scale-95"
-          title={`Bấm để chuyển trình phát tới ${timeString}`}
-        >
-          ⏱ {timeString}
-        </button>,
-      );
-      lastIndex = regex.lastIndex;
+      parts.push({
+        type: "ts",
+        value: match[1],
+        seconds: parseTimestampToSeconds(match[1]),
+      });
+      lastIndex = match.index + match[0].length;
     }
 
-    if (lastIndex < fullText.length) {
-      parts.push(fullText.substring(lastIndex));
+    if (lastIndex < text.length) {
+      parts.push({
+        type: "text",
+        value: text.slice(lastIndex),
+      });
     }
 
-    return (
-      <span>
-        {replyToUser && (
-          <span className="text-sky-400 font-bold mr-1.5 hover:underline cursor-pointer">
-            @{replyToUser}
-          </span>
-        )}
-        {parts.length > 0 ? parts : fullText}
-      </span>
-    );
+    return parts.map((part, i) => {
+      if (part.type === "ts" && part.seconds !== undefined) {
+        return (
+          <button
+            key={i}
+            type="button"
+            onClick={() => onSeekToTimestamp?.(part.seconds!)}
+            className="inline-flex items-center font-mono font-bold text-amber-400 hover:text-amber-300 transition-colors mx-0.5 underline cursor-pointer"
+            title={`Tua đến ${part.value}`}
+          >
+            [{part.value}]
+          </button>
+        );
+      }
+      return <span key={i}>{part.value}</span>;
+    });
   };
 
-  // Sorted comments: Pinned comments always on top
+  // Sort pinned comments to the top, then newest first
   const sortedComments = useMemo(() => {
     return [...comments].sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
-      return (b.createdAt || 0) - (a.createdAt || 0);
+      return b.createdAt - a.createdAt;
     });
   }, [comments]);
 
+  const totalCommentCount = useMemo(() => {
+    let count = comments.length;
+    comments.forEach((c) => {
+      if (c.replies) count += c.replies.length;
+    });
+    return count;
+  }, [comments]);
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <MessageCircle size={16} className="text-white/40" />
-          <h3 className="text-sm font-extrabold text-white uppercase tracking-wider">
+    <section className="w-full space-y-6 pt-4">
+      {/* Section Header */}
+      <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
             Bình luận
-            {episodeName && (
-              <span className="text-white/40 ml-1.5 font-normal lowercase">— {episodeName}</span>
-            )}
-          </h3>
-          {comments.length > 0 && (
-            <span className="px-2 py-0.5 rounded-full bg-white/10 text-xs text-white/70 font-mono font-bold">
-              {comments.length}
-            </span>
-          )}
+          </h2>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/[0.06] text-neutral-400 border border-white/[0.08]">
+            {totalCommentCount}
+          </span>
         </div>
       </div>
 
-      {/* Write Comment Form / Login Prompt */}
+      {/* Comment Input Form */}
       {!currentUser ? (
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 text-left w-full sm:w-auto">
-            <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-neutral-300 shrink-0">
-              <MessageCircle size={18} />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-white">Bạn cần đăng nhập để bình luận</p>
-              <p className="text-[11px] text-neutral-400 mt-0.5">
-                Đăng nhập để đánh giá phim, gắn mốc thời gian và thảo luận cùng cộng đồng.
-              </p>
-            </div>
-          </div>
+        <div className="p-4 rounded-2xl bg-neutral-900/40 border border-white/[0.06] flex items-center justify-between gap-4">
+          <p className="text-xs sm:text-sm text-neutral-400">
+            Đăng nhập để tham gia thảo luận và đánh giá phim.
+          </p>
           <button
-            type="button"
             onClick={() => openAuthModal("login")}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-neutral-200 text-black text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer shrink-0 select-none"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white text-black text-xs font-semibold hover:bg-neutral-200 transition-all cursor-pointer shrink-0 shadow-sm"
           >
-            <LogIn size={14} />
-            <span>Đăng nhập ngay</span>
+            <LogIn size={13} />
+            <span>Đăng nhập</span>
           </button>
         </div>
       ) : (
-        <form onSubmit={handleSubmitComment} className="space-y-3 bg-white/[0.02] border border-white/[0.06] rounded-2xl p-3.5 sm:p-4">
-          {/* User Preview & Rating row */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <form
+          onSubmit={handleSubmitComment}
+          className="p-4 rounded-2xl bg-neutral-900/40 border border-white/[0.06] focus-within:border-white/15 focus-within:bg-neutral-900/70 transition-all space-y-3"
+        >
+          {/* User Row + Rating Stars */}
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              {isCurrentAdmin ? (
-                <EmotionAdminAvatar
-                  src={
-                    currentUser?.avatarUrl ||
-                    "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150&auto=format&fit=crop&q=80"
-                  }
-                  alt={currentUser?.displayName || "Admin"}
-                  size={30}
-                />
-              ) : (
-                <img
-                  src={
-                    currentUser?.avatarUrl ||
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.displayName || currentUser?.username || "U")}&background=334155&color=fff`
-                  }
-                  alt="avatar"
-                  className="w-7 h-7 rounded-full object-cover border border-white/10"
-                />
-              )}
-              <div className="flex items-center gap-1.5">
-                {isCurrentAdmin && <EmotionAdminBadge label="ADMIN" />}
-                <span className="text-xs font-bold text-white">
+              <img
+                src={
+                  currentUser?.avatarUrl ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.displayName || currentUser?.username || "U")}&background=1e293b&color=fff`
+                }
+                alt="avatar"
+                className={cn(
+                  "w-8 h-8 rounded-full object-cover",
+                  isCurrentAdmin
+                    ? "ring-1.5 ring-amber-400/60 shadow-[0_0_10px_rgba(251,191,36,0.15)]"
+                    : "border border-white/10",
+                )}
+              />
+              <div className="flex items-center gap-2">
+                {isCurrentAdmin && (
+                  <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/30">
+                    ADMIN
+                  </span>
+                )}
+                <span className="text-xs font-semibold text-white">
                   {currentUser?.displayName || currentUser?.username}
                 </span>
-                {isCurrentAdmin && <EmotionBurningFlame size={15} />}
               </div>
             </div>
 
-            <div className="flex items-center gap-3 ml-auto">
-              <div className="flex items-center gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    type="button"
-                    key={star}
-                    onClick={() => setRating(star)}
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    className="p-0.5 hover:scale-110 transition-transform cursor-pointer"
-                  >
-                    <Star
-                      size={15}
-                      className={cn(
-                        "transition-colors",
-                        (hoverRating || rating) >= star
-                          ? "fill-amber-400 text-amber-400"
-                          : "text-white/20",
-                      )}
-                    />
-                  </button>
-                ))}
-              </div>
-
-              {/* Instant Timestamp Insert Button */}
-              <button
-                type="button"
-                onClick={() => insertCurrentTimestamp(false)}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/[0.06] hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 text-xs font-semibold transition-all cursor-pointer active:scale-95 shadow-sm"
-                title="Gắn số phút/giây đang xem vào ô bình luận"
-              >
-                <Clock size={12} className="text-sky-400" />
-                <span>Mốc {formatSecondsToTimestamp(currentVideoTimeSeconds)}</span>
-              </button>
+            {/* Rating Stars */}
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  type="button"
+                  key={star}
+                  onClick={() => setRating(star)}
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  className="p-0.5 transition-transform hover:scale-110 cursor-pointer"
+                >
+                  <Star
+                    size={15}
+                    className={cn(
+                      "transition-colors",
+                      (hoverRating || rating) >= star
+                        ? "fill-amber-400 text-amber-400"
+                        : "text-neutral-700",
+                    )}
+                  />
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Textarea */}
-          <div className="relative">
+          {/* Clean Textarea */}
+          <div>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Viết bình luận của bạn (nhắc tới thời gian như [05:20] để tạo liên kết)..."
+              placeholder="Viết bình luận của bạn..."
               rows={3}
-              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 outline-none resize-none focus:border-white/30 focus:bg-black/60 transition-all"
+              className="w-full bg-transparent border-0 text-sm text-neutral-100 placeholder-neutral-500 outline-none resize-none leading-relaxed"
             />
           </div>
 
           {/* Submit Row */}
-          <div className="flex items-center justify-end gap-2 pt-1">
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/[0.04]">
             {content.trim() && (
               <button
                 type="button"
                 onClick={() => setContent("")}
-                className="px-3 py-1.5 text-xs text-white/40 hover:text-white transition-colors rounded-lg cursor-pointer"
+                className="px-3 py-1.5 text-xs text-neutral-400 hover:text-white transition-colors cursor-pointer"
               >
                 Hủy
               </button>
@@ -586,10 +536,10 @@ export function AdvancedCommentSection({
               type="submit"
               disabled={!content.trim()}
               className={cn(
-                "flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer",
+                "flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer",
                 content.trim()
-                  ? "bg-white text-black hover:bg-neutral-200 active:scale-95 shadow-md"
-                  : "bg-white/5 text-white/20 cursor-not-allowed",
+                  ? "bg-white text-black hover:bg-neutral-200 active:scale-95 shadow-sm"
+                  : "bg-white/5 text-neutral-600 cursor-not-allowed",
               )}
             >
               <Send size={12} />
@@ -601,80 +551,70 @@ export function AdvancedCommentSection({
 
       {/* Comment List */}
       {sortedComments.length === 0 ? (
-        <div className="py-12 flex flex-col items-center justify-center text-white/30 gap-2 border border-dashed border-white/10 rounded-2xl">
-          <MessageCircle size={32} strokeWidth={1.25} />
+        <div className="py-12 flex flex-col items-center justify-center text-neutral-500 gap-2 border border-dashed border-white/[0.06] rounded-2xl">
+          <MessageCircle size={28} strokeWidth={1.25} className="text-neutral-600" />
           <p className="text-xs font-medium">Chưa có bình luận nào. Hãy là người đầu tiên thảo luận!</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {sortedComments.map((comment) => {
             const isAdmin = isUserAdmin(comment.user);
             const replies = comment.replies || [];
-            const isExpanded = expandedReplies[comment.id] !== false; // Default true
+            const isExpanded = expandedReplies[comment.id] !== false;
 
             return (
               <div
                 key={comment.id}
                 className={cn(
-                  "p-3.5 sm:p-4 rounded-2xl transition-all border",
+                  "p-4 rounded-2xl transition-all border",
                   comment.isPinned
-                    ? "bg-gradient-to-b from-amber-500/[0.07] to-transparent border-amber-500/20 shadow-lg"
-                    : "bg-white/[0.015] border-white/[0.05] hover:border-white/10",
+                    ? "bg-neutral-900/50 border-l-2 border-l-amber-400 border-y border-r border-white/[0.06]"
+                    : "bg-neutral-900/20 border-white/[0.04] hover:border-white/[0.08] hover:bg-neutral-900/40",
                 )}
               >
                 {/* Pinned Label */}
                 {comment.isPinned && (
-                  <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-amber-400 mb-2.5 select-none">
-                    <Pin size={12} className="fill-amber-400 rotate-45" />
+                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-400 mb-2 select-none">
+                    <Pin size={11} className="fill-amber-400 rotate-45" />
                     <span>Ghim bởi {comment.pinnedBy || "Admin"}</span>
                   </div>
                 )}
 
-                {/* Main Author Row */}
+                {/* Author Row */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2.5">
-                    {isAdmin ? (
-                      <EmotionAdminAvatar
-                        src={comment.user.avatar}
-                        alt={comment.user.name}
-                        size={32}
-                      />
-                    ) : (
-                      <img
-                        src={comment.user.avatar}
-                        alt={comment.user.name}
-                        referrerPolicy="no-referrer"
-                        className="w-8 h-8 rounded-full object-cover border border-white/10 flex-shrink-0"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user.name)}&background=334155&color=ffffff&size=64`;
-                        }}
-                      />
-                    )}
+                    <img
+                      src={comment.user.avatar}
+                      alt={comment.user.name}
+                      referrerPolicy="no-referrer"
+                      className={cn(
+                        "w-8 h-8 rounded-full object-cover flex-shrink-0",
+                        isAdmin
+                          ? "ring-1.5 ring-amber-400/60 shadow-[0_0_10px_rgba(251,191,36,0.15)]"
+                          : "border border-white/10",
+                      )}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user.name)}&background=1e293b&color=ffffff&size=64`;
+                      }}
+                    />
 
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {isAdmin && <EmotionAdminBadge label="ADMIN" />}
-                      <span className="text-xs font-bold text-white tracking-tight">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {isAdmin && (
+                        <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/30">
+                          ADMIN
+                        </span>
+                      )}
+                      <span className="text-xs font-semibold text-white tracking-tight">
                         {comment.user.name}
                       </span>
-                      {isAdmin && <EmotionBurningFlame size={15} className="inline-flex" />}
-                      {comment.user.gender === "male" && (
-                        <span className="text-[11px] text-sky-400 font-bold" title="Nam">
-                          ♂️
-                        </span>
-                      )}
-                      {comment.user.gender === "female" && (
-                        <span className="text-[11px] text-pink-400 font-bold" title="Nữ">
-                          ♀️
-                        </span>
-                      )}
-                      <span className="text-[11px] text-white/30 font-medium">
+                      <span className="text-[11px] text-neutral-500 font-medium">
                         {formatTimeAgo(comment.createdAt)}
                       </span>
                     </div>
                   </div>
 
                   {comment.rating && (
-                    <div className="flex items-center gap-0.5 text-[10px] text-amber-400 font-bold px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20">
+                    <div className="flex items-center gap-1 text-[11px] text-amber-400 font-semibold px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20">
                       <Star size={10} className="fill-amber-400 text-amber-400" />
                       <span>{comment.rating}.0</span>
                     </div>
@@ -682,18 +622,18 @@ export function AdvancedCommentSection({
                 </div>
 
                 {/* Comment Content & Actions */}
-                <div className="pl-10 mt-1.5">
-                  <div className="text-xs text-white/85 leading-relaxed font-normal">
+                <div className="pl-10.5 mt-1.5">
+                  <div className="text-sm text-neutral-200 leading-relaxed font-normal">
                     {renderCommentContent(comment.content)}
                   </div>
 
-                  {/* Actions Row: Likes, Dislikes, Reply, Admin Pin, Delete */}
-                  <div className="flex items-center gap-4 mt-2.5 pt-1 text-[11px] text-white/40">
+                  {/* Actions Row */}
+                  <div className="flex items-center gap-4 mt-3 text-xs text-neutral-500">
                     <button
                       onClick={() => handleReaction(comment.id, "like")}
                       className={cn(
                         "flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer active:scale-90 font-medium",
-                        comment.userReaction === "like" && "text-sky-400 font-bold",
+                        comment.userReaction === "like" && "text-sky-400 font-semibold",
                       )}
                     >
                       <ThumbsUp size={13} className={comment.userReaction === "like" ? "fill-sky-400" : ""} />
@@ -704,7 +644,7 @@ export function AdvancedCommentSection({
                       onClick={() => handleReaction(comment.id, "dislike")}
                       className={cn(
                         "flex items-center gap-1 hover:text-white transition-colors cursor-pointer active:scale-90",
-                        comment.userReaction === "dislike" && "text-rose-400 font-bold",
+                        comment.userReaction === "dislike" && "text-rose-400 font-semibold",
                       )}
                     >
                       <ThumbsDown size={13} className={comment.userReaction === "dislike" ? "fill-rose-400" : ""} />
@@ -723,7 +663,7 @@ export function AdvancedCommentSection({
                         setReplyTargetUser(comment.user.name);
                         setReplyContent("");
                       }}
-                      className="hover:text-white transition-colors cursor-pointer font-bold"
+                      className="hover:text-white transition-colors cursor-pointer font-medium"
                     >
                       Phản hồi
                     </button>
@@ -733,7 +673,7 @@ export function AdvancedCommentSection({
                       <button
                         onClick={() => handleTogglePin(comment.id)}
                         className={cn(
-                          "flex items-center gap-1 transition-colors cursor-pointer font-bold",
+                          "flex items-center gap-1 transition-colors cursor-pointer font-medium",
                           comment.isPinned
                             ? "text-amber-400 hover:text-amber-300"
                             : "hover:text-amber-400",
@@ -745,12 +685,12 @@ export function AdvancedCommentSection({
                       </button>
                     )}
 
-                    {/* Delete button (If Author or Admin) */}
+                    {/* Delete button (Author or Admin) */}
                     {(isCurrentAdmin || currentUser?.id === comment.user.id) && (
                       <button
                         onClick={() => handleDeleteComment(comment.id)}
                         className="hover:text-rose-400 transition-colors cursor-pointer ml-auto"
-                        title="Xóa bình luận này"
+                        title="Xóa bình luận"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -760,19 +700,12 @@ export function AdvancedCommentSection({
 
                 {/* Inline Reply Input Box */}
                 {replyingToCommentId === comment.id && (
-                  <div className="pl-10 mt-3 pt-2 border-t border-white/[0.05]">
-                    <div className="flex items-center gap-2 mb-2 text-xs text-white/50">
-                      <CornerDownRight size={12} className="text-sky-400" />
+                  <div className="pl-10.5 mt-3 pt-3 border-t border-white/[0.04]">
+                    <div className="flex items-center gap-1.5 mb-2 text-xs text-neutral-400">
+                      <CornerDownRight size={12} className="text-neutral-500" />
                       <span>
-                        Đang trả lời <strong className="text-sky-400">@{replyTargetUser}</strong>
+                        Trả lời <strong className="text-neutral-200">@{replyTargetUser}</strong>
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => insertCurrentTimestamp(true)}
-                        className="ml-auto inline-flex items-center gap-1 text-[11px] text-sky-400 hover:text-sky-300 font-semibold"
-                      >
-                        <Clock size={11} /> + Mốc ({formatSecondsToTimestamp(currentVideoTimeSeconds)})
-                      </button>
                     </div>
 
                     <div className="relative">
@@ -787,7 +720,7 @@ export function AdvancedCommentSection({
                           }
                         }}
                         placeholder={`Trả lời @${replyTargetUser}...`}
-                        className="w-full bg-black/60 border border-white/15 rounded-xl px-3.5 py-2 text-xs text-white placeholder-white/30 outline-none focus:border-sky-400/50 transition-all pr-20"
+                        className="w-full bg-neutral-900/80 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder-neutral-500 outline-none focus:border-white/20 transition-all pr-20"
                         autoFocus
                       />
                       <div className="absolute right-1.5 top-1.5 flex items-center gap-1">
@@ -797,7 +730,7 @@ export function AdvancedCommentSection({
                             setReplyingToCommentId(null);
                             setReplyContent("");
                           }}
-                          className="px-2 py-1 text-[11px] text-white/40 hover:text-white"
+                          className="px-2 py-1 text-xs text-neutral-400 hover:text-white"
                         >
                           Hủy
                         </button>
@@ -806,10 +739,10 @@ export function AdvancedCommentSection({
                           onClick={() => handleSubmitReply(comment.id)}
                           disabled={!replyContent.trim()}
                           className={cn(
-                            "px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all",
+                            "px-3 py-1 rounded-lg text-xs font-semibold transition-all",
                             replyContent.trim()
                               ? "bg-white text-black hover:bg-neutral-200 cursor-pointer"
-                              : "bg-white/10 text-white/30 cursor-not-allowed",
+                              : "bg-white/10 text-neutral-500 cursor-not-allowed",
                           )}
                         >
                           Gửi
@@ -822,19 +755,18 @@ export function AdvancedCommentSection({
                 {/* Nested Tree Branch Replies */}
                 {replies.length > 0 && (
                   <div className="pl-6 sm:pl-9 mt-3 pt-2">
-                    {/* Toggle Replies button */}
                     <button
                       onClick={() => toggleRepliesExpansion(comment.id)}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-400 hover:text-sky-300 transition-colors cursor-pointer select-none mb-2"
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer select-none mb-2"
                     >
                       {isExpanded ? (
                         <>
-                          <ChevronUp size={14} strokeWidth={2.5} />
+                          <ChevronUp size={13} strokeWidth={2} />
                           <span>Ẩn phản hồi</span>
                         </>
                       ) : (
                         <>
-                          <ChevronDown size={14} strokeWidth={2.5} />
+                          <ChevronDown size={13} strokeWidth={2} />
                           <span>Xem {replies.length} câu trả lời</span>
                         </>
                       )}
@@ -842,7 +774,7 @@ export function AdvancedCommentSection({
 
                     {/* Tree connector branch container */}
                     {isExpanded && (
-                      <div className="relative space-y-3 pt-1 before:absolute before:left-3.5 before:top-2 before:bottom-3 before:w-[1.5px] before:bg-white/10 before:rounded-full">
+                      <div className="relative space-y-3 pt-1 before:absolute before:left-3.5 before:top-2 before:bottom-3 before:w-[1px] before:bg-white/10">
                         {replies.map((reply) => {
                           const isReplyAdmin = isUserAdmin(reply.user);
 
@@ -854,105 +786,83 @@ export function AdvancedCommentSection({
                               {/* Curved branch tree connector line */}
                               <div
                                 aria-hidden="true"
-                                className="absolute left-3.5 top-3.5 w-3.5 h-3.5 border-b border-l border-white/15 rounded-bl-xl pointer-events-none"
+                                className="absolute left-3.5 top-3.5 w-3.5 h-3.5 border-b border-l border-white/10 rounded-bl-lg pointer-events-none"
                               />
 
                               {/* Reply User Row */}
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex items-center gap-2">
-                                  {isReplyAdmin ? (
-                                    <EmotionAdminAvatar
-                                      src={reply.user.avatar}
-                                      alt={reply.user.name}
-                                      size={26}
-                                    />
-                                  ) : (
-                                    <img
-                                      src={reply.user.avatar}
-                                      alt={reply.user.name}
-                                      referrerPolicy="no-referrer"
-                                      className="w-6 h-6 rounded-full object-cover border border-white/10 flex-shrink-0"
-                                      onError={(e) => {
-                                        (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.user.name)}&background=334155&color=ffffff&size=64`;
-                                      }}
-                                    />
-                                  )}
+                                  <img
+                                    src={reply.user.avatar}
+                                    alt={reply.user.name}
+                                    referrerPolicy="no-referrer"
+                                    className={cn(
+                                      "w-6 h-6 rounded-full object-cover flex-shrink-0",
+                                      isReplyAdmin
+                                        ? "ring-1.5 ring-amber-400/60"
+                                        : "border border-white/10",
+                                    )}
+                                    onError={(e) => {
+                                      (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.user.name)}&background=1e293b&color=ffffff&size=64`;
+                                    }}
+                                  />
 
                                   <div className="flex items-center gap-1.5 flex-wrap">
-                                    {isReplyAdmin && <EmotionAdminBadge label="ADMIN" />}
-                                    <span className="text-xs font-bold text-white tracking-tight">
+                                    {isReplyAdmin && (
+                                      <span className="text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/30">
+                                        ADMIN
+                                      </span>
+                                    )}
+                                    <span className="text-xs font-semibold text-white tracking-tight">
                                       {reply.user.name}
                                     </span>
-                                    {isReplyAdmin && <EmotionBurningFlame size={14} className="inline-flex" />}
-                                    {reply.user.gender === "male" && (
-                                      <span className="text-[10px] text-sky-400 font-bold">
-                                        ♂️
-                                      </span>
-                                    )}
-                                    {reply.user.gender === "female" && (
-                                      <span className="text-[10px] text-pink-400 font-bold">
-                                        ♀️
-                                      </span>
-                                    )}
-                                    <span className="text-[10px] text-white/30 font-medium">
+                                    <span className="text-[10px] text-neutral-500 font-medium">
                                       {formatTimeAgo(reply.createdAt)}
                                     </span>
                                   </div>
                                 </div>
-                              </div>
 
-                              {/* Reply Content */}
-                              <div className="pl-8 mt-1 text-xs text-white/80 leading-relaxed font-normal">
-                                {renderCommentContent(reply.content, reply.replyToUser)}
-                              </div>
-
-                              {/* Reply Actions */}
-                              <div className="pl-8 flex items-center gap-3.5 mt-1.5 text-[10px] text-white/35">
-                                <button
-                                  onClick={() => handleReaction(reply.id, "like", comment.id)}
-                                  className={cn(
-                                    "flex items-center gap-1 hover:text-white transition-colors cursor-pointer",
-                                    reply.userReaction === "like" && "text-sky-400 font-bold",
-                                  )}
-                                >
-                                  <ThumbsUp size={11} className={reply.userReaction === "like" ? "fill-sky-400" : ""} />
-                                  {reply.likes > 0 && <span>{reply.likes}</span>}
-                                </button>
-
-                                <button
-                                  onClick={() => handleReaction(reply.id, "dislike", comment.id)}
-                                  className={cn(
-                                    "flex items-center gap-1 hover:text-white transition-colors cursor-pointer",
-                                    reply.userReaction === "dislike" && "text-rose-400 font-bold",
-                                  )}
-                                >
-                                  <ThumbsDown size={11} className={reply.userReaction === "dislike" ? "fill-rose-400" : ""} />
-                                </button>
-
-                                <button
-                                  onClick={() => {
-                                    if (!currentUser) {
-                                      openAuthModal("login");
-                                      return;
-                                    }
-                                    setReplyingToCommentId(comment.id);
-                                    setReplyTargetUser(reply.user.name);
-                                    setReplyContent("");
-                                  }}
-                                  className="hover:text-white transition-colors cursor-pointer font-bold"
-                                >
-                                  Phản hồi
-                                </button>
-
+                                {/* Delete reply button */}
                                 {(isCurrentAdmin || currentUser?.id === reply.user.id) && (
                                   <button
-                                    onClick={() => handleDeleteComment(reply.id, comment.id)}
-                                    className="hover:text-rose-400 transition-colors cursor-pointer ml-auto opacity-0 group-hover/reply:opacity-100"
-                                    title="Xóa phản hồi này"
+                                    onClick={() => handleDeleteComment(reply.id)}
+                                    className="text-neutral-500 hover:text-rose-400 transition-colors opacity-0 group-hover/reply:opacity-100 cursor-pointer"
+                                    title="Xóa phản hồi"
                                   >
                                     <Trash2 size={11} />
                                   </button>
                                 )}
+                              </div>
+
+                              {/* Reply Content */}
+                              <div className="pl-8 mt-1">
+                                <div className="text-xs text-neutral-300 leading-relaxed">
+                                  {renderCommentContent(reply.content)}
+                                </div>
+
+                                <div className="flex items-center gap-3 mt-2 text-[11px] text-neutral-500">
+                                  <button
+                                    onClick={() => handleReaction(reply.id, "like")}
+                                    className={cn(
+                                      "flex items-center gap-1 hover:text-white transition-colors cursor-pointer",
+                                      reply.userReaction === "like" && "text-sky-400 font-semibold",
+                                    )}
+                                  >
+                                    <ThumbsUp size={11} className={reply.userReaction === "like" ? "fill-sky-400" : ""} />
+                                    <span>{reply.likes > 0 ? reply.likes : ""}</span>
+                                  </button>
+
+                                  <button
+                                    onClick={() => handleReaction(reply.id, "dislike")}
+                                    className={cn(
+                                      "flex items-center gap-1 hover:text-white transition-colors cursor-pointer",
+                                      reply.userReaction === "dislike" && "text-rose-400 font-semibold",
+                                    )}
+                                  >
+                                    <ThumbsDown size={11} className={reply.userReaction === "dislike" ? "fill-rose-400" : ""} />
+                                    {reply.dislikes ? <span>{reply.dislikes}</span> : null}
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           );
@@ -966,6 +876,6 @@ export function AdvancedCommentSection({
           })}
         </div>
       )}
-    </div>
+    </section>
   );
 }
