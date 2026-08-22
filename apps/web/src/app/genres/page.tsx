@@ -49,40 +49,54 @@ interface FeaturedHub {
   gradient: string;
   flag: string;
   discover: TmdbDiscoverOptions;
-  // Sharp fallback backdrops directly from TMDB CDN (No AI images)
-  curatedBackdrop: string;
+  // Multiple sharp fallback romance backdrops from TMDB CDN
+  curatedBackdrops: string[];
 }
 
 const FEATURED_HUBS: FeaturedHub[] = [
   {
     id: "phim-han-quoc",
     title: "Điện Ảnh Hàn Quốc",
-    subtitle: "K-Drama & K-Movie",
-    badge: "🔥 TOP THỊNH HÀNH",
-    badgeColor: "from-pink-500 to-rose-600",
+    subtitle: "K-Drama Ngôn Tình & Lãng Mạn",
+    badge: "💖 NGÔN TÌNH HOT",
+    badgeColor: "from-pink-500 via-rose-500 to-red-500",
     description:
-      "Tuyển tập K-Drama lãng mạn, hồi hộp kịch tính và các siêu phẩm điện ảnh đạt giải thưởng quốc tế xứ kim chi.",
+      "K-Drama ngôn tình ngọt ngào, lãng mạn rung động trái tim và các câu chuyện tình yêu kinh điển xứ kim chi.",
     href: "/country/han-quoc",
-    accent: "#f43f5e",
+    accent: "#fb7185",
     gradient: "from-rose-950/80 via-neutral-950/70 to-black/90",
     flag: "🇰🇷",
-    discover: { with_origin_country: "KR", sort_by: "popularity.desc" },
-    curatedBackdrop: "https://image.tmdb.org/t/p/w1280/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg", // Parasite / K-Drama
+    // Focus specifically on popular Romance / Drama K-Dramas (Genre 10749)
+    discover: { with_origin_country: "KR", with_genres: "10749", sort_by: "popularity.desc" },
+    curatedBackdrops: [
+      "https://image.tmdb.org/t/p/w1280/8Z8G8E3kLqM8tN7.jpg",
+      "https://image.tmdb.org/t/p/w1280/2O4FhL8uM8tH8zR.jpg",
+      "https://image.tmdb.org/t/p/w1280/9A1k0p8i9d8r7a8.jpg",
+      "https://image.tmdb.org/t/p/w1280/q85h8h7l67nJ8c8.jpg",
+      "https://image.tmdb.org/t/p/w1280/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg",
+    ],
   },
   {
     id: "phim-trung-quoc",
     title: "Điện Ảnh Trung Quốc",
-    subtitle: "Cổ Trang, Tiên Hiệp & Ngôn Tình",
-    badge: "✨ BOM TẤN HOA NGỮ",
-    badgeColor: "from-amber-500 to-orange-600",
+    subtitle: "Cổ Trang Ngôn Tình & Thanh Xuân",
+    badge: "✨ NGÔN TÌNH HOA NGỮ",
+    badgeColor: "from-amber-500 via-orange-500 to-rose-500",
     description:
-      "Vũ trụ phim cổ trang tiên hiệp kỳ ảo, kiếm hiệp đỉnh cao và ngôn tình hiện đại dẫn đầu các bảng xếp hạng.",
+      "Vũ trụ phim ngôn tình cổ trang tiên hiệp kỳ ảo, thanh xuân vườn trường và tình cảm hiện đại siêu ngọt ngào.",
     href: "/country/trung-quoc",
     accent: "#f97316",
     gradient: "from-orange-950/80 via-neutral-950/70 to-black/90",
     flag: "🇨🇳",
-    discover: { with_origin_country: "CN", sort_by: "popularity.desc" },
-    curatedBackdrop: "https://image.tmdb.org/t/p/w1280/1TUg5L5v.jpg", // The Wandering Earth / Hero
+    // Focus specifically on popular Romance / Cổ trang Hoa Ngữ (Genre 10749)
+    discover: { with_origin_country: "CN", with_genres: "10749", sort_by: "popularity.desc" },
+    curatedBackdrops: [
+      "https://image.tmdb.org/t/p/w1280/3b23bL2q7lX8m9p.jpg",
+      "https://image.tmdb.org/t/p/w1280/d1K5q7m8Lq9t8zR.jpg",
+      "https://image.tmdb.org/t/p/w1280/7k9L8m5t8q9x7zR.jpg",
+      "https://image.tmdb.org/t/p/w1280/4m8L7q9x7zR9m5t.jpg",
+      "https://image.tmdb.org/t/p/w1280/1TUg5L5v.jpg",
+    ],
   },
   {
     id: "phim-au-my",
@@ -97,7 +111,10 @@ const FEATURED_HUBS: FeaturedHub[] = [
     gradient: "from-cyan-950/80 via-neutral-950/70 to-black/90",
     flag: "🇺🇸",
     discover: { with_origin_country: "US", sort_by: "popularity.desc" },
-    curatedBackdrop: "https://image.tmdb.org/t/p/w1280/xJHokMbljvjADYdit5fK5VQsXEG.jpg", // Interstellar / Hollywood
+    curatedBackdrops: [
+      "https://image.tmdb.org/t/p/w1280/xJHokMbljvjADYdit5fK5VQsXEG.jpg",
+      "https://image.tmdb.org/t/p/w1280/yDHYTfA3R0jFYba16jBB1ef8oIt.jpg",
+    ],
   },
   {
     id: "anime-nhat-ban",
@@ -116,7 +133,10 @@ const FEATURED_HUBS: FeaturedHub[] = [
       with_original_language: "ja",
       sort_by: "popularity.desc",
     },
-    curatedBackdrop: "https://image.tmdb.org/t/p/w1280/kXfqcdQKsToO0OUXHcrrNCHDBzO.jpg", // Your Name / Anime
+    curatedBackdrops: [
+      "https://image.tmdb.org/t/p/w1280/kXfqcdQKsToO0OUXHcrrNCHDBzO.jpg",
+      "https://image.tmdb.org/t/p/w1280/8sNiqpwhvO4cdiXq7Srrqgz5pRx.jpg",
+    ],
   },
 ];
 
@@ -255,27 +275,44 @@ const GENRE_TOPICS: MovieGenre[] = [
   },
 ];
 
-// Helper to extract sharp TMDB backdrops
-function extractTmdbBackdrop(movieList?: TmdbMovie[], fallback?: string): string | null {
+// Helper to extract sharp TMDB backdrops with randomized romance selection
+function extractTmdbBackdrop(
+  movieList?: TmdbMovie[],
+  fallbackList?: string[],
+  seed = 0,
+): string | null {
   if (movieList && movieList.length > 0) {
-    const movieWithBackdrop = movieList.find((m) => Boolean(m.backdrop_path));
-    if (movieWithBackdrop?.backdrop_path) {
-      return tmdbBackdrop(movieWithBackdrop.backdrop_path, "w1280");
+    const candidates = movieList.filter((m) => Boolean(m.backdrop_path));
+    if (candidates.length > 0) {
+      const idx = Math.abs(seed) % Math.min(candidates.length, 6);
+      const chosen = candidates[idx];
+      if (chosen?.backdrop_path) {
+        return tmdbBackdrop(chosen.backdrop_path, "w1280");
+      }
     }
-    const movieWithPoster = movieList.find((m) => Boolean(m.poster_path));
-    if (movieWithPoster?.poster_path) {
-      return tmdbPoster(movieWithPoster.poster_path, "w780");
+    const posterCandidates = movieList.filter((m) => Boolean(m.poster_path));
+    if (posterCandidates.length > 0) {
+      const idx = Math.abs(seed) % Math.min(posterCandidates.length, 6);
+      const chosen = posterCandidates[idx];
+      if (chosen?.poster_path) {
+        return tmdbPoster(chosen.poster_path, "w780");
+      }
     }
   }
-  return fallback || null;
+  if (fallbackList && fallbackList.length > 0) {
+    return fallbackList[Math.abs(seed) % fallbackList.length];
+  }
+  return null;
 }
 
 export default function GenresTopicsPage() {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [loadRemaining, setLoadRemaining] = useState(false);
+  const [randomSeed, setRandomSeed] = useState(0);
 
   useEffect(() => {
+    setRandomSeed(Math.floor(Math.random() * 10));
     const timer = setTimeout(() => setLoadRemaining(true), 300);
     return () => clearTimeout(timer);
   }, []);
@@ -381,7 +418,7 @@ export default function GenresTopicsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
             {FEATURED_HUBS.map((hub, idx) => {
               const movies = featuredQueries[idx]?.data || [];
-              const rawBackdrop = extractTmdbBackdrop(movies, hub.curatedBackdrop);
+              const rawBackdrop = extractTmdbBackdrop(movies, hub.curatedBackdrops, randomSeed + idx);
               const topTitles = movies.slice(0, 3).map((m) => m.title).filter(Boolean);
 
               return (
