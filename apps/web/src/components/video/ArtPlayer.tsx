@@ -152,26 +152,26 @@ export default function ArtPlayer({
       if (Hls.isSupported()) {
         const hls = new Hls({
           enableWorker: true,
-          backBufferLength: 60,
-          maxBufferLength: 30,
-          maxMaxBufferLength: 60,
-          maxBufferSize: 60 * 1000 * 1000,
-          maxBufferHole: 1.5,
+          backBufferLength: 30,
+          maxBufferLength: 10,
+          maxMaxBufferLength: 20,
+          maxBufferSize: 30 * 1000 * 1000,
+          maxBufferHole: 0.8,
           highBufferWatchdogPeriod: 2,
-          nudgeMaxRetry: 8,
-          nudgeOffset: 0.2,
+          nudgeMaxRetry: 6,
+          nudgeOffset: 0.1,
           startFragPrefetch: true,
           progressive: true,
           lowLatencyMode: false,
-          abrBandWidthFactor: 0.85,
-          abrBandWidthUpFactor: 0.7,
+          abrBandWidthFactor: 0.9,
+          abrBandWidthUpFactor: 0.8,
           capLevelToPlayerSize: true,
-          manifestLoadingTimeOut: 12_000,
-          manifestLoadingMaxRetry: 4,
-          levelLoadingTimeOut: 12_000,
-          levelLoadingMaxRetry: 4,
-          fragLoadingTimeOut: 20_000,
-          fragLoadingMaxRetry: 4,
+          manifestLoadingTimeOut: 8_000,
+          manifestLoadingMaxRetry: 3,
+          levelLoadingTimeOut: 8_000,
+          levelLoadingMaxRetry: 3,
+          fragLoadingTimeOut: 10_000,
+          fragLoadingMaxRetry: 3,
           pLoader: class ManifestFilterLoader extends (Hls.DefaultConfig
             .loader as any) {
             load(context: any, config: any, callbacks: any) {
@@ -528,7 +528,10 @@ export default function ArtPlayer({
       autoOrientation: true,
       fastForward: true,
       lock: true,
-      screenshot: true,
+      screenshot:
+        typeof navigator !== "undefined"
+          ? !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+          : false,
       setting: true,
       pip: true,
       loop: true,
@@ -572,7 +575,11 @@ export default function ArtPlayer({
           name: "quality",
           position: "right",
           index: 10,
-          html: "Chất lượng",
+          html:
+            typeof navigator !== "undefined" &&
+            /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+              ? "HD"
+              : "Chất lượng",
           selector: qualityLevels,
           onSelect: function (item: { level?: number; html: string }) {
             return item.html;

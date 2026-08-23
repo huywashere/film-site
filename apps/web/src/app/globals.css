@@ -528,6 +528,42 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
   pointer-events: none !important;
 }
 
+/* Mobile responsive ArtPlayer controls */
+@media (max-width: 640px) {
+  .art-video-player {
+    --art-padding: 4px !important;
+    --art-control-height: 36px !important;
+    --art-control-icon-scale: 0.95 !important;
+  }
+
+  .art-video-player .art-bottom {
+    padding: 0 4px 2px 4px !important;
+  }
+
+  .art-video-player .art-controls .art-control {
+    min-width: 28px !important;
+    padding: 0 2px !important;
+  }
+
+  .art-video-player .art-control-time {
+    font-size: 11px !important;
+    padding: 0 2px !important;
+    letter-spacing: -0.3px !important;
+    white-space: nowrap !important;
+  }
+
+  .art-video-player.art-mobile .art-control-screenshot,
+  .art-video-player .art-control-screenshot {
+    display: none !important;
+  }
+
+  .art-video-player .art-control-quality {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    padding: 0 3px !important;
+  }
+}
+
 /* Stable web glass for the mobile dock. The solid fill keeps it readable over
    posters and dark banners even when backdrop-filter is unavailable. */
 .mobile-bottom-nav-surface {
