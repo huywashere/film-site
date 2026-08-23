@@ -111,10 +111,8 @@ export default function ArtPlayer({
       type === "hls" ||
       url.includes(".m3u8") ||
       (type === "auto" && url.includes(".m3u8"));
-    const prefersSameOriginHls =
-      isHls &&
-      (window.matchMedia("(max-width: 1024px), (pointer: coarse)").matches ||
-        /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent));
+    // Direct CDN streaming ensures maximum bandwidth, 0 proxy bottlenecks, and instant loading on both mobile and desktop
+    const prefersSameOriginHls = false;
     const hlsTransport = selectInitialHlsTransport(
       url,
       fallbackUrl,
@@ -328,6 +326,13 @@ export default function ArtPlayer({
           const levels = data.levels ?? [];
           if (levels.length <= 1) return;
 
+          if (playerRef.current?.loading) {
+            playerRef.current.loading.show = false;
+          }
+          if (playerRef.current?.mask) {
+            playerRef.current.mask.show = true;
+          }
+
           const prefQuality = useSettingsStore.getState().defaultQuality;
           if (prefQuality !== "auto") {
             const targetIdx = levels.findIndex(
@@ -481,11 +486,22 @@ export default function ArtPlayer({
           onErrorRef.current?.({ type: "HLS_NATIVE_ERROR" });
         };
 
+        const handleNativeLoaded = () => {
+          clearStartupTimer();
+          if (playerRef.current?.loading) {
+            playerRef.current.loading.show = false;
+          }
+          if (playerRef.current?.mask) {
+            playerRef.current.mask.show = true;
+          }
+        };
+
         video.addEventListener("error", handleNativeError, { once: true });
-        video.addEventListener("loadedmetadata", clearStartupTimer, {
+        video.addEventListener("loadedmetadata", handleNativeLoaded, {
           once: true,
         });
-        video.addEventListener("canplay", clearStartupTimer, { once: true });
+        video.addEventListener("canplay", handleNativeLoaded, { once: true });
+        video.addEventListener("loadeddata", handleNativeLoaded, { once: true });
       } else {
         onErrorRef.current?.({ type: "HLS_UNSUPPORTED" });
       }
@@ -862,6 +878,12 @@ export default function ArtPlayer({
 
     player.on("ready", () => {
       onReadyRef.current?.(player);
+      if (player.loading) {
+        player.loading.show = false;
+      }
+      if (player.mask) {
+        player.mask.show = true;
+      }
 
       const video = player.video;
       const canvas = canvasRef.current;
