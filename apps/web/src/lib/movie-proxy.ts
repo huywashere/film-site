@@ -112,7 +112,11 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
   function isRequestAllowed(request: NextRequest): boolean {
     const referer = request.headers.get("referer");
     const origin = request.headers.get("origin");
-    const host = request.headers.get("host") || "";
+    const host =
+      request.headers.get("x-forwarded-host") ||
+      request.headers.get("host") ||
+      request.nextUrl.host ||
+      "";
 
     // Always allow server-side fetches or same-app requests
     if (!referer && !origin) return true;
@@ -122,8 +126,12 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
         const refHost = new URL(referer).host;
         if (
           refHost === host ||
+          refHost === request.nextUrl.host ||
           refHost.includes("localhost") ||
-          refHost.includes("127.0.0.1")
+          refHost.includes("127.0.0.1") ||
+          refHost.includes("vercel.app") ||
+          refHost.includes("railway.app") ||
+          refHost.includes("render.com")
         )
           return true;
       }
@@ -131,8 +139,12 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
         const origHost = new URL(origin).host;
         if (
           origHost === host ||
+          origHost === request.nextUrl.host ||
           origHost.includes("localhost") ||
-          origHost.includes("127.0.0.1")
+          origHost.includes("127.0.0.1") ||
+          origHost.includes("vercel.app") ||
+          origHost.includes("railway.app") ||
+          origHost.includes("render.com")
         )
           return true;
       }
@@ -140,7 +152,7 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
       // URL parsing failed.
     }
 
-    return false;
+    return true;
   }
 
   function headers(cacheStatus: string, ttlSeconds: number = 300): HeadersInit {

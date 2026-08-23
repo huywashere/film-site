@@ -572,6 +572,38 @@ export default function ArtPlayer({
       },
       controls: [
         {
+          name: "backward-10",
+          position: "left",
+          index: 25,
+          html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;" title="Lùi 10 giây">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+              <text x="12" y="15.5" font-size="8.5" font-family="sans-serif" font-weight="700" fill="currentColor" stroke="none" text-anchor="middle">10</text>
+            </svg>
+          </span>`,
+          tooltip: "Lùi 10 giây",
+          click: function (art: any) {
+            art.currentTime = Math.max(0, art.currentTime - 10);
+          },
+        },
+        {
+          name: "forward-10",
+          position: "left",
+          index: 26,
+          html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;" title="Tua 10 giây">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+              <path d="M21 3v5h-5"/>
+              <text x="12" y="15.5" font-size="8.5" font-family="sans-serif" font-weight="700" fill="currentColor" stroke="none" text-anchor="middle">10</text>
+            </svg>
+          </span>`,
+          tooltip: "Tua 10 giây",
+          click: function (art: any) {
+            art.currentTime = Math.min(art.duration || 0, art.currentTime + 10);
+          },
+        },
+        {
           name: "quality",
           position: "right",
           index: 10,

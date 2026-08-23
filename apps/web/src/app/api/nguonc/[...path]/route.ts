@@ -25,7 +25,11 @@ import {
 
 const NGUONC_ORIGINS = resolveMovieApiOrigins(
   process.env.NGUONC_API_ORIGINS || process.env.NGUONC_API_BASE,
-  ["https://phim.nguonc.com/api"],
+  [
+    "https://phim.nguonc.com/api",
+    "https://api.nguonc.com/api",
+    "https://nguonc.com/api",
+  ],
 );
 
 /** Path-aware TTL in seconds */
@@ -47,6 +51,8 @@ export const GET = createMovieProxyHandler({
     Accept: "application/json",
     "User-Agent":
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    Referer: "https://phim.nguonc.com/",
+    Origin: "https://phim.nguonc.com",
   },
   transform: normalizeNguonC,
   forbiddenMessage: "Truy cập bị chặn (403) - Yêu cầu không hợp lệ",
