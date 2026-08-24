@@ -631,8 +631,15 @@ export function Navbar() {
         )}
       >
         <div className="w-full px-4 md:px-8 flex items-center justify-between gap-3 md:gap-6 relative">
-          <div className="flex items-center shrink-0">
+          <div className="flex shrink-0 items-center gap-1.5">
             <AnimatedNavbarLogo />
+            <button
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-neutral-300 transition-colors hover:bg-white/[0.06] hover:text-white active:scale-95 lg:hidden"
+              onClick={() => setMobileSidebarOpen(true)}
+              aria-label="Mở menu"
+            >
+              <Menu size={21} className="stroke-[2.2]" />
+            </button>
           </div>
 
           <nav className="hidden lg:flex items-center justify-center space-x-1.5 xl:space-x-2 text-sm font-semibold text-neutral-200 absolute left-1/2 -translate-x-1/2 z-10">
@@ -1147,14 +1154,6 @@ export function Navbar() {
               )}
             </div>
 
-            {/* Mobile menu trigger */}
-            <button
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-neutral-300 hover:bg-white/[0.06] hover:text-white transition-colors cursor-pointer active:scale-95 lg:hidden"
-              onClick={() => setMobileSidebarOpen(true)}
-              aria-label="Mở menu"
-            >
-              <Menu size={22} className="stroke-[2.2]" />
-            </button>
           </div>
         </div>
       </header>

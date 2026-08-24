@@ -745,20 +745,20 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
 /* Stable web glass for the mobile dock. The solid fill keeps it readable over
    posters and dark banners even when backdrop-filter is unavailable. */
 .mobile-bottom-nav-surface {
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   background:
     linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.07),
-      rgba(255, 255, 255, 0.015)
+      rgba(255, 255, 255, 0.065),
+      rgba(255, 255, 255, 0.012)
     ),
-    rgba(15, 17, 21, 0.94);
-  -webkit-backdrop-filter: blur(22px) saturate(140%);
-  backdrop-filter: blur(22px) saturate(140%);
+    rgba(15, 17, 21, 0.96);
+  -webkit-backdrop-filter: blur(20px) saturate(135%);
+  backdrop-filter: blur(20px) saturate(135%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     inset 0 -1px 0 rgba(255, 255, 255, 0.04),
-    0 14px 36px rgba(0, 0, 0, 0.48);
+    0 12px 32px rgba(0, 0, 0, 0.5);
 }
 
 @media (prefers-reduced-transparency: reduce) {

@@ -114,7 +114,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
         {/* User Profile Card (Visible when logged in) */}
         {user ? (
-          <div className="p-4 border-b border-white/10 bg-white/[0.02]">
+          <div className="border-b border-white/10 bg-white/[0.02] px-4 py-3">
             <div className="flex flex-col space-y-3">
               <div className="flex items-center space-x-3">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -170,7 +170,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 onClose();
                 useAuthModalStore.getState().openModal("login");
               }}
-              className="flex items-center justify-center space-x-2 w-full py-2.5 px-4 rounded-xl bg-white text-black font-extrabold text-xs shadow-md active:scale-95 transition-all cursor-pointer"
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 text-xs font-extrabold text-black shadow-[0_4px_14px_rgba(0,0,0,0.18)] transition-transform active:scale-[0.98]"
             >
               <User size={15} />
               <span>{t("nav.login")} / {t("nav.register")}</span>
@@ -179,35 +179,35 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         )}
 
         {/* Language Selection Bar in Mobile Drawer */}
-        <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
-          <span className="text-xs font-bold text-neutral-400 flex items-center gap-2">
-            <Languages size={15} />
+        <div className="flex h-12 items-center justify-between border-b border-white/10 px-4">
+          <span className="flex items-center gap-2 text-[11px] font-bold text-neutral-400">
+            <Languages size={14} />
             <span>{t("nav.language")}:</span>
           </span>
-          <div className="flex items-center bg-white/[0.06] border border-white/10 p-0.5 rounded-full text-xs font-bold">
+          <div className="flex h-8 items-center rounded-full border border-white/10 bg-white/[0.06] p-0.5 text-[10px] font-bold">
             <button
               type="button"
               onClick={() => setLang("vi")}
               className={cn(
-                "px-2.5 py-1 rounded-full transition-all cursor-pointer",
+                "h-6 rounded-full px-2.5 transition-all cursor-pointer",
                 lang === "vi"
                   ? "bg-white text-black font-extrabold shadow-sm"
                   : "text-neutral-400 hover:text-white",
               )}
             >
-              🇻🇳 VI
+              VN VI
             </button>
             <button
               type="button"
               onClick={() => setLang("en")}
               className={cn(
-                "px-2.5 py-1 rounded-full transition-all cursor-pointer",
+                "h-6 rounded-full px-2.5 transition-all cursor-pointer",
                 lang === "en"
                   ? "bg-white text-black font-extrabold shadow-sm"
                   : "text-neutral-400 hover:text-white",
               )}
             >
-              🇬🇧 EN
+              GB EN
             </button>
           </div>
         </div>

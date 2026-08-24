@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 import { useMotionValueEvent, useScroll } from "framer-motion";
-import { Home, LayoutGrid, History, Bookmark, User } from "lucide-react";
+import { CalendarDays, History, Home, LayoutGrid, User } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 import { cardFont } from "@/lib/fonts";
@@ -30,7 +30,13 @@ export function MobileBottomNav() {
 
   const navItems = [
     {
-      label: "Chủ đề",
+      label: "Trang chủ",
+      href: "/",
+      icon: Home,
+      isActive: pathname === "/",
+    },
+    {
+      label: "Duyệt phim",
       href: "/genres",
       icon: LayoutGrid,
       isActive: pathname === "/genres" || pathname.startsWith("/genre/"),
@@ -42,17 +48,10 @@ export function MobileBottomNav() {
       isActive: pathname === "/history",
     },
     {
-      label: "Trang chủ",
-      href: "/",
-      icon: Home,
-      isActive: pathname === "/",
-      isPrimary: true,
-    },
-    {
-      label: "Đã lưu",
-      href: "/watchlist",
-      icon: Bookmark,
-      isActive: pathname === "/watchlist",
+      label: "Lịch chiếu",
+      href: "/schedule",
+      icon: CalendarDays,
+      isActive: pathname === "/schedule",
     },
   ];
 
@@ -61,13 +60,13 @@ export function MobileBottomNav() {
       aria-label="Điều hướng nhanh"
       className={cn(
         cardFont.className,
-        "mobile-bottom-nav-surface fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 right-3 z-40 overflow-hidden rounded-2xl px-1 py-1 transition-[transform,opacity] duration-300 ease-out will-change-transform lg:hidden",
+        "mobile-bottom-nav-surface fixed bottom-[max(0.55rem,env(safe-area-inset-bottom))] left-2.5 right-2.5 z-40 overflow-hidden rounded-[1.65rem] px-1.5 py-1.5 transition-[transform,opacity] duration-300 ease-out will-change-transform lg:hidden",
         isHidden
           ? "pointer-events-none translate-y-[calc(100%+1.25rem)] opacity-0"
           : "translate-y-0 opacity-100",
       )}
     >
-      <div className="flex h-12 items-center justify-around">
+      <div className="grid h-[3.6rem] grid-cols-5 items-center">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -77,22 +76,22 @@ export function MobileBottomNav() {
               prefetch={true}
               aria-current={item.isActive ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center justify-center flex-1 h-full py-1 rounded-xl text-[10px] font-semibold transition-[color,background-color,transform] active:scale-[0.96] relative",
+                "relative flex h-full min-w-0 flex-col items-center justify-center rounded-[1.1rem] py-1 text-[10px] font-semibold transition-[color,background-color,transform] active:scale-[0.96]",
                 item.isActive
-                  ? item.isPrimary
-                    ? "bg-white/[0.13] text-white font-extrabold shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
-                    : "bg-white/[0.08] text-white font-extrabold"
+                  ? "bg-white/[0.08] text-white font-extrabold shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] after:absolute after:bottom-0.5 after:h-0.5 after:w-4 after:rounded-full after:bg-violet-400"
                   : "text-neutral-400 hover:text-neutral-200",
               )}
             >
               <Icon
-                size={18}
+                size={20}
                 className={cn(
                   "transition-transform duration-200",
                   item.isActive && "scale-110 text-white",
                 )}
               />
-              <span className="mt-0.5 tracking-tight">{item.label}</span>
+              <span className="mt-1 max-w-full truncate px-0.5 tracking-tight">
+                {item.label}
+              </span>
             </Link>
           );
         })}
@@ -102,9 +101,9 @@ export function MobileBottomNav() {
           <Link
             href={`/user/${encodeURIComponent(user.username)}`}
             className={cn(
-              "flex flex-col items-center justify-center flex-1 h-full py-1 rounded-xl text-[10px] font-semibold transition-[color,background-color,transform] active:scale-[0.96] relative",
+              "relative flex h-full min-w-0 flex-col items-center justify-center rounded-[1.1rem] py-1 text-[10px] font-semibold transition-[color,background-color,transform] active:scale-[0.96]",
               pathname.startsWith("/user/") || pathname.startsWith("/profile/")
-                ? "bg-white/10 text-white font-extrabold"
+                ? "bg-white/[0.08] text-white font-extrabold after:absolute after:bottom-0.5 after:h-0.5 after:w-4 after:rounded-full after:bg-violet-400"
                 : "text-neutral-400 hover:text-neutral-200",
             )}
           >
@@ -115,7 +114,7 @@ export function MobileBottomNav() {
                 alt={user.displayName || user.username}
                 referrerPolicy="no-referrer"
                 className={cn(
-                  "h-5 w-5 rounded-full object-cover border border-white/20 transition-transform",
+                  "h-5 w-5 rounded-full border border-white/20 object-cover transition-transform",
                   (pathname.startsWith("/user/") ||
                     pathname.startsWith("/profile/")) &&
                     "scale-110 border-white ring-2 ring-violet-400/50",
@@ -139,19 +138,23 @@ export function MobileBottomNav() {
                   .toUpperCase()}
               </div>
             )}
-            <span className="mt-0.5 tracking-tight">Cá nhân</span>
+            <span className="mt-1 max-w-full truncate px-0.5 tracking-tight">
+              Cá nhân
+            </span>
           </Link>
         ) : (
           <Link
             href="/login"
             className={cn(
-              "flex flex-col items-center justify-center flex-1 h-full py-1 rounded-xl text-[10px] font-semibold text-neutral-400 hover:text-white transition-[color,background-color,transform] active:scale-[0.96]",
+              "flex h-full min-w-0 flex-col items-center justify-center rounded-[1.1rem] py-1 text-[10px] font-semibold text-neutral-400 transition-[color,background-color,transform] hover:text-white active:scale-[0.96]",
               (pathname === "/login" || pathname === "/register") &&
                 "bg-white/10 text-white font-extrabold",
             )}
           >
-            <User size={18} />
-            <span className="mt-0.5 tracking-tight">Đăng nhập</span>
+            <User size={20} />
+            <span className="mt-1 max-w-full truncate px-0.5 tracking-tight">
+              Đăng nhập
+            </span>
           </Link>
         )}
       </div>
