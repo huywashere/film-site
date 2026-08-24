@@ -6,7 +6,7 @@ import axios from "axios";
 @Injectable()
 export class AdminSyncSchedulerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AdminSyncSchedulerService.name);
-  private timer: NodeJS.Timeout | null = null;
+  private timer: ReturnType<typeof setInterval> | null = null;
   private isProcessing = false;
 
   constructor(

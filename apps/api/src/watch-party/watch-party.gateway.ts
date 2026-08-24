@@ -33,7 +33,7 @@ export class WatchPartyGateway implements OnGatewayDisconnect, OnGatewayInit {
   private namespace!: Namespace;
 
   private readonly activity = new Map<string, Map<string, number[]>>();
-  private lobbyTimer: NodeJS.Timeout | null = null;
+  private lobbyTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private readonly rooms: WatchPartyService,

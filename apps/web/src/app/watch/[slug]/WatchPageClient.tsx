@@ -1091,7 +1091,7 @@ export default function WatchPage() {
       wp.syncPlayerState("pause", artInstance.currentTime || 0);
     };
 
-    let seekTimer: NodeJS.Timeout | null = null;
+    let seekTimer: ReturnType<typeof setTimeout> | null = null;
     const handleSeek = () => {
       if (applyingRemoteStateRef.current) return;
       if (seekTimer) clearTimeout(seekTimer);

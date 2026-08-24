@@ -105,7 +105,7 @@ export function AdminDevToolsGuard() {
     };
 
     // 3. Console Inspection Detector (Only triggers when DevTools formats output in an active tab)
-    let consoleInterval: NodeJS.Timeout | null = null;
+    let consoleInterval: ReturnType<typeof setInterval> | null = null;
     try {
       const detector = /./;
       detector.toString = () => {

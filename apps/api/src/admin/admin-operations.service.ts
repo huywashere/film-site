@@ -31,7 +31,7 @@ function normalizedTitle(value: string) {
 @Injectable()
 export class AdminOperationsService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AdminOperationsService.name);
-  private timer?: NodeJS.Timeout;
+  private timer?: ReturnType<typeof setInterval>;
   private scheduleBusy = false;
   private monitorBusy = false;
   private readonly backupDir = resolve(process.env.BACKUP_DIR || "./backups");
@@ -48,7 +48,7 @@ export class AdminOperationsService implements OnModuleInit, OnModuleDestroy {
       void this.runDueSchedules();
       void this.monitorSystem();
     }, 60_000);
-    this.timer.unref();
+    (this.timer as unknown as { unref?: () => void }).unref?.();
     void this.runDueSchedules();
   }
 
