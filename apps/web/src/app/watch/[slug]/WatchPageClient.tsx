@@ -1000,7 +1000,12 @@ export default function WatchPage() {
       if (typeof window !== "undefined") {
         localStorage.setItem("cineverse_auto_skip_intro", String(next));
       }
-      if (next && artInstance && typeof artInstance.currentTime === "number" && artInstance.currentTime < 85) {
+      if (
+        next &&
+        artInstance &&
+        typeof artInstance.currentTime === "number" &&
+        artInstance.currentTime < 85
+      ) {
         hasSkippedIntroRef.current = true;
         artInstance.currentTime = 85;
       }
@@ -2231,7 +2236,10 @@ export default function WatchPage() {
         e.preventDefault();
         setTheaterMode((prev) => {
           const next = !prev;
-          toast(next ? "Đã bật chế độ rạp phim" : "Đã tắt chế độ rạp phim", "info");
+          toast(
+            next ? "Đã bật chế độ rạp phim" : "Đã tắt chế độ rạp phim",
+            "info",
+          );
           return next;
         });
       } else if (e.key === "m" || e.key === "M") {
@@ -2242,7 +2250,10 @@ export default function WatchPage() {
       } else if (e.key === "ArrowLeft" || e.key === "j" || e.key === "J") {
         e.preventDefault();
         if (artInstance) {
-          artInstance.currentTime = Math.max(0, (artInstance.currentTime || 0) - 10);
+          artInstance.currentTime = Math.max(
+            0,
+            (artInstance.currentTime || 0) - 10,
+          );
         }
       } else if (e.key === "ArrowRight" || e.key === "l" || e.key === "L") {
         e.preventDefault();
@@ -2252,12 +2263,18 @@ export default function WatchPage() {
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         if (artInstance) {
-          artInstance.volume = Math.min(1, Math.round(((artInstance.volume || 1) + 0.1) * 10) / 10);
+          artInstance.volume = Math.min(
+            1,
+            Math.round(((artInstance.volume || 1) + 0.1) * 10) / 10,
+          );
         }
       } else if (e.key === "ArrowDown") {
         e.preventDefault();
         if (artInstance) {
-          artInstance.volume = Math.max(0, Math.round(((artInstance.volume || 1) - 0.1) * 10) / 10);
+          artInstance.volume = Math.max(
+            0,
+            Math.round(((artInstance.volume || 1) - 0.1) * 10) / 10,
+          );
         }
       } else if (e.key === "n" || e.key === "N") {
         e.preventDefault();
@@ -2836,8 +2853,6 @@ export default function WatchPage() {
                 </div>
               )}
 
-
-
               {/* Fallback overlay */}
               {isFallbacking && (
                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm gap-3">
@@ -2862,7 +2877,9 @@ export default function WatchPage() {
                       proxySrc={m3u8ProxyUrl}
                       poster={posterUrl}
                       title={film?.name || film?.title || ""}
-                      subtitle={currentEpData?.name ? `Tập ${currentEpData.name}` : ""}
+                      subtitle={
+                        currentEpData?.name ? `Tập ${currentEpData.name}` : ""
+                      }
                       initialTime={lastKnownPlaybackTimeRef.current || resumeAt}
                       autoPlay={autoPlayConfig}
                       onReady={(player) => {
@@ -3091,7 +3108,9 @@ export default function WatchPage() {
                     }
                   >
                     <SlidersHorizontal size={11} className="text-neutral-400" />
-                    <span>{isQuickSettingsCollapsed ? "Cài đặt" : "Thu gọn"}</span>
+                    <span>
+                      {isQuickSettingsCollapsed ? "Cài đặt" : "Thu gọn"}
+                    </span>
                     <ChevronDown
                       size={11}
                       className={cn(
@@ -3154,7 +3173,10 @@ export default function WatchPage() {
                       const next = !autoNextConfig;
                       setAutoNextConfig(next);
                       if (typeof window !== "undefined") {
-                        localStorage.setItem("cineverse_auto_next", String(next));
+                        localStorage.setItem(
+                          "cineverse_auto_next",
+                          String(next),
+                        );
                       }
                       toast(
                         next
@@ -3257,7 +3279,10 @@ export default function WatchPage() {
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-neutral-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all cursor-pointer select-none active:scale-95"
                       title="Thu gọn tất cả cài đặt trình phát"
                     >
-                      <SlidersHorizontal size={12} className="text-neutral-400" />
+                      <SlidersHorizontal
+                        size={12}
+                        className="text-neutral-400"
+                      />
                       <span>Thu gọn</span>
                       <ChevronDown
                         size={12}
@@ -3279,7 +3304,10 @@ export default function WatchPage() {
                   >
                     <SlidersHorizontal size={12} className="text-neutral-400" />
                     <span>Cài đặt</span>
-                    <ChevronDown size={12} className="transition-transform duration-200" />
+                    <ChevronDown
+                      size={12}
+                      className="transition-transform duration-200"
+                    />
                   </button>
                 </div>
               )}
@@ -3440,7 +3468,7 @@ export default function WatchPage() {
                         const n = serverData[currentEpIndex + 1];
                         router.push(watchUrlForEpisode(n.slug || n.name));
                       }}
-                      className="flex items-center gap-1 rounded-lg bg-white px-4 py-1.5 text-xs font-semibold text-[#111317] transition-colors hover:bg-neutral-200"
+                      className="flex items-center gap-1 rounded-lg border border-violet-500 bg-violet-600 px-4 py-1.5 text-xs font-semibold text-white shadow-[0_8px_24px_-14px_rgba(139,92,246,0.9)] transition-colors hover:bg-violet-500"
                     >
                       {t("watch.nextEpisode", "Tập tiếp")}{" "}
                       <ChevronRight size={13} />
@@ -3514,14 +3542,16 @@ export default function WatchPage() {
               return (
                 <div className="space-y-4 pt-1">
                   {/* ── Version & Audio Selection Tabs ── */}
-                  <div className="space-y-2">
-                    <div className="text-[11px] font-extrabold text-neutral-400 uppercase tracking-wider">
-                      {lang === "en"
-                        ? "Audio & Subtitle Versions"
-                        : "Phiên bản Âm thanh & Phụ đề"}
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
+                  <div>
+                    <div
+                      className="netphim-media-tabs flex items-center gap-5 overflow-x-auto overflow-y-hidden no-scrollbar"
+                      role="tablist"
+                      aria-label={
+                        lang === "en"
+                          ? "Audio and subtitle versions"
+                          : "Phiên bản âm thanh và phụ đề"
+                      }
+                    >
                       {subOptions.map((opt) => {
                         const isActive = activeServerType === opt.id;
                         const hasItems = opt.count > 0;
@@ -3530,6 +3560,8 @@ export default function WatchPage() {
                         return (
                           <button
                             key={opt.id}
+                            role="tab"
+                            aria-selected={isActive}
                             disabled={!hasItems}
                             onClick={() => {
                               if (!hasItems) return;
@@ -3572,26 +3604,23 @@ export default function WatchPage() {
                               }
                             }}
                             className={cn(
-                              "group inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer select-none border active:scale-95",
+                              "group relative -mb-px inline-flex h-11 shrink-0 items-center gap-2 border-b-2 px-0 text-xs font-extrabold uppercase tracking-[0.03em] transition-colors cursor-pointer select-none",
                               isActive
-                                ? "bg-white text-black border-white shadow-md scale-[1.02]"
+                                ? "border-violet-500 text-violet-400"
                                 : hasItems
-                                  ? "bg-white/[0.04] hover:bg-white/[0.09] text-neutral-300 border-white/10 hover:border-white/20"
-                                  : "opacity-40 cursor-not-allowed bg-white/[0.02] border-white/5 text-neutral-500",
+                                  ? "border-transparent text-neutral-400 hover:border-violet-500/35 hover:text-violet-300"
+                                  : "cursor-not-allowed border-transparent text-neutral-500 opacity-65",
                             )}
                           >
                             <IconComponent
                               size={14}
                               className={
                                 isActive
-                                  ? "text-black"
-                                  : "text-neutral-400 group-hover:text-white"
+                                  ? "text-violet-400"
+                                  : "text-neutral-500 group-hover:text-violet-300"
                               }
                             />
                             <span>{opt.label}</span>
-                            {isActive && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-black ml-0.5" />
-                            )}
                           </button>
                         );
                       })}
@@ -3600,17 +3629,22 @@ export default function WatchPage() {
 
                   {/* ── Server Provider Mirrors ── */}
                   {activeGroup.length > 0 && (
-                    <div className="pt-3 border-t border-white/[0.08] space-y-2">
-                      <div className="flex items-center gap-1.5 text-xs font-extrabold text-neutral-300">
-                        <Server size={14} className="text-neutral-400" />
-                        <span>
-                          {lang === "en"
-                            ? `Server (${activeGroup.length}):`
-                            : "Máy chủ:"}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2">
+                    <div className="pt-1">
+                      <div
+                        className="netphim-server-row flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar"
+                        role="group"
+                        aria-label={
+                          lang === "en" ? "Playback server" : "Máy chủ phát"
+                        }
+                      >
+                        <div className="flex shrink-0 items-center gap-1.5 pr-1 text-[11px] font-extrabold uppercase tracking-[0.04em] text-neutral-500">
+                          <Server size={13} />
+                          <span>
+                            {lang === "en"
+                              ? `Server (${activeGroup.length})`
+                              : "Máy chủ"}
+                          </span>
+                        </div>
                         {activeGroup.map((ep, groupIdx) => {
                           const i = episodes.indexOf(ep);
                           const isActive = i === currentServer;
@@ -3624,6 +3658,7 @@ export default function WatchPage() {
                           return (
                             <button
                               key={i}
+                              aria-pressed={isActive}
                               disabled={hasFailed}
                               onClick={() => {
                                 setUserManuallySelectedServer(true);
@@ -3650,10 +3685,10 @@ export default function WatchPage() {
                                 }
                               }}
                               className={cn(
-                                "px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none active:scale-95 border flex items-center gap-2",
+                                "flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer select-none active:scale-[0.98]",
                                 isActive
-                                  ? "bg-white text-black border-white font-extrabold shadow-md scale-[1.02]"
-                                  : "bg-white/[0.04] hover:bg-white/[0.09] text-neutral-300 border-white/10 hover:border-white/20",
+                                  ? "border-violet-500 bg-violet-600 text-white shadow-[0_8px_24px_-14px_rgba(139,92,246,0.9)]"
+                                  : "border-white/10 bg-white/[0.035] text-neutral-300 hover:border-violet-500/45 hover:bg-violet-500/10 hover:text-violet-200",
                                 hasFailed &&
                                   "opacity-30 cursor-not-allowed line-through",
                               )}
@@ -3661,9 +3696,7 @@ export default function WatchPage() {
                               <Server
                                 size={12}
                                 className={
-                                  isActive
-                                    ? "text-black"
-                                    : "text-neutral-400"
+                                  isActive ? "text-white" : "text-neutral-400"
                                 }
                               />
                               <span>{serverLabel}</span>
@@ -3701,6 +3734,8 @@ export default function WatchPage() {
                 : serverData.length > 30
                   ? serverData.slice(rangeStart, rangeEnd)
                   : filteredEps;
+              const activeEpisodeKey =
+                currentEp || currentEpData?.slug || currentEpData?.name;
 
               return (
                 <div className="space-y-3 pt-3 border-t border-white/[0.08]">
@@ -3759,7 +3794,7 @@ export default function WatchPage() {
                           className={cn(
                             "w-9 h-5 rounded-full p-0.5 transition-colors cursor-pointer flex items-center",
                             showEpThumbnails
-                              ? "bg-white/40 justify-end"
+                              ? "bg-violet-600 justify-end"
                               : "bg-white/20 justify-start",
                           )}
                         >
@@ -3826,15 +3861,15 @@ export default function WatchPage() {
                               className={cn(
                                 "px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 cursor-pointer border",
                                 isCurrentRange
-                                  ? "bg-white border-white text-black shadow-sm"
+                                  ? "border-violet-500 bg-violet-600 text-white shadow-sm"
                                   : containsActiveEp
-                                    ? "bg-white/10 border-white/30 text-white"
-                                    : "bg-white/[0.03] border-white/[0.06] text-white/50 hover:bg-white/[0.07] hover:text-white",
+                                    ? "border-violet-500/40 bg-violet-500/15 text-violet-200"
+                                    : "bg-white/[0.03] border-white/[0.06] text-white/50 hover:border-violet-500/35 hover:bg-violet-500/10 hover:text-violet-200",
                               )}
                             >
                               {start} - {end}
                               {containsActiveEp && (
-                                <span className="ml-1 w-1.5 h-1.5 rounded-full bg-white inline-block animate-pulse" />
+                                <span className="ml-1 w-1.5 h-1.5 rounded-full bg-violet-300 inline-block animate-pulse" />
                               )}
                             </button>
                           );
@@ -3853,9 +3888,8 @@ export default function WatchPage() {
                       >
                         {displayedEps.map((ep: any, i: number) => {
                           const isActive =
-                            ep.slug === currentEp ||
-                            ep.name === currentEp ||
-                            episodes.indexOf(ep) === currentEpIndex;
+                            ep.slug === activeEpisodeKey ||
+                            ep.name === activeEpisodeKey;
                           const epNum = ep.name.replace(/^tập\s*/i, "");
                           const epIdentifier = ep.slug || ep.name;
                           const isWatched =
@@ -3871,6 +3905,7 @@ export default function WatchPage() {
                           return (
                             <button
                               key={ep.slug || ep.name || i}
+                              aria-current={isActive ? "true" : undefined}
                               onClick={() =>
                                 router.push(
                                   watchUrlForEpisode(ep.slug || ep.name),
@@ -3879,7 +3914,7 @@ export default function WatchPage() {
                               className={cn(
                                 "relative flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-3 transition-all cursor-pointer border text-xs font-bold",
                                 isActive
-                                  ? "bg-white border-white text-black font-extrabold shadow-lg scale-[1.02]"
+                                  ? "border-violet-500 bg-violet-600 text-white font-extrabold shadow-[0_8px_24px_-14px_rgba(139,92,246,0.9)] scale-[1.02]"
                                   : isWatched
                                     ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20"
                                     : "bg-[#14181f]/80 hover:bg-white/[0.08] border-white/10 text-white/70 hover:text-white",
@@ -3898,7 +3933,7 @@ export default function WatchPage() {
                                   fill="currentColor"
                                   className={
                                     isActive
-                                      ? "text-black shrink-0"
+                                      ? "text-white shrink-0"
                                       : "text-white/70 shrink-0"
                                   }
                                 />
@@ -3916,9 +3951,8 @@ export default function WatchPage() {
                       >
                         {displayedEps.map((ep: any, i: number) => {
                           const isActive =
-                            ep.slug === currentEp ||
-                            ep.name === currentEp ||
-                            episodes.indexOf(ep) === currentEpIndex;
+                            ep.slug === activeEpisodeKey ||
+                            ep.name === activeEpisodeKey;
                           const epNum = ep.name.replace(/^tập\s*/i, "");
                           // Determine if this ep has been watched using watch progress storage
                           const epIdentifier = ep.slug || ep.name;
@@ -3936,6 +3970,7 @@ export default function WatchPage() {
                           return (
                             <button
                               key={ep.slug || ep.name || i}
+                              aria-current={isActive ? "true" : undefined}
                               onClick={() =>
                                 router.push(
                                   watchUrlForEpisode(ep.slug || ep.name),
@@ -3944,8 +3979,8 @@ export default function WatchPage() {
                               className={cn(
                                 "group/ep relative aspect-video rounded-xl overflow-hidden border transition-all cursor-pointer text-left bg-neutral-900",
                                 isActive
-                                  ? "border-2 border-white ring-2 ring-white/20 shadow-xl"
-                                  : "border-white/10 hover:border-white/30 hover:scale-[1.02]",
+                                  ? "border-2 border-violet-500 ring-2 ring-violet-500/25 shadow-[0_12px_30px_-16px_rgba(139,92,246,0.9)]"
+                                  : "border-white/10 hover:border-violet-500/40 hover:scale-[1.02]",
                               )}
                             >
                               {/* Use EpisodeThumbnail for multi-tier fallback: TMDB → provider → proxy */}

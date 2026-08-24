@@ -14,7 +14,9 @@ function getSafeLink(value?: string) {
   if (href.startsWith("/") && !href.startsWith("//")) return href;
   try {
     const parsed = new URL(href);
-    return parsed.protocol === "https:" || parsed.protocol === "http:" ? href : "";
+    return parsed.protocol === "https:" || parsed.protocol === "http:"
+      ? href
+      : "";
   } catch {
     return "";
   }
@@ -24,14 +26,17 @@ export function HomeAnnouncementPopup() {
   const [config, setConfig] = useState<PublicSiteConfiguration | null>(null);
   const [open, setOpen] = useState(false);
   const [catGif] = useState(
-    () => `/images/cat${Math.floor(Math.random() * 4) + 1}.gif`,
+    () => `/images/cat${Math.floor(Math.random() * 4) + 1}-optimized.webp`,
   );
   const dismissButtonRef = useRef<HTMLButtonElement>(null);
 
   const dismiss = useCallback(() => {
     if (config) {
       try {
-        localStorage.setItem(DISMISSED_VERSION_KEY, String(config.homePopupVersion));
+        localStorage.setItem(
+          DISMISSED_VERSION_KEY,
+          String(config.homePopupVersion),
+        );
       } catch {
         // Closing must never depend on storage availability.
       }
@@ -44,10 +49,13 @@ export function HomeAnnouncementPopup() {
     siteConfigApi
       .getPublic()
       .then(({ data }) => {
-        if (!active || !data.homePopupEnabled || !data.homePopupBody?.trim()) return;
+        if (!active || !data.homePopupEnabled || !data.homePopupBody?.trim())
+          return;
         let dismissedVersion = 0;
         try {
-          dismissedVersion = Number(localStorage.getItem(DISMISSED_VERSION_KEY) || 0);
+          dismissedVersion = Number(
+            localStorage.getItem(DISMISSED_VERSION_KEY) || 0,
+          );
         } catch {
           // Storage can be unavailable in privacy mode; the announcement still works.
         }
@@ -66,7 +74,10 @@ export function HomeAnnouncementPopup() {
     const previousOverflow = document.body.style.overflow;
     const previousFocus = document.activeElement as HTMLElement | null;
     document.body.style.overflow = "hidden";
-    const focusTimer = window.setTimeout(() => dismissButtonRef.current?.focus(), 80);
+    const focusTimer = window.setTimeout(
+      () => dismissButtonRef.current?.focus(),
+      80,
+    );
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") dismiss();
     };
@@ -187,14 +198,14 @@ export function HomeAnnouncementPopup() {
                 Chúc bạn xem phim vui vẻ
               </p>
             )}
-          <button
-            ref={dismissButtonRef}
-            type="button"
-            onClick={dismiss}
+            <button
+              ref={dismissButtonRef}
+              type="button"
+              onClick={dismiss}
               className="min-w-28 rounded-full bg-gradient-to-r from-amber-300 to-yellow-500 px-6 py-3 text-[11px] font-black uppercase tracking-[.08em] text-zinc-950 shadow-[0_10px_30px_rgba(250,204,21,.13)] transition hover:brightness-105 active:scale-[.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111116]"
-          >
-            {config.homePopupDismissLabel?.trim() || "Đã hiểu"}
-          </button>
+            >
+              {config.homePopupDismissLabel?.trim() || "Đã hiểu"}
+            </button>
           </footer>
         </div>
       </section>

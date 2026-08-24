@@ -250,17 +250,45 @@ export function CountryFlagImage({
 }
 
 const LISTS_CATALOG = [
-  { label: "Phim Mới", labelEn: "New Releases", href: "/search?sort=modified.time%20desc" },
+  {
+    label: "Phim Mới",
+    labelEn: "New Releases",
+    href: "/search?sort=modified.time%20desc",
+  },
   { label: "Phim Bộ", labelEn: "TV Series", href: "/films/series" },
   { label: "Phim Lẻ", labelEn: "Feature Films", href: "/films/single" },
   { label: "Hoạt Hình", labelEn: "Anime / Animation", href: "/films/anime" },
-  { label: "Phim Vietsub", labelEn: "Subtitled Movies", href: "/search?q=vietsub" },
-  { label: "Phim Thuyết Minh", labelEn: "Dubbed Movies", href: "/search?q=thuyet%20minh" },
-  { label: "Phim Lồng Tiếng", labelEn: "Voiceover Movies", href: "/search?q=long%20tieng" },
-  { label: "Phim Bộ Đang Chiếu", labelEn: "Ongoing Series", href: "/search?status=ongoing" },
-  { label: "Phim Bộ Đã Hoàn Thành", labelEn: "Completed Series", href: "/search?status=completed" },
+  {
+    label: "Phim Vietsub",
+    labelEn: "Subtitled Movies",
+    href: "/search?q=vietsub",
+  },
+  {
+    label: "Phim Thuyết Minh",
+    labelEn: "Dubbed Movies",
+    href: "/search?q=thuyet%20minh",
+  },
+  {
+    label: "Phim Lồng Tiếng",
+    labelEn: "Voiceover Movies",
+    href: "/search?q=long%20tieng",
+  },
+  {
+    label: "Phim Bộ Đang Chiếu",
+    labelEn: "Ongoing Series",
+    href: "/search?status=ongoing",
+  },
+  {
+    label: "Phim Bộ Đã Hoàn Thành",
+    labelEn: "Completed Series",
+    href: "/search?status=completed",
+  },
   { label: "Subteam", labelEn: "Subteam Releases", href: "/search?q=subteam" },
-  { label: "Phim Chiếu Rạp", labelEn: "Theatrical Releases", href: "/search?q=chieu%20rap" },
+  {
+    label: "Phim Chiếu Rạp",
+    labelEn: "Theatrical Releases",
+    href: "/search?q=chieu%20rap",
+  },
 ];
 
 function AnimatedNavbarLogo() {
@@ -385,16 +413,6 @@ export function Navbar() {
     [queryClient, router],
   );
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      prefetchNav("/films/series");
-      prefetchNav("/films/single");
-      prefetchNav("/films/anime");
-      prefetchNav("/schedule");
-    }, 1200);
-    return () => clearTimeout(timer);
-  }, [prefetchNav]);
-
   const [notifTab, setNotifTab] = useState<"system" | "movies">("system");
 
   const [systemNotifications, setSystemNotifications] = useState<
@@ -411,7 +429,8 @@ export function Navbar() {
     {
       id: "sys-1",
       title: "Chào mừng bạn đến với NetPhim",
-      message: "Xem phim chuẩn 4K siêu nét, tự động lọc sạch quảng cáo nhà cái từ gốc M3U8.",
+      message:
+        "Xem phim chuẩn 4K siêu nét, tự động lọc sạch quảng cáo nhà cái từ gốc M3U8.",
       time: "Hôm nay",
       tag: "Hệ thống",
       read: false,
@@ -419,7 +438,8 @@ export function Navbar() {
     {
       id: "sys-2",
       title: "Chế độ Rạp Phim Mở Rộng",
-      message: "Tính năng mở rộng khung hình cực đại (bấm nút 'Rạp phim' hoặc phím tắt 'T').",
+      message:
+        "Tính năng mở rộng khung hình cực đại (bấm nút 'Rạp phim' hoặc phím tắt 'T').",
       time: "Mới",
       tag: "Tính năng",
       read: false,
@@ -427,7 +447,8 @@ export function Navbar() {
     {
       id: "sys-3",
       title: "Phòng Xem Chung (Watch Party)",
-      message: "Tạo phòng xem cùng bạn bè, đồng bộ tua phim và trò chuyện trực tiếp mượt mà.",
+      message:
+        "Tạo phòng xem cùng bạn bè, đồng bộ tua phim và trò chuyện trực tiếp mượt mà.",
       time: "Cộng đồng",
       tag: "Watch Party",
       read: false,
@@ -435,7 +456,8 @@ export function Navbar() {
     {
       id: "sys-4",
       title: "Bộ Lọc Luồng Tự Động",
-      message: "Hệ thống tự động định tuyến máy chủ m3u8 tối ưu nhất cho từng tập phim.",
+      message:
+        "Hệ thống tự động định tuyến máy chủ m3u8 tối ưu nhất cho từng tập phim.",
       time: "Tối ưu",
       tag: "Hệ thống",
       read: false,
@@ -708,10 +730,17 @@ export function Navbar() {
                     <motion.div
                       layoutId="navbarActivePill"
                       className="absolute inset-0 rounded-full bg-white/10 border border-white/20 shadow-sm backdrop-blur-md -z-10"
-                      transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 35,
+                        mass: 0.8,
+                      }}
                     />
                   )}
-                  <span>{link.key ? t(link.key, link.label || "") : link.label}</span>
+                  <span>
+                    {link.key ? t(link.key, link.label || "") : link.label}
+                  </span>
                 </Link>
               );
             })}
@@ -743,8 +772,6 @@ export function Navbar() {
             >
               <Search size={20} />
             </button>
-
-
 
             <div className="flex items-center space-x-1 sm:space-x-2">
               <DropdownMenu modal={false} onOpenChange={setNotificationsOpen}>
@@ -996,28 +1023,40 @@ export function Navbar() {
                           }
                           className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
-                          <User size={14} className="mr-2 text-neutral-300 shrink-0" />
+                          <User
+                            size={14}
+                            className="mr-2 text-neutral-300 shrink-0"
+                          />
                           <span>{t("nav.profile")}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => router.push("/watchlist")}
                           className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
-                          <Bookmark size={14} className="mr-2 text-neutral-300 shrink-0" />
+                          <Bookmark
+                            size={14}
+                            className="mr-2 text-neutral-300 shrink-0"
+                          />
                           <span>{t("nav.watchlist")}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => router.push("/history")}
                           className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
-                          <History size={14} className="mr-2 text-neutral-300 shrink-0" />
+                          <History
+                            size={14}
+                            className="mr-2 text-neutral-300 shrink-0"
+                          />
                           <span>{t("nav.history")}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => router.push("/settings")}
                           className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
-                          <Settings size={14} className="mr-2 text-neutral-300 shrink-0" />
+                          <Settings
+                            size={14}
+                            className="mr-2 text-neutral-300 shrink-0"
+                          />
                           <span>Cài đặt</span>
                         </DropdownMenuItem>
                       </div>
@@ -1030,15 +1069,24 @@ export function Navbar() {
                         >
                           <div className="flex items-center">
                             {mounted && theme === "light" ? (
-                              <Moon size={14} className="mr-2 text-neutral-400 shrink-0" />
+                              <Moon
+                                size={14}
+                                className="mr-2 text-neutral-400 shrink-0"
+                              />
                             ) : (
-                              <Sun size={14} className="mr-2 text-neutral-400 shrink-0" />
+                              <Sun
+                                size={14}
+                                className="mr-2 text-neutral-400 shrink-0"
+                              />
                             )}
                             <span>
                               Giao diện: {theme === "light" ? "Sáng" : "Tối"}
                             </span>
                           </div>
-                          <ChevronRight size={12} className="text-neutral-500 shrink-0" />
+                          <ChevronRight
+                            size={12}
+                            className="text-neutral-500 shrink-0"
+                          />
                         </DropdownMenuItem>
 
                         {/* Language Switcher Modal Item */}
@@ -1060,7 +1108,10 @@ export function Navbar() {
                                   : lang.toUpperCase()}
                             </span>
                           </div>
-                          <ChevronRight size={12} className="text-neutral-500 shrink-0" />
+                          <ChevronRight
+                            size={12}
+                            className="text-neutral-500 shrink-0"
+                          />
                         </DropdownMenuItem>
                       </div>
 
@@ -1073,7 +1124,10 @@ export function Navbar() {
                           }}
                           className="hover:bg-red-500/15 text-red-400 hover:text-red-300 rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-semibold"
                         >
-                          <LogOut size={14} className="mr-2 text-red-400 shrink-0" />
+                          <LogOut
+                            size={14}
+                            className="mr-2 text-red-400 shrink-0"
+                          />
                           <span>Đăng xuất</span>
                         </DropdownMenuItem>
                       </div>

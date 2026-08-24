@@ -1,11 +1,12 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import Artplayer from "artplayer";
+import vi from "artplayer/i18n/vi";
 import Hls from "hls.js";
-import { cn } from "@/lib/utils";
 import { useSettingsStore } from "@/store/settingsStore";
 import { isLikelyAdUrl, filterHlsManifest } from "@/lib/hls-ad-filter";
 import { selectInitialHlsTransport } from "@/lib/player-source-routing";
+import { ARTPLAYER_EDITOR_LOADING_GIF } from "./artplayer-editor-assets";
 
 const HLS_STARTUP_TIMEOUT_MS = 8_000;
 
@@ -56,24 +57,12 @@ export default function ArtPlayer({
   onBuffering,
   onError,
   onPlaybackStateChange,
-  isTheaterMode = false,
-  onTheaterModeToggle,
   skipIntroStart,
   skipIntroEnd,
   skipOutroStart,
 }: ArtPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const playerRef = useRef<Artplayer | null>(null);
-
-  const [isDimmed, setIsDimmed] = useState(false); // Chế độ rạp tắt đèn
-  const [pipActive, setPipActive] = useState(false); // Picture-in-Picture
-
-  const isTheaterModeRef = useRef(isTheaterMode);
-  const onTheaterModeToggleRef = useRef(onTheaterModeToggle);
-  isTheaterModeRef.current = isTheaterMode;
-  onTheaterModeToggleRef.current = onTheaterModeToggle;
 
   const detectedAdRangesRef = useRef<
     Array<{ start: number; end: number; duration: number }>
@@ -127,7 +116,12 @@ export default function ArtPlayer({
     let startupTimer: ReturnType<typeof setTimeout> | null = null;
     let startupVideo: HTMLVideoElement | null = null;
     let startupReadyHandler: (() => void) | null = null;
-    const qualityLevels: { default: boolean; html: string; url: string }[] = [];
+    const qualityLevels: Array<{
+      default: boolean;
+      html: string;
+      url: string;
+      level: number;
+    }> = [];
 
     const clearStartupTimer = () => {
       if (startupTimer) {
@@ -322,65 +316,22 @@ export default function ArtPlayer({
           detectedAdRangesRef.current = adRanges;
         });
 
-        hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
-          const levels = data.levels ?? [];
-          if (levels.length <= 1) return;
-
-          if (playerRef.current?.loading) {
-            playerRef.current.loading.show = false;
-          }
-          if (playerRef.current?.mask) {
-            playerRef.current.mask.show = true;
-          }
-
-          const prefQuality = useSettingsStore.getState().defaultQuality;
-          if (prefQuality !== "auto") {
-            const targetIdx = levels.findIndex(
-              (level) =>
-                level.height &&
-                `${level.height}p`.toLowerCase() === prefQuality.toLowerCase(),
-            );
-            if (targetIdx !== -1) hls.currentLevel = targetIdx;
-          }
+        const syncQualityControls = (activeLevel: number) => {
+          const levels = hls.levels ?? [];
+          if (!levels.length) return;
 
           const built = levels.map((level, i) => ({
-            default:
-              i === hls.currentLevel || (hls.currentLevel === -1 && i === 0),
-            html: level.height ? `${level.height}p` : `Level ${i + 1}`,
-            url: streamUrl,
+            default: i === activeLevel,
+            html: level.height ? `${level.height}P` : `Mức ${i + 1}`,
+            url: activeStreamUrl,
             level: i,
           }));
-          qualityLevels.unshift({
-            default: hls.currentLevel === -1,
-            html: "Tự động (ABR)",
-            url: streamUrl,
-            level: -1,
-          } as (typeof qualityLevels)[number]);
-          built.forEach((quality) =>
-            qualityLevels.push(quality as (typeof qualityLevels)[number]),
-          );
+          qualityLevels.splice(0, qualityLevels.length, ...built);
 
           const currentQualityHtml =
-            built.find((quality) => quality.default)?.html ?? "Tự động";
-
-          try {
-            player.controls.update({
-              name: "quality",
-              html: currentQualityHtml,
-              selector: qualityLevels.map((quality) => ({
-                default: quality.default,
-                html: quality.html,
-                url: quality.url,
-                level: (quality as { level?: number }).level ?? -1,
-              })),
-              onSelect(item: { level: number; html: string }) {
-                hls.currentLevel = item.level ?? -1;
-                return item.html;
-              },
-            } as any);
-          } catch {
-            // Ignore if controls not ready
-          }
+            built.find((quality) => quality.default)?.html ??
+            built[0]?.html ??
+            "HD";
 
           player.setting.update({
             name: "quality",
@@ -390,13 +341,47 @@ export default function ArtPlayer({
               default: quality.default,
               html: quality.html,
               url: quality.url,
-              level: (quality as { level?: number }).level ?? -1,
+              level: quality.level,
             })),
             onSelect(item: { level: number; html: string }) {
-              hls.currentLevel = item.level ?? -1;
+              hls.currentLevel = item.level;
               return item.html;
             },
           } as any);
+        };
+
+        hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
+          const levels = data.levels ?? [];
+
+          if (playerRef.current?.loading) {
+            playerRef.current.loading.show = false;
+          }
+          if (playerRef.current?.mask) {
+            playerRef.current.mask.show = true;
+          }
+
+          const prefQuality = useSettingsStore.getState().defaultQuality;
+          const preferredLevel =
+            prefQuality !== "auto"
+              ? levels.findIndex(
+                  (level) =>
+                    level.height &&
+                    `${level.height}p`.toLowerCase() ===
+                      prefQuality.toLowerCase(),
+                )
+              : -1;
+
+          if (preferredLevel >= 0) hls.currentLevel = preferredLevel;
+
+          const displayedLevel =
+            preferredLevel >= 0
+              ? preferredLevel
+              : Math.max(0, hls.loadLevel, hls.nextAutoLevel, hls.firstLevel);
+          syncQualityControls(displayedLevel);
+        });
+
+        hls.on(Hls.Events.LEVEL_SWITCHED, (_event, data) => {
+          syncQualityControls(data.level);
         });
 
         hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -501,11 +486,63 @@ export default function ArtPlayer({
           once: true,
         });
         video.addEventListener("canplay", handleNativeLoaded, { once: true });
-        video.addEventListener("loadeddata", handleNativeLoaded, { once: true });
+        video.addEventListener("loadeddata", handleNativeLoaded, {
+          once: true,
+        });
       } else {
         onErrorRef.current?.({ type: "HLS_UNSUPPORTED" });
       }
     };
+
+    const seekControls = [
+      {
+        name: "backward-10",
+        position: "left" as const,
+        index: 25,
+        html: `<span class="netphim-seek-glyph" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <g class="netphim-seek-arrow">
+              <path d="M8.2 4.7 4.8 8.1l3.4 3.4"/>
+              <path d="M5.2 8.1h6.6a7.6 7.6 0 1 1-7 10.6"/>
+            </g>
+            <text x="12" y="12" text-anchor="middle" dominant-baseline="central">10</text>
+          </svg>
+        </span>`,
+        tooltip: "Lùi 10 giây",
+        mounted(element: HTMLElement) {
+          element.setAttribute("aria-label", "Lùi 10 giây");
+          element.setAttribute("role", "button");
+        },
+        click: function (this: Artplayer) {
+          this.seek = Math.max(0, this.currentTime - 10);
+        },
+      },
+      {
+        name: "forward-10",
+        position: "left" as const,
+        index: 26,
+        html: `<span class="netphim-seek-glyph" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <g class="netphim-seek-arrow" transform="translate(24 0) scale(-1 1)">
+              <path d="M8.2 4.7 4.8 8.1l3.4 3.4"/>
+              <path d="M5.2 8.1h6.6a7.6 7.6 0 1 1-7 10.6"/>
+            </g>
+            <text x="12" y="12" text-anchor="middle" dominant-baseline="central">10</text>
+          </svg>
+        </span>`,
+        tooltip: "Tua 10 giây",
+        mounted(element: HTMLElement) {
+          element.setAttribute("aria-label", "Tua 10 giây");
+          element.setAttribute("role", "button");
+        },
+        click: function (this: Artplayer) {
+          const targetTime = this.currentTime + 10;
+          this.seek = Number.isFinite(this.duration)
+            ? Math.min(this.duration, targetTime)
+            : targetTime;
+        },
+      },
+    ];
 
     const player = new Artplayer({
       container: containerRef.current,
@@ -524,7 +561,7 @@ export default function ArtPlayer({
       volume: 0.8,
       autoplay,
       autoSize: false,
-      autoMini: true,
+      autoMini: false,
       autoOrientation: true,
       fastForward: true,
       lock: true,
@@ -547,21 +584,15 @@ export default function ArtPlayer({
       playsInline: true,
       autoPlayback: true,
       airplay: true,
-      theme: "#23ade5",
+      theme: "#8b5cf6",
       lang: "vi",
-      i18n: {
-        vi: {
-          Pause: "",
-          Play: "",
-        },
-        en: {
-          Pause: "",
-          Play: "",
-        },
-        "zh-cn": {
-          Pause: "",
-          Play: "",
-        },
+      i18n: { vi },
+      icons: {
+        loading: `<img src="${ARTPLAYER_EDITOR_LOADING_GIF}" alt="" aria-hidden="true">`,
+        state:
+          '<img width="150" height="150" src="/artplayer/state.svg" alt="" aria-hidden="true">',
+        indicator:
+          '<img width="16" height="16" src="/artplayer/indicator.svg" alt="" aria-hidden="true">',
       },
       moreVideoAttr: {
         playsInline: "true",
@@ -570,54 +601,7 @@ export default function ArtPlayer({
         "x5-video-player-type": "h5",
         "x5-video-player-fullscreen": "false",
       },
-      controls: [
-        {
-          name: "backward-10",
-          position: "left",
-          index: 25,
-          html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;" title="Lùi 10 giây">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-              <path d="M3 3v5h5"/>
-              <text x="12" y="15.5" font-size="8.5" font-family="sans-serif" font-weight="700" fill="currentColor" stroke="none" text-anchor="middle">10</text>
-            </svg>
-          </span>`,
-          tooltip: "Lùi 10 giây",
-          click: function (art: any) {
-            art.currentTime = Math.max(0, art.currentTime - 10);
-          },
-        },
-        {
-          name: "forward-10",
-          position: "left",
-          index: 26,
-          html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;" title="Tua 10 giây">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-              <path d="M21 3v5h-5"/>
-              <text x="12" y="15.5" font-size="8.5" font-family="sans-serif" font-weight="700" fill="currentColor" stroke="none" text-anchor="middle">10</text>
-            </svg>
-          </span>`,
-          tooltip: "Tua 10 giây",
-          click: function (art: any) {
-            art.currentTime = Math.min(art.duration || 0, art.currentTime + 10);
-          },
-        },
-        {
-          name: "quality",
-          position: "right",
-          index: 10,
-          html:
-            typeof navigator !== "undefined" &&
-            /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
-              ? "HD"
-              : "Chất lượng",
-          selector: qualityLevels,
-          onSelect: function (item: { level?: number; html: string }) {
-            return item.html;
-          },
-        },
-      ],
+      controls: seekControls,
       highlight: [
         ...(skipIntroStart != null && skipIntroEnd != null
           ? [
@@ -630,105 +614,47 @@ export default function ArtPlayer({
           : []),
       ],
 
-      // Hotkey settings (handing via custom event listener)
-      hotkey: false,
+      // Use ArtPlayer's native focus-scoped keyboard controls.
+      hotkey: true,
 
-      // Subtitle with style customization & Subtitle Offset Sync
+      // Keep the movie subtitle source, but let ArtPlayer render and position it.
       ...(subtitle
         ? {
             subtitle: {
               url: subtitle,
               type: "vtt",
-              style: {
-                color: "#ffffff",
-                fontSize: "22px",
-                textShadow: "0 2px 4px rgba(0,0,0,0.8)",
-              },
             },
           }
         : {}),
-
-      // Settings menu additions: Subtitle Sync Offset (+/- 0.5s) and Custom Subtitle Colors
-      settings: [
-        {
-          html: "Tốc độ phát",
-          tooltip: "1x",
-          selector: [
-            { html: "0.25x", value: 0.25 },
-            { html: "0.5x", value: 0.5 },
-            { html: "0.75x", value: 0.75 },
-            { default: true, html: "1x (Bình thường)", value: 1 },
-            { html: "1.25x", value: 1.25 },
-            { html: "1.5x", value: 1.5 },
-            { html: "1.75x", value: 1.75 },
-            { html: "2x", value: 2 },
-          ],
-          onSelect(item: { value: number; html: string }) {
-            player.playbackRate = item.value;
-            return item.html;
-          },
-        },
-        {
-          html: "Độ lệch phụ đề (Sync)",
-          tooltip: "0.0s",
-          selector: [
-            { html: "-2.0s", offset: -2 },
-            { html: "-1.0s", offset: -1 },
-            { html: "-0.5s", offset: -0.5 },
-            { default: true, html: "0.0s (Chuẩn)", offset: 0 },
-            { html: "+0.5s", offset: 0.5 },
-            { html: "+1.0s", offset: 1 },
-            { html: "+2.0s", offset: 2 },
-          ],
-          onSelect(item: { offset: number; html: string }) {
-            if (player.subtitle) {
-              (
-                player.subtitle as typeof player.subtitle & { offset?: number }
-              ).offset = item.offset;
-            }
-            return item.html;
-          },
-        },
-        {
-          html: "Màu phụ đề",
-          tooltip: "Trắng",
-          selector: [
-            { default: true, html: "Trắng", color: "#ffffff" },
-            { html: "Vàng", color: "#ffea00" },
-            { html: "Xanh Lá", color: "#00e054" },
-            { html: "Xanh Lam", color: "#00e5ff" },
-          ],
-          onSelect(item: { color: string; html: string }) {
-            if (player.subtitle) {
-              player.subtitle.style("color", item.color);
-            }
-            return item.html;
-          },
-        },
-      ],
     } as unknown as ConstructorParameters<typeof Artplayer>[0]);
 
     playerRef.current = player;
 
+    // ArtPlayer can rebuild its control tree while initializing a custom HLS
+    // source. Restore the seek buttons if that happens so they are always
+    // present on desktop and mobile layouts.
+    const ensureSeekControls = () => {
+      for (const control of seekControls) {
+        const selector = `.art-control-${control.name}`;
+        if (!player.template.$controls.querySelector(selector)) {
+          player.controls.add(control);
+        }
+      }
+    };
+    ensureSeekControls();
+    player.on("ready", ensureSeekControls);
+
     player.on("video:play", () => {
-      if (player.notice) player.notice.show = "";
       onPlaybackStateChangeRef.current?.({
         action: "play",
         currentTime: player.currentTime,
       });
     });
     player.on("video:pause", () => {
-      if (player.notice) player.notice.show = "";
       onPlaybackStateChangeRef.current?.({
         action: "pause",
         currentTime: player.currentTime,
       });
-    });
-    player.on("pause", () => {
-      if (player.notice) player.notice.show = "";
-    });
-    player.on("play", () => {
-      if (player.notice) player.notice.show = "";
     });
     player.on("video:seeked", () => {
       onPlaybackStateChangeRef.current?.({
@@ -786,135 +712,7 @@ export default function ArtPlayer({
       checkAndSkipAd(time);
     });
 
-    const handlePlayerHotkeys = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (!target) return;
-      const ignoreTags = ["INPUT", "TEXTAREA", "SELECT", "BUTTON"];
-      if (ignoreTags.includes(target.tagName) || target.isContentEditable)
-        return;
-
-      const video = player.video;
-      if (!video) return;
-
-      // Space / K — Play/Pause Toggle
-      if (
-        e.code === "Space" ||
-        e.key === " " ||
-        e.key === "Spacebar" ||
-        e.key === "k" ||
-        e.key === "K"
-      ) {
-        e.preventDefault();
-        e.stopPropagation();
-        player.toggle();
-        return;
-      }
-
-      switch (e.key) {
-        // ← / J — Tua lùi 10s (không hiện popup thông báo)
-        case "ArrowLeft":
-        case "j":
-        case "J":
-          e.preventDefault();
-          player.currentTime = Math.max(0, player.currentTime - 10);
-          break;
-
-        // → / L — Tua tới 10s (không hiện popup thông báo)
-        case "ArrowRight":
-        case "l":
-        case "L":
-          e.preventDefault();
-          player.currentTime = Math.min(
-            player.duration,
-            player.currentTime + 10,
-          );
-          break;
-
-        // ↑ — Tăng âm lượng
-        case "ArrowUp":
-          e.preventDefault();
-          player.volume = Math.min(1, player.volume + 0.1);
-          break;
-
-        // ↓ — Giảm âm lượng
-        case "ArrowDown":
-          e.preventDefault();
-          player.volume = Math.max(0, player.volume - 0.1);
-          break;
-
-        // M — Mute/Unmute
-        case "m":
-        case "M":
-          e.preventDefault();
-          player.muted = !player.muted;
-          break;
-
-        // F — Fullscreen
-        case "f":
-        case "F": {
-          e.preventDefault();
-          const el = containerRef.current;
-          if (!el) break;
-          if (document.fullscreenElement) {
-            document.exitFullscreen().catch(() => {});
-          } else {
-            el.requestFullscreen?.().catch(() => {});
-          }
-          break;
-        }
-
-        // P — Picture-in-Picture
-        case "p":
-        case "P":
-          e.preventDefault();
-          if (document.pictureInPictureElement) {
-            document.exitPictureInPicture().catch(() => {});
-            setPipActive(false);
-          } else if (video.requestPictureInPicture) {
-            video
-              .requestPictureInPicture()
-              .then(() => setPipActive(true))
-              .catch(() => {});
-          }
-          break;
-
-        // D — Dimming (tắt đèn)
-        case "d":
-        case "D":
-          e.preventDefault();
-          setIsDimmed((prev) => !prev);
-          break;
-
-        // 0-9 — Seek theo %
-        default:
-          if (e.key >= "0" && e.key <= "9") {
-            e.preventDefault();
-            const pct = parseInt(e.key) / 10;
-            player.currentTime = player.duration * pct;
-          }
-          // , / . — Tốc độ phát
-          if (e.key === ",") {
-            e.preventDefault();
-            const rates = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
-            const cur = rates.indexOf(player.playbackRate);
-            const next = rates[Math.max(0, cur - 1)];
-            player.playbackRate = next;
-          }
-          if (e.key === ".") {
-            e.preventDefault();
-            const rates = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
-            const cur = rates.indexOf(player.playbackRate);
-            const next = rates[Math.min(rates.length - 1, cur + 1)];
-            player.playbackRate = next;
-          }
-      }
-    };
-
-    window.addEventListener("keydown", handlePlayerHotkeys, true);
-
-    // -- Ready callback & Ambilight canvas draw loop --
-    let drawInterval: NodeJS.Timeout | null = null;
-
+    // Keep business callbacks around ArtPlayer's native UI lifecycle.
     player.on("ready", () => {
       onReadyRef.current?.(player);
       if (player.loading) {
@@ -922,44 +720,6 @@ export default function ArtPlayer({
       }
       if (player.mask) {
         player.mask.show = true;
-      }
-
-      const video = player.video;
-      const canvas = canvasRef.current;
-      if (canvas && video) {
-        const ctx = canvas.getContext("2d");
-        canvas.width = 24;
-        canvas.height = 14;
-
-        const updateCanvas = () => {
-          if (video.readyState >= 2 && !video.paused && !video.ended) {
-            try {
-              ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
-            } catch (e) {
-              // Ignore tainted canvas errors
-            }
-          }
-        };
-
-        const startLoop = () => {
-          if (drawInterval) clearInterval(drawInterval);
-          drawInterval = setInterval(updateCanvas, 100); // 10 fps
-        };
-
-        const stopLoop = () => {
-          if (drawInterval) {
-            clearInterval(drawInterval);
-            drawInterval = null;
-          }
-        };
-
-        player.on("video:play", startLoop);
-        player.on("video:pause", stopLoop);
-        player.on("destroy", stopLoop);
-
-        if (!video.paused) {
-          startLoop();
-        }
       }
     });
 
@@ -1027,7 +787,6 @@ export default function ArtPlayer({
     });
 
     return () => {
-      window.removeEventListener("keydown", handlePlayerHotkeys, true);
       if (playerRef.current) {
         const video = playerRef.current.video;
         if (video && (video as any).hls) {
@@ -1045,92 +804,15 @@ export default function ArtPlayer({
       if (stallRecoveryTimer) {
         clearInterval(stallRecoveryTimer);
       }
-      if (drawInterval) {
-        clearInterval(drawInterval);
-      }
     };
     // Recreate only when the primary/fallback transport changes. Other props use refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, fallbackUrl, type]);
 
-  // Dynamically update the Theater Mode button UI in the player controls
-  useEffect(() => {
-    if (playerRef.current) {
-      const btn = playerRef.current.template.$controls.querySelector(
-        ".art-control-theater-mode",
-      );
-      if (btn) {
-        btn.setAttribute(
-          "data-tip",
-          isTheaterMode ? "Chế độ mặc định" : "Chế độ rạp chiếu",
-        );
-        const svg = btn.querySelector("svg");
-        if (svg) {
-          if (isTheaterMode) {
-            svg.style.color = "#e5a93b";
-            svg.style.filter = "drop-shadow(0 0 4px rgba(229,169,59,0.5))";
-          } else {
-            svg.style.color = "";
-            svg.style.filter = "";
-          }
-        }
-      }
-    }
-  }, [isTheaterMode]);
-
   return (
-    <>
-      {/* ── Dimming overlay (tắt đèn) ── */}
-      {isDimmed && (
-        <div
-          className="fixed inset-0 bg-black/80 z-40 pointer-events-none"
-          style={{ backdropFilter: "none" }}
-        />
-      )}
-
-      <div
-        ref={wrapperRef}
-        className="absolute inset-0 h-full min-h-0 w-full select-none overflow-hidden"
-      >
-        {/* ── PiP active indicator ── */}
-        {pipActive && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="text-center text-white">
-              <div className="text-4xl mb-2">📺</div>
-              <p className="text-sm font-bold">Đang phát Picture-in-Picture</p>
-              <button
-                onClick={() => {
-                  document.exitPictureInPicture().catch(() => {});
-                  setPipActive(false);
-                }}
-                className="mt-3 px-4 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-xs font-bold transition-colors"
-              >
-                Quay lại
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Dynamic ambient backglow canvas */}
-        <canvas
-          ref={canvasRef}
-          className="absolute -inset-4 w-[calc(100%+32px)] h-[calc(100%+32px)] -z-10 opacity-70 blur-[60px] pointer-events-none scale-[1.03] transition-all duration-700 ease-out"
-          style={{ mixBlendMode: "normal" }}
-        />
-        <div
-          ref={containerRef}
-          className="absolute inset-0 h-full min-h-0 w-full"
-        />
-      </div>
-    </>
+    <div
+      ref={containerRef}
+      className="absolute inset-0 h-full min-h-0 w-full overflow-hidden"
+    />
   );
-}
-
-function formatTime(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  if (h > 0)
-    return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  return `${m}:${s.toString().padStart(2, "0")}`;
 }

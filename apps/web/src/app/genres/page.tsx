@@ -28,7 +28,7 @@ const TOPICS: TopicItem[] = [
     href: "/country/han-quoc",
     accent: "#f43f5e",
     badge: "K-Drama Hot",
-    image: "https://image.tmdb.org/t/p/w780/vbkpl0ps4s5tMTUnC7SFXNzWmVr.jpg", // Lovely Runner
+    image: "https://image.tmdb.org/t/p/w1280/vbkpl0ps4s5tMTUnC7SFXNzWmVr.jpg", // Lovely Runner
   },
   {
     slug: "phim-trung-quoc",
@@ -37,7 +37,7 @@ const TOPICS: TopicItem[] = [
     href: "/country/trung-quoc",
     accent: "#f59e0b",
     badge: "Hoa Ngữ",
-    image: "https://image.tmdb.org/t/p/w780/aJxMvBSaUdbIkY8nqFkuEarrgcx.jpg", // Thương Lan Quyết
+    image: "https://image.tmdb.org/t/p/w1280/aJxMvBSaUdbIkY8nqFkuEarrgcx.jpg", // Thương Lan Quyết
   },
   {
     slug: "dien-anh-au-my",
@@ -46,7 +46,7 @@ const TOPICS: TopicItem[] = [
     href: "/country/au-my",
     accent: "#0ea5e9",
     badge: "Hollywood",
-    image: "https://image.tmdb.org/t/p/w780/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg", // Avengers: Endgame
+    image: "https://image.tmdb.org/t/p/w1280/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg", // Avengers: Endgame
   },
   {
     slug: "anime-nhat-ban",
@@ -55,25 +55,25 @@ const TOPICS: TopicItem[] = [
     href: "/films/anime",
     accent: "#a855f7",
     badge: "Anime 4K",
-    image: "https://image.tmdb.org/t/p/w780/8x9iKH8kWA0zdkgNdpAew7OstYe.jpg", // Your Name
+    image: "https://image.tmdb.org/t/p/w1280/8x9iKH8kWA0zdkgNdpAew7OstYe.jpg", // Your Name
   },
   {
     slug: "co-trang-tien-hiep",
     title: "Cổ Trang Tiên Hiệp",
     description: "Kiếm hiệp kỳ ảo, tu tiên & thần thoại huyền huyễn",
-    href: "/country/trung-quoc",
+    href: "/search?genre=co-trang&country=trung-quoc",
     accent: "#10b981",
     badge: "Tiên Hiệp",
-    image: "https://image.tmdb.org/t/p/w780/ampkwvfwO7o5YMwYAVPKx1PLDaB.jpg", // Trần Tình Lệnh
+    image: "https://image.tmdb.org/t/p/w1280/ampkwvfwO7o5YMwYAVPKx1PLDaB.jpg", // Trần Tình Lệnh
   },
   {
     slug: "thanh-xuan-vuon-truong",
     title: "Thanh Xuân Vườn Trường",
     description: "Tuổi trẻ, tình bạn & hoài niệm học đường",
-    href: "/genre/tinh-cam",
+    href: "/search?genre=hoc-duong",
     accent: "#14b8a6",
     badge: "Thanh Xuân",
-    image: "https://image.tmdb.org/t/p/w780/wNSLw756U5JQSpG6POYxHKL2KDH.jpg", // Tinh Hán Xán Lạn
+    image: "https://image.tmdb.org/t/p/w1280/3nWfjIBUyYUCABI7Fsl1AhNhDAr.jpg", // Khi Anh Chạy Về Phía Em
   },
   {
     slug: "tinh-yeu-lang-man",
@@ -82,7 +82,7 @@ const TOPICS: TopicItem[] = [
     href: "/genre/tinh-cam",
     accent: "#ec4899",
     badge: "Lãng Mạn",
-    image: "https://image.tmdb.org/t/p/w780/3yEHM2HT2vrUtO93YzTJNgEfiZG.jpg", // Hạ Cánh Nơi Anh
+    image: "https://image.tmdb.org/t/p/w1280/3yEHM2HT2vrUtO93YzTJNgEfiZG.jpg", // Hạ Cánh Nơi Anh
   },
   {
     slug: "gia-dinh-doi-thuong",
@@ -91,25 +91,25 @@ const TOPICS: TopicItem[] = [
     href: "/genre/gia-dinh",
     accent: "#84cc16",
     badge: "Gia Đình",
-    image: "https://image.tmdb.org/t/p/w780/1QUrjFNKgVchKktX4N6DaegfPbP.jpg", // Đi Đến Nơi Có Gió
+    image: "https://image.tmdb.org/t/p/w1280/1QUrjFNKgVchKktX4N6DaegfPbP.jpg", // Đi Đến Nơi Có Gió
   },
   {
     slug: "phim-cong-so",
     title: "Phim Công Sở & Đô Thị",
     description: "Tình cảm, sự nghiệp & cuộc sống hiện đại",
-    href: "/genre/tam-ly",
+    href: "/search?q=phim%20cong%20so",
     accent: "#6366f1",
     badge: "Đô Thị",
-    image: "https://image.tmdb.org/t/p/w780/hMJZCkmdaC2ZMzjP76a9TPNQFsS.jpg", // Hẹn Hò Chốn Công Sở
+    image: "https://image.tmdb.org/t/p/w1280/lq0YqJuffMuZhoKTiC5xDqvtCSn.jpg", // Hẹn Hò Chốn Công Sở
   },
   {
     slug: "hinh-su-toi-pham",
     title: "Hình Sự & Trinh Thám",
     description: "Phá án gay cấn, truy lùng tội phạm kịch tính",
-    href: "/genre/bi-an",
+    href: "/genre/hinh-su",
     accent: "#06b6d4",
     badge: "Trinh Thám",
-    image: "https://image.tmdb.org/t/p/w780/i1SyUHsi45psSH1xy9sM0in8FKJ.jpg", // Taxi Driver
+    image: "https://image.tmdb.org/t/p/w1280/i1SyUHsi45psSH1xy9sM0in8FKJ.jpg", // Taxi Driver
   },
   {
     slug: "phim-chieu-rap-4k",
@@ -118,7 +118,7 @@ const TOPICS: TopicItem[] = [
     href: "/search?q=chieu%20rap",
     accent: "#eab308",
     badge: "4K Cinema",
-    image: "https://image.tmdb.org/t/p/w780/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg", // Oppenheimer
+    image: "https://image.tmdb.org/t/p/w1280/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg", // Oppenheimer
   },
   {
     slug: "hanh-dong-nghet-tho",
@@ -127,7 +127,7 @@ const TOPICS: TopicItem[] = [
     href: "/genre/hanh-dong",
     accent: "#ef4444",
     badge: "Hành Động",
-    image: "https://image.tmdb.org/t/p/w780/7I6VUdPj6tQECNHdviJkUHD2u89.jpg", // John Wick 4
+    image: "https://image.tmdb.org/t/p/w1280/7I6VUdPj6tQECNHdviJkUHD2u89.jpg", // John Wick 4
   },
   {
     slug: "khoa-hoc-vien-tuong",
@@ -136,7 +136,7 @@ const TOPICS: TopicItem[] = [
     href: "/genre/vien-tuong",
     accent: "#3b82f6",
     badge: "Sci-Fi",
-    image: "https://image.tmdb.org/t/p/w780/vgnoBSVzWAV9sNQUORaDGvDp7wx.jpg", // Interstellar
+    image: "https://image.tmdb.org/t/p/w1280/vgnoBSVzWAV9sNQUORaDGvDp7wx.jpg", // Interstellar
   },
   {
     slug: "kinh-di-dem-khuya",
@@ -145,7 +145,7 @@ const TOPICS: TopicItem[] = [
     href: "/genre/kinh-di",
     accent: "#dc2626",
     badge: "Kinh Dị",
-    image: "https://image.tmdb.org/t/p/w780/ecKQlAEG95k62SMGhvX83oEqANK.jpg", // The Conjuring
+    image: "https://image.tmdb.org/t/p/w1280/ecKQlAEG95k62SMGhvX83oEqANK.jpg", // The Conjuring
   },
   {
     slug: "hai-huoc-xa-stress",
@@ -154,7 +154,7 @@ const TOPICS: TopicItem[] = [
     href: "/genre/hai-huoc",
     accent: "#f97316",
     badge: "Hài Hước",
-    image: "https://image.tmdb.org/t/p/w780/by8z9Fe8y7p4jo2YlW2SZDnptyT.jpg", // Deadpool & Wolverine
+    image: "https://image.tmdb.org/t/p/w1280/by8z9Fe8y7p4jo2YlW2SZDnptyT.jpg", // Deadpool & Wolverine
   },
   {
     slug: "tam-ly-chinh-kich",
@@ -163,7 +163,7 @@ const TOPICS: TopicItem[] = [
     href: "/genre/tam-ly",
     accent: "#d946ef",
     badge: "Chính Kịch",
-    image: "https://image.tmdb.org/t/p/w780/5qVLF9WTdBDA08fsZ9H5clJ6umI.jpg", // Parasite
+    image: "https://image.tmdb.org/t/p/w1280/5qVLF9WTdBDA08fsZ9H5clJ6umI.jpg", // Parasite
   },
 ];
 
@@ -184,20 +184,91 @@ export default function GenresTopicsPage() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const recommendedFilms = (marqueeData && marqueeData.length > 0)
-    ? marqueeData.slice(0, 16)
-    : [
-        { slug: "nu-hoang-nuoc-mat", name: "Nữ Hoàng Nước Mắt", year: 2024, quality: "FHD", thumb_url: "https://image.tmdb.org/t/p/w300/gwt4hJPSwAPxU6eFLhV0Dyb0tnY.jpg" },
-        { slug: "ha-canh-noi-anh", name: "Hạ Cánh Nơi Anh", year: 2020, quality: "HD", thumb_url: "https://image.tmdb.org/t/p/w300/3yEHM2HT2vrUtO93YzTJNgEfiZG.jpg" },
-        { slug: "cong-anh-ma-chay", name: "Cõng Anh Mà Chạy", year: 2024, quality: "FHD", thumb_url: "https://image.tmdb.org/t/p/w300/vbkpl0ps4s5tMTUnC7SFXNzWmVr.jpg" },
-        { slug: "thuong-lan-quyet", name: "Thương Lan Quyết", year: 2022, quality: "FHD", thumb_url: "https://image.tmdb.org/t/p/w300/aJxMvBSaUdbIkY8nqFkuEarrgcx.jpg" },
-        { slug: "tinh-han-xan-lan", name: "Tinh Hán Xán Lạn", year: 2022, quality: "HD", thumb_url: "https://image.tmdb.org/t/p/w300/wNSLw756U5JQSpG6POYxHKL2KDH.jpg" },
-        { slug: "tran-tinh-lenh", name: "Trần Tình Lệnh", year: 2019, quality: "HD", thumb_url: "https://image.tmdb.org/t/p/w300/ampkwvfwO7o5YMwYAVPKx1PLDaB.jpg" },
-        { slug: "oppenheimer", name: "Oppenheimer", year: 2023, quality: "4K", thumb_url: "https://image.tmdb.org/t/p/w300/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg" },
-        { slug: "sat-thu-john-wick-4", name: "John Wick 4", year: 2023, quality: "4K", thumb_url: "https://image.tmdb.org/t/p/w300/7I6VUdPj6tQECNHdviJkUHD2u89.jpg" },
-        { slug: "deadpool-va-wolverine", name: "Deadpool & Wolverine", year: 2024, quality: "4K", thumb_url: "https://image.tmdb.org/t/p/w300/by8z9Fe8y7p4jo2YlW2SZDnptyT.jpg" },
-        { slug: "di-den-noi-co-gio", name: "Đi Đến Nơi Có Gió", year: 2023, quality: "FHD", thumb_url: "https://image.tmdb.org/t/p/w300/1QUrjFNKgVchKktX4N6DaegfPbP.jpg" },
-      ];
+  const recommendedFilms =
+    marqueeData && marqueeData.length > 0
+      ? marqueeData.slice(0, 16)
+      : [
+          {
+            slug: "nu-hoang-nuoc-mat",
+            name: "Nữ Hoàng Nước Mắt",
+            year: 2024,
+            quality: "FHD",
+            thumb_url:
+              "https://image.tmdb.org/t/p/w300/gwt4hJPSwAPxU6eFLhV0Dyb0tnY.jpg",
+          },
+          {
+            slug: "ha-canh-noi-anh",
+            name: "Hạ Cánh Nơi Anh",
+            year: 2020,
+            quality: "HD",
+            thumb_url:
+              "https://image.tmdb.org/t/p/w300/3yEHM2HT2vrUtO93YzTJNgEfiZG.jpg",
+          },
+          {
+            slug: "cong-anh-ma-chay",
+            name: "Cõng Anh Mà Chạy",
+            year: 2024,
+            quality: "FHD",
+            thumb_url:
+              "https://image.tmdb.org/t/p/w300/vbkpl0ps4s5tMTUnC7SFXNzWmVr.jpg",
+          },
+          {
+            slug: "thuong-lan-quyet",
+            name: "Thương Lan Quyết",
+            year: 2022,
+            quality: "FHD",
+            thumb_url:
+              "https://image.tmdb.org/t/p/w300/aJxMvBSaUdbIkY8nqFkuEarrgcx.jpg",
+          },
+          {
+            slug: "tinh-han-xan-lan",
+            name: "Tinh Hán Xán Lạn",
+            year: 2022,
+            quality: "HD",
+            thumb_url:
+              "https://image.tmdb.org/t/p/w300/wNSLw756U5JQSpG6POYxHKL2KDH.jpg",
+          },
+          {
+            slug: "tran-tinh-lenh",
+            name: "Trần Tình Lệnh",
+            year: 2019,
+            quality: "HD",
+            thumb_url:
+              "https://image.tmdb.org/t/p/w300/ampkwvfwO7o5YMwYAVPKx1PLDaB.jpg",
+          },
+          {
+            slug: "oppenheimer",
+            name: "Oppenheimer",
+            year: 2023,
+            quality: "4K",
+            thumb_url:
+              "https://image.tmdb.org/t/p/w300/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg",
+          },
+          {
+            slug: "sat-thu-john-wick-4",
+            name: "John Wick 4",
+            year: 2023,
+            quality: "4K",
+            thumb_url:
+              "https://image.tmdb.org/t/p/w300/7I6VUdPj6tQECNHdviJkUHD2u89.jpg",
+          },
+          {
+            slug: "deadpool-va-wolverine",
+            name: "Deadpool & Wolverine",
+            year: 2024,
+            quality: "4K",
+            thumb_url:
+              "https://image.tmdb.org/t/p/w300/by8z9Fe8y7p4jo2YlW2SZDnptyT.jpg",
+          },
+          {
+            slug: "di-den-noi-co-gio",
+            name: "Đi Đến Nơi Có Gió",
+            year: 2023,
+            quality: "FHD",
+            thumb_url:
+              "https://image.tmdb.org/t/p/w300/1QUrjFNKgVchKktX4N6DaegfPbP.jpg",
+          },
+        ];
 
   return (
     <main
@@ -224,13 +295,17 @@ export default function GenresTopicsPage() {
               Thế Giới Phim
             </h1>
             <p className="mt-2 text-xs sm:text-sm text-neutral-400 max-w-xl mx-auto">
-              Khám phá các vũ trụ điện ảnh và chủ đề phim hấp dẫn theo phong cách riêng của bạn.
+              Khám phá các vũ trụ điện ảnh và chủ đề phim hấp dẫn theo phong
+              cách riêng của bạn.
             </p>
           </div>
         </header>
 
         {/* ── DẢI BĂNG CÁC PHIM ĐỀ XUẤT LIÊN QUAN (ĐỒNG MÀU BACKGROUND WEB #141414) ── */}
-        <section aria-label="Dải băng phim đề xuất" className="mb-10 overflow-hidden">
+        <section
+          aria-label="Dải băng phim đề xuất"
+          className="mb-10 overflow-hidden"
+        >
           <div className="relative w-full overflow-hidden py-1 bg-transparent">
             {/* Smooth Edge Fades matching Web Background #141414 */}
             <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-[#141414] to-transparent z-10" />
@@ -238,42 +313,47 @@ export default function GenresTopicsPage() {
 
             {/* Continuous Marquee Track (Slow Right to Left) */}
             <div className="animate-marquee-rtl gap-3 px-3">
-              {[...recommendedFilms, ...recommendedFilms].map((film: any, idx) => {
-                const poster = film.thumb_url?.startsWith("http")
-                  ? film.thumb_url
-                  : film.poster_url?.startsWith("http")
-                  ? film.poster_url
-                  : film.thumb_url
-                  ? `https://phimimg.com/${film.thumb_url}`
-                  : "https://image.tmdb.org/t/p/w300/3yEHM2HT2vrUtO93YzTJNgEfiZG.jpg";
+              {[...recommendedFilms, ...recommendedFilms].map(
+                (film: any, idx) => {
+                  const poster = film.thumb_url?.startsWith("http")
+                    ? film.thumb_url
+                    : film.poster_url?.startsWith("http")
+                      ? film.poster_url
+                      : film.thumb_url
+                        ? `https://phimimg.com/${film.thumb_url}`
+                        : "https://image.tmdb.org/t/p/w300/3yEHM2HT2vrUtO93YzTJNgEfiZG.jpg";
 
-                return (
-                  <Link
-                    key={`${film.slug || idx}-${idx}`}
-                    href={`/film/${film.slug}`}
-                    className="group flex items-center gap-3 px-3.5 py-1.5 rounded-xl bg-[#181a20] border border-white/[0.08] hover:bg-[#20222a] hover:border-white/20 transition-all flex-shrink-0 cursor-pointer"
-                  >
-                    <div className="relative h-10 w-7 rounded-md overflow-hidden bg-neutral-900 flex-shrink-0 shadow-md">
-                      <Image
-                        src={poster}
-                        alt={film.name || film.origin_name || "Phim"}
-                        fill
-                        sizes="32px"
-                        className="object-cover group-hover:scale-110 transition-transform duration-300"
-                        unoptimized
-                      />
-                    </div>
-                    <div className="max-w-[160px] text-left">
-                      <p className="text-xs font-bold text-neutral-200 truncate group-hover:text-white transition-colors">
-                        {film.name}
-                      </p>
-                      <p className="text-[10px] text-neutral-400 truncate mt-0.5">
-                        {film.year || film.origin_name || "Tuyển chọn"} • <span className="text-amber-400 font-semibold">{film.quality || "HD"}</span>
-                      </p>
-                    </div>
-                  </Link>
-                );
-              })}
+                  return (
+                    <Link
+                      key={`${film.slug || idx}-${idx}`}
+                      href={`/film/${film.slug}`}
+                      className="group flex items-center gap-3 px-3.5 py-1.5 rounded-xl bg-[#181a20] border border-white/[0.08] hover:bg-[#20222a] hover:border-white/20 transition-all flex-shrink-0 cursor-pointer"
+                    >
+                      <div className="relative h-10 w-7 rounded-md overflow-hidden bg-neutral-900 flex-shrink-0 shadow-md">
+                        <Image
+                          src={poster}
+                          alt={film.name || film.origin_name || "Phim"}
+                          fill
+                          sizes="32px"
+                          className="object-cover group-hover:scale-110 transition-transform duration-300"
+                          unoptimized
+                        />
+                      </div>
+                      <div className="max-w-[160px] text-left">
+                        <p className="text-xs font-bold text-neutral-200 truncate group-hover:text-white transition-colors">
+                          {film.name}
+                        </p>
+                        <p className="text-[10px] text-neutral-400 truncate mt-0.5">
+                          {film.year || film.origin_name || "Tuyển chọn"} •{" "}
+                          <span className="text-amber-400 font-semibold">
+                            {film.quality || "HD"}
+                          </span>
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                },
+              )}
             </div>
           </div>
         </section>
@@ -290,7 +370,10 @@ export default function GenresTopicsPage() {
               className="group relative flex flex-col justify-end min-h-[175px] sm:min-h-[195px] overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#16171e] p-5 transition-all duration-500 hover:-translate-y-1.5 hover:border-white/25 hover:shadow-[0_20px_45px_rgba(0,0,0,0.85)] cursor-pointer select-none transform-gpu will-change-transform"
             >
               {/* Full-bleed HD Backdrop Artwork */}
-              <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+              <div
+                className="pointer-events-none absolute inset-0 overflow-hidden"
+                aria-hidden="true"
+              >
                 <Image
                   src={topic.image}
                   alt={topic.title}
@@ -302,7 +385,7 @@ export default function GenresTopicsPage() {
                 />
                 {/* Clean Bottom Gradient Scrim for crisp text contrast */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0e0f14] via-[#0e0f14]/70 to-black/25 group-hover:via-[#0e0f14]/50 transition-colors duration-500" />
-                
+
                 {/* Subtle colored accent glow on hover */}
                 <div
                   className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"

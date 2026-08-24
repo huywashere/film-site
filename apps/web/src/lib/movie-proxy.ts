@@ -157,10 +157,11 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
 
   function headers(cacheStatus: string, ttlSeconds: number = 300): HeadersInit {
     const swrTtl = Math.max(ttlSeconds * 4, 86400);
+    const browserTtl = Math.min(ttlSeconds, 300);
     return {
       "X-Cache": cacheStatus,
       "X-Source": config.sourceName,
-      "Cache-Control": `public, max-age=60, s-maxage=${ttlSeconds}, stale-while-revalidate=${swrTtl}`,
+      "Cache-Control": `public, max-age=${browserTtl}, s-maxage=${ttlSeconds}, stale-while-revalidate=${swrTtl}`,
       "CDN-Cache-Control": `public, max-age=${ttlSeconds}, stale-while-revalidate=${swrTtl}`,
     };
   }

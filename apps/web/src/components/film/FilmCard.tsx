@@ -118,9 +118,19 @@ function FilmCardComponent({
       : resolveImageUrl(film.poster_url, film.thumb_url) ||
         resolveImageUrl(film.thumb_url);
 
-  const { posterUrl: tmdbPosterUrl } = useTmdbArtwork(film, preferHighQuality);
+  // Catalog cards already include provider artwork. Looking every poster up on
+  // TMDB created 6-8 metadata requests whenever a route mounted, even when the
+  // provider image was perfectly usable. Resolve TMDB only as a true fallback.
+  const [requestTmdbArtwork, setRequestTmdbArtwork] = useState(
+    preferHighQuality && !initialPosterUrl,
+  );
+  const { posterUrl: tmdbPosterUrl } = useTmdbArtwork(film, requestTmdbArtwork);
 
   const [imageSrc, setImageSrc] = useState<string | null>(initialPosterUrl);
+
+  useEffect(() => {
+    setRequestTmdbArtwork(preferHighQuality && !initialPosterUrl);
+  }, [initialPosterUrl, preferHighQuality, slug]);
 
   useEffect(() => {
     const url =
@@ -280,7 +290,12 @@ function FilmCardComponent({
       }
     }
 
-    // All provider and proxy attempts failed; render the stable title fallback.
+    if (preferHighQuality && !requestTmdbArtwork && !tmdbPosterUrl) {
+      setRequestTmdbArtwork(true);
+    }
+
+    // All provider and proxy attempts failed. The title fallback remains visible
+    // while the optional TMDB fallback resolves.
     setImageSrc(null);
   };
 
@@ -437,10 +452,6 @@ function FilmCardComponent({
                 loading={priority ? "eager" : "lazy"}
                 decoding="async"
                 referrerPolicy="no-referrer"
-                // Movie artwork is already resized by its CDN. Avoid making
-                // production wait for a second Vercel image-optimizer fetch;
-                // onError below retains the guarded same-origin fallback.
-                unoptimized
                 onError={handleImageError}
               />
             ) : (

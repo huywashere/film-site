@@ -9,7 +9,6 @@ import {
 } from "@/components/film/FilmCard";
 import { Pagination } from "@/components/film/Pagination";
 import { cardFont } from "@/lib/fonts";
-import { useEffect } from "react";
 
 const TYPE_LABELS: Record<string, string> = {
   series: "Phim Bộ",
@@ -39,25 +38,21 @@ export default function FilmsTypePage() {
   const { data, isLoading } = useQuery({
     queryKey: ["films-type", type, page],
     queryFn: () => apiFn(page).then((r) => r.data),
-    staleTime: 10 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
+    staleTime: 30 * 60 * 1000,
+    gcTime: 2 * 60 * 60 * 1000,
     retry: 1,
     refetchOnWindowFocus: false,
     placeholderData: (previousData) => previousData,
   });
 
-  useEffect(() => {
-    if (!data) return;
-    const nextPage = page + 1;
-    const timer = window.setTimeout(() => {
-      void queryClient.prefetchQuery({
-        queryKey: ["films-type", type, nextPage],
-        queryFn: () => apiFn(nextPage).then((response) => response.data),
-        staleTime: 10 * 60 * 1000,
-      });
-    }, 2500);
-    return () => window.clearTimeout(timer);
-  }, [apiFn, data, page, queryClient, type]);
+  const prefetchPage = (targetPage: number) => {
+    if (targetPage < 1 || targetPage > totalPages) return;
+    void queryClient.prefetchQuery({
+      queryKey: ["films-type", type, targetPage],
+      queryFn: () => apiFn(targetPage).then((response) => response.data),
+      staleTime: 30 * 60 * 1000,
+    });
+  };
 
   const films: FilmItem[] = data?.data?.items || data?.items || [];
 
@@ -137,6 +132,7 @@ export default function FilmsTypePage() {
         totalPages={totalPages}
         totalItems={totalItems}
         onPageChange={handlePageChange}
+        onPrefetchPage={prefetchPage}
       />
     </div>
   );

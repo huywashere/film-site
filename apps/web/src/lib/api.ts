@@ -1285,8 +1285,28 @@ export type PublicSiteConfiguration = {
   updatedAt?: string | null;
 };
 
+let publicSiteConfigurationRequest: Promise<
+  AxiosResponse<PublicSiteConfiguration>
+> | null = null;
+let publicSiteConfigurationRequestedAt = 0;
+
 export const siteConfigApi = {
-  getPublic: () => api.get<PublicSiteConfiguration>("/config/public"),
+  getPublic: () => {
+    if (
+      !publicSiteConfigurationRequest ||
+      Date.now() - publicSiteConfigurationRequestedAt > 60_000
+    ) {
+      publicSiteConfigurationRequestedAt = Date.now();
+      publicSiteConfigurationRequest = api
+        .get<PublicSiteConfiguration>("/config/public")
+        .catch((error) => {
+          publicSiteConfigurationRequest = null;
+          publicSiteConfigurationRequestedAt = 0;
+          throw error;
+        });
+    }
+    return publicSiteConfigurationRequest;
+  },
 };
 
 export const viewApi = {

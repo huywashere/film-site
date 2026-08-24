@@ -11,15 +11,17 @@ export function ClientBackgroundServices() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Defer non-critical background watchers until main thread is completely idle
-    if ("requestIdleCallback" in window) {
-      const handle = window.requestIdleCallback(() => setMounted(true), {
-        timeout: 2000,
-      });
-      return () => window.cancelIdleCallback(handle);
-    }
-    const timer = setTimeout(() => setMounted(true), 1200);
-    return () => clearTimeout(timer);
+    // These services are not required to paint or navigate the page. Starting
+    // them on first interaction avoids an artificial late burst of JavaScript
+    // and network work for visitors who are only reading the hero.
+    const mount = () => setMounted(true);
+    const options: AddEventListenerOptions = { passive: true, once: true };
+    window.addEventListener("pointerdown", mount, options);
+    window.addEventListener("keydown", mount, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", mount);
+      window.removeEventListener("keydown", mount);
+    };
   }, []);
 
   if (!mounted) return null;

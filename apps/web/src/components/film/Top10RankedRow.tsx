@@ -1,15 +1,23 @@
 "use client";
 import Link from "next/link";
-import Image from "next/image";
 import { Montserrat } from "next/font/google";
 import { useRef, useState, useEffect } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, FreeMode } from "swiper/modules";
 import { FilmItem, resolveImageUrl } from "./FilmCard";
-import { Play, ChevronLeft, ChevronRight, Clapperboard, Star } from "lucide-react";
+import {
+  Play,
+  ChevronLeft,
+  ChevronRight,
+  Clapperboard,
+  Star,
+  Crown,
+} from "lucide-react";
 import { DashPagination } from "./DashPagination";
 import { cardFont } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
+import { TmdbArtwork } from "./TmdbArtwork";
+import { CURATED_HERO_FRANCHISE_POOL } from "@/lib/curated-hero-pool";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -26,36 +34,48 @@ interface Top10RankedRowProps {
 }
 
 function getRankColorStyle(rank: number) {
-  // Chỉ ba vị trí dẫn đầu dùng màu nhấn riêng. Hạng 4-10 giữ màu trung tính
-  // để thứ bậc thị giác tập trung đúng vào top 3.
-  const colors: Record<number, { stroke: string; glow: string }> = {
-    1: { stroke: "#ffd43b", glow: "rgba(255, 212, 59, 0.62)" },
-    2: { stroke: "#ff4d8d", glow: "rgba(255, 77, 141, 0.52)" },
-    3: { stroke: "#22d3ee", glow: "rgba(34, 211, 238, 0.48)" },
-  };
-
-  const style = colors[rank] || {
-    stroke: "#3f3f46",
-    glow: "rgba(0, 0, 0, 0)",
+  const colors: Record<number, string> = {
+    1: "#ffd400",
+    2: "#ff4f91",
+    3: "#22d3ee",
   };
 
   return {
-    WebkitTextStroke: "3px " + style.stroke,
+    WebkitTextStroke: `3px ${colors[rank] || "#3f444d"}`,
     color: "transparent",
-    filter: `drop-shadow(0 4px 18px ${style.glow})`,
   };
 }
 
 function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
-  const initialUrl =
-    resolveImageUrl(film.poster_url, film.thumb_url) ||
-    resolveImageUrl(film.thumb_url);
-
-  const [imgSrc, setImgSrc] = useState<string | null>(initialUrl);
+  const itemRef = useRef<HTMLAnchorElement>(null);
+  const [resolveHighQualityArtwork, setResolveHighQualityArtwork] =
+    useState(false);
+  const posterUrl = resolveImageUrl(film.poster_url, film.thumb_url);
+  const alreadyUsesTmdbPoster = Boolean(
+    posterUrl &&
+    /image\.tmdb\.org\/t\/p\/(?:w500|w780|w1280|original)\//i.test(posterUrl),
+  );
 
   useEffect(() => {
-    setImgSrc(initialUrl);
-  }, [initialUrl]);
+    const element = itemRef.current;
+    if (!element) return;
+
+    if (!("IntersectionObserver" in window)) {
+      setResolveHighQualityArtwork(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setResolveHighQualityArtwork(true);
+        observer.disconnect();
+      },
+      { rootMargin: "320px 0px", threshold: 0.01 },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   const filmTitle = film.name || film.title || "Phim Top 10";
 
@@ -165,6 +185,7 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
 
   return (
     <Link
+      ref={itemRef}
       href={`/film/${film.slug}`}
       className="flex w-full flex-col group/item relative select-none cursor-pointer pt-4 pb-2 pr-1 sm:w-auto sm:pr-2"
     >
@@ -181,40 +202,13 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
       {/* Poster Card Container Overlapping Rank Number (Creating 3D Depth Layer) */}
       <div className="relative z-10 pl-7 sm:pl-14 md:pl-16">
         <div className="relative w-[78px] sm:w-[160px] md:w-[185px] aspect-[2/3] rounded-xl sm:rounded-2xl overflow-hidden border border-white/15 shadow-2xl group-hover/item:border-white/40 group-hover/item:scale-105 transition-all duration-300 bg-neutral-900">
-          {imgSrc ? (
-            <Image
-              src={imgSrc}
-              alt={filmTitle}
-              fill
-              sizes="(max-width: 640px) 130px, (max-width: 768px) 160px, 185px"
-              quality={75}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105"
-              loading="lazy"
-              decoding="async"
-              unoptimized
-              referrerPolicy="no-referrer"
-              onError={() => {
-                if (
-                  imgSrc &&
-                  !imgSrc.startsWith("https://wsrv.nl") &&
-                  !imgSrc.startsWith("/api/image-proxy")
-                ) {
-                  setImgSrc(
-                    `https://wsrv.nl/?url=${encodeURIComponent(imgSrc)}`,
-                  );
-                } else if (imgSrc && imgSrc.startsWith("https://wsrv.nl")) {
-                  const original = new URL(imgSrc).searchParams.get("url");
-                  setImgSrc(
-                    original
-                      ? `/api/image-proxy?url=${encodeURIComponent(original)}`
-                      : null,
-                  );
-                } else {
-                  setImgSrc(null);
-                }
-              }}
-            />
-          ) : null}
+          <TmdbArtwork
+            film={film}
+            kind="poster"
+            alt={filmTitle}
+            enabled={resolveHighQualityArtwork && !alreadyUsesTmdbPoster}
+            className="absolute inset-0 h-full w-full transition-transform duration-500 group-hover/item:scale-105"
+          />
 
           {/* Fallback Movie Specific Title Backdrop */}
           <div className="absolute inset-0 -z-10 flex flex-col items-center justify-between p-3 bg-gradient-to-b from-neutral-800 via-neutral-900 to-black text-center">
@@ -293,7 +287,7 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
   );
 }
 
-function getBaseTitle(name: string): string {
+function getBaseTitle(name?: string | null): string {
   if (!name) return "";
   return name
     .toLowerCase()
@@ -309,7 +303,24 @@ function getBaseTitle(name: string): string {
     .trim();
 }
 
-import { CURATED_HERO_FRANCHISE_POOL } from "@/lib/curated-hero-pool";
+function preferCuratedArtwork(film: FilmItem): FilmItem {
+  const filmTitle = getBaseTitle(film.origin_name || film.name || film.title);
+  const curated = CURATED_HERO_FRANCHISE_POOL.find((candidate) => {
+    if (candidate.slug === film.slug) return true;
+    const candidateTitle = getBaseTitle(
+      candidate.origin_name || candidate.name || candidate.title,
+    );
+    return Boolean(filmTitle && candidateTitle === filmTitle);
+  });
+
+  if (!curated) return film;
+  return {
+    ...film,
+    poster_url: curated.poster_url || film.poster_url,
+    thumb_url: curated.thumb_url || film.thumb_url,
+    tmdb: film.tmdb || curated.tmdb,
+  };
+}
 
 function dedupeTop10(films: FilmItem[]): FilmItem[] {
   const seenBase = new Set<string>();
@@ -337,12 +348,10 @@ function dedupeTop10(films: FilmItem[]): FilmItem[] {
     }
   }
 
-  return result.slice(0, 10);
+  return result.slice(0, 10).map(preferCuratedArtwork);
 }
 
 import { useTranslation } from "@/store/langStore";
-import { EmotionBurningFlame } from "@/components/ui/EmotionBadges";
-
 export function Top10RankedRow({ films, title }: Top10RankedRowProps) {
   const { t } = useTranslation();
   const prevRef = useRef<HTMLButtonElement>(null);
@@ -360,7 +369,9 @@ export function Top10RankedRow({ films, title }: Top10RankedRowProps) {
         <h2
           className={`${cardFont.className} text-lg md:text-xl font-extrabold text-white flex items-center gap-2`}
         >
-          <EmotionBurningFlame size={24} />
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#f2c14e]/25 bg-[#f2c14e]/10 text-[#f2c14e] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+            <Crown size={16} strokeWidth={2} aria-hidden="true" />
+          </span>
           <span className="tracking-[-0.015em]">{displayTitle}</span>
         </h2>
 

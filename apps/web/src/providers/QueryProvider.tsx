@@ -8,9 +8,10 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 15 * 60 * 1000, // 15 minutes fresh RAM cache
-            gcTime: 60 * 60 * 1000, // 60 minutes garbage collection time
+            staleTime: 30 * 60 * 1000, // Keep catalog data fresh across route/tab changes
+            gcTime: 2 * 60 * 60 * 1000,
             refetchOnWindowFocus: false, // Prevent refetching on tab focus
+            refetchOnReconnect: false,
             refetchOnMount: false, // Prevent refetching when navigating back
             placeholderData: (previousData: any) => previousData, // Seamless tab transitions without black flicker
             retry: 1,

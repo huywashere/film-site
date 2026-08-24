@@ -10,6 +10,7 @@ export interface PaginationProps {
   totalItems?: number;
   pageSize?: number;
   onPageChange: (page: number) => void;
+  onPrefetchPage?: (page: number) => void;
   className?: string;
 }
 
@@ -19,6 +20,7 @@ export function Pagination({
   totalItems,
   pageSize = 24,
   onPageChange,
+  onPrefetchPage,
   className = "",
 }: PaginationProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -66,6 +68,8 @@ export function Pagination({
         <button
           type="button"
           onClick={() => handlePageClick(currentPageClamped - 1)}
+          onPointerEnter={() => onPrefetchPage?.(currentPageClamped - 1)}
+          onFocus={() => onPrefetchPage?.(currentPageClamped - 1)}
           disabled={currentPageClamped <= 1}
           aria-label="Trang trước"
           title="Trang trước"
@@ -112,6 +116,8 @@ export function Pagination({
         <button
           type="button"
           onClick={() => handlePageClick(currentPageClamped + 1)}
+          onPointerEnter={() => onPrefetchPage?.(currentPageClamped + 1)}
+          onFocus={() => onPrefetchPage?.(currentPageClamped + 1)}
           disabled={currentPageClamped >= totalPages}
           aria-label="Trang tiếp"
           title="Trang tiếp"

@@ -3,11 +3,11 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-const MIN_VISIBLE_MS = 1_050;
-const MAX_VISIBLE_MS = 3_600;
-const EXIT_DURATION_MS = 560;
+const MIN_VISIBLE_MS = 250;
+const MAX_VISIBLE_MS = 1_000;
+const EXIT_DURATION_MS = 160;
 
-const WALL_TILE_COUNT = 18;
+const WALL_TILE_COUNT = 9;
 
 export function LogoSplashIntro() {
   const [visible, setVisible] = useState(true);
@@ -33,7 +33,10 @@ export function LogoSplashIntro() {
     const close = () => {
       if (closeScheduled) return;
       closeScheduled = true;
-      const remaining = Math.max(0, MIN_VISIBLE_MS - (performance.now() - startedAt));
+      const remaining = Math.max(
+        0,
+        MIN_VISIBLE_MS - (performance.now() - startedAt),
+      );
       closeTimer = window.setTimeout(() => {
         setLeaving(true);
         removeTimer = window.setTimeout(() => {

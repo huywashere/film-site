@@ -1,11 +1,6 @@
 import "./globals.css";
 import "./light-theme.css";
 import type { Metadata, Viewport } from "next";
-import {
-  Be_Vietnam_Pro,
-  Manrope,
-  Roboto_Condensed,
-} from "next/font/google";
 import { ConditionalNavbar } from "@/components/layout/ConditionalNavbar";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -21,6 +16,7 @@ import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { ClientBackgroundServices } from "@/components/layout/ClientBackgroundServices";
 import { OperationalNotice } from "@/components/layout/OperationalNotice";
 import { LogoSplashIntro } from "@/components/layout/LogoSplashIntro";
+import { cardFont } from "@/lib/fonts";
 
 export const viewport: Viewport = {
   themeColor: "#141414",
@@ -87,31 +83,6 @@ export const metadata: Metadata = {
   },
 };
 
-const beVietnamPro = Be_Vietnam_Pro({
-  subsets: ["vietnamese", "latin"],
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
-  style: ["normal", "italic"],
-  display: "swap",
-  variable: "--font-be-vietnam",
-  preload: true,
-});
-
-const manrope = Manrope({
-  subsets: ["latin", "vietnamese"],
-  weight: ["400", "500", "600", "700", "800"],
-  display: "swap",
-  variable: "--font-manrope",
-  preload: true,
-});
-
-const robotoCondensed = Roboto_Condensed({
-  subsets: ["latin", "vietnamese"],
-  weight: ["600", "700", "800", "900"],
-  display: "swap",
-  variable: "--font-cinema",
-  preload: true,
-});
-
 export default function RootLayout({
   children,
 }: {
@@ -135,22 +106,18 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var r=document.documentElement,k="netphim-entry-intro-v2",s=sessionStorage.getItem(k);r.dataset.netphimIntro=s?"skip":"show";if(!s){var h=Array.from({length:18},function(_,i){return "/images/splash/tmdb/"+String(i+1).padStart(2,"0")+".webp"}),o=Array.from({length:10},function(_,i){return "/images/splash/tmdb/kr-"+String(i+1).padStart(2,"0")+".webp"}),c=Array.from({length:10},function(_,i){return "/images/splash/tmdb/cn-"+String(i+1).padStart(2,"0")+".webp"}),x=function(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a},p=x(x(h).slice(0,6).concat(x(o).slice(0,6),x(c).slice(0,6)));for(var i=0;i<p.length;i++)r.style.setProperty("--netphim-intro-poster-"+(i+1),'url("'+p[i]+'")');sessionStorage.setItem(k,"1")}}catch(e){document.documentElement.dataset.netphimIntro="show";}})();`,
+            __html: `(function(){try{var r=document.documentElement,k="netphim-entry-intro-v2",s=sessionStorage.getItem(k);r.dataset.netphimIntro=s?"skip":"show";if(!s){var h=Array.from({length:18},function(_,i){return "/images/splash/tmdb/"+String(i+1).padStart(2,"0")+".webp"}),o=Array.from({length:10},function(_,i){return "/images/splash/tmdb/kr-"+String(i+1).padStart(2,"0")+".webp"}),c=Array.from({length:10},function(_,i){return "/images/splash/tmdb/cn-"+String(i+1).padStart(2,"0")+".webp"}),x=function(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a},p=x(x(h).slice(0,3).concat(x(o).slice(0,3),x(c).slice(0,3)));for(var i=0;i<p.length;i++)r.style.setProperty("--netphim-intro-poster-"+(i+1),'url("'+p[i]+'")');sessionStorage.setItem(k,"1")}}catch(e){document.documentElement.dataset.netphimIntro="show";}})();`,
           }}
         />
         <meta name="referrer" content="no-referrer" />
         <link rel="icon" href="/cinephim-logo.png" type="image/png" />
         <link rel="shortcut icon" href="/cinephim-logo.png" type="image/png" />
         <link rel="apple-touch-icon" href="/cinephim-logo.png" />
-        <link rel="preconnect" href="https://wsrv.nl" />
         <link rel="dns-prefetch" href="https://wsrv.nl" />
-        <link rel="preconnect" href="https://img.phimapi.com" />
         <link rel="dns-prefetch" href="https://img.phimapi.com" />
         <link rel="preconnect" href="https://phimimg.com" />
         <link rel="dns-prefetch" href="https://phimimg.com" />
-        <link rel="preconnect" href="https://img.ophim.live" />
         <link rel="dns-prefetch" href="https://img.ophim.live" />
-        <link rel="preconnect" href="https://images.nguonc.com" />
         <link rel="dns-prefetch" href="https://images.nguonc.com" />
         <link rel="preconnect" href="https://image.tmdb.org" />
         <link rel="dns-prefetch" href="https://image.tmdb.org" />
@@ -160,7 +127,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${beVietnamPro.variable} ${manrope.variable} ${robotoCondensed.variable} font-sans antialiased`}
+        className={`${cardFont.variable} ${cardFont.className} antialiased`}
         suppressHydrationWarning
       >
         <LogoSplashIntro />

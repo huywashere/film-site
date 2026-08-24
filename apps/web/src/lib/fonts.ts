@@ -2,8 +2,11 @@ import { Be_Vietnam_Pro } from "next/font/google";
 
 export const cardFont = Be_Vietnam_Pro({
   subsets: ["latin", "vietnamese"],
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  // Three real cuts cover body, headings and display text. Intermediate
+  // utility weights are synthesized without preloading dozens of font files.
+  weight: ["400", "700", "900"],
   display: "swap",
+  variable: "--font-be-vietnam",
   preload: true,
 });
 
