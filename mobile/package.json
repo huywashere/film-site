@@ -1,0 +1,46 @@
+{
+  "name": "netphim-mobile",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "dependencies": {
+    "expo": "~57.0.15",
+    "expo-status-bar": "~57.0.1",
+    "expo-linear-gradient": "~57.0.1",
+    "expo-blur": "~57.0.2",
+    "expo-image": "~57.0.3",
+    "expo-av": "~16.0.8",
+    "expo-video": "~57.0.2",
+    "expo-font": "~57.0.1",
+    "expo-splash-screen": "~57.0.7",
+    "expo-system-ui": "~57.0.2",
+    "react": "19.2.3",
+    "react-native": "0.86.2",
+    "react-native-safe-area-context": "5.4.0",
+    "react-native-screens": "~4.10.0",
+    "react-native-gesture-handler": "~2.24.0",
+    "react-native-reanimated": "~3.17.4",
+    "react-native-webview": "13.14.0",
+    "@react-navigation/native": "^7.1.7",
+    "@react-navigation/bottom-tabs": "^7.3.11",
+    "@react-navigation/native-stack": "^7.3.11",
+    "@tanstack/react-query": "^5.62.8",
+    "zustand": "^5.0.3",
+    "axios": "^1.7.9",
+    "@shopify/flash-list": "^1.7.3",
+    "@expo-google-fonts/be-vietnam-pro": "^0.2.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.0",
+    "@types/react": "~19.2.2",
+    "@types/react-native": "^0.73.0",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "build:android": "eas build --platform android --profile preview"
+  },
+  "private": true
+}
