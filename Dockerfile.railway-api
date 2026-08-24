@@ -17,12 +17,11 @@ FROM base AS builder
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc turbo.json ./
 COPY apps/api/package.json ./apps/api/package.json
+COPY apps/api ./apps/api
 
 # Install from the committed workspace lockfile. Dev dependencies are required
 # only in this stage for Nest and TypeScript compilation.
 RUN pnpm install --frozen-lockfile --filter api...
-
-COPY apps/api ./apps/api
 
 RUN pnpm --dir apps/api exec prisma generate --schema=prisma/schema.prisma && \
     pnpm --dir apps/api build
