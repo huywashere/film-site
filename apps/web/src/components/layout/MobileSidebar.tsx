@@ -13,7 +13,7 @@ import {
   BookOpen,
   History,
   ChevronDown,
-  X,
+  Menu,
   User,
   LogOut,
   Clapperboard,
@@ -83,7 +83,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       {/* Minimalist Black & White Sheet Drawer */}
       <aside className={`${cardFont.className} fixed left-0 top-0 bottom-0 h-[100dvh] w-[88vw] max-w-[320px] bg-[#0a0c10] border-r border-white/10 z-[65] overflow-y-auto overscroll-contain touch-pan-y scrollbar-none lg:hidden shadow-[0_0_40px_rgba(0,0,0,0.9)] animate-in slide-in-from-left duration-250`}>
         {/* Sticky Header */}
-        <div className="sticky top-0 bg-[#0a0c10]/95 backdrop-blur-xl px-5 py-4 border-b border-white/10 flex items-center justify-between z-20">
+        <div className="sticky top-0 z-20 flex items-center gap-1.5 border-b border-white/10 bg-[#0a0c10]/95 px-5 py-3.5 backdrop-blur-xl">
           <Link
             href="/"
             className="flex items-center space-x-2"
@@ -106,16 +106,16 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             type="button"
             onClick={onClose}
             aria-label={t("nav.closeSearch", "Đóng")}
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-neutral-400 hover:text-white hover:bg-white/10 transition-colors active:scale-95 cursor-pointer"
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-neutral-300 transition-colors hover:bg-white/10 hover:text-white active:scale-95"
           >
-            <X size={20} />
+            <Menu size={21} strokeWidth={2.2} />
           </button>
         </div>
 
         {/* User Profile Card (Visible when logged in) */}
         {user ? (
-          <div className="border-b border-white/10 bg-white/[0.02] px-4 py-3">
-            <div className="flex flex-col space-y-3">
+          <div className="border-b border-white/10 bg-white/[0.02] px-3 py-2.5">
+            <div className="flex flex-col space-y-2">
               <div className="flex items-center space-x-3">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -125,7 +125,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                   }
                   alt={user.displayName || user.username}
                   referrerPolicy="no-referrer"
-                  className="w-10 h-10 rounded-full object-cover border border-white/20 shadow-md shrink-0"
+                  className="h-9 w-9 shrink-0 rounded-full border border-white/20 object-cover shadow-md"
                   onError={(e) => {
                     (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=10b981&color=ffffff&size=80`;
                   }}
@@ -139,10 +139,10 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 pt-0.5">
+              <div className="grid grid-cols-2 gap-1.5">
                 <Link
                   href={`/user/${encodeURIComponent(user.username)}`}
-                  className="flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl bg-white/10 border border-white/15 text-xs font-semibold text-white hover:bg-white/20 transition-all text-center active:scale-95"
+                  className="flex h-8 items-center justify-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-3 text-center text-[11px] font-semibold text-white transition-all hover:bg-white/20 active:scale-95"
                   onClick={onClose}
                 >
                   <User size={13} />
@@ -154,7 +154,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                     logout();
                     onClose();
                   }}
-                  className="flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-neutral-300 hover:bg-white/10 hover:text-white transition-all text-center active:scale-95 cursor-pointer"
+                  className="flex h-8 items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 text-center text-[11px] font-bold text-neutral-300 transition-all hover:bg-white/10 hover:text-white active:scale-95"
                 >
                   <LogOut size={13} />
                   <span>{t("nav.logout")}</span>
@@ -163,14 +163,14 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             </div>
           </div>
         ) : (
-          <div className="p-4 border-b border-white/10 bg-white/[0.02]">
+          <div className="border-b border-white/10 bg-white/[0.02] px-3 py-2.5">
             <button
               type="button"
               onClick={() => {
                 onClose();
                 useAuthModalStore.getState().openModal("login");
               }}
-              className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 text-xs font-extrabold text-black shadow-[0_4px_14px_rgba(0,0,0,0.18)] transition-transform active:scale-[0.98]"
+              className="flex h-9 w-full items-center justify-center gap-2 rounded-[0.7rem] bg-white px-4 text-[11px] font-extrabold text-black shadow-[0_4px_14px_rgba(0,0,0,0.18)] transition-transform active:scale-[0.98]"
             >
               <User size={15} />
               <span>{t("nav.login")} / {t("nav.register")}</span>
@@ -179,17 +179,17 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         )}
 
         {/* Language Selection Bar in Mobile Drawer */}
-        <div className="flex h-12 items-center justify-between border-b border-white/10 px-4">
+        <div className="flex h-10 items-center justify-between border-b border-white/10 px-3.5">
           <span className="flex items-center gap-2 text-[11px] font-bold text-neutral-400">
             <Languages size={14} />
             <span>{t("nav.language")}:</span>
           </span>
-          <div className="flex h-8 items-center rounded-full border border-white/10 bg-white/[0.06] p-0.5 text-[10px] font-bold">
+          <div className="flex h-7 items-center rounded-full border border-white/10 bg-white/[0.06] p-0.5 text-[9px] font-bold">
             <button
               type="button"
               onClick={() => setLang("vi")}
               className={cn(
-                "h-6 rounded-full px-2.5 transition-all cursor-pointer",
+                "h-[1.35rem] rounded-full px-2.5 transition-all cursor-pointer",
                 lang === "vi"
                   ? "bg-white text-black font-extrabold shadow-sm"
                   : "text-neutral-400 hover:text-white",
@@ -201,7 +201,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
               type="button"
               onClick={() => setLang("en")}
               className={cn(
-                "h-6 rounded-full px-2.5 transition-all cursor-pointer",
+                "h-[1.35rem] rounded-full px-2.5 transition-all cursor-pointer",
                 lang === "en"
                   ? "bg-white text-black font-extrabold shadow-sm"
                   : "text-neutral-400 hover:text-white",
@@ -213,7 +213,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         </div>
 
         {/* Scrollable Navigation List */}
-        <nav className="px-3 py-4 space-y-5 pb-36">
+        <nav className="space-y-4 px-3 py-3 pb-5">
           {/* Main Navigation Group */}
           <div>
             <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-neutral-500">
