@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, memo } from "react";
 import { Bookmark, Play, Clapperboard, Star } from "lucide-react";
-import { watchlistApi, movieApi } from "@/lib/api";
+import { watchlistApi } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/providers/ToastProvider";
 import { useQueryClient } from "@tanstack/react-query";
@@ -13,6 +13,12 @@ import type { MovieSource } from "@/lib/movie-normalizer";
 import { guestDataStorage } from "@/lib/user-data";
 import { cardFont } from "@/lib/fonts";
 import { normalizeMovieArtworkUrl } from "@/lib/movie-image-url";
+import {
+  isPreOptimizedImageUrl,
+  localImageProxyUrl,
+  unwrapImageUrl,
+  wsrvImageUrl,
+} from "@/lib/image-cdn";
 import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
 
 export interface FilmItem {
@@ -274,15 +280,17 @@ function FilmCardComponent({
       !imageSrc.startsWith("/api/image-proxy") &&
       !imageSrc.startsWith("data:")
     ) {
-      setImageSrc(`https://wsrv.nl/?url=${encodeURIComponent(imageSrc)}`);
+      setImageSrc(
+        wsrvImageUrl(imageSrc, variant === "landscape" ? "thumbnail" : "card"),
+      );
       return;
     }
 
     if (imageSrc && imageSrc.startsWith("https://wsrv.nl")) {
       try {
-        const original = new URL(imageSrc).searchParams.get("url");
+        const original = unwrapImageUrl(imageSrc);
         if (original) {
-          setImageSrc(`/api/image-proxy?url=${encodeURIComponent(original)}`);
+          setImageSrc(localImageProxyUrl(original));
           return;
         }
       } catch {
@@ -297,16 +305,6 @@ function FilmCardComponent({
     // All provider and proxy attempts failed. The title fallback remains visible
     // while the optional TMDB fallback resolves.
     setImageSrc(null);
-  };
-
-  const prefetchFilmDetail = () => {
-    if (typeof window !== "undefined" && window.innerWidth > 768) {
-      queryClient.prefetchQuery({
-        queryKey: ["film", slug],
-        queryFn: () => movieApi.getDetail(slug).then((r) => r.data),
-        staleTime: 5 * 60 * 1000,
-      });
-    }
   };
 
   // Extract top-left badge (Priority: Thuyết Minh -> Lồng Tiếng -> Vietsub -> Engsub)
@@ -422,7 +420,6 @@ function FilmCardComponent({
         `${cardFont.className} flex flex-col group/card relative select-none`,
         width ? `w-[${width}px]` : "w-full",
       )}
-      onMouseEnter={prefetchFilmDetail}
     >
       <div className="relative">
         <Link
@@ -447,6 +444,7 @@ function FilmCardComponent({
                     : `(max-width: 640px) 42vw, (max-width: 1024px) 24vw, ${preferHighQuality ? 300 : width || 220}px`
                 }
                 quality={preferHighQuality ? 85 : 75}
+                unoptimized={isPreOptimizedImageUrl(imageSrc)}
                 priority={priority}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
                 loading={priority ? "eager" : "lazy"}

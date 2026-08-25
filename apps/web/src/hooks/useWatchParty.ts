@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { Socket } from "socket.io-client";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/providers/ToastProvider";
 import {
@@ -41,15 +42,19 @@ function getGuestId() {
   return id;
 }
 
-export function useWatchParty(movieSlug: string, episodeName: string) {
+export function useWatchParty(
+  movieSlug: string,
+  episodeName: string,
+  enabled = true,
+) {
   const user = useAuthStore((state) => state.user);
   const { toast } = useToast();
-  const socket = useMemo(() => createWatchPartySocket(), []);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   const [room, setRoom] = useState<WatchPartyRoom | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [connectionState, setConnectionState] =
-    useState<WatchPartyConnectionState>("connecting");
+    useState<WatchPartyConnectionState>("offline");
   const [floatingReactions, setFloatingReactions] = useState<
     FloatingReaction[]
   >([]);
@@ -89,6 +94,33 @@ export function useWatchParty(movieSlug: string, episodeName: string) {
   );
 
   useEffect(() => {
+    if (!enabled) {
+      setConnectionState("offline");
+      return;
+    }
+
+    let active = true;
+    setConnectionState("connecting");
+    void createWatchPartySocket().then((nextSocket) => {
+      if (!active) {
+        nextSocket.disconnect();
+        return;
+      }
+      setSocket(nextSocket);
+    });
+
+    return () => {
+      active = false;
+      setSocket((current) => {
+        current?.removeAllListeners();
+        current?.disconnect();
+        return null;
+      });
+    };
+  }, [enabled]);
+
+  useEffect(() => {
+    if (!socket) return;
     const handleConnect = () => {
       setConnectionState("online");
       if (roomIdRef.current) {
@@ -134,7 +166,7 @@ export function useWatchParty(movieSlug: string, episodeName: string) {
   const createRoom = useCallback(
     (input: CreateWatchPartyInput = {}) =>
       new Promise<string | null>((resolve) => {
-        if (!socket.connected) {
+        if (!socket?.connected) {
           toast("Chưa kết nối được máy chủ xem chung.", "error");
           resolve(null);
           return;
@@ -174,6 +206,11 @@ export function useWatchParty(movieSlug: string, episodeName: string) {
         const roomId = targetRoomId.trim().toUpperCase();
         if (!roomId) return resolve(false);
         roomIdRef.current = roomId;
+        if (!socket) {
+          toast("Chưa kết nối được máy chủ xem chung.", "error");
+          resolve(false);
+          return;
+        }
         const sendJoin = () => {
           socket.emit(
             "room:join",
@@ -202,7 +239,7 @@ export function useWatchParty(movieSlug: string, episodeName: string) {
 
   const leaveRoom = useCallback(() => {
     const roomId = roomIdRef.current;
-    if (roomId && socket.connected) socket.emit("room:leave", { roomId });
+    if (roomId && socket?.connected) socket.emit("room:leave", { roomId });
     roomIdRef.current = null;
     setRoom(null);
     setRemotePlayerState(null);
@@ -212,7 +249,8 @@ export function useWatchParty(movieSlug: string, episodeName: string) {
 
   const sendMessage = useCallback(
     (text: string) => {
-      if (!room?.id || !text.trim() || connectionState !== "online") return;
+      if (!socket || !room?.id || !text.trim() || connectionState !== "online")
+        return;
       socket.emit(
         "chat:send",
         { roomId: room.id, text: text.trim() },
@@ -227,7 +265,7 @@ export function useWatchParty(movieSlug: string, episodeName: string) {
 
   const sendReaction = useCallback(
     (emoji: string) => {
-      if (!room?.id || connectionState !== "online") return;
+      if (!socket || !room?.id || connectionState !== "online") return;
       socket.emit(
         "reaction:send",
         { roomId: room.id, emoji },
@@ -242,7 +280,13 @@ export function useWatchParty(movieSlug: string, episodeName: string) {
 
   const syncPlayerState = useCallback(
     (action: PlaybackAction, currentTime: number) => {
-      if (!room?.id || room.hostId !== socket.id || !socket.connected) return;
+      if (
+        !socket ||
+        !room?.id ||
+        room.hostId !== socket.id ||
+        !socket.connected
+      )
+        return;
       socket.emit("player:state", {
         roomId: room.id,
         action,
@@ -256,7 +300,7 @@ export function useWatchParty(movieSlug: string, episodeName: string) {
   return {
     room,
     roomId: room?.id || null,
-    isHost: Boolean(room && room.hostId === socket.id),
+    isHost: Boolean(room && socket && room.hostId === socket.id),
     participants: room?.participants || [],
     messages: room?.messages || [],
     floatingReactions,

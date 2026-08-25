@@ -40,6 +40,7 @@ import {
   CURATED_HERO_FRANCHISE_POOL,
   getRandomCuratedHeroSet,
 } from "@/lib/curated-hero-pool";
+import { buildArtworkCandidates } from "@/lib/image-cdn";
 
 const TrailerModal = dynamic(
   () => import("@/components/film/TrailerModal").then((m) => m.TrailerModal),
@@ -604,20 +605,7 @@ function HeroMovieTitle({
 }) {
   const candidateLogos = useMemo(() => {
     if (!film.titleLogo) return [];
-    const list: string[] = [];
-    const add = (url?: string) => {
-      if (url && !list.includes(url)) {
-        list.push(url);
-        if (url.startsWith("http")) {
-          const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(url)}`;
-          if (!list.includes(wsrv)) list.push(wsrv);
-          const proxy = `/api/image-proxy?url=${encodeURIComponent(url)}`;
-          if (!list.includes(proxy)) list.push(proxy);
-        }
-      }
-    };
-    add(film.titleLogo);
-    return list;
+    return buildArtworkCandidates([film.titleLogo], "titleLogo");
   }, [film.titleLogo]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);

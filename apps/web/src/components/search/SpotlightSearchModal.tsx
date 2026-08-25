@@ -29,6 +29,7 @@ import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
 import { VoiceSearchButton } from "@/components/search/VoiceSearchButton";
 import { cardFont } from "@/lib/fonts";
 import { searchLocalFilms } from "@/lib/smart-search";
+import { isIMEQuery, normalizeForSearch } from "@/lib/text-utils";
 
 // ── Local storage helpers ─────────────────────────────────────────
 const HISTORY_KEY = "cineverse-search-history";
@@ -69,9 +70,17 @@ function removeAccents(str: string): string {
 
 function filmIdentity(film: FilmItem): string {
   if (film._canonicalKey) return film._canonicalKey;
-  if (film.tmdb?.id) return `tmdb:${film.tmdb.type || film.type}:${film.tmdb.id}`;
-  const title = removeAccents(film.origin_name || film.name || film.slug);
+  if (film.tmdb?.id)
+    return `tmdb:${film.tmdb.type || film.type}:${film.tmdb.id}`;
+  const origin = normalizeForSearch(film.origin_name || "");
+  const name = normalizeForSearch(film.name || "");
+  const slug = normalizeForSearch(film.slug || "");
+  const title = origin || name || slug;
   return `${title}:${film.year || ""}`;
+}
+
+function filmSlugIdentity(film: FilmItem): string {
+  return normalizeForSearch(film.slug || "");
 }
 
 function SearchCardImage({ film }: { film: FilmItem }) {
@@ -204,9 +213,11 @@ export function SpotlightSearchModal({
     }
   }, [isOpen, mounted]);
 
-  // Ultra-fast 90ms debounce for lightning responsiveness
+  // IME-aware debounce: 90ms cho Latin, 160ms cho tiếng Việt/CJK
+  // Tránh tình trạng query nửa chừng khi dùng input method editor
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQuery(query), 90);
+    const debounceDelay = isIMEQuery(query) ? 160 : 90;
+    const t = setTimeout(() => setDebouncedQuery(query), debounceDelay);
     return () => clearTimeout(t);
   }, [query]);
 
@@ -243,7 +254,9 @@ export function SpotlightSearchModal({
     refetchOnWindowFocus: false,
   });
 
-  const isFetching = (isSearchingMovies || isSearchingActors) && instantLocalResults.length === 0;
+  const isFetching =
+    (isSearchingMovies || isSearchingActors) &&
+    instantLocalResults.length === 0;
 
   const searchedActors = useMemo(
     () => actorSearchData?.results || [],
@@ -263,26 +276,36 @@ export function SpotlightSearchModal({
     [searchData],
   );
 
-  // Seamless merge of remote and instant local results
+  // Seamless merge of remote and instant local results with intelligent deduplication
   const rawResults: FilmItem[] = useMemo(() => {
     if (!query.trim()) return [];
-    const seen = new Set<string>();
+    const seenIdentities = new Set<string>();
+    const seenSlugs = new Set<string>();
     const merged: FilmItem[] = [];
+
+    const appendUnique = (item: FilmItem) => {
+      if (!item?.slug) return;
+      const identity = filmIdentity(item);
+      const slugIdentity = filmSlugIdentity(item);
+      if (
+        seenIdentities.has(identity) ||
+        (slugIdentity && seenSlugs.has(slugIdentity))
+      ) {
+        return;
+      }
+      seenIdentities.add(identity);
+      if (slugIdentity) seenSlugs.add(slugIdentity);
+      merged.push(item);
+    };
 
     // Prioritize remote results
     for (const item of remoteResults) {
-      if (item && item.slug && !seen.has(item.slug)) {
-        seen.add(item.slug);
-        merged.push(item);
-      }
+      appendUnique(item);
     }
 
     // Merge instant local results for missing items
     for (const item of instantLocalResults) {
-      if (item && item.slug && !seen.has(item.slug)) {
-        seen.add(item.slug);
-        merged.push(item);
-      }
+      appendUnique(item);
     }
 
     return merged;
@@ -340,12 +363,20 @@ export function SpotlightSearchModal({
   ]);
 
   const uniqueSearchResults = useMemo(() => {
-    const seen = new Set<string>();
+    const seenIdentities = new Set<string>();
+    const seenSlugs = new Set<string>();
     return sortedAndFilteredResults.filter((film) => {
       if (!film || !film.slug) return false;
       const identity = filmIdentity(film);
-      if (seen.has(identity)) return false;
-      seen.add(identity);
+      const slugIdentity = filmSlugIdentity(film);
+      if (
+        seenIdentities.has(identity) ||
+        (slugIdentity && seenSlugs.has(slugIdentity))
+      ) {
+        return false;
+      }
+      seenIdentities.add(identity);
+      if (slugIdentity) seenSlugs.add(slugIdentity);
       return true;
     });
   }, [sortedAndFilteredResults]);
@@ -418,7 +449,9 @@ export function SpotlightSearchModal({
   };
 
   const handleGoToSearchPage = (searchQuery?: string) => {
-    const targetQuery = (searchQuery !== undefined ? searchQuery : query).trim();
+    const targetQuery = (
+      searchQuery !== undefined ? searchQuery : query
+    ).trim();
     if (!targetQuery) return;
     saveHistory(targetQuery);
     onClose();
@@ -542,7 +575,9 @@ export function SpotlightSearchModal({
             {isQueryTooShort ? (
               <div className="flex min-h-24 flex-col items-center justify-center gap-1 text-center text-neutral-400 p-3">
                 <Search size={16} className="text-neutral-500 mb-0.5" />
-                <p className="text-xs font-medium">Nhập thêm một ký tự để tìm kiếm...</p>
+                <p className="text-xs font-medium">
+                  Nhập thêm một ký tự để tìm kiếm...
+                </p>
               </div>
             ) : isSearching ? (
               <div className="space-y-3">
@@ -550,19 +585,21 @@ export function SpotlightSearchModal({
                 <div className="space-y-1">
                   <div className="flex items-center justify-between px-1 mb-1">
                     <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
-                      Phim {rawResults.length > 0 && `(${rawResults.length})`}
+                      Phim{" "}
+                      {uniqueSearchResults.length > 0 &&
+                        `(${uniqueSearchResults.length})`}
                     </span>
                   </div>
 
-                  {rawResults.length === 0 && !isFetching ? (
+                  {uniqueSearchResults.length === 0 && !isFetching ? (
                     <p className="text-xs text-neutral-500 px-2 py-2">
                       Không tìm thấy phim phù hợp.
                     </p>
                   ) : (
                     <div className="space-y-1">
-                      {rawResults.slice(0, 6).map((film) => (
+                      {uniqueSearchResults.slice(0, 6).map((film) => (
                         <div
-                          key={film.slug}
+                          key={filmIdentity(film)}
                           onClick={() => handleSelectMovie(film.slug)}
                           className="group flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-white/[0.06] cursor-pointer"
                         >
@@ -602,7 +639,10 @@ export function SpotlightSearchModal({
 
                     <div className="space-y-1">
                       {searchedActors.slice(0, 3).map((person: any) => {
-                        const profile = tmdbProfile(person.profile_path, "w185");
+                        const profile = tmdbProfile(
+                          person.profile_path,
+                          "w185",
+                        );
                         return (
                           <Link
                             key={person.id}
@@ -645,7 +685,7 @@ export function SpotlightSearchModal({
                 )}
 
                 {/* ── Compact Bottom Expand Action ── */}
-                {rawResults.length > 0 && (
+                {uniqueSearchResults.length > 0 && (
                   <div className="pt-2 border-t border-white/[0.08]">
                     <button
                       type="button"
@@ -653,7 +693,9 @@ export function SpotlightSearchModal({
                       className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] text-xs font-bold text-neutral-300 hover:text-white transition-all cursor-pointer"
                     >
                       <Maximize2 size={12} />
-                      <span>Xem toàn bộ kết quả ({rawResults.length})</span>
+                      <span>
+                        Xem toàn bộ kết quả ({uniqueSearchResults.length})
+                      </span>
                       <ArrowRight size={12} />
                     </button>
                   </div>
@@ -978,7 +1020,10 @@ export function SpotlightSearchModal({
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
                       {searchedActors.slice(0, 4).map((person: any) => {
-                        const profile = tmdbProfile(person.profile_path, "w185");
+                        const profile = tmdbProfile(
+                          person.profile_path,
+                          "w185",
+                        );
                         return (
                           <Link
                             key={person.id}
@@ -1030,9 +1075,9 @@ export function SpotlightSearchModal({
               ) : uniqueSearchResults.length > 0 ? (
                 /* Rich Scrollable Cards Grid */
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pb-4">
-                  {uniqueSearchResults.map((film, idx) => (
+                  {uniqueSearchResults.map((film) => (
                     <div
-                      key={`${film.slug}-${idx}`}
+                      key={filmIdentity(film)}
                       onClick={() => handleSelectMovie(film.slug)}
                       className="group relative cursor-pointer overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.02] transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/[0.04]"
                     >
@@ -1057,7 +1102,11 @@ export function SpotlightSearchModal({
                         {/* Hover Play Icon Overlay */}
                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
                           <div className="flex h-10 w-10 scale-75 items-center justify-center rounded-full bg-white text-black transition-transform group-hover:scale-100">
-                            <Play size={18} fill="currentColor" className="ml-0.5" />
+                            <Play
+                              size={18}
+                              fill="currentColor"
+                              className="ml-0.5"
+                            />
                           </div>
                         </div>
                       </div>

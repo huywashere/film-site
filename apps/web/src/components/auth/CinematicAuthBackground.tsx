@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { buildArtworkCandidates } from "@/lib/image-cdn";
 
 const TMDB_POSTERS = [
   "https://image.tmdb.org/t/p/w342/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
@@ -23,11 +24,7 @@ const TMDB_POSTERS = [
 ];
 
 function AuthPosterItem({ url, idx }: { url: string; idx: number }) {
-  const candidates = [
-    url,
-    `https://wsrv.nl/?url=${encodeURIComponent(url)}`,
-    `/api/image-proxy?url=${encodeURIComponent(url)}`,
-  ];
+  const candidates = buildArtworkCandidates([url], "card");
   const [candidateIdx, setCandidateIdx] = useState(0);
 
   return (

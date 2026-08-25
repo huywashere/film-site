@@ -236,6 +236,159 @@ export class RedisCacheService implements OnModuleDestroy {
     return { namespace, deleted };
   }
 
+  // ── RediSearch Full-Text Search Methods ────────────────────────────────────
+
+  /** Kiểm tra Redis Stack có hỗ trợ RediSearch module không */
+  private redisearchAvailable: boolean | null = null;
+
+  private async checkRediSearch(): Promise<boolean> {
+    if (this.redisearchAvailable !== null) return this.redisearchAvailable;
+    if (!this.isReady) {
+      this.redisearchAvailable = false;
+      return false;
+    }
+    try {
+      // FT.INFO sẽ throw nếu module không tồn tại
+      await this.client!.call("FT._LIST");
+      this.redisearchAvailable = true;
+      this.logger.log("✅ RediSearch module available — full-text search enabled");
+    } catch {
+      this.redisearchAvailable = false;
+      this.logger.warn("⚠️ RediSearch module không có — dùng key-value cache bình thường");
+    }
+    return this.redisearchAvailable;
+  }
+
+  /**
+   * Tạo RediSearch index cho phim (chạy 1 lần khi startup).
+   * Schema hỗ trợ:
+   * - name, origin_name: TEXT có weight cao (tìm theo tên)
+   * - slug: TAG (exact match)
+   * - year: NUMERIC sortable
+   * - type: TAG (lọc theo loại phim)
+   * - norm_name: TEXT (tên đã bỏ dấu — tăng khả năng tìm kiếm không dấu)
+   */
+  async ftCreateIndex(indexName = "phim_idx"): Promise<void> {
+    if (!(await this.checkRediSearch())) return;
+    try {
+      // Drop nếu đã tồn tại (idempotent)
+      await this.client!.call("FT.DROPINDEX", indexName).catch(() => null);
+      await this.client!.call(
+        "FT.CREATE", indexName,
+        "ON", "HASH",
+        "PREFIX", "1", `${indexName}:`,
+        "LANGUAGE", "english",        // Default language (RediSearch không có built-in VN stemmer)
+        "LANGUAGE_FIELD", "__lang",    // Mỗi doc có thể override language
+        "SCHEMA",
+        "name",        "TEXT", "WEIGHT", "5.0", "NOSTEM",  // NOSTEM vì VN không cần English stemmer
+        "origin_name", "TEXT", "WEIGHT", "4.0", "NOSTEM",
+        "norm_name",   "TEXT", "WEIGHT", "3.0", "NOSTEM",  // Tên đã bỏ dấu
+        "norm_origin", "TEXT", "WEIGHT", "2.0", "NOSTEM",  // Tên gốc đã bỏ dấu
+        "slug",        "TAG",
+        "year",        "NUMERIC", "SORTABLE",
+        "type",        "TAG",
+      );
+      this.logger.log(`✅ RediSearch index "${indexName}" created`);
+    } catch (err) {
+      this.logger.warn(`RediSearch createIndex error: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  /**
+   * Index 1 phim vào RediSearch.
+   * normName/normOrigin là tên đã bỏ dấu tiếng Việt để tăng recall khi search không dấu.
+   */
+  async ftIndexDoc(
+    indexName = "phim_idx",
+    slug: string,
+    doc: {
+      name: string;
+      origin_name?: string;
+      norm_name: string;
+      norm_origin?: string;
+      year?: number;
+      type?: string;
+    },
+  ): Promise<void> {
+    if (!(await this.checkRediSearch())) return;
+    try {
+      const key = `${indexName}:${slug}`;
+      const fields: string[] = [
+        "name", doc.name || "",
+        "norm_name", doc.norm_name || "",
+        "__lang", "english",
+      ];
+      if (doc.origin_name) fields.push("origin_name", doc.origin_name);
+      if (doc.norm_origin) fields.push("norm_origin", doc.norm_origin);
+      if (doc.year) fields.push("year", String(doc.year));
+      if (doc.type) fields.push("type", doc.type);
+      fields.push("slug", slug);
+
+      await this.client!.call("HSET", key, ...fields);
+    } catch {
+      // Ignore index errors — không ảnh hưởng main flow
+    }
+  }
+
+  /**
+   * Full-text search qua RediSearch.
+   * Hỗ trợ:
+   * - Tìm không dấu (norm_name): "avengers" → "avengers"
+   * - Fuzzy match (typo): "avengrs" → "avengers" (1 lỗi)
+   * - Multi-field: search cả name + origin_name + norm_name
+   *
+   * Returns danh sách slug matches, caller tự fetch detail từ KKPhim.
+   */
+  async ftSearch(
+    indexName = "phim_idx",
+    keyword: string,
+    limit = 24,
+  ): Promise<Array<{ slug: string; name: string; score: number }>> {
+    if (!(await this.checkRediSearch())) return [];
+    if (!keyword.trim()) return [];
+
+    try {
+      // Escape special characters cho RediSearch query syntax
+      const escaped = keyword.trim().replace(/[^a-zA-Z0-9\u00C0-\u024F\u1E00-\u1EFF\s]/g, " ").trim();
+      if (!escaped) return [];
+
+      // Query: tìm exact + fuzzy (% = 1 edit distance)
+      // Ưu tiên: exact match > prefix > fuzzy
+      const query = `(@norm_name:${escaped}* | @norm_origin:${escaped}* | @name:${escaped}* | %${escaped}%)`;
+
+      const raw = await this.client!.call(
+        "FT.SEARCH", indexName, query,
+        "LIMIT", "0", String(limit),
+        "RETURN", "3", "slug", "name", "__score",
+        "SORTBY", "__score", "DESC",
+      ) as any[];
+
+      if (!Array.isArray(raw) || raw.length < 1) return [];
+
+      const results: Array<{ slug: string; name: string; score: number }> = [];
+      // raw[0] = total count, raw[1..] = [key, [field, val, ...], key, ...]
+      for (let i = 1; i < raw.length; i += 2) {
+        const fields = raw[i + 1] as string[];
+        if (!Array.isArray(fields)) continue;
+        const fieldMap: Record<string, string> = {};
+        for (let j = 0; j < fields.length; j += 2) {
+          fieldMap[fields[j]] = fields[j + 1];
+        }
+        if (fieldMap["slug"]) {
+          results.push({
+            slug: fieldMap["slug"],
+            name: fieldMap["name"] || "",
+            score: parseFloat(fieldMap["__score"] || "0"),
+          });
+        }
+      }
+      return results;
+    } catch (err) {
+      this.logger.warn(`RediSearch ftSearch error: ${err instanceof Error ? err.message : String(err)}`);
+      return [];
+    }
+  }
+
   async onModuleDestroy() {
     if (this.client) {
       await this.client.quit().catch(() => this.client?.disconnect());

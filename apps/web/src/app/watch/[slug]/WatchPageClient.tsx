@@ -97,6 +97,7 @@ import {
   type ServerType,
   type SourceServer,
 } from "@/lib/player-source-routing";
+import { buildArtworkCandidates } from "@/lib/image-cdn";
 
 const HlsVideoPlayer = dynamic(
   () =>
@@ -715,23 +716,15 @@ function ReportStreamModal({
 }
 
 // ── Recommendation Item Component with TMDB Artwork Resolution ──
-function RecMovieItem({ item }: { item: any }) {
+function RecMovieItem({ item, index = 0 }: { item: any; index?: number }) {
   const { posterUrl: tmdbPosterUrl, backdropUrl: tmdbBackdropUrl } =
-    useTmdbArtwork(item, true);
+    useTmdbArtwork(item, !item?.poster_url && !item?.thumb_url);
 
   const candidateUrls = useMemo(() => {
-    const list: string[] = [];
+    const sources: string[] = [];
     const add = (url?: unknown) => {
       const resolved = resolveImageUrl(url);
-      if (resolved && !list.includes(resolved)) {
-        list.push(resolved);
-        if (resolved.startsWith("http")) {
-          const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(resolved)}`;
-          if (!list.includes(wsrv)) list.push(wsrv);
-          const proxy = `/api/image-proxy?url=${encodeURIComponent(resolved)}`;
-          if (!list.includes(proxy)) list.push(proxy);
-        }
-      }
+      if (resolved && !sources.includes(resolved)) sources.push(resolved);
     };
 
     if (tmdbPosterUrl) add(tmdbPosterUrl);
@@ -749,7 +742,7 @@ function RecMovieItem({ item }: { item: any }) {
       }
     }
 
-    return list;
+    return buildArtworkCandidates(sources, "card");
   }, [item?.poster_url, item?.thumb_url, tmdbBackdropUrl, tmdbPosterUrl]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
@@ -766,7 +759,8 @@ function RecMovieItem({ item }: { item: any }) {
   return (
     <Link
       href={`/film/${item.slug}`}
-      className="flex gap-3 group p-2 rounded-xl hover:bg-white/[0.04] transition-all duration-200 cursor-pointer"
+      className="flex gap-3 group p-2 rounded-xl hover:bg-white/[0.04] transition-all duration-200 cursor-pointer animate-in fade-in slide-in-from-bottom-1 fill-mode-both"
+      style={{ animationDelay: `${Math.min(index, 7) * 35}ms` }}
     >
       <div className="relative w-16 h-24 rounded-lg bg-neutral-900 flex-shrink-0 overflow-hidden border border-white/[0.08] group-hover:border-white/25 shadow-md">
         {src ? (
@@ -829,7 +823,7 @@ function WatchSkeleton() {
 }
 
 // ── MAIN PAGE ─────────────────────────────────────────────────
-export default function WatchPage() {
+export default function WatchPage({ initialData }: { initialData?: any }) {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -850,7 +844,12 @@ export default function WatchPage() {
   const roomCode = searchParams.get("room");
   const shouldCreateParty = searchParams.get("party") === "create";
   const requestedRoomName = searchParams.get("roomName") || "";
-  const wp = useWatchParty(slug, currentEp);
+  const [watchPartyRequested, setWatchPartyRequested] = useState(
+    Boolean(roomCode || shouldCreateParty),
+  );
+  const [manualPartyCreateRequested, setManualPartyCreateRequested] =
+    useState(false);
+  const wp = useWatchParty(slug, currentEp, watchPartyRequested);
   const joinWatchPartyRoom = wp.joinRoom;
   const createWatchPartyRoom = wp.createRoom;
 
@@ -872,9 +871,26 @@ export default function WatchPage() {
     "vsmov",
   ]);
   const [watchPartyEnabled, setWatchPartyEnabled] = useState(true);
+  const [secondaryDataSlug, setSecondaryDataSlug] = useState("");
+  const secondaryDataReady = secondaryDataSlug === slug;
+  const [recommendationsSlug, setRecommendationsSlug] = useState("");
+  const recommendationsReady = recommendationsSlug === slug;
   const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(
     null,
   );
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSecondaryDataSlug(slug), 2_500);
+    return () => window.clearTimeout(timer);
+  }, [slug]);
+
+  useEffect(() => {
+    // Recommendations used to be intentionally held for six seconds. Start
+    // them almost immediately; the query is cached and no longer blocks on a
+    // fan-out of TMDB catalogue resolution requests in the common path.
+    const timer = window.setTimeout(() => setRecommendationsSlug(slug), 180);
+    return () => window.clearTimeout(timer);
+  }, [slug]);
   // Native HLS is the primary transport because it exposes real playback
   // events. Provider iframe remains the safe final transport fallback.
   const [playerEngine, setPlayerEngine] = useState<"hls" | "iframe">("hls");
@@ -952,6 +968,7 @@ export default function WatchPage() {
   });
 
   useEffect(() => {
+    if (!secondaryDataReady) return;
     let active = true;
     siteConfigApi
       .getPublic()
@@ -968,7 +985,7 @@ export default function WatchPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [secondaryDataReady]);
 
   const [isQuickSettingsCollapsed, setIsQuickSettingsCollapsed] = useState(
     () => {
@@ -1036,6 +1053,10 @@ export default function WatchPage() {
   const applyingRemoteStateRef = useRef(false);
   const [epRangeIndex, setEpRangeIndex] = useState(0);
   const epGridRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (roomCode || shouldCreateParty) setWatchPartyRequested(true);
+  }, [roomCode, shouldCreateParty]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -1374,9 +1395,15 @@ export default function WatchPage() {
     queryKey: ["film", sourceSlug, preferredSource],
     queryFn: () =>
       movieApi.getDetail(sourceSlug, preferredSource).then((r) => r.data),
+    initialData:
+      !preferredSource && sourceSlug === slug
+        ? initialData || undefined
+        : undefined,
     enabled: !!sourceSlug,
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: 1,
   });
   const film = data?.movie || data;
   const primarySource = String(
@@ -1427,8 +1454,11 @@ export default function WatchPage() {
   const { data: sourceLookupData } = useQuery({
     queryKey: ["watch-source-lookup", lookupTitle, film?.year],
     queryFn: () => movieApi.search(lookupTitle, 1, 30).then((r) => r.data),
-    enabled: Boolean(lookupTitle),
+    enabled: secondaryDataReady && Boolean(lookupTitle),
     staleTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: 1,
   });
 
   const matchedSourceRecord = useMemo(() => {
@@ -1452,9 +1482,9 @@ export default function WatchPage() {
   const sourceSlugFor = useCallback(
     (source: MovieSource) => {
       if (primarySource === source) return sourceSlug;
-      return matchedSourceRecord?._sourceSlugs?.[source] || sourceSlug || slug;
+      return matchedSourceRecord?._sourceSlugs?.[source] || "";
     },
-    [matchedSourceRecord, primarySource, slug, sourceSlug],
+    [matchedSourceRecord, primarySource, sourceSlug],
   );
 
   const kkphimSlug = sourceSlugFor("kkphim");
@@ -1466,29 +1496,41 @@ export default function WatchPage() {
     queryKey: ["film-kkphim", kkphimSlug],
     queryFn: () =>
       movieApi.getDetailFromSource("kkphim", kkphimSlug).then((r) => r.data),
-    enabled: Boolean(kkphimSlug) && primarySource !== "kkphim",
+    enabled:
+      secondaryDataReady && Boolean(kkphimSlug) && primarySource !== "kkphim",
     staleTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
   const { data: ophimFetchedData } = useQuery({
     queryKey: ["film-ophim", ophimSlug],
     queryFn: () =>
       movieApi.getDetailFromSource("ophim", ophimSlug).then((r) => r.data),
-    enabled: Boolean(ophimSlug) && primarySource !== "ophim",
+    enabled:
+      secondaryDataReady && Boolean(ophimSlug) && primarySource !== "ophim",
     staleTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
   const { data: nguoncFetchedData } = useQuery({
     queryKey: ["film-nguonc", nguoncSlug],
     queryFn: () =>
       movieApi.getDetailFromSource("nguonc", nguoncSlug).then((r) => r.data),
-    enabled: Boolean(nguoncSlug) && primarySource !== "nguonc",
+    enabled:
+      secondaryDataReady && Boolean(nguoncSlug) && primarySource !== "nguonc",
     staleTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
   const { data: vsmovFetchedData } = useQuery({
     queryKey: ["film-vsmov", vsmovSlug],
     queryFn: () =>
       movieApi.getDetailFromSource("vsmov", vsmovSlug).then((r) => r.data),
-    enabled: Boolean(vsmovSlug) && primarySource !== "vsmov",
+    enabled:
+      secondaryDataReady && Boolean(vsmovSlug) && primarySource !== "vsmov",
     staleTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 
   const kkphimData = primarySource === "kkphim" ? data : kkphimFetchedData;
@@ -1516,7 +1558,7 @@ export default function WatchPage() {
 
   const { bestBackdrop, backdrops: tmdbBackdrops } = useTmdb({
     film,
-    enabled: !!film,
+    enabled: secondaryDataReady && !!film,
     fetchCredits: false,
     fetchVideos: false,
   });
@@ -1563,8 +1605,40 @@ export default function WatchPage() {
       const seenSlugs = new Set<string>();
       if (slug) seenSlugs.add(slug);
 
+      // Render provider-native recommendations first. These already have a
+      // valid NetPhim slug and only need one cached catalogue request.
+      try {
+        const { searchLocalFilms } = await import("@/lib/smart-search");
+        const titleKeywords =
+          (film?.name || film?.origin_name || slug || "").split(" ")[0] || "";
+        for (const item of searchLocalFilms(titleKeywords)) {
+          if (item?.slug && !seenSlugs.has(item.slug)) {
+            seenSlugs.add(item.slug);
+            items.push(item);
+          }
+        }
+      } catch {
+        // Continue with the provider catalogue.
+      }
+
+      if (filmCategory && items.length < 8) {
+        try {
+          const response: any = await movieApi.getByGenre(filmCategory, 1);
+          const genreItems =
+            response?.data?.data?.items || response?.data?.items || [];
+          for (const item of genreItems) {
+            if (item?.slug && !seenSlugs.has(item.slug)) {
+              seenSlugs.add(item.slug);
+              items.push(item);
+            }
+          }
+        } catch {
+          // TMDB resolution below remains the final fallback.
+        }
+      }
+
       // 1. Cấp độ 1: TMDB Intelligent Recommendation API (AI graph-based recommendation)
-      if (effectiveTmdbId) {
+      if (effectiveTmdbId && items.length < 8) {
         try {
           const tmdbEndpoint = `/api/tmdb/${effectiveMediaType === "tv" ? "tv" : "movie"}/${effectiveTmdbId}/recommendations`;
           const res = await fetch(tmdbEndpoint);
@@ -1574,7 +1648,7 @@ export default function WatchPage() {
             // by /film and /watch. Only render recommendations that resolve to
             // a real catalogue entry, otherwise the generated English slug
             // leads to a guaranteed "Không tìm thấy phim" page.
-            const tmdbRecs = (tmdbJson?.results || []).slice(0, 10);
+            const tmdbRecs = (tmdbJson?.results || []).slice(0, 5);
             const resolved = await Promise.allSettled(
               tmdbRecs.map(async (tmdbItem: any) => {
                 const title =
@@ -1656,44 +1730,15 @@ export default function WatchPage() {
         }
       }
 
-      // 2. Cấp độ 2: Kho 100 phim bom tấn tuyển chọn (Khớp franchise/từ khóa)
-      try {
-        const { searchLocalFilms } = await import("@/lib/smart-search");
-        const titleKeywords =
-          (film?.name || film?.origin_name || slug || "").split(" ")[0] || "";
-        const localMatches = searchLocalFilms(titleKeywords);
-        for (const item of localMatches) {
-          if (item?.slug && !seenSlugs.has(item.slug)) {
-            seenSlugs.add(item.slug);
-            items.push(item);
-          }
-        }
-      } catch {
-        // Fallback
-      }
-
-      // 3. Cấp độ 3: Khớp theo thể loại từ KKPhim
-      if (filmCategory && items.length < 8) {
-        try {
-          const r: any = await movieApi.getByGenre(filmCategory, 1);
-          const genreItems = r?.data?.data?.items || r?.data?.items || [];
-          for (const item of genreItems) {
-            if (item?.slug && !seenSlugs.has(item.slug)) {
-              seenSlugs.add(item.slug);
-              items.push(item);
-            }
-          }
-        } catch {
-          // Fallback
-        }
-      }
-
       return {
         items: items.slice(0, 10),
       };
     },
-    enabled: !!slug,
+    enabled: recommendationsReady && !!slug,
     staleTime: 1000 * 60 * 30, // 30 phút cache
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: 1,
   });
 
   const { data: resumeData } = useQuery({
@@ -2035,7 +2080,7 @@ export default function WatchPage() {
 
   useEffect(() => {
     if (
-      !shouldCreateParty ||
+      (!shouldCreateParty && !manualPartyCreateRequested) ||
       !watchPartyEnabled ||
       !film ||
       wp.roomId ||
@@ -2047,10 +2092,12 @@ export default function WatchPage() {
     creatingRoomRef.current = true;
     createCurrentMovieParty().then((roomId) => {
       if (!roomId) creatingRoomRef.current = false;
+      else setManualPartyCreateRequested(false);
     });
   }, [
     createCurrentMovieParty,
     film,
+    manualPartyCreateRequested,
     shouldCreateParty,
     watchPartyEnabled,
     wp.connectionState,
@@ -2677,11 +2724,15 @@ export default function WatchPage() {
                 </button>
 
                 <button
-                  onClick={async () => {
-                    if (!wp.roomId) await createCurrentMovieParty();
-                    else wp.setIsOpen(!wp.isOpen);
+                  onClick={() => {
+                    if (!wp.roomId) {
+                      setWatchPartyRequested(true);
+                      setManualPartyCreateRequested(true);
+                    } else {
+                      wp.setIsOpen(!wp.isOpen);
+                    }
                   }}
-                  disabled={wp.connectionState !== "online"}
+                  disabled={!watchPartyEnabled}
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] hover:text-white/80 transition-colors text-white/50 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <Sparkles size={12} />
@@ -4021,9 +4072,15 @@ export default function WatchPage() {
                       : "Phim tương tự"}
                   </h3>
                   <div className="space-y-1">
-                    {recsData.items.slice(0, 8).map((item: any) => (
-                      <RecMovieItem key={item._id || item.slug} item={item} />
-                    ))}
+                    {recsData.items
+                      .slice(0, 8)
+                      .map((item: any, index: number) => (
+                        <RecMovieItem
+                          key={item._id || item.slug}
+                          item={item}
+                          index={index}
+                        />
+                      ))}
                   </div>
                 </div>
               )}

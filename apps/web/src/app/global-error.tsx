@@ -3,21 +3,23 @@
 import { useEffect } from "react";
 import { StatusPage } from "@/components/layout/StatusPage";
 import { captureException } from "@/lib/sentry";
+import {
+  recoverFromChunkLoadError,
+  retryCurrentDocument,
+} from "@/lib/chunk-load-recovery";
 
 export default function GlobalError({
   error,
-  reset,
 }: {
   error: Error;
-  reset: () => void;
 }) {
   useEffect(() => {
     captureException(error, { tags: { scope: "global-error-boundary" } });
+    recoverFromChunkLoadError(error);
   }, [error]);
 
   const retry = () => {
-    reset();
-    window.setTimeout(() => window.location.reload(), 50);
+    retryCurrentDocument();
   };
 
   return (

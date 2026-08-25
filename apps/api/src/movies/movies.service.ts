@@ -4,6 +4,7 @@ import { RedisCacheService } from "../redis/redis.service";
 import { PrismaService } from "../prisma/prisma.service";
 import axios, { AxiosInstance } from "axios";
 import { RecordMovieViewDto } from "./movies.dto";
+import { SearchIndexerService } from "./search-indexer.service";
 
 @Injectable()
 export class MoviesService {
@@ -15,6 +16,7 @@ export class MoviesService {
     private readonly config: ConfigService,
     private readonly cache: RedisCacheService,
     private readonly prisma: PrismaService,
+    private readonly searchIndexer: SearchIndexerService,
   ) {
     this.baseUrl = config.get("KKPHIM_BASE_URL") || "https://phimapi.com";
     this.http = axios.create({
@@ -312,7 +314,12 @@ export class MoviesService {
 
   // GET /v1/api/tim-kiem?keyword=&page=1
   async search(keyword: string, page = 1, limit = 24) {
-    const normalized = (keyword || "").trim().toLowerCase();
+    const normalized = (keyword || "")
+      .replace(/[\\/()[\]{}*+?^$|#@~`"']/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+
     if (!normalized) {
       return {
         status: "success",
@@ -330,11 +337,27 @@ export class MoviesService {
         },
       };
     }
-    return this.cachedGet(
+
+    // ── 1. Fetch từ KKPhim (kèm Redis Cache 5 phút siêu tốc, đầy đủ metadata) ────────
+    const result = (await this.cachedGet(
       `search:${normalized}:${page}:${limit}`,
       `/v1/api/tim-kiem?keyword=${encodeURIComponent(normalized)}&page=${page}&limit=${limit}`,
-      300, // Cache 5 minutes in Redis (sub-millisecond instant responses under DDoS)
-    );
+      300, // Cache 5 phút trong Redis
+    )) as any;
+
+    // ── 2. Background index kết quả KKPhim vào RediSearch để làm giàu full-text index ───
+    const items: any[] = result?.data?.items || result?.items || [];
+    if (items.length > 0) {
+      setImmediate(async () => {
+        for (const film of items.slice(0, 24)) {
+          if (film?.slug) {
+            await this.searchIndexer.indexFilm(film).catch(() => null);
+          }
+        }
+      });
+    }
+
+    return result;
   }
 
   // ── Thể loại ────────────────────────────────────────────────────

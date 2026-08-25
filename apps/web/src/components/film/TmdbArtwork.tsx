@@ -8,6 +8,7 @@ import { HERO_LOCAL_FALLBACK } from "@/lib/hero-image";
 import { alternateMovieArtworkUrl } from "@/lib/movie-image-url";
 import { cn } from "@/lib/utils";
 import { Clapperboard } from "lucide-react";
+import { buildArtworkCandidates } from "@/lib/image-cdn";
 
 interface TmdbArtworkProps {
   film: FilmItem;
@@ -37,25 +38,16 @@ export function TmdbArtwork({
     ? alternateMovieArtworkUrl(providerPrimary)
     : null;
 
-  const proxyFallback =
-    providerPrimary && !providerPrimary.startsWith("/api/image-proxy")
-      ? `/api/image-proxy?url=${encodeURIComponent(providerPrimary)}`
-      : null;
-
   const candidates = useMemo(() => {
-    const list: string[] = [];
-    const add = (url?: string | null) => {
-      if (url && !list.includes(url)) list.push(url);
-    };
-
-    if (tmdbUrl) add(tmdbUrl);
-    if (providerPrimary) add(providerPrimary);
-    if (providerAlternate) add(providerAlternate);
-    if (proxyFallback) add(proxyFallback);
-    if (kind === "backdrop") add(HERO_LOCAL_FALLBACK);
-
+    const list = buildArtworkCandidates(
+      [tmdbUrl, providerPrimary, providerAlternate],
+      kind === "backdrop" ? "backdrop" : "poster",
+    );
+    if (kind === "backdrop" && !list.includes(HERO_LOCAL_FALLBACK)) {
+      list.push(HERO_LOCAL_FALLBACK);
+    }
     return list;
-  }, [tmdbUrl, providerPrimary, providerAlternate, proxyFallback, kind]);
+  }, [tmdbUrl, providerPrimary, providerAlternate, kind]);
 
   const [candidateIndex, setCandidateIndex] = useState(0);
   const [loaded, setLoaded] = useState(false);

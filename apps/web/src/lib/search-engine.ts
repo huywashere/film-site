@@ -3,7 +3,7 @@
  *
  * Pipeline:
  *   raw query
- *     → normalize (bỏ dấu, lowercase, trim)
+ *     → normalize (bỏ dấu, lowercase, trim) [via shared text-utils]
  *     → tokenize
  *     → score mỗi film (exact > prefix > token > fuzzy)
  *     → boost theo độ phổ biến (nhiều nguồn = phổ biến hơn)
@@ -11,18 +11,23 @@
  */
 
 import { normalizeText } from "@/lib/movie-normalizer";
+import { normalizeForSearch, tokenizeQuery } from "@/lib/text-utils";
 import type { NormalizedFilmItem } from "@/lib/movie-normalizer";
 
 // ── Text helpers ──────────────────────────────────────────────────
 
-/** Bỏ dấu tiếng Việt, lowercase, chỉ giữ a-z0-9 và space */
+/**
+ * Bỏ dấu tiếng Việt, lowercase, chỉ giữ a-z0-9 và space.
+ * Dùng shared normalizeForSearch (character-map based) làm primary,
+ * fallback sang normalizeText (NFD-based) để backward-compat.
+ */
 export function normalize(text: string): string {
-  return normalizeText(text);
+  return normalizeForSearch(text) || normalizeText(text);
 }
 
-/** Tách thành mảng token, bỏ token rỗng */
+/** Tách thành mảng token, bỏ token rỗng và stopwords */
 function tokenize(text: string): string[] {
-  return normalize(text).split(" ").filter(Boolean);
+  return tokenizeQuery(text);
 }
 
 // ── Fuzzy: Levenshtein distance (capped) ─────────────────────────
@@ -67,14 +72,44 @@ export interface ScoredFilm extends NormalizedFilmItem {
 }
 
 const WEIGHTS = {
-  exact: 1000, // "avengers endgame" === "avengers endgame"
+  exact: 1200, // "avengers endgame" === "avengers endgame"
+  slugExact: 1000,
   prefix: 600, // starts with query
-  tokenAllMatch: 400, // tất cả token đều match
+  tokenAllMatch: 450, // tất cả token đều match
   tokenPartial: 200, // một số token match
   fuzzy: 100, // gần giống
-  multiSource: 80, // xuất hiện ở nhiều nguồn
-  yearBoost: 20, // phim mới hơn được ưu tiên nhẹ
+  multiSource: 120, // xuất hiện ở nhiều nguồn = uy tín/phổ biến hơn
+  yearBoost: 30, // phim mới hơn được ưu tiên nhẹ
+  qualityHD: 200, // HD / FHD / 4K
+  hasPoster: 100, // có ảnh poster hợp lệ
+  trailerPenalty: -700, // Trừ điểm nặng phim Trailer / Cam / Preview
 };
+
+/** Nhận diện phim chất lượng kém, trailer, review, clip phụ */
+function isLowQualityOrTrailer(film: NormalizedFilmItem): boolean {
+  const text = `${film.name || ""} ${film.origin_name || ""} ${film.slug || ""}`.toLowerCase();
+  const quality = String(film.quality || "").toLowerCase();
+  const episode = String(film.episode_current || "").toLowerCase();
+
+  if (
+    quality.includes("trailer") ||
+    episode.includes("trailer") ||
+    text.includes("trailer") ||
+    text.includes("hau truong") ||
+    text.includes("hậu trường") ||
+    text.includes("review") ||
+    text.includes("preview") ||
+    text.includes("ban cam") ||
+    text.includes("bản cam") ||
+    text.includes("hdcam") ||
+    text.includes("hd-cam") ||
+    text.includes("tap 0") ||
+    text.includes("tập 0")
+  ) {
+    return true;
+  }
+  return false;
+}
 
 function scoreFilm(
   film: NormalizedFilmItem,
@@ -88,9 +123,12 @@ function scoreFilm(
   let score = 0;
   let matchType: ScoredFilm["_matchType"] = "none";
 
-  // ── 1. Exact match ──
+  // ── 1. Exact match trên Name, Origin Name, hoặc Slug ──
   if (normName === normQuery || normOrigin === normQuery) {
     score += WEIGHTS.exact;
+    matchType = "exact";
+  } else if (normSlug === normQuery || normSlug.replace(/-/g, " ") === normQuery) {
+    score += WEIGHTS.slugExact;
     matchType = "exact";
   }
 
@@ -157,10 +195,25 @@ function scoreFilm(
     }
   }
 
-  // ── 6. Multi-source boost (phim phổ biến hơn) ──
+  // ── 6. Quality & Completeness Boosts ──
+  const qStr = String(film.quality || "").toLowerCase();
+  if (qStr.includes("4k") || qStr.includes("fhd") || qStr.includes("hd") || qStr.includes("bluray")) {
+    score += WEIGHTS.qualityHD;
+  }
+
+  if (film.poster_url || film.thumb_url) {
+    score += WEIGHTS.hasPoster;
+  }
+
+  // ── 7. Trailer / CAM / Review Penalty (hạ sâu phim rác, chỉ xem trailer) ──
+  if (isLowQualityOrTrailer(film)) {
+    score += WEIGHTS.trailerPenalty;
+  }
+
+  // ── 8. Multi-source boost (phim phổ biến hơn) ──
   score += ((film._duplicateCount || 1) - 1) * WEIGHTS.multiSource;
 
-  // ── 7. Year boost (phim mới hơn) ──
+  // ── 9. Year boost (phim mới hơn) ──
   if (film.year && film.year > 2010) {
     score += Math.min((film.year - 2010) * 0.5, WEIGHTS.yearBoost);
   }
@@ -178,19 +231,27 @@ export function rankSearchResults(
   films: NormalizedFilmItem[],
   query: string,
 ): ScoredFilm[] {
-  if (!query.trim())
+  // Sanitize query: bỏ dấu gạch chéo nhầm, ký tự lạ
+  const sanitizedQuery = (query || "")
+    .replace(/[\\/()[\]{}*+?^$|#@~`"']/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!sanitizedQuery)
     return films.map((f) => ({
       ...f,
       _searchScore: 0,
       _matchType: "none" as const,
     }));
 
-  const normQuery = normalize(query);
-  const queryTokens = tokenize(query);
+  const normQuery = normalize(sanitizedQuery);
+  const queryTokens = tokenize(sanitizedQuery);
 
-  return films
-    .map((film) => scoreFilm(film, normQuery, queryTokens))
-    .filter((f) => f._searchScore > 0 || films.length <= 10)
+  const scored = films.map((film) => scoreFilm(film, normQuery, queryTokens));
+
+  // Sắp xếp: điểm cao nhất lên đầu. Nếu cùng điểm, ưu tiên phim có ảnh và chất lượng HD
+  return scored
+    .filter((f) => f._searchScore > -200 || films.length <= 6)
     .sort((a, b) => b._searchScore - a._searchScore);
 }
 

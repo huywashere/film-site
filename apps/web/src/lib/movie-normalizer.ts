@@ -88,23 +88,34 @@ function getYear(record: Record<string, unknown>): number | undefined {
   return readNumber(record.year);
 }
 
+function cleanTitleForDedupe(text: string): string {
+  if (!text) return "";
+  return normalizeText(text)
+    .replace(/\b(phim|movie|tap\s*\d+|phan\s*\d+|season\s*\d+|full|hd|cam|hdcam|vietsub|thuyet minh|long tieng|chieu rap)\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function getCanonicalKey(record: Record<string, unknown>): string {
-  const tmdbId = readNestedString(record, "tmdb", "id");
-  const tmdbType = readNestedString(record, "tmdb", "type") || "movie";
+  const tmdbId = readNestedString(record, "tmdb", "id") || readString(record.tmdbId);
+  const tmdbType = readNestedString(record, "tmdb", "type") || readString(record.mediaType) || "movie";
   if (tmdbId && tmdbId !== "0") return `tmdb:${tmdbType}:${tmdbId}`;
 
-  const imdbId = readNestedString(record, "imdb", "id");
+  const imdbId = readNestedString(record, "imdb", "id") || readString(record.imdbId);
   if (imdbId && imdbId !== "0") return `imdb:${imdbId.toLowerCase()}`;
 
   const year = getYear(record);
-  const title = getOriginName(record) || getFilmName(record);
-  const normalizedTitle = normalizeText(title);
-  if (year && normalizedTitle) return `title-year:${normalizedTitle}:${year}`;
+  const name = cleanTitleForDedupe(getFilmName(record) || "");
+  const originName = cleanTitleForDedupe(getOriginName(record) || "");
+  const slug = cleanTitleForDedupe(readString(record.slug) || "");
 
-  const slug = readString(record.slug);
-  if (slug) return `slug:${normalizeText(slug)}`;
+  // Use origin_name if available (standardized international title), otherwise name or slug
+  const primaryTitle = originName || name || slug;
+  if (primaryTitle) {
+    return year ? `film:${primaryTitle}:${year}` : `film:${primaryTitle}`;
+  }
 
-  return `title:${normalizedTitle || "unknown"}`;
+  return `title:${name || slug || "unknown"}`;
 }
 
 function sourcePriority(source: MovieSource): number {

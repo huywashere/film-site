@@ -21,10 +21,7 @@ import {
   Play,
 } from "lucide-react";
 import { movieApi } from "@/lib/api";
-import {
-  type FilmItem,
-  resolveImageUrl,
-} from "@/components/film/FilmCard";
+import { type FilmItem, resolveImageUrl } from "@/components/film/FilmCard";
 import { useToast } from "@/providers/ToastProvider";
 import {
   createWatchPartySocket,
@@ -34,13 +31,14 @@ import {
 import { deduplicateSectionRow } from "@/lib/recommendation-engine";
 import { cardFont } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
+import type { Socket } from "socket.io-client";
 
 type LobbyState = "connecting" | "online" | "offline";
 
 export default function WatchPartyListPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const socket = useMemo(() => createWatchPartySocket(), []);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [rooms, setRooms] = useState<WatchPartyLobbyRoom[]>([]);
   const [lobbyState, setLobbyState] = useState<LobbyState>("connecting");
   const [inputRoomCode, setInputRoomCode] = useState("");
@@ -80,7 +78,8 @@ export default function WatchPartyListPage() {
   });
 
   const defaultMovies: FilmItem[] = useMemo(() => {
-    const list = trendingData?.items || trendingData?.data?.items || trendingData || [];
+    const list =
+      trendingData?.items || trendingData?.data?.items || trendingData || [];
     return deduplicateSectionRow(Array.isArray(list) ? list : []);
   }, [trendingData]);
 
@@ -98,11 +97,12 @@ export default function WatchPartyListPage() {
   // Socket lobby room updates
   useEffect(() => {
     let active = true;
+    let activeSocket: Socket | null = null;
 
     const requestRooms = () => {
       if (!active) return;
       setLobbyState("online");
-      socket.emit("rooms:list", {}, (result: SocketAck) => {
+      activeSocket?.emit("rooms:list", {}, (result: SocketAck) => {
         if (active && result && result.ok) {
           setRooms(result.rooms || []);
         }
@@ -124,20 +124,27 @@ export default function WatchPartyListPage() {
       if (active) setLobbyState("connecting");
     };
 
-    socket.on("connect", requestRooms);
-    socket.on("rooms:changed", handleRooms);
-    socket.on("disconnect", handleOffline);
-    socket.on("connect_error", handleOffline);
-    socket.on("reconnecting", handleConnecting);
-
-    socket.connect();
+    void createWatchPartySocket().then((nextSocket) => {
+      if (!active) {
+        nextSocket.disconnect();
+        return;
+      }
+      activeSocket = nextSocket;
+      setSocket(nextSocket);
+      nextSocket.on("connect", requestRooms);
+      nextSocket.on("rooms:changed", handleRooms);
+      nextSocket.on("disconnect", handleOffline);
+      nextSocket.on("connect_error", handleOffline);
+      nextSocket.on("reconnecting", handleConnecting);
+      nextSocket.connect();
+    });
 
     return () => {
       active = false;
-      socket.removeAllListeners();
-      socket.disconnect();
+      activeSocket?.removeAllListeners();
+      activeSocket?.disconnect();
     };
-  }, [socket]);
+  }, []);
 
   const handleJoinByLink = (event: React.FormEvent) => {
     event.preventDefault();
@@ -182,6 +189,10 @@ export default function WatchPartyListPage() {
 
   const refreshLobby = () => {
     setLobbyState("connecting");
+    if (!socket) {
+      toast("Đang kết nối máy chủ xem chung.", "info");
+      return;
+    }
     if (!socket.connected) {
       socket.connect();
     } else {
@@ -233,7 +244,9 @@ export default function WatchPartyListPage() {
               Phòng Xem Chung
             </h1>
             <p className="text-xs sm:text-sm text-neutral-200 leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-              Thưởng thức phim điện ảnh và series cùng bạn bè với tính năng đồng bộ phát video tức thì, tua phim siêu tốc và trò chuyện trực tiếp không độ trễ.
+              Thưởng thức phim điện ảnh và series cùng bạn bè với tính năng đồng
+              bộ phát video tức thì, tua phim siêu tốc và trò chuyện trực tiếp
+              không độ trễ.
             </p>
           </div>
 
@@ -282,7 +295,10 @@ export default function WatchPartyListPage() {
                 <div className="absolute left-0 right-0 top-full mt-2 z-50 rounded-xl border border-white/10 bg-[#141720]/95 backdrop-blur-xl shadow-2xl p-2 space-y-1">
                   {isSearching ? (
                     <div className="flex items-center justify-center p-4 text-xs text-neutral-400 gap-2">
-                      <Loader2 size={14} className="animate-spin text-neutral-400" />
+                      <Loader2
+                        size={14}
+                        className="animate-spin text-neutral-400"
+                      />
                       <span>Đang tìm kiếm phim...</span>
                     </div>
                   ) : searchMovies.length === 0 ? (
@@ -396,8 +412,13 @@ export default function WatchPartyListPage() {
             </div>
           ) : rooms.length === 0 ? (
             <div className="py-8 text-center text-xs text-neutral-500 space-y-1">
-              <p className="font-semibold text-neutral-400">Hiện tại chưa có phòng công khai nào.</p>
-              <p className="text-[11px] text-neutral-600">Tìm kiếm phim ở trên hoặc bấm "Tạo phòng" để bắt đầu xem cùng bạn bè!</p>
+              <p className="font-semibold text-neutral-400">
+                Hiện tại chưa có phòng công khai nào.
+              </p>
+              <p className="text-[11px] text-neutral-600">
+                Tìm kiếm phim ở trên hoặc bấm "Tạo phòng" để bắt đầu xem cùng
+                bạn bè!
+              </p>
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -483,7 +504,8 @@ export default function WatchPartyListPage() {
                       {selectedMovie.name}
                     </h4>
                     <p className="text-xs text-neutral-400 truncate">
-                      {selectedMovie.origin_name || `${selectedMovie.year || 2026}`}
+                      {selectedMovie.origin_name ||
+                        `${selectedMovie.year || 2026}`}
                     </p>
                   </div>
                 </div>

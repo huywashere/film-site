@@ -160,23 +160,42 @@ export const kkphimApi = {
       const allItems: any[] = [];
       const seenSlugs = new Set<string>();
 
-      // 1. Truy vấn song song đồng thời các từ khóa mở rộng (Anh + Việt + Tên gốc) qua KKPhim
-      const searchPromises = candidateTerms
-        .slice(0, 3)
-        .map((term) =>
-          fetchKKPhim(
-            `/v1/api/tim-kiem?keyword=${encodeURIComponent(term)}&page=${page}&limit=${limit}`,
-          ).catch(() => null),
-        );
+      // ── OPTIMIZED: 1 KKPhim request thay vì 3 parallel requests ──────────
+      // candidateTerms[0] là primary keyword (query gốc / normalized).
+      // Aliases trong candidateTerms được dùng cho client-side re-ranking,
+      // KHÔNG gửi thêm network request cho mỗi alias nữa.
+      const primaryTerm = candidateTerms[0] || cleanKw;
+      const kkData = await fetchKKPhim(
+        `/v1/api/tim-kiem?keyword=${encodeURIComponent(primaryTerm)}&page=${page}&limit=${limit}`,
+      ).catch(() => null);
 
-      const kkResults = await Promise.allSettled(searchPromises);
-      for (const res of kkResults) {
-        if (res.status === "fulfilled" && res.value) {
-          const items = res.value?.data?.items || res.value?.items || [];
-          for (const item of items) {
-            if (item?.slug && !seenSlugs.has(item.slug)) {
-              seenSlugs.add(item.slug);
-              allItems.push(item);
+      if (kkData) {
+        const items = kkData?.data?.items || kkData?.items || [];
+        for (const item of items) {
+          if (item?.slug && !seenSlugs.has(item.slug)) {
+            seenSlugs.add(item.slug);
+            allItems.push(item);
+          }
+        }
+      }
+
+      // Nếu kết quả ít (<5), thử thêm 1 secondary term (VN↔EN alternate)
+      // Tối đa 1 extra request — không phải 3 như trước
+      if (allItems.length < 5 && candidateTerms.length > 1) {
+        const secondTerm = candidateTerms.find(
+          (t) => t !== primaryTerm && t.length > 2,
+        );
+        if (secondTerm) {
+          const kkData2 = await fetchKKPhim(
+            `/v1/api/tim-kiem?keyword=${encodeURIComponent(secondTerm)}&page=${page}&limit=${limit}`,
+          ).catch(() => null);
+          if (kkData2) {
+            const items2 = kkData2?.data?.items || kkData2?.items || [];
+            for (const item of items2) {
+              if (item?.slug && !seenSlugs.has(item.slug)) {
+                seenSlugs.add(item.slug);
+                allItems.push(item);
+              }
             }
           }
         }
@@ -466,7 +485,12 @@ function getTotalPages(data: unknown): number | undefined {
 }
 
 async function searchAllSources(keyword: string, page = 1, limit = 24) {
-  const trimmed = keyword.trim();
+  // Sanitize query: bỏ ký tự đặc biệt, gạch chéo vô tình gõ nhầm
+  const trimmed = (keyword || "")
+    .replace(/[\\/()[\]{}*+?^$|#@~`"']/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
   if (!trimmed) {
     return {
       status: "success",
@@ -535,7 +559,9 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
   // Expand query thành nhiều biến thể để tăng recall
   const variants = expandQuery(trimmed);
   const primaryKeyword = variants[0];
+  const unaccentedKeyword = normalize(primaryKeyword);
   const encodedKeyword = encodeURIComponent(primaryKeyword);
+  const encodedUnaccented = encodeURIComponent(unaccentedKeyword);
 
   // Gọi song song tất cả nguồn với primary keyword
   const requests: Array<{
@@ -558,12 +584,13 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
       : []),
     {
       source: "nguonc",
+      // NguonC API hoạt động tốt nhất với từ khoá không dấu
       request: () =>
-        fetchNguonc(`/films/search?keyword=${encodedKeyword}&page=${page}`),
+        fetchNguonc(`/films/search?keyword=${encodedUnaccented}&page=${page}`).catch(() => null),
     },
     {
       source: "vsmov",
-      request: () => vsmovApi.search(primaryKeyword, page),
+      request: () => vsmovApi.search(primaryKeyword, page).catch(() => null),
     },
   ];
 
@@ -582,7 +609,7 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
   // This removes two network requests from the common search path.
   const primaryMerged = dedupeFilmsBySource(groups);
   const shouldExpandUpstream =
-    primaryMerged.length < Math.min(8, limit) &&
+    primaryMerged.length < Math.min(6, limit) &&
     variants.length > 1 &&
     variants[1] !== primaryKeyword;
 
@@ -594,13 +621,6 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
         {
           source: "kkphim",
           request: () => kkphimApi.search(variants[1], page, limit),
-        },
-        {
-          source: "ophim",
-          request: () =>
-            fetchOphim(
-              `/tim-kiem?keyword=${encodeURIComponent(variants[1])}&page=${page}`,
-            ),
         },
       ]
     : [];
@@ -617,10 +637,19 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
 
   // Merge tất cả groups (primary + extra)
   const allGroups = [...groups, ...extraGroups];
-  const merged =
+  let merged =
     extraGroups.length > 0 ? dedupeFilmsBySource(allGroups) : primaryMerged;
 
-  // ── Smart re-ranking với search engine ──
+  // ── Fallback thông minh: nếu tất cả nguồn upstream đều không có, tìm trong kho curated ──
+  if (merged.length === 0) {
+    const { searchLocalFilms } = await import("@/lib/smart-search");
+    const localMatches = searchLocalFilms(trimmed);
+    if (localMatches.length > 0) {
+      merged = dedupeFilmsBySource([{ source: "kkphim", items: localMatches }]);
+    }
+  }
+
+  // ── Smart re-ranking với search engine (boost HD/Full, hạ Trailer/Cam) ──
   const ranked = rankSearchResults(merged, trimmed);
 
   // Paginate sau khi rank

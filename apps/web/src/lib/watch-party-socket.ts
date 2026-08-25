@@ -1,4 +1,4 @@
-import { io, type Socket } from "socket.io-client";
+import type { Socket } from "socket.io-client";
 
 export type PlaybackAction = "play" | "pause" | "seek";
 
@@ -82,7 +82,8 @@ function getSocketOrigin() {
   }
 }
 
-export function createWatchPartySocket(): Socket {
+export async function createWatchPartySocket(): Promise<Socket> {
+  const { io } = await import("socket.io-client");
   return io(`${getSocketOrigin()}/watch-party`, {
     autoConnect: false,
     withCredentials: true,

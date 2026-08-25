@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import WatchPage from "./WatchPageClient";
 import { normalizeMovieArtworkUrl } from "@/lib/movie-image-url";
 import { safeJsonLd } from "@/lib/safe-json-ld";
+import {
+  getMovieFromPageData,
+  getMoviePageData,
+} from "@/lib/server/movie-page-data";
 
-export const dynamic = "force-dynamic";
 export const revalidate = 3600;
 
 interface PageProps {
@@ -11,37 +14,6 @@ interface PageProps {
   searchParams?:
     | Promise<{ [key: string]: string | string[] | undefined }>
     | { [key: string]: string | string[] | undefined };
-}
-
-async function fetchFilmMetadata(slug: string) {
-  const cleanSlug = encodeURIComponent(slug.trim());
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 3500);
-
-  try {
-    const res = await fetch(`https://phimapi.com/phim/${cleanSlug}`, {
-      signal: controller.signal,
-      next: { revalidate: 3600 },
-    });
-    clearTimeout(timeoutId);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    return data?.movie || data?.data?.item || null;
-  } catch (_err) {
-    clearTimeout(timeoutId);
-    try {
-      const resOphim = await fetch(`https://ophim1.com/phim/${cleanSlug}`, {
-        next: { revalidate: 3600 },
-      });
-      if (resOphim.ok) {
-        const dataOphim = await resOphim.json();
-        return dataOphim?.movie || dataOphim?.data?.item || null;
-      }
-    } catch {
-      // Ignore fallback error
-    }
-    return null;
-  }
 }
 
 export async function generateMetadata({
@@ -54,7 +26,7 @@ export async function generateMetadata({
   const epParam = resolvedSearchParams?.ep;
   const epNumber = Array.isArray(epParam) ? epParam[0] : epParam;
 
-  const movie = await fetchFilmMetadata(slug);
+  const movie = getMovieFromPageData(await getMoviePageData(slug));
 
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL || "https://film-site-web.vercel.app";
@@ -138,7 +110,8 @@ export async function generateMetadata({
 export default async function WatchPageWrapper({ params }: PageProps) {
   const resolvedParams = await params;
   const slug = resolvedParams?.slug || "";
-  const movie = await fetchFilmMetadata(slug);
+  const initialData = await getMoviePageData(slug);
+  const movie = getMovieFromPageData(initialData);
 
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL || "https://film-site-web.vercel.app";
@@ -169,7 +142,7 @@ export default async function WatchPageWrapper({ params }: PageProps) {
           dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
         />
       )}
-      <WatchPage />
+      <WatchPage initialData={initialData} />
     </>
   );
 }

@@ -25,6 +25,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install Go
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5
+        with:
+          go-version: "1.23.x"
+          cache-dependency-path: services/media-gateway/go.sum
+
+      - name: Test Gin media gateway
+        working-directory: services/media-gateway
+        run: |
+          go test ./...
+          go vet ./...
+
+      - name: Build Gin media gateway image
+        run: docker build --tag netphim/media-gateway:ci services/media-gateway
+
       - name: Install pnpm
         uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
         with:

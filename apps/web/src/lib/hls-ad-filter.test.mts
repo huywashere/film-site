@@ -77,3 +77,16 @@ test("marks only blocks with explicit ad URLs as skippable", () => {
     { start: 30, end: 41, duration: 11, skippable: true },
   ]);
 });
+
+test("a malformed cue-out cannot remove the rest of a movie", () => {
+  const segments = Array.from(
+    { length: 40 },
+    (_, index) => `#EXTINF:6,\nsegment-${index}.ts`,
+  ).join("\n");
+  const result = filterHlsManifest(
+    `#EXTM3U\n#EXT-X-CUE-OUT\n${segments}\n`,
+    "https://cdn.example.com/movie/index.m3u8",
+  );
+  assert.ok(result.stats.removedSegments <= 30);
+  assert.match(result.manifest, /segment-39\.ts/);
+});

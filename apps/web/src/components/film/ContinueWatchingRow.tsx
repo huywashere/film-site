@@ -14,19 +14,13 @@ import { DashPagination } from "./DashPagination";
 import { cardFont } from "@/lib/fonts";
 import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
 import { useTranslation } from "@/store/langStore";
+import { buildArtworkCandidates } from "@/lib/image-cdn";
 
 import "swiper/css";
 import "swiper/css/navigation";
 
 interface ContinueWatchingRowProps {
   fallbackFilms?: FilmItem[];
-}
-
-function imageProxyFallback(url: string): string | null {
-  if (!/^https?:\/\//i.test(url) || url.includes("/api/image-proxy?")) {
-    return null;
-  }
-  return `/api/image-proxy?url=${encodeURIComponent(url)}`;
 }
 
 function HistoryArtwork({
@@ -70,29 +64,13 @@ function HistoryArtwork({
     useTmdbArtwork(filmForArtwork, needsTmdb);
 
   const candidates = useMemo(() => {
-    const result: string[] = [];
-    const add = (value?: string | null) => {
-      if (value && !result.includes(value)) {
-        result.push(value);
-        if (value.startsWith("http")) {
-          const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(value)}`;
-          if (!result.includes(wsrv)) result.push(wsrv);
-        }
-      }
-    };
-
-    add(primary);
-    add(alternate);
-    add(primary ? imageProxyFallback(primary) : null);
-    add(alternate ? imageProxyFallback(alternate) : null);
+    const sources: Array<string | null | undefined> = [primary, alternate];
     if (landscape) {
-      add(tmdbBackdropUrl);
-      add(tmdbPosterUrl);
+      sources.push(tmdbBackdropUrl, tmdbPosterUrl);
     } else {
-      add(tmdbPosterUrl);
-      add(tmdbBackdropUrl);
+      sources.push(tmdbPosterUrl, tmdbBackdropUrl);
     }
-    return result;
+    return buildArtworkCandidates(sources, landscape ? "thumbnail" : "card");
   }, [alternate, landscape, primary, tmdbBackdropUrl, tmdbPosterUrl]);
 
   const src = candidates[candidateIndex];

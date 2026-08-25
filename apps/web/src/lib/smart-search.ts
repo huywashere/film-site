@@ -1,20 +1,13 @@
 import { FilmItem } from "@/components/film/FilmCard";
 import { CURATED_HERO_FRANCHISE_POOL } from "@/lib/curated-hero-pool";
+import { AliasTrie, normalizeForSearch } from "@/lib/text-utils";
 
 /**
- * Remove Vietnamese accents and special characters for ultra-fast fuzzy matching
+ * Backward-compat alias — prefer normalizeForSearch from text-utils in new code.
+ * Uses the shared character-map based normalizer (faster than NFD.normalize).
  */
 export function removeAccents(str: string): string {
-  if (!str) return "";
-  return str
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D")
-    .replace(/[^a-zA-Z0-9\s]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
+  return normalizeForSearch(str);
 }
 
 /**
@@ -119,14 +112,54 @@ const FRANCHISE_ALIASES: Record<string, string[]> = {
   "dai chien titan": ["Attack on Titan", "Shingeki no Kyojin"],
   "dragon ball": ["Dragon Ball", "Bảy Viên Ngọc Rồng", "Dragon Ball Super"],
   "bay vien ngoc rong": ["Dragon Ball", "Bảy Viên Ngọc Rồng"],
+  "spirited away": ["Spirited Away", "Vùng Đất Linh Hồn"],
+  "vung dat linh hon": ["Spirited Away", "Vùng Đất Linh Hồn"],
+  "your name": ["Your Name", "Kimi no Na wa"],
+  "kung fu panda": ["Kung Fu Panda", "Kungfu Panda"],
+  "kungfu panda": ["Kung Fu Panda", "Kungfu Panda"],
+  "how to train your dragon": ["How to Train Your Dragon", "Bí Kíp Luyện Rồng"],
+  "bi kip luyen rong": ["How to Train Your Dragon", "Bí Kíp Luyện Rồng"],
+
+  // Special Queries & Common Searches
+  "american sniper": ["American Sniper", "Lính Bắn Tỉa Mỹ"],
+  "linh ban tia my": ["American Sniper", "Lính Bắn Tỉa Mỹ"],
+  "super girl": ["Supergirl", "Nữ Siêu Nhân"],
+  "supergirl": ["Supergirl", "Nữ Siêu Nhân"],
+  "nu sieu nhan": ["Supergirl", "Nữ Siêu Nhân"],
+  "hoi chuong la": ["Hồi Chuông Lạ", "For Whom the Bell Tolls"],
+  "top gun": ["Top Gun: Maverick", "Top Gun", "Phi Công Siêu Đẳng"],
+  "top gun maverick": ["Top Gun: Maverick", "Phi Công Siêu Đẳng"],
+  "peaky blinders": ["Peaky Blinders", "Bóng Ma Anh Quốc"],
+  "bong ma anh quoc": ["Peaky Blinders", "Bóng Ma Anh Quốc"],
+  "arcane": ["Arcane", "Liên Minh Huyền Thoại"],
+  "godzilla": ["Godzilla x Kong", "Godzilla", "Quái Vật Godzilla"],
+  "aquaman": ["Aquaman", "Đế Vương Atlantis"],
+  "de vuong atlantis": ["Aquaman", "Đế Vương Atlantis"],
 };
 
+// ── Build Trie một lần khi module load (O(1) amortized per query) ──────────
+const ALIAS_TRIE = new AliasTrie();
+
+for (const [key, aliases] of Object.entries(FRANCHISE_ALIASES)) {
+  const normKey = normalizeForSearch(key);
+  if (normKey) {
+    ALIAS_TRIE.insert(normKey, [
+      ...aliases,
+      ...aliases.map((a) => normalizeForSearch(a)).filter(Boolean),
+    ]);
+  }
+}
+
 /**
- * Get potential expanded search terms based on aliases and translations
+ * Get potential expanded search terms based on aliases and translations.
+ * Dùng Trie O(query.length) thay vì O(dict.size) linear scan.
  */
 export function getExpandedSearchTerms(query: string): string[] {
-  const clean = query.trim().toLowerCase();
-  const unacc = removeAccents(clean);
+  // Sanitize query: bỏ ký tự đặc biệt / slashes
+  const clean = (query || "").replace(/[\\/()[\]{}*+?^$|#@~`"']/g, " ").trim().toLowerCase();
+  if (!clean) return [];
+
+  const unacc = normalizeForSearch(clean);
   const terms = new Set<string>();
 
   terms.add(clean);
@@ -134,16 +167,18 @@ export function getExpandedSearchTerms(query: string): string[] {
     terms.add(unacc);
   }
 
-  // Check exact and substring alias matches
-  for (const [key, aliases] of Object.entries(FRANCHISE_ALIASES)) {
-    const normKey = removeAccents(key);
-    if (unacc === normKey || unacc.includes(normKey) || normKey.includes(unacc)) {
-      for (const alias of aliases) {
-        terms.add(alias);
-        const normAlias = removeAccents(alias);
-        if (normAlias) terms.add(normAlias);
-      }
-    }
+  // Also add compact term (e.g. "super girl" -> "supergirl")
+  const compact = clean.replace(/\s+/g, "");
+  if (compact !== clean) {
+    terms.add(compact);
+  }
+
+  // Trie-based alias lookup — O(query.length)
+  const trieMatches = ALIAS_TRIE.search(unacc);
+  for (const match of trieMatches) {
+    terms.add(match);
+    const normMatch = normalizeForSearch(match);
+    if (normMatch) terms.add(normMatch);
   }
 
   return Array.from(terms);
@@ -156,14 +191,14 @@ export function getExpandedSearchTerms(query: string): string[] {
 export function calculateFuzzyScore(query: string, target: string): number {
   if (!query || !target) return 0;
 
-  const q = removeAccents(query);
-  const t = removeAccents(target);
+  const q = normalizeForSearch(query);
+  const t = normalizeForSearch(target);
 
   if (t === q) return 100;
   if (t.startsWith(q)) return 95;
   if (t.includes(q)) return 85;
 
-  // Token-based matching
+  // Token-based matching — early exit khi score đủ cao
   const qTokens = q.split(" ").filter((tok) => tok.length > 0);
   const tTokens = t.split(" ").filter((tok) => tok.length > 0);
 
@@ -171,6 +206,8 @@ export function calculateFuzzyScore(query: string, target: string): number {
   for (const qTok of qTokens) {
     if (tTokens.some((tTok) => tTok.startsWith(qTok) || tTok.includes(qTok))) {
       matchedTokens++;
+      // Early exit: tất cả tokens đã match
+      if (matchedTokens === qTokens.length) break;
     }
   }
 
@@ -188,13 +225,17 @@ export function calculateFuzzyScore(query: string, target: string): number {
 /**
  * Instant in-memory search across a list of films (0ms latency)
  */
-export function searchLocalFilms(query: string, films: FilmItem[] = CURATED_HERO_FRANCHISE_POOL): FilmItem[] {
-  const clean = query.trim();
+export function searchLocalFilms(
+  query: string,
+  customFilms?: FilmItem[],
+): FilmItem[] {
+  const clean = (query || "").replace(/[\\/()[\]{}*+?^$|#@~`"']/g, " ").trim();
   if (!clean || clean.length < 1) return [];
 
+  const pool = customFilms && customFilms.length > 0 ? customFilms : CURATED_HERO_FRANCHISE_POOL;
   const expandedTerms = getExpandedSearchTerms(clean);
 
-  const scored = films
+  const scored = pool
     .map((film) => {
       let maxScore = 0;
 

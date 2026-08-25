@@ -353,6 +353,7 @@ export function filterHlsManifest(
   const pendingSegmentTags: string[] = [];
   const lines = content.replace(/\r\n/g, "\n").split("\n");
   let cueAdBreak = false;
+  let cueAdSecondsRemoved = 0;
   let timedAdSecondsRemaining = 0;
   let removedSinceLastMedia = false;
   let keptMediaSegments = 0;
@@ -402,6 +403,7 @@ export function filterHlsManifest(
 
     if (line.startsWith("#EXT-X-CUE-OUT")) {
       cueAdBreak = true;
+      cueAdSecondsRemoved = 0;
       stats.detectedBreaks++;
       stats.removedTags++;
       rememberReason(stats, "cue-out");
@@ -410,6 +412,7 @@ export function filterHlsManifest(
 
     if (line.startsWith("#EXT-X-CUE-IN")) {
       cueAdBreak = false;
+      cueAdSecondsRemoved = 0;
       timedAdSecondsRemaining = 0;
       stats.removedTags++;
       rememberReason(stats, "cue-in");
@@ -426,7 +429,7 @@ export function filterHlsManifest(
           const duration = Number.parseFloat(
             attributes.DURATION || attributes["PLANNED-DURATION"] || "0",
           );
-          if (Number.isFinite(duration) && duration > 0) {
+          if (Number.isFinite(duration) && duration > 0 && duration <= 180) {
             timedAdSecondsRemaining = Math.max(
               timedAdSecondsRemaining,
               duration,
@@ -492,8 +495,17 @@ export function filterHlsManifest(
     const uriKind = classifyUri(absoluteUrl, hasExtInf);
     const duration = parseDurationFromExtInf(pendingSegmentTags);
     const blockedByUrl = isLikelyAdUrl(absoluteUrl);
-    const blockedByMarker =
-      uriKind === "segment" && (cueAdBreak || timedAdSecondsRemaining > 0);
+    let blockedByMarker =
+      uriKind === "segment" &&
+      duration > 0 &&
+      (cueAdBreak || timedAdSecondsRemaining > 0);
+    // A malformed CUE-OUT without CUE-IN must never remove the remaining
+    // movie and make the player jump to its end.
+    if (cueAdBreak && cueAdSecondsRemoved + duration > 180) {
+      cueAdBreak = false;
+      cueAdSecondsRemoved = 0;
+      blockedByMarker = timedAdSecondsRemaining > 0 && duration > 0;
+    }
 
     if (blockedByUrl || blockedByMarker) {
       if (uriKind === "segment") recordAdMarker(duration);
@@ -503,6 +515,7 @@ export function filterHlsManifest(
       removedSinceLastMedia = uriKind === "segment" || removedSinceLastMedia;
       if (blockedByUrl) rememberReason(stats, "uri");
       if (blockedByMarker) rememberReason(stats, "marker");
+      if (blockedByMarker && cueAdBreak) cueAdSecondsRemoved += duration;
       if (timedAdSecondsRemaining > 0) {
         timedAdSecondsRemaining = Math.max(
           0,

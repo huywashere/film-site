@@ -1,3 +1,5 @@
+import { buildArtworkCandidates } from "@/lib/image-cdn";
+
 const IMAGE_PROXY_PATH = "/api/image-proxy";
 
 export const HERO_LOCAL_FALLBACK =
@@ -76,7 +78,8 @@ export function buildHeroImageCandidates(input: {
 }): string[] {
   const candidates: string[] = [];
   const add = (candidate: string | null | undefined) => {
-    if (candidate && !candidates.includes(candidate)) candidates.push(candidate);
+    if (candidate && !candidates.includes(candidate))
+      candidates.push(candidate);
   };
 
   for (const value of [input.heroBackdrop, input.thumbUrl, input.posterUrl]) {
@@ -162,17 +165,9 @@ export function buildHeroCardImageCandidates(
     }
   }
 
-  const fallbacks: string[] = [];
-  for (const url of direct) {
-    // TMDB's edge supports CORS and card-specific sizes reliably. Provider
-    // images retain two relay fallbacks for regional CDN failures.
-    if (!isTmdbImage(url)) {
-      fallbacks.push(`https://wsrv.nl/?url=${encodeURIComponent(url)}`);
-    }
-    fallbacks.push(
-      `${IMAGE_PROXY_PATH}?url=${encodeURIComponent(url)}&strict=1`,
-    );
-  }
-
-  return [...direct, ...fallbacks.filter((url, index, all) => all.indexOf(url) === index)];
+  return buildArtworkCandidates(
+    direct,
+    variant === "poster" ? "poster" : "thumbnail",
+    { strictProxy: true },
+  );
 }
