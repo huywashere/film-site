@@ -1,4 +1,8 @@
-# ☸️ CineVerse Production Kubernetes Architecture & Manifests
+# Kubernetes manifests (future expansion only)
+
+> Trạng thái: **không được bật trên VPS hiện tại**. Production hiện chạy bằng
+> Docker Compose với OpenResty. Thư mục này chỉ được giữ để chuẩn bị mở rộng
+> sang cluster sau này và không được gọi từ CI/CD mặc định.
 
 Hệ thống kiến trúc Kubernetes dành cho ứng dụng **CineVerse** được thiết kế đáp ứng các tiêu chuẩn sản xuất (Production-Grade):
 
@@ -19,7 +23,7 @@ Hệ thống kiến trúc Kubernetes dành cho ứng dụng **CineVerse** đư�
 
 ### 1. Triển khai bằng 1 câu lệnh bash
 ```bash
-IMAGE_TAG=<git-commit-sha> bash k8s/deploy.sh
+ENABLE_K8S_DEPLOY=true IMAGE_TAG=<git-commit-sha> bash k8s/deploy.sh
 ```
 
 ### 2. Kiểm tra trạng thái các Pods và Autoscaler

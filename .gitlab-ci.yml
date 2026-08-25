@@ -127,6 +127,21 @@ build:web:
     - docker push "$REGISTRY_IMAGE/web:latest"
     - 'echo "✅ Web image pushed: $REGISTRY_IMAGE/web:$IMAGE_TAG"'
 
+build:media-gateway:
+  <<: *build_base
+  script:
+    - docker build --tag "$REGISTRY_IMAGE/media-gateway:$IMAGE_TAG" --tag "$REGISTRY_IMAGE/media-gateway:latest" services/media-gateway
+    - docker push "$REGISTRY_IMAGE/media-gateway:$IMAGE_TAG"
+    - docker push "$REGISTRY_IMAGE/media-gateway:latest"
+
+build:openresty:
+  <<: *build_base
+  script:
+    - docker build --file openresty/Dockerfile --tag "$REGISTRY_IMAGE/openresty:$IMAGE_TAG" --tag "$REGISTRY_IMAGE/openresty:latest" .
+    - docker run --rm --add-host web:127.0.0.1 --add-host api:127.0.0.1 --add-host media-gateway:127.0.0.1 "$REGISTRY_IMAGE/openresty:$IMAGE_TAG" /usr/local/openresty/bin/openresty -t
+    - docker push "$REGISTRY_IMAGE/openresty:$IMAGE_TAG"
+    - docker push "$REGISTRY_IMAGE/openresty:latest"
+
 # ══════════════════════════════════════════════════════
 # STAGE 3: DEPLOY
 # SSH vào VPS, pull image mới, restart services
@@ -169,6 +184,8 @@ deploy:production:
   needs:
     - job: build:api
     - job: build:web
+    - job: build:media-gateway
+    - job: build:openresty
   retry:
     max: 1
     when:

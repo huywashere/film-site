@@ -200,17 +200,19 @@ services:
       retries: 3
       start_period: 10s
 
-  # ── Nginx Reverse Proxy ─────────────────────────────────────
-  nginx:
-    image: nginx:alpine
-    container_name: cineverse_nginx
+  # ── OpenResty Reverse Proxy + Lua WAF ───────────────────────
+  openresty:
+    image: ${REGISTRY_IMAGE:-netphim}/openresty:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: openresty/Dockerfile
+    container_name: netphim_openresty
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
+      - ./ssl:/etc/openresty/ssl
       - nginx_cache:/var/cache/nginx
     depends_on:
       web:
@@ -221,6 +223,12 @@ services:
         condition: service_healthy
     networks:
       - cineverse_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost/openresty-health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   postgres_data:

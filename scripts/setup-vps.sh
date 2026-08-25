@@ -1,6 +1,6 @@
 #!/bin/bash
 # ══════════════════════════════════════════════════════════════════
-# CineVerse VPS Setup Script
+# NetPhim VPS Setup Script
 # Hỗ trợ: Ubuntu 22.04 / 24.04 LTS
 # Chạy với: sudo bash setup-vps.sh
 # ══════════════════════════════════════════════════════════════════
@@ -26,7 +26,7 @@ if [[ $EUID -ne 0 ]]; then
    error "Script này phải chạy với sudo: sudo bash setup-vps.sh"
 fi
 
-header "CineVerse VPS Setup"
+header "NetPhim VPS Setup"
 info "Bắt đầu cài đặt môi trường VPS..."
 
 # ── Config (sửa nếu cần) ───────────────────────────────────────
@@ -96,14 +96,11 @@ else
 fi
 
 header "Bước 4: Cấu hình Firewall (UFW)"
-ufw --force reset > /dev/null 2>&1
-ufw default deny incoming
-ufw default allow outgoing
-ufw allow ssh        # Port 22
-ufw allow 80/tcp     # HTTP
-ufw allow 443/tcp    # HTTPS
-ufw --force enable
-log "Firewall đã được cấu hình"
+if ufw status | grep -q "Status: active"; then
+    log "Giữ nguyên UFW do Terraform đã giới hạn SSH và Cloudflare CIDR"
+else
+    error "UFW chưa hoạt động. Hãy provision VPS bằng terraform/ trước khi setup ứng dụng"
+fi
 
 header "Bước 5: Clone repository"
 mkdir -p "$APP_DIR"
@@ -152,26 +149,11 @@ else
     fi
 fi
 
-header "Bước 7: Cài đặt Cloudflare Tunnel (cloudflared)"
-if command -v cloudflared &> /dev/null; then
-    warn "cloudflared đã được cài đặt"
-else
-    curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | \
-        gpg --dearmor -o /usr/share/keyrings/cloudflare-main.gpg
-    echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] \
-        https://pkg.cloudflare.com/cloudflared $(lsb_release -cs) main" | \
-        tee /etc/apt/sources.list.d/cloudflared.list
-    apt-get update -qq
-    apt-get install -y -qq cloudflared
-    log "cloudflared đã được cài đặt"
-fi
-
-info "Để tạo Cloudflare Tunnel, chạy lệnh sau với user deploy:"
-echo ""
-echo "   sudo -u $DEPLOY_USER cloudflared tunnel login"
-echo "   sudo -u $DEPLOY_USER cloudflared tunnel create cineverse"
-echo "   sudo -u $DEPLOY_USER cloudflared tunnel route dns cineverse YOUR_DOMAIN"
-echo ""
+header "Bước 7: Chuẩn bị OpenResty TLS"
+mkdir -p "$APP_DIR/ssl"
+chown -R $DEPLOY_USER:$DEPLOY_USER "$APP_DIR/ssl"
+chmod 700 "$APP_DIR/ssl"
+log "OpenResty sẽ tạo chứng chỉ bootstrap nếu chưa có Cloudflare Origin CA"
 
 header "Bước 8: Build Docker images"
 info "Đây có thể mất 5-15 phút lần đầu..."
@@ -208,8 +190,8 @@ echo -e "📁 App directory: ${CYAN}$APP_DIR${NC}"
 echo -e "🐳 Xem logs: ${CYAN}cd $APP_DIR && docker compose logs -f${NC}"
 echo -e "🔄 Update app: ${CYAN}cd $APP_DIR && bash scripts/deploy.sh${NC}"
 echo ""
-warn "Tiếp theo: Cấu hình Cloudflare Tunnel để có HTTPS"
-echo "   Xem hướng dẫn trong: $APP_DIR/VPS_DEPLOY.md"
+warn "Cloudflare phải để proxy ON và SSL Full; chuyển Strict sau khi cài Origin CA"
+echo "   Xem hướng dẫn trong: $APP_DIR/terraform/README.md"
 
 # ── Bước 11: Tạo SSH key cho GitLab CI/CD ─────────────────────
 header "Bước 11: Tạo SSH key cho GitLab CI/CD (auto-deploy)"

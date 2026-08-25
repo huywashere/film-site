@@ -1,6 +1,6 @@
 # ── DigitalOcean Cloud Firewall & Security Group ───────────────────
 resource "digitalocean_firewall" "cineverse_firewall" {
-  name = "cineverse-production-firewall"
+  name = "netphim-production-firewall"
 
   droplet_ids = [digitalocean_droplet.cineverse_server.id]
 
@@ -18,13 +18,10 @@ resource "digitalocean_firewall" "cineverse_firewall" {
     source_addresses = var.cloudflare_origin_cidrs
   }
 
-  dynamic "inbound_rule" {
-    for_each = length(var.admin_ssh_cidrs) > 0 ? [1] : []
-    content {
-      protocol         = "tcp"
-      port_range       = "22"
-      source_addresses = var.admin_ssh_cidrs
-    }
+  inbound_rule {
+    protocol         = "tcp"
+    port_range       = "22"
+    source_addresses = var.admin_ssh_cidrs
   }
 
   # Allow all outbound traffic (Package updates, API fetches)

@@ -40,6 +40,27 @@ jobs:
       - name: Build Gin media gateway image
         run: docker build --tag netphim/media-gateway:ci services/media-gateway
 
+      - name: Build OpenResty edge image
+        run: |
+          docker build --tag netphim/openresty:ci --file openresty/Dockerfile .
+          docker run --rm --add-host web:127.0.0.1 --add-host api:127.0.0.1 --add-host media-gateway:127.0.0.1 netphim/openresty:ci /usr/local/openresty/bin/openresty -t
+
+      - name: Validate Docker Compose deployment
+        run: docker compose config --quiet
+        env:
+          POSTGRES_PASSWORD: ci-postgres-password
+          REDIS_PASSWORD: ci-redis-password
+          JWT_SECRET: ci-jwt-secret
+          JWT_REFRESH_SECRET: ci-jwt-refresh-secret
+          TOTP_ENCRYPTION_KEY: ci-totp-encryption-key
+          HLS_PROXY_SECRET: ci-hls-proxy-secret
+
+      - name: Validate Terraform infrastructure
+        run: |
+          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD/terraform:/infra" -w /infra hashicorp/terraform:1.15.5 fmt -check -recursive
+          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD/terraform:/infra" -w /infra hashicorp/terraform:1.15.5 init -backend=false -input=false
+          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD/terraform:/infra" -w /infra hashicorp/terraform:1.15.5 validate
+
       - name: Install pnpm
         uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
         with:

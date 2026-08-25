@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+if [[ "${ENABLE_K8S_DEPLOY:-false}" != "true" ]]; then
+  echo "Kubernetes deployment is disabled for the current VPS architecture."
+  echo "Set ENABLE_K8S_DEPLOY=true only after a cluster and its secrets are ready."
+  exit 1
+fi
+
 # CineVerse One-Click Production Kubernetes Deployment Script
 set -e
 

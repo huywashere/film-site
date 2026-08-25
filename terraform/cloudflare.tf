@@ -1,12 +1,6 @@
 # ── Cloudflare DNS Records ─────────────────────────────────────────
-data "cloudflare_zone" "cineverse" {
-  count   = var.cloudflare_zone_id != "" ? 1 : 0
-  zone_id = var.cloudflare_zone_id
-}
-
-# Root Domain Record (cineverse.vn -> Floating Static IP)
+# Root Domain Record -> Floating Static IP
 resource "cloudflare_record" "root" {
-  count   = var.cloudflare_zone_id != "" ? 1 : 0
   zone_id = var.cloudflare_zone_id
   name    = "@"
   value   = digitalocean_floating_ip.cineverse_ip.ip_address
@@ -15,9 +9,8 @@ resource "cloudflare_record" "root" {
   ttl     = 1
 }
 
-# WWW Domain Record (www.cineverse.vn)
+# WWW Domain Record
 resource "cloudflare_record" "www" {
-  count   = var.cloudflare_zone_id != "" ? 1 : 0
   zone_id = var.cloudflare_zone_id
   name    = "www"
   value   = digitalocean_floating_ip.cineverse_ip.ip_address
@@ -26,9 +19,8 @@ resource "cloudflare_record" "www" {
   ttl     = 1
 }
 
-# API Subdomain Record (api.cineverse.vn)
+# API Subdomain Record
 resource "cloudflare_record" "api" {
-  count   = var.cloudflare_zone_id != "" ? 1 : 0
   zone_id = var.cloudflare_zone_id
   name    = "api"
   value   = digitalocean_floating_ip.cineverse_ip.ip_address
@@ -39,12 +31,10 @@ resource "cloudflare_record" "api" {
 
 # ── Cloudflare SSL & Security Settings ────────────────────────────
 resource "cloudflare_zone_settings_override" "cineverse_security" {
-  count   = var.cloudflare_zone_id != "" ? 1 : 0
   zone_id = var.cloudflare_zone_id
 
   settings {
-    # Cloudflare provider value `strict` maps to dashboard mode “Full (strict)”.
-    ssl                      = "strict"
+    ssl                      = var.cloudflare_ssl_mode
     always_use_https         = "on"
     min_tls_version          = "1.2"
     brotli                   = "on"

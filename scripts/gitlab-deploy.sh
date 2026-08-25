@@ -41,6 +41,11 @@ header "CineVerse GitLab Deploy — $IMAGE_TAG"
 info "Registry: $REGISTRY_IMAGE"
 info "App dir:  $APP_DIR"
 
+# Compose and edge configuration are versioned with the application.
+git fetch origin main
+git checkout main
+git pull --ff-only origin main
+
 # Lưu tag cũ để rollback nếu cần
 PREV_TAG=""
 if [[ -f "$PREV_TAG_FILE" ]]; then
@@ -61,6 +66,12 @@ docker pull "$REGISTRY_IMAGE/api:$IMAGE_TAG"
 
 info "Pulling Web image: $REGISTRY_IMAGE/web:$IMAGE_TAG"
 docker pull "$REGISTRY_IMAGE/web:$IMAGE_TAG"
+
+info "Pulling media gateway image: $REGISTRY_IMAGE/media-gateway:$IMAGE_TAG"
+docker pull "$REGISTRY_IMAGE/media-gateway:$IMAGE_TAG"
+
+info "Pulling OpenResty image: $REGISTRY_IMAGE/openresty:$IMAGE_TAG"
+docker pull "$REGISTRY_IMAGE/openresty:$IMAGE_TAG"
 log "Pull hoàn tất"
 
 # ── Bước 3: Cập nhật IMAGE_TAG trong môi trường ───────────────
@@ -126,7 +137,7 @@ rollback_services() {
 
     warn "Rolling back API và Web về $PREV_TAG..."
     export IMAGE_TAG="$PREV_TAG"
-    docker compose up -d --no-deps --pull never api web || true
+    docker compose up -d --no-deps --pull never api web media-gateway openresty || true
     echo "$PREV_TAG" > "$PREV_TAG_FILE"
     error "Deploy $1 thất bại; đã yêu cầu rollback về $PREV_TAG"
 }
@@ -142,6 +153,11 @@ docker compose up -d --no-deps --pull never web
 wait_healthy web || rollback_services "$IMAGE_TAG"
 
 log "Tất cả services đã được restart"
+
+info "Restarting media gateway and OpenResty edge..."
+docker compose up -d --no-deps --pull never media-gateway openresty
+wait_healthy media-gateway || rollback_services "$IMAGE_TAG"
+wait_healthy openresty || rollback_services "$IMAGE_TAG"
 
 # ── Bước 6: Lưu tag đã deploy ─────────────────────────────────
 echo "$IMAGE_TAG" > "$PREV_TAG_FILE"

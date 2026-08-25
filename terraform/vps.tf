@@ -1,7 +1,6 @@
 # ── SSH Key Resource ──────────────────────────────────────────────
 resource "digitalocean_ssh_key" "admin" {
-  count      = var.ssh_public_key != "" ? 1 : 0
-  name       = "cineverse-admin-key"
+  name       = "netphim-admin-key"
   public_key = var.ssh_public_key
 }
 
@@ -12,11 +11,11 @@ resource "digitalocean_floating_ip" "cineverse_ip" {
 
 # ── VPS Server Instance (Droplet) ──────────────────────────────────
 resource "digitalocean_droplet" "cineverse_server" {
-  name     = "cineverse-production-vps"
+  name     = "netphim-production-vps"
   image    = "ubuntu-24-04-x64"
   region   = var.vps_region
   size     = var.vps_size
-  ssh_keys = var.ssh_public_key != "" ? [digitalocean_ssh_key.admin[0].id] : []
+  ssh_keys = [digitalocean_ssh_key.admin.id]
 
   # Auto-provisioning Script (Installs Docker, Docker Compose, Git, UFW Firewall)
   user_data = <<-EOF
@@ -42,9 +41,9 @@ resource "digitalocean_droplet" "cineverse_server" {
     # Configure UFW Security Firewall
     ufw default deny incoming
     ufw default allow outgoing
-    ufw allow 22/tcp
-    ufw allow 80/tcp
-    ufw allow 443/tcp
+    ${join("\n    ", [for cidr in var.admin_ssh_cidrs : "ufw allow from ${cidr} to any port 22 proto tcp"])}
+    ${join("\n    ", [for cidr in var.cloudflare_origin_cidrs : "ufw allow from ${cidr} to any port 80 proto tcp"])}
+    ${join("\n    ", [for cidr in var.cloudflare_origin_cidrs : "ufw allow from ${cidr} to any port 443 proto tcp"])}
     ufw --force enable
 
     # Create swap space (2GB) for stability
@@ -54,10 +53,10 @@ resource "digitalocean_droplet" "cineverse_server" {
     swapon /swapfile
     echo '/swapfile none swap sw 0 0' >> /etc/fstab
 
-    echo "✅ CineVerse Server Provisioning Complete!"
+    echo "NetPhim server provisioning complete"
   EOF
 
-  tags = ["cineverse", "production", "movie-site"]
+  tags = ["netphim", "production", "movie-site"]
 }
 
 # Assign Floating IP to Droplet

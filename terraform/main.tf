@@ -13,9 +13,9 @@ terraform {
 }
 
 provider "digitalocean" {
-  token = var.do_token != "" && !can(regex("^dop_v1_your_", var.do_token)) ? var.do_token : null
+  token = var.do_token
 }
 
 provider "cloudflare" {
-  api_token = var.cloudflare_api_token != "" && !can(regex("^your_", var.cloudflare_api_token)) ? var.cloudflare_api_token : null
+  api_token = var.cloudflare_api_token
 }

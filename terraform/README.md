@@ -1,41 +1,47 @@
-# 🚀 CineVerse - Terraform Infrastructure as Code (IaC)
+# NetPhim infrastructure
 
-Bộ mã nguồn tự động hóa 100% quy trình khởi tạo máy chủ VPS, cấu hình Domain Cloudflare CDN & Tường lửa Bảo mật cho hệ thống phim CineVerse.
+Terraform trong thư mục này chỉ quản lý:
 
----
+- DigitalOcean VPS và IP tĩnh;
+- DigitalOcean Firewall cùng UFW chỉ cho phép SSH từ CIDR quản trị;
+- HTTP/HTTPS từ dải IP Cloudflare;
+- DNS proxied và thiết lập TLS/WAF cơ bản của Cloudflare.
 
-### 📋 Hướng Dẫn Nhanh 3 Bước Chạy Terraform
+Ứng dụng, PostgreSQL, Redis, Gin media gateway và OpenResty được chạy bằng
+Docker Compose. Kubernetes không thuộc luồng deploy VPS hiện tại.
 
-#### 1️⃣ Tạo file cấu hình bí mật `terraform.tfvars`
-Sao chép file mẫu và điền Token của bạn:
-```bash
-cp terraform.tfvars.example terraform.tfvars
-```
-Điền các giá trị:
-- `do_token`: API Token tạo từ [DigitalOcean Control Panel](https://cloud.digitalocean.com/account/api/tokens).
-- `cloudflare_api_token`: API Token tạo từ [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens).
-- `cloudflare_zone_id`: Zone ID tên miền trong Cloudflare.
-- `domain_name`: Tên miền chính của bạn (ví dụ: `cineverse.vn`).
+## Chuẩn bị
 
-#### 2️⃣ Khởi tạo Terraform
 ```bash
 cd terraform
-terraform init
+cp terraform.tfvars.example terraform.tfvars
 ```
 
-#### 3️⃣ Xem trước & Khởi tạo Hạ Tầng Siêu Tốc
+Điền token thật, Zone ID, SSH public key, domain và IP public quản trị dạng
+`x.x.x.x/32`. `terraform.tfvars` đã bị Git bỏ qua, tuyệt đối không commit file
+này.
+
+## Kiểm tra trước khi tạo tài nguyên
+
 ```bash
-# Xem trước danh sách tài nguyên sắp được tạo
-terraform plan
-
-# Tạo toàn bộ Server, IP Tĩnh, Cloudflare DNS & Firewall trong 60 giây
-terraform apply -auto-approve
+terraform fmt -check -recursive
+terraform init
+terraform validate
+terraform plan -out=netphim.tfplan
 ```
 
----
+Đọc kỹ plan vì Droplet và Reserved IP phát sinh chi phí. Chỉ sau đó mới chạy:
 
-### 🌟 Kết quả tự động thu được:
-1. Máy chủ **Ubuntu 24.04 LTS (2 vCPU, 4GB RAM, 2GB Swap)** được khởi tạo tại Singapore (`sgp1`).
-2. Tự động cài sẵn **Docker, Docker Compose, Git, UFW Firewall**.
-3. **Cloudflare CDN** được bật sẵn đám mây màu cam (Proxy, Anti-DDoS, SSL Full/Strict).
-4. Tường lửa khóa toàn bộ cổng nội bộ (PostgreSQL `5432`, Redis `6379`), chỉ mở cổng `80`, `443` và `22`.
+```bash
+terraform apply netphim.tfplan
+```
+
+## TLS origin
+
+OpenResty tự tạo chứng chỉ bootstrap tự ký nếu `ssl/fullchain.pem` và
+`ssl/privkey.pem` chưa tồn tại. Vì vậy lần đầu để `cloudflare_ssl_mode = "full"`.
+Sau khi đặt Cloudflare Origin CA certificate vào hai đường dẫn trên, đổi thành
+`"strict"` và chạy lại `terraform apply`.
+
+Cloudflare proxy không thay thế firewall origin. Không thêm DNS-only record trỏ
+về IP VPS và không mở cổng 80/443 cho toàn Internet.

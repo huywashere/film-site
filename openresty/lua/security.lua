@@ -1,31 +1,57 @@
--- CineVerse OpenResty Lua Security & Rate Limiting Module
-local ffi = require("ffi")
-
 local _M = {}
 
-function _M.check_security()
-    local uri = ngx.var.uri
-    local client_ip = ngx.var.remote_addr
+local patterns = {
+    [[(?:union\s+(?:all\s+)?select|information_schema|sleep\s*\(|benchmark\s*\()]],
+    [[(?:<\s*script\b|javascript\s*:|onerror\s*=|onload\s*=)]],
+    [[(?:\.\./){3,}]],
+}
 
-    -- 1. Block common SQLi and XSS patterns at the Nginx edge
-    local args = ngx.req.get_uri_args()
-    for key, val in pairs(args) do
-        if type(val) == "string" then
-            if string.match(val, "(?i)union%s+select") or string.match(val, "<script>") then
-                ngx.log(ngx.WARN, "[OpenResty Security] Blocked malicious request from IP: ", client_ip)
-                ngx.status = ngx.HTTP_FORBIDDEN
-                ngx.header.content_type = "application/json; charset=utf-8"
-                ngx.say('{"success":false,"message":"Yêu cầu bị chặn bởi tường lửa OpenResty"}')
-                return ngx.exit(ngx.HTTP_FORBIDDEN)
-            end
+local function reject(reason)
+    ngx.log(ngx.WARN, "[netphim-waf] blocked ", reason, " ip=", ngx.var.remote_addr)
+    ngx.status = ngx.HTTP_FORBIDDEN
+    ngx.header.content_type = "application/json; charset=utf-8"
+    ngx.say('{"success":false,"message":"Yêu cầu không hợp lệ"}')
+    return ngx.exit(ngx.HTTP_FORBIDDEN)
+end
+
+local function inspect(value)
+    if type(value) ~= "string" then
+        return false
+    end
+    if #value > 8192 or value:find("\0", 1, true) then
+        return true
+    end
+    for _, pattern in ipairs(patterns) do
+        if ngx.re.find(value, pattern, "ijo") then
+            return true
         end
     end
+    return false
+end
 
-    -- 2. Security Headers Injection
-    ngx.header["X-Frame-Options"] = "SAMEORIGIN"
-    ngx.header["X-Content-Type-Options"] = "nosniff"
-    ngx.header["X-XSS-Protection"] = "1; mode=block"
-    ngx.header["Server"] = "CineVerse-Edge-Gateway"
+function _M.check()
+    if #(ngx.var.request_uri or "") > 12288 then
+        return reject("request-uri")
+    end
+
+    local args, err = ngx.req.get_uri_args(100)
+    if err == "truncated" then
+        return reject("too-many-query-args")
+    end
+    for key, value in pairs(args) do
+        if inspect(key) then
+            return reject("query-key")
+        end
+        if type(value) == "table" then
+            for _, item in ipairs(value) do
+                if inspect(item) then
+                    return reject("query-value")
+                end
+            end
+        elseif inspect(value) then
+            return reject("query-value")
+        end
+    end
 end
 
 return _M

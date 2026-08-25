@@ -1,5 +1,5 @@
 output "server_public_ip" {
-  description = "Elastic Static IP of the CineVerse VPS server"
+  description = "Elastic static IP of the NetPhim VPS server"
   value       = digitalocean_floating_ip.cineverse_ip.ip_address
 }
 
@@ -14,6 +14,6 @@ output "ssh_command" {
 }
 
 output "web_url" {
-  description = "Primary URL of CineVerse Website"
+  description = "Primary URL of NetPhim"
   value       = "https://${var.domain_name}"
 }

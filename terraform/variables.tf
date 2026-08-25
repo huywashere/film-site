@@ -2,26 +2,22 @@ variable "do_token" {
   description = "DigitalOcean API Token (Generate at DigitalOcean Control Panel -> API)"
   type        = string
   sensitive   = true
-  default     = ""
 }
 
 variable "cloudflare_api_token" {
   description = "Cloudflare API Token (Zone.DNS, Zone.Settings Permissions)"
   type        = string
   sensitive   = true
-  default     = ""
 }
 
 variable "cloudflare_zone_id" {
   description = "Cloudflare Zone ID for the domain"
   type        = string
-  default     = ""
 }
 
 variable "domain_name" {
-  description = "Primary domain name for CineVerse (e.g. cineverse.vn)"
+  description = "Primary domain name for NetPhim"
   type        = string
-  default     = "cineverse.vn"
 }
 
 variable "vps_region" {
@@ -39,13 +35,26 @@ variable "vps_size" {
 variable "ssh_public_key" {
   description = "SSH Public Key string to inject into VPS root user"
   type        = string
-  default     = ""
 }
 
 variable "admin_ssh_cidrs" {
   description = "Trusted public CIDRs allowed to reach SSH. Keep empty to disable public SSH."
   type        = list(string)
-  default     = []
+  validation {
+    condition     = length(var.admin_ssh_cidrs) > 0 && alltrue([for cidr in var.admin_ssh_cidrs : can(cidrhost(cidr, 0))])
+    error_message = "Provide at least one valid trusted CIDR for SSH administration."
+  }
+}
+
+variable "cloudflare_ssl_mode" {
+  description = "Use full for the generated bootstrap certificate; switch to strict after installing a Cloudflare Origin CA certificate."
+  type        = string
+  default     = "full"
+
+  validation {
+    condition     = contains(["full", "strict"], var.cloudflare_ssl_mode)
+    error_message = "cloudflare_ssl_mode must be full or strict."
+  }
 }
 
 variable "cloudflare_origin_cidrs" {
