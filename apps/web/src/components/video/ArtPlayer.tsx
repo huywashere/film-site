@@ -57,15 +57,19 @@ export default function ArtPlayer({
   onBuffering,
   onError,
   onPlaybackStateChange,
-  skipIntroStart,
-  skipIntroEnd,
-  skipOutroStart,
+  skipIntroStart = 0,
+  skipIntroEnd = 85,
 }: ArtPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Artplayer | null>(null);
 
   const detectedAdRangesRef = useRef<
-    Array<{ start: number; end: number; duration: number }>
+    Array<{
+      start: number;
+      end: number;
+      duration: number;
+      removed?: boolean;
+    }>
   >([]);
 
   const initialTimeRef = useRef(initialTime);
@@ -73,10 +77,8 @@ export default function ArtPlayer({
   const dbProgressRef = useRef(dbProgress);
   const skipIntroStartRef = useRef(skipIntroStart);
   const skipIntroEndRef = useRef(skipIntroEnd);
-  const skipOutroStartRef = useRef(skipOutroStart);
   skipIntroStartRef.current = skipIntroStart;
   skipIntroEndRef.current = skipIntroEnd;
-  skipOutroStartRef.current = skipOutroStart;
 
   const onReadyRef = useRef(onReady);
   const onEndedRef = useRef(onEnded);
@@ -95,6 +97,7 @@ export default function ArtPlayer({
 
   useEffect(() => {
     if (!containerRef.current || !url) return;
+    detectedAdRangesRef.current = [];
 
     const isHls =
       type === "hls" ||
@@ -122,6 +125,121 @@ export default function ArtPlayer({
       url: string;
       level: number;
     }> = [];
+
+    const formatTimelineTime = (seconds: number) => {
+      const safeSeconds = Math.max(0, Math.floor(seconds));
+      const hours = Math.floor(safeSeconds / 3600);
+      const minutes = Math.floor((safeSeconds % 3600) / 60);
+      const remainingSeconds = safeSeconds % 60;
+      return hours > 0
+        ? `${hours}:${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`
+        : `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+    };
+
+    const mergeDetectedAdRanges = (
+      nextRanges: Array<{
+        start: number;
+        end: number;
+        duration: number;
+        removed?: boolean;
+      }>,
+    ) => {
+      for (const range of nextRanges) {
+        if (
+          !Number.isFinite(range.start) ||
+          range.start < 0 ||
+          detectedAdRangesRef.current.some(
+            (current) => Math.abs(current.start - range.start) < 0.75,
+          )
+        ) {
+          continue;
+        }
+        detectedAdRangesRef.current.push(range);
+      }
+      detectedAdRangesRef.current.sort(
+        (left, right) => left.start - right.start,
+      );
+    };
+
+    const syncTimelineMarkers = () => {
+      const player = playerRef.current;
+      const duration = player?.duration || 0;
+      const progress = player?.template.$progress?.querySelector(
+        ".art-control-progress-inner",
+      );
+      if (
+        !(progress instanceof HTMLElement) ||
+        !Number.isFinite(duration) ||
+        duration <= 0
+      ) {
+        return;
+      }
+
+      let markerLayer = progress.querySelector<HTMLElement>(
+        ".netphim-timeline-markers",
+      );
+      if (!markerLayer) {
+        markerLayer = document.createElement("div");
+        markerLayer.className = "netphim-timeline-markers";
+        progress.appendChild(markerLayer);
+      }
+      markerLayer.replaceChildren();
+
+      const appendMarker = (
+        kind: "intro" | "ad",
+        start: number,
+        end: number,
+        label: string,
+        pointOnly = false,
+      ) => {
+        const safeStart = Math.min(duration, Math.max(0, start));
+        const safeEnd = Math.min(duration, Math.max(safeStart, end));
+        const marker = document.createElement("span");
+        marker.className = `netphim-timeline-marker netphim-timeline-marker-${kind}${pointOnly ? " is-point" : ""}`;
+        const startPercent = (safeStart / duration) * 100;
+        marker.style.left = `${startPercent}%`;
+        if (startPercent <= 12) marker.classList.add("is-near-start");
+        if (startPercent >= 88) marker.classList.add("is-near-end");
+        if (!pointOnly) {
+          marker.style.width = `${Math.max(
+            0.22,
+            ((safeEnd - safeStart) / duration) * 100,
+          )}%`;
+        }
+        marker.dataset.label = label;
+        marker.title = label;
+        marker.setAttribute("role", "img");
+        marker.setAttribute("aria-label", label);
+        marker.tabIndex = 0;
+        markerLayer?.appendChild(marker);
+      };
+
+      const introStart = skipIntroStartRef.current;
+      const introEnd = skipIntroEndRef.current;
+      if (
+        duration > 120 &&
+        introStart != null &&
+        introEnd != null &&
+        introEnd > introStart
+      ) {
+        appendMarker(
+          "intro",
+          introStart,
+          introEnd,
+          `Intro · ${formatTimelineTime(introStart)}–${formatTimelineTime(introEnd)}`,
+        );
+      }
+
+      detectedAdRangesRef.current.forEach((range, index) => {
+        appendMarker(
+          "ad",
+          range.start,
+          range.end,
+          `Quảng cáo ${index + 1} · ${formatTimelineTime(range.start)}`,
+          range.removed,
+        );
+      });
+    };
 
     const clearStartupTimer = () => {
       if (startupTimer) {
@@ -183,6 +301,15 @@ export default function ArtPlayer({
                   try {
                     const filtered = filterHlsManifest(response.data, ctx.url);
                     response.data = filtered.manifest;
+                    mergeDetectedAdRanges(
+                      filtered.stats.adMarkers.map((marker) => ({
+                        start: marker.start,
+                        end: marker.start,
+                        duration: marker.duration,
+                        removed: true,
+                      })),
+                    );
+                    queueMicrotask(syncTimelineMarkers);
                   } catch (e) {
                     // Fallback to raw response if filtering errors
                   }
@@ -313,7 +440,8 @@ export default function ArtPlayer({
             }
           }
 
-          detectedAdRangesRef.current = adRanges;
+          mergeDetectedAdRanges(adRanges);
+          syncTimelineMarkers();
         });
 
         const syncQualityControls = (activeLevel: number) => {
@@ -602,18 +730,6 @@ export default function ArtPlayer({
         "x5-video-player-fullscreen": "false",
       },
       controls: seekControls,
-      highlight: [
-        ...(skipIntroStart != null && skipIntroEnd != null
-          ? [
-              { time: skipIntroStart, text: "Bắt đầu Intro" },
-              { time: skipIntroEnd, text: "Hết Intro" },
-            ]
-          : []),
-        ...(skipOutroStart != null
-          ? [{ time: skipOutroStart, text: "Bắt đầu Outro" }]
-          : []),
-      ],
-
       // Use ArtPlayer's native focus-scoped keyboard controls.
       hotkey: true,
 
@@ -642,7 +758,11 @@ export default function ArtPlayer({
       }
     };
     ensureSeekControls();
-    player.on("ready", ensureSeekControls);
+    player.on("ready", () => {
+      ensureSeekControls();
+      syncTimelineMarkers();
+    });
+    player.on("video:durationchange", syncTimelineMarkers);
 
     player.on("video:play", () => {
       onPlaybackStateChangeRef.current?.({

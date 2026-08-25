@@ -8,6 +8,7 @@ export interface HlsAdFilterStats {
   removedTags: number;
   removedUris: number;
   reasons: string[];
+  adMarkers: Array<{ start: number; duration: number }>;
 }
 
 export interface HlsAdFilterResult {
@@ -279,6 +280,7 @@ export function filterHlsManifest(
     removedTags: 0,
     removedUris: 0,
     reasons: [],
+    adMarkers: [],
   };
   const output: string[] = [];
   const pendingSegmentTags: string[] = [];
@@ -287,6 +289,17 @@ export function filterHlsManifest(
   let timedAdSecondsRemaining = 0;
   let removedSinceLastMedia = false;
   let keptMediaSegments = 0;
+  let playableTimelineSeconds = 0;
+
+  const recordAdMarker = (duration: number) => {
+    if (!Number.isFinite(duration) || duration <= 0) return;
+    const previous = stats.adMarkers.at(-1);
+    if (previous && Math.abs(previous.start - playableTimelineSeconds) < 0.1) {
+      previous.duration += duration;
+      return;
+    }
+    stats.adMarkers.push({ start: playableTimelineSeconds, duration });
+  };
 
   const addBoundaryIfNeeded = () => {
     if (!removedSinceLastMedia) return;
@@ -416,6 +429,7 @@ export function filterHlsManifest(
       uriKind === "segment" && (cueAdBreak || timedAdSecondsRemaining > 0);
 
     if (blockedByUrl || blockedByMarker) {
+      if (uriKind === "segment") recordAdMarker(duration);
       pendingSegmentTags.length = 0;
       stats.removedSegments += uriKind === "segment" ? 1 : 0;
       stats.removedUris++;
@@ -434,6 +448,7 @@ export function filterHlsManifest(
     if (uriKind === "segment") {
       addBoundaryIfNeeded();
       keptMediaSegments++;
+      playableTimelineSeconds += duration;
     }
     flushPendingTags();
     output.push(rewriteUri(absoluteUrl, uriKind));

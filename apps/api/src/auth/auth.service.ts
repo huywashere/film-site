@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
   Logger,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
@@ -23,12 +24,14 @@ import {
   ResetPasswordDto,
   TwoFactorVerifyDto,
   TwoFactorLoginVerifyDto,
+  ChangePasswordDto,
 } from "./dto/auth.dto";
 import { MailService } from "../mail/mail.service";
 import { UAParser } from "ua-parser-js";
 import { generateSecret, verify, generateURI } from "otplib";
 import * as QRCode from "qrcode";
 import { RedisCacheService } from "../redis/redis.service";
+import { sessionContextMatches } from "./session-context";
 
 @Injectable()
 export class AuthService {
@@ -373,6 +376,20 @@ export class AuthService {
         throw new UnauthorizedException("Refresh token đã hết hạn");
       }
 
+      if (
+        !sessionContextMatches(
+          record,
+          { userAgent, ipAddress },
+          process.env.USER_SESSION_BIND_IP === "true",
+        )
+      ) {
+        await this.prisma.refreshToken.update({
+          where: { id: record.id },
+          data: { isRevoked: true },
+        });
+        throw new UnauthorizedException("Phiên đăng nhập không đúng thiết bị");
+      }
+
       const isMatch = await bcrypt.compare(refreshToken, record.tokenHash);
       if (!isMatch)
         throw new UnauthorizedException("Refresh token không hợp lệ");
@@ -582,6 +599,76 @@ export class AuthService {
     );
   }
 
+  async linkGoogleAccount(userId: string, profile: any) {
+    const { googleId, email, emailVerified } = profile || {};
+    if (!googleId || !email || emailVerified !== true) {
+      throw new UnauthorizedException(
+        "Google chưa xác minh email của tài khoản này.",
+      );
+    }
+
+    const [user, linkedAccount] = await Promise.all([
+      this.prisma.user.findUnique({ where: { id: userId } }),
+      this.prisma.user.findUnique({ where: { googleId } }),
+    ]);
+    if (!user) throw new UnauthorizedException("Tài khoản không tồn tại");
+    this.assertAccountCanAuthenticate(user);
+    if (linkedAccount && linkedAccount.id !== userId) {
+      throw new ConflictException(
+        "Tài khoản Google này đã được liên kết với một tài khoản khác.",
+      );
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { googleId, isEmailVerified: true },
+      select: { id: true, username: true, googleId: true },
+    });
+  }
+
+  async changePassword(
+    userId: string,
+    currentSessionId: string,
+    dto: ChangePasswordDto,
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException("Tài khoản không tồn tại");
+    this.assertAccountCanAuthenticate(user);
+
+    const currentPasswordMatches = await bcrypt.compare(
+      dto.currentPassword,
+      user.passwordHash,
+    );
+    if (!currentPasswordMatches) {
+      throw new UnauthorizedException("Mật khẩu hiện tại không chính xác");
+    }
+    if (await bcrypt.compare(dto.newPassword, user.passwordHash)) {
+      throw new BadRequestException("Mật khẩu mới phải khác mật khẩu hiện tại");
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, 12);
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { passwordHash },
+      }),
+      this.prisma.refreshToken.updateMany({
+        where: {
+          userId,
+          id: currentSessionId ? { not: currentSessionId } : undefined,
+          isRevoked: false,
+        },
+        data: { isRevoked: true },
+      }),
+      this.prisma.resetPasswordToken.deleteMany({ where: { userId } }),
+    ]);
+
+    return {
+      success: true,
+      message: "Đã đổi mật khẩu và đăng xuất các thiết bị khác.",
+    };
+  }
+
   async validateFirebaseUser(
     profile: {
       uid: string;
@@ -714,7 +801,7 @@ export class AuthService {
     const otpauth = generateURI({
       secret,
       label: user.email,
-      issuer: "CineVerse",
+      issuer: "NetPhim",
     });
     const qrCode = await QRCode.toDataURL(otpauth);
 
@@ -755,6 +842,17 @@ export class AuthService {
   }
 
   async disable2FA(userId: string, dto: TwoFactorVerifyDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new BadRequestException("User không tồn tại");
+    if (
+      user.role === "ADMIN" ||
+      (user.role !== "USER" && user.adminAccessEnabled)
+    ) {
+      throw new ForbiddenException(
+        "Tài khoản Control Room bắt buộc duy trì xác thực hai bước.",
+      );
+    }
+
     const record = await this.prisma.twoFactorAuth.findUnique({
       where: { userId },
     });
@@ -857,75 +955,6 @@ export class AuthService {
       if (e instanceof UnauthorizedException) throw e;
       throw new UnauthorizedException("Mã xác thực hoặc token hết hạn");
     }
-  }
-
-  async verifyAdminCredentials(input: {
-    email: string;
-    password: string;
-    code?: string;
-  }) {
-    const identifier = input.email.toLowerCase().trim();
-    const failKey = `admin_login_fail:${identifier}`;
-    const failCount = Number((await this.cache.get(failKey)) || 0);
-    if (failCount >= 8) {
-      throw new UnauthorizedException(
-        "Tài khoản quản trị tạm khóa trong 15 phút do đăng nhập sai nhiều lần.",
-      );
-    }
-
-    const user = await this.prisma.user.findFirst({
-      where: { OR: [{ email: identifier }, { username: input.email.trim() }] },
-      include: { twoFactorAuth: true },
-    });
-    const validPassword = user
-      ? await bcrypt.compare(input.password, user.passwordHash)
-      : false;
-    if (!user || !validPassword) {
-      await this.cache.set(failKey, String(failCount + 1), this.LOCKOUT_TTL);
-      throw new UnauthorizedException("Thông tin đăng nhập không hợp lệ");
-    }
-    this.assertAccountCanAuthenticate(user);
-    if (user.role === "USER" || (!user.adminAccessEnabled && user.role !== "ADMIN")) {
-      throw new UnauthorizedException("Tài khoản chưa được cấp quyền vào Admin");
-    }
-
-    const require2FA =
-      process.env.ADMIN_REQUIRE_2FA !== "false" &&
-      (process.env.NODE_ENV === "production" || process.env.ADMIN_REQUIRE_2FA === "true");
-    if (require2FA && (!user.twoFactorEnabled || !user.twoFactorAuth)) {
-      throw new UnauthorizedException(
-        "Admin bắt buộc bật xác thực 2 lớp trước khi đăng nhập.",
-      );
-    }
-    if (user.twoFactorEnabled && user.twoFactorAuth) {
-      if (!input.code) {
-        return { requires2FA: true as const };
-      }
-      const decryptedSecret = this.decrypt(user.twoFactorAuth.secret);
-      let validCode = Boolean(
-        await verify({ token: input.code, secret: decryptedSecret }),
-      );
-      if (!validCode) {
-        for (let index = 0; index < user.twoFactorAuth.backupCodes.length; index += 1) {
-          if (await bcrypt.compare(input.code, user.twoFactorAuth.backupCodes[index])) {
-            validCode = true;
-            await this.prisma.twoFactorAuth.update({
-              where: { userId: user.id },
-              data: {
-                backupCodes: user.twoFactorAuth.backupCodes.filter((_, codeIndex) => codeIndex !== index),
-              },
-            });
-            break;
-          }
-        }
-      }
-      if (!validCode) {
-        await this.cache.set(failKey, String(failCount + 1), this.LOCKOUT_TTL);
-        throw new UnauthorizedException("Mã OTP hoặc mã dự phòng không đúng");
-      }
-    }
-    await this.cache.del(failKey);
-    return { user };
   }
 
   async verifyAdminSecondFactor(userId: string, code: string) {
@@ -1174,11 +1203,15 @@ export class AuthService {
         username: true,
         displayName: true,
         avatarUrl: true,
+        nameColor: true,
+        avatarFrameColor: true,
         bio: true,
         createdAt: true,
         isEmailVerified: true,
         googleId: true,
         twoFactorEnabled: true,
+        role: true,
+        adminAccessEnabled: true,
         isLocked: true,
         _count: {
           select: {

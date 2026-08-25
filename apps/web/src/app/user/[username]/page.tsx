@@ -7,6 +7,7 @@ import { useState, useEffect, startTransition } from "react";
 import {
   User,
   Bookmark,
+  Heart,
   History,
   Sliders,
   LogOut,
@@ -44,6 +45,8 @@ import {
   Medal,
   TrendingUp,
   Zap,
+  Palette,
+  CircleUserRound,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
@@ -55,12 +58,22 @@ import { cn } from "@/lib/utils";
 import { AccountPageTabs } from "@/components/account/AccountPageTabs";
 import { cardFont } from "@/lib/fonts";
 import { PRESET_AVATARS, type PresetAvatar } from "@/lib/default-avatars";
+import {
+  DEFAULT_AVATAR_FRAME_COLOR,
+  DEFAULT_NAME_COLOR,
+  PROFILE_COLOR_OPTIONS,
+} from "@/lib/profile-appearance";
+import {
+  guestDataStorage,
+  type GuestWatchlistItem,
+} from "@/lib/user-data";
 
 type TabType =
   | "account"
   | "stats"
   | "leaderboard"
   | "security"
+  | "favorites"
   | "watchlist"
   | "history"
   | "settings";
@@ -71,6 +84,8 @@ type TabItem = {
   icon: any;
   category: "profile" | "settings";
 };
+
+type AppearanceTab = "avatar" | "nameColor" | "avatarFrame";
 
 interface Session {
   id: string;
@@ -95,6 +110,9 @@ function TwoFactorSection({
   onDisable: () => void;
   disabling: boolean;
 }) {
+  const isControlRoomAccount =
+    user?.role === "ADMIN" ||
+    (user?.role && user.role !== "USER" && user?.adminAccessEnabled);
   return (
     <div className="rounded-xl border border-white/10 bg-black overflow-hidden shadow-2xl">
       <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
@@ -128,20 +146,26 @@ function TwoFactorSection({
       <div className="flex items-center justify-between gap-4 p-5">
         <p className="text-xs text-neutral-500">
           {user?.twoFactorEnabled
-            ? "Tài khoản đã được bảo vệ bằng 2FA. Bạn có thể tắt nếu cần."
+            ? isControlRoomAccount
+              ? "2FA là lớp bảo vệ bắt buộc đối với tài khoản Control Room."
+              : "Tài khoản đã được bảo vệ bằng 2FA. Bạn có thể tắt nếu cần."
             : "Khuyến nghị bật để bảo vệ tài khoản khỏi truy cập trái phép."}
         </p>
 
-        {user?.twoFactorEnabled ? (
+        {user?.twoFactorEnabled && !isControlRoomAccount ? (
           <button onClick={onDisable} disabled={disabling}
             className="shrink-0 rounded-lg border border-white/10 bg-white/[0.04] hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 text-neutral-400 text-xs font-semibold px-4 py-2 transition-all cursor-pointer disabled:opacity-50">
             {disabling ? <Loader2 className="h-4 w-4 animate-spin" /> : "Tắt 2FA"}
           </button>
-        ) : (
+        ) : !user?.twoFactorEnabled ? (
           <button onClick={onSetup}
             className="shrink-0 rounded-lg bg-white hover:bg-neutral-200 text-black text-xs font-bold px-4 py-2 transition-colors cursor-pointer">
             Bật xác thực
           </button>
+        ) : (
+          <span className="shrink-0 rounded-lg border border-violet-500/20 bg-violet-500/10 px-4 py-2 text-xs font-semibold text-violet-300">
+            Bắt buộc
+          </span>
         )}
       </div>
     </div>
@@ -155,7 +179,7 @@ function GoogleLinkSection({ user }: { user: any }) {
     (process.env.NODE_ENV === "production"
       ? "/api/v1"
       : "http://localhost:3001/api/v1");
-  const googleLinkUrl = `${apiBase.replace("/api/v1", "")}/api/v1/auth/google`;
+  const googleLinkUrl = `${apiBase.replace(/\/api\/v1\/?$/, "")}/api/v1/auth/google/link`;
 
   return (
     <div className="rounded-xl border border-white/10 bg-black overflow-hidden shadow-2xl">
@@ -266,6 +290,7 @@ export default function UserDashboardPage() {
         "account",
         "stats",
         "security",
+        "favorites",
         "watchlist",
         "history",
         "settings",
@@ -306,10 +331,39 @@ export default function UserDashboardPage() {
   const [selectedAvatar, setSelectedAvatar] = useState<string>(
     user?.avatarUrl || "",
   );
+  const [selectedNameColor, setSelectedNameColor] = useState(
+    user?.nameColor || DEFAULT_NAME_COLOR,
+  );
+  const [selectedAvatarFrameColor, setSelectedAvatarFrameColor] = useState(
+    user?.avatarFrameColor || DEFAULT_AVATAR_FRAME_COLOR,
+  );
+  const [appearanceTab, setAppearanceTab] =
+    useState<AppearanceTab>("avatar");
   const [customAvatarInput, setCustomAvatarInput] = useState("");
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [updatingProfile, setUpdatingProfile] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [favoriteItems, setFavoriteItems] = useState<GuestWatchlistItem[]>([]);
+
+  useEffect(() => {
+    if (!isOwnProfile) {
+      setFavoriteItems([]);
+      return;
+    }
+
+    const syncFavorites = () => {
+      setFavoriteItems(guestDataStorage.getFavorites());
+    };
+
+    syncFavorites();
+    window.addEventListener("cineverse_favorites_changed", syncFavorites);
+    window.addEventListener("storage", syncFavorites);
+
+    return () => {
+      window.removeEventListener("cineverse_favorites_changed", syncFavorites);
+      window.removeEventListener("storage", syncFavorites);
+    };
+  }, [isOwnProfile]);
 
   useEffect(() => {
     if (user) {
@@ -318,6 +372,10 @@ export default function UserDashboardPage() {
       if (user.email) setEmail(user.email);
       if (user.bio) setBio(user.bio);
       if (user.avatarUrl) setSelectedAvatar(user.avatarUrl);
+      setSelectedNameColor(user.nameColor || DEFAULT_NAME_COLOR);
+      setSelectedAvatarFrameColor(
+        user.avatarFrameColor || DEFAULT_AVATAR_FRAME_COLOR,
+      );
     }
   }, [user]);
 
@@ -329,6 +387,7 @@ export default function UserDashboardPage() {
 
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
+  const [sessionError, setSessionError] = useState("");
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [revokingAll, setRevokingAll] = useState(false);
 
@@ -349,13 +408,24 @@ export default function UserDashboardPage() {
     }
   }, [activeTab, isOwnProfile]);
 
+  useEffect(() => {
+    if (searchParams.get("google_link") === "success") {
+      toast("Đã liên kết tài khoản Google thành công", "success");
+      fetchMe();
+      router.replace(`/user/${encodeURIComponent(username)}?tab=security`);
+    }
+  }, [searchParams, fetchMe, router, toast, username]);
+
   const loadSessions = async () => {
     setLoadingSessions(true);
+    setSessionError("");
     try {
       const res = await authApi.getSessions();
       setSessions(res.data || []);
     } catch (err) {
       console.error("Failed to load sessions", err);
+      setSessions([]);
+      setSessionError("Không thể tải danh sách thiết bị. Hãy thử lại.");
     } finally {
       setLoadingSessions(false);
     }
@@ -463,6 +533,8 @@ export default function UserDashboardPage() {
           username: user.username,
           displayName: user.displayName || user.username,
           avatarUrl: user.avatarUrl,
+          nameColor: user.nameColor,
+          avatarFrameColor: user.avatarFrameColor,
           bio: user.bio || "",
           _count: { watchlist: 0, reviews: 0 },
         }
@@ -470,6 +542,8 @@ export default function UserDashboardPage() {
           username: username || "Guest",
           displayName: username || "Khách",
           avatarUrl: null,
+          nameColor: DEFAULT_NAME_COLOR,
+          avatarFrameColor: DEFAULT_AVATAR_FRAME_COLOR,
           bio: "",
           _count: { watchlist: 0, reviews: 0 },
         });
@@ -537,6 +611,8 @@ export default function UserDashboardPage() {
         username: cleanUsername || undefined,
         displayName,
         avatarUrl: avatarToSave || undefined,
+        nameColor: selectedNameColor,
+        avatarFrameColor: selectedAvatarFrameColor,
         bio,
       });
       if (data) {
@@ -545,6 +621,9 @@ export default function UserDashboardPage() {
           username: cleanUsername || user?.username || "",
           displayName: data.displayName || displayName,
           avatarUrl: data.avatarUrl || avatarToSave,
+          nameColor: data.nameColor || selectedNameColor,
+          avatarFrameColor:
+            data.avatarFrameColor || selectedAvatarFrameColor,
           bio: data.bio || bio,
         });
       }
@@ -568,8 +647,12 @@ export default function UserDashboardPage() {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPassword || newPassword.length < 6) {
-      toast("Mật khẩu mới phải có ít nhất 6 ký tự!", "error");
+    if (!currentPassword) {
+      toast("Vui lòng nhập mật khẩu hiện tại!", "error");
+      return;
+    }
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}/.test(newPassword)) {
+      toast("Mật khẩu cần ít nhất 8 ký tự, gồm chữ hoa, chữ thường và chữ số.", "error");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -584,10 +667,8 @@ export default function UserDashboardPage() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (err: any) {
-      toast("Đổi mật khẩu thành công!", "success");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
+      const message = err?.response?.data?.message || "Không thể đổi mật khẩu";
+      toast(Array.isArray(message) ? message.join(", ") : message, "error");
     } finally {
       setChangingPassword(false);
     }
@@ -602,10 +683,50 @@ export default function UserDashboardPage() {
     (user?.role === "ADMIN" && user?.email?.toLowerCase() === "huywashere@gmail.com"),
   );
 
+  const effectiveNameColor =
+    (isOwnProfile ? selectedNameColor : profile.nameColor) ||
+    DEFAULT_NAME_COLOR;
+  const effectiveAvatarFrameColor =
+    (isOwnProfile
+      ? selectedAvatarFrameColor
+      : profile.avatarFrameColor) || DEFAULT_AVATAR_FRAME_COLOR;
+
+  const openAppearancePicker = () => {
+    setSelectedAvatar(user?.avatarUrl || profile.avatarUrl || "");
+    setSelectedNameColor(
+      user?.nameColor || profile.nameColor || DEFAULT_NAME_COLOR,
+    );
+    setSelectedAvatarFrameColor(
+      user?.avatarFrameColor ||
+        profile.avatarFrameColor ||
+        DEFAULT_AVATAR_FRAME_COLOR,
+    );
+    setCustomAvatarInput("");
+    setAppearanceTab("avatar");
+    setShowAvatarPicker(true);
+  };
+
+  const closeAppearancePicker = () => {
+    setSelectedAvatar(user?.avatarUrl || profile.avatarUrl || "");
+    setSelectedNameColor(
+      user?.nameColor || profile.nameColor || DEFAULT_NAME_COLOR,
+    );
+    setSelectedAvatarFrameColor(
+      user?.avatarFrameColor ||
+        profile.avatarFrameColor ||
+        DEFAULT_AVATAR_FRAME_COLOR,
+    );
+    setCustomAvatarInput("");
+    setShowAvatarPicker(false);
+  };
+
   const TABS: TabItem[] = [
     { id: "account", label: "Thông tin cá nhân", icon: User, category: "profile" },
     { id: "stats", label: "Thống kê", icon: BarChart3, category: "profile" },
     { id: "leaderboard", label: "Bảng xếp hạng", icon: Trophy, category: "profile" },
+    ...(isOwnProfile
+      ? [{ id: "favorites" as const, label: `Yêu thích (${favoriteItems.length})`, icon: Heart, category: "profile" as const }]
+      : []),
     { id: "watchlist", label: `Tủ phim (${watchlistItems.length})`, icon: Bookmark, category: "profile" },
     { id: "history", label: `Lịch sử (${historyItems.length})`, icon: History, category: "profile" },
     { id: "settings", label: "Trình phát", icon: Sliders, category: "settings" },
@@ -641,7 +762,13 @@ export default function UserDashboardPage() {
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6 pb-6 border-b border-white/[0.08]">
           {/* Avatar */}
           <div className="relative shrink-0 group">
-            <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-full overflow-hidden border-2 border-white/20 bg-neutral-900 shadow-xl">
+            <div
+              className="h-24 w-24 sm:h-28 sm:w-28 rounded-full overflow-hidden border-[3px] bg-neutral-900 transition-[border-color,box-shadow] duration-300"
+              style={{
+                borderColor: effectiveAvatarFrameColor,
+                boxShadow: `0 0 0 4px ${effectiveAvatarFrameColor}1f, 0 18px 38px rgba(0,0,0,.42)`,
+              }}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={
@@ -664,7 +791,7 @@ export default function UserDashboardPage() {
             {isOwnProfile && (
               <button
                 type="button"
-                onClick={() => setShowAvatarPicker(true)}
+                onClick={openAppearancePicker}
                 className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-white text-black shadow-lg flex items-center justify-center cursor-pointer hover:bg-neutral-200 transition-all hover:scale-105"
                 title="Đổi ảnh đại diện"
               >
@@ -677,7 +804,10 @@ export default function UserDashboardPage() {
           <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-1">
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                <h1
+                  className="text-2xl font-bold tracking-tight transition-colors duration-300 sm:text-3xl"
+                  style={{ color: effectiveNameColor }}
+                >
                   {displayName || profile.displayName || profile.username}
                 </h1>
                 {isAdmin ? (
@@ -1334,7 +1464,7 @@ export default function UserDashboardPage() {
 
                       {[
                         { label: "Mật khẩu hiện tại", value: currentPassword, onChange: setCurrentPassword, placeholder: "Nhập mật khẩu hiện tại..." },
-                        { label: "Mật khẩu mới", value: newPassword, onChange: setNewPassword, placeholder: "Tối thiểu 6 ký tự..." },
+                        { label: "Mật khẩu mới", value: newPassword, onChange: setNewPassword, placeholder: "Tối thiểu 8 ký tự..." },
                         { label: "Xác nhận mật khẩu mới", value: confirmPassword, onChange: setConfirmPassword, placeholder: "Nhập lại mật khẩu mới..." },
                       ].map(({ label, value, onChange, placeholder }) => (
                         <div key={label}>
@@ -1350,6 +1480,10 @@ export default function UserDashboardPage() {
                           </div>
                         </div>
                       ))}
+
+                      <p className="text-[11px] leading-5 text-neutral-500">
+                        Mật khẩu mới cần có chữ hoa, chữ thường và ít nhất một chữ số.
+                      </p>
 
                       <button
                         type="submit"
@@ -1377,7 +1511,7 @@ export default function UserDashboardPage() {
                               Thiết bị đã đăng nhập
                             </h3>
                             <p className="text-[11px] text-neutral-400">
-                              {sessions.length} thiết bị đang hoạt động
+                              {sessionError ? "Không tải được dữ liệu" : `${sessions.length} thiết bị đang hoạt động`}
                             </p>
                           </div>
                         </div>
@@ -1403,9 +1537,16 @@ export default function UserDashboardPage() {
                             <Loader2 className="h-4 w-4 animate-spin mx-auto mb-2" />{" "}
                             Đang tải thiết bị...
                           </div>
+                        ) : sessionError ? (
+                          <div className="p-6 text-center text-xs text-red-300">
+                            <p>{sessionError}</p>
+                            <button onClick={loadSessions} className="mt-3 rounded-lg border border-red-400/20 px-3 py-1.5 font-semibold hover:bg-red-400/10">
+                              Thử lại
+                            </button>
+                          </div>
                         ) : sessions.length === 0 ? (
                           <div className="p-6 text-center text-xs text-neutral-400">
-                            Không có thiết bị nào khác
+                            Không có phiên đăng nhập đang hoạt động.
                           </div>
                         ) : (
                           sessions.map((session) => (
@@ -1481,6 +1622,77 @@ export default function UserDashboardPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* TAB: PHIM YÊU THÍCH */}
+            {activeTab === "favorites" && (
+              <div className="animate-fade-in space-y-5 rounded-2xl border border-white/10 bg-[#161618] p-5 shadow-xl sm:p-7">
+                <div className="flex items-center justify-between gap-4 border-b border-white/[0.07] pb-4">
+                  <div>
+                    <h2 className="flex items-center gap-2 text-base font-bold text-white sm:text-lg">
+                      <Heart size={18} className="fill-violet-400 text-violet-400" />
+                      Phim yêu thích
+                      <span className="font-normal text-neutral-400">
+                        ({favoriteItems.length})
+                      </span>
+                    </h2>
+                    <p className="mt-1 text-xs text-neutral-500">
+                      Những phim bạn đã đánh dấu yêu thích trên thiết bị này.
+                    </p>
+                  </div>
+                </div>
+
+                {favoriteItems.length > 0 ? (
+                  <div className="grid grid-cols-[repeat(auto-fit,minmax(110px,140px))] justify-center gap-3">
+                    {favoriteItems.map((item) => {
+                      const movie = item.movieData;
+                      const thumb =
+                        resolveImageUrl(movie.thumbUrl) ||
+                        resolveImageUrl(movie.posterUrl);
+
+                      return (
+                        <Link
+                          key={item.id}
+                          href={`/film/${item.movieId}`}
+                          className="group relative aspect-[2/3] overflow-hidden rounded-xl border border-white/10 bg-neutral-900 shadow-md transition-all hover:-translate-y-1 hover:border-violet-400/60"
+                        >
+                          {thumb ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={thumb}
+                              alt={movie.title || item.movieId}
+                              loading="lazy"
+                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-neutral-600">
+                              <Film size={28} />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black via-black/10 to-transparent p-2.5">
+                            <p className="line-clamp-2 text-[11px] font-bold leading-tight text-white">
+                              {movie.title || item.movieId}
+                            </p>
+                          </div>
+                          <span className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full border border-white/15 bg-black/65 text-violet-300 backdrop-blur-sm">
+                            <Heart size={13} fill="currentColor" />
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <Heart size={36} className="mb-3 text-neutral-600" />
+                    <p className="text-sm font-semibold text-neutral-300">
+                      Chưa có phim yêu thích
+                    </p>
+                    <p className="mt-1 text-xs text-neutral-500">
+                      Bấm “Yêu thích” trên trang xem phim để thêm vào đây.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1789,7 +2001,7 @@ export default function UserDashboardPage() {
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="max-w-lg w-full bg-[#16171d] border border-white/15 rounded-2xl p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto"
+              className="max-h-[90vh] w-full max-w-2xl space-y-5 overflow-y-auto rounded-2xl border border-white/15 bg-[#16171d] p-4 shadow-2xl sm:p-6"
             >
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <div className="flex items-center gap-2.5">
@@ -1798,28 +2010,62 @@ export default function UserDashboardPage() {
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-white">
-                      Chọn ảnh đại diện
+                      Tùy chỉnh hồ sơ
                     </h3>
                     <p className="text-xs text-neutral-400">
-                      Chọn avatar có sẵn hoặc nhập link ảnh tuỳ chọn
+                      Chọn avatar, màu tên và khung đại diện
                     </p>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowAvatarPicker(false)}
+                  onClick={closeAppearancePicker}
                   className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10"
                 >
                   <X size={18} />
                 </button>
               </div>
 
+              <div
+                className="grid grid-cols-3 gap-1 rounded-xl border border-white/10 bg-black/30 p-1"
+                role="tablist"
+                aria-label="Tùy chỉnh diện mạo hồ sơ"
+              >
+                {([
+                  { id: "avatar", label: "Avatar", icon: Camera },
+                  { id: "nameColor", label: "Màu tên", icon: Palette },
+                  { id: "avatarFrame", label: "Khung avatar", icon: CircleUserRound },
+                ] as const).map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = appearanceTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={isActive}
+                      onClick={() => setAppearanceTab(tab.id)}
+                      className={cn(
+                        "flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-2 text-[11px] font-bold transition-all sm:text-xs",
+                        isActive
+                          ? "bg-violet-500/20 text-violet-200 shadow-sm ring-1 ring-violet-400/30"
+                          : "text-neutral-500 hover:bg-white/5 hover:text-neutral-200",
+                      )}
+                    >
+                      <Icon size={14} />
+                      <span className="truncate">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
               {/* Avatar Presets Grid */}
-              <div className="space-y-3">
+              {appearanceTab === "avatar" && (
+                <div className="space-y-3">
                 <label className="text-xs font-bold text-neutral-300 uppercase tracking-wider">
-                  Bộ sưu tập Avatar Phẳng Hệ Thống (Flat Avatars)
+                  Bộ sưu tập Avatar ({PRESET_AVATARS.length} nhân vật)
                 </label>
-                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5">
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                   {PRESET_AVATARS.map((av) => {
                     const isSelected =
                       (selectedAvatar || user?.avatarUrl) === av.url;
@@ -1844,6 +2090,9 @@ export default function UserDashboardPage() {
                           <img
                             src={av.url}
                             alt={av.name}
+                            width={200}
+                            height={200}
+                            loading="lazy"
                             className="w-full h-full object-cover"
                           />
                           {isSelected && (
@@ -1862,32 +2111,173 @@ export default function UserDashboardPage() {
                     );
                   })}
                 </div>
-              </div>
+                </div>
+              )}
 
               {/* Custom Image URL Input */}
-              <div className="space-y-2 pt-2 border-t border-white/10">
-                <label className="text-xs font-bold text-neutral-300 uppercase tracking-wider">
-                  Hoặc nhập link ảnh tuỳ chỉnh (URL)
-                </label>
-                <input
-                  type="url"
-                  value={customAvatarInput}
-                  onChange={(e) => {
-                    setCustomAvatarInput(e.target.value);
-                    if (e.target.value.trim()) {
-                      setSelectedAvatar(e.target.value.trim());
-                    }
-                  }}
-                  placeholder="https://example.com/my-photo.jpg"
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-neutral-500 outline-none focus:border-violet-400"
-                />
-              </div>
+              {appearanceTab === "avatar" && (
+                <div className="space-y-2 border-t border-white/10 pt-4">
+                  <label className="text-xs font-bold uppercase tracking-wider text-neutral-300">
+                    Hoặc nhập link ảnh tuỳ chỉnh (URL)
+                  </label>
+                  <input
+                    type="url"
+                    value={customAvatarInput}
+                    onChange={(e) => {
+                      setCustomAvatarInput(e.target.value);
+                      if (e.target.value.trim()) {
+                        setSelectedAvatar(e.target.value.trim());
+                      }
+                    }}
+                    placeholder="https://example.com/my-photo.jpg"
+                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white outline-none placeholder:text-neutral-500 focus:border-violet-400"
+                  />
+                </div>
+              )}
+
+              {appearanceTab === "nameColor" && (
+                <div className="space-y-5">
+                  <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-transparent p-4">
+                    <div
+                      className="h-16 w-16 shrink-0 overflow-hidden rounded-full border-[3px] bg-neutral-900"
+                      style={{ borderColor: selectedAvatarFrameColor }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={
+                          customAvatarInput.trim() ||
+                          selectedAvatar ||
+                          profile.avatarUrl ||
+                          `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName || profile.username)}&background=8b5cf6&color=ffffff&size=120`
+                        }
+                        alt="Xem trước avatar"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
+                        Xem trước tên hiển thị
+                      </p>
+                      <p
+                        className="mt-1 truncate text-xl font-black transition-colors"
+                        style={{ color: selectedNameColor }}
+                      >
+                        {displayName || profile.displayName || profile.username}
+                      </p>
+                      <p className="mt-0.5 text-xs text-neutral-500">
+                        @{profile.username}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-xs font-bold uppercase tracking-wider text-neutral-300">
+                      Bảng màu tên ({PROFILE_COLOR_OPTIONS.length} màu)
+                    </p>
+                    <div className="grid grid-cols-5 gap-2.5 sm:grid-cols-8">
+                      {PROFILE_COLOR_OPTIONS.map((color) => {
+                        const isSelected = selectedNameColor === color.value;
+                        return (
+                          <button
+                            key={`name-${color.id}`}
+                            type="button"
+                            onClick={() => setSelectedNameColor(color.value)}
+                            aria-label={`Chọn màu tên ${color.label}`}
+                            title={color.label}
+                            className={cn(
+                              "relative aspect-square rounded-xl border bg-black/30 p-1.5 transition-all hover:-translate-y-0.5",
+                              isSelected
+                                ? "border-white/70 ring-2 ring-violet-400/50"
+                                : "border-white/10 hover:border-white/30",
+                            )}
+                          >
+                            <span
+                              className="block h-full w-full rounded-lg shadow-inner"
+                              style={{ backgroundColor: color.value }}
+                            />
+                            {isSelected && (
+                              <span className="absolute inset-0 grid place-items-center text-black drop-shadow-[0_1px_1px_rgba(255,255,255,.8)]">
+                                <Check size={15} strokeWidth={3} />
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {appearanceTab === "avatarFrame" && (
+                <div className="space-y-5">
+                  <div className="grid place-items-center rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_center,rgba(139,92,246,.13),transparent_62%)] p-6">
+                    <div
+                      className="h-28 w-28 overflow-hidden rounded-full border-4 bg-neutral-900 transition-[border-color,box-shadow] duration-300"
+                      style={{
+                        borderColor: selectedAvatarFrameColor,
+                        boxShadow: `0 0 0 5px ${selectedAvatarFrameColor}20, 0 16px 35px rgba(0,0,0,.5)`,
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={
+                          customAvatarInput.trim() ||
+                          selectedAvatar ||
+                          profile.avatarUrl ||
+                          `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName || profile.username)}&background=8b5cf6&color=ffffff&size=160`
+                        }
+                        alt="Xem trước khung avatar"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <p className="mt-4 text-xs font-semibold text-neutral-300">
+                      {PROFILE_COLOR_OPTIONS.find(
+                        (color) => color.value === selectedAvatarFrameColor,
+                      )?.label || "Màu tùy chỉnh"}
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-xs font-bold uppercase tracking-wider text-neutral-300">
+                      Màu khung avatar ({PROFILE_COLOR_OPTIONS.length} màu)
+                    </p>
+                    <div className="grid grid-cols-5 gap-2.5 sm:grid-cols-8">
+                      {PROFILE_COLOR_OPTIONS.map((color) => {
+                        const isSelected =
+                          selectedAvatarFrameColor === color.value;
+                        return (
+                          <button
+                            key={`frame-${color.id}`}
+                            type="button"
+                            onClick={() =>
+                              setSelectedAvatarFrameColor(color.value)
+                            }
+                            aria-label={`Chọn màu khung ${color.label}`}
+                            title={color.label}
+                            className={cn(
+                              "relative aspect-square rounded-full border-4 bg-[#111318] p-1 transition-all hover:scale-105",
+                              isSelected
+                                ? "ring-2 ring-white/60 ring-offset-2 ring-offset-[#16171d]"
+                                : "border-white/10",
+                            )}
+                            style={{ borderColor: color.value }}
+                          >
+                            <span className="grid h-full w-full place-items-center rounded-full bg-white/[0.06] text-white">
+                              {isSelected && <Check size={14} strokeWidth={3} />}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowAvatarPicker(false)}
+                  onClick={closeAppearancePicker}
                   className="flex-1 py-2.5 rounded-xl border border-white/10 bg-white/5 text-neutral-300 hover:text-white text-xs font-semibold"
                 >
                   Hủy
@@ -1897,29 +2287,28 @@ export default function UserDashboardPage() {
                   onClick={async () => {
                     const avatarToSave =
                       customAvatarInput.trim() || selectedAvatar;
-                    if (!avatarToSave) return;
                     setUpdatingProfile(true);
                     try {
                       const { data } = await authApi.updateProfile({
                         displayName,
-                        avatarUrl: avatarToSave,
+                        avatarUrl: avatarToSave || undefined,
+                        nameColor: selectedNameColor,
+                        avatarFrameColor: selectedAvatarFrameColor,
                         bio,
                       });
                       useAuthStore.getState().setUser({
                         ...user!,
                         displayName: data?.displayName || displayName,
-                        avatarUrl: data?.avatarUrl || avatarToSave,
+                        avatarUrl: data?.avatarUrl || avatarToSave || undefined,
+                        nameColor: data?.nameColor || selectedNameColor,
+                        avatarFrameColor:
+                          data?.avatarFrameColor || selectedAvatarFrameColor,
                         bio: data?.bio || bio,
                       });
-                      toast("Đã cập nhật ảnh đại diện!", "success");
+                      toast("Đã cập nhật diện mạo hồ sơ!", "success");
                       setShowAvatarPicker(false);
                     } catch (err) {
-                      useAuthStore.getState().setUser({
-                        ...user!,
-                        avatarUrl: avatarToSave,
-                      });
-                      toast("Đã lưu ảnh đại diện!", "success");
-                      setShowAvatarPicker(false);
+                      toast("Không thể lưu tùy chỉnh hồ sơ. Hãy thử lại.", "error");
                     } finally {
                       setUpdatingProfile(false);
                     }
@@ -1930,7 +2319,7 @@ export default function UserDashboardPage() {
                   {updatingProfile ? (
                     <Loader2 size={14} className="animate-spin" />
                   ) : (
-                    "Lưu ảnh đại diện"
+                    "Lưu tùy chỉnh"
                   )}
                 </button>
               </div>

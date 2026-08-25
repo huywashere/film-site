@@ -8,8 +8,11 @@ export interface User {
   username: string;
   displayName?: string;
   avatarUrl?: string;
+  nameColor?: string;
+  avatarFrameColor?: string;
   bio?: string;
-  role?: "ADMIN" | "USER" | "MODERATOR";
+  role?: "ADMIN" | "USER" | "MODERATOR" | "CONTENT_EDITOR" | "OPERATIONS" | "ANALYST";
+  adminAccessEnabled?: boolean;
   googleId?: string | null;
   twoFactorEnabled?: boolean;
   isLocked?: boolean;

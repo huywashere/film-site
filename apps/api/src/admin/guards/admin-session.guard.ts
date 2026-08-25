@@ -5,13 +5,16 @@ import { AdminAccessService } from "../admin-access.service";
 export class AdminSessionGuard implements CanActivate {
   constructor(private readonly access: AdminAccessService) {}
 
-  async canActivate(context: ExecutionContext) {
-    const request = context.switchToHttp().getRequest();
+  async canActivate(executionContext: ExecutionContext) {
+    const request = executionContext.switchToHttp().getRequest();
     const token = String(request.headers["x-admin-session-token"] || "");
-    request.user = await this.access.resolve(token);
-    request.user.ipAddress =
-      String(request.headers["x-forwarded-for"] || "").split(",")[0].trim() || request.ip;
-    request.user.userAgent = String(request.headers["user-agent"] || "").slice(0, 1000);
+    const context = {
+      ipAddress: request.ip,
+      userAgent: String(request.headers["user-agent"] || ""),
+    };
+    request.user = await this.access.resolve(token, context);
+    request.user.ipAddress = context.ipAddress;
+    request.user.userAgent = context.userAgent.slice(0, 1000);
     return true;
   }
 }

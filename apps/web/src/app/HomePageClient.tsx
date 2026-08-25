@@ -552,6 +552,20 @@ export default function HomePageClient({
     staleTime: 1000 * 60 * 10,
     enabled: catalogReady,
   });
+  const { data: usUkSeriesData2 } = useQuery({
+    queryKey: ["us-uk-series-v2-p2"],
+    queryFn: () =>
+      movieApi
+        .getFiltered({
+          type: "phim-bo",
+          country: "au-my",
+          page: 2,
+          limit: 24,
+        })
+        .then((r) => r.data),
+    staleTime: 1000 * 60 * 10,
+    enabled: catalogReady,
+  });
   // 3. Phim hành động (Hollywood & International Action Movies)
   const { data: actionUsUkData } = useQuery({
     queryKey: ["action-movies-us-uk"],
@@ -719,9 +733,11 @@ export default function HomePageClient({
   const usUkSeriesFilms = useMemo(() => {
     const firstPage =
       usUkSeriesData?.data?.items || usUkSeriesData?.items || [];
-    const liveAction = filterLiveActionOnly(deduplicate(firstPage));
+    const secondPage =
+      usUkSeriesData2?.data?.items || usUkSeriesData2?.items || [];
+    const liveAction = filterLiveActionOnly(deduplicate([...firstPage, ...secondPage]));
     return liveAction.filter(isLikelySeries);
-  }, [usUkSeriesData]);
+  }, [usUkSeriesData, usUkSeriesData2]);
 
   const actionFilms = useMemo(() => {
     const usUkList = actionUsUkData?.data?.items || actionUsUkData?.items || [];
@@ -825,7 +841,7 @@ export default function HomePageClient({
     // Initial Sections
     const latestRowList = buildRow(latestFilms);
     const vfxRowList = buildRow(vfxFilms);
-    const usUkSeriesRowList = buildRow(usUkSeriesFilms, 16);
+    const usUkSeriesRowList = buildRow(usUkSeriesFilms, 24);
     const actionRowList = buildRow(actionFilms);
     const scifiRowList = buildRow(scifiFilms);
 

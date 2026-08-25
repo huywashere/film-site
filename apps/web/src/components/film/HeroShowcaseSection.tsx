@@ -47,7 +47,7 @@ export function HeroShowcaseSection({
   const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
   const reduceMotion = useReducedMotion();
-  const shortlist = useMemo(() => deduplicateSectionRow(films).slice(0, 16), [films]);
+  const shortlist = useMemo(() => deduplicateSectionRow(films).slice(0, 24), [films]);
   const activeFilm = shortlist[activeIndex % Math.max(shortlist.length, 1)];
 
   useEffect(() => {
@@ -228,40 +228,45 @@ export function HeroShowcaseSection({
 
         {/* Thumbnail Strip: floats over the lower edge of the banner */}
         <div className="relative z-20 -mt-12 px-3 sm:-mt-14 sm:px-6 lg:-mt-16">
-          <div className="flex gap-2 overflow-x-auto px-1 pb-2 pt-1 xl:justify-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {shortlist.map((film, index) => {
-              const isActive = index === activeIndex;
-              return (
-                <button
-                  key={`${film.slug}-${index}`}
-                  type="button"
-                  onClick={() => setActiveIndex(index)}
-                  className={`group relative w-[58px] shrink-0 overflow-hidden rounded-xl transition-all cursor-pointer sm:w-[70px] ${
-                    isActive
-                      ? "ring-2 ring-violet-400 opacity-100 scale-105 shadow-[0_12px_30px_rgba(0,0,0,0.5)]"
-                      : "opacity-65 shadow-[0_10px_24px_rgba(0,0,0,0.45)] hover:opacity-100 hover:scale-[1.02]"
-                  }`}
-                  title={film.name}
-                >
-                  <TmdbArtwork
-                    film={film}
-                    kind="poster"
-                    alt={film.name}
-                    className="aspect-[2/3] w-full transition-transform duration-300 group-hover:scale-105"
-                  />
-                  {/* Active indicator */}
-                  {isActive && (
-                    <div className="absolute inset-x-0 bottom-0 h-1 rounded-full bg-violet-400" />
-                  )}
-                  {/* Film name tooltip overlay */}
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-1.5 pt-4">
-                    <p className="text-[8px] font-semibold text-white line-clamp-1 leading-tight sm:text-[9px]">
-                      {film.name}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
+          {/* Fade masks for scroll hint */}
+          <div className="pointer-events-none absolute inset-y-0 left-3 z-10 w-8 bg-gradient-to-r from-[#141414]/80 to-transparent sm:left-6 sm:w-12" />
+          <div className="pointer-events-none absolute inset-y-0 right-3 z-10 w-8 bg-gradient-to-l from-[#141414]/80 to-transparent sm:right-6 sm:w-12" />
+          <div className="overflow-x-auto pb-2 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="mx-auto flex w-max min-w-full justify-center gap-2 px-1">
+              {shortlist.map((film, index) => {
+                const isActive = index === activeIndex;
+                return (
+                  <button
+                    key={`${film.slug}-${index}`}
+                    type="button"
+                    onClick={() => setActiveIndex(index)}
+                    className={`group relative w-[58px] shrink-0 overflow-hidden rounded-xl transition-all cursor-pointer sm:w-[70px] ${
+                      isActive
+                        ? "ring-2 ring-violet-400 opacity-100 scale-105 shadow-[0_12px_30px_rgba(0,0,0,0.5)]"
+                        : "opacity-65 shadow-[0_10px_24px_rgba(0,0,0,0.45)] hover:opacity-100 hover:scale-[1.02]"
+                    }`}
+                    title={film.name}
+                  >
+                    <TmdbArtwork
+                      film={film}
+                      kind="poster"
+                      alt={film.name}
+                      className="aspect-[2/3] w-full transition-transform duration-300 group-hover:scale-105"
+                    />
+                    {/* Active indicator */}
+                    {isActive && (
+                      <div className="absolute inset-x-0 bottom-0 h-1 rounded-full bg-violet-400" />
+                    )}
+                    {/* Film name tooltip overlay */}
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-1.5 pt-4">
+                      <p className="text-[8px] font-semibold text-white line-clamp-1 leading-tight sm:text-[9px]">
+                        {film.name}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

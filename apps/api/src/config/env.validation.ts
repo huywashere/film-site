@@ -101,7 +101,7 @@ export function validateEnv(
   const githubAdminConfigured = githubAdminKeys.some(
     (key) => typeof config[key] === "string" && config[key].length > 0,
   );
-  if (githubAdminConfigured) {
+  if (githubAdminConfigured || isProduction) {
     for (const key of githubAdminKeys) {
       if (typeof config[key] !== "string" || config[key].length === 0) {
         problems.push(`${key} is required when GitHub Admin OAuth is enabled`);
@@ -132,6 +132,30 @@ export function validateEnv(
         "ADMIN_GITHUB_ALLOWED_IDS must contain comma-separated numeric GitHub IDs",
       );
     }
+    if (isProduction && allowedGithubIds.length !== 1) {
+      problems.push(
+        "ADMIN_GITHUB_ALLOWED_IDS must contain exactly one GitHub ID in production",
+      );
+    }
+
+    const allowedGithubLogins =
+      typeof config.ADMIN_GITHUB_ALLOWED_LOGINS === "string"
+        ? config.ADMIN_GITHUB_ALLOWED_LOGINS.split(",")
+            .map((value) => value.trim())
+            .filter(Boolean)
+        : [];
+    if (isProduction && allowedGithubLogins.length > 1) {
+      problems.push(
+        "ADMIN_GITHUB_ALLOWED_LOGINS may contain at most one login in production",
+      );
+    }
+  }
+
+  if (isProduction && config.ADMIN_REQUIRE_2FA === "false") {
+    problems.push("ADMIN_REQUIRE_2FA cannot be false in production");
+  }
+  if (isProduction && config.ADMIN_SESSION_BIND_IP === "false") {
+    problems.push("ADMIN_SESSION_BIND_IP cannot be false in production");
   }
 
   if (problems.length > 0) {

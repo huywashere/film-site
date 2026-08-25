@@ -1177,12 +1177,12 @@ export const authApi = {
     username?: string;
     displayName?: string;
     avatarUrl?: string;
+    nameColor?: string;
+    avatarFrameColor?: string;
     bio?: string;
-  }) => api.put("/users/me/profile", data).catch(() => ({ data })),
-  changePassword: (data: { currentPassword?: string; newPassword?: string }) =>
-    api
-      .put("/auth/change-password", data)
-      .catch(() => ({ data: { success: true } })),
+  }) => api.put("/users/me", data),
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    api.put("/auth/change-password", data),
   getSessions: () => api.get("/auth/sessions"),
   revokeSession: (id: string) => api.post(`/auth/sessions/${id}/revoke`),
   revokeAllSessions: () => api.post("/auth/sessions/revoke-all"),

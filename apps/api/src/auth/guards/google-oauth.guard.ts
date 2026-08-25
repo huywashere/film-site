@@ -7,14 +7,24 @@ import { AuthGuard } from "@nestjs/passport";
 import { randomBytes, timingSafeEqual } from "crypto";
 import type { Request, Response } from "express";
 
-type OAuthRequest = Request & { cineverseOAuthState?: string };
+type OAuthRequest = Request & {
+  cineverseOAuthState?: string;
+  cineverseOAuthCallbackUrl?: string;
+};
 
 @Injectable()
 export class GoogleOAuthGuard extends AuthGuard("google") {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<OAuthRequest>();
     const response = context.switchToHttp().getResponse<Response>();
-    const isCallback = request.path.endsWith("/google/callback");
+    const isCallback = /\/google(?:\/link)?\/callback$/.test(request.path);
+    const isLinkFlow = request.path.includes("/google/link");
+    const configuredCallback = process.env.GOOGLE_CALLBACK_URL ||
+      "http://localhost:3001/api/v1/auth/google/callback";
+    request.cineverseOAuthCallbackUrl = isLinkFlow
+      ? process.env.GOOGLE_LINK_CALLBACK_URL ||
+        configuredCallback.replace(/\/google\/callback$/, "/google/link/callback")
+      : configuredCallback;
 
     if (isCallback) {
       const received = String(request.query.state || "");
@@ -23,7 +33,7 @@ export class GoogleOAuthGuard extends AuthGuard("google") {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-        path: "/api/v1/auth/google/callback",
+        path: "/api/v1/auth/google",
       });
 
       const receivedBuffer = Buffer.from(received);
@@ -42,7 +52,7 @@ export class GoogleOAuthGuard extends AuthGuard("google") {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-        path: "/api/v1/auth/google/callback",
+        path: "/api/v1/auth/google",
         maxAge: 10 * 60 * 1000,
       });
     }
@@ -52,8 +62,11 @@ export class GoogleOAuthGuard extends AuthGuard("google") {
 
   getAuthenticateOptions(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest<OAuthRequest>();
-    return request.cineverseOAuthState
-      ? { state: request.cineverseOAuthState }
-      : undefined;
+    return {
+      ...(request.cineverseOAuthState
+        ? { state: request.cineverseOAuthState }
+        : {}),
+      callbackURL: request.cineverseOAuthCallbackUrl,
+    };
   }
 }

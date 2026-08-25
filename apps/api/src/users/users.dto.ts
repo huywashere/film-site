@@ -3,6 +3,7 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  Matches,
   Max,
   MaxLength,
   Min,
@@ -25,9 +26,19 @@ export class UpdateProfileDto {
   bio?: string;
 
   @IsOptional()
-  @IsUrl({ protocols: ["https"], require_protocol: true })
-  @MaxLength(2048)
+  @Matches(
+    /^(?:https:\/\/[^\s]+|\/[A-Za-z0-9/_\-.]+|data:image\/svg\+xml;utf8,%3Csvg[^\s]+)$/,
+  )
+  @MaxLength(50000)
   avatarUrl?: string;
+
+  @IsOptional()
+  @Matches(/^#[0-9A-Fa-f]{6}$/)
+  nameColor?: string;
+
+  @IsOptional()
+  @Matches(/^#[0-9A-Fa-f]{6}$/)
+  avatarFrameColor?: string;
 }
 
 export class SaveUserWatchHistoryDto {

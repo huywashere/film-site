@@ -85,6 +85,8 @@ model User {
   passwordHash             String
   displayName              String?
   avatarUrl                String?
+  nameColor                String?
+  avatarFrameColor         String?
   bio                      String?
   role                     Role           @default(USER) // FIX #14: enum thay vì String
   isBanned                 Boolean        @default(false)
@@ -310,18 +312,18 @@ model SyncJob {
 }
 
 model SyncSchedule {
-  id          String   @id @default(cuid())
-  name        String
-  source      String
-  cron        String
-  pages       Int      @default(5)
-  enabled     Boolean  @default(true)
-  nextRunAt   DateTime
-  lastRunAt   DateTime?
-  lastJobId   String?
-  createdBy   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String    @id @default(cuid())
+  name      String
+  source    String
+  cron      String
+  pages     Int       @default(5)
+  enabled   Boolean   @default(true)
+  nextRunAt DateTime
+  lastRunAt DateTime?
+  lastJobId String?
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([enabled, nextRunAt])
   @@map("sync_schedules")
@@ -346,22 +348,22 @@ model DatabaseBackup {
 }
 
 model SystemIncident {
-  id             String         @id @default(cuid())
-  fingerprint    String
-  source         String
-  title          String
-  message        String         @db.Text
-  severity       String         @default("warning")
-  status         IncidentStatus @default(OPEN)
-  occurrenceCount Int           @default(1)
-  metadata       Json?
-  acknowledgedBy String?
-  acknowledgedAt DateTime?
-  resolvedBy     String?
-  resolvedAt     DateTime?
-  lastSeenAt     DateTime       @default(now())
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id              String         @id @default(cuid())
+  fingerprint     String
+  source          String
+  title           String
+  message         String         @db.Text
+  severity        String         @default("warning")
+  status          IncidentStatus @default(OPEN)
+  occurrenceCount Int            @default(1)
+  metadata        Json?
+  acknowledgedBy  String?
+  acknowledgedAt  DateTime?
+  resolvedBy      String?
+  resolvedAt      DateTime?
+  lastSeenAt      DateTime       @default(now())
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   @@index([status, severity, lastSeenAt(sort: Desc)])
   @@index([fingerprint, status])
@@ -641,13 +643,13 @@ model WatchHistory {
 }
 
 model IpBlockRule {
-  id          String    @id @default(cuid())
-  ipAddress   String    @unique
-  reason      String?   @db.Text
-  blockedBy   String
-  expiresAt   DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        String    @id @default(cuid())
+  ipAddress String    @unique
+  reason    String?   @db.Text
+  blockedBy String
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([expiresAt, createdAt(sort: Desc)])
   @@map("ip_block_rules")
@@ -662,7 +664,7 @@ model AdPlacement {
   htmlContent   String?   @db.Text
   videoVastUrl  String?
   videoDuration Int?      @default(15) // seconds
-  skipOffsetSec Int?      @default(5)  // skip after seconds
+  skipOffsetSec Int?      @default(5) // skip after seconds
   categories    String[]  @default([]) // empty = all categories
   isActive      Boolean   @default(true)
   startDate     DateTime?
@@ -675,4 +677,3 @@ model AdPlacement {
   @@index([type, isActive])
   @@map("ad_placements")
 }
-

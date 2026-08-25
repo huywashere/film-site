@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Put,
   Body,
   Get,
   UseGuards,
@@ -20,9 +21,10 @@ import { AuthGuard } from "@nestjs/passport";
 import { AuthService } from "./auth.service";
 import { FirebaseAuthGuard } from "./guards/firebase-auth.guard";
 import { TurnstileService } from "./turnstile.service";
-import { RegisterDto, LoginDto } from "./dto/auth.dto";
+import { RegisterDto, LoginDto, ChangePasswordDto } from "./dto/auth.dto";
 import { Response } from "express";
 import { GoogleOAuthGuard } from "./guards/google-oauth.guard";
+import { GoogleLinkAuthGuard } from "./guards/google-link-auth.guard";
 import { LockAccountDto } from "./dto/auth.dto";
 
 @Controller("auth")
@@ -149,6 +151,23 @@ export class AuthController {
     res.redirect(frontendUrl);
   }
 
+  @Get("google/link")
+  @UseGuards(GoogleLinkAuthGuard, GoogleOAuthGuard)
+  async googleLink() {}
+
+  @Get("google/link/callback")
+  @UseGuards(GoogleLinkAuthGuard, GoogleOAuthGuard)
+  async googleLinkRedirect(@Request() req, @Res() res: Response) {
+    const user = await this.authService.linkGoogleAccount(
+      req.accountUser.id,
+      req.user,
+    );
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    res.redirect(
+      `${frontendUrl}/user/${encodeURIComponent(user.username)}?tab=security&google_link=success`,
+    );
+  }
+
   /** Exchange a verified Firebase ID token for the normal NetPhim cookie session. */
   @Post("firebase")
   @UseGuards(FirebaseAuthGuard)
@@ -219,6 +238,13 @@ export class AuthController {
   @UseGuards(AuthGuard("jwt"))
   getMe(@Request() req) {
     return this.authService.getMe(req.user.id);
+  }
+
+  @Put("change-password")
+  @UseGuards(AuthGuard("jwt"))
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  changePassword(@Request() req, @Body() dto: ChangePasswordDto) {
+    return this.authService.changePassword(req.user.id, req.user.jti, dto);
   }
 
   @Post("2fa/setup")

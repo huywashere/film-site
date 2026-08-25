@@ -9,6 +9,12 @@ import { PrismaService } from "../prisma/prisma.service";
 import { AuthService } from "../auth/auth.service";
 import { RedisCacheService } from "../redis/redis.service";
 import { permissionsFor } from "./admin-permissions";
+import {
+  AdminRequestContext,
+  adminContextFingerprint,
+  adminSessionContextMatches,
+  normalizeAdminContext,
+} from "./admin-session-context";
 
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
@@ -22,18 +28,9 @@ export class AdminAccessService {
     private readonly cache: RedisCacheService,
   ) {}
 
-  async login(
-    input: { email: string; password: string; code?: string },
-    context: { ipAddress?: string; userAgent?: string },
-  ) {
-    const verified = await this.auth.verifyAdminCredentials(input);
-    if ("requires2FA" in verified) return verified;
-    return this.createSession(verified.user, context);
-  }
-
   async loginWithGithub(
     input: { code: string; codeVerifier: string; redirectUri: string },
-    context: { ipAddress?: string; userAgent?: string },
+    context: AdminRequestContext,
   ) {
     const clientId = process.env.GITHUB_ADMIN_CLIENT_ID?.trim();
     const clientSecret = process.env.GITHUB_ADMIN_CLIENT_SECRET?.trim();
@@ -156,9 +153,8 @@ export class AdminAccessService {
     }
 
     const require2FA =
-      process.env.ADMIN_REQUIRE_2FA !== "false" &&
-      (process.env.NODE_ENV === "production" ||
-        process.env.ADMIN_REQUIRE_2FA === "true");
+      process.env.NODE_ENV === "production" ||
+      process.env.ADMIN_REQUIRE_2FA === "true";
     if (require2FA && !user.twoFactorEnabled) {
       throw new UnauthorizedException(
         "Admin phải bật xác thực 2 lớp NetPhim trước khi đăng nhập bằng GitHub",
@@ -168,7 +164,10 @@ export class AdminAccessService {
       const challenge = randomBytes(48).toString("base64url");
       await this.cache.setJson(
         `admin_github_challenge:${hashToken(challenge)}`,
-        { userId: user.id },
+        {
+          userId: user.id,
+          contextFingerprint: adminContextFingerprint(context),
+        },
         5 * 60,
       );
       return { requires2FA: true as const, challenge };
@@ -178,12 +177,18 @@ export class AdminAccessService {
 
   async completeGithubSecondFactor(
     input: { challenge: string; code: string },
-    context: { ipAddress?: string; userAgent?: string },
+    context: AdminRequestContext,
   ) {
     const key = `admin_github_challenge:${hashToken(input.challenge)}`;
-    const pending = await this.cache.getJson<{ userId: string }>(key);
+    const pending = await this.cache.getJson<{
+      userId: string;
+      contextFingerprint: string;
+    }>(key);
     await this.cache.del(key);
-    if (!pending?.userId) {
+    if (
+      !pending?.userId ||
+      pending.contextFingerprint !== adminContextFingerprint(context)
+    ) {
       throw new UnauthorizedException("Phiên xác minh GitHub đã hết hạn");
     }
     const user = await this.auth.verifyAdminSecondFactor(
@@ -193,7 +198,7 @@ export class AdminAccessService {
     return this.createSession(user, context);
   }
 
-  async resolve(token: string) {
+  async resolve(token: string, context: AdminRequestContext) {
     if (!token || token.length < 40) throw new UnauthorizedException();
     const session = await this.prisma.adminSession.findUnique({
       where: { tokenHash: hashToken(token) },
@@ -210,6 +215,20 @@ export class AdminAccessService {
     ) {
       throw new UnauthorizedException(
         "Phiên Admin không hợp lệ hoặc đã hết hạn",
+      );
+    }
+    if (
+      !adminSessionContextMatches(
+        { ipAddress: session.ipAddress, userAgent: session.userAgent },
+        context,
+      )
+    ) {
+      await this.prisma.adminSession.update({
+        where: { id: session.id },
+        data: { revokedAt: new Date() },
+      });
+      throw new UnauthorizedException(
+        "Phiên Admin đã bị thu hồi do thiết bị hoặc địa chỉ mạng thay đổi",
       );
     }
     if (Date.now() - session.lastSeenAt.getTime() > 60_000) {
@@ -245,19 +264,17 @@ export class AdminAccessService {
     }
   }
 
-  private async createSession(
-    user: User,
-    context: { ipAddress?: string; userAgent?: string },
-  ) {
+  private async createSession(user: User, context: AdminRequestContext) {
     const token = randomBytes(48).toString("base64url");
     const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000);
+    const normalizedContext = normalizeAdminContext(context);
     await this.prisma.adminSession.create({
       data: {
         userId: user.id,
         tokenHash: hashToken(token),
         expiresAt,
-        ipAddress: context.ipAddress,
-        userAgent: context.userAgent?.slice(0, 1000),
+        ipAddress: normalizedContext.ipAddress,
+        userAgent: normalizedContext.userAgent,
       },
     });
     return { token, expiresAt, user: this.toActor(user) };

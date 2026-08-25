@@ -48,6 +48,9 @@ function TwoFactorSection({
   onDisable: () => void;
   disabling: boolean;
 }) {
+  const isControlRoomAccount =
+    user?.role === "ADMIN" ||
+    (user?.role && user.role !== "USER" && user?.adminAccessEnabled);
   return (
     <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] overflow-hidden">
       <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
@@ -81,20 +84,26 @@ function TwoFactorSection({
       <div className="flex items-center justify-between gap-4 p-5">
         <p className="text-xs text-neutral-500">
           {user.twoFactorEnabled
-            ? "Tài khoản đã được bảo vệ bằng 2FA. Bạn có thể tắt nếu cần."
+            ? isControlRoomAccount
+              ? "2FA là lớp bảo vệ bắt buộc đối với tài khoản Control Room."
+              : "Tài khoản đã được bảo vệ bằng 2FA. Bạn có thể tắt nếu cần."
             : "Khuyến nghị bật để bảo vệ tài khoản khỏi truy cập trái phép."}
         </p>
 
-        {user.twoFactorEnabled ? (
+        {user.twoFactorEnabled && !isControlRoomAccount ? (
           <button onClick={onDisable} disabled={disabling}
             className="shrink-0 rounded-lg border border-white/10 bg-white/[0.04] hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 text-neutral-400 text-xs font-semibold px-4 py-2 transition-all cursor-pointer disabled:opacity-50">
             {disabling ? <Loader2 className="h-4 w-4 animate-spin" /> : "Tắt 2FA"}
           </button>
-        ) : (
+        ) : !user.twoFactorEnabled ? (
           <button onClick={onSetup}
             className="shrink-0 rounded-lg bg-white hover:bg-neutral-200 text-black text-xs font-bold px-4 py-2 transition-colors cursor-pointer">
             Bật xác thực
           </button>
+        ) : (
+          <span className="shrink-0 rounded-lg border border-violet-500/20 bg-violet-500/10 px-4 py-2 text-xs font-semibold text-violet-300">
+            Bắt buộc
+          </span>
         )}
       </div>
     </div>
@@ -108,7 +117,7 @@ function GoogleLinkSection({ user }: { user: any }) {
     (process.env.NODE_ENV === "production"
       ? "/api/v1"
       : "http://localhost:3001/api/v1");
-  const googleLinkUrl = `${apiBase.replace("/api/v1", "")}/api/v1/auth/google`;
+  const googleLinkUrl = `${apiBase.replace(/\/api\/v1\/?$/, "")}/api/v1/auth/google/link`;
 
   return (
     <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] overflow-hidden">
@@ -160,6 +169,7 @@ export default function SecuritySettingsPage() {
   const { toast } = useToast();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
+  const [sessionError, setSessionError] = useState("");
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [revokingAll, setRevokingAll] = useState(false);
 
@@ -177,15 +187,18 @@ export default function SecuritySettingsPage() {
   useEffect(() => {
     fetchMe();
     loadSessions();
-  }, []);
+  }, [fetchMe]);
 
   const loadSessions = async () => {
     setLoadingSessions(true);
+    setSessionError("");
     try {
       const res = await authApi.getSessions();
       setSessions(res.data || []);
     } catch (err) {
       console.error("Failed to load sessions", err);
+      setSessions([]);
+      setSessionError("Không thể tải danh sách thiết bị. Hãy thử lại.");
     } finally {
       setLoadingSessions(false);
     }
@@ -324,7 +337,7 @@ export default function SecuritySettingsPage() {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-white">Thiết bị đã đăng nhập</h3>
-                  <p className="text-xs text-neutral-500 mt-0.5">{sessions.length} thiết bị đang hoạt động</p>
+                  <p className="text-xs text-neutral-500 mt-0.5">{sessionError ? "Không tải được dữ liệu" : `${sessions.length} thiết bị đang hoạt động`}</p>
                 </div>
               </div>
 
@@ -340,9 +353,16 @@ export default function SecuritySettingsPage() {
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-5 w-5 animate-spin text-neutral-600" />
                 </div>
+              ) : sessionError ? (
+                <div className="py-10 text-center text-sm text-red-300">
+                  <p>{sessionError}</p>
+                  <button onClick={loadSessions} className="mt-3 rounded-lg border border-red-400/20 px-3 py-1.5 text-xs font-semibold hover:bg-red-400/10">
+                    Thử lại
+                  </button>
+                </div>
               ) : sessions.length === 0 ? (
                 <div className="py-10 text-center">
-                  <p className="text-sm text-neutral-600">Không có thiết bị nào.</p>
+                  <p className="text-sm text-neutral-600">Không có phiên đăng nhập đang hoạt động.</p>
                 </div>
               ) : (
                 sessions.map((session) => (

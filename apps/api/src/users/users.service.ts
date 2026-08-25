@@ -17,6 +17,8 @@ export class UsersService {
         username: true,
         displayName: true,
         avatarUrl: true,
+        nameColor: true,
+        avatarFrameColor: true,
         bio: true,
         createdAt: true,
         _count: {
@@ -40,6 +42,8 @@ export class UsersService {
       displayName?: string;
       bio?: string;
       avatarUrl?: string;
+      nameColor?: string;
+      avatarFrameColor?: string;
     },
   ) {
     if (dto.username) {
@@ -65,6 +69,8 @@ export class UsersService {
         username: true,
         displayName: true,
         avatarUrl: true,
+        nameColor: true,
+        avatarFrameColor: true,
         bio: true,
       },
     });

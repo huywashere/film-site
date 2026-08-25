@@ -88,6 +88,20 @@ export class TwoFactorLoginVerifyDto {
   code: string;
 }
 
+export class ChangePasswordDto {
+  @IsString()
+  @MaxLength(128)
+  currentPassword: string;
+
+  @IsString()
+  @MinLength(8, { message: "Mật khẩu phải chứa ít nhất 8 ký tự" })
+  @MaxLength(128)
+  @Matches(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message: "Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 chữ số",
+  })
+  newPassword: string;
+}
+
 export class LockAccountDto {
   @IsString()
   @MinLength(20)
