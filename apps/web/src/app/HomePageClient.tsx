@@ -325,10 +325,10 @@ function FilmSection({
       className={`${cardFont.className} mb-8 group/section`}
     >
       {/* Title Header matching user's requested layout (Inline pill button + right dash line pagination) */}
-      <div className="mb-3.5 flex items-center justify-between px-1">
+      <div className="mb-3.5 flex items-start justify-between gap-2 px-1 sm:items-center">
         {/* Left Side: Title + Inline "Xem tất cả >" Pill Button */}
-        <div className="flex items-center gap-2.5">
-          <div>
+        <div className="flex min-w-0 flex-1 items-start gap-2 sm:items-center">
+          <div className="min-w-0 flex-1 sm:flex-none">
             <h2
               data-film-section-title="true"
               className={`${cardFont.className} bg-gradient-to-r ${sectionTitleTone(title)} bg-clip-text text-xl font-extrabold tracking-[-0.025em] text-transparent sm:text-2xl`}
@@ -340,7 +340,7 @@ function FilmSection({
             <Link
               href={href}
               data-film-section-action="true"
-              className={`${cardFont.className} inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.12] text-white/90 hover:text-white text-xs font-medium transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95 ml-1`}
+              className={`${cardFont.className} inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-white/[0.12] bg-white/[0.08] px-2.5 py-1.5 text-[11px] font-semibold text-white/90 shadow-sm transition-all hover:scale-105 hover:bg-white/[0.16] hover:text-white active:scale-95 sm:px-3 sm:py-1 sm:text-xs`}
             >
               <span>{t("home.viewAll", "Xem tất cả")}</span>
               <ChevronRight size={12} strokeWidth={2.5} />
@@ -352,7 +352,7 @@ function FilmSection({
         {isLoading ? (
           <div className="h-2 w-24 rounded bg-white/[0.07] motion-safe:animate-pulse" />
         ) : (
-          <div className="flex items-center gap-1.5" aria-hidden="true">
+          <div className="hidden items-center gap-1.5 sm:flex" aria-hidden="true">
             {[0, 1, 2, 3].map((step) => (
               <span
                 key={step}

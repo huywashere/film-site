@@ -14,6 +14,7 @@ import type {
   WatchlistItem,
 } from "@/types/movie";
 import { recordTelemetry } from "@/lib/telemetry";
+import { normalizeNguonCPayload } from "@/lib/nguonc-normalizer";
 
 // ── Search In-Memory Cache & Deduping ─────────────────────────────
 const SEARCH_CACHE_MAX_AGE_MS = 1000 * 60 * 10; // 10 phút
@@ -309,9 +310,41 @@ const fetchOphim = async (endpoint: string) => {
 };
 
 const fetchNguonc = async (endpoint: string) => {
-  const response = await trackedMovieFetch(`/api/nguonc${endpoint}`);
-  if (!response.ok) throw new Error(`NguonC API Error: ${response.status}`);
-  return response.json();
+  let proxyStatus = 0;
+  try {
+    const response = await trackedMovieFetch(`/api/nguonc${endpoint}`);
+    proxyStatus = response.status;
+    if (response.ok) {
+      const payload = await response.json();
+      if (payload?.status !== false && payload?.error !== true) return payload;
+    }
+  } catch {
+    // Some serverless egress ranges are rejected by NguonC's Cloudflare edge.
+  }
+
+  if (typeof window === "undefined") {
+    throw new Error(`NguonC API Error: ${proxyStatus || "proxy unavailable"}`);
+  }
+
+  // NguonC's public API allows browser CORS. Use it only when our same-origin
+  // proxy has failed so local/VPS cache behavior remains the primary path.
+  const normalizedEndpoint = endpoint.startsWith("/")
+    ? endpoint
+    : `/${endpoint}`;
+  const directUrl = new URL(
+    normalizedEndpoint.replace(/^\/+/, ""),
+    "https://phim.nguonc.com/api/",
+  );
+  const directResponse = await fetch(directUrl, {
+    headers: { Accept: "application/json" },
+    credentials: "omit",
+    mode: "cors",
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!directResponse.ok) {
+    throw new Error(`NguonC direct API Error: ${directResponse.status}`);
+  }
+  return normalizeNguonCPayload(await directResponse.json());
 };
 
 const fetchVsmov = async (endpoint: string) => {

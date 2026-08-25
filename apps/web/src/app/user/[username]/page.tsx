@@ -47,6 +47,8 @@ import {
   Zap,
   Palette,
   CircleUserRound,
+  Menu,
+  ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
@@ -343,6 +345,7 @@ export default function UserDashboardPage() {
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [updatingProfile, setUpdatingProfile] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [favoriteItems, setFavoriteItems] = useState<GuestWatchlistItem[]>([]);
 
   useEffect(() => {
@@ -740,7 +743,7 @@ export default function UserDashboardPage() {
   return (
     <main className={cn("min-h-screen bg-[#141414] text-white select-none", cardFont.className)}>
       {/* ── PROFILE HEADER ── */}
-      <div className="mx-auto max-w-[1300px] px-4 sm:px-8 pt-24 pb-28">
+      <div className="mx-auto max-w-[1300px] px-4 pb-28 pt-5 sm:px-8 sm:pt-8">
         {/* Nút Quay lại trang trước */}
         <div className="mb-6">
           <button
@@ -864,32 +867,72 @@ export default function UserDashboardPage() {
 
         {/* ── MAIN WORKSPACE ── */}
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 py-6 pb-28">
-          {/* ── MOBILE IN-FLOW TAB BAR (Placed cleanly under profile header) ── */}
-          <div className="lg:hidden w-full overflow-x-auto scrollbar-none flex gap-2 pb-2 mb-2 border-b border-white/[0.08]">
-            {TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => startTransition(() => setActiveTab(tab.id))}
-                  className={cn(
-                    "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all shrink-0 active:scale-95",
-                    isActive
-                      ? "text-white bg-white/15 border border-white/20 shadow-sm"
-                      : "text-neutral-400 hover:text-white bg-white/[0.03] border border-white/[0.06]",
-                  )}
+          {/* ── MOBILE PROFILE MENU ── */}
+          <div className="relative z-20 mb-2 w-full lg:hidden">
+            <button
+              type="button"
+              aria-expanded={profileMenuOpen}
+              aria-controls="mobile-profile-navigation"
+              onClick={() => setProfileMenuOpen((open) => !open)}
+              className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-[#19191c] px-3.5 py-3 text-left shadow-lg transition-colors hover:bg-white/[0.06]"
+            >
+              <Menu size={18} className="shrink-0 text-violet-400" />
+              <span className="min-w-0 flex-1 truncate text-xs font-bold text-white">
+                {TABS.find((tab) => tab.id === activeTab)?.label || "Hồ sơ"}
+              </span>
+              <ChevronDown
+                size={16}
+                className={cn(
+                  "shrink-0 text-neutral-400 transition-transform duration-200",
+                  profileMenuOpen && "rotate-180",
+                )}
+              />
+            </button>
+
+            <AnimatePresence initial={false}>
+              {profileMenuOpen && (
+                <motion.div
+                  id="mobile-profile-navigation"
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.16 }}
+                  className="absolute left-0 right-0 top-[calc(100%+8px)] overflow-hidden rounded-2xl border border-white/10 bg-[#18181b] p-2 shadow-2xl shadow-black/50"
                 >
-                  <Icon
-                    size={14}
-                    className={
-                      isActive ? "text-violet-400" : "text-neutral-400"
-                    }
-                  />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {TABS.map((tab) => {
+                      const Icon = tab.icon;
+                      const isActive = activeTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => {
+                            startTransition(() => setActiveTab(tab.id));
+                            setProfileMenuOpen(false);
+                          }}
+                          className={cn(
+                            "flex min-w-0 items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-[11px] font-semibold transition-colors",
+                            isActive
+                              ? "border-violet-400/30 bg-violet-500/15 text-white"
+                              : "border-transparent text-neutral-400 hover:bg-white/[0.05] hover:text-white",
+                          )}
+                        >
+                          <Icon
+                            size={14}
+                            className={cn(
+                              "shrink-0",
+                              isActive ? "text-violet-400" : "text-neutral-500",
+                            )}
+                          />
+                          <span className="truncate">{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* ── LEFT SIDEBAR (Desktop) ── */}

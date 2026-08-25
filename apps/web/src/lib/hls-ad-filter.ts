@@ -16,6 +16,20 @@ export interface HlsAdFilterResult {
   stats: HlsAdFilterStats;
 }
 
+export interface HlsFragmentLike {
+  cc?: number;
+  start: number;
+  duration: number;
+  url?: string;
+}
+
+export interface HlsDetectedAdRange {
+  start: number;
+  end: number;
+  duration: number;
+  skippable: true;
+}
+
 const AD_HOST_TOKENS = [
   "ads",
   "adserver",
@@ -248,6 +262,59 @@ export function isLikelyAdUrl(value: string): boolean {
   } catch {
     return AD_PATH_PATTERN.test(value);
   }
+}
+
+/**
+ * Only treats a discontinuity block as skippable when at least one fragment
+ * has an explicit ad URL. A short discontinuity is common for codec/source
+ * changes and must never be used as ad evidence on its own.
+ */
+export function detectExplicitHlsAdRanges(
+  fragments: HlsFragmentLike[],
+): HlsDetectedAdRange[] {
+  if (!fragments.length) return [];
+
+  type Block = {
+    cc: number;
+    start: number;
+    end: number;
+    hasAdUrl: boolean;
+  };
+  const blocks: Block[] = [];
+  let current: Block | null = null;
+
+  for (const fragment of fragments) {
+    if (
+      !Number.isFinite(fragment.start) ||
+      !Number.isFinite(fragment.duration) ||
+      fragment.duration <= 0
+    ) {
+      continue;
+    }
+    const cc = fragment.cc ?? 0;
+    const end = fragment.start + fragment.duration;
+    const hasAdUrl = isLikelyAdUrl(fragment.url || "");
+    if (!current || current.cc !== cc) {
+      if (current) blocks.push(current);
+      current = { cc, start: fragment.start, end, hasAdUrl };
+      continue;
+    }
+    current.end = Math.max(current.end, end);
+    current.hasAdUrl ||= hasAdUrl;
+  }
+  if (current) blocks.push(current);
+
+  return blocks.flatMap((block) => {
+    const duration = block.end - block.start;
+    // Guard against a bad manifest turning a marker into a movie-length seek.
+    if (!block.hasAdUrl || duration <= 0 || duration > 180) return [];
+    return [{
+      start: block.start,
+      end: block.end,
+      duration,
+      skippable: true as const,
+    }];
+  });
 }
 
 function isClientSideInterstitial(attributes: Record<string, string>): boolean {

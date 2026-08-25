@@ -5,7 +5,13 @@ import { Navbar } from "./Navbar";
 
 export function ConditionalNavbar() {
   const pathname = usePathname();
-  if (pathname === "/login" || pathname === "/register") {
+  const isProfileRoute =
+    pathname === "/user" ||
+    pathname.startsWith("/user/") ||
+    pathname === "/profile" ||
+    pathname.startsWith("/profile/");
+
+  if (pathname === "/login" || pathname === "/register" || isProfileRoute) {
     return null;
   }
   return <Navbar />;

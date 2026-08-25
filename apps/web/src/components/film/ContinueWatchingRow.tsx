@@ -304,11 +304,11 @@ export function ContinueWatchingRow({
       className={`${cardFont.className} w-full mb-10 relative group/section`}
     >
       {/* Header: "Lịch sử xem" + "Xem tất cả >" + Dash Pagination */}
-      <div className="flex items-center justify-between mb-3 px-1">
-        <div className="flex items-center gap-2.5">
+      <div className="mb-3 flex items-start justify-between gap-2 px-1 sm:items-center">
+        <div className="flex min-w-0 flex-1 items-start gap-2 sm:items-center">
           <h2
             data-history-title="true"
-            className={`${cardFont.className} text-lg md:text-xl font-extrabold text-white tracking-tight`}
+            className={`${cardFont.className} min-w-0 flex-1 text-lg font-extrabold tracking-tight text-white sm:flex-none md:text-xl`}
           >
             {sectionTitle}
           </h2>
@@ -316,7 +316,7 @@ export function ContinueWatchingRow({
             <Link
               href="/history"
               data-history-action="true"
-              className={`${cardFont.className} inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.12] text-white/90 hover:text-white text-xs font-medium transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95 ml-1`}
+              className={`${cardFont.className} inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-white/[0.12] bg-white/[0.08] px-2.5 py-1.5 text-[11px] font-semibold text-white/90 shadow-sm transition-all hover:scale-105 hover:bg-white/[0.16] hover:text-white active:scale-95 sm:px-3 sm:py-1 sm:text-xs`}
             >
               <span>{t("home.viewAll", "Xem tất cả")}</span>
               <ChevronRight size={12} strokeWidth={2.5} />
@@ -325,7 +325,9 @@ export function ContinueWatchingRow({
         </div>
 
         {/* Dynamic Dash Line Pagination Indicators (— - - - -) */}
-        <DashPagination swiper={swiper} />
+        <div className="hidden sm:block">
+          <DashPagination swiper={swiper} />
+        </div>
       </div>
 
       {/* Main Carousel Area with Fixed Slide Widths */}

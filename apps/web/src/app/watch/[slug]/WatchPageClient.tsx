@@ -3011,26 +3011,6 @@ export default function WatchPage() {
                     </div>
                   )}
 
-                  {/* Floating Skip Intro Pill Button on Player */}
-                  {lastKnownPlaybackTimeRef.current >= 2 &&
-                    lastKnownPlaybackTimeRef.current <= 85 && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          hasSkippedIntroRef.current = true;
-                          if (artInstance) {
-                            artInstance.currentTime = 85;
-                          }
-                          toast("Đã bỏ qua đoạn mở đầu (Intro)", "info");
-                        }}
-                        className="absolute bottom-16 right-5 z-40 bg-black/85 hover:bg-neutral-900 text-white border border-white/20 backdrop-blur-xl px-4 py-2 rounded-full font-bold text-xs shadow-2xl flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer animate-in fade-in zoom-in-95 duration-200"
-                      >
-                        <FastForward size={14} className="text-purple-400" />
-                        <span>Bỏ qua Intro (+85s)</span>
-                      </button>
-                    )}
-
                   {autoNextCountdown !== null && (
                     <AutoNextOverlay
                       seconds={autoNextCountdown}

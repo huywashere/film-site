@@ -18,7 +18,7 @@ import {
   LogOut,
   Clapperboard,
   Globe,
-  Languages,
+  Flag,
   HelpCircle,
   Shield,
   FileText,
@@ -83,7 +83,15 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       {/* Minimalist Black & White Sheet Drawer */}
       <aside className={`${cardFont.className} fixed left-0 top-0 bottom-0 h-[100dvh] w-[88vw] max-w-[320px] bg-[#0a0c10] border-r border-white/10 z-[65] overflow-y-auto overscroll-contain touch-pan-y scrollbar-none lg:hidden shadow-[0_0_40px_rgba(0,0,0,0.9)] animate-in slide-in-from-left duration-250`}>
         {/* Sticky Header */}
-        <div className="sticky top-0 z-20 flex items-center gap-1.5 border-b border-white/10 bg-[#0a0c10]/95 px-5 py-3.5 backdrop-blur-xl">
+        <div className="sticky top-0 z-20 flex items-center gap-1.5 border-b border-white/10 bg-[#0a0c10]/95 px-4 py-3.5 backdrop-blur-xl">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t("nav.closeSearch", "Đóng")}
+            className="-ml-1 flex h-9 w-9 items-center justify-center rounded-xl text-neutral-300 transition-colors hover:bg-white/10 hover:text-white active:scale-95"
+          >
+            <Menu size={21} strokeWidth={2.2} />
+          </button>
           <Link
             href="/"
             className="flex items-center space-x-2"
@@ -102,14 +110,6 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
               Net<span className="text-violet-400">Phim</span>
             </span>
           </Link>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t("nav.closeSearch", "Đóng")}
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-neutral-300 transition-colors hover:bg-white/10 hover:text-white active:scale-95"
-          >
-            <Menu size={21} strokeWidth={2.2} />
-          </button>
         </div>
 
         {/* User Profile Card (Visible when logged in) */}
@@ -181,7 +181,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         {/* Language Selection Bar in Mobile Drawer */}
         <div className="flex h-10 items-center justify-between border-b border-white/10 px-3.5">
           <span className="flex items-center gap-2 text-[11px] font-bold text-neutral-400">
-            <Languages size={14} />
+            <Flag size={14} />
             <span>{t("nav.language")}:</span>
           </span>
           <div className="flex h-7 items-center rounded-full border border-white/10 bg-white/[0.06] p-0.5 text-[9px] font-bold">
@@ -195,7 +195,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                   : "text-neutral-400 hover:text-white",
               )}
             >
-              VN VI
+              <span aria-hidden="true" className="mr-1">🇻🇳</span> VI
             </button>
             <button
               type="button"
@@ -207,7 +207,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                   : "text-neutral-400 hover:text-white",
               )}
             >
-              GB EN
+              <span aria-hidden="true" className="mr-1">🇬🇧</span> EN
             </button>
           </div>
         </div>

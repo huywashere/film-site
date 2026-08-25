@@ -26,7 +26,15 @@ export function MobileBottomNav() {
     previousScrollY.current = currentScrollY;
   });
 
-  if (pathname === "/login" || pathname === "/register") return null;
+  const isProfileRoute =
+    pathname === "/user" ||
+    pathname.startsWith("/user/") ||
+    pathname === "/profile" ||
+    pathname.startsWith("/profile/");
+
+  if (pathname === "/login" || pathname === "/register" || isProfileRoute) {
+    return null;
+  }
 
   const navItems = [
     {

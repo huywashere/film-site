@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { normalizeVsmovImages } from "../app/api/vsmov/[...path]/route";
 import { resolveMovieApiOrigins } from "./movie-proxy";
+import { normalizeNguonCPayload } from "./nguonc-normalizer";
 
 test("movie origin pools keep safe HTTPS origins and known defaults", () => {
   const origins = resolveMovieApiOrigins(
@@ -50,4 +51,34 @@ test("VSMov normalization isolates malformed artwork fields", () => {
     "https://vsmov.com/storage/images/thumb-2.jpg",
   );
   assert.equal(normalized.items[1].poster_url, "");
+});
+
+test("NguonC browser fallback preserves normalized playback servers", () => {
+  const normalized = normalizeNguonCPayload({
+    status: "success",
+    movie: {
+      name: "Phim mẫu",
+      slug: "phim-mau",
+      original_name: "Sample Movie",
+      episodes: [
+        {
+          server_name: "Vietsub",
+          items: [
+            {
+              name: "Tập 1",
+              slug: "tap-1",
+              embed: "https://example.com/embed/1",
+            },
+          ],
+        },
+      ],
+    },
+  }) as any;
+
+  assert.equal(normalized.movie.origin_name, "Sample Movie");
+  assert.equal(normalized.episodes[0].server_name, "Vietsub");
+  assert.equal(
+    normalized.episodes[0].server_data[0].link_embed,
+    "https://example.com/embed/1",
+  );
 });

@@ -4,7 +4,10 @@ import Artplayer from "artplayer";
 import vi from "artplayer/i18n/vi";
 import Hls from "hls.js";
 import { useSettingsStore } from "@/store/settingsStore";
-import { isLikelyAdUrl, filterHlsManifest } from "@/lib/hls-ad-filter";
+import {
+  detectExplicitHlsAdRanges,
+  filterHlsManifest,
+} from "@/lib/hls-ad-filter";
 import { selectInitialHlsTransport } from "@/lib/player-source-routing";
 import { ARTPLAYER_EDITOR_LOADING_GIF } from "./artplayer-editor-assets";
 
@@ -69,6 +72,7 @@ export default function ArtPlayer({
       end: number;
       duration: number;
       removed?: boolean;
+      skippable?: boolean;
     }>
   >([]);
 
@@ -142,6 +146,7 @@ export default function ArtPlayer({
         end: number;
         duration: number;
         removed?: boolean;
+        skippable?: boolean;
       }>,
     ) => {
       for (const range of nextRanges) {
@@ -375,72 +380,12 @@ export default function ArtPlayer({
           return true;
         };
 
-        // Auto-detect spliced ad blocks (EXT-X-DISCONTINUITY) and betting/casino ad segments
+        // A discontinuity can be a normal codec/source boundary. Only an
+        // explicit ad URL is strong enough evidence to make a range skippable.
         hls.on(Hls.Events.LEVEL_LOADED, (_e, data) => {
           const frags = data.details?.fragments || [];
           if (!frags.length) return;
-
-          const adRanges: Array<{
-            start: number;
-            end: number;
-            duration: number;
-          }> = [];
-
-          type Block = {
-            cc: number;
-            start: number;
-            end: number;
-            duration: number;
-            hasAdUrl: boolean;
-          };
-          const blocks: Block[] = [];
-          let currentBlock: Block = {
-            cc: frags[0].cc ?? 0,
-            start: frags[0].start,
-            end: frags[0].start + frags[0].duration,
-            duration: frags[0].duration,
-            hasAdUrl: isLikelyAdUrl(frags[0].url || ""),
-          };
-
-          for (let i = 1; i < frags.length; i++) {
-            const f = frags[i];
-            const isAd = isLikelyAdUrl(f.url || "");
-            if (f.cc === currentBlock.cc) {
-              currentBlock.end = f.start + f.duration;
-              currentBlock.duration = currentBlock.end - currentBlock.start;
-              if (isAd) currentBlock.hasAdUrl = true;
-            } else {
-              blocks.push(currentBlock);
-              currentBlock = {
-                cc: f.cc,
-                start: f.start,
-                end: f.start + f.duration,
-                duration: f.duration,
-                hasAdUrl: isAd,
-              };
-            }
-          }
-          blocks.push(currentBlock);
-
-          for (const b of blocks) {
-            const isShortAdDuration = b.duration >= 4 && b.duration <= 95;
-            if (b.hasAdUrl || (isShortAdDuration && blocks.length > 1)) {
-              const alreadyAdded = adRanges.some(
-                (r) =>
-                  Math.abs(r.start - b.start) < 1 &&
-                  Math.abs(r.end - b.end) < 1,
-              );
-              if (!alreadyAdded) {
-                adRanges.push({
-                  start: b.start,
-                  end: b.end,
-                  duration: b.duration,
-                });
-              }
-            }
-          }
-
-          mergeDetectedAdRanges(adRanges);
+          mergeDetectedAdRanges(detectExplicitHlsAdRanges(frags));
           syncTimelineMarkers();
         });
 
@@ -801,13 +746,24 @@ export default function ArtPlayer({
       }
     });
 
-    // Continuous ad skipping engine: works during normal playback, seeking, and replaying
+    // Skip only ranges backed by an explicit ad URL. Marker-only ranges and
+    // removed manifest segments must never mutate currentTime.
     const checkAndSkipAd = (time: number): boolean => {
       const activeAd = detectedAdRangesRef.current.find(
-        (ad) => time >= ad.start - 0.05 && time < ad.end - 0.15,
+        (ad) =>
+          ad.skippable === true &&
+          !ad.removed &&
+          ad.duration > 0 &&
+          ad.duration <= 180 &&
+          time >= ad.start - 0.05 &&
+          time < ad.end - 0.15,
       );
       if (activeAd) {
-        const target = activeAd.end + 0.15;
+        const duration = Number.isFinite(player.duration) ? player.duration : 0;
+        const target = duration > 0
+          ? Math.min(Math.max(0, duration - 0.25), activeAd.end + 0.15)
+          : activeAd.end + 0.15;
+        if (target <= time || target - time > 181) return false;
         if (Math.abs(player.currentTime - target) > 0.2) {
           player.currentTime = target;
           return true;
