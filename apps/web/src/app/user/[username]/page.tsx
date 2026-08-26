@@ -60,6 +60,7 @@ import { cn } from "@/lib/utils";
 import { AccountPageTabs } from "@/components/account/AccountPageTabs";
 import { cardFont } from "@/lib/fonts";
 import { PRESET_AVATARS, type PresetAvatar } from "@/lib/default-avatars";
+import { applyLocalDecorativeAssetFallback } from "@/lib/decorative-asset-cdn";
 import {
   DEFAULT_AVATAR_FRAME_COLOR,
   DEFAULT_NAME_COLOR,
@@ -2131,12 +2132,18 @@ export default function UserDashboardPage() {
                         <div className="relative aspect-square w-full rounded-lg overflow-hidden flex items-center justify-center bg-black/50">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={av.url}
+                            src={av.previewUrl || av.url}
                             alt={av.name}
                             width={200}
                             height={200}
                             loading="lazy"
                             className="w-full h-full object-cover"
+                            onError={(event) => {
+                              applyLocalDecorativeAssetFallback(
+                                event.currentTarget,
+                                av.url,
+                              );
+                            }}
                           />
                           {isSelected && (
                             <div className="absolute top-1 right-1 bg-violet-500 rounded-full p-0.5 shadow-md">

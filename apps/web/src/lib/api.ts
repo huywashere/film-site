@@ -15,6 +15,10 @@ import type {
 } from "@/types/movie";
 import { recordTelemetry } from "@/lib/telemetry";
 import { normalizeNguonCPayload } from "@/lib/nguonc-normalizer";
+import {
+  curateCatalogFilms,
+  type CuratedCatalogKind,
+} from "@/lib/catalog-curation";
 
 // ── Search In-Memory Cache & Deduping ─────────────────────────────
 const SEARCH_CACHE_MAX_AGE_MS = 1000 * 60 * 10; // 10 phút
@@ -484,7 +488,12 @@ function getTotalPages(data: unknown): number | undefined {
   );
 }
 
-async function searchAllSources(keyword: string, page = 1, limit = 24) {
+async function searchAllSources(
+  keyword: string,
+  page = 1,
+  limit = 24,
+  expandUpstream = true,
+) {
   // Sanitize query: bỏ ký tự đặc biệt, gạch chéo vô tình gõ nhầm
   const trimmed = (keyword || "")
     .replace(/[\\/()[\]{}*+?^$|#@~`"']/g, " ")
@@ -586,7 +595,9 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
       source: "nguonc",
       // NguonC API hoạt động tốt nhất với từ khoá không dấu
       request: () =>
-        fetchNguonc(`/films/search?keyword=${encodedUnaccented}&page=${page}`).catch(() => null),
+        fetchNguonc(
+          `/films/search?keyword=${encodedUnaccented}&page=${page}`,
+        ).catch(() => null),
     },
     {
       source: "vsmov",
@@ -609,6 +620,7 @@ async function searchAllSources(keyword: string, page = 1, limit = 24) {
   // This removes two network requests from the common search path.
   const primaryMerged = dedupeFilmsBySource(groups);
   const shouldExpandUpstream =
+    expandUpstream &&
     primaryMerged.length < Math.min(6, limit) &&
     variants.length > 1 &&
     variants[1] !== primaryKeyword;
@@ -858,6 +870,7 @@ async function getMergedCatalogPage(
 async function getFastCatalogPage(
   page: number,
   requests: CatalogSourceRequest[],
+  curatedKind?: CuratedCatalogKind,
 ): Promise<any> {
   const resolveFirstHealthy = (tier: CatalogSourceRequest[]) =>
     Promise.any(
@@ -865,7 +878,12 @@ async function getFastCatalogPage(
         const data = await request();
         const rawItems = extractFilmItems(data);
         if (!rawItems.length) throw new Error(`${source} returned no films`);
-        const items = dedupeFilmsBySource([{ source, items: rawItems }]);
+        const normalizedItems = dedupeFilmsBySource([
+          { source, items: rawItems },
+        ]);
+        const items = curatedKind
+          ? curateCatalogFilms(normalizedItems, curatedKind)
+          : normalizedItems;
         if (!items.length) throw new Error(`${source} returned unusable films`);
 
         const sourceData = data as any;
@@ -949,9 +967,9 @@ function catalogRequests(
       source: "kkphim",
       request: () => {
         if (kind === "latest") return kkphimApi.getLatest(page);
-        if (kind === "series") return kkphimApi.getSeries(page, 36);
-        if (kind === "single") return kkphimApi.getSingle(page, 36);
-        if (kind === "anime") return kkphimApi.getAnime(page, 36);
+        if (kind === "series") return kkphimApi.getSeries(page, 64);
+        if (kind === "single") return kkphimApi.getSingle(page, 64);
+        if (kind === "anime") return kkphimApi.getAnime(page, 64);
         if (kind === "tvshows") return kkphimApi.getTvShows(page, 36);
         if (kind === "genre")
           return kkphimApi.getByGenre(value || "", page, 36);
@@ -999,15 +1017,15 @@ function catalogRequests(
                 return fetchOphim(`/danh-sach/phim-moi-cap-nhat?page=${page}`);
               if (kind === "series")
                 return fetchOphim(
-                  `/v1/api/danh-sach/phim-bo?page=${page}&limit=36`,
+                  `/v1/api/danh-sach/phim-bo?page=${page}&limit=64`,
                 );
               if (kind === "single")
                 return fetchOphim(
-                  `/v1/api/danh-sach/phim-le?page=${page}&limit=36`,
+                  `/v1/api/danh-sach/phim-le?page=${page}&limit=64`,
                 );
               if (kind === "anime")
                 return fetchOphim(
-                  `/v1/api/danh-sach/hoat-hinh?page=${page}&limit=36`,
+                  `/v1/api/danh-sach/hoat-hinh?page=${page}&limit=64`,
                 );
               if (kind === "genre")
                 return fetchOphim(
@@ -1031,17 +1049,17 @@ export const movieApi = {
       data,
     })),
   getSeries: (page = 1) =>
-    getFastCatalogPage(page, catalogRequests("series", page)).then((data) => ({
-      data,
-    })),
+    getFastCatalogPage(page, catalogRequests("series", page), "series").then(
+      (data) => ({ data }),
+    ),
   getSingle: (page = 1) =>
-    getFastCatalogPage(page, catalogRequests("single", page)).then((data) => ({
-      data,
-    })),
+    getFastCatalogPage(page, catalogRequests("single", page), "single").then(
+      (data) => ({ data }),
+    ),
   getAnime: (page = 1) =>
-    getFastCatalogPage(page, catalogRequests("anime", page)).then((data) => ({
-      data,
-    })),
+    getFastCatalogPage(page, catalogRequests("anime", page), "anime").then(
+      (data) => ({ data }),
+    ),
   getTvShows: (page = 1) =>
     getFastCatalogPage(page, catalogRequests("tvshows", page)).then((data) => ({
       data,
@@ -1054,6 +1072,8 @@ export const movieApi = {
     kkphimApi.getDetailV1(slug).then((data) => ({ data })),
   search: (keyword: string, page = 1, limit = 24) =>
     searchAllSources(keyword, page, limit).then((data) => ({ data })),
+  searchSourceAlternatives: (keyword: string, page = 1, limit = 24) =>
+    searchAllSources(keyword, page, limit, false).then((data) => ({ data })),
   getByGenre: (slug: string, page = 1) =>
     getFastCatalogPage(page, catalogRequests("genre", page, slug)).then(
       (data) => ({ data }),

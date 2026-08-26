@@ -67,7 +67,7 @@ import { useTranslation } from "@/store/langStore";
 import { useWatchParty } from "@/hooks/useWatchParty";
 import { useTmdb } from "@/hooks/useTmdb";
 import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
-import { tmdbBackdrop } from "@/lib/tmdb";
+import { tmdbBackdrop, tmdbPoster } from "@/lib/tmdb";
 import { cardFont } from "@/lib/fonts";
 import dynamic from "next/dynamic";
 import { watchProgressStorage } from "@/lib/watch-progress";
@@ -214,6 +214,7 @@ function SidebarFilmCard({ film, slug }: { film: any; slug: string }) {
           <TmdbArtwork
             film={film}
             kind="poster"
+            enabled={false}
             className="w-full h-full object-cover"
             alt={film?.name}
           />
@@ -276,6 +277,7 @@ function EpisodeThumbnail({
   film,
   tmdbBackdrops,
   bestBackdrop,
+  bestPoster,
   isActive,
   isWatched,
   lang,
@@ -285,13 +287,11 @@ function EpisodeThumbnail({
   film: any;
   tmdbBackdrops?: any[];
   bestBackdrop?: any;
+  bestPoster?: any;
   isActive: boolean;
   isWatched: boolean;
   lang: string;
 }) {
-  const { backdropUrl: tmdbBackdropUrl, posterUrl: tmdbPosterUrl } =
-    useTmdbArtwork(film, true);
-
   const candidateUrls = useMemo(() => {
     const list: string[] = [];
     const add = (url?: unknown) => {
@@ -313,14 +313,11 @@ function EpisodeThumbnail({
       add(tmdbBackdrop(bestBackdrop.file_path, "w780"));
     }
 
-    // 3. TMDB artwork hook backdrop
-    if (tmdbBackdropUrl) add(tmdbBackdropUrl);
-
-    // 4. Provider thumb and poster URLs
+    // 3. Provider thumb and poster URLs
     if (film?.thumb_url) add(film.thumb_url);
     if (film?.poster_url) add(film.poster_url);
 
-    // 5. Alternate path for KKPhim
+    // 4. Alternate path for KKPhim
     const primary = film?.thumb_url || film?.poster_url;
     if (primary && typeof primary === "string") {
       if (primary.includes("/uploads/movies/")) {
@@ -330,15 +327,18 @@ function EpisodeThumbnail({
       }
     }
 
-    if (tmdbPosterUrl) add(tmdbPosterUrl);
+    // 5. Reuse the already-fetched TMDB poster. Do not start one artwork
+    // query per episode thumbnail; that duplicated the page-level TMDB search.
+    if (bestPoster?.file_path) {
+      add(tmdbPoster(bestPoster.file_path, "w500"));
+    }
 
     return list;
   }, [
     epIndex,
     tmdbBackdrops,
     bestBackdrop,
-    tmdbBackdropUrl,
-    tmdbPosterUrl,
+    bestPoster,
     film?.thumb_url,
     film?.poster_url,
   ]);
@@ -875,22 +875,41 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   const secondaryDataReady = secondaryDataSlug === slug;
   const [recommendationsSlug, setRecommendationsSlug] = useState("");
   const recommendationsReady = recommendationsSlug === slug;
+  const [playerReadySlug, setPlayerReadySlug] = useState("");
+  const primaryPlayerReady = playerReadySlug === slug;
   const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(
     null,
   );
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setSecondaryDataSlug(slug), 2_500);
+    // Preserve the 2.5s fallback for movies whose primary source is broken,
+    // but let a healthy player settle before fanning out to other providers.
+    const timer = window.setTimeout(
+      () => setSecondaryDataSlug(slug),
+      primaryPlayerReady ? 350 : 2_500,
+    );
     return () => window.clearTimeout(timer);
-  }, [slug]);
+  }, [primaryPlayerReady, slug]);
 
   useEffect(() => {
-    // Recommendations used to be intentionally held for six seconds. Start
-    // them almost immediately; the query is cached and no longer blocks on a
-    // fan-out of TMDB catalogue resolution requests in the common path.
-    const timer = window.setTimeout(() => setRecommendationsSlug(slug), 180);
-    return () => window.clearTimeout(timer);
-  }, [slug]);
+    // Recommendations are below the player and must not compete with manifest,
+    // subtitle and first-segment requests. A no-player fallback still makes
+    // them available on films with unavailable streams.
+    let timer: ReturnType<typeof window.setTimeout> | undefined;
+    const schedule = () => {
+      timer = window.setTimeout(
+        () => setRecommendationsSlug(slug),
+        primaryPlayerReady ? 800 : 3_000,
+      );
+    };
+
+    if (document.readyState === "complete") schedule();
+    else window.addEventListener("load", schedule, { once: true });
+    return () => {
+      if (timer) window.clearTimeout(timer);
+      window.removeEventListener("load", schedule);
+    };
+  }, [primaryPlayerReady, slug]);
   // Native HLS is the primary transport because it exposes real playback
   // events. Provider iframe remains the safe final transport fallback.
   const [playerEngine, setPlayerEngine] = useState<"hls" | "iframe">("hls");
@@ -918,12 +937,35 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
   // Universal Player Container & Gestures (for ALL video players & iframe sources)
   const playerContainerRef = useRef<HTMLDivElement>(null);
+  const commentsSectionRef = useRef<HTMLDivElement>(null);
+  const [commentsReadySlug, setCommentsReadySlug] = useState("");
+  const commentsReady = commentsReadySlug === slug;
   const [isOuterSpeedBoosted, setIsOuterSpeedBoosted] = useState(false);
   const [outerDoubleTapHud, setOuterDoubleTapHud] = useState<
     "rewind" | "forward" | null
   >(null);
   const outerPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const outerLastTapRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (commentsReady) return;
+    const target = commentsSectionRef.current;
+    if (!target || !("IntersectionObserver" in window)) {
+      const timer = window.setTimeout(() => setCommentsReadySlug(slug), 4_000);
+      return () => window.clearTimeout(timer);
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        setCommentsReadySlug(slug);
+        observer.disconnect();
+      },
+      { rootMargin: "700px 0px" },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [commentsReady, slug]);
 
   // Cinema Mode & Player Enhancement States
   const [lightOff, setLightOff] = useState(false);
@@ -1453,7 +1495,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
   const { data: sourceLookupData } = useQuery({
     queryKey: ["watch-source-lookup", lookupTitle, film?.year],
-    queryFn: () => movieApi.search(lookupTitle, 1, 30).then((r) => r.data),
+    queryFn: () =>
+      movieApi
+        .searchSourceAlternatives(lookupTitle, 1, 30)
+        .then((r) => r.data),
     enabled: secondaryDataReady && Boolean(lookupTitle),
     staleTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
@@ -1556,7 +1601,11 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     slug,
   );
 
-  const { bestBackdrop, backdrops: tmdbBackdrops } = useTmdb({
+  const {
+    bestBackdrop,
+    bestPoster,
+    backdrops: tmdbBackdrops,
+  } = useTmdb({
     film,
     enabled: secondaryDataReady && !!film,
     fetchCredits: false,
@@ -2935,6 +2984,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       autoPlay={autoPlayConfig}
                       onReady={(player) => {
                         setArtInstance(player);
+                        setPlayerReadySlug(slug);
                         setIsFallbacking(false);
                         setFallbackMessage("");
                       }}
@@ -3003,6 +3053,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                         title={`${film?.name} - ${currentEpData?.name}`}
                         onLoad={() => {
                           clearIframeLoadTimeout();
+                          setPlayerReadySlug(slug);
                           setIsFallbacking(false);
                           setFallbackMessage("");
                           const sourceKey = `${sourceCandidate.source || "unknown"}:${sourceCandidate.serverName || "unknown"}`;
@@ -4021,6 +4072,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                 film={film}
                                 tmdbBackdrops={sceneStills}
                                 bestBackdrop={bestBackdrop}
+                                bestPoster={bestPoster}
                                 isActive={isActive}
                                 isWatched={isWatched}
                                 lang={lang}
@@ -4036,24 +4088,34 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             })()}
 
             {/* 6. COMMENTS */}
-            <div className="border-t border-white/[0.05] pt-5">
-              <AdvancedCommentSection
-                movieSlug={slug}
-                episodeName={
-                  currentEpData?.name
-                    ? `Tập ${currentEpData.name.replace(/^tập\s*/i, "")}`
-                    : undefined
-                }
-                currentVideoTimeSeconds={lastKnownPlaybackTimeRef.current}
-                onSeekToTimestamp={(sec) => {
-                  if (artInstance) {
-                    artInstance.seek = sec;
+            <div
+              ref={commentsSectionRef}
+              className="min-h-24 border-t border-white/[0.05] pt-5"
+            >
+              {commentsReady ? (
+                <AdvancedCommentSection
+                  movieSlug={slug}
+                  episodeName={
+                    currentEpData?.name
+                      ? `Tập ${currentEpData.name.replace(/^tập\s*/i, "")}`
+                      : undefined
                   }
-                  if (typeof window !== "undefined") {
-                    window.scrollTo({ top: 180, behavior: "smooth" });
-                  }
-                }}
-              />
+                  currentVideoTimeSeconds={lastKnownPlaybackTimeRef.current}
+                  onSeekToTimestamp={(sec) => {
+                    if (artInstance) {
+                      artInstance.seek = sec;
+                    }
+                    if (typeof window !== "undefined") {
+                      window.scrollTo({ top: 180, behavior: "smooth" });
+                    }
+                  }}
+                />
+              ) : (
+                <div
+                  className="h-24 animate-pulse rounded-xl border border-white/[0.05] bg-white/[0.02]"
+                  aria-hidden="true"
+                />
+              )}
             </div>
           </div>
 

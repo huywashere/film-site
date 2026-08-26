@@ -841,8 +841,24 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
   const secondaryReady = secondaryReadySlug === slug;
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setSecondaryReadySlug(slug), 1_800);
-    return () => window.clearTimeout(timer);
+    let timer: ReturnType<typeof window.setTimeout> | undefined;
+    const activate = () => {
+      timer = window.setTimeout(() => setSecondaryReadySlug(slug), 250);
+    };
+
+    if (document.readyState === "complete") activate();
+    else window.addEventListener("load", activate, { once: true });
+
+    // A broken decorative image must not postpone enhancements forever.
+    const fallbackTimer = window.setTimeout(
+      () => setSecondaryReadySlug(slug),
+      6_000,
+    );
+    return () => {
+      if (timer) window.clearTimeout(timer);
+      window.clearTimeout(fallbackTimer);
+      window.removeEventListener("load", activate);
+    };
   }, [slug]);
 
   // Fetch film detail
@@ -902,10 +918,14 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
     bestBackdrop,
     bestPoster,
     cast: tmdbCast,
+    directors: tmdbDirectors,
+    creditsLoading: tmdbCreditsLoading,
+    isResolving: tmdbResolving,
     trailer,
   } = useTmdb({
     film,
-    enabled: secondaryReady && !!film,
+    enabled: (secondaryReady || showTrailer) && !!film,
+    fetchImages: secondaryReady,
     fetchCredits: secondaryReady,
     fetchVideos: secondaryReady || showTrailer,
   });
@@ -1895,9 +1915,13 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
             </div>
           </section>
 
-          {(directors.length > 0 ||
-            actors.length > 0 ||
-            (tmdbCast && tmdbCast.length > 0)) && (
+          {secondaryReady &&
+            !tmdbResolving &&
+            !tmdbCreditsLoading &&
+            (directors.length > 0 ||
+              actors.length > 0 ||
+              tmdbDirectors.length > 0 ||
+              tmdbCast.length > 0) && (
             <section className="space-y-3" aria-labelledby="film-credits-title">
               <h2
                 id="film-credits-title"
@@ -1906,15 +1930,31 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
                 <span>{t("film.cast", "Đạo diễn và diễn viên")}</span>
               </h2>
               <CastScroller>
-                {directors.map((director, idx) => (
-                  <CastCard
-                    key={`director-${director}-${idx}`}
-                    name={director}
-                    role={t("film.director", "Đạo diễn")}
-                  />
-                ))}
-                {tmdbCast && tmdbCast.length > 0
-                  ? tmdbCast.map((c) => (
+                {tmdbDirectors.some((director) => director.profile_path)
+                  ? tmdbDirectors
+                      .filter((director) => director.profile_path)
+                      .slice(0, 3)
+                      .map((director) => (
+                      <CastCard
+                        key={`tmdb-director-${director.id}`}
+                        name={director.name}
+                        role={t("film.director", "Đạo diễn")}
+                        profilePath={director.profile_path}
+                        personId={director.id}
+                      />
+                      ))
+                  : directors.slice(0, 3).map((director, idx) => (
+                      <CastCard
+                        key={`director-${director}-${idx}`}
+                        name={director}
+                        role={t("film.director", "Đạo diễn")}
+                      />
+                    ))}
+                {tmdbCast.some((castMember) => castMember.profile_path)
+                  ? tmdbCast
+                      .filter((castMember) => castMember.profile_path)
+                      .slice(0, 12)
+                      .map((c) => (
                       <CastCard
                         key={`tmdb-cast-${c.id}`}
                         name={c.name}
@@ -1922,8 +1962,8 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
                         profilePath={c.profile_path}
                         personId={c.id}
                       />
-                    ))
-                  : actors.map((actor, idx) => (
+                      ))
+                  : actors.slice(0, 10).map((actor, idx) => (
                       <CastCard
                         key={`actor-${actor}-${idx}`}
                         name={actor}

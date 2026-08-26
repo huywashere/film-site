@@ -85,7 +85,7 @@ export function useTmdb({
   const isEnabled = enabled && !!film;
 
   // 1. Resolve TMDB ID từ IMDB ID nếu chưa có tmdbId
-  const { data: findData } = useQuery({
+  const { data: findData, isLoading: findLoading } = useQuery({
     queryKey: ["tmdb-find", imdbId],
     queryFn: () => tmdbApi.findByImdbId(imdbId!),
     enabled: isEnabled && !tmdbId && !!imdbId,
@@ -93,7 +93,7 @@ export function useTmdb({
   });
 
   // 2. Nếu chưa có tmdbId và imdbId, tìm kiếm theo tên phim (origin_name / title / name)
-  const { data: searchData } = useQuery({
+  const { data: searchData, isLoading: searchLoading } = useQuery({
     queryKey: ["tmdb-search-title", searchTitle, type],
     queryFn: async () => {
       if (!searchTitle) return null;
@@ -172,7 +172,7 @@ export function useTmdb({
 
   // Director / Creator
   const directors = (credits?.crew || []).filter(
-    (c) => c.job === "Director" || c.department === "Directing",
+    (c) => c.job === "Director" || c.job === "Series Director",
   );
 
   // Best backdrop (sort by vote_average)
@@ -229,8 +229,14 @@ export function useTmdb({
     videos,
     trailer,
     videosLoading,
+    isResolving: findLoading || searchLoading,
     // Overall
-    isLoading: imagesLoading || creditsLoading || videosLoading,
+    isLoading:
+      findLoading ||
+      searchLoading ||
+      imagesLoading ||
+      creditsLoading ||
+      videosLoading,
     hasData: !!resolvedId,
   };
 }

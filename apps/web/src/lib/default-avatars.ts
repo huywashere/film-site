@@ -1,4 +1,5 @@
 import { LEGACY_PRESET_AVATARS } from "./legacy-default-avatars";
+import { decorativeAssetUrl } from "./decorative-asset-cdn";
 
 export interface PresetAvatar {
   id: string;
@@ -13,6 +14,8 @@ export interface PresetAvatar {
     | "cosmic"
     | "system";
   url: string;
+  /** CDN preview only; `url` remains local so saved profiles never depend on it. */
+  previewUrl?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -72,10 +75,10 @@ export const PRESET_AVATARS: PresetAvatar[] = [
   { id: "nft_face_02", name: "Portrait #02", category: "character", url: NFT_FACE_02 },
   { id: "nft_peep_01", name: "Character #01", category: "character", url: NFT_PEEP_01 },
   { id: "nft_peep_02", name: "Character #02", category: "character", url: NFT_PEEP_02 },
-  { id: "collectible_robot", name: "Orbit Robot", category: "robot", url: COLLECTIBLE_ROBOT },
-  { id: "collectible_cat", name: "Neon Cat", category: "animal", url: COLLECTIBLE_CAT },
-  { id: "collectible_owl", name: "Violet Owl", category: "animal", url: COLLECTIBLE_OWL },
-  { id: "collectible_wanderer", name: "Noir Wanderer", category: "character", url: COLLECTIBLE_WANDERER },
-  { id: "collectible_eclipse", name: "Eclipse", category: "cosmic", url: COLLECTIBLE_ECLIPSE },
-  { id: "collectible_ape", name: "Cinema Ape", category: "animal", url: COLLECTIBLE_APE },
+  { id: "collectible_robot", name: "Orbit Robot", category: "robot", url: COLLECTIBLE_ROBOT, previewUrl: decorativeAssetUrl(COLLECTIBLE_ROBOT) },
+  { id: "collectible_cat", name: "Neon Cat", category: "animal", url: COLLECTIBLE_CAT, previewUrl: decorativeAssetUrl(COLLECTIBLE_CAT) },
+  { id: "collectible_owl", name: "Violet Owl", category: "animal", url: COLLECTIBLE_OWL, previewUrl: decorativeAssetUrl(COLLECTIBLE_OWL) },
+  { id: "collectible_wanderer", name: "Noir Wanderer", category: "character", url: COLLECTIBLE_WANDERER, previewUrl: decorativeAssetUrl(COLLECTIBLE_WANDERER) },
+  { id: "collectible_eclipse", name: "Eclipse", category: "cosmic", url: COLLECTIBLE_ECLIPSE, previewUrl: decorativeAssetUrl(COLLECTIBLE_ECLIPSE) },
+  { id: "collectible_ape", name: "Cinema Ape", category: "animal", url: COLLECTIBLE_APE, previewUrl: decorativeAssetUrl(COLLECTIBLE_APE) },
 ];

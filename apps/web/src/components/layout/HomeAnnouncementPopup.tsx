@@ -5,6 +5,10 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpRight, X } from "lucide-react";
 import { PublicSiteConfiguration, siteConfigApi } from "@/lib/api";
+import {
+  applyLocalDecorativeAssetFallback,
+  decorativeAssetUrl,
+} from "@/lib/decorative-asset-cdn";
 
 const DISMISSED_VERSION_KEY = "netphim:home-announcement:dismissed-version";
 
@@ -25,9 +29,10 @@ function getSafeLink(value?: string) {
 export function HomeAnnouncementPopup() {
   const [config, setConfig] = useState<PublicSiteConfiguration | null>(null);
   const [open, setOpen] = useState(false);
-  const [catGif] = useState(
+  const [catGifLocal] = useState(
     () => `/images/cat${Math.floor(Math.random() * 4) + 1}-optimized.webp`,
   );
+  const catGif = decorativeAssetUrl(catGifLocal);
   const dismissButtonRef = useRef<HTMLButtonElement>(null);
 
   const dismiss = useCallback(() => {
@@ -145,6 +150,12 @@ export function HomeAnnouncementPopup() {
                 unoptimized
                 sizes="126px"
                 className="rounded-[16px] object-cover"
+                onError={(event) => {
+                  applyLocalDecorativeAssetFallback(
+                    event.currentTarget,
+                    catGifLocal,
+                  );
+                }}
               />
               <span className="absolute bottom-2 left-2 rounded-full border border-white/10 bg-black/70 px-2 py-1 text-[8px] font-black uppercase tracking-[.14em] text-amber-200 backdrop-blur-sm">
                 Tin mới

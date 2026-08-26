@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { cardFont } from "@/lib/fonts";
+import {
+  applyLocalDecorativeAssetFallback,
+  decorativeAssetUrl,
+} from "@/lib/decorative-asset-cdn";
 import { useTranslation } from "@/store/langStore";
 
 // Social icon components
@@ -71,10 +75,10 @@ const SOCIAL_LINKS = [
 ];
 
 const CAT_MASCOTS = [
-  { src: "/images/cat1-thumbnail.webp", alt: "Mèo NetPhim 1" },
-  { src: "/images/cat2-thumbnail.webp", alt: "Mèo NetPhim 2" },
-  { src: "/images/cat3-thumbnail.webp", alt: "Mèo NetPhim 3" },
-  { src: "/images/cat4-thumbnail.webp", alt: "Mèo NetPhim 4" },
+  { localSrc: "/images/cat1-thumbnail.webp", alt: "Mèo NetPhim 1" },
+  { localSrc: "/images/cat2-thumbnail.webp", alt: "Mèo NetPhim 2" },
+  { localSrc: "/images/cat3-thumbnail.webp", alt: "Mèo NetPhim 3" },
+  { localSrc: "/images/cat4-thumbnail.webp", alt: "Mèo NetPhim 4" },
 ];
 
 export function Footer() {
@@ -243,13 +247,20 @@ export function Footer() {
           <div className="mt-0.5 flex items-center justify-center select-none pointer-events-none">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={randomCat.src}
+              src={decorativeAssetUrl(randomCat.localSrc)}
               alt=""
               aria-hidden="true"
               loading="lazy"
               className="h-11 w-auto sm:h-13 max-w-[90px] rounded-lg object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
               onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = "none";
+                if (
+                  !applyLocalDecorativeAssetFallback(
+                    e.currentTarget,
+                    randomCat.localSrc,
+                  )
+                ) {
+                  e.currentTarget.style.display = "none";
+                }
               }}
             />
           </div>
