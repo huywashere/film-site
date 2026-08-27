@@ -3844,7 +3844,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             {/* ── Seamless Cinema Navigation Bar ── */}
             <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
               <nav
-                className="flex items-center gap-1.5 overflow-x-auto scrollbar-none"
+                className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth w-full -mx-1 px-1 sm:mx-0 sm:px-0"
                 aria-label="Nội dung phim"
               >
                 {[
@@ -3883,7 +3883,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       onClick={() => setWatchContentTab(tab.id)}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "relative flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer select-none",
+                        "relative flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer select-none shrink-0 whitespace-nowrap",
                         active
                           ? "bg-[#24262c] text-white font-bold shadow-sm"
                           : "text-neutral-400 hover:text-white hover:bg-[#1a1c22]",
@@ -3976,194 +3976,196 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   ];
 
                   return (
-                    <div className="space-y-3.5">
+                    <div className="space-y-3">
                       {/* Row 1: Language Segmented Capsule & Quick Tools */}
-                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-white/[0.08]">
-                        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                          <div
-                            className="flex items-center gap-1.5 flex-wrap"
-                            role="tablist"
-                          >
-                            {subOptions.map((opt) => {
-                              const isActive = activeServerType === opt.id;
-                              const hasItems = opt.count > 0;
-                              const IconComponent = opt.icon;
+                      <div className="space-y-2.5 pb-3 border-b border-white/[0.08]">
+                        {/* Sub-row 1.1: Audio / Subtitle format pills */}
+                        <div
+                          className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 -mx-1 px-1 sm:mx-0 sm:px-0"
+                          role="tablist"
+                        >
+                          {subOptions.map((opt) => {
+                            const isActive = activeServerType === opt.id;
+                            const hasItems = opt.count > 0;
+                            const IconComponent = opt.icon;
 
-                              return (
-                                <button
-                                  key={opt.id}
-                                  role="tab"
-                                  aria-selected={isActive}
-                                  disabled={!hasItems}
-                                  onClick={() => {
-                                    if (!hasItems) return;
-                                    const selectingVidSrc = opt.eps.every(
-                                      (candidate) =>
-                                        candidate._source === "vidsrc",
-                                    );
-                                    setVidsrcManuallySelected(selectingVidSrc);
-                                    setActiveServerType(opt.id as ServerType);
-                                    if (opt.eps.length > 0) {
-                                      const targetEpisode =
-                                        currentEpData?.slug ||
-                                        currentEpData?.name ||
-                                        currentEp;
-                                      const first =
-                                        opt.eps.find((candidate) =>
-                                          findMatchingEpisode(
-                                            candidate.server_data,
-                                            targetEpisode,
-                                          ),
-                                        ) || opt.eps[0];
-                                      const idx = episodes.indexOf(first);
-                                      const targetIdx = idx >= 0 ? idx : 0;
-                                      setCurrentServer(targetIdx);
-                                      const matchedEpisode =
+                            return (
+                              <button
+                                key={opt.id}
+                                role="tab"
+                                aria-selected={isActive}
+                                disabled={!hasItems}
+                                onClick={() => {
+                                  if (!hasItems) return;
+                                  const selectingVidSrc = opt.eps.every(
+                                    (candidate) =>
+                                      candidate._source === "vidsrc",
+                                  );
+                                  setVidsrcManuallySelected(selectingVidSrc);
+                                  setActiveServerType(opt.id as ServerType);
+                                  if (opt.eps.length > 0) {
+                                    const targetEpisode =
+                                      currentEpData?.slug ||
+                                      currentEpData?.name ||
+                                      currentEp;
+                                    const first =
+                                      opt.eps.find((candidate) =>
                                         findMatchingEpisode(
-                                          first?.server_data,
+                                          candidate.server_data,
                                           targetEpisode,
-                                        );
-                                      const matchedEpisodeId =
-                                        matchedEpisode?.slug ||
-                                        matchedEpisode?.name;
-                                      setPlayerEngine(
-                                        matchedEpisode?.link_m3u8
-                                          ? "hls"
-                                          : "iframe",
+                                        ),
+                                      ) || opt.eps[0];
+                                    const idx = episodes.indexOf(first);
+                                    const targetIdx = idx >= 0 ? idx : 0;
+                                    setCurrentServer(targetIdx);
+                                    const matchedEpisode =
+                                      findMatchingEpisode(
+                                        first?.server_data,
+                                        targetEpisode,
                                       );
-                                      if (matchedEpisodeId)
-                                        router.replace(
-                                          watchUrlForEpisode(
-                                            matchedEpisodeId,
-                                            targetIdx,
-                                          ),
-                                        );
-                                    }
-                                  }}
-                                  className={cn(
-                                    "relative inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none",
+                                    const matchedEpisodeId =
+                                      matchedEpisode?.slug ||
+                                      matchedEpisode?.name;
+                                    setPlayerEngine(
+                                      matchedEpisode?.link_m3u8
+                                        ? "hls"
+                                        : "iframe",
+                                    );
+                                    if (matchedEpisodeId)
+                                      router.replace(
+                                        watchUrlForEpisode(
+                                          matchedEpisodeId,
+                                          targetIdx,
+                                        ),
+                                      );
+                                  }
+                                }}
+                                className={cn(
+                                  "relative inline-flex items-center gap-1.5 rounded-full px-3.5 sm:px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none shrink-0 whitespace-nowrap",
+                                  isActive
+                                    ? "bg-[#24262c] text-white font-bold shadow-sm"
+                                    : hasItems
+                                      ? "text-neutral-400 hover:text-white hover:bg-[#1a1c22]"
+                                      : "cursor-not-allowed text-neutral-600 opacity-40",
+                                )}
+                              >
+                                <IconComponent
+                                  size={13}
+                                  className={
                                     isActive
-                                      ? "bg-[#24262c] text-white font-bold shadow-sm"
-                                      : hasItems
-                                        ? "text-neutral-400 hover:text-white hover:bg-[#1a1c22]"
-                                        : "cursor-not-allowed text-neutral-600 opacity-40",
-                                  )}
-                                >
-                                  <IconComponent
-                                    size={13}
-                                    className={
-                                      isActive
-                                        ? "text-white"
-                                        : "text-neutral-400"
-                                    }
-                                  />
-                                  <span>{opt.label}</span>
-                                </button>
-                              );
-                            })}
-                          </div>
+                                      ? "text-white"
+                                      : "text-neutral-400"
+                                  }
+                                />
+                                <span>{opt.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
 
-                          {/* Interactive Server Health & Speed Button */}
+                        {/* Sub-row 1.2: Speed Test button + Sort/Thumbnails/Search */}
+                        <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 sm:mx-0 sm:px-0">
+                          {/* Speed Check Button */}
                           <button
                             type="button"
                             onClick={() => setShowServerHealthModal(true)}
-                            className="inline-flex items-center gap-2 rounded-full bg-[#201d2c] hover:bg-[#2a263a] border border-purple-500/30 hover:border-purple-500/60 px-3.5 py-1.5 text-xs font-semibold text-neutral-200 transition-all cursor-pointer shadow-sm active:scale-95 select-none"
+                            className="inline-flex items-center gap-2 rounded-full bg-[#201d2c] hover:bg-[#2a263a] border border-purple-500/30 hover:border-purple-500/60 px-3 py-1.5 text-xs font-semibold text-neutral-200 transition-all cursor-pointer shadow-sm active:scale-95 select-none shrink-0 whitespace-nowrap"
                           >
                             <Activity size={13} className="text-purple-400 animate-pulse" />
                             <span className="font-medium text-white/90">Kiểm tra tốc độ</span>
-                            <span className="rounded-full bg-purple-500/25 text-purple-300 border border-purple-500/40 px-2 py-0.5 text-[10px] font-bold">
+                            <span className="rounded-full bg-purple-500/25 text-purple-300 border border-purple-500/40 px-1.5 py-0.2 text-[10px] font-bold">
                               {episodes.length} nguồn
                             </span>
                           </button>
-                        </div>
 
-                        {/* Right: Quick Tools (Sort, Thumbnails, Search) */}
-                        <div className="flex items-center gap-2 self-end lg:self-auto">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const rangeSize =
-                                serverData.length > 500
-                                  ? 100
-                                  : serverData.length > 100
-                                    ? 50
-                                    : 40;
-                              const totalRanges = Math.ceil(
-                                serverData.length / rangeSize,
-                              );
-                              const nextOrder =
-                                episodeSortOrder === "oldest"
-                                  ? "newest"
-                                  : "oldest";
-                              setEpisodeSortOrder(nextOrder);
-                              if (serverData.length > 30) {
-                                setEpRangeIndex(
-                                  nextOrder === "newest"
-                                    ? Math.max(0, totalRanges - 1)
-                                    : 0,
+                          {/* Right Controls: Sort + Thumbnail toggle + Search */}
+                          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const rangeSize =
+                                  serverData.length > 500
+                                    ? 100
+                                    : serverData.length > 100
+                                      ? 50
+                                      : 40;
+                                const totalRanges = Math.ceil(
+                                  serverData.length / rangeSize,
                                 );
-                              }
-                            }}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-[#24262c] hover:bg-[#2f313a] px-3.5 py-1.5 text-xs font-semibold text-neutral-300 transition-colors cursor-pointer select-none"
-                          >
-                            <ArrowUpDown
-                              size={12}
-                              className="text-neutral-400"
-                            />
-                            <span>
-                              {episodeSortOrder === "oldest"
-                                ? "Cũ nhất"
-                                : "Mới nhất"}
-                            </span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setShowEpThumbnails(!showEpThumbnails)
-                            }
-                            className={cn(
-                              "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer select-none",
-                              showEpThumbnails
-                                ? "bg-[#24262c] text-white font-bold shadow-sm"
-                                : "bg-[#181a20] text-neutral-400 hover:text-white hover:bg-[#24262c]",
-                            )}
-                          >
-                            <FolderOpen size={12} />
-                            <span>
-                              {showEpThumbnails ? "Ẩn ảnh" : "Hiện ảnh"}
-                            </span>
-                          </button>
-
-                          {serverData.length > 16 && (
-                            <div className="relative hidden sm:block">
-                              <Search
-                                size={12}
-                                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30"
-                              />
-                              <input
-                                type="text"
-                                placeholder="Tìm tập..."
-                                value={episodeSearch}
-                                onChange={(e) =>
-                                  setEpisodeSearch(e.target.value)
+                                const nextOrder =
+                                  episodeSortOrder === "oldest"
+                                    ? "newest"
+                                    : "oldest";
+                                setEpisodeSortOrder(nextOrder);
+                                if (serverData.length > 30) {
+                                  setEpRangeIndex(
+                                    nextOrder === "newest"
+                                      ? Math.max(0, totalRanges - 1)
+                                      : 0,
+                                  );
                                 }
-                                className="bg-[#181a20] border border-white/5 pl-7 pr-3 py-1.5 text-xs text-white placeholder-white/30 rounded-full focus:outline-none focus:bg-[#24262c] w-24 sm:w-28 transition-colors"
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-full bg-[#24262c] hover:bg-[#2f313a] px-3 py-1.5 text-xs font-semibold text-neutral-300 transition-colors cursor-pointer select-none shrink-0 whitespace-nowrap"
+                            >
+                              <ArrowUpDown
+                                size={12}
+                                className="text-neutral-400"
                               />
-                            </div>
-                          )}
+                              <span>
+                                {episodeSortOrder === "oldest"
+                                  ? "Cũ nhất"
+                                  : "Mới nhất"}
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowEpThumbnails(!showEpThumbnails)
+                              }
+                              className={cn(
+                                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer select-none shrink-0 whitespace-nowrap",
+                                showEpThumbnails
+                                  ? "bg-[#24262c] text-white font-bold shadow-sm"
+                                  : "bg-[#181a20] text-neutral-400 hover:text-white hover:bg-[#24262c]",
+                              )}
+                            >
+                              <FolderOpen size={12} />
+                              <span>
+                                {showEpThumbnails ? "Ẩn ảnh" : "Hiện ảnh"}
+                              </span>
+                            </button>
+
+                            {serverData.length > 16 && (
+                              <div className="relative hidden sm:block">
+                                <Search
+                                  size={12}
+                                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Tìm tập..."
+                                  value={episodeSearch}
+                                  onChange={(e) =>
+                                    setEpisodeSearch(e.target.value)
+                                  }
+                                  className="bg-[#181a20] border border-white/5 pl-7 pr-3 py-1.5 text-xs text-white placeholder-white/30 rounded-full focus:outline-none focus:bg-[#24262c] w-24 sm:w-28 transition-colors"
+                                />
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
 
                       {/* Row 2: Dedicated API Server Source Row (MÁY CHỦ API) */}
                       {episodes.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-2 pb-3 border-b border-white/[0.08]">
+                        <div className="flex items-center gap-2 pb-3 border-b border-white/[0.08] overflow-x-auto no-scrollbar scroll-smooth -mx-1 px-1 sm:mx-0 sm:px-0">
                           <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-400 uppercase tracking-wider shrink-0 pr-1 select-none">
                             <Server size={14} className="text-neutral-400" />
                             <span>MÁY CHỦ :</span>
                           </div>
 
-                          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-0.5 flex-wrap">
+                          <div className="flex items-center gap-2 shrink-0 py-0.5">
                             {episodes.map((ep, idx) => {
                               const isActive = idx === currentServer;
                               const hasFailed = failedServers.includes(idx);
@@ -4228,7 +4230,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                     }
                                   }}
                                   className={cn(
-                                    "group relative inline-flex items-center gap-2 rounded-xl px-4 py-1.5 text-xs font-bold transition-all cursor-pointer select-none shrink-0 border",
+                                    "group relative inline-flex items-center gap-2 rounded-xl px-3.5 sm:px-4 py-1.5 text-xs font-bold transition-all cursor-pointer select-none shrink-0 whitespace-nowrap border",
                                     isActive
                                       ? "bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600 text-white border-purple-400/50 shadow-lg shadow-purple-600/30 scale-[1.02]"
                                       : "bg-[#15171e] text-neutral-300 border-white/[0.08] hover:border-purple-500/40 hover:bg-[#1f222d] hover:text-white",
