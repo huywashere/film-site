@@ -42,6 +42,10 @@ type HealthPayload = {
     degraded: number;
     down: number;
   };
+  proxy?: {
+    status: ProviderStatus;
+    message: string;
+  };
   providers: ProviderHealth[];
 };
 
@@ -150,6 +154,12 @@ export function ProviderHealthPanel() {
       </div>
 
       <div className="p-5">
+        {data?.proxy?.status === "down" && (
+          <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-[11px] leading-5 text-amber-500">
+            <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+            <span>{data.proxy.message}</span>
+          </div>
+        )}
         {loading && !data ? (
           <div className="space-y-3" aria-label="Đang kiểm tra nguồn phim">
             {Array.from({ length: 7 }, (_, index) => (

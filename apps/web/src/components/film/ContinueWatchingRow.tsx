@@ -15,6 +15,7 @@ import { cardFont } from "@/lib/fonts";
 import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
 import { useTranslation } from "@/store/langStore";
 import { buildArtworkCandidates } from "@/lib/image-cdn";
+import { formatEpisodeLabel } from "@/lib/player-source-routing";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -160,15 +161,7 @@ function getHistoryProgressDetails(item: any) {
         )
       : 0;
 
-  // Episode label e.g. "Tập 1", "Tập FULL", "Tập 2"
-  let epLabel = "Tập 1";
-  if (item.epName) {
-    const str = String(item.epName);
-    epLabel = str.toLowerCase().startsWith("tập") ? str : `Tập ${str}`;
-  } else if (item.epSlug) {
-    const str = String(item.epSlug);
-    epLabel = str.toLowerCase() === "full" ? "Tập FULL" : `Tập ${str}`;
-  }
+  const epLabel = formatEpisodeLabel(item.epName || item.epSlug);
 
   // Quality badge e.g. "HD", "RDẼ", "Vietsub", "L.Tiếng"
   let qualityBadge = "HD";

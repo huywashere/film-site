@@ -25,7 +25,7 @@ export interface OmdbData {
 const omdbMemoryCache = new Map<string, OmdbData>();
 
 function getCacheKey(imdbId: string | null | undefined, title: string, year?: string | number): string {
-  if (imdbId) return `imdb:${imdbId}`;
+  if (imdbId) return `imdb:${imdbId.toLowerCase().trim()}`;
   return `title:${title.toLowerCase().trim()}:${year || ""}`;
 }
 
@@ -35,7 +35,7 @@ function readClientCachedOmdb(key: string): OmdbData | null {
   }
   if (typeof window !== "undefined") {
     try {
-      const stored = sessionStorage.getItem(`omdb_cache_${key}`);
+      const stored = localStorage.getItem(`omdb_cache_v2_${key}`);
       if (stored) {
         const parsed = JSON.parse(stored);
         omdbMemoryCache.set(key, parsed);
@@ -50,7 +50,7 @@ function writeClientCachedOmdb(key: string, data: OmdbData) {
   omdbMemoryCache.set(key, data);
   if (typeof window !== "undefined") {
     try {
-      sessionStorage.setItem(`omdb_cache_${key}`, JSON.stringify(data));
+      localStorage.setItem(`omdb_cache_v2_${key}`, JSON.stringify(data));
     } catch {}
   }
 }

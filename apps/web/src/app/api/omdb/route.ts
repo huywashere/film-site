@@ -135,11 +135,30 @@ export async function GET(request: NextRequest) {
 
   // Strategy 2: Search by title + year
   if (!data && title) {
+    const cleanTitle = title
+      .replace(/\s*\((?:Phần|Season|SS|Part)\s*\d+\)/gi, "")
+      .replace(/\s+(?:Phần|Season|SS|Part)\s*\d+/gi, "")
+      .replace(/\s*:\s*(?:Phần|Season|SS|Part)\s*\d+/gi, "")
+      .trim();
+
     const params: Record<string, string> = { t: title, plot: "short" };
     if (year) params.y = year;
     if (type === "tv" || type === "series") params.type = "series";
     else if (type === "movie") params.type = "movie";
+
     data = await fetchOmdb(params);
+
+    // Fallback 2a: Try cleanTitle with year
+    if (!data && cleanTitle && cleanTitle !== title) {
+      data = await fetchOmdb({ ...params, t: cleanTitle });
+    }
+
+    // Fallback 2b: Try cleanTitle without year constraint (e.g. series started in different year)
+    if (!data && cleanTitle && year) {
+      const noYearParams: Record<string, string> = { t: cleanTitle, plot: "short" };
+      if (type === "tv" || type === "series") noYearParams.type = "series";
+      data = await fetchOmdb(noYearParams);
+    }
   }
 
   if (!data) {

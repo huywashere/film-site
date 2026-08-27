@@ -13,7 +13,7 @@ import { useEffect, useState, useCallback } from "react";
  * 3. Clipboard Purge on Capture: Wipes the OS clipboard upon PrintScreen/Snipping shortcuts.
  * 4. Forensic Security Watermark: Embeds non-intrusive metadata preventing untraceable camera photos.
  */
-export function AdminAntiScreenshot() {
+export function AdminAntiScreenshot({ enabled = true }: { enabled?: boolean }) {
   const [isShieldActive, setIsShieldActive] = useState(false);
   const [isFlashActive, setIsFlashActive] = useState(false);
 
@@ -26,6 +26,12 @@ export function AdminAntiScreenshot() {
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      setIsShieldActive(false);
+      setIsFlashActive(false);
+      return;
+    }
+
     // 1. Check window focus & visibility continuously (Catches Snipping Tool immediately)
     const handleFocusCheck = () => {
       if (
@@ -93,7 +99,9 @@ export function AdminAntiScreenshot() {
       window.removeEventListener("focus", deactivateShield);
       document.removeEventListener("visibilitychange", handleFocusCheck);
     };
-  }, [activateShield, deactivateShield]);
+  }, [activateShield, deactivateShield, enabled]);
+
+  if (!enabled) return null;
 
   return (
     <>

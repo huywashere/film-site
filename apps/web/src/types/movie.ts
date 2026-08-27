@@ -1,4 +1,10 @@
-export type MovieSource = "kkphim" | "ophim" | "nguonc" | "vsmov" | "vidsrc";
+export type MovieSource =
+  | "kkphim"
+  | "ophim"
+  | "nguonc"
+  | "vsmov"
+  | "vidsrc"
+  | "vicdn";
 
 export interface NamedValue {
   name?: string;
@@ -18,7 +24,7 @@ export interface EpisodeServer {
   server_name: string;
   server_data: Episode[];
   _source?: MovieSource;
-  _type?: "vietsub" | "thuyet-minh" | "raw";
+  _type?: "vietsub" | "thuyet-minh" | "song-ngu" | "engsub" | "raw";
 }
 
 export interface UnifiedMovie {

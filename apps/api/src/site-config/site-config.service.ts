@@ -15,7 +15,7 @@ const DEFAULT_CONFIGURATION = {
   homePopupDismissLabel: "Đã hiểu",
   homePopupVersion: 1,
   heroMovieSlugs: [] as string[],
-  providerPriority: ["kkphim", "ophim", "nguonc", "vsmov"],
+  providerPriority: ["kkphim", "ophim", "nguonc", "vsmov", "vicdn"],
   autoSkipIntro: false,
   watchPartyEnabled: true,
   homeTop10Slugs: [] as string[],

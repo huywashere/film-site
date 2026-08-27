@@ -30,6 +30,9 @@ const ALLOWED_IMAGE_HOSTS = [
   "storage.vsmov.com",
   "nguon.vsphim.com",
   "*.vsphim.com",
+  // ViCDN
+  "vicdn.cc",
+  "*.vicdn.cc",
   // TMDB
   "image.tmdb.org",
   "*.tmdb.org",

@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  buildVicdnEmbedUrl,
   buildVidsrcEmbedUrl,
   canonicalEpisodeKey,
   canUseUnsandboxedEmbed,
   detectServerType,
   episodeNumberFromLabel,
   findMatchingEpisode,
+  formatEpisodeLabel,
   getSourceAbbr,
   isAutomaticPlaybackSource,
   resolveSeasonNumber,
@@ -17,6 +19,8 @@ import { rankHealthyCandidates } from "./player-source-health.ts";
 
 test("classifies Vietnamese server labels without leaking unknown servers", () => {
   assert.equal(detectServerType("Vietsub #1"), "vietsub");
+  assert.equal(detectServerType("ViCDN Song Ngữ"), "song-ngu");
+  assert.equal(detectServerType("Bilingual MultiSub"), "song-ngu");
   assert.equal(detectServerType("[KKPhim] Thuyết Minh"), "thuyet-minh");
   assert.equal(detectServerType("[NguonC] Lồng Tiếng #1"), "thuyet-minh");
   assert.equal(detectServerType("VidSrc Engsub"), "engsub");
@@ -28,6 +32,13 @@ test("normalizes equivalent episode labels across providers", () => {
   assert.equal(canonicalEpisodeKey("Tập 1"), "1");
   assert.equal(canonicalEpisodeKey("episode-001"), "1");
   assert.equal(canonicalEpisodeKey("Full Movie"), "full");
+});
+
+test("formats provider episode slugs as a single readable label", () => {
+  assert.equal(formatEpisodeLabel("tap-01"), "Tập 1");
+  assert.equal(formatEpisodeLabel("Tập tap-01"), "Tập 1");
+  assert.equal(formatEpisodeLabel("episode-002"), "Tập 2");
+  assert.equal(formatEpisodeLabel("full"), "Tập Full");
 });
 
 test("finds the same episode even when provider slugs differ", () => {
@@ -152,11 +163,35 @@ test("derives VidSrc season and episode numbers from Vietnamese labels", () => {
   assert.equal(episodeNumberFromLabel("Full Movie"), null);
 });
 
+test("builds documented vicdn.cc movie and TV embed URLs", () => {
+  assert.equal(
+    buildVicdnEmbedUrl({ tmdbId: 287496, mediaType: "movie" }),
+    "https://vicdn.cc/movie-287496",
+  );
+  assert.equal(
+    buildVicdnEmbedUrl({
+      tmdbId: "287496",
+      mediaType: "tv",
+      season: 1,
+      episode: 5,
+    }),
+    "https://vicdn.cc/tv-287496-1-5",
+  );
+  assert.equal(
+    buildVicdnEmbedUrl({
+      tmdbId: "not-a-tmdb-id",
+      mediaType: "movie",
+    }),
+    null,
+  );
+});
+
 test("formats provider abbreviations correctly", () => {
   assert.equal(getSourceAbbr("kkphim"), "KP");
   assert.equal(getSourceAbbr("nguonc"), "NC");
   assert.equal(getSourceAbbr("vsmov"), "VS");
   assert.equal(getSourceAbbr("ophim"), "OP");
+  assert.equal(getSourceAbbr("vicdn"), "ViCDN");
   assert.equal(getSourceAbbr("vidsrc"), "VidSrc");
   assert.equal(getSourceAbbr(undefined), "KP");
 });

@@ -5,6 +5,7 @@ import Link from "next/link";
 import NextImage from "next/image";
 import dynamic from "next/dynamic";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Play,
   Bookmark,
@@ -32,6 +33,10 @@ import {
   Trophy,
   DollarSign,
   ExternalLink,
+  Maximize2,
+  Sparkles,
+  Images,
+  X,
 } from "lucide-react";
 import { movieApi, watchlistApi, ratingsApi, reviewsApi } from "@/lib/api";
 import { FilmNotFound } from "@/components/film/FilmNotFound";
@@ -115,24 +120,38 @@ function ResilientDetailImage({
   );
 }
 
+// ── Interactive Poster Card with Smooth 3D Flip / Crossfade Transition ──
 function DetailPosterCard({
   candidates,
   filmName,
   className,
+  onOpenLightbox,
 }: {
   candidates: string[];
   filmName: string;
   className?: string;
+  onOpenLightbox?: (initialIndex?: number) => void;
 }) {
   const robustCandidates = useMemo(() => {
     return buildArtworkCandidates(candidates, "poster");
   }, [candidates]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
+  const totalImages = robustCandidates.length;
 
   useEffect(() => {
     setCandidateIdx(0);
   }, [robustCandidates]);
+
+  const handleNext = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setCandidateIdx((prev) => (prev + 1) % totalImages);
+  };
+
+  const handlePrev = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setCandidateIdx((prev) => (prev - 1 + totalImages) % totalImages);
+  };
 
   const src = robustCandidates[candidateIdx];
 
@@ -148,30 +167,103 @@ function DetailPosterCard({
   }
 
   return (
-    /* eslint-disable-next-line @next/next/no-img-element */
-    <img
-      key={`${filmName}-${candidateIdx}`}
-      src={src}
-      alt={filmName}
-      referrerPolicy="no-referrer"
-      loading="eager"
-      decoding="async"
-      className={className}
-      onError={() => {
-        if (candidateIdx < robustCandidates.length - 1) {
-          setCandidateIdx((i) => i + 1);
+    <div
+      onClick={() => {
+        if (totalImages > 1) {
+          handleNext();
+        } else if (onOpenLightbox) {
+          onOpenLightbox(0);
         }
       }}
-    />
+      className="relative w-full h-full overflow-hidden cursor-pointer select-none group"
+      title={totalImages > 1 ? "Bấm vào ảnh để chuyển poster khác" : "Bấm để xem ảnh phóng to"}
+    >
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={`${filmName}-${candidateIdx}-${src}`}
+          initial={{ opacity: 0, scale: 1.04, rotateY: -6 }}
+          animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+          exit={{ opacity: 0, scale: 0.96, rotateY: 6 }}
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full h-full"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt={filmName}
+            referrerPolicy="no-referrer"
+            loading="eager"
+            decoding="async"
+            className={className}
+            onError={() => {
+              if (candidateIdx < robustCandidates.length - 1) {
+                setCandidateIdx((i) => i + 1);
+              }
+            }}
+          />
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Floating Controls when multiple posters exist */}
+      {totalImages > 1 && (
+        <>
+          {/* Subtle gradient overlay on hover */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+          {/* Top-right zoom lightbox button */}
+          {onOpenLightbox && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenLightbox(candidateIdx);
+              }}
+              className="absolute top-2.5 right-2.5 p-1.5 rounded-full bg-black/65 hover:bg-black/90 text-white/80 hover:text-white border border-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-200 active:scale-90 shadow-lg"
+              title="Xem ảnh toàn màn hình"
+            >
+              <Maximize2 size={13} />
+            </button>
+          )}
+
+          {/* Left & Right Switcher Buttons */}
+          <button
+            type="button"
+            onClick={handlePrev}
+            className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/65 hover:bg-black/90 text-white/80 hover:text-white border border-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-200 active:scale-90 shadow-lg"
+            title="Ảnh trước"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={handleNext}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/65 hover:bg-black/90 text-white/80 hover:text-white border border-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-200 active:scale-90 shadow-lg"
+            title="Ảnh tiếp theo"
+          >
+            <ChevronRight size={14} />
+          </button>
+
+          {/* Bottom Badge Indicator */}
+          <div className="absolute bottom-2.5 inset-x-0 flex items-center justify-center pointer-events-none">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 border border-white/20 backdrop-blur-md text-[10px] font-bold text-white shadow-xl group-hover:scale-105 transition-transform">
+              <Sparkles size={11} className="text-amber-400 animate-pulse" />
+              <span>{candidateIdx + 1}/{totalImages} ảnh • Bấm để đổi</span>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
 function GalleryBackdropCard({
   filePath,
   alt,
+  onClick,
 }: {
   filePath: string;
   alt: string;
+  onClick?: () => void;
 }) {
   const candidateUrls = useMemo(() => {
     const rawList = [
@@ -190,7 +282,11 @@ function GalleryBackdropCard({
   if (!src) return null;
 
   return (
-    <div className="relative aspect-video rounded-xl overflow-hidden border border-white/10 bg-neutral-900 group shadow-lg">
+    <div
+      onClick={onClick}
+      className="relative aspect-video rounded-xl overflow-hidden border border-white/10 bg-neutral-900 group shadow-lg cursor-pointer select-none"
+      title="Bấm để xem ảnh phóng to"
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         key={`${filePath}-${candidateIdx}`}
@@ -206,7 +302,174 @@ function GalleryBackdropCard({
           }
         }}
       />
+      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+        <div className="p-2 rounded-full bg-black/60 border border-white/20 backdrop-blur-md text-white">
+          <Maximize2 size={16} />
+        </div>
+      </div>
     </div>
+  );
+}
+
+// ── Fullscreen Interactive Lightbox Modal ──
+function FilmImageLightboxModal({
+  isOpen,
+  onClose,
+  images,
+  initialIndex = 0,
+  filmName,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  images: string[];
+  initialIndex?: number;
+  filmName: string;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentIndex(Math.max(0, Math.min(initialIndex, images.length - 1)));
+    }
+  }, [isOpen, initialIndex, images.length]);
+
+  const total = images.length;
+  const currentImage = images[currentIndex];
+
+  const handleNext = useCallback(() => {
+    setCurrentIndex((prev) => (prev + 1) % total);
+  }, [total]);
+
+  const handlePrev = useCallback(() => {
+    setCurrentIndex((prev) => (prev - 1 + total) % total);
+  }, [total]);
+
+  // Keyboard navigation (Escape, Left, Right)
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") handleNext();
+      if (e.key === "ArrowLeft") handlePrev();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose, handleNext, handlePrev]);
+
+  if (!isOpen || !images.length) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-black/92 backdrop-blur-2xl p-4 sm:p-6 select-none"
+      >
+        {/* Top Header */}
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute top-4 inset-x-4 sm:inset-x-8 flex items-center justify-between z-20 text-white"
+        >
+          <div className="flex items-center gap-3">
+            <span className="font-extrabold text-sm sm:text-base text-neutral-200 truncate max-w-xs sm:max-w-md">
+              {filmName}
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full bg-white/10 border border-white/15 text-xs font-mono font-bold text-amber-300">
+              {currentIndex + 1} / {total}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white border border-white/15 transition-all cursor-pointer active:scale-90"
+            title="Đóng (Esc)"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Center Image with Smooth Animation */}
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="relative max-w-5xl max-h-[75vh] w-full flex items-center justify-center my-auto"
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentImage}
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.94 }}
+              transition={{ duration: 0.28, ease: "easeOut" }}
+              className="relative max-h-[75vh] max-w-full flex items-center justify-center"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={currentImage}
+                alt={`${filmName} - Ảnh ${currentIndex + 1}`}
+                referrerPolicy="no-referrer"
+                decoding="async"
+                className="max-h-[75vh] max-w-full object-contain rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] border border-white/10"
+              />
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Navigation Arrows */}
+          {total > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={handlePrev}
+                className="absolute left-2 sm:-left-6 p-3 rounded-full bg-black/70 hover:bg-black text-white border border-white/20 backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-2xl"
+                title="Ảnh trước (Mũi tên trái)"
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <button
+                type="button"
+                onClick={handleNext}
+                className="absolute right-2 sm:-right-6 p-3 rounded-full bg-black/70 hover:bg-black text-white border border-white/20 backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-2xl"
+                title="Ảnh tiếp theo (Mũi tên phải)"
+              >
+                <ChevronRight size={24} />
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Bottom Thumbnail Strip */}
+        {total > 1 && (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="absolute bottom-4 inset-x-4 flex items-center justify-center gap-2 overflow-x-auto py-2 px-4 max-w-3xl mx-auto scrollbar-none"
+          >
+            {images.map((thumb, idx) => (
+              <button
+                key={`${thumb}-${idx}`}
+                type="button"
+                onClick={() => setCurrentIndex(idx)}
+                className={cn(
+                  "relative w-14 sm:w-16 h-10 sm:h-12 rounded-lg overflow-hidden shrink-0 border transition-all cursor-pointer",
+                  idx === currentIndex
+                    ? "border-amber-400 scale-110 shadow-lg ring-2 ring-amber-400/30"
+                    : "border-white/20 opacity-50 hover:opacity-100",
+                )}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={thumb}
+                  alt={`Thumbnail ${idx + 1}`}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover"
+                />
+              </button>
+            ))}
+          </div>
+        )}
+      </motion.div>
+    </AnimatePresence>
   );
 }
 
@@ -837,13 +1100,15 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
   const [watchlistPending, setWatchlistPending] = useState(false);
   const [myRating, setMyRating] = useState(0);
   const [showTrailer, setShowTrailer] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   const [secondaryReadySlug, setSecondaryReadySlug] = useState("");
   const secondaryReady = secondaryReadySlug === slug;
 
   useEffect(() => {
     let timer: ReturnType<typeof window.setTimeout> | undefined;
     const activate = () => {
-      timer = window.setTimeout(() => setSecondaryReadySlug(slug), 250);
+      timer = window.setTimeout(() => setSecondaryReadySlug(slug), 100);
     };
 
     if (document.readyState === "complete") activate();
@@ -852,7 +1117,7 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
     // A broken decorative image must not postpone enhancements forever.
     const fallbackTimer = window.setTimeout(
       () => setSecondaryReadySlug(slug),
-      6_000,
+      4_000,
     );
     return () => {
       if (timer) window.clearTimeout(timer);
@@ -912,9 +1177,10 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
     return { cleanContent: content, directors: d, actors: a };
   }, [film]);
 
-  // TMDB data
+  // TMDB data — fetch images immediately for gallery & alternative poster switcher
   const {
     backdrops,
+    posters,
     bestBackdrop,
     bestPoster,
     cast: tmdbCast,
@@ -924,14 +1190,14 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
     trailer,
   } = useTmdb({
     film,
-    enabled: (secondaryReady || showTrailer) && !!film,
-    fetchImages: secondaryReady,
+    enabled: !!film,
+    fetchImages: true,
     fetchCredits: secondaryReady,
     fetchVideos: secondaryReady || showTrailer,
   });
 
-  // OMDB data — ratings IMDb/RT/Metacritic + awards + box office
-  const { omdb } = useOmdb(film, secondaryReady && !!film);
+  // OMDB data — ratings IMDb/RT/Metacritic + awards + box office (fetch immediately, 0ms cache)
+  const { omdb } = useOmdb(film, !!film);
 
   const providerPosterUrl = film
     ? resolveImageUrl(film.poster_url, film.thumb_url) ||
@@ -963,10 +1229,30 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
       if (resolved && !list.includes(resolved)) list.push(resolved);
     };
 
+    // 1. All TMDB posters first
+    if (posters && posters.length > 0) {
+      for (const p of posters) {
+        if (p.file_path) {
+          const url = tmdbPoster(p.file_path, "w780") || tmdbPoster(p.file_path, "w500");
+          if (url) add(url);
+        }
+      }
+    }
+
     if (tmdbPosterUrl) add(tmdbPosterUrl);
     if (providerPosterUrl) add(providerPosterUrl);
     if (providerBackdropUrl) add(providerBackdropUrl);
     if (tmdbBackdropUrl) add(tmdbBackdropUrl);
+
+    // 2. TMDB backdrops
+    if (backdrops && backdrops.length > 0) {
+      for (const b of backdrops.slice(0, 5)) {
+        if (b.file_path) {
+          const url = tmdbBackdrop(b.file_path, "w1280");
+          if (url) add(url);
+        }
+      }
+    }
 
     const primary = film?.poster_url || film?.thumb_url;
     if (primary && typeof primary === "string") {
@@ -985,7 +1271,46 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
     providerPosterUrl,
     tmdbBackdropUrl,
     tmdbPosterUrl,
+    posters,
+    backdrops,
   ]);
+
+  const allGalleryImages = useMemo(() => {
+    const list: string[] = [];
+    const add = (url?: unknown) => {
+      const resolved = resolveImageUrl(url);
+      if (resolved && !list.includes(resolved)) list.push(resolved);
+    };
+
+    // TMDB backdrops high-res
+    if (backdrops && backdrops.length > 0) {
+      for (const b of backdrops) {
+        if (b.file_path) {
+          const url =
+            tmdbBackdrop(b.file_path, "original") ||
+            tmdbBackdrop(b.file_path, "w1280");
+          if (url) add(url);
+        }
+      }
+    }
+
+    // TMDB posters
+    if (posters && posters.length > 0) {
+      for (const p of posters) {
+        if (p.file_path) {
+          const url =
+            tmdbPoster(p.file_path, "original") ||
+            tmdbPoster(p.file_path, "w780");
+          if (url) add(url);
+        }
+      }
+    }
+
+    if (providerBackdropUrl) add(providerBackdropUrl);
+    if (providerPosterUrl) add(providerPosterUrl);
+
+    return list;
+  }, [backdrops, posters, providerBackdropUrl, providerPosterUrl]);
 
   // Watchlist status check
   useEffect(() => {
@@ -1344,6 +1669,10 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
                 <DetailPosterCard
                   candidates={heroPosterCandidates}
                   filmName={film.name}
+                  onOpenLightbox={(idx) => {
+                    setLightboxIndex(idx || 0);
+                    setLightboxOpen(true);
+                  }}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
@@ -1568,8 +1897,15 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
             </div>
 
             {/* ── OMDB Ratings (below action buttons) ── */}
-            {omdb && (
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-2 pt-3 w-full">
+            <AnimatePresence>
+              {omdb && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.28, ease: "easeOut" }}
+                  className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-2 pt-3 w-full"
+                >
                 {/* IMDb chip */}
                 {omdb.imdbRating && (
                   <a
@@ -1806,8 +2142,9 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
                     </span>
                   )}
                 </div>
-              </div>
+              </motion.div>
             )}
+          </AnimatePresence>
           </div>
 
           <div className="lg:col-span-4 hidden lg:flex justify-end">
@@ -1815,6 +2152,10 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
               <DetailPosterCard
                 candidates={heroPosterCandidates}
                 filmName={film.name}
+                onOpenLightbox={(idx) => {
+                  setLightboxIndex(idx || 0);
+                  setLightboxOpen(true);
+                }}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
             </div>
@@ -2034,6 +2375,10 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
                     key={`${bg.file_path}-${idx}`}
                     filePath={bg.file_path}
                     alt={`Ảnh phim ${idx + 1}`}
+                    onClick={() => {
+                      setLightboxIndex(idx);
+                      setLightboxOpen(true);
+                    }}
                   />
                 ))}
               </div>
@@ -2050,6 +2395,19 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
         filmName={film?.name || ""}
         trailerUrl={film?.trailer_url}
         tmdbVideoKey={trailer?.key}
+      />
+
+      {/* Fullscreen Interactive Image Lightbox Modal */}
+      <FilmImageLightboxModal
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        images={
+          allGalleryImages.length > 0
+            ? allGalleryImages
+            : heroPosterCandidates
+        }
+        initialIndex={lightboxIndex}
+        filmName={film?.name || ""}
       />
     </div>
   );

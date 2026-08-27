@@ -5,7 +5,15 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
-import { Play, Star, Film, ChevronDown, Bookmark } from "lucide-react";
+import {
+  Play,
+  Star,
+  Film,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Bookmark,
+} from "lucide-react";
 import dynamic from "next/dynamic";
 import { FilmItem } from "@/components/film/FilmCard";
 import { useTranslation } from "@/store/langStore";
@@ -822,8 +830,11 @@ function HeroThumbnailImage({
 const preloadedHeroBackdrops = new Set<string>();
 
 function getMobileHeroBackdrop(src: string) {
-  return src.includes("image.tmdb.org/t/p/w1280/")
-    ? src.replace("/t/p/w1280/", "/t/p/w780/")
+  return src.includes("image.tmdb.org/t/p/")
+    ? src.replace(
+        /\/t\/p\/(?:original|w300|w342|w500|w780|w1280)\//i,
+        "/t/p/w780/",
+      )
     : src;
 }
 
@@ -847,16 +858,39 @@ function HeroBackdropImage({
       }),
     [film.heroBackdrop, film.poster_url, film.thumb_url],
   );
+  const mobileCandidates = useMemo(
+    () =>
+      buildHeroCardImageCandidates(
+        {
+          heroBackdrop: film.heroBackdrop,
+          thumbUrl: film.thumb_url,
+          posterUrl: film.poster_url,
+        },
+        "poster",
+      ).map(getMobileHeroBackdrop),
+    [film.heroBackdrop, film.poster_url, film.thumb_url],
+  );
   const [candidateIndex, setCandidateIndex] = useState(0);
+  const [mobileCandidateIndex, setMobileCandidateIndex] = useState(0);
   const imageRef = useRef<HTMLImageElement>(null);
 
   const src = candidates[candidateIndex] || candidates[0];
+  const mobileSrc =
+    mobileCandidates[mobileCandidateIndex] || getMobileHeroBackdrop(src);
 
   useEffect(() => {
     onReady();
   }, [onReady]);
 
   const tryNextCandidate = () => {
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 767px)").matches &&
+      mobileCandidateIndex < mobileCandidates.length - 1
+    ) {
+      setMobileCandidateIndex((index) => index + 1);
+      return;
+    }
     if (candidateIndex < candidates.length - 1) {
       setCandidateIndex((index) => index + 1);
     }
@@ -867,10 +901,7 @@ function HeroBackdropImage({
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_35%,rgba(50,58,72,0.3),transparent_44%),linear-gradient(135deg,#0b0e13_0%,#151a22_52%,#0b0d12_100%)]" />
       {src && (
         <picture className="block h-full w-full">
-          <source
-            media="(max-width: 767px)"
-            srcSet={getMobileHeroBackdrop(src)}
-          />
+          <source media="(max-width: 767px)" srcSet={mobileSrc} />
           <img
             ref={imageRef}
             src={src}
@@ -884,7 +915,7 @@ function HeroBackdropImage({
               onReady();
             }}
             onError={tryNextCandidate}
-            className="h-full w-full object-cover object-center brightness-[0.72] transition-transform duration-1000 ease-out"
+            className="h-full w-full object-cover object-[center_22%] brightness-[0.72] transition-transform duration-1000 ease-out md:object-center"
           />
         </picture>
       )}
@@ -1348,16 +1379,24 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
           preloadedHeroLogos.add(item.titleLogo!);
         };
       }
-      const candidates = buildHeroImageCandidates({
-        heroBackdrop: item.heroBackdrop,
-        thumbUrl: item.thumb_url,
-        posterUrl: item.poster_url,
-      });
+      const isMobile = window.matchMedia("(max-width: 767px)").matches;
+      const candidates = isMobile
+        ? buildHeroCardImageCandidates(
+            {
+              heroBackdrop: item.heroBackdrop,
+              thumbUrl: item.thumb_url,
+              posterUrl: item.poster_url,
+            },
+            "poster",
+          )
+        : buildHeroImageCandidates({
+            heroBackdrop: item.heroBackdrop,
+            thumbUrl: item.thumb_url,
+            posterUrl: item.poster_url,
+          });
       candidates.slice(0, 1).forEach((url) => {
         const img = new window.Image();
-        img.src = window.matchMedia("(max-width: 767px)").matches
-          ? getMobileHeroBackdrop(url)
-          : url;
+        img.src = isMobile ? getMobileHeroBackdrop(url) : url;
         img.onload = () => {
           preloadedHeroBackdrops.add(url);
         };
@@ -1831,23 +1870,53 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                 </div>
               </div>
 
-              {/* Mobile Pagination Dots */}
-              <div className="flex sm:hidden items-center justify-center gap-1.5 pt-2">
-                {featured.slice(0, 6).map((_, i) => (
+              {/* Mobile previous / pagination / next controls */}
+              {featured.length > 1 && (
+                <div className="flex items-center justify-center gap-2 pt-2 sm:hidden">
                   <button
-                    key={`mobile-dot-${i}`}
                     type="button"
-                    onClick={() => setCurrent(i)}
-                    aria-label={`Chuyển đến phim ${i + 1}`}
-                    className={cn(
-                      "h-1.5 rounded-full transition-all duration-300",
-                      i === current
-                        ? "w-6 bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"
-                        : "w-1.5 bg-white/40 hover:bg-white/60",
-                    )}
-                  />
-                ))}
-              </div>
+                    onClick={() =>
+                      setCurrent(
+                        (index) =>
+                          (index - 1 + featured.length) % featured.length,
+                      )
+                    }
+                    aria-label="Banner trước"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white/80 backdrop-blur-md transition-colors hover:bg-white/15 hover:text-white active:scale-95"
+                  >
+                    <ChevronLeft size={17} aria-hidden="true" />
+                  </button>
+
+                  <div className="flex min-h-8 items-center justify-center gap-1.5 rounded-full border border-white/10 bg-black/30 px-3 backdrop-blur-md">
+                    {featured.slice(0, 6).map((_, i) => (
+                      <button
+                        key={`mobile-dot-${i}`}
+                        type="button"
+                        onClick={() => setCurrent(i)}
+                        aria-label={`Chuyển đến phim ${i + 1}`}
+                        aria-current={i === current ? "true" : undefined}
+                        className={cn(
+                          "h-1.5 rounded-full transition-[width,background-color] duration-300",
+                          i === current
+                            ? "w-7 bg-white"
+                            : "w-1.5 bg-white/40 hover:bg-white/70",
+                        )}
+                      />
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrent((index) => (index + 1) % featured.length)
+                    }
+                    aria-label="Banner tiếp theo"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white/80 backdrop-blur-md transition-colors hover:bg-white/15 hover:text-white active:scale-95"
+                  >
+                    <ChevronRight size={17} aria-hidden="true" />
+                  </button>
+                </div>
+              )}
             </motion.div>
           </AnimatePresence>
         </div>

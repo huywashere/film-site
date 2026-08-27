@@ -24,6 +24,7 @@ import { useToast } from "@/providers/ToastProvider";
 import { guestDataStorage } from "@/lib/user-data";
 import { watchProgressStorage } from "@/lib/watch-progress";
 import { cardFont } from "@/lib/fonts";
+import { formatEpisodeLabel } from "@/lib/player-source-routing";
 import {
   Dialog,
   DialogClose,
@@ -117,7 +118,9 @@ export default function HistoryPage() {
         : []
     : guestHistory;
 
-  const historyItems = rawHistoryItems.filter((item) => !removedIds.includes(item.id));
+  const historyItems = rawHistoryItems.filter(
+    (item) => !removedIds.includes(item.id),
+  );
   const total = historyItems.length;
   const totalPages = user ? historyData?.totalPages || 1 : 1;
 
@@ -258,7 +261,14 @@ export default function HistoryPage() {
                       )}
                     </button>
 
-                    <Link href={`/watch/${item.movieId}`} className="flex">
+                    <Link
+                      href={`/watch/${item.movieId}${
+                        item.episode
+                          ? `?ep=${encodeURIComponent(item.episode)}`
+                          : ""
+                      }`}
+                      className="flex"
+                    >
                       {/* Thumbnail */}
                       <div className="relative w-40 md:w-48 flex-shrink-0">
                         {posterUrl ? (
@@ -304,7 +314,7 @@ export default function HistoryPage() {
 
                           {item.episode && (
                             <p className="text-xs text-blue-400 font-semibold mb-2">
-                              {item.episode}
+                              {formatEpisodeLabel(item.episode)}
                             </p>
                           )}
 

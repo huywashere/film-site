@@ -593,6 +593,8 @@ export default function CountryPage() {
   const selectedGenre = searchParams.get("category") || "";
   const label = COUNTRY_NAMES[slug] || slug;
   const isKoreanPage = slug === "han-quoc";
+  const isChinesePage = slug === "trung-quoc";
+  const isCustomHeroPage = isKoreanPage || isChinesePage;
   const user = useAuthStore((s) => s.user);
 
   const [heroSeed, setHeroSeed] = useState(() => Math.random());
@@ -676,7 +678,7 @@ export default function CountryPage() {
     return () => window.clearTimeout(timer);
   }, [slug]);
 
-  // Specific genre queries filtered by country with Instant Cache
+  // Specific genre queries filtered by country with Instant Cache (ONLY enabled for Korea & China)
   const { data: romanceData, isLoading: romanceLoading } = useQuery({
     queryKey: ["country-romance", slug],
     queryFn: () =>
@@ -690,7 +692,7 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: loadSecondaryRows,
+    enabled: loadSecondaryRows && isCustomHeroPage,
   });
 
   const { data: actionData, isLoading: actionLoading } = useQuery({
@@ -706,7 +708,7 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: loadSecondaryRows,
+    enabled: loadSecondaryRows && isCustomHeroPage,
   });
 
   const { data: coTrangData, isLoading: coTrangLoading } = useQuery({
@@ -722,7 +724,7 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: loadSecondaryRows,
+    enabled: loadSecondaryRows && isCustomHeroPage,
   });
 
   const { data: crimeData, isLoading: crimeLoading } = useQuery({
@@ -733,16 +735,16 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: loadSecondaryRows,
+    enabled: loadSecondaryRows && isCustomHeroPage,
   });
 
-  // Additional queries for maximum Korean movie variety with Instant Cache
+  // Additional queries for maximum Korean/Chinese movie variety with Instant Cache
   const { data: page2Data, isLoading: page2Loading } = useQuery({
     queryKey: ["country-p2", slug],
     queryFn: () => movieApi.getByCountry(slug, 2).then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: loadSecondaryRows,
+    enabled: loadSecondaryRows && isCustomHeroPage,
   });
 
   const { data: comedyData, isLoading: comedyLoading } = useQuery({
@@ -758,7 +760,7 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: loadSecondaryRows,
+    enabled: loadSecondaryRows && isCustomHeroPage,
   });
 
   const { data: dramaData, isLoading: dramaLoading } = useQuery({
@@ -769,7 +771,7 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: loadSecondaryRows,
+    enabled: loadSecondaryRows && isCustomHeroPage,
   });
 
   const romanceFilms: FilmItem[] =
@@ -868,9 +870,6 @@ export default function CountryPage() {
     globalSeenSlugs,
   ).slice(0, 14);
 
-  const isChinesePage = slug === "trung-quoc";
-  const isCustomHeroPage = isKoreanPage || isChinesePage;
-
   return (
     <div
       className={cn(
@@ -879,180 +878,273 @@ export default function CountryPage() {
         isCustomHeroPage ? "-mt-20 sm:-mt-24" : "pt-20 sm:pt-24",
       )}
     >
-      {/* ── Curated Hero Banner ONLY for Korean and Chinese pages ── */}
-      {isKoreanPage ? (
-        <AsianCuratedHeroBanner
-          pool={CURATED_KOREAN_HERO_POOL}
-          countryLabel="Hàn Quốc"
-          fallbackLocal="/images/wp4300709-avengers-4k-wallpapers.jpg"
-        />
-      ) : isChinesePage ? (
-        <AsianCuratedHeroBanner
-          pool={CURATED_CHINESE_HERO_POOL}
-          countryLabel="Trung Quốc"
-          fallbackLocal="/images/phim_co_trang_trung_quoc_50_573c11fea1.jpg"
-        />
-      ) : null}
+      {/* ── CASE 1: KOREA & CHINA ONLY (Showcase with Curated Hero Banner & 8 Multi-Genre Rows) ── */}
+      {isCustomHeroPage ? (
+        <>
+          {/* Curated Hero Banner */}
+          {isKoreanPage ? (
+            <AsianCuratedHeroBanner
+              pool={CURATED_KOREAN_HERO_POOL}
+              countryLabel="Hàn Quốc"
+              fallbackLocal="/images/wp4300709-avengers-4k-wallpapers.jpg"
+            />
+          ) : (
+            <AsianCuratedHeroBanner
+              pool={CURATED_CHINESE_HERO_POOL}
+              countryLabel="Trung Quốc"
+              fallbackLocal="/images/phim_co_trang_trung_quoc_50_573c11fea1.jpg"
+            />
+          )}
 
-      {/* ── Content Rows ── */}
-      <div
-        className={cn(
-          "relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6",
-          isCustomHeroPage ? "-mt-24 sm:-mt-36 lg:-mt-48" : "pt-2 sm:pt-4",
-        )}
-      >
-        {/* Row 1: Phim Thịnh Hành */}
-        <CountryCategoryRow
-          title={
-            isKoreanPage
-              ? t("country_sections.koreanTrending", "Phim Hàn Quốc Đang Thịnh Hành")
-              : isChinesePage
-                ? "Phim Trung Quốc Đang Thịnh Hành"
-                : t("country_sections.featuredToday", "Phim Nổi Bật Hôm Nay")
-          }
-          films={row1Films}
-          isLoading={mainLoading}
-          variant="landscape"
-        />
+          {/* Curated Multi-Genre Rows */}
+          <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 -mt-24 sm:-mt-36 lg:-mt-48">
+            {/* Row 1: Phim Thịnh Hành */}
+            <CountryCategoryRow
+              title={
+                isKoreanPage
+                  ? t("country_sections.koreanTrending", "Phim Hàn Quốc Đang Thịnh Hành")
+                  : "Phim Trung Quốc Đang Thịnh Hành"
+              }
+              films={row1Films}
+              isLoading={mainLoading}
+              variant="landscape"
+            />
 
-        {/* Row 2: Tình Cảm & Lãng Mạn */}
-        <CountryCategoryRow
-          title={
-            isKoreanPage
-              ? t("country_sections.koreanRomance", "Tuyệt phẩm K-Drama lãng mạn khiến trái tim tan chảy")
-              : isChinesePage
-                ? "Ngôn Tình & Lãng Mạn Hoa Ngữ Ngọt Ngào"
-                : t("country_sections.romanceTitle", "Phim Tình Cảm & Lãng Mạn")
-          }
-          films={row2Films}
-          isLoading={romanceLoading}
-        />
+            {/* Row 2: Tình Cảm & Lãng Mạn */}
+            <CountryCategoryRow
+              title={
+                isKoreanPage
+                  ? t("country_sections.koreanRomance", "Tuyệt phẩm K-Drama lãng mạn khiến trái tim tan chảy")
+                  : "Ngôn Tình & Lãng Mạn Hoa Ngữ Ngọt Ngào"
+              }
+              films={row2Films}
+              isLoading={romanceLoading}
+            />
 
-        {/* Row 3: Tuyển chọn đặc sắc */}
-        <CountryCategoryRow
-          title={
-            isKoreanPage
-              ? "Khám Phá K-Drama Đặc Sắc Tuyển Chọn"
-              : isChinesePage
-                ? "Khám Phá Phim Hoa Ngữ Tuyển Chọn"
-                : t("country_sections.koreanMaybeMissed", "Có thể bạn chưa xem")
-          }
-          films={row3Films}
-          isLoading={page2Loading || mainLoading}
-          variant="landscape"
-        />
+            {/* Row 3: Tuyển chọn đặc sắc */}
+            <CountryCategoryRow
+              title={
+                isKoreanPage
+                  ? "Khám Phá K-Drama Đặc Sắc Tuyển Chọn"
+                  : "Khám Phá Phim Hoa Ngữ Tuyển Chọn"
+              }
+              films={row3Films}
+              isLoading={page2Loading || mainLoading}
+              variant="landscape"
+            />
 
-        {/* Row 4: Hành Động & Kịch Tính */}
-        <CountryCategoryRow
-          title={
-            isKoreanPage
-              ? t("country_sections.koreanThriller", "Series Phim Hàn kịch tính & giật gân đáng xem liên tục")
-              : isChinesePage
-                ? "Phim Hành Động & Quyền Mưu Gay Cấn"
-                : t("country_sections.actionTitle", "Phim Hành Động & Kịch Tính")
-          }
-          films={row4Films}
-          isLoading={actionLoading}
-          variant="landscape"
-        />
+            {/* Row 4: Hành Động & Kịch Tính */}
+            <CountryCategoryRow
+              title={
+                isKoreanPage
+                  ? t("country_sections.koreanThriller", "Series Phim Hàn kịch tính & giật gân đáng xem liên tục")
+                  : "Phim Hành Động & Quyền Mưu Gay Cấn"
+              }
+              films={row4Films}
+              isLoading={actionLoading}
+              variant="landscape"
+            />
 
-        {/* Row 5: Cổ Trang & Thần Thoại */}
-        <CountryCategoryRow
-          title={
-            isKoreanPage
-              ? t("country_sections.koreanHistorical", "Phim Hàn Cổ Trang & Thần Thoại Kỳ Ảo Đỉnh Cao")
-              : isChinesePage
-                ? "Cổ Trang Tiên Hiệp & Kiếm Hiệp Đỉnh Cao"
-                : t("country_sections.historicalTitle", "Phim Cổ Trang & Thần Thoại")
-          }
-          films={row5Films}
-          isLoading={coTrangLoading}
-        />
+            {/* Row 5: Cổ Trang & Thần Thoại */}
+            <CountryCategoryRow
+              title={
+                isKoreanPage
+                  ? t("country_sections.koreanHistorical", "Phim Hàn Cổ Trang & Thần Thoại Kỳ Ảo Đỉnh Cao")
+                  : "Cổ Trang Tiên Hiệp & Kiếm Hiệp Đỉnh Cao"
+              }
+              films={row5Films}
+              isLoading={coTrangLoading}
+            />
 
-        {/* Row 6: Hài Hước & Giải Trí */}
-        <CountryCategoryRow
-          title={
-            isKoreanPage
-              ? t("country_sections.koreanComedy", "Phim Hàn Hài Hước & Giải Trí Sảng Khoái")
-              : isChinesePage
-                ? "Phim Hài Hước & Gia Đình Trung Quốc"
-                : t("country_sections.comedyTitle", "Phim Hài Hước Đặc Sắc")
-          }
-          films={row6Films}
-          isLoading={comedyLoading}
-          variant="landscape"
-        />
+            {/* Row 6: Hài Hước & Giải Trí */}
+            <CountryCategoryRow
+              title={
+                isKoreanPage
+                  ? t("country_sections.koreanComedy", "Phim Hàn Hài Hước & Giải Trí Sảng Khoái")
+                  : "Phim Hài Hước & Gia Đình Trung Quốc"
+              }
+              films={row6Films}
+              isLoading={comedyLoading}
+              variant="landscape"
+            />
 
-        {/* Row 7: Hình Sự & Trinh Thám */}
-        <CountryCategoryRow
-          title={
-            isKoreanPage
-              ? t("country_sections.koreanCrime", "Phim Hàn Hình Sự, Trinh Thám & Phá Án Hồi Hộp")
-              : isChinesePage
-                ? "Phim Hình Sự, Trinh Thám & Phá Án Hoa Ngữ"
-                : t("country_sections.crimeTitle", "Phim Hình Sự & Trinh Thám")
-          }
-          films={row7Films}
-          isLoading={crimeLoading}
-        />
+            {/* Row 7: Hình Sự & Trinh Thám */}
+            <CountryCategoryRow
+              title={
+                isKoreanPage
+                  ? t("country_sections.koreanCrime", "Phim Hàn Hình Sự, Trinh Thám & Phá Án Hồi Hộp")
+                  : "Phim Hình Sự, Trinh Thám & Phá Án Hoa Ngữ"
+              }
+              films={row7Films}
+              isLoading={crimeLoading}
+            />
 
-        {/* Row 8: Tâm Lý & Đời Thường */}
-        <CountryCategoryRow
-          title={
-            isKoreanPage
-              ? t("country_sections.koreanDrama", "Top Phim Tâm Lý & Đời Thường Chạm Đến Cảm Xúc")
-              : isChinesePage
-                ? "Phim Tâm Lý & Đời Thường Trung Quốc"
-                : t("country_sections.dramaTitle", "Phim Tâm Lý Chọn Lọc")
-          }
-          films={row8Films}
-          isLoading={dramaLoading}
-        />
+            {/* Row 8: Tâm Lý & Đời Thường */}
+            <CountryCategoryRow
+              title={
+                isKoreanPage
+                  ? t("country_sections.koreanDrama", "Top Phim Tâm Lý & Đời Thường Chạm Đến Cảm Xúc")
+                  : "Phim Tâm Lý & Đời Thường Trung Quốc"
+              }
+              films={row8Films}
+              isLoading={dramaLoading}
+            />
 
-        {/* Full Catalog Header */}
-        <div className="mt-14 mb-8 pt-8 border-t border-white/10 flex flex-col md:flex-row md:items-end justify-between gap-2">
-          <div>
-            <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
-              {t("country_sections.allMoviesOf", "Tất Cả Phim")} {t(`countries_list.${slug}`, label)} {selectedGenre ? `• ${activeGenreLabel}` : ""}
-            </h2>
-            <p className="text-xs text-neutral-400 font-semibold mt-1">
-              {t("country_sections.curatedDescription", "Kho phim điện ảnh và series truyền hình chọn lọc sản xuất tại")}{" "}
-              {t(`countries_list.${slug}`, label)}
-            </p>
+            {/* Full Catalog Header */}
+            <div className="mt-14 mb-8 pt-8 border-t border-white/10 flex flex-col md:flex-row md:items-end justify-between gap-2">
+              <div>
+                <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
+                  {t("country_sections.allMoviesOf", "Tất Cả Phim")} {t(`countries_list.${slug}`, label)} {selectedGenre ? `• ${activeGenreLabel}` : ""}
+                </h2>
+                <p className="text-xs text-neutral-400 font-semibold mt-1">
+                  {t("country_sections.curatedDescription", "Kho phim điện ảnh và series truyền hình chọn lọc sản xuất tại")}{" "}
+                  {t(`countries_list.${slug}`, label)}
+                </p>
+              </div>
+              <div className="text-xs font-bold text-neutral-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 self-start md:self-auto">
+                {t("common.page", "Trang")} <span className="text-white font-extrabold">{page}</span> /{" "}
+                {totalPages}
+              </div>
+            </div>
+
+            {/* Full Catalog Grid */}
+            {mainLoading ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
+                {Array.from({ length: 14 }).map((_, i) => (
+                  <FilmCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : films.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
+                {dedupeFilmsList(films).map((f, idx) => (
+                  <FilmCard key={`${f.slug || f._id || idx}-${idx}`} film={f} />
+                ))}
+              </div>
+            ) : (
+              <div className="py-20 text-center text-neutral-500 font-semibold text-sm">
+                {t("search.noResults", "Chưa tìm thấy bộ phim nào phù hợp.")}
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={handlePageChange}
+            />
           </div>
-          <div className="text-xs font-bold text-neutral-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 self-start md:self-auto">
-            {t("common.page", "Trang")} <span className="text-white font-extrabold">{page}</span> /{" "}
-            {totalPages}
+        </>
+      ) : (
+        /* ── CASE 2: ALL OTHER COUNTRIES (Original Clean Country Catalog Hub) ── */
+        <div className="mx-auto w-full max-w-[1720px] px-4 sm:px-6 md:px-8 lg:px-12 pb-20 space-y-6">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-6 border-b border-white/10 gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-purple-400 bg-purple-500/15 border border-purple-500/30 px-3 py-1 rounded-full">
+                  Quốc Gia
+                </span>
+                {selectedGenre && (
+                  <span className="text-xs font-bold text-neutral-300 bg-white/5 border border-white/10 px-3 py-1 rounded-full">
+                    {activeGenreLabel}
+                  </span>
+                )}
+              </div>
+              <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+                Phim {t(`countries_list.${slug}`, label)}
+              </h1>
+              <p className="text-xs sm:text-sm text-neutral-400 font-medium mt-1.5 max-w-xl">
+                Tổng hợp danh sách các bộ phim điện ảnh và series truyền hình đặc sắc nhất sản xuất tại {t(`countries_list.${slug}`, label)}.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 self-start sm:self-auto">
+              <div className="text-xs font-bold text-neutral-300 bg-[#1a1c24] px-4 py-2 rounded-full border border-white/10">
+                {t("common.page", "Trang")} <span className="text-white font-extrabold">{page}</span> / {totalPages}
+              </div>
+            </div>
           </div>
+
+          {/* Quick Category Filter Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1">
+            <button
+              onClick={() => handleSelectGenre("")}
+              className={cn(
+                "px-4 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer select-none",
+                !selectedGenre
+                  ? "bg-purple-600 text-white shadow-md shadow-purple-600/30 border border-purple-400/40"
+                  : "bg-[#181a24] text-neutral-400 border border-white/[0.08] hover:text-white hover:bg-[#222432]",
+              )}
+            >
+              Tất cả thể loại
+            </button>
+            {GENRE_OPTIONS.map((genre) => {
+              const active = selectedGenre === genre.slug;
+              return (
+                <button
+                  key={genre.slug}
+                  onClick={() => handleSelectGenre(genre.slug)}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all shrink-0 cursor-pointer select-none",
+                    active
+                      ? "bg-purple-600 text-white font-bold shadow-md shadow-purple-600/30 border border-purple-400/40"
+                      : "bg-[#181a24] text-neutral-400 border border-white/[0.06] hover:text-white hover:bg-[#222432]",
+                  )}
+                >
+                  {genre.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Movie Grid */}
+          {mainLoading ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {Array.from({ length: 18 }).map((_, i) => (
+                <FilmCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : films.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {dedupeFilmsList(films).map((f, idx) => (
+                <FilmCard
+                  key={`${f.slug || f._id || idx}-${idx}`}
+                  film={f}
+                  priority={idx < 6}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="py-24 text-center rounded-2xl bg-[#161822] border border-white/[0.08] space-y-3">
+              <p className="text-sm font-semibold text-neutral-400">
+                {t("search.noResults", "Chưa tìm thấy bộ phim nào phù hợp.")}
+              </p>
+              {selectedGenre && (
+                <button
+                  onClick={() => handleSelectGenre("")}
+                  className="px-4 py-1.5 rounded-full bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-colors cursor-pointer"
+                >
+                  Xem tất cả thể loại
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="pt-8 flex justify-center">
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                pageSize={24}
+                onPageChange={handlePageChange}
+              />
+            </div>
+          )}
         </div>
-
-        {/* Full Catalog Grid */}
-        {mainLoading ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
-            {Array.from({ length: 14 }).map((_, i) => (
-              <FilmCardSkeleton key={i} />
-            ))}
-          </div>
-        ) : films.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
-            {dedupeFilmsList(films).map((f, idx) => (
-              <FilmCard key={`${f.slug || f._id || idx}-${idx}`} film={f} />
-            ))}
-          </div>
-        ) : (
-          <div className="py-20 text-center text-neutral-500 font-semibold text-sm">
-            {t("search.noResults", "Chưa tìm thấy bộ phim nào phù hợp.")}
-          </div>
-        )}
-
-        {/* Pagination Controls */}
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          onPageChange={handlePageChange}
-        />
-      </div>
+      )}
     </div>
   );
 }

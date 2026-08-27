@@ -150,13 +150,22 @@ export default function ArtPlayer({
       }>,
     ) => {
       for (const range of nextRanges) {
-        if (
-          !Number.isFinite(range.start) ||
-          range.start < 0 ||
-          detectedAdRangesRef.current.some(
-            (current) => Math.abs(current.start - range.start) < 0.75,
-          )
-        ) {
+        const existingRange = detectedAdRangesRef.current.find(
+          (current) => Math.abs(current.start - range.start) < 0.75,
+        );
+        if (existingRange) {
+          existingRange.end = Math.max(existingRange.end, range.end);
+          existingRange.duration = Math.max(
+            existingRange.duration,
+            range.duration,
+          );
+          existingRange.skippable =
+            existingRange.skippable === true || range.skippable === true;
+          existingRange.removed =
+            existingRange.removed === true && range.removed === true;
+          continue;
+        }
+        if (!Number.isFinite(range.start) || range.start < 0) {
           continue;
         }
         detectedAdRangesRef.current.push(range);
@@ -305,13 +314,17 @@ export default function ArtPlayer({
                 ) {
                   try {
                     const filtered = filterHlsManifest(response.data, ctx.url);
-                    response.data = filtered.manifest;
+                    // Keep the original timeline intact. Filtering segments and
+                    // seeking the resulting timestamps again can move playback
+                    // to the wrong position. We only inspect the manifest here;
+                    // skipping is always an explicit viewer action.
                     mergeDetectedAdRanges(
                       filtered.stats.adMarkers.map((marker) => ({
                         start: marker.start,
-                        end: marker.start,
+                        end: marker.start + marker.duration,
                         duration: marker.duration,
-                        removed: true,
+                        removed: false,
+                        skippable: false,
                       })),
                     );
                     queueMicrotask(syncTimelineMarkers);
@@ -572,13 +585,11 @@ export default function ArtPlayer({
         name: "backward-10",
         position: "left" as const,
         index: 25,
-        html: `<span class="netphim-seek-glyph" aria-hidden="true">
-          <svg viewBox="0 0 24 24" focusable="false">
-            <g class="netphim-seek-arrow">
-              <path d="M8.2 4.7 4.8 8.1l3.4 3.4"/>
-              <path d="M5.2 8.1h6.6a7.6 7.6 0 1 1-7 10.6"/>
-            </g>
-            <text x="12" y="12" text-anchor="middle" dominant-baseline="central">10</text>
+        html: `<span class="netphim-seek-glyph netphim-seek-glyph-backward" aria-hidden="true">
+          <svg viewBox="0 0 26 26" focusable="false">
+            <path class="netphim-seek-arrow" d="M9.4 5.4 5.5 8.6l3.9 3.2" />
+            <path class="netphim-seek-arc" d="M6 8.7A8.4 8.4 0 1 1 5.15 15.8" />
+            <text x="13" y="16.05" text-anchor="middle">10</text>
           </svg>
         </span>`,
         tooltip: "Lùi 10 giây",
@@ -594,13 +605,11 @@ export default function ArtPlayer({
         name: "forward-10",
         position: "left" as const,
         index: 26,
-        html: `<span class="netphim-seek-glyph" aria-hidden="true">
-          <svg viewBox="0 0 24 24" focusable="false">
-            <g class="netphim-seek-arrow" transform="translate(24 0) scale(-1 1)">
-              <path d="M8.2 4.7 4.8 8.1l3.4 3.4"/>
-              <path d="M5.2 8.1h6.6a7.6 7.6 0 1 1-7 10.6"/>
-            </g>
-            <text x="12" y="12" text-anchor="middle" dominant-baseline="central">10</text>
+        html: `<span class="netphim-seek-glyph netphim-seek-glyph-forward" aria-hidden="true">
+          <svg viewBox="0 0 26 26" focusable="false">
+            <path class="netphim-seek-arrow" d="m16.6 5.4 3.9 3.2-3.9 3.2" />
+            <path class="netphim-seek-arc" d="M20 8.7a8.4 8.4 0 1 0 .85 7.1" />
+            <text x="13" y="16.05" text-anchor="middle">10</text>
           </svg>
         </span>`,
         tooltip: "Tua 10 giây",
@@ -691,6 +700,58 @@ export default function ArtPlayer({
 
     playerRef.current = player;
 
+    const skipAdButton = document.createElement("button");
+    skipAdButton.type = "button";
+    skipAdButton.className = "netphim-skip-ad";
+    skipAdButton.hidden = true;
+    skipAdButton.setAttribute("aria-live", "polite");
+    skipAdButton.innerHTML = `
+      <span class="netphim-skip-ad-label">Bỏ qua quảng cáo</span>
+      <span class="netphim-skip-ad-countdown" aria-hidden="true"></span>
+      <span class="netphim-skip-ad-arrow" aria-hidden="true">›</span>
+    `;
+    player.template.$player.appendChild(skipAdButton);
+
+    const findActiveAd = (time: number) =>
+      detectedAdRangesRef.current.find(
+        (ad) =>
+          ad.skippable === true &&
+          !ad.removed &&
+          ad.duration > 0 &&
+          ad.duration <= 180 &&
+          time >= ad.start - 0.05 &&
+          time < ad.end - 0.15,
+      );
+
+    const syncSkipAdButton = () => {
+      const activeAd = findActiveAd(player.currentTime);
+      skipAdButton.hidden = !activeAd;
+      if (!activeAd) return;
+      const remaining = Math.max(
+        1,
+        Math.ceil(activeAd.end - player.currentTime),
+      );
+      const countdown = skipAdButton.querySelector<HTMLElement>(
+        ".netphim-skip-ad-countdown",
+      );
+      if (countdown) countdown.textContent = `${remaining}s`;
+    };
+
+    const handleSkipAd = () => {
+      const activeAd = findActiveAd(player.currentTime);
+      if (!activeAd) return;
+      const duration = Number.isFinite(player.duration) ? player.duration : 0;
+      const target =
+        duration > 0
+          ? Math.min(Math.max(0, duration - 0.25), activeAd.end + 0.08)
+          : activeAd.end + 0.08;
+      if (target > player.currentTime && target - player.currentTime <= 181) {
+        player.seek = target;
+      }
+      syncSkipAdButton();
+    };
+    skipAdButton.addEventListener("click", handleSkipAd);
+
     // ArtPlayer can rebuild its control tree while initializing a custom HLS
     // source. Restore the seek buttons if that happens so they are always
     // present on desktop and mobile layouts.
@@ -746,47 +807,12 @@ export default function ArtPlayer({
       }
     });
 
-    // Skip only ranges backed by an explicit ad URL. Marker-only ranges and
-    // removed manifest segments must never mutate currentTime.
-    const checkAndSkipAd = (time: number): boolean => {
-      const activeAd = detectedAdRangesRef.current.find(
-        (ad) =>
-          ad.skippable === true &&
-          !ad.removed &&
-          ad.duration > 0 &&
-          ad.duration <= 180 &&
-          time >= ad.start - 0.05 &&
-          time < ad.end - 0.15,
-      );
-      if (activeAd) {
-        const duration = Number.isFinite(player.duration) ? player.duration : 0;
-        const target = duration > 0
-          ? Math.min(Math.max(0, duration - 0.25), activeAd.end + 0.15)
-          : activeAd.end + 0.15;
-        if (target <= time || target - time > 181) return false;
-        if (Math.abs(player.currentTime - target) > 0.2) {
-          player.currentTime = target;
-          return true;
-        }
-      }
-      return false;
-    };
-
-    player.on("video:timeupdate", () => {
-      checkAndSkipAd(player.currentTime);
-    });
-
-    player.on("video:seeking", () => {
-      checkAndSkipAd(player.currentTime);
-    });
-
-    player.on("video:seeked", () => {
-      checkAndSkipAd(player.currentTime);
-    });
-
-    player.on("seek", (time: number) => {
-      checkAndSkipAd(time);
-    });
+    // Advertisement ranges never seek automatically. These listeners only
+    // reveal the manual skip action while playback is inside a verified ad.
+    player.on("video:timeupdate", syncSkipAdButton);
+    player.on("video:seeking", syncSkipAdButton);
+    player.on("video:seeked", syncSkipAdButton);
+    player.on("seek", syncSkipAdButton);
 
     // Keep business callbacks around ArtPlayer's native UI lifecycle.
     player.on("ready", () => {
@@ -821,9 +847,8 @@ export default function ArtPlayer({
       });
     }
 
-    // -- Save progress + Skip Intro/Outro detection --
+    // -- Save progress --
     let lastSave = 0;
-    let didAutoSkipIntro = false;
     player.on("video:timeupdate", () => {
       const now = Date.now();
       const ct = player.currentTime;
@@ -834,20 +859,6 @@ export default function ArtPlayer({
           if (savedKey) localStorage.setItem(savedKey, ct.toString());
         }
         onProgressRef.current?.(ct, dur);
-
-        // Auto-skip Intro if setting enabled and starting from beginning
-        const isAutoSkipEnabled =
-          useSettingsStore.getState().autoSkipIntro ||
-          (typeof window !== "undefined" &&
-            localStorage.getItem("cineverse_auto_skip_intro") === "true");
-
-        if (!didAutoSkipIntro && isAutoSkipEnabled && dur > 120) {
-          if (ct >= 0 && ct < 3 && startTime < 5) {
-            didAutoSkipIntro = true;
-            const targetIntro = skipIntroEndRef.current ?? 85;
-            player.currentTime = targetIntro;
-          }
-        }
       }
     });
 
@@ -880,6 +891,7 @@ export default function ArtPlayer({
       if (stallRecoveryTimer) {
         clearInterval(stallRecoveryTimer);
       }
+      skipAdButton.removeEventListener("click", handleSkipAd);
     };
     // Recreate only when the primary/fallback transport changes. Other props use refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps

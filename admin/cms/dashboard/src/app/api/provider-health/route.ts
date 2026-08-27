@@ -26,6 +26,11 @@ type ProviderResult = {
   quota?: ProviderQuota;
 };
 
+type ProxyStatus = {
+  status: ProviderStatus;
+  message: string;
+};
+
 type ProviderProbe = {
   id: string;
   name: string;
@@ -295,7 +300,11 @@ async function probeProvider(
   }
 }
 
-function buildPayload(providers: ProviderResult[], checkedAt: string) {
+function buildPayload(
+  providers: ProviderResult[],
+  checkedAt: string,
+  proxy: ProxyStatus = { status: "operational", message: "Website proxy phản hồi" },
+) {
   const operational = providers.filter(
     (provider) => provider.status === "operational",
   ).length;
@@ -312,6 +321,7 @@ function buildPayload(providers: ProviderResult[], checkedAt: string) {
           ? ("degraded" as const)
           : ("operational" as const),
     checkedAt,
+    proxy,
     summary: { total: providers.length, operational, degraded, down },
     providers,
   };
@@ -339,10 +349,27 @@ export async function GET(request: NextRequest) {
   }
 
   const baseUrl = webBaseUrl();
+  let proxy: ProxyStatus = {
+    status: "operational",
+    message: "Website proxy phản hồi",
+  };
+  try {
+    const response = await fetch(`${baseUrl}/api/health`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(3_000),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  } catch {
+    proxy = {
+      status: "down",
+      message:
+        "Website proxy chưa chạy. Hãy khởi động web ở cổng 3000 để kiểm tra nguồn phim.",
+    };
+  }
   const providers = await Promise.all(
     PROVIDERS.map((provider) => probeProvider(provider, baseUrl)),
   );
-  const payload = buildPayload(providers, new Date().toISOString());
+  const payload = buildPayload(providers, new Date().toISOString(), proxy);
   resultCache = { expiresAt: Date.now() + RESULT_CACHE_MS, payload };
 
   return NextResponse.json(payload, {

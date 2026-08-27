@@ -301,12 +301,6 @@ export default function ConfigurationPage() {
           </div>
           <div className="mt-5 space-y-4">
             <Toggle
-              label="Tự động bỏ intro mặc định"
-              detail="Người xem vẫn có thể đổi trong player."
-              checked={config.autoSkipIntro}
-              onChange={(value) => update("autoSkipIntro", value)}
-            />
-            <Toggle
               label="Cho phép Watch Party"
               detail="Tắt nút tạo phòng mới khi cần cô lập sự cố."
               checked={config.watchPartyEnabled}

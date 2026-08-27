@@ -15,6 +15,7 @@ import type {
 } from "@/types/movie";
 import { recordTelemetry } from "@/lib/telemetry";
 import { normalizeNguonCPayload } from "@/lib/nguonc-normalizer";
+import { normalizeVicdnPayload } from "@/lib/vicdn-normalizer";
 import {
   curateCatalogFilms,
   type CuratedCatalogKind,
@@ -414,6 +415,60 @@ export const vsmovApi = {
     fetchVsmov(`/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}`),
 };
 
+const fetchVicdn = async (endpoint: string) => {
+  let proxyStatus = 0;
+  try {
+    const response = await trackedMovieFetch(`/api/vicdn${endpoint}`);
+    proxyStatus = response.status;
+    if (response.ok) {
+      const payload = await response.json();
+      if (payload?.status !== false && payload?.error !== true) return payload;
+    }
+  } catch {
+    // Ignore proxy fallback error
+  }
+
+  if (typeof window === "undefined") {
+    throw new Error(`ViCDN API Error: ${proxyStatus || "proxy unavailable"}`);
+  }
+
+  const normalizedEndpoint = endpoint.startsWith("/")
+    ? endpoint
+    : `/${endpoint}`;
+  const directUrl = new URL(
+    normalizedEndpoint.replace(/^\/+/, ""),
+    "https://vicdn.cc/api/",
+  );
+  const directResponse = await fetch(directUrl, {
+    headers: { Accept: "application/json" },
+    credentials: "omit",
+    mode: "cors",
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!directResponse.ok) {
+    throw new Error(`ViCDN direct API Error: ${directResponse.status}`);
+  }
+  return normalizeVicdnPayload(await directResponse.json());
+};
+
+// ── ViCDN API & Embed adapter (Song Ngữ / Bilingual) ──────────────
+export const vicdnApi = {
+  // Phim mới cập nhật
+  getLatest: (page = 1) => fetchVicdn(`/update/${page}`),
+
+  // Chi tiết phim & danh sách tập
+  getDetail: (slug: string) => fetchVicdn(`/info/${slug}`),
+
+  // Theo thể loại (hoat-hinh, vien-tuong, hinh-su, bi-an, hanh-dong, chinh-kich...)
+  getByCategory: (key: string, page = 1) => fetchVicdn(`/type/${key}/${page}`),
+
+  // Direct player embeds by TMDB ID
+  getMovieEmbed: (tmdbId: string | number) =>
+    `https://vicdn.cc/movie-${encodeURIComponent(String(tmdbId))}`,
+  getTvEmbed: (tmdbId: string | number, season = 1, episode = 1) =>
+    `https://vicdn.cc/tv-${encodeURIComponent(String(tmdbId))}-${season}-${episode}`,
+};
+
 // ── VidSrc embed adapter (TMDB IDs only; not a catalogue API) ─────
 export const vidsrcApi = {
   getMovieEmbed: (tmdbId: string | number) =>
@@ -723,6 +778,10 @@ async function getDetailFromAnySource(
       source: "vsmov",
       request: () => vsmovApi.getDetail(slug),
     },
+    {
+      source: "vicdn",
+      request: () => fetchVicdn(`/info/${slug}`),
+    },
   ];
 
   const orderedRequests = preferredSource
@@ -761,6 +820,7 @@ async function getDetailFromSource(source: MovieSource, slug: string) {
     ophim: () => fetchOphim(`/phim/${slug}`),
     nguonc: () => fetchNguonc(`/film/${slug}`),
     vsmov: () => vsmovApi.getDetail(slug),
+    vicdn: () => fetchVicdn(`/info/${slug}`),
     vidsrc: () =>
       Promise.reject(new Error("VidSrc chỉ hỗ trợ trình phát bằng TMDB ID.")),
   };
@@ -1006,6 +1066,27 @@ function catalogRequests(
         if (kind === "genre") return vsmovApi.getByGenre(value || "", page);
         if (kind === "country") return vsmovApi.getByCountry(value || "", page);
         return vsmovApi.getByType("tv-shows", page);
+      },
+    },
+    {
+      source: "vicdn",
+      request: () => {
+        if (kind === "latest") return vicdnApi.getLatest(page);
+        if (kind === "anime") return vicdnApi.getByCategory("hoat-hinh", page);
+        if (kind === "genre") {
+          const map: Record<string, string> = {
+            "hoat-hinh": "hoat-hinh",
+            "vien-tuong": "vien-tuong",
+            "khoa-hoc-vien-tuong": "vien-tuong",
+            "hinh-su": "hinh-su",
+            "bi-an": "bi-an",
+            "hanh-dong": "hanh-dong",
+            "chinh-kich": "chinh-kich",
+          };
+          const categoryKey = map[value || ""] || value || "hanh-dong";
+          return vicdnApi.getByCategory(categoryKey, page);
+        }
+        return vicdnApi.getLatest(page);
       },
     },
     ...(ENABLE_OPHIM && kind !== "tvshows"

@@ -40,6 +40,8 @@ import {
   IconTopologyStar3,
   IconLogout,
   IconSpeakerphone,
+  IconCamera,
+  IconCameraOff,
 } from "@tabler/icons-react";
 import netphimLogo from "../../../../../apps/web/public/cinephim-logo.png";
 import { adminFetch } from "@/lib/admin-api";
@@ -215,7 +217,15 @@ export default function AdminRootLayout({
   const [notificationCount, setNotificationCount] = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null);
+  const [screenshotProtectionEnabled, setScreenshotProtectionEnabled] =
+    useState(true);
   const headerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    setScreenshotProtectionEnabled(
+      localStorage.getItem("netphim-admin-screenshot-protection") !== "off",
+    );
+  }, []);
 
   const loadNotifications = useCallback(async () => {
     setNotificationsLoading(true);
@@ -353,6 +363,17 @@ export default function AdminRootLayout({
     setOpenMenu(null);
   };
 
+  const toggleScreenshotProtection = () => {
+    setScreenshotProtectionEnabled((current) => {
+      const next = !current;
+      localStorage.setItem(
+        "netphim-admin-screenshot-protection",
+        next ? "on" : "off",
+      );
+      return next;
+    });
+  };
+
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const query = search.trim();
@@ -388,7 +409,7 @@ export default function AdminRootLayout({
         </head>
         <body className={nunito.variable}>
           <AdminDevToolsGuard />
-          <AdminAntiScreenshot />
+          <AdminAntiScreenshot enabled={screenshotProtectionEnabled} />
           {children}
         </body>
       </html>
@@ -413,7 +434,7 @@ export default function AdminRootLayout({
       <body className={nunito.variable}>
         <AdminDevToolsGuard />
         <AdminIdleLock />
-        <AdminAntiScreenshot />
+        <AdminAntiScreenshot enabled={screenshotProtectionEnabled} />
         <div className="admin-shell min-h-screen bg-[var(--admin-sidebar)] lg:grid lg:grid-cols-[245px_minmax(0,1fr)]">
           <aside
             className={`fixed inset-y-0 left-0 z-40 flex w-[245px] flex-col bg-[var(--admin-sidebar)] text-slate-200 transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${mobileNavigationOpen ? "translate-x-0" : "-translate-x-full"}`}
@@ -906,6 +927,34 @@ export default function AdminRootLayout({
                             }
                             close={() => setOpenMenu(null)}
                           />
+                          <button
+                            type="button"
+                            onClick={toggleScreenshotProtection}
+                            className="admin-profile-link w-full"
+                            aria-pressed={screenshotProtectionEnabled}
+                          >
+                            {screenshotProtectionEnabled ? (
+                              <IconCameraOff size={17} />
+                            ) : (
+                              <IconCamera size={17} />
+                            )}
+                            <span className="flex min-w-0 flex-1 items-center justify-between gap-3">
+                              <span>
+                                {locale === "vi"
+                                  ? "Chống chụp màn hình"
+                                  : "Screenshot protection"}
+                              </span>
+                              <small className="text-[9px] font-bold uppercase text-[var(--admin-muted)]">
+                                {screenshotProtectionEnabled
+                                  ? locale === "vi"
+                                    ? "Bật"
+                                    : "On"
+                                  : locale === "vi"
+                                    ? "Tắt"
+                                    : "Off"}
+                              </small>
+                            </span>
+                          </button>
                           <a
                             href="http://localhost:3000"
                             target="_blank"

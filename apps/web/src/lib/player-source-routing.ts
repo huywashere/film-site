@@ -1,4 +1,9 @@
-export type ServerType = "vietsub" | "thuyet-minh" | "engsub" | "raw";
+export type ServerType =
+  | "vietsub"
+  | "thuyet-minh"
+  | "song-ngu"
+  | "engsub"
+  | "raw";
 
 export type EpisodeItem = {
   name?: string;
@@ -40,6 +45,7 @@ export function getSourceAbbr(source?: string): string {
   if (s.includes("nguonc") || s === "nc") return "NC";
   if (s.includes("vsmov") || s === "vs") return "VS";
   if (s.includes("ophim") || s === "op") return "OP";
+  if (s.includes("vicdn") || s === "vicdn") return "ViCDN";
   if (s.includes("vidsrc")) return "VidSrc";
   return source.toUpperCase();
 }
@@ -49,10 +55,16 @@ const PROVIDER_PRIORITY: Record<string, number> = {
   nguonc: 35,
   vsmov: 30,
   ophim: 25,
+  vicdn: 20,
   vidsrc: 5,
 };
 
-const UNSANDBOXED_VIDSRC_HOSTS = new Set(["vidsrc.sbs", "www.vidsrc.sbs"]);
+const UNSANDBOXED_EMBED_HOSTS = new Set([
+  "vidsrc.sbs",
+  "www.vidsrc.sbs",
+  "vicdn.cc",
+  "www.vicdn.cc",
+]);
 
 const VIDSRC_EMBED_ORIGIN = "https://vidsrc.sbs";
 
@@ -114,9 +126,50 @@ export function buildVidsrcEmbedUrl({
   return url.toString();
 }
 
+export type VicdnEmbedOptions = {
+  tmdbId: unknown;
+  mediaType: "movie" | "tv";
+  season?: unknown;
+  episode?: unknown;
+};
+
+/** Build ViCDN embed URLs: https://vicdn.cc/movie-{tmdbId} or https://vicdn.cc/tv-{tmdbId}-{season}-{episode} */
+export function buildVicdnEmbedUrl({
+  tmdbId,
+  mediaType,
+  season,
+  episode,
+}: VicdnEmbedOptions): string | null {
+  const safeTmdbId = positiveInteger(tmdbId);
+  if (!safeTmdbId) return null;
+
+  if (mediaType === "movie") {
+    return `https://vicdn.cc/movie-${safeTmdbId}`;
+  }
+  const safeSeason = positiveInteger(season) || 1;
+  const safeEpisode = positiveInteger(episode) || 1;
+  return `https://vicdn.cc/tv-${safeTmdbId}-${safeSeason}-${safeEpisode}`;
+}
+
 export function episodeNumberFromLabel(value?: string): number | null {
   const key = canonicalEpisodeKey(value);
   return positiveInteger(key);
+}
+
+export function formatEpisodeLabel(
+  value?: string | null,
+  fallback = "Tập 1",
+): string {
+  const key = canonicalEpisodeKey(value || "");
+  if (!key) return fallback;
+  if (key === "full") return "Tập Full";
+  if (/^\d+(?:\.\d+)?$/.test(key)) return `Tập ${key}`;
+
+  const readable = String(value || "")
+    .replace(/^(?:tập|tap|episode|ep)[\s:_-]*/i, "")
+    .replace(/[-_]+/g, " ")
+    .trim();
+  return readable ? `Tập ${readable}` : fallback;
 }
 
 export function resolveSeasonNumber(
@@ -154,12 +207,12 @@ export function canUseUnsandboxedEmbed(
   source: string | undefined,
   url: string,
 ) {
-  if (source !== "vidsrc") return false;
+  if (source !== "vidsrc" && source !== "vicdn") return false;
   try {
     const parsed = new URL(url);
     return (
       parsed.protocol === "https:" &&
-      UNSANDBOXED_VIDSRC_HOSTS.has(parsed.hostname)
+      UNSANDBOXED_EMBED_HOSTS.has(parsed.hostname)
     );
   } catch {
     return false;
@@ -185,6 +238,9 @@ export function detectServerType(
     `${serverName || ""} ${serverLanguage || ""}`,
   );
 
+  if (/\b(song ngu|songngu|bilingual|multi sub|multisub|vietsub\s*song\s*ngu)\b/.test(value)) {
+    return "song-ngu";
+  }
   if (/\b(thuyet minh|thuyetminh|voice over|voiceover|tm)\b/.test(value)) {
     return "thuyet-minh";
   }

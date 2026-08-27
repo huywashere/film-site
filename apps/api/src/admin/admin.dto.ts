@@ -140,7 +140,7 @@ export class SyncScheduleDto {
   name!: string;
 
   @IsString()
-  @IsIn(["kkphim", "ophim", "nguonc", "vsmov"])
+  @IsIn(["kkphim", "ophim", "nguonc", "vsmov", "vicdn"])
   source!: string;
 
   @IsInt()
@@ -184,7 +184,7 @@ export class UpdateMovieSourcesDto {
 
 export class ManualSyncDto {
   @IsString()
-  @IsIn(["kkphim", "ophim", "nguonc", "vsmov"])
+  @IsIn(["kkphim", "ophim", "nguonc", "vsmov", "vicdn"])
   source: string;
 
   @IsOptional()
@@ -196,7 +196,7 @@ export class ManualSyncDto {
 
 export class PlaybackSourceDto {
   @IsString()
-  @IsIn(["kkphim", "ophim", "nguonc", "vsmov", "vidsrc", "custom"])
+  @IsIn(["kkphim", "ophim", "nguonc", "vsmov", "vicdn", "vidsrc", "custom"])
   provider: string;
 
   @IsString()
@@ -377,7 +377,7 @@ export class UpdateSiteConfigurationDto {
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(10)
-  @IsIn(["kkphim", "ophim", "nguonc", "vsmov"], { each: true })
+  @IsIn(["kkphim", "ophim", "nguonc", "vsmov", "vicdn"], { each: true })
   providerPriority?: string[];
 
   @IsOptional()

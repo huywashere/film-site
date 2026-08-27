@@ -18,13 +18,11 @@ export interface SettingsState {
   subtitleSize: SubtitleSizeSetting;
   subtitleColor: SubtitleColorSetting;
   audioMode: AudioModeSetting;
-  autoSkipIntro: boolean;
   newMovieNotifications: boolean;
   commentNotifications: boolean;
 
   setAutoplay: (val: boolean) => void;
   setAutoNextEpisode: (val: boolean) => void;
-  setAutoSkipIntro: (val: boolean) => void;
   setTheaterMode: (val: boolean) => void;
   setDefaultQuality: (val: QualitySetting) => void;
   setDefaultServer: (val: ServerSetting) => void;
@@ -41,7 +39,6 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       autoplay: true,
       autoNextEpisode: true,
-      autoSkipIntro: true,
       theaterMode: false,
       defaultQuality: "auto",
       defaultServer: "vip1",
@@ -54,7 +51,6 @@ export const useSettingsStore = create<SettingsState>()(
 
       setAutoplay: (val) => set({ autoplay: val }),
       setAutoNextEpisode: (val) => set({ autoNextEpisode: val }),
-      setAutoSkipIntro: (val) => set({ autoSkipIntro: val }),
       setTheaterMode: (val) => set({ theaterMode: val }),
       setDefaultQuality: (val) => set({ defaultQuality: val }),
       setDefaultServer: (val) => set({ defaultServer: val }),
