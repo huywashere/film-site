@@ -140,7 +140,7 @@ export function TrailerModal({
     : null;
 
   const embedSrc = finalYouTubeKey
-    ? `https://www.youtube.com/embed/${encodeURIComponent(finalYouTubeKey)}?autoplay=1&rel=0&playsinline=1&enablejsapi=1`
+    ? `https://www.youtube.com/embed/${encodeURIComponent(finalYouTubeKey)}?autoplay=1&rel=0&playsinline=1`
     : vimeoKey
       ? `https://player.vimeo.com/video/${encodeURIComponent(vimeoKey)}?autoplay=1&title=0&byline=0`
       : null;
@@ -166,13 +166,18 @@ export function TrailerModal({
 
       {/* Borderless Minimal Modal Card */}
       <div className="relative w-full max-w-4xl bg-[#0a0c10]/95 rounded-2xl p-3 sm:p-4 backdrop-blur-2xl shadow-[0_0_80px_rgba(0,0,0,0.95)] z-10 flex flex-col">
-        {/* Minimal Header Bar (No Borders) */}
+        {/* Minimal Header Bar */}
         <div className="flex items-center justify-between pb-3 px-1">
           <div className="flex items-center gap-2 min-w-0 pr-4 text-xs sm:text-sm text-neutral-400">
-            <Clapperboard size={15} className="text-neutral-400 shrink-0" />
-            <span className="truncate font-medium">
+            <Clapperboard size={15} className="text-[#23ade5] shrink-0" />
+            <span className="truncate font-medium flex items-center gap-1.5">
               Trailer chính thức{" "}
               <span className="text-white font-bold">{displayName}</span>
+              {finalYouTubeKey && (
+                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/25 text-[10px] font-bold">
+                  TMDB 4K / 1080p HD
+                </span>
+              )}
             </span>
           </div>
 
@@ -202,33 +207,25 @@ export function TrailerModal({
         <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black shadow-2xl flex items-center justify-center">
           {isLoading ? (
             <div className="flex flex-col items-center gap-2 text-neutral-400">
-              <Loader2 size={24} className="animate-spin text-neutral-400" />
-              <p className="text-xs font-medium">Đang tìm trailer chính thức...</p>
+              <Loader2 size={24} className="animate-spin text-[#23ade5]" />
+              <p className="text-xs font-medium">Đang tải trailer chính thức TMDB chất lượng cao...</p>
             </div>
           ) : embedSrc ? (
             <iframe
               src={embedSrc}
               title={`${displayName} Official Trailer`}
               className="w-full h-full border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+              referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen
             />
           ) : (
             <div className="flex max-w-sm flex-col items-center gap-3 px-6 text-center text-neutral-300">
-              <Clapperboard size={28} className="text-neutral-300" />
-              <p className="text-sm font-semibold">Chưa tìm thấy video trailer</p>
+              <Clapperboard size={28} className="text-neutral-400" />
+              <p className="text-sm font-semibold">Chưa có trailer chính thức</p>
               <p className="text-xs leading-relaxed text-neutral-500">
-                Mở kết quả YouTube để xem trailer của phim này.
+                Phim này hiện chưa phát hành trailer chính thức chất lượng cao từ hãng phim.
               </p>
-              <a
-                href={externalTrailerHref}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-[#111317] transition-colors hover:bg-neutral-200 active:scale-[0.98]"
-              >
-                Mở YouTube
-                <ExternalLink size={14} />
-              </a>
             </div>
           )}
         </div>

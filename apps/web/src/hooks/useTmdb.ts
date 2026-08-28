@@ -1,7 +1,8 @@
 /**
  * useTmdb — hook tổng hợp để lấy dữ liệu TMDB cho một bộ phim
- * Tự động detect tmdbId từ film data, fetch images + credits + videos song song
+ * Tự động detect tmdbId từ film data, fetch images + credits + videos + season episode stills song song
  */
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   tmdbApi,
@@ -9,15 +10,18 @@ import {
   type TmdbImages,
   type TmdbCredits,
   type TmdbVideo,
+  type TmdbImage,
   getYoutubeTrailer,
 } from "@/lib/tmdb";
 
 interface UseTmdbOptions {
   film: any; // film data từ KKPhim/OPhim/NguonC
+  seasonNumber?: number;
   enabled?: boolean;
   fetchImages?: boolean;
   fetchCredits?: boolean;
   fetchVideos?: boolean;
+  fetchSeason?: boolean;
 }
 
 function normalizeTmdbTitle(value: unknown): string {
@@ -75,10 +79,12 @@ function pickBestTmdbResult(results: any[], film: any) {
 
 export function useTmdb({
   film,
+  seasonNumber = 1,
   enabled = true,
   fetchImages = true,
   fetchCredits = true,
   fetchVideos = true,
+  fetchSeason = true,
 }: UseTmdbOptions) {
   const { tmdbId, type, imdbId } = extractTmdbInfo(film);
   const searchTitle = film?.origin_name || film?.title || film?.name || "";
@@ -141,6 +147,29 @@ export function useTmdb({
     enabled: isEnabled && fetchImages && !!resolvedId,
     staleTime: 1000 * 60 * 60 * 24,
   });
+
+  // TV Season & Episode Details (chứa exact still_path cho từng tập)
+  const { data: seasonData } = useQuery({
+    queryKey: ["tmdb-season-details", resolvedId, seasonNumber || 1],
+    queryFn: () => tmdbApi.getTvSeasonDetail(resolvedId!, seasonNumber || 1),
+    enabled:
+      isEnabled &&
+      fetchSeason &&
+      resolvedType === "tv" &&
+      !!resolvedId,
+    staleTime: 1000 * 60 * 60 * 24,
+  });
+
+  const seasonEpisodes = seasonData?.episodes || [];
+  const episodeStillsMap: Record<number, string> = useMemo(() => {
+    const map: Record<number, string> = {};
+    seasonEpisodes.forEach((ep) => {
+      if (ep.episode_number && ep.still_path) {
+        map[ep.episode_number] = ep.still_path;
+      }
+    });
+    return map;
+  }, [seasonEpisodes]);
 
   // Credits
   const { data: credits, isLoading: creditsLoading } = useQuery({
@@ -220,6 +249,10 @@ export function useTmdb({
     bestPoster,
     bestLogo: logos[0] || null,
     imagesLoading,
+    // Season & Episode stills
+    seasonData,
+    seasonEpisodes,
+    episodeStillsMap,
     // Credits
     credits,
     cast,

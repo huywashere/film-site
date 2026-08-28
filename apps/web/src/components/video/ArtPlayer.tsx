@@ -40,6 +40,7 @@ export interface ArtPlayerProps {
   skipIntroStart?: number;
   skipIntroEnd?: number;
   skipOutroStart?: number;
+  autoSkipIntro?: boolean;
 }
 
 export default function ArtPlayer({
@@ -62,6 +63,7 @@ export default function ArtPlayer({
   onPlaybackStateChange,
   skipIntroStart = 0,
   skipIntroEnd = 85,
+  autoSkipIntro = true,
 }: ArtPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Artplayer | null>(null);
@@ -81,8 +83,11 @@ export default function ArtPlayer({
   const dbProgressRef = useRef(dbProgress);
   const skipIntroStartRef = useRef(skipIntroStart);
   const skipIntroEndRef = useRef(skipIntroEnd);
+  const autoSkipIntroRef = useRef(autoSkipIntro);
+  const introAutoSkippedRef = useRef(false);
   skipIntroStartRef.current = skipIntroStart;
   skipIntroEndRef.current = skipIntroEnd;
+  autoSkipIntroRef.current = autoSkipIntro;
 
   const onReadyRef = useRef(onReady);
   const onEndedRef = useRef(onEnded);
@@ -203,12 +208,14 @@ export default function ArtPlayer({
         kind: "intro" | "ad",
         start: number,
         end: number,
-        label: string,
+        title: string,
+        badge: string,
+        seekTarget?: number,
         pointOnly = false,
       ) => {
         const safeStart = Math.min(duration, Math.max(0, start));
         const safeEnd = Math.min(duration, Math.max(safeStart, end));
-        const marker = document.createElement("span");
+        const marker = document.createElement("div");
         marker.className = `netphim-timeline-marker netphim-timeline-marker-${kind}${pointOnly ? " is-point" : ""}`;
         const startPercent = (safeStart / duration) * 100;
         marker.style.left = `${startPercent}%`;
@@ -216,31 +223,43 @@ export default function ArtPlayer({
         if (startPercent >= 88) marker.classList.add("is-near-end");
         if (!pointOnly) {
           marker.style.width = `${Math.max(
-            0.22,
+            0.35,
             ((safeEnd - safeStart) / duration) * 100,
           )}%`;
         }
-        marker.dataset.label = label;
-        marker.title = label;
-        marker.setAttribute("role", "img");
-        marker.setAttribute("aria-label", label);
+        marker.dataset.title = title;
+        marker.dataset.badge = badge;
+        marker.dataset.label = `${title} • ${badge}`;
+        marker.title = `${title} (${badge})`;
+        marker.setAttribute("role", "button");
+        marker.setAttribute("aria-label", `${title} ${badge}`);
         marker.tabIndex = 0;
+
+        if (seekTarget !== undefined) {
+          marker.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (player) {
+              player.seek = Math.min(duration, seekTarget);
+            }
+          });
+        }
+
         markerLayer?.appendChild(marker);
       };
 
-      const introStart = skipIntroStartRef.current;
-      const introEnd = skipIntroEndRef.current;
+      const introStart = skipIntroStartRef.current ?? 0;
+      const introEnd = skipIntroEndRef.current ?? 85;
       if (
         duration > 120 &&
-        introStart != null &&
-        introEnd != null &&
         introEnd > introStart
       ) {
         appendMarker(
           "intro",
           introStart,
           introEnd,
-          `Intro · ${formatTimelineTime(introStart)}–${formatTimelineTime(introEnd)}`,
+          "🎬 Đoạn Mở Đầu (Intro)",
+          `${formatTimelineTime(introStart)} – ${formatTimelineTime(introEnd)}`,
+          introEnd + 0.1,
         );
       }
 
@@ -249,7 +268,9 @@ export default function ArtPlayer({
           "ad",
           range.start,
           range.end,
-          `Quảng cáo ${index + 1} · ${formatTimelineTime(range.start)}`,
+          `📢 Điểm Quảng Cáo ${index + 1}`,
+          `${formatTimelineTime(range.start)}`,
+          range.end + 0.1,
           range.removed,
         );
       });
@@ -586,10 +607,10 @@ export default function ArtPlayer({
         position: "left" as const,
         index: 25,
         html: `<span class="netphim-seek-glyph netphim-seek-glyph-backward" aria-hidden="true">
-          <svg viewBox="0 0 26 26" focusable="false">
-            <path class="netphim-seek-arrow" d="M9.4 5.4 5.5 8.6l3.9 3.2" />
-            <path class="netphim-seek-arc" d="M6 8.7A8.4 8.4 0 1 1 5.15 15.8" />
-            <text x="13" y="16.05" text-anchor="middle">10</text>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4.5v5h5" />
+            <path d="M4.5 9A8.5 8.5 0 1 1 3.5 12" />
+            <text x="12" y="15.2" text-anchor="middle" font-size="7.5" font-weight="900" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="currentColor" stroke="none">10</text>
           </svg>
         </span>`,
         tooltip: "Lùi 10 giây",
@@ -606,10 +627,10 @@ export default function ArtPlayer({
         position: "left" as const,
         index: 26,
         html: `<span class="netphim-seek-glyph netphim-seek-glyph-forward" aria-hidden="true">
-          <svg viewBox="0 0 26 26" focusable="false">
-            <path class="netphim-seek-arrow" d="m16.6 5.4 3.9 3.2-3.9 3.2" />
-            <path class="netphim-seek-arc" d="M20 8.7a8.4 8.4 0 1 0 .85 7.1" />
-            <text x="13" y="16.05" text-anchor="middle">10</text>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 4.5v5h-5" />
+            <path d="M19.5 9A8.5 8.5 0 1 0 20.5 12" />
+            <text x="12" y="15.2" text-anchor="middle" font-size="7.5" font-weight="900" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="currentColor" stroke="none">10</text>
           </svg>
         </span>`,
         tooltip: "Tua 10 giây",
@@ -666,7 +687,7 @@ export default function ArtPlayer({
       playsInline: true,
       autoPlayback: true,
       airplay: true,
-      theme: "#8b5cf6",
+      theme: "#23ade5",
       lang: "vi",
       i18n: { vi },
       icons: {
@@ -710,8 +731,6 @@ export default function ArtPlayer({
       <span class="netphim-skip-ad-countdown" aria-hidden="true"></span>
       <span class="netphim-skip-ad-arrow" aria-hidden="true">›</span>
     `;
-    player.template.$player.appendChild(skipAdButton);
-
     const findActiveAd = (time: number) =>
       detectedAdRangesRef.current.find(
         (ad) =>
@@ -750,6 +769,7 @@ export default function ArtPlayer({
       }
       syncSkipAdButton();
     };
+
     skipAdButton.addEventListener("click", handleSkipAd);
 
     // ArtPlayer can rebuild its control tree while initializing a custom HLS
@@ -758,36 +778,25 @@ export default function ArtPlayer({
     const ensureSeekControls = () => {
       for (const control of seekControls) {
         const selector = `.art-control-${control.name}`;
-        if (!player.template.$controls.querySelector(selector)) {
-          player.controls.add(control);
+        const existing = player.template.$controls?.querySelector(selector);
+        if (existing) continue;
+
+        try {
+          player.controls.add({
+            name: control.name,
+            position: control.position,
+            index: control.index,
+            html: control.html,
+            tooltip: control.tooltip,
+            mounted: control.mounted,
+            click: control.click,
+          });
+        } catch {
+          // Ignore if control cannot be added
         }
       }
     };
-    ensureSeekControls();
-    player.on("ready", () => {
-      ensureSeekControls();
-      syncTimelineMarkers();
-    });
-    player.on("video:durationchange", syncTimelineMarkers);
 
-    player.on("video:play", () => {
-      onPlaybackStateChangeRef.current?.({
-        action: "play",
-        currentTime: player.currentTime,
-      });
-    });
-    player.on("video:pause", () => {
-      onPlaybackStateChangeRef.current?.({
-        action: "pause",
-        currentTime: player.currentTime,
-      });
-    });
-    player.on("video:seeked", () => {
-      onPlaybackStateChangeRef.current?.({
-        action: "seek",
-        currentTime: player.currentTime,
-      });
-    });
     let didStartPlayback = false;
     let bufferingStartedAt = 0;
     player.on("video:waiting", () => {
@@ -807,9 +816,24 @@ export default function ArtPlayer({
       }
     });
 
-    // Advertisement ranges never seek automatically. These listeners only
-    // reveal the manual skip action while playback is inside a verified ad.
-    player.on("video:timeupdate", syncSkipAdButton);
+    // Advertisement & Auto Skip Intro listeners
+    player.on("video:timeupdate", () => {
+      syncSkipAdButton();
+      if (autoSkipIntroRef.current && !introAutoSkippedRef.current) {
+        const start = skipIntroStartRef.current ?? 0;
+        const end = skipIntroEndRef.current ?? 85;
+        const duration = Number.isFinite(player.duration) ? player.duration : 0;
+        if (
+          duration > 120 &&
+          end > start &&
+          player.currentTime >= start &&
+          player.currentTime < end - 0.5
+        ) {
+          introAutoSkippedRef.current = true;
+          player.seek = end + 0.1;
+        }
+      }
+    });
     player.on("video:seeking", syncSkipAdButton);
     player.on("video:seeked", syncSkipAdButton);
     player.on("seek", syncSkipAdButton);
@@ -823,6 +847,31 @@ export default function ArtPlayer({
       if (player.mask) {
         player.mask.show = true;
       }
+      syncTimelineMarkers();
+      ensureSeekControls();
+    });
+
+    player.on("video:loadedmetadata", syncTimelineMarkers);
+    player.on("video:durationchange", syncTimelineMarkers);
+    player.on("resize", syncTimelineMarkers);
+
+    player.on("video:play", () => {
+      onPlaybackStateChangeRef.current?.({
+        action: "play",
+        currentTime: player.currentTime,
+      });
+    });
+    player.on("video:pause", () => {
+      onPlaybackStateChangeRef.current?.({
+        action: "pause",
+        currentTime: player.currentTime,
+      });
+    });
+    player.on("video:seeked", () => {
+      onPlaybackStateChangeRef.current?.({
+        action: "seek",
+        currentTime: player.currentTime,
+      });
     });
 
     // -- Resume: restore saved position using progressKey (slug+ep) or dbProgress --

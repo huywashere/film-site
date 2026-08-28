@@ -242,14 +242,6 @@ function DetailPosterCard({
           >
             <ChevronRight size={14} />
           </button>
-
-          {/* Bottom Badge Indicator */}
-          <div className="absolute bottom-2.5 inset-x-0 flex items-center justify-center pointer-events-none">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 border border-white/20 backdrop-blur-md text-[10px] font-bold text-white shadow-xl group-hover:scale-105 transition-transform">
-              <Sparkles size={11} className="text-amber-400 animate-pulse" />
-              <span>{candidateIdx + 1}/{totalImages} ảnh • Bấm để đổi</span>
-            </div>
-          </div>
         </>
       )}
     </div>

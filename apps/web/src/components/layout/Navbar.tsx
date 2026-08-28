@@ -249,46 +249,40 @@ export function CountryFlagImage({
   );
 }
 
-const LISTS_CATALOG = [
-  {
-    label: "Phim Mới",
-    labelEn: "New Releases",
-    href: "/search?sort=modified.time%20desc",
-  },
-  { label: "Phim Bộ", labelEn: "TV Series", href: "/films/series" },
-  { label: "Phim Lẻ", labelEn: "Feature Films", href: "/films/single" },
-  { label: "Hoạt Hình", labelEn: "Anime / Animation", href: "/films/anime" },
-  {
-    label: "Phim Vietsub",
-    labelEn: "Subtitled Movies",
-    href: "/search?q=vietsub",
-  },
-  {
-    label: "Phim Thuyết Minh",
-    labelEn: "Dubbed Movies",
-    href: "/search?q=thuyet%20minh",
-  },
-  {
-    label: "Phim Lồng Tiếng",
-    labelEn: "Voiceover Movies",
-    href: "/search?q=long%20tieng",
-  },
-  {
-    label: "Phim Bộ Đang Chiếu",
-    labelEn: "Ongoing Series",
-    href: "/search?status=ongoing",
-  },
-  {
-    label: "Phim Bộ Đã Hoàn Thành",
-    labelEn: "Completed Series",
-    href: "/search?status=completed",
-  },
-  { label: "Subteam", labelEn: "Subteam Releases", href: "/search?q=subteam" },
-  {
-    label: "Phim Chiếu Rạp",
-    labelEn: "Theatrical Releases",
-    href: "/search?q=chieu%20rap",
-  },
+const LISTS_COLUMNS = [
+  // Column 1
+  [
+    { label: "Phim Mới", labelEn: "New Releases", href: "/films/latest" },
+    { label: "Phim Bộ", labelEn: "TV Series", href: "/films/series" },
+    { label: "Phim Lẻ", labelEn: "Feature Films", href: "/films/single" },
+    { label: "Shows", labelEn: "TV Shows", href: "/films/shows" },
+  ],
+  // Column 2
+  [
+    { label: "Hoạt Hình", labelEn: "Animation / Anime", href: "/films/anime" },
+    { label: "Phim Vietsub", labelEn: "Subtitled", href: "/films/vietsub" },
+    { label: "Phim Thuyết Minh", labelEn: "Dubbed", href: "/films/thuyet-minh" },
+    { label: "Phim Lồng Tiếng", labelEn: "Voiceover", href: "/films/long-tieng" },
+  ],
+  // Column 3
+  [
+    {
+      label: "Phim Bộ Đang Chiếu",
+      labelEn: "Ongoing Series",
+      href: "/films/dang-chieu",
+    },
+    {
+      label: "Phim Bộ Đã Hoàn Thành",
+      labelEn: "Completed Series",
+      href: "/films/hoan-thanh",
+    },
+    { label: "Subteam", labelEn: "Subteam", href: "/films/subteam" },
+    {
+      label: "Phim Chiếu Rạp",
+      labelEn: "Theatrical Movies",
+      href: "/films/chieu-rap",
+    },
+  ],
 ];
 
 function AnimatedNavbarLogo() {
@@ -704,16 +698,20 @@ export function Navbar() {
                   className="transition-transform duration-200 group-hover:rotate-180 text-neutral-400"
                 />
               </button>
-              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[500px] p-4 bg-[#090c15]/65 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.6)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-3 gap-y-1.5 gap-x-2 z-50">
-                {LISTS_CATALOG.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onMouseEnter={() => router.prefetch(item.href)}
-                    className="px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 block truncate"
-                  >
-                    {lang === "en" ? item.labelEn || item.label : item.label}
-                  </Link>
+              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[540px] p-4 bg-[#090c15]/95 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.7)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-3 gap-x-2 z-50">
+                {LISTS_COLUMNS.map((column, colIdx) => (
+                  <div key={colIdx} className="flex flex-col space-y-1">
+                    {column.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onMouseEnter={() => router.prefetch(item.href)}
+                        className="px-3 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/10 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-150 block truncate"
+                      >
+                        {lang === "en" ? item.labelEn || item.label : item.label}
+                      </Link>
+                    ))}
+                  </div>
                 ))}
               </div>
             </div>

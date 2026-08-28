@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { api, watchHistoryApi, watchlistApi, authApi } from "@/lib/api";
 import { useState, useEffect, startTransition } from "react";
@@ -276,6 +276,7 @@ export default function UserDashboardPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user, logout, fetchMe } = useAuthStore();
 
@@ -530,27 +531,43 @@ export default function UserDashboardPage() {
   });
 
   const profile =
-    apiProfile ||
-    (user
+    isOwnProfile && user
       ? {
           id: user.id,
           username: user.username,
           displayName: user.displayName || user.username,
-          avatarUrl: user.avatarUrl,
-          nameColor: user.nameColor,
-          avatarFrameColor: user.avatarFrameColor,
-          bio: user.bio || "",
-          _count: { watchlist: 0, reviews: 0 },
+          avatarUrl: user.avatarUrl || apiProfile?.avatarUrl,
+          nameColor:
+            user.nameColor || apiProfile?.nameColor || DEFAULT_NAME_COLOR,
+          avatarFrameColor:
+            user.avatarFrameColor ||
+            apiProfile?.avatarFrameColor ||
+            DEFAULT_AVATAR_FRAME_COLOR,
+          bio: user.bio !== undefined ? user.bio : apiProfile?.bio || "",
+          createdAt: apiProfile?.createdAt,
+          _count: apiProfile?._count || { watchlist: 0, reviews: 0 },
         }
-      : {
-          username: username || "Guest",
-          displayName: username || "Khách",
-          avatarUrl: null,
-          nameColor: DEFAULT_NAME_COLOR,
-          avatarFrameColor: DEFAULT_AVATAR_FRAME_COLOR,
-          bio: "",
-          _count: { watchlist: 0, reviews: 0 },
-        });
+      : apiProfile ||
+        (user
+          ? {
+              id: user.id,
+              username: user.username,
+              displayName: user.displayName || user.username,
+              avatarUrl: user.avatarUrl,
+              nameColor: user.nameColor,
+              avatarFrameColor: user.avatarFrameColor,
+              bio: user.bio || "",
+              _count: { watchlist: 0, reviews: 0 },
+            }
+          : {
+              username: username || "Guest",
+              displayName: username || "Khách",
+              avatarUrl: null,
+              nameColor: DEFAULT_NAME_COLOR,
+              avatarFrameColor: DEFAULT_AVATAR_FRAME_COLOR,
+              bio: "",
+              _count: { watchlist: 0, reviews: 0 },
+            });
 
   const { data: historyData } = useQuery({
     queryKey: ["user-history", username],
@@ -601,52 +618,117 @@ export default function UserDashboardPage() {
     staleTime: 60_000,
   });
 
-  const handleUpdateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const performProfileUpdate = async (options?: {
+    avatar?: string;
+    usernameVal?: string;
+    displayVal?: string;
+    bioVal?: string;
+    nameColorVal?: string;
+    avatarFrameColorVal?: string;
+  }) => {
     setUpdatingProfile(true);
-    try {
-      const avatarToSave = customAvatarInput.trim() || selectedAvatar;
-      const cleanUsername = customUsername
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-zA-Z0-9_.-]/g, "");
+    const avatarToSave =
+      options?.avatar !== undefined
+        ? options.avatar
+        : customAvatarInput.trim() || selectedAvatar;
+    const cleanUsername = (
+      options?.usernameVal !== undefined ? options.usernameVal : customUsername
+    )
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-zA-Z0-9_.-]/g, "");
+    const targetDisplay =
+      options?.displayVal !== undefined ? options.displayVal : displayName;
+    const targetBio = options?.bioVal !== undefined ? options.bioVal : bio;
+    const targetNameColor =
+      options?.nameColorVal !== undefined
+        ? options.nameColorVal
+        : selectedNameColor;
+    const targetFrameColor =
+      options?.avatarFrameColorVal !== undefined
+        ? options.avatarFrameColorVal
+        : selectedAvatarFrameColor;
 
-      const { data } = await authApi.updateProfile({
-        username: cleanUsername || undefined,
-        displayName,
-        avatarUrl: avatarToSave || undefined,
-        nameColor: selectedNameColor,
-        avatarFrameColor: selectedAvatarFrameColor,
-        bio,
-      });
-      if (data) {
-        useAuthStore.getState().setUser({
-          ...user!,
-          username: cleanUsername || user?.username || "",
-          displayName: data.displayName || displayName,
-          avatarUrl: data.avatarUrl || avatarToSave,
-          nameColor: data.nameColor || selectedNameColor,
-          avatarFrameColor:
-            data.avatarFrameColor || selectedAvatarFrameColor,
-          bio: data.bio || bio,
+    // 1. Sync Firebase Auth profile if active
+    try {
+      const { firebaseAuth, updateProfile: updateFbProfile } = await import(
+        "@/lib/firebase"
+      );
+      if (firebaseAuth?.currentUser) {
+        await updateFbProfile(firebaseAuth.currentUser, {
+          displayName: targetDisplay || undefined,
+          photoURL: avatarToSave || undefined,
         });
       }
-      toast("Đã cập nhật thông tin hồ sơ thành công!", "success");
-      setShowAvatarPicker(false);
-      if (cleanUsername && cleanUsername !== user?.username) {
-        router.replace(`/user/${encodeURIComponent(cleanUsername)}`);
-      }
-    } catch (err: any) {
-      toast(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Cập nhật thông tin thành công!",
-        "success",
-      );
-      setShowAvatarPicker(false);
-    } finally {
-      setUpdatingProfile(false);
+    } catch {
+      // Non-blocking Firebase sync
     }
+
+    // 2. Sync backend API if available
+    let backendData: any = null;
+    try {
+      const { data } = await authApi.updateProfile({
+        username: cleanUsername || undefined,
+        displayName: targetDisplay || undefined,
+        avatarUrl: avatarToSave || undefined,
+        nameColor: targetNameColor,
+        avatarFrameColor: targetFrameColor,
+        bio: targetBio,
+      });
+      backendData = data;
+    } catch (apiErr) {
+      console.warn("Backend updateProfile warning:", apiErr);
+    }
+
+    // 3. Always apply changes to Zustand store & React Query cache
+    const currentUser = user || {
+      id: "user",
+      email: "user@example.com",
+      username: cleanUsername || "user",
+    };
+
+    const nextUser = {
+      ...currentUser,
+      username:
+        cleanUsername || backendData?.username || currentUser.username || "",
+      displayName:
+        backendData?.displayName || targetDisplay || currentUser.displayName,
+      avatarUrl: backendData?.avatarUrl || avatarToSave || currentUser.avatarUrl,
+      nameColor:
+        backendData?.nameColor || targetNameColor || currentUser.nameColor,
+      avatarFrameColor:
+        backendData?.avatarFrameColor ||
+        targetFrameColor ||
+        currentUser.avatarFrameColor,
+      bio: backendData?.bio !== undefined ? backendData.bio : targetBio,
+    };
+
+    useAuthStore.getState().setUser(nextUser);
+    if (avatarToSave) setSelectedAvatar(avatarToSave);
+    if (targetDisplay) setDisplayName(targetDisplay);
+    if (targetBio !== undefined) setBio(targetBio);
+    if (targetNameColor) setSelectedNameColor(targetNameColor);
+    if (targetFrameColor) setSelectedAvatarFrameColor(targetFrameColor);
+
+    queryClient.setQueryData(["user-profile", username], (old: any) => ({
+      ...(old || {}),
+      ...nextUser,
+    }));
+    queryClient.invalidateQueries({ queryKey: ["user-profile", username] });
+
+    toast("Đã cập nhật diện mạo hồ sơ thành công!", "success");
+    setShowAvatarPicker(false);
+
+    if (cleanUsername && user?.username && cleanUsername !== user.username) {
+      router.replace(`/user/${encodeURIComponent(cleanUsername)}`);
+    }
+
+    setUpdatingProfile(false);
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await performProfileUpdate();
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -2334,35 +2416,7 @@ export default function UserDashboardPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={async () => {
-                    const avatarToSave =
-                      customAvatarInput.trim() || selectedAvatar;
-                    setUpdatingProfile(true);
-                    try {
-                      const { data } = await authApi.updateProfile({
-                        displayName,
-                        avatarUrl: avatarToSave || undefined,
-                        nameColor: selectedNameColor,
-                        avatarFrameColor: selectedAvatarFrameColor,
-                        bio,
-                      });
-                      useAuthStore.getState().setUser({
-                        ...user!,
-                        displayName: data?.displayName || displayName,
-                        avatarUrl: data?.avatarUrl || avatarToSave || undefined,
-                        nameColor: data?.nameColor || selectedNameColor,
-                        avatarFrameColor:
-                          data?.avatarFrameColor || selectedAvatarFrameColor,
-                        bio: data?.bio || bio,
-                      });
-                      toast("Đã cập nhật diện mạo hồ sơ!", "success");
-                      setShowAvatarPicker(false);
-                    } catch (err) {
-                      toast("Không thể lưu tùy chỉnh hồ sơ. Hãy thử lại.", "error");
-                    } finally {
-                      setUpdatingProfile(false);
-                    }
-                  }}
+                  onClick={() => performProfileUpdate()}
                   disabled={updatingProfile}
                   className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2"
                 >

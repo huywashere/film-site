@@ -1026,7 +1026,7 @@ function HeroTrailerLayer({
   }, [canStream, enabled, film, isInView]);
 
   const embedUrl = trailerKey
-    ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(trailerKey)}?autoplay=1&mute=1&controls=0&loop=1&playlist=${encodeURIComponent(trailerKey)}&playsinline=1&rel=0&disablekb=1&fs=0&iv_load_policy=3`
+    ? `https://www.youtube.com/embed/${encodeURIComponent(trailerKey)}?autoplay=1&mute=1&controls=0&loop=1&playlist=${encodeURIComponent(trailerKey)}&playsinline=1&rel=0&disablekb=1&fs=0`
     : null;
 
   return (

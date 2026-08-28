@@ -367,15 +367,17 @@ function AsianCuratedHeroBanner({
   fallbackLocal: string;
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
   const [logoFailed, setLogoFailed] = useState(false);
 
   const curatedList = pool;
 
-  // Auto slide every 7 seconds
+  // Auto slide every 7 seconds with forward glide
   useEffect(() => {
     if (curatedList.length <= 1 || isPaused) return;
     const interval = setInterval(() => {
+      setDirection(1);
       setCurrentIndex((prev) => (prev + 1) % curatedList.length);
       setLogoFailed(false);
     }, 7000);
@@ -384,21 +386,57 @@ function AsianCuratedHeroBanner({
 
   const currentItem = curatedList[currentIndex] || curatedList[0];
 
+  const handleNext = () => {
+    setDirection(1);
+    setCurrentIndex((prev) => (prev + 1) % curatedList.length);
+    setLogoFailed(false);
+  };
+
+  const handlePrev = () => {
+    setDirection(-1);
+    setCurrentIndex(
+      (prev) => (prev - 1 + curatedList.length) % curatedList.length,
+    );
+    setLogoFailed(false);
+  };
+
+  const handleGoTo = (idx: number) => {
+    setDirection(idx >= currentIndex ? 1 : -1);
+    setCurrentIndex(idx);
+    setLogoFailed(false);
+  };
+
   return (
     <section
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       className="relative w-full min-h-[680px] sm:min-h-[760px] lg:min-h-[840px] h-[92vh] sm:h-[96vh] lg:h-[100vh] max-h-[1080px] overflow-hidden bg-[#141414] select-none"
     >
-      {/* ── High Resolution Dynamic Backdrop with Framer Motion Crossfade ── */}
-      <div className="absolute inset-0 w-full h-full">
-        <AnimatePresence initial={false}>
+      {/* ── High Resolution Dynamic Backdrop with Right-to-Left Gliding Motion ── */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden">
+        <AnimatePresence initial={false} custom={direction}>
           <motion.div
             key={currentItem.slug || currentItem._id || currentIndex}
-            initial={{ opacity: 0, scale: 1.04 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.85, ease: [0.25, 1, 0.5, 1] }}
+            custom={direction}
+            initial={{
+              x: direction > 0 ? "5%" : "-5%",
+              opacity: 0,
+              scale: 1.04,
+            }}
+            animate={{
+              x: "0%",
+              opacity: 1,
+              scale: 1,
+            }}
+            exit={{
+              x: direction > 0 ? "-5%" : "5%",
+              opacity: 0,
+              scale: 0.98,
+            }}
+            transition={{
+              duration: 0.9,
+              ease: [0.16, 1, 0.3, 1],
+            }}
             className="absolute inset-0 w-full h-full"
           >
             <ResilientAsianHeroBackdrop
@@ -421,15 +459,31 @@ function AsianCuratedHeroBanner({
         }}
       />
 
-      {/* ── Left Content Overlay (Typography, Badges & Play Button with Framer Motion Transition) ── */}
+      {/* ── Left Content Overlay with Counter-Parallax (Moves in Opposite Direction: Left-to-Right) ── */}
       <div className="absolute inset-0 z-20 flex flex-col justify-center px-6 sm:px-14 md:px-20 lg:px-24">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentItem.slug || currentItem._id || currentIndex}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
+            custom={direction}
+            initial={{
+              x: direction > 0 ? -50 : 50,
+              opacity: 0,
+              filter: "blur(4px)",
+            }}
+            animate={{
+              x: 0,
+              opacity: 1,
+              filter: "blur(0px)",
+            }}
+            exit={{
+              x: direction > 0 ? 40 : -40,
+              opacity: 0,
+              filter: "blur(4px)",
+            }}
+            transition={{
+              duration: 0.65,
+              ease: [0.16, 1, 0.3, 1],
+            }}
             className="max-w-2xl space-y-4 sm:space-y-5 pt-8"
           >
             {/* Official Title Logo PNG or Calligraphy Title */}
@@ -531,12 +585,7 @@ function AsianCuratedHeroBanner({
       {curatedList.length > 1 && (
         <>
           <button
-            onClick={() => {
-              setCurrentIndex(
-                (prev) => (prev - 1 + curatedList.length) % curatedList.length,
-              );
-              setLogoFailed(false);
-            }}
+            onClick={handlePrev}
             aria-label="Slide trước"
             className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer shadow-2xl"
           >
@@ -544,10 +593,7 @@ function AsianCuratedHeroBanner({
           </button>
 
           <button
-            onClick={() => {
-              setCurrentIndex((prev) => (prev + 1) % curatedList.length);
-              setLogoFailed(false);
-            }}
+            onClick={handleNext}
             aria-label="Slide tiếp theo"
             className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer shadow-2xl"
           >
@@ -562,10 +608,7 @@ function AsianCuratedHeroBanner({
           {curatedList.map((item, idx) => (
             <button
               key={item._id || item.slug || idx}
-              onClick={() => {
-                setCurrentIndex(idx);
-                setLogoFailed(false);
-              }}
+              onClick={() => handleGoTo(idx)}
               aria-label={`Chuyển đến phim ${item.name}`}
               className={cn(
                 "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
@@ -598,8 +641,6 @@ export default function CountryPage() {
   const user = useAuthStore((s) => s.user);
 
   const [heroSeed, setHeroSeed] = useState(() => Math.random());
-  const [showGenreMenu, setShowGenreMenu] = useState(false);
-  const [loadSecondaryRows, setLoadSecondaryRows] = useState(false);
 
   // First healthy provider paints the hero immediately. The complete merged
   // catalogue replaces it from cache without blocking the initial navigation.
@@ -632,53 +673,23 @@ export default function CountryPage() {
     () => mainData?.data?.items || mainData?.items || [],
     [mainData],
   );
-  const heroCandidates = useMemo(
-    () =>
-      films
-        .filter((film) => film.slug && (film.name || film.title))
-        .slice(0, 16),
-    [films],
-  );
-  const { data: resolvedHero } = useQuery({
-    queryKey: [
-      "country-hero-assets",
-      slug,
-      heroCandidates.map((film) => film.slug).join("|"),
-    ],
-    queryFn: async () => {
-      try {
-        return await Promise.any(
-          heroCandidates.map(async (candidate) => {
-            const assets = await resolveTmdbHeroAssets(candidate);
-            if (assets?.backdrop_path) {
-              return { film: candidate, assets };
-            }
-            throw new Error("Hero backdrop incomplete");
-          }),
-        );
-      } catch {
-        // Provider artwork still renders while the next refresh retries TMDB.
-        return null;
-      }
-    },
-    enabled: heroCandidates.length > 0,
-    staleTime: 1000 * 60 * 60 * 24,
-    gcTime: 1000 * 60 * 60 * 24,
-    placeholderData: undefined,
-    retry: false,
-  });
-  const heroFilm = resolvedHero?.film || heroCandidates[0];
 
-  // Instantly reset scroll to top (0px) on country slug switch to prevent bottom scroll jumping
+  // Instantly reset scroll to top (0px) on country slug switch
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" as any });
     setHeroSeed(Math.random());
-    setLoadSecondaryRows(false);
-    const timer = window.setTimeout(() => setLoadSecondaryRows(true), 900);
-    return () => window.clearTimeout(timer);
   }, [slug]);
 
-  // Specific genre queries filtered by country with Instant Cache (ONLY enabled for Korea & China)
+  // Specific genre queries filtered by country with Instant Cache (Parallelized for Korea & China)
+  const { data: page2Data, isLoading: page2Loading } = useQuery({
+    queryKey: ["country-p2", slug],
+    queryFn: () => movieApi.getByCountry(slug, 2).then((r) => r.data),
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
+    enabled: isCustomHeroPage,
+    placeholderData: (prev) => prev,
+  });
+
   const { data: romanceData, isLoading: romanceLoading } = useQuery({
     queryKey: ["country-romance", slug],
     queryFn: () =>
@@ -692,7 +703,8 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: loadSecondaryRows && isCustomHeroPage,
+    enabled: isCustomHeroPage,
+    placeholderData: (prev) => prev,
   });
 
   const { data: actionData, isLoading: actionLoading } = useQuery({
@@ -708,7 +720,8 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: loadSecondaryRows && isCustomHeroPage,
+    enabled: isCustomHeroPage,
+    placeholderData: (prev) => prev,
   });
 
   const { data: coTrangData, isLoading: coTrangLoading } = useQuery({
@@ -724,7 +737,8 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: loadSecondaryRows && isCustomHeroPage,
+    enabled: isCustomHeroPage,
+    placeholderData: (prev) => prev,
   });
 
   const { data: crimeData, isLoading: crimeLoading } = useQuery({
@@ -735,16 +749,8 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: loadSecondaryRows && isCustomHeroPage,
-  });
-
-  // Additional queries for maximum Korean/Chinese movie variety with Instant Cache
-  const { data: page2Data, isLoading: page2Loading } = useQuery({
-    queryKey: ["country-p2", slug],
-    queryFn: () => movieApi.getByCountry(slug, 2).then((r) => r.data),
-    staleTime: 1000 * 60 * 60,
-    gcTime: 1000 * 60 * 60 * 24,
-    enabled: loadSecondaryRows && isCustomHeroPage,
+    enabled: isCustomHeroPage,
+    placeholderData: (prev) => prev,
   });
 
   const { data: comedyData, isLoading: comedyLoading } = useQuery({
@@ -760,7 +766,8 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: loadSecondaryRows && isCustomHeroPage,
+    enabled: isCustomHeroPage,
+    placeholderData: (prev) => prev,
   });
 
   const { data: dramaData, isLoading: dramaLoading } = useQuery({
@@ -771,23 +778,73 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: loadSecondaryRows && isCustomHeroPage,
+    enabled: isCustomHeroPage,
+    placeholderData: (prev) => prev,
   });
 
-  const romanceFilms: FilmItem[] =
-    romanceData?.data?.items || romanceData?.items || [];
-  const actionFilms: FilmItem[] =
-    actionData?.data?.items || actionData?.items || [];
-  const coTrangFilms: FilmItem[] =
-    coTrangData?.data?.items || coTrangData?.items || [];
-  const crimeFilms: FilmItem[] =
-    crimeData?.data?.items || crimeData?.items || [];
-  const page2Films: FilmItem[] =
-    page2Data?.data?.items || page2Data?.items || [];
-  const comedyFilms: FilmItem[] =
-    comedyData?.data?.items || comedyData?.items || [];
-  const dramaFilms: FilmItem[] =
-    dramaData?.data?.items || dramaData?.items || [];
+  const page2Films: FilmItem[] = useMemo(
+    () => page2Data?.data?.items || page2Data?.items || [],
+    [page2Data],
+  );
+
+  // Instant in-memory genre partition fallback so rows display immediately
+  const combinedPool = useMemo(() => [...films, ...page2Films], [films, page2Films]);
+
+  const romanceFilms: FilmItem[] = useMemo(() => {
+    const fromApi = romanceData?.data?.items || romanceData?.items;
+    if (fromApi?.length) return fromApi;
+    return combinedPool.filter((f) =>
+      JSON.stringify(f).toLowerCase().includes("tình cảm") ||
+      JSON.stringify(f).toLowerCase().includes("lãng mạn")
+    );
+  }, [romanceData, combinedPool]);
+
+  const actionFilms: FilmItem[] = useMemo(() => {
+    const fromApi = actionData?.data?.items || actionData?.items;
+    if (fromApi?.length) return fromApi;
+    return combinedPool.filter((f) =>
+      JSON.stringify(f).toLowerCase().includes("hành động") ||
+      JSON.stringify(f).toLowerCase().includes("võ thuật")
+    );
+  }, [actionData, combinedPool]);
+
+  const coTrangFilms: FilmItem[] = useMemo(() => {
+    const fromApi = coTrangData?.data?.items || coTrangData?.items;
+    if (fromApi?.length) return fromApi;
+    return combinedPool.filter((f) =>
+      JSON.stringify(f).toLowerCase().includes("cổ trang") ||
+      JSON.stringify(f).toLowerCase().includes("thần thoại") ||
+      JSON.stringify(f).toLowerCase().includes("tiên hiệp")
+    );
+  }, [coTrangData, combinedPool]);
+
+  const crimeFilms: FilmItem[] = useMemo(() => {
+    const fromApi = crimeData?.data?.items || crimeData?.items;
+    if (fromApi?.length) return fromApi;
+    return combinedPool.filter((f) =>
+      JSON.stringify(f).toLowerCase().includes("hình sự") ||
+      JSON.stringify(f).toLowerCase().includes("trinh thám") ||
+      JSON.stringify(f).toLowerCase().includes("bí ẩn")
+    );
+  }, [crimeData, combinedPool]);
+
+  const comedyFilms: FilmItem[] = useMemo(() => {
+    const fromApi = comedyData?.data?.items || comedyData?.items;
+    if (fromApi?.length) return fromApi;
+    return combinedPool.filter((f) =>
+      JSON.stringify(f).toLowerCase().includes("hài hước") ||
+      JSON.stringify(f).toLowerCase().includes("gia đình")
+    );
+  }, [comedyData, combinedPool]);
+
+  const dramaFilms: FilmItem[] = useMemo(() => {
+    const fromApi = dramaData?.data?.items || dramaData?.items;
+    if (fromApi?.length) return fromApi;
+    return combinedPool.filter((f) =>
+      JSON.stringify(f).toLowerCase().includes("tâm lý") ||
+      JSON.stringify(f).toLowerCase().includes("chính kịch")
+    );
+  }, [dramaData, combinedPool]);
 
   const totalItems =
     Number(mainData?.data?.params?.pagination?.totalItems) ||
@@ -821,7 +878,6 @@ export default function CountryPage() {
   };
 
   const handleSelectGenre = (genreSlug: string) => {
-    setShowGenreMenu(false);
     const params = new URLSearchParams(searchParams.toString());
     if (genreSlug) {
       params.set("category", genreSlug);
@@ -874,8 +930,10 @@ export default function CountryPage() {
     <div
       className={cn(
         cardFont.className,
-        "min-h-screen w-full bg-[#141414] text-foreground",
-        isCustomHeroPage ? "-mt-20 sm:-mt-24" : "pt-20 sm:pt-24",
+        "min-h-screen w-full bg-background text-foreground",
+        isCustomHeroPage
+          ? "-mt-20 sm:-mt-24 bg-[#141414]"
+          : "pb-20 pl-4 pr-4 pt-20 sm:pt-24 md:pr-10 lg:pl-24",
       )}
     >
       {/* ── CASE 1: KOREA & CHINA ONLY (Showcase with Curated Hero Banner & 8 Multi-Genre Rows) ── */}
@@ -1036,66 +1094,21 @@ export default function CountryPage() {
           </div>
         </>
       ) : (
-        /* ── CASE 2: ALL OTHER COUNTRIES (Original Clean Country Catalog Hub) ── */
-        <div className="mx-auto w-full max-w-[1720px] px-4 sm:px-6 md:px-8 lg:px-12 pb-20 space-y-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-6 border-b border-white/10 gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-purple-400 bg-purple-500/15 border border-purple-500/30 px-3 py-1 rounded-full">
-                  Quốc Gia
-                </span>
-                {selectedGenre && (
-                  <span className="text-xs font-bold text-neutral-300 bg-white/5 border border-white/10 px-3 py-1 rounded-full">
-                    {activeGenreLabel}
-                  </span>
-                )}
-              </div>
-              <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-                Phim {t(`countries_list.${slug}`, label)}
-              </h1>
-              <p className="text-xs sm:text-sm text-neutral-400 font-medium mt-1.5 max-w-xl">
-                Tổng hợp danh sách các bộ phim điện ảnh và series truyền hình đặc sắc nhất sản xuất tại {t(`countries_list.${slug}`, label)}.
-              </p>
+        /* ── CASE 2: ALL OTHER COUNTRIES (Clean Centered Catalog Header) ── */
+        <div className="w-full">
+          {/* Page Header — Centered */}
+          <div className="flex flex-col items-center justify-center text-center mb-10 pb-6 border-b border-white/10 gap-2.5 max-w-3xl mx-auto">
+            <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+              Phim {t(`countries_list.${slug}`, label)}
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-400 font-medium">
+              Khám phá kho phim chọn lọc cập nhật liên tục hàng ngày
+            </p>
+            <div className="mt-1 text-xs font-mono font-bold text-neutral-300 bg-white/5 px-4 py-1.5 rounded-full border border-white/10">
+              {t("common.page", "Trang")}{" "}
+              <span className="text-white font-extrabold">{page}</span> /{" "}
+              {totalPages}
             </div>
-
-            <div className="flex items-center gap-3 self-start sm:self-auto">
-              <div className="text-xs font-bold text-neutral-300 bg-[#1a1c24] px-4 py-2 rounded-full border border-white/10">
-                {t("common.page", "Trang")} <span className="text-white font-extrabold">{page}</span> / {totalPages}
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Category Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1">
-            <button
-              onClick={() => handleSelectGenre("")}
-              className={cn(
-                "px-4 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer select-none",
-                !selectedGenre
-                  ? "bg-purple-600 text-white shadow-md shadow-purple-600/30 border border-purple-400/40"
-                  : "bg-[#181a24] text-neutral-400 border border-white/[0.08] hover:text-white hover:bg-[#222432]",
-              )}
-            >
-              Tất cả thể loại
-            </button>
-            {GENRE_OPTIONS.map((genre) => {
-              const active = selectedGenre === genre.slug;
-              return (
-                <button
-                  key={genre.slug}
-                  onClick={() => handleSelectGenre(genre.slug)}
-                  className={cn(
-                    "px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all shrink-0 cursor-pointer select-none",
-                    active
-                      ? "bg-purple-600 text-white font-bold shadow-md shadow-purple-600/30 border border-purple-400/40"
-                      : "bg-[#181a24] text-neutral-400 border border-white/[0.06] hover:text-white hover:bg-[#222432]",
-                  )}
-                >
-                  {genre.label}
-                </button>
-              );
-            })}
           </div>
 
           {/* Movie Grid */}
@@ -1120,14 +1133,6 @@ export default function CountryPage() {
               <p className="text-sm font-semibold text-neutral-400">
                 {t("search.noResults", "Chưa tìm thấy bộ phim nào phù hợp.")}
               </p>
-              {selectedGenre && (
-                <button
-                  onClick={() => handleSelectGenre("")}
-                  className="px-4 py-1.5 rounded-full bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-colors cursor-pointer"
-                >
-                  Xem tất cả thể loại
-                </button>
-              )}
             </div>
           )}
 

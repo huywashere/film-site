@@ -118,9 +118,7 @@ export function AdminDevToolsGuard() {
       consoleInterval = setInterval(() => {
         // Skip check entirely if tab is in background / switching
         if (document.hidden || !document.hasFocus()) return;
-        // eslint-disable-next-line no-console
         console.log(detector);
-        // eslint-disable-next-line no-console
         console.clear();
       }, 1000);
     } catch {

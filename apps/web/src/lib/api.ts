@@ -89,6 +89,27 @@ export const kkphimApi = {
   getTvShows: (page = 1, limit = 36) =>
     fetchKKPhim(`/v1/api/danh-sach/tv-shows?page=${page}&limit=${limit}`),
 
+  getVietsub: (page = 1, limit = 36) =>
+    fetchKKPhim(`/v1/api/danh-sach/phim-vietsub?page=${page}&limit=${limit}`),
+
+  getThuyetMinh: (page = 1, limit = 36) =>
+    fetchKKPhim(`/v1/api/danh-sach/phim-thuyet-minh?page=${page}&limit=${limit}`),
+
+  getLongTieng: (page = 1, limit = 36) =>
+    fetchKKPhim(`/v1/api/danh-sach/phim-long-tieng?page=${page}&limit=${limit}`),
+
+  getDangChieu: (page = 1) =>
+    fetchKKPhim(`/v1/api/danh-sach?type=phim-bo&status=ongoing&page=${page}`),
+
+  getHoanThanh: (page = 1) =>
+    fetchKKPhim(`/v1/api/danh-sach?type=phim-bo&status=completed&page=${page}`),
+
+  getSubteam: (page = 1, limit = 36) =>
+    fetchKKPhim(`/v1/api/danh-sach/subteam?page=${page}&limit=${limit}`),
+
+  getChieuRap: (page = 1, limit = 36) =>
+    fetchKKPhim(`/v1/api/danh-sach/phim-chieu-rap?page=${page}&limit=${limit}`),
+
   // Lọc phim với nhiều tùy chọn
   getFiltered: (params: {
     type?: string; // phim-le, phim-bo, hoat-hinh, tv-shows
@@ -1174,6 +1195,20 @@ export const movieApi = {
   getYears: () => kkphimApi.getYears().then((data) => ({ data })),
   getFiltered: (params: Parameters<typeof kkphimApi.getFiltered>[0]) =>
     kkphimApi.getFiltered(params).then((data) => ({ data })),
+  getVietsub: (page = 1) =>
+    kkphimApi.getVietsub(page).then((data) => ({ data })),
+  getThuyetMinh: (page = 1) =>
+    kkphimApi.getThuyetMinh(page).then((data) => ({ data })),
+  getLongTieng: (page = 1) =>
+    kkphimApi.getLongTieng(page).then((data) => ({ data })),
+  getDangChieu: (page = 1) =>
+    kkphimApi.getDangChieu(page).then((data) => ({ data })),
+  getHoanThanh: (page = 1) =>
+    kkphimApi.getHoanThanh(page).then((data) => ({ data })),
+  getSubteam: (page = 1) =>
+    kkphimApi.getSubteam(page).then((data) => ({ data })),
+  getChieuRap: (page = 1) =>
+    kkphimApi.getChieuRap(page).then((data) => ({ data })),
   getFilmsByType: (type?: string, page = 1, _limit = 24) => {
     if (type === "phim-bo" || type === "series")
       return movieApi.getSeries(page);
@@ -1181,7 +1216,22 @@ export const movieApi = {
       return movieApi.getSingle(page);
     if (type === "hoat-hinh" || type === "anime")
       return movieApi.getAnime(page);
-    if (type === "tv-shows") return movieApi.getTvShows(page);
+    if (type === "tv-shows" || type === "shows" || type === "tvshows")
+      return movieApi.getTvShows(page);
+    if (type === "vietsub" || type === "phim-vietsub")
+      return movieApi.getVietsub(page);
+    if (type === "thuyet-minh" || type === "thuyetminh" || type === "phim-thuyet-minh")
+      return movieApi.getThuyetMinh(page);
+    if (type === "long-tieng" || type === "longtieng" || type === "phim-long-tieng")
+      return movieApi.getLongTieng(page);
+    if (type === "dang-chieu" || type === "ongoing" || type === "phim-bo-dang-chieu")
+      return movieApi.getDangChieu(page);
+    if (type === "hoan-thanh" || type === "completed" || type === "phim-bo-hoan-thanh")
+      return movieApi.getHoanThanh(page);
+    if (type === "subteam")
+      return movieApi.getSubteam(page);
+    if (type === "chieu-rap" || type === "chieurap" || type === "phim-chieu-rap")
+      return movieApi.getChieuRap(page);
     return movieApi.getLatest(page);
   },
 };

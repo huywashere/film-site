@@ -78,7 +78,7 @@ test:
     - echo "📝 TypeScript typecheck..."
     - pnpm --filter api exec tsc --noEmit
     - pnpm --filter web exec tsc --noEmit
-    - pnpm --filter @cineverse/admin-cms exec tsc --noEmit
+    - pnpm --filter @netphim/admin-cms exec tsc --noEmit
 
     # 4. Lint
     - echo "🔎 ESLint..."

@@ -17,7 +17,7 @@ function extractYouTubeKeyFromUrl(url?: string): string | null {
   return null;
 }
 
-// Search TMDB videos by searching for the movie/show first
+// Search TMDB videos by searching for the movie/show first with Official Studio Ranking
 async function searchTmdbTrailer(
   title: string,
   originName?: string,
@@ -47,8 +47,8 @@ async function searchTmdbTrailer(
 
       if (results.length === 0) continue;
 
-      // Check top 2 results for videos
-      for (const item of results.slice(0, 2)) {
+      // Check top 3 results for official studio videos
+      for (const item of results.slice(0, 3)) {
         if (!item.id || (item.media_type !== "movie" && item.media_type !== "tv")) continue;
 
         const mediaType = item.media_type;
@@ -61,19 +61,40 @@ async function searchTmdbTrailer(
         if (vRes.ok) {
           const vData = await vRes.json();
           const videos = vData?.results || [];
-          const ytVideos = videos.filter(
-            (v: any) => v.site === "YouTube" && v.key,
+          const validVideos = videos.filter(
+            (v: any) => (v.site === "YouTube" || v.site === "Vimeo") && v.key,
           );
 
-          const officialTrailer = ytVideos.find(
-            (v: any) => v.type === "Trailer" && /official/i.test(v.name),
-          );
-          if (officialTrailer) return officialTrailer.key;
+          if (validVideos.length > 0) {
+            const sorted = [...validVideos].sort((a: any, b: any) => {
+              let scoreA = 0;
+              let scoreB = 0;
 
-          const anyTrailer = ytVideos.find((v: any) => v.type === "Trailer");
-          if (anyTrailer) return anyTrailer.key;
+              if (a.official) scoreA += 100;
+              if (b.official) scoreB += 100;
 
-          if (ytVideos[0]?.key) return ytVideos[0].key;
+              if (a.type === "Trailer") scoreA += 80;
+              else if (a.type === "Teaser") scoreA += 40;
+
+              if (b.type === "Trailer") scoreB += 80;
+              else if (b.type === "Teaser") scoreB += 40;
+
+              if (/official\s+trailer/i.test(a.name)) scoreA += 50;
+              if (/official\s+trailer/i.test(b.name)) scoreB += 50;
+
+              scoreA += Math.min(Number(a.size || 720) / 20, 110);
+              scoreB += Math.min(Number(b.size || 720) / 20, 110);
+
+              if (a.iso_639_1 === "vi") scoreA += 25;
+              if (b.iso_639_1 === "vi") scoreB += 25;
+              if (a.iso_639_1 === "en") scoreA += 15;
+              if (b.iso_639_1 === "en") scoreB += 15;
+
+              return scoreB - scoreA;
+            });
+
+            if (sorted[0]?.key) return sorted[0].key;
+          }
         }
       }
     } catch {

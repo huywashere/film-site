@@ -188,6 +188,9 @@ export interface TmdbVideo {
   type: string;
   official: boolean;
   published_at: string;
+  size?: number;
+  iso_639_1?: string;
+  iso_3166_1?: string;
 }
 
 export interface TmdbFindResult {
@@ -243,6 +246,31 @@ export const tmdbApi = {
 
   getTvImages: (tmdbId: number) =>
     fetchTmdb<TmdbImages>(`tv/${tmdbId}/images`, {
+      include_image_language: "vi,en,zh,ko,ja,null",
+    }),
+
+  // ── TV Season & Episode Details & Stills ──
+  getTvSeasonDetail: (tvId: number, seasonNumber = 1) =>
+    fetchTmdb<{
+      _id?: string;
+      air_date?: string;
+      episodes?: Array<{
+        id: number;
+        name?: string;
+        episode_number: number;
+        season_number?: number;
+        still_path?: string | null;
+        overview?: string;
+        vote_average?: number;
+      }>;
+      name?: string;
+      overview?: string;
+      poster_path?: string | null;
+      season_number?: number;
+    }>(`tv/${tvId}/season/${seasonNumber}`),
+
+  getTvSeasonImages: (tvId: number, seasonNumber = 1) =>
+    fetchTmdb<TmdbImages>(`tv/${tvId}/season/${seasonNumber}/images`, {
       include_image_language: "vi,en,zh,ko,ja,null",
     }),
 
@@ -402,32 +430,55 @@ export async function resolveTmdbHeroAssets(
   return tmdbApi.getHeroAssets(tmdbId, type);
 }
 
-// ── Helper: lấy trailer YouTube đầu tiên ─────────────────────────
+// ── Helper: lấy trailer HD chính thức chất lượng cao từ TMDB ──────────────
 
 export function getYoutubeTrailer(videos: TmdbVideo[]): TmdbVideo | null {
   if (!videos?.length) return null;
-  const youtubeVideos = videos.filter((v) => v.site === "YouTube");
-  if (!youtubeVideos.length) return null;
-
-  // 1. Official Trailer (type === 'Trailer' and name has official)
-  const officialTrailer = youtubeVideos.find(
-    (v) => v.type === "Trailer" && /official trailer/i.test(v.name),
+  const validVideos = videos.filter(
+    (v) => (v.site === "YouTube" || v.site === "Vimeo") && Boolean(v.key),
   );
-  if (officialTrailer) return officialTrailer;
+  if (!validVideos.length) return null;
 
-  // 2. Any Trailer (type === 'Trailer')
-  const anyTypeTrailer = youtubeVideos.find((v) => v.type === "Trailer");
-  if (anyTypeTrailer) return anyTypeTrailer;
+  // Thuật toán ưu tiên Trailer Chính Thức (Official Studio 4K / 1080p HD)
+  const sorted = [...validVideos].sort((a, b) => {
+    let scoreA = 0;
+    let scoreB = 0;
 
-  // 3. Name contains trailer
-  const nameTrailer = youtubeVideos.find((v) => /trailer/i.test(v.name));
-  if (nameTrailer) return nameTrailer;
+    // 1. Phim từ Hãng sản xuất chính thức (Official Studio Release)
+    if (a.official) scoreA += 100;
+    if (b.official) scoreB += 100;
 
-  // 4. Teaser
-  const teaser = youtubeVideos.find(
-    (v) => v.type === "Teaser" || /teaser/i.test(v.name),
-  );
-  if (teaser) return teaser;
+    // 2. Phân loại nội dung: Trailer > Teaser > Clip
+    if (a.type === "Trailer") scoreA += 80;
+    else if (a.type === "Teaser") scoreA += 40;
+    else if (a.type === "Clip") scoreA += 10;
 
-  return youtubeVideos[0];
+    if (b.type === "Trailer") scoreB += 80;
+    else if (b.type === "Teaser") scoreB += 40;
+    else if (b.type === "Clip") scoreB += 10;
+
+    // 3. Tên trailer chứa Official / Main Trailer
+    if (/official\s+trailer/i.test(a.name)) scoreA += 50;
+    else if (/main\s+trailer/i.test(a.name)) scoreA += 45;
+    else if (/trailer/i.test(a.name)) scoreA += 30;
+
+    if (/official\s+trailer/i.test(b.name)) scoreB += 50;
+    else if (/main\s+trailer/i.test(b.name)) scoreB += 45;
+    else if (/trailer/i.test(b.name)) scoreB += 30;
+
+    // 4. Độ phân giải cao (2160p 4K / 1080p Full HD)
+    scoreA += Math.min(Number(a.size || 720) / 20, 110);
+    scoreB += Math.min(Number(b.size || 720) / 20, 110);
+
+    // 5. Ưu tiên ngôn ngữ: Vietsub (vi) -> Quốc tế / Tiếng Anh (en)
+    if (a.iso_639_1 === "vi") scoreA += 25;
+    else if (a.iso_639_1 === "en") scoreA += 15;
+
+    if (b.iso_639_1 === "vi") scoreB += 25;
+    else if (b.iso_639_1 === "en") scoreB += 15;
+
+    return scoreB - scoreA;
+  });
+
+  return sorted[0] || null;
 }

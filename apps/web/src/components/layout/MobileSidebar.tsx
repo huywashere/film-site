@@ -23,6 +23,7 @@ import {
   Shield,
   FileText,
   Mail,
+  ListFilter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
@@ -40,6 +41,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
   const { t, lang, setLang } = useTranslation();
+  const [showLists, setShowLists] = useState(false);
   const [showGenres, setShowGenres] = useState(false);
   const [showCountries, setShowCountries] = useState(false);
 
@@ -286,7 +288,59 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             </div>
           </div>
 
-          {/* Genres Collapsible Grid */}
+          {/* Lists / Danh Sách Collapsible Grid */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowLists(!showLists)}
+              className="flex min-h-11 w-full items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-neutral-300 hover:bg-white/5 hover:text-white transition-all cursor-pointer"
+            >
+              <div className="flex items-center space-x-3">
+                <ListFilter size={17} className="text-neutral-400" />
+                <span>{t("nav.list", "Danh sách")}</span>
+              </div>
+              <ChevronDown
+                size={15}
+                className={cn(
+                  "transition-transform duration-200 text-neutral-500",
+                  showLists && "rotate-180 text-white",
+                )}
+              />
+            </button>
+
+            {showLists && (
+              <div className="mt-2 grid grid-cols-2 gap-1.5 px-1 pt-1 animate-in fade-in duration-200">
+                {[
+                  { label: "Phim Mới", href: "/films/latest" },
+                  { label: "Phim Bộ", href: "/films/series" },
+                  { label: "Phim Lẻ", href: "/films/single" },
+                  { label: "Shows", href: "/films/shows" },
+                  { label: "Hoạt Hình", href: "/films/anime" },
+                  { label: "Phim Vietsub", href: "/films/vietsub" },
+                  { label: "Phim Thuyết Minh", href: "/films/thuyet-minh" },
+                  { label: "Phim Lồng Tiếng", href: "/films/long-tieng" },
+                  { label: "Phim Bộ Đang Chiếu", href: "/films/dang-chieu" },
+                  { label: "Phim Bộ Đã Hoàn Thành", href: "/films/hoan-thanh" },
+                  { label: "Subteam", href: "/films/subteam" },
+                  { label: "Phim Chiếu Rạp", href: "/films/chieu-rap" },
+                ].map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "px-3 py-2 rounded-lg text-[11px] font-medium transition-all truncate border",
+                      pathname === item.href
+                        ? "bg-white/15 border-white/30 text-white font-bold"
+                        : "border-white/5 bg-white/[0.02] text-neutral-400 hover:text-white hover:bg-white/10",
+                    )}
+                    onClick={onClose}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
           <div>
             <button
               type="button"

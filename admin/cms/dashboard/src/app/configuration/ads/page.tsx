@@ -260,7 +260,7 @@ export default function AdsManagementPage() {
 
         {ads.length === 0 ? (
           <div className="p-12 text-center text-slate-400 text-xs">
-            Chưa có vị trí quảng cáo nào. Bấm "Thêm Vị Trí Quảng Cáo" để tạo banner hoặc video ads đầu tiên!
+            Chưa có vị trí quảng cáo nào. Bấm &quot;Thêm Vị Trí Quảng Cáo&quot; để tạo banner hoặc video ads đầu tiên!
           </div>
         ) : (
           <div className="divide-y divide-[var(--admin-line)]">

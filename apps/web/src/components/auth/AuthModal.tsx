@@ -22,6 +22,7 @@ import {
   Clapperboard,
 } from "lucide-react";
 import Link from "next/link";
+import NextImage from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -43,57 +44,7 @@ import { CinematicAuthBackground } from "@/components/auth/CinematicAuthBackgrou
 import { useGoogleOneTap } from "@/hooks/useGoogleOneTap";
 import { cn } from "@/lib/utils";
 
-const MARVEL_DC_POSTERS = [
-  {
-    title: "Deadpool & Wolverine",
-    universe: "Marvel Studios",
-    year: "2024",
-    rating: "8.5",
-    image: "https://phimimg.com/upload/vod/20250821-1/1ec414f82adc729512410edd1b083996.jpg",
-  },
-  {
-    title: "Avengers: Endgame",
-    universe: "Marvel Studios",
-    year: "2019",
-    rating: "8.9",
-    image: "https://phimimg.com/upload/vod/20250517-1/c9391052648953e135770cf4c7b10034.jpg",
-  },
-  {
-    title: "Spider-Man: No Way Home",
-    universe: "Marvel Studios",
-    year: "2021",
-    rating: "8.3",
-    image: "https://phimimg.com/upload/vod/20250828-1/db868e69da1af78d124ed464063b27a6.jpg",
-  },
-  {
-    title: "Avengers: Infinity War",
-    universe: "Marvel Studios",
-    year: "2018",
-    rating: "8.8",
-    image: "https://phimimg.com/upload/vod/20250517-1/ce91513c3f6e12457edea803bdd583d3.jpg",
-  },
-  {
-    title: "The Dark Knight",
-    universe: "DC Universe",
-    year: "2008",
-    rating: "9.0",
-    image: "https://phimimg.com/upload/vod/20240104-1/b2748e456090a1c43b246c014b60fa1a.jpg",
-  },
-  {
-    title: "Zack Snyder's Justice League",
-    universe: "DC Universe",
-    year: "2021",
-    rating: "8.5",
-    image: "https://phimimg.com/upload/vod/20231016-1/ffd14feb9753f59f0c5424947e686aaa.jpg",
-  },
-  {
-    title: "The Batman",
-    universe: "DC Universe",
-    year: "2022",
-    rating: "8.2",
-    image: "https://phimimg.com/upload/vod/20231018-1/e58014050ad6ce7fbed8c3932b615073.jpg",
-  },
-];
+const AUTH_SIDEBAR_IMAGE = "/images/man.webp";
 
 export function AuthModal() {
   const router = useRouter();
@@ -114,16 +65,6 @@ export function AuthModal() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-
-  // Deterministic initial poster for SSR, randomized on client mount
-  const [featuredMovie, setFeaturedMovie] = useState(MARVEL_DC_POSTERS[0]);
-
-  useEffect(() => {
-    if (isOpen) {
-      const random = MARVEL_DC_POSTERS[Math.floor(Math.random() * MARVEL_DC_POSTERS.length)];
-      setFeaturedMovie(random);
-    }
-  }, [isOpen]);
 
   // Google One Tap fast login integration
   useGoogleOneTap({
@@ -366,49 +307,37 @@ export function AuthModal() {
           <X size={16} />
         </button>
 
-        {/* ── Left Column: Random Marvel / DC Blockbuster Artwork ── */}
-        <div className="relative hidden md:flex md:w-[44%] flex-col justify-between overflow-hidden bg-black p-6 min-h-[560px] border-r border-neutral-800">
-          {/* Poster Image */}
+        {/* ── Left Column: Clean Cinematic Poster + Brand Logo (Single Fixed Image) ── */}
+        <div className="relative hidden md:flex md:w-[44%] flex-col justify-start overflow-hidden bg-black p-6 min-h-[560px] border-r border-neutral-800">
+          {/* Single High-Quality Fixed Backdrop Image */}
           <div className="absolute inset-0 z-0">
             <img
-              src={featuredMovie.image}
-              alt={featuredMovie.title}
-              className="w-full h-full object-cover object-center scale-105 transition-all duration-700 brightness-[0.75]"
+              src={AUTH_SIDEBAR_IMAGE}
+              alt="NetPhim"
+              className="w-full h-full object-cover object-center scale-105 brightness-[0.88]"
             />
-            {/* Gradient Overlays */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#10141a] via-[#10141a]/30 to-black/40" />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#10141a]" />
+            {/* Gradient Overlays for smooth blend */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#10141a]/80 via-transparent to-black/30" />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#151923]" />
           </div>
 
           {/* Brand Logo at top-left */}
           <div className="relative z-10">
-            <Link href="/" className="inline-flex items-center gap-2">
-              <span className="text-2xl font-black tracking-tight text-white flex items-center font-[family-name:var(--font-manrope)]">
+            <Link href="/" className="inline-flex items-center gap-2 select-none group">
+              <NextImage
+                src="/cinephim-logo.png"
+                alt="NetPhim Logo"
+                width={32}
+                height={32}
+                className="h-8 w-8 object-contain"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "/logo.png";
+                }}
+              />
+              <span className="text-2xl font-black tracking-tight text-white flex items-center font-sans">
                 Net<span className="text-violet-400 drop-shadow-[0_0_12px_rgba(167,139,250,0.6)]">Phim</span>
               </span>
             </Link>
-          </div>
-
-          {/* Bottom Movie Spotlight Card */}
-          <div className="relative z-10">
-            <div className="rounded-xl border border-white/15 bg-black/60 p-3.5 backdrop-blur-md shadow-2xl">
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-violet-400 flex items-center gap-1">
-                  <Clapperboard size={12} />
-                  {featuredMovie.universe}
-                </span>
-                <span className="text-[11px] font-bold text-amber-400 flex items-center gap-0.5">
-                  <Star size={11} className="fill-amber-400" />
-                  {featuredMovie.rating}
-                </span>
-              </div>
-              <h4 className="text-sm font-extrabold text-white leading-snug line-clamp-1 font-[family-name:var(--font-manrope)]">
-                {featuredMovie.title}
-              </h4>
-              <p className="mt-1 text-[10.5px] font-medium text-neutral-300 line-clamp-1">
-                Xem phim 4K không giới hạn, đồng bộ đa thiết bị.
-              </p>
-            </div>
           </div>
         </div>
 
