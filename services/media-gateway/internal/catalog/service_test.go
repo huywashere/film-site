@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -194,7 +195,7 @@ func TestSearchFiltersAndMergesTranslatedDuplicates(t *testing.T) {
 
 func testConfig(origin string) config.Config {
 	return config.Config{
-		SigningSecret:    "test-signing-secret-that-is-at-least-32-characters",
+		SigningSecret:    strings.Repeat("x", 32),
 		RedisURL:         "",
 		CatalogTimeout:   2 * time.Second,
 		CatalogCacheTTL:  10 * time.Minute,
