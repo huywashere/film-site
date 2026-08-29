@@ -2,7 +2,14 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, useEffect, useRef, useMemo, Suspense } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useTransition,
+  Suspense,
+} from "react";
 import {
   Search,
   X,
@@ -29,6 +36,8 @@ import { FilmNotFound } from "@/components/film/FilmNotFound";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/store/langStore";
 import { recordTelemetry } from "@/lib/telemetry";
+import { dedupeFilmItems } from "@/lib/movie-normalizer";
+import { filterSearchResults } from "@/lib/search-filters";
 
 // ── Shared Lists ──────────────────────────────────────────────────
 const GENRES_LIST = [
@@ -183,17 +192,19 @@ function CustomSelect({
   );
 }
 
-const YEAR_OPTIONS = Array.from({ length: 15 }, (_, i) => 2024 - i).map(
-  (y) => ({
-    value: String(y),
-    label: `Năm ${y}`,
-  }),
-);
+const YEAR_OPTIONS = Array.from(
+  { length: 30 },
+  (_, i) => new Date().getFullYear() + 1 - i,
+).map((y) => ({
+  value: String(y),
+  label: `Năm ${y}`,
+}));
 
 function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { t, lang } = useTranslation();
+  const [isNavigating, startTransition] = useTransition();
 
   const [mounted, setMounted] = useState(false);
   const [input, setInput] = useState("");
@@ -206,6 +217,16 @@ function SearchContent() {
   const country = searchParams.get("country") || "";
   const status = searchParams.get("status") || "";
   const sort = searchParams.get("sort") || "modified.time desc";
+  const activeFilters = useMemo(
+    () => ({
+      type: type || undefined,
+      genre: genre || undefined,
+      country: country || undefined,
+      year: year ? Number(year) : undefined,
+      status: status || undefined,
+    }),
+    [country, genre, status, type, year],
+  );
 
   useEffect(() => {
     setMounted(true);
@@ -216,14 +237,14 @@ function SearchContent() {
     !query &&
     Boolean(
       type ||
-        year ||
-        genre ||
-        country ||
-        status ||
-        sort !== "modified.time desc",
+      year ||
+      genre ||
+      country ||
+      status ||
+      sort !== "modified.time desc",
     );
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isFetching } = useQuery({
     queryKey: [
       "search-v3",
       query.trim(),
@@ -251,7 +272,7 @@ function SearchContent() {
           });
           return res?.data || res;
         }
-        const res: any = await movieApi.search(query, page, 24);
+        const res: any = await movieApi.search(query, page, 24, activeFilters);
         return res?.data || res;
       } catch (err) {
         console.warn("Search query error fallback:", err);
@@ -262,6 +283,7 @@ function SearchContent() {
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
+    placeholderData: (previousData) => previousData,
   });
 
   const rawFilms: FilmItem[] = useMemo(() => {
@@ -284,14 +306,9 @@ function SearchContent() {
 
   // Filter client-side if additional fields were not handled by backend
   const films = useMemo(() => {
-    let result = rawFilms;
-    if (year) {
-      result = result.filter(
-        (f) => String(f.year) === String(year),
-      );
-    }
-    return result;
-  }, [rawFilms, year]);
+    const unique = dedupeFilmItems(rawFilms);
+    return filterSearchResults(unique, activeFilters) as FilmItem[];
+  }, [activeFilters, rawFilms]);
 
   useEffect(() => {
     if (!query.trim() || isLoading || !data) return;
@@ -323,26 +340,52 @@ function SearchContent() {
   };
 
   const handleResetFilters = () => {
-    setInput("");
-    router.push("/search");
+    const params = new URLSearchParams(searchParams.toString());
+    ["type", "genre", "country", "year", "status", "sort", "page"].forEach(
+      (key) => params.delete(key),
+    );
+    startTransition(() => {
+      router.replace(`/search?${params.toString()}`, { scroll: false });
+    });
+  };
+
+  const updateFilter = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set(key, value);
+    else params.delete(key);
+    params.delete("page");
+    startTransition(() => {
+      router.replace(`/search?${params.toString()}`, { scroll: false });
+    });
   };
 
   const localizedTypeOptions = [
     { value: "single", label: lang === "en" ? "Movies" : "Phim Lẻ" },
     { value: "series", label: lang === "en" ? "TV Series" : "Phim Bộ" },
-    { value: "anime", label: lang === "en" ? "Anime & Animation" : "Hoạt Hình" },
+    {
+      value: "anime",
+      label: lang === "en" ? "Anime & Animation" : "Hoạt Hình",
+    },
     { value: "tvshows", label: lang === "en" ? "TV Shows" : "TV Shows" },
   ];
 
   return (
-    <div className={cn(cardFont.className, "min-h-screen w-full bg-[#141414] text-white pt-20 sm:pt-24 pb-20 px-4 sm:px-8 max-w-7xl mx-auto select-none")}>
+    <div
+      className={cn(
+        cardFont.className,
+        "min-h-screen w-full bg-[#141414] text-white pt-20 sm:pt-24 pb-20 px-4 sm:px-8 max-w-7xl mx-auto select-none",
+      )}
+    >
       {/* Search Header & Form Container */}
       <div className="max-w-3xl mx-auto mb-8 md:mb-12">
         <h1 className="text-2xl md:text-4xl font-extrabold text-white text-center mb-2 tracking-tight">
           {t("search.discoverMovies", "Khám phá Phim")}
         </h1>
         <p className="text-center text-neutral-400 max-w-xl mx-auto mb-6 text-xs sm:text-sm">
-          {t("search.searchSubtitle", "Tìm phim theo tên, diễn viên hoặc bộ lọc nâng cao")}
+          {t(
+            "search.searchSubtitle",
+            "Tìm phim theo tên, diễn viên hoặc bộ lọc nâng cao",
+          )}
         </p>
 
         {/* Compact Search Bar */}
@@ -376,7 +419,9 @@ function SearchContent() {
                 className="flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.16] border border-white/10 text-xs font-bold text-white transition-all px-4 active:scale-95 shadow-sm"
               >
                 <Search size={14} />
-                <span className="hidden sm:inline">{t("search.searchBtn", "Tìm kiếm")}</span>
+                <span className="hidden sm:inline">
+                  {t("search.searchBtn", "Tìm kiếm")}
+                </span>
               </button>
             </div>
           </div>
@@ -409,12 +454,7 @@ function SearchContent() {
                 value={type}
                 placeholder={t("search.allTypes", "Tất cả loại phim")}
                 options={localizedTypeOptions}
-                onChange={(newVal) => {
-                  const params = new URLSearchParams(searchParams.toString());
-                  if (newVal) params.set("type", newVal);
-                  else params.delete("type");
-                  router.push(`/search?${params.toString()}`);
-                }}
+                onChange={(newVal) => updateFilter("type", newVal)}
               />
             </div>
 
@@ -430,12 +470,7 @@ function SearchContent() {
                   value: g.slug,
                   label: t(`genres_list.${g.slug}`, g.label),
                 }))}
-                onChange={(newVal) => {
-                  const params = new URLSearchParams(searchParams.toString());
-                  if (newVal) params.set("genre", newVal);
-                  else params.delete("genre");
-                  router.push(`/search?${params.toString()}`);
-                }}
+                onChange={(newVal) => updateFilter("genre", newVal)}
               />
             </div>
 
@@ -451,12 +486,7 @@ function SearchContent() {
                   value: c.slug,
                   label: t(`countries_list.${c.slug}`, c.label),
                 }))}
-                onChange={(newVal) => {
-                  const params = new URLSearchParams(searchParams.toString());
-                  if (newVal) params.set("country", newVal);
-                  else params.delete("country");
-                  router.push(`/search?${params.toString()}`);
-                }}
+                onChange={(newVal) => updateFilter("country", newVal)}
               />
             </div>
 
@@ -469,12 +499,7 @@ function SearchContent() {
                 value={year}
                 placeholder={t("search.allYears", "Tất cả các năm")}
                 options={YEAR_OPTIONS}
-                onChange={(newVal) => {
-                  const params = new URLSearchParams(searchParams.toString());
-                  if (newVal) params.set("year", newVal);
-                  else params.delete("year");
-                  router.push(`/search?${params.toString()}`);
-                }}
+                onChange={(newVal) => updateFilter("year", newVal)}
               />
             </div>
           </div>
@@ -495,8 +520,13 @@ function SearchContent() {
             <>
               <div className="border-b border-white/10 pb-3">
                 <p className="text-xs text-neutral-400 font-bold uppercase tracking-wider flex items-center space-x-1.5">
-                  <Loader2 size={12} className="animate-spin text-neutral-400" />
-                  <span>{t("search.loading", "Đang tải kết quả tìm kiếm...")}</span>
+                  <Loader2
+                    size={12}
+                    className="animate-spin text-neutral-400"
+                  />
+                  <span>
+                    {t("search.loading", "Đang tải kết quả tìm kiếm...")}
+                  </span>
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-y-6 sm:gap-y-8">
@@ -506,19 +536,38 @@ function SearchContent() {
               </div>
             </>
           ) : films.length === 0 ? (
-            <FilmNotFound querySlug={query} title={t("search.noResults", "Không tìm thấy kết quả nào phù hợp")} />
+            <FilmNotFound
+              querySlug={query}
+              title={t(
+                "search.noResults",
+                "Không tìm thấy kết quả nào phù hợp",
+              )}
+            />
           ) : (
             <>
               <div className="border-b border-white/10 pb-3 flex items-center justify-between">
                 <p className="text-xs text-neutral-400 font-bold uppercase tracking-wider">
                   {query
-                    ? (lang === "en" ? `Search results for "${query}" (${films.length} films)` : `Kết quả tìm kiếm cho "${query}" (${films.length} phim)`)
-                    : (lang === "en" ? `Filtered results (${films.length} films)` : `Kết quả lọc phim (${films.length} phim)`)}
+                    ? lang === "en"
+                      ? `Search results for "${query}" (${films.length} films)`
+                      : `Kết quả tìm kiếm cho "${query}" (${films.length} phim)`
+                    : lang === "en"
+                      ? `Filtered results (${films.length} films)`
+                      : `Kết quả lọc phim (${films.length} phim)`}
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-3 animate-in fade-in duration-300 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-y-6 sm:gap-y-8">
+              <div
+                className={cn(
+                  "grid grid-cols-2 gap-3 animate-in fade-in duration-300 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-y-6 sm:gap-y-8 transition-opacity",
+                  (isFetching || isNavigating) && "opacity-55",
+                )}
+                aria-busy={isFetching || isNavigating}
+              >
                 {films.map((film, idx) => (
-                  <FilmCard key={`${film.slug || film._id || (film as any).id}-${idx}`} film={film} />
+                  <FilmCard
+                    key={`${film.slug || film._id || (film as any).id}-${idx}`}
+                    film={film}
+                  />
                 ))}
               </div>
 

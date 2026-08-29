@@ -8,6 +8,11 @@ import {
   type MovieSource,
 } from "@/lib/movie-normalizer";
 import { rankSearchResults, expandQuery, normalize } from "@/lib/search-engine";
+import {
+  filterSearchResults,
+  searchFilterParams,
+  type MovieSearchFilters,
+} from "@/lib/search-filters";
 import type {
   PaginatedResponse,
   WatchHistoryItem,
@@ -25,6 +30,15 @@ import {
 const SEARCH_CACHE_MAX_AGE_MS = 1000 * 60 * 10; // 10 phút
 const globalSearchCache = new Map<string, { data: any; timestamp: number }>();
 const globalPendingSearches = new Map<string, Promise<any>>();
+
+// The Go catalogue service is optional in local/Vercel environments. Probe it
+// once instead of letting every homepage query discover the same outage. This
+// avoids a burst of 503 requests and keeps the established provider fallback
+// on the interaction-critical path.
+const CATALOG_GATEWAY_RECHECK_MS = 15_000;
+let catalogGatewayAvailableUntil = 0;
+let catalogGatewayUnavailableUntil = 0;
+let catalogGatewayProbe: Promise<boolean> | null = null;
 
 // ── KKPhim API Configuration ──────────────────────────────────────
 const KKPHIM_PROXY = "/api/kkphim";
@@ -55,6 +69,54 @@ const trackedMovieFetch = async (path: string) => {
     throw error;
   }
 };
+
+async function fetchCatalogGateway(endpoint: string): Promise<any> {
+  const now = Date.now();
+  if (catalogGatewayUnavailableUntil > now) {
+    throw new Error("Catalog Gateway unavailable");
+  }
+
+  if (catalogGatewayAvailableUntil <= now) {
+    catalogGatewayProbe ||= trackedMovieFetch(
+      "/api/catalog-gateway/catalog/providers/health",
+    )
+      .then((response) => {
+        if (
+          !response.ok ||
+          response.headers.get("x-netphim-catalog-available") === "0"
+        ) {
+          catalogGatewayUnavailableUntil =
+            Date.now() + CATALOG_GATEWAY_RECHECK_MS;
+          return false;
+        }
+        catalogGatewayAvailableUntil = Date.now() + CATALOG_GATEWAY_RECHECK_MS;
+        catalogGatewayUnavailableUntil = 0;
+        return true;
+      })
+      .catch(() => {
+        catalogGatewayUnavailableUntil =
+          Date.now() + CATALOG_GATEWAY_RECHECK_MS;
+        return false;
+      })
+      .finally(() => {
+        catalogGatewayProbe = null;
+      });
+
+    if (!(await catalogGatewayProbe)) {
+      throw new Error("Catalog Gateway unavailable");
+    }
+  }
+
+  const response = await trackedMovieFetch(`/api/catalog-gateway${endpoint}`);
+  if (!response.ok) {
+    if (response.status >= 500) {
+      catalogGatewayAvailableUntil = 0;
+      catalogGatewayUnavailableUntil = Date.now() + CATALOG_GATEWAY_RECHECK_MS;
+    }
+    throw new Error(`Catalog Gateway Error: ${response.status}`);
+  }
+  return response.json();
+}
 
 // Helper function to handle API calls
 const fetchKKPhim = async (endpoint: string) => {
@@ -93,10 +155,14 @@ export const kkphimApi = {
     fetchKKPhim(`/v1/api/danh-sach/phim-vietsub?page=${page}&limit=${limit}`),
 
   getThuyetMinh: (page = 1, limit = 36) =>
-    fetchKKPhim(`/v1/api/danh-sach/phim-thuyet-minh?page=${page}&limit=${limit}`),
+    fetchKKPhim(
+      `/v1/api/danh-sach/phim-thuyet-minh?page=${page}&limit=${limit}`,
+    ),
 
   getLongTieng: (page = 1, limit = 36) =>
-    fetchKKPhim(`/v1/api/danh-sach/phim-long-tieng?page=${page}&limit=${limit}`),
+    fetchKKPhim(
+      `/v1/api/danh-sach/phim-long-tieng?page=${page}&limit=${limit}`,
+    ),
 
   getDangChieu: (page = 1) =>
     fetchKKPhim(`/v1/api/danh-sach?type=phim-bo&status=ongoing&page=${page}`),
@@ -569,6 +635,7 @@ async function searchAllSources(
   page = 1,
   limit = 24,
   expandUpstream = true,
+  filters: MovieSearchFilters = {},
 ) {
   // Sanitize query: bỏ ký tự đặc biệt, gạch chéo vô tình gõ nhầm
   const trimmed = (keyword || "")
@@ -592,6 +659,22 @@ async function searchAllSources(
       },
       _sources: [],
     };
+  }
+
+  // P2 hot path: one browser request lets Go query/cache providers in
+  // parallel. The existing TypeScript merger remains the compatibility
+  // fallback for Vercel/local environments without the gateway.
+  try {
+    const gatewayParams = searchFilterParams(filters);
+    gatewayParams.set("q", trimmed);
+    gatewayParams.set("page", String(page));
+    gatewayParams.set("limit", String(limit));
+    const gatewayResult = await fetchCatalogGateway(
+      `/search?${gatewayParams.toString()}`,
+    );
+    if (gatewayResult?.data?.items) return gatewayResult;
+  } catch {
+    // Continue with the established multi-source fallback below.
   }
 
   const normQuery = normalize(trimmed);
@@ -738,11 +821,11 @@ async function searchAllSources(
   }
 
   // ── Smart re-ranking với search engine (boost HD/Full, hạ Trailer/Cam) ──
-  const ranked = rankSearchResults(merged, trimmed);
+  const filtered = filterSearchResults(merged, filters);
+  const ranked = rankSearchResults(filtered, trimmed);
 
-  // Paginate sau khi rank
-  const startIndex = (page - 1) * limit;
-  const items = ranked.slice(startIndex, startIndex + limit);
+  // Mỗi upstream đã nhận đúng page, không cắt offset lần thứ hai.
+  const items = ranked.slice(0, limit);
 
   const totalPages = Math.max(
     1,
@@ -775,6 +858,15 @@ async function getDetailFromAnySource(
   slug: string,
   preferredSource?: MovieSource,
 ): Promise<any> {
+  try {
+    const bootstrap = await fetchCatalogGateway(
+      `/movies/${encodeURIComponent(slug)}/bootstrap`,
+    );
+    if (isUsableMovieDetail(bootstrap)) return bootstrap;
+  } catch {
+    // Preserve direct provider fallback when Go is unavailable.
+  }
+
   const requests: Array<{
     source: MovieSource;
     request: () => Promise<unknown>;
@@ -832,6 +924,21 @@ async function getDetailFromAnySource(
       message: `Không tìm thấy phim: ${slug}`,
     };
   }
+}
+
+async function getCatalogFromGateway(
+  kind: string,
+  page: number,
+  limit = 64,
+  value = "",
+) {
+  const query = new URLSearchParams({
+    kind,
+    page: String(page),
+    limit: String(limit),
+  });
+  if (value) query.set("value", value);
+  return fetchCatalogGateway(`/catalog?${query.toString()}`);
 }
 
 async function getDetailFromSource(source: MovieSource, slug: string) {
@@ -1147,54 +1254,86 @@ function catalogRequests(
 // ── movieApi (alias for component compatibility) ──────────────────
 export const movieApi = {
   getLatest: (page = 1) =>
-    getFastCatalogPage(page, catalogRequests("latest", page)).then((data) => ({
-      data,
-    })),
+    getCatalogFromGateway("latest", page)
+      .catch(() => getFastCatalogPage(page, catalogRequests("latest", page)))
+      .then((data) => ({ data })),
   getSeries: (page = 1) =>
-    getFastCatalogPage(page, catalogRequests("series", page), "series").then(
-      (data) => ({ data }),
-    ),
+    getCatalogFromGateway("series", page)
+      .catch(() =>
+        getFastCatalogPage(page, catalogRequests("series", page), "series"),
+      )
+      .then((data) => ({ data })),
   getSingle: (page = 1) =>
-    getFastCatalogPage(page, catalogRequests("single", page), "single").then(
-      (data) => ({ data }),
-    ),
+    getCatalogFromGateway("single", page)
+      .catch(() =>
+        getFastCatalogPage(page, catalogRequests("single", page), "single"),
+      )
+      .then((data) => ({ data })),
   getAnime: (page = 1) =>
-    getFastCatalogPage(page, catalogRequests("anime", page), "anime").then(
-      (data) => ({ data }),
-    ),
+    getCatalogFromGateway("anime", page)
+      .catch(() =>
+        getFastCatalogPage(page, catalogRequests("anime", page), "anime"),
+      )
+      .then((data) => ({ data })),
   getTvShows: (page = 1) =>
-    getFastCatalogPage(page, catalogRequests("tvshows", page)).then((data) => ({
-      data,
-    })),
+    getCatalogFromGateway("tvshows", page)
+      .catch(() => getFastCatalogPage(page, catalogRequests("tvshows", page)))
+      .then((data) => ({ data })),
   getDetail: (slug: string, preferredSource?: MovieSource) =>
     getDetailFromAnySource(slug, preferredSource).then((data) => ({ data })),
   getDetailFromSource: (source: MovieSource, slug: string) =>
     getDetailFromSource(source, slug).then((data) => ({ data })),
   getDetailV1: (slug: string) =>
     kkphimApi.getDetailV1(slug).then((data) => ({ data })),
-  search: (keyword: string, page = 1, limit = 24) =>
-    searchAllSources(keyword, page, limit).then((data) => ({ data })),
+  search: (
+    keyword: string,
+    page = 1,
+    limit = 24,
+    filters: MovieSearchFilters = {},
+  ) =>
+    searchAllSources(keyword, page, limit, true, filters).then((data) => ({
+      data,
+    })),
   searchSourceAlternatives: (keyword: string, page = 1, limit = 24) =>
     searchAllSources(keyword, page, limit, false).then((data) => ({ data })),
   getByGenre: (slug: string, page = 1) =>
-    getFastCatalogPage(page, catalogRequests("genre", page, slug)).then(
-      (data) => ({ data }),
-    ),
+    getCatalogFromGateway("genre", page, 64, slug)
+      .catch(() =>
+        getFastCatalogPage(page, catalogRequests("genre", page, slug)),
+      )
+      .then((data) => ({ data })),
   getByCountry: (slug: string, page = 1) =>
-    getFastCatalogPage(page, catalogRequests("country", page, slug)).then(
-      (data) => ({ data }),
-    ),
+    getCatalogFromGateway("country", page, 64, slug)
+      .catch(() =>
+        getFastCatalogPage(page, catalogRequests("country", page, slug)),
+      )
+      .then((data) => ({ data })),
   getByCountryFast: (slug: string, page = 1) =>
-    getFastCatalogPage(page, catalogRequests("country", page, slug)).then(
-      (data) => ({ data }),
-    ),
+    getCatalogFromGateway("country", page, 64, slug)
+      .catch(() =>
+        getFastCatalogPage(page, catalogRequests("country", page, slug)),
+      )
+      .then((data) => ({ data })),
   getByYear: (year: number, page = 1) =>
     kkphimApi.getByYear(year, page).then((data) => ({ data })),
   getGenres: () => kkphimApi.getGenres().then((data) => ({ data })),
   getCountries: () => kkphimApi.getCountries().then((data) => ({ data })),
   getYears: () => kkphimApi.getYears().then((data) => ({ data })),
-  getFiltered: (params: Parameters<typeof kkphimApi.getFiltered>[0]) =>
-    kkphimApi.getFiltered(params).then((data) => ({ data })),
+  getFiltered: (params: Parameters<typeof kkphimApi.getFiltered>[0]) => {
+    const page = params.page || 1;
+    const limit = params.limit || 36;
+    const value = [
+      params.type || "",
+      params.category || "",
+      params.country || "",
+      params.year || "",
+    ].join("|");
+    return getCatalogFromGateway("filter", page, limit, value)
+      .catch(() => kkphimApi.getFiltered(params))
+      .then((data) => ({ data }));
+  },
+  getTop10: (limit = 10) =>
+    fetchCatalogGateway(`/top10?limit=${Math.max(1, Math.min(limit, 30))}`),
   getVietsub: (page = 1) =>
     kkphimApi.getVietsub(page).then((data) => ({ data })),
   getThuyetMinh: (page = 1) =>
@@ -1220,17 +1359,36 @@ export const movieApi = {
       return movieApi.getTvShows(page);
     if (type === "vietsub" || type === "phim-vietsub")
       return movieApi.getVietsub(page);
-    if (type === "thuyet-minh" || type === "thuyetminh" || type === "phim-thuyet-minh")
+    if (
+      type === "thuyet-minh" ||
+      type === "thuyetminh" ||
+      type === "phim-thuyet-minh"
+    )
       return movieApi.getThuyetMinh(page);
-    if (type === "long-tieng" || type === "longtieng" || type === "phim-long-tieng")
+    if (
+      type === "long-tieng" ||
+      type === "longtieng" ||
+      type === "phim-long-tieng"
+    )
       return movieApi.getLongTieng(page);
-    if (type === "dang-chieu" || type === "ongoing" || type === "phim-bo-dang-chieu")
+    if (
+      type === "dang-chieu" ||
+      type === "ongoing" ||
+      type === "phim-bo-dang-chieu"
+    )
       return movieApi.getDangChieu(page);
-    if (type === "hoan-thanh" || type === "completed" || type === "phim-bo-hoan-thanh")
+    if (
+      type === "hoan-thanh" ||
+      type === "completed" ||
+      type === "phim-bo-hoan-thanh"
+    )
       return movieApi.getHoanThanh(page);
-    if (type === "subteam")
-      return movieApi.getSubteam(page);
-    if (type === "chieu-rap" || type === "chieurap" || type === "phim-chieu-rap")
+    if (type === "subteam") return movieApi.getSubteam(page);
+    if (
+      type === "chieu-rap" ||
+      type === "chieurap" ||
+      type === "phim-chieu-rap"
+    )
       return movieApi.getChieuRap(page);
     return movieApi.getLatest(page);
   },

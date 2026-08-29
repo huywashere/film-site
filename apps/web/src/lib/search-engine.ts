@@ -64,6 +64,20 @@ function fuzzyScore(a: string, b: string): number {
   return maxLen === 0 ? 1 : 1 - dist / maxLen;
 }
 
+function searchableValues(value: unknown): string[] {
+  const values = Array.isArray(value) ? value : value == null ? [] : [value];
+  return values.flatMap((entry) => {
+    if (typeof entry === "string") return [entry];
+    if (entry && typeof entry === "object") {
+      const record = entry as Record<string, unknown>;
+      return [record.name, record.title].filter(
+        (item): item is string => typeof item === "string",
+      );
+    }
+    return [];
+  });
+}
+
 // ── Scoring ───────────────────────────────────────────────────────
 
 export interface ScoredFilm extends NormalizedFilmItem {
@@ -87,7 +101,8 @@ const WEIGHTS = {
 
 /** Nhận diện phim chất lượng kém, trailer, review, clip phụ */
 function isLowQualityOrTrailer(film: NormalizedFilmItem): boolean {
-  const text = `${film.name || ""} ${film.origin_name || ""} ${film.slug || ""}`.toLowerCase();
+  const text =
+    `${film.name || ""} ${film.origin_name || ""} ${film.slug || ""}`.toLowerCase();
   const quality = String(film.quality || "").toLowerCase();
   const episode = String(film.episode_current || "").toLowerCase();
 
@@ -119,6 +134,13 @@ function scoreFilm(
   const normName = normalize(film.name || "");
   const normOrigin = normalize(film.origin_name || "");
   const normSlug = normalize(film.slug || "");
+  const normMetadata = normalize(
+    [
+      ...searchableValues(film.actor),
+      ...searchableValues(film.director),
+      ...searchableValues(film.category),
+    ].join(" "),
+  );
 
   let score = 0;
   let matchType: ScoredFilm["_matchType"] = "none";
@@ -127,7 +149,10 @@ function scoreFilm(
   if (normName === normQuery || normOrigin === normQuery) {
     score += WEIGHTS.exact;
     matchType = "exact";
-  } else if (normSlug === normQuery || normSlug.replace(/-/g, " ") === normQuery) {
+  } else if (
+    normSlug === normQuery ||
+    normSlug.replace(/-/g, " ") === normQuery
+  ) {
     score += WEIGHTS.slugExact;
     matchType = "exact";
   }
@@ -154,16 +179,17 @@ function scoreFilm(
   if (queryTokens.length > 0) {
     const nameTokens = tokenize(film.name || "");
     const originTokens = tokenize(film.origin_name || "");
-    const allTargetTokens = [...nameTokens, ...originTokens];
+    const metadataTokens = tokenize(normMetadata);
+    const allTargetTokens = [...nameTokens, ...originTokens, ...metadataTokens];
 
     let matchedCount = 0;
     for (const qt of queryTokens) {
       const matched = allTargetTokens.some(
         (tt) =>
           tt === qt ||
-          tt.startsWith(qt) ||
-          qt.startsWith(tt) ||
-          fuzzyScore(qt, tt) > 0.8,
+          (qt.length >= 4 && tt.startsWith(qt)) ||
+          (tt.length >= 4 && qt.startsWith(tt)) ||
+          fuzzyScore(qt, tt) > 0.84,
       );
       if (matched) matchedCount++;
     }
@@ -197,7 +223,12 @@ function scoreFilm(
 
   // ── 6. Quality & Completeness Boosts ──
   const qStr = String(film.quality || "").toLowerCase();
-  if (qStr.includes("4k") || qStr.includes("fhd") || qStr.includes("hd") || qStr.includes("bluray")) {
+  if (
+    qStr.includes("4k") ||
+    qStr.includes("fhd") ||
+    qStr.includes("hd") ||
+    qStr.includes("bluray")
+  ) {
     score += WEIGHTS.qualityHD;
   }
 
@@ -218,7 +249,11 @@ function scoreFilm(
     score += Math.min((film.year - 2010) * 0.5, WEIGHTS.yearBoost);
   }
 
-  return { ...film, _searchScore: isNaN(score) ? 0 : score, _matchType: matchType };
+  return {
+    ...film,
+    _searchScore: isNaN(score) ? 0 : score,
+    _matchType: matchType,
+  };
 }
 
 // ── Main ranking function ─────────────────────────────────────────
@@ -249,8 +284,14 @@ export function rankSearchResults(
 
   const scored = films.map((film) => scoreFilm(film, normQuery, queryTokens));
 
+  // Provider search endpoints sometimes append broadly related catalogue
+  // items. Once at least one real text/actor match exists, hide entries that
+  // only received quality/poster boosts.
+  const relevant = scored.filter((film) => film._matchType !== "none");
+  const candidates = relevant.length > 0 ? relevant : scored;
+
   // Sắp xếp: điểm cao nhất lên đầu. Nếu cùng điểm, ưu tiên phim có ảnh và chất lượng HD
-  return scored
+  return candidates
     .filter((f) => f._searchScore > -200 || films.length <= 6)
     .sort((a, b) => b._searchScore - a._searchScore);
 }

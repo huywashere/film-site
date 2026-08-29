@@ -20,6 +20,7 @@ type ManifestStore interface {
 	Get(context.Context, string) (Manifest, bool)
 	Set(context.Context, string, Manifest)
 	Ready(context.Context) bool
+	Close() error
 }
 
 type RedisManifestStore struct {
@@ -57,6 +58,8 @@ func (s *RedisManifestStore) Set(ctx context.Context, target string, value Manif
 func (s *RedisManifestStore) Ready(ctx context.Context) bool {
 	return s.client.Ping(ctx).Err() == nil
 }
+
+func (s *RedisManifestStore) Close() error { return s.client.Close() }
 
 func cacheKey(target string) string {
 	sum := sha256.Sum256([]byte(target))
@@ -96,3 +99,5 @@ func (s *MemoryManifestStore) Set(_ context.Context, target string, value Manife
 }
 
 func (s *MemoryManifestStore) Ready(context.Context) bool { return true }
+
+func (s *MemoryManifestStore) Close() error { return nil }

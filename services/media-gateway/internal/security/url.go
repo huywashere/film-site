@@ -13,6 +13,7 @@ type URLGuard struct {
 	AllowedHosts []string
 	RequireHTTPS bool
 	Resolver     *net.Resolver
+	ResolveIP    func(context.Context, string) ([]net.IP, error)
 }
 
 func (g URLGuard) Validate(ctx context.Context, raw string) (*url.URL, error) {
@@ -63,11 +64,17 @@ func (g URLGuard) ResolvePublic(ctx context.Context, host string) ([]net.IP, err
 		}
 		return []net.IP{ip}, nil
 	}
-	resolver := g.Resolver
-	if resolver == nil {
-		resolver = net.DefaultResolver
+	var addresses []net.IP
+	var err error
+	if g.ResolveIP != nil {
+		addresses, err = g.ResolveIP(ctx, host)
+	} else {
+		resolver := g.Resolver
+		if resolver == nil {
+			resolver = net.DefaultResolver
+		}
+		addresses, err = resolver.LookupIP(ctx, "ip", host)
 	}
-	addresses, err := resolver.LookupIP(ctx, "ip", host)
 	if err != nil || len(addresses) == 0 {
 		return nil, fmt.Errorf("cannot resolve media host")
 	}

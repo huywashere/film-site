@@ -1098,7 +1098,7 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
   const secondaryReady = secondaryReadySlug === slug;
 
   useEffect(() => {
-    let timer: ReturnType<typeof window.setTimeout> | undefined;
+    let timer: number | undefined;
     const activate = () => {
       timer = window.setTimeout(() => setSecondaryReadySlug(slug), 100);
     };

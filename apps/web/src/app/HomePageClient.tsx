@@ -352,7 +352,10 @@ function FilmSection({
         {isLoading ? (
           <div className="h-2 w-24 rounded bg-white/[0.07] motion-safe:animate-pulse" />
         ) : (
-          <div className="hidden items-center gap-1.5 sm:flex" aria-hidden="true">
+          <div
+            className="hidden items-center gap-1.5 sm:flex"
+            aria-hidden="true"
+          >
             {[0, 1, 2, 3].map((step) => (
               <span
                 key={step}
@@ -473,6 +476,7 @@ export default function HomePageClient({
   const [showMoreSections, setShowMoreSections] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [catalogReady, setCatalogReady] = useState(false);
+  const [secondaryCatalogReady, setSecondaryCatalogReady] = useState(false);
   const { data: publicConfig } = useQuery({
     queryKey: ["public-site-configuration"],
     queryFn: () => siteConfigApi.getPublic().then((response) => response.data),
@@ -498,12 +502,32 @@ export default function HomePageClient({
     window.addEventListener("wheel", reveal, options);
     window.addEventListener("touchstart", reveal, options);
     window.addEventListener("keydown", reveal, { once: true });
+
+    // Do not leave catalogue rows as permanent skeletons when the visitor does
+    // not scroll. Start the critical rows during the first idle window, while
+    // still giving the hero the initial network/CPU budget.
+    let idleId: number | undefined;
+    let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
+    if ("requestIdleCallback" in window) {
+      idleId = window.requestIdleCallback(reveal, { timeout: 900 });
+    } else {
+      fallbackTimer = globalThis.setTimeout(reveal, 650);
+    }
+
     return () => {
       window.removeEventListener("wheel", reveal);
       window.removeEventListener("touchstart", reveal);
       window.removeEventListener("keydown", reveal);
+      if (idleId !== undefined) window.cancelIdleCallback(idleId);
+      if (fallbackTimer !== undefined) window.clearTimeout(fallbackTimer);
     };
   }, []);
+
+  useEffect(() => {
+    if (!catalogReady) return;
+    const timer = window.setTimeout(() => setSecondaryCatalogReady(true), 550);
+    return () => window.clearTimeout(timer);
+  }, [catalogReady]);
 
   const handleShowMore = () => {
     setIsLoadingMore(true);
@@ -519,7 +543,7 @@ export default function HomePageClient({
     queryKey: ["vfx-movies-genre"],
     queryFn: () => movieApi.getByGenre("than-thoai", 1).then((r) => r.data),
     staleTime: 1000 * 60 * 10,
-    enabled: catalogReady,
+    enabled: secondaryCatalogReady,
   });
   const { data: vfxUsUkData, isLoading: vfxUsUkLoading } = useQuery({
     queryKey: ["vfx-movies-us-uk"],
@@ -533,7 +557,7 @@ export default function HomePageClient({
         })
         .then((r) => r.data),
     staleTime: 1000 * 60 * 10,
-    enabled: catalogReady,
+    enabled: secondaryCatalogReady,
   });
   const vfxLoading = vfxGenreLoading || vfxUsUkLoading;
 
@@ -550,7 +574,7 @@ export default function HomePageClient({
         })
         .then((r) => r.data),
     staleTime: 1000 * 60 * 10,
-    enabled: catalogReady,
+    enabled: secondaryCatalogReady,
   });
   const { data: usUkSeriesData2 } = useQuery({
     queryKey: ["us-uk-series-v2-p2"],
@@ -564,7 +588,7 @@ export default function HomePageClient({
         })
         .then((r) => r.data),
     staleTime: 1000 * 60 * 10,
-    enabled: catalogReady,
+    enabled: secondaryCatalogReady,
   });
   // 3. Phim hành động (Hollywood & International Action Movies)
   const { data: actionUsUkData } = useQuery({
@@ -579,13 +603,13 @@ export default function HomePageClient({
         })
         .then((r) => r.data),
     staleTime: 1000 * 60 * 10,
-    enabled: catalogReady,
+    enabled: secondaryCatalogReady,
   });
   const { data: actionData, isLoading: actionLoading } = useQuery({
     queryKey: ["action-movies"],
     queryFn: () => movieApi.getByGenre("hanh-dong", 1).then((r) => r.data),
     staleTime: 1000 * 60 * 10,
-    enabled: catalogReady,
+    enabled: secondaryCatalogReady,
   });
 
   // 4. Phim khoa học viễn tưởng bom tấn (Hollywood Sci-Fi Blockbusters)
@@ -593,7 +617,7 @@ export default function HomePageClient({
     queryKey: ["scifi-movies"],
     queryFn: () => movieApi.getByGenre("vien-tuong", 1).then((r) => r.data),
     staleTime: 1000 * 60 * 10,
-    enabled: catalogReady,
+    enabled: secondaryCatalogReady,
   });
   const scifiLoading = scifiGenreLoading || vfxUsUkLoading;
 
@@ -714,9 +738,11 @@ export default function HomePageClient({
   const { data: trendingData } = useQuery({
     queryKey: ["weekly-trending-movies"],
     queryFn: () =>
-      api
-        .get<FilmItem[]>("/movies/trending?limit=30")
-        .then((r) => r.data)
+      movieApi
+        .getTop10(30)
+        .catch(() =>
+          api.get<FilmItem[]>("/movies/trending?limit=30").then((r) => r.data),
+        )
         .catch(() => []),
     staleTime: 1000 * 60 * 10,
     retry: false,
@@ -735,7 +761,9 @@ export default function HomePageClient({
       usUkSeriesData?.data?.items || usUkSeriesData?.items || [];
     const secondPage =
       usUkSeriesData2?.data?.items || usUkSeriesData2?.items || [];
-    const liveAction = filterLiveActionOnly(deduplicate([...firstPage, ...secondPage]));
+    const liveAction = filterLiveActionOnly(
+      deduplicate([...firstPage, ...secondPage]),
+    );
     return liveAction.filter(isLikelySeries);
   }, [usUkSeriesData, usUkSeriesData2]);
 

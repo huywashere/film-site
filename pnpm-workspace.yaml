@@ -3,4 +3,3 @@ packages:
   - 'packages/*'
   - 'admin/*'
   - 'admin/cms/*'
-  - 'mobile'

@@ -28,7 +28,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5
         with:
-          go-version: "1.23.x"
+          go-version: "1.25.x"
           cache-dependency-path: services/media-gateway/go.sum
 
       - name: Test Gin media gateway
@@ -36,6 +36,10 @@ jobs:
         run: |
           go test ./...
           go vet ./...
+
+      - name: Scan Gin dependencies and reachable code
+        working-directory: services/media-gateway
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
 
       - name: Build Gin media gateway image
         run: docker build --tag netphim/media-gateway:ci services/media-gateway

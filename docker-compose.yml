@@ -130,6 +130,7 @@ services:
         OPHIM_API_BASE: ${OPHIM_API_BASE:-https://ophim1.com}
         NGUONC_API_BASE: ${NGUONC_API_BASE:-https://phim.nguonc.com/api}
         VSMOV_API_BASE: ${VSMOV_API_BASE:-https://vsmov.com/api}
+        VICDN_API_BASE: ${VICDN_API_BASE:-https://vicdn.cc/api}
     container_name: cineverse_web
     restart: unless-stopped
     environment:
@@ -138,14 +139,17 @@ services:
       HOSTNAME: 0.0.0.0
       # Server-side env vars (runtime, không cần bake)
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      MEDIA_GATEWAY_INTERNAL_URL: http://media-gateway:8081
       KKPHIM_API_BASE: ${KKPHIM_API_BASE:-https://phimapi.com}
       OPHIM_API_BASE: ${OPHIM_API_BASE:-https://ophim1.com}
       NGUONC_API_BASE: ${NGUONC_API_BASE:-https://phim.nguonc.com/api}
       VSMOV_API_BASE: ${VSMOV_API_BASE:-https://vsmov.com/api}
+      VICDN_API_BASE: ${VICDN_API_BASE:-https://vicdn.cc/api}
       KKPHIM_API_ORIGINS: ${KKPHIM_API_ORIGINS:-https://phimapi.com}
       OPHIM_API_ORIGINS: ${OPHIM_API_ORIGINS:-https://ophim1.com,https://ophim17.cc,https://ophim3.cc}
       NGUONC_API_ORIGINS: ${NGUONC_API_ORIGINS:-https://phim.nguonc.com/api}
       VSMOV_API_ORIGINS: ${VSMOV_API_ORIGINS:-https://vsmov.com/api}
+      VICDN_API_ORIGINS: ${VICDN_API_ORIGINS:-https://vicdn.cc/api,https://api.vicdn.cc/api}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       HLS_PROXY_SECRET: ${HLS_PROXY_SECRET}
       HLS_PROXY_ALLOWED_HOSTS: ${HLS_PROXY_ALLOWED_HOSTS}
@@ -175,6 +179,7 @@ services:
       dockerfile: Dockerfile
     container_name: netphim_media_gateway
     restart: unless-stopped
+    stop_grace_period: 35s
     environment:
       GIN_MODE: release
       PORT: 8081
@@ -187,6 +192,28 @@ services:
       MEDIA_RATE_PER_SECOND: ${MEDIA_RATE_PER_SECOND:-40}
       MEDIA_RATE_BURST: ${MEDIA_RATE_BURST:-80}
       MEDIA_MAX_MANIFEST_BYTES: ${MEDIA_MAX_MANIFEST_BYTES:-4194304}
+      MEDIA_MAX_RESOLVE_BYTES: ${MEDIA_MAX_RESOLVE_BYTES:-16384}
+      MEDIA_RETRY_ATTEMPTS: ${MEDIA_RETRY_ATTEMPTS:-2}
+      MEDIA_RETRY_BACKOFF: ${MEDIA_RETRY_BACKOFF:-150ms}
+      MEDIA_SERVER_READ_HEADER_TIMEOUT: ${MEDIA_SERVER_READ_HEADER_TIMEOUT:-5s}
+      MEDIA_SERVER_READ_TIMEOUT: ${MEDIA_SERVER_READ_TIMEOUT:-15s}
+      MEDIA_SERVER_WRITE_TIMEOUT: ${MEDIA_SERVER_WRITE_TIMEOUT:-5m}
+      MEDIA_SERVER_IDLE_TIMEOUT: ${MEDIA_SERVER_IDLE_TIMEOUT:-90s}
+      MEDIA_SHUTDOWN_TIMEOUT: ${MEDIA_SHUTDOWN_TIMEOUT:-25s}
+      MEDIA_SERVER_MAX_HEADER_BYTES: ${MEDIA_SERVER_MAX_HEADER_BYTES:-32768}
+      MEDIA_TRUSTED_PROXIES: ${MEDIA_TRUSTED_PROXIES:-127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
+      MEDIA_CATALOG_ENABLED: ${MEDIA_CATALOG_ENABLED:-true}
+      MEDIA_CATALOG_TIMEOUT: ${MEDIA_CATALOG_TIMEOUT:-3s}
+      MEDIA_CATALOG_DETAIL_TTL: ${MEDIA_CATALOG_DETAIL_TTL:-10m}
+      MEDIA_CATALOG_SEARCH_TTL: ${MEDIA_CATALOG_SEARCH_TTL:-5m}
+      MEDIA_CATALOG_LIST_TTL: ${MEDIA_CATALOG_LIST_TTL:-2m}
+      MEDIA_CATALOG_MAX_BYTES: ${MEDIA_CATALOG_MAX_BYTES:-8388608}
+      CORE_API_URL: http://api:4000/api/v1
+      KKPHIM_API_ORIGINS: ${KKPHIM_API_ORIGINS:-https://phimapi.com}
+      OPHIM_API_ORIGINS: ${OPHIM_API_ORIGINS:-https://ophim1.com,https://ophim17.cc,https://ophim3.cc}
+      NGUONC_API_ORIGINS: ${NGUONC_API_ORIGINS:-https://phim.nguonc.com/api}
+      VSMOV_API_ORIGINS: ${VSMOV_API_ORIGINS:-https://vsmov.com/api}
+      VICDN_API_ORIGINS: ${VICDN_API_ORIGINS:-https://vicdn.cc/api,https://api.vicdn.cc/api}
     expose:
       - "8081"
     depends_on:
@@ -195,7 +222,7 @@ services:
     networks:
       - cineverse_net
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/healthz || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/readyz || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 3

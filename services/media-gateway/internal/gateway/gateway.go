@@ -11,9 +11,11 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/netphim/media-gateway/internal/catalog"
 	"github.com/netphim/media-gateway/internal/config"
 	"github.com/netphim/media-gateway/internal/hls"
 	"github.com/netphim/media-gateway/internal/security"
@@ -21,13 +23,58 @@ import (
 )
 
 type Gateway struct {
-	cfg     config.Config
-	guard   security.URLGuard
-	signer  *security.Signer
-	client  *http.Client
-	store   store.ManifestStore
-	metrics *Metrics
-	limiter *RateLimiter
+	cfg       config.Config
+	guard     security.URLGuard
+	signer    *security.Signer
+	client    *http.Client
+	transport *http.Transport
+	store     store.ManifestStore
+	metrics   *Metrics
+	limiter   *RateLimiter
+	manifests manifestFlightGroup
+	catalog   *catalog.Service
+}
+
+type manifestLoadResult struct {
+	manifest store.Manifest
+}
+
+type manifestFlight struct {
+	done   chan struct{}
+	result manifestLoadResult
+	err    error
+}
+
+type manifestFlightGroup struct {
+	mu    sync.Mutex
+	calls map[string]*manifestFlight
+}
+
+func (g *manifestFlightGroup) Do(ctx context.Context, key string, fn func() (manifestLoadResult, error)) (manifestLoadResult, error, bool) {
+	g.mu.Lock()
+	if g.calls == nil {
+		g.calls = make(map[string]*manifestFlight)
+	}
+	call, shared := g.calls[key]
+	if !shared {
+		call = &manifestFlight{done: make(chan struct{})}
+		g.calls[key] = call
+		go func() {
+			call.result, call.err = fn()
+			g.mu.Lock()
+			delete(g.calls, key)
+			close(call.done)
+			g.mu.Unlock()
+		}()
+	}
+	g.mu.Unlock()
+
+	select {
+	case <-ctx.Done():
+		return manifestLoadResult{}, ctx.Err(), shared
+	case <-call.done:
+		return call.result, call.err, shared
+	}
 }
 
 func New(cfg config.Config, manifestStore store.ManifestStore) *Gateway {
@@ -68,11 +115,21 @@ func New(cfg config.Config, manifestStore store.ManifestStore) *Gateway {
 	}
 	gateway := &Gateway{
 		cfg: cfg, guard: guard, signer: security.NewSigner(cfg.SigningSecret),
-		client: client, store: manifestStore, metrics: NewMetrics(),
+		client: client, transport: transport, store: manifestStore, metrics: NewMetrics(),
 		limiter: NewRateLimiter(cfg.RatePerSecond, cfg.RateBurst),
+		catalog: catalog.New(cfg),
 	}
 	client.CheckRedirect = gateway.checkRedirect
 	return gateway
+}
+
+func (g *Gateway) Close() {
+	if g.transport != nil {
+		g.transport.CloseIdleConnections()
+	}
+	if g.catalog != nil {
+		_ = g.catalog.Close()
+	}
 }
 
 func (g *Gateway) Register(router *gin.Engine) {
@@ -86,6 +143,9 @@ func (g *Gateway) Register(router *gin.Engine) {
 	})
 	router.POST("/v1/streams/resolve", g.requireInternalToken(), g.resolveStream)
 	router.GET("/api/hls-proxy", g.rateLimit(), g.proxy)
+	if g.cfg.CatalogEnabled && g.catalog != nil {
+		g.catalog.Register(router, g.rateLimit())
+	}
 }
 
 func (g *Gateway) ready(c *gin.Context) {
@@ -99,10 +159,16 @@ func (g *Gateway) ready(c *gin.Context) {
 }
 
 func (g *Gateway) resolveStream(c *gin.Context) {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, g.cfg.MaxResolveBytes)
 	var input struct {
 		URL string `json:"url" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&input); err != nil {
+		var tooLarge *http.MaxBytesError
+		if errors.As(err, &tooLarge) {
+			c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "request body too large"})
+			return
+		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
@@ -119,6 +185,8 @@ func (g *Gateway) resolveStream(c *gin.Context) {
 }
 
 func (g *Gateway) proxy(c *gin.Context) {
+	started := time.Now()
+	defer func() { g.metrics.recordRequest(time.Since(started)) }()
 	g.metrics.requests.Add(1)
 	rawURL := c.Query("url")
 	if !g.signer.Verify(rawURL, c.Query("expires"), c.Query("signature")) {
@@ -136,20 +204,30 @@ func (g *Gateway) proxy(c *gin.Context) {
 		return
 	}
 
-	if cached, ok := g.store.Get(c.Request.Context(), target.String()); ok && c.GetHeader("Range") == "" {
-		g.metrics.manifestHits.Add(1)
-		g.writeManifest(c, cached.Content, cached.FinalURL, true)
+	rangeHeader := c.GetHeader("Range")
+	likelyManifest := isLikelyManifestURL(target)
+	if rangeHeader == "" && likelyManifest {
+		if cached, ok := g.store.Get(c.Request.Context(), target.String()); ok {
+			g.metrics.manifestHits.Add(1)
+			g.writeManifest(c, cached.Content, cached.FinalURL, true)
+			return
+		}
+		g.metrics.manifestMisses.Add(1)
+		manifest, err := g.loadManifest(c.Request.Context(), target)
+		if err != nil {
+			g.fail(c, http.StatusBadGateway, "upstream manifest unavailable")
+			return
+		}
+		g.writeManifest(c, manifest.Content, manifest.FinalURL, false)
 		return
 	}
-	g.metrics.manifestMisses.Add(1)
-	response, finalURL, err := g.fetch(c.Request.Context(), target, c.GetHeader("Range"))
+
+	response, finalURL, err := g.fetch(c.Request.Context(), target, rangeHeader)
 	if err != nil {
-		g.metrics.recordHost(target.Hostname(), false)
 		g.fail(c, http.StatusBadGateway, "upstream unavailable")
 		return
 	}
 	defer response.Body.Close()
-	g.metrics.recordHost(target.Hostname(), response.StatusCode >= 200 && response.StatusCode < 400)
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		g.fail(c, response.StatusCode, "upstream rejected media request")
 		return
@@ -159,6 +237,11 @@ func (g *Gateway) proxy(c *gin.Context) {
 	path := strings.ToLower(finalURL.Path)
 	isManifest := strings.Contains(contentType, "mpegurl") || strings.HasSuffix(path, ".m3u8") || strings.HasSuffix(path, ".m3u")
 	if isManifest {
+		g.metrics.manifestMisses.Add(1)
+		if response.ContentLength > g.cfg.MaxManifestBytes {
+			g.fail(c, http.StatusBadGateway, "manifest exceeds size limit")
+			return
+		}
 		content, err := readLimited(response.Body, g.cfg.MaxManifestBytes)
 		if err != nil {
 			g.fail(c, http.StatusBadGateway, err.Error())
@@ -207,7 +290,81 @@ func (g *Gateway) stream(c *gin.Context, response *http.Response) {
 	}
 }
 
+func (g *Gateway) loadManifest(ctx context.Context, target *url.URL) (store.Manifest, error) {
+	result, err, shared := g.manifests.Do(ctx, target.String(), func() (manifestLoadResult, error) {
+		fetchContext, cancel := context.WithTimeout(context.Background(), g.manifestFetchTimeout())
+		defer cancel()
+
+		if cached, ok := g.store.Get(fetchContext, target.String()); ok {
+			return manifestLoadResult{manifest: cached}, nil
+		}
+		response, finalURL, err := g.fetch(fetchContext, target, "")
+		if err != nil {
+			return manifestLoadResult{}, err
+		}
+		defer response.Body.Close()
+		if response.StatusCode < 200 || response.StatusCode >= 300 {
+			return manifestLoadResult{}, fmt.Errorf("upstream manifest status %d", response.StatusCode)
+		}
+		contentType := strings.ToLower(response.Header.Get("Content-Type"))
+		path := strings.ToLower(finalURL.Path)
+		if !strings.Contains(contentType, "mpegurl") && !strings.HasSuffix(path, ".m3u8") && !strings.HasSuffix(path, ".m3u") {
+			return manifestLoadResult{}, fmt.Errorf("unexpected manifest content type")
+		}
+		if response.ContentLength > g.cfg.MaxManifestBytes {
+			return manifestLoadResult{}, fmt.Errorf("manifest exceeds size limit")
+		}
+		content, err := readLimited(response.Body, g.cfg.MaxManifestBytes)
+		if err != nil {
+			return manifestLoadResult{}, err
+		}
+		manifest := store.Manifest{Content: string(content), FinalURL: finalURL.String()}
+		g.store.Set(fetchContext, target.String(), manifest)
+		return manifestLoadResult{manifest: manifest}, nil
+	})
+	if shared {
+		g.metrics.manifestShared.Add(1)
+	}
+	if err != nil {
+		return store.Manifest{}, err
+	}
+	return result.manifest, nil
+}
+
+func (g *Gateway) manifestFetchTimeout() time.Duration {
+	attempts := time.Duration(g.cfg.RetryAttempts)
+	return g.cfg.RequestTimeout*attempts + g.cfg.RetryBackoff*(1<<attempts) + time.Second
+}
+
 func (g *Gateway) fetch(ctx context.Context, target *url.URL, rangeHeader string) (*http.Response, *url.URL, error) {
+	var lastErr error
+	for attempt := 0; attempt < g.cfg.RetryAttempts; attempt++ {
+		response, finalURL, err := g.fetchOnce(ctx, target, rangeHeader)
+		if err == nil && !retryableStatus(response.StatusCode) {
+			return response, finalURL, nil
+		}
+		if err == nil && attempt+1 >= g.cfg.RetryAttempts {
+			return response, finalURL, nil
+		}
+		if err != nil {
+			lastErr = err
+			if !retryableError(err) || attempt+1 >= g.cfg.RetryAttempts {
+				return nil, nil, err
+			}
+		}
+		if response != nil {
+			_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 8*1024))
+			_ = response.Body.Close()
+		}
+		g.metrics.recordRetry(target.Hostname())
+		if err := waitForRetry(ctx, g.cfg.RetryBackoff, attempt); err != nil {
+			return nil, nil, err
+		}
+	}
+	return nil, nil, lastErr
+}
+
+func (g *Gateway) fetchOnce(ctx context.Context, target *url.URL, rangeHeader string) (*http.Response, *url.URL, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, target.String(), nil)
 	if err != nil {
 		return nil, nil, err
@@ -218,11 +375,24 @@ func (g *Gateway) fetch(ctx context.Context, target *url.URL, rangeHeader string
 	if rangeHeader != "" {
 		request.Header.Set("Range", rangeHeader)
 	}
+	started := time.Now()
 	response, err := g.client.Do(request)
+	duration := time.Since(started)
 	if err != nil {
+		if response != nil && response.Body != nil {
+			_ = response.Body.Close()
+		}
+		g.metrics.recordHost(target.Hostname(), false, isTimeoutError(err), duration)
 		return nil, nil, err
 	}
-	return response, response.Request.URL, nil
+	success := response.StatusCode >= 200 && response.StatusCode < 400
+	timedOut := response.StatusCode == http.StatusRequestTimeout || response.StatusCode == http.StatusGatewayTimeout
+	g.metrics.recordHost(target.Hostname(), success, timedOut, duration)
+	finalURL := target
+	if response.Request != nil && response.Request.URL != nil {
+		finalURL = response.Request.URL
+	}
+	return response, finalURL, nil
 }
 
 func (g *Gateway) checkRedirect(request *http.Request, via []*http.Request) error {
@@ -286,4 +456,50 @@ func boolHeader(value bool) string {
 		return "1"
 	}
 	return "0"
+}
+
+func isLikelyManifestURL(target *url.URL) bool {
+	path := strings.ToLower(target.Path)
+	return strings.HasSuffix(path, ".m3u8") || strings.HasSuffix(path, ".m3u")
+}
+
+func retryableStatus(status int) bool {
+	switch status {
+	case http.StatusRequestTimeout, http.StatusTooEarly, http.StatusInternalServerError,
+		http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout:
+		return true
+	default:
+		return false
+	}
+}
+
+func retryableError(err error) bool {
+	if errors.Is(err, context.Canceled) {
+		return false
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+	var networkError net.Error
+	return errors.As(err, &networkError)
+}
+
+func isTimeoutError(err error) bool {
+	if errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+	var networkError net.Error
+	return errors.As(err, &networkError) && networkError.Timeout()
+}
+
+func waitForRetry(ctx context.Context, base time.Duration, attempt int) error {
+	delay := base * time.Duration(1<<attempt)
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
 }

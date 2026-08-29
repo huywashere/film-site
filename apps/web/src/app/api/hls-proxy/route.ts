@@ -26,6 +26,8 @@ const DEFAULT_ALLOWED_HOST_PATTERNS = [
   "*.hihihoho*.top",
   "*.vsmov.com",
   "*.streamvsmov.com",
+  "vicdn.cc",
+  "*.vicdn.cc",
 ];
 
 function hostIsAllowed(hostname: string): boolean {

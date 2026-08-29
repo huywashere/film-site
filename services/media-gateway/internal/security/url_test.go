@@ -6,8 +6,8 @@ import (
 )
 
 func TestHostAllowlistSupportsProviderWildcards(t *testing.T) {
-	guard := URLGuard{AllowedHosts: []string{"*.ophim.live", "*.kkphimplayer*.com"}}
-	for _, host := range []string{"cdn.ophim.live", "s1.kkphimplayer7.com"} {
+	guard := URLGuard{AllowedHosts: []string{"*.ophim.live", "*.kkphimplayer*.com", "vicdn.cc", "*.vicdn.cc"}}
+	for _, host := range []string{"cdn.ophim.live", "s1.kkphimplayer7.com", "vicdn.cc", "media.vicdn.cc"} {
 		if !guard.HostAllowed(host) {
 			t.Fatalf("expected %s to be allowed", host)
 		}

@@ -98,17 +98,25 @@ function getYear(record: Record<string, unknown>): number | undefined {
 function cleanTitleForDedupe(text: string): string {
   if (!text) return "";
   return normalizeText(text)
-    .replace(/\b(phim|movie|tap\s*\d+|phan\s*\d+|season\s*\d+|full|hd|cam|hdcam|vietsub|thuyet minh|long tieng|chieu rap)\b/gi, "")
+    .replace(
+      /\b(phim|movie|tap\s*\d+|phan\s*\d+|season\s*\d+|full|hd|cam|hdcam|vietsub|thuyet minh|long tieng|chieu rap)\b/gi,
+      "",
+    )
     .replace(/\s+/g, " ")
     .trim();
 }
 
 function getCanonicalKey(record: Record<string, unknown>): string {
-  const tmdbId = readNestedString(record, "tmdb", "id") || readString(record.tmdbId);
-  const tmdbType = readNestedString(record, "tmdb", "type") || readString(record.mediaType) || "movie";
+  const tmdbId =
+    readNestedString(record, "tmdb", "id") || readString(record.tmdbId);
+  const tmdbType =
+    readNestedString(record, "tmdb", "type") ||
+    readString(record.mediaType) ||
+    "movie";
   if (tmdbId && tmdbId !== "0") return `tmdb:${tmdbType}:${tmdbId}`;
 
-  const imdbId = readNestedString(record, "imdb", "id") || readString(record.imdbId);
+  const imdbId =
+    readNestedString(record, "imdb", "id") || readString(record.imdbId);
   if (imdbId && imdbId !== "0") return `imdb:${imdbId.toLowerCase()}`;
 
   const year = getYear(record);
@@ -123,6 +131,29 @@ function getCanonicalKey(record: Record<string, unknown>): string {
   }
 
   return `title:${name || slug || "unknown"}`;
+}
+
+function getFilmAliases(record: Record<string, unknown>): string[] {
+  const year = getYear(record);
+  const titles = [
+    getFilmName(record),
+    getOriginName(record),
+    readString(record.original_name),
+    readString(record.title),
+    readString(record.slug),
+  ]
+    .map((value) => cleanTitleForDedupe(value || ""))
+    .filter(Boolean);
+
+  const aliases = new Set<string>();
+  const canonical = getCanonicalKey(record);
+  aliases.add(canonical);
+  for (const title of titles) {
+    // A year is required for title aliases whenever it is known. This merges
+    // provider translations without collapsing remakes with the same title.
+    aliases.add(year ? `title:${title}:${year}` : `title:${title}`);
+  }
+  return Array.from(aliases);
 }
 
 function sourcePriority(source: MovieSource): number {
@@ -164,6 +195,19 @@ export function normalizeFilmItem(
     origin_name: originName,
     year,
   });
+  const existingSources = Array.isArray(record._sources)
+    ? record._sources.filter(
+        (item): item is MovieSource =>
+          typeof item === "string" &&
+          SOURCE_PRIORITY.includes(item as MovieSource),
+      )
+    : [];
+  const sources = Array.from(new Set([source, ...existingSources])).sort(
+    (left, right) => sourcePriority(left) - sourcePriority(right),
+  );
+  const existingSlugs = isRecord(record._sourceSlugs)
+    ? (record._sourceSlugs as Partial<Record<MovieSource, string>>)
+    : {};
 
   return {
     ...record,
@@ -172,11 +216,14 @@ export function normalizeFilmItem(
     origin_name: originName,
     year,
     _source: source,
-    _sources: [source],
-    _sourceSlugs: { [source]: slug },
+    _sources: sources,
+    _sourceSlugs: { ...existingSlugs, [source]: slug },
     _canonicalKey: canonicalKey,
-    _duplicateCount: 1,
-    _rank: rank,
+    _duplicateCount: Math.max(
+      sources.length,
+      readNumber(record._duplicateCount) || 1,
+    ),
+    _rank: readNumber(record._rank) ?? rank,
   };
 }
 
@@ -216,16 +263,23 @@ export function dedupeFilmsBySource(
   groups: Array<{ source: MovieSource; items: unknown[] }>,
 ): NormalizedFilmItem[] {
   const byKey = new Map<string, NormalizedFilmItem>();
+  const aliasToKey = new Map<string, string>();
   let rank = 0;
 
   groups.forEach(({ source, items }) => {
     items.forEach((item) => {
       const normalized = normalizeFilmItem(item, source, rank++);
-      const existing = byKey.get(normalized._canonicalKey);
+      const aliases = getFilmAliases(normalized);
+      const matchedKey = aliases
+        .map((alias) => aliasToKey.get(alias))
+        .find((key): key is string => Boolean(key));
+      const targetKey = matchedKey || normalized._canonicalKey;
+      const existing = byKey.get(targetKey);
       byKey.set(
-        normalized._canonicalKey,
+        targetKey,
         existing ? mergeFilm(existing, normalized) : normalized,
       );
+      aliases.forEach((alias) => aliasToKey.set(alias, targetKey));
     });
   });
 
@@ -233,6 +287,23 @@ export function dedupeFilmsBySource(
     const sourceDelta = sourcePriority(a._source) - sourcePriority(b._source);
     return sourceDelta || a._rank - b._rank;
   });
+}
+
+export function dedupeFilmItems(items: unknown[]): NormalizedFilmItem[] {
+  const groups = new Map<MovieSource, unknown[]>();
+  for (const item of items) {
+    const record = asRecord(item);
+    const source = (readString(record._source) || "kkphim") as MovieSource;
+    const sourceItems = groups.get(source) || [];
+    sourceItems.push(item);
+    groups.set(source, sourceItems);
+  }
+  return dedupeFilmsBySource(
+    Array.from(groups, ([source, sourceItems]) => ({
+      source,
+      items: sourceItems,
+    })),
+  );
 }
 
 export function isUsableMovieDetail(data: unknown): boolean {

@@ -54,6 +54,19 @@ stages:
   - build
   - deploy
 
+test:media-gateway:
+  stage: test
+  image: golang:1.25-alpine
+  before_script:
+    - cd services/media-gateway
+  script:
+    - go test ./...
+    - go vet ./...
+    - go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
 # ══════════════════════════════════════════════════════
 # STAGE 1: TEST
 # Chạy trên mọi branch để bắt lỗi sớm

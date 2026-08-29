@@ -6,6 +6,27 @@ type MoviePagePayload = Record<string, any>;
 const PAGE_DATA_REVALIDATE_SECONDS = 60 * 60;
 const PAGE_DATA_TIMEOUT_MS = 1_800;
 
+async function fetchGatewayBootstrap(
+  slug: string,
+): Promise<MoviePagePayload | null> {
+  const origin = process.env.MEDIA_GATEWAY_INTERNAL_URL?.trim();
+  if (!origin) return null;
+  try {
+    const response = await fetch(
+      `${origin.replace(/\/$/, "")}/v1/movies/${encodeURIComponent(slug)}/bootstrap`,
+      {
+        signal: AbortSignal.timeout(PAGE_DATA_TIMEOUT_MS),
+        next: { revalidate: PAGE_DATA_REVALIDATE_SECONDS },
+      },
+    );
+    if (!response.ok) return null;
+    const payload = (await response.json()) as MoviePagePayload;
+    return movieFromPayload(payload) ? payload : null;
+  } catch {
+    return null;
+  }
+}
+
 function movieFromPayload(payload: MoviePagePayload | null) {
   return payload?.movie || payload?.data?.item || payload?.data?.movie || null;
 }
@@ -42,6 +63,9 @@ async function fetchProviderPayload(
 export const getMoviePageData = cache(async (slug: string) => {
   const cleanSlug = encodeURIComponent(slug.trim());
   if (!cleanSlug) return null;
+
+  const gatewayPayload = await fetchGatewayBootstrap(slug.trim());
+  if (gatewayPayload) return gatewayPayload;
 
   // OPhim is usually the faster detail origin. Hedge KKPhim after a short
   // delay instead of hitting both providers on every page view. A healthy

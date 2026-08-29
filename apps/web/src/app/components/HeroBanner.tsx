@@ -1506,15 +1506,70 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         aria-label="Đang tải banner nổi bật"
         className="relative min-h-[100dvh] w-full overflow-hidden bg-[#141414]"
       >
-        <div className="absolute inset-0 animate-pulse bg-[radial-gradient(circle_at_70%_35%,rgba(50,58,72,0.32),transparent_42%),linear-gradient(135deg,#101318_0%,#171b22_52%,#101216_100%)]" />
-        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#14181c] via-[#14181c]/70 to-transparent" />
-        <div className="absolute bottom-[16%] right-[6%] hidden w-[min(42rem,48vw)] space-y-4 md:block">
-          <div className="h-4 w-36 rounded-full bg-white/8" />
-          <div className="h-12 w-4/5 rounded-xl bg-white/8" />
-          <div className="h-5 w-2/3 rounded-lg bg-white/6" />
-          <div className="flex gap-3 pt-3">
-            <div className="h-11 w-36 rounded-full bg-white/10" />
-            <div className="h-11 w-28 rounded-full bg-white/6" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_62%_34%,rgba(57,64,77,0.3),transparent_44%),linear-gradient(135deg,#101318_0%,#171b22_52%,#101216_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_24%,rgba(10,12,16,0.54)_70%,rgba(10,12,16,0.94)_100%),linear-gradient(to_top,#14181c_0%,rgba(20,24,28,0.78)_28%,transparent_62%),linear-gradient(to_bottom,rgba(10,12,16,0.76)_0%,transparent_30%)]" />
+
+        <div
+          aria-hidden="true"
+          className="absolute left-6 top-1/2 hidden h-[300px] w-[420px] -translate-y-1/2 xl:block 2xl:left-14"
+        >
+          {[0, 1, 2].map((index) => (
+            <div
+              key={index}
+              className="absolute left-0 top-0 aspect-[2/3] w-[172px] overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.055] shadow-2xl motion-safe:animate-pulse motion-reduce:animate-none"
+              style={{
+                transform: `translate(${index * 105}px, ${index * 18}px) scale(${1 - index * 0.06})`,
+                zIndex: 30 - index * 10,
+                opacity: 1 - index * 0.16,
+              }}
+            >
+              <div className="absolute inset-x-3 bottom-4 space-y-2">
+                <div className="h-3 w-4/5 rounded-full bg-white/[0.11]" />
+                <div className="h-2.5 w-2/5 rounded-full bg-white/[0.07]" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 flex flex-col items-center justify-end px-4 pb-8 text-center sm:pb-18 md:pb-20"
+        >
+          <div className="flex w-full max-w-2xl flex-col items-center gap-3 motion-safe:animate-pulse motion-reduce:animate-none sm:gap-4">
+            <div className="h-6 w-36 rounded-full bg-white/[0.09] sm:w-44" />
+            <div className="h-16 w-[min(82vw,30rem)] rounded-2xl bg-white/[0.08] sm:h-24 sm:w-[min(64vw,36rem)]" />
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-14 rounded-full bg-white/[0.1]" />
+              <div className="h-6 w-16 rounded-full bg-white/[0.075]" />
+              <div className="h-6 w-24 rounded-full bg-white/[0.075]" />
+            </div>
+            <div className="h-3.5 w-[min(78vw,25rem)] rounded-full bg-white/[0.075]" />
+            <div className="hidden h-3 w-[min(72vw,31rem)] rounded-full bg-white/[0.055] sm:block" />
+            <div className="flex items-center gap-2 pt-1 sm:gap-3">
+              <div className="h-10 w-28 rounded-full bg-white/[0.13] sm:h-11 sm:w-36" />
+              <div className="h-10 w-24 rounded-full bg-white/[0.075] sm:h-11 sm:w-28" />
+              <div className="h-10 w-10 rounded-full bg-white/[0.075] sm:h-11 sm:w-11" />
+            </div>
+            <div className="mt-1 flex items-center gap-2 sm:hidden">
+              <div className="h-8 w-8 rounded-full bg-white/[0.065]" />
+              <div className="h-8 w-28 rounded-full bg-white/[0.065]" />
+              <div className="h-8 w-8 rounded-full bg-white/[0.065]" />
+            </div>
+          </div>
+        </div>
+
+        <div
+          aria-hidden="true"
+          className="absolute bottom-6 right-4 hidden flex-col items-end gap-2 motion-safe:animate-pulse motion-reduce:animate-none sm:right-8 sm:flex md:right-12"
+        >
+          <div className="h-7 w-28 rounded-full bg-white/[0.065]" />
+          <div className="flex gap-2">
+            {Array.from({ length: 6 }, (_, index) => (
+              <div
+                key={index}
+                className="aspect-video w-20 rounded-lg border border-white/[0.06] bg-white/[0.055] sm:w-24"
+              />
+            ))}
           </div>
         </div>
       </section>
