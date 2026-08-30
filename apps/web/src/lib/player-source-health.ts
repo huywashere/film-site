@@ -19,7 +19,7 @@ export type PlayerCandidate = {
 
 // Bump when the player transport changes so a previous implementation cannot
 // leave every source on cooldown after a successful player fix.
-const STORAGE_KEY = "cineverse_player_source_health_v2";
+const STORAGE_KEY = "netphim_player_source_health_v2";
 const COOLDOWN_MS = 2 * 60 * 1000;
 
 function read(): Record<string, SourceHealth> {

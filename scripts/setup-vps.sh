@@ -31,7 +31,7 @@ info "Bắt đầu cài đặt môi trường VPS..."
 
 # ── Config (sửa nếu cần) ───────────────────────────────────────
 DEPLOY_USER="deploy"
-APP_DIR="/opt/cineverse"
+APP_DIR="/opt/netphim"
 GITHUB_REPO="${GITHUB_REPO:-}"  # Truyền qua env: GITHUB_REPO=user/repo sudo bash setup-vps.sh
 
 # ── Yêu cầu GitHub repo ────────────────────────────────────────
@@ -99,7 +99,7 @@ header "Bước 4: Cấu hình Firewall (UFW)"
 if ufw status | grep -q "Status: active"; then
     log "Giữ nguyên UFW do Terraform đã giới hạn SSH và Cloudflare CIDR"
 else
-    error "UFW chưa hoạt động. Hãy provision VPS bằng terraform/ trước khi setup ứng dụng"
+    error "UFW chưa hoạt động. Hãy provision VPS bằng infra/terraform/ trước khi setup ứng dụng"
 fi
 
 header "Bước 5: Clone repository"
@@ -158,40 +158,40 @@ log "OpenResty sẽ tạo chứng chỉ bootstrap nếu chưa có Cloudflare Ori
 header "Bước 8: Build Docker images"
 info "Đây có thể mất 5-15 phút lần đầu..."
 cd "$APP_DIR"
-sudo -u $DEPLOY_USER docker compose build
+sudo -u $DEPLOY_USER docker compose --project-directory "$APP_DIR" -f "$APP_DIR/infra/docker/docker-compose.yml" build
 log "Build Docker images hoàn tất"
 
 header "Bước 9: Khởi động các services"
-sudo -u $DEPLOY_USER docker compose up -d postgres redis
+sudo -u $DEPLOY_USER docker compose --project-directory "$APP_DIR" -f "$APP_DIR/infra/docker/docker-compose.yml" up -d postgres redis
 info "Đợi PostgreSQL và Redis khởi động..."
 sleep 15
 
 # Chạy Prisma migrations
 info "Chạy Prisma migrations..."
-sudo -u $DEPLOY_USER docker compose run --rm api sh -c "cd /app/apps/api && npx prisma migrate deploy"
+sudo -u $DEPLOY_USER docker compose --project-directory "$APP_DIR" -f "$APP_DIR/infra/docker/docker-compose.yml" run --rm api sh -c "cd /app/apps/api && npx prisma migrate deploy"
 log "Database migrations hoàn tất"
 
 # Khởi động tất cả services
-sudo -u $DEPLOY_USER docker compose up -d
+sudo -u $DEPLOY_USER docker compose --project-directory "$APP_DIR" -f "$APP_DIR/infra/docker/docker-compose.yml" up -d
 log "Tất cả services đã được khởi động"
 
 header "Bước 10: Kiểm tra trạng thái"
 sleep 10
-sudo -u $DEPLOY_USER docker compose ps
+sudo -u $DEPLOY_USER docker compose --project-directory "$APP_DIR" -f "$APP_DIR/infra/docker/docker-compose.yml" ps
 echo ""
-sudo -u $DEPLOY_USER docker compose logs --tail=20
+sudo -u $DEPLOY_USER docker compose --project-directory "$APP_DIR" -f "$APP_DIR/infra/docker/docker-compose.yml" logs --tail=20
 
 echo ""
 echo -e "${GREEN}══════════════════════════════════════${NC}"
-echo -e "${GREEN}  ✓ CineVerse đã được deploy thành công!${NC}"
+echo -e "${GREEN}  ✓ NetPhim đã được deploy thành công!${NC}"
 echo -e "${GREEN}══════════════════════════════════════${NC}"
 echo ""
 echo -e "📁 App directory: ${CYAN}$APP_DIR${NC}"
-echo -e "🐳 Xem logs: ${CYAN}cd $APP_DIR && docker compose logs -f${NC}"
+echo -e "🐳 Xem logs: ${CYAN}pnpm docker:logs${NC}"
 echo -e "🔄 Update app: ${CYAN}cd $APP_DIR && bash scripts/deploy.sh${NC}"
 echo ""
 warn "Cloudflare phải để proxy ON và SSL Full; chuyển Strict sau khi cài Origin CA"
-echo "   Xem hướng dẫn trong: $APP_DIR/terraform/README.md"
+echo "   Xem hướng dẫn trong: $APP_DIR/infra/terraform/README.md"
 
 # ── Bước 11: Tạo SSH key cho GitLab CI/CD ─────────────────────
 header "Bước 11: Tạo SSH key cho GitLab CI/CD (auto-deploy)"
@@ -200,7 +200,7 @@ GITLAB_KEY_PATH="/home/$DEPLOY_USER/.ssh/gitlab_ci_ed25519"
 if [[ ! -f "$GITLAB_KEY_PATH" ]]; then
     sudo -u $DEPLOY_USER ssh-keygen \
         -t ed25519 \
-        -C "gitlab-ci-deploy@cineverse" \
+        -C "gitlab-ci-deploy@netphim" \
         -f "$GITLAB_KEY_PATH" \
         -N ""
 

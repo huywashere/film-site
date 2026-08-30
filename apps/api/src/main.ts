@@ -239,6 +239,13 @@ async function bootstrap() {
   const { TimeoutInterceptor } = await import("./common/interceptors/timeout.interceptor");
   app.useGlobalInterceptors(new TimeoutInterceptor(requestTimeoutMs));
 
+  // ── Redis WebSocket Adapter (Multi-pod Watch Party Sync) ──────
+  const { RedisIoAdapter } = await import("./common/adapters/redis-io.adapter");
+  const redisIoAdapter = new RedisIoAdapter(app);
+  const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
+  await redisIoAdapter.connectToRedis(redisUrl);
+  app.useWebSocketAdapter(redisIoAdapter);
+
   const port = process.env.PORT || 3001;
   const serverInstance = await app.listen(port, "0.0.0.0");
 

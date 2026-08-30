@@ -14,6 +14,7 @@ import { resolve, sep } from "path";
 import { PrismaService } from "../prisma/prisma.service";
 import { RedisCacheService } from "../redis/redis.service";
 import { AuditService } from "../audit/audit.service";
+import { StorageService } from "../common/storage/storage.service";
 import { AdminService } from "./admin.service";
 
 type Actor = { uid: string; email?: string; ipAddress?: string; userAgent?: string };
@@ -40,6 +41,7 @@ export class AdminOperationsService implements OnModuleInit, OnModuleDestroy {
     private readonly prisma: PrismaService,
     private readonly cache: RedisCacheService,
     private readonly audit: AuditService,
+    private readonly storage: StorageService,
     private readonly admin: AdminService,
   ) {}
 
@@ -47,13 +49,68 @@ export class AdminOperationsService implements OnModuleInit, OnModuleDestroy {
     this.timer = setInterval(() => {
       void this.runDueSchedules();
       void this.monitorSystem();
+      void this.runLogPruning();
     }, 60_000);
     (this.timer as unknown as { unref?: () => void }).unref?.();
     void this.runDueSchedules();
+    void this.runLogPruning();
   }
 
   onModuleDestroy() {
     if (this.timer) clearInterval(this.timer);
+  }
+
+  /**
+   * Prunes telemetry records older than retention threshold to prevent database bloat.
+   */
+  async pruneExpiredLogs(retentionDays?: number) {
+    const days = Math.max(
+      7,
+      Number(retentionDays || process.env.LOG_RETENTION_DAYS || 60),
+    );
+    const cutoffDate = new Date(Date.now() - days * 86_400_000);
+
+    const [viewLogsPruned, playbackEventsPruned, searchEventsPruned] =
+      await Promise.all([
+        this.prisma.viewLog.deleteMany({ where: { viewedAt: { lt: cutoffDate } } }),
+        this.prisma.playbackEvent.deleteMany({
+          where: { occurredAt: { lt: cutoffDate } },
+        }),
+        this.prisma.searchEvent.deleteMany({
+          where: { occurredAt: { lt: cutoffDate } },
+        }),
+      ]);
+
+    this.logger.log(
+      `🧹 Pruned telemetry logs older than ${days} days: ${viewLogsPruned.count} view logs, ${playbackEventsPruned.count} playback events, ${searchEventsPruned.count} search events`,
+    );
+
+    return {
+      retentionDays: days,
+      cutoffDate,
+      deleted: {
+        viewLogs: viewLogsPruned.count,
+        playbackEvents: playbackEventsPruned.count,
+        searchEvents: searchEventsPruned.count,
+      },
+    };
+  }
+
+  private async runLogPruning() {
+    const acquired = await this.cache.acquireLock(
+      "log_retention_prune",
+      24 * 3600 * 1000,
+    );
+    if (!acquired) return; // Only 1 pod runs pruning per 24 hours
+    try {
+      await this.pruneExpiredLogs();
+    } catch (err) {
+      this.logger.warn(
+        `Failed to prune expired logs: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
   }
 
   async createMovie(data: Record<string, unknown>, actor: Actor) {
@@ -199,7 +256,11 @@ export class AdminOperationsService implements OnModuleInit, OnModuleDestroy {
     const backup = await this.prisma.databaseBackup.findUnique({ where: { id } });
     if (!backup?.filename || backup.status !== BackupStatus.COMPLETED) throw new BadRequestException("Bản backup chưa sẵn sàng");
     const file = this.safeBackupPath(backup.filename);
-    await fs.access(file);
+    try {
+      await fs.access(file);
+    } catch {
+      await this.storage.downloadFile(`backups/${backup.filename}`, file);
+    }
     await this.runPgCommand("pg_restore", ["--clean", "--if-exists", "--no-owner", "--no-privileges", "--exit-on-error", ...this.pgConnectionArgs(), file]);
     await this.prisma.databaseBackup.update({ where: { id }, data: { status: BackupStatus.RESTORED, restoredBy: actor.email || actor.uid, restoredAt: new Date() } });
     await this.log(actor, "RESTORE_DATABASE_BACKUP", id);
@@ -237,7 +298,7 @@ export class AdminOperationsService implements OnModuleInit, OnModuleDestroy {
   }
 
   async revalidateWeb(paths: string[], actor: Actor) {
-    const base = (process.env.NETPHIM_WEB_URL || process.env.CINEVERSE_WEB_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
+    const base = (process.env.NETPHIM_WEB_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
     const token = process.env.REVALIDATE_SECRET || "";
     if (token.length < 32) throw new BadRequestException("REVALIDATE_SECRET chưa được cấu hình an toàn");
     const response = await fetch(`${base}/api/admin/revalidate`, {
@@ -365,6 +426,14 @@ export class AdminOperationsService implements OnModuleInit, OnModuleDestroy {
       await this.runPgCommand("pg_dump", ["--format=custom", "--no-owner", "--no-privileges", ...this.pgConnectionArgs(), "--file", file]);
       const stat = await fs.stat(file);
       const checksum = await this.fileChecksum(file);
+
+      // Upload to Cloudflare R2 / S3 storage
+      await this.storage
+        .uploadFile(file, `backups/${filename}`, "application/octet-stream")
+        .catch((err) => {
+          this.logger.warn(`Storage upload for backup ${id} failed: ${err}`);
+        });
+
       await this.prisma.databaseBackup.update({ where: { id }, data: { status: BackupStatus.COMPLETED, fileSizeBytes: stat.size, checksum, finishedAt: new Date() } });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

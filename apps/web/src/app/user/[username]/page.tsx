@@ -361,11 +361,11 @@ export default function UserDashboardPage() {
     };
 
     syncFavorites();
-    window.addEventListener("cineverse_favorites_changed", syncFavorites);
+    window.addEventListener("netphim_favorites_changed", syncFavorites);
     window.addEventListener("storage", syncFavorites);
 
     return () => {
-      window.removeEventListener("cineverse_favorites_changed", syncFavorites);
+      window.removeEventListener("netphim_favorites_changed", syncFavorites);
       window.removeEventListener("storage", syncFavorites);
     };
   }, [isOwnProfile]);

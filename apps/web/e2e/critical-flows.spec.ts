@@ -7,8 +7,8 @@ test.describe("critical visitor flows", () => {
     const authRequests: string[] = [];
     const user = {
       id: "e2e-user-id",
-      email: "member@cineverse.test",
-      username: "cineverse_member",
+      email: "member@netphim.test",
+      username: "netphim_member",
       displayName: "NetPhim Member",
       role: "USER",
     };
@@ -100,7 +100,7 @@ test.describe("critical visitor flows", () => {
     await expect(page).toHaveURL("/");
     await expect
       .poll(() =>
-        page.evaluate(() => document.cookie.includes("cineverse-auth=true")),
+        page.evaluate(() => document.cookie.includes("netphim-auth=true")),
       )
       .toBe(true);
   });
@@ -109,7 +109,7 @@ test.describe("critical visitor flows", () => {
     await page.goto("/watchlist");
     await page.evaluate(() => {
       localStorage.setItem(
-        "cineverse_guest_watchlist",
+        "netphim_guest_watchlist",
         JSON.stringify([
           {
             id: "guest-demo-film",
@@ -130,7 +130,7 @@ test.describe("critical visitor flows", () => {
     await page.goto("/history");
     await page.evaluate(() => {
       localStorage.setItem(
-        "cineverse_continue_watching",
+        "netphim_continue_watching",
         JSON.stringify([
           {
             slug: "demo-film",

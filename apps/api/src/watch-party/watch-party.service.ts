@@ -1,6 +1,7 @@
 import { Injectable, OnModuleDestroy } from "@nestjs/common";
 import { randomBytes, randomUUID } from "crypto";
 import { PrismaService } from "../prisma/prisma.service";
+import { RedisCacheService } from "../redis/redis.service";
 import {
   CreateRoomPayload,
   PlaybackAction,
@@ -19,7 +20,10 @@ interface InternalRoom extends WatchPartyRoomSnapshot {
 
 @Injectable()
 export class WatchPartyService implements OnModuleDestroy {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisCacheService,
+  ) {}
 
   private readonly maxRooms = 500;
   private readonly maxRoomsPerSocket = 3;
@@ -33,6 +37,14 @@ export class WatchPartyService implements OnModuleDestroy {
 
   onModuleDestroy() {
     clearInterval(this.cleanupTimer);
+  }
+
+  private syncToRedis(room: InternalRoom) {
+    void this.redis.setJson(`wp:room:${room.id}`, room, 4 * 3600);
+  }
+
+  private removeFromRedis(roomId: string) {
+    void this.redis.del(`wp:room:${roomId}`);
   }
 
   createRoom(
@@ -81,6 +93,7 @@ export class WatchPartyService implements OnModuleDestroy {
 
     this.rooms.set(id, room);
     this.trackSocketRoom(socketId, id);
+    this.syncToRedis(room);
     return this.snapshot(room);
   }
 
@@ -105,6 +118,7 @@ export class WatchPartyService implements OnModuleDestroy {
     );
     this.trimMessages(room);
     this.trackSocketRoom(socketId, room.id);
+    this.syncToRedis(room);
     return { room: this.snapshot(room), participant };
   }
 
@@ -123,6 +137,7 @@ export class WatchPartyService implements OnModuleDestroy {
     if (room.participants.length === 0) {
       void this.archiveRoom(room, "Phòng trống", participant.name);
       this.rooms.delete(room.id);
+      this.removeFromRedis(room.id);
       return { roomId: room.id, participant, room: null, deleted: true };
     }
 
@@ -147,6 +162,7 @@ export class WatchPartyService implements OnModuleDestroy {
 
     room.updatedAt = now;
     this.trimMessages(room);
+    this.syncToRedis(room);
     return {
       roomId: room.id,
       participant,
@@ -181,6 +197,7 @@ export class WatchPartyService implements OnModuleDestroy {
     room.messages.push(message);
     room.updatedAt = message.timestamp;
     this.trimMessages(room);
+    this.syncToRedis(room);
     return message;
   }
 
@@ -190,6 +207,7 @@ export class WatchPartyService implements OnModuleDestroy {
     const allowed = new Set(["❤️", "🔥", "😂", "😱", "👏", "🎉"]);
     if (!allowed.has(emoji)) throw new Error("Biểu cảm không hợp lệ.");
     room.updatedAt = new Date().toISOString();
+    this.syncToRedis(room);
     return { id: randomUUID(), emoji, senderName: sender.name };
   }
 
@@ -218,6 +236,7 @@ export class WatchPartyService implements OnModuleDestroy {
     room.playerState = state;
     room.movie.episode = state.episode;
     room.updatedAt = state.updatedAt;
+    this.syncToRedis(room);
     return state;
   }
 
@@ -252,6 +271,7 @@ export class WatchPartyService implements OnModuleDestroy {
       this.untrackSocketRoom(participant.id, normalized);
     }
     this.rooms.delete(normalized);
+    this.removeFromRedis(normalized);
     return this.snapshot(room);
   }
 
@@ -275,7 +295,7 @@ export class WatchPartyService implements OnModuleDestroy {
     isHost: boolean,
     joinedAt: string,
   ): WatchPartyParticipant {
-    const name = this.clean(identity?.name, 50) || "Khách Cineverse";
+    const name = this.clean(identity?.name, 50) || "Khách NetPhim";
     return {
       id: socketId,
       userId: this.clean(identity?.userId, 100) || undefined,
@@ -292,7 +312,7 @@ export class WatchPartyService implements OnModuleDestroy {
     return {
       id: randomUUID(),
       senderId: "system",
-      senderName: "Cineverse",
+      senderName: "NetPhim",
       senderAvatar: "",
       text,
       timestamp,

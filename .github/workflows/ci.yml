@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: ["**"]
+    branches: ['**']
   pull_request:
     branches: [main]
 
@@ -28,7 +28,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5
         with:
-          go-version: "1.25.x"
+          go-version: '1.25.x'
           cache-dependency-path: services/media-gateway/go.sum
 
       - name: Test Gin media gateway
@@ -44,16 +44,32 @@ jobs:
       - name: Build Gin media gateway image
         run: docker build --tag netphim/media-gateway:ci services/media-gateway
 
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Test Rust HLS analyzer
+        working-directory: services/media-worker-rs
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test --locked
+
+      - name: Build Rust HLS analyzer image
+        run: docker build --tag netphim/media-worker-rs:ci services/media-worker-rs
+
       - name: Build OpenResty edge image
         run: |
-          docker build --tag netphim/openresty:ci --file openresty/Dockerfile .
+          docker build --tag netphim/openresty:ci --file infra/openresty/Dockerfile .
           docker run --rm --add-host web:127.0.0.1 --add-host api:127.0.0.1 --add-host media-gateway:127.0.0.1 netphim/openresty:ci /usr/local/openresty/bin/openresty -t
 
       - name: Validate Docker Compose deployment
-        run: docker compose config --quiet
+        run: docker compose --project-directory . -f infra/docker/docker-compose.yml config --quiet
         env:
           POSTGRES_PASSWORD: ci-postgres-password
           REDIS_PASSWORD: ci-redis-password
+          MEILI_MASTER_KEY: ci-meilisearch-private-key-at-least-32-characters
           JWT_SECRET: ci-jwt-secret
           JWT_REFRESH_SECRET: ci-jwt-refresh-secret
           TOTP_ENCRYPTION_KEY: ci-totp-encryption-key
@@ -61,9 +77,9 @@ jobs:
 
       - name: Validate Terraform infrastructure
         run: |
-          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD/terraform:/infra" -w /infra hashicorp/terraform:1.15.5 fmt -check -recursive
-          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD/terraform:/infra" -w /infra hashicorp/terraform:1.15.5 init -backend=false -input=false
-          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD/terraform:/infra" -w /infra hashicorp/terraform:1.15.5 validate
+          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD/infra/terraform:/infra" -w /infra hashicorp/terraform:1.15.5 fmt -check -recursive
+          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD/infra/terraform:/infra" -w /infra hashicorp/terraform:1.15.5 init -backend=false -input=false
+          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD/infra/terraform:/infra" -w /infra hashicorp/terraform:1.15.5 validate
 
       - name: Install pnpm
         uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
@@ -74,7 +90,7 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
-          cache: "pnpm"
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

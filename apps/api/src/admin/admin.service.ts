@@ -1341,7 +1341,7 @@ export class AdminService implements OnModuleInit {
       });
 
       const webBase = (
-        process.env.CINEVERSE_WEB_URL || "http://127.0.0.1:3000"
+        process.env.NETPHIM_WEB_URL || "http://127.0.0.1:3000"
       ).replace(/\/$/, "");
       const pathFor = (source: string, page: number) => {
         const paths: Record<string, string> = {

@@ -1,22 +1,19 @@
-"use client";
-import { useEffect, useRef } from "react";
-import Artplayer from "artplayer";
-import vi from "artplayer/i18n/vi";
-import Hls from "hls.js";
-import { useSettingsStore } from "@/store/settingsStore";
-import {
-  detectExplicitHlsAdRanges,
-  filterHlsManifest,
-} from "@/lib/hls-ad-filter";
-import { selectInitialHlsTransport } from "@/lib/player-source-routing";
-import { ARTPLAYER_EDITOR_LOADING_GIF } from "./artplayer-editor-assets";
+'use client';
+import { useEffect, useRef } from 'react';
+import Artplayer from 'artplayer';
+import vi from 'artplayer/i18n/vi';
+import Hls from 'hls.js';
+import { useSettingsStore } from '@/store/settingsStore';
+import { detectExplicitHlsAdRanges, filterHlsManifest } from '@/lib/hls-ad-filter';
+import { selectInitialHlsTransport } from '@/lib/player-source-routing';
+import { ARTPLAYER_EDITOR_LOADING_GIF } from './artplayer-editor-assets';
 
 const HLS_STARTUP_TIMEOUT_MS = 8_000;
 
 export interface ArtPlayerProps {
   url: string;
   fallbackUrl?: string;
-  type?: "hls" | "mp4" | "auto";
+  type?: 'hls' | 'mp4' | 'auto';
   poster?: string;
   title?: string;
   subtitle?: string;
@@ -31,7 +28,7 @@ export interface ArtPlayerProps {
   onBuffering?: (durationMs: number) => void;
   onError?: (error: unknown) => void;
   onPlaybackStateChange?: (state: {
-    action: "play" | "pause" | "seek";
+    action: 'play' | 'pause' | 'seek';
     currentTime: number;
   }) => void;
   isTheaterMode?: boolean;
@@ -46,7 +43,7 @@ export interface ArtPlayerProps {
 export default function ArtPlayer({
   url,
   fallbackUrl,
-  type = "auto",
+  type = 'auto',
   poster,
   title,
   subtitle,
@@ -109,16 +106,10 @@ export default function ArtPlayer({
     detectedAdRangesRef.current = [];
 
     const isHls =
-      type === "hls" ||
-      url.includes(".m3u8") ||
-      (type === "auto" && url.includes(".m3u8"));
+      type === 'hls' || url.includes('.m3u8') || (type === 'auto' && url.includes('.m3u8'));
     // Direct CDN streaming ensures maximum bandwidth, 0 proxy bottlenecks, and instant loading on both mobile and desktop
     const prefersSameOriginHls = false;
-    const hlsTransport = selectInitialHlsTransport(
-      url,
-      fallbackUrl,
-      prefersSameOriginHls,
-    );
+    const hlsTransport = selectInitialHlsTransport(url, fallbackUrl, prefersSameOriginHls);
 
     // -- HLS quality levels (populated after manifest load) --
     let hlsInstance: Hls | null = null;
@@ -128,6 +119,7 @@ export default function ArtPlayer({
     let startupTimer: ReturnType<typeof setTimeout> | null = null;
     let startupVideo: HTMLVideoElement | null = null;
     let startupReadyHandler: (() => void) | null = null;
+    let startupPlayHandler: (() => void) | null = null;
     const qualityLevels: Array<{
       default: boolean;
       html: string;
@@ -141,8 +133,8 @@ export default function ArtPlayer({
       const minutes = Math.floor((safeSeconds % 3600) / 60);
       const remainingSeconds = safeSeconds % 60;
       return hours > 0
-        ? `${hours}:${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`
-        : `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+        ? `${hours}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`
+        : `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
     };
 
     const mergeDetectedAdRanges = (
@@ -160,14 +152,9 @@ export default function ArtPlayer({
         );
         if (existingRange) {
           existingRange.end = Math.max(existingRange.end, range.end);
-          existingRange.duration = Math.max(
-            existingRange.duration,
-            range.duration,
-          );
-          existingRange.skippable =
-            existingRange.skippable === true || range.skippable === true;
-          existingRange.removed =
-            existingRange.removed === true && range.removed === true;
+          existingRange.duration = Math.max(existingRange.duration, range.duration);
+          existingRange.skippable = existingRange.skippable === true || range.skippable === true;
+          existingRange.removed = existingRange.removed === true && range.removed === true;
           continue;
         }
         if (!Number.isFinite(range.start) || range.start < 0) {
@@ -175,37 +162,27 @@ export default function ArtPlayer({
         }
         detectedAdRangesRef.current.push(range);
       }
-      detectedAdRangesRef.current.sort(
-        (left, right) => left.start - right.start,
-      );
+      detectedAdRangesRef.current.sort((left, right) => left.start - right.start);
     };
 
     const syncTimelineMarkers = () => {
       const player = playerRef.current;
       const duration = player?.duration || 0;
-      const progress = player?.template.$progress?.querySelector(
-        ".art-control-progress-inner",
-      );
-      if (
-        !(progress instanceof HTMLElement) ||
-        !Number.isFinite(duration) ||
-        duration <= 0
-      ) {
+      const progress = player?.template.$progress?.querySelector('.art-control-progress-inner');
+      if (!(progress instanceof HTMLElement) || !Number.isFinite(duration) || duration <= 0) {
         return;
       }
 
-      let markerLayer = progress.querySelector<HTMLElement>(
-        ".netphim-timeline-markers",
-      );
+      let markerLayer = progress.querySelector<HTMLElement>('.netphim-timeline-markers');
       if (!markerLayer) {
-        markerLayer = document.createElement("div");
-        markerLayer.className = "netphim-timeline-markers";
+        markerLayer = document.createElement('div');
+        markerLayer.className = 'netphim-timeline-markers';
         progress.appendChild(markerLayer);
       }
       markerLayer.replaceChildren();
 
       const appendMarker = (
-        kind: "intro" | "ad",
+        kind: 'intro' | 'ad',
         start: number,
         end: number,
         title: string,
@@ -215,28 +192,25 @@ export default function ArtPlayer({
       ) => {
         const safeStart = Math.min(duration, Math.max(0, start));
         const safeEnd = Math.min(duration, Math.max(safeStart, end));
-        const marker = document.createElement("div");
-        marker.className = `netphim-timeline-marker netphim-timeline-marker-${kind}${pointOnly ? " is-point" : ""}`;
+        const marker = document.createElement('div');
+        marker.className = `netphim-timeline-marker netphim-timeline-marker-${kind}${pointOnly ? ' is-point' : ''}`;
         const startPercent = (safeStart / duration) * 100;
         marker.style.left = `${startPercent}%`;
-        if (startPercent <= 12) marker.classList.add("is-near-start");
-        if (startPercent >= 88) marker.classList.add("is-near-end");
+        if (startPercent <= 12) marker.classList.add('is-near-start');
+        if (startPercent >= 88) marker.classList.add('is-near-end');
         if (!pointOnly) {
-          marker.style.width = `${Math.max(
-            0.35,
-            ((safeEnd - safeStart) / duration) * 100,
-          )}%`;
+          marker.style.width = `${Math.max(0.35, ((safeEnd - safeStart) / duration) * 100)}%`;
         }
         marker.dataset.title = title;
         marker.dataset.badge = badge;
         marker.dataset.label = `${title} • ${badge}`;
         marker.title = `${title} (${badge})`;
-        marker.setAttribute("role", "button");
-        marker.setAttribute("aria-label", `${title} ${badge}`);
+        marker.setAttribute('role', 'button');
+        marker.setAttribute('aria-label', `${title} ${badge}`);
         marker.tabIndex = 0;
 
         if (seekTarget !== undefined) {
-          marker.addEventListener("click", (e) => {
+          marker.addEventListener('click', (e) => {
             e.stopPropagation();
             if (player) {
               player.seek = Math.min(duration, seekTarget);
@@ -249,15 +223,12 @@ export default function ArtPlayer({
 
       const introStart = skipIntroStartRef.current ?? 0;
       const introEnd = skipIntroEndRef.current ?? 85;
-      if (
-        duration > 120 &&
-        introEnd > introStart
-      ) {
+      if (duration > 120 && introEnd > introStart) {
         appendMarker(
-          "intro",
+          'intro',
           introStart,
           introEnd,
-          "🎬 Đoạn Mở Đầu (Intro)",
+          '🎬 Đoạn Mở Đầu (Intro)',
           `${formatTimelineTime(introStart)} – ${formatTimelineTime(introEnd)}`,
           introEnd + 0.1,
         );
@@ -265,7 +236,7 @@ export default function ArtPlayer({
 
       detectedAdRangesRef.current.forEach((range, index) => {
         appendMarker(
-          "ad",
+          'ad',
           range.start,
           range.end,
           `📢 Điểm Quảng Cáo ${index + 1}`,
@@ -286,52 +257,46 @@ export default function ArtPlayer({
     // HLS.js is attached directly to ArtPlayer's video element. The playback
     // URL is a proxy route with query parameters, so extension-based custom
     // type dispatch is not a dependable place to initialize HLS.
-    const attachHls = (
-      video: HTMLVideoElement,
-      streamUrl: string,
-      alternateUrl?: string,
-    ) => {
+    const attachHls = (video: HTMLVideoElement, streamUrl: string, alternateUrl?: string) => {
       startupVideo = video;
       startupReadyHandler = clearStartupTimer;
-      video.addEventListener("loadedmetadata", startupReadyHandler);
-      video.addEventListener("canplay", startupReadyHandler);
+      video.addEventListener('loadedmetadata', startupReadyHandler);
+      video.addEventListener('canplay', startupReadyHandler);
 
       if (Hls.isSupported()) {
         const hls = new Hls({
           enableWorker: true,
+          startLevel: -1,
+          testBandwidth: true,
           backBufferLength: 30,
-          maxBufferLength: 10,
-          maxMaxBufferLength: 20,
-          maxBufferSize: 30 * 1000 * 1000,
-          maxBufferHole: 0.8,
+          maxBufferLength: 30,
+          maxMaxBufferLength: 60,
+          maxBufferSize: 60 * 1000 * 1000,
+          maxBufferHole: 0.5,
           highBufferWatchdogPeriod: 2,
-          nudgeMaxRetry: 6,
+          nudgeMaxRetry: 3,
           nudgeOffset: 0.1,
           startFragPrefetch: true,
           progressive: true,
           lowLatencyMode: false,
-          abrBandWidthFactor: 0.9,
-          abrBandWidthUpFactor: 0.8,
+          abrBandWidthFactor: 0.85,
+          abrBandWidthUpFactor: 0.7,
+          maxStarvationDelay: 4,
+          maxLoadingDelay: 4,
           capLevelToPlayerSize: true,
           manifestLoadingTimeOut: 8_000,
-          manifestLoadingMaxRetry: 3,
+          manifestLoadingMaxRetry: 2,
           levelLoadingTimeOut: 8_000,
-          levelLoadingMaxRetry: 3,
-          fragLoadingTimeOut: 10_000,
-          fragLoadingMaxRetry: 3,
-          pLoader: class ManifestFilterLoader extends (Hls.DefaultConfig
-            .loader as any) {
+          levelLoadingMaxRetry: 2,
+          fragLoadingTimeOut: 12_000,
+          fragLoadingMaxRetry: 2,
+          pLoader: class ManifestFilterLoader extends (Hls.DefaultConfig.loader as any) {
             load(context: any, config: any, callbacks: any) {
               const originalOnSuccess = callbacks.onSuccess;
-              callbacks.onSuccess = (
-                response: any,
-                stats: any,
-                ctx: any,
-                networkDetails: any,
-              ) => {
+              callbacks.onSuccess = (response: any, stats: any, ctx: any, networkDetails: any) => {
                 if (
-                  typeof response.data === "string" &&
-                  (ctx.type === "manifest" || ctx.type === "level")
+                  typeof response.data === 'string' &&
+                  (ctx.type === 'manifest' || ctx.type === 'level')
                 ) {
                   try {
                     const filtered = filterHlsManifest(response.data, ctx.url);
@@ -366,53 +331,52 @@ export default function ArtPlayer({
         const armStartupWatchdog = () => {
           clearStartupTimer();
           const isMobileDevice =
-            typeof navigator !== "undefined" &&
+            typeof navigator !== 'undefined' &&
             /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
               navigator.userAgent,
             );
-          const timeoutMs = isMobileDevice ? 20_000 : HLS_STARTUP_TIMEOUT_MS;
+          const timeoutMs = isMobileDevice ? 10_000 : HLS_STARTUP_TIMEOUT_MS;
 
           startupTimer = setTimeout(() => {
             if (video.readyState >= HTMLMediaElement.HAVE_METADATA) return;
-            if (isMobileDevice && video.paused) return;
+            // Autoplay is intentionally disabled for many mobile browsers.
+            // Arm a fresh watchdog on the first real play attempt instead of
+            // reporting a source failure while the viewer has not pressed play.
+            if (video.paused && video.currentTime === 0) return;
 
-            if (
-              alternateUrl &&
-              alternateUrl !== activeStreamUrl &&
-              !transportFallbackUsed
-            ) {
+            if (alternateUrl && alternateUrl !== activeStreamUrl && !transportFallbackUsed) {
               transportFallbackUsed = true;
               activeStreamUrl = alternateUrl;
               hls.stopLoad();
               hls.loadSource(activeStreamUrl);
-              hls.startLoad(-1);
+              hls.startLoad(video.currentTime || -1);
               armStartupWatchdog();
               return;
             }
 
             onErrorRef.current?.({
-              type: "HLS_STARTUP_TIMEOUT",
+              type: 'HLS_STARTUP_TIMEOUT',
               details: { streamUrl: activeStreamUrl },
             });
           }, timeoutMs);
         };
 
         const switchTransport = () => {
-          if (
-            !alternateUrl ||
-            alternateUrl === activeStreamUrl ||
-            transportFallbackUsed
-          ) {
+          if (!alternateUrl || alternateUrl === activeStreamUrl || transportFallbackUsed) {
             return false;
           }
           transportFallbackUsed = true;
           activeStreamUrl = alternateUrl;
+          const resumeAt = video.currentTime;
           hls.stopLoad();
           hls.loadSource(activeStreamUrl);
-          hls.startLoad(-1);
+          hls.startLoad(resumeAt || -1);
           armStartupWatchdog();
           return true;
         };
+
+        startupPlayHandler = armStartupWatchdog;
+        video.addEventListener('play', startupPlayHandler);
 
         // A discontinuity can be a normal codec/source boundary. Only an
         // explicit ad URL is strong enough evidence to make a range skippable.
@@ -436,13 +400,11 @@ export default function ArtPlayer({
           qualityLevels.splice(0, qualityLevels.length, ...built);
 
           const currentQualityHtml =
-            built.find((quality) => quality.default)?.html ??
-            built[0]?.html ??
-            "HD";
+            built.find((quality) => quality.default)?.html ?? built[0]?.html ?? 'HD';
 
           player.setting.update({
-            name: "quality",
-            html: "Chất lượng",
+            name: 'quality',
+            html: 'Chất lượng',
             tooltip: currentQualityHtml,
             selector: qualityLevels.map((quality) => ({
               default: quality.default,
@@ -469,12 +431,10 @@ export default function ArtPlayer({
 
           const prefQuality = useSettingsStore.getState().defaultQuality;
           const preferredLevel =
-            prefQuality !== "auto"
+            prefQuality !== 'auto'
               ? levels.findIndex(
                   (level) =>
-                    level.height &&
-                    `${level.height}p`.toLowerCase() ===
-                      prefQuality.toLowerCase(),
+                    level.height && `${level.height}p`.toLowerCase() === prefQuality.toLowerCase(),
                 )
               : -1;
 
@@ -497,10 +457,7 @@ export default function ArtPlayer({
             networkRecoveries += 1;
             return;
           }
-          if (
-            data.type === Hls.ErrorTypes.NETWORK_ERROR &&
-            networkRecoveries < 2
-          ) {
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR && networkRecoveries < 2) {
             networkRecoveries += 1;
             hls.startLoad(-1);
             return;
@@ -511,7 +468,7 @@ export default function ArtPlayer({
             return;
           }
           hls.destroy();
-          onErrorRef.current?.({ type: "HLS_FATAL_ERROR", details: data });
+          onErrorRef.current?.({ type: 'HLS_FATAL_ERROR', details: data });
         });
 
         hls.loadSource(streamUrl);
@@ -546,36 +503,34 @@ export default function ArtPlayer({
               hls.nextAutoLevel = hls.loadLevel - 1;
             }
             hls.startLoad(video.currentTime);
-          } else if (stalledFor >= 7_000 && stallRecoveries === 1) {
+          } else if (stalledFor >= 6_000 && stallRecoveries === 1) {
             stallRecoveries = 2;
-            hls.recoverMediaError();
-          } else if (stalledFor >= 14_000 && stallRecoveries === 2) {
+            if (!switchTransport()) {
+              hls.recoverMediaError();
+            }
+          } else if (stalledFor >= 10_000 && stallRecoveries === 2) {
             stallRecoveries = 3;
             onErrorRef.current?.({
-              type: "HLS_STALL_TIMEOUT",
+              type: 'HLS_STALL_TIMEOUT',
               details: { currentTime: video.currentTime },
             });
           }
         }, 1_000);
-      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        video.setAttribute("playsinline", "true");
-        video.setAttribute("webkit-playsinline", "true");
-        video.setAttribute("x5-playsinline", "true");
-        video.removeAttribute("crossorigin");
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.setAttribute('playsinline', 'true');
+        video.setAttribute('webkit-playsinline', 'true');
+        video.setAttribute('x5-playsinline', 'true');
+        video.removeAttribute('crossorigin');
         video.src = streamUrl;
         video.load();
 
         const handleNativeError = () => {
-          if (
-            alternateUrl &&
-            alternateUrl !== streamUrl &&
-            video.src !== alternateUrl
-          ) {
+          if (alternateUrl && alternateUrl !== streamUrl && video.src !== alternateUrl) {
             video.src = alternateUrl;
             video.load();
             return;
           }
-          onErrorRef.current?.({ type: "HLS_NATIVE_ERROR" });
+          onErrorRef.current?.({ type: 'HLS_NATIVE_ERROR' });
         };
 
         const handleNativeLoaded = () => {
@@ -588,23 +543,23 @@ export default function ArtPlayer({
           }
         };
 
-        video.addEventListener("error", handleNativeError, { once: true });
-        video.addEventListener("loadedmetadata", handleNativeLoaded, {
+        video.addEventListener('error', handleNativeError, { once: true });
+        video.addEventListener('loadedmetadata', handleNativeLoaded, {
           once: true,
         });
-        video.addEventListener("canplay", handleNativeLoaded, { once: true });
-        video.addEventListener("loadeddata", handleNativeLoaded, {
+        video.addEventListener('canplay', handleNativeLoaded, { once: true });
+        video.addEventListener('loadeddata', handleNativeLoaded, {
           once: true,
         });
       } else {
-        onErrorRef.current?.({ type: "HLS_UNSUPPORTED" });
+        onErrorRef.current?.({ type: 'HLS_UNSUPPORTED' });
       }
     };
 
     const seekControls = [
       {
-        name: "backward-10",
-        position: "left" as const,
+        name: 'backward-10',
+        position: 'left' as const,
         index: 25,
         html: `<span class="netphim-seek-glyph netphim-seek-glyph-backward" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -613,18 +568,20 @@ export default function ArtPlayer({
             <text x="12" y="15.2" text-anchor="middle" font-size="7.5" font-weight="900" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="currentColor" stroke="none">10</text>
           </svg>
         </span>`,
-        tooltip: "Lùi 10 giây",
+        tooltip: 'Lùi 10 giây',
         mounted(element: HTMLElement) {
-          element.setAttribute("aria-label", "Lùi 10 giây");
-          element.setAttribute("role", "button");
+          element.setAttribute('aria-label', 'Lùi 10 giây');
+          element.setAttribute('role', 'button');
         },
         click: function (this: Artplayer) {
-          this.seek = Math.max(0, this.currentTime - 10);
+          const target = Math.max(0, this.currentTime - 10);
+          showSeekFeedback('backward', 10, target);
+          this.seek = target;
         },
       },
       {
-        name: "forward-10",
-        position: "left" as const,
+        name: 'forward-10',
+        position: 'left' as const,
         index: 26,
         html: `<span class="netphim-seek-glyph netphim-seek-glyph-forward" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -633,16 +590,18 @@ export default function ArtPlayer({
             <text x="12" y="15.2" text-anchor="middle" font-size="7.5" font-weight="900" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="currentColor" stroke="none">10</text>
           </svg>
         </span>`,
-        tooltip: "Tua 10 giây",
+        tooltip: 'Tua 10 giây',
         mounted(element: HTMLElement) {
-          element.setAttribute("aria-label", "Tua 10 giây");
-          element.setAttribute("role", "button");
+          element.setAttribute('aria-label', 'Tua 10 giây');
+          element.setAttribute('role', 'button');
         },
         click: function (this: Artplayer) {
           const targetTime = this.currentTime + 10;
-          this.seek = Number.isFinite(this.duration)
+          const target = Number.isFinite(this.duration)
             ? Math.min(this.duration, targetTime)
             : targetTime;
+          showSeekFeedback('forward', 10, target);
+          this.seek = target;
         },
       },
     ];
@@ -650,7 +609,7 @@ export default function ArtPlayer({
     const player = new Artplayer({
       container: containerRef.current,
       url: isHls ? hlsTransport.primary : url,
-      type: isHls ? "m3u8" : "auto",
+      type: isHls ? 'm3u8' : 'auto',
       customType: {
         m3u8: function (video: HTMLVideoElement, streamUrl: string) {
           attachHls(video, streamUrl, hlsTransport.fallback);
@@ -666,10 +625,12 @@ export default function ArtPlayer({
       autoSize: false,
       autoMini: false,
       autoOrientation: true,
-      fastForward: true,
+      // WatchPage owns double-tap and press-and-hold gestures. Keeping the
+      // built-in gesture enabled makes a single double tap seek twice.
+      fastForward: false,
       lock: true,
       screenshot:
-        typeof navigator !== "undefined"
+        typeof navigator !== 'undefined'
           ? !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
           : false,
       setting: true,
@@ -687,8 +648,8 @@ export default function ArtPlayer({
       playsInline: true,
       autoPlayback: true,
       airplay: true,
-      theme: "#23ade5",
-      lang: "vi",
+      theme: '#8b5cf6',
+      lang: 'vi',
       i18n: { vi },
       icons: {
         loading: `<img src="${ARTPLAYER_EDITOR_LOADING_GIF}" alt="" aria-hidden="true">`,
@@ -698,11 +659,11 @@ export default function ArtPlayer({
           '<img width="16" height="16" src="/artplayer/indicator.svg" alt="" aria-hidden="true">',
       },
       moreVideoAttr: {
-        playsInline: "true",
-        "webkit-playsinline": "true",
-        "x5-playsinline": "true",
-        "x5-video-player-type": "h5",
-        "x5-video-player-fullscreen": "false",
+        playsInline: 'true',
+        'webkit-playsinline': 'true',
+        'x5-playsinline': 'true',
+        'x5-video-player-type': 'h5',
+        'x5-video-player-fullscreen': 'false',
       },
       controls: seekControls,
       // Use ArtPlayer's native focus-scoped keyboard controls.
@@ -713,7 +674,7 @@ export default function ArtPlayer({
         ? {
             subtitle: {
               url: subtitle,
-              type: "vtt",
+              type: 'vtt',
             },
           }
         : {}),
@@ -721,11 +682,64 @@ export default function ArtPlayer({
 
     playerRef.current = player;
 
-    const skipAdButton = document.createElement("button");
-    skipAdButton.type = "button";
-    skipAdButton.className = "netphim-skip-ad";
+    const seekFeedback = document.createElement('div');
+    seekFeedback.className = 'netphim-seek-feedback';
+    seekFeedback.setAttribute('role', 'status');
+    seekFeedback.setAttribute('aria-live', 'polite');
+    seekFeedback.innerHTML = `
+      <span class="netphim-seek-feedback-orbit" aria-hidden="true">
+        <svg viewBox="0 0 48 48" fill="none">
+          <path class="netphim-seek-feedback-track" d="M13 14.5A17 17 0 1 1 8.5 26" />
+          <path class="netphim-seek-feedback-arrow" d="M7.5 13.5v11h11" />
+        </svg>
+        <strong class="netphim-seek-feedback-number">10</strong>
+      </span>
+      <span class="netphim-seek-feedback-copy">
+        <strong class="netphim-seek-feedback-label">Lùi 10 giây</strong>
+        <span class="netphim-seek-feedback-time">0:00</span>
+      </span>
+    `;
+    player.template.$player.appendChild(seekFeedback);
+    let seekFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
+    let lastSeekFeedbackAt = 0;
+    let lastStablePlaybackTime = 0;
+    let seekOriginTime: number | null = null;
+
+    function showSeekFeedback(
+      direction: 'backward' | 'forward',
+      seconds: number,
+      targetTime: number,
+    ) {
+      const roundedSeconds = Math.max(1, Math.round(seconds));
+      const label = direction === 'backward' ? 'Lùi' : 'Tới';
+      seekFeedback.classList.remove('is-backward', 'is-forward', 'is-visible');
+      // Restart the compact entrance animation for repeated taps.
+      void seekFeedback.offsetWidth;
+      seekFeedback.classList.add(`is-${direction}`, 'is-visible');
+      const number = seekFeedback.querySelector<HTMLElement>('.netphim-seek-feedback-number');
+      const labelElement = seekFeedback.querySelector<HTMLElement>('.netphim-seek-feedback-label');
+      const time = seekFeedback.querySelector<HTMLElement>('.netphim-seek-feedback-time');
+      if (number) number.textContent = String(roundedSeconds);
+      if (labelElement) {
+        labelElement.textContent = `${label} ${roundedSeconds} giây`;
+      }
+      if (time) time.textContent = formatTimelineTime(targetTime);
+      seekFeedback.setAttribute(
+        'aria-label',
+        `${label} ${roundedSeconds} giây, đến ${formatTimelineTime(targetTime)}`,
+      );
+      lastSeekFeedbackAt = Date.now();
+      if (seekFeedbackTimer) clearTimeout(seekFeedbackTimer);
+      seekFeedbackTimer = setTimeout(() => {
+        seekFeedback.classList.remove('is-visible');
+      }, 720);
+    }
+
+    const skipAdButton = document.createElement('button');
+    skipAdButton.type = 'button';
+    skipAdButton.className = 'netphim-skip-ad';
     skipAdButton.hidden = true;
-    skipAdButton.setAttribute("aria-live", "polite");
+    skipAdButton.setAttribute('aria-live', 'polite');
     skipAdButton.innerHTML = `
       <span class="netphim-skip-ad-label">Bỏ qua quảng cáo</span>
       <span class="netphim-skip-ad-countdown" aria-hidden="true"></span>
@@ -746,13 +760,8 @@ export default function ArtPlayer({
       const activeAd = findActiveAd(player.currentTime);
       skipAdButton.hidden = !activeAd;
       if (!activeAd) return;
-      const remaining = Math.max(
-        1,
-        Math.ceil(activeAd.end - player.currentTime),
-      );
-      const countdown = skipAdButton.querySelector<HTMLElement>(
-        ".netphim-skip-ad-countdown",
-      );
+      const remaining = Math.max(1, Math.ceil(activeAd.end - player.currentTime));
+      const countdown = skipAdButton.querySelector<HTMLElement>('.netphim-skip-ad-countdown');
       if (countdown) countdown.textContent = `${remaining}s`;
     };
 
@@ -770,7 +779,7 @@ export default function ArtPlayer({
       syncSkipAdButton();
     };
 
-    skipAdButton.addEventListener("click", handleSkipAd);
+    skipAdButton.addEventListener('click', handleSkipAd);
 
     // ArtPlayer can rebuild its control tree while initializing a custom HLS
     // source. Restore the seek buttons if that happens so they are always
@@ -799,13 +808,13 @@ export default function ArtPlayer({
 
     let didStartPlayback = false;
     let bufferingStartedAt = 0;
-    player.on("video:waiting", () => {
+    player.on('video:waiting', () => {
       if (!bufferingStartedAt) bufferingStartedAt = Date.now();
     });
-    player.on("video:stalled", () => {
+    player.on('video:stalled', () => {
       if (!bufferingStartedAt) bufferingStartedAt = Date.now();
     });
-    player.on("video:playing", () => {
+    player.on('video:playing', () => {
       if (bufferingStartedAt) {
         onBufferingRef.current?.(Date.now() - bufferingStartedAt);
         bufferingStartedAt = 0;
@@ -817,7 +826,7 @@ export default function ArtPlayer({
     });
 
     // Advertisement & Auto Skip Intro listeners
-    player.on("video:timeupdate", () => {
+    player.on('video:timeupdate', () => {
       syncSkipAdButton();
       if (autoSkipIntroRef.current && !introAutoSkippedRef.current) {
         const start = skipIntroStartRef.current ?? 0;
@@ -834,12 +843,15 @@ export default function ArtPlayer({
         }
       }
     });
-    player.on("video:seeking", syncSkipAdButton);
-    player.on("video:seeked", syncSkipAdButton);
-    player.on("seek", syncSkipAdButton);
+    player.on('video:seeking', () => {
+      if (seekOriginTime === null) seekOriginTime = lastStablePlaybackTime;
+      syncSkipAdButton();
+    });
+    player.on('video:seeked', syncSkipAdButton);
+    player.on('seek', syncSkipAdButton);
 
     // Keep business callbacks around ArtPlayer's native UI lifecycle.
-    player.on("ready", () => {
+    player.on('ready', () => {
       onReadyRef.current?.(player);
       if (player.loading) {
         player.loading.show = false;
@@ -851,25 +863,31 @@ export default function ArtPlayer({
       ensureSeekControls();
     });
 
-    player.on("video:loadedmetadata", syncTimelineMarkers);
-    player.on("video:durationchange", syncTimelineMarkers);
-    player.on("resize", syncTimelineMarkers);
+    player.on('video:loadedmetadata', syncTimelineMarkers);
+    player.on('video:durationchange', syncTimelineMarkers);
+    player.on('resize', syncTimelineMarkers);
 
-    player.on("video:play", () => {
+    player.on('video:play', () => {
       onPlaybackStateChangeRef.current?.({
-        action: "play",
+        action: 'play',
         currentTime: player.currentTime,
       });
     });
-    player.on("video:pause", () => {
+    player.on('video:pause', () => {
       onPlaybackStateChangeRef.current?.({
-        action: "pause",
+        action: 'pause',
         currentTime: player.currentTime,
       });
     });
-    player.on("video:seeked", () => {
+    player.on('video:seeked', () => {
+      const delta = player.currentTime - (seekOriginTime ?? lastStablePlaybackTime);
+      if (Math.abs(delta) >= 1 && Date.now() - lastSeekFeedbackAt > 180) {
+        showSeekFeedback(delta < 0 ? 'backward' : 'forward', Math.abs(delta), player.currentTime);
+      }
+      seekOriginTime = null;
+      lastStablePlaybackTime = player.currentTime;
       onPlaybackStateChangeRef.current?.({
-        action: "seek",
+        action: 'seek',
         currentTime: player.currentTime,
       });
     });
@@ -889,8 +907,12 @@ export default function ArtPlayer({
     }
 
     if (startTime > 5) {
-      player.on("ready", () => {
+      player.on('ready', () => {
         if (startTime < player.duration - 10) {
+          // Restoring a previous session is not a viewer seek gesture, so keep
+          // the HUD quiet and establish the restored point as the baseline.
+          lastStablePlaybackTime = startTime;
+          seekOriginTime = startTime;
           player.currentTime = startTime;
         }
       });
@@ -898,11 +920,12 @@ export default function ArtPlayer({
 
     // -- Save progress --
     let lastSave = 0;
-    player.on("video:timeupdate", () => {
+    player.on('video:timeupdate', () => {
       const now = Date.now();
       const ct = player.currentTime;
       const dur = player.duration;
       if (dur > 0) {
+        if (!player.video.seeking) lastStablePlaybackTime = ct;
         if (now - lastSave > 5000) {
           lastSave = now;
           if (savedKey) localStorage.setItem(savedKey, ct.toString());
@@ -912,14 +935,14 @@ export default function ArtPlayer({
     });
 
     // -- Video ended → clear saved progress, fire callback --
-    player.on("video:ended", () => {
+    player.on('video:ended', () => {
       if (savedKey) localStorage.removeItem(savedKey);
       onEndedRef.current?.();
     });
 
     // -- Native error --
-    player.on("video:error", (err) => {
-      onErrorRef.current?.({ type: "NATIVE_ERROR", details: err });
+    player.on('video:error', (err) => {
+      onErrorRef.current?.({ type: 'NATIVE_ERROR', details: err });
     });
 
     return () => {
@@ -934,22 +957,23 @@ export default function ArtPlayer({
       hlsInstance?.destroy();
       clearStartupTimer();
       if (startupVideo && startupReadyHandler) {
-        startupVideo.removeEventListener("loadedmetadata", startupReadyHandler);
-        startupVideo.removeEventListener("canplay", startupReadyHandler);
+        startupVideo.removeEventListener('loadedmetadata', startupReadyHandler);
+        startupVideo.removeEventListener('canplay', startupReadyHandler);
       }
+      if (startupVideo && startupPlayHandler) {
+        startupVideo.removeEventListener('play', startupPlayHandler);
+      }
+      if (seekFeedbackTimer) clearTimeout(seekFeedbackTimer);
       if (stallRecoveryTimer) {
         clearInterval(stallRecoveryTimer);
       }
-      skipAdButton.removeEventListener("click", handleSkipAd);
+      skipAdButton.removeEventListener('click', handleSkipAd);
     };
     // Recreate only when the primary/fallback transport changes. Other props use refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, fallbackUrl, type]);
 
   return (
-    <div
-      ref={containerRef}
-      className="absolute inset-0 h-full min-h-0 w-full overflow-hidden"
-    />
+    <div ref={containerRef} className="absolute inset-0 h-full min-h-0 w-full overflow-hidden" />
   );
 }

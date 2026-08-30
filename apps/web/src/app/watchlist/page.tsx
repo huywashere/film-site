@@ -36,12 +36,12 @@ export default function WatchlistPage() {
     };
 
     window.addEventListener(
-      "cineverse_watchlist_changed",
+      "netphim_watchlist_changed",
       handleWatchlistChanged,
     );
     return () => {
       window.removeEventListener(
-        "cineverse_watchlist_changed",
+        "netphim_watchlist_changed",
         handleWatchlistChanged,
       );
     };

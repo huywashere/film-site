@@ -118,7 +118,7 @@ export default function SettingsPage() {
     setClearingSearch(true);
     setTimeout(() => {
       if (typeof window !== "undefined") {
-        localStorage.removeItem("cineverse_search_history");
+        localStorage.removeItem("netphim_search_history");
         window.dispatchEvent(new Event("search_history_cleared"));
       }
       setClearingSearch(false);

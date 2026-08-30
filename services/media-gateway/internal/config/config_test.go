@@ -33,6 +33,9 @@ func TestLoadUsesProductionHardeningDefaults(t *testing.T) {
 	if cfg.CoreAPIURL != "http://api:4000/api/v1" {
 		t.Fatalf("media gateway must use the NestJS container port, got %s", cfg.CoreAPIURL)
 	}
+	if cfg.MeiliIndex != "movies" || cfg.MeiliWarmPages != 3 || cfg.MeiliBatchSize != 200 {
+		t.Fatalf("unexpected Meilisearch defaults: index=%s pages=%d batch=%d", cfg.MeiliIndex, cfg.MeiliWarmPages, cfg.MeiliBatchSize)
+	}
 }
 
 func TestRetryAttemptsAreBounded(t *testing.T) {

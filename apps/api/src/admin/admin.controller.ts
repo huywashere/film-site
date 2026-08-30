@@ -499,6 +499,12 @@ export class AdminController {
     return this.operations.getAdvancedAnalytics(range);
   }
 
+  @Post("operations/prune-logs")
+  @RequireAdminPermissions("system.manage")
+  pruneLogs(@Body() body: { retentionDays?: number }) {
+    return this.operations.pruneExpiredLogs(body?.retentionDays);
+  }
+
   // ── 9. Security & IP Blacklist ──────────────────────────────────────
   @Get("security/blocked-ips")
   @RequireAdminPermissions("system.manage")

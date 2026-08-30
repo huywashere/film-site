@@ -34,7 +34,7 @@ export type WatchPartyConnectionState = "connecting" | "online" | "offline";
 
 function getGuestId() {
   if (typeof window === "undefined") return "guest";
-  const key = "cineverse-watch-party-guest";
+  const key = "netphim-watch-party-guest";
   const existing = window.localStorage.getItem(key);
   if (existing) return existing;
   const id = `guest-${crypto.randomUUID()}`;

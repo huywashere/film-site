@@ -23,7 +23,7 @@ export class MailService {
     const url = `${process.env.FRONTEND_URL || "http://localhost:3000"}/verify-email?token=${token}`;
     try {
       const info = await this.transporter.sendMail({
-        from: `"NetPhim Auth" <${process.env.SMTP_FROM || "noreply@cineverse.com"}>`,
+        from: `"NetPhim Auth" <${process.env.SMTP_FROM || "noreply@netphim.com"}>`,
         to,
         subject: "NetPhim - Xác thực địa chỉ email của bạn",
         html: `
@@ -49,7 +49,7 @@ export class MailService {
     const url = `${process.env.FRONTEND_URL || "http://localhost:3000"}/reset-password?token=${token}`;
     try {
       const info = await this.transporter.sendMail({
-        from: `"NetPhim Auth" <${process.env.SMTP_FROM || "noreply@cineverse.com"}>`,
+        from: `"NetPhim Auth" <${process.env.SMTP_FROM || "noreply@netphim.com"}>`,
         to,
         subject: "NetPhim - Đặt lại mật khẩu",
         html: `
@@ -81,7 +81,7 @@ export class MailService {
 
     try {
       const info = await this.transporter.sendMail({
-        from: `"NetPhim Security" <${process.env.SMTP_FROM || "security@cineverse.com"}>`,
+        from: `"NetPhim Security" <${process.env.SMTP_FROM || "security@netphim.com"}>`,
         to,
         subject: "⚠️ Cảnh báo: Đăng nhập từ thiết bị lạ!",
         html: `

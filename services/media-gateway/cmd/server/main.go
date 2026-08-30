@@ -42,12 +42,31 @@ func run() error {
 		}
 	}()
 
+	var analysisQueue store.AnalysisQueue
+	if cfg.AnalysisEnabled && cfg.RedisURL != "" {
+		redisQueue, queueErr := store.NewRedisAnalysisQueue(
+			cfg.RedisURL,
+			cfg.AnalysisJobStream,
+			cfg.AnalysisQueueTTL,
+		)
+		if queueErr != nil {
+			log.Printf("HLS analysis queue disabled: %v", queueErr)
+		} else {
+			analysisQueue = redisQueue
+			defer func() {
+				if err := redisQueue.Close(); err != nil {
+					log.Printf("HLS analysis queue close failed: %v", err)
+				}
+			}()
+		}
+	}
+
 	router := gin.New()
 	router.Use(gin.Recovery())
 	if err := router.SetTrustedProxies(cfg.TrustedProxies); err != nil {
 		return err
 	}
-	mediaGateway := gateway.New(cfg, manifestStore)
+	mediaGateway := gateway.New(cfg, manifestStore, analysisQueue)
 	defer mediaGateway.Close()
 	mediaGateway.Register(router)
 

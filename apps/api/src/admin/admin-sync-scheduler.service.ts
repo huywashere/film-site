@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { MoviesService } from "../movies/movies.service";
+import { RedisCacheService } from "../redis/redis.service";
 import axios from "axios";
 
 @Injectable()
@@ -12,6 +13,7 @@ export class AdminSyncSchedulerService implements OnModuleInit, OnModuleDestroy 
   constructor(
     private readonly prisma: PrismaService,
     private readonly moviesService: MoviesService,
+    private readonly redis: RedisCacheService,
   ) {}
 
   async onModuleInit() {
@@ -168,6 +170,13 @@ export class AdminSyncSchedulerService implements OnModuleInit, OnModuleDestroy 
   private async tickSchedules() {
     if (this.isProcessing) return;
 
+    // Acquire global distributed lock across pods for the scheduler ticker (duration 50s)
+    const acquired = await this.redis.acquireLock("sync_scheduler_tick", 50_000);
+    if (!acquired) {
+      this.logger.debug("Another pod is currently processing sync schedules, skipping tick.");
+      return;
+    }
+
     try {
       const now = new Date();
       const dueSchedules = await this.prisma.syncSchedule.findMany({
@@ -182,10 +191,20 @@ export class AdminSyncSchedulerService implements OnModuleInit, OnModuleDestroy 
       }
     } catch (err) {
       this.logger.error("Error running sync schedules ticker:", err);
+    } finally {
+      await this.redis.releaseLock("sync_scheduler_tick");
     }
   }
 
   private async executeSync(schedule: any, requestedBy: string) {
+    const lockKey = `sync_source:${schedule.source}`;
+    // Lock source execution for up to 10 minutes to prevent overlapping runs on same source across pods
+    const sourceLocked = await this.redis.acquireLock(lockKey, 10 * 60 * 1000);
+    if (!sourceLocked) {
+      this.logger.warn(`Source ${schedule.source} is already being synced by another process, skipping.`);
+      return { success: false, message: `Sync already in progress for ${schedule.source}` };
+    }
+
     this.isProcessing = true;
     const startTime = new Date();
 
@@ -290,6 +309,7 @@ export class AdminSyncSchedulerService implements OnModuleInit, OnModuleDestroy 
       throw err;
     } finally {
       this.isProcessing = false;
+      await this.redis.releaseLock(lockKey);
     }
   }
 

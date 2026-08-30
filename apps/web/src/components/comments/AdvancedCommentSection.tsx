@@ -139,7 +139,7 @@ export function AdvancedCommentSection({
   // Comments list with localStorage persistence
   const [comments, setComments] = useState<CommentItem[]>([]);
 
-  const storageKey = `cineverse_comments_tree_${movieSlug || "default"}`;
+  const storageKey = `netphim_comments_tree_${movieSlug || "default"}`;
 
   useEffect(() => {
     try {

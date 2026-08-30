@@ -38,7 +38,8 @@ k6 run -e BASE_URL=http://127.0.0.1:8081 \
 - `GET /v1/movies/:slug/bootstrap`: merged movie detail, episode servers,
   source-specific slugs and provider payloads in one request.
 - `GET /v1/catalog?kind=...`: cached, deduplicated multi-source catalogue.
-- `GET /v1/search?q=...`: multi-source search with deterministic ranking.
+- `GET /v1/search?q=...`: Meilisearch typo-tolerant index with automatic
+  multi-source provider fallback and deterministic ranking.
 - `GET /v1/top10`: real view analytics from NestJS with catalogue fallback.
 - `GET /v1/catalog/providers/health`: provider circuit state and latency.
 
@@ -49,6 +50,22 @@ fallback, so a gateway outage does not take film pages offline.
 The production Compose stack exposes the service only on the internal Docker
 network. Nginx sends a stable 10% canary to Gin and transparently retries the
 existing Next.js route handler on 502/503/504.
+
+## Meilisearch index
+
+Meilisearch is a derived, disposable index: provider/PostgreSQL records remain
+authoritative. Catalog and provider-search responses feed a bounded asynchronous
+queue, while a periodic warmup indexes recent series, single movies and anime.
+If Meilisearch is unavailable, empty or still warming, `/v1/search` immediately
+uses the existing multi-provider search path. Source alternatives and
+`_sourceSlugs` are stored in each indexed document so playback fallback is not
+lost after a search hit.
+
+The Compose service exposes port `7700` only inside the Docker network. Set a
+unique `MEILI_MASTER_KEY` (minimum 32 random characters) on every environment;
+never use it in a `NEXT_PUBLIC_*` variable. Relevant tuning variables are
+`MEILI_MOVIES_INDEX`, `MEILI_TIMEOUT`, `MEILI_SYNC_INTERVAL`,
+`MEILI_WARM_PAGES`, and `MEILI_BATCH_SIZE`.
 
 ## Required production secrets
 

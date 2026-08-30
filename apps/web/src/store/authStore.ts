@@ -57,10 +57,10 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user) => {
         if (typeof window !== "undefined") {
           if (user) {
-            document.cookie = "cineverse-auth=true; path=/; max-age=31536000";
+            document.cookie = "netphim-auth=true; path=/; max-age=31536000";
           } else {
             document.cookie =
-              "cineverse-auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+              "netphim-auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
           }
         }
         set({ user });
@@ -155,7 +155,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: "cineverse-auth",
+      name: "netphim-auth",
       partialize: (state) => ({ user: state.user }),
     },
   ),

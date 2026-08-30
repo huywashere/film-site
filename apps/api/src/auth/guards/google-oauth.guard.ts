@@ -8,8 +8,8 @@ import { randomBytes, timingSafeEqual } from "crypto";
 import type { Request, Response } from "express";
 
 type OAuthRequest = Request & {
-  cineverseOAuthState?: string;
-  cineverseOAuthCallbackUrl?: string;
+  netphimOAuthState?: string;
+  netphimOAuthCallbackUrl?: string;
 };
 
 @Injectable()
@@ -21,15 +21,15 @@ export class GoogleOAuthGuard extends AuthGuard("google") {
     const isLinkFlow = request.path.includes("/google/link");
     const configuredCallback = process.env.GOOGLE_CALLBACK_URL ||
       "http://localhost:3001/api/v1/auth/google/callback";
-    request.cineverseOAuthCallbackUrl = isLinkFlow
+    request.netphimOAuthCallbackUrl = isLinkFlow
       ? process.env.GOOGLE_LINK_CALLBACK_URL ||
         configuredCallback.replace(/\/google\/callback$/, "/google/link/callback")
       : configuredCallback;
 
     if (isCallback) {
       const received = String(request.query.state || "");
-      const expected = String(request.cookies?.cineverse_oauth_state || "");
-      response.clearCookie("cineverse_oauth_state", {
+      const expected = String(request.cookies?.netphim_oauth_state || "");
+      response.clearCookie("netphim_oauth_state", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
@@ -47,8 +47,8 @@ export class GoogleOAuthGuard extends AuthGuard("google") {
       }
     } else {
       const state = randomBytes(32).toString("base64url");
-      request.cineverseOAuthState = state;
-      response.cookie("cineverse_oauth_state", state, {
+      request.netphimOAuthState = state;
+      response.cookie("netphim_oauth_state", state, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
@@ -63,10 +63,10 @@ export class GoogleOAuthGuard extends AuthGuard("google") {
   getAuthenticateOptions(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest<OAuthRequest>();
     return {
-      ...(request.cineverseOAuthState
-        ? { state: request.cineverseOAuthState }
+      ...(request.netphimOAuthState
+        ? { state: request.netphimOAuthState }
         : {}),
-      callbackURL: request.cineverseOAuthCallbackUrl,
+      callbackURL: request.netphimOAuthCallbackUrl,
     };
   }
 }

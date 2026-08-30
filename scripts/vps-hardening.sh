@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ════════════════════════════════════════════════════════════════════════
-# CineVerse — Automated VPS Linux Hardening & Fail2Ban Setup Script
+# NetPhim — Automated VPS Linux Hardening & Fail2Ban Setup Script
 # ════════════════════════════════════════════════════════════════════════
 
 set -e
@@ -15,7 +15,7 @@ apt-get install -y fail2ban ufw iptables ufw curl htop
 
 # 2. Configure Fail2Ban for Nginx / OpenResty
 echo "🛡️ Configuring Fail2Ban auto-ban rules for Nginx/OpenResty..."
-cat <<'EOF' > /etc/fail2ban/jail.d/cineverse-nginx.conf
+cat <<'EOF' > /etc/fail2ban/jail.d/netphim-nginx.conf
 [nginx-http-auth]
 enabled  = true
 filter   = nginx-http-auth
@@ -48,7 +48,7 @@ systemctl enable fail2ban
 
 # 3. Kernel Anti-DDoS & Security sysctl tuning
 echo "⚡ Applying Linux Kernel Anti-DDoS sysctl hardening..."
-cat <<'EOF' > /etc/sysctl.d/99-cineverse-security.conf
+cat <<'EOF' > /etc/sysctl.d/99-netphim-security.conf
 # SYN Flood Protection
 net.ipv4.tcp_syncookies = 1
 net.ipv4.tcp_max_syn_backlog = 8192
@@ -76,5 +76,5 @@ ufw allow 443/tcp
 ufw allow 22/tcp
 ufw --force enable
 
-echo "✅ CineVerse Production VPS Hardening Completed Successfully!"
+echo "✅ NetPhim Production VPS Hardening Completed Successfully!"
 echo "📌 Remember to disable password authentication in /etc/ssh/sshd_config (PasswordAuthentication no)."

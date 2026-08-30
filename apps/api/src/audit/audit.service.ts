@@ -23,7 +23,7 @@ export class AuditService {
     return this.prisma.auditLog.create({
       data: {
         adminId: params.adminId,
-        adminEmail: params.adminEmail || "admin@cineverse.com",
+        adminEmail: params.adminEmail || "admin@netphim.com",
         action: params.action,
         targetId: params.targetId,
         details: params.details,

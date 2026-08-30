@@ -18,8 +18,8 @@ export interface GuestWatchlistItem {
   addedAt: number;
 }
 
-const WATCHLIST_KEY = "cineverse_guest_watchlist";
-const FAVORITES_KEY = "cineverse_guest_favorites";
+const WATCHLIST_KEY = "netphim_guest_watchlist";
+const FAVORITES_KEY = "netphim_guest_favorites";
 
 function read<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -79,7 +79,7 @@ export const guestDataStorage = {
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(
-        new CustomEvent("cineverse_favorites_changed", {
+        new CustomEvent("netphim_favorites_changed", {
           detail: { movieId, isFavorite: !isFav },
         }),
       );
@@ -102,7 +102,7 @@ export const guestDataStorage = {
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(
-        new CustomEvent("cineverse_watchlist_changed", {
+        new CustomEvent("netphim_watchlist_changed", {
           detail: { movieId, action: "add" },
         }),
       );
@@ -119,7 +119,7 @@ export const guestDataStorage = {
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(
-        new CustomEvent("cineverse_watchlist_changed", {
+        new CustomEvent("netphim_watchlist_changed", {
           detail: { movieId, action: "remove" },
         }),
       );

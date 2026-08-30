@@ -122,18 +122,30 @@ npm run lint:fix
 
 ## 📁 Project Structure
 
-```
-movie_demo/
+```text
+netphim/
 ├── apps/
-│   ├── api/          # NestJS API
-│   └── web/          # Next.js Frontend
-├── docker-compose.yml
-├── Dockerfile
-├── nginx.conf
+│   ├── api/                  # NestJS core API
+│   ├── web/                  # Next.js public application
+│   └── admin/                # Next.js private control room
+├── services/
+│   └── media-gateway/        # Go/Gin catalog and HLS gateway
+│   └── media-worker-rs/      # Rust asynchronous HLS analyzer
+├── packages/
+│   └── shared-types/         # Shared TypeScript contracts
+├── infra/
+│   ├── docker/
+│   ├── openresty/
+│   ├── kubernetes/
+│   ├── terraform/
+│   └── cloudflare/
+├── docs/
+├── scripts/
 ├── .prettierrc
-├── .editorconfig
-└── .eslintrc.json
+└── .editorconfig
 ```
+
+See `docs/architecture/README.md` for service boundaries.
 
 ## 🔧 Available Scripts
 
@@ -165,7 +177,10 @@ The Nginx configuration includes:
 1. Configure environment variables in `.env`
 2. Build Docker images: `npm run docker:build`
 3. Start containers: `npm run docker:up`
-4. Run migrations: `docker-compose exec api npx prisma migrate deploy`
+4. Run migrations: `docker compose --project-directory . -f infra/docker/docker-compose.yml exec api npx prisma migrate deploy`
+
+Operational steps and rollback guidance are documented in
+`docs/runbooks/deployment.md`.
 
 ## 🔐 Security
 

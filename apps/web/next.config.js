@@ -13,6 +13,7 @@ const configuredApiOrigin = (() => {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: ["@netphim/shared-types"],
   // Use separate directories for dev and prod builds to prevent Windows file lock collisions
   distDir: isDev ? ".next-dev" : isBuildVerification ? ".next-verify" : ".next",
   // Standalone output for Docker production builds
@@ -154,7 +155,7 @@ const nextConfig = {
         headers: [
           {
             key: "Access-Control-Allow-Origin",
-            value: process.env.NEXT_PUBLIC_APP_URL || "https://cineverse.app",
+            value: process.env.NEXT_PUBLIC_APP_URL || "https://netphim.app",
           },
           { key: "Access-Control-Allow-Methods", value: "GET, OPTIONS" },
         ],

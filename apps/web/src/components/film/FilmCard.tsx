@@ -207,9 +207,9 @@ function FilmCardComponent({
       if (detail?.movieId !== slug) return;
       setSaved(detail.action === "add");
     };
-    window.addEventListener("cineverse_watchlist_changed", syncSavedState);
+    window.addEventListener("netphim_watchlist_changed", syncSavedState);
     return () =>
-      window.removeEventListener("cineverse_watchlist_changed", syncSavedState);
+      window.removeEventListener("netphim_watchlist_changed", syncSavedState);
   }, [slug]);
 
   const toggleWatchlist = async () => {
@@ -239,7 +239,7 @@ function FilmCardComponent({
 
       if (user) {
         window.dispatchEvent(
-          new CustomEvent("cineverse_watchlist_changed", {
+          new CustomEvent("netphim_watchlist_changed", {
             detail: { movieId: slug, action: next ? "add" : "remove" },
           }),
         );

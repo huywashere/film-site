@@ -70,7 +70,7 @@ export function EmotionBurningFlame({
       <FlameSvg viewBox="0 0 24 24" fill="none">
         <defs>
           <linearGradient
-            id="cineverseFlameGrad"
+            id="netphimFlameGrad"
             x1="0%"
             y1="100%"
             x2="0%"
@@ -83,7 +83,7 @@ export function EmotionBurningFlame({
           </linearGradient>
 
           <linearGradient
-            id="cineverseFlameInnerGrad"
+            id="netphimFlameInnerGrad"
             x1="0%"
             y1="100%"
             x2="0%"
@@ -99,13 +99,13 @@ export function EmotionBurningFlame({
         {/* Outer sharp stylized flame path */}
         <path
           d="M12 2C11.3 4.2 10.1 5.9 10.6 7.6C8.7 5.7 8.2 4.1 8.2 4.1C5.6 7.3 5 10.4 5.5 13.1C6.2 17.2 9 21.5 12 21.5C15 21.5 17.8 17.2 18.5 13.1C19.1 8.8 16.5 5.2 13.8 3C13.8 4.7 13.1 5.9 11.8 6.5C12.4 4.8 12.4 3.5 12 2Z"
-          fill="url(#cineverseFlameGrad)"
+          fill="url(#netphimFlameGrad)"
         />
 
         {/* Inner intense luminous core */}
         <InnerPath
           d="M12 8.5C11.3 10 10.6 11.4 11 12.6C9.7 11 9.1 9.9 9.1 9.9C7.4 11.9 7.2 13.9 7.5 15.6C7.9 18.2 9.8 20 12 20C14.2 20 16.1 18.2 16.5 15.6C16.8 13 15.2 10.7 13.3 9.4C13.3 10.4 12.8 11.2 11.9 11.5C12.3 10.4 12.3 9.5 12 8.5Z"
-          fill="url(#cineverseFlameInnerGrad)"
+          fill="url(#netphimFlameInnerGrad)"
         />
       </FlameSvg>
     </FlameContainer>

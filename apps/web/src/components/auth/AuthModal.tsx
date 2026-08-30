@@ -165,7 +165,7 @@ export function AuthModal() {
     try {
       const targetEmail = emailOrUsername.includes("@")
         ? emailOrUsername.trim()
-        : `${emailOrUsername.trim()}@cineverse.app`;
+        : `${emailOrUsername.trim()}@netphim.app`;
       await sendPasswordResetEmail(getFirebaseAuth(), targetEmail);
       toast(
         "Đã gửi email đặt lại mật khẩu! Vui lòng kiểm tra hộp thư của bạn.",
@@ -202,7 +202,7 @@ export function AuthModal() {
       if (mode === "login") {
         let loginEmail = emailOrUsername;
         if (!emailOrUsername.includes("@")) {
-          loginEmail = `${emailOrUsername.trim().toLowerCase()}@cineverse.app`;
+          loginEmail = `${emailOrUsername.trim().toLowerCase()}@netphim.app`;
         }
 
         try {
@@ -228,7 +228,7 @@ export function AuthModal() {
           .toLowerCase();
         const registerEmail = emailOrUsername.includes("@")
           ? emailOrUsername.trim()
-          : `${cleanUsername}@cineverse.app`;
+          : `${cleanUsername}@netphim.app`;
 
         try {
           const res = await createUserWithEmailAndPassword(

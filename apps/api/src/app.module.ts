@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { RedisThrottlerStorage } from "./throttler-redis.storage";
 import { RedisCacheModule } from "./redis/redis.module";
+import { StorageModule } from "./common/storage/storage.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { AuthModule } from "./auth/auth.module";
 import { UsersModule } from "./users/users.module";
@@ -67,6 +68,7 @@ import { IpBlacklistGuard } from "./common/guards/ip-blacklist.guard";
     ReportsModule,
     SiteConfigModule,
     AdsModule,
+    StorageModule,
   ],
   providers: [
     // Global IP Blacklist Guard (chống DDoS & chặn IP tức thì qua Redis)

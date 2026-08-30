@@ -24,7 +24,7 @@ export const useThemeStore = create<ThemeState>()(
       togglePureBlack: () => set((state) => ({ pureBlack: !state.pureBlack })),
     }),
     {
-      name: "cineverse-theme",
+      name: "netphim-theme",
     },
   ),
 );

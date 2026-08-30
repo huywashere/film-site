@@ -304,7 +304,7 @@ export function AuthPageForm({
     try {
       const targetEmail = email.includes("@")
         ? email.trim()
-        : `${email.trim()}@cineverse.app`;
+        : `${email.trim()}@netphim.app`;
       await sendPasswordResetEmail(getFirebaseAuth(), targetEmail);
       toast(
         "Đã gửi email đặt lại mật khẩu! Vui lòng kiểm tra hộp thư của bạn.",

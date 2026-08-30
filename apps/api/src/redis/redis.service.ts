@@ -128,6 +128,62 @@ export class RedisCacheService implements OnModuleDestroy {
     }
   }
 
+  /** Get underlying Redis client instance */
+  getClient(): Redis | null {
+    return this.client;
+  }
+
+  /**
+   * Acquire a distributed lock using Redis SET key value NX PX.
+   * Falls back to memory-based lock if Redis is offline.
+   * @param lockKey Key identifier for the lock
+   * @param ttlMs Lock duration in milliseconds
+   * @param token Optional token/identifier for the lock holder (defaults to "locked")
+   * @returns true if lock was acquired, false otherwise
+   */
+  async acquireLock(
+    lockKey: string,
+    ttlMs: number = 30_000,
+    token: string = "locked",
+  ): Promise<boolean> {
+    const fullKey = `lock:${lockKey}`;
+    if (this.isReady) {
+      try {
+        const result = await this.client!.set(fullKey, token, "PX", ttlMs, "NX");
+        return result === "OK";
+      } catch (err) {
+        this.logger.warn(`Failed to acquire Redis lock for ${lockKey}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    // In-memory fallback
+    const now = Date.now();
+    const existing = this.mem.get(fullKey);
+    if (existing && existing.expiresAt > now) {
+      return false;
+    }
+    this.mem.set(fullKey, { value: token, expiresAt: now + ttlMs });
+    return true;
+  }
+
+  /**
+   * Release a distributed lock.
+   * @param lockKey Key identifier for the lock
+   */
+  async releaseLock(lockKey: string): Promise<boolean> {
+    const fullKey = `lock:${lockKey}`;
+    this.mem.delete(fullKey);
+    if (this.isReady) {
+      try {
+        await this.client!.del(fullKey);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /** Helper: get parsed JSON from cache */
   async getJson<T>(key: string): Promise<T | null> {
     const raw = await this.get(key);

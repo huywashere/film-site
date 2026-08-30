@@ -18,8 +18,8 @@
   }
 }
 
-html[data-netphim-intro="skip"] #netphim-entry-splash,
-html[data-netphim-intro="done"] #netphim-entry-splash {
+html[data-netphim-intro='skip'] #netphim-entry-splash,
+html[data-netphim-intro='done'] #netphim-entry-splash {
   display: none !important;
 }
 
@@ -99,112 +99,58 @@ html[data-netphim-intro="done"] #netphim-entry-splash {
 }
 
 .netphim-intro-poster:nth-child(1) {
-  background-image: var(
-    --netphim-intro-poster-1,
-    url("/images/splash/tmdb/01.webp")
-  );
+  background-image: var(--netphim-intro-poster-1, url('/images/splash/tmdb/01.webp'));
 }
 .netphim-intro-poster:nth-child(2) {
-  background-image: var(
-    --netphim-intro-poster-2,
-    url("/images/splash/tmdb/02.webp")
-  );
+  background-image: var(--netphim-intro-poster-2, url('/images/splash/tmdb/02.webp'));
 }
 .netphim-intro-poster:nth-child(3) {
-  background-image: var(
-    --netphim-intro-poster-3,
-    url("/images/splash/tmdb/03.webp")
-  );
+  background-image: var(--netphim-intro-poster-3, url('/images/splash/tmdb/03.webp'));
 }
 .netphim-intro-poster:nth-child(4) {
-  background-image: var(
-    --netphim-intro-poster-4,
-    url("/images/splash/tmdb/04.webp")
-  );
+  background-image: var(--netphim-intro-poster-4, url('/images/splash/tmdb/04.webp'));
 }
 .netphim-intro-poster:nth-child(5) {
-  background-image: var(
-    --netphim-intro-poster-5,
-    url("/images/splash/tmdb/05.webp")
-  );
+  background-image: var(--netphim-intro-poster-5, url('/images/splash/tmdb/05.webp'));
 }
 .netphim-intro-poster:nth-child(6) {
-  background-image: var(
-    --netphim-intro-poster-6,
-    url("/images/splash/tmdb/06.webp")
-  );
+  background-image: var(--netphim-intro-poster-6, url('/images/splash/tmdb/06.webp'));
 }
 .netphim-intro-poster:nth-child(7) {
-  background-image: var(
-    --netphim-intro-poster-7,
-    url("/images/splash/tmdb/07.webp")
-  );
+  background-image: var(--netphim-intro-poster-7, url('/images/splash/tmdb/07.webp'));
 }
 .netphim-intro-poster:nth-child(8) {
-  background-image: var(
-    --netphim-intro-poster-8,
-    url("/images/splash/tmdb/08.webp")
-  );
+  background-image: var(--netphim-intro-poster-8, url('/images/splash/tmdb/08.webp'));
 }
 .netphim-intro-poster:nth-child(9) {
-  background-image: var(
-    --netphim-intro-poster-9,
-    url("/images/splash/tmdb/09.webp")
-  );
+  background-image: var(--netphim-intro-poster-9, url('/images/splash/tmdb/09.webp'));
 }
 .netphim-intro-poster:nth-child(10) {
-  background-image: var(
-    --netphim-intro-poster-10,
-    url("/images/splash/tmdb/10.webp")
-  );
+  background-image: var(--netphim-intro-poster-10, url('/images/splash/tmdb/10.webp'));
 }
 .netphim-intro-poster:nth-child(11) {
-  background-image: var(
-    --netphim-intro-poster-11,
-    url("/images/splash/tmdb/11.webp")
-  );
+  background-image: var(--netphim-intro-poster-11, url('/images/splash/tmdb/11.webp'));
 }
 .netphim-intro-poster:nth-child(12) {
-  background-image: var(
-    --netphim-intro-poster-12,
-    url("/images/splash/tmdb/12.webp")
-  );
+  background-image: var(--netphim-intro-poster-12, url('/images/splash/tmdb/12.webp'));
 }
 .netphim-intro-poster:nth-child(13) {
-  background-image: var(
-    --netphim-intro-poster-13,
-    url("/images/splash/tmdb/13.webp")
-  );
+  background-image: var(--netphim-intro-poster-13, url('/images/splash/tmdb/13.webp'));
 }
 .netphim-intro-poster:nth-child(14) {
-  background-image: var(
-    --netphim-intro-poster-14,
-    url("/images/splash/tmdb/14.webp")
-  );
+  background-image: var(--netphim-intro-poster-14, url('/images/splash/tmdb/14.webp'));
 }
 .netphim-intro-poster:nth-child(15) {
-  background-image: var(
-    --netphim-intro-poster-15,
-    url("/images/splash/tmdb/15.webp")
-  );
+  background-image: var(--netphim-intro-poster-15, url('/images/splash/tmdb/15.webp'));
 }
 .netphim-intro-poster:nth-child(16) {
-  background-image: var(
-    --netphim-intro-poster-16,
-    url("/images/splash/tmdb/16.webp")
-  );
+  background-image: var(--netphim-intro-poster-16, url('/images/splash/tmdb/16.webp'));
 }
 .netphim-intro-poster:nth-child(17) {
-  background-image: var(
-    --netphim-intro-poster-17,
-    url("/images/splash/tmdb/17.webp")
-  );
+  background-image: var(--netphim-intro-poster-17, url('/images/splash/tmdb/17.webp'));
 }
 .netphim-intro-poster:nth-child(18) {
-  background-image: var(
-    --netphim-intro-poster-18,
-    url("/images/splash/tmdb/18.webp")
-  );
+  background-image: var(--netphim-intro-poster-18, url('/images/splash/tmdb/18.webp'));
 }
 
 .netphim-intro-brand {
@@ -261,8 +207,8 @@ html[data-netphim-intro="done"] #netphim-entry-splash {
 
   /* Font tokens — Be Vietnam Pro là font chính, đồng bộ toàn bộ giao diện */
   --font-primary:
-    var(--font-be-vietnam), "Be Vietnam Pro", -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, sans-serif;
+    var(--font-be-vietnam), 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    sans-serif;
   --font-manrope: var(--font-be-vietnam);
   --font-cinema: var(--font-be-vietnam);
   --font-ui: var(--font-primary);
@@ -279,9 +225,9 @@ select,
 textarea {
   font-family: var(--font-primary);
   font-feature-settings:
-    "kern" 1,
-    "liga" 1,
-    "calt" 1;
+    'kern' 1,
+    'liga' 1,
+    'calt' 1;
   font-optical-sizing: auto;
 }
 
@@ -296,19 +242,19 @@ video {
   user-select: none;
 }
 
-body[data-status-page="true"] {
+body[data-status-page='true'] {
   overflow: hidden;
 }
 
 body:has(.status-page) [data-site-chrome],
-body[data-status-page="true"] [data-site-chrome] {
+body[data-status-page='true'] [data-site-chrome] {
   display: none !important;
 }
 
 /* Cinema mode removes navigation chrome so the player is the only visual
    focus. The watch page owns this short-lived body state and cleans it up on
    route changes. */
-body[data-cinema-lights="off"] [data-site-chrome] {
+body[data-cinema-lights='off'] [data-site-chrome] {
   display: none !important;
 }
 
@@ -423,9 +369,9 @@ body {
   @apply bg-background text-foreground;
   font-family: var(--font-primary);
   font-feature-settings:
-    "rlig" 1,
-    "calt" 1,
-    "kern" 1;
+    'rlig' 1,
+    'calt' 1,
+    'kern' 1;
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
@@ -433,7 +379,7 @@ body {
 
 /* ── OLED Pure Black Mode (#000000) ─────────────────────────── */
 html.pure-black,
-html[data-pure-black="true"] {
+html[data-pure-black='true'] {
   --background: #000000 !important;
   --background-rgb: 0, 0, 0 !important;
   background: #000000 !important;
@@ -441,23 +387,23 @@ html[data-pure-black="true"] {
 }
 
 html.pure-black body,
-html[data-pure-black="true"] body,
+html[data-pure-black='true'] body,
 html.pure-black main,
-html[data-pure-black="true"] main,
+html[data-pure-black='true'] main,
 html.pure-black footer,
-html[data-pure-black="true"] footer,
+html[data-pure-black='true'] footer,
 html.pure-black .bg-\[\#141414\],
-html[data-pure-black="true"] .bg-\[\#141414\] {
+html[data-pure-black='true'] .bg-\[\#141414\] {
   background-color: #000000 !important;
 }
 
 html.pure-black ::-webkit-scrollbar-track,
-html[data-pure-black="true"] ::-webkit-scrollbar-track {
+html[data-pure-black='true'] ::-webkit-scrollbar-track {
   background: #000000 !important;
 }
 
 html.pure-black ::-webkit-scrollbar-thumb,
-html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
+html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
   border-color: #000000 !important;
 }
 
@@ -673,7 +619,13 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
 
 .art-video-player .netphim-seek-glyph text {
   fill: currentColor;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   font-size: 7.5px;
   font-weight: 900;
   letter-spacing: -0.04em;
@@ -681,9 +633,9 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
 
 .art-video-player .art-control-backward-10:hover .netphim-seek-glyph,
 .art-video-player .art-control-forward-10:hover .netphim-seek-glyph {
-  color: #23ade5;
-  transform: scale(1.12);
-  filter: drop-shadow(0 0 8px rgba(35, 173, 229, 0.65));
+  color: #a78bfa;
+  transform: scale(1.08);
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.6));
 }
 
 .art-video-player .art-control-backward-10:active .netphim-seek-glyph,
@@ -693,8 +645,141 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
 
 .art-video-player .art-control-backward-10:focus-visible,
 .art-video-player .art-control-forward-10:focus-visible {
-  outline: 2px solid #23ade5;
+  outline: 2px solid #a78bfa;
   outline-offset: -4px;
+}
+
+/* Directional seek feedback. It stays close to the side the viewer tapped,
+   leaving subtitles and the subject in the center unobstructed. */
+.art-video-player .netphim-seek-feedback,
+.netphim-outer-seek-feedback {
+  position: absolute;
+  z-index: 38;
+  top: 50%;
+  display: flex;
+  min-width: 116px;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px 9px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(8, 9, 13, 0.76);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.34);
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) scale(0.92);
+  -webkit-backdrop-filter: blur(9px) saturate(120%);
+  backdrop-filter: blur(9px) saturate(120%);
+  font-variant-numeric: tabular-nums;
+}
+
+.art-video-player .netphim-seek-feedback.is-backward,
+.netphim-outer-seek-feedback.is-backward {
+  left: clamp(14px, 10%, 120px);
+  transform-origin: left center;
+}
+
+.art-video-player .netphim-seek-feedback.is-forward,
+.netphim-outer-seek-feedback.is-forward {
+  right: clamp(14px, 10%, 120px);
+  flex-direction: row-reverse;
+  padding: 9px 9px 9px 12px;
+  text-align: right;
+  transform-origin: right center;
+}
+
+.art-video-player .netphim-seek-feedback.is-visible,
+.netphim-outer-seek-feedback {
+  animation: netphim-seek-feedback-in 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.art-video-player .netphim-seek-feedback-orbit,
+.netphim-outer-seek-orbit {
+  position: relative;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+}
+
+.art-video-player .netphim-seek-feedback-orbit svg,
+.netphim-outer-seek-orbit svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.art-video-player .netphim-seek-feedback-track,
+.art-video-player .netphim-seek-feedback-arrow,
+.netphim-outer-seek-orbit path {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.82);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.art-video-player .netphim-seek-feedback-arrow,
+.netphim-outer-seek-orbit path:last-child {
+  stroke: #a78bfa;
+}
+
+.art-video-player .netphim-seek-feedback.is-forward .netphim-seek-feedback-orbit svg,
+.netphim-outer-seek-feedback.is-forward .netphim-outer-seek-orbit svg {
+  transform: scaleX(-1);
+}
+
+.art-video-player .netphim-seek-feedback-number,
+.netphim-outer-seek-orbit strong {
+  position: relative;
+  z-index: 1;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: -0.04em;
+}
+
+.art-video-player .netphim-seek-feedback-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  white-space: nowrap;
+}
+
+.art-video-player .netphim-seek-feedback-label,
+.netphim-outer-seek-feedback > span:last-child {
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.art-video-player .netphim-seek-feedback-time {
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+@keyframes netphim-seek-feedback-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.9);
+  }
+  18% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+  72% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.96);
+  }
 }
 
 /* ── Highlight & Timeline Markers (Intro & Ads) ── */
@@ -718,7 +803,9 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
   pointer-events: auto;
   cursor: pointer;
   border-radius: 2px;
-  transition: transform 160ms ease, filter 160ms ease;
+  transition:
+    transform 160ms ease,
+    filter 160ms ease;
 }
 
 .art-video-player .netphim-timeline-marker:hover,
@@ -840,7 +927,10 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
   cursor: pointer;
   backdrop-filter: blur(12px);
   animation: netphim-skip-enter 180ms ease-out both;
-  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
 }
 
 .art-video-player .netphim-skip-ad[hidden] {
@@ -949,6 +1039,30 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
     height: 23px;
   }
 
+  .art-video-player .netphim-seek-feedback,
+  .netphim-outer-seek-feedback {
+    min-width: 0;
+    gap: 7px;
+    padding: 7px 9px 7px 7px;
+  }
+
+  .art-video-player .netphim-seek-feedback.is-forward,
+  .netphim-outer-seek-feedback.is-forward {
+    padding: 7px 7px 7px 9px;
+  }
+
+  .art-video-player .netphim-seek-feedback-orbit,
+  .netphim-outer-seek-orbit {
+    width: 38px;
+    height: 38px;
+    flex-basis: 38px;
+  }
+
+  .art-video-player .netphim-seek-feedback-label,
+  .netphim-outer-seek-feedback > span:last-child {
+    font-size: 11px;
+  }
+
   .art-video-player .netphim-skip-ad {
     right: 8px;
     bottom: 50px;
@@ -972,6 +1086,11 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
 
   .art-video-player .art-control-time {
     font-size: 10px !important;
+  }
+
+  .art-video-player .netphim-seek-feedback-copy,
+  .netphim-outer-seek-feedback > span:last-child {
+    display: none;
   }
 }
 
@@ -1000,6 +1119,11 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
   .art-video-player .netphim-seek-glyph {
     transition: none;
   }
+
+  .art-video-player .netphim-seek-feedback.is-visible,
+  .netphim-outer-seek-feedback {
+    animation-duration: 1ms;
+  }
 }
 
 /* Stable web glass for the mobile dock. The solid fill keeps it readable over
@@ -1007,11 +1131,7 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
 .mobile-bottom-nav-surface {
   border: 1px solid rgba(255, 255, 255, 0.14);
   background:
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.065),
-      rgba(255, 255, 255, 0.012)
-    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.012)),
     rgba(15, 17, 21, 0.96);
   -webkit-backdrop-filter: blur(20px) saturate(135%);
   backdrop-filter: blur(20px) saturate(135%);
@@ -1030,18 +1150,33 @@ html[data-pure-black="true"] ::-webkit-scrollbar-thumb {
 }
 
 @keyframes soundwave-1 {
-  0%, 100% { height: 4px; }
-  50% { height: 12px; }
+  0%,
+  100% {
+    height: 4px;
+  }
+  50% {
+    height: 12px;
+  }
 }
 
 @keyframes soundwave-2 {
-  0%, 100% { height: 12px; }
-  50% { height: 5px; }
+  0%,
+  100% {
+    height: 12px;
+  }
+  50% {
+    height: 5px;
+  }
 }
 
 @keyframes soundwave-3 {
-  0%, 100% { height: 7px; }
-  50% { height: 14px; }
+  0%,
+  100% {
+    height: 7px;
+  }
+  50% {
+    height: 14px;
+  }
 }
 
 .animate-soundwave-1 {

@@ -13,6 +13,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@netphim/shared-types": "workspace:*",
     "@nestjs/common": "^11.1.28",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.1.28",
@@ -26,6 +27,7 @@
     "@prisma/client": "^5.0.0",
     "@sentry/nestjs": "^10.66.0",
     "@sentry/node": "^10.66.0",
+    "@socket.io/redis-adapter": "^8.3.0",
     "axios": "^1.6.0",
     "bcrypt": "^5.1.0",
     "class-transformer": "^0.5.1",

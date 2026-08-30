@@ -13,10 +13,10 @@
     "db:migrate": "cd apps/api && npx prisma migrate dev",
     "db:studio": "cd apps/api && npx prisma studio",
     "db:seed": "cd apps/api && npx prisma db seed",
-    "docker:build": "docker-compose build",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f"
+    "docker:build": "docker compose --project-directory . -f infra/docker/docker-compose.yml build",
+    "docker:up": "docker compose --project-directory . -f infra/docker/docker-compose.yml up -d",
+    "docker:down": "docker compose --project-directory . -f infra/docker/docker-compose.yml down",
+    "docker:logs": "docker compose --project-directory . -f infra/docker/docker-compose.yml logs -f"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.65.0",

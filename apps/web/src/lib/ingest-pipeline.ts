@@ -5,7 +5,7 @@ import {
   UnifiedMovieRecord,
 } from "./dedupe";
 
-const CATALOG_CACHE_KEY = "cineverse_unified_catalog_v1";
+const CATALOG_CACHE_KEY = "netphim_unified_catalog_v1";
 
 export class IngestPipelineService {
   private static catalog: UnifiedMovieRecord[] = [];

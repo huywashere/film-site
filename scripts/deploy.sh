@@ -1,6 +1,6 @@
 #!/bin/bash
 # ══════════════════════════════════════════════════════════════
-# CineVerse — Quick Deploy / Update Script
+# NetPhim — Quick Deploy / Update Script
 # Chạy khi có code mới cần deploy lên VPS
 # Sử dụng: bash scripts/deploy.sh
 # ══════════════════════════════════════════════════════════════
@@ -15,7 +15,12 @@ warn() { echo -e "${YELLOW}[!]${NC} $1"; }
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$APP_DIR"
 
-echo -e "${CYAN}══ CineVerse Deploy ══${NC}"
+COMPOSE_FILE="$APP_DIR/infra/docker/docker-compose.yml"
+compose() {
+    docker compose --project-directory "$APP_DIR" -f "$COMPOSE_FILE" "$@"
+}
+
+echo -e "${CYAN}══ NetPhim Deploy ══${NC}"
 info "Working dir: $APP_DIR"
 
 # 1. Pull latest code
@@ -25,15 +30,15 @@ log "Code updated"
 
 # 2. Rebuild images
 info "Rebuilding Docker images (chỉ rebuild service thay đổi)..."
-docker compose build
+compose build
 
 # 3. Restart services với zero-downtime (rotate)
 info "Restarting services..."
-docker compose up -d --no-deps --remove-orphans
+compose up -d --no-deps --remove-orphans
 
 # 4. Chạy migrations nếu có
 info "Running Prisma migrations..."
-docker compose exec api sh -c "cd /app/apps/api && npx prisma migrate deploy" || \
+compose exec api sh -c "cd /app/apps/api && npx prisma migrate deploy" || \
     warn "Migration failed hoặc không có migration mới"
 
 # 5. Xóa old images
@@ -42,8 +47,8 @@ docker image prune -f
 
 # 6. Status
 echo ""
-docker compose ps
+compose ps
 log "Deploy hoàn tất!"
 echo ""
-echo -e "🌐 Xem logs: ${CYAN}docker compose logs -f web${NC}"
-echo -e "🔍 API logs: ${CYAN}docker compose logs -f api${NC}"
+echo -e "🌐 Xem logs: ${CYAN}pnpm docker:logs${NC}"
+echo -e "🔍 API logs: ${CYAN}docker compose --project-directory . -f infra/docker/docker-compose.yml logs -f api${NC}"

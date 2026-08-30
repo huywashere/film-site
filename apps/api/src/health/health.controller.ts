@@ -1,13 +1,14 @@
-import { Controller, Get } from "@nestjs/common";
+import { Controller, Get } from '@nestjs/common';
 import {
   HealthCheck,
   HealthCheckService,
   PrismaHealthIndicator,
   MemoryHealthIndicator,
-} from "@nestjs/terminus";
-import { PrismaService } from "../prisma/prisma.service";
+} from '@nestjs/terminus';
+import { PrismaService } from '../prisma/prisma.service';
+import type { ServiceHealth } from '@netphim/shared-types';
 
-@Controller("health")
+@Controller('health')
 export class HealthController {
   constructor(
     private health: HealthCheckService,
@@ -21,21 +22,21 @@ export class HealthController {
   async check() {
     try {
       return await this.health.check([
-        () => this.prismaHealth.pingCheck("database", this.prisma as any),
-        () => this.memory.checkHeap("memory_heap", 250 * 1024 * 1024),
+        () => this.prismaHealth.pingCheck('database', this.prisma as any),
+        () => this.memory.checkHeap('memory_heap', 250 * 1024 * 1024),
       ]);
     } catch {
       return {
-        status: "ok",
-        info: { database: { status: "up" } },
+        status: 'ok',
+        info: { database: { status: 'up' } },
         error: {},
-        details: { database: { status: "up" } },
+        details: { database: { status: 'up' } },
       };
     }
   }
 
-  @Get("ping")
-  ping() {
-    return { status: "ok", timestamp: new Date().toISOString() };
+  @Get('ping')
+  ping(): ServiceHealth {
+    return { status: 'ok', timestamp: new Date().toISOString() };
   }
 }

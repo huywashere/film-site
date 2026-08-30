@@ -31,7 +31,7 @@ function rawProxyUrl(value: string): string | null {
   if (!value.startsWith(IMAGE_PROXY_PATH)) return null;
 
   try {
-    const parsed = new URL(value, "https://cineverse.local");
+    const parsed = new URL(value, "https://netphim.local");
     return parsed.searchParams.get("url");
   } catch {
     return null;
@@ -40,7 +40,7 @@ function rawProxyUrl(value: string): string | null {
 
 function strictProxyUrl(value: string): string {
   try {
-    const parsed = new URL(value, "https://cineverse.local");
+    const parsed = new URL(value, "https://netphim.local");
     parsed.searchParams.set("strict", "1");
     return `${parsed.pathname}${parsed.search}`;
   } catch {

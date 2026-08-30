@@ -6,5 +6,7 @@ dist
 coverage
 .terraform
 .vercel
-data
+apps/api/test/fixtures/providers
+infra/terraform/.terraform
+infra/terraform/*.tfstate*
 *.log

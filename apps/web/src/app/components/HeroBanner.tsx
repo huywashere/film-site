@@ -160,8 +160,8 @@ interface HeroFilm extends FilmItem {
   tmdbOnly?: boolean;
 }
 
-const HERO_SESSION_KEY = "cineverse.tmdb-hero.v6";
-const HERO_INDEX_SESSION_KEY = "cineverse.tmdb-hero-index.v2";
+const HERO_SESSION_KEY = "netphim.tmdb-hero.v6";
+const HERO_INDEX_SESSION_KEY = "netphim.tmdb-hero-index.v2";
 
 // Trailer IDs are tiny and safe to retain for the current browser session.
 // This avoids repeating the TMDB request when a hero slide cycles back.

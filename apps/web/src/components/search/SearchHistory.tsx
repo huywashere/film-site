@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Clock, X, Trash2, TrendingUp } from "lucide-react";
 
-const STORAGE_KEY = "cineverse_search_history";
+const STORAGE_KEY = "netphim_search_history";
 
 const HOT_KEYWORDS = [
   "Biệt Đội Marvel",

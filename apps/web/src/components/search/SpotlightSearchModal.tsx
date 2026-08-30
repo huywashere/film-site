@@ -32,7 +32,7 @@ import { searchLocalFilms } from "@/lib/smart-search";
 import { isIMEQuery, normalizeForSearch } from "@/lib/text-utils";
 
 // ── Local storage helpers ─────────────────────────────────────────
-const HISTORY_KEY = "cineverse-search-history";
+const HISTORY_KEY = "netphim-search-history";
 const MAX_HISTORY = 10;
 
 function getHistory(): string[] {

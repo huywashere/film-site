@@ -20,7 +20,7 @@ export const useLangStore = create<LangState>()(
       setLang: (lang) => set({ lang }),
     }),
     {
-      name: "cineverse-lang",
+      name: "netphim-lang",
     },
   ),
 );

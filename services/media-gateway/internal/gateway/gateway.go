@@ -33,6 +33,7 @@ type Gateway struct {
 	limiter   *RateLimiter
 	manifests manifestFlightGroup
 	catalog   *catalog.Service
+	analysis  store.AnalysisQueue
 }
 
 type manifestLoadResult struct {
@@ -77,7 +78,7 @@ func (g *manifestFlightGroup) Do(ctx context.Context, key string, fn func() (man
 	}
 }
 
-func New(cfg config.Config, manifestStore store.ManifestStore) *Gateway {
+func New(cfg config.Config, manifestStore store.ManifestStore, analysisQueues ...store.AnalysisQueue) *Gateway {
 	guard := security.URLGuard{
 		AllowedHosts: cfg.AllowedHosts,
 		RequireHTTPS: cfg.Environment == "release",
@@ -113,11 +114,16 @@ func New(cfg config.Config, manifestStore store.ManifestStore) *Gateway {
 	client := &http.Client{
 		Transport: transport,
 	}
+	var analysisQueue store.AnalysisQueue
+	if len(analysisQueues) > 0 {
+		analysisQueue = analysisQueues[0]
+	}
 	gateway := &Gateway{
 		cfg: cfg, guard: guard, signer: security.NewSigner(cfg.SigningSecret),
 		client: client, transport: transport, store: manifestStore, metrics: NewMetrics(),
-		limiter: NewRateLimiter(cfg.RatePerSecond, cfg.RateBurst),
-		catalog: catalog.New(cfg),
+		limiter:  NewRateLimiter(cfg.RatePerSecond, cfg.RateBurst),
+		catalog:  catalog.New(cfg),
+		analysis: analysisQueue,
 	}
 	client.CheckRedirect = gateway.checkRedirect
 	return gateway
@@ -260,15 +266,47 @@ func (g *Gateway) proxy(c *gin.Context) {
 }
 
 func (g *Gateway) writeManifest(c *gin.Context, source, finalURL string, cached bool) {
+	if !cached && g.analysis != nil {
+		job := store.NewAnalysisJob(finalURL, providerFromURL(finalURL))
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), g.cfg.AnalysisTimeout)
+			defer cancel()
+			if err := g.analysis.Enqueue(ctx, job); err != nil {
+				g.metrics.errors.Add(1)
+			}
+		}()
+	}
 	filtered, stats := hls.Filter(source, finalURL, g.signer.SignedProxyURL)
 	c.Header("Content-Type", "application/vnd.apple.mpegurl")
 	c.Header("Cache-Control", "no-store")
 	c.Header("X-NetPhim-Manifest-Cache", map[bool]string{true: "HIT", false: "MISS"}[cached])
-	c.Header("X-Cineverse-Ad-Filtered", boolHeader(stats.RemovedSegments+stats.RemovedTags+stats.RemovedURIs > 0))
-	c.Header("X-Cineverse-Ad-Segments", strconv.Itoa(stats.RemovedSegments))
-	c.Header("X-Cineverse-Ad-Breaks", strconv.Itoa(stats.DetectedBreaks))
-	c.Header("X-Cineverse-Ad-Reasons", strings.Join(stats.Reasons, ","))
+	c.Header("X-NetPhim-Ad-Filtered", boolHeader(stats.RemovedSegments+stats.RemovedTags+stats.RemovedURIs > 0))
+	c.Header("X-NetPhim-Ad-Segments", strconv.Itoa(stats.RemovedSegments))
+	c.Header("X-NetPhim-Ad-Breaks", strconv.Itoa(stats.DetectedBreaks))
+	c.Header("X-NetPhim-Ad-Reasons", strings.Join(stats.Reasons, ","))
 	c.String(http.StatusOK, filtered)
+}
+
+func providerFromURL(rawURL string) string {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return "unknown"
+	}
+	host := strings.ToLower(parsed.Hostname())
+	switch {
+	case strings.Contains(host, "phimapi"), strings.Contains(host, "kkphim"):
+		return "kkphim"
+	case strings.Contains(host, "ophim"), strings.Contains(host, "opstream"):
+		return "ophim"
+	case strings.Contains(host, "nguonc"), strings.Contains(host, "streamc"):
+		return "nguonc"
+	case strings.Contains(host, "vsmov"), strings.Contains(host, "streamvsmov"):
+		return "vsmov"
+	case strings.Contains(host, "vicdn"):
+		return "vicdn"
+	default:
+		return "unknown"
+	}
 }
 
 func (g *Gateway) stream(c *gin.Context, response *http.Response) {
@@ -277,7 +315,7 @@ func (g *Gateway) stream(c *gin.Context, response *http.Response) {
 	copyHeader(c, response.Header, "Accept-Ranges")
 	copyHeader(c, response.Header, "Content-Length")
 	copyHeader(c, response.Header, "ETag")
-	c.Header("Cache-Control", "private, max-age=300")
+	c.Header("Cache-Control", "public, max-age=86400, s-maxage=86400, immutable")
 	c.Status(response.StatusCode)
 	g.metrics.activeStreams.Add(1)
 	defer g.metrics.activeStreams.Add(-1)

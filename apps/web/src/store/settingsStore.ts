@@ -62,7 +62,7 @@ export const useSettingsStore = create<SettingsState>()(
       setCommentNotifications: (val) => set({ commentNotifications: val }),
     }),
     {
-      name: "cineverse_user_settings",
+      name: "netphim_user_settings",
     },
   ),
 );

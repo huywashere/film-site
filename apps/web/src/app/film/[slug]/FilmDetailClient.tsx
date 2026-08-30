@@ -1319,13 +1319,13 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
       setInWatchlist(detail.action === "add");
     };
 
-    window.addEventListener("cineverse_watchlist_changed", syncWatchlistState);
+    window.addEventListener("netphim_watchlist_changed", syncWatchlistState);
 
     if (!user) {
       setInWatchlist(guestDataStorage.isWatchlisted(slug));
       return () =>
         window.removeEventListener(
-          "cineverse_watchlist_changed",
+          "netphim_watchlist_changed",
           syncWatchlistState,
         );
     }
@@ -1341,7 +1341,7 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
     return () => {
       active = false;
       window.removeEventListener(
-        "cineverse_watchlist_changed",
+        "netphim_watchlist_changed",
         syncWatchlistState,
       );
     };
@@ -1393,7 +1393,7 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
 
       if (user) {
         window.dispatchEvent(
-          new CustomEvent("cineverse_watchlist_changed", {
+          new CustomEvent("netphim_watchlist_changed", {
             detail: { movieId: slug, action: next ? "add" : "remove" },
           }),
         );
@@ -1506,7 +1506,7 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
       "@type": "WatchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: `https://cineverse-movie.vercel.app/watch/${slug}`,
+        urlTemplate: `https://netphim-movie.vercel.app/watch/${slug}`,
         actionPlatform: [
           "http://schema.org/DesktopWebPlatform",
           "http://schema.org/MobileWebPlatform",
@@ -1523,19 +1523,19 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
         "@type": "ListItem",
         position: 1,
         name: "Trang Chủ",
-        item: "https://cineverse-movie.vercel.app",
+        item: "https://netphim-movie.vercel.app",
       },
       {
         "@type": "ListItem",
         position: 2,
         name: typeLabel,
-        item: `https://cineverse-movie.vercel.app/films/${film?.type === "series" ? "series" : "single"}`,
+        item: `https://netphim-movie.vercel.app/films/${film?.type === "series" ? "series" : "single"}`,
       },
       {
         "@type": "ListItem",
         position: 3,
         name: filmName,
-        item: `https://cineverse-movie.vercel.app/film/${slug}`,
+        item: `https://netphim-movie.vercel.app/film/${slug}`,
       },
     ],
   };
@@ -1562,13 +1562,13 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
       <meta name="description" content={seoDescription} />
       <link
         rel="canonical"
-        href={`https://cineverse-movie.vercel.app/film/${slug}`}
+        href={`https://netphim-movie.vercel.app/film/${slug}`}
       />
       <meta property="og:title" content={seoTitle} />
       <meta property="og:description" content={seoDescription} />
       <meta
         property="og:url"
-        content={`https://cineverse-movie.vercel.app/film/${slug}`}
+        content={`https://netphim-movie.vercel.app/film/${slug}`}
       />
       <meta
         property="og:image"

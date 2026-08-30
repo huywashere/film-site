@@ -22,7 +22,7 @@ export function AuthSessionBridge() {
       // gets a chance to restore its own identity through the idle observer.
       const hasSessionMarker = document.cookie
         .split(";")
-        .some((cookie) => cookie.trim() === "cineverse-auth=true");
+        .some((cookie) => cookie.trim() === "netphim-auth=true");
       if (!hasSessionMarker && !useAuthStore.getState().user) return;
 
       restoreInFlight = (async () => {

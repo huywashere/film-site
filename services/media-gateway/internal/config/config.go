@@ -61,6 +61,17 @@ type Config struct {
 	CatalogSearchTTL  time.Duration
 	CatalogListTTL    time.Duration
 	CatalogMaxBytes   int64
+	MeiliURL          string
+	MeiliAPIKey       string
+	MeiliIndex        string
+	MeiliTimeout      time.Duration
+	MeiliSyncInterval time.Duration
+	MeiliWarmPages    int
+	MeiliBatchSize    int
+	AnalysisEnabled   bool
+	AnalysisJobStream string
+	AnalysisQueueTTL  time.Duration
+	AnalysisTimeout   time.Duration
 	CoreAPIURL        string
 	KKPhimOrigins     []string
 	OPhimOrigins      []string
@@ -97,6 +108,17 @@ func Load() (Config, error) {
 		CatalogSearchTTL:  durationEnv("MEDIA_CATALOG_SEARCH_TTL", 5*time.Minute),
 		CatalogListTTL:    durationEnv("MEDIA_CATALOG_LIST_TTL", 2*time.Minute),
 		CatalogMaxBytes:   int64(intEnv("MEDIA_CATALOG_MAX_BYTES", 8*1024*1024)),
+		MeiliURL:          strings.TrimRight(strings.TrimSpace(os.Getenv("MEILI_URL")), "/"),
+		MeiliAPIKey:       strings.TrimSpace(os.Getenv("MEILI_MASTER_KEY")),
+		MeiliIndex:        env("MEILI_MOVIES_INDEX", "movies"),
+		MeiliTimeout:      durationEnv("MEILI_TIMEOUT", 1200*time.Millisecond),
+		MeiliSyncInterval: durationEnv("MEILI_SYNC_INTERVAL", 6*time.Hour),
+		MeiliWarmPages:    boundedIntEnv("MEILI_WARM_PAGES", 3, 1, 20),
+		MeiliBatchSize:    boundedIntEnv("MEILI_BATCH_SIZE", 200, 10, 1000),
+		AnalysisEnabled:   boolEnv("HLS_ANALYZER_ENABLED", true),
+		AnalysisJobStream: env("HLS_ANALYZER_JOB_STREAM", "netphim:hls:analysis:jobs"),
+		AnalysisQueueTTL:  durationEnv("HLS_ANALYZER_DEDUP_TTL", 30*time.Minute),
+		AnalysisTimeout:   durationEnv("HLS_ANALYZER_ENQUEUE_TIMEOUT", 500*time.Millisecond),
 		CoreAPIURL:        strings.TrimRight(env("CORE_API_URL", "http://api:4000/api/v1"), "/"),
 	}
 

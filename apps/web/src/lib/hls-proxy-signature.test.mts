@@ -21,7 +21,7 @@ test("keeps the browser HLS URL direct and adds a valid signed proxy fallback", 
   assert.equal(episode.link_m3u8, directUrl);
   assert.match(episode.link_m3u8_proxy, /^\/api\/hls-proxy\?/);
 
-  const fallback = new URL(episode.link_m3u8_proxy, "https://cineverse.test");
+  const fallback = new URL(episode.link_m3u8_proxy, "https://netphim.test");
   assert.equal(fallback.searchParams.get("url"), directUrl);
   assert.equal(
     verifySignedHlsProxyUrl(

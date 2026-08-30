@@ -6,7 +6,7 @@ function signingSecret(): string {
   const configured = process.env.HLS_PROXY_SECRET?.trim();
   if (configured && configured.length >= 32) return configured;
   if (process.env.NODE_ENV !== "production") {
-    return "cineverse-development-only-hls-secret-change-me";
+    return "netphim-development-only-hls-secret-change-me";
   }
   throw new Error("HLS_PROXY_SECRET must contain at least 32 characters");
 }

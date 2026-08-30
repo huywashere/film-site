@@ -1,4 +1,5 @@
 node_modules
+services/media-worker-rs/target/
 .next
 .next-dev
 dist
@@ -10,12 +11,12 @@ apps/web/.next-verify/
 *.log
 .turbo
 .terraform/
-terraform/*.tfvars
-!terraform/*.tfvars.example
-terraform/*.tfstate
-terraform/*.tfstate.*
-terraform/crash.log
-terraform/.terraform.tfstate.lock.info
+infra/terraform/*.tfvars
+!infra/terraform/*.tfvars.example
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.*
+infra/terraform/crash.log
+infra/terraform/.terraform.tfstate.lock.info
 .vercel/
 **/.vercel/
 .DS_Store

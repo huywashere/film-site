@@ -26,6 +26,10 @@ type Service struct {
 	cache     Cache
 	flights   jsonFlightGroup
 	signer    *security.Signer
+	search    *meiliSearchIndex
+	searchCtx context.Context
+	searchEnd context.CancelFunc
+	searchWG  sync.WaitGroup
 }
 
 type jsonFlight struct {
@@ -101,10 +105,28 @@ func New(cfg config.Config) *Service {
 			cache = redisCache
 		}
 	}
-	return &Service{cfg: cfg, providers: providers, client: newProviderClient(cfg.CatalogTimeout, cfg.CatalogMaxBytes, providers), cache: cache, signer: security.NewSigner(cfg.SigningSecret)}
+	service := &Service{
+		cfg: cfg, providers: providers,
+		client: newProviderClient(cfg.CatalogTimeout, cfg.CatalogMaxBytes, providers),
+		cache:  cache, signer: security.NewSigner(cfg.SigningSecret),
+		search: newMeiliSearchIndex(cfg),
+	}
+	if service.search != nil {
+		service.searchCtx, service.searchEnd = context.WithCancel(context.Background())
+		service.searchWG.Add(1)
+		go service.runSearchWarmup()
+	}
+	return service
 }
 
 func (s *Service) Close() error {
+	if s.searchEnd != nil {
+		s.searchEnd()
+		s.searchWG.Wait()
+	}
+	if s.search != nil {
+		s.search.Close()
+	}
 	s.client.close()
 	return s.cache.Close()
 }
@@ -184,7 +206,11 @@ func (s *Service) top10Handler(c *gin.Context) {
 }
 
 func (s *Service) healthHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"providers": s.client.health()})
+	search := gin.H{"engine": "providers", "enabled": false, "ready": false}
+	if s.search != nil {
+		search = gin.H{"engine": "meilisearch", "enabled": true, "ready": s.search.ready.Load(), "fallback": "providers"}
+	}
+	c.JSON(http.StatusOK, gin.H{"providers": s.client.health(), "search": search})
 }
 
 func (s *Service) Bootstrap(ctx context.Context, slug string) (map[string]any, string, error) {
@@ -294,6 +320,7 @@ func (s *Service) Catalog(ctx context.Context, kind, value string, page, limit i
 		if len(items) == 0 && kind != "filter" {
 			return nil, errors.New("catalog is empty")
 		}
+		s.enqueueSearchItems(items)
 		if len(items) > limit {
 			items = items[:limit]
 		}
@@ -318,6 +345,9 @@ func (s *Service) SearchFiltered(ctx context.Context, query string, page, limit 
 		return payload, "HIT", nil
 	}
 	encoded, err, shared := s.flights.do(ctx, cacheKey, func() ([]byte, error) {
+		if indexed, ok := s.searchIndexed(ctx, cacheKey, query, page, limit, filters); ok {
+			return indexed, nil
+		}
 		upstreamLimit := limit
 		if filters.active() {
 			upstreamLimit = maxInt(limit, 64)
@@ -347,6 +377,7 @@ func (s *Service) SearchFiltered(ctx context.Context, query string, page, limit 
 		items := dedupeGroups(groups, 0)
 		items = filterMovies(items, filters)
 		items = rankSearch(items, query)
+		s.enqueueSearchItems(items)
 		mergedTotal := len(items)
 		if len(items) > limit {
 			items = items[:limit]
@@ -373,6 +404,81 @@ func (s *Service) SearchFiltered(ctx context.Context, query string, page, limit 
 		return s.encodeAndCache(cacheKey, result, ttl)
 	})
 	return decodeMapResult(encoded, err, shared)
+}
+
+func (s *Service) enqueueSearchItems(items []map[string]any) {
+	if s.search != nil && len(items) > 0 {
+		s.search.Enqueue(items)
+	}
+}
+
+func (s *Service) searchIndexed(ctx context.Context, cacheKey, query string, page, limit int, filters SearchFilters) ([]byte, bool) {
+	if s.search == nil {
+		return nil, false
+	}
+	response, err := s.search.Search(ctx, query, page, limit, filters)
+	if err != nil || len(response.Hits) == 0 {
+		return nil, false
+	}
+	items := filterMovies(response.Hits, filters)
+	items = rankSearch(items, query)
+	if len(items) == 0 {
+		return nil, false
+	}
+	if len(items) > limit {
+		items = items[:limit]
+	}
+	total := response.EstimatedTotalHits
+	if total < (page-1)*limit+len(items) {
+		total = (page-1)*limit + len(items)
+	}
+	totalPages := maxInt(1, (total+limit-1)/limit)
+	pagination := map[string]any{"currentPage": page, "totalItems": total, "totalItemsPerPage": limit, "totalPages": totalPages}
+	result := map[string]any{
+		"status":       "success",
+		"data":         map[string]any{"items": mapsToAny(items), "params": map[string]any{"pagination": pagination}},
+		"_sources":     []map[string]any{{"source": "meilisearch", "count": len(items)}},
+		"_totalMerged": len(items), "_query": map[string]any{"original": query, "filters": filters},
+		"_engine": "meilisearch", "_processingTimeMs": response.ProcessingTimeMS,
+	}
+	encoded, err := s.encodeAndCache(cacheKey, result, s.cfg.CatalogSearchTTL)
+	return encoded, err == nil
+}
+
+func (s *Service) runSearchWarmup() {
+	defer s.searchWG.Done()
+	// Give the HTTP service time to become ready before background provider work.
+	timer := time.NewTimer(2 * time.Second)
+	defer timer.Stop()
+	select {
+	case <-s.searchCtx.Done():
+		return
+	case <-timer.C:
+	}
+	for {
+		s.warmSearchIndex(s.searchCtx)
+		timer.Reset(s.cfg.MeiliSyncInterval)
+		select {
+		case <-s.searchCtx.Done():
+			return
+		case <-timer.C:
+		}
+	}
+}
+
+func (s *Service) warmSearchIndex(ctx context.Context) {
+	for _, kind := range []string{"latest", "series", "single", "anime"} {
+		for page := 1; page <= s.cfg.MeiliWarmPages; page++ {
+			if ctx.Err() != nil {
+				return
+			}
+			payload, _, err := s.Catalog(ctx, kind, "", page, 64)
+			if err != nil {
+				break
+			}
+			s.enqueueSearchItems(extractItems(payload))
+		}
+	}
 }
 
 // collectSearchProviders is deliberately separate from collectProviders:

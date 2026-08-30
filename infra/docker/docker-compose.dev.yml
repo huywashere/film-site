@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database (Development Only)
+  postgres:
+    image: postgres:15-alpine
+    container_name: movie_demo_postgres_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: movie_demo_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+
+  # Redis Cache & RediSearch (Development Only)
+  redis:
+    image: redis/redis-stack-server:latest
+    container_name: movie_demo_redis_dev
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+      - '8001:8001' # RedisInsight Web UI để xem index/keys
+    volumes:
+      - redis_dev_data:/data
+
+  # Optional local Gin gateway. The web app continues to use its Next fallback
+  # unless requests are routed here through Nginx or a local reverse proxy.
+  media-gateway:
+    build:
+      context: ./services/media-gateway
+      dockerfile: Dockerfile
+    container_name: netphim_media_gateway_dev
+    restart: unless-stopped
+    environment:
+      GIN_MODE: debug
+      PORT: 8081
+      REDIS_URL: redis://redis:6379
+      HLS_PROXY_SECRET: ${HLS_PROXY_SECRET:-netphim-development-only-hls-secret-change-me}
+      HLS_PROXY_ALLOWED_HOSTS: ${HLS_PROXY_ALLOWED_HOSTS:-}
+      HLS_ANALYZER_ENABLED: ${HLS_ANALYZER_ENABLED:-true}
+      HLS_ANALYZER_JOB_STREAM: ${HLS_ANALYZER_JOB_STREAM:-netphim:hls:analysis:jobs}
+      MEDIA_INTERNAL_TOKEN: ${MEDIA_INTERNAL_TOKEN:-netphim-development-media-token-change-me}
+    ports:
+      - '8081:8081'
+    depends_on:
+      - redis
+
+  media-worker-rs:
+    profiles: ['media-analysis']
+    build:
+      context: ./services/media-worker-rs
+      dockerfile: Dockerfile
+    container_name: netphim_media_worker_rs_dev
+    restart: unless-stopped
+    environment:
+      REDIS_URL: redis://redis:6379
+      HLS_ANALYZER_ALLOWED_HOSTS: ${HLS_PROXY_ALLOWED_HOSTS:-}
+      HLS_ANALYZER_REQUIRE_HTTPS: ${HLS_ANALYZER_REQUIRE_HTTPS:-true}
+      HLS_ANALYZER_CONCURRENCY: ${HLS_ANALYZER_CONCURRENCY:-2}
+      HLS_ANALYZER_HEALTH_PORT: 8091
+    ports:
+      - '8091:8091'
+    depends_on:
+      - redis
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:

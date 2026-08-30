@@ -12,7 +12,7 @@ export function PwaInstallBanner() {
 
   useEffect(() => {
     // Check if user has already dismissed or installed in this session
-    const isDismissed = sessionStorage.getItem("cineverse_pwa_dismissed");
+    const isDismissed = sessionStorage.getItem("netphim_pwa_dismissed");
     if (isDismissed) return;
 
     // Detect iOS
@@ -64,7 +64,7 @@ export function PwaInstallBanner() {
 
   const handleDismiss = () => {
     setShowBanner(false);
-    sessionStorage.setItem("cineverse_pwa_dismissed", "true");
+    sessionStorage.setItem("netphim_pwa_dismissed", "true");
   };
 
   if (!showBanner) return null;

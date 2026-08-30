@@ -11,7 +11,7 @@ export interface UserTasteVector {
   totalInteractions: number;
 }
 
-const LOCAL_PREFERENCE_KEY = "cineverse_user_preferences";
+const LOCAL_PREFERENCE_KEY = "netphim_user_preferences";
 
 // Default fallback genre weights if user is completely new (Guest)
 const DEFAULT_POPULAR_GENRES: Record<string, number> = {
@@ -91,7 +91,7 @@ export function buildUserTasteVector(): UserTasteVector {
     });
 
     // 3. Read Bookmarked Watchlist
-    const savedWatchlist = localStorage.getItem("cineverse_watchlist");
+    const savedWatchlist = localStorage.getItem("netphim_watchlist");
     if (savedWatchlist) {
       try {
         const watchlist = JSON.parse(savedWatchlist);

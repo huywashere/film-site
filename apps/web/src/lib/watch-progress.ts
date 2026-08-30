@@ -9,7 +9,7 @@ export interface WatchProgressEntry {
   updatedAt: number;
 }
 
-const STORAGE_KEY = "cineverse_continue_watching";
+const STORAGE_KEY = "netphim_continue_watching";
 let lastSyncTimestamp = 0;
 
 export const watchProgressStorage = {

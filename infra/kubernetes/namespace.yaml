@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: netphim
+  labels:
+    name: netphim
+    app.kubernetes.io/part-of: netphim-platform

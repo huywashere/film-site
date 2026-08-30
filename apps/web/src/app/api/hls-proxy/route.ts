@@ -112,10 +112,6 @@ async function validateTargetUrl(value: string): Promise<URL> {
 }
 
 function rewriteManifestUri(url: string, kind: HlsUriKind): string {
-  // HLS.js fetches every URI in the manifest from the browser. Keeping media
-  // segments on the upstream origin made the manifest load but then failed at
-  // 00:00 on providers without permissive CORS. Proxy manifests, keys and
-  // segments consistently so the full stream has one same-origin contract.
   void kind;
   return createSignedHlsProxyUrl(url);
 }
@@ -191,7 +187,7 @@ export async function GET(request: NextRequest) {
   if (isLikelyAdUrl(targetUrl.toString())) {
     return new NextResponse(null, {
       status: 204,
-      headers: { "X-Cineverse-Ad-Blocked": "uri" },
+      headers: { "X-NetPhim-Ad-Blocked": "uri" },
     });
   }
 
@@ -226,21 +222,20 @@ export async function GET(request: NextRequest) {
         headers: {
           "Content-Type": "application/vnd.apple.mpegurl",
           "Cache-Control": "no-store",
-          "X-Cineverse-Ad-Filtered": filtered ? "1" : "0",
-          "X-Cineverse-Ad-Segments": String(stats.removedSegments),
-          "X-Cineverse-Ad-Breaks": String(stats.detectedBreaks),
-          "X-Cineverse-Ad-Reasons": stats.reasons.join(",").slice(0, 160),
+          "X-NetPhim-Ad-Filtered": filtered ? "1" : "0",
+          "X-NetPhim-Ad-Segments": String(stats.removedSegments),
+          "X-NetPhim-Ad-Breaks": String(stats.detectedBreaks),
+          "X-NetPhim-Ad-Reasons": stats.reasons.join(",").slice(0, 160),
         },
       });
     }
 
-    // Stream media bytes directly to the browser. Buffering every segment in
-    // Node previously multiplied memory usage by concurrent viewers.
+    // Stream media bytes directly to the browser with public immutable edge caching
     return new NextResponse(response.body, {
       status: response.status,
       headers: {
         "Content-Type": contentType || "application/octet-stream",
-        "Cache-Control": "private, max-age=300",
+        "Cache-Control": "public, max-age=86400, s-maxage=86400, immutable",
         ...(response.headers.get("content-range")
           ? { "Content-Range": response.headers.get("content-range")! }
           : {}),
