@@ -87,82 +87,31 @@ const LEFT_FEATURES = [
   { Icon: ShieldCheck, text: "Quản lý phiên đăng nhập" },
 ];
 
-type AuthFeaturedMovie = {
-  title: string;
-  studio: string;
-  backdropUrl: string;
-  objectPosition: string;
-};
+import { STATIC_AUTH_ARTWORKS, type AuthArtwork } from "@/lib/auth-artworks";
 
-const TMDB_FEATURED_MOVIES: AuthFeaturedMovie[] = [
-  {
-    title: "Avengers: Endgame",
-    studio: "Marvel Studios",
-    backdropUrl:
-      "https://image.tmdb.org/t/p/w1280/or06FN3Dka5tukK1e9sl16pB3iy.jpg",
-    objectPosition: "center top",
-  },
-  {
-    title: "Spider-Man: Across the Spider-Verse",
-    studio: "Sony Pictures / Marvel",
-    backdropUrl:
-      "https://image.tmdb.org/t/p/w1280/4HodYYKEIsGOdinkGi2Ucz6X9i0.jpg",
-    objectPosition: "center",
-  },
-  {
-    title: "Oppenheimer",
-    studio: "Universal Pictures",
-    backdropUrl:
-      "https://image.tmdb.org/t/p/w1280/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg",
-    objectPosition: "center",
-  },
-  {
-    title: "Dune: Part Two",
-    studio: "Warner Bros. Pictures",
-    backdropUrl:
-      "https://image.tmdb.org/t/p/w1280/xOMo8BRK7PfcJv9JCnx7s520b4a.jpg",
-    objectPosition: "center",
-  },
-  {
-    title: "Interstellar",
-    studio: "Paramount Pictures",
-    backdropUrl:
-      "https://image.tmdb.org/t/p/w1280/xJHokMbljvjADYdit5fK5VQsXEG.jpg",
-    objectPosition: "center",
-  },
-  {
-    title: "Avatar: The Way of Water",
-    studio: "20th Century Studios",
-    backdropUrl:
-      "https://image.tmdb.org/t/p/w1280/ovM06PdF36CfeK00pcipAawNV7W.jpg",
-    objectPosition: "center",
-  },
-];
-
-function AuthBackdropImage({ movie }: { movie: AuthFeaturedMovie }) {
+function AuthBackdropImage({ artwork }: { artwork: AuthArtwork }) {
   const candidateUrls = useMemo(() => {
-    return buildArtworkCandidates([movie.backdropUrl], "backdrop");
-  }, [movie.backdropUrl]);
+    return buildArtworkCandidates([artwork.url], "backdrop");
+  }, [artwork.url]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
 
   useEffect(() => {
     setCandidateIdx(0);
-  }, [movie.backdropUrl]);
+  }, [artwork.url]);
 
-  const src = candidateUrls[candidateIdx] || movie.backdropUrl;
+  const src = candidateUrls[candidateIdx] || artwork.url;
 
   return (
     /* eslint-disable-next-line @next/next/no-img-element */
     <img
-      key={`${movie.backdropUrl}-${candidateIdx}`}
+      key={`${artwork.url}-${candidateIdx}`}
       src={src}
-      alt={`Ảnh phim ${movie.title}`}
+      alt={artwork.title}
       referrerPolicy="no-referrer"
       loading="eager"
       decoding="async"
-      className="w-full h-full object-cover brightness-[0.72] transition-all duration-700"
-      style={{ objectPosition: movie.objectPosition }}
+      className="w-full h-full object-cover brightness-[0.88] transition-all duration-700"
       onError={() => {
         if (candidateIdx < candidateUrls.length - 1) {
           setCandidateIdx((i) => i + 1);
@@ -212,56 +161,12 @@ export function AuthPageForm({
     },
   });
 
-  // TMDB supplies a fresh random image per page load directly from TMDB
-  const [randomMovie, setRandomMovie] = useState<AuthFeaturedMovie>(() => {
-    return TMDB_FEATURED_MOVIES[
-      Math.floor(Math.random() * TMDB_FEATURED_MOVIES.length)
-    ];
-  });
-
-  useEffect(() => {
-    let cancelled = false;
-
-    tmdbApi
-      .getTrending("movie", "week")
-      .then((response) => {
-        if (cancelled) return;
-        const candidates = (response?.results || []).filter(
-          (movie: TmdbMovie) =>
-            Boolean(movie?.backdrop_path || movie?.poster_path) &&
-            Boolean(movie?.title || movie?.original_title || movie?.name),
-        );
-        if (candidates.length === 0) return;
-
-        const movie = candidates[
-          Math.floor(Math.random() * candidates.length)
-        ] as TmdbMovie;
-        const backdrop = movie.backdrop_path
-          ? tmdbBackdrop(movie.backdrop_path, "w1280")
-          : null;
-        const poster = movie.poster_path
-          ? tmdbPoster(movie.poster_path, "w780")
-          : null;
-        const imageUrl = backdrop || poster;
-        if (!imageUrl) return;
-
-        setRandomMovie({
-          title:
-            movie.title ||
-            movie.original_title ||
-            movie.name ||
-            "Phim Thịnh Hành",
-          studio: "Phim Thịnh Hành",
-          backdropUrl: imageUrl,
-          objectPosition: backdrop ? "center" : "center top",
-        });
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Keep the first server render deterministic. Choosing artwork with
+  // Math.random() inside a state initializer produces different server/client
+  // markup and makes the whole auth card flash during hydration.
+  const randomArtwork =
+    STATIC_AUTH_ARTWORKS[initialMode === "register" ? 2 : 1] ||
+    STATIC_AUTH_ARTWORKS[0];
 
   // Auto-redirect if user is already logged in
   const currentUser = useAuthStore((state) => state.user);
@@ -538,19 +443,19 @@ export function AuthPageForm({
               {/* Poster Image */}
               <AnimatePresence initial={false}>
                 <motion.div
-                  key={randomMovie.backdropUrl}
+                  key={randomArtwork.url}
                   className="absolute inset-0 scale-[1.03]"
                   initial={{ opacity: 0, scale: 1.055 }}
                   animate={{ opacity: 1, scale: 1.03 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.7, ease: "easeOut" }}
                 >
-                  <AuthBackdropImage movie={randomMovie} />
+                  <AuthBackdropImage artwork={randomArtwork} />
                 </motion.div>
               </AnimatePresence>
 
               {/* Solid Gradient overlays */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#151923] via-[#151923]/40 to-black/50" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#151923] via-transparent to-black/40" />
               <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-r from-transparent to-[#151923]" />
 
               {/* Logo top-left */}
@@ -577,27 +482,6 @@ export function AuthPageForm({
                     </span>
                   </span>
                 </Link>
-              </div>
-
-              {/* Bottom Spotlight Movie Card */}
-              <div className="relative z-10">
-                <div className="rounded-2xl border border-white/15 bg-black/75 p-4 shadow-2xl">
-                  <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-violet-400 flex items-center gap-1">
-                      <Clapperboard size={12} />
-                      {randomMovie.studio || "Phim Thịnh Hành"}
-                    </span>
-                    <span className="text-[11px] font-bold text-amber-400 flex items-center gap-0.5">
-                      ★ 8.8
-                    </span>
-                  </div>
-                  <h4 className="text-sm font-extrabold text-white leading-snug line-clamp-1 font-[family-name:var(--font-manrope)]">
-                    {randomMovie.title}
-                  </h4>
-                  <p className="mt-1 text-[11px] font-medium text-neutral-300">
-                    Xem phim 4K không giới hạn, đồng bộ đa thiết bị.
-                  </p>
-                </div>
               </div>
             </div>
 

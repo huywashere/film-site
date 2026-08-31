@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
-  ArrowUpRight,
   ChevronLeft,
   ChevronRight,
   Info,
@@ -87,9 +86,10 @@ export function HeroShowcaseSection({
         {href && (
           <Link
             href={href}
-            className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-[11px] font-semibold text-neutral-300 transition-all hover:bg-white/[0.1] hover:text-white sm:rounded-xl sm:px-3 sm:py-2"
+            className="group/link inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap text-xs sm:text-sm font-semibold text-white/80 hover:text-white transition-colors select-none ml-1.5"
           >
-            {t("home.viewAll", "Xem tất cả")} <ArrowUpRight size={13} />
+            <span>{t("home.viewAll", "Xem tất cả")}</span>
+            <ChevronRight size={14} className="stroke-[2.2] text-white/60 group-hover/link:text-white transition-transform group-hover/link:translate-x-0.5" />
           </Link>
         )}
       </div>

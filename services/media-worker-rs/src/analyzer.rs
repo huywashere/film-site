@@ -25,6 +25,8 @@ struct ParsedPlaylist {
     ad_markers: Vec<Marker>,
     intro_markers: Vec<Marker>,
     discontinuities: usize,
+    encrypted: bool,
+    encryption_method: Option<String>,
 }
 
 impl Analyzer {
@@ -157,6 +159,8 @@ impl Analyzer {
             health_score,
             analyzed_at: unix_timestamp(),
             errors,
+            encrypted: parsed.encrypted,
+            encryption_method: parsed.encryption_method,
         }
     }
 
@@ -285,7 +289,7 @@ fn parse_playlist(source: &str, base: &Url) -> Result<ParsedPlaylist> {
         .collect();
     let mut parsed = ParsedPlaylist::default();
     let mut pending_segment_duration: Option<f64> = None;
-    let mut pending_variant: Option<(Option<u64>, Option<String>)> = None;
+    let mut pending_variant: Option<(Option<u64>, Option<String>, Option<String>, Option<f64>, Option<String>)> = None;
     let mut current_time = 0.0_f64;
     let mut active_ad_start: Option<f64> = None;
     let mut seen_markers = HashSet::new();
@@ -302,11 +306,25 @@ fn parse_playlist(source: &str, base: &Url) -> Result<ParsedPlaylist> {
             pending_variant = Some((
                 attribute(attributes, "BANDWIDTH").and_then(|value| value.parse().ok()),
                 attribute(attributes, "RESOLUTION"),
+                attribute(attributes, "CODECS"),
+                attribute(attributes, "FRAME-RATE").and_then(|v| v.parse::<f64>().ok()),
+                attribute(attributes, "AUDIO"),
             ));
             continue;
         }
-        if line.starts_with("#EXT-X-DISCONTINUITY") {
+        if line.starts_with("#EXT-X-DISCONTINUITY") && !line.starts_with("#EXT-X-DISCONTINUITY-SEQUENCE") {
             parsed.discontinuities += 1;
+            continue;
+        }
+        // Detect HLS encryption — a stream with AES-128 or SAMPLE-AES
+        // requires a decryption key that may not be available to the player.
+        if let Some(attributes) = line.strip_prefix("#EXT-X-KEY:") {
+            if let Some(method) = attribute(attributes, "METHOD") {
+                if method != "NONE" {
+                    parsed.encrypted = true;
+                    parsed.encryption_method.get_or_insert(method);
+                }
+            }
             continue;
         }
         if line.starts_with("#EXT-X-CUE-OUT") {
@@ -359,11 +377,14 @@ fn parse_playlist(source: &str, base: &Url) -> Result<ParsedPlaylist> {
         let resolved = base
             .join(line)
             .context("playlist contains an invalid relative URL")?;
-        if let Some((bandwidth, resolution)) = pending_variant.take() {
+        if let Some((bandwidth, resolution, codecs, frame_rate, audio_group)) = pending_variant.take() {
             parsed.variants.push(Variant {
                 url: resolved.to_string(),
                 bandwidth,
                 resolution,
+                codecs,
+                frame_rate,
+                audio_group,
             });
             continue;
         }
@@ -387,8 +408,26 @@ fn parse_playlist(source: &str, base: &Url) -> Result<ParsedPlaylist> {
     Ok(parsed)
 }
 
+/// Parse a single named attribute from an HLS attribute-list.
+/// Handles both quoted values ("...") and unquoted values, and correctly
+/// skips commas inside quoted strings (e.g. CODECS="avc1.64002a,mp4a.40.2").
 fn attribute(input: &str, name: &str) -> Option<String> {
-    input.split(',').find_map(|part| {
+    // State-machine split that respects quoted strings.
+    let mut parts: Vec<String> = Vec::new();
+    let mut current = String::new();
+    let mut in_quotes = false;
+    for ch in input.chars() {
+        match ch {
+            '"' => in_quotes = !in_quotes,
+            ',' if !in_quotes => {
+                parts.push(current.trim().to_owned());
+                current = String::new();
+            }
+            _ => current.push(ch),
+        }
+    }
+    parts.push(current.trim().to_owned());
+    parts.into_iter().find_map(|part| {
         let (key, value) = part.split_once('=')?;
         if key.trim().eq_ignore_ascii_case(name) {
             Some(value.trim().trim_matches('"').to_owned())
@@ -424,14 +463,17 @@ fn select_samples(urls: &[String], count: usize) -> Vec<String> {
     if urls.len() <= count {
         return urls.to_vec();
     }
-    (0..count)
-        .map(|index| {
-            let position = index * (urls.len() - 1) / (count - 1).max(1);
-            urls[position].clone()
-        })
-        .collect::<HashSet<_>>()
-        .into_iter()
-        .collect()
+    // Use evenly-spaced indices and collect into a Vec (not HashSet) so the
+    // result is deterministic across calls with identical input.
+    let mut seen = std::collections::HashSet::with_capacity(count);
+    let mut result = Vec::with_capacity(count);
+    for index in 0..count {
+        let position = index * (urls.len() - 1) / (count - 1).max(1);
+        if seen.insert(position) {
+            result.push(urls[position].clone());
+        }
+    }
+    result
 }
 
 fn score(
@@ -480,6 +522,8 @@ fn failed_result(job: &AnalysisJob, error: String, latency_ms: u64) -> AnalysisR
         health_score: 0,
         analyzed_at: unix_timestamp(),
         errors: vec![error],
+        encrypted: false,
+        encryption_method: None,
     }
 }
 
@@ -537,6 +581,38 @@ mod tests {
             &Url::parse("https://video.example.com/main.m3u8").unwrap(),
         );
         assert!(error.is_err());
+    }
+
+    #[test]
+    fn parses_attributes_with_commas_in_quotes() {
+        let attrs = r#"BANDWIDTH=2142000,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=1920x1080,FRAME-RATE=29.970"#;
+        assert_eq!(attribute(attrs, "BANDWIDTH"), Some("2142000".to_owned()));
+        assert_eq!(attribute(attrs, "CODECS"), Some("avc1.640028,mp4a.40.2".to_owned()));
+        assert_eq!(attribute(attrs, "RESOLUTION"), Some("1920x1080".to_owned()));
+        assert_eq!(attribute(attrs, "FRAME-RATE"), Some("29.970".to_owned()));
+    }
+
+    #[test]
+    fn detects_encryption_and_methods() {
+        let source = "#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI=\"https://key.example.com/enc.key\"\n#EXTINF:10,\nsegment1.ts\n";
+        let parsed = parse_playlist(
+            source,
+            &Url::parse("https://video.example.com/main.m3u8").unwrap(),
+        )
+        .unwrap();
+        assert!(parsed.encrypted);
+        assert_eq!(parsed.encryption_method, Some("AES-128".to_owned()));
+    }
+
+    #[test]
+    fn select_samples_is_deterministic() {
+        let urls: Vec<String> = (0..10).map(|i| format!("seg_{i}.ts")).collect();
+        let samples1 = select_samples(&urls, 3);
+        let samples2 = select_samples(&urls, 3);
+        assert_eq!(samples1, samples2);
+        assert_eq!(samples1.len(), 3);
+        assert_eq!(samples1[0], "seg_0.ts");
+        assert_eq!(samples1[2], "seg_9.ts");
     }
 
     #[test]

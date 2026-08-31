@@ -6,6 +6,7 @@ use redis::{
     streams::{StreamReadOptions, StreamReadReply},
     AsyncCommands,
 };
+use tokio::sync::broadcast;
 use tracing::{info, warn};
 
 use crate::{
@@ -43,6 +44,7 @@ pub async fn run_worker(
     config: Arc<Config>,
     analyzer: Analyzer,
     metrics: Arc<Metrics>,
+    mut shutdown: broadcast::Receiver<()>,
 ) {
     let consumer = format!("{}-{worker_index}", config.consumer_name);
     loop {
@@ -53,14 +55,18 @@ pub async fn run_worker(
                     .redis_errors
                     .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 warn!(worker_index, error = %error, "Redis unavailable; retrying");
-                tokio::time::sleep(Duration::from_secs(2)).await;
-                continue;
+                tokio::select! {
+                    _ = tokio::time::sleep(Duration::from_secs(2)) => continue,
+                    _ = shutdown.recv() => { info!(worker_index, "shutdown signal received"); return; }
+                }
             }
         };
         if let Err(error) = ensure_group(&mut connection, &config).await {
             warn!(worker_index, error = %error, "consumer group unavailable");
-            tokio::time::sleep(Duration::from_secs(2)).await;
-            continue;
+            tokio::select! {
+                _ = tokio::time::sleep(Duration::from_secs(2)) => continue,
+                _ = shutdown.recv() => { info!(worker_index, "shutdown signal received"); return; }
+            }
         }
 
         metrics
@@ -68,16 +74,23 @@ pub async fn run_worker(
             .store(true, std::sync::atomic::Ordering::Relaxed);
         info!(worker_index, consumer, "HLS analyzer worker ready");
 
-        if let Err(error) = consume(&mut connection, &config, &consumer, &analyzer, &metrics).await
-        {
-            metrics
-                .ready
-                .store(false, std::sync::atomic::Ordering::Relaxed);
-            metrics
-                .redis_errors
-                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            warn!(worker_index, error = %error, "consumer loop interrupted; reconnecting");
-            tokio::time::sleep(Duration::from_secs(1)).await;
+        tokio::select! {
+            result = consume(&mut connection, &config, &consumer, &analyzer, &metrics) => {
+                if let Err(error) = result {
+                    metrics
+                        .ready
+                        .store(false, std::sync::atomic::Ordering::Relaxed);
+                    metrics
+                        .redis_errors
+                        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    warn!(worker_index, error = %error, "consumer loop interrupted; reconnecting");
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                }
+            }
+            _ = shutdown.recv() => {
+                info!(worker_index, "shutdown signal received; worker stopping after current job");
+                return;
+            }
         }
     }
 }
@@ -162,7 +175,27 @@ async fn process_entry(
     metrics
         .jobs_total
         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    let result = analyzer.analyze(&job).await;
+
+    // Retry loop: attempt analysis up to config.retry_attempts times with
+    // exponential backoff before writing a failed result.
+    let started = std::time::Instant::now();
+    let mut result = analyzer.analyze(&job).await;
+    let mut attempt = 1usize;
+    while !result.playable && attempt < config.retry_attempts {
+        let backoff_ms = config.retry_backoff_ms.saturating_mul(1u64 << (attempt - 1).min(4));
+        warn!(
+            job_id = job.job_id,
+            attempt,
+            backoff_ms,
+            "analysis failed; retrying"
+        );
+        tokio::time::sleep(Duration::from_millis(backoff_ms)).await;
+        result = analyzer.analyze(&job).await;
+        attempt += 1;
+    }
+    let duration_ms = started.elapsed().as_millis() as u64;
+    metrics.record_duration(duration_ms);
+
     if !result.playable {
         metrics
             .jobs_failed
@@ -179,6 +212,8 @@ async fn process_entry(
         playable = result.playable,
         health_score = result.health_score,
         segments = result.segment_count,
+        attempts = attempt,
+        duration_ms,
         "HLS analysis complete"
     );
     Ok(())

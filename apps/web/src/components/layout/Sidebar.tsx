@@ -166,6 +166,11 @@ export function Sidebar() {
         });
       }
 
+      if (href === "/watch-party" && typeof window !== "undefined") {
+        const img = new window.Image();
+        img.src = "/images/cinema-hall-with-red-seat-wide-white-screen.webp";
+      }
+
       if (href === "/genres") {
         for (const topic of MOVIE_WORLD_PREFETCH) {
           void queryClient.prefetchQuery({

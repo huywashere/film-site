@@ -1167,10 +1167,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   const commentsSectionRef = useRef<HTMLDivElement>(null);
   const [commentsReadySlug, setCommentsReadySlug] = useState('');
   const commentsReady = commentsReadySlug === slug;
-  const [isOuterSpeedBoosted, setIsOuterSpeedBoosted] = useState(false);
-  const [outerDoubleTapHud, setOuterDoubleTapHud] = useState<'rewind' | 'forward' | null>(null);
-  const outerPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const outerLastTapRef = useRef<number>(0);
 
   useEffect(() => {
     if (commentsReady) return;
@@ -1547,68 +1543,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [artInstance, toast, setTheaterMode, setShowShortcutsModal]);
-
-  const handleOuterPointerDown = (e: React.PointerEvent) => {
-    if (e.button !== 0) return;
-    const target = e.target as HTMLElement;
-    if (
-      target.closest('.art-controls') ||
-      target.closest('.art-setting') ||
-      target.closest('button')
-    ) {
-      return;
-    }
-
-    const now = Date.now();
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const width = rect.width;
-
-    if (now - outerLastTapRef.current < 300) {
-      if (outerPressTimerRef.current) {
-        clearTimeout(outerPressTimerRef.current);
-        outerPressTimerRef.current = null;
-      }
-      const videoEl = playerContainerRef.current?.querySelector('video');
-      if (clickX < width * 0.45) {
-        if (videoEl) videoEl.currentTime = Math.max(0, videoEl.currentTime - 10);
-        // ArtPlayer renders its own seek HUD from the native seeking event.
-        // Keep this fallback only for iframe/native providers.
-        if (!artInstance) {
-          setOuterDoubleTapHud('rewind');
-          setTimeout(() => setOuterDoubleTapHud(null), 800);
-        }
-      } else if (clickX > width * 0.55) {
-        if (videoEl)
-          videoEl.currentTime = Math.min(videoEl.duration || 0, videoEl.currentTime + 10);
-        if (!artInstance) {
-          setOuterDoubleTapHud('forward');
-          setTimeout(() => setOuterDoubleTapHud(null), 800);
-        }
-      }
-      outerLastTapRef.current = 0;
-      return;
-    }
-    outerLastTapRef.current = now;
-
-    outerPressTimerRef.current = setTimeout(() => {
-      const videoEl = playerContainerRef.current?.querySelector('video');
-      if (videoEl) videoEl.playbackRate = 2.0;
-      setIsOuterSpeedBoosted(true);
-    }, 280);
-  };
-
-  const handleOuterPointerUp = () => {
-    if (outerPressTimerRef.current) {
-      clearTimeout(outerPressTimerRef.current);
-      outerPressTimerRef.current = null;
-    }
-    const videoEl = playerContainerRef.current?.querySelector('video');
-    if (videoEl) videoEl.playbackRate = 1.0;
-    if (isOuterSpeedBoosted) {
-      setIsOuterSpeedBoosted(false);
-    }
-  };
 
   // Data
   const { data, isLoading } = useQuery({
@@ -2377,7 +2311,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       if (user) {
         watchHistoryApi
           .upsert({
-            movieId: film._id || String(slug),
+            // Use the public slug consistently. Mixing the provider database
+            // id here with the slug used by progress events created duplicate
+            // history rows for the same movie.
+            movieId: String(slug),
             movieTitle: movieTitle,
             movieThumb: moviePoster,
             episode: String(currentEp || '1'),
@@ -2925,61 +2862,20 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         <div
           className={cn(
             'grid gap-5 transition-all duration-300',
-            theaterMode ? 'grid-cols-1' : 'grid-cols-1 xl:grid-cols-[minmax(0,1fr)_280px]',
+            'grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px]',
           )}
         >
-          {/* ───── LEFT COLUMN ───── */}
-          <div className={cn('space-y-4 min-w-0', theaterMode ? 'w-full max-w-none' : '')}>
-            {/* 1. PLAYER */}
-            <div
-              ref={playerContainerRef}
-              onPointerDown={handleOuterPointerDown}
-              onPointerUp={handleOuterPointerUp}
-              onPointerLeave={handleOuterPointerUp}
-              className={cn(
-                'netphim-watch-player bg-black rounded-2xl overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none transition-all duration-300 flex items-center justify-center',
-                theaterMode
-                  ? 'is-theater w-full aspect-[16/9] sm:aspect-auto sm:h-[72vh] lg:h-[78vh] min-h-[400px] max-h-[920px] mx-auto shadow-2xl ring-1 ring-purple-500/20'
-                  : 'w-full aspect-video',
-                lightOff ? 'relative z-50 ring-1 ring-white/20 shadow-2xl' : '',
-              )}
-            >
-              {/* ── Universal 2x Speed Hold Top HUD Banner ── */}
-              {isOuterSpeedBoosted && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-black/90 border border-purple-500/50 text-purple-400 font-extrabold text-xs px-4 py-1.5 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-2 animate-pulse pointer-events-none">
-                  <span className="w-2 h-2 rounded-full bg-purple-400 animate-ping" />
-                  <span>⏩ Tua Nhanh 2X (Đang Giữ)</span>
-                </div>
-              )}
-
-              {/* ── Universal Double Tap Rewind HUD (-10s) ── */}
-              {outerDoubleTapHud === 'rewind' && (
-                <div className="netphim-outer-seek-feedback is-backward" role="status">
-                  <span className="netphim-outer-seek-orbit" aria-hidden="true">
-                    <svg viewBox="0 0 48 48" fill="none">
-                      <path d="M13 14.5A17 17 0 1 1 8.5 26" />
-                      <path d="M7.5 13.5v11h11" />
-                    </svg>
-                    <strong>10</strong>
-                  </span>
-                  <span>Lùi 10 giây</span>
-                </div>
-              )}
-
-              {/* ── Universal Double Tap Fast-Forward HUD (+10s) ── */}
-              {outerDoubleTapHud === 'forward' && (
-                <div className="netphim-outer-seek-feedback is-forward" role="status">
-                  <span className="netphim-outer-seek-orbit" aria-hidden="true">
-                    <svg viewBox="0 0 48 48" fill="none">
-                      <path d="M13 14.5A17 17 0 1 1 8.5 26" />
-                      <path d="M7.5 13.5v11h11" />
-                    </svg>
-                    <strong>10</strong>
-                  </span>
-                  <span>Tới 10 giây</span>
-                </div>
-              )}
-
+          {/* ───── 1. PLAYER ───── */}
+          <div
+            ref={playerContainerRef}
+            className={cn(
+              'netphim-watch-player bg-black rounded-none overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none transition-all duration-300 flex items-center justify-center',
+              theaterMode
+                ? 'col-span-full w-full aspect-[16/9] sm:aspect-auto sm:h-[72vh] lg:h-[78vh] min-h-[400px] max-h-[920px] mx-auto shadow-2xl ring-1 ring-purple-500/20'
+                : 'xl:col-start-1 xl:row-start-1 w-full aspect-video',
+              lightOff ? 'relative z-50 ring-1 ring-white/20 shadow-2xl' : '',
+            )}
+          >
               {/* Fallback overlay */}
               {isFallbacking && (
                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm gap-3">
@@ -3139,8 +3035,15 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
               )}
             </div>
 
-            {/* ── BREADCRUMB & QUICK CONTROLS BAR — Positioned Below Video ── */}
-            <div className="flex items-center justify-between gap-2 py-2 px-3.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-white/60 select-none">
+            {/* ── 2. UNDER-PLAYER CONTENT (Breadcrumb bar, Title, Episodes, Cast, Comments) ── */}
+            <div
+              className={cn(
+                'space-y-4 min-w-0',
+                theaterMode ? 'col-span-1 xl:col-start-1 xl:row-start-2' : 'xl:col-start-1 xl:row-start-2',
+              )}
+            >
+              {/* ── BREADCRUMB & QUICK CONTROLS BAR — Positioned Below Video ── */}
+              <div className="flex items-center justify-between gap-2 py-2 px-3.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-white/60 select-none">
               <div className="flex items-center gap-2 min-w-0">
                 {watchPartyEnabled && (
                   <button
@@ -4276,9 +4179,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     <div className="mx-auto w-full max-w-5xl space-y-2.5">
                       <div className="aspect-video overflow-hidden rounded-xl border border-white/[0.1] bg-black">
                         <iframe
-                          src={`https://www.youtube.com/embed/${encodeURIComponent(trailerKey)}?autoplay=1&rel=0&playsinline=1`}
+                          src={`https://www.youtube.com/embed/${encodeURIComponent(trailerKey)}?autoplay=1&rel=0&playsinline=1&enablejsapi=1`}
                           title={`${film?.name || 'NetPhim'} trailer`}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                           allowFullScreen
                           loading="lazy"
                           referrerPolicy="strict-origin-when-cross-origin"
@@ -4368,14 +4271,22 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             </div>
           </div>
 
-          {/* ───── RIGHT SIDEBAR ───── */}
-          {!theaterMode && (
-            <div className="space-y-4 min-w-0">
-              {/* Film Info */}
-              <SidebarFilmCard film={film} slug={slug} />
+          {/* ───── 3. RIGHT SIDEBAR (Always available in both normal & theater mode) ───── */}
+          <div
+            className={cn(
+              'space-y-4 min-w-0',
+              theaterMode
+                ? 'col-span-1 xl:col-start-2 xl:row-start-2'
+                : 'xl:col-start-2 xl:row-start-1 xl:row-span-2',
+            )}
+          >
+            {/* Film Info */}
+            <SidebarFilmCard film={film} slug={slug} />
 
-              {/* ── PLAYER QUICK ACTIONS PANEL (Nằm ở cột dọc bên phải, cùng phong cách tối giản) ── */}
-              <div className="space-y-2 pb-4 border-b border-white/[0.08] select-none">
+            {/* ── PLAYER QUICK ACTIONS PANEL (THU GỌN TINH TẾ) ── */}
+            <div className="space-y-1.5 pb-3 border-b border-white/[0.08] select-none">
+              {/* 3 Playback Toggles in 1 compact grid row */}
+              <div className="grid grid-cols-3 gap-1.5">
                 {/* Rạp phim */}
                 <button
                   type="button"
@@ -4387,22 +4298,16 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       'info',
                     );
                   }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all cursor-pointer select-none active:scale-[0.98]"
+                  title={theaterMode ? 'Tắt chế độ rạp phim' : 'Bật chế độ rạp phim'}
+                  className={cn(
+                    'flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 border',
+                    theaterMode
+                      ? 'bg-purple-600/20 text-purple-200 border-purple-500/40 shadow-sm shadow-purple-900/30'
+                      : 'bg-white/[0.03] hover:bg-white/[0.07] text-neutral-400 hover:text-neutral-200 border-white/[0.06]',
+                  )}
                 >
-                  <div className="flex items-center gap-2">
-                    <Maximize2 size={13} className="text-neutral-400" />
-                    <span>Rạp phim</span>
-                  </div>
-                  <span
-                    className={cn(
-                      'text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider transition-colors',
-                      theaterMode
-                        ? 'bg-white/15 text-white border border-white/20'
-                        : 'bg-white/[0.04] text-neutral-400 border border-white/[0.06]',
-                    )}
-                  >
-                    {theaterMode ? 'BẬT' : 'TẮT'}
-                  </span>
+                  <Maximize2 size={12} className={theaterMode ? 'text-purple-400' : 'text-neutral-400'} />
+                  <span className="truncate">Rạp phim</span>
                 </button>
 
                 {/* Tự động chuyển tập */}
@@ -4416,22 +4321,16 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     }
                     toast(next ? 'Đã bật Tự động chuyển tập' : 'Đã tắt Tự động chuyển tập', 'info');
                   }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all cursor-pointer select-none active:scale-[0.98]"
+                  title={autoNextConfig ? 'Tắt tự động chuyển tập' : 'Bật tự động chuyển tập'}
+                  className={cn(
+                    'flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 border',
+                    autoNextConfig
+                      ? 'bg-purple-600/20 text-purple-200 border-purple-500/40 shadow-sm shadow-purple-900/30'
+                      : 'bg-white/[0.03] hover:bg-white/[0.07] text-neutral-400 hover:text-neutral-200 border-white/[0.06]',
+                  )}
                 >
-                  <div className="flex items-center gap-2">
-                    <SkipForward size={13} className="text-neutral-400" />
-                    <span>Tự động chuyển tập</span>
-                  </div>
-                  <span
-                    className={cn(
-                      'text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider transition-colors',
-                      autoNextConfig
-                        ? 'bg-white/15 text-white border border-white/20'
-                        : 'bg-white/[0.04] text-neutral-400 border border-white/[0.06]',
-                    )}
-                  >
-                    {autoNextConfig ? 'BẬT' : 'TẮT'}
-                  </span>
+                  <SkipForward size={12} className={autoNextConfig ? 'text-purple-400' : 'text-neutral-400'} />
+                  <span className="truncate">Tự chuyển</span>
                 </button>
 
                 {/* Bỏ qua Intro */}
@@ -4445,67 +4344,62 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     }
                     toast(next ? 'Đã bật Tự động bỏ qua Intro' : 'Đã tắt Bỏ qua Intro', 'info');
                   }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all cursor-pointer select-none active:scale-[0.98]"
+                  title={skipIntroConfig ? 'Tắt tự động bỏ qua intro' : 'Bật tự động bỏ qua intro'}
+                  className={cn(
+                    'flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 border',
+                    skipIntroConfig
+                      ? 'bg-purple-600/20 text-purple-200 border-purple-500/40 shadow-sm shadow-purple-900/30'
+                      : 'bg-white/[0.03] hover:bg-white/[0.07] text-neutral-400 hover:text-neutral-200 border-white/[0.06]',
+                  )}
                 >
-                  <div className="flex items-center gap-2">
-                    <FastForward size={13} className="text-neutral-400" />
-                    <span>Bỏ qua intro</span>
-                  </div>
-                  <span
-                    className={cn(
-                      'text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider transition-colors',
-                      skipIntroConfig
-                        ? 'bg-white/15 text-white border border-white/20'
-                        : 'bg-white/[0.04] text-neutral-400 border border-white/[0.06]',
-                    )}
-                  >
-                    {skipIntroConfig ? 'BẬT' : 'TẮT'}
-                  </span>
+                  <FastForward size={12} className={skipIntroConfig ? 'text-purple-400' : 'text-neutral-400'} />
+                  <span className="truncate">Bỏ intro</span>
                 </button>
-
-                <div className="grid grid-cols-2 gap-2 pt-0.5">
-                  {/* Báo lỗi */}
-                  <button
-                    type="button"
-                    onClick={() => setShowReportModal(true)}
-                    className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-[11px] font-semibold text-neutral-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all cursor-pointer active:scale-95"
-                  >
-                    <Bug size={13} className="text-neutral-400 shrink-0" />
-                    <span>Báo lỗi</span>
-                  </button>
-
-                  {/* Phím tắt */}
-                  <button
-                    type="button"
-                    onClick={() => setShowShortcutsGuide((prev) => !prev)}
-                    className={cn(
-                      'flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-[11px] font-semibold transition-all cursor-pointer active:scale-95 border',
-                      showShortcutsGuide
-                        ? 'bg-white/15 text-white border-white/25'
-                        : 'text-neutral-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border-white/[0.06]',
-                    )}
-                  >
-                    <HelpCircle size={13} className="text-neutral-400 shrink-0" />
-                    <span>Phím tắt</span>
-                  </button>
-                </div>
               </div>
 
-              {/* Recommendations */}
-              {recsData?.items && recsData.items.length > 0 && (
-                <div className="space-y-3 pt-2">
-                  <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wider px-1">
-                    {matchedKeyword ? `Thêm về "${matchedKeyword}"` : 'Phim tương tự'}
-                  </h3>
-                  <div className="space-y-1">
-                    {recsData.items.slice(0, 8).map((item: any, index: number) => (
-                      <RecMovieItem key={item._id || item.slug} item={item} index={index} />
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Utilities row */}
+              <div className="grid grid-cols-2 gap-1.5">
+                {/* Báo lỗi */}
+                <button
+                  type="button"
+                  onClick={() => setShowReportModal(true)}
+                  className="flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-[11px] font-medium text-neutral-400 hover:text-neutral-200 bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.05] transition-all cursor-pointer active:scale-95"
+                >
+                  <Bug size={12} className="text-neutral-400 shrink-0" />
+                  <span>Báo lỗi</span>
+                </button>
+
+                {/* Phím tắt */}
+                <button
+                  type="button"
+                  onClick={() => setShowShortcutsGuide((prev) => !prev)}
+                  className={cn(
+                    'flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-[11px] font-medium transition-all cursor-pointer active:scale-95 border',
+                    showShortcutsGuide
+                      ? 'bg-purple-600/20 text-purple-300 border-purple-500/30'
+                      : 'text-neutral-400 hover:text-neutral-200 bg-white/[0.02] hover:bg-white/[0.06] border-white/[0.05]',
+                  )}
+                >
+                  <HelpCircle size={12} className="text-neutral-400 shrink-0" />
+                  <span>Phím tắt</span>
+                </button>
+              </div>
             </div>
-          )}
+
+            {/* Recommendations */}
+            {recsData?.items && recsData.items.length > 0 && (
+              <div className="space-y-3 pt-2">
+                <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wider px-1">
+                  {matchedKeyword ? `Thêm về "${matchedKeyword}"` : 'Phim tương tự'}
+                </h3>
+                <div className="space-y-1">
+                  {recsData.items.slice(0, 8).map((item: any, index: number) => (
+                    <RecMovieItem key={item._id || item.slug} item={item} index={index} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </main>
 

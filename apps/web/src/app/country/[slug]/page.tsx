@@ -173,10 +173,10 @@ function CountryCategoryRow({
         {href && (
           <Link
             href={href}
-            className="text-xs text-neutral-400 hover:text-white font-bold uppercase tracking-wider flex items-center space-x-1 transition-colors"
+            className="group/link inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap text-xs sm:text-sm font-semibold text-white/80 hover:text-white transition-colors select-none ml-1.5"
           >
             <span>{t("home.viewAll", "Xem tất cả")}</span>
-            <ChevronRight size={14} />
+            <ChevronRight size={14} className="stroke-[2.2] text-white/60 group-hover/link:text-white transition-transform group-hover/link:translate-x-0.5" />
           </Link>
         )}
       </div>
@@ -369,9 +369,24 @@ function AsianCuratedHeroBanner({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
+  const curatedList = pool || [];
   const [logoFailed, setLogoFailed] = useState(false);
 
-  const curatedList = pool;
+  // Preload all banner logos and backdrops in memory for instant 0ms slide switching
+  useEffect(() => {
+    if (typeof window !== "undefined" && pool?.length) {
+      pool.forEach((item) => {
+        if (item.logoUrl) {
+          const img = new Image();
+          img.src = item.logoUrl;
+        }
+        if (item.thumb_url) {
+          const img = new Image();
+          img.src = item.thumb_url;
+        }
+      });
+    }
+  }, [pool]);
 
   // Auto slide every 7 seconds with forward glide
   useEffect(() => {
@@ -493,6 +508,8 @@ function AsianCuratedHeroBanner({
                   src={currentItem.logoUrl}
                   alt={currentItem.name}
                   fill
+                  priority
+                  loading="eager"
                   className="object-contain object-left drop-shadow-[0_10px_25px_rgba(0,0,0,0.95)]"
                   unoptimized
                   onError={() => setLogoFailed(true)}
@@ -515,13 +532,8 @@ function AsianCuratedHeroBanner({
               {currentItem.name} {currentItem.origin_name ? `(${currentItem.origin_name})` : ""}
             </p>
 
-            {/* Metadata Row: TOP 10 | Year | Country | Total Episodes */}
+            {/* Metadata Row: Year | Country | Total Episodes */}
             <div className="flex flex-wrap items-center gap-2.5 text-xs font-semibold text-neutral-200">
-              {currentItem.topBadge && (
-                <span className="bg-gradient-to-r from-red-600 to-amber-600 text-white font-extrabold text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded font-mono shadow-md uppercase tracking-wider">
-                  {currentItem.topBadge}
-                </span>
-              )}
               {currentItem.year && (
                 <span className="text-white font-bold">{currentItem.year}</span>
               )}
@@ -531,12 +543,6 @@ function AsianCuratedHeroBanner({
                 <>
                   <span className="text-neutral-400">|</span>
                   <span className="text-neutral-300">{currentItem.totalEpisodesText}</span>
-                </>
-              )}
-              {currentItem.quality && (
-                <>
-                  <span className="text-neutral-400">|</span>
-                  <span className="text-amber-400 font-bold">{currentItem.quality}</span>
                 </>
               )}
             </div>
@@ -613,8 +619,8 @@ function AsianCuratedHeroBanner({
               className={cn(
                 "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
                 idx === currentIndex
-                  ? "w-7 bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]"
-                  : "w-1.5 bg-white/30 hover:bg-white/60",
+                  ? "w-6 bg-white/85 shadow-sm"
+                  : "w-1.5 bg-white/25 hover:bg-white/45",
               )}
             />
           ))}
@@ -698,7 +704,7 @@ export default function CountryPage() {
           country: slug,
           category: "tinh-cam",
           page: 1,
-          limit: 18,
+          limit: 36,
         })
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
@@ -715,7 +721,7 @@ export default function CountryPage() {
           country: slug,
           category: "hanh-dong",
           page: 1,
-          limit: 18,
+          limit: 36,
         })
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
@@ -732,7 +738,7 @@ export default function CountryPage() {
           country: slug,
           category: "co-trang",
           page: 1,
-          limit: 18,
+          limit: 36,
         })
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
@@ -745,7 +751,7 @@ export default function CountryPage() {
     queryKey: ["country-hinhsu", slug],
     queryFn: () =>
       movieApi
-        .getFiltered({ country: slug, category: "hinh-su", page: 1, limit: 18 })
+        .getFiltered({ country: slug, category: "hinh-su", page: 1, limit: 36 })
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
@@ -761,7 +767,7 @@ export default function CountryPage() {
           country: slug,
           category: "hai-huoc",
           page: 1,
-          limit: 20,
+          limit: 36,
         })
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
@@ -774,7 +780,7 @@ export default function CountryPage() {
     queryKey: ["country-drama", slug],
     queryFn: () =>
       movieApi
-        .getFiltered({ country: slug, category: "tam-ly", page: 1, limit: 20 })
+        .getFiltered({ country: slug, category: "tam-ly", page: 1, limit: 36 })
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
@@ -787,7 +793,7 @@ export default function CountryPage() {
     [page2Data],
   );
 
-  // Instant in-memory genre partition fallback so rows display immediately
+  // Combined country catalogue pool for reliable fallback and full row population
   const combinedPool = useMemo(() => [...films, ...page2Films], [films, page2Films]);
 
   const romanceFilms: FilmItem[] = useMemo(() => {
@@ -891,40 +897,44 @@ export default function CountryPage() {
   const activeGenreLabel =
     GENRE_OPTIONS.find((g) => g.slug === selectedGenre)?.label || "Thể loại";
 
-  // Prepare 100% Unique non-repeating dynamic lists for each Netflix row
-  const globalSeenSlugs = new Set<string>();
-  const row1Films = dedupeFilmsList(
-    shuffleArray(films, heroSeed),
-    globalSeenSlugs,
-  ).slice(0, 14);
-  const row2Films = dedupeFilmsList(
-    shuffleArray(romanceFilms, heroSeed + 1),
-    globalSeenSlugs,
-  ).slice(0, 14);
-  const row3Films = dedupeFilmsList(
-    shuffleArray(page2Films.length ? page2Films : films.slice(6), heroSeed + 2),
-    globalSeenSlugs,
-  ).slice(0, 14);
-  const row4Films = dedupeFilmsList(
-    shuffleArray(actionFilms, heroSeed + 3),
-    globalSeenSlugs,
-  ).slice(0, 14);
-  const row5Films = dedupeFilmsList(
-    shuffleArray(coTrangFilms, heroSeed + 4),
-    globalSeenSlugs,
-  ).slice(0, 14);
-  const row6Films = dedupeFilmsList(
-    shuffleArray(comedyFilms, heroSeed + 5),
-    globalSeenSlugs,
-  ).slice(0, 14);
-  const row7Films = dedupeFilmsList(
-    shuffleArray(crimeFilms, heroSeed + 6),
-    globalSeenSlugs,
-  ).slice(0, 14);
-  const row8Films = dedupeFilmsList(
-    shuffleArray(dramaFilms, heroSeed + 7),
-    globalSeenSlugs,
-  ).slice(0, 14);
+  // Build completely full, non-truncated rows with 16 unique items each
+  const buildFullRow = (
+    primary: FilmItem[],
+    fallback: FilmItem[],
+    seedOffset: number,
+    targetCount = 16,
+  ) => {
+    const seen = new Set<string>();
+    const list: FilmItem[] = [];
+
+    const add = (f: FilmItem) => {
+      if (!f) return;
+      const key = (f.slug || f._id || (f as any).id || "").toLowerCase();
+      const base = getBaseTitle(f.name || f.title || "");
+      if (key && !seen.has(key) && (!base || !seen.has(base))) {
+        seen.add(key);
+        if (base) seen.add(base);
+        list.push(f);
+      }
+    };
+
+    (primary || []).forEach(add);
+
+    if (list.length < targetCount && fallback?.length) {
+      shuffleArray(fallback, heroSeed + seedOffset).forEach(add);
+    }
+
+    return list.slice(0, targetCount);
+  };
+
+  const row1Films = buildFullRow(films, page2Films, 1);
+  const row2Films = buildFullRow(romanceFilms, combinedPool, 2);
+  const row3Films = buildFullRow(coTrangFilms, combinedPool, 3);
+  const row4Films = buildFullRow(actionFilms, combinedPool, 4);
+  const row5Films = buildFullRow(crimeFilms, combinedPool, 5);
+  const row6Films = buildFullRow(comedyFilms, combinedPool, 6);
+  const row7Films = buildFullRow(dramaFilms, combinedPool, 7);
+  const row8Films = buildFullRow(page2Films, films, 8);
 
   return (
     <div
@@ -954,98 +964,102 @@ export default function CountryPage() {
             />
           )}
 
-          {/* Curated Multi-Genre Rows */}
+          {/* Curated Multi-Genre Rows (Tất cả Card dạng dọc chuẩn Poster 2:3, Đầy đủ 100%) */}
           <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 -mt-24 sm:-mt-36 lg:-mt-48">
-            {/* Row 1: Phim Thịnh Hành */}
+            {/* Row 1: Phim Mới & Đang Thịnh Hành */}
             <CountryCategoryRow
               title={
                 isKoreanPage
-                  ? t("country_sections.koreanTrending", "Phim Hàn Quốc Đang Thịnh Hành")
-                  : "Phim Trung Quốc Đang Thịnh Hành"
+                  ? "Phim Hàn Quốc Mới & Đang Thịnh Hành"
+                  : "Phim Trung Quốc Mới & Đang Thịnh Hành"
               }
               films={row1Films}
               isLoading={mainLoading}
-              variant="landscape"
+              variant="standard"
             />
 
             {/* Row 2: Tình Cảm & Lãng Mạn */}
             <CountryCategoryRow
               title={
                 isKoreanPage
-                  ? t("country_sections.koreanRomance", "Tuyệt phẩm K-Drama lãng mạn khiến trái tim tan chảy")
-                  : "Ngôn Tình & Lãng Mạn Hoa Ngữ Ngọt Ngào"
+                  ? "Phim Tình Cảm & Lãng Mạn Hàn Quốc"
+                  : "Ngôn Tình Hiện Đại & Lãng Mạn Hoa Ngữ"
               }
               films={row2Films}
               isLoading={romanceLoading}
+              variant="standard"
             />
 
-            {/* Row 3: Tuyển chọn đặc sắc */}
+            {/* Row 3: Cổ Trang & Thần Thoại */}
             <CountryCategoryRow
               title={
                 isKoreanPage
-                  ? "Khám Phá K-Drama Đặc Sắc Tuyển Chọn"
-                  : "Khám Phá Phim Hoa Ngữ Tuyển Chọn"
+                  ? "Phim Cổ Trang & Vương Triều Hàn Quốc"
+                  : "Cổ Trang Tiên Hiệp & Kiếm Hiệp Đỉnh Cao"
               }
               films={row3Films}
-              isLoading={page2Loading || mainLoading}
-              variant="landscape"
+              isLoading={coTrangLoading}
+              variant="standard"
             />
 
             {/* Row 4: Hành Động & Kịch Tính */}
             <CountryCategoryRow
               title={
                 isKoreanPage
-                  ? t("country_sections.koreanThriller", "Series Phim Hàn kịch tính & giật gân đáng xem liên tục")
-                  : "Phim Hành Động & Quyền Mưu Gay Cấn"
+                  ? "Phim Hành Động & Kịch Tính Hàn Quốc"
+                  : "Phim Hành Động & Võ Thuật Trung Quốc"
               }
               films={row4Films}
               isLoading={actionLoading}
-              variant="landscape"
+              variant="standard"
             />
 
-            {/* Row 5: Cổ Trang & Thần Thoại */}
+            {/* Row 5: Hình Sự & Trinh Thám */}
             <CountryCategoryRow
               title={
                 isKoreanPage
-                  ? t("country_sections.koreanHistorical", "Phim Hàn Cổ Trang & Thần Thoại Kỳ Ảo Đỉnh Cao")
-                  : "Cổ Trang Tiên Hiệp & Kiếm Hiệp Đỉnh Cao"
+                  ? "Phim Hình Sự, Trinh Thám & Phá Án"
+                  : "Phim Hình Sự & Trinh Thám Hoa Ngữ"
               }
               films={row5Films}
-              isLoading={coTrangLoading}
+              isLoading={crimeLoading}
+              variant="standard"
             />
 
-            {/* Row 6: Hài Hước & Giải Trí */}
+            {/* Row 6: Hài Hước & Gia Đình */}
             <CountryCategoryRow
               title={
                 isKoreanPage
-                  ? t("country_sections.koreanComedy", "Phim Hàn Hài Hước & Giải Trí Sảng Khoái")
+                  ? "Phim Hài Hước & Gia Đình Hàn Quốc"
                   : "Phim Hài Hước & Gia Đình Trung Quốc"
               }
               films={row6Films}
               isLoading={comedyLoading}
-              variant="landscape"
+              variant="standard"
             />
 
-            {/* Row 7: Hình Sự & Trinh Thám */}
+            {/* Row 7: Tâm Lý & Đời Thường */}
             <CountryCategoryRow
               title={
                 isKoreanPage
-                  ? t("country_sections.koreanCrime", "Phim Hàn Hình Sự, Trinh Thám & Phá Án Hồi Hộp")
-                  : "Phim Hình Sự, Trinh Thám & Phá Án Hoa Ngữ"
+                  ? "Phim Tâm Lý & Đời Thường Hàn Quốc"
+                  : "Phim Tâm Lý & Xã Hội Trung Quốc"
               }
               films={row7Films}
-              isLoading={crimeLoading}
+              isLoading={dramaLoading}
+              variant="standard"
             />
 
-            {/* Row 8: Tâm Lý & Đời Thường */}
+            {/* Row 8: Tuyển Chọn Đặc Sắc */}
             <CountryCategoryRow
               title={
                 isKoreanPage
-                  ? t("country_sections.koreanDrama", "Top Phim Tâm Lý & Đời Thường Chạm Đến Cảm Xúc")
-                  : "Phim Tâm Lý & Đời Thường Trung Quốc"
+                  ? "Phim Hàn Quốc Tuyển Chọn Đặc Sắc"
+                  : "Phim Hoa Ngữ Tuyển Chọn Đặc Sắc"
               }
               films={row8Films}
-              isLoading={dramaLoading}
+              isLoading={page2Loading || mainLoading}
+              variant="standard"
             />
 
             {/* Full Catalog Header */}

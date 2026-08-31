@@ -1,23 +1,56 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from "@nestjs/common";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
+
+function databaseUrlWithPoolSettings() {
+  const raw = process.env.DATABASE_URL;
+  if (!raw) return undefined;
+  try {
+    const url = new URL(raw);
+    if (!url.searchParams.has("connection_limit")) {
+      url.searchParams.set(
+        "connection_limit",
+        process.env.DATABASE_CONNECTION_LIMIT || "10",
+      );
+    }
+    if (!url.searchParams.has("pool_timeout")) {
+      url.searchParams.set(
+        "pool_timeout",
+        process.env.DATABASE_POOL_TIMEOUT_SECONDS || "10",
+      );
+    }
+    return url.toString();
+  } catch {
+    return raw;
+  }
+}
 
 @Injectable()
 export class PrismaService
-  extends PrismaClient
+  extends PrismaClient<Prisma.PrismaClientOptions, "query">
   implements OnModuleInit, OnModuleDestroy
 {
   private readonly logger = new Logger(PrismaService.name);
 
   constructor() {
     super({
-      log:
-        process.env.NODE_ENV === "development"
-          ? [
-              { emit: "event", level: "query" },
-              { emit: "stdout", level: "warn" },
-              { emit: "stdout", level: "error" },
-            ]
-          : [{ emit: "stdout", level: "error" }],
+      datasources: { db: { url: databaseUrlWithPoolSettings() } },
+      log: [
+        { emit: "event", level: "query" },
+        { emit: "stdout", level: "warn" },
+        { emit: "stdout", level: "error" },
+      ],
+    });
+    const threshold = Math.max(
+      25,
+      Number(process.env.DATABASE_SLOW_QUERY_MS) ||
+        (process.env.NODE_ENV === "production" ? 250 : 100),
+    );
+    this.$on("query", (event: Prisma.QueryEvent) => {
+      if (event.duration < threshold) return;
+      const query = event.query.replace(/\s+/g, " ").trim().slice(0, 1200);
+      this.logger.warn(
+        `Slow query ${event.duration}ms target=${event.target}: ${query}`,
+      );
     });
   }
 

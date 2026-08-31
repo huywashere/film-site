@@ -31,7 +31,7 @@ func run() error {
 	if cfg.RedisURL != "" {
 		redisStore, redisErr := store.NewRedisManifestStore(cfg.RedisURL, cfg.ManifestCacheTTL)
 		if redisErr != nil {
-			log.Printf("redis disabled: %v", redisErr)
+			log.Printf("redis manifest store disabled: %v", redisErr)
 		} else {
 			manifestStore = redisStore
 		}
@@ -61,12 +61,33 @@ func run() error {
 		}
 	}
 
+	// AnalysisResultStore reads cached Rust worker results from Redis so the
+	// gateway can serve them via /v1/analysis/result and enrich /v1/streams/resolve.
+	var analysisResults store.AnalysisResultStore
+	if cfg.RedisURL != "" {
+		resultsStore, resultsErr := store.NewRedisAnalysisResultStore(cfg.RedisURL, cfg.AnalysisResultPrefix)
+		if resultsErr != nil {
+			log.Printf("analysis result store disabled: %v", resultsErr)
+		} else {
+			analysisResults = resultsStore
+			defer func() {
+				if err := resultsStore.Close(); err != nil {
+					log.Printf("analysis result store close failed: %v", err)
+				}
+			}()
+		}
+	}
+
 	router := gin.New()
 	router.Use(gin.Recovery())
+	router.Use(gateway.RequestLogger())
+	router.Use(gateway.CORSMiddleware(cfg.CORSOrigins))
 	if err := router.SetTrustedProxies(cfg.TrustedProxies); err != nil {
 		return err
 	}
+
 	mediaGateway := gateway.New(cfg, manifestStore, analysisQueue)
+	mediaGateway.SetResults(analysisResults)
 	defer mediaGateway.Close()
 	mediaGateway.Register(router)
 

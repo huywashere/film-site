@@ -4,7 +4,6 @@ import Link from "next/link";
 import NextImage from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import {
   Search,
@@ -732,16 +731,7 @@ export function Navbar() {
                   )}
                 >
                   {isActive && (
-                    <motion.div
-                      layoutId="navbarActivePill"
-                      className="absolute inset-0 rounded-full bg-white/10 border border-white/20 shadow-sm backdrop-blur-md -z-10"
-                      transition={{
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 35,
-                        mass: 0.8,
-                      }}
-                    />
+                    <div className="absolute inset-0 -z-10 rounded-full border border-white/20 bg-white/10 shadow-sm backdrop-blur-md motion-safe:animate-[route-in_150ms_ease-out]" />
                   )}
                   <span>
                     {link.key ? t(link.key, link.label || "") : link.label}

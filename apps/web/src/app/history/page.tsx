@@ -1,10 +1,9 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   History as HistoryIcon,
   ChevronLeft,
@@ -14,17 +13,18 @@ import {
   Trash2,
   Loader2,
   Clock,
-} from "lucide-react";
-import { useAuthStore } from "@/store/authStore";
-import { watchHistoryApi } from "@/lib/api";
-import { resolveImageUrl } from "@/components/film/FilmCard";
-import { Pagination } from "@/components/film/Pagination";
-import { cn } from "@/lib/utils";
-import { useToast } from "@/providers/ToastProvider";
-import { guestDataStorage } from "@/lib/user-data";
-import { watchProgressStorage } from "@/lib/watch-progress";
-import { cardFont } from "@/lib/fonts";
-import { formatEpisodeLabel } from "@/lib/player-source-routing";
+} from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
+import { movieApi, watchHistoryApi } from '@/lib/api';
+import type { FilmItem } from '@/components/film/FilmCard';
+import { TmdbArtwork } from '@/components/film/TmdbArtwork';
+import { Pagination } from '@/components/film/Pagination';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/providers/ToastProvider';
+import { guestDataStorage } from '@/lib/user-data';
+import { watchProgressStorage } from '@/lib/watch-progress';
+import { cardFont } from '@/lib/fonts';
+import { formatEpisodeLabel } from '@/lib/player-source-routing';
 import {
   Dialog,
   DialogClose,
@@ -32,7 +32,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 
 interface HistoryItem {
   id: string;
@@ -57,7 +57,7 @@ export default function HistoryPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     setGuestHistory(
       guestDataStorage.getHistory().map((item) => ({
         id: `guest-${item.slug}-${item.epSlug}`,
@@ -74,7 +74,7 @@ export default function HistoryPage() {
 
   // Fetch history - must be called unconditionally (Rules of Hooks)
   const { data: historyData, isLoading } = useQuery({
-    queryKey: ["watch-history", user?.id, page],
+    queryKey: ['watch-history', user?.id, page],
     queryFn: async () => {
       try {
         const res = await watchHistoryApi.getHistory(page, 24);
@@ -94,11 +94,36 @@ export default function HistoryPage() {
     enabled: !!user, // Only fetch when user is logged in
   });
 
+  // Reconcile legacy history thumbnails with the current canonical catalogue
+  // in one cached request. This avoids one detail request per card while
+  // repairing images that were saved before source deduplication was fixed.
+  const { data: artworkFeed } = useQuery({
+    queryKey: ['home-feed-v1', 64],
+    queryFn: () => movieApi.getHomeFeed(64).then((response) => response.data),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+
+  const artworkBySlug = useMemo(() => {
+    const map = new Map<string, FilmItem>();
+    for (const films of Object.values(artworkFeed?.sections || {})) {
+      for (const film of films as FilmItem[]) {
+        if (film.slug) map.set(film.slug, film);
+        for (const sourceSlug of Object.values(film._sourceSlugs || {})) {
+          if (sourceSlug) map.set(sourceSlug, film);
+        }
+      }
+    }
+    return map;
+  }, [artworkFeed?.sections]);
+
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: (id: string) => watchHistoryApi.deleteEntry(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["watch-history"] });
+      queryClient.invalidateQueries({ queryKey: ['watch-history'] });
     },
   });
 
@@ -106,7 +131,7 @@ export default function HistoryPage() {
   const clearAllMutation = useMutation({
     mutationFn: () => watchHistoryApi.clearAll(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["watch-history"] });
+      queryClient.invalidateQueries({ queryKey: ['watch-history'] });
     },
   });
 
@@ -118,16 +143,14 @@ export default function HistoryPage() {
         : []
     : guestHistory;
 
-  const historyItems = rawHistoryItems.filter(
-    (item) => !removedIds.includes(item.id),
-  );
+  const historyItems = rawHistoryItems.filter((item) => !removedIds.includes(item.id));
   const total = historyItems.length;
   const totalPages = user ? historyData?.totalPages || 1 : 1;
 
   const handleDelete = (id: string) => {
     // ⚡ INSTANT OPTIMISTIC UI REMOVAL (0ms delay)
     setRemovedIds((prev) => [...prev, id]);
-    toast("Đã xóa khỏi lịch sử", "success");
+    toast('Đã xóa khỏi lịch sử', 'success');
 
     if (!user) {
       const item = guestHistory.find((entry) => entry.id === id);
@@ -135,9 +158,7 @@ export default function HistoryPage() {
         const entry = guestDataStorage
           .getHistory()
           .find(
-            (candidate) =>
-              candidate.slug === item.movieId &&
-              candidate.epSlug === item.episode,
+            (candidate) => candidate.slug === item.movieId && candidate.epSlug === item.episode,
           );
         if (entry) {
           watchProgressStorage.removeEntry(entry.slug, entry.epSlug);
@@ -150,7 +171,7 @@ export default function HistoryPage() {
     deleteMutation.mutate(id, {
       onError: () => {
         setRemovedIds((prev) => prev.filter((item) => item !== id));
-        toast("Không thể xóa lúc này", "error");
+        toast('Không thể xóa lúc này', 'error');
       },
     });
   };
@@ -159,13 +180,13 @@ export default function HistoryPage() {
     setShowClearConfirm(false);
     const allIds = rawHistoryItems.map((item) => item.id);
     setRemovedIds((prev) => [...new Set([...prev, ...allIds])]);
-    toast("Đã xóa toàn bộ lịch sử", "success");
+    toast('Đã xóa toàn bộ lịch sử', 'success');
 
     if (user) {
       clearAllMutation.mutate(undefined, {
         onError: () => {
           setRemovedIds([]);
-          toast("Không thể xóa toàn bộ lịch sử", "error");
+          toast('Không thể xóa toàn bộ lịch sử', 'error');
         },
       });
     } else {
@@ -196,9 +217,7 @@ export default function HistoryPage() {
   };
 
   return (
-    <div
-      className={`${cardFont.className} min-h-screen bg-background pb-16 pt-16 lg:ml-20`}
-    >
+    <div className={`${cardFont.className} min-h-screen bg-background pb-16 pt-16 lg:ml-20`}>
       {/* Header */}
       <div className="relative z-10 border-b border-white/10 bg-background">
         <div className="mx-auto max-w-[1600px] px-4 py-5 md:px-8 md:py-6">
@@ -208,8 +227,7 @@ export default function HistoryPage() {
               Lịch Sử Xem
             </h1>
             <p className="text-sm text-neutral-400 normal-case font-normal tracking-normal">
-              {total} phim đã xem{" "}
-              {user ? "trong tài khoản" : "trên thiết bị này"}
+              {total} phim đã xem {user ? 'trong tài khoản' : 'trên thiết bị này'}
             </p>
 
             {/* Clear All Button */}
@@ -238,7 +256,15 @@ export default function HistoryPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {historyItems.map((item) => {
                 const progress = formatProgress(item.progress, item.duration);
-                const posterUrl = resolveImageUrl(item.movieThumb);
+                const catalogFilm = artworkBySlug.get(item.movieId);
+                const historyFilm: FilmItem = {
+                  ...catalogFilm,
+                  slug: item.movieId,
+                  name: catalogFilm?.name || item.movieTitle,
+                  title: catalogFilm?.title || item.movieTitle,
+                  thumb_url: catalogFilm?.thumb_url || item.movieThumb,
+                  poster_url: catalogFilm?.poster_url || item.movieThumb,
+                };
 
                 return (
                   <div
@@ -252,10 +278,7 @@ export default function HistoryPage() {
                       className="absolute top-3 right-3 z-10 p-2 bg-black/60 hover:bg-black/80 backdrop-blur-sm rounded-full transition-all opacity-0 group-hover:opacity-100"
                     >
                       {deletingId === item.id ? (
-                        <Loader2
-                          size={16}
-                          className="animate-spin text-white"
-                        />
+                        <Loader2 size={16} className="animate-spin text-white" />
                       ) : (
                         <X size={16} className="text-white" />
                       )}
@@ -263,27 +286,18 @@ export default function HistoryPage() {
 
                     <Link
                       href={`/watch/${item.movieId}${
-                        item.episode
-                          ? `?ep=${encodeURIComponent(item.episode)}`
-                          : ""
+                        item.episode ? `?ep=${encodeURIComponent(item.episode)}` : ''
                       }`}
                       className="flex"
                     >
                       {/* Thumbnail */}
                       <div className="relative w-40 md:w-48 flex-shrink-0">
-                        {posterUrl ? (
-                          <Image
-                            src={posterUrl}
-                            alt={item.movieTitle}
-                            fill
-                            unoptimized
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
-                            <Play size={32} className="text-neutral-600" />
-                          </div>
-                        )}
+                        <TmdbArtwork
+                          film={historyFilm}
+                          kind="poster"
+                          alt={item.movieTitle}
+                          className="absolute inset-0 h-full w-full"
+                        />
 
                         {/* Progress Bar Overlay */}
                         <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/50">
@@ -296,11 +310,7 @@ export default function HistoryPage() {
                         {/* Play Overlay */}
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
-                            <Play
-                              size={20}
-                              fill="black"
-                              className="text-black ml-1"
-                            />
+                            <Play size={20} fill="black" className="text-black ml-1" />
                           </div>
                         </div>
                       </div>
@@ -327,9 +337,7 @@ export default function HistoryPage() {
                         <div className="mt-3">
                           <div className="flex items-center justify-between text-xs mb-1">
                             <span className="text-neutral-400">Đã xem</span>
-                            <span className="text-white font-semibold">
-                              {progress}%
-                            </span>
+                            <span className="text-white font-semibold">{progress}%</span>
                           </div>
                           <div className="h-1.5 bg-neutral-700 rounded-full overflow-hidden">
                             <div
@@ -345,19 +353,13 @@ export default function HistoryPage() {
               })}
             </div>
             {user && totalPages > 1 && (
-              <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={setPage}
-              />
+              <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
             )}
           </>
         ) : (
           <div className="text-center py-20">
             <HistoryIcon size={64} className="mx-auto mb-4 text-neutral-700" />
-            <p className="text-xl font-semibold text-neutral-400">
-              Chưa có lịch sử xem phim
-            </p>
+            <p className="text-xl font-semibold text-neutral-400">Chưa có lịch sử xem phim</p>
             <p className="text-sm text-neutral-500 mt-2">
               Bắt đầu xem phim để theo dõi tiến độ tại đây
             </p>
@@ -384,8 +386,7 @@ export default function HistoryPage() {
                 Xóa toàn bộ lịch sử?
               </DialogTitle>
               <DialogDescription className="text-[13px] leading-5 text-neutral-400">
-                Tiến độ của {total} phim trên thiết bị này sẽ bị xóa và không
-                thể khôi phục.
+                Tiến độ của {total} phim trên thiết bị này sẽ bị xóa và không thể khôi phục.
               </DialogDescription>
             </DialogHeader>
           </div>

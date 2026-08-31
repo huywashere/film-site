@@ -3,24 +3,19 @@ import { useState } from "react";
 import { buildArtworkCandidates } from "@/lib/image-cdn";
 
 const TMDB_POSTERS = [
+  // 4 Phim Ngôn Tình Hàn Quốc Đình Đám
+  "/images/auth/queen-of-tears.webp",
+  "/images/auth/crash-landing-on-you.webp",
+  "/images/auth/goblin.webp",
+  "/images/auth/its-okay-to-not-be-okay.webp",
+
+  // Cinema & Blockbuster Backdrops
   "https://image.tmdb.org/t/p/w342/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
   "https://image.tmdb.org/t/p/w342/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg",
   "https://image.tmdb.org/t/p/w342/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
   "https://image.tmdb.org/t/p/w342/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg",
   "https://image.tmdb.org/t/p/w342/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
   "https://image.tmdb.org/t/p/w342/or06FN3Dka5tukK1e9sl16pB3iy.jpg",
-  "https://image.tmdb.org/t/p/w342/wqGZVSCUSXE92WH2zyol2REaqT4.jpg",
-  "https://image.tmdb.org/t/p/w342/lH8k9uCWYn2b2gsYleqYBDPbWa8.jpg",
-  "https://image.tmdb.org/t/p/w342/duXkWKOLS7hHAddyjBwk35YY6U.jpg",
-  "https://image.tmdb.org/t/p/w342/7876PK6gosE13Uq1B6nRxf7AJLT.jpg",
-  "https://image.tmdb.org/t/p/w342/15qLAM3QM8DoPL9Fps4JOTdqWqt.jpg",
-  "https://image.tmdb.org/t/p/w342/7uabN7xF4209cDUdBuMvkVcpkN2.jpg",
-  "https://image.tmdb.org/t/p/w342/hhCEHR0OKeVJUiQLtiI6GBbUeAe.jpg",
-  "https://image.tmdb.org/t/p/w342/gf7EeEQe22Zu1u55wRT8EAnav93.jpg",
-  "https://image.tmdb.org/t/p/w342/nI4uPl4E3No8674XnyY8zJpceBS.jpg",
-  "https://image.tmdb.org/t/p/w342/r30blmL8bB7WFzdAcXu7gJMUYk8.jpg",
-  "https://image.tmdb.org/t/p/w342/3zJKDkvyTz3g6VpCS6RtaufYV0j.jpg",
-  "https://image.tmdb.org/t/p/w342/nV99ACeAa8fFFso0tQZ3HktEf5X.jpg",
 ];
 
 function AuthPosterItem({ url, idx }: { url: string; idx: number }) {

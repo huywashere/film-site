@@ -67,9 +67,10 @@ func cacheKey(target string) string {
 }
 
 type MemoryManifestStore struct {
-	ttl   time.Duration
-	items map[string]memoryEntry
-	mu    sync.RWMutex
+	ttl    time.Duration
+	items  map[string]memoryEntry
+	mu     sync.RWMutex
+	stopGC chan struct{}
 }
 
 type memoryEntry struct {
@@ -78,15 +79,26 @@ type memoryEntry struct {
 }
 
 func NewMemoryManifestStore(ttl time.Duration) *MemoryManifestStore {
-	return &MemoryManifestStore{ttl: ttl, items: make(map[string]memoryEntry)}
+	s := &MemoryManifestStore{
+		ttl:    ttl,
+		items:  make(map[string]memoryEntry),
+		stopGC: make(chan struct{}),
+	}
+	go s.gc()
+	return s
 }
 
 func (s *MemoryManifestStore) Get(_ context.Context, target string) (Manifest, bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
 	entry, ok := s.items[target]
+	s.mu.RUnlock()
+
 	if !ok || time.Now().After(entry.expires) {
-		delete(s.items, target)
+		if ok {
+			s.mu.Lock()
+			delete(s.items, target)
+			s.mu.Unlock()
+		}
 		return Manifest{}, false
 	}
 	return entry.manifest, true
@@ -100,4 +112,27 @@ func (s *MemoryManifestStore) Set(_ context.Context, target string, value Manife
 
 func (s *MemoryManifestStore) Ready(context.Context) bool { return true }
 
-func (s *MemoryManifestStore) Close() error { return nil }
+func (s *MemoryManifestStore) Close() error {
+	close(s.stopGC)
+	return nil
+}
+
+func (s *MemoryManifestStore) gc() {
+	ticker := time.NewTicker(s.ttl)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			now := time.Now()
+			s.mu.Lock()
+			for k, v := range s.items {
+				if now.After(v.expires) {
+					delete(s.items, k)
+				}
+			}
+			s.mu.Unlock()
+		case <-s.stopGC:
+			return
+		}
+	}
+}

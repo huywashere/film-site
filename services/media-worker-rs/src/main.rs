@@ -10,6 +10,7 @@ use anyhow::{Context, Result};
 use axum::{routing::get, Router};
 use config::Config;
 use metrics::Metrics;
+use tokio::sync::broadcast;
 use tracing::{info, warn};
 use tracing_subscriber::EnvFilter;
 
@@ -27,6 +28,9 @@ async fn main() -> Result<()> {
     let config = Arc::new(Config::from_env()?);
     let metrics = Arc::new(Metrics::default());
     let analyzer = analyzer::Analyzer::new(config.clone())?;
+
+    // Broadcast channel used to signal all workers to stop gracefully.
+    let (shutdown_tx, _) = broadcast::channel::<()>(1);
 
     let health_metrics = metrics.clone();
     let health_address = format!("0.0.0.0:{}", config.health_port);
@@ -51,6 +55,7 @@ async fn main() -> Result<()> {
             config.clone(),
             analyzer.clone(),
             metrics.clone(),
+            shutdown_tx.subscribe(),
         )));
     }
     info!(
@@ -58,23 +63,53 @@ async fn main() -> Result<()> {
         "NetPhim Rust HLS analyzer started"
     );
 
+    // Wait for SIGINT or SIGTERM.
+    #[cfg(unix)]
+    {
+        use tokio::signal::unix::{signal, SignalKind};
+        let mut sigterm = signal(SignalKind::terminate()).context("SIGTERM listener failed")?;
+        tokio::select! {
+            _ = tokio::signal::ctrl_c() => {},
+            _ = sigterm.recv() => {},
+        }
+    }
+    #[cfg(not(unix))]
     tokio::signal::ctrl_c()
         .await
         .context("failed to listen for shutdown signal")?;
-    info!("shutdown signal received");
+
+    info!(
+        shutdown_timeout_secs = config.shutdown_timeout.as_secs(),
+        "shutdown signal received; waiting for workers to finish"
+    );
     metrics
         .ready
         .store(false, std::sync::atomic::Ordering::Relaxed);
-    for worker in workers {
-        worker.abort();
-        if let Err(error) = worker.await {
-            if !error.is_cancelled() {
-                warn!(error = %error, "worker shutdown failed");
+
+    // Signal workers to stop after their current job.
+    let _ = shutdown_tx.send(());
+
+    // Wait for all workers to finish, up to shutdown_timeout.
+    let shutdown_deadline = tokio::time::sleep(config.shutdown_timeout);
+    tokio::pin!(shutdown_deadline);
+    for worker in &mut workers {
+        tokio::select! {
+            _ = worker => {},
+            _ = &mut shutdown_deadline => {
+                warn!("shutdown timeout exceeded; force-aborting remaining workers");
+                break;
             }
+        }
+    }
+    for worker in workers {
+        if !worker.is_finished() {
+            worker.abort();
+            let _ = worker.await;
         }
     }
     health_server.abort();
     tokio::time::sleep(Duration::from_millis(50)).await;
+    info!("shutdown complete");
     Ok(())
 }
 

@@ -19,6 +19,12 @@ pub struct Config {
     pub health_port: u16,
     pub allowed_hosts: Vec<String>,
     pub require_https: bool,
+    /// How long to wait for in-flight workers before force-aborting on shutdown.
+    pub shutdown_timeout: Duration,
+    /// How many times to retry a failed analysis before writing a failed result.
+    pub retry_attempts: usize,
+    /// Base backoff between retries in milliseconds (doubles each attempt).
+    pub retry_backoff_ms: u64,
 }
 
 impl Config {
@@ -63,6 +69,9 @@ impl Config {
             health_port: number("HLS_ANALYZER_HEALTH_PORT", 8091)?,
             allowed_hosts,
             require_https: boolean("HLS_ANALYZER_REQUIRE_HTTPS", true),
+            shutdown_timeout: Duration::from_secs(number("HLS_ANALYZER_SHUTDOWN_TIMEOUT_SECS", 30)?),
+            retry_attempts: number::<usize>("HLS_ANALYZER_RETRY_ATTEMPTS", 3)?.clamp(1, 5),
+            retry_backoff_ms: number("HLS_ANALYZER_RETRY_BACKOFF_MS", 2_000)?,
         })
     }
 }

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { ChevronRight, ChevronLeft, ChevronDown, Loader2 } from "lucide-react";
 import {
-  api,
   movieApi,
   siteConfigApi,
   type PublicSiteConfiguration,
@@ -41,11 +40,6 @@ const HeroShowcaseSection = dynamic(() =>
 const CuratedSpotlightSection = dynamic(() =>
   import("@/components/film/CuratedSpotlightSection").then(
     (module) => module.CuratedSpotlightSection,
-  ),
-);
-const WeeklyScheduleSection = dynamic(() =>
-  import("@/components/film/WeeklyScheduleSection").then(
-    (module) => module.WeeklyScheduleSection,
   ),
 );
 import HeroBanner from "@/app/components/HeroBanner";
@@ -128,6 +122,22 @@ function deduplicate(films: FilmItem[]): FilmItem[] {
 function catalogItemCount(data: any): number {
   const items = data?.data?.items || data?.items || [];
   return Array.isArray(items) ? items.length : 0;
+}
+
+function movieTaxonomyContains(
+  values: Array<{ name?: string; slug?: string }> | undefined,
+  needles: string[],
+): boolean {
+  const haystack = (values || [])
+    .flatMap((value) => [value.name, value.slug])
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return needles.some((needle) => haystack.includes(needle));
+}
+
+function asCatalogPayload(items: FilmItem[]) {
+  return { items, data: { items } };
 }
 
 // Fallback riêng cho hàng Top 10. Hero không còn dùng bộ banner tĩnh này.
@@ -340,10 +350,10 @@ function FilmSection({
             <Link
               href={href}
               data-film-section-action="true"
-              className={`${cardFont.className} inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-white/[0.12] bg-white/[0.08] px-2.5 py-1.5 text-[11px] font-semibold text-white/90 shadow-sm transition-all hover:scale-105 hover:bg-white/[0.16] hover:text-white active:scale-95 sm:px-3 sm:py-1 sm:text-xs`}
+              className="group/link inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap text-xs sm:text-sm font-semibold text-white/80 hover:text-white transition-colors select-none ml-1.5"
             >
               <span>{t("home.viewAll", "Xem tất cả")}</span>
-              <ChevronRight size={12} strokeWidth={2.5} />
+              <ChevronRight size={14} className="stroke-[2.2] text-white/60 group-hover/link:text-white transition-transform group-hover/link:translate-x-0.5" />
             </Link>
           )}
         </div>
@@ -380,7 +390,7 @@ function FilmSection({
               ? Array.from({ length: 10 }, (_, index) => (
                   <div
                     key={`film-skeleton-${index}`}
-                    className="w-[26%] min-w-[112px] shrink-0 snap-start sm:w-[19%] md:w-[16%] lg:w-[14%] xl:w-[12.4%]"
+                    className="w-[26%] min-w-[112px] shrink-0 snap-start sm:w-[19%] md:w-[18%] lg:w-[16%] xl:w-[15.4%]"
                   >
                     <FilmCardSkeleton />
                   </div>
@@ -388,7 +398,7 @@ function FilmSection({
               : films.map((film, idx) => (
                   <div
                     key={`slide-${title}-${film._id || film.slug || "film"}-${idx}`}
-                    className="w-[26%] min-w-[112px] shrink-0 snap-start sm:w-[19%] md:w-[16%] lg:w-[14%] xl:w-[12.4%]"
+                    className="w-[26%] min-w-[112px] shrink-0 snap-start sm:w-[19%] md:w-[18%] lg:w-[16%] xl:w-[15.4%]"
                   >
                     <FilmCard
                       film={film}
@@ -529,6 +539,31 @@ export default function HomePageClient({
     return () => window.clearTimeout(timer);
   }, [catalogReady]);
 
+  const {
+    data: homeFeedData,
+    isLoading: homeFeedLoading,
+  } = useQuery({
+    queryKey: ["home-feed-v1", 24],
+    queryFn: () => movieApi.getHomeFeed(24).then((response) => response.data),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: false,
+    enabled: catalogReady,
+  });
+
+  const homeFeedSections = homeFeedData?.sections;
+  const homeFeedPool = useMemo(
+    () =>
+      deduplicate([
+        ...(homeFeedSections?.latest || []),
+        ...(homeFeedSections?.series || []),
+        ...(homeFeedSections?.single || []),
+        ...(homeFeedSections?.anime || []),
+      ]),
+    [homeFeedSections],
+  );
+
   const handleShowMore = () => {
     setIsLoadingMore(true);
     setTimeout(() => {
@@ -539,87 +574,59 @@ export default function HomePageClient({
 
   // ── Initial 4 Sections Data (Prioritizing Hollywood/Western Live-Action & Fantasy Movies) ──
   // 1. Phim kỹ xảo (VFX, Fantasy & Myth Movies)
-  const { data: vfxGenreData, isLoading: vfxGenreLoading } = useQuery({
-    queryKey: ["vfx-movies-genre"],
-    queryFn: () => movieApi.getByGenre("than-thoai", 1).then((r) => r.data),
-    staleTime: 1000 * 60 * 10,
-    enabled: secondaryCatalogReady,
-  });
-  const { data: vfxUsUkData, isLoading: vfxUsUkLoading } = useQuery({
-    queryKey: ["vfx-movies-us-uk"],
-    queryFn: () =>
-      movieApi
-        .getFiltered({
-          country: "au-my",
-          category: "vien-tuong",
-          page: 1,
-          limit: 24,
-        })
-        .then((r) => r.data),
-    staleTime: 1000 * 60 * 10,
-    enabled: secondaryCatalogReady,
-  });
-  const vfxLoading = vfxGenreLoading || vfxUsUkLoading;
+  const vfxGenreData = useMemo(
+    () =>
+      asCatalogPayload(
+        homeFeedPool.filter((film) =>
+          movieTaxonomyContains(film.category, [
+            "thần thoại",
+            "than-thoai",
+            "viễn tưởng",
+            "vien-tuong",
+            "fantasy",
+            "sci-fi",
+          ]),
+        ),
+      ),
+    [homeFeedPool],
+  );
+  const vfxUsUkData = vfxGenreData;
+  const vfxLoading = secondaryCatalogReady && homeFeedLoading;
 
   // 2. Series Âu-Mỹ (Hollywood TV Series)
-  const { data: usUkSeriesData, isLoading: usUkSeriesLoading } = useQuery({
-    queryKey: ["us-uk-series-v2"],
-    queryFn: () =>
-      movieApi
-        .getFiltered({
-          type: "phim-bo",
-          country: "au-my",
-          page: 1,
-          limit: 24,
-        })
-        .then((r) => r.data),
-    staleTime: 1000 * 60 * 10,
-    enabled: secondaryCatalogReady,
-  });
-  const { data: usUkSeriesData2 } = useQuery({
-    queryKey: ["us-uk-series-v2-p2"],
-    queryFn: () =>
-      movieApi
-        .getFiltered({
-          type: "phim-bo",
-          country: "au-my",
-          page: 2,
-          limit: 24,
-        })
-        .then((r) => r.data),
-    staleTime: 1000 * 60 * 10,
-    enabled: secondaryCatalogReady,
-  });
+  const usUkSeriesData = useMemo(
+    () =>
+      asCatalogPayload(
+        (homeFeedSections?.series || []).filter(
+          (film) =>
+            movieTaxonomyContains(film.country, [
+              "âu mỹ",
+              "au-my",
+              "mỹ",
+              "anh",
+              "united states",
+            ]) || !film.country?.length,
+        ),
+      ),
+    [homeFeedSections?.series],
+  );
+  const usUkSeriesLoading = secondaryCatalogReady && homeFeedLoading;
   // 3. Phim hành động (Hollywood & International Action Movies)
-  const { data: actionUsUkData } = useQuery({
-    queryKey: ["action-movies-us-uk"],
-    queryFn: () =>
-      movieApi
-        .getFiltered({
-          country: "au-my",
-          category: "hanh-dong",
-          page: 1,
-          limit: 24,
-        })
-        .then((r) => r.data),
-    staleTime: 1000 * 60 * 10,
-    enabled: secondaryCatalogReady,
-  });
-  const { data: actionData, isLoading: actionLoading } = useQuery({
-    queryKey: ["action-movies"],
-    queryFn: () => movieApi.getByGenre("hanh-dong", 1).then((r) => r.data),
-    staleTime: 1000 * 60 * 10,
-    enabled: secondaryCatalogReady,
-  });
+  const actionData = useMemo(
+    () =>
+      asCatalogPayload(
+        homeFeedPool.filter((film) =>
+          movieTaxonomyContains(film.category, ["hành động", "hanh-dong", "action"]),
+        ),
+      ),
+    [homeFeedPool],
+  );
+  const actionUsUkData = actionData;
+  const actionLoading = secondaryCatalogReady && homeFeedLoading;
 
   // 4. Phim khoa học viễn tưởng bom tấn (Hollywood Sci-Fi Blockbusters)
-  const { data: scifiData, isLoading: scifiGenreLoading } = useQuery({
-    queryKey: ["scifi-movies"],
-    queryFn: () => movieApi.getByGenre("vien-tuong", 1).then((r) => r.data),
-    staleTime: 1000 * 60 * 10,
-    enabled: secondaryCatalogReady,
-  });
-  const scifiLoading = scifiGenreLoading || vfxUsUkLoading;
+  const scifiData = vfxGenreData;
+  const scifiLoading = secondaryCatalogReady && homeFeedLoading;
 
   // ── Lazy Loaded 10 Sections Data (Loaded after clicking Xem Thêm) ──
 
@@ -631,18 +638,24 @@ export default function HomePageClient({
   });
 
   // 6. Series quốc tế (International Series)
-  const { data: seriesData, isLoading: seriesLoading } = useQuery({
-    queryKey: ["films-type", "series", 1],
-    queryFn: () => movieApi.getSeries(1).then((r) => r.data),
-    enabled: showMoreSections,
-  });
+  const seriesData = useMemo(
+    () =>
+      homeFeedSections?.series
+        ? asCatalogPayload(homeFeedSections.series)
+        : undefined,
+    [homeFeedSections?.series],
+  );
+  const seriesLoading = showMoreSections && homeFeedLoading;
 
   // 7. Anime & Hoạt hình lồng tiếng (ONLY place for Anime/3D Animation)
-  const { data: animeData, isLoading: animeLoading } = useQuery({
-    queryKey: ["films-type", "anime", 1],
-    queryFn: () => movieApi.getAnime(1).then((r) => r.data),
-    enabled: showMoreSections,
-  });
+  const animeData = useMemo(
+    () =>
+      homeFeedSections?.anime
+        ? asCatalogPayload(homeFeedSections.anime)
+        : undefined,
+    [homeFeedSections?.anime],
+  );
+  const animeLoading = showMoreSections && homeFeedLoading;
   const { data: animeGenreData } = useQuery({
     queryKey: ["anime-genre", 1],
     queryFn: () => movieApi.getByGenre("hoat-hinh", 1).then((r) => r.data),
@@ -670,19 +683,14 @@ export default function HomePageClient({
   });
 
   // 9. Phim chất lượng 4K (Hollywood 4K Movies)
-  const { data: singleData, isLoading: singleLoading } = useQuery({
-    queryKey: ["single-us-uk-v3", 1],
-    queryFn: () =>
-      movieApi
-        .getFiltered({
-          type: "phim-le",
-          country: "au-my",
-          page: 1,
-          limit: 24,
-        })
-        .then((r) => r.data),
-    enabled: showMoreSections,
-  });
+  const singleData = useMemo(
+    () =>
+      homeFeedSections?.single
+        ? asCatalogPayload(homeFeedSections.single)
+        : undefined,
+    [homeFeedSections?.single],
+  );
+  const singleLoading = showMoreSections && homeFeedLoading;
 
   // 10. Phim chính kịch chuyển thể từ sách (Book Adaptation Dramas)
   const { data: dramaData, isLoading: dramaLoading } = useQuery({
@@ -728,26 +736,18 @@ export default function HomePageClient({
   });
 
   // Latest films query for Phim Mới Cập Nhật
-  const { data: latestData, isLoading: latestLoading } = useQuery({
-    queryKey: ["latest-v2", 1],
-    queryFn: () => movieApi.getLatest(1).then((r) => r.data),
-    staleTime: 1000 * 60 * 10,
-    enabled: catalogReady,
-  });
-
-  const { data: trendingData } = useQuery({
-    queryKey: ["weekly-trending-movies"],
-    queryFn: () =>
-      movieApi
-        .getTop10(30)
-        .catch(() =>
-          api.get<FilmItem[]>("/movies/trending?limit=30").then((r) => r.data),
-        )
-        .catch(() => []),
-    staleTime: 1000 * 60 * 10,
-    retry: false,
-    enabled: catalogReady,
-  });
+  const latestData = useMemo(
+    () =>
+      homeFeedSections?.latest
+        ? asCatalogPayload(homeFeedSections.latest)
+        : undefined,
+    [homeFeedSections?.latest],
+  );
+  const latestLoading = catalogReady && homeFeedLoading;
+  const trendingData = useMemo(
+    () => homeFeedData?.top10 || [],
+    [homeFeedData?.top10],
+  );
 
   // ── Process arrays with STRICT Live-Action filtering for Hollywood rows ──
   const vfxFilms = useMemo(() => {
@@ -759,13 +759,11 @@ export default function HomePageClient({
   const usUkSeriesFilms = useMemo(() => {
     const firstPage =
       usUkSeriesData?.data?.items || usUkSeriesData?.items || [];
-    const secondPage =
-      usUkSeriesData2?.data?.items || usUkSeriesData2?.items || [];
     const liveAction = filterLiveActionOnly(
-      deduplicate([...firstPage, ...secondPage]),
+      deduplicate(firstPage),
     );
     return liveAction.filter(isLikelySeries);
-  }, [usUkSeriesData, usUkSeriesData2]);
+  }, [usUkSeriesData]);
 
   const actionFilms = useMemo(() => {
     const usUkList = actionUsUkData?.data?.items || actionUsUkData?.items || [];
@@ -1050,12 +1048,7 @@ export default function HomePageClient({
     ),
     continue: (
       <LazySection>
-        <ContinueWatchingRow />
-      </LazySection>
-    ),
-    schedule: (
-      <LazySection>
-        <WeeklyScheduleSection items={seriesFilms} />
+        <ContinueWatchingRow fallbackFilms={homeFeedPool} />
       </LazySection>
     ),
     latest: (
@@ -1113,16 +1106,15 @@ export default function HomePageClient({
   const defaultSectionOrder = [
     "top10",
     "continue",
-    "schedule",
     "latest",
     "vfx",
     "usuk-series",
     "action",
     "scifi",
   ];
-  const configuredSectionOrder = publicConfig?.homeSectionOrder?.length
+  const configuredSectionOrder = (publicConfig?.homeSectionOrder?.length
     ? publicConfig.homeSectionOrder
-    : defaultSectionOrder;
+    : defaultSectionOrder).filter((sectionId) => sectionId !== "schedule");
   const primarySectionOrder = [
     ...configuredSectionOrder,
     ...Object.keys(customFeaturedSections).filter(

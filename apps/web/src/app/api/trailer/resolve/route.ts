@@ -35,7 +35,7 @@ async function searchTmdbTrailer(
         headers["Authorization"] = `Bearer ${TMDB_TOKEN}`;
       }
 
-      const searchUrl = `${TMDB_BASE}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(clean)}&include_adult=false&language=vi-VN`;
+      const searchUrl = `${TMDB_BASE}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(clean)}&include_adult=false`;
       const searchRes = await fetch(searchUrl, {
         headers,
         next: { revalidate: 86400 },
@@ -47,12 +47,12 @@ async function searchTmdbTrailer(
 
       if (results.length === 0) continue;
 
-      // Check top 3 results for official studio videos
-      for (const item of results.slice(0, 3)) {
+      // Check top 5 results for official studio videos
+      for (const item of results.slice(0, 5)) {
         if (!item.id || (item.media_type !== "movie" && item.media_type !== "tv")) continue;
 
         const mediaType = item.media_type;
-        const videosUrl = `${TMDB_BASE}/${mediaType}/${item.id}/videos?api_key=${TMDB_API_KEY}&include_video_language=vi,en,zh,ko,null`;
+        const videosUrl = `${TMDB_BASE}/${mediaType}/${item.id}/videos?api_key=${TMDB_API_KEY}&include_video_language=vi,en,zh,ko,ja,null`;
         const vRes = await fetch(videosUrl, {
           headers,
           next: { revalidate: 86400 },
@@ -162,23 +162,6 @@ export async function GET(request: NextRequest) {
   const year = searchParams.get("year") || "";
   const rawTrailerUrl = searchParams.get("trailerUrl") || "";
 
-  // 1. Direct URL check
-  const directKey = extractYouTubeKeyFromUrl(rawTrailerUrl);
-  if (directKey) {
-    return NextResponse.json({
-      success: true,
-      key: directKey,
-      source: "direct",
-    });
-  }
-
-  if (!title && !originName) {
-    return NextResponse.json(
-      { success: false, error: "Missing title or originName" },
-      { status: 400 },
-    );
-  }
-
   const cacheKey = `${title}_${originName}_${year}`.toLowerCase();
   const cached = cache.get(cacheKey);
   if (cached && cached.expiry > Date.now()) {
@@ -189,7 +172,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // 2. Try TMDB Search first
+  // 1. Try TMDB Search first for official verified studio trailer
   const tmdbKey = await searchTmdbTrailer(title, originName, year);
   if (tmdbKey) {
     cache.set(cacheKey, { key: tmdbKey, expiry: Date.now() + 86400 * 1000 });
@@ -197,6 +180,16 @@ export async function GET(request: NextRequest) {
       success: true,
       key: tmdbKey,
       source: "tmdb",
+    });
+  }
+
+  // 2. Direct provider URL check fallback
+  const directKey = extractYouTubeKeyFromUrl(rawTrailerUrl);
+  if (directKey) {
+    return NextResponse.json({
+      success: true,
+      key: directKey,
+      source: "direct",
     });
   }
 

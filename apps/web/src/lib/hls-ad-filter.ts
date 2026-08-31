@@ -1,4 +1,4 @@
-export type HlsUriKind = "manifest" | "segment" | "resource";
+export type HlsUriKind = 'manifest' | 'segment' | 'resource';
 
 export type HlsUriRewriter = (absoluteUrl: string, kind: HlsUriKind) => string;
 
@@ -30,124 +30,221 @@ export interface HlsDetectedAdRange {
   skippable: true;
 }
 
+/**
+ * Reads ad breaks without rewriting the playlist. Unlike filterHlsManifest,
+ * timestamps stay on the original media timeline, which is what the player
+ * progress bar uses when the raw manifest is played.
+ */
+export function inspectHlsAdRanges(content: string, originalUrl: string): HlsDetectedAdRange[] {
+  const lines = content.replace(/\r\n/g, '\n').split('\n');
+  const ranges: HlsDetectedAdRange[] = [];
+  let timelineSeconds = 0;
+  let segmentDuration = 0;
+  let cueAdBreak = false;
+  let cueAdSeconds = 0;
+  let timedAdSecondsRemaining = 0;
+
+  const appendRange = (start: number, duration: number) => {
+    if (!Number.isFinite(start) || !Number.isFinite(duration) || duration <= 0 || duration > 180) {
+      return;
+    }
+    const end = start + duration;
+    const previous = ranges.at(-1);
+    if (previous && start <= previous.end + 0.1) {
+      previous.end = Math.max(previous.end, end);
+      previous.duration = previous.end - previous.start;
+      return;
+    }
+    ranges.push({ start, end, duration, skippable: true });
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    if (line.startsWith('#EXT-X-CUE-OUT-CONT')) {
+      cueAdBreak = true;
+      continue;
+    }
+    if (line.startsWith('#EXT-X-CUE-OUT')) {
+      cueAdBreak = true;
+      cueAdSeconds = 0;
+      continue;
+    }
+    if (line.startsWith('#EXT-X-CUE-IN')) {
+      cueAdBreak = false;
+      cueAdSeconds = 0;
+      timedAdSecondsRemaining = 0;
+      continue;
+    }
+    if (line.startsWith('#EXT-X-DATERANGE:')) {
+      const attributes = parseAttributeList(line);
+      if (isAdDateRange(attributes)) {
+        const duration = Number.parseFloat(
+          attributes.DURATION || attributes['PLANNED-DURATION'] || '0',
+        );
+        if (Number.isFinite(duration) && duration > 0 && duration <= 180) {
+          timedAdSecondsRemaining = Math.max(timedAdSecondsRemaining, duration);
+        } else if (attributes['SCTE35-OUT']) {
+          cueAdBreak = true;
+          cueAdSeconds = 0;
+        }
+        if (attributes['SCTE35-IN']) {
+          cueAdBreak = false;
+          cueAdSeconds = 0;
+        }
+      }
+      continue;
+    }
+    if (line.startsWith('#EXTINF:')) {
+      segmentDuration = Number.parseFloat(line.slice('#EXTINF:'.length).split(',')[0]);
+      if (!Number.isFinite(segmentDuration) || segmentDuration <= 0) segmentDuration = 0;
+      continue;
+    }
+    if (line.startsWith('#')) continue;
+
+    if (segmentDuration > 0) {
+      const absoluteUrl = resolveUrl(originalUrl, line);
+      const markedAsAd = cueAdBreak || timedAdSecondsRemaining > 0 || isLikelyAdUrl(absoluteUrl);
+      if (markedAsAd) appendRange(timelineSeconds, segmentDuration);
+
+      if (cueAdBreak) {
+        cueAdSeconds += segmentDuration;
+        // Broken CUE-OUT tags must not classify the rest of a feature film.
+        if (cueAdSeconds >= 180) {
+          cueAdBreak = false;
+          cueAdSeconds = 0;
+        }
+      }
+      if (timedAdSecondsRemaining > 0) {
+        timedAdSecondsRemaining = Math.max(0, timedAdSecondsRemaining - segmentDuration);
+      }
+      timelineSeconds += segmentDuration;
+      segmentDuration = 0;
+    }
+  }
+
+  return ranges.filter((range) => range.duration <= 180);
+}
+
 const AD_HOST_TOKENS = [
-  "ads",
-  "adserver",
-  "advertising",
-  "adsystem",
-  "adtech",
-  "pagead",
-  "doubleclick",
-  "googlesyndication",
-  "googleadservices",
-  "adservice",
-  "adnxs",
-  "adform",
-  "adroll",
-  "criteo",
-  "taboola",
-  "outbrain",
-  "revcontent",
-  "mgid",
-  "propellerads",
-  "popcash",
-  "popads",
-  "exoclick",
-  "trafficjunky",
-  "juicyads",
-  "hilltopads",
-  "adsterra",
-  "clickadu",
-  "richpush",
-  "pushground",
-  "evadav",
-  "zeropark",
-  "admaven",
-  "adcash",
-  "bidvertiser",
-  "yllix",
-  "cdn-ads",
-  "ad-cdn",
-  "ads-cdn",
-  "789bet",
-  "shbet",
-  "jun88",
-  "hi88",
-  "f8bet",
-  "okvip",
-  "new88",
-  "bk8",
-  "w88",
-  "fun88",
-  "12bet",
-  "v9bet",
-  "fb88",
-  "m88",
-  "kubet",
-  "thabet",
-  "rikvip",
-  "go88",
-  "sunwin",
-  "9922",
-  "8877",
-  "78win",
-  "ku11",
-  "kucasino",
-  "88online",
-  "choi88",
-  "win79",
-  "b52",
-  "macao",
-  "taixiu",
-  "nohu",
-  "quayhu",
-  "gamebai",
-  "baccarat",
-  "mb66",
-  "789club",
-  "hitclub",
-  "iwin",
-  "twin",
-  "winbet",
-  "bet69",
-  "keonhacai",
-  "typhu88",
-  "lode88",
-  "debet",
-  "zbet",
-  "oxbet",
-  "five88",
-  "sin88",
-  "may88",
-  "red88",
-  "sky88",
-  "sv88",
-  "uk88",
-  "lucky88",
-  "ta88",
-  "mu9",
-  "fcb8",
-  "bong88",
-  "sodo",
-  "sodocasino",
-  "ae888",
-  "ee88",
-  "qh88",
-  "vn88",
-  "viva88",
-  "k8cc",
-  "st666",
-  "tf88",
-  "vz99",
-  "sm66",
-  "mig8",
-  "k8",
-  "cmd368",
-  "dafabet",
-  "188bet",
+  'ads',
+  'adserver',
+  'advertising',
+  'adsystem',
+  'adtech',
+  'pagead',
+  'doubleclick',
+  'googlesyndication',
+  'googleadservices',
+  'adservice',
+  'adnxs',
+  'adform',
+  'adroll',
+  'criteo',
+  'taboola',
+  'outbrain',
+  'revcontent',
+  'mgid',
+  'propellerads',
+  'popcash',
+  'popads',
+  'exoclick',
+  'trafficjunky',
+  'juicyads',
+  'hilltopads',
+  'adsterra',
+  'clickadu',
+  'richpush',
+  'pushground',
+  'evadav',
+  'zeropark',
+  'admaven',
+  'adcash',
+  'bidvertiser',
+  'yllix',
+  'cdn-ads',
+  'ad-cdn',
+  'ads-cdn',
+  '789bet',
+  'shbet',
+  'jun88',
+  'hi88',
+  'f8bet',
+  'okvip',
+  'new88',
+  'bk8',
+  'w88',
+  'fun88',
+  '12bet',
+  'v9bet',
+  'fb88',
+  'm88',
+  'kubet',
+  'thabet',
+  'rikvip',
+  'go88',
+  'sunwin',
+  '9922',
+  '8877',
+  '78win',
+  'ku11',
+  'kucasino',
+  '88online',
+  'choi88',
+  'win79',
+  'b52',
+  'macao',
+  'taixiu',
+  'nohu',
+  'quayhu',
+  'gamebai',
+  'baccarat',
+  'mb66',
+  '789club',
+  'hitclub',
+  'iwin',
+  'twin',
+  'winbet',
+  'bet69',
+  'keonhacai',
+  'typhu88',
+  'lode88',
+  'debet',
+  'zbet',
+  'oxbet',
+  'five88',
+  'sin88',
+  'may88',
+  'red88',
+  'sky88',
+  'sv88',
+  'uk88',
+  'lucky88',
+  'ta88',
+  'mu9',
+  'fcb8',
+  'bong88',
+  'sodo',
+  'sodocasino',
+  'ae888',
+  'ee88',
+  'qh88',
+  'vn88',
+  'viva88',
+  'k8cc',
+  'st666',
+  'tf88',
+  'vz99',
+  'sm66',
+  'mig8',
+  'k8',
+  'cmd368',
+  'dafabet',
+  '188bet',
 ];
 
-const AD_HOST_SUFFIXES = ["ads.google.com", "adf.ly", "shorte.st", "ouo.io"];
+const AD_HOST_SUFFIXES = ['ads.google.com', 'adf.ly', 'shorte.st', 'ouo.io'];
 
 const AD_PATH_PATTERN =
   /(?:^|[/_.,?=&-])(ads?|advert(?:isement|ising)?|commercial|preroll|midroll|postroll|sponsor(?:ed)?|betting|casino|nha-?cai|quang-?cao)(?:$|[/_.,?=&-])/i;
@@ -156,12 +253,12 @@ const AD_MARKER_PATTERN =
   /(?:^|[\s._:-])(ad|ads|advert|commercial|preroll|midroll|postroll|interstitial|scte|splice)(?:$|[\s._:-])/i;
 
 const SEGMENT_SCOPED_TAGS = [
-  "#EXT-X-STREAM-INF:",
-  "#EXTINF:",
-  "#EXT-X-BYTERANGE:",
-  "#EXT-X-PROGRAM-DATE-TIME:",
-  "#EXT-X-GAP",
-  "#EXT-X-BITRATE:",
+  '#EXT-X-STREAM-INF:',
+  '#EXTINF:',
+  '#EXT-X-BYTERANGE:',
+  '#EXT-X-PROGRAM-DATE-TIME:',
+  '#EXT-X-GAP',
+  '#EXT-X-BITRATE:',
 ];
 
 function rememberReason(stats: HlsAdFilterStats, reason: string) {
@@ -181,30 +278,28 @@ function classifyUri(url: string, hasExtInf: boolean): HlsUriKind {
     try {
       return new URL(url).pathname.toLowerCase();
     } catch {
-      return url.toLowerCase().split("?")[0];
+      return url.toLowerCase().split('?')[0];
     }
   })();
 
-  if (pathname.endsWith(".m3u8") || pathname.endsWith(".m3u")) {
-    return "manifest";
+  if (pathname.endsWith('.m3u8') || pathname.endsWith('.m3u')) {
+    return 'manifest';
   }
   if (hasExtInf || /\.(?:ts|m4s|mp4|aac|ac3|ec3|vtt|webvtt)$/.test(pathname)) {
-    return "segment";
+    return 'segment';
   }
-  return "resource";
+  return 'resource';
 }
 
 function parseDurationFromExtInf(lines: string[]): number {
-  const extInf = lines.find((line) => line.startsWith("#EXTINF:"));
+  const extInf = lines.find((line) => line.startsWith('#EXTINF:'));
   if (!extInf) return 0;
-  const value = Number.parseFloat(
-    extInf.slice("#EXTINF:".length).split(",")[0],
-  );
+  const value = Number.parseFloat(extInf.slice('#EXTINF:'.length).split(',')[0]);
   return Number.isFinite(value) && value > 0 ? value : 0;
 }
 
 function parseAttributeList(line: string): Record<string, string> {
-  const separator = line.indexOf(":");
+  const separator = line.indexOf(':');
   if (separator < 0) return {};
 
   const input = line.slice(separator + 1);
@@ -232,7 +327,7 @@ function replaceUriAttribute(
   const absoluteUrl = resolveUrl(originalUrl, rawUri);
   if (isLikelyAdUrl(absoluteUrl)) return { blocked: true };
 
-  const kind = classifyUri(absoluteUrl, line.startsWith("#EXT-X-PART:"));
+  const kind = classifyUri(absoluteUrl, line.startsWith('#EXT-X-PART:'));
   const rewritten = rewriteUri(absoluteUrl, kind);
   return {
     line: line.replace(match[0], `URI="${rewritten}"`),
@@ -244,17 +339,13 @@ export function isLikelyAdUrl(value: string): boolean {
   try {
     const url = new URL(value);
     const hostname = url.hostname.toLowerCase();
-    const hostLabels = hostname.split(".");
+    const hostLabels = hostname.split('.');
     const hasAdHost =
-      AD_HOST_SUFFIXES.some(
-        (suffix) => hostname === suffix || hostname.endsWith(`.${suffix}`),
-      ) ||
+      AD_HOST_SUFFIXES.some((suffix) => hostname === suffix || hostname.endsWith(`.${suffix}`)) ||
       AD_HOST_TOKENS.some((token) =>
         hostLabels.some(
           (label) =>
-            label === token ||
-            label.startsWith(`${token}-`) ||
-            label.endsWith(`-${token}`),
+            label === token || label.startsWith(`${token}-`) || label.endsWith(`-${token}`),
         ),
       );
     if (hasAdHost) return true;
@@ -269,19 +360,10 @@ export function isLikelyAdUrl(value: string): boolean {
  * has an explicit ad URL. A short discontinuity is common for codec/source
  * changes and must never be used as ad evidence on its own.
  */
-export function detectExplicitHlsAdRanges(
-  fragments: HlsFragmentLike[],
-): HlsDetectedAdRange[] {
+export function detectExplicitHlsAdRanges(fragments: HlsFragmentLike[]): HlsDetectedAdRange[] {
   if (!fragments.length) return [];
 
-  type Block = {
-    cc: number;
-    start: number;
-    end: number;
-    hasAdUrl: boolean;
-  };
-  const blocks: Block[] = [];
-  let current: Block | null = null;
+  const ranges: HlsDetectedAdRange[] = [];
 
   for (const fragment of fragments) {
     if (
@@ -291,47 +373,40 @@ export function detectExplicitHlsAdRanges(
     ) {
       continue;
     }
-    const cc = fragment.cc ?? 0;
+    if (!isLikelyAdUrl(fragment.url || '')) continue;
     const end = fragment.start + fragment.duration;
-    const hasAdUrl = isLikelyAdUrl(fragment.url || "");
-    if (!current || current.cc !== cc) {
-      if (current) blocks.push(current);
-      current = { cc, start: fragment.start, end, hasAdUrl };
+    const previous = ranges.at(-1);
+    if (previous && fragment.start <= previous.end + 0.1) {
+      previous.end = Math.max(previous.end, end);
+      previous.duration = previous.end - previous.start;
       continue;
     }
-    current.end = Math.max(current.end, end);
-    current.hasAdUrl ||= hasAdUrl;
+    ranges.push({
+      start: fragment.start,
+      end,
+      duration: fragment.duration,
+      skippable: true,
+    });
   }
-  if (current) blocks.push(current);
 
-  return blocks.flatMap((block) => {
-    const duration = block.end - block.start;
-    // Guard against a bad manifest turning a marker into a movie-length seek.
-    if (!block.hasAdUrl || duration <= 0 || duration > 180) return [];
-    return [{
-      start: block.start,
-      end: block.end,
-      duration,
-      skippable: true as const,
-    }];
-  });
+  return ranges.filter((range) => range.duration > 0 && range.duration <= 180);
 }
 
 function isClientSideInterstitial(attributes: Record<string, string>): boolean {
   return Boolean(
-    attributes["X-ASSET-URI"] ||
-    attributes["X-ASSET-LIST"] ||
-    attributes.CLASS?.toLowerCase().includes("com.apple.hls.interstitial"),
+    attributes['X-ASSET-URI'] ||
+    attributes['X-ASSET-LIST'] ||
+    attributes.CLASS?.toLowerCase().includes('com.apple.hls.interstitial'),
   );
 }
 
 function isAdDateRange(attributes: Record<string, string>): boolean {
-  const markerText = `${attributes.ID || ""} ${attributes.CLASS || ""}`;
+  const markerText = `${attributes.ID || ''} ${attributes.CLASS || ''}`;
   return Boolean(
-    attributes["SCTE35-OUT"] ||
-    attributes["SCTE35-IN"] ||
-    attributes["X-ASSET-URI"] ||
-    attributes["X-ASSET-LIST"] ||
+    attributes['SCTE35-OUT'] ||
+    attributes['SCTE35-IN'] ||
+    attributes['X-ASSET-URI'] ||
+    attributes['X-ASSET-LIST'] ||
     AD_MARKER_PATTERN.test(markerText),
   );
 }
@@ -351,7 +426,7 @@ export function filterHlsManifest(
   };
   const output: string[] = [];
   const pendingSegmentTags: string[] = [];
-  const lines = content.replace(/\r\n/g, "\n").split("\n");
+  const lines = content.replace(/\r\n/g, '\n').split('\n');
   let cueAdBreak = false;
   let cueAdSecondsRemoved = 0;
   let timedAdSecondsRemaining = 0;
@@ -375,8 +450,8 @@ export function filterHlsManifest(
       removedSinceLastMedia = false;
       return;
     }
-    if (output[output.length - 1] !== "#EXT-X-DISCONTINUITY") {
-      output.push("#EXT-X-DISCONTINUITY");
+    if (output[output.length - 1] !== '#EXT-X-DISCONTINUITY') {
+      output.push('#EXT-X-DISCONTINUITY');
     }
     removedSinceLastMedia = false;
   };
@@ -390,70 +465,67 @@ export function filterHlsManifest(
     const line = rawLine.trim();
 
     if (!line) {
-      if (pendingSegmentTags.length === 0) output.push("");
+      if (pendingSegmentTags.length === 0) output.push('');
       continue;
     }
 
-    if (line.startsWith("#EXT-X-CUE-OUT-CONT")) {
+    if (line.startsWith('#EXT-X-CUE-OUT-CONT')) {
       cueAdBreak = true;
       stats.removedTags++;
-      rememberReason(stats, "cue-out");
+      rememberReason(stats, 'cue-out');
       continue;
     }
 
-    if (line.startsWith("#EXT-X-CUE-OUT")) {
+    if (line.startsWith('#EXT-X-CUE-OUT')) {
       cueAdBreak = true;
       cueAdSecondsRemoved = 0;
       stats.detectedBreaks++;
       stats.removedTags++;
-      rememberReason(stats, "cue-out");
+      rememberReason(stats, 'cue-out');
       continue;
     }
 
-    if (line.startsWith("#EXT-X-CUE-IN")) {
+    if (line.startsWith('#EXT-X-CUE-IN')) {
       cueAdBreak = false;
       cueAdSecondsRemoved = 0;
       timedAdSecondsRemaining = 0;
       stats.removedTags++;
-      rememberReason(stats, "cue-in");
+      rememberReason(stats, 'cue-in');
       continue;
     }
 
-    if (line.startsWith("#EXT-X-DATERANGE:")) {
+    if (line.startsWith('#EXT-X-DATERANGE:')) {
       const attributes = parseAttributeList(line);
       if (isAdDateRange(attributes)) {
         stats.detectedBreaks++;
         stats.removedTags++;
-        rememberReason(stats, "daterange");
+        rememberReason(stats, 'daterange');
         if (!isClientSideInterstitial(attributes)) {
           const duration = Number.parseFloat(
-            attributes.DURATION || attributes["PLANNED-DURATION"] || "0",
+            attributes.DURATION || attributes['PLANNED-DURATION'] || '0',
           );
           if (Number.isFinite(duration) && duration > 0 && duration <= 180) {
-            timedAdSecondsRemaining = Math.max(
-              timedAdSecondsRemaining,
-              duration,
-            );
-          } else if (attributes["SCTE35-OUT"]) {
+            timedAdSecondsRemaining = Math.max(timedAdSecondsRemaining, duration);
+          } else if (attributes['SCTE35-OUT']) {
             cueAdBreak = true;
           }
         }
-        if (attributes["SCTE35-IN"]) cueAdBreak = false;
+        if (attributes['SCTE35-IN']) cueAdBreak = false;
         continue;
       }
     }
 
     if (
-      line.startsWith("#EXT-OATCLS-SCTE35") ||
-      line.startsWith("#EXT-X-SCTE35") ||
-      line.startsWith("#EXT-X-SPLICEPOINT-SCTE35")
+      line.startsWith('#EXT-OATCLS-SCTE35') ||
+      line.startsWith('#EXT-X-SCTE35') ||
+      line.startsWith('#EXT-X-SPLICEPOINT-SCTE35')
     ) {
       stats.removedTags++;
-      rememberReason(stats, "scte35");
+      rememberReason(stats, 'scte35');
       continue;
     }
 
-    if (line === "#EXT-X-DISCONTINUITY") {
+    if (line === '#EXT-X-DISCONTINUITY') {
       if (cueAdBreak || timedAdSecondsRemaining > 0 || removedSinceLastMedia) {
         stats.removedTags++;
         removedSinceLastMedia = true;
@@ -469,12 +541,12 @@ export function filterHlsManifest(
       continue;
     }
 
-    if (line.startsWith("#") && /URI=/i.test(line)) {
+    if (line.startsWith('#') && /URI=/i.test(line)) {
       const rewritten = replaceUriAttribute(line, originalUrl, rewriteUri);
       if (rewritten.blocked || cueAdBreak || timedAdSecondsRemaining > 0) {
         stats.removedTags++;
         stats.removedUris += rewritten.blocked ? 1 : 0;
-        if (rewritten.blocked) rememberReason(stats, "uri");
+        if (rewritten.blocked) rememberReason(stats, 'uri');
         continue;
       }
       flushPendingTags();
@@ -482,23 +554,19 @@ export function filterHlsManifest(
       continue;
     }
 
-    if (line.startsWith("#")) {
+    if (line.startsWith('#')) {
       flushPendingTags();
       output.push(line);
       continue;
     }
 
     const absoluteUrl = resolveUrl(originalUrl, line);
-    const hasExtInf = pendingSegmentTags.some((tag) =>
-      tag.startsWith("#EXTINF:"),
-    );
+    const hasExtInf = pendingSegmentTags.some((tag) => tag.startsWith('#EXTINF:'));
     const uriKind = classifyUri(absoluteUrl, hasExtInf);
     const duration = parseDurationFromExtInf(pendingSegmentTags);
     const blockedByUrl = isLikelyAdUrl(absoluteUrl);
     let blockedByMarker =
-      uriKind === "segment" &&
-      duration > 0 &&
-      (cueAdBreak || timedAdSecondsRemaining > 0);
+      uriKind === 'segment' && duration > 0 && (cueAdBreak || timedAdSecondsRemaining > 0);
     // A malformed CUE-OUT without CUE-IN must never remove the remaining
     // movie and make the player jump to its end.
     if (cueAdBreak && cueAdSecondsRemoved + duration > 180) {
@@ -508,24 +576,21 @@ export function filterHlsManifest(
     }
 
     if (blockedByUrl || blockedByMarker) {
-      if (uriKind === "segment") recordAdMarker(duration);
+      if (uriKind === 'segment') recordAdMarker(duration);
       pendingSegmentTags.length = 0;
-      stats.removedSegments += uriKind === "segment" ? 1 : 0;
+      stats.removedSegments += uriKind === 'segment' ? 1 : 0;
       stats.removedUris++;
-      removedSinceLastMedia = uriKind === "segment" || removedSinceLastMedia;
-      if (blockedByUrl) rememberReason(stats, "uri");
-      if (blockedByMarker) rememberReason(stats, "marker");
+      removedSinceLastMedia = uriKind === 'segment' || removedSinceLastMedia;
+      if (blockedByUrl) rememberReason(stats, 'uri');
+      if (blockedByMarker) rememberReason(stats, 'marker');
       if (blockedByMarker && cueAdBreak) cueAdSecondsRemoved += duration;
       if (timedAdSecondsRemaining > 0) {
-        timedAdSecondsRemaining = Math.max(
-          0,
-          timedAdSecondsRemaining - duration,
-        );
+        timedAdSecondsRemaining = Math.max(0, timedAdSecondsRemaining - duration);
       }
       continue;
     }
 
-    if (uriKind === "segment") {
+    if (uriKind === 'segment') {
       addBoundaryIfNeeded();
       keptMediaSegments++;
       playableTimelineSeconds += duration;
@@ -535,5 +600,5 @@ export function filterHlsManifest(
   }
 
   flushPendingTags();
-  return { manifest: output.join("\n"), stats };
+  return { manifest: output.join('\n'), stats };
 }

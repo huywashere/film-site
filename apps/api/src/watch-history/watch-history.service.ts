@@ -43,6 +43,8 @@ export class WatchHistoryService {
         watchedAt: new Date(),
       },
       update: {
+        movieTitle: dto.movieTitle,
+        movieThumb: dto.movieThumb,
         progress: dto.progress,
         duration: dto.duration,
         serverName: dto.serverName,
@@ -52,20 +54,23 @@ export class WatchHistoryService {
   }
 
   /** Paginated history list, newest first */
-  async getHistory(userId: string, page = 1, limit = 20) {
-    const skip = (page - 1) * limit;
+  async getHistory(userId: string, page = 1, limit = 20, cursor?: string) {
+    const useCursor = Boolean(cursor);
+    const skip = useCursor ? undefined : (page - 1) * limit;
     const [items, total] = await Promise.all([
       this.prisma.watchHistory.findMany({
         where: { userId },
-        orderBy: { watchedAt: "desc" },
-        skip,
-        take: limit,
+        orderBy: [{ watchedAt: "desc" }, { id: "desc" }],
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : { skip }),
+        take: limit + 1,
       }),
       this.prisma.watchHistory.count({ where: { userId } }),
     ]);
     const totalPages = Math.ceil(total / limit);
+    const hasMore = items.length > limit;
+    const pageItems = hasMore ? items.slice(0, limit) : items;
     return {
-      items: items.map(({ watchedAt, ...item }) => ({
+      items: pageItems.map(({ watchedAt, ...item }) => ({
         ...item,
         updatedAt: watchedAt,
       })),
@@ -74,6 +79,8 @@ export class WatchHistoryService {
       pages: totalPages,
       totalPages,
       limit,
+      hasMore,
+      nextCursor: hasMore ? pageItems.at(-1)?.id ?? null : null,
     };
   }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -227,11 +228,16 @@ export default function WatchPartyListPage() {
         {/* ── Visual Cinema Banner Hero Card ── */}
         <div className="isolate relative rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 shadow-[0_20px_60px_rgba(0,0,0,0.8)] bg-[#0b0c10] p-6 sm:p-10 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 min-h-[260px] sm:min-h-[300px] md:min-h-[320px] group">
           <div className="absolute inset-0 -z-10 overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/cinema-hall-with-red-seat-wide-white-screen.jpg"
-              alt="Cinema Theater"
-              className="w-full h-full object-cover object-[center_65%] sm:object-[center_60%] scale-110 sm:scale-120 group-hover:scale-125 transition-transform duration-1000 ease-out brightness-[1.05] contrast-[1.08] saturate-[1.2]"
+            <Image
+              src="/images/cinema-hall-with-red-seat-wide-white-screen.webp"
+              alt="Phòng Xem Chung NetPhim"
+              fill
+              priority
+              placeholder="blur"
+              blurDataURL="data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAABQBACdASogABUAPyl8tFOuJ6Uit/qoAcAlCUAYyAPSFKiNKKjydGO6FkeAAP7un2x/P8JAkG3L2Jr9uOgUCoBNczgMfRFcvVztfeDLCn7R7pUdyq9kCPlBcyiccX8GCz4lG1Zf8EKAAA=="
+              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 1200px, 1280px"
+              quality={85}
+              className="object-cover object-[center_65%] sm:object-[center_60%] scale-110 sm:scale-120 group-hover:scale-125 transition-transform duration-1000 ease-out brightness-[1.05] contrast-[1.08] saturate-[1.2] pointer-events-none"
             />
             {/* Directional gradient: deep contrast on left for crisp readability, open on right for cinematic red seats */}
             <div className="absolute inset-0 bg-gradient-to-r from-[#07080b]/95 via-[#07080b]/75 via-45% to-black/20" />

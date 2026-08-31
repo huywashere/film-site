@@ -1,24 +1,23 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef, useMemo } from "react";
-import Link from "next/link";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, FreeMode } from "swiper/modules";
-import { ChevronRight, ChevronLeft, Play, X } from "lucide-react";
-import { watchProgressStorage, WatchProgressEntry } from "@/lib/watch-progress";
-import { useAuthStore } from "@/store/authStore";
-import { useQuery } from "@tanstack/react-query";
-import { watchHistoryApi } from "@/lib/api";
-import { FilmItem, resolveImageUrl } from "./FilmCard";
-import { DashPagination } from "./DashPagination";
-import { cardFont } from "@/lib/fonts";
-import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
-import { useTranslation } from "@/store/langStore";
-import { buildArtworkCandidates } from "@/lib/image-cdn";
-import { formatEpisodeLabel } from "@/lib/player-source-routing";
+import { useState, useEffect, useRef, useMemo } from 'react';
+import Link from 'next/link';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, FreeMode } from 'swiper/modules';
+import { ChevronRight, ChevronLeft, Play, X } from 'lucide-react';
+import { watchProgressStorage, WatchProgressEntry } from '@/lib/watch-progress';
+import { useAuthStore } from '@/store/authStore';
+import { useQuery } from '@tanstack/react-query';
+import { watchHistoryApi } from '@/lib/api';
+import { FilmItem } from './FilmCard';
+import { DashPagination } from './DashPagination';
+import { cardFont } from '@/lib/fonts';
+import { useTranslation } from '@/store/langStore';
+import { formatEpisodeLabel } from '@/lib/player-source-routing';
+import { TmdbArtwork } from './TmdbArtwork';
 
-import "swiper/css";
-import "swiper/css/navigation";
+import 'swiper/css';
+import 'swiper/css/navigation';
 
 interface ContinueWatchingRowProps {
   fallbackFilms?: FilmItem[];
@@ -26,103 +25,61 @@ interface ContinueWatchingRowProps {
 
 function HistoryArtwork({
   item,
+  catalogFilm,
   landscape,
   className,
 }: {
   item: any;
+  catalogFilm?: FilmItem;
   landscape: boolean;
   className: string;
 }) {
-  const primary = landscape
-    ? resolveImageUrl(
-        item.thumb || item.thumb_url,
-        item.poster || item.poster_url,
-      )
-    : resolveImageUrl(
-        item.poster || item.poster_url,
-        item.thumb || item.thumb_url,
-      );
-  const alternate = landscape
-    ? resolveImageUrl(item.poster || item.poster_url)
-    : resolveImageUrl(item.thumb || item.thumb_url);
-  const [candidateIndex, setCandidateIndex] = useState(0);
-  const [needsTmdb, setNeedsTmdb] = useState(!primary);
-  const title = item.title || item.name || "Phim";
+  const title = item.title || item.name || 'Phim';
   const filmForArtwork = useMemo<FilmItem>(
     () => ({
-      slug: item.slug || item.movieId || title,
-      name: title,
-      title,
+      ...catalogFilm,
+      slug: catalogFilm?.slug || item.slug || item.movieId || title,
+      name: catalogFilm?.name || title,
+      title: catalogFilm?.title || title,
       origin_name:
-        item.originName || item.origin_name || item.titleEn || undefined,
-      year: Number(item.year || item.movieYear) || undefined,
-      type: item.type,
-      tmdb: item.tmdb,
+        catalogFilm?.origin_name ||
+        item.originName ||
+        item.origin_name ||
+        item.titleEn ||
+        undefined,
+      year: catalogFilm?.year || Number(item.year || item.movieYear) || undefined,
+      type: catalogFilm?.type || item.type,
+      tmdb: catalogFilm?.tmdb || item.tmdb,
+      // A current catalogue match is authoritative. Stored history artwork can
+      // be stale after a provider merge or an earlier fallback mistake.
+      poster_url:
+        catalogFilm?.poster_url || item.poster || item.poster_url || undefined,
+      thumb_url:
+        catalogFilm?.thumb_url || item.thumb || item.thumb_url || undefined,
     }),
-    [item, title],
+    [catalogFilm, item, title],
   );
-  const { posterUrl: tmdbPosterUrl, backdropUrl: tmdbBackdropUrl } =
-    useTmdbArtwork(filmForArtwork, needsTmdb);
-
-  const candidates = useMemo(() => {
-    const sources: Array<string | null | undefined> = [primary, alternate];
-    if (landscape) {
-      sources.push(tmdbBackdropUrl, tmdbPosterUrl);
-    } else {
-      sources.push(tmdbPosterUrl, tmdbBackdropUrl);
-    }
-    return buildArtworkCandidates(sources, landscape ? "thumbnail" : "card");
-  }, [alternate, landscape, primary, tmdbBackdropUrl, tmdbPosterUrl]);
-
-  const src = candidates[candidateIndex];
-
-  useEffect(() => {
-    setCandidateIndex(0);
-    setNeedsTmdb(!primary);
-  }, [item.slug, landscape, primary]);
-
-  if (!src) {
-    return (
-      <div
-        className={`${className} flex items-center justify-center bg-gradient-to-br from-neutral-800 to-neutral-950 p-2 text-center text-[10px] font-bold text-neutral-400`}
-      >
-        {title}
-      </div>
-    );
-  }
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt=""
-      aria-label={`Ảnh phim ${title}`}
+    <TmdbArtwork
+      film={filmForArtwork}
+      kind={landscape ? 'backdrop' : 'poster'}
+      alt={`Ảnh phim ${title}`}
       className={className}
-      referrerPolicy="no-referrer"
-      loading="lazy"
-      decoding="async"
-      onError={() => {
-        const nextIndex = candidateIndex + 1;
-        if (nextIndex >= candidates.length) setNeedsTmdb(true);
-        setCandidateIndex(nextIndex);
-      }}
     />
   );
 }
 
 function getHistoryProgressDetails(item: any) {
-  const title = item.title || item.name || "Phim đã xem";
+  const title = item.title || item.name || 'Phim đã xem';
 
   // Parse current watched time safely in seconds
-  const currentSec = Math.max(
-    0,
-    Number(item.currentTime ?? item.progress ?? 0) || 0,
-  );
+  const currentSec = Math.max(0, Number(item.currentTime ?? item.progress ?? 0) || 0);
 
   // Parse total duration safely in seconds
   let durationSec = Math.max(0, Number(item.duration ?? 0) || 0);
   if (durationSec <= 100) {
-    if (typeof item.time === "string") {
+    if (typeof item.time === 'string') {
       const match = item.time.match(/(\d+)\s*(?:phút|min|p)/i);
       if (match) {
         durationSec = parseInt(match[1], 10) * 60;
@@ -136,7 +93,7 @@ function getHistoryProgressDetails(item: any) {
 
   // Format watched string e.g. "34p", "7p", "0p", "1g 15p"
   const watchedMins = Math.floor(currentSec / 60);
-  let watchedStr = "";
+  let watchedStr = '';
   if (watchedMins >= 60) {
     const h = Math.floor(watchedMins / 60);
     const m = watchedMins % 60;
@@ -154,24 +111,21 @@ function getHistoryProgressDetails(item: any) {
     durationSec > 0
       ? Math.min(
           100,
-          Math.max(
-            currentSec > 0 ? 3 : 0,
-            Math.round((currentSec / durationSec) * 100),
-          ),
+          Math.max(currentSec > 0 ? 3 : 0, Math.round((currentSec / durationSec) * 100)),
         )
       : 0;
 
   const epLabel = formatEpisodeLabel(item.epName || item.epSlug);
 
   // Quality badge e.g. "HD", "RDẼ", "Vietsub", "L.Tiếng"
-  let qualityBadge = "HD";
-  const langLower = (item.lang || item.quality || "").toLowerCase();
-  if (langLower.includes("lồng tiếng") || langLower.includes("l.tiếng")) {
-    qualityBadge = "L.Tiếng";
-  } else if (langLower.includes("thuyết minh")) {
-    qualityBadge = "Thuyết Minh";
-  } else if (langLower.includes("vietsub") || langLower.includes("sub")) {
-    qualityBadge = "Vietsub";
+  let qualityBadge = 'HD';
+  const langLower = (item.lang || item.quality || '').toLowerCase();
+  if (langLower.includes('lồng tiếng') || langLower.includes('l.tiếng')) {
+    qualityBadge = 'L.Tiếng';
+  } else if (langLower.includes('thuyết minh')) {
+    qualityBadge = 'Thuyết Minh';
+  } else if (langLower.includes('vietsub') || langLower.includes('sub')) {
+    qualityBadge = 'Vietsub';
   } else if (item.quality) {
     qualityBadge = item.quality;
   }
@@ -186,9 +140,7 @@ function getHistoryProgressDetails(item: any) {
   };
 }
 
-export function ContinueWatchingRow({
-  fallbackFilms = [],
-}: ContinueWatchingRowProps) {
+export function ContinueWatchingRow({ fallbackFilms = [] }: ContinueWatchingRowProps) {
   const { user } = useAuthStore();
   const [localEntries, setLocalEntries] = useState<WatchProgressEntry[]>([]);
   const [swiper, setSwiper] = useState<any>(null);
@@ -203,7 +155,7 @@ export function ContinueWatchingRow({
 
   // Fetch logged-in user history from server
   const { data: serverHistoryData } = useQuery({
-    queryKey: ["watch-history-row", user?.id],
+    queryKey: ['watch-history-row', user?.id],
     queryFn: () => watchHistoryApi.getHistory(1, 20).then((r) => r.data),
     enabled: !!user,
   });
@@ -213,30 +165,18 @@ export function ContinueWatchingRow({
     const items = serverHistoryData?.items || [];
     return items.map((item: any) => ({
       slug: item.movieId || item.movieSlug || item.slug,
-      epSlug: item.episode || "1",
-      epName: item.episode ? `Tập ${item.episode}` : "",
-      title: item.movieTitle || item.name || "Phim đã xem",
-      originName: item.originName || item.origin_name || item.titleEn || "",
-      poster:
-        item.poster ||
-        item.moviePoster ||
-        item.poster_url ||
-        item.movieThumb ||
-        item.thumb,
-      thumb:
-        item.movieThumb ||
-        item.thumb ||
-        item.thumb_url ||
-        item.backdrop ||
-        item.poster,
+      epSlug: item.episode || '1',
+      epName: item.episode ? `Tập ${item.episode}` : '',
+      title: item.movieTitle || item.name || 'Phim đã xem',
+      originName: item.originName || item.origin_name || item.titleEn || '',
+      poster: item.poster || item.moviePoster || item.poster_url || item.movieThumb || item.thumb,
+      thumb: item.movieThumb || item.thumb || item.thumb_url || item.backdrop || item.poster,
       year: item.year || item.movieYear,
       lang: item.lang || item.movieLang,
       quality: item.quality || item.movieQuality,
       currentTime: item.progress || 0,
       duration: item.duration || 5400,
-      updatedAt: item.updatedAt
-        ? new Date(item.updatedAt).getTime()
-        : Date.now(),
+      updatedAt: item.updatedAt ? new Date(item.updatedAt).getTime() : Date.now(),
     }));
   }, [serverHistoryData]);
 
@@ -251,18 +191,25 @@ export function ContinueWatchingRow({
     });
   }, [localEntries, serverItems]);
 
+  const catalogBySlug = useMemo(() => {
+    const map = new Map<string, FilmItem>();
+    for (const film of fallbackFilms) {
+      if (film.slug) map.set(film.slug, film);
+      for (const sourceSlug of Object.values(film._sourceSlugs || {})) {
+        if (sourceSlug) map.set(sourceSlug, film);
+      }
+    }
+    return map;
+  }, [fallbackFilms]);
+
   const { t } = useTranslation();
   const hasHistory = historyEntries.length > 0;
-  const sectionTitle = t("home.historyTitle", "Lịch sử xem");
+  const sectionTitle = t('home.historyTitle', 'Lịch sử xem');
 
   if (!hasHistory) return null;
 
   // Remove single local item from watch progress
-  const handleRemoveItem = (
-    e: React.MouseEvent,
-    slug: string,
-    epSlug?: string,
-  ) => {
+  const handleRemoveItem = (e: React.MouseEvent, slug: string, epSlug?: string) => {
     e.preventDefault();
     e.stopPropagation();
     watchProgressStorage.removeEntry(slug, epSlug);
@@ -287,10 +234,13 @@ export function ContinueWatchingRow({
             <Link
               href="/history"
               data-history-action="true"
-              className={`${cardFont.className} inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-white/[0.12] bg-white/[0.08] px-2.5 py-1.5 text-[11px] font-semibold text-white/90 shadow-sm transition-all hover:scale-105 hover:bg-white/[0.16] hover:text-white active:scale-95 sm:px-3 sm:py-1 sm:text-xs`}
+              className="group/link inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap text-xs sm:text-sm font-semibold text-white/80 hover:text-white transition-colors select-none ml-1.5"
             >
-              <span>{t("home.viewAll", "Xem tất cả")}</span>
-              <ChevronRight size={12} strokeWidth={2.5} />
+              <span>{t('home.viewAll', 'Xem tất cả')}</span>
+              <ChevronRight
+                size={14}
+                className="stroke-[2.2] text-white/60 group-hover/link:text-white transition-transform group-hover/link:translate-x-0.5"
+              />
             </Link>
           )}
         </div>
@@ -312,10 +262,7 @@ export function ContinueWatchingRow({
               nextEl: nextRef.current,
             }}
             onBeforeInit={(swiper: any) => {
-              if (
-                swiper.params.navigation &&
-                typeof swiper.params.navigation !== "boolean"
-              ) {
+              if (swiper.params.navigation && typeof swiper.params.navigation !== 'boolean') {
                 swiper.params.navigation.prevEl = prevRef.current;
                 swiper.params.navigation.nextEl = nextRef.current;
               }
@@ -335,30 +282,21 @@ export function ContinueWatchingRow({
             className="w-full !pb-3 !pt-1 !pl-0.5"
           >
             {historyEntries.map((item: any, idx: number) => {
-              const {
-                title,
-                watchedStr,
-                totalStr,
-                percent,
-                epLabel,
-                qualityBadge,
-              } = getHistoryProgressDetails(item);
+              const { title, watchedStr, totalStr, percent, epLabel, qualityBadge } =
+                getHistoryProgressDetails(item);
 
               return (
-                <SwiperSlide
-                  key={`continue-${item.slug}-${item.epSlug || ""}-${idx}`}
-                >
+                <SwiperSlide key={`continue-${item.slug}-${item.epSlug || ''}-${idx}`}>
                   <div className="w-full shrink-0">
                     <Link
-                      href={`/watch/${item.slug}${
-                        item.epSlug ? `?ep=${item.epSlug}` : ""
-                      }`}
+                      href={`/watch/${item.slug}${item.epSlug ? `?ep=${item.epSlug}` : ''}`}
                       className="group/card block relative select-none cursor-pointer"
                     >
                       {/* 16:9 Landscape Card Image */}
                       <div className="aspect-video w-full rounded-xl sm:rounded-2xl overflow-hidden border border-white/10 group-hover/card:border-white/40 group-hover/card:scale-[1.02] shadow-xl bg-neutral-900 transition-all duration-300 relative">
                         <HistoryArtwork
                           item={item}
+                          catalogFilm={catalogBySlug.get(item.slug)}
                           landscape
                           className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
                         />
@@ -379,19 +317,13 @@ export function ContinueWatchingRow({
                         {/* Play Button Icon on Hover */}
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/30 backdrop-blur-[1px]">
                           <div className="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform scale-75 group-hover/card:scale-100 transition-transform">
-                            <Play
-                              size={16}
-                              fill="currentColor"
-                              className="ml-0.5"
-                            />
+                            <Play size={16} fill="currentColor" className="ml-0.5" />
                           </div>
                         </div>
 
                         {/* Remove Button on hover */}
                         <button
-                          onClick={(e) =>
-                            handleRemoveItem(e, item.slug, item.epSlug)
-                          }
+                          onClick={(e) => handleRemoveItem(e, item.slug, item.epSlug)}
                           title="Xóa khỏi lịch sử xem"
                           aria-label="Xóa khỏi lịch sử xem"
                           className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 hover:bg-red-600 text-white/70 hover:text-white transition-all opacity-0 group-hover/card:opacity-100 z-30 cursor-pointer shadow-md"

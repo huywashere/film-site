@@ -3,7 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const ALLOWED_ROOTS = new Set(["movies", "catalog", "search", "top10"]);
+const ALLOWED_ROOTS = new Set([
+  "movies",
+  "catalog",
+  "home-feed",
+  "search",
+  "top10",
+]);
 
 function gatewayOrigin() {
   // Do not silently assume a local Go process exists. On local/Vercel builds

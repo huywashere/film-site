@@ -131,6 +131,8 @@ export class UsersService {
         },
       },
       update: {
+        movieTitle: dto.movieTitle,
+        movieThumb: dto.movieThumb,
         progress: dto.progress,
         duration: dto.duration,
         serverName: dto.serverName,
@@ -156,6 +158,23 @@ export class UsersService {
       include: { movie: true },
       orderBy: { addedAt: "desc" },
     });
+  }
+
+  async getWatchlistPage(userId: string, limit = 20, cursor?: string) {
+    const items = await this.prisma.watchlist.findMany({
+      where: { userId },
+      include: { movie: true },
+      orderBy: [{ addedAt: "desc" }, { id: "desc" }],
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      take: limit + 1,
+    });
+    const hasMore = items.length > limit;
+    const pageItems = hasMore ? items.slice(0, limit) : items;
+    return {
+      items: pageItems,
+      hasMore,
+      nextCursor: hasMore ? pageItems.at(-1)?.id ?? null : null,
+    };
   }
 
   async addToWatchlist(

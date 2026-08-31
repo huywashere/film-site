@@ -2,6 +2,9 @@ package catalog
 
 import (
 	"context"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -136,9 +139,24 @@ func (s *Service) Register(router *gin.Engine, middleware ...gin.HandlerFunc) {
 	group.Use(middleware...)
 	group.GET("/movies/:slug/bootstrap", s.bootstrapHandler)
 	group.GET("/catalog", s.catalogHandler)
+	group.GET("/home-feed", s.homeFeedHandler)
 	group.GET("/search", s.searchHandler)
 	group.GET("/top10", s.top10Handler)
 	group.GET("/catalog/providers/health", s.healthHandler)
+	group.GET("/search/status", s.searchStatusHandler)
+	group.POST("/search/documents/delete", s.deleteSearchDocumentsHandler)
+}
+
+func (s *Service) homeFeedHandler(c *gin.Context) {
+	startedAt := time.Now()
+	limit := boundedQueryInt(c, "limit", 24, 8, 64)
+	payload, cacheStatus, err := s.HomeFeed(c.Request.Context(), limit)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": "home feed unavailable"})
+		return
+	}
+	c.Header("Server-Timing", fmt.Sprintf("homefeed;dur=%.1f;desc=\"%s\"", float64(time.Since(startedAt).Microseconds())/1000, cacheStatus))
+	writeJSON(c, payload, cacheStatus, int(s.cfg.CatalogHomeTTL.Seconds()))
 }
 
 func (s *Service) bootstrapHandler(c *gin.Context) {
@@ -213,6 +231,37 @@ func (s *Service) healthHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"providers": s.client.health(), "search": search})
 }
 
+func (s *Service) searchStatusHandler(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), s.cfg.MeiliTimeout)
+	defer cancel()
+	if s.search == nil {
+		c.JSON(http.StatusOK, meiliStatus{Enabled: false})
+		return
+	}
+	c.JSON(http.StatusOK, s.search.Status(ctx))
+}
+
+func (s *Service) deleteSearchDocumentsHandler(c *gin.Context) {
+	if s.search == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "meilisearch is disabled"})
+		return
+	}
+	provided := c.GetHeader("X-Internal-Token")
+	if len(s.cfg.InternalToken) < 32 || subtle.ConstantTimeCompare([]byte(provided), []byte(s.cfg.InternalToken)) != 1 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	var body struct {
+		CanonicalKeys []string `json:"canonicalKeys"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil || len(body.CanonicalKeys) == 0 || len(body.CanonicalKeys) > 500 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "canonicalKeys must contain 1..500 items"})
+		return
+	}
+	s.search.DeleteCanonical(body.CanonicalKeys)
+	c.JSON(http.StatusAccepted, gin.H{"queued": len(body.CanonicalKeys)})
+}
+
 func (s *Service) Bootstrap(ctx context.Context, slug string) (map[string]any, string, error) {
 	cacheKey := "bootstrap:" + slug
 	if payload, ok := s.readMapCache(ctx, cacheKey); ok {
@@ -254,6 +303,20 @@ func (s *Service) Bootstrap(ctx context.Context, slug string) (map[string]any, s
 		movie["_sources"] = orderedSources
 		movie["_sourceSlugs"] = sourceSlugs
 		movie["_duplicateCount"] = len(orderedSources)
+		// Fetch recommendations concurrently — non-blocking, fails silently.
+		var recommendations []any
+		if s.cfg.CoreAPIURL != "" {
+			recURL := s.cfg.CoreAPIURL + "/movies/trending?limit=12"
+			recCtx, recCancel := context.WithTimeout(ctx, s.cfg.CatalogTimeout)
+			recList, recErr := s.fetchJSONArray(recCtx, recURL)
+			recCancel()
+			if recErr == nil && len(recList) > 0 {
+				recommendations = recList
+			}
+		}
+		if recommendations == nil {
+			recommendations = []any{}
+		}
 		result := map[string]any{
 			"status":          true,
 			"movie":           movie,
@@ -263,7 +326,7 @@ func (s *Service) Bootstrap(ctx context.Context, slug string) (map[string]any, s
 			"_sourceSlugs":    sourceSlugs,
 			"_primarySource":  primarySource,
 			"_providerCount":  len(orderedSources),
-			"recommendations": []any{},
+			"recommendations": recommendations,
 		}
 		value, marshalErr := json.Marshal(result)
 		if marshalErr == nil {
@@ -337,6 +400,114 @@ func (s *Service) Catalog(ctx context.Context, kind, value string, page, limit i
 
 func (s *Service) Search(ctx context.Context, query string, page, limit int) (map[string]any, string, error) {
 	return s.SearchFiltered(ctx, query, page, limit, SearchFilters{})
+}
+
+// HomeFeed collapses the homepage's critical catalogue fan-out into one
+// cacheable response. A longer-lived stale snapshot is returned immediately
+// while one coalesced background refresh rebuilds the fresh snapshot.
+func (s *Service) HomeFeed(ctx context.Context, limit int) (map[string]any, string, error) {
+	cacheKey := fmt.Sprintf("home-feed:%d", limit)
+	if payload, ok := s.readMapCache(ctx, cacheKey); ok {
+		return payload, "HIT", nil
+	}
+	if payload, ok := s.readMapCache(ctx, cacheKey+":stale"); ok {
+		go s.refreshHomeFeed(limit)
+		return payload, "STALE", nil
+	}
+
+	encoded, err, shared := s.flights.do(ctx, cacheKey, func() ([]byte, error) {
+		return s.buildAndCacheHomeFeed(ctx, cacheKey, limit)
+	})
+	return decodeMapResult(encoded, err, shared)
+}
+
+func (s *Service) refreshHomeFeed(limit int) {
+	cacheKey := fmt.Sprintf("home-feed:%d", limit)
+	ctx, cancel := context.WithTimeout(context.Background(), maxDuration(12*time.Second, s.cfg.CatalogTimeout*3))
+	defer cancel()
+	_, _, _ = s.flights.do(ctx, cacheKey, func() ([]byte, error) {
+		return s.buildAndCacheHomeFeed(ctx, cacheKey, limit)
+	})
+}
+
+func (s *Service) buildAndCacheHomeFeed(ctx context.Context, cacheKey string, limit int) ([]byte, error) {
+	type sectionResult struct {
+		key   string
+		items []any
+		err   error
+	}
+	requests := []struct {
+		key  string
+		kind string
+	}{
+		{key: "latest", kind: "latest"},
+		{key: "series", kind: "series"},
+		{key: "single", kind: "single"},
+		{key: "anime", kind: "anime"},
+	}
+	results := make(chan sectionResult, len(requests))
+	for _, request := range requests {
+		request := request
+		go func() {
+			payload, _, err := s.Catalog(ctx, request.kind, "", 1, limit)
+			if err != nil {
+				results <- sectionResult{key: request.key, err: err}
+				return
+			}
+			results <- sectionResult{key: request.key, items: mapsToAny(extractItems(payload))}
+		}()
+	}
+
+	sections := make(map[string]any, len(requests))
+	succeeded := 0
+	for range requests {
+		result := <-results
+		if result.err != nil || len(result.items) == 0 {
+			sections[result.key] = []any{}
+			continue
+		}
+		sections[result.key] = result.items
+		succeeded++
+	}
+
+	top10, _, top10Err := s.Top10(ctx, minInt(limit, 30))
+	if top10Err != nil {
+		top10 = []any{}
+	} else if len(top10) > 0 {
+		succeeded++
+	}
+	if succeeded == 0 {
+		return nil, errors.New("home feed contains no usable sections")
+	}
+
+	result := map[string]any{
+		"status":      true,
+		"generatedAt": time.Now().UTC().Format(time.RFC3339),
+		"sections":    sections,
+		"top10":       top10,
+	}
+	encoded, err := json.Marshal(result)
+	if err != nil {
+		return nil, err
+	}
+	freshTTL := s.cfg.CatalogHomeTTL
+	if freshTTL <= 0 {
+		freshTTL = 5 * time.Minute
+	}
+	staleTTL := s.cfg.CatalogHomeStale
+	if staleTTL <= freshTTL {
+		staleTTL = freshTTL * 6
+	}
+	s.cache.Set(context.Background(), cacheKey, encoded, freshTTL)
+	s.cache.Set(context.Background(), cacheKey+":stale", encoded, staleTTL)
+	return encoded, nil
+}
+
+func maxDuration(left, right time.Duration) time.Duration {
+	if left > right {
+		return left
+	}
+	return right
 }
 
 func (s *Service) SearchFiltered(ctx context.Context, query string, page, limit int, filters SearchFilters) (map[string]any, string, error) {
@@ -455,28 +626,43 @@ func (s *Service) runSearchWarmup() {
 		return
 	case <-timer.C:
 	}
+	// Fast initial coverage makes search useful shortly after startup without
+	// competing with readiness and homepage traffic.
+	s.syncSearchIndex(s.searchCtx, s.cfg.MeiliWarmPages, 0)
 	for {
-		s.warmSearchIndex(s.searchCtx)
 		timer.Reset(s.cfg.MeiliSyncInterval)
 		select {
 		case <-s.searchCtx.Done():
 			return
 		case <-timer.C:
 		}
+		// Deep sync expands the disposable index gradually. Pacing prevents a
+		// provider request storm and gives the bounded writer time to flush.
+		s.syncSearchIndex(s.searchCtx, s.cfg.MeiliSyncPages, s.cfg.MeiliSyncPause)
 	}
 }
 
-func (s *Service) warmSearchIndex(ctx context.Context) {
+func (s *Service) syncSearchIndex(ctx context.Context, pages int, pause time.Duration) {
 	for _, kind := range []string{"latest", "series", "single", "anime"} {
-		for page := 1; page <= s.cfg.MeiliWarmPages; page++ {
+		for page := 1; page <= pages; page++ {
 			if ctx.Err() != nil {
 				return
 			}
-			payload, _, err := s.Catalog(ctx, kind, "", page, 64)
+			_, _, err := s.Catalog(ctx, kind, "", page, 64)
 			if err != nil {
 				break
 			}
-			s.enqueueSearchItems(extractItems(payload))
+			// Catalog already enqueues each merged item. Enqueuing here again used
+			// to halve effective queue capacity and produced duplicate writes.
+			if pause > 0 {
+				timer := time.NewTimer(pause)
+				select {
+				case <-ctx.Done():
+					timer.Stop()
+					return
+				case <-timer.C:
+				}
+			}
 		}
 	}
 }
@@ -608,7 +794,7 @@ func (s *Service) collectProviders(parent context.Context, operation func(contex
 			if result.err == nil && result.payload != nil {
 				collected[result.source] = result.payload
 				if timer == nil {
-					timer = time.NewTimer(650 * time.Millisecond)
+					timer = time.NewTimer(s.cfg.CatalogEnrichmentWindow)
 					enrichment = timer.C
 				}
 			}
@@ -1020,7 +1206,20 @@ func decodeMapResult(encoded []byte, err error, shared bool) (map[string]any, st
 func writeJSON(c *gin.Context, payload any, cacheStatus string, ttl int) {
 	c.Header("X-NetPhim-Catalog-Cache", cacheStatus)
 	c.Header("Cache-Control", fmt.Sprintf("public, max-age=30, s-maxage=%d, stale-while-revalidate=%d", ttl, maxInt(ttl*4, 300)))
-	c.JSON(http.StatusOK, payload)
+	// Compute ETag from the JSON body for conditional request support.
+	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		c.JSON(http.StatusOK, payload)
+		return
+	}
+	sum := sha256.Sum256(bodyBytes)
+	etag := `"` + hex.EncodeToString(sum[:8]) + `"`
+	c.Header("ETag", etag)
+	if c.GetHeader("If-None-Match") == etag {
+		c.Status(http.StatusNotModified)
+		return
+	}
+	c.Data(http.StatusOK, "application/json; charset=utf-8", bodyBytes)
 }
 
 func cleanSlug(value string) string {

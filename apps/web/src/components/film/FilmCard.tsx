@@ -1,25 +1,13 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import Image from "next/image";
-import { useState, useEffect, memo } from "react";
-import { Bookmark, Play, Clapperboard, Star } from "lucide-react";
-import { watchlistApi } from "@/lib/api";
-import { useAuthStore } from "@/store/authStore";
-import { useToast } from "@/providers/ToastProvider";
-import { useQueryClient } from "@tanstack/react-query";
-import { cn } from "@/lib/utils";
-import type { MovieSource } from "@/lib/movie-normalizer";
-import { guestDataStorage } from "@/lib/user-data";
-import { cardFont } from "@/lib/fonts";
-import { normalizeMovieArtworkUrl } from "@/lib/movie-image-url";
-import {
-  isPreOptimizedImageUrl,
-  localImageProxyUrl,
-  unwrapImageUrl,
-  wsrvImageUrl,
-} from "@/lib/image-cdn";
-import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
+import Link from 'next/link';
+import { memo } from 'react';
+import { Play } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { MovieSource } from '@/lib/movie-normalizer';
+import { cardFont } from '@/lib/fonts';
+import { normalizeMovieArtworkUrl } from '@/lib/movie-image-url';
+import { TmdbArtwork } from '@/components/film/TmdbArtwork';
 
 export interface FilmItem {
   _id?: string;
@@ -62,7 +50,7 @@ interface FilmCardProps {
   film: FilmItem;
   width?: number;
   showActions?: boolean;
-  variant?: "standard" | "landscape";
+  variant?: 'standard' | 'landscape';
   hideDetails?: boolean;
   priority?: boolean;
   preferHighQuality?: boolean;
@@ -73,13 +61,10 @@ function normalizeUpstreamImageUrl(url?: unknown): string | null {
   return normalizeMovieArtworkUrl(url);
 }
 
-export function resolveImageUrl(
-  url?: unknown,
-  fallbackUrl?: unknown,
-): string | null {
+export function resolveImageUrl(url?: unknown, fallbackUrl?: unknown): string | null {
   const resolved = normalizeUpstreamImageUrl(url);
   if (!resolved) return null;
-  if (resolved.startsWith("/api/image-proxy")) return resolved;
+  if (resolved.startsWith('/api/image-proxy')) return resolved;
 
   // DIRECT CDN FAST-PATH OPTIMIZATION:
   const isDirectCdnHost =
@@ -92,304 +77,44 @@ export function resolveImageUrl(
 
   const fallback = normalizeUpstreamImageUrl(fallbackUrl);
   const fallbackQuery =
-    fallback &&
-    fallback !== resolved &&
-    !fallback.startsWith("/api/image-proxy")
+    fallback && fallback !== resolved && !fallback.startsWith('/api/image-proxy')
       ? `&fallback=${encodeURIComponent(fallback)}`
-      : "";
+      : '';
   return `/api/image-proxy?url=${encodeURIComponent(resolved)}${fallbackQuery}`;
 }
 
 function FilmCardComponent({
   film,
   width,
-  showActions = true,
-  variant = "standard",
+  variant = 'standard',
   hideDetails = false,
   priority = false,
-  preferHighQuality = false,
 }: FilmCardProps) {
-  const { user } = useAuthStore();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [saved, setSaved] = useState(false);
-  const [watchlistPending, setWatchlistPending] = useState(false);
-
   const slug = film.slug;
-  const title = film.name || film.title || "Chưa có tên";
-  const initialPosterUrl =
-    variant === "landscape"
-      ? resolveImageUrl(film.thumb_url, film.poster_url) ||
-        resolveImageUrl(film.poster_url)
-      : resolveImageUrl(film.poster_url, film.thumb_url) ||
-        resolveImageUrl(film.thumb_url);
-
-  // Catalog cards already include provider artwork. Looking every poster up on
-  // TMDB created 6-8 metadata requests whenever a route mounted, even when the
-  // provider image was perfectly usable. Resolve TMDB only as a true fallback.
-  const [requestTmdbArtwork, setRequestTmdbArtwork] = useState(
-    preferHighQuality && !initialPosterUrl,
-  );
-  const { posterUrl: tmdbPosterUrl } = useTmdbArtwork(film, requestTmdbArtwork);
-
-  const [imageSrc, setImageSrc] = useState<string | null>(initialPosterUrl);
-
-  useEffect(() => {
-    setRequestTmdbArtwork(preferHighQuality && !initialPosterUrl);
-  }, [initialPosterUrl, preferHighQuality, slug]);
-
-  useEffect(() => {
-    const url =
-      variant === "landscape"
-        ? resolveImageUrl(film.thumb_url, film.poster_url) ||
-          resolveImageUrl(film.poster_url)
-        : resolveImageUrl(film.poster_url, film.thumb_url) ||
-          resolveImageUrl(film.thumb_url);
-
-    setImageSrc(
-      preferHighQuality && variant === "standard" && tmdbPosterUrl
-        ? tmdbPosterUrl
-        : url,
-    );
-  }, [
-    film.poster_url,
-    film.thumb_url,
-    preferHighQuality,
-    tmdbPosterUrl,
-    variant,
-  ]);
-
-  useEffect(() => {
-    let active = true;
-    if (!user) {
-      setSaved(guestDataStorage.isWatchlisted(slug));
-      return () => {
-        active = false;
-      };
-    }
-
-    const cachedWatchlist = queryClient.getQueryData<any>(["watchlist"]);
-    if (cachedWatchlist) {
-      const items =
-        cachedWatchlist.items ||
-        (Array.isArray(cachedWatchlist) ? cachedWatchlist : []);
-      const isSavedInCache = items.some(
-        (item: any) => item.movieId === slug || item.slug === slug,
-      );
-      setSaved(isSavedInCache);
-      return () => {
-        active = false;
-      };
-    }
-
-    void watchlistApi
-      .check(slug)
-      .then((response) => {
-        if (active) setSaved(Boolean(response.data?.inWatchlist));
-      })
-      .catch(() => {
-        if (active) setSaved(guestDataStorage.isWatchlisted(slug));
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [slug, user, queryClient]);
-
-  useEffect(() => {
-    const syncSavedState = (event: Event) => {
-      const detail = (
-        event as CustomEvent<{
-          movieId?: string;
-          action?: "add" | "remove";
-        }>
-      ).detail;
-      if (detail?.movieId !== slug) return;
-      setSaved(detail.action === "add");
-    };
-    window.addEventListener("netphim_watchlist_changed", syncSavedState);
-    return () =>
-      window.removeEventListener("netphim_watchlist_changed", syncSavedState);
-  }, [slug]);
-
-  const toggleWatchlist = async () => {
-    if (watchlistPending) return;
-    const previous = saved;
-    const next = !previous;
-    const movieData = {
-      title,
-      titleEn: film.origin_name,
-      posterUrl: film.poster_url,
-      thumbUrl: film.thumb_url,
-      type: film.type,
-      year: film.year,
-    };
-
-    setSaved(next);
-    setWatchlistPending(true);
-    try {
-      if (!user) {
-        if (next) guestDataStorage.addWatchlist(slug, movieData);
-        else guestDataStorage.removeWatchlist(slug);
-      } else if (next) {
-        await watchlistApi.add(slug, movieData);
-      } else {
-        await watchlistApi.remove(slug);
-      }
-
-      if (user) {
-        window.dispatchEvent(
-          new CustomEvent("netphim_watchlist_changed", {
-            detail: { movieId: slug, action: next ? "add" : "remove" },
-          }),
-        );
-      }
-
-      await queryClient.invalidateQueries({ queryKey: ["watchlist"] });
-      await queryClient.invalidateQueries({ queryKey: ["user-watchlist"] });
-      toast(next ? "Đã thêm vào Xem sau" : "Đã xóa khỏi Xem sau", "success");
-    } catch {
-      setSaved(previous);
-      toast("Chưa thể cập nhật Xem sau, vui lòng thử lại", "error");
-    } finally {
-      setWatchlistPending(false);
-    }
-  };
-
-  const handleImageError = () => {
-    const posterResolved = normalizeUpstreamImageUrl(film.poster_url);
-    const thumbResolved = normalizeUpstreamImageUrl(film.thumb_url);
-
-    // Try the provider's alternate artwork once. Do not bounce through TMDB
-    // here: a failed direct TMDB URL and its proxy previously reset each other
-    // forever, flooding Chrome with hundreds of image requests.
-    if (
-      thumbResolved &&
-      thumbResolved !== posterResolved &&
-      imageSrc !== thumbResolved &&
-      !imageSrc?.includes(encodeURIComponent(thumbResolved))
-    ) {
-      setImageSrc(thumbResolved);
-      return;
-    }
-
-    // If direct CDN URL failed, try wsrv.nl first, then same-origin proxy.
-    if (
-      imageSrc &&
-      !imageSrc.startsWith("https://wsrv.nl") &&
-      !imageSrc.startsWith("/api/image-proxy") &&
-      !imageSrc.startsWith("data:")
-    ) {
-      setImageSrc(
-        wsrvImageUrl(imageSrc, variant === "landscape" ? "thumbnail" : "card"),
-      );
-      return;
-    }
-
-    if (imageSrc && imageSrc.startsWith("https://wsrv.nl")) {
-      try {
-        const original = unwrapImageUrl(imageSrc);
-        if (original) {
-          setImageSrc(localImageProxyUrl(original));
-          return;
-        }
-      } catch {
-        // proceed to null
-      }
-    }
-
-    if (preferHighQuality && !requestTmdbArtwork && !tmdbPosterUrl) {
-      setRequestTmdbArtwork(true);
-    }
-
-    // All provider and proxy attempts failed. The title fallback remains visible
-    // while the optional TMDB fallback resolves.
-    setImageSrc(null);
-  };
-
-  // Extract top-left badge (Priority: Thuyết Minh -> Lồng Tiếng -> Vietsub -> Engsub)
-  const langBadge = (() => {
-    const raw = (film.lang || "").toLowerCase();
-    if (
-      raw.includes("thuyết minh") ||
-      raw.includes("thuyet minh") ||
-      raw.includes("t.minh") ||
-      raw.includes("tm")
-    ) {
-      return "T.Minh";
-    }
-    if (
-      raw.includes("lồng tiếng") ||
-      raw.includes("long tieng") ||
-      raw.includes("l.tiếng") ||
-      raw.includes("lt")
-    ) {
-      return "L.Tiếng";
-    }
-    if (
-      raw.includes("vietsub") ||
-      raw.includes("sub") ||
-      raw.includes("phụ đề")
-    ) {
-      return "Vietsub";
-    }
-    if (raw.includes("engsub") || raw.includes("eng")) {
-      return "Engsub";
-    }
-    return "Vietsub";
-  })();
+  const title = film.name || film.title || 'Chưa có tên';
+  const rawLang = (film.lang || '').toLowerCase();
+  const hasVoiceOver = /thuyết minh|thuyet minh|t\.minh|\btm\b/.test(rawLang);
+  const hasDub = /lồng tiếng|long tieng|l\.tiếng|\blt\b/.test(rawLang);
 
   // Extract top-right quality badge (FHD / 4K / HD / CAM)
   const qualityBadge = (() => {
-    const raw = (film.quality || "").toUpperCase();
-    if (raw.includes("4K")) return "4K";
+    const raw = (film.quality || '').toUpperCase();
+    if (raw.includes('4K')) return '4K';
     if (
-      raw.includes("FHD") ||
-      raw.includes("FULL HD") ||
-      raw.includes("1080P") ||
-      raw.includes("FULLHD")
+      raw.includes('FHD') ||
+      raw.includes('FULL HD') ||
+      raw.includes('1080P') ||
+      raw.includes('FULLHD')
     ) {
-      return "FHD";
+      return 'FHD';
     }
-    if (raw.includes("CAM") || raw.includes("HDCAM")) return "CAM";
-    if (raw.includes("TRAILER")) return "Trailer";
-    if (raw.includes("HD") || raw.includes("720P")) return "HD";
-    return "FHD";
+    if (raw.includes('CAM') || raw.includes('HDCAM')) return 'CAM';
+    if (raw.includes('TRAILER')) return 'Trailer';
+    if (raw.includes('HD') || raw.includes('720P')) return 'HD';
+    return 'FHD';
   })();
 
-  // Normalize episode text (Bottom Left): e.g. "Full", "Tập 12", "12/12"
-  const episodeBadge = (() => {
-    const raw = (film.episode_current || "").trim();
-    if (!raw) {
-      if (film.type === "single" || film.type === "movie") return "Full";
-      return "Full";
-    }
-    const lower = raw.toLowerCase();
-    if (
-      lower === "full" ||
-      lower === "trọn bộ" ||
-      lower === "hoàn tất" ||
-      lower.includes("full") ||
-      lower.includes("hoàn tất") ||
-      lower.includes("trọn bộ") ||
-      lower === "1/1"
-    ) {
-      return "Full";
-    }
-    const match = raw.match(/\((\d+\/\d+)\)/) || raw.match(/(\d+\/\d+)/);
-    if (match) {
-      const [curr, total] = match[1].split("/");
-      if (curr && total && curr === total) return "Full";
-      return `Tập ${match[1]}`;
-    }
-    if (/^\d+$/.test(raw)) {
-      return `Tập ${raw}`;
-    }
-    return raw;
-  })();
-
-  // Calculate rating (Bottom Right): IMDb / TMDB score
-  const displayRating = (() => {
+  const ratingMeta = (() => {
     const rawRating =
       film.imdb_rating ||
       film.vote_average ||
@@ -397,130 +122,99 @@ function FilmCardComponent({
       film.tmdb?.rating ||
       film.rating;
     if (rawRating && Number(rawRating) > 0) {
-      return Number(rawRating).toFixed(1);
+      return {
+        label: film.imdb_rating ? 'IMDb' : '★',
+        value: Number(rawRating).toFixed(1),
+      };
     }
-    if (slug) {
-      let hash = 0;
-      for (let i = 0; i < slug.length; i++) {
-        hash = (hash << 5) - hash + slug.charCodeAt(i);
-        hash |= 0;
-      }
-      const score = 7.5 + (Math.abs(hash) % 15) / 10;
-      return score.toFixed(1);
-    }
-    return "8.0";
+    return null;
   })();
 
-  // Format year & category subtitle
-  const categoryName = film.category?.[0]?.name;
+  const episodeNumber = (() => {
+    const raw = film.episode_current || '';
+    const fraction = raw.match(/(?:\(|\b)(\d+)\s*\/\s*\d+/);
+    if (fraction?.[1]) return fraction[1];
+    const explicit = raw.match(/(?:tập|tap|episode|ep)\s*[-.:]?\s*(\d+)/i);
+    if (explicit?.[1]) return explicit[1];
+    return /^\d+$/.test(raw.trim()) ? raw.trim() : '';
+  })();
+
+  const subtitleBadge = `P.Đ${episodeNumber ? ` ${episodeNumber}` : ''}`;
+  const voiceBadge = hasVoiceOver
+    ? `T.M${episodeNumber ? ` ${episodeNumber}` : ''}`
+    : hasDub
+      ? `L.T${episodeNumber ? ` ${episodeNumber}` : ''}`
+      : null;
 
   return (
     <div
+      style={width ? { width } : undefined}
       className={cn(
-        `${cardFont.className} flex flex-col group/card relative select-none`,
-        width ? `w-[${width}px]` : "w-full",
+        `${cardFont.className} group/card relative flex flex-col select-none`,
+        !width && 'w-full',
       )}
     >
-      <div className="relative">
+      <div className="relative transition-transform duration-300 ease-out motion-safe:group-hover/card:-translate-y-1.5">
         <Link
           href={`/film/${slug}`}
-          className="block relative overflow-hidden rounded-xl border border-white/10 group-hover/card:border-white/30 transition-all duration-300 shadow-lg bg-neutral-900"
+          className="relative block overflow-hidden rounded-[8px] border border-white/[0.08] bg-[#111216] shadow-[0_8px_22px_rgba(0,0,0,0.24)] transition-[border-color,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111214] group-hover/card:border-white/25 group-hover/card:shadow-[0_16px_36px_rgba(0,0,0,0.44)]"
         >
           {/* Poster Container Aspect Ratio */}
           <div
             className={cn(
-              "relative w-full overflow-hidden bg-neutral-900",
-              variant === "landscape" ? "aspect-video" : "aspect-[2/3]",
+              'relative w-full overflow-hidden bg-neutral-900',
+              variant === 'landscape' ? 'aspect-video' : 'aspect-[2/3]',
             )}
           >
-            {imageSrc ? (
-              <Image
-                src={imageSrc}
-                alt={title}
-                fill
-                sizes={
-                  variant === "landscape"
-                    ? "(max-width: 640px) 78vw, (max-width: 1024px) 38vw, 320px"
-                    : `(max-width: 640px) 42vw, (max-width: 1024px) 24vw, ${preferHighQuality ? 300 : width || 220}px`
-                }
-                quality={preferHighQuality ? 85 : 75}
-                unoptimized={isPreOptimizedImageUrl(imageSrc)}
-                priority={priority}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
-                loading={priority ? "eager" : "lazy"}
-                decoding="async"
-                referrerPolicy="no-referrer"
-                onError={handleImageError}
-              />
-            ) : (
-              /* Clean, Movie-Specific Title Card (when image is completely missing from all upstreams & TMDB) */
-              <div className="w-full h-full flex flex-col items-center justify-between p-4 bg-gradient-to-b from-neutral-800 via-neutral-900 to-black text-center relative">
-                <div className="w-full flex justify-between items-center text-[10px] text-neutral-400 font-bold">
-                  <span>{film.year || 2026}</span>
-                  <span>{qualityBadge}</span>
-                </div>
-                <div className="flex flex-col items-center gap-2 my-auto px-1">
-                  <Clapperboard className="w-8 h-8 text-neutral-600 mb-1" />
-                  <h3 className="text-sm font-extrabold text-white line-clamp-3 leading-snug">
-                    {title}
-                  </h3>
-                  {film.origin_name && (
-                    <p className="text-[11px] text-neutral-400 font-medium line-clamp-1 italic">
-                      {film.origin_name}
-                    </p>
-                  )}
-                </div>
-                <div className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">
-                  {categoryName || "NetPhim"}
-                </div>
-              </div>
-            )}
+            <TmdbArtwork
+              film={film}
+              kind={variant === 'landscape' ? 'backdrop' : 'poster'}
+              alt={title}
+              priority={priority}
+              className="absolute inset-0 h-full w-full transition-transform duration-700 ease-out motion-safe:group-hover/card:scale-[1.035]"
+            />
 
-            {/* Top Gradient Overlay */}
-            <div className="absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-black/60 to-transparent pointer-events-none z-10" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-12 bg-gradient-to-b from-black/55 to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+            <div className="pointer-events-none absolute inset-0 z-[11] bg-black/0 transition-colors duration-300 group-hover/card:bg-black/15" />
 
-            {/* Bottom Gradient Overlay */}
-            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none z-10" />
-
-            {/* Badges Container Top: [T.Minh] (left) ... [FHD] (right) */}
-            <div className="absolute top-2 inset-x-2 flex items-center justify-between z-20 pointer-events-none gap-1">
-              {langBadge ? (
-                <span className="whitespace-nowrap bg-black/75 border border-white/20 backdrop-blur-md text-white text-[9.5px] sm:text-[10.5px] font-bold px-1.5 sm:px-2 py-0.5 rounded-[5px] shadow-sm leading-none tracking-tight">
-                  {langBadge}
+            {/* IMDb/TMDB score and technical quality follow the compact shelf language. */}
+            <div className="pointer-events-none absolute inset-x-1.5 top-1.5 z-20 flex items-center justify-between gap-1 sm:inset-x-2 sm:top-2">
+              {ratingMeta ? (
+                <span className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-[4px] bg-[#f5a400] px-1.5 py-[3px] text-[8.5px] font-black leading-none tracking-[-0.02em] text-white shadow-[0_2px_8px_rgba(0,0,0,0.28)] sm:text-[9.5px]">
+                  <span>{ratingMeta.label}</span>
+                  <span>{ratingMeta.value}</span>
                 </span>
               ) : (
                 <span />
               )}
-
               {qualityBadge && (
-                <span className="whitespace-nowrap bg-white text-black text-[9.5px] sm:text-[10.5px] font-black px-1.5 sm:px-2 py-0.5 rounded-[5px] shadow-md leading-none tracking-tight">
+                <span className="whitespace-nowrap rounded-[4px] border border-white/10 bg-black/85 px-1.5 py-[3px] text-[8.5px] font-extrabold leading-none tracking-wide text-white shadow-sm backdrop-blur-sm sm:text-[9.5px]">
                   {qualityBadge}
                 </span>
               )}
             </div>
 
-            {/* Bottom Badges Container inside Poster: [Full] (left) ... [⭐ 8.0] (right) */}
-            <div className="absolute bottom-2 inset-x-2 flex items-center justify-between z-20 pointer-events-none gap-1">
-              {episodeBadge ? (
-                <span className="whitespace-nowrap bg-black/80 border border-white/20 backdrop-blur-md text-white text-[9.5px] sm:text-[10.5px] font-bold px-1.5 sm:px-2 py-0.5 rounded-[5px] shadow-sm leading-none tracking-tight">
-                  {episodeBadge}
-                </span>
-              ) : (
-                <span />
-              )}
-
-              {displayRating && (
-                <span className="whitespace-nowrap flex items-center gap-1 bg-black/85 border border-amber-500/30 backdrop-blur-md text-amber-400 text-[9.5px] sm:text-[10.5px] font-black px-1.5 sm:px-2 py-0.5 rounded-[5px] shadow-sm leading-none tracking-tight">
-                  <Star size={10} className="fill-amber-400 text-amber-400" />
-                  <span>{displayRating}</span>
+            <div className="pointer-events-none absolute bottom-1.5 left-1.5 z-20 flex items-center gap-1 sm:bottom-2 sm:left-2">
+              <span className="whitespace-nowrap rounded-[3px] bg-[#64666d]/95 px-1.5 py-[3px] text-[8.5px] font-black leading-none text-white shadow-sm sm:text-[9.5px]">
+                {subtitleBadge}
+              </span>
+              {voiceBadge && (
+                <span
+                  className={cn(
+                    'whitespace-nowrap rounded-[3px] px-1.5 py-[3px] text-[8.5px] font-black leading-none text-white shadow-sm sm:text-[9.5px]',
+                    hasDub ? 'bg-[#3567dd]' : 'bg-[#08bd67]',
+                  )}
+                >
+                  {voiceBadge}
                 </span>
               )}
             </div>
 
             {/* Hover Overlay Play Icon */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/40 backdrop-blur-[2px]">
-              <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-xl transform scale-75 group-hover/card:scale-100 transition-transform">
-                <Play size={18} fill="currentColor" className="ml-0.5" />
+            <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover/card:opacity-100">
+              <div className="flex h-10 w-10 scale-90 items-center justify-center rounded-full border border-white/50 bg-black/70 text-white shadow-[0_10px_28px_rgba(0,0,0,0.5)] backdrop-blur-md transition-transform duration-300 motion-safe:group-hover/card:scale-100">
+                <Play size={16} fill="currentColor" className="ml-0.5" />
               </div>
             </div>
           </div>
@@ -529,18 +223,18 @@ function FilmCardComponent({
 
       {/* Details Footer below Card */}
       {!hideDetails && (
-        <div className="mt-1.5 sm:mt-2.5 flex flex-col px-0.5">
+        <div className="mt-2 flex flex-col px-0.5">
           <Link
             href={`/film/${slug}`}
-            className="font-bold text-[11px] sm:text-sm text-neutral-200 hover:text-white transition-colors truncate block leading-snug tracking-normal"
+            className="block truncate whitespace-nowrap text-[11px] font-extrabold leading-[1.3] tracking-[-0.015em] text-[#f2f2f3] transition-colors hover:text-white sm:text-[13px]"
             title={title}
           >
             {title}
           </Link>
 
-          <div className="flex items-center justify-between mt-0.5 sm:mt-1 text-[10px] sm:text-[11.5px] text-neutral-400 font-medium">
-            <span className="truncate">
-              {film.origin_name || categoryName || `Năm ${film.year || 2026}`}
+          <div className="mt-[2px] flex items-center justify-between text-[9.5px] font-medium leading-tight text-[#777981] sm:text-[11px]">
+            <span className="truncate transition-colors group-hover/card:text-neutral-400">
+              {film.origin_name || `Năm ${film.year || 2026}`}
             </span>
           </div>
         </div>
@@ -552,23 +246,33 @@ function FilmCardComponent({
 export const FilmCard = memo(FilmCardComponent);
 
 export function FilmCardSkeleton({
-  variant = "standard",
+  variant = 'standard',
   width,
   hideDetails,
 }: {
-  variant?: "standard" | "landscape";
+  variant?: 'standard' | 'landscape';
   width?: number;
   hideDetails?: boolean;
 }) {
   return (
     <div
-      className={cn(
-        "relative overflow-hidden rounded-xl bg-neutral-900 border border-white/5 animate-pulse",
-        variant === "landscape" ? "aspect-video w-full" : "aspect-[2/3] w-full",
-        width ? `w-[${width}px]` : "w-full",
-      )}
+      style={width ? { width } : undefined}
+      className={cn('flex flex-col animate-pulse', !width && 'w-full')}
     >
-      <div className="absolute inset-0 bg-neutral-800/40" />
+      <div
+        className={cn(
+          'relative overflow-hidden rounded-[8px] border border-white/5 bg-neutral-900',
+          variant === 'landscape' ? 'aspect-video w-full' : 'aspect-[2/3] w-full',
+        )}
+      >
+        <div className="absolute inset-0 bg-neutral-800/40" />
+      </div>
+      {!hideDetails && (
+        <div className="mt-2 px-0.5">
+          <div className="h-3 w-[78%] rounded-sm bg-neutral-800/70" />
+          <div className="mt-1 h-2.5 w-[52%] rounded-sm bg-neutral-800/45" />
+        </div>
+      )}
     </div>
   );
 }

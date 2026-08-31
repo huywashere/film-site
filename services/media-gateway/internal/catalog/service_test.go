@@ -98,6 +98,43 @@ func TestCatalogAndSearchDedupeSources(t *testing.T) {
 	}
 }
 
+func TestHomeFeedBuildsOnceAndUsesSnapshotCache(t *testing.T) {
+	var requests atomic.Int64
+	upstream := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		requests.Add(1)
+		writer.Header().Set("Content-Type", "application/json")
+		_, _ = writer.Write([]byte(`{"status":true,"data":{"items":[{"name":"Phim Mẫu","origin_name":"Sample Movie","slug":"sample","year":2024}]}}`))
+	}))
+	defer upstream.Close()
+
+	cfg := testConfig(upstream.URL)
+	cfg.CatalogHomeTTL = 5 * time.Minute
+	cfg.CatalogHomeStale = 30 * time.Minute
+	service := New(cfg)
+	defer service.Close()
+
+	payload, status, err := service.HomeFeed(context.Background(), 12)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status != "MISS" {
+		t.Fatalf("expected first home feed to miss, got %s", status)
+	}
+	sections, ok := payload["sections"].(map[string]any)
+	if !ok || len(sections) != 4 {
+		t.Fatalf("expected four homepage sections, got %#v", payload["sections"])
+	}
+
+	before := requests.Load()
+	_, status, err = service.HomeFeed(context.Background(), 12)
+	if err != nil || status != "HIT" {
+		t.Fatalf("expected cached home feed, status=%s err=%v", status, err)
+	}
+	if requests.Load() != before {
+		t.Fatal("cached home feed unexpectedly called upstream")
+	}
+}
+
 func TestTop10PrefersAnalyticsAPI(t *testing.T) {
 	upstream := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
@@ -195,18 +232,19 @@ func TestSearchFiltersAndMergesTranslatedDuplicates(t *testing.T) {
 
 func testConfig(origin string) config.Config {
 	return config.Config{
-		SigningSecret:    strings.Repeat("x", 32),
-		RedisURL:         "",
-		CatalogTimeout:   2 * time.Second,
-		CatalogCacheTTL:  10 * time.Minute,
-		CatalogSearchTTL: 5 * time.Minute,
-		CatalogListTTL:   2 * time.Minute,
-		CatalogMaxBytes:  1024 * 1024,
-		CoreAPIURL:       "",
-		KKPhimOrigins:    []string{origin},
-		OPhimOrigins:     []string{origin},
-		NguonCOrigins:    []string{origin},
-		VSMovOrigins:     []string{origin},
-		ViCDNOrigins:     []string{origin},
+		SigningSecret:           strings.Repeat("x", 32),
+		RedisURL:                "",
+		CatalogTimeout:          2 * time.Second,
+		CatalogCacheTTL:         10 * time.Minute,
+		CatalogSearchTTL:        5 * time.Minute,
+		CatalogListTTL:          2 * time.Minute,
+		CatalogMaxBytes:         1024 * 1024,
+		CatalogEnrichmentWindow: 650 * time.Millisecond,
+		CoreAPIURL:              "",
+		KKPhimOrigins:           []string{origin},
+		OPhimOrigins:            []string{origin},
+		NguonCOrigins:           []string{origin},
+		VSMovOrigins:            []string{origin},
+		ViCDNOrigins:            []string{origin},
 	}
 }

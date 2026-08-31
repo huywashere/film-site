@@ -5,6 +5,7 @@ test.describe("critical visitor flows", () => {
     page,
   }) => {
     const authRequests: string[] = [];
+    let loginSucceeded = false;
     const user = {
       id: "e2e-user-id",
       email: "member@netphim.test",
@@ -53,6 +54,7 @@ test.describe("critical visitor flows", () => {
         });
         return;
       }
+      loginSucceeded = true;
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -80,6 +82,14 @@ test.describe("critical visitor flows", () => {
         });
         return;
       }
+      if (!loginSucceeded) {
+        await route.fulfill({
+          status: 401,
+          contentType: "application/json",
+          body: JSON.stringify({ message: "Unauthenticated" }),
+        });
+        return;
+      }
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -94,7 +104,10 @@ test.describe("critical visitor flows", () => {
     await page.goto("/login");
     await page.locator('input[type="email"]').fill(user.email);
     await page.locator('input[type="password"]').fill("correct-password");
-    await page.getByRole("button", { name: "Đăng nhập ngay" }).click();
+    await page
+      .locator("form")
+      .getByRole("button", { name: "Đăng nhập", exact: true })
+      .click();
 
     await expect.poll(() => authRequests).not.toEqual([]);
     await expect(page).toHaveURL("/");

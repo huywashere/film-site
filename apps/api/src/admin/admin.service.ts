@@ -44,7 +44,6 @@ const RANGE_DAYS: Record<string, number> = {
 const DEFAULT_HOME_SECTION_ORDER = [
   "top10",
   "continue",
-  "schedule",
   "latest",
   "vfx",
   "usuk-series",

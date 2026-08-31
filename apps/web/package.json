@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint src --ext .ts,.tsx --max-warnings=9999",
     "perf:budget": "node scripts/check-performance-budget.mjs",
+    "perf:waterfall:4g": "node scripts/audit-waterfall.mjs",
     "lint:fix": "eslint src --ext .ts,.tsx --fix --max-warnings=9999",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

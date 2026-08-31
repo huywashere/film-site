@@ -35,7 +35,7 @@ export const CURATED_CHINESE_HERO_POOL: AsianHeroItem[] = [
     genres: ["Cổ Trang", "Tiên Hiệp", "Hài Hước", "Lãng Mạn"],
     poster_url: "https://image.tmdb.org/t/p/w780/zW1YdedNH24xVCMrWHOZHxpJC39.jpg",
     thumb_url: "https://image.tmdb.org/t/p/original/4J8znHxVaZY3vKb05IWqWfzczXR.jpg",
-    logoUrl: "https://image.tmdb.org/t/p/original/vTOXewk16M1GrO6lMzHUB5B5J1N.png",
+    logoUrl: "https://image.tmdb.org/t/p/w500/vTOXewk16M1GrO6lMzHUB5B5J1N.png",
     content:
       "Bích Thương Vương Thẩm Ly của Linh giới đào hôn rơi xuống nhân gian, gặp gỡ Thần quân thượng cổ Hành Chỉ và bắt đầu mối duyên tiền định tam giới.",
     calligraphyTitle: "Dữ Phượng Hành",
@@ -74,7 +74,7 @@ export const CURATED_CHINESE_HERO_POOL: AsianHeroItem[] = [
     genres: ["Tiên Hiệp", "Huyền Huyễn", "Tình Cảm", "Ngược Luyến"],
     poster_url: "https://image.tmdb.org/t/p/w780/xxaTu3Ibo5ZIYt6dEavYcIuvQMf.jpg",
     thumb_url: "https://image.tmdb.org/t/p/original/5fhS6Bh4VnF0SOZyZnhNpc0XHDb.jpg",
-    logoUrl: "https://image.tmdb.org/t/p/original/wqlcL7FhloP0ZXUka4cQmNVJ4Dw.png",
+    logoUrl: "https://image.tmdb.org/t/p/w500/wqlcL7FhloP0ZXUka4cQmNVJ4Dw.png",
     content:
       "Siêu phẩm tiên hiệp kỹ xảo bùng nổ kể về mối tình ba kiếp đầy đau thương và bi tráng giữa Ma thần Đạm Đài Tẫn và thần nữ Lê Tô Tô.",
     calligraphyTitle: "Trường Nguyệt Tẫn Minh",
@@ -113,7 +113,7 @@ export const CURATED_CHINESE_HERO_POOL: AsianHeroItem[] = [
     genres: ["Cổ Trang", "Trọng Sinh", "Mưu Lược", "Tình Cảm"],
     poster_url: "https://image.tmdb.org/t/p/w780/idcVj88MODVdBkaKpxNMiXwffLk.jpg",
     thumb_url: "https://image.tmdb.org/t/p/original/3OLeiLbTdNFovd2zyBn2xgR8UWY.jpg",
-    logoUrl: "https://image.tmdb.org/t/p/original/sKQjRVWggMoJUPkSh9xNWhmmF7P.png",
+    logoUrl: "https://image.tmdb.org/t/p/w500/sKQjRVWggMoJUPkSh9xNWhmmF7P.png",
     content:
       "Khương Tuyết Ninh trải qua một kiếp hoàng hậu đầy mưu toan, sau khi trọng sinh quyết tâm sửa chữa sai lầm nhưng lại vướng vào lưới tình với đế sư Tạ Nguy.",
     calligraphyTitle: "Ninh An Như Mộng",
@@ -152,7 +152,7 @@ export const CURATED_CHINESE_HERO_POOL: AsianHeroItem[] = [
     genres: ["Tiên Hiệp", "Hài Hước", "Lãng Mạn", "Kỳ Ảo"],
     poster_url: "https://image.tmdb.org/t/p/w780/mNgUuTGkOj19Z09zKa76bE6J5Di.jpg",
     thumb_url: "https://image.tmdb.org/t/p/original/pECcUE53TjkrR2VsAgF7JICzH7k.jpg",
-    logoUrl: "https://image.tmdb.org/t/p/original/ouAPcIcyljmXQT4FIsJyxKXvigj.png",
+    logoUrl: "https://image.tmdb.org/t/p/w500/ouAPcIcyljmXQT4FIsJyxKXvigj.png",
     content:
       "Đại Ma Đầu Nguyệt Tôn Đông Phương Thanh Thương vô tình bị trói buộc linh hồn và sa vào lưới tình ngọt ngào cùng tiểu tiên nữ ngây thơ Hoa Lan Nhỏ.",
     calligraphyTitle: "Thương Lan Quyết",
@@ -191,7 +191,7 @@ export const CURATED_CHINESE_HERO_POOL: AsianHeroItem[] = [
     genres: ["Quyền Đấu", "Cổ Trang", "Trí Tuệ", "Hài Hước"],
     poster_url: "https://image.tmdb.org/t/p/w780/wHJvPo9CLpXwX1ncDg6uD0QJIZo.jpg",
     thumb_url: "https://image.tmdb.org/t/p/original/AcsXGeHgpvbvg3pAZM1MsfcyWuJ.jpg",
-    logoUrl: "https://image.tmdb.org/t/p/original/pOAwk2eh5zDfqXnEMoWEAebFCMG.png",
+    logoUrl: "https://image.tmdb.org/t/p/w500/pOAwk2eh5zDfqXnEMoWEAebFCMG.png",
     content:
       "Chàng thanh niên Phạm Nhàn với ký ức hiện đại bước vào chốn kinh thành Nam Khánh đầy rẫy âm mưu thâm hiểm để lật mở bí mật thân thế chấn động.",
     calligraphyTitle: "Khánh Dư Niên",
@@ -212,7 +212,7 @@ export const CURATED_CHINESE_HERO_POOL: AsianHeroItem[] = [
     genres: ["Gia Đấu", "Cổ Trang", "Lãng Mạn", "Kỳ Ảo"],
     poster_url: "https://image.tmdb.org/t/p/w780/upqf01cnDIXXOeCanQJEitznF1R.jpg",
     thumb_url: "https://image.tmdb.org/t/p/original/wNSLw756U5JQSpG6POYxHKL2KDH.jpg",
-    logoUrl: "https://image.tmdb.org/t/p/original/fvP4wfQHcaDaWhaFW51OVwG33Cx.png",
+    logoUrl: "https://image.tmdb.org/t/p/w500/fvP4wfQHcaDaWhaFW51OVwG33Cx.png",
     content:
       "Mối tình khắc cốt ghi tâm giữa vị tướng quân trẻ tuổi Lăng Bất Nghi gánh trên vai thù hận gia tộc và nàng thiếu nữ bướng bỉnh Trình Thiếu Thương.",
     calligraphyTitle: "Tinh Hán Xán Lạn",
@@ -233,7 +233,7 @@ export const CURATED_CHINESE_HERO_POOL: AsianHeroItem[] = [
     genres: ["Kiếm Hiệp", "Tiên Hiệp", "Tri Kỷ", "Hành Động"],
     poster_url: "https://image.tmdb.org/t/p/w780/4nwuKrZwiYwludJ1V7RW1n4mbOI.jpg",
     thumb_url: "https://image.tmdb.org/t/p/original/kpZZzgk2iUsn60Fj0mwUMAUaSel.jpg",
-    logoUrl: "https://image.tmdb.org/t/p/original/dONrtdcup8BYGZKoGAA9Oi81c0j.png",
+    logoUrl: "https://image.tmdb.org/t/p/w500/dONrtdcup8BYGZKoGAA9Oi81c0j.png",
     content:
       "Di Lăng Lão Tổ Ngụy Vô Tiện cùng Hàm Quang Quân Lam Vong Cơ đồng hành phá giải những bí ẩn tà ác và bảo vệ chính nghĩa chốn tu chân giới.",
     calligraphyTitle: "Trần Tình Lệnh",
@@ -257,7 +257,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     genres: ["Tình Cảm", "Gia Đình", "Chính Kịch", "Hài Hước"],
     poster_url: "https://image.tmdb.org/t/p/w780/fvpYJkQaeon5kmxioIPHFmgA2v5.jpg",
     thumb_url: "https://image.tmdb.org/t/p/original/wcP3FsRLog4GNEs9PFrDKKQdcof.jpg",
-    logoUrl: "https://image.tmdb.org/t/p/original/rtYUutWaNOO0IfWQWhegTUw0ERo.png",
+    logoUrl: "https://image.tmdb.org/t/p/w500/rtYUutWaNOO0IfWQWhegTUw0ERo.png",
     content:
       "Cuộc hôn nhân đầy sóng gió nhưng cũng ngập tràn cảm xúc của nàng tiểu thư tài phiệt Hong Hae-in và chàng luật sư thôn quê Baek Hyun-woo.",
     calligraphyTitle: "Queen of Tears",
@@ -278,7 +278,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     genres: ["Lập Nghiệp", "Kịch Tính", "Tuổi Trẻ", "Báo Thù"],
     poster_url: "https://phimimg.com/upload/vod/20231207-1/c1bb63db8d7f6b22ee4eb025f879171a.jpg",
     thumb_url: "https://image.tmdb.org/t/p/original/rtYQCa2NzX8RspbOmwfAla6BemO.jpg",
-    logoUrl: "https://image.tmdb.org/t/p/original/fe405KMt75BP1xx31UKmfOAfX0q.png",
+    logoUrl: "https://image.tmdb.org/t/p/w500/fe405KMt75BP1xx31UKmfOAfX0q.png",
     content:
       "Chàng trai trẻ Park Sae-royi với ý chí kiên định mở quán nhậu DanBam tại khu phố Itaewon sầm uất để thách thức tập đoàn ẩm thực Jangga hùng mạnh.",
     calligraphyTitle: "Itaewon Class",
@@ -299,7 +299,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     genres: ["Lãng Mạn", "Kịch Tính", "Quân Đội", "Hài Hước"],
     poster_url: "https://image.tmdb.org/t/p/w780/fgBNLPr6mC8pxuR79ENAJY4nBmj.jpg",
     thumb_url: "https://image.tmdb.org/t/p/original/3yEHM2HT2vrUtO93YzTJNgEfiZG.jpg",
-    logoUrl: "https://image.tmdb.org/t/p/original/eOSHzaCE8Of4mIHsueUM9dIJXnJ.png",
+    logoUrl: "https://image.tmdb.org/t/p/w500/eOSHzaCE8Of4mIHsueUM9dIJXnJ.png",
     content:
       "Mối tình vượt biên giới định mệnh giữa nữ thừa kế tài phiệt Nam Hàn Yoon Se-ri và chàng đại úy Triều Tiên Ri Jung-hyuk.",
     calligraphyTitle: "Hạ Cánh Nơi Anh",
@@ -320,7 +320,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     genres: ["Kỳ Ảo", "Lãng Mạn", "Hài Hước", "Cổ Trang"],
     poster_url: "https://image.tmdb.org/t/p/w780/sPkxHNw5BFvuCFGWw825TS7n6X3.jpg",
     thumb_url: "https://image.tmdb.org/t/p/original/smSbK5cd8T9XHcxEUcems23BDEF.jpg",
-    logoUrl: "https://image.tmdb.org/t/p/original/vq3jtNuFkeVW3dYZGOjvsgTKyPa.png",
+    logoUrl: "https://image.tmdb.org/t/p/w500/vq3jtNuFkeVW3dYZGOjvsgTKyPa.png",
     content:
       "Chàng Yêu tinh Kim Shin sống hơn 900 năm cô độc đi tìm cô dâu định mệnh Ji Eun-tak để rút thanh kiếm phong ấn giải thoát linh hồn.",
     calligraphyTitle: "Goblin",
@@ -341,7 +341,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     genres: ["Quân Đội", "Y Khoa", "Lãng Mạn", "Hành Động"],
     poster_url: "https://image.tmdb.org/t/p/w780/qg7WXAatXyQq6zO3SnWnRJEayeZ.jpg",
     thumb_url: "https://image.tmdb.org/t/p/original/tCP3AyjUDxDxJfXhiVCOYedIHjG.jpg",
-    logoUrl: "https://image.tmdb.org/t/p/original/c3EVMcfTRwrXVl4GUm2ficTVKi1.png",
+    logoUrl: "https://image.tmdb.org/t/p/w500/c3EVMcfTRwrXVl4GUm2ficTVKi1.png",
     content:
       "Tình yêu mãnh liệt giữa đại úy lực lượng đặc biệt Yoo Shi-jin và nữ bác sĩ ngoại khoa Kang Mo-yeon nơi chiến trường Uruk khốc liệt.",
     calligraphyTitle: "Descendants of the Sun",
@@ -362,7 +362,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     genres: ["Lãng Mạn", "Hài Hước", "Công Sở", "Tình Cảm"],
     poster_url: "https://image.tmdb.org/t/p/w780/lOa1IUp3AFVo6h9b17KA20r4E5s.jpg",
     thumb_url: "https://image.tmdb.org/t/p/original/lq0YqJuffMuZhoKTiC5xDqvtCSn.jpg",
-    logoUrl: "https://image.tmdb.org/t/p/original/89cbbDLh5l7QNbgfKM4PoHHW43A.png",
+    logoUrl: "https://image.tmdb.org/t/p/w500/89cbbDLh5l7QNbgfKM4PoHHW43A.png",
     content:
       "Shin Ha-ri đi xem mắt thay cho bạn thân giàu có, ai ngờ đối tượng lại chính là Giám đốc điều hành công ty cô đang làm việc.",
     calligraphyTitle: "Hẹn Hò Chốn Công Sở",
@@ -383,7 +383,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     genres: ["Báo Thù", "Kịch Tính", "Tâm Lý", "Hình Sự"],
     poster_url: "https://image.tmdb.org/t/p/w780/uUM4LVlPgIrww07OoEKrGWlS1Ej.jpg",
     thumb_url: "https://image.tmdb.org/t/p/original/AjwoDj77HLlqcpwEGqsnvMXm5my.jpg",
-    logoUrl: "https://image.tmdb.org/t/p/original/hGAZrbhiWS81FLGpMtUyMBOcEuO.png",
+    logoUrl: "https://image.tmdb.org/t/p/w500/hGAZrbhiWS81FLGpMtUyMBOcEuO.png",
     content:
       "Hành trình trả thù tỉ mỉ và lạnh lùng của Moon Dong-eun chống lại những kẻ từng bạo lực học đường tàn khốc với cô thời trung học.",
     calligraphyTitle: "The Glory",
@@ -404,7 +404,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     genres: ["Kỳ Ảo", "Bí Ẩn", "Lãng Mạn", "Hài Hước"],
     poster_url: "https://image.tmdb.org/t/p/w780/uuQvLgr3xWuW5bb4LeR1jwa0G82.jpg",
     thumb_url: "https://image.tmdb.org/t/p/original/epq6I0AwVaHldCrQ6xJ5ZsAyHCF.jpg",
-    logoUrl: "https://image.tmdb.org/t/p/original/BzDBP2RpSVCCMo2KO4LjsFLyJL.png",
+    logoUrl: "https://image.tmdb.org/t/p/w500/BzDBP2RpSVCCMo2KO4LjsFLyJL.png",
     content:
       "Khách sạn bí ẩn chỉ phục vụ linh hồn người đã khuất do bà chủ kiêu kỳ Jang Man-wol quản lý cùng chàng quản lý người trần Goo Chan-sung.",
     calligraphyTitle: "Hotel Del Luna",
@@ -425,7 +425,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     genres: ["Hành Động", "Hài Đen", "Hình Sự", "Luật Pháp"],
     poster_url: "https://image.tmdb.org/t/p/w780/qbkSS1cTjT4DzIwD44bdhTuYgdT.jpg",
     thumb_url: "https://image.tmdb.org/t/p/original/sf7NCqyVUNoyjYuwW5oJke1T1lH.jpg",
-    logoUrl: "https://image.tmdb.org/t/p/original/znGVUeFTAM0WhRHMJl1kxlzC1l6.png",
+    logoUrl: "https://image.tmdb.org/t/p/w500/znGVUeFTAM0WhRHMJl1kxlzC1l6.png",
     content:
       "Luật sư mafia Ý gốc Hàn Vincenzo Cassano trở về quê hương đòi lại số vàng khổng lồ và thực thi công lý theo cách của kẻ phản diện.",
     calligraphyTitle: "Vincenzo",

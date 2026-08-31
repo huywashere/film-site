@@ -6,6 +6,7 @@ import {
   Param,
   UseGuards,
   Request,
+  Query,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { UsersService } from "./users.service";
@@ -78,6 +79,20 @@ export class UsersController {
   @UseGuards(AuthGuard("jwt"))
   getWatchlist(@Request() req) {
     return this.usersService.getWatchlist(req.user.id);
+  }
+
+  @Get("me/watchlist/page")
+  @UseGuards(AuthGuard("jwt"))
+  getWatchlistPage(
+    @Request() req,
+    @Query("limit") limit = "20",
+    @Query("cursor") cursor?: string,
+  ) {
+    return this.usersService.getWatchlistPage(
+      req.user.id,
+      Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100),
+      cursor?.trim() || undefined,
+    );
   }
 
   @Put("me/watchlist")

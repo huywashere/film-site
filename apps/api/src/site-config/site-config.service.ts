@@ -19,7 +19,7 @@ const DEFAULT_CONFIGURATION = {
   autoSkipIntro: false,
   watchPartyEnabled: true,
   homeTop10Slugs: [] as string[],
-  homeSectionOrder: ["top10", "continue", "schedule", "latest", "vfx", "usuk-series", "action", "scifi"],
+  homeSectionOrder: ["top10", "continue", "latest", "vfx", "usuk-series", "action", "scifi"],
   homeHiddenSections: [] as string[],
   homeFeaturedRows: {} as Prisma.InputJsonValue,
   seoTitle: "NetPhim - Xem phim trực tuyến",

@@ -134,6 +134,14 @@ func Filter(content, originalURL string, rewrite RewriteFunc) (string, Stats) {
 
 		if strings.HasPrefix(line, "#") {
 			if uriAttribute.MatchString(line) {
+				// #EXT-X-MAP carries the fMP4 initialisation segment and is
+				// never an ad resource — rewrite its URI unconditionally.
+				if strings.HasPrefix(upper, "#EXT-X-MAP:") {
+					rewritten, _ := rewriteAttributeURI(line, originalURL, rewrite)
+					flush()
+					output = append(output, rewritten)
+					continue
+				}
 				rewritten, blocked := rewriteAttributeURI(line, originalURL, rewrite)
 				if blocked || cueBreak || timedRemaining > 0 {
 					stats.RemovedTags++

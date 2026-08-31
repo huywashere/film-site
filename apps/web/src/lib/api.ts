@@ -941,6 +941,46 @@ async function getCatalogFromGateway(
   return fetchCatalogGateway(`/catalog?${query.toString()}`);
 }
 
+type HomeFeedPayload = {
+  status: boolean;
+  generatedAt?: string;
+  sections: Record<"latest" | "series" | "single" | "anime", any[]>;
+  top10: any[];
+};
+
+async function getHomeFeed(limit = 24): Promise<HomeFeedPayload> {
+  const boundedLimit = Math.max(8, Math.min(limit, 64));
+  try {
+    return await fetchCatalogGateway(`/home-feed?limit=${boundedLimit}`);
+  } catch {
+    // Keep local/Vercel development functional when Gin is intentionally not
+    // running. The fallback preserves the same response contract so homepage
+    // components never need provider-specific branches.
+    const [latest, series, single, anime, top10] = await Promise.all([
+      getFastCatalogPage(1, catalogRequests("latest", 1)),
+      getFastCatalogPage(1, catalogRequests("series", 1), "series"),
+      getFastCatalogPage(1, catalogRequests("single", 1), "single"),
+      getFastCatalogPage(1, catalogRequests("anime", 1), "anime"),
+      fetchCatalogGateway(`/top10?limit=${Math.min(boundedLimit, 30)}`).catch(
+        () => [],
+      ),
+    ]);
+    const items = (payload: any) =>
+      payload?.data?.items || payload?.items || [];
+    return {
+      status: true,
+      generatedAt: new Date().toISOString(),
+      sections: {
+        latest: items(latest),
+        series: items(series),
+        single: items(single),
+        anime: items(anime),
+      },
+      top10: Array.isArray(top10) ? top10 : [],
+    };
+  }
+}
+
 async function getDetailFromSource(source: MovieSource, slug: string) {
   if (!slug) return null;
   const requests: Record<MovieSource, () => Promise<unknown>> = {
@@ -1253,6 +1293,8 @@ function catalogRequests(
 
 // ── movieApi (alias for component compatibility) ──────────────────
 export const movieApi = {
+  getHomeFeed: (limit = 24) =>
+    getHomeFeed(limit).then((data) => ({ data })),
   getLatest: (page = 1) =>
     getCatalogFromGateway("latest", page)
       .catch(() => getFastCatalogPage(page, catalogRequests("latest", page)))

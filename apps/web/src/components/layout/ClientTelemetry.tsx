@@ -46,25 +46,52 @@ export function ClientTelemetry() {
 
   useEffect(() => {
     if (!("PerformanceObserver" in window)) return;
+    const metrics = {
+      lcp: 0,
+      cls: 0,
+      inp: 0,
+      fcp: 0,
+      ttfb: 0,
+    };
+    let reported = false;
+
+    const navigation = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+    if (navigation) metrics.ttfb = Math.max(0, navigation.responseStart);
+
+    const reportVitals = () => {
+      if (reported) return;
+      reported = true;
+      recordTelemetry("web_vital.summary", {
+        lcp: Math.round(metrics.lcp),
+        cls: Number(metrics.cls.toFixed(4)),
+        inp: Math.round(metrics.inp),
+        fcp: Math.round(metrics.fcp),
+        ttfb: Math.round(metrics.ttfb),
+      });
+    };
+
     const observer = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
         if (entry.entryType === "largest-contentful-paint") {
-          recordTelemetry("web_vital.lcp", {
-            value: Math.round(entry.startTime),
-          });
+          metrics.lcp = Math.max(metrics.lcp, entry.startTime);
         }
         if (entry.entryType === "layout-shift") {
           const shift = entry as PerformanceEntry & {
             hadRecentInput?: boolean;
             value?: number;
           };
-          if (!shift.hadRecentInput)
-            recordTelemetry("web_vital.cls", { value: shift.value || 0 });
+          if (!shift.hadRecentInput) metrics.cls += shift.value || 0;
         }
         if (entry.entryType === "event") {
-          recordTelemetry("web_vital.inp", {
-            value: Math.round(entry.duration),
-          });
+          metrics.inp = Math.max(metrics.inp, entry.duration);
+        }
+        if (
+          entry.entryType === "paint" &&
+          entry.name === "first-contentful-paint"
+        ) {
+          metrics.fcp = entry.startTime;
         }
       }
     });
@@ -72,6 +99,7 @@ export function ClientTelemetry() {
     try {
       observer.observe({ type: "largest-contentful-paint", buffered: true });
       observer.observe({ type: "layout-shift", buffered: true });
+      observer.observe({ type: "paint", buffered: true });
       observer.observe({
         type: "event",
         buffered: true,
@@ -80,7 +108,18 @@ export function ClientTelemetry() {
     } catch {
       // Older browsers may not support one or more entry types.
     }
-    return () => observer.disconnect();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") reportVitals();
+    };
+    window.addEventListener("pagehide", reportVitals, { once: true });
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("pagehide", reportVitals);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      reportVitals();
+    };
   }, []);
 
   return null;

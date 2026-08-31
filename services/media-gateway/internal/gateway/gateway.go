@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -23,17 +24,19 @@ import (
 )
 
 type Gateway struct {
-	cfg       config.Config
-	guard     security.URLGuard
-	signer    *security.Signer
-	client    *http.Client
-	transport *http.Transport
-	store     store.ManifestStore
-	metrics   *Metrics
-	limiter   *RateLimiter
-	manifests manifestFlightGroup
-	catalog   *catalog.Service
-	analysis  store.AnalysisQueue
+	cfg          config.Config
+	guard        security.URLGuard
+	signer       *security.Signer
+	client       *http.Client
+	transport    *http.Transport
+	store        store.ManifestStore
+	metrics      *Metrics
+	limiter      *RateLimiter
+	searchLimiter *RateLimiter
+	manifests    manifestFlightGroup
+	catalog      *catalog.Service
+	analysis     store.AnalysisQueue
+	results      store.AnalysisResultStore
 }
 
 type manifestLoadResult struct {
@@ -79,6 +82,9 @@ func (g *manifestFlightGroup) Do(ctx context.Context, key string, fn func() (man
 }
 
 func New(cfg config.Config, manifestStore store.ManifestStore, analysisQueues ...store.AnalysisQueue) *Gateway {
+	if cfg.InternalToken == "" {
+		log.Println("[WARN] MEDIA_INTERNAL_TOKEN is not set; internal endpoints will reject all requests")
+	}
 	guard := security.URLGuard{
 		AllowedHosts: cfg.AllowedHosts,
 		RequireHTTPS: cfg.Environment == "release",
@@ -121,7 +127,8 @@ func New(cfg config.Config, manifestStore store.ManifestStore, analysisQueues ..
 	gateway := &Gateway{
 		cfg: cfg, guard: guard, signer: security.NewSigner(cfg.SigningSecret),
 		client: client, transport: transport, store: manifestStore, metrics: NewMetrics(),
-		limiter:  NewRateLimiter(cfg.RatePerSecond, cfg.RateBurst),
+		limiter:       NewRateLimiter(cfg.RatePerSecond, cfg.RateBurst),
+		searchLimiter: NewRateLimiter(cfg.SearchRatePerSecond, cfg.SearchRateBurst),
 		catalog:  catalog.New(cfg),
 		analysis: analysisQueue,
 	}
@@ -136,6 +143,15 @@ func (g *Gateway) Close() {
 	if g.catalog != nil {
 		_ = g.catalog.Close()
 	}
+	if g.results != nil {
+		_ = g.results.Close()
+	}
+}
+
+// SetResults injects an AnalysisResultStore so the gateway can serve cached
+// Rust worker results. Call before Register().
+func (g *Gateway) SetResults(r store.AnalysisResultStore) {
+	g.results = r
 }
 
 func (g *Gateway) Register(router *gin.Engine) {
@@ -150,8 +166,10 @@ func (g *Gateway) Register(router *gin.Engine) {
 	router.POST("/v1/streams/resolve", g.requireInternalToken(), g.resolveStream)
 	router.GET("/api/hls-proxy", g.rateLimit(), g.proxy)
 	if g.cfg.CatalogEnabled && g.catalog != nil {
-		g.catalog.Register(router, g.rateLimit())
+		g.catalog.Register(router, g.rateLimitCatalog())
 	}
+	// Analysis endpoints (all require internal token, wired inside helper).
+	g.registerAnalysisRoutes(router)
 }
 
 func (g *Gateway) ready(c *gin.Context) {
@@ -183,11 +201,20 @@ func (g *Gateway) resolveStream(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	response := gin.H{
 		"directUrl": target.String(),
 		"proxyUrl":  g.signer.SignedProxyURL(target.String()),
 		"expiresIn": 3600,
-	})
+	}
+	// Attach any cached analysis result so callers get markers/health in one hop.
+	if g.results != nil {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 500*time.Millisecond)
+		if result, ok := g.results.GetResult(ctx, target.String()); ok {
+			response["analysis"] = result
+		}
+		cancel()
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 func (g *Gateway) proxy(c *gin.Context) {
@@ -454,6 +481,18 @@ func (g *Gateway) rateLimit() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !g.limiter.Allow(c.ClientIP()) {
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": "too many media requests"})
+			return
+		}
+		c.Next()
+	}
+}
+
+// rateLimitCatalog applies a stricter, separate token bucket for catalog and
+// search routes so that a search flood cannot starve the HLS proxy limiter.
+func (g *Gateway) rateLimitCatalog() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !g.searchLimiter.Allow(c.ClientIP()) {
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": "too many catalog requests"})
 			return
 		}
 		c.Next()

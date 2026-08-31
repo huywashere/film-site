@@ -2,6 +2,8 @@ package catalog
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -27,10 +29,74 @@ func TestMeiliDocumentKeepsSourceFallbackMetadata(t *testing.T) {
 	if document["_sourceSlugs"] == nil || document["_sources"] == nil {
 		t.Fatalf("source fallback metadata was lost: %#v", document)
 	}
+	normalizedAliases, ok := document["search_aliases_normalized"].([]string)
+	if !ok || !containsString(normalizedAliases, "bo gia") || !containsString(normalizedAliases, "the godfather") {
+		t.Fatalf("Vietnamese and original aliases must be searchable: %#v", normalizedAliases)
+	}
+	if quality := document["search_quality"]; quality != 3 {
+		t.Fatalf("source quality score should reward two fallback sources, got %#v", quality)
+	}
 	second := meiliDocument(movie)
 	if document["search_id"] != second["search_id"] {
 		t.Fatal("the same canonical movie must always receive the same search id")
 	}
+}
+
+func TestMeiliDeleteCanonicalQueuesStableDocumentID(t *testing.T) {
+	deleteBodies := make(chan map[string]any, 1)
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		switch {
+		case request.Method == http.MethodPost && request.URL.Path == "/indexes":
+			writer.WriteHeader(http.StatusAccepted)
+		case request.Method == http.MethodPatch && strings.HasSuffix(request.URL.Path, "/settings"):
+			writer.WriteHeader(http.StatusAccepted)
+		case request.Method == http.MethodPost && strings.HasSuffix(request.URL.Path, "/documents/delete"):
+			var deleteBody map[string]any
+			if err := json.NewDecoder(request.Body).Decode(&deleteBody); err != nil {
+				t.Fatal(err)
+			}
+			deleteBodies <- deleteBody
+			writer.WriteHeader(http.StatusAccepted)
+		default:
+			writer.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	index := newMeiliSearchIndex(config.Config{
+		MeiliURL: server.URL, MeiliIndex: "movies", MeiliTimeout: time.Second, MeiliBatchSize: 1,
+	})
+	defer index.Close()
+	index.DeleteCanonical([]string{"the godfather:1972"})
+
+	var deleteBody map[string]any
+	select {
+	case deleteBody = <-deleteBodies:
+	case <-time.After(time.Second):
+		t.Fatal("delete mutation was not flushed")
+	}
+	digest := sha256.Sum256([]byte("the godfather:1972"))
+	expectedID := hex.EncodeToString(digest[:])
+	filter, _ := deleteBody["filter"].(string)
+	if !strings.Contains(filter, expectedID) {
+		t.Fatalf("delete filter does not contain stable document id: %q", filter)
+	}
+	deadline := time.Now().Add(time.Second)
+	for index.deleted.Load() != 1 && time.Now().Before(deadline) {
+		time.Sleep(5 * time.Millisecond)
+	}
+	if index.deleted.Load() != 1 {
+		t.Fatalf("expected one deleted document, got %d", index.deleted.Load())
+	}
+}
+
+func containsString(values []string, expected string) bool {
+	for _, value := range values {
+		if value == expected {
+			return true
+		}
+	}
+	return false
 }
 
 func TestMeiliSearchUsesPrivateKeyAndFilters(t *testing.T) {

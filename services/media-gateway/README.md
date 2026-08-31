@@ -38,6 +38,7 @@ k6 run -e BASE_URL=http://127.0.0.1:8081 \
 - `GET /v1/movies/:slug/bootstrap`: merged movie detail, episode servers,
   source-specific slugs and provider payloads in one request.
 - `GET /v1/catalog?kind=...`: cached, deduplicated multi-source catalogue.
+- `GET /v1/home-feed`: Redis-backed homepage snapshot with stale-while-revalidate fallback.
 - `GET /v1/search?q=...`: Meilisearch typo-tolerant index with automatic
   multi-source provider fallback and deterministic ranking.
 - `GET /v1/top10`: real view analytics from NestJS with catalogue fallback.
@@ -65,7 +66,9 @@ The Compose service exposes port `7700` only inside the Docker network. Set a
 unique `MEILI_MASTER_KEY` (minimum 32 random characters) on every environment;
 never use it in a `NEXT_PUBLIC_*` variable. Relevant tuning variables are
 `MEILI_MOVIES_INDEX`, `MEILI_TIMEOUT`, `MEILI_SYNC_INTERVAL`,
-`MEILI_WARM_PAGES`, and `MEILI_BATCH_SIZE`.
+`MEILI_WARM_PAGES`, `MEILI_SYNC_PAGES`, `MEILI_SYNC_PAUSE`, and
+`MEILI_BATCH_SIZE`. Startup warms a small recent window; periodic paced deep
+sync expands coverage without flooding upstream providers.
 
 ## Required production secrets
 

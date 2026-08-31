@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRef, useState } from "react";
-import { useMotionValueEvent, useScroll } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { CalendarDays, History, Home, LayoutGrid, User } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
@@ -14,17 +13,27 @@ export function MobileBottomNav() {
   const { user } = useAuthStore();
   const [isHidden, setIsHidden] = useState(false);
   const previousScrollY = useRef(0);
-  const { scrollY } = useScroll();
 
-  useMotionValueEvent(scrollY, "change", (currentScrollY) => {
-    const delta = currentScrollY - previousScrollY.current;
-
-    // Ignore tiny scroll jitter so the dock never flickers while reading.
-    if (Math.abs(delta) < 10) return;
-
-    setIsHidden(currentScrollY > 96 && delta > 0);
-    previousScrollY.current = currentScrollY;
-  });
+  useEffect(() => {
+    let frame = 0;
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        const currentScrollY = window.scrollY;
+        const delta = currentScrollY - previousScrollY.current;
+        // Ignore tiny scroll jitter so the dock never flickers while reading.
+        if (Math.abs(delta) < 10) return;
+        setIsHidden(currentScrollY > 96 && delta > 0);
+        previousScrollY.current = currentScrollY;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
 
   const isProfileRoute =
     pathname === "/user" ||

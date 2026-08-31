@@ -4,7 +4,7 @@ import Artplayer from 'artplayer';
 import vi from 'artplayer/i18n/vi';
 import Hls from 'hls.js';
 import { useSettingsStore } from '@/store/settingsStore';
-import { detectExplicitHlsAdRanges, filterHlsManifest } from '@/lib/hls-ad-filter';
+import { detectExplicitHlsAdRanges, inspectHlsAdRanges } from '@/lib/hls-ad-filter';
 import { selectInitialHlsTransport } from '@/lib/player-source-routing';
 import { ARTPLAYER_EDITOR_LOADING_GIF } from './artplayer-editor-assets';
 
@@ -181,70 +181,77 @@ export default function ArtPlayer({
       }
       markerLayer.replaceChildren();
 
+      let legend = progress.querySelector<HTMLElement>('.netphim-timeline-legend');
+      if (!legend) {
+        legend = document.createElement('div');
+        legend.className = 'netphim-timeline-legend';
+        legend.setAttribute('aria-hidden', 'true');
+        progress.appendChild(legend);
+      }
+
+      const renderedKinds = new Set<'intro' | 'ad'>();
+
       const appendMarker = (
         kind: 'intro' | 'ad',
-        start: number,
-        end: number,
+        startTimestamp: number,
+        endTimestamp: number,
         title: string,
-        badge: string,
-        seekTarget?: number,
-        pointOnly = false,
       ) => {
-        const safeStart = Math.min(duration, Math.max(0, start));
-        const safeEnd = Math.min(duration, Math.max(safeStart, end));
+        const safeStart = Math.min(duration, Math.max(0, startTimestamp));
+        const safeEnd = Math.min(duration, Math.max(safeStart, endTimestamp));
+        const markerDuration = safeEnd - safeStart;
         const marker = document.createElement('div');
-        marker.className = `netphim-timeline-marker netphim-timeline-marker-${kind}${pointOnly ? ' is-point' : ''}`;
+        marker.className = `netphim-timeline-marker netphim-timeline-marker-${kind}`;
         const startPercent = (safeStart / duration) * 100;
+        const endPercent = (safeEnd / duration) * 100;
+        const timeRange =
+          markerDuration >= 0.5
+            ? `${formatTimelineTime(safeStart)}–${formatTimelineTime(safeEnd)}`
+            : formatTimelineTime(safeStart);
+
         marker.style.left = `${startPercent}%`;
+        marker.style.width = `${Math.max(0, endPercent - startPercent)}%`;
+        if (markerDuration < 0.5) marker.classList.add('is-point');
         if (startPercent <= 12) marker.classList.add('is-near-start');
-        if (startPercent >= 88) marker.classList.add('is-near-end');
-        if (!pointOnly) {
-          marker.style.width = `${Math.max(0.35, ((safeEnd - safeStart) / duration) * 100)}%`;
-        }
+        if (endPercent >= 88) marker.classList.add('is-near-end');
         marker.dataset.title = title;
-        marker.dataset.badge = badge;
-        marker.dataset.label = `${title} • ${badge}`;
-        marker.title = `${title} (${badge})`;
-        marker.setAttribute('role', 'button');
-        marker.setAttribute('aria-label', `${title} ${badge}`);
+        marker.dataset.label = `${title} • ${timeRange}`;
+        marker.title = `${title} (${timeRange})`;
+        marker.setAttribute('role', 'img');
+        marker.setAttribute(
+          'aria-label',
+          `${title}, từ ${formatTimelineTime(safeStart)} đến ${formatTimelineTime(safeEnd)}`,
+        );
         marker.tabIndex = 0;
 
-        if (seekTarget !== undefined) {
-          marker.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (player) {
-              player.seek = Math.min(duration, seekTarget);
-            }
-          });
-        }
-
         markerLayer?.appendChild(marker);
+        renderedKinds.add(kind);
       };
 
       const introStart = skipIntroStartRef.current ?? 0;
       const introEnd = skipIntroEndRef.current ?? 85;
       if (duration > 120 && introEnd > introStart) {
-        appendMarker(
-          'intro',
-          introStart,
-          introEnd,
-          '🎬 Đoạn Mở Đầu (Intro)',
-          `${formatTimelineTime(introStart)} – ${formatTimelineTime(introEnd)}`,
-          introEnd + 0.1,
-        );
+        appendMarker('intro', introStart, introEnd, 'Đoạn mở đầu');
       }
 
       detectedAdRangesRef.current.forEach((range, index) => {
-        appendMarker(
-          'ad',
-          range.start,
-          range.end,
-          `📢 Điểm Quảng Cáo ${index + 1}`,
-          `${formatTimelineTime(range.start)}`,
-          range.end + 0.1,
-          range.removed,
-        );
+        appendMarker('ad', range.start, range.end, `Quảng cáo ${index + 1}`);
       });
+
+      legend.replaceChildren();
+      // The intro remains visible as a purple range on the timeline. Do not
+      // show a floating "Intro" chip in the player corner.
+      const legendLabels: Array<{ kind: 'intro' | 'ad'; label: string }> = [
+        { kind: 'ad', label: 'Quảng cáo' },
+      ];
+      legendLabels.forEach(({ kind, label }) => {
+        if (!renderedKinds.has(kind)) return;
+        const item = document.createElement('span');
+        item.className = `netphim-timeline-legend-item netphim-timeline-legend-${kind}`;
+        item.textContent = label;
+        legend?.appendChild(item);
+      });
+      legend.hidden = legend.childElementCount === 0;
     };
 
     const clearStartupTimer = () => {
@@ -299,18 +306,12 @@ export default function ArtPlayer({
                   (ctx.type === 'manifest' || ctx.type === 'level')
                 ) {
                   try {
-                    const filtered = filterHlsManifest(response.data, ctx.url);
-                    // Keep the original timeline intact. Filtering segments and
-                    // seeking the resulting timestamps again can move playback
-                    // to the wrong position. We only inspect the manifest here;
-                    // skipping is always an explicit viewer action.
+                    // Inspect the raw playlist so marker positions match the
+                    // unmodified timeline being played by HLS.js.
                     mergeDetectedAdRanges(
-                      filtered.stats.adMarkers.map((marker) => ({
-                        start: marker.start,
-                        end: marker.start + marker.duration,
-                        duration: marker.duration,
+                      inspectHlsAdRanges(response.data, ctx.url).map((range) => ({
+                        ...range,
                         removed: false,
-                        skippable: false,
                       })),
                     );
                     queueMicrotask(syncTimelineMarkers);
@@ -556,56 +557,6 @@ export default function ArtPlayer({
       }
     };
 
-    const seekControls = [
-      {
-        name: 'backward-10',
-        position: 'left' as const,
-        index: 25,
-        html: `<span class="netphim-seek-glyph netphim-seek-glyph-backward" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 4.5v5h5" />
-            <path d="M4.5 9A8.5 8.5 0 1 1 3.5 12" />
-            <text x="12" y="15.2" text-anchor="middle" font-size="7.5" font-weight="900" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="currentColor" stroke="none">10</text>
-          </svg>
-        </span>`,
-        tooltip: 'Lùi 10 giây',
-        mounted(element: HTMLElement) {
-          element.setAttribute('aria-label', 'Lùi 10 giây');
-          element.setAttribute('role', 'button');
-        },
-        click: function (this: Artplayer) {
-          const target = Math.max(0, this.currentTime - 10);
-          showSeekFeedback('backward', 10, target);
-          this.seek = target;
-        },
-      },
-      {
-        name: 'forward-10',
-        position: 'left' as const,
-        index: 26,
-        html: `<span class="netphim-seek-glyph netphim-seek-glyph-forward" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 4.5v5h-5" />
-            <path d="M19.5 9A8.5 8.5 0 1 0 20.5 12" />
-            <text x="12" y="15.2" text-anchor="middle" font-size="7.5" font-weight="900" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="currentColor" stroke="none">10</text>
-          </svg>
-        </span>`,
-        tooltip: 'Tua 10 giây',
-        mounted(element: HTMLElement) {
-          element.setAttribute('aria-label', 'Tua 10 giây');
-          element.setAttribute('role', 'button');
-        },
-        click: function (this: Artplayer) {
-          const targetTime = this.currentTime + 10;
-          const target = Number.isFinite(this.duration)
-            ? Math.min(this.duration, targetTime)
-            : targetTime;
-          showSeekFeedback('forward', 10, target);
-          this.seek = target;
-        },
-      },
-    ];
-
     const player = new Artplayer({
       container: containerRef.current,
       url: isHls ? hlsTransport.primary : url,
@@ -665,7 +616,6 @@ export default function ArtPlayer({
         'x5-video-player-type': 'h5',
         'x5-video-player-fullscreen': 'false',
       },
-      controls: seekControls,
       // Use ArtPlayer's native focus-scoped keyboard controls.
       hotkey: true,
 
@@ -682,58 +632,8 @@ export default function ArtPlayer({
 
     playerRef.current = player;
 
-    const seekFeedback = document.createElement('div');
-    seekFeedback.className = 'netphim-seek-feedback';
-    seekFeedback.setAttribute('role', 'status');
-    seekFeedback.setAttribute('aria-live', 'polite');
-    seekFeedback.innerHTML = `
-      <span class="netphim-seek-feedback-orbit" aria-hidden="true">
-        <svg viewBox="0 0 48 48" fill="none">
-          <path class="netphim-seek-feedback-track" d="M13 14.5A17 17 0 1 1 8.5 26" />
-          <path class="netphim-seek-feedback-arrow" d="M7.5 13.5v11h11" />
-        </svg>
-        <strong class="netphim-seek-feedback-number">10</strong>
-      </span>
-      <span class="netphim-seek-feedback-copy">
-        <strong class="netphim-seek-feedback-label">Lùi 10 giây</strong>
-        <span class="netphim-seek-feedback-time">0:00</span>
-      </span>
-    `;
-    player.template.$player.appendChild(seekFeedback);
-    let seekFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
-    let lastSeekFeedbackAt = 0;
     let lastStablePlaybackTime = 0;
     let seekOriginTime: number | null = null;
-
-    function showSeekFeedback(
-      direction: 'backward' | 'forward',
-      seconds: number,
-      targetTime: number,
-    ) {
-      const roundedSeconds = Math.max(1, Math.round(seconds));
-      const label = direction === 'backward' ? 'Lùi' : 'Tới';
-      seekFeedback.classList.remove('is-backward', 'is-forward', 'is-visible');
-      // Restart the compact entrance animation for repeated taps.
-      void seekFeedback.offsetWidth;
-      seekFeedback.classList.add(`is-${direction}`, 'is-visible');
-      const number = seekFeedback.querySelector<HTMLElement>('.netphim-seek-feedback-number');
-      const labelElement = seekFeedback.querySelector<HTMLElement>('.netphim-seek-feedback-label');
-      const time = seekFeedback.querySelector<HTMLElement>('.netphim-seek-feedback-time');
-      if (number) number.textContent = String(roundedSeconds);
-      if (labelElement) {
-        labelElement.textContent = `${label} ${roundedSeconds} giây`;
-      }
-      if (time) time.textContent = formatTimelineTime(targetTime);
-      seekFeedback.setAttribute(
-        'aria-label',
-        `${label} ${roundedSeconds} giây, đến ${formatTimelineTime(targetTime)}`,
-      );
-      lastSeekFeedbackAt = Date.now();
-      if (seekFeedbackTimer) clearTimeout(seekFeedbackTimer);
-      seekFeedbackTimer = setTimeout(() => {
-        seekFeedback.classList.remove('is-visible');
-      }, 720);
-    }
 
     const skipAdButton = document.createElement('button');
     skipAdButton.type = 'button';
@@ -780,31 +680,6 @@ export default function ArtPlayer({
     };
 
     skipAdButton.addEventListener('click', handleSkipAd);
-
-    // ArtPlayer can rebuild its control tree while initializing a custom HLS
-    // source. Restore the seek buttons if that happens so they are always
-    // present on desktop and mobile layouts.
-    const ensureSeekControls = () => {
-      for (const control of seekControls) {
-        const selector = `.art-control-${control.name}`;
-        const existing = player.template.$controls?.querySelector(selector);
-        if (existing) continue;
-
-        try {
-          player.controls.add({
-            name: control.name,
-            position: control.position,
-            index: control.index,
-            html: control.html,
-            tooltip: control.tooltip,
-            mounted: control.mounted,
-            click: control.click,
-          });
-        } catch {
-          // Ignore if control cannot be added
-        }
-      }
-    };
 
     let didStartPlayback = false;
     let bufferingStartedAt = 0;
@@ -860,7 +735,6 @@ export default function ArtPlayer({
         player.mask.show = true;
       }
       syncTimelineMarkers();
-      ensureSeekControls();
     });
 
     player.on('video:loadedmetadata', syncTimelineMarkers);
@@ -880,10 +754,6 @@ export default function ArtPlayer({
       });
     });
     player.on('video:seeked', () => {
-      const delta = player.currentTime - (seekOriginTime ?? lastStablePlaybackTime);
-      if (Math.abs(delta) >= 1 && Date.now() - lastSeekFeedbackAt > 180) {
-        showSeekFeedback(delta < 0 ? 'backward' : 'forward', Math.abs(delta), player.currentTime);
-      }
       seekOriginTime = null;
       lastStablePlaybackTime = player.currentTime;
       onPlaybackStateChangeRef.current?.({
@@ -963,7 +833,6 @@ export default function ArtPlayer({
       if (startupVideo && startupPlayHandler) {
         startupVideo.removeEventListener('play', startupPlayHandler);
       }
-      if (seekFeedbackTimer) clearTimeout(seekFeedbackTimer);
       if (stallRecoveryTimer) {
         clearInterval(stallRecoveryTimer);
       }

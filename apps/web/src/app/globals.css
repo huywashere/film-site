@@ -562,8 +562,14 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
 
 /* ── ArtPlayer: keep the native ArtPlayer skin from the editor ── */
 .art-video-player {
-  border-radius: 12px !important;
+  border-radius: 0 !important;
   overflow: hidden !important;
+}
+
+.netphim-watch-player,
+.netphim-watch-player > iframe,
+.netphim-watch-player > video {
+  border-radius: 0 !important;
 }
 
 /* Keep breadcrumb, player and action bar on one shared horizontal axis. On
@@ -579,209 +585,6 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
   }
 }
 
-.art-video-player .art-control-backward-10,
-.art-video-player .art-control-forward-10 {
-  display: flex !important;
-  width: 34px !important;
-  min-width: 34px !important;
-  padding: 0 1px !important;
-  color: rgb(255 255 255 / 72%) !important;
-  opacity: 1 !important;
-}
-
-.art-video-player .netphim-seek-glyph {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  color: inherit;
-  transition:
-    color 180ms cubic-bezier(0.16, 1, 0.3, 1),
-    transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
-    filter 180ms ease;
-}
-
-.art-video-player .netphim-seek-glyph svg {
-  width: 23px;
-  height: 23px;
-  overflow: visible;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
-}
-
-.art-video-player .netphim-seek-glyph path {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.art-video-player .netphim-seek-glyph text {
-  fill: currentColor;
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 7.5px;
-  font-weight: 900;
-  letter-spacing: -0.04em;
-}
-
-.art-video-player .art-control-backward-10:hover .netphim-seek-glyph,
-.art-video-player .art-control-forward-10:hover .netphim-seek-glyph {
-  color: #a78bfa;
-  transform: scale(1.08);
-  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.6));
-}
-
-.art-video-player .art-control-backward-10:active .netphim-seek-glyph,
-.art-video-player .art-control-forward-10:active .netphim-seek-glyph {
-  transform: scale(0.92);
-}
-
-.art-video-player .art-control-backward-10:focus-visible,
-.art-video-player .art-control-forward-10:focus-visible {
-  outline: 2px solid #a78bfa;
-  outline-offset: -4px;
-}
-
-/* Directional seek feedback. It stays close to the side the viewer tapped,
-   leaving subtitles and the subject in the center unobstructed. */
-.art-video-player .netphim-seek-feedback,
-.netphim-outer-seek-feedback {
-  position: absolute;
-  z-index: 38;
-  top: 50%;
-  display: flex;
-  min-width: 116px;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px 9px 9px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
-  background: rgba(8, 9, 13, 0.76);
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.34);
-  color: #fff;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-50%) scale(0.92);
-  -webkit-backdrop-filter: blur(9px) saturate(120%);
-  backdrop-filter: blur(9px) saturate(120%);
-  font-variant-numeric: tabular-nums;
-}
-
-.art-video-player .netphim-seek-feedback.is-backward,
-.netphim-outer-seek-feedback.is-backward {
-  left: clamp(14px, 10%, 120px);
-  transform-origin: left center;
-}
-
-.art-video-player .netphim-seek-feedback.is-forward,
-.netphim-outer-seek-feedback.is-forward {
-  right: clamp(14px, 10%, 120px);
-  flex-direction: row-reverse;
-  padding: 9px 9px 9px 12px;
-  text-align: right;
-  transform-origin: right center;
-}
-
-.art-video-player .netphim-seek-feedback.is-visible,
-.netphim-outer-seek-feedback {
-  animation: netphim-seek-feedback-in 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.art-video-player .netphim-seek-feedback-orbit,
-.netphim-outer-seek-orbit {
-  position: relative;
-  display: grid;
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
-  place-items: center;
-}
-
-.art-video-player .netphim-seek-feedback-orbit svg,
-.netphim-outer-seek-orbit svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.art-video-player .netphim-seek-feedback-track,
-.art-video-player .netphim-seek-feedback-arrow,
-.netphim-outer-seek-orbit path {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.82);
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.art-video-player .netphim-seek-feedback-arrow,
-.netphim-outer-seek-orbit path:last-child {
-  stroke: #a78bfa;
-}
-
-.art-video-player .netphim-seek-feedback.is-forward .netphim-seek-feedback-orbit svg,
-.netphim-outer-seek-feedback.is-forward .netphim-outer-seek-orbit svg {
-  transform: scaleX(-1);
-}
-
-.art-video-player .netphim-seek-feedback-number,
-.netphim-outer-seek-orbit strong {
-  position: relative;
-  z-index: 1;
-  font-size: 11px;
-  font-weight: 850;
-  letter-spacing: -0.04em;
-}
-
-.art-video-player .netphim-seek-feedback-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  white-space: nowrap;
-}
-
-.art-video-player .netphim-seek-feedback-label,
-.netphim-outer-seek-feedback > span:last-child {
-  font-size: 12px;
-  font-weight: 750;
-  line-height: 1.25;
-}
-
-.art-video-player .netphim-seek-feedback-time {
-  color: rgba(255, 255, 255, 0.56);
-  font-size: 10px;
-  font-weight: 650;
-  line-height: 1.25;
-}
-
-@keyframes netphim-seek-feedback-in {
-  0% {
-    opacity: 0;
-    transform: translateY(-50%) scale(0.9);
-  }
-  18% {
-    opacity: 1;
-    transform: translateY(-50%) scale(1);
-  }
-  72% {
-    opacity: 1;
-    transform: translateY(-50%) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-50%) scale(0.96);
-  }
-}
-
 /* ── Highlight & Timeline Markers (Intro & Ads) ── */
 .art-video-player .netphim-timeline-markers {
   position: absolute;
@@ -792,57 +595,95 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
 
 .art-video-player .netphim-timeline-marker {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  min-width: 3px;
-  border-inline: 1px solid rgba(35, 173, 229, 0.95);
-  background: linear-gradient(180deg, rgba(35, 173, 229, 0.85), rgba(14, 116, 144, 0.65));
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.15),
-    0 0 10px rgba(35, 173, 229, 0.6);
+  top: -2px;
+  bottom: -2px;
+  min-width: 5px;
+  border-radius: 3px;
+  transform-origin: center;
   pointer-events: auto;
-  cursor: pointer;
-  border-radius: 2px;
+  cursor: help;
+  z-index: 15;
   transition:
-    transform 160ms ease,
-    filter 160ms ease;
+    transform 140ms ease,
+    filter 140ms ease;
+}
+
+.art-video-player .netphim-timeline-marker.is-point {
+  width: 4px !important;
+  min-width: 4px;
+  transform: translateX(-50%);
 }
 
 .art-video-player .netphim-timeline-marker:hover,
 .art-video-player .netphim-timeline-marker:focus-visible {
-  transform: scaleY(1.4);
+  transform: scaleY(1.55);
   filter: brightness(1.25);
-  z-index: 20;
+  z-index: 25;
 }
 
-/* Mốc Intro phim (Cyan / Sky) */
+.art-video-player .netphim-timeline-marker.is-point:hover,
+.art-video-player .netphim-timeline-marker.is-point:focus-visible {
+  transform: translateX(-50%) scaleY(1.55);
+}
+
+/* Intro uses NetPhim purple; the complete interval is visible, not only its end. */
 .art-video-player .netphim-timeline-marker-intro {
-  border-color: rgba(35, 173, 229, 0.95);
-  background: linear-gradient(180deg, rgba(35, 173, 229, 0.85), rgba(14, 116, 144, 0.65));
+  background: #a855f7;
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
-    0 0 10px rgba(35, 173, 229, 0.55);
+    0 0 0 1px rgba(0, 0, 0, 0.7),
+    0 0 5px rgba(168, 85, 247, 0.72);
 }
 
-/* Mốc Quảng cáo & Điểm ngắt (Amber / Gold) */
+/* Ad ranges use a striped amber treatment so they remain distinct in grayscale. */
 .art-video-player .netphim-timeline-marker-ad {
-  border-color: rgba(251, 191, 36, 1);
-  background: linear-gradient(180deg, rgba(245, 158, 11, 0.95), rgba(217, 119, 6, 0.75));
+  background: repeating-linear-gradient(135deg, #fb923c 0 4px, #facc15 4px 8px);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.25),
-    0 0 12px rgba(245, 158, 11, 0.7);
+    0 0 0 1px rgba(0, 0, 0, 0.7),
+    0 0 5px rgba(251, 146, 60, 0.72);
 }
 
-.art-video-player .netphim-timeline-marker.is-point {
-  width: 4px;
-  min-width: 4px;
-  border: 0;
-  border-radius: 9999px;
-  background: #fbbf24;
-  box-shadow:
-    0 0 0 1px rgba(15, 17, 21, 0.8),
-    0 0 10px rgba(245, 158, 11, 0.85);
-  transform: translateX(-1.5px);
+.art-video-player .netphim-timeline-legend {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  z-index: 14;
+  display: flex;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.art-video-player .netphim-timeline-legend[hidden] {
+  display: none;
+}
+
+.art-video-player .netphim-timeline-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 999px;
+  background: rgba(8, 9, 13, 0.82);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  backdrop-filter: blur(8px);
+}
+
+.art-video-player .netphim-timeline-legend-item::before {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  content: '';
+}
+
+.art-video-player .netphim-timeline-legend-intro::before {
+  background: #a855f7;
+}
+
+.art-video-player .netphim-timeline-legend-ad::before {
+  background: linear-gradient(135deg, #fb923c 0 50%, #facc15 50%);
 }
 
 /* Rich Marker Tooltip */
@@ -900,7 +741,7 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
 }
 
 .art-video-player .netphim-timeline-marker:focus-visible {
-  outline: 2px solid #23ade5;
+  outline: 2px solid #fff;
   outline-offset: 2px;
 }
 
@@ -1002,6 +843,17 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
     padding: 0 4px 2px 4px !important;
   }
 
+  .art-video-player .netphim-timeline-marker {
+    top: -3px;
+    bottom: -3px;
+    min-width: 7px;
+  }
+
+  .art-video-player .netphim-timeline-legend {
+    right: 2px;
+    bottom: calc(100% + 8px);
+  }
+
   .art-video-player .art-controls .art-control {
     min-width: 28px !important;
     padding: 0 2px !important;
@@ -1025,42 +877,6 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
   .art-video-player.art-mobile .art-control-screenshot,
   .art-video-player .art-control-screenshot {
     display: none !important;
-  }
-
-  .art-video-player .art-control-backward-10,
-  .art-video-player .art-control-forward-10 {
-    width: 31px !important;
-    min-width: 31px !important;
-    flex: 0 0 31px !important;
-  }
-
-  .art-video-player .netphim-seek-glyph svg {
-    width: 23px;
-    height: 23px;
-  }
-
-  .art-video-player .netphim-seek-feedback,
-  .netphim-outer-seek-feedback {
-    min-width: 0;
-    gap: 7px;
-    padding: 7px 9px 7px 7px;
-  }
-
-  .art-video-player .netphim-seek-feedback.is-forward,
-  .netphim-outer-seek-feedback.is-forward {
-    padding: 7px 7px 7px 9px;
-  }
-
-  .art-video-player .netphim-seek-feedback-orbit,
-  .netphim-outer-seek-orbit {
-    width: 38px;
-    height: 38px;
-    flex-basis: 38px;
-  }
-
-  .art-video-player .netphim-seek-feedback-label,
-  .netphim-outer-seek-feedback > span:last-child {
-    font-size: 11px;
   }
 
   .art-video-player .netphim-skip-ad {
@@ -1087,11 +903,6 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
   .art-video-player .art-control-time {
     font-size: 10px !important;
   }
-
-  .art-video-player .netphim-seek-feedback-copy,
-  .netphim-outer-seek-feedback > span:last-child {
-    display: none;
-  }
 }
 
 @media (max-width: 350px) {
@@ -1102,27 +913,11 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
     min-width: 31px !important;
     flex-basis: 31px !important;
   }
-
-  .art-video-player .art-control-backward-10,
-  .art-video-player .art-control-forward-10 {
-    width: 29px !important;
-    min-width: 29px !important;
-    flex-basis: 29px !important;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .art-video-player .netphim-skip-ad {
     animation: none;
-  }
-
-  .art-video-player .netphim-seek-glyph {
-    transition: none;
-  }
-
-  .art-video-player .netphim-seek-feedback.is-visible,
-  .netphim-outer-seek-feedback {
-    animation-duration: 1ms;
   }
 }
 
@@ -1189,4 +984,12 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
 
 .animate-soundwave-3 {
   animation: soundwave-3 0.8s ease-in-out infinite 0.4s;
+}
+@keyframes route-in {
+  from {
+    opacity: 0.95;
+  }
+  to {
+    opacity: 1;
+  }
 }

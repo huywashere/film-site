@@ -42,15 +42,22 @@ import { establishFirebaseSession } from "@/lib/auth-session";
 import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
 import { CinematicAuthBackground } from "@/components/auth/CinematicAuthBackground";
 import { useGoogleOneTap } from "@/hooks/useGoogleOneTap";
+import { getRandomAuthArtwork, type AuthArtwork } from "@/lib/auth-artworks";
 import { cn } from "@/lib/utils";
-
-const AUTH_SIDEBAR_IMAGE = "/images/man.webp";
 
 export function AuthModal() {
   const router = useRouter();
   const { isOpen, mode, closeModal, setMode } = useAuthModalStore();
   const { setUser, login, register } = useAuthStore();
   const { toast } = useToast();
+
+  const [currentArtwork, setCurrentArtwork] = useState<AuthArtwork>(getRandomAuthArtwork);
+
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentArtwork(getRandomAuthArtwork());
+    }
+  }, [isOpen]);
 
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
@@ -312,24 +319,24 @@ export function AuthModal() {
           {/* Single High-Quality Fixed Backdrop Image */}
           <div className="absolute inset-0 z-0">
             <img
-              src={AUTH_SIDEBAR_IMAGE}
-              alt="NetPhim"
-              className="w-full h-full object-cover object-center scale-105 brightness-[0.88]"
+              src={currentArtwork.url}
+              alt={currentArtwork.title}
+              className="w-full h-full object-cover object-center scale-105 brightness-[0.88] transition-all duration-700"
             />
             {/* Gradient Overlays for smooth blend */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#10141a]/80 via-transparent to-black/30" />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#151923]" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#151923] via-transparent to-black/40" />
+            <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-r from-transparent to-[#151923]" />
           </div>
 
           {/* Brand Logo at top-left */}
           <div className="relative z-10">
-            <Link href="/" className="inline-flex items-center gap-2 select-none group">
+            <Link href="/" className="inline-flex items-center gap-2.5 select-none group">
               <NextImage
                 src="/cinephim-logo.png"
                 alt="NetPhim Logo"
                 width={32}
                 height={32}
-                className="h-8 w-8 object-contain"
+                className="h-8 w-8 object-contain transition-transform group-hover:scale-105"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = "/logo.png";
                 }}

@@ -557,6 +557,7 @@ model Watchlist {
   movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
 
   @@unique([userId, movieId])
+  @@index([userId, addedAt(sort: Desc), id(sort: Desc)])
   @@map("watchlists")
 }
 
@@ -617,6 +618,7 @@ model ViewLog {
   movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
 
   @@index([viewedAt(sort: Desc), movieId])
+  @@index([movieId, viewedAt(sort: Desc)])
   @@map("view_logs")
 }
 
@@ -638,7 +640,8 @@ model WatchHistory {
 
   // One record per (user, movie, episode) — upserted on every sync
   @@unique([userId, movieId, episode])
-  @@index([userId, updatedAt(sort: Desc)])
+  @@index([userId, watchedAt(sort: Desc), id(sort: Desc)])
+  @@index([userId, movieId, watchedAt(sort: Desc)])
   @@map("watch_histories")
 }
 

@@ -128,12 +128,6 @@ const FanCardButton = styled.button<{
     transform: scale(1.035);
   }
 
-  &:hover .fan-card-action,
-  &:focus-visible .fan-card-action {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-
   @media (prefers-reduced-motion: reduce) {
     animation: none;
     transition: none;
@@ -439,53 +433,6 @@ function getFilmDetailMeta(film: HeroFilm) {
   return { durationStr, genresStr, ageRating, qualityBadge, langBadge };
 }
 
-function getSpotlightBadge(film: HeroFilm, index: number) {
-  if ((film as any).spotlightBadge) {
-    const colors = [
-      "from-red-600/90 to-amber-600/90 text-white border-red-500/40",
-      "from-amber-600/90 to-yellow-500/90 text-white border-amber-400/40",
-      "from-violet-600/90 to-purple-500/90 text-white border-purple-400/40",
-      "from-blue-600/90 to-indigo-600/90 text-white border-blue-400/40",
-      "from-emerald-600/90 to-teal-500/90 text-white border-emerald-400/40",
-      "from-rose-600/90 to-pink-600/90 text-white border-rose-500/40",
-    ];
-    return {
-      label: (film as any).spotlightBadge,
-      color: colors[index % colors.length],
-    };
-  }
-  const badges = [
-    {
-      label: "🔥 #1 THỊNH HÀNH HÔM NAY",
-      color: "from-red-600/90 to-amber-600/90 text-white border-red-500/40",
-    },
-    {
-      label: "🏆 SIÊU PHẨM HOLLYWOOD 4K",
-      color:
-        "from-amber-600/90 to-yellow-500/90 text-white border-amber-400/40",
-    },
-    {
-      label: "✨ BOM TẤN CHIẾU RẠP",
-      color:
-        "from-violet-600/90 to-purple-500/90 text-white border-purple-400/40",
-    },
-    {
-      label: "🍿 VŨ TRỤ ĐIỆN ẢNH ĐỈNH CAO",
-      color: "from-rose-600/90 to-pink-600/90 text-white border-rose-500/40",
-    },
-    {
-      label: "⚡ BẢN QUYỀN CHẤT LƯỢNG CAO",
-      color:
-        "from-emerald-600/90 to-teal-500/90 text-white border-emerald-400/40",
-    },
-    {
-      label: "💎 TOP PHIM ĐƯỢC BÌNH CHỌN",
-      color: "from-blue-600/90 to-indigo-600/90 text-white border-blue-400/40",
-    },
-  ];
-  return badges[index % badges.length];
-}
-
 function getBestTitleLogo(logos: TmdbImage[]): TmdbImage | null {
   const languagePriority = (language?: string | null) => {
     if (language === "vi") return 4;
@@ -655,11 +602,11 @@ function HeroMovieTitle({
   }, [hasLogoCandidate, onReady]);
 
   return (
-    <div className="relative flex min-h-16 w-full items-center justify-center sm:min-h-24 md:min-h-28">
+    <div className="relative flex min-h-16 w-full items-center justify-center sm:min-h-24 md:min-h-28 overflow-visible">
       {/* Cinematic Text Title - Rendered immediately so user never sees a blank gap */}
       <h1
         className={cn(
-          "max-w-2xl line-clamp-2 text-xl font-black uppercase leading-tight tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl transition-opacity duration-300",
+          "max-w-2xl line-clamp-2 text-xl font-black uppercase leading-[1.3] sm:leading-[1.25] tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl transition-opacity duration-300 pt-3 pb-2 px-2 overflow-visible",
           logoLoaded
             ? "opacity-0 absolute pointer-events-none"
             : "opacity-100 relative",
@@ -1184,6 +1131,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
   const [current, setCurrent] = useState(0);
   const [showDesktopFanCards, setShowDesktopFanCards] = useState(false);
   const [autoRotateEnabled, setAutoRotateEnabled] = useState(false);
+  const [pageVisible, setPageVisible] = useState(true);
   const attemptedTitleLogos = useRef(new Set<string>());
   // Keep SSR and the first client paint neutral. Rendering a curated playlist
   // here used to flash unrelated films before the authoritative admin/session
@@ -1232,10 +1180,45 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
     const options: AddEventListenerOptions = { passive: true, once: true };
     window.addEventListener("pointerdown", enable, options);
     window.addEventListener("keydown", enable, { once: true });
+
+    // Start rotation after the critical hero paint even when the visitor does
+    // not interact. Previously only pointer/keyboard input enabled the timer,
+    // leaving the progress bar full while the first slide stayed forever.
+    const idleWindow = window as unknown as {
+      requestIdleCallback?: (
+        callback: IdleRequestCallback,
+        options?: IdleRequestOptions,
+      ) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+    let idleId: number | null = null;
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+    if (typeof idleWindow.requestIdleCallback === "function") {
+      idleId = idleWindow.requestIdleCallback(enable, { timeout: 1_500 });
+    } else {
+      fallbackTimer = setTimeout(enable, 800);
+    }
+
     return () => {
       window.removeEventListener("pointerdown", enable);
       window.removeEventListener("keydown", enable);
+      if (
+        idleId !== null &&
+        typeof idleWindow.cancelIdleCallback === "function"
+      ) {
+        idleWindow.cancelIdleCallback(idleId);
+      }
+      if (fallbackTimer !== null) clearTimeout(fallbackTimer);
     };
+  }, []);
+
+  useEffect(() => {
+    const syncVisibility = () =>
+      setPageVisible(document.visibilityState === "visible");
+    syncVisibility();
+    document.addEventListener("visibilitychange", syncVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", syncVisibility);
   }, []);
 
   // Resolve one authoritative playlist before painting any film artwork.
@@ -1419,12 +1402,18 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
   }, [current, featured.length]);
 
   useEffect(() => {
-    if (featured.length <= 1 || reduceMotion || !autoRotateEnabled) return;
-    const timer = setInterval(() => {
+    if (
+      featured.length <= 1 ||
+      reduceMotion ||
+      !autoRotateEnabled ||
+      !pageVisible
+    )
+      return;
+    const timer = window.setTimeout(() => {
       setCurrent((c) => (c + 1) % featured.length);
     }, HERO_ROTATION_MS);
-    return () => clearInterval(timer);
-  }, [autoRotateEnabled, featured.length, reduceMotion]);
+    return () => window.clearTimeout(timer);
+  }, [autoRotateEnabled, current, featured.length, pageVisible, reduceMotion]);
 
   const [fanCardSlugs, setFanCardSlugs] = useState<string[]>([]);
 
@@ -1611,7 +1600,6 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         film={trailerModalFilm}
         isOpen={!!trailerModalFilm}
         onClose={() => setTrailerModalFilm(null)}
-        presentation="hero"
       />
 
       {/* Direct CDN Preloaded Backdrop Layers (700ms GPU Opacity Crossfade) */}
@@ -1742,15 +1730,6 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                         ) : null}
                       </div>
                     </div>
-
-                    <span className="fan-card-action absolute right-2.5 top-2.5 flex h-7 w-7 translate-y-1 items-center justify-center rounded-full bg-white text-[#0b0e14] opacity-0 shadow-lg transition-[opacity,transform] duration-300">
-                      <Play
-                        size={12}
-                        fill="currentColor"
-                        className="ml-0.5"
-                        aria-hidden="true"
-                      />
-                    </span>
                   </div>
                 </FanCardButton>
               );
@@ -1770,18 +1749,6 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
               transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
               className={`${heroSerifFont.className} flex w-full flex-col items-center space-y-2.5 sm:space-y-3.5`}
             >
-              {/* 🏆 SINGLE PROMINENT SPOTLIGHT BADGE (Lý do để click) */}
-              {(() => {
-                const badge = getSpotlightBadge(film, current);
-                return (
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-gradient-to-r ${badge.color} border shadow-lg backdrop-blur-md`}
-                  >
-                    {badge.label}
-                  </span>
-                );
-              })()}
-
               {/* Official TMDB title artwork with an accessible text fallback. */}
               <HeroMovieTitle
                 film={film}
@@ -1868,16 +1835,16 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                 <button
                   type="button"
                   onClick={() => setTrailerModalFilm(film)}
-                  className={`${cardFont.className} flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/15 bg-[#181c24]/80 px-4 py-2.5 sm:px-5 sm:py-3 text-xs font-bold text-neutral-200 shadow-xl transition-all duration-200 hover:scale-105 hover:bg-white/20 hover:text-white active:scale-95 cursor-pointer`}
+                  className={`${cardFont.className} flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/10 bg-[#181b22] px-5 py-2.5 sm:px-6 sm:py-3 text-xs font-extrabold uppercase tracking-wider text-white shadow-xl transition-all duration-200 hover:scale-105 hover:bg-[#222731] hover:border-white/20 active:scale-95 cursor-pointer`}
                 >
-                  <Film size={14} className="text-neutral-300" />
+                  <Film size={14} className="text-white/80" />
                   <span>{t("home.trailer", "Trailer")}</span>
                 </button>
 
                 {/* Bookmark CTA with hover tooltip */}
                 <div className="relative group">
-                  <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-black/90 border border-white/20 backdrop-blur-md text-[10px] font-bold text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 shadow-2xl z-40 translate-y-1 group-hover:translate-y-0">
-                    {t("home.saveWatchlist", "Lưu vào tủ phim")}
+                  <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-[#181b22] border border-white/15 text-[10px] font-bold text-sky-400 whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 shadow-2xl z-40 translate-y-1 group-hover:translate-y-0 uppercase tracking-wider">
+                    {t("home.saveWatchlist", "Tủ phim")}
                   </span>
                   <button
                     type="button"
@@ -1918,9 +1885,9 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                         });
                     }}
                     aria-label="Thêm vào tủ phim"
-                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center backdrop-blur-md transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-xl"
+                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#181b22] hover:bg-[#222731] border border-white/10 hover:border-white/20 text-neutral-200 hover:text-white flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-xl"
                   >
-                    <Bookmark size={15} />
+                    <Bookmark size={16} />
                   </button>
                 </div>
               </div>
@@ -2013,14 +1980,25 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
             {String(featured.length).padStart(2, "0")}
           </span>
 
-          {/* Thin Progress Bar indicating 10s auto rotation */}
+          {/* Progress bar stays synchronized with the 14s rotation timer. */}
           <div className="w-14 sm:w-16 h-1 bg-white/20 rounded-full overflow-hidden relative">
             <motion.div
-              key={current}
+              key={`${current}-${autoRotateEnabled}-${pageVisible}`}
               initial={{ width: "0%" }}
-              animate={{ width: "100%" }}
-              transition={{ duration: HERO_ROTATION_MS / 1000, ease: "linear" }}
-              className="h-full bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+              animate={{
+                width:
+                  autoRotateEnabled && pageVisible && !reduceMotion
+                    ? "100%"
+                    : "0%",
+              }}
+              transition={{
+                duration:
+                  autoRotateEnabled && pageVisible && !reduceMotion
+                    ? HERO_ROTATION_MS / 1000
+                    : 0,
+                ease: "linear",
+              }}
+              className="h-full bg-white/90 rounded-full shadow-sm"
             />
           </div>
         </div>
@@ -2060,7 +2038,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                     className={cn(
                       "relative w-20 sm:w-24 aspect-[16/9] rounded-lg overflow-hidden cursor-pointer flex-shrink-0 transition-all duration-300 shadow-xl border text-left block",
                       isActive
-                        ? "border-white scale-105 shadow-[0_0_15px_rgba(255,255,255,0.35)] z-10 opacity-100 ring-1 ring-white/40"
+                        ? "border-white scale-105 shadow-md z-10 opacity-100 ring-1 ring-white/30"
                         : "border-white/20 opacity-50 hover:opacity-90 hover:border-white/60 hover:scale-105",
                     )}
                   >
