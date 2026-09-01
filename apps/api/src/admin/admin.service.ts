@@ -51,6 +51,9 @@ const DEFAULT_HOME_SECTION_ORDER = [
   "scifi",
 ];
 
+import { RabbitMQService } from "../rabbitmq/rabbitmq.service";
+import { Optional, Inject, forwardRef } from "@nestjs/common";
+
 function adminKey(actor: AdminActor) {
   return (actor.email || actor.uid).toLowerCase();
 }
@@ -64,6 +67,9 @@ export class AdminService implements OnModuleInit {
     private readonly watchParties: WatchPartyService,
     private readonly cache: RedisCacheService,
     private readonly siteConfig: SiteConfigService,
+    @Inject(forwardRef(() => RabbitMQService))
+    @Optional()
+    private readonly rabbitMQService?: RabbitMQService,
   ) {}
 
   async onModuleInit() {
@@ -72,7 +78,18 @@ export class AdminService implements OnModuleInit {
       take: 10,
       orderBy: { createdAt: "asc" },
     });
-    for (const job of unfinished) void this.runSyncJob(job.id);
+    for (const job of unfinished) {
+      if (this.rabbitMQService) {
+        void this.rabbitMQService.publishCrawlJob({
+          jobId: job.id,
+          source: job.source,
+          pages: job.requestedPages,
+          requestedBy: job.requestedBy,
+        });
+      } else {
+        void this.executeSyncJob(job.id);
+      }
+    }
   }
 
   // ── 1. Dashboard Overview Stats & Charts ──────────────────────────
@@ -436,7 +453,16 @@ export class AdminService implements OnModuleInit {
       details: `Yêu cầu đồng bộ thủ công cho nguồn "${source}"`,
     });
 
-    void this.runSyncJob(job.id);
+    if (this.rabbitMQService) {
+      await this.rabbitMQService.publishCrawlJob({
+        jobId: job.id,
+        source: job.source,
+        pages: job.requestedPages,
+        requestedBy: job.requestedBy,
+      });
+    } else {
+      void this.executeSyncJob(job.id);
+    }
     return job;
   }
 
@@ -464,7 +490,17 @@ export class AdminService implements OnModuleInit {
       targetId: id,
       details: `Chạy lại job đồng bộ ${job.source}`,
     });
-    void this.runSyncJob(id);
+
+    if (this.rabbitMQService) {
+      await this.rabbitMQService.publishCrawlJob({
+        jobId: updated.id,
+        source: updated.source,
+        pages: updated.requestedPages,
+        requestedBy: adminUser.email || adminUser.uid,
+      });
+    } else {
+      void this.executeSyncJob(updated.id);
+    }
     return updated;
   }
 
@@ -1322,7 +1358,7 @@ export class AdminService implements OnModuleInit {
     return restored;
   }
 
-  private async runSyncJob(jobId: string) {
+  async executeSyncJob(jobId: string) {
     if (this.runningSyncJobs.has(jobId)) return;
     this.runningSyncJobs.add(jobId);
     try {

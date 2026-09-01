@@ -42,6 +42,11 @@ const CuratedSpotlightSection = dynamic(() =>
     (module) => module.CuratedSpotlightSection,
   ),
 );
+const LandscapeSpotlightRow = dynamic(() =>
+  import("@/components/film/LandscapeSpotlightRow").then(
+    (module) => module.LandscapeSpotlightRow,
+  ),
+);
 import HeroBanner from "@/app/components/HeroBanner";
 import { cardFont } from "@/lib/fonts";
 
@@ -1053,7 +1058,7 @@ export default function HomePageClient({
     ),
     latest: (
       <LazySection>
-        <FilmSection
+        <LandscapeSpotlightRow
           title={t("sections.latest", "Phim Mới Cập Nhật")}
           films={latestRowList}
           isLoading={latestLoading}

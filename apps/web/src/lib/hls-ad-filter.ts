@@ -247,7 +247,7 @@ const AD_HOST_TOKENS = [
 const AD_HOST_SUFFIXES = ['ads.google.com', 'adf.ly', 'shorte.st', 'ouo.io'];
 
 const AD_PATH_PATTERN =
-  /(?:^|[/_.,?=&-])(ads?|advert(?:isement|ising)?|commercial|preroll|midroll|postroll|sponsor(?:ed)?|betting|casino|nha-?cai|quang-?cao)(?:$|[/_.,?=&-])/i;
+  /(?:^|[/_.,?=&-])(ads?|advert(?:isement|ising)?|commercial|preroll|midroll|postroll|sponsor(?:ed)?|betting|casino|nha-?cai|quang-?cao|convertv8|segment_\d+)(?:$|[/_.,?=&-])|(?:\/v8\/[a-f0-9]{20,})/i;
 
 const AD_MARKER_PATTERN =
   /(?:^|[\s._:-])(ad|ads|advert|commercial|preroll|midroll|postroll|interstitial|scte|splice)(?:$|[\s._:-])/i;
@@ -356,40 +356,78 @@ export function isLikelyAdUrl(value: string): boolean {
 }
 
 /**
- * Only treats a discontinuity block as skippable when at least one fragment
- * has an explicit ad URL. A short discontinuity is common for codec/source
- * changes and must never be used as ad evidence on its own.
+ * Detects explicit ad ranges and spliced discontinuity commercial blocks (e.g. gambling ads).
  */
 export function detectExplicitHlsAdRanges(fragments: HlsFragmentLike[]): HlsDetectedAdRange[] {
   if (!fragments.length) return [];
 
   const ranges: HlsDetectedAdRange[] = [];
 
-  for (const fragment of fragments) {
-    if (
-      !Number.isFinite(fragment.start) ||
-      !Number.isFinite(fragment.duration) ||
-      fragment.duration <= 0
-    ) {
-      continue;
+  // 1. Group fragments by Continuity Counter (CC) to catch spliced ad intervals
+  const ccGroups = new Map<number, HlsFragmentLike[]>();
+  for (const f of fragments) {
+    const cc = f.cc ?? 0;
+    if (!ccGroups.has(cc)) {
+      ccGroups.set(cc, []);
     }
-    if (!isLikelyAdUrl(fragment.url || '')) continue;
-    const end = fragment.start + fragment.duration;
-    const previous = ranges.at(-1);
-    if (previous && fragment.start <= previous.end + 0.1) {
-      previous.end = Math.max(previous.end, end);
-      previous.duration = previous.end - previous.start;
-      continue;
-    }
-    ranges.push({
-      start: fragment.start,
-      end,
-      duration: fragment.duration,
-      skippable: true,
-    });
+    ccGroups.get(cc)!.push(f);
   }
 
-  return ranges.filter((range) => range.duration > 0 && range.duration <= 180);
+  const totalDuration = fragments.reduce((sum, f) => sum + (f.duration || 0), 0);
+
+  if (ccGroups.size > 1) {
+    for (const [, frags] of ccGroups.entries()) {
+      if (!frags.length) continue;
+      const start = frags[0].start;
+      const duration = frags.reduce((sum, f) => sum + (f.duration || 0), 0);
+      const end = start + duration;
+
+      const hasExplicitAdUrl = frags.some((f) => isLikelyAdUrl(f.url || ''));
+      // A spliced discontinuity with short duration (4s - 50s) in a full-length film
+      const isSplicedDiscontinuity =
+        duration >= 4 && duration <= 50 && totalDuration >= 180 && frags.length <= 30;
+
+      if (hasExplicitAdUrl || isSplicedDiscontinuity) {
+        ranges.push({
+          start,
+          end,
+          duration,
+          skippable: true,
+        });
+      }
+    }
+  }
+
+  // 2. Individual fragment-level fallback
+  if (ranges.length === 0) {
+    for (const fragment of fragments) {
+      if (
+        !Number.isFinite(fragment.start) ||
+        !Number.isFinite(fragment.duration) ||
+        fragment.duration <= 0
+      ) {
+        continue;
+      }
+      if (!isLikelyAdUrl(fragment.url || '')) continue;
+      const end = fragment.start + fragment.duration;
+      const previous = ranges.at(-1);
+      if (previous && fragment.start <= previous.end + 0.1) {
+        previous.end = Math.max(previous.end, end);
+        previous.duration = previous.end - previous.start;
+        continue;
+      }
+      ranges.push({
+        start: fragment.start,
+        end,
+        duration: fragment.duration,
+        skippable: true,
+      });
+    }
+  }
+
+  return ranges
+    .filter((range) => range.duration > 0 && range.duration <= 180)
+    .sort((a, b) => a.start - b.start);
 }
 
 function isClientSideInterstitial(attributes: Record<string, string>): boolean {

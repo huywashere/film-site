@@ -114,11 +114,11 @@ function ResilientDetailImage({
   );
 }
 
-// ── Interactive Poster Card with Smooth 3D Flip / Crossfade Transition ──
+// ── Clean & Reliable Detail Poster Card (Single TMDB / Provider Poster) ──
 function DetailPosterCard({
   candidates,
   filmName,
-  className,
+  className = 'w-full h-full object-cover group-hover:scale-105 transition-transform duration-500',
   onOpenLightbox,
 }: {
   candidates: string[];
@@ -131,21 +131,10 @@ function DetailPosterCard({
   }, [candidates]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
-  const totalImages = robustCandidates.length;
 
   useEffect(() => {
     setCandidateIdx(0);
   }, [robustCandidates]);
-
-  const handleNext = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setCandidateIdx((prev) => (prev + 1) % totalImages);
-  };
-
-  const handlePrev = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setCandidateIdx((prev) => (prev - 1 + totalImages) % totalImages);
-  };
 
   const src = robustCandidates[candidateIdx];
 
@@ -162,81 +151,42 @@ function DetailPosterCard({
 
   return (
     <div
-      onClick={() => {
-        if (totalImages > 1) {
-          handleNext();
-        } else if (onOpenLightbox) {
-          onOpenLightbox(0);
-        }
-      }}
+      onClick={() => onOpenLightbox?.(0)}
       className="relative w-full h-full overflow-hidden cursor-pointer select-none group"
-      title={totalImages > 1 ? 'Bấm vào ảnh để chuyển poster khác' : 'Bấm để xem ảnh phóng to'}
+      title="Bấm để xem ảnh phóng to"
     >
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`${filmName}-${candidateIdx}-${src}`}
-          initial={{ opacity: 0, scale: 1.04, rotateY: -6 }}
-          animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-          exit={{ opacity: 0, scale: 0.96, rotateY: 6 }}
-          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full h-full"
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        key={`${filmName}-${src}`}
+        src={src}
+        alt={filmName}
+        referrerPolicy="no-referrer"
+        loading="eager"
+        decoding="async"
+        className={className}
+        onError={() => {
+          if (candidateIdx < robustCandidates.length - 1) {
+            setCandidateIdx((i) => i + 1);
+          }
+        }}
+      />
+
+      {/* Subtle hover overlay */}
+      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+      {/* Top-right zoom lightbox button */}
+      {onOpenLightbox && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenLightbox(0);
+          }}
+          className="absolute top-2.5 right-2.5 p-1.5 rounded-full bg-black/65 hover:bg-black/90 text-white/80 hover:text-white border border-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-200 active:scale-90 shadow-lg"
+          title="Xem ảnh toàn màn hình"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={src}
-            alt={filmName}
-            referrerPolicy="no-referrer"
-            loading="eager"
-            decoding="async"
-            className={className}
-            onError={() => {
-              if (candidateIdx < robustCandidates.length - 1) {
-                setCandidateIdx((i) => i + 1);
-              }
-            }}
-          />
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Floating Controls when multiple posters exist */}
-      {totalImages > 1 && (
-        <>
-          {/* Subtle gradient overlay on hover */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-
-          {/* Top-right zoom lightbox button */}
-          {onOpenLightbox && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenLightbox(candidateIdx);
-              }}
-              className="absolute top-2.5 right-2.5 p-1.5 rounded-full bg-black/65 hover:bg-black/90 text-white/80 hover:text-white border border-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-200 active:scale-90 shadow-lg"
-              title="Xem ảnh toàn màn hình"
-            >
-              <Maximize2 size={13} />
-            </button>
-          )}
-
-          {/* Left & Right Switcher Buttons */}
-          <button
-            type="button"
-            onClick={handlePrev}
-            className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/65 hover:bg-black/90 text-white/80 hover:text-white border border-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-200 active:scale-90 shadow-lg"
-            title="Ảnh trước"
-          >
-            <ChevronLeft size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={handleNext}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/65 hover:bg-black/90 text-white/80 hover:text-white border border-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-200 active:scale-90 shadow-lg"
-            title="Ảnh tiếp theo"
-          >
-            <ChevronRight size={14} />
-          </button>
-        </>
+          <Maximize2 size={13} />
+        </button>
       )}
     </div>
   );
@@ -1191,7 +1141,10 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
       if (resolved && !list.includes(resolved)) list.push(resolved);
     };
 
-    // 1. All TMDB posters first
+    // 1. Primary best TMDB poster
+    if (tmdbPosterUrl) add(tmdbPosterUrl);
+
+    // 2. All other TMDB posters
     if (posters && posters.length > 0) {
       for (const p of posters) {
         if (p.file_path) {
@@ -1201,41 +1154,20 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
       }
     }
 
-    if (tmdbPosterUrl) add(tmdbPosterUrl);
-    if (tmdbBackdropUrl) add(tmdbBackdropUrl);
+    // 3. Provider artwork
     if (providerPosterUrl) add(providerPosterUrl);
     if (providerBackdropUrl) add(providerBackdropUrl);
 
-    // 2. TMDB backdrops
-    if (backdrops && backdrops.length > 0) {
-      for (const b of backdrops.slice(0, 5)) {
-        if (b.file_path) {
-          const url = tmdbBackdrop(b.file_path, 'w1280');
-          if (url) add(url);
-        }
-      }
-    }
-
-    const primary = film?.poster_url || film?.thumb_url;
-    if (primary && typeof primary === 'string') {
-      if (primary.includes('/uploads/movies/')) {
-        add(primary.replace('/uploads/movies/', '/upload/vod/'));
-      } else if (primary.includes('/upload/vod/')) {
-        add(primary.replace('/upload/vod/', '/uploads/movies/'));
-      }
-    }
+    // 4. TMDB backdrop fallback
+    if (tmdbBackdropUrl) add(tmdbBackdropUrl);
 
     return list;
   }, [
-    film?.poster_url,
-    film?.thumb_url,
-    providerBackdropUrl,
-    providerPosterUrl,
-    tmdbBackdropUrl,
     tmdbPosterUrl,
     posters,
-    backdrops,
-    tmdbResolving,
+    providerPosterUrl,
+    providerBackdropUrl,
+    tmdbBackdropUrl,
   ]);
 
   const allGalleryImages = useMemo(() => {

@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { RedisThrottlerStorage } from "./throttler-redis.storage";
 import { RedisCacheModule } from "./redis/redis.module";
+import { RabbitMQModule } from "./rabbitmq/rabbitmq.module";
 import { StorageModule } from "./common/storage/storage.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { AuthModule } from "./auth/auth.module";
@@ -33,6 +34,8 @@ import { IpBlacklistGuard } from "./common/guards/ip-blacklist.guard";
     }),
     // Global Redis cache module – available to all feature modules
     RedisCacheModule,
+    // Global RabbitMQ Event Broker module
+    RabbitMQModule,
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

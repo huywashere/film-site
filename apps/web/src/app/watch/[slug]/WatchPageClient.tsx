@@ -65,6 +65,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/providers/ToastProvider';
 import { useAuthStore } from '@/store/authStore';
 import { useTranslation } from '@/store/langStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useWatchParty } from '@/hooks/useWatchParty';
 import { useTmdb } from '@/hooks/useTmdb';
 import { useTmdbArtwork } from '@/hooks/useTmdbArtwork';
@@ -2910,6 +2911,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       initialTime={lastKnownPlaybackTimeRef.current || resumeAt}
                       autoPlay={autoPlayConfig}
                       autoSkipIntro={skipIntroConfig}
+                      autoSkipAds={useSettingsStore.getState().autoSkipAds ?? true}
                       onReady={(player) => {
                         setArtInstance(player);
                         setPlayerReadySlug(slug);

@@ -40,6 +40,8 @@ export interface ArtPlayerProps {
   skipIntroEnd?: number;
   skipOutroStart?: number;
   autoSkipIntro?: boolean;
+  autoSkipAds?: boolean;
+  adRanges?: Array<{ start: number; end: number; title?: string }>;
 }
 
 export default function ArtPlayer({
@@ -63,6 +65,8 @@ export default function ArtPlayer({
   skipIntroStart = 0,
   skipIntroEnd = 85,
   autoSkipIntro = true,
+  autoSkipAds = true,
+  adRanges,
 }: ArtPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Artplayer | null>(null);
@@ -83,10 +87,13 @@ export default function ArtPlayer({
   const skipIntroStartRef = useRef(skipIntroStart);
   const skipIntroEndRef = useRef(skipIntroEnd);
   const autoSkipIntroRef = useRef(autoSkipIntro);
+  const autoSkipAdsRef = useRef(autoSkipAds);
   const introAutoSkippedRef = useRef(false);
+  const skippedAdIntervalsRef = useRef(new Set<string>());
   skipIntroStartRef.current = skipIntroStart;
   skipIntroEndRef.current = skipIntroEnd;
   autoSkipIntroRef.current = autoSkipIntro;
+  autoSkipAdsRef.current = autoSkipAds;
 
   const onReadyRef = useRef(onReady);
   const onEndedRef = useRef(onEnded);
@@ -183,16 +190,6 @@ export default function ArtPlayer({
       }
       markerLayer.replaceChildren();
 
-      let legend = progress.querySelector<HTMLElement>('.netphim-timeline-legend');
-      if (!legend) {
-        legend = document.createElement('div');
-        legend.className = 'netphim-timeline-legend';
-        legend.setAttribute('aria-hidden', 'true');
-        progress.appendChild(legend);
-      }
-
-      const renderedKinds = new Set<'intro' | 'ad'>();
-
       const appendMarker = (
         kind: 'intro' | 'ad',
         startTimestamp: number,
@@ -206,28 +203,12 @@ export default function ArtPlayer({
         marker.className = `netphim-timeline-marker netphim-timeline-marker-${kind}`;
         const startPercent = (safeStart / duration) * 100;
         const endPercent = (safeEnd / duration) * 100;
-        const timeRange =
-          markerDuration >= 0.5
-            ? `${formatTimelineTime(safeStart)}–${formatTimelineTime(safeEnd)}`
-            : formatTimelineTime(safeStart);
 
         marker.style.left = `${startPercent}%`;
         marker.style.width = `${Math.max(0, endPercent - startPercent)}%`;
-        if (markerDuration < 0.5) marker.classList.add('is-point');
-        if (startPercent <= 12) marker.classList.add('is-near-start');
-        if (endPercent >= 88) marker.classList.add('is-near-end');
-        marker.dataset.title = title;
-        marker.dataset.label = `${title} • ${timeRange}`;
-        marker.title = `${title} (${timeRange})`;
-        marker.setAttribute('role', 'img');
-        marker.setAttribute(
-          'aria-label',
-          `${title}, từ ${formatTimelineTime(safeStart)} đến ${formatTimelineTime(safeEnd)}`,
-        );
-        marker.tabIndex = 0;
-
+        if (markerDuration < 1) marker.classList.add('is-point');
+        marker.title = title;
         markerLayer?.appendChild(marker);
-        renderedKinds.add(kind);
       };
 
       const introStart = skipIntroStartRef.current ?? 0;
@@ -240,21 +221,6 @@ export default function ArtPlayer({
       detectedAdRangesRef.current.forEach((range, index) => {
         appendMarker('ad', range.start, range.end, `Quảng cáo ${index + 1}`);
       });
-
-      legend.replaceChildren();
-      // The intro remains visible as a purple range on the timeline. Do not
-      // show a floating "Intro" chip in the player corner.
-      const legendLabels: Array<{ kind: 'intro' | 'ad'; label: string }> = [
-        { kind: 'ad', label: 'Quảng cáo' },
-      ];
-      legendLabels.forEach(({ kind, label }) => {
-        if (!renderedKinds.has(kind)) return;
-        const item = document.createElement('span');
-        item.className = `netphim-timeline-legend-item netphim-timeline-legend-${kind}`;
-        item.textContent = label;
-        legend?.appendChild(item);
-      });
-      legend.hidden = legend.childElementCount === 0;
     };
 
     const clearStartupTimer = () => {
@@ -610,6 +576,29 @@ export default function ArtPlayer({
       playsInline: true,
       autoPlayback: true,
       airplay: true,
+      settings: [
+        {
+          html: 'Tự động bỏ qua quảng cáo',
+          tooltip: autoSkipAds ? 'Bật' : 'Tắt',
+          switch: autoSkipAds,
+          onSwitch: function (item: any) {
+            item.tooltip = item.switch ? 'Bật' : 'Tắt';
+            autoSkipAdsRef.current = item.switch;
+            useSettingsStore.getState().setAutoSkipAds(item.switch);
+            return item.switch;
+          },
+        },
+        {
+          html: 'Tự động bỏ qua mở đầu',
+          tooltip: autoSkipIntro ? 'Bật' : 'Tắt',
+          switch: autoSkipIntro,
+          onSwitch: function (item: any) {
+            item.tooltip = item.switch ? 'Bật' : 'Tắt';
+            autoSkipIntroRef.current = item.switch;
+            return item.switch;
+          },
+        },
+      ],
       // Use the default ArtPlayer Editor theme as specified in project rules.
       theme: '#23ade5',
       lang: 'vi',
@@ -677,7 +666,7 @@ export default function ArtPlayer({
       if (countdown) countdown.textContent = `${remaining}s`;
     };
 
-    const handleSkipAd = () => {
+    const handleSkipAd = (isAuto = false) => {
       const activeAd = findActiveAd(player.currentTime);
       if (!activeAd) return;
       const duration = Number.isFinite(player.duration) ? player.duration : 0;
@@ -687,11 +676,14 @@ export default function ArtPlayer({
           : activeAd.end + 0.08;
       if (target > player.currentTime && target - player.currentTime <= 181) {
         player.seek = target;
+        if (isAuto) {
+          player.notice.show = 'Đã tự động bỏ qua quảng cáo';
+        }
       }
       syncSkipAdButton();
     };
 
-    skipAdButton.addEventListener('click', handleSkipAd);
+    skipAdButton.addEventListener('click', () => handleSkipAd(false));
 
     let didStartPlayback = false;
     let bufferingStartedAt = 0;
@@ -714,6 +706,16 @@ export default function ArtPlayer({
 
     // Advertisement & Auto Skip Intro listeners
     player.on('video:timeupdate', () => {
+      const activeAd = findActiveAd(player.currentTime);
+      if (activeAd) {
+        const adKey = `${activeAd.start.toFixed(1)}-${activeAd.end.toFixed(1)}`;
+        if (autoSkipAdsRef.current && !skippedAdIntervalsRef.current.has(adKey)) {
+          skippedAdIntervalsRef.current.add(adKey);
+          handleSkipAd(true);
+          return;
+        }
+      }
+
       syncSkipAdButton();
       if (autoSkipIntroRef.current && !introAutoSkippedRef.current) {
         const start = skipIntroStartRef.current ?? 0;
@@ -727,6 +729,7 @@ export default function ArtPlayer({
         ) {
           introAutoSkippedRef.current = true;
           player.seek = end + 0.1;
+          player.notice.show = 'Đã bỏ qua đoạn mở đầu';
         }
       }
     });

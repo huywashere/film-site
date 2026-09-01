@@ -20,6 +20,7 @@ export interface SettingsState {
   audioMode: AudioModeSetting;
   newMovieNotifications: boolean;
   commentNotifications: boolean;
+  autoSkipAds: boolean;
 
   setAutoplay: (val: boolean) => void;
   setAutoNextEpisode: (val: boolean) => void;
@@ -32,6 +33,7 @@ export interface SettingsState {
   setAudioMode: (val: AudioModeSetting) => void;
   setNewMovieNotifications: (val: boolean) => void;
   setCommentNotifications: (val: boolean) => void;
+  setAutoSkipAds: (val: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -48,6 +50,7 @@ export const useSettingsStore = create<SettingsState>()(
       audioMode: "vietsub",
       newMovieNotifications: true,
       commentNotifications: true,
+      autoSkipAds: true,
 
       setAutoplay: (val) => set({ autoplay: val }),
       setAutoNextEpisode: (val) => set({ autoNextEpisode: val }),
@@ -60,6 +63,7 @@ export const useSettingsStore = create<SettingsState>()(
       setAudioMode: (val) => set({ audioMode: val }),
       setNewMovieNotifications: (val) => set({ newMovieNotifications: val }),
       setCommentNotifications: (val) => set({ commentNotifications: val }),
+      setAutoSkipAds: (val) => set({ autoSkipAds: val }),
     }),
     {
       name: "netphim_user_settings",

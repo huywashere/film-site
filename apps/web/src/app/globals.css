@@ -570,7 +570,7 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
   }
 }
 
-/* ── Highlight & Timeline Markers (Intro & Ads) ── */
+/* ── Highlight & Timeline Markers (Intro & Ads - Netflix & YouTube Standard) ── */
 .art-video-player .netphim-timeline-markers {
   position: absolute;
   z-index: 12;
@@ -580,154 +580,43 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
 
 .art-video-player .netphim-timeline-marker {
   position: absolute;
-  top: -2px;
-  bottom: -2px;
-  min-width: 5px;
-  border-radius: 3px;
-  transform-origin: center;
+  top: 0;
+  bottom: 0;
+  height: 100%;
+  border-radius: 0;
   pointer-events: auto;
-  cursor: help;
+  cursor: pointer;
   z-index: 15;
-  transition:
-    transform 140ms ease,
-    filter 140ms ease;
+  transition: opacity 120ms ease;
 }
 
 .art-video-player .netphim-timeline-marker.is-point {
-  width: 4px !important;
-  min-width: 4px;
+  width: 3px !important;
+  min-width: 3px;
   transform: translateX(-50%);
 }
 
 .art-video-player .netphim-timeline-marker:hover,
 .art-video-player .netphim-timeline-marker:focus-visible {
-  transform: scaleY(1.55);
-  filter: brightness(1.25);
+  filter: brightness(1.2);
   z-index: 25;
 }
 
 .art-video-player .netphim-timeline-marker.is-point:hover,
 .art-video-player .netphim-timeline-marker.is-point:focus-visible {
-  transform: translateX(-50%) scaleY(1.55);
+  transform: translateX(-50%);
 }
 
-/* Intro uses crisp Cyan/Sky #23ade5 as a subtle point marker */
+/* Intro uses crisp Cyan/Sky #23ade5 point marker */
 .art-video-player .netphim-timeline-marker-intro {
   background: #23ade5;
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.7),
-    0 0 5px rgba(35, 173, 229, 0.72);
+  box-shadow: none;
 }
 
-/* Ad ranges use a striped amber treatment so they remain distinct in grayscale. */
+/* Ad markers use clean solid YouTube-standard Gold/Yellow #fbbf24 */
 .art-video-player .netphim-timeline-marker-ad {
-  background: repeating-linear-gradient(135deg, #fb923c 0 4px, #facc15 4px 8px);
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.7),
-    0 0 5px rgba(251, 146, 60, 0.72);
-}
-
-.art-video-player .netphim-timeline-legend {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 10px);
-  z-index: 14;
-  display: flex;
-  gap: 6px;
-  pointer-events: none;
-}
-
-.art-video-player .netphim-timeline-legend[hidden] {
-  display: none;
-}
-
-.art-video-player .netphim-timeline-legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 7px;
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: 999px;
-  background: rgba(8, 9, 13, 0.82);
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 9px;
-  font-weight: 700;
-  line-height: 1;
-  backdrop-filter: blur(8px);
-}
-
-.art-video-player .netphim-timeline-legend-item::before {
-  width: 7px;
-  height: 7px;
-  border-radius: 2px;
-  content: '';
-}
-
-.art-video-player .netphim-timeline-legend-intro::before {
-  background: #a855f7;
-}
-
-.art-video-player .netphim-timeline-legend-ad::before {
-  background: linear-gradient(135deg, #fb923c 0 50%, #facc15 50%);
-}
-
-/* Rich Marker Tooltip */
-.art-video-player .netphim-timeline-marker::after {
-  content: attr(data-label);
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 10px);
-  width: max-content;
-  max-width: min(240px, 75vw);
-  padding: 5px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 8px;
-  background: rgba(10, 12, 16, 0.96);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.3;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(12px);
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(-50%, 6px);
-  transition:
-    opacity 160ms cubic-bezier(0.16, 1, 0.3, 1),
-    transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
-  white-space: nowrap;
-}
-
-.art-video-player .netphim-timeline-marker:hover::after,
-.art-video-player .netphim-timeline-marker:focus-visible::after {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-
-.art-video-player .netphim-timeline-marker.is-near-start::after {
-  left: 0;
-  transform: translate(0, 6px);
-}
-
-.art-video-player .netphim-timeline-marker.is-near-start:hover::after,
-.art-video-player .netphim-timeline-marker.is-near-start:focus-visible::after {
-  transform: translate(0, 0);
-}
-
-.art-video-player .netphim-timeline-marker.is-near-end::after {
-  right: 0;
-  left: auto;
-  transform: translate(0, 6px);
-}
-
-.art-video-player .netphim-timeline-marker.is-near-end:hover::after,
-.art-video-player .netphim-timeline-marker.is-near-end:focus-visible::after {
-  transform: translate(0, 0);
-}
-
-.art-video-player .netphim-timeline-marker:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
+  background: #fbbf24;
+  box-shadow: none;
 }
 
 /* ── Floating Skip Ad Button ── */
@@ -829,9 +718,10 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
   }
 
   .art-video-player .netphim-timeline-marker {
-    top: -3px;
-    bottom: -3px;
-    min-width: 7px;
+    top: 0;
+    bottom: 0;
+    height: 100%;
+    min-width: 3px;
   }
 
   .art-video-player .netphim-timeline-legend {
