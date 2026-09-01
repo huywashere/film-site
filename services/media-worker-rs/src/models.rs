@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AnalysisJob {
+    #[serde(default = "default_schema_version")]
+    pub schema_version: u8,
     pub job_id: String,
     pub url: String,
     #[serde(default)]
@@ -12,10 +14,12 @@ pub struct AnalysisJob {
     #[serde(default)]
     pub episode: String,
     #[serde(default)]
+    pub trace_id: String,
+    #[serde(default)]
     pub requested_at: u64,
 }
 
-#[derive(Clone, Debug, Default, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Marker {
     pub kind: String,
@@ -24,7 +28,7 @@ pub struct Marker {
     pub source: String,
 }
 
-#[derive(Clone, Debug, Default, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Variant {
     pub url: String,
@@ -38,17 +42,20 @@ pub struct Variant {
     pub audio_group: Option<String>,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AnalysisResult {
     pub schema_version: u8,
     pub job_id: String,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub trace_id: String,
     pub url: String,
     pub final_url: String,
     pub provider: String,
     pub movie_slug: String,
     pub episode: String,
     pub playable: bool,
+    pub retryable: bool,
     pub playlist_kind: String,
     pub duration_seconds: f64,
     pub segment_count: usize,
@@ -67,4 +74,38 @@ pub struct AnalysisResult {
     /// Encryption method if detected (e.g. "AES-128", "SAMPLE-AES").
     #[serde(skip_serializing_if = "Option::is_none")]
     pub encryption_method: Option<String>,
+}
+
+fn default_schema_version() -> u8 {
+    1
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{AnalysisJob, AnalysisResult};
+
+    #[test]
+    fn shared_job_fixture_matches_rust_contract() {
+        let source = include_str!(
+            "../../../packages/shared-types/contracts/fixtures/hls-analysis-job-v1.json"
+        );
+        let job: AnalysisJob =
+            serde_json::from_str(source).expect("shared job fixture must decode");
+        assert_eq!(job.schema_version, 1);
+        assert_eq!(job.trace_id, "edge-contract-1");
+        assert!(!job.url.is_empty());
+    }
+
+    #[test]
+    fn shared_result_fixture_matches_rust_contract() {
+        let source = include_str!(
+            "../../../packages/shared-types/contracts/fixtures/hls-analysis-result-v1.json"
+        );
+        let result: AnalysisResult =
+            serde_json::from_str(source).expect("shared result fixture must decode");
+        assert_eq!(result.schema_version, 1);
+        assert!(result.playable);
+        assert!(!result.retryable);
+        assert_eq!(result.health_score, 100);
+    }
 }

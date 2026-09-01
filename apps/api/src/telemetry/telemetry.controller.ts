@@ -6,33 +6,52 @@ import {
   HttpCode,
   Post,
   UnauthorizedException,
-} from "@nestjs/common";
-import { ClientTelemetryDto } from "./dto/client-telemetry.dto";
-import { ClientTelemetryBatchDto } from "./dto/client-telemetry-batch.dto";
-import { TelemetryService } from "./telemetry.service";
+  UseGuards,
+  Request,
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { Throttle } from '@nestjs/throttler';
+import { timingSafeEqual } from 'crypto';
+import { ClientTelemetryDto } from './dto/client-telemetry.dto';
+import { ClientTelemetryBatchDto } from './dto/client-telemetry-batch.dto';
+import { TelemetryService } from './telemetry.service';
 
-@Controller("telemetry")
+function secureTokenMatch(actual: string | undefined, expected: string): boolean {
+  if (!actual) return false;
+  const left = Buffer.from(actual);
+  const right = Buffer.from(expected);
+  return left.length === right.length && timingSafeEqual(left, right);
+}
+
+@Controller('telemetry')
 export class TelemetryController {
   constructor(private readonly telemetry: TelemetryService) {}
 
-  @Post("client")
+  @Post('client')
+  @UseGuards(AuthGuard('jwt'))
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @HttpCode(202)
-  captureClientEvent(@Body() event: ClientTelemetryDto) {
-    this.telemetry.capture(event);
+  captureClientEvent(@Request() req: { user: { id: string } }, @Body() event: ClientTelemetryDto) {
+    this.telemetry.capture(event, req.user.id);
     return { accepted: true };
   }
 
-  @Post("client/batch")
+  @Post('client/batch')
+  @UseGuards(AuthGuard('jwt'))
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @HttpCode(202)
-  captureClientEvents(@Body() batch: ClientTelemetryBatchDto) {
-    this.telemetry.captureMany(batch.events);
+  captureClientEvents(
+    @Request() req: { user: { id: string } },
+    @Body() batch: ClientTelemetryBatchDto,
+  ) {
+    this.telemetry.captureMany(batch.events, req.user.id);
     return { accepted: batch.events.length };
   }
 
-  @Get("metrics")
-  metrics(@Headers("x-admin-metrics-token") token?: string) {
+  @Get('metrics')
+  metrics(@Headers('x-admin-metrics-token') token?: string) {
     const expected = process.env.ADMIN_METRICS_TOKEN;
-    if (expected && token !== expected) {
+    if (!expected || !secureTokenMatch(token, expected)) {
       throw new UnauthorizedException();
     }
     return this.telemetry.snapshot();

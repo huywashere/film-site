@@ -31,6 +31,8 @@ import {
   RestoreBackupDto,
   UpdateIncidentDto,
   PurgeCacheDto,
+  CreateAdDto,
+  UpdateAdDto,
 } from "./admin.dto";
 import { AdminOperationsService } from "./admin-operations.service";
 import { RequireAdminPermissions } from "./admin-permissions";
@@ -611,13 +613,13 @@ export class AdminController {
 
   @Post("ads")
   @RequireAdminPermissions("cms.manage")
-  createAdItem(@Body() body: any) {
+  createAdItem(@Body() body: CreateAdDto) {
     return this.adsService.createAd(body);
   }
 
   @Patch("ads/:id")
   @RequireAdminPermissions("cms.manage")
-  updateAdItem(@Param("id") id: string, @Body() body: any) {
+  updateAdItem(@Param("id") id: string, @Body() body: UpdateAdDto) {
     return this.adsService.updateAd(id, body);
   }
 

@@ -60,8 +60,6 @@ const nextConfig = {
     // Poster URLs are served through the app's guarded image proxy and always
     // include a dynamic `url` query parameter.
     remotePatterns: [
-      { protocol: "https", hostname: "**" },
-      { protocol: "http", hostname: "**" },
       // KKPhim
       { protocol: "https", hostname: "phimimg.com" },
       { protocol: "https", hostname: "img.phimapi.com" },
@@ -88,6 +86,9 @@ const nextConfig = {
       { protocol: "https", hostname: "platform-lookaside.fbsbx.com" },
       { protocol: "https", hostname: "**.fbsbx.com" },
       { protocol: "https", hostname: "secure.gravatar.com" },
+      { protocol: "https", hostname: "api.dicebear.com" },
+      { protocol: "https", hostname: "cdn.jsdelivr.net" },
+      { protocol: "https", hostname: "raw.githubusercontent.com" },
       { protocol: "https", hostname: "motphim.net" },
       { protocol: "https", hostname: "**.motphim.net" },
       // TMDB
@@ -100,7 +101,12 @@ const nextConfig = {
       { pathname: "/api/image-proxy" },
       // Curated first-party artwork (auth backgrounds, hero assets, logos).
       { pathname: "/images/**" },
-      { pathname: "/**" },
+      { pathname: "/avatars/**" },
+      { pathname: "/artplayer/**" },
+      { pathname: "/brand/**" },
+      { pathname: "/*.png" },
+      { pathname: "/*.jpg" },
+      { pathname: "/cinephim-logo.png" },
     ],
     formats: ["image/avif", "image/webp"],
     qualities: [75, 85],

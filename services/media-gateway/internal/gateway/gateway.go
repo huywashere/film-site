@@ -24,19 +24,19 @@ import (
 )
 
 type Gateway struct {
-	cfg          config.Config
-	guard        security.URLGuard
-	signer       *security.Signer
-	client       *http.Client
-	transport    *http.Transport
-	store        store.ManifestStore
-	metrics      *Metrics
-	limiter      *RateLimiter
+	cfg           config.Config
+	guard         security.URLGuard
+	signer        *security.Signer
+	client        *http.Client
+	transport     *http.Transport
+	store         store.ManifestStore
+	metrics       *Metrics
+	limiter       *RateLimiter
 	searchLimiter *RateLimiter
-	manifests    manifestFlightGroup
-	catalog      *catalog.Service
-	analysis     store.AnalysisQueue
-	results      store.AnalysisResultStore
+	manifests     manifestFlightGroup
+	catalog       *catalog.Service
+	analysis      store.AnalysisQueue
+	results       store.AnalysisResultStore
 }
 
 type manifestLoadResult struct {
@@ -129,8 +129,8 @@ func New(cfg config.Config, manifestStore store.ManifestStore, analysisQueues ..
 		client: client, transport: transport, store: manifestStore, metrics: NewMetrics(),
 		limiter:       NewRateLimiter(cfg.RatePerSecond, cfg.RateBurst),
 		searchLimiter: NewRateLimiter(cfg.SearchRatePerSecond, cfg.SearchRateBurst),
-		catalog:  catalog.New(cfg),
-		analysis: analysisQueue,
+		catalog:       catalog.New(cfg),
+		analysis:      analysisQueue,
 	}
 	client.CheckRedirect = gateway.checkRedirect
 	return gateway
@@ -295,6 +295,7 @@ func (g *Gateway) proxy(c *gin.Context) {
 func (g *Gateway) writeManifest(c *gin.Context, source, finalURL string, cached bool) {
 	if !cached && g.analysis != nil {
 		job := store.NewAnalysisJob(finalURL, providerFromURL(finalURL))
+		job.TraceID = requestIDFromContext(c)
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), g.cfg.AnalysisTimeout)
 			defer cancel()

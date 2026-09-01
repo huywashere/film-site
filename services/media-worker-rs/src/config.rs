@@ -25,6 +25,8 @@ pub struct Config {
     pub retry_attempts: usize,
     /// Base backoff between retries in milliseconds (doubles each attempt).
     pub retry_backoff_ms: u64,
+    /// Pending jobs older than this are reclaimed from crashed consumers.
+    pub reclaim_idle: Duration,
 }
 
 impl Config {
@@ -69,9 +71,13 @@ impl Config {
             health_port: number("HLS_ANALYZER_HEALTH_PORT", 8091)?,
             allowed_hosts,
             require_https: boolean("HLS_ANALYZER_REQUIRE_HTTPS", true),
-            shutdown_timeout: Duration::from_secs(number("HLS_ANALYZER_SHUTDOWN_TIMEOUT_SECS", 30)?),
+            shutdown_timeout: Duration::from_secs(number(
+                "HLS_ANALYZER_SHUTDOWN_TIMEOUT_SECS",
+                30,
+            )?),
             retry_attempts: number::<usize>("HLS_ANALYZER_RETRY_ATTEMPTS", 3)?.clamp(1, 5),
             retry_backoff_ms: number("HLS_ANALYZER_RETRY_BACKOFF_MS", 2_000)?,
+            reclaim_idle: Duration::from_millis(number("HLS_ANALYZER_RECLAIM_IDLE_MS", 60_000)?),
         })
     }
 }

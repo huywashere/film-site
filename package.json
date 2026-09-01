@@ -21,6 +21,7 @@
     "docker:logs": "docker compose --project-directory . -f infra/docker/docker-compose.yml logs -f"
   },
   "devDependencies": {
+    "ajv": "^8.18.0",
     "@typescript-eslint/eslint-plugin": "^8.65.0",
     "@typescript-eslint/parser": "^8.65.0",
     "eslint": "^9.39.5",

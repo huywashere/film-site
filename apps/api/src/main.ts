@@ -4,7 +4,6 @@ import type { NestExpressApplication } from "@nestjs/platform-express";
 import helmet from "helmet";
 import * as cookieParser from "cookie-parser";
 import * as Sentry from "@sentry/node";
-import rateLimit from "express-rate-limit";
 import { AppModule } from "./app.module";
 
 // ── Clean & Pretty Console Logger (Suppresses RouterExplorer route mapping spam) ──
@@ -163,62 +162,6 @@ async function bootstrap() {
 
   // ── Global prefix ─────────────────────────────────────────────
   app.setGlobalPrefix("api/v1");
-
-  const globalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 1000,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { success: false, message: "Quá nhiều yêu cầu, vui lòng thử lại sau" },
-  });
-
-  const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 30,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { success: false, message: "Quá nhiều lần thử đăng nhập, vui lòng thử lại sau" },
-  });
-
-  const forgotPasswordLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 5,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { success: false, message: "Quá nhiều yêu cầu khôi phục mật khẩu, vui lòng thử lại sau 15 phút" },
-  });
-
-  const searchLimiter = rateLimit({
-    windowMs: 1 * 60 * 1000,
-    max: 30,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { success: false, message: "Bạn thực hiện tìm kiếm quá nhanh, vui lòng thử lại sau 1 phút" },
-  });
-
-  const reviewLimiter = rateLimit({
-    windowMs: 1 * 60 * 1000,
-    max: 10,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { success: false, message: "Bạn gửi bình luận quá nhanh, vui lòng chờ 1 phút" },
-  });
-
-  const watchHistoryLimiter = rateLimit({
-    windowMs: 1 * 60 * 1000,
-    max: 30,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { success: false, message: "Tần suất đồng bộ tiến độ quá dày đặc" },
-  });
-
-  app.use(globalLimiter);
-  app.use("/api/v1/auth/forgot-password", forgotPasswordLimiter);
-  app.use("/api/v1/auth/login", authLimiter);
-  app.use("/api/v1/auth/register", authLimiter);
-  app.use("/api/v1/movies/search", searchLimiter);
-  app.use("/api/v1/reviews", reviewLimiter);
-  app.use("/api/v1/users/me/watch-history", watchHistoryLimiter);
 
   // ── Request body size cap ─────────────────────────────────────
   const { json, urlencoded } = await import("express");

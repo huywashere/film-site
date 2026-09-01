@@ -1460,7 +1460,7 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
       '@type': 'WatchAction',
       target: {
         '@type': 'EntryPoint',
-        urlTemplate: `https://netphim-movie.vercel.app/watch/${slug}`,
+        urlTemplate: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://netphim.app'}/watch/${slug}`,
         actionPlatform: [
           'http://schema.org/DesktopWebPlatform',
           'http://schema.org/MobileWebPlatform',
@@ -1477,19 +1477,19 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
         '@type': 'ListItem',
         position: 1,
         name: 'Trang Chủ',
-        item: 'https://netphim-movie.vercel.app',
+        item: process.env.NEXT_PUBLIC_SITE_URL || 'https://netphim.app',
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: typeLabel,
-        item: `https://netphim-movie.vercel.app/films/${film?.type === 'series' ? 'series' : 'single'}`,
+        item: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://netphim.app'}/films/${film?.type === 'series' ? 'series' : 'single'}`,
       },
       {
         '@type': 'ListItem',
         position: 3,
         name: filmName,
-        item: `https://netphim-movie.vercel.app/film/${slug}`,
+        item: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://netphim.app'}/film/${slug}`,
       },
     ],
   };
@@ -1514,10 +1514,10 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
       {/* ── DYNAMIC HEAD META TAGS (OPEN GRAPH & TWITTER CARDS) ── */}
       <title>{seoTitle}</title>
       <meta name="description" content={seoDescription} />
-      <link rel="canonical" href={`https://netphim-movie.vercel.app/film/${slug}`} />
+      <link rel="canonical" href={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://netphim.app'}/film/${slug}`} />
       <meta property="og:title" content={seoTitle} />
       <meta property="og:description" content={seoDescription} />
-      <meta property="og:url" content={`https://netphim-movie.vercel.app/film/${slug}`} />
+      <meta property="og:url" content={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://netphim.app'}/film/${slug}`} />
       <meta property="og:image" content={posterUrl || backdropUrl || undefined} />
       <meta property="og:type" content="video.movie" />
       <meta name="twitter:card" content="summary_large_image" />

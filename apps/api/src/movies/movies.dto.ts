@@ -1,11 +1,4 @@
-import {
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  MaxLength,
-  Min,
-} from "class-validator";
+import { IsInt, IsOptional, IsString, IsUrl, Max, MaxLength, Min } from 'class-validator';
 
 export class RecordMovieViewDto {
   @IsString()
@@ -18,7 +11,7 @@ export class RecordMovieViewDto {
   originName?: string;
 
   @IsOptional()
-  @IsString()
+  @IsUrl({ protocols: ['https'], require_protocol: true })
   @MaxLength(2048)
   posterUrl?: string;
 

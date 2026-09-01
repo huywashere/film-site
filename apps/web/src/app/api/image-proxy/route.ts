@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkImageProxyRateLimit } from "@/lib/rate-limiter";
+import { checkImageProxyRateLimitDistributed } from "@/lib/server-rate-limiter";
 import { clientIpFromRequest } from "@/lib/client-ip";
 import { validateImageUrl } from "@/lib/allowed-image-hosts";
 import { lookup } from "node:dns/promises";
@@ -239,7 +239,9 @@ async function fetchImageCandidate(
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const rateCheck = checkImageProxyRateLimit(clientIpFromRequest(request));
+  const rateCheck = await checkImageProxyRateLimitDistributed(
+    clientIpFromRequest(request),
+  );
   if (!rateCheck.allowed) {
     return failedImageResponse(429);
   }

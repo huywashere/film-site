@@ -1,23 +1,8 @@
-import {
-  IsEmail,
-  IsIn,
-  IsOptional,
-  IsString,
-  MaxLength,
-  MinLength,
-} from "class-validator";
+import { IsEmail, IsIn, IsOptional, IsString, IsUrl, MaxLength, MinLength } from 'class-validator';
 
 export class CreateIssueReportDto {
   @IsString()
-  @IsIn([
-    "playback",
-    "subtitles",
-    "audio",
-    "lag",
-    "duplicate",
-    "ui_bug",
-    "other",
-  ])
+  @IsIn(['playback', 'subtitles', 'audio', 'lag', 'duplicate', 'ui_bug', 'other'])
   category: string;
 
   @IsOptional()
@@ -56,7 +41,7 @@ export class CreateIssueReportDto {
   email?: string;
 
   @IsOptional()
-  @IsString()
+  @IsUrl({ protocols: ['https'], require_protocol: true })
   @MaxLength(2048)
   screenshotUrl?: string;
 }

@@ -23,6 +23,25 @@ interface ContinueWatchingRowProps {
   fallbackFilms?: FilmItem[];
 }
 
+const LEGACY_SHARED_HISTORY_ARTWORK =
+  /(?:^|\/)wp3533664-avengers-infinity-war-4k-wallpapers\.jpg(?:\?|$)/i;
+
+function historyArtwork(value?: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const artwork = value.trim();
+  if (!artwork || LEGACY_SHARED_HISTORY_ARTWORK.test(artwork)) return undefined;
+  return artwork;
+}
+
+function historyIdentity(value?: unknown): string {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
 function HistoryArtwork({
   item,
   catalogFilm,
@@ -53,9 +72,13 @@ function HistoryArtwork({
       // A current catalogue match is authoritative. Stored history artwork can
       // be stale after a provider merge or an earlier fallback mistake.
       poster_url:
-        catalogFilm?.poster_url || item.poster || item.poster_url || undefined,
+        catalogFilm?.poster_url ||
+        historyArtwork(item.poster) ||
+        historyArtwork(item.poster_url),
       thumb_url:
-        catalogFilm?.thumb_url || item.thumb || item.thumb_url || undefined,
+        catalogFilm?.thumb_url ||
+        historyArtwork(item.thumb) ||
+        historyArtwork(item.thumb_url),
     }),
     [catalogFilm, item, title],
   );
@@ -66,6 +89,7 @@ function HistoryArtwork({
       kind={landscape ? 'backdrop' : 'poster'}
       alt={`Ảnh phim ${title}`}
       className={className}
+      allowTitleLookup
     />
   );
 }
@@ -162,7 +186,9 @@ export function ContinueWatchingRow({ fallbackFilms = [] }: ContinueWatchingRowP
 
   // Convert server history into unified items
   const serverItems = useMemo(() => {
-    const items = serverHistoryData?.items || [];
+    const items = Array.isArray(serverHistoryData)
+      ? serverHistoryData
+      : serverHistoryData?.items || [];
     return items.map((item: any) => ({
       slug: item.movieId || item.movieSlug || item.slug,
       epSlug: item.episode || '1',
@@ -197,6 +223,17 @@ export function ContinueWatchingRow({ fallbackFilms = [] }: ContinueWatchingRowP
       if (film.slug) map.set(film.slug, film);
       for (const sourceSlug of Object.values(film._sourceSlugs || {})) {
         if (sourceSlug) map.set(sourceSlug, film);
+      }
+    }
+    return map;
+  }, [fallbackFilms]);
+
+  const catalogByTitle = useMemo(() => {
+    const map = new Map<string, FilmItem>();
+    for (const film of fallbackFilms) {
+      for (const title of [film.name, film.title, film.origin_name]) {
+        const identity = historyIdentity(title);
+        if (identity && !map.has(identity)) map.set(identity, film);
       }
     }
     return map;
@@ -284,6 +321,8 @@ export function ContinueWatchingRow({ fallbackFilms = [] }: ContinueWatchingRowP
             {historyEntries.map((item: any, idx: number) => {
               const { title, watchedStr, totalStr, percent, epLabel, qualityBadge } =
                 getHistoryProgressDetails(item);
+              const catalogFilm =
+                catalogBySlug.get(item.slug) || catalogByTitle.get(historyIdentity(title));
 
               return (
                 <SwiperSlide key={`continue-${item.slug}-${item.epSlug || ''}-${idx}`}>
@@ -296,7 +335,7 @@ export function ContinueWatchingRow({ fallbackFilms = [] }: ContinueWatchingRowP
                       <div className="aspect-video w-full rounded-xl sm:rounded-2xl overflow-hidden border border-white/10 group-hover/card:border-white/40 group-hover/card:scale-[1.02] shadow-xl bg-neutral-900 transition-all duration-300 relative">
                         <HistoryArtwork
                           item={item}
-                          catalogFilm={catalogBySlug.get(item.slug)}
+                          catalogFilm={catalogFilm}
                           landscape
                           className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
                         />

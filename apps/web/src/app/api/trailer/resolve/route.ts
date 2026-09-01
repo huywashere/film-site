@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
-const TMDB_API_KEY =
-  process.env.TMDB_API_KEY?.trim() || "f85dbd29011db19e75f5d29028fd096d";
-const TMDB_TOKEN = process.env.TMDB_ACCESS_TOKEN?.trim() || "";
-
 const cache = new Map<string, { key: string; expiry: number }>();
 
 function extractYouTubeKeyFromUrl(url?: string): string | null {
@@ -23,6 +19,9 @@ async function searchTmdbTrailer(
   originName?: string,
   year?: string,
 ): Promise<string | null> {
+  const tmdbApiKey = process.env.TMDB_API_KEY?.trim() || "";
+  const tmdbToken = process.env.TMDB_ACCESS_TOKEN?.trim() || "";
+  if (!tmdbApiKey && !tmdbToken) return null;
   const queries = [originName, title].filter(Boolean) as string[];
 
   for (const q of queries) {
@@ -31,11 +30,16 @@ async function searchTmdbTrailer(
       if (!clean) continue;
 
       const headers: Record<string, string> = {};
-      if (TMDB_TOKEN && TMDB_TOKEN.startsWith("eyJ")) {
-        headers["Authorization"] = `Bearer ${TMDB_TOKEN}`;
+      if (tmdbToken && tmdbToken.startsWith("eyJ")) {
+        headers["Authorization"] = `Bearer ${tmdbToken}`;
       }
 
-      const searchUrl = `${TMDB_BASE}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(clean)}&include_adult=false`;
+      const searchParams = new URLSearchParams({
+        query: clean,
+        include_adult: "false",
+      });
+      if (!headers.Authorization && tmdbApiKey) searchParams.set("api_key", tmdbApiKey);
+      const searchUrl = `${TMDB_BASE}/search/multi?${searchParams.toString()}`;
       const searchRes = await fetch(searchUrl, {
         headers,
         next: { revalidate: 86400 },
@@ -52,7 +56,11 @@ async function searchTmdbTrailer(
         if (!item.id || (item.media_type !== "movie" && item.media_type !== "tv")) continue;
 
         const mediaType = item.media_type;
-        const videosUrl = `${TMDB_BASE}/${mediaType}/${item.id}/videos?api_key=${TMDB_API_KEY}&include_video_language=vi,en,zh,ko,ja,null`;
+        const videoParams = new URLSearchParams({
+          include_video_language: "vi,en,zh,ko,ja,null",
+        });
+        if (!headers.Authorization && tmdbApiKey) videoParams.set("api_key", tmdbApiKey);
+        const videosUrl = `${TMDB_BASE}/${mediaType}/${item.id}/videos?${videoParams.toString()}`;
         const vRes = await fetch(videosUrl, {
           headers,
           next: { revalidate: 86400 },

@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://netphim.local/contracts/hls-analysis-result-v1.schema.json",
+  "title": "NetPhim HLS analysis result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "jobId",
+    "url",
+    "finalUrl",
+    "provider",
+    "movieSlug",
+    "episode",
+    "playable",
+    "retryable",
+    "playlistKind",
+    "durationSeconds",
+    "segmentCount",
+    "sampledSegments",
+    "brokenSegments",
+    "variants",
+    "adMarkers",
+    "introMarkers",
+    "discontinuities",
+    "manifestLatencyMs",
+    "healthScore",
+    "analyzedAt",
+    "errors",
+    "encrypted"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "jobId": { "type": "string", "minLength": 1 },
+    "traceId": { "type": "string", "maxLength": 128 },
+    "url": { "type": "string" },
+    "finalUrl": { "type": "string" },
+    "provider": { "type": "string" },
+    "movieSlug": { "type": "string" },
+    "episode": { "type": "string" },
+    "playable": { "type": "boolean" },
+    "retryable": { "type": "boolean" },
+    "playlistKind": { "enum": ["master", "media", "unknown"] },
+    "durationSeconds": { "type": "number", "minimum": 0 },
+    "segmentCount": { "type": "integer", "minimum": 0 },
+    "sampledSegments": { "type": "integer", "minimum": 0 },
+    "brokenSegments": { "type": "array", "items": { "type": "string" } },
+    "variants": { "type": "array", "items": { "$ref": "#/$defs/variant" } },
+    "adMarkers": { "type": "array", "items": { "$ref": "#/$defs/marker" } },
+    "introMarkers": { "type": "array", "items": { "$ref": "#/$defs/marker" } },
+    "discontinuities": { "type": "integer", "minimum": 0 },
+    "manifestLatencyMs": { "type": "integer", "minimum": 0 },
+    "healthScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "analyzedAt": { "type": "integer", "minimum": 0 },
+    "errors": { "type": "array", "items": { "type": "string" } },
+    "encrypted": { "type": "boolean" },
+    "encryptionMethod": { "type": "string" }
+  },
+  "$defs": {
+    "marker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "startSeconds", "source"],
+      "properties": {
+        "kind": { "enum": ["intro", "ad"] },
+        "startSeconds": { "type": "number", "minimum": 0 },
+        "durationSeconds": { "type": ["number", "null"], "minimum": 0 },
+        "source": { "type": "string" }
+      }
+    },
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {
+        "url": { "type": "string" },
+        "bandwidth": { "type": ["integer", "null"], "minimum": 0 },
+        "resolution": { "type": ["string", "null"] },
+        "codecs": { "type": ["string", "null"] },
+        "frameRate": { "type": ["number", "null"], "minimum": 0 },
+        "audioGroup": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

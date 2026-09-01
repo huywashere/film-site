@@ -7,11 +7,16 @@ export function proxy(request: NextRequest) {
     try {
       return process.env.NEXT_PUBLIC_API_URL
         ? new URL(process.env.NEXT_PUBLIC_API_URL).origin
-        : "https://victorious-possibility-production-aba7.up.railway.app";
+        : "";
     } catch {
-      return "https://victorious-possibility-production-aba7.up.railway.app";
+      return "";
     }
   })();
+  const apiSocketOrigin = apiOrigin.startsWith("https://")
+    ? apiOrigin.replace(/^https:/, "wss:")
+    : apiOrigin.startsWith("http://")
+      ? apiOrigin.replace(/^http:/, "ws:")
+      : "";
 
   const csp = [
     "default-src 'self'",
@@ -23,15 +28,15 @@ export function proxy(request: NextRequest) {
     } https://apis.google.com https://www.gstatic.com https://www.google.com https://challenges.cloudflare.com`,
     "script-src-attr 'none'",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "img-src 'self' data: blob: https: http:",
+    "img-src 'self' data: blob: https://image.tmdb.org https://phimimg.com https://*.phimimg.com https://img.phimapi.com https://*.phimapi.com https://img.ophim.live https://*.ophim.live https://ophim1.com https://ophim17.cc https://*.ophim.cc https://images.nguonc.com https://*.nguonc.com https://*.vsmov.com https://*.vsphim.com https://vicdn.cc https://*.vicdn.cc https://wsrv.nl https://*.wsrv.nl https://ui-avatars.com https://api.dicebear.com https://cdn.jsdelivr.net https://raw.githubusercontent.com https://flagcdn.com https://*.flagcdn.com https://upload.wikimedia.org https://lh3.googleusercontent.com https://*.googleusercontent.com https://avatars.githubusercontent.com https://platform-lookaside.fbsbx.com https://*.fbsbx.com https://secure.gravatar.com https://motphim.net https://*.motphim.net",
     "font-src 'self' data: https://fonts.gstatic.com",
-    `connect-src 'self' https: wss: https://victorious-possibility-production-aba7.up.railway.app wss://victorious-possibility-production-aba7.up.railway.app${apiOrigin && apiOrigin !== "https://victorious-possibility-production-aba7.up.railway.app" ? ` ${apiOrigin}` : ""}${
+    `connect-src 'self'${apiOrigin ? ` ${apiOrigin}` : ""}${apiSocketOrigin ? ` ${apiSocketOrigin}` : ""}${
       isDevelopment
         ? " http://localhost:3001 http://127.0.0.1:3001 ws://localhost:3001 ws://127.0.0.1:3001"
         : ""
-    } https://challenges.cloudflare.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com wss://*.firebaseio.com`,
-    "frame-src 'self' https: http: https://accounts.google.com https://*.firebaseapp.com https://www.google.com https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://vidsrc.to https://vidsrc.in https://vidsrc.pm https://vidsrc.me https://vidsrc.sbs https://vicdn.cc https://*.vicdn.cc https://ssl.p.jwpcdn.com https://*.phimapi.com https://*.kkphimplayer7.com https://*.ophim.live https://ophim1.com https://*.opstream12.com https://*.nguonc.com https://*.streamc.xyz https://*.streamembed.me https://*.vipstream.me https://*.vsmov.com https://*.streamvsmov.com",
-    "media-src 'self' blob: https: http: data:",
+    } https://challenges.cloudflare.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com wss://*.firebaseio.com https://*.phimapi.com https://*.kkphimplayer7.com https://*.ophim.live https://ophim1.com https://*.opstream12.com https://*.nguonc.com https://*.streamc.xyz https://*.vsmov.com https://*.streamvsmov.com https://vicdn.cc https://*.vicdn.cc`,
+    "frame-src 'self' https://accounts.google.com https://*.firebaseapp.com https://www.google.com https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://vidsrc.to https://vidsrc.in https://vidsrc.pm https://vidsrc.me https://vidsrc.sbs https://vicdn.cc https://*.vicdn.cc https://ssl.p.jwpcdn.com https://*.phimapi.com https://*.kkphimplayer7.com https://*.ophim.live https://ophim1.com https://*.opstream12.com https://*.nguonc.com https://*.streamc.xyz https://*.streamembed.me https://*.vipstream.me https://*.vsmov.com https://*.streamvsmov.com",
+    "media-src 'self' blob: data: https://*.phimapi.com https://*.kkphimplayer7.com https://*.ophim.live https://ophim1.com https://*.opstream12.com https://*.nguonc.com https://*.streamc.xyz https://*.vsmov.com https://*.streamvsmov.com https://vicdn.cc https://*.vicdn.cc",
     "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",

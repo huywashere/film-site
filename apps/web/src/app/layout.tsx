@@ -27,7 +27,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://film-site-web.vercel.app",
+    process.env.NEXT_PUBLIC_SITE_URL || "https://netphim.app",
   ),
   title: {
     default: "NetPhim — Xem Phim Online",
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     title: "NetPhim — Xem Phim Online",
     description:
       "Nền tảng xem phim online chất lượng cao. Phim bộ, phim lẻ, anime với phụ đề tiếng Việt và thuyết minh.",
-    url: "https://film-site-web.vercel.app",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://netphim.app",
     siteName: "NetPhim",
     locale: "vi_VN",
     type: "website",
@@ -104,11 +104,6 @@ export default function RootLayout({
   return (
     <html lang="vi" suppressHydrationWarning>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var oldPrefix=["cine","verse"].join(""),newPrefix="netphim";[localStorage,sessionStorage].forEach(function(store){var keys=[];for(var i=0;i<store.length;i++){var key=store.key(i);if(key&&key.indexOf(oldPrefix)===0)keys.push(key)}keys.forEach(function(key){var next=newPrefix+key.slice(oldPrefix.length);if(store.getItem(next)===null)store.setItem(next,store.getItem(key));store.removeItem(key)})});document.cookie.split(";").forEach(function(part){var pair=part.trim().split("=");var name=pair.shift();if(name&&name.indexOf(oldPrefix)===0){document.cookie=newPrefix+name.slice(oldPrefix.length)+"="+pair.join("=")+"; path=/; max-age=31536000; SameSite=Lax";document.cookie=name+"=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"}})}catch(e){}})();`,
-          }}
-        />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var r=document.documentElement,k="netphim-entry-intro-v2",s=sessionStorage.getItem(k);r.dataset.netphimIntro=s?"skip":"show";if(!s){var h=Array.from({length:18},function(_,i){return "/images/splash/tmdb/"+String(i+1).padStart(2,"0")+".webp"}),o=Array.from({length:10},function(_,i){return "/images/splash/tmdb/kr-"+String(i+1).padStart(2,"0")+".webp"}),c=Array.from({length:10},function(_,i){return "/images/splash/tmdb/cn-"+String(i+1).padStart(2,"0")+".webp"}),x=function(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a},p=x(x(h).slice(0,3).concat(x(o).slice(0,3),x(c).slice(0,3)));for(var i=0;i<p.length;i++)r.style.setProperty("--netphim-intro-poster-"+(i+1),'url("'+p[i]+'")');sessionStorage.setItem(k,"1")}}catch(e){document.documentElement.dataset.netphimIntro="show";}})();`,

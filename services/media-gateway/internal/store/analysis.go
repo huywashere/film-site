@@ -11,20 +11,23 @@ import (
 )
 
 type AnalysisJob struct {
-	JobID       string `json:"jobId"`
-	URL         string `json:"url"`
-	Provider    string `json:"provider,omitempty"`
-	MovieSlug   string `json:"movieSlug,omitempty"`
-	Episode     string `json:"episode,omitempty"`
-	RequestedAt int64  `json:"requestedAt"`
+	SchemaVersion int    `json:"schemaVersion"`
+	JobID         string `json:"jobId"`
+	URL           string `json:"url"`
+	Provider      string `json:"provider,omitempty"`
+	MovieSlug     string `json:"movieSlug,omitempty"`
+	Episode       string `json:"episode,omitempty"`
+	TraceID       string `json:"traceId,omitempty"`
+	RequestedAt   int64  `json:"requestedAt"`
 }
 
 func NewAnalysisJob(rawURL, provider string) AnalysisJob {
 	return AnalysisJob{
-		JobID:       analysisFingerprint(rawURL),
-		URL:         rawURL,
-		Provider:    provider,
-		RequestedAt: time.Now().Unix(),
+		SchemaVersion: 1,
+		JobID:         analysisFingerprint(rawURL),
+		URL:           rawURL,
+		Provider:      provider,
+		RequestedAt:   time.Now().Unix(),
 	}
 }
 

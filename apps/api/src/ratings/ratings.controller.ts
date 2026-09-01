@@ -7,13 +7,12 @@ import {
   UseGuards,
   Request,
 } from "@nestjs/common";
-import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
+import { Throttle } from "@nestjs/throttler";
 import { AuthGuard } from "@nestjs/passport";
 import { RatingsService } from "./ratings.service";
 import { CreateRatingDto } from "./ratings.dto";
 
 @Controller("ratings")
-@UseGuards(ThrottlerGuard)
 export class RatingsController {
   constructor(private ratingsService: RatingsService) {}
 

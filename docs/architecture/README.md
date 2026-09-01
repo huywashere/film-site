@@ -61,5 +61,9 @@ the service boundary; shared TypeScript types alone are not input validation.
 5. Secrets live in environment/secret stores and never in committed manifests.
 6. Infrastructure changes require `docker compose config`, Terraform validation and
    the relevant application build before deployment.
+7. The gateway must not log query strings because signed HLS URLs are credentials.
+   `X-Request-ID` is the correlation contract across edge, Gin and Rust jobs.
+8. HLS job/result payloads are versioned by the JSON Schemas under
+   `packages/shared-types/contracts`; breaking changes require a new schema version.
 
 Record significant future decisions as short ADR files in this directory.

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const OMDB_API_KEY = process.env.OMDB_API_KEY || "df7557ba";
 const OMDB_BASE = "https://www.omdbapi.com";
 const OMDB_DAILY_LIMIT = 1000;
 
@@ -72,8 +71,10 @@ export function getOmdbQuotaStats() {
 }
 
 async function fetchOmdb(params: Record<string, string>): Promise<any | null> {
+  const apiKey = process.env.OMDB_API_KEY?.trim();
+  if (!apiKey) return null;
   syncDailyQuota();
-  const qs = new URLSearchParams({ ...params, apikey: OMDB_API_KEY });
+  const qs = new URLSearchParams({ ...params, apikey: apiKey });
   const cacheKey = qs.toString();
 
   const cached = cache.get(cacheKey);

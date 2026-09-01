@@ -1,93 +1,77 @@
-import {
-  Controller,
-  Get,
-  Put,
-  Body,
-  Param,
-  UseGuards,
-  Request,
-  Query,
-} from "@nestjs/common";
-import { AuthGuard } from "@nestjs/passport";
-import { UsersService } from "./users.service";
+import { Controller, Get, Put, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { Throttle } from '@nestjs/throttler';
+import { UsersService } from './users.service';
 import {
   RemoveUserWatchlistDto,
   SaveUserWatchHistoryDto,
   UpdateProfileDto,
   UserWatchlistDto,
-} from "./users.dto";
+} from './users.dto';
 
-@Controller("users")
+@Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
   // ── 🏆 Leaderboard Top Watchers (Public & Cached) ─────────────────
-  @Get("leaderboard")
+  @Get('leaderboard')
   getLeaderboard() {
     return this.usersService.getLeaderboard();
   }
 
   // ── 📊 Real User Stats ────────────────────────────────────────────
-  @Get("me/stats")
-  @UseGuards(AuthGuard("jwt"))
+  @Get('me/stats')
+  @UseGuards(AuthGuard('jwt'))
   getMyStats(@Request() req) {
     return this.usersService.getUserStats(req.user.id);
   }
 
-  @Get(":username/stats")
-  getUserStats(@Param("username") username: string) {
+  @Get(':username/stats')
+  getUserStats(@Param('username') username: string) {
     return this.usersService.getUserStats(username);
   }
 
-  @Get(":username")
-  getProfile(@Param("username") username: string) {
+  @Get(':username')
+  getProfile(@Param('username') username: string) {
     return this.usersService.getProfile(username);
   }
 
-  @Get(":username/activity")
-  getActivity(@Param("username") username: string) {
+  @Get(':username/activity')
+  getActivity(@Param('username') username: string) {
     return this.usersService.getRecentActivity(username);
   }
 
-  @Put("me")
-  @UseGuards(AuthGuard("jwt"))
-  updateMe(
-    @Request() req,
-    @Body() dto: UpdateProfileDto,
-  ) {
+  @Put('me')
+  @UseGuards(AuthGuard('jwt'))
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  updateMe(@Request() req, @Body() dto: UpdateProfileDto) {
     return this.usersService.updateMe(req.user.id, dto);
   }
 
   // ── Watch History Endpoints ─────────────────────────────────────────
-  @Get("me/watch-history")
-  @UseGuards(AuthGuard("jwt"))
+  @Get('me/watch-history')
+  @UseGuards(AuthGuard('jwt'))
   getWatchHistory(@Request() req) {
     return this.usersService.getWatchHistory(req.user.id);
   }
 
-  @Put("me/watch-history")
-  @UseGuards(AuthGuard("jwt"))
-  saveWatchHistory(
-    @Request() req,
-    @Body() dto: SaveUserWatchHistoryDto,
-  ) {
+  @Put('me/watch-history')
+  @UseGuards(AuthGuard('jwt'))
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  saveWatchHistory(@Request() req, @Body() dto: SaveUserWatchHistoryDto) {
     return this.usersService.saveWatchHistory(req.user.id, dto);
   }
 
   // ── Watchlist Endpoints ─────────────────────────────────────────────
-  @Get("me/watchlist")
-  @UseGuards(AuthGuard("jwt"))
+  @Get('me/watchlist')
+  @UseGuards(AuthGuard('jwt'))
   getWatchlist(@Request() req) {
     return this.usersService.getWatchlist(req.user.id);
   }
 
-  @Get("me/watchlist/page")
-  @UseGuards(AuthGuard("jwt"))
-  getWatchlistPage(
-    @Request() req,
-    @Query("limit") limit = "20",
-    @Query("cursor") cursor?: string,
-  ) {
+  @Get('me/watchlist/page')
+  @UseGuards(AuthGuard('jwt'))
+  getWatchlistPage(@Request() req, @Query('limit') limit = '20', @Query('cursor') cursor?: string) {
     return this.usersService.getWatchlistPage(
       req.user.id,
       Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100),
@@ -95,17 +79,16 @@ export class UsersController {
     );
   }
 
-  @Put("me/watchlist")
-  @UseGuards(AuthGuard("jwt"))
-  addToWatchlist(
-    @Request() req,
-    @Body() dto: UserWatchlistDto,
-  ) {
+  @Put('me/watchlist')
+  @UseGuards(AuthGuard('jwt'))
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  addToWatchlist(@Request() req, @Body() dto: UserWatchlistDto) {
     return this.usersService.addToWatchlist(req.user.id, dto);
   }
 
-  @Put("me/watchlist/remove")
-  @UseGuards(AuthGuard("jwt"))
+  @Put('me/watchlist/remove')
+  @UseGuards(AuthGuard('jwt'))
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   removeFromWatchlist(@Request() req, @Body() dto: RemoveUserWatchlistDto) {
     return this.usersService.removeFromWatchlist(req.user.id, dto.movieId);
   }

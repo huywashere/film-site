@@ -29,7 +29,7 @@ export async function generateMetadata({
   const movie = getMovieFromPageData(await getMoviePageData(slug));
 
   const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://film-site-web.vercel.app";
+    process.env.NEXT_PUBLIC_SITE_URL || "https://netphim.app";
   const watchUrl = epNumber
     ? `${siteUrl}/watch/${slug}?ep=${epNumber}`
     : `${siteUrl}/watch/${slug}`;
@@ -114,7 +114,7 @@ export default async function WatchPageWrapper({ params }: PageProps) {
   const movie = getMovieFromPageData(initialData);
 
   const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://film-site-web.vercel.app";
+    process.env.NEXT_PUBLIC_SITE_URL || "https://netphim.app";
   const watchUrl = `${siteUrl}/watch/${slug}`;
 
   const jsonLd = movie

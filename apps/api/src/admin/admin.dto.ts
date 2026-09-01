@@ -14,6 +14,7 @@ import {
   Matches,
   ValidateNested,
   ArrayUnique,
+  IsISO8601,
 } from "class-validator";
 import { Type } from "class-transformer";
 
@@ -425,4 +426,139 @@ export class UpdateSiteConfigurationDto {
   @IsString()
   @MaxLength(500)
   seoDescription?: string;
+}
+
+const AD_TYPES = [
+  "BANNER_TOP",
+  "BANNER_BOTTOM",
+  "BANNER_PLAYER",
+  "VIDEO_PREROLL",
+  "POPUNDER",
+  "CUSTOM_HTML",
+] as const;
+
+export class CreateAdDto {
+  @IsString()
+  @MaxLength(160)
+  title: string;
+
+  @IsIn(AD_TYPES)
+  type: string;
+
+  @IsOptional()
+  @IsUrl({ protocols: ["https"], require_protocol: true })
+  @MaxLength(2048)
+  imageUrl?: string;
+
+  @IsOptional()
+  @IsUrl({ protocols: ["https"], require_protocol: true })
+  @MaxLength(2048)
+  targetUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50_000)
+  htmlContent?: string;
+
+  @IsOptional()
+  @IsUrl({ protocols: ["https"], require_protocol: true })
+  @MaxLength(2048)
+  videoVastUrl?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(600)
+  videoDuration?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(120)
+  skipOffsetSec?: number;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30)
+  @IsString({ each: true })
+  @MaxLength(60, { each: true })
+  categories?: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @IsOptional()
+  @IsISO8601()
+  startDate?: string;
+
+  @IsOptional()
+  @IsISO8601()
+  endDate?: string;
+}
+
+export class UpdateAdDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  title?: string;
+
+  @IsOptional()
+  @IsIn(AD_TYPES)
+  type?: string;
+
+  @IsOptional()
+  @IsUrl({ protocols: ["https"], require_protocol: true })
+  @MaxLength(2048)
+  imageUrl?: string;
+
+  @IsOptional()
+  @IsUrl({ protocols: ["https"], require_protocol: true })
+  @MaxLength(2048)
+  targetUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50_000)
+  htmlContent?: string;
+
+  @IsOptional()
+  @IsUrl({ protocols: ["https"], require_protocol: true })
+  @MaxLength(2048)
+  videoVastUrl?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(600)
+  videoDuration?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(120)
+  skipOffsetSec?: number;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30)
+  @IsString({ each: true })
+  @MaxLength(60, { each: true })
+  categories?: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @IsOptional()
+  @IsISO8601()
+  startDate?: string;
+
+  @IsOptional()
+  @IsISO8601()
+  endDate?: string;
 }

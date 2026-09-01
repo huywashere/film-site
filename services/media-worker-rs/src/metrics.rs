@@ -9,6 +9,10 @@ pub struct Metrics {
     pub jobs_failed: AtomicU64,
     pub manifests_playable: AtomicU64,
     pub redis_errors: AtomicU64,
+    pub jobs_reclaimed: AtomicU64,
+    pub jobs_retried: AtomicU64,
+    pub jobs_dead_lettered: AtomicU64,
+    pub pending_jobs: AtomicU64,
     /// Sum of analysis durations in milliseconds (for computing mean).
     pub analysis_duration_ms_sum: AtomicU64,
     /// Number of completed analyses (successful + failed).
@@ -56,7 +60,7 @@ pub async fn prometheus(State(metrics): State<std::sync::Arc<Metrics>>) -> impl 
     let count = metrics.analysis_duration_ms_count.load(Ordering::Relaxed);
     let sum = metrics.analysis_duration_ms_sum.load(Ordering::Relaxed);
     let max = metrics.analysis_duration_ms_max.load(Ordering::Relaxed);
-    let mean = if count > 0 { sum / count } else { 0 };
+    let mean = sum.checked_div(count).unwrap_or_default();
     let body = format!(
         concat!(
             "# TYPE netphim_hls_analyzer_jobs_total counter\n",
@@ -67,6 +71,14 @@ pub async fn prometheus(State(metrics): State<std::sync::Arc<Metrics>>) -> impl 
             "netphim_hls_analyzer_playable_total {}\n",
             "# TYPE netphim_hls_analyzer_redis_errors_total counter\n",
             "netphim_hls_analyzer_redis_errors_total {}\n",
+            "# TYPE netphim_hls_analyzer_jobs_reclaimed_total counter\n",
+            "netphim_hls_analyzer_jobs_reclaimed_total {}\n",
+            "# TYPE netphim_hls_analyzer_jobs_retried_total counter\n",
+            "netphim_hls_analyzer_jobs_retried_total {}\n",
+            "# TYPE netphim_hls_analyzer_jobs_dead_lettered_total counter\n",
+            "netphim_hls_analyzer_jobs_dead_lettered_total {}\n",
+            "# TYPE netphim_hls_analyzer_pending_jobs gauge\n",
+            "netphim_hls_analyzer_pending_jobs {}\n",
             "# TYPE netphim_hls_analyzer_duration_ms_mean gauge\n",
             "netphim_hls_analyzer_duration_ms_mean {}\n",
             "# TYPE netphim_hls_analyzer_duration_ms_max gauge\n",
@@ -80,6 +92,10 @@ pub async fn prometheus(State(metrics): State<std::sync::Arc<Metrics>>) -> impl 
         metrics.jobs_failed.load(Ordering::Relaxed),
         metrics.manifests_playable.load(Ordering::Relaxed),
         metrics.redis_errors.load(Ordering::Relaxed),
+        metrics.jobs_reclaimed.load(Ordering::Relaxed),
+        metrics.jobs_retried.load(Ordering::Relaxed),
+        metrics.jobs_dead_lettered.load(Ordering::Relaxed),
+        metrics.pending_jobs.load(Ordering::Relaxed),
         mean,
         max,
         sum,

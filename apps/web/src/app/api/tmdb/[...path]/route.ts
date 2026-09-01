@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
-const TMDB_TOKEN = process.env.TMDB_ACCESS_TOKEN?.trim() || "";
-const TMDB_API_KEY =
-  process.env.TMDB_API_KEY?.trim() || "f85dbd29011db19e75f5d29028fd096d";
-
 function getTtl(path: string): number {
   if (path.includes("images")) return 86400;
   if (path.includes("credits")) return 86400;
@@ -21,7 +17,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
 ) {
-  if (!TMDB_TOKEN && !TMDB_API_KEY) {
+  const tmdbToken = process.env.TMDB_ACCESS_TOKEN?.trim() || "";
+  const tmdbApiKey = process.env.TMDB_API_KEY?.trim() || "";
+  if (!tmdbToken && !tmdbApiKey) {
     return NextResponse.json(
       { error: "TMDB_ACCESS_TOKEN hoac TMDB_API_KEY chua duoc cau hinh" },
       { status: 503 },
@@ -33,9 +31,9 @@ export async function GET(
   const searchParams = request.nextUrl.searchParams;
 
   const isValidToken =
-    Boolean(TMDB_TOKEN) &&
-    TMDB_TOKEN !== "your-read-access-token-here" &&
-    TMDB_TOKEN.startsWith("eyJ");
+    Boolean(tmdbToken) &&
+    tmdbToken !== "your-read-access-token-here" &&
+    tmdbToken.startsWith("eyJ");
 
   // Them language mac dinh neu chua co (tru cac endpoint anh/video de khong bi chan logo quoc te)
   const isMediaAssetEndpoint =
@@ -52,8 +50,8 @@ export async function GET(
   }
 
   // Neu khong dung Bearer token hop le, them api_key vao query
-  if (!isValidToken && TMDB_API_KEY) {
-    searchParams.set("api_key", TMDB_API_KEY);
+  if (!isValidToken && tmdbApiKey) {
+    searchParams.set("api_key", tmdbApiKey);
   }
 
   const qs = searchParams.toString();
@@ -89,7 +87,7 @@ export async function GET(
   };
 
   if (isValidToken) {
-    headers["Authorization"] = "Bearer " + TMDB_TOKEN;
+    headers["Authorization"] = "Bearer " + tmdbToken;
   }
 
   let lastError: unknown = null;

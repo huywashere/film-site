@@ -9,7 +9,7 @@ import {
   UseGuards,
   Request,
 } from "@nestjs/common";
-import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
+import { Throttle } from "@nestjs/throttler";
 import { AuthGuard } from "@nestjs/passport";
 import { ReviewsService } from "./reviews.service";
 import { CreateReviewDto } from "./reviews.dto";
@@ -20,7 +20,6 @@ function safePage(value: unknown): number {
 }
 
 @Controller("reviews")
-@UseGuards(ThrottlerGuard)
 export class ReviewsController {
   constructor(private reviewsService: ReviewsService) {}
 

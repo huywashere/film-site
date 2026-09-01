@@ -1,11 +1,13 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from 'react';
+import DOMPurify from 'dompurify';
 
 type AdItem = {
   id: string;
   title: string;
-  type: "BANNER_TOP" | "BANNER_BOTTOM" | "BANNER_PLAYER" | "VIDEO_PREROLL" | "POPUNDER" | "CUSTOM_HTML";
+  type:
+    'BANNER_TOP' | 'BANNER_BOTTOM' | 'BANNER_PLAYER' | 'VIDEO_PREROLL' | 'POPUNDER' | 'CUSTOM_HTML';
   imageUrl?: string | null;
   targetUrl?: string | null;
   htmlContent?: string | null;
@@ -13,13 +15,14 @@ type AdItem = {
 };
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === 'production' ? '/api/v1' : 'http://localhost:3001/api/v1');
 
 export function AdBanner({
   placement,
-  className = "",
+  className = '',
 }: {
-  placement: "BANNER_TOP" | "BANNER_BOTTOM" | "BANNER_PLAYER";
+  placement: 'BANNER_TOP' | 'BANNER_BOTTOM' | 'BANNER_PLAYER';
   className?: string;
 }) {
   const [ad, setAd] = useState<AdItem | null>(null);
@@ -36,7 +39,10 @@ export function AdBanner({
           if (matched) {
             setAd(matched);
             // Record view impression
-            void fetch(`${API_BASE_URL}/ads/${matched.id}/view`, { method: "POST" }).catch(() => {});
+            void fetch(`${API_BASE_URL}/ads/${matched.id}/view`, {
+              method: 'POST',
+              credentials: 'include',
+            }).catch(() => {});
           }
         }
       } catch {
@@ -49,19 +55,61 @@ export function AdBanner({
     };
   }, [placement]);
 
+  const sanitizedHtml = useMemo(
+    () =>
+      ad?.htmlContent
+        ? DOMPurify.sanitize(ad.htmlContent, {
+            ALLOWED_TAGS: [
+              'a',
+              'article',
+              'b',
+              'br',
+              'div',
+              'em',
+              'figure',
+              'figcaption',
+              'h2',
+              'h3',
+              'img',
+              'p',
+              'small',
+              'span',
+              'strong',
+            ],
+            ALLOWED_ATTR: [
+              'alt',
+              'class',
+              'height',
+              'href',
+              'loading',
+              'rel',
+              'src',
+              'target',
+              'title',
+              'width',
+            ],
+            ALLOWED_URI_REGEXP: /^https:\/\//i,
+          })
+        : '',
+    [ad?.htmlContent],
+  );
+
   if (!ad) return null;
 
   const handleClick = () => {
     if (ad.id) {
-      void fetch(`${API_BASE_URL}/ads/${ad.id}/click`, { method: "POST" }).catch(() => {});
+      void fetch(`${API_BASE_URL}/ads/${ad.id}/click`, {
+        method: 'POST',
+        credentials: 'include',
+      }).catch(() => {});
     }
   };
 
-  if (ad.htmlContent) {
+  if (sanitizedHtml) {
     return (
       <div
         className={`my-4 flex justify-center overflow-hidden rounded-xl ${className}`}
-        dangerouslySetInnerHTML={{ __html: ad.htmlContent }}
+        dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
       />
     );
   }
@@ -74,7 +122,7 @@ export function AdBanner({
         Quảng cáo
       </span>
       <a
-        href={ad.targetUrl || "#"}
+        href={ad.targetUrl || '#'}
         target="_blank"
         rel="noopener noreferrer nofollow"
         onClick={handleClick}
@@ -82,9 +130,10 @@ export function AdBanner({
       >
         <img
           src={ad.imageUrl}
-          alt={ad.title || "Quảng cáo"}
+          alt={ad.title || 'Quảng cáo'}
           className="max-h-[120px] w-full object-contain sm:max-h-[160px]"
           loading="lazy"
+          referrerPolicy="no-referrer"
         />
       </a>
     </div>

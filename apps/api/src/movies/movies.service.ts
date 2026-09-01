@@ -1,10 +1,10 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { RedisCacheService } from "../redis/redis.service";
-import { PrismaService } from "../prisma/prisma.service";
-import axios, { AxiosInstance } from "axios";
-import { RecordMovieViewDto } from "./movies.dto";
-import { SearchIndexerService } from "./search-indexer.service";
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { RedisCacheService } from '../redis/redis.service';
+import { PrismaService } from '../prisma/prisma.service';
+import axios, { AxiosInstance } from 'axios';
+import { RecordMovieViewDto } from './movies.dto';
+import { SearchIndexerService } from './search-indexer.service';
 
 @Injectable()
 export class MoviesService {
@@ -18,11 +18,11 @@ export class MoviesService {
     private readonly prisma: PrismaService,
     private readonly searchIndexer: SearchIndexerService,
   ) {
-    this.baseUrl = config.get("KKPHIM_BASE_URL") || "https://phimapi.com";
+    this.baseUrl = config.get('KKPHIM_BASE_URL') || 'https://phimapi.com';
     this.http = axios.create({
       baseURL: this.baseUrl,
       timeout: 10000,
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
@@ -30,11 +30,7 @@ export class MoviesService {
    * Generic cached GET helper.
    * Checks Redis (or in-memory fallback) before hitting KKPhim upstream.
    */
-  private async cachedGet<T>(
-    key: string,
-    url: string,
-    ttlSeconds = 300,
-  ): Promise<T> {
+  private async cachedGet<T>(key: string, url: string, ttlSeconds = 300): Promise<T> {
     return this.cache.getOrSet<T>(
       `movies:${key}`,
       async () => {
@@ -55,11 +51,7 @@ export class MoviesService {
 
   // GET /danh-sach/phim-moi-cap-nhat?page=1
   async getLatest(page = 1) {
-    return this.cachedGet(
-      `latest:${page}`,
-      `/danh-sach/phim-moi-cap-nhat?page=${page}`,
-      120,
-    );
+    return this.cachedGet(`latest:${page}`, `/danh-sach/phim-moi-cap-nhat?page=${page}`, 120);
   }
 
   /**
@@ -79,10 +71,10 @@ export class MoviesService {
 
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const ranked = await this.prisma.viewLog.groupBy({
-      by: ["movieId"],
+      by: ['movieId'],
       where: { viewedAt: { gte: since } },
       _count: { movieId: true },
-      orderBy: { _count: { movieId: "desc" } },
+      orderBy: { _count: { movieId: 'desc' } },
       take: safeLimit,
     });
 
@@ -110,9 +102,7 @@ export class MoviesService {
           thumb_url: movie.thumbUrl || undefined,
           year: movie.year || undefined,
           type: movie.type,
-          episode_current: movie.totalEpisodes
-            ? `Tập ${movie.totalEpisodes}`
-            : "Full",
+          episode_current: movie.totalEpisodes ? `Tập ${movie.totalEpisodes}` : 'Full',
           quality: movie.quality || undefined,
           lang: movie.language || undefined,
           content: movie.description || undefined,
@@ -126,61 +116,70 @@ export class MoviesService {
     return result;
   }
 
-  async recordView(movieId: string, data: RecordMovieViewDto) {
-    await this.prisma.movie.upsert({
-      where: { id: movieId },
-      create: {
-        id: movieId,
-        title: data.title,
-        originName: data.originName,
-        posterUrl: data.posterUrl,
-        year: data.year,
-        type: data.type || "unknown",
-      },
-      update: {
-        title: data.title,
-        originName: data.originName,
-        posterUrl: data.posterUrl,
-        year: data.year,
-        type: data.type,
-      },
-    });
-    await this.prisma.viewLog.create({
-      data: {
-        movieId,
-        episode: data.episode,
-        serverName: data.serverName,
-      },
-    });
-    if (data.provider && data.serverName) {
-      await this.prisma.moviePlaybackSource.upsert({
-        where: {
-          movieId_provider_providerSlug_episodeKey_serverName: {
+  async recordView(movieId: string, data: RecordMovieViewDto, userId: string) {
+    const lockKey = `movie_view:${userId}:${movieId}`;
+    const shouldCountView = await this.cache.acquireLock(lockKey, 6 * 60 * 60 * 1000);
+    if (!shouldCountView) return { recorded: false };
+
+    try {
+      await this.prisma.movie.upsert({
+        where: { id: movieId },
+        create: {
+          id: movieId,
+          title: data.title,
+          originName: data.originName,
+          posterUrl: data.posterUrl,
+          year: data.year,
+          type: data.type || 'unknown',
+        },
+        update: {
+          title: data.title,
+          originName: data.originName,
+          posterUrl: data.posterUrl,
+          year: data.year,
+          type: data.type,
+        },
+      });
+      await this.prisma.viewLog.create({
+        data: {
+          movieId,
+          episode: data.episode,
+          serverName: data.serverName,
+        },
+      });
+      if (data.provider && data.serverName) {
+        await this.prisma.moviePlaybackSource.upsert({
+          where: {
+            movieId_provider_providerSlug_episodeKey_serverName: {
+              movieId,
+              provider: data.provider,
+              providerSlug: movieId,
+              episodeKey: data.episode || 'full',
+              serverName: data.serverName,
+            },
+          },
+          create: {
             movieId,
             provider: data.provider,
             providerSlug: movieId,
-            episodeKey: data.episode || "full",
+            episodeKey: data.episode || 'full',
             serverName: data.serverName,
+            healthStatus: 'operational',
+            lastCheckedAt: new Date(),
           },
-        },
-        create: {
-          movieId,
-          provider: data.provider,
-          providerSlug: movieId,
-          episodeKey: data.episode || "full",
-          serverName: data.serverName,
-          healthStatus: "operational",
-          lastCheckedAt: new Date(),
-        },
-        update: {
-          healthStatus: "operational",
-          lastCheckedAt: new Date(),
-          lastError: null,
-        },
-      });
+          update: {
+            healthStatus: 'operational',
+            lastCheckedAt: new Date(),
+            lastError: null,
+          },
+        });
+      }
+      await this.cache.del('movies:trending:20');
+      return { recorded: true };
+    } catch (error) {
+      await this.cache.releaseLock(lockKey).catch(() => false);
+      throw error;
     }
-    await this.cache.del("movies:trending:20");
-    return { recorded: true };
   }
 
   // GET /v1/api/danh-sach/phim-bo?page=1
@@ -238,11 +237,7 @@ export class MoviesService {
       }
     });
     const queryString = query.toString();
-    return this.cachedGet(
-      `filtered:${queryString}`,
-      `/v1/api/danh-sach?${queryString}`,
-      300,
-    );
+    return this.cachedGet(`filtered:${queryString}`, `/v1/api/danh-sach?${queryString}`, 300);
   }
 
   // ── Chi tiết phim ───────────────────────────────────────────────
@@ -263,10 +258,10 @@ export class MoviesService {
   }
 
   // GET /phim/tmdb?tmdb_id=xxx&type=tv&season=1
-  async getByTmdb(tmdbId: string, type: "tv" | "movie", season?: number) {
-    const seasonParam = season ? `&season=${season}` : "";
+  async getByTmdb(tmdbId: string, type: 'tv' | 'movie', season?: number) {
+    const seasonParam = season ? `&season=${season}` : '';
     return this.cachedGet(
-      `tmdb:${tmdbId}:${type}:${season || "none"}`,
+      `tmdb:${tmdbId}:${type}:${season || 'none'}`,
       `/phim/tmdb?tmdb_id=${tmdbId}&type=${type}${seasonParam}`,
       600,
     );
@@ -274,17 +269,13 @@ export class MoviesService {
 
   // GET /phim/imdb?imdb_id=xxx
   async getByImdb(imdbId: string) {
-    return this.cachedGet(
-      `imdb:${imdbId}`,
-      `/phim/imdb?imdb_id=${imdbId}`,
-      600,
-    );
+    return this.cachedGet(`imdb:${imdbId}`, `/phim/imdb?imdb_id=${imdbId}`, 600);
   }
 
   // ── Thông tin bổ sung ───────────────────────────────────────────
 
   // GET /phim/images?tmdb_type=tv&tmdb_id=xxx
-  async getImages(tmdbType: "tv" | "movie", tmdbId: string) {
+  async getImages(tmdbType: 'tv' | 'movie', tmdbId: string) {
     return this.cachedGet(
       `images:${tmdbType}:${tmdbId}`,
       `/phim/images?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`,
@@ -293,7 +284,7 @@ export class MoviesService {
   }
 
   // GET /phim/cast?tmdb_type=tv&tmdb_id=xxx
-  async getCast(tmdbType: "tv" | "movie", tmdbId: string) {
+  async getCast(tmdbType: 'tv' | 'movie', tmdbId: string) {
     return this.cachedGet(
       `cast:${tmdbType}:${tmdbId}`,
       `/phim/cast?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`,
@@ -302,7 +293,7 @@ export class MoviesService {
   }
 
   // GET /phim/keywords?tmdb_type=tv&tmdb_id=xxx
-  async getKeywords(tmdbType: "tv" | "movie", tmdbId: string) {
+  async getKeywords(tmdbType: 'tv' | 'movie', tmdbId: string) {
     return this.cachedGet(
       `keywords:${tmdbType}:${tmdbId}`,
       `/phim/keywords?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`,
@@ -314,16 +305,16 @@ export class MoviesService {
 
   // GET /v1/api/tim-kiem?keyword=&page=1
   async search(keyword: string, page = 1, limit = 24) {
-    const normalized = (keyword || "")
-      .replace(/[\\/()[\]{}*+?^$|#@~`"']/g, " ")
-      .replace(/\s+/g, " ")
+    const normalized = (keyword || '')
+      .replace(/[\\/()[\]{}*+?^$|#@~`"']/g, ' ')
+      .replace(/\s+/g, ' ')
       .trim()
       .toLowerCase();
 
     if (!normalized) {
       return {
-        status: "success",
-        msg: "OK",
+        status: 'success',
+        msg: 'OK',
         data: {
           items: [],
           params: {
@@ -364,7 +355,7 @@ export class MoviesService {
 
   // GET /the-loai (genres list)
   async getGenres() {
-    return this.cachedGet("genres", "/the-loai", 3600);
+    return this.cachedGet('genres', '/the-loai', 3600);
   }
 
   // GET /v1/api/the-loai/:slug?page=1
@@ -380,7 +371,7 @@ export class MoviesService {
 
   // GET /quoc-gia (countries list)
   async getCountries() {
-    return this.cachedGet("countries", "/quoc-gia", 3600);
+    return this.cachedGet('countries', '/quoc-gia', 3600);
   }
 
   // GET /v1/api/quoc-gia/:slug?page=1
@@ -396,7 +387,7 @@ export class MoviesService {
 
   // GET /nam-phat-hanh (years list)
   async getYears() {
-    return this.cachedGet("years", "/nam-phat-hanh", 3600);
+    return this.cachedGet('years', '/nam-phat-hanh', 3600);
   }
 
   // GET /nam-phat-hanh/:year?page=1

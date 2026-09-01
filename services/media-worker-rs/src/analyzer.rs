@@ -1,5 +1,7 @@
 use std::{collections::HashSet, sync::Arc, time::Instant};
 
+use std::fmt;
+
 use anyhow::{bail, Context, Result};
 use futures_util::{stream::FuturesUnordered, StreamExt};
 use reqwest::{header, redirect::Policy, Client, Response};
@@ -28,6 +30,28 @@ struct ParsedPlaylist {
     encrypted: bool,
     encryption_method: Option<String>,
 }
+
+type PendingVariant = (
+    Option<u64>,
+    Option<String>,
+    Option<String>,
+    Option<f64>,
+    Option<String>,
+);
+
+#[derive(Debug)]
+struct FetchFailure {
+    message: String,
+    retryable: bool,
+}
+
+impl fmt::Display for FetchFailure {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.message)
+    }
+}
+
+impl std::error::Error for FetchFailure {}
 
 impl Analyzer {
     pub fn new(config: Arc<Config>) -> Result<Self> {
@@ -60,21 +84,32 @@ impl Analyzer {
         let original_url = match self.validate_url(&job.url) {
             Ok(url) => url,
             Err(error) => {
-                return failed_result(job, error.to_string(), started.elapsed().as_millis() as u64)
+                return failed_result(
+                    job,
+                    error.to_string(),
+                    started.elapsed().as_millis() as u64,
+                    false,
+                )
             }
         };
 
         let (mut final_url, mut body) = match self.fetch_manifest(original_url).await {
             Ok(value) => value,
             Err(error) => {
-                return failed_result(job, error.to_string(), started.elapsed().as_millis() as u64)
+                return failed_result(
+                    job,
+                    error.to_string(),
+                    started.elapsed().as_millis() as u64,
+                    error.retryable,
+                )
             }
         };
         let manifest_latency_ms = started.elapsed().as_millis() as u64;
         let mut parsed = match parse_playlist(&body, &final_url) {
             Ok(value) => value,
-            Err(error) => return failed_result(job, error.to_string(), manifest_latency_ms),
+            Err(error) => return failed_result(job, error.to_string(), manifest_latency_ms, false),
         };
+        let mut retryable = false;
 
         // A master playlist has no media duration. Analyze its highest-bandwidth
         // variant once, while retaining every advertised quality in the result.
@@ -98,7 +133,10 @@ impl Analyzer {
                                 Err(error) => errors.push(error.to_string()),
                             }
                         }
-                        Err(error) => errors.push(error.to_string()),
+                        Err(error) => {
+                            retryable |= error.retryable;
+                            errors.push(error.to_string());
+                        }
                     },
                     Err(error) => errors.push(error.to_string()),
                 }
@@ -114,6 +152,7 @@ impl Analyzer {
 
         let playable = !parsed.segment_urls.is_empty()
             && (sampled_segments == 0 || broken_segments.len() < sampled_segments);
+        retryable |= !playable && !parsed.segment_urls.is_empty() && !broken_segments.is_empty();
         let health_score = score(
             playable,
             manifest_latency_ms,
@@ -126,12 +165,14 @@ impl Analyzer {
         AnalysisResult {
             schema_version: 1,
             job_id: job.job_id.clone(),
+            trace_id: job.trace_id.clone(),
             url: redact_url(&job.url),
             final_url: redact_url(final_url.as_str()),
             provider: job.provider.clone(),
             movie_slug: job.movie_slug.clone(),
             episode: job.episode.clone(),
             playable,
+            retryable,
             playlist_kind: if parsed.variants.is_empty() {
                 "media".to_owned()
             } else {
@@ -172,25 +213,44 @@ impl Analyzer {
         Ok(url)
     }
 
-    async fn fetch_manifest(&self, url: Url) -> Result<(Url, String)> {
+    async fn fetch_manifest(&self, url: Url) -> std::result::Result<(Url, String), FetchFailure> {
         let response = self
             .client
             .get(url)
             .send()
             .await
-            .context("manifest request failed")?;
+            .map_err(|error| FetchFailure {
+                message: format!("manifest request failed: {error}"),
+                retryable: error.is_timeout() || error.is_connect() || error.is_request(),
+            })?;
         let final_url = response.url().clone();
         if !response.status().is_success() {
-            bail!("manifest returned HTTP {}", response.status());
+            let status = response.status();
+            return Err(FetchFailure {
+                message: format!("manifest returned HTTP {status}"),
+                retryable: retryable_status(status),
+            });
         }
         if response.content_length().unwrap_or_default() > self.config.max_manifest_bytes as u64 {
-            bail!("manifest exceeds size limit");
+            return Err(FetchFailure {
+                message: "manifest exceeds size limit".to_owned(),
+                retryable: false,
+            });
         }
-        let bytes = response.bytes().await.context("manifest body failed")?;
+        let bytes = response.bytes().await.map_err(|error| FetchFailure {
+            message: format!("manifest body failed: {error}"),
+            retryable: true,
+        })?;
         if bytes.len() > self.config.max_manifest_bytes {
-            bail!("manifest exceeds size limit");
+            return Err(FetchFailure {
+                message: "manifest exceeds size limit".to_owned(),
+                retryable: false,
+            });
         }
-        let body = String::from_utf8(bytes.to_vec()).context("manifest is not UTF-8")?;
+        let body = String::from_utf8(bytes.to_vec()).map_err(|_| FetchFailure {
+            message: "manifest is not UTF-8".to_owned(),
+            retryable: false,
+        })?;
         Ok((final_url, body))
     }
 
@@ -227,6 +287,10 @@ impl Analyzer {
         }
         broken
     }
+}
+
+fn retryable_status(status: reqwest::StatusCode) -> bool {
+    matches!(status.as_u16(), 408 | 425 | 429 | 500 | 502 | 503 | 504)
 }
 
 fn url_allowed(url: &Url, config: &Config) -> bool {
@@ -289,7 +353,7 @@ fn parse_playlist(source: &str, base: &Url) -> Result<ParsedPlaylist> {
         .collect();
     let mut parsed = ParsedPlaylist::default();
     let mut pending_segment_duration: Option<f64> = None;
-    let mut pending_variant: Option<(Option<u64>, Option<String>, Option<String>, Option<f64>, Option<String>)> = None;
+    let mut pending_variant: Option<PendingVariant> = None;
     let mut current_time = 0.0_f64;
     let mut active_ad_start: Option<f64> = None;
     let mut seen_markers = HashSet::new();
@@ -312,7 +376,9 @@ fn parse_playlist(source: &str, base: &Url) -> Result<ParsedPlaylist> {
             ));
             continue;
         }
-        if line.starts_with("#EXT-X-DISCONTINUITY") && !line.starts_with("#EXT-X-DISCONTINUITY-SEQUENCE") {
+        if line.starts_with("#EXT-X-DISCONTINUITY")
+            && !line.starts_with("#EXT-X-DISCONTINUITY-SEQUENCE")
+        {
             parsed.discontinuities += 1;
             continue;
         }
@@ -377,7 +443,9 @@ fn parse_playlist(source: &str, base: &Url) -> Result<ParsedPlaylist> {
         let resolved = base
             .join(line)
             .context("playlist contains an invalid relative URL")?;
-        if let Some((bandwidth, resolution, codecs, frame_rate, audio_group)) = pending_variant.take() {
+        if let Some((bandwidth, resolution, codecs, frame_rate, audio_group)) =
+            pending_variant.take()
+        {
             parsed.variants.push(Variant {
                 url: resolved.to_string(),
                 bandwidth,
@@ -492,23 +560,30 @@ fn score(
     if segment_count == 0 {
         value -= 50;
     }
-    if sampled > 0 {
-        value -= ((broken * 50) / sampled) as i32;
+    if let Some(ratio) = (broken * 50).checked_div(sampled) {
+        value -= ratio as i32;
     }
     value -= (error_count as i32 * 10).min(30);
     value.clamp(0, 100) as u8
 }
 
-fn failed_result(job: &AnalysisJob, error: String, latency_ms: u64) -> AnalysisResult {
+fn failed_result(
+    job: &AnalysisJob,
+    error: String,
+    latency_ms: u64,
+    retryable: bool,
+) -> AnalysisResult {
     AnalysisResult {
         schema_version: 1,
         job_id: job.job_id.clone(),
+        trace_id: job.trace_id.clone(),
         url: redact_url(&job.url),
         final_url: String::new(),
         provider: job.provider.clone(),
         movie_slug: job.movie_slug.clone(),
         episode: job.episode.clone(),
         playable: false,
+        retryable,
         playlist_kind: "unknown".to_owned(),
         duration_seconds: 0.0,
         segment_count: 0,
@@ -545,6 +620,15 @@ fn redact_url(raw: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn retry_policy_only_retries_transient_http_statuses() {
+        assert!(retryable_status(reqwest::StatusCode::REQUEST_TIMEOUT));
+        assert!(retryable_status(reqwest::StatusCode::TOO_MANY_REQUESTS));
+        assert!(retryable_status(reqwest::StatusCode::BAD_GATEWAY));
+        assert!(!retryable_status(reqwest::StatusCode::BAD_REQUEST));
+        assert!(!retryable_status(reqwest::StatusCode::NOT_FOUND));
+    }
 
     #[test]
     fn parses_duration_and_ad_markers_without_removing_segments() {
@@ -587,7 +671,10 @@ mod tests {
     fn parses_attributes_with_commas_in_quotes() {
         let attrs = r#"BANDWIDTH=2142000,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=1920x1080,FRAME-RATE=29.970"#;
         assert_eq!(attribute(attrs, "BANDWIDTH"), Some("2142000".to_owned()));
-        assert_eq!(attribute(attrs, "CODECS"), Some("avc1.640028,mp4a.40.2".to_owned()));
+        assert_eq!(
+            attribute(attrs, "CODECS"),
+            Some("avc1.640028,mp4a.40.2".to_owned())
+        );
         assert_eq!(attribute(attrs, "RESOLUTION"), Some("1920x1080".to_owned()));
         assert_eq!(attribute(attrs, "FRAME-RATE"), Some("29.970".to_owned()));
     }

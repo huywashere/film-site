@@ -88,7 +88,6 @@ import { safeJsonLd } from '@/lib/safe-json-ld';
 import {
   buildVicdnEmbedUrl,
   buildVidsrcEmbedUrl,
-  canUseUnsandboxedEmbed,
   detectServerType,
   episodeNumberFromLabel,
   findMatchingEpisode,
@@ -2270,7 +2269,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   const iframeUrl =
     embedUrl ||
     (m3u8Url ? `https://player.phimapi.com/player/?url=${encodeURIComponent(m3u8Url)}` : '');
-  const iframeSandbox = undefined;
+  // Third-party players may execute scripts and use their own storage, but
+  // must not navigate the NetPhim tab, spawn popunders or trigger downloads.
+  const iframeSandbox =
+    "allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock";
   const videoUrl = m3u8Url || embedUrl || iframeUrl;
 
   const currentEpIndex = serverData.findIndex(
@@ -2806,7 +2808,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       dateCreated: film?.year ? String(film.year) : undefined,
       potentialAction: {
         '@type': 'WatchAction',
-        target: `https://netphim-movie.vercel.app/watch/${slug}`,
+        target: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://netphim.app'}/watch/${slug}`,
       },
     },
     {
@@ -2816,7 +2818,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       description: watchSeoDescription,
       thumbnailUrl: posterUrl || tmdbBackdropUrl,
       uploadDate: film?.year ? `${film.year}-01-01` : '2024-01-01',
-      embedUrl: iframeUrl || `https://netphim-movie.vercel.app/watch/${slug}`,
+      embedUrl: iframeUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://netphim.app'}/watch/${slug}`,
       inLanguage: 'vi',
     },
   ];
@@ -2962,7 +2964,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                         className="w-full h-full border-0"
                         allowFullScreen
                         allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer"
-                        referrerPolicy="no-referrer-when-downgrade"
+                        referrerPolicy="no-referrer"
                         sandbox={iframeSandbox}
                         title={`${film?.name} - ${currentEpData?.name}`}
                         onLoad={() => {

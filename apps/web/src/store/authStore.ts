@@ -56,11 +56,12 @@ export const useAuthStore = create<AuthState>()(
 
       setUser: (user) => {
         if (typeof window !== "undefined") {
+          const secure = window.location.protocol === "https:" ? "; Secure" : "";
           if (user) {
-            document.cookie = "netphim-auth=true; path=/; max-age=31536000";
+            document.cookie = `netphim-auth=true; Path=/; Max-Age=604800; SameSite=Lax${secure}`;
           } else {
             document.cookie =
-              "netphim-auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+              `netphim-auth=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
           }
         }
         set({ user });
@@ -156,7 +157,11 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "netphim-auth",
-      partialize: (state) => ({ user: state.user }),
+      version: 2,
+      migrate: () => ({ user: null, isLoading: false }),
+      // Authentication is restored from the server's HttpOnly cookies. Do not
+      // persist email, role or security flags in script-readable storage.
+      partialize: () => ({ user: null }),
     },
   ),
 );

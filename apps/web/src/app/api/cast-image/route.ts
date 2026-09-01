@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "ioredis";
-import { checkImageProxyRateLimit } from "@/lib/rate-limiter";
+import { checkImageProxyRateLimitDistributed } from "@/lib/server-rate-limiter";
 import { clientIpFromRequest } from "@/lib/client-ip";
 
 export const dynamic = "force-dynamic";
@@ -40,7 +40,9 @@ function getRedisClient(): Redis | null {
 }
 
 export async function GET(request: NextRequest) {
-  const rateCheck = checkImageProxyRateLimit(clientIpFromRequest(request));
+  const rateCheck = await checkImageProxyRateLimitDistributed(
+    clientIpFromRequest(request),
+  );
   if (!rateCheck.allowed) {
     return NextResponse.json(
       { error: "Too many requests. Please slow down." },

@@ -121,38 +121,42 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
     // Always allow server-side fetches or same-app requests
     if (!referer && !origin) return true;
 
+    const configuredHosts = [
+      process.env.NEXT_PUBLIC_APP_URL,
+      process.env.NEXT_PUBLIC_SITE_URL,
+      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
+    ]
+      .filter(Boolean)
+      .flatMap((value) => {
+        try {
+          return [new URL(value!).host];
+        } catch {
+          return [];
+        }
+      });
+    const allowedHosts = new Set([
+      host,
+      request.nextUrl.host,
+      ...configuredHosts,
+      ...(process.env.NODE_ENV === "development"
+        ? ["localhost:3000", "127.0.0.1:3000"]
+        : []),
+    ]);
+
     try {
       if (referer) {
         const refHost = new URL(referer).host;
-        if (
-          refHost === host ||
-          refHost === request.nextUrl.host ||
-          refHost.includes("localhost") ||
-          refHost.includes("127.0.0.1") ||
-          refHost.includes("vercel.app") ||
-          refHost.includes("railway.app") ||
-          refHost.includes("render.com")
-        )
-          return true;
+        if (allowedHosts.has(refHost)) return true;
       }
       if (origin) {
         const origHost = new URL(origin).host;
-        if (
-          origHost === host ||
-          origHost === request.nextUrl.host ||
-          origHost.includes("localhost") ||
-          origHost.includes("127.0.0.1") ||
-          origHost.includes("vercel.app") ||
-          origHost.includes("railway.app") ||
-          origHost.includes("render.com")
-        )
-          return true;
+        if (allowedHosts.has(origHost)) return true;
       }
     } catch {
       // URL parsing failed.
     }
 
-    return true;
+    return false;
   }
 
   function headers(cacheStatus: string, ttlSeconds: number = 300): HeadersInit {

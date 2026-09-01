@@ -11,30 +11,48 @@ import (
 
 // AnalysisResult mirrors the JSON structure produced by the Rust
 // media-worker-rs service. Fields use camelCase to match serde output.
+type AnalysisMarker struct {
+	Kind            string   `json:"kind"`
+	StartSeconds    float64  `json:"startSeconds"`
+	DurationSeconds *float64 `json:"durationSeconds,omitempty"`
+	Source          string   `json:"source"`
+}
+
+type AnalysisVariant struct {
+	URL        string   `json:"url"`
+	Bandwidth  *uint64  `json:"bandwidth,omitempty"`
+	Resolution *string  `json:"resolution,omitempty"`
+	Codecs     *string  `json:"codecs,omitempty"`
+	FrameRate  *float64 `json:"frameRate,omitempty"`
+	AudioGroup *string  `json:"audioGroup,omitempty"`
+}
+
 type AnalysisResult struct {
-	SchemaVersion    int      `json:"schemaVersion"`
-	JobID            string   `json:"jobId"`
-	URL              string   `json:"url"`
-	FinalURL         string   `json:"finalUrl"`
-	Provider         string   `json:"provider"`
-	MovieSlug        string   `json:"movieSlug"`
-	Episode          string   `json:"episode"`
-	Playable         bool     `json:"playable"`
-	PlaylistKind     string   `json:"playlistKind"`
-	DurationSeconds  float64  `json:"durationSeconds"`
-	SegmentCount     int      `json:"segmentCount"`
-	SampledSegments  int      `json:"sampledSegments"`
-	BrokenSegments   []string `json:"brokenSegments"`
-	Variants         []any    `json:"variants"`
-	AdMarkers        []any    `json:"adMarkers"`
-	IntroMarkers     []any    `json:"introMarkers"`
-	Discontinuities  int      `json:"discontinuities"`
-	ManifestLatency  uint64   `json:"manifestLatencyMs"`
-	HealthScore      uint8    `json:"healthScore"`
-	AnalyzedAt       uint64   `json:"analyzedAt"`
-	Errors           []string `json:"errors"`
-	Encrypted        bool     `json:"encrypted"`
-	EncryptionMethod string   `json:"encryptionMethod,omitempty"`
+	SchemaVersion    int               `json:"schemaVersion"`
+	JobID            string            `json:"jobId"`
+	TraceID          string            `json:"traceId,omitempty"`
+	URL              string            `json:"url"`
+	FinalURL         string            `json:"finalUrl"`
+	Provider         string            `json:"provider"`
+	MovieSlug        string            `json:"movieSlug"`
+	Episode          string            `json:"episode"`
+	Playable         bool              `json:"playable"`
+	Retryable        bool              `json:"retryable"`
+	PlaylistKind     string            `json:"playlistKind"`
+	DurationSeconds  float64           `json:"durationSeconds"`
+	SegmentCount     int               `json:"segmentCount"`
+	SampledSegments  int               `json:"sampledSegments"`
+	BrokenSegments   []string          `json:"brokenSegments"`
+	Variants         []AnalysisVariant `json:"variants"`
+	AdMarkers        []AnalysisMarker  `json:"adMarkers"`
+	IntroMarkers     []AnalysisMarker  `json:"introMarkers"`
+	Discontinuities  int               `json:"discontinuities"`
+	ManifestLatency  uint64            `json:"manifestLatencyMs"`
+	HealthScore      uint8             `json:"healthScore"`
+	AnalyzedAt       uint64            `json:"analyzedAt"`
+	Errors           []string          `json:"errors"`
+	Encrypted        bool              `json:"encrypted"`
+	EncryptionMethod string            `json:"encryptionMethod,omitempty"`
 }
 
 // AnalysisResultStore reads cached HLS analysis results written by the Rust worker.
@@ -71,6 +89,9 @@ func (s *RedisAnalysisResultStore) GetResult(ctx context.Context, rawURL string)
 	}
 	var result AnalysisResult
 	if json.Unmarshal(value, &result) != nil {
+		return nil, false
+	}
+	if result.SchemaVersion != 1 {
 		return nil, false
 	}
 	return &result, true

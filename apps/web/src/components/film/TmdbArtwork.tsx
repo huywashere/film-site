@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FilmItem } from '@/components/film/FilmCard';
 import { resolveImageUrl } from '@/components/film/FilmCard';
 import { useTmdbArtwork } from '@/hooks/useTmdbArtwork';
-import { HERO_LOCAL_FALLBACK } from '@/lib/hero-image';
 import { alternateMovieArtworkUrl } from '@/lib/movie-image-url';
 import { cn } from '@/lib/utils';
 import { Clapperboard } from 'lucide-react';
@@ -18,6 +17,7 @@ interface TmdbArtworkProps {
   alt?: string;
   priority?: boolean;
   enabled?: boolean;
+  allowTitleLookup?: boolean;
 }
 
 export function TmdbArtwork({
@@ -27,6 +27,7 @@ export function TmdbArtwork({
   alt,
   priority = false,
   enabled = true,
+  allowTitleLookup = false,
 }: TmdbArtworkProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [nearViewport, setNearViewport] = useState(priority);
@@ -72,7 +73,10 @@ export function TmdbArtwork({
   // the catalogue image remains the stable fallback for legacy records.
   const artworkQuery = useTmdbArtwork(
     film,
-    enabled && nearViewport && !providerIsTmdb && hasExactTmdbIdentity,
+    enabled &&
+      nearViewport &&
+      !providerIsTmdb &&
+      (hasExactTmdbIdentity || allowTitleLookup),
   );
   const { backdropUrl, posterUrl } = artworkQuery;
   const tmdbUrl = kind === 'backdrop' ? backdropUrl || posterUrl : posterUrl || backdropUrl;
@@ -92,9 +96,6 @@ export function TmdbArtwork({
         ? [providerPrimary, providerAlternate]
         : [];
     const list = buildArtworkCandidates(sources, kind === 'backdrop' ? 'backdrop' : 'poster');
-    if (kind === 'backdrop' && !list.includes(HERO_LOCAL_FALLBACK)) {
-      list.push(HERO_LOCAL_FALLBACK);
-    }
     return list;
   }, [
     tmdbUrl,

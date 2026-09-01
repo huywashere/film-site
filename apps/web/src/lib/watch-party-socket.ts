@@ -70,14 +70,14 @@ function getSocketOrigin() {
   const configured = process.env.NEXT_PUBLIC_API_URL;
   if (!configured) {
     return process.env.NODE_ENV === "production"
-      ? "https://victorious-possibility-production-aba7.up.railway.app"
+      ? window.location.origin
       : "http://localhost:3001";
   }
   try {
     return new URL(configured).origin;
   } catch {
     return process.env.NODE_ENV === "production"
-      ? "https://victorious-possibility-production-aba7.up.railway.app"
+      ? window.location.origin
       : "http://localhost:3001";
   }
 }

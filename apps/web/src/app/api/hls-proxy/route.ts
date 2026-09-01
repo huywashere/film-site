@@ -9,7 +9,7 @@ import {
   createSignedHlsProxyUrl,
   verifySignedHlsProxyUrl,
 } from "@/lib/hls-proxy-signature";
-import { checkHlsProxyRateLimit } from "@/lib/rate-limiter";
+import { checkHlsProxyRateLimitDistributed } from "@/lib/server-rate-limiter";
 import { clientIpFromRequest } from "@/lib/client-ip";
 
 const MAX_REDIRECTS = 3;
@@ -150,7 +150,9 @@ async function fetchUpstream(
 }
 
 export async function GET(request: NextRequest) {
-  const rateCheck = checkHlsProxyRateLimit(clientIpFromRequest(request));
+  const rateCheck = await checkHlsProxyRateLimitDistributed(
+    clientIpFromRequest(request),
+  );
   if (!rateCheck.allowed) {
     return NextResponse.json({ error: "Quá nhiều yêu cầu media" }, { status: 429 });
   }

@@ -138,28 +138,34 @@ export type HlsAnalysisMarkerKind = 'intro' | 'ad';
 export interface HlsAnalysisMarker {
   kind: HlsAnalysisMarkerKind;
   startSeconds: number;
-  durationSeconds?: number;
+  durationSeconds?: number | null;
   source: string;
 }
 
 export interface HlsAnalysisVariant {
   url: string;
-  bandwidth?: number;
-  resolution?: string;
+  bandwidth?: number | null;
+  resolution?: string | null;
+  codecs?: string | null;
+  frameRate?: number | null;
+  audioGroup?: string | null;
 }
 
 export interface HlsAnalysisJob {
+  schemaVersion: 1;
   jobId: string;
   url: string;
   provider?: string;
   movieSlug?: string;
   episode?: string;
+  traceId?: string;
   requestedAt: number;
 }
 
 export interface HlsAnalysisResult {
   schemaVersion: 1;
   jobId: string;
+  traceId?: string;
   url: string;
   finalUrl: string;
   provider: string;
@@ -167,6 +173,7 @@ export interface HlsAnalysisResult {
   episode: string;
   playlistKind: 'master' | 'media' | 'unknown';
   playable: boolean;
+  retryable: boolean;
   healthScore: number;
   durationSeconds: number;
   segmentCount: number;
@@ -179,4 +186,6 @@ export interface HlsAnalysisResult {
   manifestLatencyMs: number;
   analyzedAt: number;
   errors: string[];
+  encrypted: boolean;
+  encryptionMethod?: string | null;
 }

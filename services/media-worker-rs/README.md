@@ -38,8 +38,22 @@ Every stream entry has one `payload` field containing JSON:
 - Three sampled media segments, never the entire video.
 - Two consumers by default, capped at eight.
 - Redis Streams preserve unacknowledged jobs during restarts.
+- `XAUTOCLAIM` reassigns jobs left pending by crashed/replaced consumers after
+  `HLS_ANALYZER_RECLAIM_IDLE_MS` (60 seconds by default).
+- Retry is limited to transient network/HTTP failures and uses exponential
+  backoff with deterministic jitter; permanent 4xx/invalid manifests fail fast.
 - Internal health/metrics server on port `8091`; no host port is published in
   production.
+
+The Go gateway adds `schemaVersion` and `traceId` to every queued job. Rust
+preserves that ID in structured logs and result payloads so one playback request
+can be followed across services without logging signed media URLs.
+
+## Shared contract
+
+The language-neutral schemas and compatibility fixtures live in
+`packages/shared-types/contracts`. Go tests, Rust tests and CI all decode the
+same fixtures; change the schema version before making a breaking payload change.
 
 ## Local development
 

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://netphim.local/contracts/hls-analysis-job-v1.schema.json",
+  "title": "NetPhim HLS analysis job v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "jobId", "url", "requestedAt"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "jobId": { "type": "string", "minLength": 1 },
+    "url": { "type": "string", "format": "uri" },
+    "provider": { "type": "string" },
+    "movieSlug": { "type": "string" },
+    "episode": { "type": "string" },
+    "traceId": { "type": "string", "maxLength": 128 },
+    "requestedAt": { "type": "integer", "minimum": 0 }
+  }
+}

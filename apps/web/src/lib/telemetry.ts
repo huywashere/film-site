@@ -1,11 +1,8 @@
-import { captureMessage } from "@/lib/sentry";
+import { captureMessage } from '@/lib/sentry';
 
-export type TelemetryLevel = "info" | "warning" | "error";
+export type TelemetryLevel = 'info' | 'warning' | 'error';
 
-type TelemetryProperties = Record<
-  string,
-  string | number | boolean | null | undefined
->;
+type TelemetryProperties = Record<string, string | number | boolean | null | undefined>;
 
 const MAX_PROPERTIES = 12;
 const MAX_BATCH_SIZE = 20;
@@ -29,25 +26,21 @@ function cleanProperties(properties: TelemetryProperties = {}) {
       .slice(0, MAX_PROPERTIES)
       .map(([key, value]) => [
         key.slice(0, 48),
-        typeof value === "string" ? value.slice(0, 180) : value,
+        typeof value === 'string' ? value.slice(0, 180) : value,
       ]),
   );
 }
 
 function telemetryEndpoint() {
   const fallbackBase =
-    process.env.NODE_ENV === "production"
-      ? "https://victorious-possibility-production-aba7.up.railway.app/api/v1"
-      : "http://localhost:3001/api/v1";
-  const rawBase = (process.env.NEXT_PUBLIC_API_URL || fallbackBase).replace(
-    /\/+$/,
-    "",
-  );
-  const baseUrl = rawBase.endsWith("/api/v1")
-    ? rawBase
-    : rawBase.endsWith("/api")
-      ? `${rawBase}/v1`
-      : `${rawBase}/api/v1`;
+    process.env.NODE_ENV === 'production' ? '/api/v1' : 'http://localhost:3001/api/v1';
+  const rawBase = (process.env.NEXT_PUBLIC_API_URL || fallbackBase).replace(/\/+$/, '');
+  const baseUrl =
+    rawBase === '/api/v1' || rawBase.endsWith('/api/v1')
+      ? rawBase
+      : rawBase.endsWith('/api')
+        ? `${rawBase}/v1`
+        : `${rawBase}/api/v1`;
   return `${baseUrl}/telemetry/client/batch`;
 }
 
@@ -65,10 +58,10 @@ function flushTelemetry() {
   const events = telemetryQueue.splice(0, MAX_BATCH_SIZE);
 
   void fetch(telemetryEndpoint(), {
-    method: "POST",
+    method: 'POST',
     body: JSON.stringify({ events }),
-    headers: { "content-type": "application/json" },
-    credentials: "omit",
+    headers: { 'content-type': 'application/json' },
+    credentials: 'include',
     keepalive: true,
   })
     .catch(() => {
@@ -84,12 +77,12 @@ function flushTelemetry() {
 export function recordTelemetry(
   name: string,
   properties: TelemetryProperties = {},
-  level: TelemetryLevel = "info",
+  level: TelemetryLevel = 'info',
 ) {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
 
-  if (level === "error") {
-    captureMessage(`[Telemetry Error] ${name}`, "error");
+  if (level === 'error') {
+    captureMessage(`[Telemetry Error] ${name}`, 'error');
   }
 
   telemetryQueue.push({
@@ -101,7 +94,7 @@ export function recordTelemetry(
   });
   if (telemetryQueue.length > MAX_BATCH_SIZE * 2) telemetryQueue.shift();
 
-  if (level === "info") scheduleFlush();
+  if (level === 'info') scheduleFlush();
   else {
     if (flushTimer !== null) globalThis.clearTimeout(flushTimer);
     flushTimer = null;
@@ -111,6 +104,6 @@ export function recordTelemetry(
 
 export function errorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
-  if (typeof error === "string") return error;
-  return "Unknown client error";
+  if (typeof error === 'string') return error;
+  return 'Unknown client error';
 }

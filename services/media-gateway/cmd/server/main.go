@@ -80,6 +80,7 @@ func run() error {
 
 	router := gin.New()
 	router.Use(gin.Recovery())
+	router.Use(gateway.RequestID())
 	router.Use(gateway.RequestLogger())
 	router.Use(gateway.CORSMiddleware(cfg.CORSOrigins))
 	if err := router.SetTrustedProxies(cfg.TrustedProxies); err != nil {

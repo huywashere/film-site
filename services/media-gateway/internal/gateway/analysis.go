@@ -87,6 +87,7 @@ func (g *Gateway) analysisEnqueueHandler(c *gin.Context) {
 	job := store.NewAnalysisJob(target.String(), input.Provider)
 	job.MovieSlug = input.MovieSlug
 	job.Episode = input.Episode
+	job.TraceID = requestIDFromContext(c)
 	ctx, cancel := context.WithTimeout(c.Request.Context(), g.cfg.AnalysisTimeout)
 	defer cancel()
 	if err := g.analysis.Enqueue(ctx, job); err != nil {

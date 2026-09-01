@@ -24,7 +24,7 @@ export async function generateMetadata({
   const movie = getMovieFromPageData(await getMoviePageData(slug));
 
   const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://film-site-web.vercel.app";
+    process.env.NEXT_PUBLIC_SITE_URL || "https://netphim.app";
   const filmUrl = `${siteUrl}/film/${slug}`;
 
   if (!movie) {
@@ -111,7 +111,7 @@ export default async function FilmPage({ params }: PageProps) {
   const movie = getMovieFromPageData(initialData);
 
   const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://film-site-web.vercel.app";
+    process.env.NEXT_PUBLIC_SITE_URL || "https://netphim.app";
   const filmUrl = `${siteUrl}/film/${slug}`;
 
   // JSON-LD Structured Data Schema for Google Rich Snippets

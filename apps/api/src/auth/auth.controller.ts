@@ -16,7 +16,7 @@ import {
   BadRequestException,
   UnauthorizedException,
 } from "@nestjs/common";
-import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
+import { Throttle } from "@nestjs/throttler";
 import { AuthGuard } from "@nestjs/passport";
 import { AuthService } from "./auth.service";
 import { FirebaseAuthGuard } from "./guards/firebase-auth.guard";
@@ -28,7 +28,6 @@ import { GoogleLinkAuthGuard } from "./guards/google-link-auth.guard";
 import { LockAccountDto } from "./dto/auth.dto";
 
 @Controller("auth")
-@UseGuards(ThrottlerGuard)
 export class AuthController {
   constructor(
     private authService: AuthService,
