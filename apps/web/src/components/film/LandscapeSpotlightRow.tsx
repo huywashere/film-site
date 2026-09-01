@@ -1,20 +1,13 @@
-"use client";
+'use client';
 
-import { useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Play,
-  Star,
-  Sparkles,
-} from "lucide-react";
-import { FilmItem } from "@/components/film/FilmCard";
-import { TmdbArtwork } from "@/components/film/TmdbArtwork";
-import { cardFont } from "@/lib/fonts";
-import { useTranslation } from "@/store/langStore";
-import { deduplicateSectionRow } from "@/lib/recommendation-engine";
-import { cn } from "@/lib/utils";
+import { useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
+import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import { FilmItem } from '@/components/film/FilmCard';
+import { TmdbArtwork } from '@/components/film/TmdbArtwork';
+import { cardFont } from '@/lib/fonts';
+import { useTranslation } from '@/store/langStore';
+import { deduplicateSectionRow } from '@/lib/recommendation-engine';
 
 interface LandscapeSpotlightRowProps {
   title: string;
@@ -23,14 +16,14 @@ interface LandscapeSpotlightRowProps {
   href?: string;
 }
 
-function filmHref(film: FilmItem, mode: "watch" | "detail") {
+function filmHref(film: FilmItem, mode: 'watch' | 'detail') {
   const source = film._source;
   const sourceSlug = source ? film._sourceSlugs?.[source] : undefined;
   const query = new URLSearchParams();
-  if (source) query.set("source", source);
-  if (sourceSlug && sourceSlug !== film.slug) query.set("sourceSlug", sourceSlug);
-  const suffix = query.toString() ? `?${query.toString()}` : "";
-  return `/${mode === "watch" ? "watch" : "film"}/${film.slug}${suffix}`;
+  if (source) query.set('source', source);
+  if (sourceSlug && sourceSlug !== film.slug) query.set('sourceSlug', sourceSlug);
+  const suffix = query.toString() ? `?${query.toString()}` : '';
+  return `/${mode === 'watch' ? 'watch' : 'film'}/${film.slug}${suffix}`;
 }
 
 export function LandscapeSpotlightRow({
@@ -45,10 +38,7 @@ export function LandscapeSpotlightRow({
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [scrollProgress, setScrollProgress] = useState(0);
 
-  const cleanList = useMemo(
-    () => deduplicateSectionRow(films).slice(0, 16),
-    [films]
-  );
+  const cleanList = useMemo(() => deduplicateSectionRow(films).slice(0, 16), [films]);
 
   const checkScroll = () => {
     const el = scrollRef.current;
@@ -61,13 +51,15 @@ export function LandscapeSpotlightRow({
     }
   };
 
-  const handleScroll = (direction: "left" | "right") => {
+  const handleScroll = (direction: 'left' | 'right') => {
     const el = scrollRef.current;
     if (!el) return;
-    const scrollAmount = el.clientWidth * 0.75;
+    const firstCard = el.firstElementChild as HTMLElement | null;
+    const gap = Number.parseFloat(window.getComputedStyle(el).columnGap || '12');
+    const scrollAmount = firstCard ? firstCard.offsetWidth + gap : el.clientWidth * 0.75;
     el.scrollBy({
-      left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth',
     });
   };
 
@@ -100,7 +92,7 @@ export function LandscapeSpotlightRow({
             <button
               type="button"
               disabled={!canScrollLeft}
-              onClick={() => handleScroll("left")}
+              onClick={() => handleScroll('left')}
               aria-label="Previous"
               className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-neutral-300 transition-all hover:border-white/30 hover:bg-white/15 hover:text-white disabled:opacity-20 disabled:pointer-events-none active:scale-90"
             >
@@ -109,7 +101,7 @@ export function LandscapeSpotlightRow({
             <button
               type="button"
               disabled={!canScrollRight}
-              onClick={() => handleScroll("right")}
+              onClick={() => handleScroll('right')}
               aria-label="Next"
               className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-neutral-300 transition-all hover:border-white/30 hover:bg-white/15 hover:text-white disabled:opacity-20 disabled:pointer-events-none active:scale-90"
             >
@@ -122,7 +114,7 @@ export function LandscapeSpotlightRow({
               href={href}
               className="group/link ml-2 hidden sm:inline-flex shrink-0 items-center gap-0.5 text-xs sm:text-sm font-semibold text-white/80 transition-colors hover:text-white"
             >
-              <span>{t("home.viewAll", "Xem tất cả")}</span>
+              <span>{t('home.viewAll', 'Xem tất cả')}</span>
               <ChevronRight
                 size={14}
                 className="stroke-[2.2] text-white/60 transition-transform group-hover/link:translate-x-0.5 group-hover/link:text-white"
@@ -132,96 +124,101 @@ export function LandscapeSpotlightRow({
         </div>
       </div>
 
-      {/* ── Horizontal Scrollable Row (4 Cards Per View on Desktop) ── */}
+      {/* Poster rail: portrait art keeps titles legible and matches the desktop catalogue. */}
       <div
         ref={scrollRef}
         onScroll={checkScroll}
-        className="flex gap-4 sm:gap-5 overflow-x-auto pb-4 pt-1 px-1 scrollbar-none scroll-smooth"
+        className="scrollbar-none flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-4 pt-1 scroll-smooth [-webkit-overflow-scrolling:touch] sm:gap-4"
       >
         {cleanList.map((film, index) => {
-          const rating = Number(film.vote_average || film.rating || 0);
+          const rating = Number(
+            film.imdb_rating ||
+              film.vote_average ||
+              film.tmdb?.vote_average ||
+              film.tmdb?.rating ||
+              film.rating ||
+              0,
+          );
+          const rawLang = (film.lang || '').toLowerCase();
+          const hasVoiceOver = /thuyết minh|thuyet minh|t\.minh|\btm\b/.test(rawLang);
+          const hasDub = /lồng tiếng|long tieng|l\.tiếng|\blt\b/.test(rawLang);
+          const episodeNumber =
+            film.episode_current?.match(/(?:tập|tap|episode|ep)\s*[-.:]?\s*(\d+)/i)?.[1] ||
+            film.episode_current?.match(/(?:\(|\b)(\d+)\s*\/\s*\d+/)?.[1] ||
+            '';
+          const quality = film.quality?.trim() || 'FHD';
 
           return (
             <div
               key={film.slug || index}
-              className="group relative flex flex-col shrink-0 w-[270px] sm:w-[310px] lg:w-[340px] cursor-pointer select-none"
+              className="group relative flex w-[44vw] min-w-[148px] max-w-[184px] shrink-0 snap-start cursor-pointer select-none flex-col sm:w-[200px] sm:max-w-[200px] lg:w-[220px] lg:max-w-[220px] xl:w-[15.4%] xl:max-w-none"
             >
-              {/* 1. Main Landscape Backdrop (16:9) */}
+              {/* Portrait TMDB poster */}
               <Link
-                href={filmHref(film, "watch")}
-                className="relative aspect-video w-full rounded-2xl overflow-hidden border border-white/10 bg-neutral-900 shadow-lg transition-all duration-300 group-hover:border-white/25 group-hover:shadow-[0_12px_30px_rgba(0,0,0,0.8)]"
+                href={filmHref(film, 'watch')}
+                className="relative aspect-[2/3] w-full overflow-hidden rounded-xl border border-white/10 bg-neutral-900 shadow-md transition-[border-color,box-shadow,transform] duration-300 group-hover:-translate-y-1 group-hover:border-white/30 group-hover:shadow-[0_16px_34px_rgba(0,0,0,0.72)] sm:rounded-2xl"
               >
                 <TmdbArtwork
                   film={film}
-                  kind="backdrop"
+                  kind="poster"
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   alt={film.name}
                 />
 
                 {/* Hover Play Button Overlay */}
                 <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-black shadow-2xl transform scale-90 group-hover:scale-100 transition-transform">
+                  <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-white text-black shadow-2xl transform scale-90 group-hover:scale-100 transition-transform">
                     <Play size={16} fill="currentColor" className="ml-0.5" />
                   </div>
                 </div>
 
-                {/* Rating Badge top-right */}
-                {rating > 0 && (
-                  <div className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-0.5 rounded-md bg-black/75 border border-white/15 px-1.5 py-0.5 text-[9px] font-black text-white backdrop-blur-md">
-                    <Star size={8} fill="currentColor" className="text-amber-400" />
-                    {rating.toFixed(1)}
+                {/* Top Corner Badges */}
+                <div className="pointer-events-none absolute inset-x-2 top-2 z-10 flex items-center justify-between gap-1">
+                  {rating > 0 ? (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-[#f5a000] px-1.5 py-1 text-[9px] font-black leading-none text-black shadow-lg">
+                      <span>IMDb</span>
+                      <span>{rating.toFixed(1)}</span>
+                    </span>
+                  ) : (
+                    <span />
+                  )}
+                  <span className="rounded-md border border-white/10 bg-black/85 px-1.5 py-1 text-[9px] font-black uppercase leading-none text-white shadow-lg backdrop-blur-sm">
+                    {quality}
+                  </span>
+                </div>
+
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-between gap-1 bg-gradient-to-t from-black/90 via-black/25 to-transparent px-2 pb-2 pt-10">
+                  <div className="flex min-w-0 flex-wrap gap-1">
+                    <span className="rounded bg-violet-500 px-1.5 py-1 text-[8.5px] font-black uppercase leading-none text-white">
+                      P.Đ{episodeNumber ? ` ${episodeNumber}` : ''}
+                    </span>
+                    {(hasVoiceOver || hasDub) && (
+                      <span className="rounded bg-emerald-500 px-1.5 py-1 text-[8.5px] font-black uppercase leading-none text-white">
+                        {hasDub ? 'L.T' : 'T.M'}
+                        {episodeNumber ? ` ${episodeNumber}` : ''}
+                      </span>
+                    )}
                   </div>
-                )}
+                </div>
               </Link>
 
-              {/* 2. Overlapping Mini Poster + Film Info */}
-              <div className="flex items-start gap-3 -mt-6 sm:-mt-7 px-2 z-10">
-                {/* Overlapping Mini Poster (Aspect 2/3) */}
+              {/* 2. Clean Film Info below Backdrop */}
+              <div className="mt-2 flex flex-col space-y-0.5 px-0.5">
                 <Link
-                  href={filmHref(film, "detail")}
-                  className="relative w-13 sm:w-16 aspect-[2/3] shrink-0 rounded-lg sm:rounded-xl overflow-hidden border-2 border-[#12141a] bg-neutral-950 shadow-2xl transition-transform duration-300 group-hover:scale-105 group-hover:border-white/40"
+                  href={filmHref(film, 'watch')}
+                  className="block line-clamp-1 text-xs font-extrabold leading-snug text-white transition-colors group-hover:text-violet-200 sm:text-sm"
+                  title={film.name}
                 >
-                  <TmdbArtwork
-                    film={film}
-                    kind="poster"
-                    className="h-full w-full object-cover"
-                    alt={film.name}
-                  />
+                  {film.name}
                 </Link>
 
-                {/* Title & Metadata (Right side of mini poster) */}
-                <div className="flex flex-col justify-end pt-7 sm:pt-8 min-w-0 flex-1 space-y-0.5">
-                  <Link
-                    href={filmHref(film, "detail")}
-                    className="block text-xs sm:text-sm font-extrabold text-white line-clamp-1 leading-snug group-hover:text-white/80 transition-colors drop-shadow"
-                  >
-                    {film.name}
-                  </Link>
-
-                  {film.origin_name && (
-                    <p className="text-[11px] text-neutral-400 font-medium line-clamp-1">
-                      {film.origin_name}
-                    </p>
+                <div className="flex items-center justify-between text-[10px] font-medium text-neutral-500 sm:text-[11px]">
+                  <span className="truncate max-w-[75%]">
+                    {film.origin_name || `Năm ${film.year || 2026}`}
+                  </span>
+                  {film.year && (
+                    <span className="shrink-0 text-neutral-500 text-[10px]">{film.year}</span>
                   )}
-
-                  {/* Metadata Badges */}
-                  <div className="flex items-center gap-1.5 pt-1 text-[10px] font-bold">
-                    {film.episode_current && (
-                      <span className="rounded bg-white/10 border border-white/10 px-1.5 py-0.5 text-neutral-300">
-                        {film.episode_current}
-                      </span>
-                    )}
-                    {film.year && (
-                      <span className="rounded bg-white/10 border border-white/10 px-1.5 py-0.5 text-neutral-400">
-                        {film.year}
-                      </span>
-                    )}
-                    {film.quality && (
-                      <span className="rounded bg-white/10 border border-white/10 px-1.5 py-0.5 text-neutral-300 uppercase">
-                        {film.quality}
-                      </span>
-                    )}
-                  </div>
                 </div>
               </div>
             </div>

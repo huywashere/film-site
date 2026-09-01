@@ -1,20 +1,14 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import {
-  ChevronRight,
-  Info,
-  Play,
-  Star,
-  Calendar,
-} from "lucide-react";
-import { FilmItem } from "@/components/film/FilmCard";
-import { TmdbArtwork } from "@/components/film/TmdbArtwork";
-import { cardFont } from "@/lib/fonts";
-import { useTranslation } from "@/store/langStore";
-import { deduplicateSectionRow } from "@/lib/recommendation-engine";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { ChevronLeft, ChevronRight, Info, Play, Star, Calendar } from 'lucide-react';
+import { FilmItem } from '@/components/film/FilmCard';
+import { TmdbArtwork } from '@/components/film/TmdbArtwork';
+import { cardFont } from '@/lib/fonts';
+import { useTranslation } from '@/store/langStore';
+import { deduplicateSectionRow } from '@/lib/recommendation-engine';
 
 interface CuratedSpotlightSectionProps {
   title: string;
@@ -23,22 +17,21 @@ interface CuratedSpotlightSectionProps {
   href?: string;
 }
 
-function filmHref(film: FilmItem, mode: "watch" | "detail") {
+function filmHref(film: FilmItem, mode: 'watch' | 'detail') {
   const source = film._source;
   const sourceSlug = source ? film._sourceSlugs?.[source] : undefined;
   const query = new URLSearchParams();
-  if (source) query.set("source", source);
-  if (sourceSlug && sourceSlug !== film.slug)
-    query.set("sourceSlug", sourceSlug);
-  const suffix = query.toString() ? `?${query.toString()}` : "";
-  return `/${mode === "watch" ? "watch" : "film"}/${film.slug}${suffix}`;
+  if (source) query.set('source', source);
+  if (sourceSlug && sourceSlug !== film.slug) query.set('sourceSlug', sourceSlug);
+  const suffix = query.toString() ? `?${query.toString()}` : '';
+  return `/${mode === 'watch' ? 'watch' : 'film'}/${film.slug}${suffix}`;
 }
 
 function sourceName(source?: string) {
-  if (source === "nguonc") return "NguonC";
-  if (source === "vsmov") return "VSMov";
-  if (source === "ophim") return "OPhim";
-  return "KKPhim";
+  if (source === 'nguonc') return 'NguonC';
+  if (source === 'vsmov') return 'VSMov';
+  if (source === 'ophim') return 'OPhim';
+  return 'KKPhim';
 }
 
 export function CuratedSpotlightSection({
@@ -49,10 +42,58 @@ export function CuratedSpotlightSection({
 }: CuratedSpotlightSectionProps) {
   const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
+  const railRef = useRef<HTMLDivElement>(null);
+  const thumbnailRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const scrollEndTimerRef = useRef<number | null>(null);
   const reduceMotion = useReducedMotion();
   const spotlightList = useMemo(() => deduplicateSectionRow(films).slice(0, 7), [films]);
-  const activeFilm =
-    spotlightList[activeIndex % Math.max(spotlightList.length, 1)];
+  const activeFilm = spotlightList[activeIndex % Math.max(spotlightList.length, 1)];
+
+  useEffect(() => {
+    setActiveIndex((index) => (spotlightList.length > 0 ? index % spotlightList.length : 0));
+  }, [spotlightList.length]);
+
+  useEffect(() => {
+    const rail = railRef.current;
+    const thumbnail = thumbnailRefs.current[activeIndex];
+    if (!rail || !thumbnail || window.innerWidth >= 1024) return;
+    rail.scrollTo({
+      left: thumbnail.offsetLeft - Math.max(0, (rail.clientWidth - thumbnail.offsetWidth) / 2),
+      behavior: reduceMotion ? 'auto' : 'smooth',
+    });
+  }, [activeIndex, reduceMotion]);
+
+  useEffect(
+    () => () => {
+      if (scrollEndTimerRef.current !== null) {
+        window.clearTimeout(scrollEndTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  const syncActiveThumbnail = () => {
+    const rail = railRef.current;
+    if (!rail || window.innerWidth >= 1024) return;
+    if (scrollEndTimerRef.current !== null) {
+      window.clearTimeout(scrollEndTimerRef.current);
+    }
+    scrollEndTimerRef.current = window.setTimeout(() => {
+      const center = rail.scrollLeft + rail.clientWidth / 2;
+      let closestIndex = 0;
+      let closestDistance = Number.POSITIVE_INFINITY;
+      thumbnailRefs.current.forEach((thumbnail, index) => {
+        if (!thumbnail) return;
+        const distance = Math.abs(thumbnail.offsetLeft + thumbnail.offsetWidth / 2 - center);
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestIndex = index;
+        }
+      });
+      setActiveIndex((current) => (current === closestIndex ? current : closestIndex));
+      scrollEndTimerRef.current = null;
+    }, 90);
+  };
 
   useEffect(() => {
     if (reduceMotion || spotlightList.length < 2) return;
@@ -84,7 +125,9 @@ export function CuratedSpotlightSection({
       {/* Section Header */}
       <div className="mb-4 flex items-start justify-between gap-2 px-1 sm:items-end">
         <div className="min-w-0 flex-1">
-          <h2 className={`${cardFont.className} bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-300 bg-clip-text text-xl font-extrabold tracking-[-0.025em] text-transparent sm:text-2xl`}>
+          <h2
+            className={`${cardFont.className} bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-300 bg-clip-text text-xl font-extrabold tracking-[-0.025em] text-transparent sm:text-2xl`}
+          >
             {title}
           </h2>
         </div>
@@ -93,8 +136,11 @@ export function CuratedSpotlightSection({
             href={href}
             className="group/link inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap text-xs sm:text-sm font-semibold text-white/80 hover:text-white transition-colors select-none ml-1.5"
           >
-            <span>{t("home.viewAll", "Xem tất cả")}</span>
-            <ChevronRight size={14} className="stroke-[2.2] text-white/60 group-hover/link:text-white transition-transform group-hover/link:translate-x-0.5" />
+            <span>{t('home.viewAll', 'Xem tất cả')}</span>
+            <ChevronRight
+              size={14}
+              className="stroke-[2.2] text-white/60 group-hover/link:text-white transition-transform group-hover/link:translate-x-0.5"
+            />
           </Link>
         )}
       </div>
@@ -109,7 +155,7 @@ export function CuratedSpotlightSection({
               initial={{ opacity: 0, scale: 1.04 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
               className="absolute inset-0"
             >
               <TmdbArtwork
@@ -127,7 +173,32 @@ export function CuratedSpotlightSection({
 
           {/* Content overlay */}
           <div className="relative z-10 flex h-full flex-col justify-between p-4 sm:p-8 lg:p-10">
-            <div aria-hidden="true" />
+            <div className="flex items-center justify-between">
+              <span className="rounded-full border border-white/15 bg-black/50 px-2.5 py-1 text-[9px] font-semibold text-neutral-300 backdrop-blur-sm">
+                {String(activeIndex + 1).padStart(2, '0')}&nbsp;/&nbsp;
+                {String(spotlightList.length).padStart(2, '0')}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveIndex((index) => (index === 0 ? spotlightList.length - 1 : index - 1))
+                  }
+                  aria-label="Phim trước"
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-90"
+                >
+                  <ChevronLeft size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveIndex((index) => (index + 1) % spotlightList.length)}
+                  aria-label="Phim tiếp theo"
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-90"
+                >
+                  <ChevronRight size={15} />
+                </button>
+              </div>
+            </div>
 
             {/* Bottom info */}
             <AnimatePresence mode="wait">
@@ -166,7 +237,9 @@ export function CuratedSpotlightSection({
                 </div>
 
                 {/* Title */}
-                <h3 className={`${cardFont.className} text-lg font-extrabold tracking-tight text-white line-clamp-2 sm:text-2xl lg:text-3xl`}>
+                <h3
+                  className={`${cardFont.className} text-lg font-extrabold tracking-tight text-white line-clamp-2 sm:text-2xl lg:text-3xl`}
+                >
                   {activeFilm.name}
                 </h3>
                 {activeFilm.origin_name && (
@@ -192,19 +265,19 @@ export function CuratedSpotlightSection({
                 {/* Description */}
                 <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-neutral-300 sm:text-sm">
                   {activeFilm.content ||
-                    "Một câu chuyện khoa học viễn tưởng với thế giới đủ khác lạ để khiến bạn muốn khám phá đến phút cuối."}
+                    'Một câu chuyện khoa học viễn tưởng với thế giới đủ khác lạ để khiến bạn muốn khám phá đến phút cuối.'}
                 </p>
 
                 {/* CTA */}
                 <div className="mt-3 flex items-center gap-2.5 sm:mt-5">
                   <Link
-                    href={filmHref(activeFilm, "watch")}
+                    href={filmHref(activeFilm, 'watch')}
                     className="inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-xs font-bold text-black transition-all hover:bg-orange-100 active:scale-[0.97] sm:px-5 sm:py-2.5 sm:text-sm"
                   >
                     <Play size={14} fill="currentColor" /> Xem ngay
                   </Link>
                   <Link
-                    href={filmHref(activeFilm, "detail")}
+                    href={filmHref(activeFilm, 'detail')}
                     className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-[0.97] sm:px-5 sm:py-2.5 sm:text-sm"
                   >
                     <Info size={14} /> Chi tiết
@@ -228,19 +301,26 @@ export function CuratedSpotlightSection({
           </div>
 
           {/* Film list — scrollable on mobile, full list on desktop */}
-          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:block lg:space-y-1 lg:overflow-visible lg:pb-0">
+          <div
+            ref={railRef}
+            onScroll={syncActiveThumbnail}
+            className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:block lg:space-y-1 lg:overflow-visible lg:pb-0"
+          >
             {spotlightList.map((film, index) => {
               const isActive = index === activeIndex;
               return (
                 <button
                   type="button"
                   key={`${film.slug}-${index}`}
+                  ref={(element) => {
+                    thumbnailRefs.current[index] = element;
+                  }}
                   onClick={() => setActiveIndex(index)}
                   aria-label={`Chọn phim ${film.name}`}
-                  className={`group relative flex w-[72px] shrink-0 flex-col items-center gap-0 overflow-hidden rounded-xl border text-left transition-all cursor-pointer lg:w-full lg:flex-row lg:items-center lg:gap-3 lg:p-2.5 lg:rounded-xl ${
+                  className={`group relative flex w-[72px] shrink-0 snap-center flex-col items-center gap-0 overflow-hidden rounded-xl border text-left transition-all cursor-pointer lg:w-full lg:flex-row lg:items-center lg:gap-3 lg:p-2.5 lg:rounded-xl ${
                     isActive
-                      ? "border-orange-400/60 bg-orange-400/[0.08] lg:border-orange-400/60"
-                      : "border-transparent lg:border-white/5 hover:border-white/15 hover:bg-white/[0.03]"
+                      ? 'border-orange-400/60 bg-orange-400/[0.08] lg:border-orange-400/60'
+                      : 'border-transparent lg:border-white/5 hover:border-white/15 hover:bg-white/[0.03]'
                   }`}
                 >
                   {/* Thumbnail */}
@@ -260,7 +340,7 @@ export function CuratedSpotlightSection({
                   {/* Film label - mobile: under thumbnail */}
                   <div className="w-full px-1 pb-1 pt-0.5 lg:hidden">
                     <p
-                      className={`text-[9px] font-semibold line-clamp-1 leading-tight ${isActive ? "text-orange-300" : "text-neutral-400"}`}
+                      className={`text-[9px] font-semibold line-clamp-1 leading-tight ${isActive ? 'text-orange-300' : 'text-neutral-400'}`}
                     >
                       {film.name}
                     </p>
@@ -269,11 +349,11 @@ export function CuratedSpotlightSection({
                   {/* Film info - desktop only */}
                   <div className="hidden lg:block min-w-0 flex-1">
                     <p className="text-[10px] text-neutral-500 font-medium">
-                      {String(index + 1).padStart(2, "0")}&nbsp;·&nbsp;
-                      {film.year || "Mới"}&nbsp;·&nbsp;{sourceName(film._source)}
+                      {String(index + 1).padStart(2, '0')}&nbsp;·&nbsp;
+                      {film.year || 'Mới'}&nbsp;·&nbsp;{sourceName(film._source)}
                     </p>
                     <h4
-                      className={`mt-0.5 text-xs font-bold line-clamp-1 ${isActive ? "text-orange-300" : "text-neutral-200 group-hover:text-white"}`}
+                      className={`mt-0.5 text-xs font-bold line-clamp-1 ${isActive ? 'text-orange-300' : 'text-neutral-200 group-hover:text-white'}`}
                     >
                       {film.name}
                     </h4>
@@ -287,7 +367,7 @@ export function CuratedSpotlightSection({
                   {/* Chevron - desktop only */}
                   <ChevronRight
                     size={13}
-                    className={`hidden lg:block shrink-0 transition-colors ${isActive ? "text-orange-400" : "text-neutral-700 group-hover:text-neutral-400"}`}
+                    className={`hidden lg:block shrink-0 transition-colors ${isActive ? 'text-orange-400' : 'text-neutral-700 group-hover:text-neutral-400'}`}
                   />
                 </button>
               );
