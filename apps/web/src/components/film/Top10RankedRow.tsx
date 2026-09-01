@@ -254,8 +254,8 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
             )}
 
             {displayRating && (
-              <span className="whitespace-nowrap flex items-center gap-1 bg-black/85 border border-amber-500/30 backdrop-blur-md text-amber-400 text-[8.5px] sm:text-[10px] font-black px-1.5 sm:px-2 py-0.5 rounded-[4px] shadow-sm leading-none tracking-tight">
-                <Star size={9} className="fill-amber-400 text-amber-400" />
+              <span className="whitespace-nowrap flex items-center gap-1 bg-[#f5c518] text-black text-[8.5px] sm:text-[9.5px] font-black px-1.5 sm:px-2 py-0.5 rounded-[3px] leading-none">
+                <span className="font-extrabold tracking-tight">IMDb</span>
                 <span>{displayRating}</span>
               </span>
             )}

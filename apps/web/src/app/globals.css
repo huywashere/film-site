@@ -16,6 +16,29 @@
     -ms-overflow-style: none !important; /* IE and Edge */
     scrollbar-width: none !important; /* Firefox */
   }
+
+  /* Inertial horizontal scroll snapping for mobile movie carousels */
+  .mobile-snap-row,
+  [data-mobile-snap-row="true"] {
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+  }
+
+  .mobile-snap-item,
+  [data-mobile-snap-item="true"] {
+    scroll-snap-align: start;
+    scroll-snap-stop: normal;
+  }
+}
+
+/* ── Mobile Touch & Performance Optimizations ── */
+* {
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+html, body {
+  -webkit-overflow-scrolling: touch;
 }
 
 html[data-netphim-intro='done'] #netphim-entry-splash {
@@ -709,7 +732,7 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
 @media (max-width: 640px) {
   .art-video-player {
     --art-padding: 4px !important;
-    --art-control-height: 36px !important;
+    --art-control-height: 40px !important;
     --art-control-icon-scale: 0.95 !important;
   }
 
@@ -729,7 +752,7 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
     bottom: calc(100% + 8px);
   }
 
-  .art-video-player .art-controls .art-control {
+  .art-video-player .art-controls .art-control:not(.art-control-progress) {
     min-width: 28px !important;
     padding: 0 2px !important;
   }
@@ -768,7 +791,6 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
 }
 
 @media (max-width: 420px) {
-  .art-video-player .art-control-volume,
   .art-video-player .art-control-pip,
   .art-video-player .art-control-airplay,
   .art-video-player .art-control-fullscreenWeb {
@@ -866,5 +888,54 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
   }
   to {
     opacity: 1;
+  }
+}
+
+/* ── Mobile Video Player Touch Targets (>= 44-48px touch slop for thumb control) ── */
+@media (max-width: 768px) {
+  .art-video-player .art-controls .art-control:not(.art-control-progress) {
+    min-height: var(--art-control-height, 40px) !important;
+    padding-inline: 4px !important;
+    display: inline-flex;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .art-video-player .art-control-progress {
+    display: block !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: 16px !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    cursor: pointer;
+  }
+
+  .art-video-player .art-control-progress-inner {
+    height: 5px !important;
+  }
+
+  .art-video-player .art-controls {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    padding-bottom: max(2px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .art-video-player .art-state {
+    width: 56px !important;
+    height: 56px !important;
+  }
+}
+
+/* A 16:9 player is taller than the usable viewport on phones held sideways.
+   Fit the regular player between the fixed navbar and the viewport bottom;
+   the video itself keeps its source ratio through ArtPlayer's object-fit. */
+@media (orientation: landscape) and (max-width: 1024px) and (max-height: 520px) {
+  .netphim-watch-player:not(.is-theater) {
+    width: 100%;
+    height: calc(100dvh - 80px);
+    min-height: 0;
+    max-height: calc(100dvh - 80px);
+    aspect-ratio: auto;
   }
 }

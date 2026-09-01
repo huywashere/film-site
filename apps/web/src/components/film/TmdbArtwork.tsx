@@ -113,6 +113,17 @@ export function TmdbArtwork({
 
   const src = candidates[candidateIndex];
 
+  // Mobile image optimization: Serve lightweight w342 poster / w780 backdrop on mobile (saving ~75% data)
+  const mobileSrc = useMemo(() => {
+    if (!src) return undefined;
+    if (/image\.tmdb\.org\/t\/p\//i.test(src)) {
+      return kind === 'backdrop'
+        ? src.replace(/\/t\/p\/(w1280|original)\//i, '/t/p/w780/')
+        : src.replace(/\/t\/p\/(w500|w780|original|w1280)\//i, '/t/p/w342/');
+    }
+    return undefined;
+  }, [src, kind]);
+
   useEffect(() => {
     setCandidateIndex(0);
     setLoaded(false);
@@ -133,6 +144,12 @@ export function TmdbArtwork({
           ref={imgRef}
           key={src}
           src={src}
+          srcSet={mobileSrc && mobileSrc !== src ? `${mobileSrc} 640w, ${src} 1280w` : undefined}
+          sizes={
+            kind === 'backdrop'
+              ? '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
+              : '(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw'
+          }
           alt={alt || film.name}
           width={kind === 'backdrop' ? 1280 : 500}
           height={kind === 'backdrop' ? 720 : 750}

@@ -376,14 +376,12 @@ export default function GenresPage() {
     <main
       className={cn(
         cardFont.className,
-        "relative min-h-[100dvh] bg-[#0c0d12] text-white pb-32 pt-20 sm:pt-24",
+        "relative min-h-[100dvh] bg-[#0b0c10] text-white pb-32 pt-20 sm:pt-24",
       )}
     >
-      {/* ── Background Ambient Glow ── */}
+      {/* ── Background Subtle Ambient Glow ── */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-purple-900/15 via-indigo-900/10 to-transparent blur-[140px] rounded-full" />
-        <div className="absolute top-1/3 -left-60 w-[500px] h-[500px] bg-purple-900/10 blur-[130px] rounded-full" />
-        <div className="absolute top-2/3 -right-60 w-[500px] h-[500px] bg-indigo-900/10 blur-[130px] rounded-full" />
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-white/[0.04] to-transparent blur-[140px] rounded-full" />
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
@@ -396,18 +394,18 @@ export default function GenresPage() {
               onClick={() => router.back()}
               className="inline-flex items-center gap-2 text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer px-4 py-2 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] backdrop-blur-md shadow-sm active:scale-95"
             >
-              <ArrowLeft size={14} className="text-purple-400" />
+              <ArrowLeft size={14} className="text-neutral-400" />
               <span>Quay lại</span>
             </button>
 
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-bold tracking-wide">
-              <Sparkles size={13} className="text-purple-400 animate-pulse" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.05] border border-white/10 text-neutral-300 text-xs font-semibold tracking-wide">
+              <Sparkles size={13} className="text-amber-400" />
               <span>Vũ Trụ Điện Ảnh & Lọc Phim Chuyên Sâu</span>
             </div>
           </div>
 
           <div className="max-w-2xl mx-auto space-y-2 pt-2">
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white via-neutral-100 to-purple-200">
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white">
               Thế Giới Phim
             </h1>
             <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed max-w-lg mx-auto">
@@ -416,21 +414,21 @@ export default function GenresPage() {
           </div>
 
           {/* Mode Switcher Segmented Tabs */}
-          <div className="flex items-center p-1 rounded-2xl bg-[#141622]/90 border border-white/[0.08] backdrop-blur-xl shadow-xl">
+          <div className="flex items-center p-1 rounded-2xl bg-neutral-900/90 border border-white/[0.08] backdrop-blur-xl shadow-xl">
             <button
               type="button"
               onClick={() => setActiveTab("universe")}
               className={cn(
                 "relative inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer select-none",
                 activeTab === "universe" && !isFiltered
-                  ? "text-white"
-                  : "text-neutral-400 hover:text-neutral-200",
+                  ? "text-black"
+                  : "text-neutral-400 hover:text-white",
               )}
             >
               {activeTab === "universe" && !isFiltered && (
                 <motion.div
                   layoutId="activeTabPill"
-                  className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md shadow-purple-900/40 border border-purple-400/30"
+                  className="absolute inset-0 rounded-xl bg-white shadow-sm"
                   transition={{ type: "spring", stiffness: 450, damping: 35 }}
                 />
               )}
@@ -444,21 +442,21 @@ export default function GenresPage() {
               className={cn(
                 "relative inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer select-none",
                 activeTab === "filter" || isFiltered
-                  ? "text-white"
-                  : "text-neutral-400 hover:text-neutral-200",
+                  ? "text-black"
+                  : "text-neutral-400 hover:text-white",
               )}
             >
               {(activeTab === "filter" || isFiltered) && (
                 <motion.div
                   layoutId="activeTabPill"
-                  className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md shadow-purple-900/40 border border-purple-400/30"
+                  className="absolute inset-0 rounded-xl bg-white shadow-sm"
                   transition={{ type: "spring", stiffness: 450, damping: 35 }}
                 />
               )}
               <SlidersHorizontal size={14} className="relative z-10" />
               <span className="relative z-10">Bộ Lọc Phim Chuyên Sâu</span>
               {isFiltered && (
-                <span className="relative z-10 w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                <span className="relative z-10 w-2 h-2 rounded-full bg-amber-500 animate-ping" />
               )}
             </button>
           </div>
@@ -467,13 +465,13 @@ export default function GenresPage() {
         {/* ── ADVANCED CINEMA FILTER HUB ── */}
         <section
           aria-label="Bộ lọc phim chuyên sâu"
-          className="rounded-3xl border border-white/[0.08] bg-[#12141e]/85 backdrop-blur-2xl p-5 sm:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.6)] space-y-5"
+          className="rounded-3xl border border-white/[0.08] bg-[#111216]/90 backdrop-blur-2xl p-5 sm:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.6)] space-y-5"
         >
           {/* Format Quick Chips */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/[0.06]">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5 pr-1 select-none">
-                <Flame size={13} className="text-purple-400" />
+                <Flame size={13} className="text-amber-400" />
                 <span>Định dạng:</span>
               </span>
               {TYPES.map((t) => {
@@ -487,11 +485,11 @@ export default function GenresPage() {
                     className={cn(
                       "inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer select-none active:scale-95",
                       isActive
-                        ? "bg-purple-600 text-white shadow-md shadow-purple-900/40 border border-purple-400/40 font-bold"
+                        ? "bg-white text-black shadow-sm font-bold"
                         : "bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.08] border border-white/[0.06]",
                     )}
                   >
-                    <IconComponent size={12} className={isActive ? "text-white" : "text-purple-400/80"} />
+                    <IconComponent size={12} className={isActive ? "text-black" : "text-neutral-400"} />
                     <span>{t.label}</span>
                   </button>
                 );
@@ -519,7 +517,7 @@ export default function GenresPage() {
                   className={cn(
                     "p-1.5 rounded-lg transition-all cursor-pointer",
                     viewMode === "grid"
-                      ? "bg-purple-600 text-white shadow-sm"
+                      ? "bg-white text-black shadow-sm"
                       : "text-neutral-400 hover:text-white",
                   )}
                 >
@@ -532,7 +530,7 @@ export default function GenresPage() {
                   className={cn(
                     "p-1.5 rounded-lg transition-all cursor-pointer",
                     viewMode === "compact"
-                      ? "bg-purple-600 text-white shadow-sm"
+                      ? "bg-white text-black shadow-sm"
                       : "text-neutral-400 hover:text-white",
                   )}
                 >
@@ -555,7 +553,7 @@ export default function GenresPage() {
                 placeholder="Tìm tên phim, diễn viên..."
                 value={search}
                 onChange={(e) => handleFilterChange(setSearch, e.target.value)}
-                className="w-full bg-white/[0.04] hover:bg-white/[0.06] border border-white/[0.08] pl-10 pr-9 py-2.5 text-xs text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:border-purple-500 focus:bg-[#161826] focus:ring-2 focus:ring-purple-500/30 transition-all font-medium"
+                className="w-full bg-white/[0.04] hover:bg-white/[0.06] border border-white/[0.08] pl-10 pr-9 py-2.5 text-xs text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:border-white/30 focus:bg-[#15161c] focus:ring-1 focus:ring-white/20 transition-all font-medium"
               />
               {search && (
                 <button
@@ -573,13 +571,13 @@ export default function GenresPage() {
               <select
                 value={selectedGenre}
                 onChange={(e) => handleFilterChange(setSelectedGenre, e.target.value)}
-                className="w-full appearance-none bg-white/[0.04] hover:bg-white/[0.06] border border-white/[0.08] px-4 py-2.5 text-xs text-neutral-200 rounded-xl focus:outline-none focus:border-purple-500 focus:bg-[#161826] focus:ring-2 focus:ring-purple-500/30 cursor-pointer font-medium transition-all"
+                className="w-full appearance-none bg-white/[0.04] hover:bg-white/[0.06] border border-white/[0.08] px-4 py-2.5 text-xs text-neutral-200 rounded-xl focus:outline-none focus:border-white/30 focus:bg-[#15161c] focus:ring-1 focus:ring-white/20 cursor-pointer font-medium transition-all"
               >
-                <option value="" className="bg-[#12141e] text-neutral-400">
+                <option value="" className="bg-[#15161c] text-neutral-400">
                   Tất cả thể loại ({GENRES_LIST.length})
                 </option>
                 {GENRES_LIST.map((g) => (
-                  <option key={g.slug} value={g.slug} className="bg-[#12141e] text-white">
+                  <option key={g.slug} value={g.slug} className="bg-[#15161c] text-white">
                     {g.label}
                   </option>
                 ))}
@@ -595,13 +593,13 @@ export default function GenresPage() {
               <select
                 value={selectedCountry}
                 onChange={(e) => handleFilterChange(setSelectedCountry, e.target.value)}
-                className="w-full appearance-none bg-white/[0.04] hover:bg-white/[0.06] border border-white/[0.08] px-4 py-2.5 text-xs text-neutral-200 rounded-xl focus:outline-none focus:border-purple-500 focus:bg-[#161826] focus:ring-2 focus:ring-purple-500/30 cursor-pointer font-medium transition-all"
+                className="w-full appearance-none bg-white/[0.04] hover:bg-white/[0.06] border border-white/[0.08] px-4 py-2.5 text-xs text-neutral-200 rounded-xl focus:outline-none focus:border-white/30 focus:bg-[#15161c] focus:ring-1 focus:ring-white/20 cursor-pointer font-medium transition-all"
               >
-                <option value="" className="bg-[#12141e] text-neutral-400">
+                <option value="" className="bg-[#15161c] text-neutral-400">
                   Tất cả quốc gia ({COUNTRIES_LIST.length})
                 </option>
                 {COUNTRIES_LIST.map((c) => (
-                  <option key={c.slug} value={c.slug} className="bg-[#12141e] text-white">
+                  <option key={c.slug} value={c.slug} className="bg-[#15161c] text-white">
                     {c.label}
                   </option>
                 ))}
@@ -618,13 +616,13 @@ export default function GenresPage() {
                 <select
                   value={selectedYear}
                   onChange={(e) => handleFilterChange(setSelectedYear, e.target.value)}
-                  className="w-full appearance-none bg-white/[0.04] hover:bg-white/[0.06] border border-white/[0.08] px-3 py-2.5 text-xs text-neutral-200 rounded-xl focus:outline-none focus:border-purple-500 cursor-pointer font-medium transition-all"
+                  className="w-full appearance-none bg-white/[0.04] hover:bg-white/[0.06] border border-white/[0.08] px-3 py-2.5 text-xs text-neutral-200 rounded-xl focus:outline-none focus:border-white/30 focus:bg-[#15161c] focus:ring-1 focus:ring-white/20 cursor-pointer font-medium transition-all"
                 >
-                  <option value="" className="bg-[#12141e] text-neutral-400">
+                  <option value="" className="bg-[#15161c] text-neutral-400">
                     Tất cả năm
                   </option>
                   {YEARS.map((y) => (
-                    <option key={y} value={y} className="bg-[#12141e] text-white">
+                    <option key={y} value={y} className="bg-[#15161c] text-white">
                       Năm {y}
                     </option>
                   ))}
@@ -639,10 +637,10 @@ export default function GenresPage() {
                 <select
                   value={selectedSort}
                   onChange={(e) => handleFilterChange(setSelectedSort, e.target.value)}
-                  className="w-full appearance-none bg-white/[0.04] hover:bg-white/[0.06] border border-white/[0.08] px-3 py-2.5 text-xs text-neutral-200 rounded-xl focus:outline-none focus:border-purple-500 cursor-pointer font-medium transition-all"
+                  className="w-full appearance-none bg-white/[0.04] hover:bg-white/[0.06] border border-white/[0.08] px-3 py-2.5 text-xs text-neutral-200 rounded-xl focus:outline-none focus:border-white/30 focus:bg-[#15161c] focus:ring-1 focus:ring-white/20 cursor-pointer font-medium transition-all"
                 >
                   {SORTS.map((s) => (
-                    <option key={s.value} value={s.value} className="bg-[#12141e] text-white">
+                    <option key={s.value} value={s.value} className="bg-[#15161c] text-white">
                       {s.label}
                     </option>
                   ))}
@@ -660,31 +658,31 @@ export default function GenresPage() {
             <div className="flex items-center gap-2 flex-wrap pt-3 border-t border-white/[0.06] text-xs">
               <span className="text-neutral-400 font-semibold">Đang lọc:</span>
               {search.trim() && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 font-medium">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.06] text-neutral-200 border border-white/10 font-medium">
                   Từ khóa: &ldquo;{search}&rdquo;
                   <button onClick={() => setSearch("")} className="hover:text-white cursor-pointer ml-0.5">✕</button>
                 </span>
               )}
               {selectedType !== "all" && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 font-medium">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.06] text-neutral-200 border border-white/10 font-medium">
                   Loại: {TYPES.find((t) => t.value === selectedType)?.label}
                   <button onClick={() => setSelectedType("all")} className="hover:text-white cursor-pointer ml-0.5">✕</button>
                 </span>
               )}
               {selectedGenre && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 font-medium">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.06] text-neutral-200 border border-white/10 font-medium">
                   Thể loại: {GENRES_LIST.find((g) => g.slug === selectedGenre)?.label}
                   <button onClick={() => setSelectedGenre("")} className="hover:text-white cursor-pointer ml-0.5">✕</button>
                 </span>
               )}
               {selectedCountry && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 font-medium">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.06] text-neutral-200 border border-white/10 font-medium">
                   Quốc gia: {COUNTRIES_LIST.find((c) => c.slug === selectedCountry)?.label}
                   <button onClick={() => setSelectedCountry("")} className="hover:text-white cursor-pointer ml-0.5">✕</button>
                 </span>
               )}
               {selectedYear && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 font-medium">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.06] text-neutral-200 border border-white/10 font-medium">
                   Năm: {selectedYear}
                   <button onClick={() => setSelectedYear("")} className="hover:text-white cursor-pointer ml-0.5">✕</button>
                 </span>
@@ -708,7 +706,7 @@ export default function GenresPage() {
             >
               <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
                   <h2 className="text-lg sm:text-xl font-extrabold text-white">
                     {isLoading
                       ? "Đang tìm kiếm phim..."
@@ -745,8 +743,8 @@ export default function GenresPage() {
                   ))}
                 </div>
               ) : (
-                <div className="py-20 text-center rounded-3xl bg-[#12141e]/60 border border-white/[0.08] backdrop-blur-xl space-y-4">
-                  <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mx-auto text-purple-400">
+                <div className="py-20 text-center rounded-3xl bg-[#111216]/60 border border-white/[0.08] backdrop-blur-xl space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto text-neutral-400">
                     <Search size={28} />
                   </div>
                   <h3 className="text-lg font-extrabold text-white">Không tìm thấy bộ phim phù hợp</h3>
@@ -756,7 +754,7 @@ export default function GenresPage() {
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all cursor-pointer shadow-lg shadow-purple-900/40 active:scale-95"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white hover:bg-neutral-200 text-black font-bold text-xs transition-all cursor-pointer shadow-lg active:scale-95"
                   >
                     <RotateCcw size={13} />
                     <span>Khôi phục tất cả bộ lọc</span>
@@ -806,7 +804,7 @@ export default function GenresPage() {
                   <Link
                     key={topic.slug}
                     href={topic.href}
-                    className="group relative flex flex-col justify-between min-h-[220px] sm:min-h-[240px] overflow-hidden rounded-3xl border border-white/[0.08] hover:border-white/[0.22] bg-[#12141f] p-5 sm:p-6 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_25px_60px_rgba(0,0,0,0.85)] cursor-pointer select-none transform-gpu will-change-transform"
+                    className="group relative flex flex-col justify-between min-h-[220px] sm:min-h-[240px] overflow-hidden rounded-3xl border border-white/[0.08] hover:border-white/25 bg-[#111216] p-5 sm:p-6 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_20px_45px_rgba(0,0,0,0.85)] cursor-pointer select-none transform-gpu will-change-transform"
                   >
                     {/* Background Backdrop Artwork */}
                     <div
@@ -818,26 +816,18 @@ export default function GenresPage() {
                         alt={topic.title}
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                        className="object-cover object-center brightness-[0.6] contrast-[1.08] transition-all duration-700 group-hover:scale-110 group-hover:brightness-85 transform-gpu"
+                        className="object-cover object-center brightness-[0.6] contrast-[1.08] transition-all duration-700 group-hover:scale-105 group-hover:brightness-85 transform-gpu"
                         loading="lazy"
                         unoptimized
                       />
                       {/* Gradient Scrim */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0c0d14] via-[#0c0d14]/75 to-black/35 group-hover:via-[#0c0d14]/55 transition-colors duration-500" />
-
-                      {/* Ambient Accent Radial Glow */}
-                      <div
-                        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                        style={{
-                          background: `radial-gradient(circle at bottom left, ${topic.accent}40 0%, transparent 70%)`,
-                        }}
-                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0b0c10] via-[#0b0c10]/75 to-black/35 group-hover:via-[#0b0c10]/55 transition-colors duration-500" />
                     </div>
 
                     {/* Top Row: Badge & Arrow Action */}
                     <div className="relative z-10 flex items-center justify-between gap-2">
                       <span
-                        className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-white shadow-sm border border-white/20 backdrop-blur-md"
+                        className="inline-flex items-center px-2.5 py-1 rounded-md text-[9.5px] font-black uppercase tracking-wide text-white shadow-sm border border-white/20 backdrop-blur-md"
                         style={{
                           backgroundColor: `${topic.accent}cc`,
                         }}
@@ -845,7 +835,7 @@ export default function GenresPage() {
                         {topic.badge}
                       </span>
 
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 border border-white/10 text-neutral-300 transition-all duration-300 group-hover:bg-purple-600 group-hover:border-purple-400 group-hover:text-white group-hover:scale-110 shadow-md">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 border border-white/10 text-white transition-all duration-300 group-hover:bg-white group-hover:text-black group-hover:scale-105 shadow-md">
                         <ArrowUpRight size={14} strokeWidth={2.5} />
                       </div>
                     </div>
@@ -853,7 +843,7 @@ export default function GenresPage() {
                     {/* Bottom Row: Title, Subtitle, Description */}
                     <div className="relative z-10 space-y-1.5 mt-auto pt-6">
                       <div className="flex items-center justify-between gap-2">
-                        <h3 className="text-lg sm:text-xl font-extrabold text-white tracking-tight leading-snug [text-shadow:_0_2px_8px_rgba(0,0,0,0.9)] group-hover:text-purple-200 transition-colors">
+                        <h3 className="text-lg sm:text-xl font-extrabold text-white tracking-tight leading-snug [text-shadow:_0_2px_8px_rgba(0,0,0,0.9)] transition-colors">
                           {topic.title}
                         </h3>
                       </div>
@@ -862,7 +852,7 @@ export default function GenresPage() {
                         {topic.description}
                       </p>
 
-                      <div className="pt-2 flex items-center justify-between text-[10px] font-bold text-neutral-400 group-hover:text-purple-300 transition-colors">
+                      <div className="pt-2 flex items-center justify-between text-[10px] font-bold text-neutral-400 group-hover:text-neutral-200 transition-colors">
                         <span>{topic.tagline}</span>
                         <span className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                           <span>Khám phá</span>

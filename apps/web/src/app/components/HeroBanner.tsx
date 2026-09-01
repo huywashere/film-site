@@ -1891,56 +1891,56 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                   </button>
                 </div>
               </div>
-
-              {/* Mobile previous / pagination / next controls */}
-              {featured.length > 1 && (
-                <div className="flex items-center justify-center gap-2 pt-2 sm:hidden">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setCurrent(
-                        (index) =>
-                          (index - 1 + featured.length) % featured.length,
-                      )
-                    }
-                    aria-label="Banner trước"
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white/80 backdrop-blur-md transition-colors hover:bg-white/15 hover:text-white active:scale-95"
-                  >
-                    <ChevronLeft size={17} aria-hidden="true" />
-                  </button>
-
-                  <div className="flex min-h-8 items-center justify-center gap-1.5 rounded-full border border-white/10 bg-black/30 px-3 backdrop-blur-md">
-                    {featured.slice(0, 6).map((_, i) => (
-                      <button
-                        key={`mobile-dot-${i}`}
-                        type="button"
-                        onClick={() => setCurrent(i)}
-                        aria-label={`Chuyển đến phim ${i + 1}`}
-                        aria-current={i === current ? "true" : undefined}
-                        className={cn(
-                          "h-1.5 rounded-full transition-[width,background-color] duration-300",
-                          i === current
-                            ? "w-7 bg-white"
-                            : "w-1.5 bg-white/40 hover:bg-white/70",
-                        )}
-                      />
-                    ))}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setCurrent((index) => (index + 1) % featured.length)
-                    }
-                    aria-label="Banner tiếp theo"
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white/80 backdrop-blur-md transition-colors hover:bg-white/15 hover:text-white active:scale-95"
-                  >
-                    <ChevronRight size={17} aria-hidden="true" />
-                  </button>
-                </div>
-              )}
             </motion.div>
           </AnimatePresence>
+
+          {/* Mobile previous / pagination / next controls - Placed outside AnimatePresence for rock-solid stability and zero flicker */}
+          {featured.length > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-1 sm:hidden select-none z-30">
+              <button
+                type="button"
+                onClick={() =>
+                  setCurrent(
+                    (index) =>
+                      (index - 1 + featured.length) % featured.length,
+                  )
+                }
+                aria-label="Banner trước"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-90 cursor-pointer shadow-md"
+              >
+                <ChevronLeft size={17} aria-hidden="true" />
+              </button>
+
+              <div className="flex min-h-8 items-center justify-center gap-1.5 rounded-full border border-white/15 bg-black/45 px-3 backdrop-blur-md shadow-md">
+                {featured.slice(0, 6).map((_, i) => (
+                  <button
+                    key={`mobile-dot-${i}`}
+                    type="button"
+                    onClick={() => setCurrent(i)}
+                    aria-label={`Chuyển đến phim ${i + 1}`}
+                    aria-current={i === current ? "true" : undefined}
+                    className={cn(
+                      "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
+                      i === current
+                        ? "w-7 bg-white shadow-sm"
+                        : "w-1.5 bg-white/40 hover:bg-white/80",
+                    )}
+                  />
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setCurrent((index) => (index + 1) % featured.length)
+                }
+                aria-label="Banner tiếp theo"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-90 cursor-pointer shadow-md"
+              >
+                <ChevronRight size={17} aria-hidden="true" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

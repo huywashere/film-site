@@ -22,15 +22,47 @@ export type SourceServer = {
   priority?: number;
 };
 
+// Keep this list aligned with the HTTPS hosts in proxy.ts `media-src`. Unknown
+// third-party CDNs are intentionally played through the signed same-origin HLS
+// relay instead of first paying for a request that the browser CSP will block.
+const DIRECT_HLS_HOST_SUFFIXES = [
+  "phimapi.com",
+  "kkphimplayer7.com",
+  "ophim.live",
+  "ophim1.com",
+  "opstream12.com",
+  "nguonc.com",
+  "streamc.xyz",
+  "vsmov.com",
+  "streamvsmov.com",
+  "vicdn.cc",
+];
+
+export function isDirectHlsAllowedByCsp(value: string) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:") return false;
+    const hostname = url.hostname.toLowerCase();
+    return DIRECT_HLS_HOST_SUFFIXES.some(
+      (suffix) => hostname === suffix || hostname.endsWith(`.${suffix}`),
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function selectInitialHlsTransport(
   directUrl: string,
   proxyUrl: string | undefined,
   preferSameOrigin: boolean,
 ) {
   const safeProxy = proxyUrl?.startsWith("/api/hls-proxy?") ? proxyUrl : "";
+  const directAllowed = Boolean(directUrl) && isDirectHlsAllowedByCsp(directUrl);
   const primary =
-    preferSameOrigin && safeProxy ? safeProxy : directUrl || safeProxy;
-  const fallback = primary === safeProxy ? directUrl : safeProxy;
+    safeProxy && (preferSameOrigin || !directAllowed)
+      ? safeProxy
+      : directUrl || safeProxy;
+  const fallback = primary === safeProxy ? (directAllowed ? directUrl : "") : safeProxy;
 
   return {
     primary,

@@ -303,20 +303,10 @@ func (s *Service) Bootstrap(ctx context.Context, slug string) (map[string]any, s
 		movie["_sources"] = orderedSources
 		movie["_sourceSlugs"] = sourceSlugs
 		movie["_duplicateCount"] = len(orderedSources)
-		// Fetch recommendations concurrently — non-blocking, fails silently.
-		var recommendations []any
-		if s.cfg.CoreAPIURL != "" {
-			recURL := s.cfg.CoreAPIURL + "/movies/trending?limit=12"
-			recCtx, recCancel := context.WithTimeout(ctx, s.cfg.CatalogTimeout)
-			recList, recErr := s.fetchJSONArray(recCtx, recURL)
-			recCancel()
-			if recErr == nil && len(recList) > 0 {
-				recommendations = recList
-			}
-		}
-		if recommendations == nil {
-			recommendations = []any{}
-		}
+		// Recommendations are below the player and are loaded separately by the
+		// web client. Keeping this bootstrap focused on movie metadata and source
+		// alternatives prevents a slow Core API request from delaying playback.
+		recommendations := []any{}
 		result := map[string]any{
 			"status":          true,
 			"movie":           movie,

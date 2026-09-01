@@ -79,7 +79,7 @@ test("prefers observable HLS transport over a higher-ranked iframe provider", ()
 });
 
 test("prefers same-origin HLS on mobile and preserves direct fallback", () => {
-  const direct = "https://stream.example/movie/master.m3u8";
+  const direct = "https://cdn.phimapi.com/movie/master.m3u8";
   const proxy = "/api/hls-proxy?url=signed";
 
   assert.deepEqual(selectInitialHlsTransport(direct, proxy, true), {
@@ -90,6 +90,17 @@ test("prefers same-origin HLS on mobile and preserves direct fallback", () => {
     primary: direct,
     fallback: proxy,
   });
+  assert.deepEqual(
+    selectInitialHlsTransport(
+      "https://unlisted-stream.example/movie/master.m3u8",
+      proxy,
+      false,
+    ),
+    {
+      primary: proxy,
+      fallback: undefined,
+    },
+  );
   assert.deepEqual(
     selectInitialHlsTransport(direct, "https://evil.test/proxy", true),
     { primary: direct, fallback: undefined },

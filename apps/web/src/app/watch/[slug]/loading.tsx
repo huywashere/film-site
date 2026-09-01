@@ -2,9 +2,9 @@ export default function WatchLoading() {
   return (
     <div className="min-h-screen bg-[#101114] text-white">
       <main className="mx-auto max-w-[1800px] px-3 pb-10 pt-20 md:px-5 lg:pl-20 lg:pt-22">
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
           <div className="min-w-0 space-y-4 motion-safe:animate-pulse motion-reduce:animate-none">
-            <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-white/[0.06] bg-black shadow-2xl">
+            <div className="relative aspect-video w-full overflow-hidden rounded-none border border-white/[0.06] bg-black shadow-2xl">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(255,255,255,0.045),transparent_28%),linear-gradient(135deg,#08090b_0%,#101318_54%,#090a0c_100%)]" />
               <div className="absolute left-1/2 top-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.07] bg-white/[0.055]" />
               <div className="absolute inset-x-4 bottom-4">

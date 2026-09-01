@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, History, Home, LayoutGrid, User } from "lucide-react";
+import { History, Home, LayoutGrid, Search, User } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 import { cardFont } from "@/lib/fonts";
@@ -22,9 +22,10 @@ export function MobileBottomNav() {
         frame = 0;
         const currentScrollY = window.scrollY;
         const delta = currentScrollY - previousScrollY.current;
-        // Ignore tiny scroll jitter so the dock never flickers while reading.
-        if (Math.abs(delta) < 10) return;
-        setIsHidden(currentScrollY > 96 && delta > 0);
+        // Ignore micro scroll jitter
+        if (Math.abs(delta) < 6) return;
+        // Hide when scrolling down past 70px, show immediately when scrolling up
+        setIsHidden(currentScrollY > 70 && delta > 0);
         previousScrollY.current = currentScrollY;
       });
     };
@@ -59,16 +60,16 @@ export function MobileBottomNav() {
       isActive: pathname === "/genres" || pathname.startsWith("/genre/"),
     },
     {
+      label: "Tìm kiếm",
+      href: "/search",
+      icon: Search,
+      isActive: pathname === "/search",
+    },
+    {
       label: "Lịch sử",
       href: "/history",
       icon: History,
       isActive: pathname === "/history",
-    },
-    {
-      label: "Lịch chiếu",
-      href: "/schedule",
-      icon: CalendarDays,
-      isActive: pathname === "/schedule",
     },
   ];
 
@@ -77,13 +78,13 @@ export function MobileBottomNav() {
       aria-label="Điều hướng nhanh"
       className={cn(
         cardFont.className,
-        "mobile-bottom-nav-surface fixed bottom-[max(0.55rem,env(safe-area-inset-bottom))] left-2.5 right-2.5 z-40 overflow-hidden rounded-[1.65rem] px-1.5 py-1.5 transition-[transform,opacity] duration-300 ease-out will-change-transform lg:hidden",
+        "fixed bottom-[max(0.5rem,env(safe-area-inset-bottom,0px))] left-2.5 right-2.5 z-40 overflow-hidden rounded-[1.65rem] border border-white/[0.12] bg-[#0c0d12]/92 p-1.5 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85)] transition-[transform,opacity] duration-300 ease-out will-change-transform lg:hidden",
         isHidden
-          ? "pointer-events-none translate-y-[calc(100%+1.25rem)] opacity-0"
+          ? "pointer-events-none translate-y-[calc(100%+2rem)] opacity-0"
           : "translate-y-0 opacity-100",
       )}
     >
-      <div className="grid h-[3.6rem] grid-cols-5 items-center">
+      <div className="grid h-[3.4rem] grid-cols-5 items-center">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -93,20 +94,20 @@ export function MobileBottomNav() {
               prefetch={true}
               aria-current={item.isActive ? "page" : undefined}
               className={cn(
-                "relative flex h-full min-w-0 flex-col items-center justify-center rounded-[1.1rem] py-1 text-[10px] font-semibold transition-[color,background-color,transform] active:scale-[0.96]",
+                "relative flex h-full min-w-0 flex-col items-center justify-center rounded-[1.1rem] py-1 text-[10px] font-semibold transition-[color,background-color,transform] active:scale-[0.94]",
                 item.isActive
-                  ? "bg-white/[0.08] text-white font-extrabold shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] after:absolute after:bottom-0.5 after:h-0.5 after:w-4 after:rounded-full after:bg-violet-400"
+                  ? "bg-white/[0.08] text-white font-extrabold shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] after:absolute after:bottom-0.5 after:h-0.5 after:w-4 after:rounded-full after:bg-[#23ade5]"
                   : "text-neutral-400 hover:text-neutral-200",
               )}
             >
               <Icon
-                size={20}
+                size={19}
                 className={cn(
                   "transition-transform duration-200",
                   item.isActive && "scale-110 text-white",
                 )}
               />
-              <span className="mt-1 max-w-full truncate px-0.5 tracking-tight">
+              <span className="mt-0.5 max-w-full truncate px-0.5 tracking-tight">
                 {item.label}
               </span>
             </Link>

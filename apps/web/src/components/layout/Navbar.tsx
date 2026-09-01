@@ -318,12 +318,12 @@ function LanguageSwitcher() {
   const { lang, setLang } = useTranslation();
 
   return (
-    <div className="flex items-center bg-white/[0.06] border border-white/10 p-0.5 rounded-full text-[11px] font-bold shrink-0">
+    <div className="flex items-center bg-white/[0.06] border border-white/10 p-0.5 rounded-full text-[10px] font-bold shrink-0">
       <button
         type="button"
         onClick={() => setLang("vi")}
         className={cn(
-          "flex items-center gap-1 px-2 py-0.5 rounded-full transition-all cursor-pointer",
+          "px-2.5 py-0.5 rounded-full transition-all cursor-pointer",
           lang === "vi"
             ? "bg-white text-black font-extrabold shadow-sm"
             : "text-neutral-400 hover:text-white",
@@ -331,14 +331,13 @@ function LanguageSwitcher() {
         aria-label="Tiếng Việt"
         title="Tiếng Việt"
       >
-        <span>🇻🇳</span>
-        <span className="hidden sm:inline text-[10px]">VI</span>
+        VI
       </button>
       <button
         type="button"
         onClick={() => setLang("en")}
         className={cn(
-          "flex items-center gap-1 px-2 py-0.5 rounded-full transition-all cursor-pointer",
+          "px-2.5 py-0.5 rounded-full transition-all cursor-pointer",
           lang === "en"
             ? "bg-white text-black font-extrabold shadow-sm"
             : "text-neutral-400 hover:text-white",
@@ -346,8 +345,7 @@ function LanguageSwitcher() {
         aria-label="English"
         title="English"
       >
-        <span>🇬🇧</span>
-        <span className="hidden sm:inline text-[10px]">EN</span>
+        EN
       </button>
     </div>
   );
@@ -626,7 +624,7 @@ export function Navbar() {
         <div className="w-full px-4 md:px-8 flex items-center justify-between gap-3 md:gap-6 relative">
           <div className="flex shrink-0 items-center gap-1.5">
             <button
-              className="-ml-1 flex h-9 w-9 items-center justify-center rounded-xl text-neutral-300 transition-colors hover:bg-white/[0.06] hover:text-white active:scale-95 lg:hidden"
+              className="-ml-1 flex h-9 w-9 items-center justify-center rounded-xl text-neutral-300 transition-colors hover:bg-white/[0.06] hover:text-white active:scale-95 xl:hidden"
               onClick={() => setMobileSidebarOpen(true)}
               aria-label="Mở menu"
             >
@@ -635,9 +633,9 @@ export function Navbar() {
             <AnimatedNavbarLogo />
           </div>
 
-          <nav className="hidden lg:flex items-center justify-center space-x-1.5 xl:space-x-2 text-sm font-semibold text-neutral-200 absolute left-1/2 -translate-x-1/2 z-10">
+          <nav className="absolute left-1/2 z-10 hidden -translate-x-1/2 items-center justify-center whitespace-nowrap text-sm font-semibold text-neutral-200 xl:flex xl:space-x-0.5 min-[1700px]:space-x-2">
             <div className="relative group py-5">
-              <button className="flex items-center space-x-1 text-sm font-semibold text-neutral-300 hover:text-white transition-colors focus:outline-none px-3 py-1.5">
+              <button className="flex items-center space-x-1 whitespace-nowrap px-2.5 py-1.5 text-sm font-semibold text-neutral-300 transition-colors hover:text-white focus:outline-none min-[1700px]:px-3">
                 <span>{t("nav.genres")}</span>
                 <ChevronDown
                   size={14}
@@ -659,7 +657,7 @@ export function Navbar() {
             </div>
 
             <div className="relative group py-5">
-              <button className="flex items-center space-x-1 text-sm font-semibold text-neutral-300 hover:text-white transition-colors focus:outline-none px-3 py-1.5">
+              <button className="flex items-center space-x-1 whitespace-nowrap px-2.5 py-1.5 text-sm font-semibold text-neutral-300 transition-colors hover:text-white focus:outline-none min-[1700px]:px-3">
                 <span>{t("nav.country")}</span>
                 <ChevronDown
                   size={14}
@@ -690,7 +688,7 @@ export function Navbar() {
             </div>
 
             <div className="relative group py-5">
-              <button className="flex items-center space-x-1 text-sm font-semibold text-neutral-300 hover:text-white transition-colors focus:outline-none px-3 py-1.5">
+              <button className="flex items-center space-x-1 whitespace-nowrap px-2.5 py-1.5 text-sm font-semibold text-neutral-300 transition-colors hover:text-white focus:outline-none min-[1700px]:px-3">
                 <span>{t("nav.list")}</span>
                 <ChevronDown
                   size={14}
@@ -724,7 +722,7 @@ export function Navbar() {
                   onMouseEnter={() => prefetchNav(link.href)}
                   onTouchStart={() => prefetchNav(link.href)}
                   className={cn(
-                    "relative px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all duration-150 select-none",
+                    "relative whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm font-semibold transition-all duration-150 select-none min-[1700px]:px-3.5",
                     isActive
                       ? "text-white font-bold"
                       : "text-neutral-300 hover:text-white hover:bg-white/[0.05]",
@@ -747,7 +745,7 @@ export function Navbar() {
               onClick={() => setIsSpotlightOpen(true)}
               aria-label={t("nav.searchBtn")}
               title={`${t("nav.searchBtn")} (Ctrl + K)`}
-              className={`${cardFont.className} group hidden min-w-[200px] cursor-pointer items-center gap-2.5 rounded-full border border-white/10 bg-[#111317]/90 py-2 pl-3.5 pr-3 text-xs transition-colors duration-200 hover:border-white/25 hover:bg-[#181b20] sm:flex lg:min-w-[240px]`}
+              className={`${cardFont.className} group hidden min-w-[200px] cursor-pointer items-center gap-2.5 rounded-full border border-white/10 bg-[#111317]/90 py-2 pl-3.5 pr-3 text-xs transition-colors duration-200 hover:border-white/25 hover:bg-[#181b20] sm:flex xl:w-[180px] xl:min-w-[180px] min-[1700px]:w-auto min-[1700px]:min-w-[240px]`}
             >
               <Search
                 size={14}

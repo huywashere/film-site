@@ -61,11 +61,18 @@ async function fetchProviderPayload(
  * this result, while Next's Data Cache keeps repeat visits off upstream APIs.
  */
 export const getMoviePageData = cache(async (slug: string) => {
-  const cleanSlug = encodeURIComponent(slug.trim());
+  const rawSlug = slug.trim();
+  const cleanSlug = encodeURIComponent(rawSlug);
   if (!cleanSlug) return null;
 
-  const gatewayPayload = await fetchGatewayBootstrap(slug.trim());
-  if (gatewayPayload) return gatewayPayload;
+  // Start the gateway and the fastest direct provider together. Previously a
+  // slow or unavailable gateway held every film/watch request for up to 1.8s
+  // before the direct origins were even contacted. Promise.any lets a warm
+  // gateway cache still win while keeping it out of the critical path.
+  const gateway = fetchGatewayBootstrap(rawSlug).then((payload) => {
+    if (!payload) throw new Error("gateway:empty");
+    return payload;
+  });
 
   // OPhim is usually the faster detail origin. Hedge KKPhim after a short
   // delay instead of hitting both providers on every page view. A healthy
@@ -95,7 +102,7 @@ export const getMoviePageData = cache(async (slug: string) => {
   });
 
   try {
-    return await Promise.any([primary, fallback]);
+    return await Promise.any([gateway, primary, fallback]);
   } catch {
     return null;
   } finally {

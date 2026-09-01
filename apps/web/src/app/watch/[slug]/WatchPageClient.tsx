@@ -1116,13 +1116,16 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(null);
 
   useEffect(() => {
-    // Delay secondary provider fetches by ~1.2 s so the HLS manifest and first
-    // video segment get a clear bandwidth window before 3–4 extra API calls
-    // compete for the same network pipe. The primary source (kkphim) is already
-    // available via `data`, so this only delays the fallback mirrors.
-    const timer = window.setTimeout(() => setSecondaryDataSlug(slug), 1_200);
+    // Give the manifest and first segment the network first. If the primary
+    // player becomes ready quickly, warm its mirrors shortly afterwards. If it
+    // does not, fetch mirrors soon enough for provider fallback to take over.
+    setSecondaryDataSlug('');
+    const timer = window.setTimeout(
+      () => setSecondaryDataSlug(slug),
+      primaryPlayerReady ? 500 : 1_800,
+    );
     return () => window.clearTimeout(timer);
-  }, [slug]);
+  }, [primaryPlayerReady, slug]);
 
   useEffect(() => {
     // Recommendations are below the player and must not compete with manifest,
@@ -2878,7 +2881,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             className={cn(
               'netphim-watch-player bg-black rounded-none overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none transition-all duration-300 flex items-center justify-center',
               theaterMode
-                ? 'col-span-full w-full aspect-[16/9] sm:aspect-auto sm:h-[72vh] lg:h-[78vh] min-h-[400px] max-h-[920px] mx-auto shadow-2xl ring-1 ring-purple-500/20'
+                ? 'is-theater col-span-full w-full aspect-[16/9] sm:aspect-auto sm:h-[72vh] lg:h-[78vh] min-h-[400px] max-h-[920px] mx-auto shadow-2xl ring-1 ring-purple-500/20'
                 : 'xl:col-start-1 xl:row-start-1 w-full aspect-video',
               lightOff ? 'relative z-50 ring-1 ring-white/20 shadow-2xl' : '',
             )}

@@ -123,7 +123,7 @@ function FilmCardComponent({
       film.rating;
     if (rawRating && Number(rawRating) > 0) {
       return {
-        label: film.imdb_rating ? 'IMDb' : '★',
+        label: 'IMDb',
         value: Number(rawRating).toFixed(1),
       };
     }
@@ -178,32 +178,33 @@ function FilmCardComponent({
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
             <div className="pointer-events-none absolute inset-0 z-[11] bg-black/0 transition-colors duration-300 group-hover/card:bg-black/15" />
 
-            {/* IMDb/TMDB score and technical quality follow the compact shelf language. */}
+            {/* IMDb score and technical quality */}
             <div className="pointer-events-none absolute inset-x-1.5 top-1.5 z-20 flex items-center justify-between gap-1 sm:inset-x-2 sm:top-2">
               {ratingMeta ? (
-                <span className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-[4px] bg-[#f5a400] px-1.5 py-[3px] text-[8.5px] font-black leading-none tracking-[-0.02em] text-white shadow-[0_2px_8px_rgba(0,0,0,0.28)] sm:text-[9.5px]">
-                  <span>{ratingMeta.label}</span>
+                <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-[3px] bg-[#f5c518] px-1.5 py-0.5 text-[8.5px] font-black leading-none text-black sm:text-[9.5px]">
+                  <span className="font-extrabold tracking-tight">IMDb</span>
                   <span>{ratingMeta.value}</span>
                 </span>
               ) : (
                 <span />
               )}
               {qualityBadge && (
-                <span className="whitespace-nowrap rounded-[4px] border border-white/10 bg-black/85 px-1.5 py-[3px] text-[8.5px] font-extrabold leading-none tracking-wide text-white shadow-sm backdrop-blur-sm sm:text-[9.5px]">
+                <span className="whitespace-nowrap rounded-[3px] bg-black/85 px-1.5 py-0.5 text-[8.5px] font-extrabold leading-none tracking-wider text-white sm:text-[9.5px]">
                   {qualityBadge}
                 </span>
               )}
             </div>
 
+            {/* Subtitle / Dubbed / Voiced language badges */}
             <div className="pointer-events-none absolute bottom-1.5 left-1.5 z-20 flex items-center gap-1 sm:bottom-2 sm:left-2">
-              <span className="whitespace-nowrap rounded-[3px] bg-[#64666d]/95 px-1.5 py-[3px] text-[8.5px] font-black leading-none text-white shadow-sm sm:text-[9.5px]">
+              <span className="whitespace-nowrap rounded-[3px] bg-[#2563eb] px-1.5 py-0.5 text-[8.5px] font-black leading-none text-white sm:text-[9.5px]">
                 {subtitleBadge}
               </span>
               {voiceBadge && (
                 <span
                   className={cn(
-                    'whitespace-nowrap rounded-[3px] px-1.5 py-[3px] text-[8.5px] font-black leading-none text-white shadow-sm sm:text-[9.5px]',
-                    hasDub ? 'bg-[#3567dd]' : 'bg-[#08bd67]',
+                    'whitespace-nowrap rounded-[3px] px-1.5 py-0.5 text-[8.5px] font-black leading-none text-white sm:text-[9.5px]',
+                    hasDub ? 'bg-[#9333ea]' : 'bg-[#16a34a]',
                   )}
                 >
                   {voiceBadge}

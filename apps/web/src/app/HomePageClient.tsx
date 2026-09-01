@@ -15,6 +15,8 @@ import {
   FilmItem,
 } from "@/components/film/FilmCard";
 import { useTranslation } from "@/store/langStore";
+import { deduplicateSectionRow } from "@/lib/recommendation-engine";
+import { extractFilmItems } from "@/lib/movie-normalizer";
 const HomeAnnouncementPopup = dynamic(
   () =>
     import("@/components/layout/HomeAnnouncementPopup").then(
@@ -598,23 +600,55 @@ export default function HomePageClient({
   const vfxUsUkData = vfxGenreData;
   const vfxLoading = secondaryCatalogReady && homeFeedLoading;
 
-  // 2. Series Âu-Mỹ (Hollywood TV Series)
-  const usUkSeriesData = useMemo(
-    () =>
-      asCatalogPayload(
-        (homeFeedSections?.series || []).filter(
-          (film) =>
-            movieTaxonomyContains(film.country, [
-              "âu mỹ",
-              "au-my",
-              "mỹ",
-              "anh",
-              "united states",
-            ]) || !film.country?.length,
-        ),
+  // 2. Series Âu-Mỹ (Hollywood TV Series) - Multi-Page Fetch for Rich Curated Hero Showcase
+  const { data: remoteUsUkSeries } = useQuery({
+    queryKey: ["home-us-uk-series-list-v2"],
+    queryFn: async () => {
+      try {
+        const [res1, res2] = await Promise.all([
+          movieApi.getByCountry("au-my", 1),
+          movieApi.getByCountry("au-my", 2),
+        ]);
+        const list1 = extractFilmItems(res1.data);
+        const list2 = extractFilmItems(res2.data);
+        return [...list1, ...list2];
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const usUkSeriesData = useMemo(() => {
+    const rawList = [
+      ...(remoteUsUkSeries || []),
+      ...(homeFeedSections?.series || []).filter(
+        (film) =>
+          movieTaxonomyContains(film.country, [
+            "âu mỹ",
+            "au-my",
+            "mỹ",
+            "anh",
+            "united states",
+          ]) || !film.country?.length,
       ),
-    [homeFeedSections?.series],
-  );
+      ...homeFeedPool.filter(
+        (film) =>
+          movieTaxonomyContains(film.country, [
+            "âu mỹ",
+            "au-my",
+            "mỹ",
+            "anh",
+            "united states",
+          ]) &&
+          (film.type === "series" ||
+            film.tmdb?.type === "tv" ||
+            (film.episode_current &&
+              !film.episode_current.toLowerCase().includes("full"))),
+      ),
+    ];
+    return asCatalogPayload(deduplicateSectionRow(rawList));
+  }, [remoteUsUkSeries, homeFeedSections?.series, homeFeedPool]);
   const usUkSeriesLoading = secondaryCatalogReady && homeFeedLoading;
   // 3. Phim hành động (Hollywood & International Action Movies)
   const actionData = useMemo(

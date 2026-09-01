@@ -10,7 +10,7 @@ import { ARTPLAYER_EDITOR_LOADING_GIF } from './artplayer-editor-assets';
 
 // Reduced from 8s → 6s for desktop. Mobile timeout is extended in the watchdog
 // itself. Faster timeout = faster automatic fallback to an alternate server.
-const HLS_STARTUP_TIMEOUT_MS = 6_000;
+const HLS_STARTUP_TIMEOUT_MS = 5_000;
 
 export interface ArtPlayerProps {
   url: string;
@@ -268,12 +268,12 @@ export default function ArtPlayer({
           maxStarvationDelay: 2,
           maxLoadingDelay: 2,
           capLevelToPlayerSize: true,
-          manifestLoadingTimeOut: 8_000,
-          manifestLoadingMaxRetry: 2,
-          levelLoadingTimeOut: 8_000,
-          levelLoadingMaxRetry: 2,
-          fragLoadingTimeOut: 12_000,
-          fragLoadingMaxRetry: 2,
+          manifestLoadingTimeOut: 6_000,
+          manifestLoadingMaxRetry: 1,
+          levelLoadingTimeOut: 6_000,
+          levelLoadingMaxRetry: 1,
+          fragLoadingTimeOut: 10_000,
+          fragLoadingMaxRetry: 1,
           pLoader: class ManifestFilterLoader extends (Hls.DefaultConfig.loader as any) {
             load(context: any, config: any, callbacks: any) {
               const originalOnSuccess = callbacks.onSuccess;
@@ -313,7 +313,7 @@ export default function ArtPlayer({
             /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
               navigator.userAgent,
             );
-          const timeoutMs = isMobileDevice ? 10_000 : HLS_STARTUP_TIMEOUT_MS;
+          const timeoutMs = isMobileDevice ? 7_000 : HLS_STARTUP_TIMEOUT_MS;
 
           startupTimer = setTimeout(() => {
             if (video.readyState >= HTMLMediaElement.HAVE_METADATA) return;
@@ -435,9 +435,19 @@ export default function ArtPlayer({
             networkRecoveries += 1;
             return;
           }
-          if (data.type === Hls.ErrorTypes.NETWORK_ERROR && networkRecoveries < 2) {
+          // Before metadata is available, retrying the same failed transport
+          // only keeps the poster spinner alive. Escalate to the next provider
+          // immediately after direct + proxy have both failed. During active
+          // playback one same-source recovery is still useful for brief drops.
+          const playbackAlreadyStarted =
+            video.readyState >= HTMLMediaElement.HAVE_METADATA || video.currentTime > 0;
+          if (
+            data.type === Hls.ErrorTypes.NETWORK_ERROR &&
+            playbackAlreadyStarted &&
+            networkRecoveries < 2
+          ) {
             networkRecoveries += 1;
-            hls.startLoad(-1);
+            hls.startLoad(video.currentTime || -1);
             return;
           }
           if (data.type === Hls.ErrorTypes.MEDIA_ERROR && mediaRecoveries < 1) {
@@ -570,7 +580,9 @@ export default function ArtPlayer({
       fullscreen: true,
       fullscreenWeb: true,
       subtitleOffset: true,
-      miniProgressBar: true,
+      // Keep the canvas completely clean while controls are idle. The regular
+      // timeline still appears with the control layer after pointer/touch input.
+      miniProgressBar: false,
       mutex: true,
       backdrop: true,
       playsInline: true,
@@ -683,7 +695,8 @@ export default function ArtPlayer({
       syncSkipAdButton();
     };
 
-    skipAdButton.addEventListener('click', () => handleSkipAd(false));
+    const onSkipButtonClick = () => handleSkipAd(false);
+    skipAdButton.addEventListener('click', onSkipButtonClick);
 
     let didStartPlayback = false;
     let bufferingStartedAt = 0;
@@ -755,6 +768,23 @@ export default function ArtPlayer({
     player.on('video:loadedmetadata', syncTimelineMarkers);
     player.on('video:durationchange', syncTimelineMarkers);
     player.on('resize', syncTimelineMarkers);
+
+    // Auto landscape rotation on mobile fullscreen
+    const handleOrientationOnFullscreen = (isFull: boolean) => {
+      if (isFull) {
+        if (typeof screen !== 'undefined' && screen.orientation && 'lock' in screen.orientation) {
+          (screen.orientation as any).lock('landscape').catch(() => {});
+        }
+      } else {
+        if (typeof screen !== 'undefined' && screen.orientation && 'unlock' in screen.orientation) {
+          try {
+            screen.orientation.unlock();
+          } catch {}
+        }
+      }
+    };
+    player.on('fullscreen', handleOrientationOnFullscreen);
+    player.on('fullscreenWeb', handleOrientationOnFullscreen);
 
     player.on('video:play', () => {
       onPlaybackStateChangeRef.current?.({
@@ -851,7 +881,7 @@ export default function ArtPlayer({
       if (stallRecoveryTimer) {
         clearInterval(stallRecoveryTimer);
       }
-      skipAdButton.removeEventListener('click', handleSkipAd);
+      skipAdButton.removeEventListener('click', onSkipButtonClick);
     };
     // Recreate only when the primary/fallback transport changes. Other props use refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
