@@ -1115,8 +1115,12 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(null);
 
   useEffect(() => {
-    // Enable multi-provider fetching immediately so all server sources appear without delay
-    setSecondaryDataSlug(slug);
+    // Delay secondary provider fetches by ~1.2 s so the HLS manifest and first
+    // video segment get a clear bandwidth window before 3–4 extra API calls
+    // compete for the same network pipe. The primary source (kkphim) is already
+    // available via `data`, so this only delays the fallback mirrors.
+    const timer = window.setTimeout(() => setSecondaryDataSlug(slug), 1_200);
+    return () => window.clearTimeout(timer);
   }, [slug]);
 
   useEffect(() => {

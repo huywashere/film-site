@@ -8,7 +8,9 @@ import { detectExplicitHlsAdRanges, inspectHlsAdRanges } from '@/lib/hls-ad-filt
 import { selectInitialHlsTransport } from '@/lib/player-source-routing';
 import { ARTPLAYER_EDITOR_LOADING_GIF } from './artplayer-editor-assets';
 
-const HLS_STARTUP_TIMEOUT_MS = 8_000;
+// Reduced from 8s → 6s for desktop. Mobile timeout is extended in the watchdog
+// itself. Faster timeout = faster automatic fallback to an alternate server.
+const HLS_STARTUP_TIMEOUT_MS = 6_000;
 
 export interface ArtPlayerProps {
   url: string;
@@ -273,12 +275,16 @@ export default function ArtPlayer({
       if (Hls.isSupported()) {
         const hls = new Hls({
           enableWorker: true,
-          startLevel: -1,
+          // Start from the lowest quality level so the first segment arrives
+          // as fast as possible, then ABR steps up automatically.
+          startLevel: 0,
           testBandwidth: true,
-          backBufferLength: 30,
-          maxBufferLength: 30,
-          maxMaxBufferLength: 60,
-          maxBufferSize: 60 * 1000 * 1000,
+          backBufferLength: 15,
+          // Reduced from 30 → 15 so the player only needs ~15 s of buffer before
+          // starting playback instead of waiting for 30 s worth of segments.
+          maxBufferLength: 15,
+          maxMaxBufferLength: 45,
+          maxBufferSize: 30 * 1000 * 1000,
           maxBufferHole: 0.5,
           highBufferWatchdogPeriod: 2,
           nudgeMaxRetry: 3,
@@ -286,10 +292,14 @@ export default function ArtPlayer({
           startFragPrefetch: true,
           progressive: true,
           lowLatencyMode: false,
-          abrBandWidthFactor: 0.85,
-          abrBandWidthUpFactor: 0.7,
-          maxStarvationDelay: 4,
-          maxLoadingDelay: 4,
+          // Slightly more aggressive upscaling so quality rises quickly once
+          // the connection is proven fast.
+          abrBandWidthFactor: 0.9,
+          abrBandWidthUpFactor: 0.8,
+          // Reduced from 4 → 2 so a slow segment triggers a level drop sooner
+          // rather than letting the spinner hang for 4 extra seconds.
+          maxStarvationDelay: 2,
+          maxLoadingDelay: 2,
           capLevelToPlayerSize: true,
           manifestLoadingTimeOut: 8_000,
           manifestLoadingMaxRetry: 2,
@@ -599,7 +609,8 @@ export default function ArtPlayer({
       playsInline: true,
       autoPlayback: true,
       airplay: true,
-      theme: '#8b5cf6',
+      // Use the default ArtPlayer Editor theme as specified in project rules.
+      theme: '#23ade5',
       lang: 'vi',
       i18n: { vi },
       icons: {
