@@ -1173,11 +1173,13 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
     : null;
   const posterUrl =
     (bestPoster ? tmdbPoster(bestPoster.file_path, 'w500') : null) ||
-    (!tmdbResolving ? providerPosterUrl : null) ||
+    providerPosterUrl ||
+    providerBackdropUrl ||
     undefined;
   const backdropUrl =
     (bestBackdrop ? tmdbBackdrop(bestBackdrop.file_path, 'w1280') : null) ||
-    (!tmdbResolving ? providerBackdropUrl : null) ||
+    providerBackdropUrl ||
+    providerPosterUrl ||
     undefined;
   const tmdbPosterUrl = bestPoster ? tmdbPoster(bestPoster.file_path, 'w500') : null;
   const tmdbBackdropUrl = bestBackdrop ? tmdbBackdrop(bestBackdrop.file_path, 'w1280') : null;
@@ -1201,13 +1203,8 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
 
     if (tmdbPosterUrl) add(tmdbPosterUrl);
     if (tmdbBackdropUrl) add(tmdbBackdropUrl);
-
-    // Do not paint a provider image and replace it a moment later when the
-    // TMDB query resolves. Provider artwork is a terminal fallback only.
-    if (!tmdbResolving) {
-      if (providerPosterUrl) add(providerPosterUrl);
-      if (providerBackdropUrl) add(providerBackdropUrl);
-    }
+    if (providerPosterUrl) add(providerPosterUrl);
+    if (providerBackdropUrl) add(providerBackdropUrl);
 
     // 2. TMDB backdrops
     if (backdrops && backdrops.length > 0) {
@@ -1525,17 +1522,16 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
       <meta name="twitter:description" content={seoDescription} />
       <meta name="twitter:image" content={posterUrl || backdropUrl || undefined} />
       {/* ── Giant Backdrop Banner (Plex Style Left-to-Right Blended Layout) ── */}
-      {(backdropUrl || posterUrl) && (
+      {(backdropUrl || posterUrl || providerBackdropUrl || providerPosterUrl) && (
         <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[86vh] min-h-[720px] w-full select-none overflow-hidden md:h-[105vh] md:max-h-[1040px]">
           <ResilientDetailImage
             candidates={[
               tmdbBackdropUrl,
+              providerBackdropUrl,
               tmdbPosterUrl,
-              !tmdbResolving ? providerBackdropUrl : null,
-              !tmdbResolving ? providerPosterUrl : null,
-              '/images/wp3533664-avengers-infinity-war-4k-wallpapers.jpg',
+              providerPosterUrl,
             ]}
-            alt=""
+            alt={filmName}
             sizes="100vw"
             className="scale-[1.03] object-cover object-top opacity-55"
             priority

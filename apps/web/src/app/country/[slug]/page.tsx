@@ -325,7 +325,6 @@ function ResilientAsianHeroBackdrop({
       item.thumb_url,
       item.poster_url,
       fallbackLocal,
-      "/images/wp3533664-avengers-infinity-war-4k-wallpapers.jpg",
     ].filter(Boolean) as string[];
   }, [item.poster_url, item.thumb_url, fallbackLocal]);
 
