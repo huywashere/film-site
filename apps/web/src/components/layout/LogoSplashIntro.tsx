@@ -3,11 +3,13 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-const MIN_VISIBLE_MS = 250;
-const MAX_VISIBLE_MS = 1_000;
-const EXIT_DURATION_MS = 160;
+// Long enough to be perceived on a fast production response, but bounded so
+// the splash never becomes another loading bottleneck on a slow connection.
+const MIN_VISIBLE_MS = 720;
+const MAX_VISIBLE_MS = 1_800;
+const EXIT_DURATION_MS = 280;
 
-const WALL_TILE_COUNT = 9;
+const WALL_TILE_COUNT = 18;
 
 export function LogoSplashIntro() {
   const [visible, setVisible] = useState(true);
@@ -15,10 +17,7 @@ export function LogoSplashIntro() {
 
   useEffect(() => {
     const root = document.documentElement;
-    if (root.dataset.netphimIntro !== "show") {
-      setVisible(false);
-      return;
-    }
+    root.dataset.netphimIntro = "show";
 
     const startedAt = performance.now();
     const previousOverflow = document.body.style.overflow;
@@ -100,10 +99,10 @@ export function LogoSplashIntro() {
       role="status"
       aria-live="polite"
       aria-label="Đang mở NetPhim"
-      className={`fixed inset-0 z-[10000] overflow-hidden bg-[#07070b] transition-[opacity,filter] duration-500 ease-out ${leaving ? "pointer-events-none opacity-0 blur-sm" : "pointer-events-auto opacity-100"}`}
+      className={`fixed inset-0 z-[10000] overflow-hidden bg-[#07080a] transition-[opacity,filter] duration-300 ease-out ${leaving ? "pointer-events-none opacity-0 blur-[2px]" : "pointer-events-auto opacity-100"}`}
     >
-      <div className="absolute -inset-[24%] overflow-hidden bg-[#06070a]">
-        <div className="netphim-intro-mosaic grid w-full grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-6">
+      <div className="absolute -inset-[18%] overflow-hidden bg-[#06070a]">
+        <div className="netphim-intro-mosaic grid w-full grid-cols-3 gap-2 sm:grid-cols-6 sm:gap-3">
           {Array.from({ length: WALL_TILE_COUNT }, (_, index) => (
             <div
               key={index}
@@ -114,25 +113,24 @@ export function LogoSplashIntro() {
         </div>
       </div>
 
-      <div className="absolute inset-0 bg-black/60" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(8,9,12,.34)_0%,rgba(6,7,10,.7)_48%,rgba(4,5,8,.96)_100%)]" />
-      <div className="netphim-intro-scan absolute inset-y-0 w-1/4 bg-gradient-to-r from-transparent via-white/[.035] to-transparent" />
+      <div className="absolute inset-0 bg-black/65" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(12,13,17,.22)_0%,rgba(6,7,10,.72)_48%,rgba(4,5,8,.97)_100%)]" />
 
       <div className="netphim-intro-brand relative flex h-full flex-col items-center justify-center px-6">
-        <div className="relative flex items-center gap-4 sm:gap-5">
+        <div className="relative flex items-center gap-3.5 sm:gap-5">
           <Image
             src="/cinephim-logo.png"
             alt=""
             width={88}
             height={88}
             priority
-            className="h-[66px] w-[66px] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,.75)] sm:h-[84px] sm:w-[84px]"
+            className="h-[62px] w-[62px] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,.75)] sm:h-[82px] sm:w-[82px]"
           />
-          <span className="text-[38px] font-black tracking-[-.065em] text-white drop-shadow-[0_8px_30px_rgba(0,0,0,.7)] sm:text-[58px]">
+          <span className="text-[36px] font-black tracking-[-.055em] text-white drop-shadow-[0_8px_30px_rgba(0,0,0,.7)] sm:text-[56px]">
             NetPhim
           </span>
         </div>
-        <div className="mt-7 h-[2px] w-36 overflow-hidden rounded-full bg-white/10 sm:w-44">
+        <div className="mt-7 h-px w-36 overflow-hidden bg-white/15 sm:w-44">
           <span className="netphim-intro-progress block h-full rounded-full bg-white/70" />
         </div>
       </div>

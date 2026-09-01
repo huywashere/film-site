@@ -1,7 +1,9 @@
-const CACHE_NAME = "netphim-cache-v5";
+const CACHE_NAME = "netphim-cache-v6";
 const OFFLINE_URL = "/offline";
 
-const ASSETS_TO_CACHE = ["/", "/offline", "/manifest.json"];
+// Never precache the homepage document. Serving cached HTML after a deploy can
+// point at obsolete Next.js chunks and can hide newly shipped entry UI.
+const ASSETS_TO_CACHE = [OFFLINE_URL, "/manifest.json"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -51,28 +53,18 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request).catch(async () => {
+        return (await caches.match(OFFLINE_URL)) || Response.error();
+      }),
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Fetch new version in background (Stale-While-Revalidate) for same-origin pages
-        if (
-          !url.pathname.includes("/_next/static/") &&
-          url.origin === self.location.origin
-        ) {
-          fetch(event.request)
-            .then((networkResponse) => {
-              if (networkResponse.status === 200) {
-                caches
-                  .open(CACHE_NAME)
-                  .then((cache) => cache.put(event.request, networkResponse));
-              }
-            })
-            .catch(() => {
-              /* Ignore network errors */
-            });
-        }
-        return cachedResponse;
-      }
+      if (cachedResponse) return cachedResponse;
 
       return fetch(event.request)
         .then((networkResponse) => {
@@ -89,13 +81,7 @@ self.addEventListener("fetch", (event) => {
           }
           return networkResponse;
         })
-        .catch(() => {
-          // If offline and navigating to a page, serve the offline page
-          if (event.request.mode === "navigate") {
-            return caches.match(OFFLINE_URL);
-          }
-          return Promise.reject("Offline");
-        });
+        .catch(() => Response.error());
     }),
   );
 });

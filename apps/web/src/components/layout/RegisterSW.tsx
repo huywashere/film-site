@@ -8,17 +8,32 @@ export function RegisterSW() {
       typeof window !== "undefined" &&
       "serviceWorker" in navigator
     ) {
+      let refreshing = false;
+      const handleControllerChange = () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      };
+
+      navigator.serviceWorker.addEventListener(
+        "controllerchange",
+        handleControllerChange,
+      );
       navigator.serviceWorker
-        .register("/sw.js")
-        .then((reg) => {
-          console.log(
-            "🟢 PWA Service Worker registered with scope:",
-            reg.scope,
-          );
+        .register("/sw.js", { updateViaCache: "none" })
+        .then(async (reg) => {
+          await reg.update();
         })
         .catch((err) => {
           console.error("🔴 PWA Service Worker registration failed:", err);
         });
+
+      return () => {
+        navigator.serviceWorker.removeEventListener(
+          "controllerchange",
+          handleControllerChange,
+        );
+      };
     }
   }, []);
 
