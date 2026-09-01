@@ -233,7 +233,8 @@ export default function ArtPlayer({
       const introStart = skipIntroStartRef.current ?? 0;
       const introEnd = skipIntroEndRef.current ?? 85;
       if (duration > 120 && introEnd > introStart) {
-        appendMarker('intro', introStart, introEnd, 'Đoạn mở đầu');
+        // Mark only the end point of the intro as a discrete, clean notch
+        appendMarker('intro', introEnd, introEnd, 'Hết đoạn mở đầu');
       }
 
       detectedAdRangesRef.current.forEach((range, index) => {

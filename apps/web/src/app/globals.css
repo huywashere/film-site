@@ -611,12 +611,12 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
   transform: translateX(-50%) scaleY(1.55);
 }
 
-/* Intro uses NetPhim purple; the complete interval is visible, not only its end. */
+/* Intro uses crisp Cyan/Sky #23ade5 as a subtle point marker */
 .art-video-player .netphim-timeline-marker-intro {
-  background: #a855f7;
+  background: #23ade5;
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.7),
-    0 0 5px rgba(168, 85, 247, 0.72);
+    0 0 5px rgba(35, 173, 229, 0.72);
 }
 
 /* Ad ranges use a striped amber treatment so they remain distinct in grayscale. */
