@@ -2298,12 +2298,52 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     }
   }, [currentEpIndex, serverData.length]);
 
+  // Set of watched episode keys for instant green checkmark indicator
+  const [watchedEpisodeKeys, setWatchedEpisodeKeys] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const set = new Set<string>();
+      const raw = localStorage.getItem(`netphim_watched_eps_${slug}`);
+      if (raw) {
+        (JSON.parse(raw) as string[]).forEach((k) => set.add(String(k).toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim()));
+      }
+      const entries = watchProgressStorage.getHistoryEntries();
+      entries
+        .filter((e) => e.slug === slug)
+        .forEach((e) => {
+          if (e.epSlug) set.add(String(e.epSlug).toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim());
+          if (e.epName) set.add(String(e.epName).toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim());
+        });
+      return set;
+    } catch {
+      return new Set();
+    }
+  });
+
   // Auto-record Watch History for BOTH Guest & Logged-in Users
   useEffect(() => {
     if (film && (film.name || film.origin_name) && slug) {
       const epName = currentEpData?.name || currentEp || 'Tập 1';
       const movieTitle = film.name || film.origin_name || 'Phim';
       const moviePoster = posterUrl || resolveImageUrl(film.poster_url || film.thumb_url) || '';
+
+      const currentKey = String(currentEpData?.slug || currentEpData?.name || currentEp || '')
+        .toLowerCase()
+        .replace(/^tập\s*/i, '')
+        .replace(/^tap-/i, '')
+        .replace(/^0+/, '')
+        .trim();
+
+      if (currentKey) {
+        setWatchedEpisodeKeys((prev) => {
+          const next = new Set(prev);
+          next.add(currentKey);
+          try {
+            localStorage.setItem(`netphim_watched_eps_${slug}`, JSON.stringify(Array.from(next)));
+          } catch {}
+          return next;
+        });
+      }
 
       // Save to localStorage for guest & logged-in users
       watchProgressStorage.saveProgress({
@@ -2333,7 +2373,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
           .catch(() => {});
       }
     }
-  }, [film, slug, currentEp, currentEpData?.name, posterUrl, user]);
+  }, [film, slug, currentEp, currentEpData?.slug, currentEpData?.name, posterUrl, user]);
 
   const createCurrentMovieParty = useCallback(async () => {
     const newRoomId = await createWatchPartyRoom({
@@ -2906,16 +2946,251 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       {/* ── MAIN — padded top for navbar (64px) + safe left padding for sidebar (96px) ── */}
       <main
         className={cn(
-          'pt-20 lg:pt-22 mx-auto px-3 md:px-5 pb-10 transition-all duration-300',
+          'pt-16 sm:pt-[70px] mx-auto px-3 md:px-5 pb-10 transition-all duration-300',
           theaterMode ? 'w-full lg:pl-20 max-w-none' : 'max-w-[1800px] lg:pl-20',
         )}
       >
         <div
           className={cn(
-            'grid gap-5 transition-all duration-300',
+            'grid gap-x-5 gap-y-2 sm:gap-y-2.5 transition-all duration-300',
             'grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px]',
           )}
         >
+          {/* ───── 0. TOP CONTROLS & BREADCRUMB BAR (Above Player) ───── */}
+          <div
+            className={cn(
+              'flex items-center justify-between gap-2 py-1.5 px-3 sm:px-3.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-white/60 select-none',
+              theaterMode ? 'col-span-full' : 'xl:col-start-1 xl:row-start-1',
+            )}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold transition-all shrink-0 text-xs shadow-sm hover:scale-105 active:scale-95 cursor-pointer border border-white/15"
+              >
+                <ArrowLeft size={13} />
+                <span>Quay lại</span>
+              </button>
+            </div>
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Yêu thích */}
+              <button
+                type="button"
+                onClick={handleToggleFavorite}
+                className={cn(
+                  'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
+                  isFavorite
+                    ? 'bg-red-500/15 text-red-400 border-red-500/30 font-semibold'
+                    : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 hover:text-white border-white/[0.06]',
+                )}
+                title="Thêm vào danh sách yêu thích"
+              >
+                <Heart
+                  size={13}
+                  className={cn(
+                    'transition-transform',
+                    isFavorite ? 'fill-red-500 text-red-500' : 'text-neutral-400',
+                  )}
+                />
+                <span className="hidden sm:inline">{isFavorite ? 'Đã thích' : 'Yêu thích'}</span>
+              </button>
+
+              {/* Tủ phim */}
+              <button
+                type="button"
+                onClick={handleToggleWatchlist}
+                className={cn(
+                  'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
+                  isInWatchlist
+                    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 font-semibold'
+                    : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 hover:text-white border-white/[0.06]',
+                )}
+                title="Thêm vào tủ phim"
+              >
+                {isInWatchlist ? (
+                  <Check size={13} className="text-emerald-400" />
+                ) : (
+                  <Plus size={13} className="text-neutral-400" />
+                )}
+                <span className="hidden sm:inline">{isInWatchlist ? 'Đã lưu' : 'Tủ phim'}</span>
+              </button>
+
+              {/* Cinema Light-Off Button */}
+              <button
+                onClick={() => setLightOff(!lightOff)}
+                className={cn(
+                  'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
+                  lightOff
+                    ? 'bg-white/10 text-white border-white/20 shadow-sm'
+                    : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
+                )}
+                title="Tắt đèn làm mờ xung quanh"
+              >
+                {lightOff ? (
+                  <LightbulbOff size={13} className="text-neutral-300" />
+                ) : (
+                  <Lightbulb size={13} className="text-neutral-400" />
+                )}
+                <span className="hidden sm:inline">{lightOff ? 'Bật Đèn' : 'Tắt Đèn'}</span>
+              </button>
+
+              {/* Watch Party / Xem chung Button */}
+              <button
+                onClick={() => {
+                  if (!wp.roomId) {
+                    setWatchPartyRequested(true);
+                    setManualPartyCreateRequested(true);
+                  } else {
+                    wp.setIsOpen(!wp.isOpen);
+                  }
+                }}
+                disabled={!watchPartyEnabled}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] hover:text-white/80 transition-colors text-white/60 border border-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+                title="Phòng xem phim chung cùng bạn bè"
+              >
+                <Users size={13} className="text-neutral-400" />
+                <span className="hidden sm:inline">
+                  {wp.roomId ? `Phòng ${wp.roomId}` : 'Xem chung'}
+                </span>
+              </button>
+
+              {/* Multi-Platform Share Button & Dropdown */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (typeof navigator !== 'undefined' && navigator.share) {
+                      navigator
+                        .share({
+                          title: film?.name || 'NetPhim',
+                          text: `Xem phim ${film?.name || ''} miễn phí trên NetPhim!`,
+                          url: window.location.href,
+                        })
+                        .catch(() => setShowShareModal((p) => !p));
+                    } else {
+                      setShowShareModal((p) => !p);
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] hover:text-white transition-colors text-white/50 text-xs font-medium border border-white/[0.06] cursor-pointer"
+                  title="Chia sẻ phim ra các nền tảng"
+                >
+                  <Share2 size={13} />
+                  <span className="hidden sm:inline">Chia sẻ</span>
+                </button>
+
+                {/* Multi-Platform Share Dropdown */}
+                {showShareModal && (
+                  <div className="absolute right-0 top-full mt-2 z-50 w-72 p-3.5 rounded-2xl bg-[#111419]/95 border border-white/15 backdrop-blur-xl shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                      <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <Share2 size={13} className="text-blue-400" /> Chia Sẻ Phim Trực Tiếp
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowShareModal(false)}
+                        className="text-neutral-400 hover:text-white text-xs px-1.5 py-0.5 rounded hover:bg-white/10"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* Direct Platform Links */}
+                    <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
+                      {/* Facebook */}
+                      <a
+                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 transition-all active:scale-95"
+                      >
+                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[11px] flex items-center justify-center">
+                          f
+                        </span>
+                        <span>Facebook</span>
+                      </a>
+
+                      {/* Zalo */}
+                      <a
+                        href={`https://zalo.me/share?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-400/30 transition-all active:scale-95"
+                      >
+                        <span className="w-5 h-5 rounded-full bg-blue-500 text-white font-black text-[10px] flex items-center justify-center">
+                          Z
+                        </span>
+                        <span>Zalo</span>
+                      </a>
+
+                      {/* Telegram */}
+                      <a
+                        href={`https://t.me/share/url?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&text=${encodeURIComponent(`Xem phim ${film?.name || ''} chất lượng cao!`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/30 transition-all active:scale-95"
+                      >
+                        <Send size={13} className="text-sky-400" />
+                        <span>Telegram</span>
+                      </a>
+
+                      {/* Twitter / X */}
+                      <a
+                        href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&text=${encodeURIComponent(`Xem phim ${film?.name || ''} trên NetPhim!`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white border border-white/10 transition-all active:scale-95"
+                      >
+                        <span className="font-mono text-xs">𝕏</span>
+                        <span>Twitter / X</span>
+                      </a>
+                    </div>
+
+                    {/* Copy Link Input Bar */}
+                    <div className="pt-2 border-t border-white/10 flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        readOnly
+                        value={typeof window !== 'undefined' ? window.location.href : ''}
+                        className="w-full bg-black/40 border border-white/10 rounded-lg px-2.5 py-1.5 text-[10px] text-neutral-300 focus:outline-none truncate font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(window.location.href);
+                          setCopied(true);
+                          toast('Đã sao chép liên kết!', 'success');
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg border border-white/15 transition-all shrink-0 active:scale-95"
+                      >
+                        {copied ? (
+                          <Check size={13} className="text-emerald-400" />
+                        ) : (
+                          <Copy size={13} />
+                        )}
+                        <span>{copied ? 'Đã chép' : 'Chép'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Kiểm tra Máy Chủ (Admin Only) */}
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setShowServerHealthModal(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 transition-colors text-xs font-semibold border border-amber-500/25 cursor-pointer shadow-sm select-none"
+                  title="Kiểm tra sức khỏe & tốc độ máy chủ (Chỉ dành cho Quản trị viên)"
+                >
+                  <Activity size={13} className="text-amber-400" />
+                  <span>Kiểm tra</span>
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* ───── 1. PLAYER ───── */}
           <div
             ref={playerContainerRef}
@@ -2923,7 +3198,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
               'netphim-watch-player bg-black rounded-none overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none transition-all duration-300 flex items-center justify-center',
               theaterMode
                 ? 'is-theater col-span-full w-full aspect-[16/9] sm:aspect-auto sm:h-[72vh] lg:h-[78vh] min-h-[400px] max-h-[920px] mx-auto shadow-2xl ring-1 ring-white/10'
-                : 'xl:col-start-1 xl:row-start-1 w-full aspect-video',
+                : 'xl:col-start-1 xl:row-start-2 w-full aspect-video',
               lightOff ? 'relative z-50 ring-1 ring-white/20 shadow-2xl' : '',
             )}
           >
@@ -3085,232 +3360,15 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             )}
           </div>
 
-          {/* ── 2. UNDER-PLAYER CONTENT (Breadcrumb bar, Title, Episodes, Cast, Comments) ── */}
+          {/* ── 2. UNDER-PLAYER CONTENT (Title, Episodes, Cast, Comments) ── */}
           <div
             className={cn(
               'space-y-4 min-w-0',
               theaterMode
-                ? 'col-span-1 xl:col-start-1 xl:row-start-2'
-                : 'xl:col-start-1 xl:row-start-2',
+                ? 'col-span-1 xl:col-start-1 xl:row-start-3'
+                : 'xl:col-start-1 xl:row-start-3',
             )}
           >
-            {/* ── BREADCRUMB & QUICK CONTROLS BAR — Positioned Below Video ── */}
-            <div className="flex items-center justify-between gap-2 py-2 px-3.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-white/60 select-none">
-              <div className="flex items-center gap-2 min-w-0">
-                {watchPartyEnabled && (
-                  <button
-                    onClick={() => router.back()}
-                    className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold transition-all shrink-0 text-xs shadow-sm hover:scale-105 active:scale-95 cursor-pointer border border-white/15"
-                  >
-                    <ArrowLeft size={13} />
-                    <span>Quay lại</span>
-                  </button>
-                )}
-              </div>
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                {/* Yêu thích */}
-                <button
-                  type="button"
-                  onClick={handleToggleFavorite}
-                  className={cn(
-                    'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
-                    isFavorite
-                      ? 'bg-red-500/15 text-red-400 border-red-500/30 font-semibold'
-                      : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 hover:text-white border-white/[0.06]',
-                  )}
-                  title="Thêm vào danh sách yêu thích"
-                >
-                  <Heart
-                    size={13}
-                    className={cn(
-                      'transition-transform',
-                      isFavorite ? 'fill-red-500 text-red-500' : 'text-neutral-400',
-                    )}
-                  />
-                  <span className="hidden sm:inline">{isFavorite ? 'Đã thích' : 'Yêu thích'}</span>
-                </button>
-
-                {/* Tủ phim */}
-                <button
-                  type="button"
-                  onClick={handleToggleWatchlist}
-                  className={cn(
-                    'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
-                    isInWatchlist
-                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 font-semibold'
-                      : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 hover:text-white border-white/[0.06]',
-                  )}
-                  title="Thêm vào tủ phim"
-                >
-                  {isInWatchlist ? (
-                    <Check size={13} className="text-emerald-400" />
-                  ) : (
-                    <Plus size={13} className="text-neutral-400" />
-                  )}
-                  <span className="hidden sm:inline">{isInWatchlist ? 'Đã lưu' : 'Tủ phim'}</span>
-                </button>
-
-                {/* Cinema Light-Off Button */}
-                <button
-                  onClick={() => setLightOff(!lightOff)}
-                  className={cn(
-                    'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
-                    lightOff
-                      ? 'bg-white/10 text-white border-white/20 shadow-sm'
-                      : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
-                  )}
-                  title="Tắt đèn làm mờ xung quanh"
-                >
-                  {lightOff ? (
-                    <LightbulbOff size={13} className="text-neutral-300" />
-                  ) : (
-                    <Lightbulb size={13} className="text-neutral-400" />
-                  )}
-                  <span className="hidden sm:inline">{lightOff ? 'Bật Đèn' : 'Tắt Đèn'}</span>
-                </button>
-
-                {/* Watch Party / Xem chung Button */}
-                <button
-                  onClick={() => {
-                    if (!wp.roomId) {
-                      setWatchPartyRequested(true);
-                      setManualPartyCreateRequested(true);
-                    } else {
-                      wp.setIsOpen(!wp.isOpen);
-                    }
-                  }}
-                  disabled={!watchPartyEnabled}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] hover:text-white/80 transition-colors text-white/60 border border-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
-                  title="Phòng xem phim chung cùng bạn bè"
-                >
-                  <Users size={13} className="text-neutral-400" />
-                  <span className="hidden sm:inline">
-                    {wp.roomId ? `Phòng ${wp.roomId}` : 'Xem chung'}
-                  </span>
-                </button>
-
-                {/* Multi-Platform Share Button & Dropdown */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (typeof navigator !== 'undefined' && navigator.share) {
-                        navigator
-                          .share({
-                            title: film?.name || 'NetPhim',
-                            text: `Xem phim ${film?.name || ''} miễn phí trên NetPhim!`,
-                            url: window.location.href,
-                          })
-                          .catch(() => setShowShareModal((p) => !p));
-                      } else {
-                        setShowShareModal((p) => !p);
-                      }
-                    }}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] hover:text-white transition-colors text-white/50 text-xs font-medium border border-white/[0.06] cursor-pointer"
-                    title="Chia sẻ phim ra các nền tảng"
-                  >
-                    <Share2 size={13} />
-                    <span className="hidden sm:inline">Chia sẻ</span>
-                  </button>
-
-                  {/* Multi-Platform Share Dropdown */}
-                  {showShareModal && (
-                    <div className="absolute right-0 top-full mt-2 z-50 w-72 p-3.5 rounded-2xl bg-[#111419]/95 border border-white/15 backdrop-blur-xl shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150">
-                      <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                          <Share2 size={13} className="text-blue-400" /> Chia Sẻ Phim Trực Tiếp
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setShowShareModal(false)}
-                          className="text-neutral-400 hover:text-white text-xs px-1.5 py-0.5 rounded hover:bg-white/10"
-                        >
-                          ✕
-                        </button>
-                      </div>
-
-                      {/* Direct Platform Links */}
-                      <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
-                        {/* Facebook */}
-                        <a
-                          href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 p-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 transition-all active:scale-95"
-                        >
-                          <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[11px] flex items-center justify-center">
-                            f
-                          </span>
-                          <span>Facebook</span>
-                        </a>
-
-                        {/* Zalo */}
-                        <a
-                          href={`https://zalo.me/share?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 p-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-400/30 transition-all active:scale-95"
-                        >
-                          <span className="w-5 h-5 rounded-full bg-blue-500 text-white font-black text-[10px] flex items-center justify-center">
-                            Z
-                          </span>
-                          <span>Zalo</span>
-                        </a>
-
-                        {/* Telegram */}
-                        <a
-                          href={`https://t.me/share/url?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&text=${encodeURIComponent(`Xem phim ${film?.name || ''} chất lượng cao!`)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 p-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/30 transition-all active:scale-95"
-                        >
-                          <Send size={13} className="text-sky-400" />
-                          <span>Telegram</span>
-                        </a>
-
-                        {/* Twitter / X */}
-                        <a
-                          href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&text=${encodeURIComponent(`Xem phim ${film?.name || ''} trên NetPhim!`)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 p-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white border border-white/10 transition-all active:scale-95"
-                        >
-                          <span className="font-mono text-xs">𝕏</span>
-                          <span>Twitter / X</span>
-                        </a>
-                      </div>
-
-                      {/* Copy Link Input Bar */}
-                      <div className="pt-2 border-t border-white/10 flex items-center gap-1.5">
-                        <input
-                          type="text"
-                          readOnly
-                          value={typeof window !== 'undefined' ? window.location.href : ''}
-                          className="w-full bg-black/40 border border-white/10 rounded-lg px-2.5 py-1.5 text-[10px] text-neutral-300 focus:outline-none truncate font-mono"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText(window.location.href);
-                            setCopied(true);
-                            toast('Đã sao chép liên kết!', 'success');
-                            setTimeout(() => setCopied(false), 2000);
-                          }}
-                          className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg border border-white/15 transition-all shrink-0 active:scale-95"
-                        >
-                          {copied ? (
-                            <Check size={13} className="text-emerald-400" />
-                          ) : (
-                            <Copy size={13} />
-                          )}
-                          <span>{copied ? 'Đã chép' : 'Chép'}</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
 
             {/* ── EXPANDABLE SHORTCUTS & GESTURE GUIDE (Premium Clean Cinema Standard) ── */}
             {showShortcutsGuide && (
@@ -3454,9 +3512,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             </div>
 
             {/* ── Seamless Cinema Navigation Bar ── */}
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+            <div className="flex items-center justify-center pb-3 border-b border-white/[0.08]">
               <nav
-                className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth w-full -mx-1 px-1 sm:mx-0 sm:px-0"
+                className="flex items-center justify-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth w-full -mx-1 px-1 sm:mx-0 sm:px-0"
                 aria-label="Nội dung phim"
               >
                 {[
@@ -3583,10 +3641,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   ];
 
                   return (
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 pb-2.5 border-b border-white/[0.08]">
+                    <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 pb-2.5 border-b border-white/[0.08]">
                       {/* Language groups / versions */}
                       <div
-                        className="flex flex-wrap items-center gap-1.5 sm:gap-2"
+                        className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2"
                         role="tablist"
                         aria-label="Phiên bản phát"
                       >
@@ -3666,7 +3724,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       {/* Server Selection */}
                       {activeGroup.length > 0 && (
                         <div
-                          className="flex flex-wrap items-center gap-1 sm:gap-1.5"
+                          className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5"
                           role="radiogroup"
                           aria-label="Máy chủ phát"
                         >
@@ -3716,25 +3774,14 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                 <span>Server {serverNumber}</span>
                                 {isActive && (
                                   <CheckCircle2
-                                    size={11}
-                                    className="shrink-0 text-neutral-300 ml-0.5"
+                                    size={12}
+                                    className="shrink-0 text-emerald-400 ml-0.5"
                                   />
                                 )}
                               </button>
                             );
                           })}
                         </div>
-                      )}
-
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={() => setShowServerHealthModal(true)}
-                          className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-lg border border-white/10 bg-white/[0.035] px-2 py-1 text-[10px] font-semibold text-neutral-400 transition-colors hover:border-white/20 hover:text-white"
-                        >
-                          <Activity size={11} />
-                          <span>Kiểm tra</span>
-                        </button>
                       )}
                     </div>
                   );
@@ -3900,21 +3947,27 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                               ref={epGridRef}
                               className="grid grid-cols-2 gap-2 p-0.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                             >
-                              {displayedEps.map((ep: any, i: number) => {
+                                {displayedEps.map((ep: any, i: number) => {
                                 const isActive =
                                   ep.slug === activeEpisodeKey || ep.name === activeEpisodeKey;
                                 const epNum = ep.name.replace(/^tập\s*/i, '');
-                                const epIdentifier = ep.slug || ep.name;
+                                const epIdentifier = String(ep.slug || ep.name || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim();
                                 const isWatched =
                                   !isActive &&
-                                  watchProgressStorage
-                                    .getHistoryEntries()
-                                    .some(
-                                      (entry) =>
-                                        entry.slug === slug &&
-                                        entry.epSlug === epIdentifier &&
-                                        entry.currentTime > 30,
-                                    );
+                                  (
+                                    watchedEpisodeKeys.has(epIdentifier) ||
+                                    watchedEpisodeKeys.has(String(ep.slug || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim()) ||
+                                    watchedEpisodeKeys.has(String(ep.name || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim()) ||
+                                    watchedEpisodeKeys.has(String(epNum).toLowerCase().replace(/^0+/, '').trim()) ||
+                                    watchProgressStorage
+                                      .getHistoryEntries()
+                                      .some(
+                                        (entry) =>
+                                          entry.slug === slug &&
+                                          (String(entry.epSlug || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim() === epIdentifier ||
+                                            String(entry.epName || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim() === epIdentifier),
+                                      )
+                                  );
                                 return (
                                   <button
                                     key={ep.slug || ep.name || i}
@@ -3927,7 +3980,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                       isActive
                                         ? 'border-white/30 bg-[#282a32] text-white font-extrabold shadow-sm scale-[1.02]'
                                         : isWatched
-                                          ? 'bg-[#101216] border-white/[0.03] text-neutral-400 hover:bg-[#181a20]'
+                                          ? 'bg-[#101216] border-emerald-500/20 text-neutral-300 hover:bg-[#181a20]'
                                           : 'bg-[#131519] hover:bg-[#1f2128] border-white/[0.04] hover:border-white/15 text-neutral-300 hover:text-white hover:scale-[1.01]',
                                     )}
                                   >
@@ -3939,7 +3992,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                       </span>
                                     ) : isWatched ? (
                                       <Check
-                                        size={11}
+                                        size={12}
                                         strokeWidth={3}
                                         className="shrink-0 text-emerald-400"
                                       />
@@ -3965,18 +4018,23 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                 const isActive =
                                   ep.slug === activeEpisodeKey || ep.name === activeEpisodeKey;
                                 const epNum = ep.name.replace(/^tập\s*/i, '');
-                                // Determine if this ep has been watched using watch progress storage
-                                const epIdentifier = ep.slug || ep.name;
+                                const epIdentifier = String(ep.slug || ep.name || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim();
                                 const isWatched =
                                   !isActive &&
-                                  watchProgressStorage
-                                    .getHistoryEntries()
-                                    .some(
-                                      (entry) =>
-                                        entry.slug === slug &&
-                                        entry.epSlug === epIdentifier &&
-                                        entry.currentTime > 30,
-                                    );
+                                  (
+                                    watchedEpisodeKeys.has(epIdentifier) ||
+                                    watchedEpisodeKeys.has(String(ep.slug || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim()) ||
+                                    watchedEpisodeKeys.has(String(ep.name || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim()) ||
+                                    watchedEpisodeKeys.has(String(epNum).toLowerCase().replace(/^0+/, '').trim()) ||
+                                    watchProgressStorage
+                                      .getHistoryEntries()
+                                      .some(
+                                        (entry) =>
+                                          entry.slug === slug &&
+                                          (String(entry.epSlug || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim() === epIdentifier ||
+                                            String(entry.epName || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim() === epIdentifier),
+                                      )
+                                  );
 
                                 return (
                                   <button
@@ -4246,8 +4304,8 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             className={cn(
               'space-y-4 min-w-0',
               theaterMode
-                ? 'col-span-1 xl:col-start-2 xl:row-start-2'
-                : 'xl:col-start-2 xl:row-start-1 xl:row-span-2',
+                ? 'col-span-1 xl:col-start-2 xl:row-start-3'
+                : 'xl:col-start-2 xl:row-start-1 xl:row-span-3',
             )}
           >
             {/* Film Info */}

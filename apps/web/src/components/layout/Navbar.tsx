@@ -66,7 +66,6 @@ const SpotlightSearchModal = dynamic(
 const NAV_LINKS = [
   { href: "/films/series", key: "nav.series" },
   { href: "/films/single", key: "nav.single" },
-  { href: "/films/anime", key: "nav.anime" },
   { href: "/actors", key: "nav.actors", label: "Diễn Viên" },
 ];
 

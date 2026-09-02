@@ -47,7 +47,7 @@ function TelegramIcon({
 
 const SIDEBAR_ITEMS = [
   { title: "Trang chủ", href: "/", icon: Home },
-  { title: "Thế Giới Phim", href: "/genres", icon: LayoutGrid },
+  { title: "Duyệt Tìm", href: "/genres", icon: LayoutGrid },
   { title: "Xem Chung", href: "/watch-party", icon: Popcorn },
   { title: "Bộ Sưu Tập", href: "/watchlist", icon: Layers },
   { title: "Lịch Sử", href: "/history", icon: History },
@@ -96,7 +96,16 @@ export function Sidebar() {
   const isHomePage = pathname === "/";
   const isAsianCountryHeroPage =
     pathname === "/country/han-quoc" || pathname === "/country/trung-quoc";
-  const hasHeroBanner = isHomePage || isAsianCountryHeroPage;
+  const isAnimeHeroPage =
+    pathname === "/films/anime" || pathname === "/films/hoat-hinh";
+  const isFilmDetailPage = pathname.startsWith("/film/");
+  const isWatchPage = pathname.startsWith("/watch/");
+  const hasHeroBanner =
+    isHomePage ||
+    isAsianCountryHeroPage ||
+    isAnimeHeroPage ||
+    isFilmDetailPage ||
+    isWatchPage;
 
   const isAuthPage = pathname === "/login" || pathname === "/register";
   const isUserPage =
@@ -119,15 +128,14 @@ export function Sidebar() {
       return;
     }
 
-    setScrolledPastBanner(false);
-    const threshold = homeThresholdRef.current;
-    if (!threshold) return;
+    const handleScroll = () => {
+      const threshold = typeof window !== "undefined" ? Math.min(window.innerHeight * 0.5, 450) : 400;
+      setScrolledPastBanner(window.scrollY > threshold);
+    };
 
-    const observer = new IntersectionObserver(([entry]) => {
-      setScrolledPastBanner(!entry.isIntersecting);
-    });
-    observer.observe(threshold);
-    return () => observer.disconnect();
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [hasHeroBanner, pathname]);
 
   const toggle = () => {
