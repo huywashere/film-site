@@ -51,7 +51,7 @@ export default function GenresPage() {
     <main
       className={cn(
         cardFont.className,
-        "relative min-h-[100dvh] bg-[#0a0b10] text-white pb-32 pt-20 sm:pt-24",
+        "relative min-h-[100dvh] bg-[#0a0b10] text-white pb-28 sm:pb-32 pt-16 sm:pt-24",
       )}
     >
       {/* ── Ambient Studio Lighting ── */}
@@ -59,32 +59,32 @@ export default function GenresPage() {
         <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[1200px] h-[500px] bg-gradient-to-b from-white/[0.025] to-transparent blur-[140px] rounded-full" />
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-[1720px] px-4 sm:px-8 lg:px-12 space-y-8">
+      <div className="relative z-10 mx-auto w-full max-w-[1720px] px-3.5 sm:px-8 lg:px-12 space-y-4 sm:space-y-8">
         {/* Header Title (Netflix / Apple TV Clean Standard) */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-4 border-b border-white/[0.08] gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-3 sm:pb-4 border-b border-white/[0.08] gap-1.5 sm:gap-2">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-widest text-cyan-400">
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-cyan-400">
               Bộ Sưu Tập Tuyển Chọn
             </span>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white mt-1">
+            <h1 className="text-xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white mt-0.5 sm:mt-1">
               Khám Phá Vũ Trụ Điện Ảnh
             </h1>
           </div>
-          <p className="text-xs sm:text-sm text-neutral-400 font-medium">
+          <p className="text-[11px] sm:text-sm text-neutral-400 font-medium">
             Chọn chủ đề để bước vào không gian giải trí đỉnh cao
           </p>
         </div>
 
-        {/* ── Cinematic 3-Hub Showcase Grid (Spacious & Clean Layout) ── */}
+        {/* ── Cinematic 3-Hub Showcase Grid ── */}
         <section
           aria-label="Danh sách tuyển tập phim nổi bật"
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 lg:gap-10 xl:gap-12 pt-2"
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8 lg:gap-10 xl:gap-12 pt-1"
         >
           {HUBS.map((hub, index) => (
             <Link
               key={hub.slug}
               href={hub.href}
-              className="group relative flex flex-col justify-end aspect-[16/11] sm:aspect-[16/10] md:aspect-[16/11] lg:aspect-[16/10] min-h-[300px] sm:min-h-[340px] overflow-hidden rounded-3xl border border-white/[0.08] hover:border-white/30 bg-[#12141c] p-6 sm:p-7 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_28px_65px_rgba(0,0,0,0.95)] cursor-pointer select-none"
+              className="group relative flex flex-col justify-end aspect-[16/9] sm:aspect-[16/10] md:aspect-[16/11] lg:aspect-[16/10] min-h-[190px] sm:min-h-[260px] md:min-h-[300px] lg:min-h-[340px] overflow-hidden rounded-2xl sm:rounded-3xl border border-white/[0.08] hover:border-white/30 bg-[#12141c] p-4 sm:p-6 lg:p-7 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_28px_65px_rgba(0,0,0,0.95)] cursor-pointer select-none"
             >
               {/* High-Resolution Full-Bleed 4K Backdrop */}
               <div
@@ -107,27 +107,27 @@ export default function GenresPage() {
               </div>
 
               {/* Lower-Third Content Lockup */}
-              <div className="relative z-10 space-y-2">
-                <p className="text-xs font-bold text-cyan-400 uppercase tracking-wide">
+              <div className="relative z-10 space-y-1 sm:space-y-2">
+                <p className="text-[10px] sm:text-xs font-bold text-cyan-400 uppercase tracking-wide">
                   {hub.tagline}
                 </p>
 
-                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none group-hover:text-white transition-colors">
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight leading-none group-hover:text-white transition-colors">
                   {hub.title}
                 </h2>
 
-                <p className="text-xs text-neutral-300 font-normal line-clamp-1 leading-relaxed opacity-90">
+                <p className="text-[11px] sm:text-xs text-neutral-300 font-normal line-clamp-1 leading-relaxed opacity-90">
                   {hub.highlight}
                 </p>
 
                 {/* Action Row */}
-                <div className="pt-3 flex items-center justify-between">
-                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 hover:bg-white text-black text-xs font-extrabold transition-all duration-300 group-hover:bg-white group-hover:shadow-md">
-                    <Play size={13} fill="currentColor" />
+                <div className="pt-2 sm:pt-3 flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl bg-white/90 hover:bg-white text-black text-[11px] sm:text-xs font-extrabold transition-all duration-300 group-hover:bg-white group-hover:shadow-md">
+                    <Play size={12} fill="currentColor" />
                     <span>Khám phá ngay</span>
                   </span>
 
-                  <span className="text-[11px] font-semibold text-neutral-400 group-hover:text-neutral-200 transition-colors">
+                  <span className="text-[10px] sm:text-[11px] font-semibold text-neutral-400 group-hover:text-neutral-200 transition-colors">
                     Hơn 500+ Phim
                   </span>
                 </div>

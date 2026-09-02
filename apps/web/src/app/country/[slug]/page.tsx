@@ -162,12 +162,10 @@ function CountryCategoryRow({
 
   if (!isLoading && !films.length) return null;
 
-  const cardWidth = variant === "landscape" ? 245 : 175;
-
   return (
     <div className="mb-8 group/row relative" aria-busy={isLoading}>
       <div className="flex items-center justify-between mb-3 px-1">
-        <h2 className="text-lg md:text-xl font-extrabold text-white">
+        <h2 className="text-base sm:text-lg md:text-xl font-extrabold text-white">
           {title}
         </h2>
         {href && (
@@ -186,7 +184,7 @@ function CountryCategoryRow({
         <button
           ref={prevRef}
           aria-label="Previous slide"
-          className="absolute left-0 top-0 bottom-0 z-30 w-11 bg-black/75 hover:bg-black/90 text-white flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity cursor-pointer disabled:hidden rounded-r-md"
+          className="hidden sm:flex absolute left-0 top-0 bottom-0 z-30 w-11 bg-black/75 hover:bg-black/90 text-white items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity cursor-pointer disabled:hidden rounded-r-md"
         >
           <ChevronLeft size={30} strokeWidth={2.5} />
         </button>
@@ -195,7 +193,7 @@ function CountryCategoryRow({
         <button
           ref={nextRef}
           aria-label="Next slide"
-          className="absolute right-0 top-0 bottom-0 z-30 w-11 bg-black/75 hover:bg-black/90 text-white flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity cursor-pointer disabled:hidden rounded-l-md"
+          className="hidden sm:flex absolute right-0 top-0 bottom-0 z-30 w-11 bg-black/75 hover:bg-black/90 text-white items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity cursor-pointer disabled:hidden rounded-l-md"
         >
           <ChevronRight size={30} strokeWidth={2.5} />
         </button>
@@ -217,28 +215,49 @@ function CountryCategoryRow({
           }}
           speed={600}
           slidesPerGroup={4}
-          spaceBetween={14}
-          slidesPerView="auto"
+          spaceBetween={8}
+          slidesPerView={4}
+          breakpoints={{
+            0: {
+              slidesPerView: 4,
+              spaceBetween: 8,
+            },
+            480: {
+              slidesPerView: 4.5,
+              spaceBetween: 10,
+            },
+            640: {
+              slidesPerView: 5.2,
+              spaceBetween: 12,
+            },
+            768: {
+              slidesPerView: 5.8,
+              spaceBetween: 14,
+            },
+            1024: {
+              slidesPerView: 6.8,
+              spaceBetween: 16,
+            },
+            1280: {
+              slidesPerView: 7.8,
+              spaceBetween: 16,
+            },
+          }}
           freeMode={{ enabled: true, momentumRatio: 0.8 }}
           className="!py-2 !px-1 w-full"
         >
           {isLoading
             ? Array.from({ length: 8 }).map((_, i) => (
-                <SwiperSlide
-                  key={`sk-${i}`}
-                  style={{ width: `${cardWidth}px` }}
-                >
-                  <FilmCardSkeleton width={cardWidth} hideDetails={false} />
+                <SwiperSlide key={`sk-${i}`}>
+                  <FilmCardSkeleton hideDetails={false} />
                 </SwiperSlide>
               ))
             : films.map((film, idx) => (
                 <SwiperSlide
                   key={`${film.slug || film._id || (film as any).id}-${idx}`}
-                  style={{ width: `${cardWidth}px` }}
                 >
                   <FilmCard
                     film={film}
-                    width={cardWidth}
                     variant={variant}
                     hideDetails={false}
                   />
@@ -335,24 +354,37 @@ function ResilientAsianHeroBackdrop({
   }, [item.slug]);
 
   const src = candidates[candidateIdx] || fallbackLocal;
+  const mobilePosterSrc = item.poster_url || src;
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      key={`${item.slug}-${candidateIdx}`}
-      src={src}
-      alt={item.name}
-      referrerPolicy="no-referrer"
-      loading="eager"
-      decoding="async"
-      fetchPriority="high"
-      onError={() => {
-        if (candidateIdx < candidates.length - 1) {
-          setCandidateIdx((i) => i + 1);
-        }
-      }}
-      className="absolute inset-0 w-full h-full object-cover object-center md:object-right brightness-[0.95] transition-opacity duration-700 animate-in fade-in"
-    />
+    <picture className="absolute inset-0 w-full h-full block">
+      {/* Mobile portrait poster (vertical artwork) */}
+      <source
+        media="(max-width: 767px)"
+        srcSet={mobilePosterSrc}
+      />
+      {/* Desktop widescreen backdrop (horizontal 16:9 artwork) */}
+      <source
+        media="(min-width: 768px)"
+        srcSet={src}
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        key={`${item.slug}-${candidateIdx}`}
+        src={src}
+        alt={item.name}
+        referrerPolicy="no-referrer"
+        loading="eager"
+        decoding="async"
+        fetchPriority="high"
+        onError={() => {
+          if (candidateIdx < candidates.length - 1) {
+            setCandidateIdx((i) => i + 1);
+          }
+        }}
+        className="w-full h-full object-cover object-top sm:object-center md:object-right brightness-[0.92] transition-opacity duration-700 animate-in fade-in"
+      />
+    </picture>
   );
 }
 
@@ -424,7 +456,7 @@ function AsianCuratedHeroBanner({
     <section
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="relative w-full min-h-[680px] sm:min-h-[760px] lg:min-h-[840px] h-[92vh] sm:h-[96vh] lg:h-[100vh] max-h-[1080px] overflow-hidden bg-[#141414] select-none"
+      className="relative w-full min-h-[580px] sm:min-h-[760px] lg:min-h-[840px] h-[88vh] sm:h-[96vh] lg:h-[100vh] max-h-[1080px] overflow-hidden bg-[#141414] select-none"
     >
       {/* ── High Resolution Dynamic Backdrop with Right-to-Left Gliding Motion ── */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -466,15 +498,15 @@ function AsianCuratedHeroBanner({
         className="absolute inset-0 z-10 pointer-events-none"
         style={{
           background: `
-            linear-gradient(to right, rgba(16,16,16,0.94) 0%, rgba(16,16,16,0.65) 38%, rgba(16,16,16,0.1) 68%, transparent 100%),
-            linear-gradient(to top, #141414 0%, rgba(20,20,20,0.7) 18%, transparent 45%),
-            linear-gradient(to bottom, rgba(16,16,16,0.6) 0%, transparent 22%)
+            linear-gradient(to right, rgba(16,16,16,0.95) 0%, rgba(16,16,16,0.7) 40%, rgba(16,16,16,0.15) 70%, transparent 100%),
+            linear-gradient(to top, #141414 0%, rgba(20,20,20,0.85) 30%, transparent 60%),
+            linear-gradient(to bottom, rgba(16,16,16,0.65) 0%, transparent 25%)
           `,
         }}
       />
 
-      {/* ── Left Content Overlay with Counter-Parallax (Moves in Opposite Direction: Left-to-Right) ── */}
-      <div className="absolute inset-0 z-20 flex flex-col justify-center px-6 sm:px-14 md:px-20 lg:px-24">
+      {/* ── Left Content Overlay (Responsive positioning: bottom-aligned on mobile, center-aligned on desktop) ── */}
+      <div className="absolute inset-0 z-20 flex flex-col justify-end sm:justify-center px-4 sm:px-14 md:px-20 lg:px-24 pb-8 sm:pb-20 lg:pb-0">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentItem.slug || currentItem._id || currentIndex}
@@ -498,11 +530,11 @@ function AsianCuratedHeroBanner({
               duration: 0.65,
               ease: [0.16, 1, 0.3, 1],
             }}
-            className="max-w-2xl space-y-4 sm:space-y-5 pt-8"
+            className="max-w-2xl space-y-2.5 sm:space-y-4 lg:space-y-5 pt-0 sm:pt-8"
           >
             {/* Official Title Logo PNG or Calligraphy Title */}
             {currentItem.logoUrl && !logoFailed ? (
-              <div className="relative w-64 sm:w-80 md:w-[440px] h-20 sm:h-28">
+              <div className="relative w-44 sm:w-72 md:w-80 lg:w-[440px] h-14 sm:h-24 md:h-28 flex items-center">
                 <NextImage
                   src={currentItem.logoUrl}
                   alt={currentItem.name}
@@ -516,7 +548,7 @@ function AsianCuratedHeroBanner({
               </div>
             ) : (
               <h1
-                className="text-4xl sm:text-6xl md:text-7xl font-bold text-white tracking-wide leading-tight drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)]"
+                className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-wide leading-tight drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)]"
                 style={{
                   fontFamily: "'Playfair Display', 'Dancing Script', Georgia, serif",
                   fontStyle: "italic",
@@ -527,12 +559,12 @@ function AsianCuratedHeroBanner({
             )}
 
             {/* Subtitle / Vietnamese or English name */}
-            <p className="text-xs sm:text-sm text-neutral-300 font-semibold italic -mt-2 drop-shadow">
+            <p className="text-[11px] sm:text-sm text-neutral-300 font-semibold italic -mt-0.5 sm:-mt-2 drop-shadow">
               {currentItem.name} {currentItem.origin_name ? `(${currentItem.origin_name})` : ""}
             </p>
 
             {/* Metadata Row: Year | Country | Total Episodes */}
-            <div className="flex flex-wrap items-center gap-2.5 text-xs font-semibold text-neutral-200">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5 text-[10px] sm:text-xs font-semibold text-neutral-200">
               {currentItem.year && (
                 <span className="text-white font-bold">{currentItem.year}</span>
               )}
@@ -548,11 +580,11 @@ function AsianCuratedHeroBanner({
 
             {/* Genre Tags */}
             {currentItem.genres && currentItem.genres.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                {currentItem.genres.map((genre) => (
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
+                {currentItem.genres.slice(0, 3).map((genre) => (
                   <span
                     key={genre}
-                    className="px-3 py-1 rounded bg-neutral-800/90 text-neutral-200 text-[11px] sm:text-xs font-semibold border border-white/10"
+                    className="px-2 sm:px-3 py-0.5 sm:py-1 rounded bg-neutral-800/90 text-neutral-200 text-[10px] sm:text-xs font-semibold border border-white/10"
                   >
                     {genre}
                   </span>
@@ -560,25 +592,25 @@ function AsianCuratedHeroBanner({
               </div>
             )}
 
-            {/* 2-line Description */}
-            <p className="text-xs sm:text-sm text-neutral-300 font-normal line-clamp-3 leading-relaxed drop-shadow max-w-lg pt-1">
+            {/* Description (Visible on sm screens and above) */}
+            <p className="hidden sm:block text-xs sm:text-sm text-neutral-300 font-normal line-clamp-2 sm:line-clamp-3 leading-relaxed drop-shadow max-w-lg pt-1">
               {currentItem.content}
             </p>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex items-center gap-2 sm:gap-3 pt-1 sm:pt-2">
               <Link
                 href={`/watch/${currentItem.slug}`}
-                className="inline-flex items-center gap-2.5 bg-white hover:bg-neutral-200 text-black font-extrabold px-8 py-3 rounded-md text-sm sm:text-base transition-all hover:scale-105 active:scale-95 shadow-2xl cursor-pointer"
+                className="inline-flex items-center gap-1.5 sm:gap-2 bg-white hover:bg-neutral-200 text-black font-extrabold px-5 sm:px-8 py-2 sm:py-3 rounded-md text-xs sm:text-base transition-all hover:scale-105 active:scale-95 shadow-2xl cursor-pointer"
               >
-                <Play size={18} fill="currentColor" className="ml-0.5" />
+                <Play size={15} fill="currentColor" className="ml-0.5" />
                 <span>Xem Ngay</span>
               </Link>
               <Link
                 href={`/film/${currentItem.slug}`}
-                className="inline-flex items-center gap-2 bg-[#6d6d6e]/80 hover:bg-[#6d6d6e] text-white font-bold px-7 py-3 rounded-md text-sm sm:text-base transition-all cursor-pointer active:scale-95 shadow-lg"
+                className="inline-flex items-center gap-1.5 sm:gap-2 bg-[#6d6d6e]/80 hover:bg-[#6d6d6e] text-white font-bold px-4 sm:px-7 py-2 sm:py-3 rounded-md text-xs sm:text-base transition-all cursor-pointer active:scale-95 shadow-lg"
               >
-                <Info size={18} />
+                <Info size={15} />
                 <span>Chi Tiết</span>
               </Link>
             </div>
@@ -586,13 +618,13 @@ function AsianCuratedHeroBanner({
         </AnimatePresence>
       </div>
 
-      {/* ── Left / Right Carousel Navigation Arrows ── */}
+      {/* ── Left / Right Carousel Navigation Arrows (Desktop Only) ── */}
       {curatedList.length > 1 && (
         <>
           <button
             onClick={handlePrev}
             aria-label="Slide trước"
-            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer shadow-2xl"
+            className="hidden sm:flex absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white items-center justify-center transition-all hover:scale-110 cursor-pointer shadow-2xl"
           >
             <ChevronLeft size={22} />
           </button>
@@ -600,16 +632,16 @@ function AsianCuratedHeroBanner({
           <button
             onClick={handleNext}
             aria-label="Slide tiếp theo"
-            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer shadow-2xl"
+            className="hidden sm:flex absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white items-center justify-center transition-all hover:scale-110 cursor-pointer shadow-2xl"
           >
             <ChevronRight size={22} />
           </button>
         </>
       )}
 
-      {/* ── Bottom Right Pagination Dots ── */}
+      {/* ── Pagination Dots (Centered on mobile, Bottom-Right on Desktop) ── */}
       {curatedList.length > 1 && (
-        <div className="absolute right-6 sm:right-14 bottom-32 sm:bottom-44 z-30 flex items-center gap-2">
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-5 sm:bottom-8 lg:left-auto lg:right-14 lg:translate-x-0 lg:bottom-44 z-30 flex items-center gap-1.5 sm:gap-2">
           {curatedList.map((item, idx) => (
             <button
               key={item._id || item.slug || idx}
@@ -618,8 +650,8 @@ function AsianCuratedHeroBanner({
               className={cn(
                 "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
                 idx === currentIndex
-                  ? "w-6 bg-white/85 shadow-sm"
-                  : "w-1.5 bg-white/25 hover:bg-white/45",
+                  ? "w-5 sm:w-6 bg-white/90 shadow-sm"
+                  : "w-1.5 bg-white/30 hover:bg-white/50",
               )}
             />
           ))}
@@ -964,7 +996,7 @@ export default function CountryPage() {
           )}
 
           {/* Curated Multi-Genre Rows (Tất cả Card dạng dọc chuẩn Poster 2:3, Đầy đủ 100%) */}
-          <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 -mt-24 sm:-mt-36 lg:-mt-48">
+          <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 mt-3 sm:-mt-24 md:-mt-36 lg:-mt-48">
             {/* Row 1: Phim Mới & Đang Thịnh Hành */}
             <CountryCategoryRow
               title={

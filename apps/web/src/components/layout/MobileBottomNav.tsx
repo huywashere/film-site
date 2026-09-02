@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { History, Home, LayoutGrid, Search, User } from "lucide-react";
+import { Bookmark, History, Home, LayoutGrid, User } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 import { cardFont } from "@/lib/fonts";
@@ -60,10 +60,10 @@ export function MobileBottomNav() {
       isActive: pathname === "/genres" || pathname.startsWith("/genre/"),
     },
     {
-      label: "Tìm kiếm",
-      href: "/search",
-      icon: Search,
-      isActive: pathname === "/search",
+      label: "Lưu phim",
+      href: "/watchlist",
+      icon: Bookmark,
+      isActive: pathname === "/watchlist",
     },
     {
       label: "Lịch sử",
@@ -78,7 +78,7 @@ export function MobileBottomNav() {
       aria-label="Điều hướng nhanh"
       className={cn(
         cardFont.className,
-        "fixed bottom-[max(0.5rem,env(safe-area-inset-bottom,0px))] left-2.5 right-2.5 z-40 overflow-hidden rounded-[1.65rem] border border-white/[0.12] bg-[#0c0d12]/92 p-1.5 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85)] transition-[transform,opacity] duration-300 ease-out will-change-transform lg:hidden",
+        "fixed bottom-[max(0.6rem,env(safe-area-inset-bottom,0px))] left-3 right-3 z-50 overflow-hidden rounded-[1.65rem] border border-white/[0.14] bg-[#12141d] p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.95)] transition-[transform,opacity] duration-300 ease-out will-change-transform lg:hidden",
         isHidden
           ? "pointer-events-none translate-y-[calc(100%+2rem)] opacity-0"
           : "translate-y-0 opacity-100",
@@ -94,10 +94,10 @@ export function MobileBottomNav() {
               prefetch={true}
               aria-current={item.isActive ? "page" : undefined}
               className={cn(
-                "relative flex h-full min-w-0 flex-col items-center justify-center rounded-[1.1rem] py-1 text-[10px] font-semibold transition-[color,background-color,transform] active:scale-[0.94]",
+                "relative flex h-full min-w-0 flex-col items-center justify-center rounded-[1.1rem] py-1 text-[10.5px] font-semibold transition-[color,background-color,transform] active:scale-[0.94]",
                 item.isActive
-                  ? "bg-white/[0.08] text-white font-extrabold shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] after:absolute after:bottom-0.5 after:h-0.5 after:w-4 after:rounded-full after:bg-[#23ade5]"
-                  : "text-neutral-400 hover:text-neutral-200",
+                  ? "bg-white/[0.12] text-white font-extrabold shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] after:absolute after:bottom-0.5 after:h-0.5 after:w-4 after:rounded-full after:bg-[#23ade5]"
+                  : "text-neutral-300 hover:text-white",
               )}
             >
               <Icon
@@ -119,10 +119,10 @@ export function MobileBottomNav() {
           <Link
             href={`/user/${encodeURIComponent(user.username)}`}
             className={cn(
-              "relative flex h-full min-w-0 flex-col items-center justify-center rounded-[1.1rem] py-1 text-[10px] font-semibold transition-[color,background-color,transform] active:scale-[0.96]",
+              "relative flex h-full min-w-0 flex-col items-center justify-center rounded-[1.1rem] py-1 text-[10.5px] font-semibold transition-[color,background-color,transform] active:scale-[0.96]",
               pathname.startsWith("/user/") || pathname.startsWith("/profile/")
-                ? "bg-white/[0.08] text-white font-extrabold after:absolute after:bottom-0.5 after:h-0.5 after:w-4 after:rounded-full after:bg-violet-400"
-                : "text-neutral-400 hover:text-neutral-200",
+                ? "bg-white/[0.12] text-white font-extrabold after:absolute after:bottom-0.5 after:h-0.5 after:w-4 after:rounded-full after:bg-violet-400"
+                : "text-neutral-300 hover:text-white",
             )}
           >
             {user.avatarUrl ? (
@@ -164,12 +164,12 @@ export function MobileBottomNav() {
           <Link
             href="/login"
             className={cn(
-              "flex h-full min-w-0 flex-col items-center justify-center rounded-[1.1rem] py-1 text-[10px] font-semibold text-neutral-400 transition-[color,background-color,transform] hover:text-white active:scale-[0.96]",
+              "flex h-full min-w-0 flex-col items-center justify-center rounded-[1.1rem] py-1 text-[10.5px] font-semibold text-neutral-300 transition-[color,background-color,transform] hover:text-white active:scale-[0.96]",
               (pathname === "/login" || pathname === "/register") &&
-                "bg-white/10 text-white font-extrabold",
+                "bg-white/[0.12] text-white font-extrabold",
             )}
           >
-            <User size={20} />
+            <User size={19} />
             <span className="mt-1 max-w-full truncate px-0.5 tracking-tight">
               Đăng nhập
             </span>
