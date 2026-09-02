@@ -149,10 +149,8 @@ function dedupeFilmsList(films: FilmItem[]): FilmItem[] {
 
 function AnimeCuratedHeroBanner({
   pool,
-  fallbackLocal,
 }: {
   pool: AsianHeroItem[];
-  fallbackLocal: string;
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -221,6 +219,9 @@ function AnimeCuratedHeroBanner({
       <div className="absolute inset-0 w-full h-full overflow-hidden">
         {curatedList.map((item, idx) => {
           const isActive = idx === currentIndex;
+          const desktopSrc = item.thumb_url || item.poster_url || "";
+          const mobilePosterSrc = item.poster_url || item.thumb_url || "";
+
           return (
             <div
               key={item.slug || item._id || idx}
@@ -239,16 +240,16 @@ function AnimeCuratedHeroBanner({
                 {/* Mobile portrait poster (vertical artwork) */}
                 <source
                   media="(max-width: 767px)"
-                  srcSet={item.poster_url || item.thumb_url || fallbackLocal}
+                  srcSet={mobilePosterSrc}
                 />
                 {/* Desktop widescreen backdrop (horizontal 16:9 artwork) */}
                 <source
                   media="(min-width: 768px)"
-                  srcSet={item.thumb_url || item.poster_url || fallbackLocal}
+                  srcSet={desktopSrc}
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={item.thumb_url || item.poster_url || fallbackLocal}
+                  src={desktopSrc}
                   alt={item.name}
                   referrerPolicy="no-referrer"
                   loading={idx <= 2 ? "eager" : "lazy"}
@@ -870,7 +871,6 @@ export default function FilmsTypePage() {
           {/* Next-Gen Hero Banner */}
           <AnimeCuratedHeroBanner
             pool={CURATED_ANIME_HERO_POOL}
-            fallbackLocal="https://image.tmdb.org/t/p/original/dIWwZWnnTo2A1LNxT58QIYewvaF.jpg"
           />
 
           {/* Curated Multi-Genre Rows */}

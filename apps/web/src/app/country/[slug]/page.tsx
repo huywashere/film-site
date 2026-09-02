@@ -334,27 +334,19 @@ function FeaturedActorsRow({ film }: { film?: FilmItem }) {
 
 function ResilientAsianHeroBackdrop({
   item,
-  fallbackLocal,
 }: {
   item: AsianHeroItem;
-  fallbackLocal: string;
 }) {
-  const candidates = useMemo(() => {
-    return [
-      item.thumb_url,
-      item.poster_url,
-      fallbackLocal,
-    ].filter(Boolean) as string[];
-  }, [item.poster_url, item.thumb_url, fallbackLocal]);
-
-  const [candidateIdx, setCandidateIdx] = useState(0);
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
-    setCandidateIdx(0);
+    setImgError(false);
   }, [item.slug]);
 
-  const src = candidates[candidateIdx] || fallbackLocal;
-  const mobilePosterSrc = item.poster_url || src;
+  const desktopSrc = imgError
+    ? item.poster_url || item.thumb_url || ""
+    : item.thumb_url || item.poster_url || "";
+  const mobilePosterSrc = item.poster_url || item.thumb_url || "";
 
   return (
     <picture className="absolute inset-0 w-full h-full block">
@@ -366,22 +358,18 @@ function ResilientAsianHeroBackdrop({
       {/* Desktop widescreen backdrop (horizontal 16:9 artwork) */}
       <source
         media="(min-width: 768px)"
-        srcSet={src}
+        srcSet={desktopSrc}
       />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        key={`${item.slug}-${candidateIdx}`}
-        src={src}
+        key={item.slug || item.name}
+        src={desktopSrc}
         alt={item.name}
         referrerPolicy="no-referrer"
         loading="eager"
         decoding="async"
         fetchPriority="high"
-        onError={() => {
-          if (candidateIdx < candidates.length - 1) {
-            setCandidateIdx((i) => i + 1);
-          }
-        }}
+        onError={() => setImgError(true)}
         className="w-full h-full object-cover object-top sm:object-center md:object-right brightness-[0.92] transition-opacity duration-700 animate-in fade-in"
       />
     </picture>
@@ -391,11 +379,9 @@ function ResilientAsianHeroBackdrop({
 function AsianCuratedHeroBanner({
   pool,
   countryLabel,
-  fallbackLocal,
 }: {
   pool: AsianHeroItem[];
   countryLabel: string;
-  fallbackLocal: string;
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -487,7 +473,6 @@ function AsianCuratedHeroBanner({
           >
             <ResilientAsianHeroBackdrop
               item={currentItem}
-              fallbackLocal={fallbackLocal}
             />
           </motion.div>
         </AnimatePresence>
@@ -985,13 +970,11 @@ export default function CountryPage() {
             <AsianCuratedHeroBanner
               pool={CURATED_KOREAN_HERO_POOL}
               countryLabel="Hàn Quốc"
-              fallbackLocal="/images/wp4300709-avengers-4k-wallpapers.jpg"
             />
           ) : (
             <AsianCuratedHeroBanner
               pool={CURATED_CHINESE_HERO_POOL}
               countryLabel="Trung Quốc"
-              fallbackLocal="/images/phim_co_trang_trung_quoc_50_573c11fea1.jpg"
             />
           )}
 

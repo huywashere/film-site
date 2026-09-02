@@ -34,7 +34,7 @@ export const CURATED_CHINESE_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 39 tập",
     genres: ["Cổ Trang", "Tiên Hiệp", "Hài Hước", "Lãng Mạn"],
     poster_url: "https://image.tmdb.org/t/p/w780/zW1YdedNH24xVCMrWHOZHxpJC39.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/4J8znHxVaZY3vKb05IWqWfzczXR.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/4J8znHxVaZY3vKb05IWqWfzczXR.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/vTOXewk16M1GrO6lMzHUB5B5J1N.png",
     content:
       "Bích Thương Vương Thẩm Ly của Linh giới đào hôn rơi xuống nhân gian, gặp gỡ Thần quân thượng cổ Hành Chỉ và bắt đầu mối duyên tiền định tam giới.",
@@ -73,7 +73,7 @@ export const CURATED_CHINESE_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 40 tập",
     genres: ["Tiên Hiệp", "Huyền Huyễn", "Tình Cảm", "Ngược Luyến"],
     poster_url: "https://image.tmdb.org/t/p/w780/xxaTu3Ibo5ZIYt6dEavYcIuvQMf.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/5fhS6Bh4VnF0SOZyZnhNpc0XHDb.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/5fhS6Bh4VnF0SOZyZnhNpc0XHDb.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/wqlcL7FhloP0ZXUka4cQmNVJ4Dw.png",
     content:
       "Siêu phẩm tiên hiệp kỹ xảo bùng nổ kể về mối tình ba kiếp đầy đau thương và bi tráng giữa Ma thần Đạm Đài Tẫn và thần nữ Lê Tô Tô.",
@@ -112,7 +112,7 @@ export const CURATED_CHINESE_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 38 tập",
     genres: ["Cổ Trang", "Trọng Sinh", "Mưu Lược", "Tình Cảm"],
     poster_url: "https://image.tmdb.org/t/p/w780/idcVj88MODVdBkaKpxNMiXwffLk.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/3OLeiLbTdNFovd2zyBn2xgR8UWY.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/3OLeiLbTdNFovd2zyBn2xgR8UWY.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/sKQjRVWggMoJUPkSh9xNWhmmF7P.png",
     content:
       "Khương Tuyết Ninh trải qua một kiếp hoàng hậu đầy mưu toan, sau khi trọng sinh quyết tâm sửa chữa sai lầm nhưng lại vướng vào lưới tình với đế sư Tạ Nguy.",
@@ -151,7 +151,7 @@ export const CURATED_CHINESE_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 36 tập",
     genres: ["Tiên Hiệp", "Hài Hước", "Lãng Mạn", "Kỳ Ảo"],
     poster_url: "https://image.tmdb.org/t/p/w780/mNgUuTGkOj19Z09zKa76bE6J5Di.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/pECcUE53TjkrR2VsAgF7JICzH7k.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/pECcUE53TjkrR2VsAgF7JICzH7k.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/ouAPcIcyljmXQT4FIsJyxKXvigj.png",
     content:
       "Đại Ma Đầu Nguyệt Tôn Đông Phương Thanh Thương vô tình bị trói buộc linh hồn và sa vào lưới tình ngọt ngào cùng tiểu tiên nữ ngây thơ Hoa Lan Nhỏ.",
@@ -190,7 +190,7 @@ export const CURATED_CHINESE_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 46 tập",
     genres: ["Quyền Đấu", "Cổ Trang", "Trí Tuệ", "Hài Hước"],
     poster_url: "https://image.tmdb.org/t/p/w780/wHJvPo9CLpXwX1ncDg6uD0QJIZo.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/AcsXGeHgpvbvg3pAZM1MsfcyWuJ.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/AcsXGeHgpvbvg3pAZM1MsfcyWuJ.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/pOAwk2eh5zDfqXnEMoWEAebFCMG.png",
     content:
       "Chàng thanh niên Phạm Nhàn với ký ức hiện đại bước vào chốn kinh thành Nam Khánh đầy rẫy âm mưu thâm hiểm để lật mở bí mật thân thế chấn động.",
@@ -211,7 +211,7 @@ export const CURATED_CHINESE_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 56 tập",
     genres: ["Gia Đấu", "Cổ Trang", "Lãng Mạn", "Kỳ Ảo"],
     poster_url: "https://image.tmdb.org/t/p/w780/upqf01cnDIXXOeCanQJEitznF1R.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/wNSLw756U5JQSpG6POYxHKL2KDH.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/wNSLw756U5JQSpG6POYxHKL2KDH.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/fvP4wfQHcaDaWhaFW51OVwG33Cx.png",
     content:
       "Mối tình khắc cốt ghi tâm giữa vị tướng quân trẻ tuổi Lăng Bất Nghi gánh trên vai thù hận gia tộc và nàng thiếu nữ bướng bỉnh Trình Thiếu Thương.",
@@ -232,7 +232,7 @@ export const CURATED_CHINESE_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 50 tập",
     genres: ["Kiếm Hiệp", "Tiên Hiệp", "Tri Kỷ", "Hành Động"],
     poster_url: "https://image.tmdb.org/t/p/w780/4nwuKrZwiYwludJ1V7RW1n4mbOI.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/kpZZzgk2iUsn60Fj0mwUMAUaSel.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/kpZZzgk2iUsn60Fj0mwUMAUaSel.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/dONrtdcup8BYGZKoGAA9Oi81c0j.png",
     content:
       "Di Lăng Lão Tổ Ngụy Vô Tiện cùng Hàm Quang Quân Lam Vong Cơ đồng hành phá giải những bí ẩn tà ác và bảo vệ chính nghĩa chốn tu chân giới.",
@@ -256,7 +256,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 16 tập",
     genres: ["Tình Cảm", "Gia Đình", "Chính Kịch", "Hài Hước"],
     poster_url: "https://image.tmdb.org/t/p/w780/fvpYJkQaeon5kmxioIPHFmgA2v5.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/wcP3FsRLog4GNEs9PFrDKKQdcof.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/8Dc24s2heFSqcpIsqDFlnjYICP.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/rtYUutWaNOO0IfWQWhegTUw0ERo.png",
     content:
       "Cuộc hôn nhân đầy sóng gió nhưng cũng ngập tràn cảm xúc của nàng tiểu thư tài phiệt Hong Hae-in và chàng luật sư thôn quê Baek Hyun-woo.",
@@ -277,7 +277,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 16 tập",
     genres: ["Lập Nghiệp", "Kịch Tính", "Tuổi Trẻ", "Báo Thù"],
     poster_url: "https://phimimg.com/upload/vod/20231207-1/c1bb63db8d7f6b22ee4eb025f879171a.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/rtYQCa2NzX8RspbOmwfAla6BemO.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/rtYQCa2NzX8RspbOmwfAla6BemO.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/fe405KMt75BP1xx31UKmfOAfX0q.png",
     content:
       "Chàng trai trẻ Park Sae-royi với ý chí kiên định mở quán nhậu DanBam tại khu phố Itaewon sầm uất để thách thức tập đoàn ẩm thực Jangga hùng mạnh.",
@@ -298,7 +298,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 16 tập",
     genres: ["Lãng Mạn", "Kịch Tính", "Quân Đội", "Hài Hước"],
     poster_url: "https://image.tmdb.org/t/p/w780/fgBNLPr6mC8pxuR79ENAJY4nBmj.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/3yEHM2HT2vrUtO93YzTJNgEfiZG.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/3yEHM2HT2vrUtO93YzTJNgEfiZG.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/eOSHzaCE8Of4mIHsueUM9dIJXnJ.png",
     content:
       "Mối tình vượt biên giới định mệnh giữa nữ thừa kế tài phiệt Nam Hàn Yoon Se-ri và chàng đại úy Triều Tiên Ri Jung-hyuk.",
@@ -319,7 +319,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 16 tập",
     genres: ["Kỳ Ảo", "Lãng Mạn", "Hài Hước", "Cổ Trang"],
     poster_url: "https://image.tmdb.org/t/p/w780/sPkxHNw5BFvuCFGWw825TS7n6X3.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/smSbK5cd8T9XHcxEUcems23BDEF.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/smSbK5cd8T9XHcxEUcems23BDEF.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/vq3jtNuFkeVW3dYZGOjvsgTKyPa.png",
     content:
       "Chàng Yêu tinh Kim Shin sống hơn 900 năm cô độc đi tìm cô dâu định mệnh Ji Eun-tak để rút thanh kiếm phong ấn giải thoát linh hồn.",
@@ -340,7 +340,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 16 tập",
     genres: ["Quân Đội", "Y Khoa", "Lãng Mạn", "Hành Động"],
     poster_url: "https://image.tmdb.org/t/p/w780/qg7WXAatXyQq6zO3SnWnRJEayeZ.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/tCP3AyjUDxDxJfXhiVCOYedIHjG.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/tCP3AyjUDxDxJfXhiVCOYedIHjG.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/c3EVMcfTRwrXVl4GUm2ficTVKi1.png",
     content:
       "Tình yêu mãnh liệt giữa đại úy lực lượng đặc biệt Yoo Shi-jin và nữ bác sĩ ngoại khoa Kang Mo-yeon nơi chiến trường Uruk khốc liệt.",
@@ -361,7 +361,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 12 tập",
     genres: ["Lãng Mạn", "Hài Hước", "Công Sở", "Tình Cảm"],
     poster_url: "https://image.tmdb.org/t/p/w780/lOa1IUp3AFVo6h9b17KA20r4E5s.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/lq0YqJuffMuZhoKTiC5xDqvtCSn.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/lq0YqJuffMuZhoKTiC5xDqvtCSn.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/89cbbDLh5l7QNbgfKM4PoHHW43A.png",
     content:
       "Shin Ha-ri đi xem mắt thay cho bạn thân giàu có, ai ngờ đối tượng lại chính là Giám đốc điều hành công ty cô đang làm việc.",
@@ -382,7 +382,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 16 tập",
     genres: ["Báo Thù", "Kịch Tính", "Tâm Lý", "Hình Sự"],
     poster_url: "https://image.tmdb.org/t/p/w780/uUM4LVlPgIrww07OoEKrGWlS1Ej.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/AjwoDj77HLlqcpwEGqsnvMXm5my.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/AjwoDj77HLlqcpwEGqsnvMXm5my.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/hGAZrbhiWS81FLGpMtUyMBOcEuO.png",
     content:
       "Hành trình trả thù tỉ mỉ và lạnh lùng của Moon Dong-eun chống lại những kẻ từng bạo lực học đường tàn khốc với cô thời trung học.",
@@ -403,7 +403,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 16 tập",
     genres: ["Kỳ Ảo", "Bí Ẩn", "Lãng Mạn", "Hài Hước"],
     poster_url: "https://image.tmdb.org/t/p/w780/uuQvLgr3xWuW5bb4LeR1jwa0G82.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/epq6I0AwVaHldCrQ6xJ5ZsAyHCF.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/epq6I0AwVaHldCrQ6xJ5ZsAyHCF.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/BzDBP2RpSVCCMo2KO4LjsFLyJL.png",
     content:
       "Khách sạn bí ẩn chỉ phục vụ linh hồn người đã khuất do bà chủ kiêu kỳ Jang Man-wol quản lý cùng chàng quản lý người trần Goo Chan-sung.",
@@ -424,7 +424,7 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 20 tập",
     genres: ["Hành Động", "Hài Đen", "Hình Sự", "Luật Pháp"],
     poster_url: "https://image.tmdb.org/t/p/w780/qbkSS1cTjT4DzIwD44bdhTuYgdT.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/sf7NCqyVUNoyjYuwW5oJke1T1lH.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/sf7NCqyVUNoyjYuwW5oJke1T1lH.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/znGVUeFTAM0WhRHMJl1kxlzC1l6.png",
     content:
       "Luật sư mafia Ý gốc Hàn Vincenzo Cassano trở về quê hương đòi lại số vàng khổng lồ và thực thi công lý theo cách của kẻ phản diện.",
@@ -448,7 +448,7 @@ export const CURATED_ANIME_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ các mùa",
     genres: ["Hành Động", "Siêu Nhiên", "Kiếm Hiệp", "Shounen"],
     poster_url: "https://image.tmdb.org/t/p/w780/xUfRZu2mi8jH6SzQEJGP6tjBuYj.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/3GQKYh6Trm8pxd2AypovoYQf4Ay.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/3GQKYh6Trm8pxd2AypovoYQf4Ay.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/ecghlDeabR3X3Vv8tXIOeXHQvQe.png",
     content:
       "Hành trình của chàng thiếu niên Kamado Tanjirou gia nhập Sát Quỷ Đoàn để tiêu diệt chúa quỷ Muzan và tìm cách biến em gái Nezuko trở lại thành người.",
@@ -469,7 +469,7 @@ export const CURATED_ANIME_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Mùa 1 Trọn bộ",
     genres: ["Hành Động", "Hầm Ngục", "Trọng Sinh", "Kỳ Ảo"],
     poster_url: "https://image.tmdb.org/t/p/w780/geCRueV3ElhRTr0xtJuEWJt6dJ1.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/xMNH87maNLt9n2bMDYeI6db5VFm.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/xMNH87maNLt9n2bMDYeI6db5VFm.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/soogvWTvbW2YVpZwUz0SgPBKiVa.png",
     content:
       "Sung Jin-Woo - thợ săn yếu nhất nhân loại bất ngờ thức tỉnh hệ thống nhiệm vụ độc nhất, từng bước thăng cấp trở thành Thợ Săn Bóng Tối mạnh nhất thế giới.",
@@ -490,7 +490,7 @@ export const CURATED_ANIME_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 47 tập",
     genres: ["Hành Động", "Huyền Huyễn", "Siêu Nhiên", "Shounen"],
     poster_url: "https://image.tmdb.org/t/p/w780/fHpKWq9ayzSk8nSwqRuaAUemRKh.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/qpin8cASXEVtwhzNsprHYFiOAGk.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/qpin8cASXEVtwhzNsprHYFiOAGk.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/tEmqJ1k4MdjuaKaetn8wGyZGcyC.png",
     content:
       "Itadori Yuuji nuốt phải ngón tay của Nguyền Vương Sukuna và bước vào trường Chú thuật Tokyo để đối đầu với những nguyền hồn tàn ác nhất.",
@@ -511,7 +511,7 @@ export const CURATED_ANIME_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ Final Season",
     genres: ["Chiến Tranh", "Kỳ Ảo", "Hành Động", "Tâm Lý"],
     poster_url: "https://image.tmdb.org/t/p/w780/hTP1DtLGFamjfu8WqjnuQdP1n4i.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/rqbCbjB19amtOtFQbb3K2lgm2zv.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/rqbCbjB19amtOtFQbb3K2lgm2zv.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/eHMfVTIwen9anB4HuvQlFRGZFms.png",
     content:
       "Trận chiến sinh tồn khốc liệt bảo vệ nhân loại sau bức tường trước loài Titan ăn thịt người và sự thật tàn khốc về tự do thế giới.",
@@ -532,7 +532,7 @@ export const CURATED_ANIME_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Hơn 1100+ tập",
     genres: ["Hành Động", "Phiêu Lưu", "Hài Hước", "Shounen"],
     poster_url: "https://image.tmdb.org/t/p/w780/dB4EDhre2dsC2kxYDavyKWqLQwi.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/2rmK7mnchw9Xr3XdiTFSxTTLXqv.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/2rmK7mnchw9Xr3XdiTFSxTTLXqv.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/9F7daAmibx8ZHTE17CdM5FAwiHE.png",
     content:
       "Hành trình giương buồm ra Đại Hải Trình của thuyền trưởng Monkey D. Luffy và băng Mũ Rơm để tìm kiếm kho báu huyền thoại One Piece và trở thành Vua Hải Tặc.",
@@ -553,7 +553,7 @@ export const CURATED_ANIME_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Phim Lẻ Chiếu Rạp",
     genres: ["Lãng Mạn", "Kỳ Ảo", "Học Đường", "Chính Kịch"],
     poster_url: "https://image.tmdb.org/t/p/w780/vfJFJPepRKapMd5G2ro7klIRysq.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/8x9iKH8kWA0zdkgNdpAew7OstYe.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/8x9iKH8kWA0zdkgNdpAew7OstYe.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/zKI7UKmsB5ywy6Rjs3wWvBfhafJ.png",
     content:
       "Mối liên kết diệu kỳ xuyên qua không gian và thời gian giữa Mitsuha - nữ sinh vùng quê và Taki - nam sinh Tokyo qua những giấc mơ hoán đổi thân xác.",
@@ -574,7 +574,7 @@ export const CURATED_ANIME_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 28 tập",
     genres: ["Phiêu Lưu", "Kỳ Ảo", "Chính Kịch", "Phép Thuật"],
     poster_url: "https://image.tmdb.org/t/p/w780/cHhJzdUGcEBq6av4wr9jsIvUITH.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/rBOnrVlck7BIlGeWVlzYiZeg4l2.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/rBOnrVlck7BIlGeWVlzYiZeg4l2.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/yQuc8JcBxRWXfRHrNUSM47gCXOo.png",
     content:
       "Hành trình chiêm nghiệm ý nghĩa của thời gian và tình người của nữ pháp sư yêu tinh Frieren sau khi cùng nhóm dũng sĩ đánh bại Quỷ Vương.",
@@ -595,7 +595,7 @@ export const CURATED_ANIME_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 2 Mùa",
     genres: ["Hài Hước", "Hành Động", "Gia Đình", "Shounen"],
     poster_url: "https://image.tmdb.org/t/p/w780/7NAvPYPAu7MeHwP8E9sn81PqsRh.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/lysUnU6V0VfcthDbviuVlIqgHOR.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/lysUnU6V0VfcthDbviuVlIqgHOR.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/hbZ7fVgxEg50plxtQHpVyXAppCq.png",
     content:
       "Để thực hiện nhiệm vụ bí mật giữ gìn hòa bình thế giới, chàng điệp viên Twilight lập nên một gia đình giả với vợ là sát thủ và con gái là siêu năng lực gia đọc suy nghĩ.",
@@ -616,7 +616,7 @@ export const CURATED_ANIME_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ Mùa 1",
     genres: ["Hành Động", "Kinh Dị", "Siêu Nhiên", "Shounen"],
     poster_url: "https://image.tmdb.org/t/p/w780/iFM1dyFi0rByvEomEkmm7NpQeeb.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/5DUMPBSnHOZsbBv81GFXZXvDpo6.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/5DUMPBSnHOZsbBv81GFXZXvDpo6.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/8X3AdUA5q3owusAXOiCOn3FwXUa.png",
     content:
       "Chàng trai trẻ Denji hồi sinh sau khi hợp nhất với chú quỷ cưa Pochita, trở thành Chainsaw Man và gia nhập Cục An Toàn Công Cộng để săn lùng loài quỷ.",
@@ -637,7 +637,7 @@ export const CURATED_ANIME_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 500 tập",
     genres: ["Hành Động", "Ninja", "Phiêu Lưu", "Shounen"],
     poster_url: "https://image.tmdb.org/t/p/w780/kV27j3Nz4d5z8u6mN3EJw9RiLg2.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/z0YhJvomqedHF85bplUJEotkN5l.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/z0YhJvomqedHF85bplUJEotkN5l.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/qopvxH4C4YIoeJWss0EVLv13rgW.png",
     content:
       "Sau 2 năm rưỡi rèn luyện cùng Tiên Nhân Háo Sắc Jiraiya, Naruto trở về Làng Lá để giải cứu Sasuke và đối đầu với tổ chức Akatsuki nguy hiểm nhất giới Ninja.",
@@ -658,7 +658,7 @@ export const CURATED_ANIME_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 148 tập",
     genres: ["Hành Động", "Phiêu Lưu", "Kỳ Ảo", "Shounen"],
     poster_url: "https://image.tmdb.org/t/p/w780/i2EEr2uBvRlAwJ8d8zTG2Y19mIa.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/bFKKyCI89Xq98Gul8cGox8K3sZa.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/bFKKyCI89Xq98Gul8cGox8K3sZa.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/upEvx63ZDsbT9VJyDNEb2WSLhUR.png",
     content:
       "Cậu bé Gon Freecss bắt đầu cuộc hành trình trở thành Hunter huyền thoại để tìm kiếm người cha mất tích và gặp gỡ những người bạn chí cốt Killua, Kurapika, Leorio.",
@@ -679,7 +679,7 @@ export const CURATED_ANIME_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Phim Lẻ Chiếu Rạp",
     genres: ["Kỳ Ảo", "Lãng Mạn", "Phiêu Lưu", "Chính Kịch"],
     poster_url: "https://image.tmdb.org/t/p/w780/yStW1TXF5s7Tbtu9KjIZEaWl6HL.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/4tdV5AeojEdbvn6VpeQrbuDlmzs.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/4tdV5AeojEdbvn6VpeQrbuDlmzs.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/q543yE9gmhqbMkVUtwE0YzRFMzO.png",
     content:
       "Cô nữ sinh 17 tuổi Suzume cùng chàng trai bí ẩn Souta du hành khắp Nhật Bản để đóng những cánh cửa tai họa đang đe dọa nuốt chửng cả quốc gia.",
@@ -700,7 +700,7 @@ export const CURATED_ANIME_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 2 Mùa",
     genres: ["Hành Động", "Hài Hước", "Siêu Anh Hùng", "Shounen"],
     poster_url: "https://image.tmdb.org/t/p/w780/dT10AxJIXVvRwFAew4tt2RhzJrD.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/s0w8JbuNNxL1YgaHeDWih12C3jG.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/s0w8JbuNNxL1YgaHeDWih12C3jG.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/s4c20xXgSDjbYAcpKchuWRU3zuR.png",
     content:
       "Saitama - chàng trai trở thành anh hùng chỉ vì đam mê sau 3 năm khổ luyện đến mức rụng hết tóc. Sở hữu sức mạnh vô song đến mức có thể hạ gục mọi quái vật khủng khiếp nhất chỉ bằng một cú đấm duy nhất.",
@@ -721,7 +721,7 @@ export const CURATED_ANIME_HERO_POOL: AsianHeroItem[] = [
     totalEpisodesText: "Trọn bộ 131 tập",
     genres: ["Hành Động", "Võ Thuật", "Kỳ Ảo", "Shounen"],
     poster_url: "https://image.tmdb.org/t/p/w780/qEUrbXJ2qt4Rg84Btlx4STOhgte.jpg",
-    thumb_url: "https://image.tmdb.org/t/p/original/qA2UwUQbj05aeBMCuC0mHSQ4loE.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/qA2UwUQbj05aeBMCuC0mHSQ4loE.jpg",
     logoUrl: "https://image.tmdb.org/t/p/w500/qpkdM5lO3Kfpcuzjz2fxSLVRWCf.png",
     content:
       "Goku và các chiến binh Z bước vào những trận chiến đỉnh cao vượt ngoài vũ trụ khi Thần Hủy Diệt Beerus thức tỉnh và Giải đấu Sức mạnh Đa Vũ Trụ mở ra.",
