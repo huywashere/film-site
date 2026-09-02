@@ -5,7 +5,10 @@ import vi from 'artplayer/i18n/vi';
 import Hls from 'hls.js';
 import { useSettingsStore } from '@/store/settingsStore';
 import { detectExplicitHlsAdRanges, inspectHlsAdRanges } from '@/lib/hls-ad-filter';
-import { selectInitialHlsTransport } from '@/lib/player-source-routing';
+import {
+  isTerminalHlsHttpStatus,
+  selectInitialHlsTransport,
+} from '@/lib/player-source-routing';
 import { ARTPLAYER_EDITOR_LOADING_GIF } from './artplayer-editor-assets';
 
 // Reduced from 8s → 6s for desktop. Mobile timeout is extended in the watchdog
@@ -431,6 +434,22 @@ export default function ArtPlayer({
 
         hls.on(Hls.Events.ERROR, (_event, data) => {
           if (!data.fatal) return;
+          const upstreamStatus =
+            data.response?.code ||
+            (data.networkDetails as { status?: number } | null)?.status;
+          if (
+            data.type === Hls.ErrorTypes.NETWORK_ERROR &&
+            isTerminalHlsHttpStatus(upstreamStatus)
+          ) {
+            // KKPhim sometimes publishes metadata before the HLS object exists.
+            // Proxying that same 404 only doubles startup time.
+            hls.destroy();
+            onErrorRef.current?.({
+              type: 'HLS_MANIFEST_NOT_FOUND',
+              details: data,
+            });
+            return;
+          }
           if (data.type === Hls.ErrorTypes.NETWORK_ERROR && switchTransport()) {
             networkRecoveries += 1;
             return;

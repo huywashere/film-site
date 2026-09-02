@@ -10,8 +10,11 @@ import {
   findMatchingEpisode,
   formatEpisodeLabel,
   getSourceAbbr,
+  getSourceLabel,
   isAutomaticPlaybackSource,
+  isTerminalHlsHttpStatus,
   resolveSeasonNumber,
+  resolveServerType,
   selectInitialHlsTransport,
   sourcePriority,
 } from "./player-source-routing.ts";
@@ -91,39 +94,30 @@ test("prefers same-origin HLS on mobile and preserves direct fallback", () => {
     fallback: proxy,
   });
   assert.deepEqual(
-    selectInitialHlsTransport(
-      "https://unlisted-stream.example/movie/master.m3u8",
-      proxy,
-      false,
-    ),
+    selectInitialHlsTransport("https://unlisted-stream.example/movie/master.m3u8", proxy, false),
     {
       primary: proxy,
       fallback: undefined,
     },
   );
-  assert.deepEqual(
-    selectInitialHlsTransport(direct, "https://evil.test/proxy", true),
-    { primary: direct, fallback: undefined },
-  );
+  assert.deepEqual(selectInitialHlsTransport(direct, "https://evil.test/proxy", true), {
+    primary: direct,
+    fallback: undefined,
+  });
+});
+
+test("does not relay manifests that the provider has removed", () => {
+  assert.equal(isTerminalHlsHttpStatus(404), true);
+  assert.equal(isTerminalHlsHttpStatus("410"), true);
+  assert.equal(isTerminalHlsHttpStatus(403), false);
+  assert.equal(isTerminalHlsHttpStatus(undefined), false);
 });
 
 test("only removes iframe sandbox for known VidSrc HTTPS hosts", () => {
-  assert.equal(
-    canUseUnsandboxedEmbed("vidsrc", "https://vidsrc.sbs/embed/movie/533535"),
-    true,
-  );
-  assert.equal(
-    canUseUnsandboxedEmbed("vidsrc", "https://vidsrc.to/embed/movie/123"),
-    false,
-  );
-  assert.equal(
-    canUseUnsandboxedEmbed("kkphim", "https://vidsrc.to/embed/movie/123"),
-    false,
-  );
-  assert.equal(
-    canUseUnsandboxedEmbed("vidsrc", "https://vidsrc.to.evil.test/embed/123"),
-    false,
-  );
+  assert.equal(canUseUnsandboxedEmbed("vidsrc", "https://vidsrc.sbs/embed/movie/533535"), true);
+  assert.equal(canUseUnsandboxedEmbed("vidsrc", "https://vidsrc.to/embed/movie/123"), false);
+  assert.equal(canUseUnsandboxedEmbed("kkphim", "https://vidsrc.to/embed/movie/123"), false);
+  assert.equal(canUseUnsandboxedEmbed("vidsrc", "https://vidsrc.to.evil.test/embed/123"), false);
   assert.equal(canUseUnsandboxedEmbed("vidsrc", "javascript:alert(1)"), false);
 });
 
@@ -159,10 +153,7 @@ test("builds documented vidsrc.sbs movie and TV embed URLs", () => {
     }),
     null,
   );
-  assert.equal(
-    buildVidsrcEmbedUrl({ tmdbId: 1399, mediaType: "tv", season: 1 }),
-    null,
-  );
+  assert.equal(buildVidsrcEmbedUrl({ tmdbId: 1399, mediaType: "tv", season: 1 }), null);
 });
 
 test("derives VidSrc season and episode numbers from Vietnamese labels", () => {
@@ -205,4 +196,13 @@ test("formats provider abbreviations correctly", () => {
   assert.equal(getSourceAbbr("vicdn"), "ViCDN");
   assert.equal(getSourceAbbr("vidsrc"), "VidSrc");
   assert.equal(getSourceAbbr(undefined), "KP");
+});
+
+test("keeps ViCDN and VidSrc in dedicated language groups", () => {
+  assert.equal(resolveServerType("vicdn", "Server 1"), "song-ngu");
+  assert.equal(resolveServerType("vidsrc", "Server 1"), "engsub");
+  assert.equal(resolveServerType("kkphim", "Vietsub"), "vietsub");
+  assert.equal(resolveServerType("nguonc", "Thuyết Minh"), "thuyet-minh");
+  assert.equal(getSourceLabel("kkphim"), "KKPhim");
+  assert.equal(getSourceLabel("vidsrc"), "VidSrc");
 });

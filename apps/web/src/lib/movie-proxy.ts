@@ -160,7 +160,9 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
   }
 
   function headers(cacheStatus: string, ttlSeconds: number = 300): HeadersInit {
-    const swrTtl = Math.max(ttlSeconds * 4, 86400);
+    // Embedded HLS fallback URLs expire after one hour. Keep stale JSON inside
+    // that window so an edge cannot return an already-expired media signature.
+    const swrTtl = Math.min(Math.max(ttlSeconds * 2, 300), 1800);
     const browserTtl = Math.min(ttlSeconds, 300);
     return {
       "X-Cache": cacheStatus,

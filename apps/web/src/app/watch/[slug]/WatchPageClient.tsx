@@ -89,13 +89,14 @@ import { safeJsonLd } from '@/lib/safe-json-ld';
 import {
   buildVicdnEmbedUrl,
   buildVidsrcEmbedUrl,
-  detectServerType,
   episodeNumberFromLabel,
   findMatchingEpisode,
   getSourceAbbr,
+  getSourceLabel,
   isPlayableEpisode,
   isAutomaticPlaybackSource,
   resolveSeasonNumber,
+  resolveServerType,
   sourcePriority,
   type ServerType,
   type SourceServer,
@@ -1122,7 +1123,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     setSecondaryDataSlug('');
     const timer = window.setTimeout(
       () => setSecondaryDataSlug(slug),
-      primaryPlayerReady ? 500 : 1_800,
+      primaryPlayerReady ? 500 : 150,
     );
     return () => window.clearTimeout(timer);
   }, [primaryPlayerReady, slug]);
@@ -1150,13 +1151,13 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   // events. Provider iframe remains the safe final transport fallback.
   const [playerEngine, setPlayerEngine] = useState<'hls' | 'iframe'>('hls');
   const [activeServerType, setActiveServerType] = useState<ServerType>('vietsub');
-  const [currentTypeServer, setCurrentTypeServer] = useState(0);
   const [vidsrcManuallySelected, setVidsrcManuallySelected] = useState(false);
   const [userManuallySelectedServer, setUserManuallySelectedServer] = useState(false);
 
   // Fallback state
   const [isFallbacking, setIsFallbacking] = useState(false);
   const [fallbackMessage, setFallbackMessage] = useState('');
+  const [pendingFallbackReason, setPendingFallbackReason] = useState<string | null>(null);
   const fallbackAttemptRef = useRef(0);
   const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const iframeLoadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1230,22 +1231,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   const [showReportModal, setShowReportModal] = useState(false);
   const [showServerHealthModal, setShowServerHealthModal] = useState(false);
   const [showShortcutsGuide, setShowShortcutsGuide] = useState(false);
-  const [showServerDropdown, setShowServerDropdown] = useState(false);
-  const serverDropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (serverDropdownRef.current && !serverDropdownRef.current.contains(event.target as Node)) {
-        setShowServerDropdown(false);
-      }
-    }
-    if (showServerDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showServerDropdown]);
 
   useEffect(() => {
     if (!secondaryDataReady) return;
@@ -1614,7 +1599,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     }
   };
 
-  const { data: sourceLookupData } = useQuery({
+  const { data: sourceLookupData, isFetching: isSourceLookupFetching } = useQuery({
     queryKey: ['watch-source-lookup', lookupTitle, film?.year],
     queryFn: () => movieApi.searchSourceAlternatives(lookupTitle, 1, 30).then((r) => r.data),
     enabled:
@@ -1661,7 +1646,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   const nguoncSlug = sourceSlugFor('nguonc');
   const vsmovSlug = sourceSlugFor('vsmov');
 
-  const { data: kkphimFetchedData } = useQuery({
+  const { data: kkphimFetchedData, isFetching: isKKPhimFetching } = useQuery({
     queryKey: ['film-kkphim', kkphimSlug],
     queryFn: () => movieApi.getDetailFromSource('kkphim', kkphimSlug).then((r) => r.data),
     enabled:
@@ -1673,7 +1658,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     refetchOnWindowFocus: false,
     retry: 1,
   });
-  const { data: ophimFetchedData } = useQuery({
+  const { data: ophimFetchedData, isFetching: isOPhimFetching } = useQuery({
     queryKey: ['film-ophim', ophimSlug],
     queryFn: () => movieApi.getDetailFromSource('ophim', ophimSlug).then((r) => r.data),
     enabled:
@@ -1685,7 +1670,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     refetchOnWindowFocus: false,
     retry: 1,
   });
-  const { data: nguoncFetchedData } = useQuery({
+  const { data: nguoncFetchedData, isFetching: isNguonCFetching } = useQuery({
     queryKey: ['film-nguonc', nguoncSlug],
     queryFn: () => movieApi.getDetailFromSource('nguonc', nguoncSlug).then((r) => r.data),
     enabled:
@@ -1697,7 +1682,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     refetchOnWindowFocus: false,
     retry: 1,
   });
-  const { data: vsmovFetchedData } = useQuery({
+  const { data: vsmovFetchedData, isFetching: isVSMovFetching } = useQuery({
     queryKey: ['film-vsmov', vsmovSlug],
     queryFn: () => movieApi.getDetailFromSource('vsmov', vsmovSlug).then((r) => r.data),
     enabled:
@@ -1718,6 +1703,13 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     bootstrapProviders.nguonc || (primarySource === 'nguonc' ? data : nguoncFetchedData);
   const vsmovData =
     bootstrapProviders.vsmov || (primarySource === 'vsmov' ? data : vsmovFetchedData);
+  const alternateSourcesLoading =
+    !secondaryDataReady ||
+    isSourceLookupFetching ||
+    isKKPhimFetching ||
+    isOPhimFetching ||
+    isNguonCFetching ||
+    isVSMovFetching;
   const tmdbId = film?.tmdb?.id || film?.tmdb_id || data?.movie?.tmdb?.id;
   const tmdbMediaType =
     film?.tmdb?.type === 'tv' ||
@@ -2156,7 +2148,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
           server_name: `Server ${i + 1} (${sourceAbbr})`,
           server_data: serverData,
           _source: sourceKey,
-          _type: detectServerType(originalName, s.lang || s.language || s.audio || ''),
+          _type: resolveServerType(sourceKey, originalName, s.lang || s.language || s.audio || ''),
           key: `${sourceKey}:${originalName || i}`,
           priority: sourcePriority(sourceKey, serverData, currentEp),
         };
@@ -2256,7 +2248,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     }
   }, [activeServerType, automaticTypes, vidsrcManuallySelected]);
 
-  const currentTypeServers = serversByType[activeServerType] || [];
   const server = episodes[currentServer] || episodes[0];
   const sourceCandidate = useMemo(
     () => ({
@@ -2280,7 +2271,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   // Third-party players may execute scripts and use their own storage, but
   // must not navigate the NetPhim tab, spawn popunders or trigger downloads.
   const iframeSandbox =
-    "allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock";
+    'allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock';
   const videoUrl = m3u8Url || embedUrl || iframeUrl;
 
   const currentEpIndex = serverData.findIndex(
@@ -2607,23 +2598,31 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       );
 
       const targetEpisode = currentEpData?.slug || currentEpData?.name || currentEp;
-      const usable = episodes.filter((ep) => {
+      const candidates = episodes.filter((ep) => {
         const matchingEpisode = findMatchingEpisode(ep.server_data, targetEpisode);
         return (
           isAutomaticPlaybackSource(ep._source) &&
-          ep._type === activeServerType &&
           Boolean(matchingEpisode) &&
           isPlayableEpisode(matchingEpisode) &&
           !upd.includes(episodes.indexOf(ep))
         );
       });
-      // Fallback is intentionally locked to the selected audio/subtitle tab.
-      // Provider priority, transport quality and learned health decide order.
+      // Preserve the selected audio/subtitle when possible. If every matching
+      // source is dead, prefer a playable alternative over an endless spinner.
+      const sameType = candidates.filter((ep) => ep._type === activeServerType);
+      const usable = sameType.length > 0 ? sameType : candidates;
       const ranked = rankHealthyCandidates(usable);
       const nextEp = ranked[0];
 
       if (!nextEp) {
         fallbackInProgressRef.current = false;
+        if (alternateSourcesLoading) {
+          setPendingFallbackReason(reason);
+          setIsFallbacking(true);
+          setFallbackMessage('Đang tìm máy chủ dự phòng...');
+          return;
+        }
+        setPendingFallbackReason(null);
         setIsFallbacking(false);
         setFallbackMessage('');
         toast(
@@ -2634,6 +2633,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       }
 
       const nextIdx = episodes.indexOf(nextEp);
+      setPendingFallbackReason(null);
       setFallbackMessage(`Thử server ${nextEp.server_name}...`);
 
       // Delay nhỏ để UX mượt, không flash. Keep its handle so leaving the
@@ -2642,7 +2642,11 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       fallbackTimerRef.current = setTimeout(() => {
         fallbackTimerRef.current = null;
         setCurrentServer(nextIdx);
-        setCurrentTypeServer(nextIdx);
+        const nextType = nextEp._type as ServerType;
+        if (nextType !== activeServerType) {
+          preserveServerOnTypeChangeRef.current = true;
+          setActiveServerType(nextType);
+        }
         setVidsrcManuallySelected(false);
         const nextEpisodeData = findMatchingEpisode(nextEp.server_data, targetEpisode);
         setPlayerEngine(nextEpisodeData?.link_m3u8 ? 'hls' : 'iframe');
@@ -2665,6 +2669,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       failedServers,
       episodes,
       activeServerType,
+      alternateSourcesLoading,
       currentEp,
       currentEpData,
       server,
@@ -2672,6 +2677,26 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       toast,
     ],
   );
+
+  useEffect(() => {
+    if (!pendingFallbackReason || alternateSourcesLoading) return;
+    // Provider discovery has settled. Retry against the newly available
+    // mirrors rather than leaving the KKPhim poster spinning indefinitely.
+    fallbackInProgressRef.current = false;
+    tryNextServer(pendingFallbackReason);
+  }, [alternateSourcesLoading, episodes, pendingFallbackReason, tryNextServer]);
+
+  useEffect(() => {
+    if (!pendingFallbackReason) return;
+    const timer = window.setTimeout(() => {
+      setPendingFallbackReason(null);
+      fallbackInProgressRef.current = false;
+      setIsFallbacking(false);
+      setFallbackMessage('');
+      toast('Nguồn phim hiện chưa có máy chủ phát khả dụng.', 'error');
+    }, 8_000);
+    return () => window.clearTimeout(timer);
+  }, [pendingFallbackReason, toast]);
 
   const clearIframeLoadTimeout = useCallback(() => {
     if (iframeLoadTimerRef.current) {
@@ -2730,6 +2755,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     setFailedServers([]);
     setIsFallbacking(false);
     setFallbackMessage('');
+    setPendingFallbackReason(null);
     playerLoadStartedAtRef.current = Date.now();
     fallbackAttemptRef.current = 0;
     fallbackInProgressRef.current = false;
@@ -2766,7 +2792,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       preserveServerOnTypeChangeRef.current = false;
       return;
     }
-    setCurrentTypeServer(0);
     const first = serversByType[activeServerType]?.[0];
     if (first) {
       const gIdx = episodes.indexOf(first);
@@ -2826,7 +2851,8 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       description: watchSeoDescription,
       thumbnailUrl: posterUrl || tmdbBackdropUrl,
       uploadDate: film?.year ? `${film.year}-01-01` : '2024-01-01',
-      embedUrl: iframeUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://netphim.app'}/watch/${slug}`,
+      embedUrl:
+        iframeUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://netphim.app'}/watch/${slug}`,
       inLanguage: 'vi',
     },
   ];
@@ -2886,42 +2912,99 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
               lightOff ? 'relative z-50 ring-1 ring-white/20 shadow-2xl' : '',
             )}
           >
-              {/* Fallback overlay */}
-              {isFallbacking && (
-                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm gap-3">
-                  <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                  <p className="text-white/70 text-sm font-medium">
-                    {fallbackMessage || 'Đang chuyển server...'}
-                  </p>
-                  {fallbackAttemptRef.current > 0 && (
-                    <p className="text-white/30 text-xs">
-                      Lần thử {fallbackAttemptRef.current + 1}
-                    </p>
-                  )}
-                </div>
-              )}
+            {/* Fallback overlay */}
+            {isFallbacking && (
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm gap-3">
+                <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                <p className="text-white/70 text-sm font-medium">
+                  {fallbackMessage || 'Đang chuyển server...'}
+                </p>
+                {fallbackAttemptRef.current > 0 && (
+                  <p className="text-white/30 text-xs">Lần thử {fallbackAttemptRef.current + 1}</p>
+                )}
+              </div>
+            )}
 
-              {videoUrl ? (
-                <>
-                  {!DISABLE_ARTPLAYER && playerEngine === 'hls' && m3u8Url ? (
-                    <HlsVideoPlayer
-                      key={`hls:${server?._source || 'unknown'}:${currentServer}:${currentEpData?.slug || currentEpData?.name || ''}`}
-                      src={m3u8Url}
-                      proxySrc={m3u8ProxyUrl}
-                      poster={posterUrl}
-                      title={film?.name || film?.title || ''}
-                      subtitle={currentEpData?.name ? `Tập ${currentEpData.name}` : ''}
-                      initialTime={lastKnownPlaybackTimeRef.current || resumeAt}
-                      autoPlay={autoPlayConfig}
-                      autoSkipIntro={skipIntroConfig}
-                      autoSkipAds={useSettingsStore.getState().autoSkipAds ?? true}
-                      onReady={(player) => {
-                        setArtInstance(player);
+            {videoUrl ? (
+              <>
+                {!DISABLE_ARTPLAYER && playerEngine === 'hls' && m3u8Url ? (
+                  <HlsVideoPlayer
+                    key={`hls:${server?._source || 'unknown'}:${currentServer}:${currentEpData?.slug || currentEpData?.name || ''}`}
+                    src={m3u8Url}
+                    proxySrc={m3u8ProxyUrl}
+                    poster={posterUrl}
+                    title={film?.name || film?.title || ''}
+                    subtitle={currentEpData?.name ? `Tập ${currentEpData.name}` : ''}
+                    initialTime={lastKnownPlaybackTimeRef.current || resumeAt}
+                    autoPlay={autoPlayConfig}
+                    autoSkipIntro={skipIntroConfig}
+                    autoSkipAds={useSettingsStore.getState().autoSkipAds ?? true}
+                    onReady={(player) => {
+                      setArtInstance(player);
+                      setPlayerReadySlug(slug);
+                      setIsFallbacking(false);
+                      setFallbackMessage('');
+                    }}
+                    onPlaying={() => {
+                      const sourceKey = `${sourceCandidate.source || 'unknown'}:${sourceCandidate.serverName || 'unknown'}`;
+                      if (!playedSourceKeysRef.current.has(sourceKey)) {
+                        playedSourceKeysRef.current.add(sourceKey);
+                        markSourceSuccess(sourceCandidate);
+                        recordTelemetry('watch_now.success', {
+                          source: sourceCandidate.source || 'unknown',
+                          server: sourceCandidate.serverName || 'unknown',
+                          episode: currentEpData?.slug || currentEpData?.name || 'unknown',
+                          start_time_ms: Date.now() - playerLoadStartedAtRef.current,
+                          engine: 'hls',
+                        });
+                        if (!recordedViewRef.current) {
+                          recordedViewRef.current = true;
+                          void viewApi
+                            .record(slug, {
+                              title: film?.name || slug,
+                              originName: film?.origin_name,
+                              posterUrl,
+                              year: Number(film?.year) || undefined,
+                              type: film?.type,
+                              episode: currentEpData?.slug || currentEpData?.name,
+                              serverName: sourceCandidate.serverName,
+                              provider: sourceCandidate.source,
+                            })
+                            .catch(() => {
+                              recordedViewRef.current = false;
+                            });
+                        }
+                      }
+                    }}
+                    onBuffering={(bufferMs) => {
+                      recordTelemetry('player.buffering', {
+                        source: sourceCandidate.source || 'unknown',
+                        server: sourceCandidate.serverName || 'unknown',
+                        episode: currentEpData?.slug || currentEpData?.name || 'unknown',
+                        buffer_ms: bufferMs,
+                        engine: 'hls',
+                      });
+                    }}
+                    onProgress={handlePlaybackProgress}
+                    onEnded={handleVideoEnded}
+                    onError={(error) => handlePlayerFailure(error.type)}
+                  />
+                ) : iframeUrl ? (
+                  <div className="relative w-full h-full">
+                    <iframe
+                      key={`iframe:${server?._source || 'unknown'}:${currentServer}:${currentEpData?.slug || currentEpData?.name || ''}`}
+                      src={iframeUrl}
+                      className="w-full h-full border-0"
+                      allowFullScreen
+                      allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer"
+                      referrerPolicy="no-referrer"
+                      sandbox={iframeSandbox}
+                      title={`${film?.name} - ${currentEpData?.name}`}
+                      onLoad={() => {
+                        clearIframeLoadTimeout();
                         setPlayerReadySlug(slug);
                         setIsFallbacking(false);
                         setFallbackMessage('');
-                      }}
-                      onPlaying={() => {
                         const sourceKey = `${sourceCandidate.source || 'unknown'}:${sourceCandidate.serverName || 'unknown'}`;
                         if (!playedSourceKeysRef.current.has(sourceKey)) {
                           playedSourceKeysRef.current.add(sourceKey);
@@ -2931,7 +3014,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                             server: sourceCandidate.serverName || 'unknown',
                             episode: currentEpData?.slug || currentEpData?.name || 'unknown',
                             start_time_ms: Date.now() - playerLoadStartedAtRef.current,
-                            engine: 'hls',
+                            engine: 'iframe',
                           });
                           if (!recordedViewRef.current) {
                             recordedViewRef.current = true;
@@ -2951,110 +3034,53 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                               });
                           }
                         }
-                      }}
-                      onBuffering={(bufferMs) => {
-                        recordTelemetry('player.buffering', {
+                        recordTelemetry('player.iframe_loaded', {
                           source: sourceCandidate.source || 'unknown',
                           server: sourceCandidate.serverName || 'unknown',
                           episode: currentEpData?.slug || currentEpData?.name || 'unknown',
-                          buffer_ms: bufferMs,
-                          engine: 'hls',
                         });
                       }}
-                      onProgress={handlePlaybackProgress}
-                      onEnded={handleVideoEnded}
-                      onError={(error) => handlePlayerFailure(error.type)}
+                      onError={() => {
+                        if (!userManuallySelectedServer) {
+                          handlePlayerFailure('iframe-error');
+                        }
+                      }}
                     />
-                  ) : iframeUrl ? (
-                    <div className="relative w-full h-full">
-                      <iframe
-                        key={`iframe:${server?._source || 'unknown'}:${currentServer}:${currentEpData?.slug || currentEpData?.name || ''}`}
-                        src={iframeUrl}
-                        className="w-full h-full border-0"
-                        allowFullScreen
-                        allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer"
-                        referrerPolicy="no-referrer"
-                        sandbox={iframeSandbox}
-                        title={`${film?.name} - ${currentEpData?.name}`}
-                        onLoad={() => {
-                          clearIframeLoadTimeout();
-                          setPlayerReadySlug(slug);
-                          setIsFallbacking(false);
-                          setFallbackMessage('');
-                          const sourceKey = `${sourceCandidate.source || 'unknown'}:${sourceCandidate.serverName || 'unknown'}`;
-                          if (!playedSourceKeysRef.current.has(sourceKey)) {
-                            playedSourceKeysRef.current.add(sourceKey);
-                            markSourceSuccess(sourceCandidate);
-                            recordTelemetry('watch_now.success', {
-                              source: sourceCandidate.source || 'unknown',
-                              server: sourceCandidate.serverName || 'unknown',
-                              episode: currentEpData?.slug || currentEpData?.name || 'unknown',
-                              start_time_ms: Date.now() - playerLoadStartedAtRef.current,
-                              engine: 'iframe',
-                            });
-                            if (!recordedViewRef.current) {
-                              recordedViewRef.current = true;
-                              void viewApi
-                                .record(slug, {
-                                  title: film?.name || slug,
-                                  originName: film?.origin_name,
-                                  posterUrl,
-                                  year: Number(film?.year) || undefined,
-                                  type: film?.type,
-                                  episode: currentEpData?.slug || currentEpData?.name,
-                                  serverName: sourceCandidate.serverName,
-                                  provider: sourceCandidate.source,
-                                })
-                                .catch(() => {
-                                  recordedViewRef.current = false;
-                                });
-                            }
-                          }
-                          recordTelemetry('player.iframe_loaded', {
-                            source: sourceCandidate.source || 'unknown',
-                            server: sourceCandidate.serverName || 'unknown',
-                            episode: currentEpData?.slug || currentEpData?.name || 'unknown',
-                          });
-                        }}
-                        onError={() => {
-                          if (!userManuallySelectedServer) {
-                            handlePlayerFailure('iframe-error');
-                          }
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center w-full h-full text-white/30">
-                      <AlertTriangle size={28} className="mb-2" />
-                      <p className="text-xs">Không có nguồn video</p>
-                    </div>
-                  )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center w-full h-full text-white/30">
+                    <AlertTriangle size={28} className="mb-2" />
+                    <p className="text-xs">Không có nguồn video</p>
+                  </div>
+                )}
 
-                  {autoNextCountdown !== null && (
-                    <AutoNextOverlay
-                      seconds={autoNextCountdown}
-                      onSkip={goNextEpisode}
-                      onCancel={() => setAutoNextCountdown(null)}
-                    />
-                  )}
-                </>
-              ) : (
-                <div className="flex flex-col items-center justify-center w-full h-full text-white/20">
-                  <Clapperboard size={36} className="mb-2" />
-                  <p className="text-xs">Không tìm thấy nguồn phim</p>
-                </div>
-              )}
-            </div>
+                {autoNextCountdown !== null && (
+                  <AutoNextOverlay
+                    seconds={autoNextCountdown}
+                    onSkip={goNextEpisode}
+                    onCancel={() => setAutoNextCountdown(null)}
+                  />
+                )}
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center w-full h-full text-white/20">
+                <Clapperboard size={36} className="mb-2" />
+                <p className="text-xs">Không tìm thấy nguồn phim</p>
+              </div>
+            )}
+          </div>
 
-            {/* ── 2. UNDER-PLAYER CONTENT (Breadcrumb bar, Title, Episodes, Cast, Comments) ── */}
-            <div
-              className={cn(
-                'space-y-4 min-w-0',
-                theaterMode ? 'col-span-1 xl:col-start-1 xl:row-start-2' : 'xl:col-start-1 xl:row-start-2',
-              )}
-            >
-              {/* ── BREADCRUMB & QUICK CONTROLS BAR — Positioned Below Video ── */}
-              <div className="flex items-center justify-between gap-2 py-2 px-3.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-white/60 select-none">
+          {/* ── 2. UNDER-PLAYER CONTENT (Breadcrumb bar, Title, Episodes, Cast, Comments) ── */}
+          <div
+            className={cn(
+              'space-y-4 min-w-0',
+              theaterMode
+                ? 'col-span-1 xl:col-start-1 xl:row-start-2'
+                : 'xl:col-start-1 xl:row-start-2',
+            )}
+          >
+            {/* ── BREADCRUMB & QUICK CONTROLS BAR — Positioned Below Video ── */}
+            <div className="flex items-center justify-between gap-2 py-2 px-3.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-white/60 select-none">
               <div className="flex items-center gap-2 min-w-0">
                 {watchPartyEnabled && (
                   <button
@@ -3484,6 +3510,12 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   const dubEps = episodes.filter((ep) => ep._type === 'thuyet-minh');
                   const engsubEps = episodes.filter((ep) => ep._type === 'engsub');
                   const rawEps = episodes.filter((ep) => ep._type === 'raw');
+                  const sourceSummary = (items: SourceServer[], fallback: string) => {
+                    const labels = Array.from(
+                      new Set(items.map((item) => getSourceLabel(item._source))),
+                    );
+                    return labels.length > 0 ? labels.join(' · ') : fallback;
+                  };
                   const activeGroup =
                     activeServerType === 'song-ngu'
                       ? songNguEps
@@ -3500,6 +3532,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       id: 'vietsub',
                       label: 'Vietsub',
                       icon: MessageSquare,
+                      sources: sourceSummary(subEps, 'KKPhim · NguonC · VSMov'),
                       count: subEps.length,
                       eps: subEps,
                     },
@@ -3509,6 +3542,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                             id: 'song-ngu',
                             label: 'Song Ngữ',
                             icon: Tv,
+                            sources: sourceSummary(songNguEps, 'ViCDN'),
                             count: songNguEps.length,
                             eps: songNguEps,
                           },
@@ -3518,6 +3552,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       id: 'thuyet-minh',
                       label: 'Thuyết Minh',
                       icon: Mic,
+                      sources: sourceSummary(dubEps, 'KKPhim · NguonC · VSMov'),
                       count: dubEps.length,
                       eps: dubEps,
                     },
@@ -3527,6 +3562,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                             id: 'engsub',
                             label: 'Engsub',
                             icon: Globe,
+                            sources: sourceSummary(engsubEps, 'VidSrc'),
                             count: engsubEps.length,
                             eps: engsubEps,
                           },
@@ -3538,6 +3574,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                             id: 'raw',
                             label: 'Bản Gốc',
                             icon: Film,
+                            sources: sourceSummary(rawEps, 'Nguồn nguyên bản'),
                             count: rawEps.length,
                             eps: rawEps,
                           },
@@ -3547,11 +3584,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
                   return (
                     <div className="space-y-3">
-                      {/* Row 1: Language Segmented Capsule & Quick Tools */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-white/[0.08]">
-                        {/* Audio / Subtitle format pills */}
+                      {/* Language groups and their dedicated providers */}
+                      <div className="space-y-3 pb-3 border-b border-white/[0.08]">
                         <div
-                          className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 -mx-1 px-1 sm:mx-0 sm:px-0"
+                          className="grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-5"
                           role="tablist"
                         >
                           {subOptions.map((opt) => {
@@ -3596,26 +3632,38 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                   }
                                 }}
                                 className={cn(
-                                  'relative inline-flex items-center gap-1.5 rounded-full px-3.5 sm:px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none shrink-0 whitespace-nowrap',
+                                  'group relative flex min-w-0 items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors cursor-pointer select-none',
                                   isActive
-                                    ? 'bg-[#24262c] text-white font-bold shadow-sm'
+                                    ? 'border-purple-400/60 bg-purple-500/15 text-white shadow-[inset_3px_0_0_#a855f7]'
                                     : hasItems
-                                      ? 'text-neutral-400 hover:text-white hover:bg-[#1a1c22]'
-                                      : 'cursor-not-allowed text-neutral-600 opacity-40',
+                                      ? 'border-white/[0.08] bg-white/[0.025] text-neutral-300 hover:border-purple-400/30 hover:bg-white/[0.05] hover:text-white'
+                                      : 'cursor-not-allowed border-white/[0.05] bg-transparent text-neutral-600 opacity-45',
                                 )}
                               >
-                                <IconComponent
-                                  size={13}
-                                  className={isActive ? 'text-white' : 'text-neutral-400'}
-                                />
-                                <span>{opt.label}</span>
+                                <span
+                                  className={cn(
+                                    'grid h-7 w-7 shrink-0 place-items-center rounded-lg border',
+                                    isActive
+                                      ? 'border-purple-400/40 bg-purple-400/15 text-purple-200'
+                                      : 'border-white/[0.08] bg-black/20 text-neutral-500',
+                                  )}
+                                >
+                                  <IconComponent size={14} />
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="block truncate text-xs font-bold">
+                                    {opt.label}
+                                  </span>
+                                  <span className="mt-0.5 block truncate text-[10px] font-medium text-neutral-500">
+                                    {opt.sources}
+                                  </span>
+                                </span>
                               </button>
                             );
                           })}
                         </div>
 
-                        {/* Right Controls: Sort + Thumbnail toggle + Search */}
-                        <div className="flex items-center gap-1.5 sm:gap-2 self-end sm:self-auto shrink-0">
+                        <div className="flex items-center justify-end gap-1.5 sm:gap-2">
                           <button
                             type="button"
                             onClick={() => {
@@ -3668,182 +3716,117 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                         </div>
                       </div>
 
-                      {/* Row 2: Dedicated Server Dropdown Box Selector (Giống hệt hình mẫu người dùng) */}
-                      {episodes.length > 0 &&
-                        (() => {
-                          const activeEp = episodes[currentServer];
-                          const activeSourceAbbr = getSourceAbbr(activeEp?._source || '');
-                          const activeTypeLabel =
-                            activeEp?._type === 'song-ngu'
-                              ? 'Song Ngữ'
-                              : activeEp?._type === 'thuyet-minh'
-                                ? 'Thuyết Minh'
-                                : activeEp?._type === 'engsub'
-                                  ? 'Engsub'
-                                  : activeEp?._type === 'raw'
-                                    ? 'Bản Gốc'
-                                    : 'Vietsub';
-                          const activeServerName =
-                            activeEp?.server_name || `${activeTypeLabel} (${activeSourceAbbr})`;
+                      {activeGroup.length > 0 && (
+                        <div className="space-y-2.5 pb-3 border-b border-white/[0.08]">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <div className="flex items-center gap-2 text-xs font-bold text-neutral-200">
+                                <Server size={13} className="text-purple-300" />
+                                Máy chủ phát
+                              </div>
+                              <p className="mt-0.5 text-[10px] text-neutral-500">
+                                Chỉ hiển thị nguồn phù hợp với phiên bản đang chọn
+                              </p>
+                            </div>
+                            {isAdmin && (
+                              <button
+                                type="button"
+                                onClick={() => setShowServerHealthModal(true)}
+                                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.035] px-2.5 py-1.5 text-[10px] font-semibold text-neutral-400 transition-colors hover:border-purple-400/30 hover:text-white"
+                              >
+                                <Activity size={12} />
+                                Kiểm tra nguồn
+                              </button>
+                            )}
+                          </div>
 
-                          return (
-                            <div className="flex items-center justify-between gap-3 pb-3 border-b border-white/[0.08] relative">
-                              {/* Left: Chọn Server Label + Custom Dropdown Selector Box */}
-                              <div className="flex items-center gap-2.5 sm:gap-3">
-                                <span className="text-xs sm:text-sm font-semibold text-neutral-300 select-none shrink-0">
-                                  Chọn Server:
-                                </span>
+                          <div
+                            className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap"
+                            role="radiogroup"
+                            aria-label="Máy chủ phát"
+                          >
+                            {activeGroup.map((ep, groupIndex) => {
+                              const idx = episodes.indexOf(ep);
+                              const isActive = idx === currentServer;
+                              const hasFailed = failedServers.includes(idx);
+                              const sourceLabel = getSourceLabel(ep._source);
+                              const sourceServerNumber = activeGroup
+                                .slice(0, groupIndex + 1)
+                                .filter((candidate) => candidate._source === ep._source).length;
+                              const hasMultipleServers =
+                                activeGroup.filter((candidate) => candidate._source === ep._source)
+                                  .length > 1;
 
-                                {/* Dropdown Container */}
-                                <div className="relative" ref={serverDropdownRef}>
-                                  <button
-                                    type="button"
-                                    onClick={() => setShowServerDropdown((prev) => !prev)}
+                              return (
+                                <button
+                                  key={ep.key || `${ep._source}-${groupIndex}`}
+                                  type="button"
+                                  role="radio"
+                                  aria-checked={isActive}
+                                  disabled={hasFailed}
+                                  onClick={() => {
+                                    setUserManuallySelectedServer(true);
+                                    setVidsrcManuallySelected(ep._source === 'vidsrc');
+                                    setCurrentServer(idx);
+                                    const matchedEpisode = findMatchingEpisode(
+                                      ep.server_data,
+                                      currentEpData?.slug || currentEpData?.name || currentEp,
+                                    );
+                                    const matchedEpisodeId =
+                                      matchedEpisode?.slug || matchedEpisode?.name;
+                                    setPlayerEngine(matchedEpisode?.link_m3u8 ? 'hls' : 'iframe');
+                                    if (matchedEpisodeId) {
+                                      router.replace(watchUrlForEpisode(matchedEpisodeId, idx));
+                                    }
+                                  }}
+                                  className={cn(
+                                    'flex min-w-0 items-center gap-2 rounded-xl border px-3 py-2 text-left transition-colors sm:min-w-[138px]',
+                                    isActive
+                                      ? 'border-purple-400/60 bg-purple-500/15 text-white'
+                                      : 'border-white/[0.08] bg-white/[0.025] text-neutral-300 hover:border-purple-400/30 hover:bg-white/[0.05]',
+                                    hasFailed &&
+                                      'cursor-not-allowed border-red-500/10 opacity-35 grayscale',
+                                  )}
+                                >
+                                  <span
                                     className={cn(
-                                      'inline-flex items-center justify-between gap-3 rounded-xl px-3.5 py-1.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none border min-w-[140px] sm:min-w-[170px]',
-                                      showServerDropdown
-                                        ? 'bg-[#222530] border-white/25 text-white shadow-lg shadow-black/40 ring-1 ring-white/20'
-                                        : 'bg-[#181a22] border-white/10 hover:border-white/20 text-white hover:bg-[#20222b] shadow-sm',
+                                      'grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[9px] font-black',
+                                      isActive
+                                        ? 'bg-purple-400 text-[#12091f]'
+                                        : 'bg-white/[0.06] text-neutral-400',
                                     )}
                                   >
-                                    <span className="truncate">{activeServerName}</span>
-                                    <ChevronDown
-                                      size={14}
-                                      className={cn(
-                                        'text-white/60 transition-transform duration-200 shrink-0',
-                                        showServerDropdown && 'rotate-180',
-                                      )}
+                                    {getSourceAbbr(ep._source)}
+                                  </span>
+                                  <span className="min-w-0">
+                                    <span className="block truncate text-xs font-bold">
+                                      {sourceLabel}
+                                      {hasMultipleServers ? ` ${sourceServerNumber}` : ''}
+                                    </span>
+                                    <span className="mt-0.5 block truncate text-[9px] font-medium uppercase tracking-wide text-neutral-500">
+                                      {ep._type === 'song-ngu'
+                                        ? 'Song ngữ'
+                                        : ep._type === 'engsub'
+                                          ? 'English subtitle'
+                                          : ep._type === 'thuyet-minh'
+                                            ? 'Thuyết minh'
+                                            : ep._type === 'raw'
+                                              ? 'Bản gốc'
+                                              : 'Phụ đề Việt'}
+                                    </span>
+                                  </span>
+                                  {isActive && (
+                                    <CheckCircle2
+                                      size={13}
+                                      className="ml-auto shrink-0 text-purple-300"
                                     />
-                                  </button>
-
-                                  {/* Dropdown Menu Box */}
-                                  {showServerDropdown && (
-                                    <div className="absolute top-full left-0 mt-2 z-[100] w-64 sm:w-72 bg-[#12141c]/95 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150">
-                                      <div className="max-h-60 overflow-y-auto no-scrollbar space-y-1 p-0.5">
-                                        {episodes.map((ep, idx) => {
-                                          const isActive = idx === currentServer;
-                                          const hasFailed = failedServers.includes(idx);
-                                          const sourceAbbr = getSourceAbbr(ep._source || '');
-                                          const totalEps = Array.isArray(ep.server_data)
-                                            ? ep.server_data.length
-                                            : 0;
-                                          const typeLabel =
-                                            ep._type === 'song-ngu'
-                                              ? 'Song Ngữ'
-                                              : ep._type === 'thuyet-minh'
-                                                ? 'Thuyết Minh'
-                                                : ep._type === 'engsub'
-                                                  ? 'Engsub'
-                                                  : ep._type === 'raw'
-                                                    ? 'Bản Gốc'
-                                                    : 'Vietsub';
-                                          const displayName =
-                                            ep.server_name || `${typeLabel} (${sourceAbbr})`;
-
-                                          return (
-                                            <button
-                                              key={idx}
-                                              type="button"
-                                              disabled={hasFailed}
-                                              onClick={() => {
-                                                setUserManuallySelectedServer(true);
-                                                setVidsrcManuallySelected(ep._source === 'vidsrc');
-                                                setCurrentServer(idx);
-                                                setCurrentTypeServer(idx);
-                                                if (ep._type) {
-                                                  setActiveServerType(ep._type as ServerType);
-                                                }
-                                                const matchedEpisode = findMatchingEpisode(
-                                                  ep.server_data,
-                                                  currentEpData?.slug ||
-                                                    currentEpData?.name ||
-                                                    currentEp,
-                                                );
-                                                const matchedEpisodeId =
-                                                  matchedEpisode?.slug || matchedEpisode?.name;
-                                                setPlayerEngine(
-                                                  matchedEpisode?.link_m3u8 ? 'hls' : 'iframe',
-                                                );
-                                                if (matchedEpisodeId) {
-                                                  router.replace(
-                                                    watchUrlForEpisode(matchedEpisodeId, idx),
-                                                  );
-                                                }
-                                                setShowServerDropdown(false);
-                                              }}
-                                              className={cn(
-                                                'w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-left',
-                                                isActive
-                                                  ? 'bg-white/10 text-white font-bold border border-white/15 shadow-sm'
-                                                  : 'text-neutral-300 hover:text-white hover:bg-white/[0.06]',
-                                                hasFailed &&
-                                                  'opacity-30 cursor-not-allowed line-through',
-                                              )}
-                                            >
-                                              <div className="flex items-center gap-2 min-w-0">
-                                                <span className="truncate">{displayName}</span>
-                                                {totalEps > 0 && (
-                                                  <span className="text-[10px] text-neutral-400 shrink-0">
-                                                    ({totalEps} tập)
-                                                  </span>
-                                                )}
-                                              </div>
-                                              {isActive && (
-                                                <CheckCircle2
-                                                  size={15}
-                                                  className="text-white shrink-0 ml-2"
-                                                />
-                                              )}
-                                            </button>
-                                          );
-                                        })}
-                                      </div>
-
-                                      {/* Quick Speed Test trigger inside dropdown (Admin Only) */}
-                                      {isAdmin && (
-                                        <div className="pt-1 border-t border-white/[0.08]">
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              setShowServerDropdown(false);
-                                              setShowServerHealthModal(true);
-                                            }}
-                                            className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-[11px] font-semibold text-neutral-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-all cursor-pointer"
-                                          >
-                                            <span className="flex items-center gap-1.5">
-                                              <Activity size={13} className="text-neutral-400" />
-                                              <span>Kiểm tra tốc độ & sức khỏe nguồn</span>
-                                            </span>
-                                            <span className="text-[10px] text-neutral-400 font-mono">
-                                              {episodes.length} nguồn
-                                            </span>
-                                          </button>
-                                        </div>
-                                      )}
-                                    </div>
                                   )}
-                                </div>
-                              </div>
-
-                              {/* Right: Interactive Speed & Health Button (Admin Only) */}
-                              {isAdmin && (
-                                <button
-                                  type="button"
-                                  onClick={() => setShowServerHealthModal(true)}
-                                  className="inline-flex items-center gap-2 rounded-xl bg-[#181a22] hover:bg-[#20222b] border border-white/10 hover:border-white/20 px-3.5 py-1.5 text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer shadow-sm active:scale-95 select-none shrink-0"
-                                >
-                                  <Activity size={13} className="text-neutral-400" />
-                                  <span className="hidden sm:inline font-medium text-white/90">
-                                    Kiểm tra tốc độ
-                                  </span>
-                                  <span className="rounded-full bg-white/10 text-neutral-300 border border-white/10 px-1.5 py-0.2 text-[10px] font-bold">
-                                    {episodes.length} nguồn
-                                  </span>
                                 </button>
-                              )}
-                            </div>
-                          );
-                        })()}
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
@@ -4317,7 +4300,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       : 'bg-white/[0.03] hover:bg-white/[0.07] text-neutral-400 hover:text-neutral-200 border-white/[0.06]',
                   )}
                 >
-                  <Maximize2 size={12} className={theaterMode ? 'text-purple-400' : 'text-neutral-400'} />
+                  <Maximize2
+                    size={12}
+                    className={theaterMode ? 'text-purple-400' : 'text-neutral-400'}
+                  />
                   <span className="truncate">Rạp phim</span>
                 </button>
 
@@ -4340,7 +4326,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       : 'bg-white/[0.03] hover:bg-white/[0.07] text-neutral-400 hover:text-neutral-200 border-white/[0.06]',
                   )}
                 >
-                  <SkipForward size={12} className={autoNextConfig ? 'text-purple-400' : 'text-neutral-400'} />
+                  <SkipForward
+                    size={12}
+                    className={autoNextConfig ? 'text-purple-400' : 'text-neutral-400'}
+                  />
                   <span className="truncate">Tự chuyển</span>
                 </button>
 
@@ -4363,7 +4352,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       : 'bg-white/[0.03] hover:bg-white/[0.07] text-neutral-400 hover:text-neutral-200 border-white/[0.06]',
                   )}
                 >
-                  <FastForward size={12} className={skipIntroConfig ? 'text-purple-400' : 'text-neutral-400'} />
+                  <FastForward
+                    size={12}
+                    className={skipIntroConfig ? 'text-purple-400' : 'text-neutral-400'}
+                  />
                   <span className="truncate">Bỏ intro</span>
                 </button>
               </div>
@@ -4424,7 +4416,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
           setUserManuallySelectedServer(true);
           setVidsrcManuallySelected(episodes[idx]?._source === 'vidsrc');
           setCurrentServer(idx);
-          setCurrentTypeServer(idx);
           if (episodes[idx]?._type) {
             setActiveServerType(episodes[idx]._type as ServerType);
           }

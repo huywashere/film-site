@@ -1,9 +1,4 @@
-export type ServerType =
-  | "vietsub"
-  | "thuyet-minh"
-  | "song-ngu"
-  | "engsub"
-  | "raw";
+export type ServerType = "vietsub" | "thuyet-minh" | "song-ngu" | "engsub" | "raw";
 
 export type EpisodeItem = {
   name?: string;
@@ -59,15 +54,19 @@ export function selectInitialHlsTransport(
   const safeProxy = proxyUrl?.startsWith("/api/hls-proxy?") ? proxyUrl : "";
   const directAllowed = Boolean(directUrl) && isDirectHlsAllowedByCsp(directUrl);
   const primary =
-    safeProxy && (preferSameOrigin || !directAllowed)
-      ? safeProxy
-      : directUrl || safeProxy;
+    safeProxy && (preferSameOrigin || !directAllowed) ? safeProxy : directUrl || safeProxy;
   const fallback = primary === safeProxy ? (directAllowed ? directUrl : "") : safeProxy;
 
   return {
     primary,
     fallback: fallback && fallback !== primary ? fallback : undefined,
   };
+}
+
+/** A missing manifest cannot be repaired by relaying the same URL. */
+export function isTerminalHlsHttpStatus(value: unknown) {
+  const status = Number(value);
+  return status === 404 || status === 410;
 }
 
 export function getSourceAbbr(source?: string): string {
@@ -80,6 +79,17 @@ export function getSourceAbbr(source?: string): string {
   if (s.includes("vicdn") || s === "vicdn") return "ViCDN";
   if (s.includes("vidsrc")) return "VidSrc";
   return source.toUpperCase();
+}
+
+export function getSourceLabel(source?: string): string {
+  const value = normalizePlayerLabel(source || "");
+  if (value.includes("kkphim") || value === "kp") return "KKPhim";
+  if (value.includes("nguonc") || value === "nc") return "NguonC";
+  if (value.includes("vsmov") || value === "vs") return "VSMov";
+  if (value.includes("ophim") || value === "op") return "OPhim";
+  if (value.includes("vicdn")) return "ViCDN";
+  if (value.includes("vidsrc")) return "VidSrc";
+  return source?.trim() || "Nguồn phát";
 }
 
 const PROVIDER_PRIORITY: Record<string, number> = {
@@ -188,10 +198,7 @@ export function episodeNumberFromLabel(value?: string): number | null {
   return positiveInteger(key);
 }
 
-export function formatEpisodeLabel(
-  value?: string | null,
-  fallback = "Tập 1",
-): string {
+export function formatEpisodeLabel(value?: string | null, fallback = "Tập 1"): string {
   const key = canonicalEpisodeKey(value || "");
   if (!key) return fallback;
   if (key === "full") return "Tập Full";
@@ -204,9 +211,7 @@ export function formatEpisodeLabel(
   return readable ? `Tập ${readable}` : fallback;
 }
 
-export function resolveSeasonNumber(
-  ...values: Array<string | number | null | undefined>
-): number {
+export function resolveSeasonNumber(...values: Array<string | number | null | undefined>): number {
   for (const value of values) {
     if (typeof value === "number") {
       const parsed = positiveInteger(value);
@@ -220,9 +225,7 @@ export function resolveSeasonNumber(
       const parsed = positiveInteger(direct[1]);
       if (parsed) return parsed;
     }
-    const labelled = /(?:season|mua|phan|ss)\s*[-_:]?\s*0*(\d+)/i.exec(
-      normalizePlayerLabel(text),
-    );
+    const labelled = /(?:season|mua|phan|ss)\s*[-_:]?\s*0*(\d+)/i.exec(normalizePlayerLabel(text));
     if (labelled) {
       const parsed = positiveInteger(labelled[1]);
       if (parsed) return parsed;
@@ -235,17 +238,11 @@ export function isAutomaticPlaybackSource(source: string | undefined) {
   return Boolean(source && source !== "vidsrc");
 }
 
-export function canUseUnsandboxedEmbed(
-  source: string | undefined,
-  url: string,
-) {
+export function canUseUnsandboxedEmbed(source: string | undefined, url: string) {
   if (source !== "vidsrc" && source !== "vicdn") return false;
   try {
     const parsed = new URL(url);
-    return (
-      parsed.protocol === "https:" &&
-      UNSANDBOXED_EMBED_HOSTS.has(parsed.hostname)
-    );
+    return parsed.protocol === "https:" && UNSANDBOXED_EMBED_HOSTS.has(parsed.hostname);
   } catch {
     return false;
   }
@@ -262,13 +259,8 @@ export function normalizePlayerLabel(value: string) {
     .trim();
 }
 
-export function detectServerType(
-  serverName: string,
-  serverLanguage?: string,
-): ServerType {
-  const value = normalizePlayerLabel(
-    `${serverName || ""} ${serverLanguage || ""}`,
-  );
+export function detectServerType(serverName: string, serverLanguage?: string): ServerType {
+  const value = normalizePlayerLabel(`${serverName || ""} ${serverLanguage || ""}`);
 
   if (/\b(song ngu|songngu|bilingual|multi sub|multisub|vietsub\s*song\s*ngu)\b/.test(value)) {
     return "song-ngu";
@@ -293,6 +285,18 @@ export function detectServerType(
   return "raw";
 }
 
+/** Keep external embed providers in their dedicated language groups. */
+export function resolveServerType(
+  source: string,
+  serverName: string,
+  serverLanguage?: string,
+): ServerType {
+  const normalizedSource = normalizePlayerLabel(source);
+  if (normalizedSource === "vicdn") return "song-ngu";
+  if (normalizedSource === "vidsrc") return "engsub";
+  return detectServerType(serverName, serverLanguage);
+}
+
 export function canonicalEpisodeKey(value?: string) {
   const normalized = normalizePlayerLabel(value || "");
   if (!normalized) return "";
@@ -314,10 +318,7 @@ export function episodeIdentity(item?: EpisodeItem | null) {
   return canonicalEpisodeKey(item?.slug) || canonicalEpisodeKey(item?.name);
 }
 
-export function findMatchingEpisode(
-  serverData: EpisodeItem[] | undefined,
-  target?: string,
-) {
+export function findMatchingEpisode(serverData: EpisodeItem[] | undefined, target?: string) {
   if (!serverData?.length) return undefined;
   const targetKey = canonicalEpisodeKey(target);
   if (!targetKey) return serverData[0];
