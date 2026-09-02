@@ -1843,7 +1843,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
 
                 {/* Bookmark CTA with hover tooltip */}
                 <div className="relative group">
-                  <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-[#181b22] border border-white/15 text-[10px] font-bold text-sky-400 whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 shadow-2xl z-40 translate-y-1 group-hover:translate-y-0 uppercase tracking-wider">
+                  <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-[#181b22] border border-white/15 text-[10px] font-semibold text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 shadow-2xl z-40 translate-y-1 group-hover:translate-y-0 uppercase tracking-wider">
                     {t("home.saveWatchlist", "Tủ phim")}
                   </span>
                   <button

@@ -198,10 +198,13 @@ test("formats provider abbreviations correctly", () => {
   assert.equal(getSourceAbbr(undefined), "KP");
 });
 
-test("keeps ViCDN and VidSrc in dedicated language groups", () => {
+test("keeps ViCDN and VidSrc in dedicated language groups and defaults VN providers to vietsub", () => {
   assert.equal(resolveServerType("vicdn", "Server 1"), "song-ngu");
   assert.equal(resolveServerType("vidsrc", "Server 1"), "engsub");
   assert.equal(resolveServerType("kkphim", "Vietsub"), "vietsub");
+  assert.equal(resolveServerType("kkphim", "Server #1"), "vietsub");
+  assert.equal(resolveServerType("nguonc", "Server #1"), "vietsub");
+  assert.equal(resolveServerType("vsmov", "VIP 1"), "vietsub");
   assert.equal(resolveServerType("nguonc", "Thuyết Minh"), "thuyet-minh");
   assert.equal(getSourceLabel("kkphim"), "KKPhim");
   assert.equal(getSourceLabel("vidsrc"), "VidSrc");

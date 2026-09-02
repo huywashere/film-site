@@ -2140,19 +2140,27 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
     const tagSource = (arr: any[], sourceKey: string) => {
       const sourceAbbr = getSourceAbbr(sourceKey);
-      return arr.map((s, i): SourceServer => {
-        const originalName = String(s.server_name || '');
-        const serverData = Array.isArray(s.server_data) ? s.server_data : [];
-        return {
-          ...s,
-          server_name: `Server ${i + 1} (${sourceAbbr})`,
-          server_data: serverData,
-          _source: sourceKey,
-          _type: resolveServerType(sourceKey, originalName, s.lang || s.language || s.audio || ''),
-          key: `${sourceKey}:${originalName || i}`,
-          priority: sourcePriority(sourceKey, serverData, currentEp),
-        };
-      });
+      return (arr || [])
+        .filter((s) => {
+          const serverData = Array.isArray(s?.server_data) ? s.server_data : [];
+          return (
+            serverData.length > 0 &&
+            serverData.some((item: any) => Boolean(item?.link_m3u8 || item?.link_embed))
+          );
+        })
+        .map((s, i): SourceServer => {
+          const originalName = String(s.server_name || '');
+          const serverData = Array.isArray(s.server_data) ? s.server_data : [];
+          return {
+            ...s,
+            server_name: `Server ${i + 1} (${sourceAbbr})`,
+            server_data: serverData,
+            _source: sourceKey,
+            _type: resolveServerType(sourceKey, originalName, s.lang || s.language || s.audio || ''),
+            key: `${sourceKey}:${originalName || i}`,
+            priority: sourcePriority(sourceKey, serverData, currentEp),
+          };
+        });
     };
 
     const combined = [
@@ -2743,9 +2751,12 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     const sp = searchParams.get('server');
     if (sp !== null) {
       const idx = Number(sp) || 0;
-      setCurrentServer(idx);
-      const ep = episodes[idx];
-      if (ep?._type) setActiveServerType(ep._type as ServerType);
+      if (episodes[idx]) {
+        preserveServerOnTypeChangeRef.current = true;
+        setCurrentServer(idx);
+        const ep = episodes[idx];
+        if (ep?._type) setActiveServerType(ep._type as ServerType);
+      }
     }
   }, [episodes, searchParams]);
 
@@ -2792,6 +2803,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       preserveServerOnTypeChangeRef.current = false;
       return;
     }
+    const currentEpServer = episodes[currentServer];
+    if (currentEpServer && currentEpServer._type === activeServerType) {
+      return;
+    }
     const first = serversByType[activeServerType]?.[0];
     if (first) {
       const gIdx = episodes.indexOf(first);
@@ -2800,7 +2815,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         DISABLE_ARTPLAYER ? 'iframe' : first.server_data?.[0]?.link_m3u8 ? 'hls' : 'iframe',
       );
     }
-  }, [activeServerType, episodes, serversByType]);
+  }, [activeServerType, currentServer, episodes, serversByType]);
 
   useEffect(() => {
     if (typeof document !== 'undefined' && film?.name) {
@@ -2907,7 +2922,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             className={cn(
               'netphim-watch-player bg-black rounded-none overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none transition-all duration-300 flex items-center justify-center',
               theaterMode
-                ? 'is-theater col-span-full w-full aspect-[16/9] sm:aspect-auto sm:h-[72vh] lg:h-[78vh] min-h-[400px] max-h-[920px] mx-auto shadow-2xl ring-1 ring-purple-500/20'
+                ? 'is-theater col-span-full w-full aspect-[16/9] sm:aspect-auto sm:h-[72vh] lg:h-[78vh] min-h-[400px] max-h-[920px] mx-auto shadow-2xl ring-1 ring-white/10'
                 : 'xl:col-start-1 xl:row-start-1 w-full aspect-video',
               lightOff ? 'relative z-50 ring-1 ring-white/20 shadow-2xl' : '',
             )}
@@ -3091,13 +3106,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     <span>Quay lại</span>
                   </button>
                 )}
-                <ChevronRight size={11} className="text-white/20 shrink-0" />
-                <Link
-                  href={`/film/${slug}`}
-                  className="hover:text-white/80 transition-colors truncate max-w-[180px] sm:max-w-xs text-white/70 font-medium"
-                >
-                  {film?.name}
-                </Link>
               </div>
               <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 {/* Yêu thích */}
@@ -3536,18 +3544,14 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       count: subEps.length,
                       eps: subEps,
                     },
-                    ...(songNguEps.length > 0
-                      ? [
-                          {
-                            id: 'song-ngu',
-                            label: 'Song Ngữ',
-                            icon: Tv,
-                            sources: sourceSummary(songNguEps, 'ViCDN'),
-                            count: songNguEps.length,
-                            eps: songNguEps,
-                          },
-                        ]
-                      : []),
+                    {
+                      id: 'song-ngu',
+                      label: 'Song Ngữ',
+                      icon: Tv,
+                      sources: sourceSummary(songNguEps, 'ViCDN'),
+                      count: songNguEps.length,
+                      eps: songNguEps,
+                    },
                     {
                       id: 'thuyet-minh',
                       label: 'Thuyết Minh',
@@ -3556,18 +3560,14 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       count: dubEps.length,
                       eps: dubEps,
                     },
-                    ...(engsubEps.length > 0
-                      ? [
-                          {
-                            id: 'engsub',
-                            label: 'Engsub',
-                            icon: Globe,
-                            sources: sourceSummary(engsubEps, 'VidSrc'),
-                            count: engsubEps.length,
-                            eps: engsubEps,
-                          },
-                        ]
-                      : []),
+                    {
+                      id: 'engsub',
+                      label: 'Engsub',
+                      icon: Globe,
+                      sources: sourceSummary(engsubEps, 'VidSrc'),
+                      count: engsubEps.length,
+                      eps: engsubEps,
+                    },
                     ...(rawEps.length > 0
                       ? [
                           {
@@ -3583,255 +3583,164 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   ];
 
                   return (
-                    <div className="space-y-3">
-                      {/* Language groups and their dedicated providers */}
-                      <div className="space-y-3 pb-3 border-b border-white/[0.08]">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 pb-2.5 border-b border-white/[0.08]">
+                      {/* Language groups / versions */}
+                      <div
+                        className="flex flex-wrap items-center gap-1.5 sm:gap-2"
+                        role="tablist"
+                        aria-label="Phiên bản phát"
+                      >
+                        {subOptions.map((opt) => {
+                          const isActive = activeServerType === opt.id;
+                          const hasItems = opt.count > 0;
+                          const IconComponent = opt.icon;
+
+                          return (
+                            <button
+                              key={opt.id}
+                              role="tab"
+                              aria-selected={isActive}
+                              disabled={!hasItems}
+                              onClick={() => {
+                                if (!hasItems) return;
+                                const selectingVidSrc = opt.eps.every(
+                                  (candidate) => candidate._source === 'vidsrc',
+                                );
+                                setVidsrcManuallySelected(selectingVidSrc);
+                                setActiveServerType(opt.id as ServerType);
+                                if (opt.eps.length > 0) {
+                                  const targetEpisode =
+                                    currentEpData?.slug || currentEpData?.name || currentEp;
+                                  const first =
+                                    opt.eps.find((candidate) =>
+                                      findMatchingEpisode(candidate.server_data, targetEpisode),
+                                    ) || opt.eps[0];
+                                  const idx = episodes.indexOf(first);
+                                  const targetIdx = idx >= 0 ? idx : 0;
+                                  preserveServerOnTypeChangeRef.current = true;
+                                  setCurrentServer(targetIdx);
+                                  const matchedEpisode = findMatchingEpisode(
+                                    first?.server_data,
+                                    targetEpisode,
+                                  );
+                                  const matchedEpisodeId =
+                                    matchedEpisode?.slug || matchedEpisode?.name;
+                                  setPlayerEngine(matchedEpisode?.link_m3u8 ? 'hls' : 'iframe');
+                                  if (matchedEpisodeId)
+                                    router.replace(
+                                      watchUrlForEpisode(matchedEpisodeId, targetIdx),
+                                    );
+                                }
+                              }}
+                              className={cn(
+                                'group relative inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all select-none border',
+                                isActive
+                                  ? 'border-white/15 bg-white/[0.08] text-white font-semibold cursor-pointer'
+                                  : hasItems
+                                    ? 'border-transparent bg-transparent text-neutral-400 hover:border-white/[0.08] hover:bg-white/[0.04] hover:text-neutral-200 cursor-pointer'
+                                    : 'cursor-not-allowed border-transparent bg-transparent text-neutral-600 opacity-30',
+                              )}
+                            >
+                              <IconComponent
+                                size={13}
+                                className={cn(
+                                  'shrink-0 transition-colors',
+                                  isActive
+                                    ? 'text-white'
+                                    : hasItems
+                                      ? 'text-neutral-400 group-hover:text-neutral-200'
+                                      : 'text-neutral-600',
+                                )}
+                              />
+                              <span className="truncate">{opt.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Divider between language versions and servers */}
+                      {activeGroup.length > 0 && (
+                        <div className="hidden sm:block h-3.5 w-px bg-white/10 mx-0.5" />
+                      )}
+
+                      {/* Server Selection */}
+                      {activeGroup.length > 0 && (
                         <div
-                          className="grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-5"
-                          role="tablist"
+                          className="flex flex-wrap items-center gap-1 sm:gap-1.5"
+                          role="radiogroup"
+                          aria-label="Máy chủ phát"
                         >
-                          {subOptions.map((opt) => {
-                            const isActive = activeServerType === opt.id;
-                            const hasItems = opt.count > 0;
-                            const IconComponent = opt.icon;
+                          <div className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 shrink-0 mr-0.5">
+                            <Server size={12} className="text-neutral-500" />
+                            <span>Máy chủ:</span>
+                          </div>
+
+                          {activeGroup.map((ep, groupIndex) => {
+                            const idx = episodes.indexOf(ep);
+                            const isActive = idx === currentServer;
+                            const hasFailed = failedServers.includes(idx);
+                            const serverNumber = groupIndex + 1;
 
                             return (
                               <button
-                                key={opt.id}
-                                role="tab"
-                                aria-selected={isActive}
-                                disabled={!hasItems}
+                                key={ep.key || `${ep._source}-${groupIndex}`}
+                                type="button"
+                                role="radio"
+                                aria-checked={isActive}
+                                disabled={hasFailed}
                                 onClick={() => {
-                                  if (!hasItems) return;
-                                  const selectingVidSrc = opt.eps.every(
-                                    (candidate) => candidate._source === 'vidsrc',
+                                  setUserManuallySelectedServer(true);
+                                  setVidsrcManuallySelected(ep._source === 'vidsrc');
+                                  preserveServerOnTypeChangeRef.current = true;
+                                  setCurrentServer(idx);
+                                  const matchedEpisode = findMatchingEpisode(
+                                    ep.server_data,
+                                    currentEpData?.slug || currentEpData?.name || currentEp,
                                   );
-                                  setVidsrcManuallySelected(selectingVidSrc);
-                                  setActiveServerType(opt.id as ServerType);
-                                  if (opt.eps.length > 0) {
-                                    const targetEpisode =
-                                      currentEpData?.slug || currentEpData?.name || currentEp;
-                                    const first =
-                                      opt.eps.find((candidate) =>
-                                        findMatchingEpisode(candidate.server_data, targetEpisode),
-                                      ) || opt.eps[0];
-                                    const idx = episodes.indexOf(first);
-                                    const targetIdx = idx >= 0 ? idx : 0;
-                                    setCurrentServer(targetIdx);
-                                    const matchedEpisode = findMatchingEpisode(
-                                      first?.server_data,
-                                      targetEpisode,
-                                    );
-                                    const matchedEpisodeId =
-                                      matchedEpisode?.slug || matchedEpisode?.name;
-                                    setPlayerEngine(matchedEpisode?.link_m3u8 ? 'hls' : 'iframe');
-                                    if (matchedEpisodeId)
-                                      router.replace(
-                                        watchUrlForEpisode(matchedEpisodeId, targetIdx),
-                                      );
+                                  const matchedEpisodeId =
+                                    matchedEpisode?.slug || matchedEpisode?.name;
+                                  setPlayerEngine(matchedEpisode?.link_m3u8 ? 'hls' : 'iframe');
+                                  if (matchedEpisodeId) {
+                                    router.replace(watchUrlForEpisode(matchedEpisodeId, idx));
                                   }
                                 }}
                                 className={cn(
-                                  'group relative flex min-w-0 items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors cursor-pointer select-none',
+                                  'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition-all cursor-pointer select-none',
                                   isActive
-                                    ? 'border-purple-400/60 bg-purple-500/15 text-white shadow-[inset_3px_0_0_#a855f7]'
-                                    : hasItems
-                                      ? 'border-white/[0.08] bg-white/[0.025] text-neutral-300 hover:border-purple-400/30 hover:bg-white/[0.05] hover:text-white'
-                                      : 'cursor-not-allowed border-white/[0.05] bg-transparent text-neutral-600 opacity-45',
+                                    ? 'border-white/15 bg-white/[0.08] text-white font-semibold'
+                                    : 'border-transparent bg-transparent text-neutral-400 hover:border-white/[0.08] hover:bg-white/[0.04] hover:text-neutral-200',
+                                  hasFailed &&
+                                    'cursor-not-allowed border-transparent opacity-25 grayscale',
                                 )}
                               >
-                                <span
-                                  className={cn(
-                                    'grid h-7 w-7 shrink-0 place-items-center rounded-lg border',
-                                    isActive
-                                      ? 'border-purple-400/40 bg-purple-400/15 text-purple-200'
-                                      : 'border-white/[0.08] bg-black/20 text-neutral-500',
-                                  )}
-                                >
-                                  <IconComponent size={14} />
-                                </span>
-                                <span className="min-w-0">
-                                  <span className="block truncate text-xs font-bold">
-                                    {opt.label}
-                                  </span>
-                                  <span className="mt-0.5 block truncate text-[10px] font-medium text-neutral-500">
-                                    {opt.sources}
-                                  </span>
-                                </span>
+                                <span>Server {serverNumber}</span>
+                                {isActive && (
+                                  <CheckCircle2
+                                    size={11}
+                                    className="shrink-0 text-neutral-300 ml-0.5"
+                                  />
+                                )}
                               </button>
                             );
                           })}
                         </div>
+                      )}
 
-                        <div className="flex items-center justify-end gap-1.5 sm:gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const rangeSize =
-                                serverData.length > 500 ? 100 : serverData.length > 100 ? 50 : 40;
-                              const totalRanges = Math.ceil(serverData.length / rangeSize);
-                              const nextOrder = episodeSortOrder === 'oldest' ? 'newest' : 'oldest';
-                              setEpisodeSortOrder(nextOrder);
-                              if (serverData.length > 30) {
-                                setEpRangeIndex(
-                                  nextOrder === 'newest' ? Math.max(0, totalRanges - 1) : 0,
-                                );
-                              }
-                            }}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-[#24262c] hover:bg-[#2f313a] px-3 py-1.5 text-xs font-semibold text-neutral-300 transition-colors cursor-pointer select-none shrink-0 whitespace-nowrap"
-                          >
-                            <ArrowUpDown size={12} className="text-neutral-400" />
-                            <span>{episodeSortOrder === 'oldest' ? 'Cũ nhất' : 'Mới nhất'}</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setShowEpThumbnails(!showEpThumbnails)}
-                            className={cn(
-                              'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer select-none shrink-0 whitespace-nowrap',
-                              showEpThumbnails
-                                ? 'bg-[#24262c] text-white font-bold shadow-sm'
-                                : 'bg-[#181a20] text-neutral-400 hover:text-white hover:bg-[#24262c]',
-                            )}
-                          >
-                            <FolderOpen size={12} />
-                            <span>{showEpThumbnails ? 'Ẩn ảnh' : 'Hiện ảnh'}</span>
-                          </button>
-
-                          {serverData.length > 16 && (
-                            <div className="relative hidden sm:block">
-                              <Search
-                                size={12}
-                                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30"
-                              />
-                              <input
-                                type="text"
-                                placeholder="Tìm tập..."
-                                value={episodeSearch}
-                                onChange={(e) => setEpisodeSearch(e.target.value)}
-                                className="bg-[#181a20] border border-white/5 pl-7 pr-3 py-1.5 text-xs text-white placeholder-white/30 rounded-full focus:outline-none focus:bg-[#24262c] w-24 sm:w-28 transition-colors"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {activeGroup.length > 0 && (
-                        <div className="space-y-2.5 pb-3 border-b border-white/[0.08]">
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <div className="flex items-center gap-2 text-xs font-bold text-neutral-200">
-                                <Server size={13} className="text-purple-300" />
-                                Máy chủ phát
-                              </div>
-                              <p className="mt-0.5 text-[10px] text-neutral-500">
-                                Chỉ hiển thị nguồn phù hợp với phiên bản đang chọn
-                              </p>
-                            </div>
-                            {isAdmin && (
-                              <button
-                                type="button"
-                                onClick={() => setShowServerHealthModal(true)}
-                                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.035] px-2.5 py-1.5 text-[10px] font-semibold text-neutral-400 transition-colors hover:border-purple-400/30 hover:text-white"
-                              >
-                                <Activity size={12} />
-                                Kiểm tra nguồn
-                              </button>
-                            )}
-                          </div>
-
-                          <div
-                            className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap"
-                            role="radiogroup"
-                            aria-label="Máy chủ phát"
-                          >
-                            {activeGroup.map((ep, groupIndex) => {
-                              const idx = episodes.indexOf(ep);
-                              const isActive = idx === currentServer;
-                              const hasFailed = failedServers.includes(idx);
-                              const sourceLabel = getSourceLabel(ep._source);
-                              const sourceServerNumber = activeGroup
-                                .slice(0, groupIndex + 1)
-                                .filter((candidate) => candidate._source === ep._source).length;
-                              const hasMultipleServers =
-                                activeGroup.filter((candidate) => candidate._source === ep._source)
-                                  .length > 1;
-
-                              return (
-                                <button
-                                  key={ep.key || `${ep._source}-${groupIndex}`}
-                                  type="button"
-                                  role="radio"
-                                  aria-checked={isActive}
-                                  disabled={hasFailed}
-                                  onClick={() => {
-                                    setUserManuallySelectedServer(true);
-                                    setVidsrcManuallySelected(ep._source === 'vidsrc');
-                                    setCurrentServer(idx);
-                                    const matchedEpisode = findMatchingEpisode(
-                                      ep.server_data,
-                                      currentEpData?.slug || currentEpData?.name || currentEp,
-                                    );
-                                    const matchedEpisodeId =
-                                      matchedEpisode?.slug || matchedEpisode?.name;
-                                    setPlayerEngine(matchedEpisode?.link_m3u8 ? 'hls' : 'iframe');
-                                    if (matchedEpisodeId) {
-                                      router.replace(watchUrlForEpisode(matchedEpisodeId, idx));
-                                    }
-                                  }}
-                                  className={cn(
-                                    'flex min-w-0 items-center gap-2 rounded-xl border px-3 py-2 text-left transition-colors sm:min-w-[138px]',
-                                    isActive
-                                      ? 'border-purple-400/60 bg-purple-500/15 text-white'
-                                      : 'border-white/[0.08] bg-white/[0.025] text-neutral-300 hover:border-purple-400/30 hover:bg-white/[0.05]',
-                                    hasFailed &&
-                                      'cursor-not-allowed border-red-500/10 opacity-35 grayscale',
-                                  )}
-                                >
-                                  <span
-                                    className={cn(
-                                      'grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[9px] font-black',
-                                      isActive
-                                        ? 'bg-purple-400 text-[#12091f]'
-                                        : 'bg-white/[0.06] text-neutral-400',
-                                    )}
-                                  >
-                                    {getSourceAbbr(ep._source)}
-                                  </span>
-                                  <span className="min-w-0">
-                                    <span className="block truncate text-xs font-bold">
-                                      {sourceLabel}
-                                      {hasMultipleServers ? ` ${sourceServerNumber}` : ''}
-                                    </span>
-                                    <span className="mt-0.5 block truncate text-[9px] font-medium uppercase tracking-wide text-neutral-500">
-                                      {ep._type === 'song-ngu'
-                                        ? 'Song ngữ'
-                                        : ep._type === 'engsub'
-                                          ? 'English subtitle'
-                                          : ep._type === 'thuyet-minh'
-                                            ? 'Thuyết minh'
-                                            : ep._type === 'raw'
-                                              ? 'Bản gốc'
-                                              : 'Phụ đề Việt'}
-                                    </span>
-                                  </span>
-                                  {isActive && (
-                                    <CheckCircle2
-                                      size={13}
-                                      className="ml-auto shrink-0 text-purple-300"
-                                    />
-                                  )}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => setShowServerHealthModal(true)}
+                          className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-lg border border-white/10 bg-white/[0.035] px-2 py-1 text-[10px] font-semibold text-neutral-400 transition-colors hover:border-white/20 hover:text-white"
+                        >
+                          <Activity size={11} />
+                          <span>Kiểm tra</span>
+                        </button>
                       )}
                     </div>
                   );
                 })()}
 
-                <section className="min-w-0 pt-1">
+                <section className="min-w-0 pt-0.5">
                   {/* 4. EPISODE LIST */}
                   {(() => {
                     const rangeSize =
@@ -3852,7 +3761,74 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       currentEp || currentEpData?.slug || currentEpData?.name;
 
                     return (
-                      <div className="space-y-3">
+                      <div className="space-y-2.5">
+                        {/* Episode Header & Action Controls Bar */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-neutral-200">
+                              Danh sách tập
+                            </span>
+                            <span className="text-[11px] font-medium text-neutral-400">
+                              ({serverData.length} tập)
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 sm:gap-2">
+                            {/* Sort Button */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const rangeSize =
+                                  serverData.length > 500 ? 100 : serverData.length > 100 ? 50 : 40;
+                                const totalRanges = Math.ceil(serverData.length / rangeSize);
+                                const nextOrder = episodeSortOrder === 'oldest' ? 'newest' : 'oldest';
+                                setEpisodeSortOrder(nextOrder);
+                                if (serverData.length > 30) {
+                                  setEpRangeIndex(
+                                    nextOrder === 'newest' ? Math.max(0, totalRanges - 1) : 0,
+                                  );
+                                }
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-full bg-[#24262c] hover:bg-[#2f313a] px-3 py-1.5 text-xs font-semibold text-neutral-300 transition-colors cursor-pointer select-none shrink-0 whitespace-nowrap"
+                            >
+                              <ArrowUpDown size={12} className="text-neutral-400" />
+                              <span>{episodeSortOrder === 'oldest' ? 'Cũ nhất' : 'Mới nhất'}</span>
+                            </button>
+
+                            {/* Thumbnail Toggle Button */}
+                            <button
+                              type="button"
+                              onClick={() => setShowEpThumbnails(!showEpThumbnails)}
+                              className={cn(
+                                'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer select-none shrink-0 whitespace-nowrap',
+                                showEpThumbnails
+                                  ? 'bg-[#24262c] text-white font-bold shadow-sm'
+                                  : 'bg-[#181a20] text-neutral-400 hover:text-white hover:bg-[#24262c]',
+                              )}
+                            >
+                              <FolderOpen size={12} />
+                              <span>{showEpThumbnails ? 'Ẩn ảnh' : 'Hiện ảnh'}</span>
+                            </button>
+
+                            {/* Episode Search Input */}
+                            {serverData.length > 16 && (
+                              <div className="relative">
+                                <Search
+                                  size={12}
+                                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Tìm tập..."
+                                  value={episodeSearch}
+                                  onChange={(e) => setEpisodeSearch(e.target.value)}
+                                  className="bg-[#181a20] border border-white/5 pl-7 pr-3 py-1.5 text-xs text-white placeholder-white/30 rounded-full focus:outline-none focus:bg-[#24262c] w-24 sm:w-28 transition-colors"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
                         {/* Range Navigation Bar for Movies with >30 Episodes */}
                         {serverData.length > 30 && !episodeSearch && (
                           <div className="flex flex-wrap items-center gap-2 py-1">
@@ -4051,7 +4027,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             )}
 
             {watchContentTab === 'recommendations' && (
-              <section className="min-h-52 border-b border-white/[0.08] py-5">
+              <section className="min-h-52 py-5">
                 {discoveryLoading ? (
                   <div className="grid gap-2 sm:grid-cols-2">
                     {Array.from({ length: 6 }).map((_, index) => (
@@ -4082,7 +4058,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             )}
 
             {watchContentTab === 'cast' && (
-              <section className="min-h-52 border-b border-white/[0.08] py-5">
+              <section className="min-h-52 py-5">
                 {creditsLoading ? (
                   <div className="grid grid-cols-4 gap-4 sm:grid-cols-6 lg:grid-cols-8">
                     {Array.from({ length: 8 }).map((_, index) => (
@@ -4142,7 +4118,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             )}
 
             {watchContentTab === 'trailer' && (
-              <section className="min-h-52 border-b border-white/[0.08] py-5">
+              <section className="min-h-52 py-5">
                 {(() => {
                   const rawTrailerUrl = String(film?.trailer_url || '');
                   const urlMatch = rawTrailerUrl.match(
@@ -4201,7 +4177,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             )}
 
             {watchContentTab === 'collection' && (
-              <section className="min-h-52 border-b border-white/[0.08] py-5">
+              <section className="min-h-52 py-5">
                 {diverseTmdbBackdrops.length ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                     {diverseTmdbBackdrops.map((image, index) => {
@@ -4237,7 +4213,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             )}
 
             {/* 6. COMMENTS */}
-            <div ref={commentsSectionRef} className="min-h-24 border-t border-white/[0.05] pt-5">
+            <div ref={commentsSectionRef} className="min-h-24 border-t border-white/[0.08] pt-5">
               {commentsReady ? (
                 <AdvancedCommentSection
                   movieSlug={slug}
@@ -4296,13 +4272,13 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   className={cn(
                     'flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 border',
                     theaterMode
-                      ? 'bg-purple-600/20 text-purple-200 border-purple-500/40 shadow-sm shadow-purple-900/30'
+                      ? 'bg-white/15 text-white border-white/20 shadow-sm'
                       : 'bg-white/[0.03] hover:bg-white/[0.07] text-neutral-400 hover:text-neutral-200 border-white/[0.06]',
                   )}
                 >
                   <Maximize2
                     size={12}
-                    className={theaterMode ? 'text-purple-400' : 'text-neutral-400'}
+                    className={theaterMode ? 'text-white' : 'text-neutral-400'}
                   />
                   <span className="truncate">Rạp phim</span>
                 </button>
@@ -4322,13 +4298,13 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   className={cn(
                     'flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 border',
                     autoNextConfig
-                      ? 'bg-purple-600/20 text-purple-200 border-purple-500/40 shadow-sm shadow-purple-900/30'
+                      ? 'bg-white/15 text-white border-white/20 shadow-sm'
                       : 'bg-white/[0.03] hover:bg-white/[0.07] text-neutral-400 hover:text-neutral-200 border-white/[0.06]',
                   )}
                 >
                   <SkipForward
                     size={12}
-                    className={autoNextConfig ? 'text-purple-400' : 'text-neutral-400'}
+                    className={autoNextConfig ? 'text-white' : 'text-neutral-400'}
                   />
                   <span className="truncate">Tự chuyển</span>
                 </button>
@@ -4348,13 +4324,13 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   className={cn(
                     'flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 border',
                     skipIntroConfig
-                      ? 'bg-purple-600/20 text-purple-200 border-purple-500/40 shadow-sm shadow-purple-900/30'
+                      ? 'bg-white/15 text-white border-white/20 shadow-sm'
                       : 'bg-white/[0.03] hover:bg-white/[0.07] text-neutral-400 hover:text-neutral-200 border-white/[0.06]',
                   )}
                 >
                   <FastForward
                     size={12}
-                    className={skipIntroConfig ? 'text-purple-400' : 'text-neutral-400'}
+                    className={skipIntroConfig ? 'text-white' : 'text-neutral-400'}
                   />
                   <span className="truncate">Bỏ intro</span>
                 </button>
@@ -4379,7 +4355,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   className={cn(
                     'flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-[11px] font-medium transition-all cursor-pointer active:scale-95 border',
                     showShortcutsGuide
-                      ? 'bg-purple-600/20 text-purple-300 border-purple-500/30'
+                      ? 'bg-white/15 text-white border-white/20'
                       : 'text-neutral-400 hover:text-neutral-200 bg-white/[0.02] hover:bg-white/[0.06] border-white/[0.05]',
                   )}
                 >

@@ -294,7 +294,15 @@ export function resolveServerType(
   const normalizedSource = normalizePlayerLabel(source);
   if (normalizedSource === "vicdn") return "song-ngu";
   if (normalizedSource === "vidsrc") return "engsub";
-  return detectServerType(serverName, serverLanguage);
+  const detected = detectServerType(serverName, serverLanguage);
+  if (detected === "raw") {
+    // Default unspecified servers from Vietnamese providers to vietsub
+    const val = normalizePlayerLabel(`${serverName || ""} ${serverLanguage || ""}`);
+    if (!/\b(raw|original|ban goc|no sub)\b/.test(val)) {
+      return "vietsub";
+    }
+  }
+  return detected;
 }
 
 export function canonicalEpisodeKey(value?: string) {

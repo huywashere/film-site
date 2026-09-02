@@ -1679,7 +1679,7 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
                       <Plus size={16} className="text-neutral-200 group-hover:text-white" />
                     )}
                   </button>
-                  <span className="text-[10px] font-bold text-sky-400/90 uppercase tracking-wider group-hover:text-sky-300 transition-colors">
+                  <span className="text-[10px] font-semibold text-neutral-300 uppercase tracking-wider group-hover:text-white transition-colors">
                     {t('nav.watchlist', 'Tủ phim')}
                   </span>
                 </div>
@@ -1706,7 +1706,7 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
                   >
                     <Bell size={16} className="text-neutral-200 group-hover:text-white" />
                   </button>
-                  <span className="text-[10px] font-bold text-sky-400/90 uppercase tracking-wider group-hover:text-sky-300 transition-colors">
+                  <span className="text-[10px] font-semibold text-neutral-300 uppercase tracking-wider group-hover:text-white transition-colors">
                     {t('watch.follow', 'Theo dõi')}
                   </span>
                 </div>
@@ -1724,7 +1724,7 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
                       )}
                     />
                   </button>
-                  <span className="text-[10px] font-bold text-sky-400/90 uppercase tracking-wider group-hover:text-sky-300 transition-colors">
+                  <span className="text-[10px] font-semibold text-neutral-300 uppercase tracking-wider group-hover:text-white transition-colors">
                     {t('watch.rate', 'Đánh giá')}
                   </span>
                 </div>
@@ -1742,7 +1742,7 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
                   >
                     <Share2 size={16} className="text-neutral-200 group-hover:text-white" />
                   </button>
-                  <span className="text-[10px] font-bold text-sky-400/90 uppercase tracking-wider group-hover:text-sky-300 transition-colors">
+                  <span className="text-[10px] font-semibold text-neutral-300 uppercase tracking-wider group-hover:text-white transition-colors">
                     {t('film.share', 'Chia sẻ')}
                   </span>
                 </div>
