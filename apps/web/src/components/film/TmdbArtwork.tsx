@@ -89,12 +89,13 @@ export function TmdbArtwork({
 
   const candidates = useMemo(() => {
     const tmdbReady = providerIsTmdb || Boolean(tmdbUrl);
-    const lookupFinished = providerIsTmdb || !hasExactTmdbIdentity || artworkQuery.isFetched;
+    const lookupFinished =
+      !enabled || providerIsTmdb || !hasExactTmdbIdentity || artworkQuery.isFetched;
     const sources = tmdbReady
       ? [tmdbUrl, providerIsTmdb ? providerPrimary : null]
       : lookupFinished
         ? [providerPrimary, providerAlternate]
-        : [];
+        : [providerPrimary, providerAlternate];
     const list = buildArtworkCandidates(sources, kind === 'backdrop' ? 'backdrop' : 'poster');
     return list;
   }, [
@@ -105,6 +106,7 @@ export function TmdbArtwork({
     providerIsTmdb,
     hasExactTmdbIdentity,
     artworkQuery.isFetched,
+    enabled,
   ]);
 
   const [candidateIndex, setCandidateIndex] = useState(0);

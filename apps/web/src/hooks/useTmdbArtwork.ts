@@ -173,12 +173,13 @@ export function useTmdbArtwork(film: FilmItem, enabled = true) {
   const query = useQuery({
     queryKey: ['tmdb-artwork', identity],
     queryFn: async () => {
+      const cached = readArtworkCache(identity);
+      if (cached) return cached;
       const movie = await resolveArtwork(film);
       writeArtworkCache(identity, movie);
       return movie;
     },
     enabled: enabled && Boolean(extracted.tmdbId || extracted.imdbId || title),
-    initialData: () => readArtworkCache(identity),
     staleTime: 1000 * 60 * 60 * 24 * 7,
     gcTime: 1000 * 60 * 60 * 24 * 30,
     retry: 1,
