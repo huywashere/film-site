@@ -1474,7 +1474,7 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
         </div>
       )}
 
-      <div className="relative z-10 container mx-auto px-4 md:px-12 pt-24 sm:pt-28">
+      <div className="relative z-10 container mx-auto px-4 md:px-12 lg:pl-20 pt-24 sm:pt-28">
         <div className="flex items-center gap-2 text-xs font-semibold text-neutral-400 mb-5 flex-wrap">
           <button
             type="button"

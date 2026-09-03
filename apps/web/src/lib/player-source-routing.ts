@@ -106,6 +106,8 @@ const UNSANDBOXED_EMBED_HOSTS = new Set([
   "www.vidsrc.sbs",
   "vicdn.cc",
   "www.vicdn.cc",
+  "streamc.xyz",
+  "embed.streamc.xyz",
 ]);
 
 const VIDSRC_EMBED_ORIGIN = "https://vidsrc.sbs";
@@ -239,7 +241,7 @@ export function isAutomaticPlaybackSource(source: string | undefined) {
 }
 
 export function canUseUnsandboxedEmbed(source: string | undefined, url: string) {
-  if (source !== "vidsrc" && source !== "vicdn") return false;
+  if (source !== "vidsrc" && source !== "vicdn" && source !== "nguonc") return false;
   try {
     const parsed = new URL(url);
     return parsed.protocol === "https:" && UNSANDBOXED_EMBED_HOSTS.has(parsed.hostname);

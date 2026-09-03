@@ -28,7 +28,6 @@ const NGUONC_ORIGINS = resolveMovieApiOrigins(
   process.env.NGUONC_API_ORIGINS || process.env.NGUONC_API_BASE,
   [
     "https://phim.nguonc.com/api",
-    "https://api.nguonc.com/api",
     "https://nguonc.com/api",
   ],
 );
@@ -49,9 +48,9 @@ export const GET = createMovieProxyHandler({
   fallbackUrls: NGUONC_ORIGINS.slice(1),
   getTtl,
   headers: {
-    Accept: "application/json",
+    Accept: "application/json, text/plain, */*",
     "User-Agent":
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     Referer: "https://phim.nguonc.com/",
     Origin: "https://phim.nguonc.com",
   },

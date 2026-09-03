@@ -7,6 +7,8 @@ export interface CuratedHeroMovie extends FilmItem {
   titleLogo?: string;
   spotlightBadge?: string;
   trailer_url?: string;
+  tmdb_rating?: number;
+  genres?: string[];
 }
 
 /**

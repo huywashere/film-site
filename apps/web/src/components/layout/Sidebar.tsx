@@ -89,29 +89,36 @@ export function Sidebar() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [collapsed, setCollapsed] = useState(false);
-  const [scrolledPastBanner, setScrolledPastBanner] = useState(false);
-  const homeThresholdRef = useRef<HTMLDivElement>(null);
   const warmedRoutesRef = useRef(new Set<string>());
 
   const isHomePage = pathname === "/";
-  const isAsianCountryHeroPage =
-    pathname === "/country/han-quoc" || pathname === "/country/trung-quoc";
-  const isAnimeHeroPage =
-    pathname === "/films/anime" || pathname === "/films/hoat-hinh";
   const isFilmDetailPage = pathname.startsWith("/film/");
   const isWatchPage = pathname.startsWith("/watch/");
-  const hasHeroBanner =
-    isHomePage ||
-    isAsianCountryHeroPage ||
-    isAnimeHeroPage ||
-    isFilmDetailPage ||
-    isWatchPage;
+  const isGenrePage = pathname.startsWith("/genre/") || pathname === "/genres";
+  const isCountryPage = pathname.startsWith("/country/");
+  const isFilmsPage = pathname.startsWith("/films/");
+  const isBrowsePage = isHomePage || isGenrePage || isCountryPage || isFilmsPage;
 
-  const isAuthPage = pathname === "/login" || pathname === "/register";
-  const isUserPage =
-    pathname.startsWith("/user") ||
-    pathname.startsWith("/profile") ||
-    pathname.startsWith("/settings");
+  const shouldShowSidebar = isFilmDetailPage || isWatchPage || isBrowsePage;
+
+  const [scrolledPastBanner, setScrolledPastBanner] = useState(false);
+
+  useEffect(() => {
+    if (!isBrowsePage) return;
+
+    const handleScroll = () => {
+      // Khi lướt đến phần body (qua Hero Banner khoảng 350-400px hoặc 40% viewport)
+      const threshold =
+        typeof window !== "undefined"
+          ? Math.min(window.innerHeight * 0.4, 380)
+          : 350;
+      setScrolledPastBanner(window.scrollY > threshold);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isBrowsePage, pathname]);
 
   useEffect(() => {
     try {
@@ -121,22 +128,6 @@ export function Sidebar() {
       // ignore localStorage errors
     }
   }, []);
-
-  useEffect(() => {
-    if (!hasHeroBanner) {
-      setScrolledPastBanner(true);
-      return;
-    }
-
-    const handleScroll = () => {
-      const threshold = typeof window !== "undefined" ? Math.min(window.innerHeight * 0.5, 450) : 400;
-      setScrolledPastBanner(window.scrollY > threshold);
-    };
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [hasHeroBanner, pathname]);
 
   const toggle = () => {
     const next = !collapsed;
@@ -195,19 +186,13 @@ export function Sidebar() {
     [queryClient, router],
   );
 
-  const isVisible = !hasHeroBanner || scrolledPastBanner;
+  // Thanh tab dọc hiển thị luôn ở trang xem phim & giới thiệu phim; ở trang chủ thì khi lướt tới phần body mới hiện
+  if (!shouldShowSidebar) return null;
 
-  if (isAuthPage || isUserPage) return null;
+  const isVisible = isFilmDetailPage || isWatchPage ? true : scrolledPastBanner;
 
   return (
     <>
-      {hasHeroBanner && (
-        <div
-          ref={homeThresholdRef}
-          aria-hidden="true"
-          className="absolute left-0 top-[350px] h-px w-px pointer-events-none"
-        />
-      )}
 
       {/* ── VERTICALLY CENTERED SLIM SIDEBAR ── */}
       <aside

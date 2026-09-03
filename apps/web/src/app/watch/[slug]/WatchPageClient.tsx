@@ -58,6 +58,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { kkphimApi, movieApi, siteConfigApi, viewApi, watchHistoryApi } from '@/lib/api';
+import { canUseUnsandboxedEmbed } from '@/lib/player-source-routing';
 import { extractFilmItems, normalizeText } from '@/lib/movie-normalizer';
 import { resolveImageUrl } from '@/components/film/FilmCard';
 import { TmdbArtwork } from '@/components/film/TmdbArtwork';
@@ -2278,8 +2279,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     (m3u8Url ? `https://player.phimapi.com/player/?url=${encodeURIComponent(m3u8Url)}` : '');
   // Third-party players may execute scripts and use their own storage, but
   // must not navigate the NetPhim tab, spawn popunders or trigger downloads.
-  const iframeSandbox =
-    'allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock';
+  // Verified native players (NguonC StreamC, VidSrc, ViCDN) require unsandboxed iframes to run their media engines.
+  const iframeSandbox = canUseUnsandboxedEmbed(server?._source, iframeUrl)
+    ? undefined
+    : 'allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock';
   const videoUrl = m3u8Url || embedUrl || iframeUrl;
 
   const currentEpIndex = serverData.findIndex(

@@ -113,12 +113,15 @@ test("does not relay manifests that the provider has removed", () => {
   assert.equal(isTerminalHlsHttpStatus(undefined), false);
 });
 
-test("only removes iframe sandbox for known VidSrc HTTPS hosts", () => {
+test("only removes iframe sandbox for known VidSrc, ViCDN, and NguonC HTTPS hosts", () => {
   assert.equal(canUseUnsandboxedEmbed("vidsrc", "https://vidsrc.sbs/embed/movie/533535"), true);
   assert.equal(canUseUnsandboxedEmbed("vidsrc", "https://vidsrc.to/embed/movie/123"), false);
   assert.equal(canUseUnsandboxedEmbed("kkphim", "https://vidsrc.to/embed/movie/123"), false);
   assert.equal(canUseUnsandboxedEmbed("vidsrc", "https://vidsrc.to.evil.test/embed/123"), false);
   assert.equal(canUseUnsandboxedEmbed("vidsrc", "javascript:alert(1)"), false);
+  assert.equal(canUseUnsandboxedEmbed("nguonc", "https://embed.streamc.xyz/embed.php?hash=123"), true);
+  assert.equal(canUseUnsandboxedEmbed("nguonc", "https://streamc.xyz/player"), true);
+  assert.equal(canUseUnsandboxedEmbed("nguonc", "https://evil.streamc.xyz.fake/embed"), false);
 });
 
 test("keeps VidSrc manual-only and Vietnamese providers automatic", () => {
