@@ -178,39 +178,43 @@ function FilmCardComponent({
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
             <div className="pointer-events-none absolute inset-0 z-[11] bg-black/0 transition-colors duration-300 group-hover/card:bg-black/15" />
 
-            {/* IMDb score and technical quality */}
-            <div className="pointer-events-none absolute inset-x-1.5 top-1.5 z-20 flex items-center justify-between gap-1 sm:inset-x-2 sm:top-2">
-              {ratingMeta ? (
-                <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-[3px] bg-[#f5c518] px-1.5 py-0.5 text-[8.5px] font-black leading-none text-black sm:text-[9.5px]">
-                  <span className="font-extrabold tracking-tight">IMDb</span>
+            {/* ── Top-left: IMDb score ── */}
+            {ratingMeta && (
+              <div className="pointer-events-none absolute left-0 top-0 z-20">
+                <span className="inline-flex items-center gap-[3px] rounded-[3px] bg-[#f5c518] px-1.5 py-[3px] text-[8px] font-black leading-none text-black sm:text-[9px]">
+                  <span>IMDb</span>
                   <span>{ratingMeta.value}</span>
                 </span>
-              ) : (
-                <span />
-              )}
-              {qualityBadge && (
-                <span className="whitespace-nowrap rounded-[3px] bg-black/85 px-1.5 py-0.5 text-[8.5px] font-extrabold leading-none tracking-wider text-white sm:text-[9.5px]">
+              </div>
+            )}
+
+            {/* ── Top-right: Quality (FHD / HD / 4K) ── */}
+            {qualityBadge && (
+              <div className="pointer-events-none absolute right-0 top-0 z-20">
+                <span className="rounded-[3px] bg-black/75 px-1.5 py-[3px] text-[8px] font-extrabold leading-none tracking-wider text-white sm:text-[9px]">
                   {qualityBadge}
                 </span>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* Subtitle / Dubbed / Voiced language badges */}
-            <div className="pointer-events-none absolute bottom-1.5 left-1.5 z-20 flex items-center gap-1 sm:bottom-2 sm:left-2">
-              <span className="whitespace-nowrap rounded-[3px] bg-[#2563eb] px-1.5 py-0.5 text-[8.5px] font-black leading-none text-white sm:text-[9.5px]">
+            {/* ── Bottom-left: Subtitle badge (P.Đ) ── */}
+            <div className="pointer-events-none absolute bottom-0 left-0 z-20">
+              <span className="rounded-[3px] bg-[#2563eb] px-1.5 py-[3px] text-[8px] font-black leading-none text-white sm:text-[9px]">
                 {subtitleBadge}
               </span>
-              {voiceBadge && (
-                <span
-                  className={cn(
-                    'whitespace-nowrap rounded-[3px] px-1.5 py-0.5 text-[8.5px] font-black leading-none text-white sm:text-[9.5px]',
-                    hasDub ? 'bg-[#9333ea]' : 'bg-[#16a34a]',
-                  )}
-                >
+            </div>
+
+            {/* ── Bottom-right: Dub / Voiceover badge (L.T / T.M) ── */}
+            {voiceBadge && (
+              <div className="pointer-events-none absolute bottom-0 right-0 z-20">
+                <span className={cn(
+                  'rounded-[3px] px-1.5 py-[3px] text-[8px] font-black leading-none text-white sm:text-[9px]',
+                  hasDub ? 'bg-[#9333ea]' : 'bg-[#16a34a]',
+                )}>
                   {voiceBadge}
                 </span>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Hover Overlay Play Icon */}
             <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover/card:opacity-100">
