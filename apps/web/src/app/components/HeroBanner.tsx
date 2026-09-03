@@ -550,6 +550,26 @@ async function enrichHeroTitleLogos(playlist: HeroFilm[]): Promise<HeroFilm[]> {
 
 const preloadedHeroLogos = new Set<string>();
 
+function buildHeroLogoCandidates(url?: string | null): string[] {
+  if (!url) return [];
+  const clean = url.trim();
+  if (!clean) return [];
+
+  const list: string[] = [];
+  if (clean.includes("image.tmdb.org")) {
+    // Cloudflare Edge CDN with WebP conversion - loads in ~300ms, avoids direct TMDB latency/block in VN
+    list.push(`https://wsrv.nl/?url=${encodeURIComponent(clean)}&output=webp&we=1`);
+    list.push(clean);
+    list.push(`/api/image-proxy?url=${encodeURIComponent(clean)}&strict=1`);
+  } else {
+    list.push(clean);
+    if (!clean.startsWith("/api/image-proxy")) {
+      list.push(`/api/image-proxy?url=${encodeURIComponent(clean)}&strict=1`);
+    }
+  }
+  return list;
+}
+
 function HeroMovieTitle({
   film,
   onReady,
@@ -559,26 +579,19 @@ function HeroMovieTitle({
 }) {
   const candidateLogos = useMemo(() => {
     if (!film.titleLogo) return [];
-    return buildArtworkCandidates([film.titleLogo], "titleLogo");
+    return buildHeroLogoCandidates(film.titleLogo);
   }, [film.titleLogo]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
-  const currentLogoSrc = candidateLogos[candidateIdx];
-  // Keep known title artwork visible in the server HTML. Waiting for React to
-  // hydrate before removing opacity delayed LCP by roughly two seconds.
-  const [logoLoaded, setLogoLoaded] = useState(Boolean(currentLogoSrc));
+  const [logoLoaded, setLogoLoaded] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
+
+  const currentLogoSrc = candidateLogos[candidateIdx];
 
   useEffect(() => {
     setCandidateIdx(0);
-    const firstSrc = candidateLogos[0];
-    if (firstSrc) {
-      setLogoLoaded(true);
-      if (preloadedHeroLogos.has(firstSrc)) onReady();
-    } else {
-      setLogoLoaded(false);
-    }
-  }, [film.slug, film.titleLogo, candidateLogos, onReady]);
+    setLogoLoaded(false);
+  }, [film.slug, film.titleLogo]);
 
   // Check if browser already has image in cache
   useEffect(() => {
@@ -602,7 +615,7 @@ function HeroMovieTitle({
 
   return (
     <div className="relative flex min-h-16 w-full items-center justify-center sm:min-h-24 md:min-h-28 overflow-visible">
-      {/* Cinematic Text Title - Rendered immediately so user never sees a blank gap */}
+      {/* Cinematic Text Title - Always rendered so user never sees a blank gap or broken icon */}
       <h1
         className={cn(
           "max-w-2xl line-clamp-2 text-xl font-black uppercase leading-[1.3] sm:leading-[1.25] tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl transition-opacity duration-300 pt-3 pb-2 px-2 overflow-visible",
@@ -643,7 +656,7 @@ function HeroMovieTitle({
             "max-h-16 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-opacity duration-300 sm:max-h-24 sm:max-w-[34rem] md:max-h-28",
             logoLoaded
               ? "opacity-100 relative"
-              : "opacity-0 absolute pointer-events-none",
+              : "opacity-0 absolute pointer-events-none invisible",
           )}
         />
       )}
@@ -1136,7 +1149,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
   // empty initial list made production wait for /config/public before the LCP
   // image and title even existed in the DOM.
   const [featured, setFeatured] = useState<HeroFilm[]>(() => {
-    if (films && films.length > 0) return films.slice(0, 6) as HeroFilm[];
+    if (films && films.length > 0) return films as HeroFilm[];
     const pinned = (initialConfig?.heroMovieSlugs || [])
       .map((slug) =>
         CURATED_HERO_FRANCHISE_POOL.find((film) => film.slug === slug),
@@ -1144,9 +1157,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       .filter((film): film is (typeof CURATED_HERO_FRANCHISE_POOL)[number] =>
         Boolean(film),
       );
-    return (pinned.length
-      ? pinned.slice(0, 6)
-      : CURATED_HERO_FRANCHISE_POOL.slice(0, 6)) as HeroFilm[];
+    return (pinned.length ? pinned : CURATED_HERO_FRANCHISE_POOL) as HeroFilm[];
   });
   const [trailerModalFilm, setTrailerModalFilm] = useState<FilmItem | null>(
     null,
@@ -1240,20 +1251,20 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       let restoredIndex = 0;
 
       if (films && films.length > 0) {
-        playlist = films.slice(0, 6) as HeroFilm[];
+        playlist = films as HeroFilm[];
       } else {
         const stored = readStoredHeroPlaylist();
         try {
           const config =
             initialConfig || (await siteConfigApi.getPublic()).data;
           if (!active) return;
-          const requestedSlugs = (config.heroMovieSlugs || [])
+          const requestedSlugs = (config?.heroMovieSlugs || [])
             .map((slug) => slug.trim())
-            .filter(Boolean)
-            .slice(0, 6);
+            .filter(Boolean);
 
           const storedMatchesPinned = Boolean(
             stored &&
+            requestedSlugs.length > 0 &&
             stored.length === requestedSlugs.length &&
             requestedSlugs.every((slug, index) => stored[index]?.slug === slug),
           );
@@ -1285,18 +1296,23 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                 }),
               )
             ).filter((film): film is HeroFilm => Boolean(film));
+          } else if (stored && stored.length > 0) {
+            playlist = stored;
+            restoredIndex = readStoredHeroIndex(stored.length);
           } else {
-            // Match the server-rendered fallback exactly. Randomizing here
-            // caused a second backdrop/logo download and a visible jump after
-            // hydration on every cold production visit.
-            playlist = CURATED_HERO_FRANCHISE_POOL.slice(0, 6) as HeroFilm[];
+            // Fresh visit: use all 100 movies in the curated pool!
+            playlist = CURATED_HERO_FRANCHISE_POOL as HeroFilm[];
+            // Start at a random movie from the 100 pool so every fresh session is unique!
+            restoredIndex = Math.floor(Math.random() * playlist.length);
           }
         } catch {
-          playlist = CURATED_HERO_FRANCHISE_POOL.slice(0, 6) as HeroFilm[];
+          playlist = (stored && stored.length > 0
+            ? stored
+            : CURATED_HERO_FRANCHISE_POOL) as HeroFilm[];
         }
 
         if (!playlist.length) {
-          playlist = CURATED_HERO_FRANCHISE_POOL.slice(0, 6) as HeroFilm[];
+          playlist = CURATED_HERO_FRANCHISE_POOL as HeroFilm[];
         }
       }
 
@@ -1442,6 +1458,22 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         .filter((film): film is HeroFilm => Boolean(film)),
     [fanCardSlugs, featured],
   );
+
+  // Rolling window of thumbnails around current index (keeps active item visible and clickable across all 100 films)
+  const visibleThumbnails = useMemo(() => {
+    if (featured.length <= 6) {
+      return featured.map((item, index) => ({ item, index }));
+    }
+    const windowSize = 6;
+    let start = Math.max(0, current - 2);
+    if (start + windowSize > featured.length) {
+      start = Math.max(0, featured.length - windowSize);
+    }
+    return featured.slice(start, start + windowSize).map((item, offset) => ({
+      item,
+      index: start + offset,
+    }));
+  }, [featured, current]);
 
   // Fetch watch history to show "Xem tiếp mm:ss" CTA with progress bar
   const { data: serverHistoryData } = useQuery({
@@ -1917,21 +1949,29 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
               </button>
 
               <div className="flex min-h-8 items-center justify-center gap-1.5 rounded-full border border-white/15 bg-black/45 px-3 backdrop-blur-md shadow-md">
-                {featured.slice(0, 6).map((_, i) => (
-                  <button
-                    key={`mobile-dot-${i}`}
-                    type="button"
-                    onClick={() => setCurrent(i)}
-                    aria-label={`Chuyển đến phim ${i + 1}`}
-                    aria-current={i === current ? "true" : undefined}
-                    className={cn(
-                      "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
-                      i === current
-                        ? "w-7 bg-white shadow-sm"
-                        : "w-1.5 bg-white/40 hover:bg-white/80",
-                    )}
-                  />
-                ))}
+                {featured.length <= 6 ? (
+                  featured.map((_, i) => (
+                    <button
+                      key={`mobile-dot-${i}`}
+                      type="button"
+                      onClick={() => setCurrent(i)}
+                      aria-label={`Chuyển đến phim ${i + 1}`}
+                      aria-current={i === current ? "true" : undefined}
+                      className={cn(
+                        "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
+                        i === current
+                          ? "w-7 bg-white shadow-sm"
+                          : "w-1.5 bg-white/40 hover:bg-white/80",
+                      )}
+                    />
+                  ))
+                ) : (
+                  <span className="text-xs font-mono font-bold text-white tracking-wider select-none px-1">
+                    {String(current + 1).padStart(2, "0")}{" "}
+                    <span className="text-neutral-500 font-normal">/</span>{" "}
+                    {String(featured.length).padStart(2, "0")}
+                  </span>
+                )}
               </div>
 
               <button
@@ -2008,10 +2048,9 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
           </div>
         </div>
 
-        {/* Thumbnails Row with Hover Preview (Scrollbar Completely Hidden) */}
         {showDesktopFanCards && (
           <div className="flex items-center gap-2 overflow-x-auto p-1 scrollbar-none [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none]">
-            {featured.slice(0, 6).map((item, i) => {
+            {visibleThumbnails.map(({ item, index: i }) => {
               const cardImg =
                 item.thumb_url ||
                 item.poster_url ||
