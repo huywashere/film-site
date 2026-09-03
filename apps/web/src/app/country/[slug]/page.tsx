@@ -22,6 +22,7 @@ import {
   CURATED_KOREAN_HERO_POOL,
   CURATED_CHINESE_HERO_POOL,
   AsianHeroItem,
+  buildAsianHeroImageCandidates,
 } from "@/lib/curated-asian-hero";
 import {
   getYoutubeTrailer,
@@ -337,16 +338,38 @@ function ResilientAsianHeroBackdrop({
 }: {
   item: AsianHeroItem;
 }) {
-  const [imgError, setImgError] = useState(false);
+  const desktopCandidates = useMemo(() => {
+    const directList = [item.thumb_url, item.poster_url].filter(Boolean) as string[];
+    const all: string[] = [];
+    for (const url of directList) {
+      for (const cand of buildAsianHeroImageCandidates(url)) {
+        if (!all.includes(cand)) all.push(cand);
+      }
+    }
+    return all;
+  }, [item.thumb_url, item.poster_url]);
+
+  const mobileCandidates = useMemo(() => {
+    const directList = [item.poster_url, item.thumb_url].filter(Boolean) as string[];
+    const all: string[] = [];
+    for (const url of directList) {
+      for (const cand of buildAsianHeroImageCandidates(url)) {
+        if (!all.includes(cand)) all.push(cand);
+      }
+    }
+    return all;
+  }, [item.poster_url, item.thumb_url]);
+
+  const [desktopIdx, setDesktopIdx] = useState(0);
+  const [mobileIdx, setMobileIdx] = useState(0);
 
   useEffect(() => {
-    setImgError(false);
-  }, [item.slug]);
+    setDesktopIdx(0);
+    setMobileIdx(0);
+  }, [item.slug, item.thumb_url, item.poster_url]);
 
-  const desktopSrc = imgError
-    ? item.poster_url || item.thumb_url || ""
-    : item.thumb_url || item.poster_url || "";
-  const mobilePosterSrc = item.poster_url || item.thumb_url || "";
+  const desktopSrc = desktopCandidates[desktopIdx] || item.thumb_url || item.poster_url || "";
+  const mobilePosterSrc = mobileCandidates[mobileIdx] || item.poster_url || item.thumb_url || "";
 
   return (
     <picture className="absolute inset-0 w-full h-full block">
@@ -360,18 +383,82 @@ function ResilientAsianHeroBackdrop({
         media="(min-width: 768px)"
         srcSet={desktopSrc}
       />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        key={item.slug || item.name}
+        key={`${item.slug}-backdrop-${desktopIdx}-${mobileIdx}`}
         src={desktopSrc}
         alt={item.name}
-        referrerPolicy="no-referrer"
+        referrerPolicy="strict-origin-when-cross-origin"
         loading="eager"
         decoding="async"
         fetchPriority="high"
-        onError={() => setImgError(true)}
+        onError={() => {
+          if (desktopIdx < desktopCandidates.length - 1) {
+            setDesktopIdx((prev) => prev + 1);
+          }
+          if (mobileIdx < mobileCandidates.length - 1) {
+            setMobileIdx((prev) => prev + 1);
+          }
+        }}
         className="w-full h-full object-cover object-top sm:object-center md:object-right brightness-[0.92] transition-opacity duration-700 animate-in fade-in"
       />
     </picture>
+  );
+}
+
+function ResilientAsianHeroLogo({
+  item,
+}: {
+  item: AsianHeroItem;
+}) {
+  const logoCandidates = useMemo(() => {
+    return buildAsianHeroImageCandidates(item.logoUrl);
+  }, [item.logoUrl]);
+
+  const [candidateIdx, setCandidateIdx] = useState(0);
+  const [hasFailedAll, setHasFailedAll] = useState(false);
+
+  useEffect(() => {
+    setCandidateIdx(0);
+    setHasFailedAll(false);
+  }, [item.slug, item.logoUrl]);
+
+  const currentLogoSrc = logoCandidates[candidateIdx];
+
+  if (!currentLogoSrc || hasFailedAll) {
+    return (
+      <h1
+        className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-wide leading-tight drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)]"
+        style={{
+          fontFamily: "'Playfair Display', 'Dancing Script', Georgia, serif",
+          fontStyle: "italic",
+        }}
+      >
+        {item.calligraphyTitle || item.name}
+      </h1>
+    );
+  }
+
+  return (
+    <div className="relative w-44 sm:w-72 md:w-80 lg:w-[440px] h-14 sm:h-24 md:h-28 flex items-center">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        key={`${item.slug}-logo-${candidateIdx}`}
+        src={currentLogoSrc}
+        alt={item.name}
+        loading="eager"
+        decoding="async"
+        referrerPolicy="strict-origin-when-cross-origin"
+        onError={() => {
+          if (candidateIdx < logoCandidates.length - 1) {
+            setCandidateIdx((prev) => prev + 1);
+          } else {
+            setHasFailedAll(true);
+          }
+        }}
+        className="max-h-full max-w-full object-contain object-left drop-shadow-[0_10px_25px_rgba(0,0,0,0.95)]"
+      />
+    </div>
   );
 }
 
@@ -386,7 +473,6 @@ function AsianCuratedHeroBanner({
   const [direction, setDirection] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
   const curatedList = pool || [];
-  const [logoFailed, setLogoFailed] = useState(false);
 
   // Warm only the visible and next slide. Preloading the entire curated pool
   // monopolized mobile bandwidth and could leave the first banner blank.
@@ -412,7 +498,6 @@ function AsianCuratedHeroBanner({
     const interval = setInterval(() => {
       setDirection(1);
       setCurrentIndex((prev) => (prev + 1) % curatedList.length);
-      setLogoFailed(false);
     }, 7000);
     return () => clearInterval(interval);
   }, [curatedList.length, isPaused]);
@@ -422,7 +507,6 @@ function AsianCuratedHeroBanner({
   const handleNext = () => {
     setDirection(1);
     setCurrentIndex((prev) => (prev + 1) % curatedList.length);
-    setLogoFailed(false);
   };
 
   const handlePrev = () => {
@@ -430,13 +514,11 @@ function AsianCuratedHeroBanner({
     setCurrentIndex(
       (prev) => (prev - 1 + curatedList.length) % curatedList.length,
     );
-    setLogoFailed(false);
   };
 
   const handleGoTo = (idx: number) => {
     setDirection(idx >= currentIndex ? 1 : -1);
     setCurrentIndex(idx);
-    setLogoFailed(false);
   };
 
   return (
@@ -518,31 +600,8 @@ function AsianCuratedHeroBanner({
             }}
             className="max-w-2xl space-y-2.5 sm:space-y-4 lg:space-y-5 pt-0 sm:pt-8"
           >
-            {/* Official Title Logo PNG or Calligraphy Title */}
-            {currentItem.logoUrl && !logoFailed ? (
-              <div className="relative w-44 sm:w-72 md:w-80 lg:w-[440px] h-14 sm:h-24 md:h-28 flex items-center">
-                <NextImage
-                  src={currentItem.logoUrl}
-                  alt={currentItem.name}
-                  fill
-                  priority
-                  loading="eager"
-                  className="object-contain object-left drop-shadow-[0_10px_25px_rgba(0,0,0,0.95)]"
-                  unoptimized
-                  onError={() => setLogoFailed(true)}
-                />
-              </div>
-            ) : (
-              <h1
-                className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-wide leading-tight drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)]"
-                style={{
-                  fontFamily: "'Playfair Display', 'Dancing Script', Georgia, serif",
-                  fontStyle: "italic",
-                }}
-              >
-                {currentItem.calligraphyTitle || currentItem.name}
-              </h1>
-            )}
+            {/* Official Title Logo PNG with Multi-CDN Resilient Fallback */}
+            <ResilientAsianHeroLogo item={currentItem} />
 
             {/* Subtitle / Vietnamese or English name */}
             <p className="text-[11px] sm:text-sm text-neutral-300 font-semibold italic -mt-0.5 sm:-mt-2 drop-shadow">

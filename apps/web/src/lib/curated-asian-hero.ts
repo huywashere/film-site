@@ -18,6 +18,31 @@ export interface AsianHeroItem extends FilmItem {
   characterCards?: CharacterCard[];
 }
 
+/**
+ * Builds a robust fallback chain for curated Asian hero assets:
+ * 1. Direct CDN (Fastest, zero-hop)
+ * 2. Cloudflare Edge Proxy (wsrv.nl - globally unblocked & fast in VN)
+ * 3. Self-hosted Next.js Server Image Proxy (/api/image-proxy)
+ */
+export function buildAsianHeroImageCandidates(url?: string | null): string[] {
+  if (!url) return [];
+  const list: string[] = [];
+  const clean = url.trim();
+  if (!clean) return [];
+
+  list.push(clean);
+
+  if (clean.includes("image.tmdb.org")) {
+    list.push(`https://wsrv.nl/?url=${encodeURIComponent(clean)}&output=webp&we=1`);
+    list.push(`/api/image-proxy?url=${encodeURIComponent(clean)}&strict=1`);
+  } else if (!clean.startsWith("/api/image-proxy")) {
+    list.push(`https://wsrv.nl/?url=${encodeURIComponent(clean)}&output=webp&we=1`);
+    list.push(`/api/image-proxy?url=${encodeURIComponent(clean)}&strict=1`);
+  }
+
+  return list;
+}
+
 export const CURATED_CHINESE_HERO_POOL: AsianHeroItem[] = [
   {
     _id: "du-phuong-hanh",

@@ -3512,9 +3512,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             </div>
 
             {/* ── Seamless Cinema Navigation Bar ── */}
-            <div className="flex items-center justify-center pb-3 border-b border-white/[0.08]">
+            <div className="w-full pb-2.5 sm:pb-3 border-b border-white/[0.08]">
               <nav
-                className="flex items-center justify-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth w-full -mx-1 px-1 sm:mx-0 sm:px-0"
+                className="flex items-center justify-start md:justify-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar scroll-smooth w-full px-1 sm:px-0 touch-pan-x select-none"
                 aria-label="Nội dung phim"
               >
                 {[
@@ -3553,9 +3553,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       onClick={() => setWatchContentTab(tab.id)}
                       aria-current={active ? 'page' : undefined}
                       className={cn(
-                        'relative flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer select-none shrink-0 whitespace-nowrap',
+                        'relative flex items-center justify-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full text-[11.5px] sm:text-xs font-semibold transition-all cursor-pointer select-none shrink-0 whitespace-nowrap',
                         active
-                          ? 'bg-[#24262c] text-white font-bold shadow-sm'
+                          ? 'bg-[#24262c] text-white font-bold shadow-sm ring-1 ring-white/10'
                           : 'text-neutral-400 hover:text-white hover:bg-[#1a1c22]',
                       )}
                     >
@@ -3641,10 +3641,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   ];
 
                   return (
-                    <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 pb-2.5 border-b border-white/[0.08]">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-2.5 pb-2.5 border-b border-white/[0.08]">
                       {/* Language groups / versions */}
                       <div
-                        className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2"
+                        className="flex items-center justify-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar w-full sm:w-auto px-1 sm:px-0 touch-pan-x"
                         role="tablist"
                         aria-label="Phiên bản phát"
                       >
@@ -3691,16 +3691,16 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                 }
                               }}
                               className={cn(
-                                'group relative inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all select-none border',
+                                'group relative inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11.5px] sm:text-xs font-medium transition-all select-none border shrink-0 whitespace-nowrap',
                                 isActive
-                                  ? 'border-white/15 bg-white/[0.08] text-white font-semibold cursor-pointer'
+                                  ? 'border-white/15 bg-white/[0.08] text-white font-semibold cursor-pointer shadow-sm'
                                   : hasItems
                                     ? 'border-transparent bg-transparent text-neutral-400 hover:border-white/[0.08] hover:bg-white/[0.04] hover:text-neutral-200 cursor-pointer'
                                     : 'cursor-not-allowed border-transparent bg-transparent text-neutral-600 opacity-30',
                               )}
                             >
                               <IconComponent
-                                size={13}
+                                size={12}
                                 className={cn(
                                   'shrink-0 transition-colors',
                                   isActive
@@ -3716,7 +3716,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                         })}
                       </div>
 
-                      {/* Divider between language versions and servers */}
+                      {/* Divider between language versions and servers (on desktop) */}
                       {activeGroup.length > 0 && (
                         <div className="hidden sm:block h-3.5 w-px bg-white/10 mx-0.5" />
                       )}
@@ -3724,11 +3724,11 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       {/* Server Selection */}
                       {activeGroup.length > 0 && (
                         <div
-                          className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5"
+                          className="flex items-center justify-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar w-full sm:w-auto px-1 sm:px-0 touch-pan-x"
                           role="radiogroup"
                           aria-label="Máy chủ phát"
                         >
-                          <div className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 shrink-0 mr-0.5">
+                          <div className="flex items-center gap-1 text-[11.5px] sm:text-xs font-medium text-neutral-500 shrink-0 mr-0.5">
                             <Server size={12} className="text-neutral-500" />
                             <span>Máy chủ:</span>
                           </div>
@@ -3763,9 +3763,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                   }
                                 }}
                                 className={cn(
-                                  'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition-all cursor-pointer select-none',
+                                  'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11.5px] sm:text-xs font-medium transition-all cursor-pointer select-none shrink-0 whitespace-nowrap',
                                   isActive
-                                    ? 'border-white/15 bg-white/[0.08] text-white font-semibold'
+                                    ? 'border-white/15 bg-white/[0.08] text-white font-semibold shadow-sm'
                                     : 'border-transparent bg-transparent text-neutral-400 hover:border-white/[0.08] hover:bg-white/[0.04] hover:text-neutral-200',
                                   hasFailed &&
                                     'cursor-not-allowed border-transparent opacity-25 grayscale',

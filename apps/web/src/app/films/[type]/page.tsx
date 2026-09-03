@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   CURATED_ANIME_HERO_POOL,
   AsianHeroItem,
+  buildAsianHeroImageCandidates,
 } from "@/lib/curated-asian-hero";
 import { useTranslation } from "@/store/langStore";
 import {
@@ -147,6 +148,131 @@ function dedupeFilmsList(films: FilmItem[]): FilmItem[] {
   });
 }
 
+function ResilientAnimeHeroBackdrop({
+  item,
+  isActive = true,
+}: {
+  item: AsianHeroItem;
+  isActive?: boolean;
+}) {
+  const desktopCandidates = useMemo(() => {
+    const directList = [item.thumb_url, item.poster_url].filter(Boolean) as string[];
+    const all: string[] = [];
+    for (const url of directList) {
+      for (const cand of buildAsianHeroImageCandidates(url)) {
+        if (!all.includes(cand)) all.push(cand);
+      }
+    }
+    return all;
+  }, [item.thumb_url, item.poster_url]);
+
+  const mobileCandidates = useMemo(() => {
+    const directList = [item.poster_url, item.thumb_url].filter(Boolean) as string[];
+    const all: string[] = [];
+    for (const url of directList) {
+      for (const cand of buildAsianHeroImageCandidates(url)) {
+        if (!all.includes(cand)) all.push(cand);
+      }
+    }
+    return all;
+  }, [item.poster_url, item.thumb_url]);
+
+  const [desktopIdx, setDesktopIdx] = useState(0);
+  const [mobileIdx, setMobileIdx] = useState(0);
+
+  useEffect(() => {
+    setDesktopIdx(0);
+    setMobileIdx(0);
+  }, [item.slug, item.thumb_url, item.poster_url]);
+
+  const desktopSrc = desktopCandidates[desktopIdx] || item.thumb_url || item.poster_url || "";
+  const mobilePosterSrc = mobileCandidates[mobileIdx] || item.poster_url || item.thumb_url || "";
+
+  return (
+    <picture className="w-full h-full block">
+      {/* Mobile portrait poster (vertical artwork) */}
+      <source
+        media="(max-width: 767px)"
+        srcSet={mobilePosterSrc}
+      />
+      {/* Desktop widescreen backdrop (horizontal 16:9 artwork) */}
+      <source
+        media="(min-width: 768px)"
+        srcSet={desktopSrc}
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        key={`${item.slug}-backdrop-${desktopIdx}-${mobileIdx}`}
+        src={desktopSrc}
+        alt={item.name}
+        referrerPolicy="strict-origin-when-cross-origin"
+        loading="eager"
+        decoding="async"
+        fetchPriority={isActive ? "high" : "auto"}
+        onError={() => {
+          if (desktopIdx < desktopCandidates.length - 1) {
+            setDesktopIdx((prev) => prev + 1);
+          }
+          if (mobileIdx < mobileCandidates.length - 1) {
+            setMobileIdx((prev) => prev + 1);
+          }
+        }}
+        className="w-full h-full object-cover object-top sm:object-center lg:object-[center_25%] brightness-[0.88] contrast-[1.06]"
+      />
+    </picture>
+  );
+}
+
+function ResilientAnimeHeroLogo({
+  item,
+}: {
+  item: AsianHeroItem;
+}) {
+  const logoCandidates = useMemo(() => {
+    return buildAsianHeroImageCandidates(item.logoUrl);
+  }, [item.logoUrl]);
+
+  const [candidateIdx, setCandidateIdx] = useState(0);
+  const [hasFailedAll, setHasFailedAll] = useState(false);
+
+  useEffect(() => {
+    setCandidateIdx(0);
+    setHasFailedAll(false);
+  }, [item.slug, item.logoUrl]);
+
+  const currentLogoSrc = logoCandidates[candidateIdx];
+
+  if (!currentLogoSrc || hasFailedAll) {
+    return (
+      <h1 className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-wide leading-tight drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)]">
+        {item.calligraphyTitle || item.name}
+      </h1>
+    );
+  }
+
+  return (
+    <div className="relative w-44 sm:w-72 md:w-80 lg:w-[460px] h-14 sm:h-24 md:h-32 lg:h-36 flex items-center">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        key={`${item.slug}-logo-${candidateIdx}`}
+        src={currentLogoSrc}
+        alt={item.name}
+        loading="eager"
+        decoding="async"
+        referrerPolicy="strict-origin-when-cross-origin"
+        onError={() => {
+          if (candidateIdx < logoCandidates.length - 1) {
+            setCandidateIdx((prev) => prev + 1);
+          } else {
+            setHasFailedAll(true);
+          }
+        }}
+        className="max-h-full max-w-full object-contain object-left drop-shadow-[0_12px_28px_rgba(0,0,0,0.95)]"
+      />
+    </div>
+  );
+}
+
 function AnimeCuratedHeroBanner({
   pool,
 }: {
@@ -156,11 +282,8 @@ function AnimeCuratedHeroBanner({
   const [direction, setDirection] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
   const curatedList = pool || [];
-  const [logoFailed, setLogoFailed] = useState(false);
 
-  // Warm just the current and next artwork. Every hidden absolute slide is
-  // still considered near-viewport by browsers, so preloading the whole pool
-  // delayed the actual LCP image badly on mobile/production.
+  // Warm just the current and next artwork
   useEffect(() => {
     if (typeof window !== "undefined" && pool?.length) {
       const nextIndex = (currentIndex + 1) % pool.length;
@@ -190,10 +313,6 @@ function AnimeCuratedHeroBanner({
 
   const currentItem = curatedList[currentIndex] || curatedList[0];
 
-  useEffect(() => {
-    setLogoFailed(false);
-  }, [currentItem?.slug, currentItem?.logoUrl]);
-
   const handleNext = () => {
     setDirection(1);
     setCurrentIndex((prev) => (prev + 1) % curatedList.length);
@@ -222,8 +341,6 @@ function AnimeCuratedHeroBanner({
       <div className="absolute inset-0 w-full h-full overflow-hidden">
         {[currentItem].filter(Boolean).map((item) => {
           const isActive = true;
-          const desktopSrc = item.thumb_url || item.poster_url || "";
-          const mobilePosterSrc = item.poster_url || item.thumb_url || "";
 
           return (
             <div
@@ -239,27 +356,7 @@ function AnimeCuratedHeroBanner({
                   : "opacity-0 scale-[1.04] z-0",
               )}
             >
-              <picture className="w-full h-full block">
-                {/* Mobile portrait poster (vertical artwork) */}
-                <source
-                  media="(max-width: 767px)"
-                  srcSet={mobilePosterSrc}
-                />
-                {/* Desktop widescreen backdrop (horizontal 16:9 artwork) */}
-                <source
-                  media="(min-width: 768px)"
-                  srcSet={desktopSrc}
-                />
-                <img
-                  src={desktopSrc}
-                  alt={item.name}
-                  referrerPolicy="no-referrer"
-                  loading="eager"
-                  decoding="async"
-                  fetchPriority={isActive ? "high" : "auto"}
-                  className="w-full h-full object-cover object-top sm:object-center lg:object-[center_25%] brightness-[0.88] contrast-[1.06]"
-                />
-              </picture>
+              <ResilientAnimeHeroBackdrop item={item} isActive={isActive} />
             </div>
           );
         })}
@@ -304,26 +401,8 @@ function AnimeCuratedHeroBanner({
             }}
             className="max-w-2xl space-y-2.5 sm:space-y-4 lg:space-y-5 pt-0 sm:pt-8"
           >
-            {/* Official Studio Title Logo PNG */}
-            {currentItem.logoUrl && !logoFailed ? (
-              <div className="relative w-44 sm:w-72 md:w-80 lg:w-[460px] h-14 sm:h-24 md:h-32 lg:h-36 flex items-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={currentItem.logoUrl}
-                  alt={currentItem.name}
-                  loading="eager"
-                  decoding="async"
-                  onError={() => setLogoFailed(true)}
-                  className="max-h-full max-w-full object-contain object-left drop-shadow-[0_12px_28px_rgba(0,0,0,0.95)]"
-                />
-              </div>
-            ) : (
-              <h1
-                className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-wide leading-tight drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)]"
-              >
-                {currentItem.calligraphyTitle || currentItem.name}
-              </h1>
-            )}
+            {/* Official Studio Title Logo PNG with Multi-CDN Resilient Fallback */}
+            <ResilientAnimeHeroLogo item={currentItem} />
 
             {/* Subtitle */}
             <p className="text-[11px] sm:text-sm text-neutral-300 font-semibold italic -mt-0.5 sm:-mt-2 drop-shadow">

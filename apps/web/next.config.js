@@ -150,7 +150,7 @@ const nextConfig = {
           },
           {
             key: "Referrer-Policy",
-            value: "no-referrer",
+            value: "strict-origin-when-cross-origin",
           },
           {
             key: "Permissions-Policy",

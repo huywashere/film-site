@@ -109,7 +109,7 @@ export default function RootLayout({
             __html: `(function(){try{var r=document.documentElement;r.dataset.netphimIntro="show";var h=Array.from({length:18},function(_,i){return "/images/splash/tmdb/"+String(i+1).padStart(2,"0")+".webp"}),o=Array.from({length:10},function(_,i){return "/images/splash/tmdb/kr-"+String(i+1).padStart(2,"0")+".webp"}),c=Array.from({length:10},function(_,i){return "/images/splash/tmdb/cn-"+String(i+1).padStart(2,"0")+".webp"}),x=function(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a},p=x(x(h).slice(0,8).concat(x(o).slice(0,5),x(c).slice(0,5)));for(var i=0;i<p.length;i++)r.style.setProperty("--netphim-intro-poster-"+(i+1),'url("'+p[i]+'")')}catch(e){document.documentElement.dataset.netphimIntro="show";}})();`,
           }}
         />
-        <meta name="referrer" content="no-referrer" />
+        <meta name="referrer" content="strict-origin-when-cross-origin" />
         <link rel="icon" href="/cinephim-logo.png" type="image/png" />
         <link rel="shortcut icon" href="/cinephim-logo.png" type="image/png" />
         <link rel="apple-touch-icon" href="/cinephim-logo.png" />
