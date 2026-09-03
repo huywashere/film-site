@@ -81,14 +81,14 @@ export function LandscapeSpotlightRow({
     return (
       <section className={`${cardFont.className} mb-8 w-full sm:mb-12`} aria-hidden="true">
         <div className="mb-4 h-8 w-56 animate-pulse rounded-md bg-white/[0.06]" />
-        <div className="scrollbar-none flex gap-3 overflow-hidden sm:gap-4">
+        <div className="scrollbar-none flex gap-2.5 overflow-hidden sm:gap-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <div
               key={index}
-              className="w-[84vw] min-w-[278px] shrink-0 overflow-hidden rounded-xl border border-white/[0.06] bg-[#101116] sm:w-[48vw] lg:w-[calc((100%-3rem)/4)]"
+              className="w-[48vw] min-w-[160px] shrink-0 overflow-hidden rounded-xl border border-white/[0.06] bg-[#101116] sm:w-[48vw] lg:w-[calc((100%-3rem)/4)]"
             >
               <div className="aspect-[16/9] animate-pulse bg-white/[0.045]" />
-              <div className="h-[74px] animate-pulse bg-white/[0.025]" />
+              <div className="h-[68px] sm:h-[74px] animate-pulse bg-white/[0.025]" />
             </div>
           ))}
         </div>
@@ -155,7 +155,7 @@ export function LandscapeSpotlightRow({
       <div
         ref={scrollRef}
         onScroll={checkScroll}
-        className="scrollbar-none flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-3 pt-1 scroll-smooth [-webkit-overflow-scrolling:touch] sm:gap-4"
+        className="scrollbar-none flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-3 pt-1 scroll-smooth [-webkit-overflow-scrolling:touch] sm:gap-4"
       >
         {cleanList.map((film, index) => {
           const rating = Number(
@@ -183,7 +183,7 @@ export function LandscapeSpotlightRow({
           return (
             <article
               key={film.slug || index}
-              className="group relative w-[84vw] min-w-[278px] shrink-0 snap-start select-none sm:w-[48vw] lg:w-[calc((100%-3rem)/4)]"
+              className="group relative w-[48vw] min-w-[160px] shrink-0 snap-start select-none sm:w-[48vw] lg:w-[calc((100%-3rem)/4)]"
             >
               <Link
                 href={filmHref(film, 'watch')}
@@ -199,58 +199,59 @@ export function LandscapeSpotlightRow({
 
                 <div className="absolute inset-0 bg-gradient-to-t from-[#08090d]/70 via-transparent to-black/10" />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/15 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                  <div className="flex h-10 w-10 scale-90 items-center justify-center rounded-full bg-white text-black shadow-2xl transition-transform group-hover:scale-100">
-                    <Play size={16} fill="currentColor" className="ml-0.5" />
+                  <div className="flex h-8 w-8 sm:h-10 sm:w-10 scale-90 items-center justify-center rounded-full bg-white text-black shadow-2xl transition-transform group-hover:scale-100">
+                    <Play size={13} className="sm:hidden ml-0.5" fill="currentColor" />
+                    <Play size={16} className="hidden sm:block ml-0.5" fill="currentColor" />
                   </div>
                 </div>
 
-                <div className="pointer-events-none absolute inset-x-2 top-2 z-10 flex items-center justify-between gap-1">
+                <div className="pointer-events-none absolute inset-x-1.5 top-1.5 sm:inset-x-2 sm:top-2 z-10 flex items-center justify-between gap-1">
                   {rating > 0 ? (
-                    <span className="inline-flex items-center gap-1 rounded bg-[#f5a000] px-1.5 py-1 text-[9px] font-black leading-none text-black shadow-lg">
+                    <span className="inline-flex items-center gap-0.5 sm:gap-1 rounded bg-[#f5a000] px-1 sm:px-1.5 py-0.5 sm:py-1 text-[7.5px] sm:text-[9px] font-black leading-none text-black shadow-lg">
                       <span>IMDb</span>
                       <span>{rating.toFixed(1)}</span>
                     </span>
                   ) : (
                     <span />
                   )}
-                  <span className="rounded border border-white/10 bg-black/85 px-1.5 py-1 text-[9px] font-black uppercase leading-none text-white shadow-lg backdrop-blur-sm">
+                  <span className="rounded border border-white/10 bg-black/85 px-1 sm:px-1.5 py-0.5 sm:py-1 text-[7.5px] sm:text-[9px] font-black uppercase leading-none text-white shadow-lg backdrop-blur-sm">
                     {quality}
                   </span>
                 </div>
               </Link>
 
-              <div className="relative -mt-9 grid min-h-[94px] grid-cols-[70px_minmax(0,1fr)] items-end gap-3 px-2 sm:grid-cols-[76px_minmax(0,1fr)]">
+              <div className="relative -mt-7 sm:-mt-9 grid min-h-[80px] sm:min-h-[94px] grid-cols-[52px_minmax(0,1fr)] sm:grid-cols-[76px_minmax(0,1fr)] items-end gap-2 sm:gap-3 px-1.5 sm:px-2">
                 <Link
                   href={filmHref(film, 'watch')}
                   aria-label={`${t('common.watch', 'Xem')} ${film.name}`}
-                  className="relative z-10 aspect-[2/3] w-[70px] overflow-hidden rounded-md border border-white/25 bg-[#111318] shadow-[0_10px_24px_rgba(0,0,0,0.62)] transition-transform duration-300 group-hover:-translate-y-0.5 sm:w-[76px] motion-reduce:transform-none"
+                  className="relative z-10 aspect-[2/3] w-[52px] sm:w-[76px] overflow-hidden rounded-md border border-white/25 bg-[#111318] shadow-[0_10px_24px_rgba(0,0,0,0.62)] transition-transform duration-300 group-hover:-translate-y-0.5 motion-reduce:transform-none"
                 >
                   <TmdbArtwork film={film} kind="poster" className="h-full w-full" alt="" />
                 </Link>
 
-                <div className="min-w-0 pb-1.5">
+                <div className="min-w-0 pb-1">
                   <Link
                     href={filmHref(film, 'watch')}
-                    className="block line-clamp-1 text-[13px] font-extrabold leading-5 text-white transition-colors group-hover:text-violet-200 sm:text-sm"
+                    className="block line-clamp-2 text-[11px] sm:text-[13px] font-extrabold leading-[1.3] sm:leading-5 text-white transition-colors group-hover:text-violet-200"
                     title={film.name}
                   >
                     {film.name}
                   </Link>
-                  <p className="line-clamp-1 text-[10px] leading-4 text-neutral-500 sm:text-[11px]">
+                  <p className="mt-0.5 line-clamp-1 text-[9px] sm:text-[10px] leading-4 text-neutral-500">
                     {film.origin_name || `Năm ${film.year || 2026}`}
                   </p>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1">
-                    <span className="rounded bg-violet-500/90 px-1.5 py-1 text-[8px] font-black uppercase leading-none text-white">
+                  <div className="mt-1 flex flex-wrap items-center gap-0.5 sm:gap-1">
+                    <span className="rounded bg-violet-500/90 px-1 sm:px-1.5 py-0.5 sm:py-1 text-[7px] sm:text-[8px] font-black uppercase leading-none text-white">
                       {episodeLabel}
                     </span>
                     {(hasVoiceOver || hasDub) && (
-                      <span className="rounded bg-emerald-500/90 px-1.5 py-1 text-[8px] font-black uppercase leading-none text-white">
+                      <span className="rounded bg-emerald-500/90 px-1 sm:px-1.5 py-0.5 sm:py-1 text-[7px] sm:text-[8px] font-black uppercase leading-none text-white">
                         {hasDub ? 'L.T' : 'T.M'}
                         {episodeNumber ? ` ${episodeNumber}` : ''}
                       </span>
                     )}
                     {film.year && (
-                      <span className="rounded border border-white/10 bg-white/[0.06] px-1.5 py-1 text-[8px] font-bold leading-none text-neutral-300">
+                      <span className="hidden sm:inline-block rounded border border-white/10 bg-white/[0.06] px-1.5 py-1 text-[8px] font-bold leading-none text-neutral-300">
                         {film.year}
                       </span>
                     )}

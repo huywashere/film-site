@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Play, Sparkles } from "lucide-react";
+import { Play } from "lucide-react";
 import { cardFont } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 
@@ -87,16 +87,12 @@ export default function GenresPage() {
         {/* Header Title */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-3 sm:pb-4 border-b border-white/[0.08] gap-1.5 sm:gap-2">
           <div>
-            <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-cyan-400">
-              <Sparkles size={13} className="text-cyan-400" />
-              Bộ Sưu Tập Tuyển Chọn
-            </span>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white mt-0.5 sm:mt-1">
-              Khám Phá Vũ Trụ Điện Ảnh
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
+              Duyệt Tìm
             </h1>
           </div>
           <p className="text-[11px] sm:text-xs text-neutral-400 font-medium">
-            Chọn chủ đề để bước vào không gian giải trí đỉnh cao
+            Chọn vũ trụ điện ảnh để bắt đầu hành trình của bạn
           </p>
         </div>
 
