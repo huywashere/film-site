@@ -103,17 +103,21 @@ model User {
   adminAccessEnabled       Boolean        @default(false)
   adminPermissions         String[]       @default([])
 
-  watchlist          Watchlist[]
-  reviews            Review[]
-  ratings            Rating[]
-  following          Follow[]             @relation("follower")
-  followers          Follow[]             @relation("following")
-  reviewLikes        ReviewLike[]
-  refreshTokens      RefreshToken[]
-  verificationTokens VerificationToken[]
-  resetTokens        ResetPasswordToken[]
-  watchHistories     WatchHistory[]
-  adminSessions      AdminSession[]
+  watchlist           Watchlist[]
+  reviews             Review[]
+  ratings             Rating[]
+  following           Follow[]              @relation("follower")
+  followers           Follow[]              @relation("following")
+  reviewLikes         ReviewLike[]
+  refreshTokens       RefreshToken[]
+  verificationTokens  VerificationToken[]
+  resetTokens         ResetPasswordToken[]
+  watchHistories      WatchHistory[]
+  adminSessions       AdminSession[]
+  notifications       UserNotification[]
+  movieSubscriptions  MovieSubscription[]
+  preferences         UserPreference?
+  playlists           Playlist[]
 
   @@map("users")
 }
@@ -230,13 +234,15 @@ model Movie {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  watchlist       Watchlist[]
-  reviews         Review[]
-  ratings         Rating[]
-  viewLogs        ViewLog[]
-  watchHistories  WatchHistory[]
-  playbackSources MoviePlaybackSource[]
-  playbackEvents  PlaybackEvent[]
+  watchlist          Watchlist[]
+  reviews            Review[]
+  ratings            Rating[]
+  viewLogs           ViewLog[]
+  watchHistories     WatchHistory[]
+  playbackSources    MoviePlaybackSource[]
+  playbackEvents     PlaybackEvent[]
+  subscriptions      MovieSubscription[]
+  playlistItems      PlaylistItem[]
 
   @@index([type, isHidden, year])
   @@index([isHidden, updatedAt(sort: Desc)])
@@ -679,4 +685,124 @@ model AdPlacement {
 
   @@index([type, isActive])
   @@map("ad_placements")
+}
+
+// ── USER NOTIFICATIONS ────────────────────────────────────────────
+
+enum NotificationType {
+  NEW_EPISODE        // Phim series có tập mới
+  REVIEW_LIKED       // Review của bạn được like
+  NEW_FOLLOWER       // Có người follow bạn
+  SYSTEM_ANNOUNCE    // Thông báo hệ thống (maintenance, update...)
+  REVIEW_REPLY       // Có người reply review của bạn
+  MOVIE_AVAILABLE    // Phim bạn đang chờ đã có
+
+  @@map("notification_type")
+}
+
+model UserNotification {
+  id         String           @id @default(cuid())
+  userId     String
+  type       NotificationType
+  title      String
+  body       String           @db.Text
+  link       String?          // Deep link tới trang liên quan (/film/slug, /review/id)
+  imageUrl   String?          // Ảnh thumbnail (poster phim, avatar người follow)
+  isRead     Boolean          @default(false)
+  readAt     DateTime?
+  expiresAt  DateTime?        // Tự xóa sau thời gian (optional)
+  createdAt  DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([createdAt, expiresAt]) // dùng cho cleanup job
+  @@map("user_notifications")
+}
+
+// ── MOVIE SUBSCRIPTIONS (Theo dõi cập nhật phim) ──────────────────
+
+model MovieSubscription {
+  userId      String
+  movieId     String
+  notifyEmail Boolean  @default(false) // gửi email khi có tập mới
+  notifyPush  Boolean  @default(true)  // gửi push/in-app notification
+  createdAt   DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@id([userId, movieId])
+  @@index([movieId]) // dùng khi fan-out thông báo cho tất cả subscriber của 1 phim
+  @@map("movie_subscriptions")
+}
+
+// ── USER PREFERENCES (Cài đặt cá nhân) ───────────────────────────
+
+model UserPreference {
+  userId                String  @id
+  // Playback
+  defaultQuality        String  @default("auto")    // "auto" | "1080p" | "720p" | "480p"
+  defaultSubtitle       String  @default("vi")      // "vi" | "en" | "off"
+  autoplay              Boolean @default(true)
+  autoSkipIntro         Boolean @default(false)
+  autoSkipOutro         Boolean @default(false)
+  preferredServer       String? // tên server ưu tiên
+  preferredProvider     String? // "kkphim" | "nguonc" | "vsmov"
+  // UI / Display
+  theme                 String  @default("dark")    // "dark" | "light" | "system"
+  language              String  @default("vi")      // giao diện
+  contentLanguage       String  @default("all")     // lọc phim theo ngôn ngữ
+  // Notifications
+  emailNotifications    Boolean @default(true)
+  pushNotifications     Boolean @default(true)
+  notifyNewEpisode      Boolean @default(true)
+  notifyReviewLiked     Boolean @default(true)
+  notifyNewFollower     Boolean @default(true)
+  // Parental Control
+  contentFilter         String  @default("all")     // "all" | "safe" | "teen"
+  // Timestamps
+  updatedAt             DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+// ── PLAYLISTS (Danh sách phim tự tạo) ────────────────────────────
+
+model Playlist {
+  id          String         @id @default(cuid())
+  userId      String
+  title       String
+  description String?        @db.Text
+  coverUrl    String?        // ảnh bìa playlist (auto = poster phim đầu tiên)
+  isPublic    Boolean        @default(false) // public = người khác xem được
+  itemCount   Int            @default(0)     // denormalized counter
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items PlaylistItem[]
+
+  @@index([userId, updatedAt(sort: Desc)])
+  @@index([isPublic, updatedAt(sort: Desc)]) // dùng cho trang khám phá playlist public
+  @@map("playlists")
+}
+
+model PlaylistItem {
+  id         String   @id @default(cuid())
+  playlistId String
+  movieId    String
+  note       String?  @db.Text // ghi chú cá nhân cho phim này trong playlist
+  position   Int      @default(0) // thứ tự trong playlist (để sort)
+  addedAt    DateTime @default(now())
+
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  movie    Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, movieId]) // 1 phim chỉ xuất hiện 1 lần trong playlist
+  @@index([playlistId, position])
+  @@map("playlist_items")
 }
