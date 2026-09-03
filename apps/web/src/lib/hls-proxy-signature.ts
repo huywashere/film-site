@@ -2,17 +2,25 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 const TOKEN_TTL_SECONDS = 60 * 60;
 
-function signingSecret(): string {
-  const configured = process.env.HLS_PROXY_SECRET?.trim();
+function signingSecret(): string | null {
+  const configured = (
+    process.env.HLS_PROXY_SECRET ||
+    process.env.AUTH_SECRET ||
+    process.env.NEXTAUTH_SECRET ||
+    process.env.JWT_SECRET ||
+    ""
+  ).trim();
   if (configured && configured.length >= 32) return configured;
   if (process.env.NODE_ENV !== "production") {
     return "netphim-development-only-hls-secret-change-me";
   }
-  throw new Error("HLS_PROXY_SECRET must contain at least 32 characters");
+  return null;
 }
 
 function signatureFor(url: string, expiresAt: number): string {
-  return createHmac("sha256", signingSecret())
+  const secret = signingSecret();
+  if (!secret) return "";
+  return createHmac("sha256", secret)
     .update(`${expiresAt}\n${url}`)
     .digest("base64url");
 }
@@ -23,6 +31,10 @@ export function createSignedHlsProxyUrl(
 ): string {
   const url = new URL(rawUrl).toString();
   const signature = signatureFor(url, expiresAt);
+  // Keep the direct provider URL usable when a deployment forgot the optional
+  // relay secret. Previously this exception invalidated the whole KKPhim API
+  // payload, so no server appeared in production at all.
+  if (!signature) return "";
   const search = new URLSearchParams({
     url,
     expires: String(expiresAt),
@@ -47,7 +59,9 @@ export function verifySignedHlsProxyUrl(
   }
 
   const received = Buffer.from(signature);
-  const expected = Buffer.from(signatureFor(new URL(url).toString(), expiresAt));
+  const expectedValue = signatureFor(new URL(url).toString(), expiresAt);
+  if (!expectedValue) return false;
+  const expected = Buffer.from(expectedValue);
   return (
     received.length === expected.length && timingSafeEqual(received, expected)
   );
@@ -71,7 +85,8 @@ export function addSignedHlsFallbacksInPayload(value: unknown): unknown {
   // SSRF-protected proxy URL solely as a CORS/network fallback.
   const hlsUrl = source.link_m3u8;
   if (typeof hlsUrl === "string" && /^https?:\/\//i.test(hlsUrl)) {
-    result.link_m3u8_proxy = createSignedHlsProxyUrl(hlsUrl);
+    const proxyUrl = createSignedHlsProxyUrl(hlsUrl);
+    if (proxyUrl) result.link_m3u8_proxy = proxyUrl;
   }
 
   return result;

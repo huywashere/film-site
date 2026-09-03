@@ -160,8 +160,8 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
   }
 
   function headers(cacheStatus: string, ttlSeconds: number = 300): HeadersInit {
-    // Embedded HLS fallback URLs expire after one hour. Keep stale JSON inside
-    // that window so an edge cannot return an already-expired media signature.
+    // Signed HLS fallbacks are added only while sending the response. The
+    // cached provider payload therefore never contains an expiring token.
     const swrTtl = Math.min(Math.max(ttlSeconds * 2, 300), 1800);
     const browserTtl = Math.min(ttlSeconds, 300);
     return {
@@ -182,6 +182,10 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
       if (!oldestKey) break;
       memoryCache.delete(oldestKey);
     }
+  }
+
+  function responsePayload(data: unknown): unknown {
+    return addSignedHlsFallbacksInPayload(data);
   }
 
   return async function GET(
@@ -225,9 +229,9 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
     const path = pathSegments.join("/");
     const searchParams = request.nextUrl.searchParams.toString();
     const upstreamUrl = `${config.baseUrl}/${path}${searchParams ? `?${searchParams}` : ""}`;
-    // Versioned so the previous proxy-only HLS payload cannot remain cached
-    // after switching to direct-first playback with a signed proxy fallback.
-    const cacheKey = `playback-v3:${config.cachePrefix}:${upstreamUrl}`;
+    // v4 stores provider data without expiring HLS relay signatures. A fresh
+    // signature is attached for every origin response, including cache hits.
+    const cacheKey = `playback-v4:${config.cachePrefix}:${upstreamUrl}`;
     const ttlSeconds = config.getTtl(path);
     const client = getRedisClient();
 
@@ -235,7 +239,7 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
       try {
         const raw = await client.get(cacheKey);
         if (raw) {
-          return NextResponse.json(JSON.parse(raw), {
+          return NextResponse.json(responsePayload(JSON.parse(raw)), {
             headers: headers("HIT-REDIS", ttlSeconds),
           });
         }
@@ -248,7 +252,7 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
     if (memoryEntry && memoryEntry.expiry > Date.now()) {
       memoryCache.delete(cacheKey);
       memoryCache.set(cacheKey, memoryEntry);
-      return NextResponse.json(memoryEntry.data, {
+      return NextResponse.json(responsePayload(memoryEntry.data), {
         headers: headers("HIT-MEMORY", ttlSeconds),
       });
     }
@@ -282,7 +286,7 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
             const transformed = config.transform
               ? config.transform(rawData, path)
               : rawData;
-            return addSignedHlsFallbacksInPayload(transformed);
+            return transformed;
           } catch (e) {
             lastError = e instanceof Error ? e : new Error(String(e));
             // Tiếp tục thử URL tiếp theo
@@ -301,11 +305,13 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
       memoryCache.set(cacheKey, { data, expiry: Date.now() + memoryTtlMs });
       evictStaleMemoryEntries();
 
-      return NextResponse.json(data, { headers: headers("MISS", ttlSeconds) });
+      return NextResponse.json(responsePayload(data), {
+        headers: headers("MISS", ttlSeconds),
+      });
     } catch (error: unknown) {
       if (error instanceof CircuitOpenError) {
         if (memoryEntry) {
-          return NextResponse.json(memoryEntry.data, {
+          return NextResponse.json(responsePayload(memoryEntry.data), {
             headers: headers("STALE-CB-OPEN"),
           });
         }
@@ -325,7 +331,7 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
       console.warn(`[${config.cachePrefix}-proxy] upstream note:`, message);
 
       if (memoryEntry) {
-        return NextResponse.json(memoryEntry.data, {
+        return NextResponse.json(responsePayload(memoryEntry.data), {
           headers: headers("STALE-MEMORY"),
         });
       }

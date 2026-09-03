@@ -158,10 +158,13 @@ function AnimeCuratedHeroBanner({
   const curatedList = pool || [];
   const [logoFailed, setLogoFailed] = useState(false);
 
-  // Preload all banner logos and backdrops into browser cache immediately
+  // Warm just the current and next artwork. Every hidden absolute slide is
+  // still considered near-viewport by browsers, so preloading the whole pool
+  // delayed the actual LCP image badly on mobile/production.
   useEffect(() => {
     if (typeof window !== "undefined" && pool?.length) {
-      pool.forEach((item) => {
+      const nextIndex = (currentIndex + 1) % pool.length;
+      [pool[currentIndex], pool[nextIndex]].filter(Boolean).forEach((item) => {
         if (item.logoUrl) {
           const img = new Image();
           img.src = item.logoUrl;
@@ -172,7 +175,7 @@ function AnimeCuratedHeroBanner({
         }
       });
     }
-  }, [pool]);
+  }, [currentIndex, pool]);
 
   // Smooth auto slide every 6.5 seconds
   useEffect(() => {
@@ -217,14 +220,14 @@ function AnimeCuratedHeroBanner({
     >
       {/* ── Layer 1: GPU-Accelerated Pre-rendered Backdrop Stack (Responsive Mobile Poster vs Desktop 4K Backdrop) ── */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
-        {curatedList.map((item, idx) => {
-          const isActive = idx === currentIndex;
+        {[currentItem].filter(Boolean).map((item) => {
+          const isActive = true;
           const desktopSrc = item.thumb_url || item.poster_url || "";
           const mobilePosterSrc = item.poster_url || item.thumb_url || "";
 
           return (
             <div
-              key={item.slug || item._id || idx}
+              key={item.slug || item._id || currentIndex}
               style={{
                 willChange: "opacity, transform",
                 transition: "opacity 900ms cubic-bezier(0.16, 1, 0.3, 1), transform 1200ms cubic-bezier(0.16, 1, 0.3, 1)",
@@ -247,12 +250,11 @@ function AnimeCuratedHeroBanner({
                   media="(min-width: 768px)"
                   srcSet={desktopSrc}
                 />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={desktopSrc}
                   alt={item.name}
                   referrerPolicy="no-referrer"
-                  loading={idx <= 2 ? "eager" : "lazy"}
+                  loading="eager"
                   decoding="async"
                   fetchPriority={isActive ? "high" : "auto"}
                   className="w-full h-full object-cover object-top sm:object-center lg:object-[center_25%] brightness-[0.88] contrast-[1.06]"

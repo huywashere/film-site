@@ -13,6 +13,9 @@ async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration 
   try {
     const response = await fetch(`${apiBase}/config/public`, {
       next: { revalidate: 60, tags: ["public-site-configuration"] },
+      // The public configuration is optional for the first paint. Do not let a
+      // sleeping/unreachable API hold the whole homepage HTML response open.
+      signal: AbortSignal.timeout(900),
     });
     if (!response.ok) return null;
     return (await response.json()) as PublicSiteConfiguration;

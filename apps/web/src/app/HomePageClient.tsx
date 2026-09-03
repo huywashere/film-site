@@ -617,6 +617,12 @@ export default function HomePageClient({
       }
     },
     staleTime: 10 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: false,
+    // This enrichment used to launch two more catalogue requests during the
+    // hero/LCP window. The home feed already provides a useful first render.
+    enabled: secondaryCatalogReady && Boolean(homeFeedSections?.series?.length),
   });
 
   const usUkSeriesData = useMemo(() => {

@@ -119,8 +119,14 @@ export default function ArtPlayer({
 
     const isHls =
       type === 'hls' || url.includes('.m3u8') || (type === 'auto' && url.includes('.m3u8'));
-    // Direct CDN streaming ensures maximum bandwidth, 0 proxy bottlenecks, and instant loading on both mobile and desktop
-    const prefersSameOriginHls = false;
+    // Several provider CDNs accept desktop traffic but reject mobile browser
+    // CORS/range requests. Prefer the signed same-origin relay on mobile, while
+    // retaining the direct CDN as an immediate fallback.
+    const prefersSameOriginHls =
+      typeof navigator !== 'undefined' &&
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(
+        navigator.userAgent,
+      );
     const hlsTransport = selectInitialHlsTransport(url, fallbackUrl, prefersSameOriginHls);
 
     // -- HLS quality levels (populated after manifest load) --

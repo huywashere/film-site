@@ -46,7 +46,6 @@ import {
 } from "@/lib/tmdb";
 import {
   CURATED_HERO_FRANCHISE_POOL,
-  getRandomCuratedHeroSet,
 } from "@/lib/curated-hero-pool";
 import { buildArtworkCandidates } from "@/lib/image-cdn";
 
@@ -1133,12 +1132,21 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
   const [autoRotateEnabled, setAutoRotateEnabled] = useState(false);
   const [pageVisible, setPageVisible] = useState(true);
   const attemptedTitleLogos = useRef(new Set<string>());
-  // Keep SSR and the first client paint neutral. Rendering a curated playlist
-  // here used to flash unrelated films before the authoritative admin/session
-  // playlist arrived.
+  // Paint a deterministic, first-party curated hero in the server HTML. An
+  // empty initial list made production wait for /config/public before the LCP
+  // image and title even existed in the DOM.
   const [featured, setFeatured] = useState<HeroFilm[]>(() => {
     if (films && films.length > 0) return films.slice(0, 6) as HeroFilm[];
-    return [];
+    const pinned = (initialConfig?.heroMovieSlugs || [])
+      .map((slug) =>
+        CURATED_HERO_FRANCHISE_POOL.find((film) => film.slug === slug),
+      )
+      .filter((film): film is (typeof CURATED_HERO_FRANCHISE_POOL)[number] =>
+        Boolean(film),
+      );
+    return (pinned.length
+      ? pinned.slice(0, 6)
+      : CURATED_HERO_FRANCHISE_POOL.slice(0, 6)) as HeroFilm[];
   });
   const [trailerModalFilm, setTrailerModalFilm] = useState<FilmItem | null>(
     null,
@@ -1277,21 +1285,18 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                 }),
               )
             ).filter((film): film is HeroFilm => Boolean(film));
-          } else if (stored?.length) {
-            playlist = stored;
-            restoredIndex = readStoredHeroIndex(stored.length);
           } else {
-            playlist = getRandomCuratedHeroSet(6) as HeroFilm[];
+            // Match the server-rendered fallback exactly. Randomizing here
+            // caused a second backdrop/logo download and a visible jump after
+            // hydration on every cold production visit.
+            playlist = CURATED_HERO_FRANCHISE_POOL.slice(0, 6) as HeroFilm[];
           }
         } catch {
-          if (stored?.length) {
-            playlist = stored;
-            restoredIndex = readStoredHeroIndex(stored.length);
-          }
+          playlist = CURATED_HERO_FRANCHISE_POOL.slice(0, 6) as HeroFilm[];
         }
 
         if (!playlist.length) {
-          playlist = getRandomCuratedHeroSet(6) as HeroFilm[];
+          playlist = CURATED_HERO_FRANCHISE_POOL.slice(0, 6) as HeroFilm[];
         }
       }
 

@@ -41,3 +41,40 @@ test("does not create proxy fallbacks for empty or non-http media values", () =>
   assert.equal(payload.server_data[0].link_m3u8_proxy, undefined);
   assert.equal(payload.server_data[1].link_m3u8_proxy, undefined);
 });
+
+test("keeps direct HLS data usable when a production relay secret is absent", () => {
+  const previous = {
+    nodeEnv: process.env.NODE_ENV,
+    hls: process.env.HLS_PROXY_SECRET,
+    auth: process.env.AUTH_SECRET,
+    nextAuth: process.env.NEXTAUTH_SECRET,
+    jwt: process.env.JWT_SECRET,
+  };
+
+  try {
+    process.env.NODE_ENV = "production";
+    delete process.env.HLS_PROXY_SECRET;
+    delete process.env.AUTH_SECRET;
+    delete process.env.NEXTAUTH_SECRET;
+    delete process.env.JWT_SECRET;
+
+    const directUrl = "https://media.example.com/movie/master.m3u8";
+    const payload = addSignedHlsFallbacksInPayload({
+      server_data: [{ link_m3u8: directUrl }],
+    }) as any;
+
+    assert.equal(payload.server_data[0].link_m3u8, directUrl);
+    assert.equal(payload.server_data[0].link_m3u8_proxy, undefined);
+  } finally {
+    if (previous.nodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previous.nodeEnv;
+    if (previous.hls === undefined) delete process.env.HLS_PROXY_SECRET;
+    else process.env.HLS_PROXY_SECRET = previous.hls;
+    if (previous.auth === undefined) delete process.env.AUTH_SECRET;
+    else process.env.AUTH_SECRET = previous.auth;
+    if (previous.nextAuth === undefined) delete process.env.NEXTAUTH_SECRET;
+    else process.env.NEXTAUTH_SECRET = previous.nextAuth;
+    if (previous.jwt === undefined) delete process.env.JWT_SECRET;
+    else process.env.JWT_SECRET = previous.jwt;
+  }
+});

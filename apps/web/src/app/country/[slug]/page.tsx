@@ -360,7 +360,6 @@ function ResilientAsianHeroBackdrop({
         media="(min-width: 768px)"
         srcSet={desktopSrc}
       />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         key={item.slug || item.name}
         src={desktopSrc}
@@ -389,10 +388,12 @@ function AsianCuratedHeroBanner({
   const curatedList = pool || [];
   const [logoFailed, setLogoFailed] = useState(false);
 
-  // Preload all banner logos and backdrops in memory for instant 0ms slide switching
+  // Warm only the visible and next slide. Preloading the entire curated pool
+  // monopolized mobile bandwidth and could leave the first banner blank.
   useEffect(() => {
     if (typeof window !== "undefined" && pool?.length) {
-      pool.forEach((item) => {
+      const nextIndex = (currentIndex + 1) % pool.length;
+      [pool[currentIndex], pool[nextIndex]].filter(Boolean).forEach((item) => {
         if (item.logoUrl) {
           const img = new Image();
           img.src = item.logoUrl;
@@ -403,7 +404,7 @@ function AsianCuratedHeroBanner({
         }
       });
     }
-  }, [pool]);
+  }, [currentIndex, pool]);
 
   // Auto slide every 7 seconds with forward glide
   useEffect(() => {
@@ -662,7 +663,9 @@ export default function CountryPage() {
   const isCustomHeroPage = isKoreanPage || isChinesePage;
   const user = useAuthStore((s) => s.user);
 
-  const [heroSeed, setHeroSeed] = useState(() => Math.random());
+  // Deterministic SSR value avoids a production hydration mismatch. A fresh
+  // seed is selected after navigation on the client.
+  const [heroSeed, setHeroSeed] = useState(0.5);
 
   // First healthy provider paints the hero immediately. The complete merged
   // catalogue replaces it from cache without blocking the initial navigation.
