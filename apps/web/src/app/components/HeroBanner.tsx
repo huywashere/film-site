@@ -622,7 +622,7 @@ function HeroMovieTitle({
           key={`${film.slug}-${candidateIdx}`}
           src={currentLogoSrc}
           alt={title}
-          referrerPolicy="no-referrer"
+          referrerPolicy="strict-origin-when-cross-origin"
           decoding="async"
           loading="eager"
           fetchPriority="high"
@@ -696,7 +696,7 @@ function HeroFanCardImage({
       key={`${film.slug}-${candidateIdx}`}
       src={src}
       alt={film.name}
-      referrerPolicy="no-referrer"
+      referrerPolicy="strict-origin-when-cross-origin"
       loading="lazy"
       fetchPriority="low"
       decoding="async"
@@ -757,7 +757,7 @@ function HeroThumbnailImage({
       key={`${film.slug}-${candidateIdx}`}
       src={src}
       alt={film.name}
-      referrerPolicy="no-referrer"
+      referrerPolicy="strict-origin-when-cross-origin"
       loading={isActive ? "eager" : "lazy"}
       fetchPriority={isActive ? "high" : "low"}
       decoding="async"
@@ -852,7 +852,7 @@ function HeroBackdropImage({
             ref={imageRef}
             src={src}
             alt={film.name}
-            referrerPolicy="no-referrer"
+            referrerPolicy="strict-origin-when-cross-origin"
             loading={isActive ? "eager" : "lazy"}
             decoding="async"
             fetchPriority={isActive ? "high" : "low"}

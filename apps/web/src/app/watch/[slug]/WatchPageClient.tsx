@@ -405,7 +405,7 @@ function EpisodeThumbnail({
           key={`${film?.slug}-ep-${epIndex}-${candidateIdx}`}
           src={src}
           alt={`Tập ${epNum}`}
-          referrerPolicy="no-referrer"
+          referrerPolicy="strict-origin-when-cross-origin"
           loading="lazy"
           decoding="async"
           onLoad={() => setLoaded(true)}
@@ -1007,7 +1007,7 @@ function RecMovieItem({ item, index = 0 }: { item: any; index?: number }) {
             key={`${item.slug}-${candidateIdx}`}
             src={src}
             alt={item.name}
-            referrerPolicy="no-referrer"
+            referrerPolicy="strict-origin-when-cross-origin"
             loading="lazy"
             decoding="async"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

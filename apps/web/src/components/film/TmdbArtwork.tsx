@@ -67,19 +67,9 @@ export function TmdbArtwork({
     return () => observer.disconnect();
   }, [enabled, priority, providerIsTmdb, film.slug]);
 
-  // Shelf pages can render dozens of cards. Searching TMDB by title for every
-  // card caused an API waterfall and occasionally selected another movie with
-  // a similar translated title. Only enrich cards with an exact external ID;
-  // the catalogue image remains the stable fallback for legacy records.
-  const artworkQuery = useTmdbArtwork(
-    film,
-    enabled &&
-      nearViewport &&
-      !providerIsTmdb &&
-      (hasExactTmdbIdentity || allowTitleLookup),
-  );
-  const { backdropUrl, posterUrl } = artworkQuery;
-  const tmdbUrl = kind === 'backdrop' ? backdropUrl || posterUrl : posterUrl || backdropUrl;
+  // Shelf pages can render dozens of cards. Only query TMDB if the film lacks
+  // provider artwork or if title lookup is explicitly requested.
+  // This avoids choking the browser's HTTP network queue with 100+ concurrent TMDB requests.
   const providerPrimary =
     kind === 'backdrop'
       ? resolveImageUrl(film.thumb_url, film.poster_url)
@@ -87,26 +77,44 @@ export function TmdbArtwork({
 
   const providerAlternate = providerPrimary ? alternateMovieArtworkUrl(providerPrimary) : null;
 
+  const needsTmdbArtwork =
+    enabled &&
+    nearViewport &&
+    !providerIsTmdb &&
+    (!providerPrimary || allowTitleLookup);
+
+  const artworkQuery = useTmdbArtwork(
+    film,
+    needsTmdbArtwork,
+  );
+  const { backdropUrl, posterUrl } = artworkQuery;
+  const tmdbUrl = kind === 'backdrop' ? backdropUrl || posterUrl : posterUrl || backdropUrl;
+
   const candidates = useMemo(() => {
-    const tmdbReady = providerIsTmdb || Boolean(tmdbUrl);
-    const lookupFinished =
-      !enabled || providerIsTmdb || !hasExactTmdbIdentity || artworkQuery.isFetched;
-    const sources = tmdbReady
-      ? [tmdbUrl, providerIsTmdb ? providerPrimary : null]
-      : lookupFinished
-        ? [providerPrimary, providerAlternate]
-        : [providerPrimary, providerAlternate];
-    const list = buildArtworkCandidates(sources, kind === 'backdrop' ? 'backdrop' : 'poster');
-    return list;
+    const list: string[] = [];
+    const add = (url?: string | null) => {
+      if (url && !list.includes(url)) list.push(url);
+    };
+
+    // Fast path: if provider already has high quality artwork (e.g. PhimImg 60KB WebP), use it directly!
+    if (providerPrimary) add(providerPrimary);
+    if (providerAlternate) add(providerAlternate);
+    if (tmdbUrl) add(tmdbUrl);
+    if (providerPrimary) {
+      add(`/api/image-proxy?url=${encodeURIComponent(providerPrimary)}`);
+    }
+
+    return list.length > 0
+      ? list
+      : buildArtworkCandidates(
+          [tmdbUrl, providerPrimary, providerAlternate],
+          kind === 'backdrop' ? 'backdrop' : 'poster',
+        );
   }, [
-    tmdbUrl,
     providerPrimary,
     providerAlternate,
+    tmdbUrl,
     kind,
-    providerIsTmdb,
-    hasExactTmdbIdentity,
-    artworkQuery.isFetched,
-    enabled,
   ]);
 
   const [candidateIndex, setCandidateIndex] = useState(0);
@@ -158,7 +166,7 @@ export function TmdbArtwork({
           loading={priority ? 'eager' : 'lazy'}
           fetchPriority={priority ? 'high' : 'auto'}
           decoding="async"
-          referrerPolicy="no-referrer"
+          referrerPolicy="strict-origin-when-cross-origin"
           draggable={false}
           onLoad={() => setLoaded(true)}
           onError={() => {

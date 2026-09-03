@@ -474,19 +474,22 @@ function AsianCuratedHeroBanner({
   const [isPaused, setIsPaused] = useState(false);
   const curatedList = pool || [];
 
-  // Warm only the visible and next slide. Preloading the entire curated pool
-  // monopolized mobile bandwidth and could leave the first banner blank.
+  // Warm only the visible and next slide with resilient CDN candidates.
   useEffect(() => {
     if (typeof window !== "undefined" && pool?.length) {
       const nextIndex = (currentIndex + 1) % pool.length;
       [pool[currentIndex], pool[nextIndex]].filter(Boolean).forEach((item) => {
-        if (item.logoUrl) {
+        const logoCand = buildAsianHeroImageCandidates(item.logoUrl)[0];
+        if (logoCand) {
           const img = new Image();
-          img.src = item.logoUrl;
+          img.referrerPolicy = "strict-origin-when-cross-origin";
+          img.src = logoCand;
         }
-        if (item.thumb_url) {
+        const thumbCand = buildAsianHeroImageCandidates(item.thumb_url)[0];
+        if (thumbCand) {
           const img = new Image();
-          img.src = item.thumb_url;
+          img.referrerPolicy = "strict-origin-when-cross-origin";
+          img.src = thumbCand;
         }
       });
     }
@@ -1062,7 +1065,7 @@ export default function CountryPage() {
                   : "Ngôn Tình Hiện Đại & Lãng Mạn Hoa Ngữ"
               }
               films={row2Films}
-              isLoading={romanceLoading}
+              isLoading={mainLoading && !row2Films.length}
               variant="standard"
             />
 
@@ -1074,7 +1077,7 @@ export default function CountryPage() {
                   : "Cổ Trang Tiên Hiệp & Kiếm Hiệp Đỉnh Cao"
               }
               films={row3Films}
-              isLoading={coTrangLoading}
+              isLoading={mainLoading && !row3Films.length}
               variant="standard"
             />
 
@@ -1086,7 +1089,7 @@ export default function CountryPage() {
                   : "Phim Hành Động & Võ Thuật Trung Quốc"
               }
               films={row4Films}
-              isLoading={actionLoading}
+              isLoading={mainLoading && !row4Films.length}
               variant="standard"
             />
 
@@ -1098,7 +1101,7 @@ export default function CountryPage() {
                   : "Phim Hình Sự & Trinh Thám Hoa Ngữ"
               }
               films={row5Films}
-              isLoading={crimeLoading}
+              isLoading={mainLoading && !row5Films.length}
               variant="standard"
             />
 
@@ -1110,7 +1113,7 @@ export default function CountryPage() {
                   : "Phim Hài Hước & Gia Đình Trung Quốc"
               }
               films={row6Films}
-              isLoading={comedyLoading}
+              isLoading={mainLoading && !row6Films.length}
               variant="standard"
             />
 
@@ -1122,7 +1125,7 @@ export default function CountryPage() {
                   : "Phim Tâm Lý & Xã Hội Trung Quốc"
               }
               films={row7Films}
-              isLoading={dramaLoading}
+              isLoading={mainLoading && !row7Films.length}
               variant="standard"
             />
 
@@ -1134,7 +1137,7 @@ export default function CountryPage() {
                   : "Phim Hoa Ngữ Tuyển Chọn Đặc Sắc"
               }
               films={row8Films}
-              isLoading={page2Loading || mainLoading}
+              isLoading={mainLoading && !row8Films.length}
               variant="standard"
             />
 

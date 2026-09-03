@@ -108,7 +108,7 @@ function ResilientDetailImage({
       className={className}
       priority={priority}
       unoptimized
-      referrerPolicy="no-referrer"
+      referrerPolicy="strict-origin-when-cross-origin"
       onError={() => setSourceIndex((index) => index + 1)}
     />
   );
@@ -160,7 +160,7 @@ function DetailPosterCard({
         key={`${filmName}-${src}`}
         src={src}
         alt={filmName}
-        referrerPolicy="no-referrer"
+        referrerPolicy="strict-origin-when-cross-origin"
         loading="eager"
         decoding="async"
         className={className}
@@ -228,7 +228,7 @@ function GalleryBackdropCard({
         key={`${filePath}-${candidateIdx}`}
         src={src}
         alt={alt}
-        referrerPolicy="no-referrer"
+        referrerPolicy="strict-origin-when-cross-origin"
         loading="lazy"
         decoding="async"
         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -345,7 +345,7 @@ function FilmImageLightboxModal({
               <img
                 src={currentImage}
                 alt={`${filmName} - Ảnh ${currentIndex + 1}`}
-                referrerPolicy="no-referrer"
+                referrerPolicy="strict-origin-when-cross-origin"
                 decoding="async"
                 className="max-h-[75vh] max-w-full object-contain rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] border border-white/10"
               />
@@ -397,7 +397,7 @@ function FilmImageLightboxModal({
                 <img
                   src={thumb}
                   alt={`Thumbnail ${idx + 1}`}
-                  referrerPolicy="no-referrer"
+                  referrerPolicy="strict-origin-when-cross-origin"
                   className="w-full h-full object-cover"
                 />
               </button>
