@@ -74,26 +74,24 @@ export const getMoviePageData = cache(async (slug: string) => {
     return payload;
   });
 
-  // OPhim is usually the faster detail origin. Hedge KKPhim after a short
-  // delay instead of hitting both providers on every page view. A healthy
-  // primary response therefore costs one upstream request, while slow/failing
-  // requests still retain the fast multi-provider fallback behavior.
+  // KKPhim is the primary detail origin for fast Direct HLS / ArtPlayer playback.
+  // Hedge OPhim after a short delay if KKPhim takes long or fails.
   let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
   let startFallback: (() => void) | undefined;
   const primary = fetchProviderPayload(
-    `https://ophim1.com/phim/${cleanSlug}`,
-    "ophim",
+    `https://phimapi.com/phim/${cleanSlug}`,
+    "kkphim",
   );
   const fallback = new Promise<MoviePagePayload>((resolve, reject) => {
     const run = () => {
       fallbackTimer = undefined;
       void fetchProviderPayload(
-        `https://phimapi.com/phim/${cleanSlug}`,
-        "kkphim",
+        `https://ophim1.com/phim/${cleanSlug}`,
+        "ophim",
       ).then(resolve, reject);
     };
     startFallback = run;
-    fallbackTimer = setTimeout(run, 250);
+    fallbackTimer = setTimeout(run, 350);
   });
   void primary.catch(() => {
     if (!fallbackTimer || !startFallback) return;

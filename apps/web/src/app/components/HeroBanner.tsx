@@ -1051,7 +1051,7 @@ function selectRandomFilms(groups: TmdbMovie[][]): HeroFilm[] {
 function isStoredHeroPlaylist(value: unknown): value is HeroFilm[] {
   return (
     Array.isArray(value) &&
-    value.length > 0 &&
+    value.length === 6 &&
     value.every(
       (film) =>
         typeof film === "object" &&
@@ -1149,7 +1149,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
   // empty initial list made production wait for /config/public before the LCP
   // image and title even existed in the DOM.
   const [featured, setFeatured] = useState<HeroFilm[]>(() => {
-    if (films && films.length > 0) return films as HeroFilm[];
+    if (films && films.length > 0) return (films as HeroFilm[]).slice(0, 6);
     const pinned = (initialConfig?.heroMovieSlugs || [])
       .map((slug) =>
         CURATED_HERO_FRANCHISE_POOL.find((film) => film.slug === slug),
@@ -1157,7 +1157,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       .filter((film): film is (typeof CURATED_HERO_FRANCHISE_POOL)[number] =>
         Boolean(film),
       );
-    return (pinned.length ? pinned : CURATED_HERO_FRANCHISE_POOL) as HeroFilm[];
+    return (pinned.length ? pinned.slice(0, 6) : CURATED_HERO_FRANCHISE_POOL.slice(0, 6)) as HeroFilm[];
   });
   const [trailerModalFilm, setTrailerModalFilm] = useState<FilmItem | null>(
     null,
@@ -1251,7 +1251,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       let restoredIndex = 0;
 
       if (films && films.length > 0) {
-        playlist = films as HeroFilm[];
+        playlist = (films as HeroFilm[]).slice(0, 6);
       } else {
         const stored = readStoredHeroPlaylist();
         try {
@@ -1265,17 +1265,17 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
           const storedMatchesPinned = Boolean(
             stored &&
             requestedSlugs.length > 0 &&
-            stored.length === requestedSlugs.length &&
-            requestedSlugs.every((slug, index) => stored[index]?.slug === slug),
+            stored.length === Math.min(6, requestedSlugs.length) &&
+            requestedSlugs.slice(0, 6).every((slug, index) => stored[index]?.slug === slug),
           );
 
           if (requestedSlugs.length && storedMatchesPinned && stored) {
-            playlist = stored;
-            restoredIndex = readStoredHeroIndex(stored.length);
+            playlist = stored.slice(0, 6);
+            restoredIndex = readStoredHeroIndex(playlist.length);
           } else if (requestedSlugs.length) {
             playlist = (
               await Promise.all(
-                requestedSlugs.map(async (slug) => {
+                requestedSlugs.slice(0, 6).map(async (slug) => {
                   const curated = CURATED_HERO_FRANCHISE_POOL.find(
                     (film) => film.slug === slug,
                   );
@@ -1295,24 +1295,18 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                   }
                 }),
               )
-            ).filter((film): film is HeroFilm => Boolean(film));
-          } else if (stored && stored.length > 0) {
-            playlist = stored;
-            restoredIndex = readStoredHeroIndex(stored.length);
+            ).filter((film): film is HeroFilm => Boolean(film)).slice(0, 6);
           } else {
-            // Fresh visit: use all 100 movies in the curated pool!
-            playlist = CURATED_HERO_FRANCHISE_POOL as HeroFilm[];
-            // Start at a random movie from the 100 pool so every fresh session is unique!
-            restoredIndex = Math.floor(Math.random() * playlist.length);
+            // Fresh visit or refresh: pick a RANDOM 6 movies from the curated franchise pool!
+            playlist = shuffled(CURATED_HERO_FRANCHISE_POOL).slice(0, 6) as HeroFilm[];
+            restoredIndex = 0;
           }
         } catch {
-          playlist = (stored && stored.length > 0
-            ? stored
-            : CURATED_HERO_FRANCHISE_POOL) as HeroFilm[];
+          playlist = shuffled(CURATED_HERO_FRANCHISE_POOL).slice(0, 6) as HeroFilm[];
         }
 
         if (!playlist.length) {
-          playlist = CURATED_HERO_FRANCHISE_POOL as HeroFilm[];
+          playlist = shuffled(CURATED_HERO_FRANCHISE_POOL).slice(0, 6) as HeroFilm[];
         }
       }
 

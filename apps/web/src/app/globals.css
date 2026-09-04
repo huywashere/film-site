@@ -751,6 +751,12 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
   }
 }
 
+/* Ensure stroke-based player control SVGs preserve fill:none */
+.art-video-player .art-control svg path[fill="none"],
+.art-video-player .art-control svg rect[fill="none"] {
+  fill: none !important;
+}
+
 /* Only compact the native control row on narrow phones. */
 @media (max-width: 640px) {
   .art-video-player {
@@ -961,4 +967,128 @@ html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
     max-height: calc(100dvh - 80px);
     aspect-ratio: auto;
   }
+}
+
+/* ==========================================================================
+   Mobile Double-Tap Seek (YouTube-style Ripple & Badge)
+   ========================================================================== */
+.netphim-mobile-seek-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 25;
+  overflow: hidden;
+  display: flex;
+}
+
+.netphim-mobile-seek-side {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-out;
+  position: relative;
+}
+
+.netphim-mobile-seek-side.is-left {
+  background: radial-gradient(ellipse at 0% 50%, rgba(35, 173, 229, 0.28) 0%, rgba(35, 173, 229, 0.08) 50%, transparent 75%);
+  border-top-right-radius: 50% 100%;
+  border-bottom-right-radius: 50% 100%;
+}
+
+.netphim-mobile-seek-side.is-right {
+  background: radial-gradient(ellipse at 100% 50%, rgba(35, 173, 229, 0.28) 0%, rgba(35, 173, 229, 0.08) 50%, transparent 75%);
+  border-top-left-radius: 50% 100%;
+  border-bottom-left-radius: 50% 100%;
+}
+
+.netphim-mobile-seek-side.is-active {
+  opacity: 1;
+  animation: netphim-seek-ripple 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes netphim-seek-ripple {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  75% {
+    opacity: 0.95;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+
+.netphim-mobile-seek-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  padding: 12px 20px;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 24px rgba(35, 173, 229, 0.25);
+}
+
+.netphim-mobile-seek-icons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: #23ade5;
+}
+
+.netphim-mobile-seek-text {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+  white-space: nowrap;
+}
+
+@keyframes netphim-chevron-pulse {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+    color: #38bdf8;
+  }
+}
+
+.netphim-mobile-seek-side.is-left.is-active .chevron-3 {
+  animation: netphim-chevron-pulse 0.6s infinite 0s;
+}
+.netphim-mobile-seek-side.is-left.is-active .chevron-2 {
+  animation: netphim-chevron-pulse 0.6s infinite 0.15s;
+}
+.netphim-mobile-seek-side.is-left.is-active .chevron-1 {
+  animation: netphim-chevron-pulse 0.6s infinite 0.3s;
+}
+
+.netphim-mobile-seek-side.is-right.is-active .chevron-1 {
+  animation: netphim-chevron-pulse 0.6s infinite 0s;
+}
+.netphim-mobile-seek-side.is-right.is-active .chevron-2 {
+  animation: netphim-chevron-pulse 0.6s infinite 0.15s;
+}
+.netphim-mobile-seek-side.is-right.is-active .chevron-3 {
+  animation: netphim-chevron-pulse 0.6s infinite 0.3s;
 }

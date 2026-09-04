@@ -402,8 +402,8 @@ export const kkphimApi = {
     fetchKKPhim(`/nam-phat-hanh/${year}?page=${page}&limit=${limit}`),
 };
 
-// ── Feature Flag: Tạm thời ẩn API OPhim do server ngưng hoạt động ──────
-export const ENABLE_OPHIM = false;
+// ── Feature Flag: Bật lại OPhim làm Server 4 dự phòng ──────
+export const ENABLE_OPHIM = true;
 
 // ── OPhim, NguonC & VSMOV Proxies ──────────────────────────────
 const fetchOphim = async (endpoint: string) => {
@@ -415,9 +415,21 @@ const fetchOphim = async (endpoint: string) => {
       data: { items: [] },
     };
   }
-  const response = await trackedMovieFetch(`/api/ophim${endpoint}`);
-  const json = await response.json();
-  return json;
+  try {
+    const response = await trackedMovieFetch(`/api/ophim${endpoint}`);
+    if (response.ok) {
+      const json = await response.json();
+      return json;
+    }
+  } catch {
+    // Upstream mirror fallback handled gracefully
+  }
+  return {
+    status: false,
+    msg: "OPhim API unavailable",
+    items: [],
+    data: { items: [] },
+  };
 };
 
 const fetchNguonc = async (endpoint: string) => {
@@ -508,8 +520,7 @@ const fetchVicdn = async (endpoint: string) => {
     const response = await trackedMovieFetch(`/api/vicdn${endpoint}`);
     proxyStatus = response.status;
     if (response.ok) {
-      const payload = await response.json();
-      if (payload?.status !== false && payload?.error !== true) return payload;
+      return await response.json();
     }
   } catch {
     // Ignore proxy fallback error
@@ -546,12 +557,54 @@ export const vicdnApi = {
   // Chi tiết phim & danh sách tập
   getDetail: (slug: string) => fetchVicdn(`/info/${slug}`),
 
-  // Theo thể loại (hoat-hinh, vien-tuong, hinh-su, bi-an, hanh-dong, chinh-kich...)
+  // Theo thể loại (hoat-hinh, vien-tuong, hinh-su, bi-an, hanh-dong)
   getByCategory: (key: string, page = 1) => fetchVicdn(`/type/${key}/${page}`),
+
+  // Helper tra cứu theo TMDB ID và mediaType
+  getDetailByTmdb: async (
+    tmdbId: string | number | undefined | null,
+    mediaType: "movie" | "tv" = "movie",
+    season = 1,
+  ) => {
+    if (!tmdbId) return null;
+    const primarySlug =
+      mediaType === "movie" ? `mv-${tmdbId}-1` : `tv-${tmdbId}-${season || 1}`;
+    try {
+      const res: any = await fetchVicdn(`/info/${primarySlug}`);
+      if (
+        res &&
+        res.status !== false &&
+        !res.error &&
+        Array.isArray(res.episodes) &&
+        res.episodes.length > 0
+      ) {
+        return res;
+      }
+    } catch {
+      // ignore
+    }
+    if (mediaType === "movie") {
+      try {
+        const res: any = await fetchVicdn(`/info/mv-${tmdbId}`);
+        if (
+          res &&
+          res.status !== false &&
+          !res.error &&
+          Array.isArray(res.episodes) &&
+          res.episodes.length > 0
+        ) {
+          return res;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return null;
+  },
 
   // Direct player embeds by TMDB ID
   getMovieEmbed: (tmdbId: string | number) =>
-    `https://vicdn.cc/movie-${encodeURIComponent(String(tmdbId))}`,
+    `https://vicdn.cc/mv-${encodeURIComponent(String(tmdbId))}-1-1`,
   getTvEmbed: (tmdbId: string | number, season = 1, episode = 1) =>
     `https://vicdn.cc/tv-${encodeURIComponent(String(tmdbId))}-${season}-${episode}`,
 };
@@ -564,6 +617,30 @@ export const vidsrcApi = {
     fetchVidsrc(
       `/tv/${encodeURIComponent(String(tmdbId))}/${season}/${episode}?sub=en`,
     ),
+};
+
+// ── VidLink embed adapter (TMDB IDs only; not a catalogue API) ────
+export const vidlinkApi = {
+  getMovieEmbed: (tmdbId: string | number) =>
+    `https://vidlink.pro/movie/${encodeURIComponent(String(tmdbId))}`,
+  getTvEmbed: (tmdbId: string | number, season: number, episode: number) =>
+    `https://vidlink.pro/tv/${encodeURIComponent(String(tmdbId))}/${season}/${episode}`,
+};
+
+// ── 2Embed embed adapter (TMDB IDs only; not a catalogue API) ────
+export const twoEmbedApi = {
+  getMovieEmbed: (tmdbId: string | number) =>
+    `https://www.2embed.cc/embed/${encodeURIComponent(String(tmdbId))}`,
+  getTvEmbed: (tmdbId: string | number, season: number, episode: number) =>
+    `https://www.2embed.cc/embedtv/${encodeURIComponent(String(tmdbId))}&s=${season}&e=${episode}`,
+};
+
+// ── VidCore embed adapter (TMDB IDs only; not a catalogue API) ────
+export const vidcoreApi = {
+  getMovieEmbed: (tmdbId: string | number) =>
+    `https://vidcore.org/embed/movie/${encodeURIComponent(String(tmdbId))}`,
+  getTvEmbed: (tmdbId: string | number, season: number, episode: number) =>
+    `https://vidcore.org/embed/tv/${encodeURIComponent(String(tmdbId))}/${season}/${episode}`,
 };
 
 // ── NguonC API (qua Next.js proxy) ────────────────────────────────
@@ -740,16 +817,6 @@ async function searchAllSources(
       source: "kkphim",
       request: () => kkphimApi.search(primaryKeyword, page, limit),
     },
-    ...(ENABLE_OPHIM
-      ? [
-          {
-            // OPhim dùng /tim-kiem (không phải /v1/api/tim-kiem)
-            source: "ophim" as MovieSource,
-            request: () =>
-              fetchOphim(`/tim-kiem?keyword=${encodedKeyword}&page=${page}`),
-          },
-        ]
-      : []),
     {
       source: "nguonc",
       // NguonC API hoạt động tốt nhất với từ khoá không dấu
@@ -762,6 +829,16 @@ async function searchAllSources(
       source: "vsmov",
       request: () => vsmovApi.search(primaryKeyword, page).catch(() => null),
     },
+    ...(ENABLE_OPHIM
+      ? [
+          {
+            // OPhim dùng /tim-kiem (không phải /v1/api/tim-kiem)
+            source: "ophim" as MovieSource,
+            request: () =>
+              fetchOphim(`/tim-kiem?keyword=${encodedKeyword}&page=${page}`).catch(() => null),
+          },
+        ]
+      : []),
   ];
 
   const primarySettled = await Promise.allSettled(
@@ -985,12 +1062,18 @@ async function getDetailFromSource(source: MovieSource, slug: string) {
   if (!slug) return null;
   const requests: Record<MovieSource, () => Promise<unknown>> = {
     kkphim: () => kkphimApi.getDetail(slug),
-    ophim: () => fetchOphim(`/phim/${slug}`),
     nguonc: () => fetchNguonc(`/film/${slug}`),
     vsmov: () => vsmovApi.getDetail(slug),
+    ophim: () => fetchOphim(`/phim/${slug}`),
     vicdn: () => fetchVicdn(`/info/${slug}`),
     vidsrc: () =>
       Promise.reject(new Error("VidSrc chỉ hỗ trợ trình phát bằng TMDB ID.")),
+    vidlink: () =>
+      Promise.reject(new Error("VidLink chỉ hỗ trợ trình phát bằng TMDB ID.")),
+    "2embed": () =>
+      Promise.reject(new Error("2Embed chỉ hỗ trợ trình phát bằng TMDB ID.")),
+    vidcore: () =>
+      Promise.reject(new Error("VidCore chỉ hỗ trợ trình phát bằng TMDB ID.")),
   };
   try {
     const data = await requests[source]();

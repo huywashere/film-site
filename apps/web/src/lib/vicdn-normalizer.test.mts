@@ -90,3 +90,54 @@ test("normalizes ViCDN film detail response with episode embed list", () => {
     "https://vicdn.cc/tv-287496-1-1",
   );
 });
+
+test("normalizes ViCDN single movie detail with 'Full' episode label", () => {
+  const raw = {
+    status: "success",
+    data: {
+      slug: "mv-121491-1",
+      stt: "1",
+      total: "1",
+      ename: "Deranged",
+      vname: "Ký Sinh Trùng",
+      poster: "https://image.tmdb.org/t/p/w400/poster.jpg",
+      banner: "https://image.tmdb.org/t/p/w1280/banner.jpg",
+      year: 2012,
+      duration: 109,
+      country: ["KR"],
+      cast: ["Myeong Min Kim"],
+      genre: ["Chính Kịch"],
+      content: "Nội dung phim Ký Sinh Trùng...",
+      type: "movie",
+      tmdb: "121491",
+      ss: "1",
+      list_episodes: ["Full|https://vicdn.cc/mv-121491-1-1"],
+    },
+  };
+
+  const res = normalizeVicdnPayload(raw) as any;
+  assert.equal(res.status, true);
+  assert.equal(res.movie.name, "Ký Sinh Trùng");
+  assert.equal(res.episodes.length, 1);
+  assert.equal(res.episodes[0].server_name, "ViCDN Song Ngữ");
+  assert.equal(res.episodes[0].server_data.length, 1);
+  assert.equal(res.episodes[0].server_data[0].name, "Tập Full");
+  assert.equal(res.episodes[0].server_data[0].slug, "tap-full");
+  assert.equal(
+    res.episodes[0].server_data[0].link_embed,
+    "https://vicdn.cc/mv-121491-1-1",
+  );
+});
+
+test("handles ViCDN movie not found error payload cleanly", () => {
+  const raw = {
+    status: "error",
+    message: "Movie not found",
+  };
+
+  const res = normalizeVicdnPayload(raw) as any;
+  assert.equal(res.status, false);
+  assert.equal(res.error, true);
+  assert.equal(res.movie, null);
+  assert.deepEqual(res.episodes, []);
+});

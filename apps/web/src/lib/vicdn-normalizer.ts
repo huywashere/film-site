@@ -67,12 +67,15 @@ function normalizeEpisodes(listEpisodes: unknown): ViCDNRecord[] {
 
   const episodeItems = listEpisodes.map((item: string) => {
     const parts = String(item).split("|");
-    const epNum = parts[0]?.trim() || "1";
+    const rawLabel = parts[0]?.trim() || "1";
     const embedUrl = parts[1]?.trim() || "";
 
+    const isFull = /^(full|movie)$/i.test(rawLabel);
+    const cleanNum = isFull ? "Full" : rawLabel.replace(/^[^\d]*/, "");
+
     return {
-      name: `Tập ${epNum.padStart(2, "0")}`,
-      slug: `tap-${epNum}`,
+      name: isFull ? "Tập Full" : `Tập ${rawLabel.padStart(2, "0")}`,
+      slug: isFull ? "tap-full" : `tap-${cleanNum || rawLabel}`,
       link_embed: embedUrl,
       link_m3u8: "",
     };
@@ -95,6 +98,17 @@ export function normalizeVicdnPayload(raw: unknown): unknown {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return raw;
 
   const payload = raw as ViCDNRecord;
+
+  // Handle explicit error responses from ViCDN (e.g. { status: "error", message: "Movie not found" })
+  if (payload.status === "error" || payload.error === true) {
+    return {
+      status: false,
+      error: true,
+      message: payload.message || "Không tìm thấy phim",
+      movie: null,
+      episodes: [],
+    };
+  }
 
   // 1. List / Pagination payload (from /api/update/{page} or /api/type/{key}/{page})
   if (Array.isArray(payload.data)) {

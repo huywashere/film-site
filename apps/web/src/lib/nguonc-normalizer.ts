@@ -46,19 +46,22 @@ function normalizeFilmItem(film: NguonCRecord): NguonCRecord {
 function normalizeEpisodes(episodes: unknown): NguonCRecord[] {
   if (!Array.isArray(episodes)) return [];
 
-  return episodes.map((server: NguonCRecord) => ({
-    server_name: server.server_name ?? "NguonC",
-    server_data: Array.isArray(server.items)
-      ? server.items.map((episode: NguonCRecord) => ({
-          name: episode.name,
-          slug: episode.slug,
-          link_embed: episode.embed ?? episode.link_embed ?? "",
-          link_m3u8: episode.link_m3u8 ?? "",
-        }))
+  return episodes.map((server: NguonCRecord) => {
+    const rawItems = Array.isArray(server.items)
+      ? server.items
       : Array.isArray(server.server_data)
         ? server.server_data
-        : [],
-  }));
+        : [];
+    return {
+      server_name: String(server.server_name ?? "NguonC").replace(/\r?\n|\r/g, " ").trim(),
+      server_data: rawItems.map((episode: NguonCRecord) => ({
+        name: episode.name ?? "",
+        slug: episode.slug ?? "",
+        link_embed: episode.embed ?? episode.link_embed ?? "",
+        link_m3u8: episode.m3u8 ?? episode.link_m3u8 ?? "",
+      })),
+    };
+  });
 }
 
 /** Keep public NguonC responses identical across proxy and browser fallback. */

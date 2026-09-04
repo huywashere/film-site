@@ -33,9 +33,7 @@ import {
   Trophy,
   DollarSign,
   ExternalLink,
-  Maximize2,
   Sparkles,
-  Images,
   X,
 } from 'lucide-react';
 import { movieApi, watchlistApi, ratingsApi, reviewsApi } from '@/lib/api';
@@ -91,11 +89,7 @@ function ResilientDetailImage({
   preset?: ImagePreset;
 }) {
   const sources = useMemo(
-    () =>
-      buildArtworkCandidates(candidates, preset, {
-        includeWsrvForTmdb: true,
-        preferEdge: true,
-      }),
+    () => buildArtworkCandidates(candidates, preset),
     [candidates, preset],
   );
   const sourceKey = sources.join('|');
@@ -121,40 +115,36 @@ function ResilientDetailImage({
   );
 }
 
-// ── Clean & Reliable Detail Poster Card (Single TMDB / Provider Poster) ──
+// ── Clean, High-Speed Detail Poster Card (Single Official TMDB Poster) ──
 function DetailPosterCard({
-  candidates,
+  src,
+  fallbackSrc,
   filmName,
   className = 'w-full h-full object-cover group-hover:scale-105 transition-transform duration-500',
   onOpenLightbox,
 }: {
-  candidates: string[];
+  src?: string | null;
+  fallbackSrc?: string | null;
   filmName: string;
   className?: string;
-  onOpenLightbox?: (initialIndex?: number) => void;
+  onOpenLightbox?: () => void;
 }) {
-  const robustCandidates = useMemo(() => {
-    return buildArtworkCandidates(candidates, 'poster', {
-      includeWsrvForTmdb: true,
-      preferEdge: true,
-    });
-  }, [candidates]);
-
-  const [candidateIdx, setCandidateIdx] = useState(0);
+  const primarySrc = src || fallbackSrc;
+  const [currentSrc, setCurrentSrc] = useState(primarySrc);
   const [hasFailedAll, setHasFailedAll] = useState(false);
 
   useEffect(() => {
-    setCandidateIdx(0);
-    setHasFailedAll(false);
-  }, [robustCandidates]);
+    if (primarySrc) {
+      setCurrentSrc(primarySrc);
+      setHasFailedAll(false);
+    }
+  }, [primarySrc]);
 
-  const src = robustCandidates[candidateIdx];
-
-  if (!src || hasFailedAll) {
+  if (!currentSrc || hasFailedAll) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gradient-to-b from-neutral-850 to-neutral-950 border border-white/10 rounded-2xl select-none">
-        <Clapperboard className="w-10 h-10 text-amber-400/90 mb-2 drop-shadow" />
-        <span className="text-xs font-bold text-neutral-200 leading-tight line-clamp-3">
+      <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-[#12151b] border border-white/10 rounded-2xl select-none">
+        <Clapperboard className="w-10 h-10 text-amber-400/80 mb-2 drop-shadow" />
+        <span className="text-xs font-bold text-neutral-300 leading-tight line-clamp-3 px-2">
           {filmName}
         </span>
       </div>
@@ -163,22 +153,22 @@ function DetailPosterCard({
 
   return (
     <div
-      onClick={() => onOpenLightbox?.(0)}
-      className="relative w-full h-full overflow-hidden cursor-pointer select-none group"
+      onClick={onOpenLightbox}
+      className="relative w-full h-full overflow-hidden cursor-pointer select-none group bg-[#12151b]"
       title="Bấm để xem ảnh phóng to"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        key={`${filmName}-${src}`}
-        src={src}
+        src={currentSrc}
         alt={filmName}
         referrerPolicy="strict-origin-when-cross-origin"
         loading="eager"
         decoding="async"
+        fetchPriority="high"
         className={className}
         onError={() => {
-          if (candidateIdx < robustCandidates.length - 1) {
-            setCandidateIdx((i) => i + 1);
+          if (fallbackSrc && currentSrc !== fallbackSrc) {
+            setCurrentSrc(fallbackSrc);
           } else {
             setHasFailedAll(true);
           }
@@ -187,79 +177,6 @@ function DetailPosterCard({
 
       {/* Subtle hover overlay */}
       <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-
-      {/* Top-right zoom lightbox button */}
-      {onOpenLightbox && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenLightbox(0);
-          }}
-          className="absolute top-2.5 right-2.5 p-1.5 rounded-full bg-black/65 hover:bg-black/90 text-white/80 hover:text-white border border-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-200 active:scale-90 shadow-lg"
-          title="Xem ảnh toàn màn hình"
-        >
-          <Maximize2 size={13} />
-        </button>
-      )}
-    </div>
-  );
-}
-
-function GalleryBackdropCard({
-  filePath,
-  alt,
-  onClick,
-}: {
-  filePath: string;
-  alt: string;
-  onClick?: () => void;
-}) {
-  const candidateUrls = useMemo(() => {
-    const rawList = [
-      tmdbBackdrop(filePath, 'w780'),
-      tmdbBackdrop(filePath, 'w1280'),
-      tmdbBackdrop(filePath, 'original'),
-    ].filter((url): url is string => Boolean(url));
-
-    return buildArtworkCandidates(rawList, 'backdrop', {
-      includeWsrvForTmdb: true,
-      preferEdge: true,
-    });
-  }, [filePath]);
-
-  const [candidateIdx, setCandidateIdx] = useState(0);
-
-  const src = candidateUrls[candidateIdx];
-
-  if (!src) return null;
-
-  return (
-    <div
-      onClick={onClick}
-      className="relative aspect-video rounded-xl overflow-hidden border border-white/10 bg-neutral-900 group shadow-lg cursor-pointer select-none"
-      title="Bấm để xem ảnh phóng to"
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        key={`${filePath}-${candidateIdx}`}
-        src={src}
-        alt={alt}
-        referrerPolicy="strict-origin-when-cross-origin"
-        loading="lazy"
-        decoding="async"
-        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        onError={() => {
-          if (candidateIdx < candidateUrls.length - 1) {
-            setCandidateIdx((i) => i + 1);
-          }
-        }}
-      />
-      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-        <div className="p-2 rounded-full bg-black/60 border border-white/20 backdrop-blur-md text-white">
-          <Maximize2 size={16} />
-        </div>
-      </div>
     </div>
   );
 }
@@ -462,10 +379,7 @@ function CastCard({
 
   const photoCandidates = useMemo(() => {
     if (!rawPhotoUrl) return [];
-    return buildArtworkCandidates([rawPhotoUrl], 'avatar', {
-      includeWsrvForTmdb: true,
-      preferEdge: true,
-    });
+    return buildArtworkCandidates([rawPhotoUrl], 'avatar');
   }, [rawPhotoUrl]);
 
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -1187,85 +1101,22 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
     undefined;
   const tmdbPosterUrl = bestPoster ? tmdbPoster(bestPoster.file_path, 'w500') : null;
   const tmdbBackdropUrl = bestBackdrop ? tmdbBackdrop(bestBackdrop.file_path, 'w1280') : null;
+  const tmdbOriginalPosterUrl = bestPoster ? tmdbPoster(bestPoster.file_path, 'original') : null;
 
   const heroPosterCandidates = useMemo(() => {
     const list: string[] = [];
-    const add = (url?: unknown) => {
-      const resolved = resolveImageUrl(url);
-      if (resolved && !list.includes(resolved)) list.push(resolved);
-    };
-
-    // 1. Primary best TMDB poster
-    if (tmdbPosterUrl) add(tmdbPosterUrl);
-
-    // 2. Provider artwork (Prioritized right after primary TMDB poster)
-    if (providerPosterUrl) add(providerPosterUrl);
-    if (providerBackdropUrl) add(providerBackdropUrl);
-
-    // 3. Alternate path for KKPhim/Ophim CDNs
-    const primary = providerPosterUrl || providerBackdropUrl;
-    if (primary && typeof primary === 'string') {
-      if (primary.includes('/uploads/movies/')) {
-        add(primary.replace('/uploads/movies/', '/upload/vod/'));
-      } else if (primary.includes('/upload/vod/')) {
-        add(primary.replace('/upload/vod/', '/uploads/movies/'));
-      }
-    }
-
-    // 4. Other TMDB posters
-    if (posters && posters.length > 0) {
-      for (const p of posters.slice(0, 4)) {
-        if (p.file_path) {
-          const url = tmdbPoster(p.file_path, 'w780') || tmdbPoster(p.file_path, 'w500');
-          if (url) add(url);
-        }
-      }
-    }
-
-    // 5. TMDB backdrop fallback
-    if (tmdbBackdropUrl) add(tmdbBackdropUrl);
-
+    if (tmdbPosterUrl) list.push(tmdbPosterUrl);
+    if (providerPosterUrl && !list.includes(providerPosterUrl)) list.push(providerPosterUrl);
+    if (providerBackdropUrl && !list.includes(providerBackdropUrl)) list.push(providerBackdropUrl);
     return list;
-  }, [
-    tmdbPosterUrl,
-    posters,
-    providerPosterUrl,
-    providerBackdropUrl,
-    tmdbBackdropUrl,
-  ]);
+  }, [tmdbPosterUrl, providerPosterUrl, providerBackdropUrl]);
 
   const allGalleryImages = useMemo(() => {
     const list: string[] = [];
-    const add = (url?: unknown) => {
-      const resolved = resolveImageUrl(url);
-      if (resolved && !list.includes(resolved)) list.push(resolved);
-    };
-
-    // TMDB backdrops high-res
-    if (backdrops && backdrops.length > 0) {
-      for (const b of backdrops) {
-        if (b.file_path) {
-          const url = tmdbBackdrop(b.file_path, 'original') || tmdbBackdrop(b.file_path, 'w1280');
-          if (url) add(url);
-        }
-      }
-    }
-
-    // TMDB posters
-    if (posters && posters.length > 0) {
-      for (const p of posters) {
-        if (p.file_path) {
-          const url = tmdbPoster(p.file_path, 'original') || tmdbPoster(p.file_path, 'w780');
-          if (url) add(url);
-        }
-      }
-    }
-
-    if (providerBackdropUrl) add(providerBackdropUrl);
-    if (providerPosterUrl) add(providerPosterUrl);
-
+    const main = tmdbOriginalPosterUrl || tmdbPosterUrl || providerPosterUrl;
+    if (main) list.push(main);
     return list;
-  }, [backdrops, posters, providerBackdropUrl, providerPosterUrl]);
+  }, [tmdbOriginalPosterUrl, tmdbPosterUrl, providerPosterUrl]);
 
   // Watchlist status check
   useEffect(() => {
@@ -1598,10 +1449,11 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center sm:items-start w-full">
               <div className="lg:hidden w-36 sm:w-40 aspect-[2/3] rounded-2xl overflow-hidden border border-white/15 bg-neutral-900 shadow-2xl shrink-0 relative group mx-auto sm:mx-0">
                 <DetailPosterCard
-                  candidates={heroPosterCandidates}
+                  src={tmdbPosterUrl}
+                  fallbackSrc={providerPosterUrl}
                   filmName={film.name}
-                  onOpenLightbox={(idx) => {
-                    setLightboxIndex(idx || 0);
+                  onOpenLightbox={() => {
+                    setLightboxIndex(0);
                     setLightboxOpen(true);
                   }}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -2049,10 +1901,11 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
           <div className="lg:col-span-4 hidden lg:flex justify-end">
             <div className="w-64 aspect-[2/3] rounded-2xl overflow-hidden border border-white/15 bg-neutral-950/60 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative group">
               <DetailPosterCard
-                candidates={heroPosterCandidates}
+                src={tmdbPosterUrl}
+                fallbackSrc={providerPosterUrl}
                 filmName={film.name}
-                onOpenLightbox={(idx) => {
-                  setLightboxIndex(idx || 0);
+                onOpenLightbox={() => {
+                  setLightboxIndex(0);
                   setLightboxOpen(true);
                 }}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -2256,29 +2109,6 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
             </div>
           </section>
 
-          {backdrops && backdrops.length > 0 && (
-            <section className="space-y-3 pt-4 border-t border-white/5">
-              <h2 className="text-base sm:text-lg font-bold text-white flex items-center">
-                <span>{t('film.gallery', 'Hình ảnh')}</span>
-                <span className="ml-2 text-xs font-normal text-neutral-400">
-                  ({backdrops.length} {t('film.imagesCount', 'ảnh')})
-                </span>
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {backdrops.slice(0, 8).map((bg, idx) => (
-                  <GalleryBackdropCard
-                    key={`${bg.file_path}-${idx}`}
-                    filePath={bg.file_path}
-                    alt={`Ảnh phim ${idx + 1}`}
-                    onClick={() => {
-                      setLightboxIndex(idx);
-                      setLightboxOpen(true);
-                    }}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
         </div>
       </div>
 

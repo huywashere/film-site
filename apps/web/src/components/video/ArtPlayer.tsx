@@ -806,6 +806,181 @@ export default function ArtPlayer({
     const onSkipButtonClick = () => handleSkipAd(false);
     skipAdButton.addEventListener('click', onSkipButtonClick);
 
+    // =========================================================================
+    // Mobile & Touch Double-Tap Seek (YouTube-style 10s ripple & badge)
+    // =========================================================================
+    (Artplayer as any).MOBILE_DBCLICK_PLAY = false;
+
+    const seekOverlay = document.createElement('div');
+    seekOverlay.className = 'netphim-mobile-seek-overlay';
+    seekOverlay.setAttribute('aria-hidden', 'true');
+    seekOverlay.innerHTML = `
+      <div class="netphim-mobile-seek-side is-left">
+        <div class="netphim-mobile-seek-badge">
+          <div class="netphim-mobile-seek-icons">
+            <svg class="chevron-1" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            <svg class="chevron-2" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            <svg class="chevron-3" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          </div>
+          <span class="netphim-mobile-seek-text" data-text-left>10 giây</span>
+        </div>
+      </div>
+      <div class="netphim-mobile-seek-side is-right">
+        <div class="netphim-mobile-seek-badge">
+          <div class="netphim-mobile-seek-icons">
+            <svg class="chevron-1" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            <svg class="chevron-2" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            <svg class="chevron-3" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </div>
+          <span class="netphim-mobile-seek-text" data-text-right>10 giây</span>
+        </div>
+      </div>
+    `;
+
+    const playerContainer = (player as any).template?.$player || containerRef.current;
+    if (playerContainer) {
+      playerContainer.appendChild(seekOverlay);
+    }
+
+    const leftSide = seekOverlay.querySelector<HTMLElement>('.is-left');
+    const rightSide = seekOverlay.querySelector<HTMLElement>('.is-right');
+    const leftText = seekOverlay.querySelector<HTMLElement>('[data-text-left]');
+    const rightText = seekOverlay.querySelector<HTMLElement>('[data-text-right]');
+
+    let accumulatedSeconds = 0;
+    let activeDirection: 'left' | 'right' | null = null;
+    let seekTimer: any = null;
+
+    const triggerSeekRipple = (isLeft: boolean) => {
+      const art = playerRef.current;
+      if (!art) return;
+
+      const direction = isLeft ? 'left' : 'right';
+      if (activeDirection === direction) {
+        accumulatedSeconds += 10;
+      } else {
+        accumulatedSeconds = 10;
+        activeDirection = direction;
+      }
+
+      const label = `${accumulatedSeconds} giây`;
+      if (isLeft) {
+        if (leftText) leftText.textContent = label;
+        rightSide?.classList.remove('is-active');
+        leftSide?.classList.remove('is-active');
+        void leftSide?.offsetWidth;
+        leftSide?.classList.add('is-active');
+        art.seek = Math.max(0, art.currentTime - 10);
+      } else {
+        if (rightText) rightText.textContent = label;
+        leftSide?.classList.remove('is-active');
+        rightSide?.classList.remove('is-active');
+        void rightSide?.offsetWidth;
+        rightSide?.classList.add('is-active');
+        art.seek = Math.min(art.duration || Infinity, art.currentTime + 10);
+      }
+
+      clearTimeout(seekTimer);
+      seekTimer = setTimeout(() => {
+        leftSide?.classList.remove('is-active');
+        rightSide?.classList.remove('is-active');
+        accumulatedSeconds = 0;
+        activeDirection = null;
+      }, 700);
+    };
+
+    let lastTapTime = 0;
+    let lastTapX = 0;
+    let lastTapY = 0;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+
+    const isInteractiveControl = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) return false;
+      return Boolean(
+        target.closest(
+          '.art-bottom, .art-controls, .art-control, .art-state, .art-settings, .art-contextmenu, .art-layer-auto-playback, .art-notice, .art-loading, .netphim-skip-ad, .netphim-skip-intro, .art-layer-lock'
+        )
+      );
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      if (isInteractiveControl(e.target)) return;
+      const touch = e.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+      touchStartTime = Date.now();
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.changedTouches.length !== 1) return;
+      if (isInteractiveControl(e.target)) return;
+
+      const touch = e.changedTouches[0];
+      const now = Date.now();
+      const pressDuration = now - touchStartTime;
+      const moveDistance = Math.hypot(
+        touch.clientX - touchStartX,
+        touch.clientY - touchStartY
+      );
+
+      if (pressDuration > 300 || moveDistance > 25) return;
+
+      const timeSinceLastTap = now - lastTapTime;
+      const tapDistance = Math.hypot(
+        touch.clientX - lastTapX,
+        touch.clientY - lastTapY
+      );
+
+      const targetEl = (player as any).template?.$player || containerRef.current;
+      const rect = targetEl?.getBoundingClientRect();
+      if (!rect) return;
+
+      if (timeSinceLastTap < 350 && tapDistance < 80) {
+        lastTapTime = 0;
+        const x = touch.clientX - rect.left;
+        triggerSeekRipple(x < rect.width / 2);
+        e.preventDefault();
+        e.stopPropagation();
+      } else {
+        lastTapTime = now;
+        lastTapX = touch.clientX;
+        lastTapY = touch.clientY;
+      }
+    };
+
+    const handleDblClick = (event: Event) => {
+      if (Date.now() - touchStartTime < 500) return;
+      if (!event || isInteractiveControl(event.target)) return;
+
+      const targetEl = (player as any).template?.$player || containerRef.current;
+      const rect = targetEl?.getBoundingClientRect();
+      if (!rect) return;
+
+      const mouseEvent = event as MouseEvent;
+      const x = (typeof mouseEvent.clientX === 'number' ? mouseEvent.clientX : 0) - rect.left;
+      const width = rect.width;
+      const isMobile = window.innerWidth <= 1024 || ('ontouchstart' in window);
+
+      if (isMobile) {
+        triggerSeekRipple(x < width / 2);
+      } else {
+        if (x < width * 0.35) {
+          triggerSeekRipple(true);
+        } else if (x > width * 0.65) {
+          triggerSeekRipple(false);
+        }
+      }
+    };
+
+    if (playerContainer) {
+      playerContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
+      playerContainer.addEventListener('touchend', handleTouchEnd, { passive: false });
+    }
+    player.on('dblclick', handleDblClick);
+
     let didStartPlayback = false;
     let bufferingStartedAt = 0;
     player.on('video:waiting', () => {
@@ -990,6 +1165,12 @@ export default function ArtPlayer({
         clearInterval(stallRecoveryTimer);
       }
       skipAdButton.removeEventListener('click', onSkipButtonClick);
+      if (playerContainer) {
+        playerContainer.removeEventListener('touchstart', handleTouchStart);
+        playerContainer.removeEventListener('touchend', handleTouchEnd);
+      }
+      seekOverlay.remove();
+      clearTimeout(seekTimer);
     };
     // Recreate only when the primary/fallback transport changes. Other props use refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps

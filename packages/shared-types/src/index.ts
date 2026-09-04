@@ -1,4 +1,4 @@
-export type MovieSource = 'kkphim' | 'ophim' | 'nguonc' | 'vsmov' | 'vidsrc' | 'vicdn';
+export type MovieSource = 'kkphim' | 'ophim' | 'nguonc' | 'vsmov' | 'vidsrc' | 'vicdn' | 'vidlink' | '2embed' | 'vidcore';
 
 export interface NamedValue {
   name?: string;

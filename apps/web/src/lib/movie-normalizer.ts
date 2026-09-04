@@ -17,11 +17,14 @@ export interface NormalizedFilmItem extends Record<string, unknown> {
 
 const SOURCE_PRIORITY: MovieSource[] = [
   "kkphim",
-  "ophim",
   "nguonc",
   "vsmov",
+  "ophim",
   "vicdn",
   "vidsrc",
+  "vidlink",
+  "2embed",
+  "vidcore",
 ];
 
 function isRecord(value: unknown): value is Record<string, unknown> {

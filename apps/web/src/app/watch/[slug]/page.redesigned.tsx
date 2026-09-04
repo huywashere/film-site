@@ -232,20 +232,20 @@ export default function WatchPageRedesigned() {
   const mappedKKPhim = kkphimEpisodes.map((s: any, idx: number) => ({
     ...s,
     server_name:
-      kkphimEpisodes.length > 1 ? `Server 1 (#${idx + 1})` : "Server 1",
-  }));
-  const mappedOphim = ophimEpisodes.map((s: any, idx: number) => ({
-    ...s,
-    server_name:
-      ophimEpisodes.length > 1 ? `Server 2 (#${idx + 1})` : "Server 2",
+      kkphimEpisodes.length > 1 ? `Server 1 (KKPhim #${idx + 1})` : "Server 1 (KKPhim)",
   }));
   const mappedNguonC = nguoncEpisodes.map((s: any, idx: number) => ({
     ...s,
     server_name:
-      nguoncEpisodes.length > 1 ? `Server 3 (#${idx + 1})` : "Server 3",
+      nguoncEpisodes.length > 1 ? `Server 2 (NguonC #${idx + 1})` : "Server 2 (NguonC)",
+  }));
+  const mappedOphim = ophimEpisodes.map((s: any, idx: number) => ({
+    ...s,
+    server_name:
+      ophimEpisodes.length > 1 ? `Server 4 (OPhim #${idx + 1})` : "Server 4 (OPhim)",
   }));
 
-  const episodes: any[] = [...mappedKKPhim, ...mappedOphim, ...mappedNguonC];
+  const episodes: any[] = [...mappedKKPhim, ...mappedNguonC, ...mappedOphim];
   const server = episodes[currentServer];
   const serverData: any[] = server?.server_data || [];
   const currentEpData: any =

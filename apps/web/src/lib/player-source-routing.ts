@@ -88,6 +88,9 @@ export function getSourceAbbr(source?: string): string {
   if (s.includes("ophim") || s === "op") return "OP";
   if (s.includes("vicdn") || s === "vicdn") return "ViCDN";
   if (s.includes("vidsrc")) return "VidSrc";
+  if (s.includes("vidlink")) return "VidLink";
+  if (s.includes("2embed") || s === "2e") return "2Embed";
+  if (s.includes("vidcore") || s === "vc") return "VidCore";
   return source.toUpperCase();
 }
 
@@ -99,6 +102,9 @@ export function getSourceLabel(source?: string): string {
   if (value.includes("ophim") || value === "op") return "OPhim";
   if (value.includes("vicdn")) return "ViCDN";
   if (value.includes("vidsrc")) return "VidSrc";
+  if (value.includes("vidlink")) return "VidLink";
+  if (value.includes("2embed")) return "2Embed";
+  if (value.includes("vidcore")) return "VidCore";
   return source?.trim() || "Nguồn phát";
 }
 
@@ -109,10 +115,16 @@ const PROVIDER_PRIORITY: Record<string, number> = {
   ophim: 25,
   vicdn: 20,
   vidsrc: 5,
+  vidlink: 4,
+  "2embed": 3,
+  vidcore: 2,
 };
 
 const UNSANDBOXED_EMBED_HOST_SUFFIXES: Record<string, string[]> = {
   vidsrc: ["vidsrc.sbs"],
+  vidlink: ["vidlink.pro"],
+  "2embed": ["2embed.cc", "2embed.skin"],
+  vidcore: ["vidcore.org"],
   vicdn: ["vicdn.cc"],
   nguonc: ["streamc.xyz"],
   vsmov: ["streamvsmov.com", "vsmov.com", "vsphim.com"],
@@ -187,7 +199,7 @@ export type VicdnEmbedOptions = {
   episode?: unknown;
 };
 
-/** Build ViCDN embed URLs: https://vicdn.cc/movie-{tmdbId} or https://vicdn.cc/tv-{tmdbId}-{season}-{episode} */
+/** Build ViCDN embed URLs: https://vicdn.cc/mv-{tmdbId}-1-1 or https://vicdn.cc/tv-{tmdbId}-{season}-{episode} */
 export function buildVicdnEmbedUrl({
   tmdbId,
   mediaType,
@@ -198,11 +210,125 @@ export function buildVicdnEmbedUrl({
   if (!safeTmdbId) return null;
 
   if (mediaType === "movie") {
-    return `https://vicdn.cc/movie-${safeTmdbId}`;
+    return `https://vicdn.cc/mv-${safeTmdbId}-1-1`;
   }
   const safeSeason = positiveInteger(season) || 1;
   const safeEpisode = positiveInteger(episode) || 1;
   return `https://vicdn.cc/tv-${safeTmdbId}-${safeSeason}-${safeEpisode}`;
+}
+
+const VIDLINK_EMBED_ORIGIN = "https://vidlink.pro";
+
+export type VidlinkEmbedOptions = {
+  tmdbId: unknown;
+  mediaType: "movie" | "tv";
+  season?: unknown;
+  episode?: unknown;
+  autoplay?: boolean;
+  primaryColor?: string;
+};
+
+/** Build documented vidlink.pro TMDB embed URLs: https://vidlink.pro/movie/{tmdbId} or https://vidlink.pro/tv/{tmdbId}/{season}/{episode} */
+export function buildVidlinkEmbedUrl({
+  tmdbId,
+  mediaType,
+  season,
+  episode,
+  autoplay,
+  primaryColor = "23ade5",
+}: VidlinkEmbedOptions): string | null {
+  const safeTmdbId = positiveInteger(tmdbId);
+  if (!safeTmdbId) return null;
+
+  let path = `/movie/${safeTmdbId}`;
+  if (mediaType === "tv") {
+    const safeSeason = positiveInteger(season) || 1;
+    const safeEpisode = positiveInteger(episode) || 1;
+    path = `/tv/${safeTmdbId}/${safeSeason}/${safeEpisode}`;
+  }
+
+  const url = new URL(path, VIDLINK_EMBED_ORIGIN);
+  if (autoplay !== undefined) {
+    url.searchParams.set("autoplay", autoplay ? "true" : "false");
+  }
+  if (primaryColor && /^[0-9a-f]{6}$/i.test(primaryColor.replace(/^#/, ""))) {
+    url.searchParams.set("primaryColor", primaryColor.replace(/^#/, "").toLowerCase());
+  }
+  return url.toString();
+}
+
+const TWOEMBED_EMBED_ORIGIN = "https://www.2embed.cc";
+
+export type TwoEmbedOptions = {
+  tmdbId: unknown;
+  mediaType: "movie" | "tv";
+  season?: unknown;
+  episode?: unknown;
+};
+
+/** Build documented 2embed.cc TMDB embed URLs:
+ * Movie: https://www.2embed.cc/embed/{tmdbId}
+ * TV: https://www.2embed.cc/embedtv/{tmdbId}&s={season}&e={episode}
+ */
+export function buildTwoEmbedUrl({
+  tmdbId,
+  mediaType,
+  season,
+  episode,
+}: TwoEmbedOptions): string | null {
+  const safeTmdbId = positiveInteger(tmdbId);
+  if (!safeTmdbId) return null;
+
+  if (mediaType === "movie") {
+    return `${TWOEMBED_EMBED_ORIGIN}/embed/${safeTmdbId}`;
+  }
+
+  const safeSeason = positiveInteger(season) || 1;
+  const safeEpisode = positiveInteger(episode) || 1;
+  return `${TWOEMBED_EMBED_ORIGIN}/embedtv/${safeTmdbId}&s=${safeSeason}&e=${safeEpisode}`;
+}
+
+const VIDCORE_EMBED_ORIGIN = "https://vidcore.org";
+
+export type VidcoreEmbedOptions = {
+  tmdbId: unknown;
+  mediaType: "movie" | "tv";
+  season?: unknown;
+  episode?: unknown;
+  autoplay?: boolean;
+  theme?: string;
+};
+
+/** Build documented vidcore.org TMDB embed URLs:
+ * Movie: https://vidcore.org/embed/movie/{tmdbId}
+ * TV: https://vidcore.org/embed/tv/{tmdbId}/{season}/{episode}
+ */
+export function buildVidcoreEmbedUrl({
+  tmdbId,
+  mediaType,
+  season,
+  episode,
+  autoplay,
+  theme = "23ade5",
+}: VidcoreEmbedOptions): string | null {
+  const safeTmdbId = positiveInteger(tmdbId);
+  if (!safeTmdbId) return null;
+
+  let path = `/embed/movie/${safeTmdbId}`;
+  if (mediaType === "tv") {
+    const safeSeason = positiveInteger(season) || 1;
+    const safeEpisode = positiveInteger(episode) || 1;
+    path = `/embed/tv/${safeTmdbId}/${safeSeason}/${safeEpisode}`;
+  }
+
+  const url = new URL(path, VIDCORE_EMBED_ORIGIN);
+  if (autoplay !== undefined) {
+    url.searchParams.set("autoplay", autoplay ? "true" : "false");
+  }
+  if (theme && /^[0-9a-f]{6}$/i.test(theme.replace(/^#/, ""))) {
+    url.searchParams.set("theme", theme.replace(/^#/, "").toLowerCase());
+  }
+  return url.toString();
 }
 
 export function episodeNumberFromLabel(value?: string): number | null {
@@ -247,7 +373,13 @@ export function resolveSeasonNumber(...values: Array<string | number | null | un
 }
 
 export function isAutomaticPlaybackSource(source: string | undefined) {
-  return Boolean(source && source !== "vidsrc");
+  return Boolean(
+    source &&
+      source !== "vidsrc" &&
+      source !== "vidlink" &&
+      source !== "2embed" &&
+      source !== "vidcore",
+  );
 }
 
 export function canUseUnsandboxedEmbed(source: string | undefined, url: string) {
@@ -312,7 +444,14 @@ export function resolveServerType(
 ): ServerType {
   const normalizedSource = normalizePlayerLabel(source);
   if (normalizedSource === "vicdn") return "song-ngu";
-  if (normalizedSource === "vidsrc") return "engsub";
+  if (
+    normalizedSource === "vidsrc" ||
+    normalizedSource === "vidlink" ||
+    normalizedSource === "2embed" ||
+    normalizedSource === "vidcore"
+  ) {
+    return "engsub";
+  }
   const detected = detectServerType(serverName, serverLanguage);
   if (detected === "raw") {
     // Default unspecified servers from Vietnamese providers to vietsub
@@ -349,7 +488,12 @@ export function findMatchingEpisode(serverData: EpisodeItem[] | undefined, targe
   if (!serverData?.length) return undefined;
   const targetKey = canonicalEpisodeKey(target);
   if (!targetKey) return serverData[0];
-  return serverData.find((item) => episodeIdentity(item) === targetKey);
+  const exact = serverData.find((item) => episodeIdentity(item) === targetKey);
+  if (exact) return exact;
+  if (serverData.length === 1 && (targetKey === "full" || targetKey === "1")) {
+    return serverData[0];
+  }
+  return undefined;
 }
 
 export function isPlayableEpisode(item?: EpisodeItem) {
