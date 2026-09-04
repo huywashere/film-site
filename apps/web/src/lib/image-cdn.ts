@@ -103,7 +103,12 @@ export function localImageProxyUrl(
 export function buildArtworkCandidates(
   sources: Array<string | null | undefined>,
   preset: ImagePreset,
-  options: { strictProxy?: boolean; includeLocalProxy?: boolean } = {},
+  options: {
+    strictProxy?: boolean;
+    includeLocalProxy?: boolean;
+    includeWsrvForTmdb?: boolean;
+    preferEdge?: boolean;
+  } = {},
 ): string[] {
   const direct: string[] = [];
   for (const source of sources) {
@@ -111,20 +116,46 @@ export function buildArtworkCandidates(
     if (upstream && !direct.includes(upstream)) direct.push(upstream);
   }
 
-  const candidates = [...direct];
+  const edgeCandidates: string[] = [];
+  const directCandidates: string[] = [];
+  const localCandidates: string[] = [];
+
   for (const source of direct) {
-    if (!isTmdbImageUrl(source)) {
+    directCandidates.push(source);
+
+    if (!isTmdbImageUrl(source) || options.includeWsrvForTmdb || options.preferEdge) {
       const wsrv = wsrvImageUrl(source, preset);
-      if (wsrv && !candidates.includes(wsrv)) candidates.push(wsrv);
+      if (wsrv && !edgeCandidates.includes(wsrv) && !directCandidates.includes(wsrv)) {
+        edgeCandidates.push(wsrv);
+      }
     }
+
     if (options.includeLocalProxy !== false) {
       const proxy = localImageProxyUrl(source, {
         strict: options.strictProxy,
       });
-      if (proxy && !candidates.includes(proxy)) candidates.push(proxy);
+      if (proxy && !localCandidates.includes(proxy) && !directCandidates.includes(proxy)) {
+        localCandidates.push(proxy);
+      }
     }
   }
-  return candidates;
+
+  const result: string[] = [];
+  const add = (url: string) => {
+    if (url && !result.includes(url)) result.push(url);
+  };
+
+  if (options.preferEdge) {
+    edgeCandidates.forEach(add);
+    directCandidates.forEach(add);
+    localCandidates.forEach(add);
+  } else {
+    directCandidates.forEach(add);
+    edgeCandidates.forEach(add);
+    localCandidates.forEach(add);
+  }
+
+  return result;
 }
 
 export function isPreOptimizedImageUrl(value?: string | null): boolean {

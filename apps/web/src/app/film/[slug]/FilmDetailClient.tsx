@@ -90,7 +90,14 @@ function ResilientDetailImage({
   priority?: boolean;
   preset?: ImagePreset;
 }) {
-  const sources = useMemo(() => buildArtworkCandidates(candidates, preset), [candidates, preset]);
+  const sources = useMemo(
+    () =>
+      buildArtworkCandidates(candidates, preset, {
+        includeWsrvForTmdb: true,
+        preferEdge: true,
+      }),
+    [candidates, preset],
+  );
   const sourceKey = sources.join('|');
   const [sourceIndex, setSourceIndex] = useState(0);
 
@@ -127,22 +134,27 @@ function DetailPosterCard({
   onOpenLightbox?: (initialIndex?: number) => void;
 }) {
   const robustCandidates = useMemo(() => {
-    return buildArtworkCandidates(candidates, 'poster');
+    return buildArtworkCandidates(candidates, 'poster', {
+      includeWsrvForTmdb: true,
+      preferEdge: true,
+    });
   }, [candidates]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
+  const [hasFailedAll, setHasFailedAll] = useState(false);
 
   useEffect(() => {
     setCandidateIdx(0);
+    setHasFailedAll(false);
   }, [robustCandidates]);
 
   const src = robustCandidates[candidateIdx];
 
-  if (!src) {
+  if (!src || hasFailedAll) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-gradient-to-b from-neutral-800 to-black">
-        <Clapperboard className="w-8 h-8 text-amber-500/80 mb-1" />
-        <span className="text-[10px] font-bold text-white leading-tight line-clamp-2">
+      <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gradient-to-b from-neutral-850 to-neutral-950 border border-white/10 rounded-2xl select-none">
+        <Clapperboard className="w-10 h-10 text-amber-400/90 mb-2 drop-shadow" />
+        <span className="text-xs font-bold text-neutral-200 leading-tight line-clamp-3">
           {filmName}
         </span>
       </div>
@@ -167,6 +179,8 @@ function DetailPosterCard({
         onError={() => {
           if (candidateIdx < robustCandidates.length - 1) {
             setCandidateIdx((i) => i + 1);
+          } else {
+            setHasFailedAll(true);
           }
         }}
       />
@@ -208,7 +222,10 @@ function GalleryBackdropCard({
       tmdbBackdrop(filePath, 'original'),
     ].filter((url): url is string => Boolean(url));
 
-    return buildArtworkCandidates(rawList, 'backdrop');
+    return buildArtworkCandidates(rawList, 'backdrop', {
+      includeWsrvForTmdb: true,
+      preferEdge: true,
+    });
   }, [filePath]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
@@ -409,7 +426,7 @@ function FilmImageLightboxModal({
   );
 }
 
-// ── Cast Card (Only renders actors with actual photos) ──────
+// ── Cast Card with Resilient Edge Photo & Initial Fallback ──────
 function CastCard({
   name,
   role = 'Diễn viên',
@@ -441,7 +458,26 @@ function CastCard({
     staleTime: 24 * 60 * 60 * 1000,
   });
 
-  const realPhotoUrl = directTmdbUrl || (data && data !== 'placeholder' ? data : null);
+  const rawPhotoUrl = directTmdbUrl || (data && data !== 'placeholder' ? data : null);
+
+  const photoCandidates = useMemo(() => {
+    if (!rawPhotoUrl) return [];
+    return buildArtworkCandidates([rawPhotoUrl], 'avatar', {
+      includeWsrvForTmdb: true,
+      preferEdge: true,
+    });
+  }, [rawPhotoUrl]);
+
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const [photoFailed, setPhotoFailed] = useState(false);
+
+  useEffect(() => {
+    setPhotoIndex(0);
+    setPhotoFailed(false);
+  }, [photoCandidates]);
+
+  const activePhotoSrc = photoCandidates[photoIndex];
+  const initial = cleanName ? cleanName.charAt(0).toUpperCase() : '?';
 
   // If loading, show skeleton pulse
   if (isLoading && !directTmdbUrl) {
@@ -453,8 +489,8 @@ function CastCard({
     );
   }
 
-  // Hide actor card completely if no photo is available
-  if (!realPhotoUrl) {
+  // Skip card only if name is completely empty
+  if (!cleanName) {
     return null;
   }
 
@@ -463,17 +499,35 @@ function CastCard({
       className="flex flex-col items-center text-center space-y-1.5 p-1.5 w-24 md:w-28 flex-shrink-0 group cursor-pointer"
       title={`${cleanName}${role ? ` (${role})` : ''}`}
     >
-      <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-neutral-900 transition-[border-color,transform] duration-200 group-hover:scale-[1.03] group-hover:border-white/30 md:h-20 md:w-20">
-        <ResilientDetailImage
-          candidates={[realPhotoUrl]}
-          alt={cleanName}
-          sizes="80px"
-          preset="avatar"
-          className="object-cover"
-        />
+      <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-neutral-900 transition-[border-color,transform] duration-200 group-hover:scale-[1.03] group-hover:border-white/30 md:h-20 md:w-20 shadow-md">
+        {activePhotoSrc && !photoFailed ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={`${cleanName}-${activePhotoSrc}`}
+            src={activePhotoSrc}
+            alt={cleanName}
+            referrerPolicy="strict-origin-when-cross-origin"
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            onError={() => {
+              if (photoIndex < photoCandidates.length - 1) {
+                setPhotoIndex((i) => i + 1);
+              } else {
+                setPhotoFailed(true);
+              }
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-neutral-800 to-neutral-950 text-neutral-300 font-extrabold text-base md:text-lg select-none border border-white/5">
+            {initial}
+          </div>
+        )}
       </div>
       <div className="w-full truncate px-1">
-        <p className="truncate text-[11px] font-bold text-white">{cleanName}</p>
+        <p className="truncate text-[11px] font-bold text-white group-hover:text-amber-300 transition-colors">
+          {cleanName}
+        </p>
         <p className="text-[9px] text-neutral-500 truncate mt-0.5">{role}</p>
       </div>
     </div>
@@ -1144,9 +1198,23 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
     // 1. Primary best TMDB poster
     if (tmdbPosterUrl) add(tmdbPosterUrl);
 
-    // 2. All other TMDB posters
+    // 2. Provider artwork (Prioritized right after primary TMDB poster)
+    if (providerPosterUrl) add(providerPosterUrl);
+    if (providerBackdropUrl) add(providerBackdropUrl);
+
+    // 3. Alternate path for KKPhim/Ophim CDNs
+    const primary = providerPosterUrl || providerBackdropUrl;
+    if (primary && typeof primary === 'string') {
+      if (primary.includes('/uploads/movies/')) {
+        add(primary.replace('/uploads/movies/', '/upload/vod/'));
+      } else if (primary.includes('/upload/vod/')) {
+        add(primary.replace('/upload/vod/', '/uploads/movies/'));
+      }
+    }
+
+    // 4. Other TMDB posters
     if (posters && posters.length > 0) {
-      for (const p of posters) {
+      for (const p of posters.slice(0, 4)) {
         if (p.file_path) {
           const url = tmdbPoster(p.file_path, 'w780') || tmdbPoster(p.file_path, 'w500');
           if (url) add(url);
@@ -1154,11 +1222,7 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
       }
     }
 
-    // 3. Provider artwork
-    if (providerPosterUrl) add(providerPosterUrl);
-    if (providerBackdropUrl) add(providerBackdropUrl);
-
-    // 4. TMDB backdrop fallback
+    // 5. TMDB backdrop fallback
     if (tmdbBackdropUrl) add(tmdbBackdropUrl);
 
     return list;

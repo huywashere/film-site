@@ -102,7 +102,7 @@ import {
   type ServerType,
   type SourceServer,
 } from '@/lib/player-source-routing';
-import { buildArtworkCandidates } from '@/lib/image-cdn';
+import { buildArtworkCandidates, wsrvImageUrl, isTmdbImageUrl } from '@/lib/image-cdn';
 
 const HlsVideoPlayer = dynamic(
   () => import('@/components/video/HlsVideoPlayer').then((module) => module.HlsVideoPlayer),
@@ -319,7 +319,10 @@ function EpisodeThumbnail({
     const list: string[] = [];
     const add = (url?: unknown) => {
       const resolved = resolveImageUrl(url);
-      if (resolved && !list.includes(resolved)) list.push(resolved);
+      if (!resolved) return;
+      const edge = wsrvImageUrl(resolved, 'card');
+      if (edge && !list.includes(edge)) list.push(edge);
+      if (!list.includes(resolved)) list.push(resolved);
     };
 
     // 1. Direct Episode Still from TMDB Season query (most accurate & unique per episode)
@@ -465,6 +468,61 @@ function EpisodeThumbnail({
         </div>
       </div>
     </div>
+  );
+}
+
+// ── Resilient Watch Cast Avatar (Edge-Accelerated wsrv with Letter Fallback) ──
+function WatchCastAvatar({
+  name,
+  profilePath,
+}: {
+  name: string;
+  profilePath?: string | null;
+}) {
+  const tmdbUrl = profilePath ? tmdbProfile(profilePath, 'w185') : null;
+  const candidates = useMemo(() => {
+    if (!tmdbUrl) return [];
+    return buildArtworkCandidates([tmdbUrl], 'avatar', {
+      includeWsrvForTmdb: true,
+      preferEdge: true,
+    });
+  }, [tmdbUrl]);
+
+  const [idx, setIdx] = useState(0);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setIdx(0);
+    setFailed(false);
+  }, [candidates]);
+
+  const src = candidates[idx];
+  const initial = (name || '?').trim().charAt(0).toUpperCase();
+
+  if (!src || failed) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-neutral-800 to-neutral-900 text-neutral-300 font-extrabold text-base sm:text-lg select-none">
+        {initial}
+      </div>
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={name}
+      loading="lazy"
+      decoding="async"
+      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.035]"
+      onError={() => {
+        if (idx < candidates.length - 1) {
+          setIdx((i) => i + 1);
+        } else {
+          setFailed(true);
+        }
+      }}
+    />
   );
 }
 
@@ -983,7 +1041,10 @@ function RecMovieItem({ item, index = 0 }: { item: any; index?: number }) {
       }
     }
 
-    return buildArtworkCandidates(sources, 'card');
+    return buildArtworkCandidates(sources, 'card', {
+      includeWsrvForTmdb: true,
+      preferEdge: true,
+    });
   }, [item?.poster_url, item?.thumb_url, tmdbBackdropUrl, tmdbPosterUrl]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
@@ -1585,7 +1646,22 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     () => data?._sourceSlugs || film?._sourceSlugs || {},
     [data?._sourceSlugs, film?._sourceSlugs],
   );
-  const lookupTitle = film?.name || film?.origin_name || slug || '';
+  const cleanTitle = useMemo(() => {
+    const raw = film?.name || slug || '';
+    return raw
+      .replace(/\s*\([^)]*(?:thuyết minh|lồng tiếng|vietsub|bản đẹp|full hd|raw|phần\s*\d+|season\s*\d+|ss\s*\d+)[^)]*\)/gi, '')
+      .replace(/\s*-\s*(?:thuyết minh|lồng tiếng|vietsub|bản đẹp|full hd|raw|phần\s*\d+|season\s*\d+|ss\s*\d+)/gi, '')
+      .replace(/\s*:\s*(?:phần\s*\d+|season\s*\d+|ss\s*\d+)/gi, '')
+      .trim();
+  }, [film?.name, slug]);
+
+  const cleanOriginTitle = useMemo(() => {
+    if (!film?.origin_name) return '';
+    return String(film.origin_name)
+      .replace(/\s*\([^)]*(?:thuyết minh|lồng tiếng|vietsub|bản đẹp|full hd|raw|phần\s*\d+|season\s*\d+|ss\s*\d+)[^)]*\)/gi, '')
+      .replace(/\s*-\s*(?:thuyết minh|lồng tiếng|vietsub|bản đẹp|full hd|raw|phần\s*\d+|season\s*\d+|ss\s*\d+)/gi, '')
+      .trim();
+  }, [film?.origin_name]);
 
   const movieStoredData = useMemo(
     () => ({
@@ -1626,10 +1702,37 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   };
 
   const { data: sourceLookupData, isFetching: isSourceLookupFetching } = useQuery({
-    queryKey: ['watch-source-lookup', lookupTitle, film?.year],
-    queryFn: () => movieApi.searchSourceAlternatives(lookupTitle, 1, 30).then((r) => r.data),
+    queryKey: ['watch-source-lookup', cleanTitle, cleanOriginTitle, film?.year],
+    queryFn: async () => {
+      const queries = [cleanTitle].filter(Boolean);
+      if (
+        cleanOriginTitle &&
+        cleanOriginTitle.toLowerCase() !== cleanTitle.toLowerCase()
+      ) {
+        queries.push(cleanOriginTitle);
+      }
+
+      const settled = await Promise.allSettled(
+        queries.map((q) => movieApi.searchSourceAlternatives(q, 1, 30).then((r) => r.data)),
+      );
+
+      const combinedItems: any[] = [];
+      const seen = new Set<string>();
+      for (const res of settled) {
+        if (res.status === 'fulfilled' && res.value?.data?.items) {
+          for (const item of res.value.data.items) {
+            const key = `${item._source || ''}:${item.slug || item.id || item.name}`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              combinedItems.push(item);
+            }
+          }
+        }
+      }
+      return { data: { items: combinedItems } };
+    },
     enabled:
-      secondaryDataReady && Boolean(lookupTitle) && Object.keys(bootstrapProviders).length < 4,
+      secondaryDataReady && Boolean(cleanTitle) && Object.keys(bootstrapProviders).length < 4,
     staleTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
@@ -1638,33 +1741,72 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
   const matchedSourceRecord = useMemo(() => {
     const items = sourceLookupData?.data?.items || [];
+    const effectiveTmdbId = film?.tmdb?.id || film?.tmdb_id || data?.movie?.tmdb?.id;
     return items.find((item: any) =>
       matchMovies(
         {
           title: film?.name || '',
           originTitle: film?.origin_name,
           year: Number(film?.year) || undefined,
+          tmdbId: effectiveTmdbId,
         },
         {
           title: item?.name || item?.title || '',
           originTitle: item?.origin_name || item?.originTitle,
           year: Number(item?.year) || undefined,
+          tmdbId: item?.tmdb?.id || item?.tmdb_id,
         },
       ),
     );
-  }, [sourceLookupData, film?.name, film?.origin_name, film?.year]);
+  }, [sourceLookupData, film?.name, film?.origin_name, film?.year, film?.tmdb, film?.tmdb_id, data?.movie?.tmdb]);
 
   const sourceSlugFor = useCallback(
     (source: MovieSource) => {
       if (primarySource === source) return sourceSlug;
-      return (
-        bootstrapSourceSlugs?.[source] ||
-        matchedSourceRecord?._sourceSlugs?.[source] ||
-        sourceSlug ||
-        slug
+      if (bootstrapSourceSlugs?.[source]) return bootstrapSourceSlugs[source];
+      if (matchedSourceRecord?._sourceSlugs?.[source]) return matchedSourceRecord._sourceSlugs[source];
+
+      // Direct fallback: check if any item from sourceLookupData matches the film
+      const items = sourceLookupData?.data?.items || [];
+      const effectiveTmdbId = film?.tmdb?.id || film?.tmdb_id || data?.movie?.tmdb?.id;
+      const directSourceItem = items.find(
+        (item: any) =>
+          (item?._source === source || item?._sourceSlugs?.[source]) &&
+          matchMovies(
+            {
+              title: film?.name || '',
+              originTitle: film?.origin_name,
+              year: Number(film?.year) || undefined,
+              tmdbId: effectiveTmdbId,
+            },
+            {
+              title: item?.name || item?.title || '',
+              originTitle: item?.origin_name || item?.originTitle,
+              year: Number(item?.year) || undefined,
+              tmdbId: item?.tmdb?.id || item?.tmdb_id,
+            },
+          ),
       );
+      if (directSourceItem) {
+        return directSourceItem._sourceSlugs?.[source] || directSourceItem.slug;
+      }
+
+      return sourceSlug || slug;
     },
-    [bootstrapSourceSlugs, matchedSourceRecord, primarySource, sourceSlug, slug],
+    [
+      bootstrapSourceSlugs,
+      matchedSourceRecord,
+      primarySource,
+      sourceSlug,
+      slug,
+      sourceLookupData,
+      film?.name,
+      film?.origin_name,
+      film?.year,
+      film?.tmdb,
+      film?.tmdb_id,
+      data?.movie?.tmdb,
+    ],
   );
 
   const kkphimSlug = sourceSlugFor('kkphim');
@@ -2198,11 +2340,24 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       ...tagSource(vidsrcEps, 'vidsrc'),
     ];
     const rank = new Map(providerPriority.map((source, index) => [source, index]));
-    return combined.sort(
+    const sorted = combined.sort(
       (left, right) =>
         (rank.get(left._source || '') ?? 999) - (rank.get(right._source || '') ?? 999) ||
         (right.priority ?? 0) - (left.priority ?? 0),
     );
+
+    // Number servers sequentially per version type (e.g. Vietsub: Server 1 (KK), Server 2 (NC), Server 3 (VS))
+    const byTypeCount = new Map<string, number>();
+    return sorted.map((item) => {
+      const typeKey = item._type || 'vietsub';
+      const count = (byTypeCount.get(typeKey) || 0) + 1;
+      byTypeCount.set(typeKey, count);
+      const sourceAbbr = getSourceAbbr(item._source || '');
+      return {
+        ...item,
+        server_name: `Server ${count} (${sourceAbbr})`,
+      };
+    });
   }, [
     autoPlayConfig,
     currentEp,
@@ -2336,6 +2491,13 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     undefined;
 
   const posterUrl = movieThumb || moviePoster || undefined;
+  const optimizedPlayerPoster = useMemo(() => {
+    if (!posterUrl) return undefined;
+    if (isTmdbImageUrl(posterUrl)) {
+      return wsrvImageUrl(posterUrl, 'backdrop') || posterUrl;
+    }
+    return posterUrl;
+  }, [posterUrl]);
 
   // Auto-sync active episode range for long series (e.g. One Piece, Conan with 500-1100+ episodes)
   useEffect(() => {
@@ -3273,7 +3435,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     key={`hls:${server?._source || 'unknown'}:${currentServer}:${currentEpData?.slug || currentEpData?.name || ''}`}
                     src={m3u8Url}
                     proxySrc={m3u8ProxyUrl}
-                    poster={posterUrl}
+                    poster={optimizedPlayerPoster || posterUrl}
                     title={film?.name || film?.title || ''}
                     subtitle={currentEpData?.name ? `Tập ${currentEpData.name}` : ''}
                     initialTime={lastKnownPlaybackTimeRef.current || resumeAt}
@@ -4188,20 +4350,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                           className="group min-w-0 text-center"
                         >
                           <div className="mx-auto aspect-square w-full max-w-28 overflow-hidden rounded-full border-2 border-white/[0.09] bg-white/[0.035] transition-all group-hover:-translate-y-0.5 group-hover:border-fuchsia-400/55 group-hover:shadow-[0_10px_28px_-14px_rgba(244,114,182,0.6)]">
-                            {profile ? (
-                              /* eslint-disable-next-line @next/next/no-img-element */
-                              <img
-                                src={profile}
-                                alt={person.name}
-                                loading="lazy"
-                                decoding="async"
-                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.035]"
-                              />
-                            ) : (
-                              <div className="flex h-full items-center justify-center text-neutral-600">
-                                <Users size={24} />
-                              </div>
-                            )}
+                            <WatchCastAvatar name={person.name} profilePath={person.profile_path} />
                           </div>
                           <p className="mt-2 truncate text-[11px] font-bold text-neutral-200 group-hover:text-fuchsia-200 sm:text-xs">
                             {person.name}
@@ -4290,7 +4439,8 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                 {diverseTmdbBackdrops.length ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                     {diverseTmdbBackdrops.map((image, index) => {
-                      const imageUrl = tmdbBackdrop(image.file_path, 'w780');
+                      const rawUrl = tmdbBackdrop(image.file_path, 'w780');
+                      const imageUrl = rawUrl ? wsrvImageUrl(rawUrl, 'thumbnail') || rawUrl : null;
                       return imageUrl ? (
                         <div
                           key={`${image.file_path}-${index}`}

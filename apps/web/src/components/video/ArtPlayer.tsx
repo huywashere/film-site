@@ -9,7 +9,13 @@ import {
   isTerminalHlsHttpStatus,
   selectInitialHlsTransport,
 } from '@/lib/player-source-routing';
-import { ARTPLAYER_EDITOR_LOADING_GIF } from './artplayer-editor-assets';
+import {
+  ARTPLAYER_EDITOR_LOADING_GIF,
+  ARTPLAYER_SEEK_BACKWARD_10_SVG,
+  ARTPLAYER_SEEK_FORWARD_10_SVG,
+  ARTPLAYER_SCREENSHOT_SVG,
+  ARTPLAYER_PIP_SVG,
+} from './artplayer-editor-assets';
 
 // Reduced from 8s → 6s for desktop. Mobile timeout is extended in the watchdog
 // itself. Faster timeout = faster automatic fallback to an alternate server.
@@ -603,18 +609,84 @@ export default function ArtPlayer({
       // built-in gesture enabled makes a single double tap seek twice.
       fastForward: false,
       lock: true,
-      screenshot:
-        typeof navigator !== 'undefined'
-          ? !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
-          : false,
+      screenshot: false,
       setting: true,
-      pip: true,
+      pip: false,
       loop: true,
       flip: true,
       playbackRate: true,
       aspectRatio: true,
       fullscreen: true,
       fullscreenWeb: true,
+      controls: [
+        {
+          name: 'backward-10',
+          position: 'left',
+          index: 11,
+          html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;">${ARTPLAYER_SEEK_BACKWARD_10_SVG}</span>`,
+          tooltip: 'Tua lại 10s',
+          click: function () {
+            if (playerRef.current) {
+              const art = playerRef.current;
+              art.seek = Math.max(0, art.currentTime - 10);
+              art.notice.show = 'Tua lại 10s';
+            }
+          },
+        },
+        {
+          name: 'forward-10',
+          position: 'left',
+          index: 12,
+          html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;">${ARTPLAYER_SEEK_FORWARD_10_SVG}</span>`,
+          tooltip: 'Tua tới 10s',
+          click: function () {
+            if (playerRef.current) {
+              const art = playerRef.current;
+              art.seek = Math.min(art.duration || Infinity, art.currentTime + 10);
+              art.notice.show = 'Tua tới 10s';
+            }
+          },
+        },
+        {
+          name: 'screenshot',
+          position: 'right',
+          index: 20,
+          html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;">${ARTPLAYER_SCREENSHOT_SVG}</span>`,
+          tooltip: 'Chụp ảnh màn hình',
+          click: function () {
+            if (playerRef.current) {
+              try {
+                playerRef.current.screenshot();
+              } catch {
+                playerRef.current.notice.show = 'Không thể chụp ảnh';
+              }
+            }
+          },
+        },
+        {
+          name: 'pip',
+          position: 'right',
+          index: 40,
+          html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;">${ARTPLAYER_PIP_SVG}</span>`,
+          tooltip: 'Hình trong hình (PiP)',
+          click: function () {
+            if (playerRef.current) {
+              const art = playerRef.current;
+              try {
+                if (typeof document !== 'undefined' && document.pictureInPictureElement) {
+                  document.exitPictureInPicture();
+                } else if (art.video && typeof art.video.requestPictureInPicture === 'function') {
+                  art.video.requestPictureInPicture();
+                } else {
+                  art.pip = !art.pip;
+                }
+              } catch {
+                art.notice.show = 'Trình duyệt không hỗ trợ PiP';
+              }
+            }
+          },
+        },
+      ],
       subtitleOffset: true,
       // Keep the canvas completely clean while controls are idle. The regular
       // timeline still appears with the control layer after pointer/touch input.

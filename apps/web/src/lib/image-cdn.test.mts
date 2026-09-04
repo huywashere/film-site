@@ -52,3 +52,12 @@ test("deduplicates proxied and direct copies of the same source", () => {
   assert.equal(candidates.filter((value) => value === provider).length, 1);
   assert.equal(candidates.length, 3);
 });
+
+test("preferEdge prioritizes edge wsrv for fast delivery in restricted network regions", () => {
+  const tmdb = "https://image.tmdb.org/t/p/w500/poster.jpg";
+  const candidates = buildArtworkCandidates([tmdb], "poster", {
+    preferEdge: true,
+  });
+  assert.equal(candidates[0].startsWith("https://wsrv.nl"), true);
+  assert.equal(candidates.includes(tmdb), true);
+});

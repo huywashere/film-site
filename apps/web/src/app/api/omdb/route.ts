@@ -137,6 +137,8 @@ export async function GET(request: NextRequest) {
   // Strategy 2: Search by title + year
   if (!data && title) {
     const cleanTitle = title
+      .replace(/\s*\([^)]*(?:thuyết minh|lồng tiếng|vietsub|bản đẹp|full hd|raw|phần\s*\d+|season\s*\d+|ss\s*\d+)[^)]*\)/gi, "")
+      .replace(/\s*-\s*(?:thuyết minh|lồng tiếng|vietsub|bản đẹp|full hd|raw|phần\s*\d+|season\s*\d+|ss\s*\d+)/gi, "")
       .replace(/\s*\((?:Phần|Season|SS|Part)\s*\d+\)/gi, "")
       .replace(/\s+(?:Phần|Season|SS|Part)\s*\d+/gi, "")
       .replace(/\s*:\s*(?:Phần|Season|SS|Part)\s*\d+/gi, "")

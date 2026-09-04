@@ -65,36 +65,54 @@ export function normalizeTitle(title: string): string {
  * Checks if two movie records match based on normalized title, release year, or origin title.
  */
 export function matchMovies(
-  movieA: { title: string; year?: number; originTitle?: string },
-  movieB: { title: string; year?: number; originTitle?: string },
+  movieA: { title: string; year?: number; originTitle?: string; tmdbId?: string | number },
+  movieB: { title: string; year?: number; originTitle?: string; tmdbId?: string | number },
 ): boolean {
-  const normA = normalizeTitle(movieA.title);
-  const normB = normalizeTitle(movieB.title);
-
-  // Exact normalized title match
-  if (normA && normB && normA === normB) {
-    // If both have release years and they differ by > 1 year, treat as different movies (e.g. remake/reboot)
-    if (movieA.year && movieB.year && Math.abs(movieA.year - movieB.year) > 1) {
-      return false;
-    }
+  // 1. Infallible match if both have valid matching TMDB IDs
+  if (movieA.tmdbId && movieB.tmdbId && String(movieA.tmdbId) === String(movieB.tmdbId)) {
     return true;
   }
 
-  // Check English origin title match
-  if (movieA.originTitle && movieB.originTitle) {
-    const normOriginA = normalizeTitle(movieA.originTitle);
-    const normOriginB = normalizeTitle(movieB.originTitle);
-    if (normOriginA && normOriginB && normOriginA === normOriginB) {
-      if (
-        movieA.year &&
-        movieB.year &&
-        Math.abs(movieA.year - movieB.year) > 1
-      ) {
-        return false;
-      }
-      return true;
-    }
+  // If both have release years and they differ by > 1 year, treat as different movies (e.g. remake/reboot)
+  if (movieA.year && movieB.year && Math.abs(movieA.year - movieB.year) > 1) {
+    return false;
   }
+
+  const normA = normalizeTitle(movieA.title);
+  const normB = normalizeTitle(movieB.title);
+  const normOriginA = movieA.originTitle ? normalizeTitle(movieA.originTitle) : "";
+  const normOriginB = movieB.originTitle ? normalizeTitle(movieB.originTitle) : "";
+
+  // 2. Exact normalized title match
+  if (normA && normB && normA === normB) {
+    return true;
+  }
+
+  // 3. Exact origin title match
+  if (normOriginA && normOriginB && normOriginA === normOriginB) {
+    return true;
+  }
+
+  // 4. Cross match: title A matches origin B, or origin A matches title B
+  if (normA && normOriginB && normA === normOriginB) {
+    return true;
+  }
+  if (normOriginA && normB && normOriginA === normB) {
+    return true;
+  }
+
+  // 5. Containment match for compound titles (e.g. "Đảo Hải Tặc - One Piece" vs "Đảo Hải Tặc")
+  const checkContainment = (t1: string, t2: string) => {
+    if (!t1 || !t2 || t1.length < 3 || t2.length < 3) return false;
+    const longer = t1.length >= t2.length ? t1 : t2;
+    const shorter = t1.length < t2.length ? t1 : t2;
+    return longer.includes(shorter) && shorter.length / longer.length >= 0.45;
+  };
+
+  if (checkContainment(normA, normB)) return true;
+  if (checkContainment(normOriginA, normOriginB)) return true;
+  if (checkContainment(normA, normOriginB)) return true;
+  if (checkContainment(normOriginA, normB)) return true;
 
   return false;
 }
