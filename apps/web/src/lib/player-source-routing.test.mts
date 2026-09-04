@@ -12,6 +12,7 @@ import {
   getSourceAbbr,
   getSourceLabel,
   isAutomaticPlaybackSource,
+  isDirectHlsAllowedByCsp,
   isTerminalHlsHttpStatus,
   resolveSeasonNumber,
   resolveServerType,
@@ -113,15 +114,27 @@ test("does not relay manifests that the provider has removed", () => {
   assert.equal(isTerminalHlsHttpStatus(undefined), false);
 });
 
-test("only removes iframe sandbox for known VidSrc, ViCDN, and NguonC HTTPS hosts", () => {
+test("only removes iframe sandbox for known VidSrc, ViCDN, NguonC, VSMov, and KKPhim HTTPS hosts", () => {
   assert.equal(canUseUnsandboxedEmbed("vidsrc", "https://vidsrc.sbs/embed/movie/533535"), true);
   assert.equal(canUseUnsandboxedEmbed("vidsrc", "https://vidsrc.to/embed/movie/123"), false);
   assert.equal(canUseUnsandboxedEmbed("kkphim", "https://vidsrc.to/embed/movie/123"), false);
   assert.equal(canUseUnsandboxedEmbed("vidsrc", "https://vidsrc.to.evil.test/embed/123"), false);
   assert.equal(canUseUnsandboxedEmbed("vidsrc", "javascript:alert(1)"), false);
   assert.equal(canUseUnsandboxedEmbed("nguonc", "https://embed.streamc.xyz/embed.php?hash=123"), true);
+  assert.equal(canUseUnsandboxedEmbed("nguonc", "https://embed13.streamc.xyz/embed.php?hash=123"), true);
   assert.equal(canUseUnsandboxedEmbed("nguonc", "https://streamc.xyz/player"), true);
   assert.equal(canUseUnsandboxedEmbed("nguonc", "https://evil.streamc.xyz.fake/embed"), false);
+  assert.equal(canUseUnsandboxedEmbed("vsmov", "https://v6.streamvsmov.com/video/525afddb"), true);
+  assert.equal(canUseUnsandboxedEmbed("vsmov", "https://streamvsmov.com/player"), true);
+  assert.equal(canUseUnsandboxedEmbed("kkphim", "https://player.phimapi.com/player/?url=test"), true);
+});
+
+test("allows direct HLS playback for known CDN domains", () => {
+  assert.equal(isDirectHlsAllowedByCsp("https://v7.kkphimplayer7.com/20260822/index.m3u8"), true);
+  assert.equal(isDirectHlsAllowedByCsp("https://s6.kkphimplayer6.com/20260822/index.m3u8"), true);
+  assert.equal(isDirectHlsAllowedByCsp("https://s5.phim1280.tv/20260822/index.m3u8"), true);
+  assert.equal(isDirectHlsAllowedByCsp("https://opstream14.com/20260822/index.m3u8"), true);
+  assert.equal(isDirectHlsAllowedByCsp("https://evil-untrusted-cdn.com/test.m3u8"), false);
 });
 
 test("keeps VidSrc manual-only and Vietnamese providers automatic", () => {

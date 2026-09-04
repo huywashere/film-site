@@ -3290,7 +3290,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       className="w-full h-full border-0"
                       allowFullScreen
                       allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer"
-                      referrerPolicy="no-referrer"
+                      referrerPolicy="strict-origin-when-cross-origin"
                       sandbox={iframeSandbox}
                       title={`${film?.name} - ${currentEpData?.name}`}
                       onLoad={() => {

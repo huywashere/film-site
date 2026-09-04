@@ -22,15 +22,23 @@ export type SourceServer = {
 // relay instead of first paying for a request that the browser CSP will block.
 const DIRECT_HLS_HOST_SUFFIXES = [
   "phimapi.com",
+  "phim1280.tv",
   "kkphimplayer7.com",
+  "kkphimplayer6.com",
+  "kkphimplayer5.com",
+  "kkphimplayer.com",
   "ophim.live",
   "ophim1.com",
+  "ophim17.cc",
+  "ophim.cc",
   "opstream12.com",
   "nguonc.com",
   "streamc.xyz",
   "vsmov.com",
   "streamvsmov.com",
+  "vsphim.com",
   "vicdn.cc",
+  "vidsrc.sbs",
 ];
 
 export function isDirectHlsAllowedByCsp(value: string) {
@@ -38,6 +46,8 @@ export function isDirectHlsAllowedByCsp(value: string) {
     const url = new URL(value);
     if (url.protocol !== "https:") return false;
     const hostname = url.hostname.toLowerCase();
+    if (/^([a-z0-9-]+\.)?kkphimplayer\d*\.com$/.test(hostname)) return true;
+    if (/^([a-z0-9-]+\.)?opstream\d*\.com$/.test(hostname)) return true;
     return DIRECT_HLS_HOST_SUFFIXES.some(
       (suffix) => hostname === suffix || hostname.endsWith(`.${suffix}`),
     );
@@ -101,14 +111,14 @@ const PROVIDER_PRIORITY: Record<string, number> = {
   vidsrc: 5,
 };
 
-const UNSANDBOXED_EMBED_HOSTS = new Set([
-  "vidsrc.sbs",
-  "www.vidsrc.sbs",
-  "vicdn.cc",
-  "www.vicdn.cc",
-  "streamc.xyz",
-  "embed.streamc.xyz",
-]);
+const UNSANDBOXED_EMBED_HOST_SUFFIXES: Record<string, string[]> = {
+  vidsrc: ["vidsrc.sbs"],
+  vicdn: ["vicdn.cc"],
+  nguonc: ["streamc.xyz"],
+  vsmov: ["streamvsmov.com", "vsmov.com", "vsphim.com"],
+  kkphim: ["phimapi.com"],
+  ophim: ["ophim.live", "ophim1.com", "opstream12.com"],
+};
 
 const VIDSRC_EMBED_ORIGIN = "https://vidsrc.sbs";
 
@@ -241,10 +251,17 @@ export function isAutomaticPlaybackSource(source: string | undefined) {
 }
 
 export function canUseUnsandboxedEmbed(source: string | undefined, url: string) {
-  if (source !== "vidsrc" && source !== "vicdn" && source !== "nguonc") return false;
+  if (!source) return false;
+  const normalizedSource = source.toLowerCase().trim();
+  const allowedSuffixes = UNSANDBOXED_EMBED_HOST_SUFFIXES[normalizedSource];
+  if (!allowedSuffixes) return false;
   try {
     const parsed = new URL(url);
-    return parsed.protocol === "https:" && UNSANDBOXED_EMBED_HOSTS.has(parsed.hostname);
+    if (parsed.protocol !== "https:") return false;
+    const hostname = parsed.hostname.toLowerCase();
+    return allowedSuffixes.some(
+      (suffix) => hostname === suffix || hostname.endsWith(`.${suffix}`),
+    );
   } catch {
     return false;
   }

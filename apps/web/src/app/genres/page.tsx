@@ -1,10 +1,11 @@
 "use client";
 
-import Image from "next/image";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Play } from "lucide-react";
 import { cardFont } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
+import { buildAsianHeroImageCandidates } from "@/lib/curated-asian-hero";
 
 interface HubCard {
   slug: string;
@@ -70,6 +71,41 @@ const HUBS: HubCard[] = [
   },
 ];
 
+function ResilientHubCardImage({
+  src,
+  alt,
+}: {
+  src: string;
+  alt: string;
+}) {
+  const candidates = useMemo(() => {
+    return buildAsianHeroImageCandidates(src);
+  }, [src]);
+
+  const [candidateIdx, setCandidateIdx] = useState(0);
+
+  const currentSrc = candidates[candidateIdx] || src;
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={currentSrc}
+      alt={alt}
+      loading="eager"
+      decoding="async"
+      fetchPriority="high"
+      referrerPolicy="strict-origin-when-cross-origin"
+      crossOrigin="anonymous"
+      onError={() => {
+        if (candidateIdx < candidates.length - 1) {
+          setCandidateIdx((prev) => prev + 1);
+        }
+      }}
+      className="w-full h-full object-cover object-center brightness-[0.72] contrast-[1.06] transition-transform duration-500 ease-out group-hover:scale-105 group-hover:brightness-[0.85]"
+    />
+  );
+}
+
 export default function GenresPage() {
   return (
     <main
@@ -96,7 +132,7 @@ export default function GenresPage() {
           </p>
         </div>
 
-        {/* ── 5 Curated Pillars Grid (Optimized Direct CDN Loading) ── */}
+        {/* ── 5 Curated Pillars Grid (Resilient Multi-CDN Fallback) ── */}
         <section
           aria-label="Danh sách tuyển tập phim nổi bật"
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 sm:gap-4 lg:gap-4.5"
@@ -108,19 +144,14 @@ export default function GenresPage() {
               prefetch={true}
               className="group relative flex flex-col justify-end aspect-[16/10] min-h-[170px] sm:min-h-[190px] lg:min-h-[205px] overflow-hidden rounded-xl sm:rounded-2xl border border-white/[0.08] hover:border-white/30 bg-[#12141c] p-3.5 sm:p-4 lg:p-4.5 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_18px_45px_rgba(0,0,0,0.85)] cursor-pointer select-none"
             >
-              {/* High-Resolution Full-Bleed Backdrop - Fast Edge CDN with unoptimized=true */}
+              {/* High-Resolution Full-Bleed Backdrop with Resilient Multi-Tier Proxy */}
               <div
                 className="pointer-events-none absolute inset-0 overflow-hidden"
                 aria-hidden="true"
               >
-                <Image
+                <ResilientHubCardImage
                   src={hub.image}
                   alt={hub.title}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 20vw"
-                  className="object-cover object-center brightness-[0.72] contrast-[1.06] transition-transform duration-500 ease-out group-hover:scale-105 group-hover:brightness-[0.85]"
-                  priority={true}
-                  unoptimized={true}
                 />
 
                 {/* Cinematic Vignette Gradients */}

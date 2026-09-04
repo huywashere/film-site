@@ -36,6 +36,7 @@ import {
   CURATED_WAR_HERO_POOL,
 } from "@/lib/curated-genre-pools";
 import { CuratedHeroMovie } from "@/lib/curated-hero-pool";
+import { buildAsianHeroImageCandidates } from "@/lib/curated-asian-hero";
 
 const GENRE_NAMES: Record<string, string> = {
   "vien-tuong": "Khoa Học Viễn Tưởng",
@@ -218,6 +219,112 @@ function GenreCategoryRow({
   );
 }
 
+// ── RESILIENT HERO MEDIA COMPONENTS ──
+function ResilientGenreHeroBackdrop({
+  item,
+  isPlayingVideo,
+  ytKey,
+}: {
+  item: CuratedHeroMovie;
+  isPlayingVideo: boolean;
+  ytKey: string | null;
+}) {
+  const candidates = useMemo(() => {
+    const directList = [item.heroBackdrop, item.thumb_url, item.poster_url].filter(Boolean) as string[];
+    const all: string[] = [];
+    for (const url of directList) {
+      for (const cand of buildAsianHeroImageCandidates(url)) {
+        if (!all.includes(cand)) all.push(cand);
+      }
+    }
+    return all;
+  }, [item.heroBackdrop, item.thumb_url, item.poster_url]);
+
+  const [candidateIdx, setCandidateIdx] = useState(0);
+
+  useEffect(() => {
+    setCandidateIdx(0);
+  }, [item.slug, item.heroBackdrop, item.thumb_url, item.poster_url]);
+
+  const currentSrc = candidates[candidateIdx] || item.heroBackdrop || item.thumb_url || "";
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      key={`${item.slug}-backdrop-${candidateIdx}`}
+      src={currentSrc}
+      alt={item.name}
+      referrerPolicy="strict-origin-when-cross-origin"
+      crossOrigin="anonymous"
+      loading="eager"
+      decoding="async"
+      fetchPriority="high"
+      onError={() => {
+        if (candidateIdx < candidates.length - 1) {
+          setCandidateIdx((prev) => prev + 1);
+        }
+      }}
+      className={cn(
+        "w-full h-full object-cover object-center transition-opacity duration-1000",
+        isPlayingVideo && ytKey
+          ? "opacity-0"
+          : "opacity-100 brightness-[0.82] contrast-[1.06]",
+      )}
+    />
+  );
+}
+
+function ResilientGenreHeroLogo({
+  item,
+}: {
+  item: CuratedHeroMovie;
+}) {
+  const candidates = useMemo(() => {
+    return buildAsianHeroImageCandidates(item.titleLogo);
+  }, [item.titleLogo]);
+
+  const [candidateIdx, setCandidateIdx] = useState(0);
+  const [hasFailedAll, setHasFailedAll] = useState(false);
+
+  useEffect(() => {
+    setCandidateIdx(0);
+    setHasFailedAll(false);
+  }, [item.slug, item.titleLogo]);
+
+  const currentLogoSrc = candidates[candidateIdx];
+
+  if (!currentLogoSrc || hasFailedAll) {
+    return (
+      <h1 className="text-2xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-none drop-shadow-[0_12px_28px_rgba(0,0,0,0.95)]">
+        {item.name}
+      </h1>
+    );
+  }
+
+  return (
+    <div className="relative w-56 sm:w-80 md:w-[460px] lg:w-[540px] h-16 sm:h-28 md:h-40 lg:h-48 flex items-center">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        key={`${item.slug}-logo-${candidateIdx}`}
+        src={currentLogoSrc}
+        alt={item.name}
+        loading="eager"
+        decoding="async"
+        referrerPolicy="strict-origin-when-cross-origin"
+        crossOrigin="anonymous"
+        onError={() => {
+          if (candidateIdx < candidates.length - 1) {
+            setCandidateIdx((prev) => prev + 1);
+          } else {
+            setHasFailedAll(true);
+          }
+        }}
+        className="max-h-full max-w-full object-contain object-left drop-shadow-[0_12px_32px_rgba(0,0,0,0.95)]"
+      />
+    </div>
+  );
+}
+
 // ── NETFLIX-GRADE CINEMATIC HERO BANNER COMPONENT ──
 function GenreCuratedHeroBanner({
   pool,
@@ -231,7 +338,6 @@ function GenreCuratedHeroBanner({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
-  const [logoFailed, setLogoFailed] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [isPlayingVideo, setIsPlayingVideo] = useState(false);
 
@@ -239,28 +345,35 @@ function GenreCuratedHeroBanner({
   const ytKey = useMemo(() => extractYouTubeKey(currentItem?.trailer_url), [currentItem?.trailer_url]);
 
   useEffect(() => {
-    setLogoFailed(false);
     setIsPlayingVideo(false);
 
-    // Preload next slide assets for instant transitions
+    // Preload next slide assets via edge CDN for instant transitions
     if (typeof window !== "undefined" && pool?.length > 1) {
       const nextIndex = (currentIndex + 1) % pool.length;
       const nextItem = pool[nextIndex];
       if (nextItem?.heroBackdrop) {
-        const img = new Image();
-        img.referrerPolicy = "strict-origin-when-cross-origin";
-        img.src = nextItem.heroBackdrop;
+        const cands = buildAsianHeroImageCandidates(nextItem.heroBackdrop);
+        if (cands[0]) {
+          const img = new Image();
+          img.referrerPolicy = "strict-origin-when-cross-origin";
+          img.crossOrigin = "anonymous";
+          img.src = cands[0];
+        }
       }
       if (nextItem?.titleLogo) {
-        const logo = new Image();
-        logo.referrerPolicy = "strict-origin-when-cross-origin";
-        logo.src = nextItem.titleLogo;
+        const logoCands = buildAsianHeroImageCandidates(nextItem.titleLogo);
+        if (logoCands[0]) {
+          const logo = new Image();
+          logo.referrerPolicy = "strict-origin-when-cross-origin";
+          logo.crossOrigin = "anonymous";
+          logo.src = logoCands[0];
+        }
       }
     }
 
-    // After 1.8s on slide, start playing the background video trailer (Netflix style)
+    // After 1.8s on slide, start playing the background video trailer (Netflix style, desktop only)
     const videoTimer = setTimeout(() => {
-      if (ytKey) {
+      if (ytKey && typeof window !== "undefined" && window.innerWidth >= 1024) {
         setIsPlayingVideo(true);
       }
     }, 1800);
@@ -295,7 +408,7 @@ function GenreCuratedHeroBanner({
     >
       {/* ── Background Media: Live Video Trailer or Dynamic Backdrop ── */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
-        {/* Backdrop Image */}
+        {/* Backdrop Image with Resilient Edge Multi-Tier Proxy */}
         <AnimatePresence initial={false} custom={direction}>
           <motion.div
             key={`backdrop-${currentItem.slug || currentIndex}`}
@@ -306,22 +419,15 @@ function GenreCuratedHeroBanner({
             transition={{ duration: 0.8 }}
             className="absolute inset-0 w-full h-full"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={currentItem.heroBackdrop}
-              alt={currentItem.name}
-              referrerPolicy="strict-origin-when-cross-origin"
-              loading="eager"
-              fetchPriority="high"
-              className={cn(
-                "w-full h-full object-cover object-center transition-opacity duration-1000",
-                isPlayingVideo && ytKey ? "opacity-0" : "opacity-100 brightness-[0.82] contrast-[1.06]",
-              )}
+            <ResilientGenreHeroBackdrop
+              item={currentItem}
+              isPlayingVideo={isPlayingVideo}
+              ytKey={ytKey}
             />
           </motion.div>
         </AnimatePresence>
 
-        {/* Netflix-Style Live Background Trailer */}
+        {/* Netflix-Style Live Background Trailer (Desktop only) */}
         {ytKey && isPlayingVideo && (
           <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none transition-opacity duration-1000">
             <iframe
@@ -360,24 +466,7 @@ function GenreCuratedHeroBanner({
             className="max-w-3xl space-y-2.5 sm:space-y-4.5 lg:space-y-5 pointer-events-auto"
           >
             {/* Large Netflix-Scale Title Logo PNG or Bold Typography */}
-            {currentItem.titleLogo && !logoFailed ? (
-              <div className="relative w-56 sm:w-80 md:w-[460px] lg:w-[540px] h-16 sm:h-28 md:h-40 lg:h-48 flex items-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  key={`logo-${currentItem.slug}`}
-                  src={currentItem.titleLogo}
-                  alt={currentItem.name}
-                  loading="eager"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  onError={() => setLogoFailed(true)}
-                  className="max-h-full max-w-full object-contain object-left drop-shadow-[0_12px_32px_rgba(0,0,0,0.95)]"
-                />
-              </div>
-            ) : (
-              <h1 className="text-2xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-none drop-shadow-[0_12px_28px_rgba(0,0,0,0.95)]">
-                {currentItem.name}
-              </h1>
-            )}
+            <ResilientGenreHeroLogo item={currentItem} />
 
             {/* Clean Prominent Subtitle */}
             <p className="text-xs sm:text-base md:text-lg text-neutral-200 font-semibold tracking-wide drop-shadow truncate max-w-xl">

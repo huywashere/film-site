@@ -35,11 +35,11 @@ test('server metadata routes contain no committed provider-key fallback', () => 
   }
 });
 
-test('third-party watch iframe is sandboxed and sends no referrer', () => {
+test('third-party watch iframe is sandboxed and sends strict origin referrer', () => {
   const watchPage = source('src/app/watch/[slug]/WatchPageClient.tsx');
   assert.match(watchPage, /allow-scripts allow-same-origin/);
   assert.doesNotMatch(watchPage, /allow-popups|allow-top-navigation|allow-downloads/);
-  assert.match(watchPage, /referrerPolicy="no-referrer"/);
+  assert.match(watchPage, /referrerPolicy="strict-origin-when-cross-origin"/);
 });
 
 test('custom advertisement HTML uses DOMPurify before rendering', () => {

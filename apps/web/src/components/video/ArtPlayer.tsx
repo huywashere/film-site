@@ -119,15 +119,9 @@ export default function ArtPlayer({
 
     const isHls =
       type === 'hls' || url.includes('.m3u8') || (type === 'auto' && url.includes('.m3u8'));
-    // Several provider CDNs accept desktop traffic but reject mobile browser
-    // CORS/range requests. Prefer the signed same-origin relay on mobile, while
-    // retaining the direct CDN as an immediate fallback.
-    const prefersSameOriginHls =
-      typeof navigator !== 'undefined' &&
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(
-        navigator.userAgent,
-      );
-    const hlsTransport = selectInitialHlsTransport(url, fallbackUrl, prefersSameOriginHls);
+    // Stream directly from high-bandwidth provider CDNs by default across desktop & mobile.
+    // The signed same-origin relay (/api/hls-proxy) is retained as an immediate fallback if direct fails.
+    const hlsTransport = selectInitialHlsTransport(url, fallbackUrl, false);
 
     // -- HLS quality levels (populated after manifest load) --
     let hlsInstance: Hls | null = null;
@@ -536,6 +530,23 @@ export default function ArtPlayer({
         video.removeAttribute('crossorigin');
         video.src = streamUrl;
         video.load();
+
+        const armNativeStartupWatchdog = () => {
+          clearStartupTimer();
+          startupTimer = setTimeout(() => {
+            if (video.readyState >= HTMLMediaElement.HAVE_METADATA) return;
+            if (video.paused && video.currentTime === 0) return;
+            if (alternateUrl && alternateUrl !== streamUrl && video.src !== alternateUrl) {
+              video.src = alternateUrl;
+              video.load();
+              return;
+            }
+            onErrorRef.current?.({ type: 'HLS_NATIVE_TIMEOUT' });
+          }, 8_000);
+        };
+        armNativeStartupWatchdog();
+        startupPlayHandler = armNativeStartupWatchdog;
+        video.addEventListener('play', startupPlayHandler);
 
         const handleNativeError = () => {
           if (alternateUrl && alternateUrl !== streamUrl && video.src !== alternateUrl) {

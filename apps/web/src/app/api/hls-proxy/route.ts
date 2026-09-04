@@ -37,6 +37,8 @@ async function resolveHostCached(hostname: string): Promise<string[]> {
 const DEFAULT_ALLOWED_HOST_PATTERNS = [
   "*.phimapi.com",
   "*.kkphimplayer*.com",
+  "*.phim1280.tv",
+  "phim1280.tv",
   "*.ophim.live",
   "*.ophim1.com",
   "*.opstream*.com",
@@ -45,6 +47,8 @@ const DEFAULT_ALLOWED_HOST_PATTERNS = [
   "*.hihihoho*.top",
   "*.vsmov.com",
   "*.streamvsmov.com",
+  "*.vsphim.com",
+  "vsphim.com",
   "vicdn.cc",
   "*.vicdn.cc",
 ];

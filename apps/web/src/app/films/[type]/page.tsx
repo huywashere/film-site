@@ -155,17 +155,6 @@ function ResilientAnimeHeroBackdrop({
   item: AsianHeroItem;
   isActive?: boolean;
 }) {
-  const desktopCandidates = useMemo(() => {
-    const directList = [item.thumb_url, item.poster_url].filter(Boolean) as string[];
-    const all: string[] = [];
-    for (const url of directList) {
-      for (const cand of buildAsianHeroImageCandidates(url)) {
-        if (!all.includes(cand)) all.push(cand);
-      }
-    }
-    return all;
-  }, [item.thumb_url, item.poster_url]);
-
   const mobileCandidates = useMemo(() => {
     const directList = [item.poster_url, item.thumb_url].filter(Boolean) as string[];
     const all: string[] = [];
@@ -177,35 +166,57 @@ function ResilientAnimeHeroBackdrop({
     return all;
   }, [item.poster_url, item.thumb_url]);
 
-  const [desktopIdx, setDesktopIdx] = useState(0);
+  const desktopCandidates = useMemo(() => {
+    const directList = [item.thumb_url, item.poster_url].filter(Boolean) as string[];
+    const all: string[] = [];
+    for (const url of directList) {
+      for (const cand of buildAsianHeroImageCandidates(url)) {
+        if (!all.includes(cand)) all.push(cand);
+      }
+    }
+    return all;
+  }, [item.thumb_url, item.poster_url]);
+
   const [mobileIdx, setMobileIdx] = useState(0);
+  const [desktopIdx, setDesktopIdx] = useState(0);
 
   useEffect(() => {
-    setDesktopIdx(0);
     setMobileIdx(0);
+    setDesktopIdx(0);
   }, [item.slug, item.thumb_url, item.poster_url]);
 
+  const mobileSrc = mobileCandidates[mobileIdx] || item.poster_url || item.thumb_url || "";
   const desktopSrc = desktopCandidates[desktopIdx] || item.thumb_url || item.poster_url || "";
-  const mobilePosterSrc = mobileCandidates[mobileIdx] || item.poster_url || item.thumb_url || "";
 
   return (
-    <picture className="w-full h-full block">
-      {/* Mobile portrait poster (vertical artwork) */}
-      <source
-        media="(max-width: 767px)"
-        srcSet={mobilePosterSrc}
-      />
-      {/* Desktop widescreen backdrop (horizontal 16:9 artwork) */}
-      <source
-        media="(min-width: 768px)"
-        srcSet={desktopSrc}
-      />
+    <div className="w-full h-full relative overflow-hidden">
+      {/* Mobile portrait poster (vertical artwork, <768px): Dedicated <img> with direct onError handler */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        key={`${item.slug}-backdrop-${desktopIdx}-${mobileIdx}`}
+        key={`${item.slug}-mobile-${mobileIdx}`}
+        src={mobileSrc}
+        alt={item.name}
+        referrerPolicy="strict-origin-when-cross-origin"
+        crossOrigin="anonymous"
+        loading="eager"
+        decoding="async"
+        fetchPriority={isActive ? "high" : "auto"}
+        onError={() => {
+          if (mobileIdx < mobileCandidates.length - 1) {
+            setMobileIdx((prev) => prev + 1);
+          }
+        }}
+        className="block md:hidden w-full h-full object-cover object-center brightness-[0.88] contrast-[1.06]"
+      />
+
+      {/* Desktop widescreen backdrop (horizontal 16:9 artwork, >=768px): Dedicated <img> with direct onError handler */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        key={`${item.slug}-desktop-${desktopIdx}`}
         src={desktopSrc}
         alt={item.name}
         referrerPolicy="strict-origin-when-cross-origin"
+        crossOrigin="anonymous"
         loading="eager"
         decoding="async"
         fetchPriority={isActive ? "high" : "auto"}
@@ -213,13 +224,10 @@ function ResilientAnimeHeroBackdrop({
           if (desktopIdx < desktopCandidates.length - 1) {
             setDesktopIdx((prev) => prev + 1);
           }
-          if (mobileIdx < mobileCandidates.length - 1) {
-            setMobileIdx((prev) => prev + 1);
-          }
         }}
-        className="w-full h-full object-cover object-top sm:object-center lg:object-[center_25%] brightness-[0.88] contrast-[1.06]"
+        className="hidden md:block w-full h-full object-cover object-top sm:object-center lg:object-[center_25%] brightness-[0.88] contrast-[1.06]"
       />
-    </picture>
+    </div>
   );
 }
 
@@ -251,7 +259,7 @@ function ResilientAnimeHeroLogo({
   }
 
   return (
-    <div className="relative w-44 sm:w-72 md:w-80 lg:w-[460px] h-14 sm:h-24 md:h-32 lg:h-36 flex items-center">
+    <div className="relative w-52 sm:w-72 md:w-80 lg:w-[460px] h-16 sm:h-24 md:h-32 lg:h-36 flex items-center">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         key={`${item.slug}-logo-${candidateIdx}`}
@@ -260,6 +268,7 @@ function ResilientAnimeHeroLogo({
         loading="eager"
         decoding="async"
         referrerPolicy="strict-origin-when-cross-origin"
+        crossOrigin="anonymous"
         onError={() => {
           if (candidateIdx < logoCandidates.length - 1) {
             setCandidateIdx((prev) => prev + 1);
@@ -283,18 +292,28 @@ function AnimeCuratedHeroBanner({
   const [isPaused, setIsPaused] = useState(false);
   const curatedList = pool || [];
 
-  // Warm just the current and next artwork
+  // Warm just the current and next artwork via edge proxy
   useEffect(() => {
     if (typeof window !== "undefined" && pool?.length) {
       const nextIndex = (currentIndex + 1) % pool.length;
       [pool[currentIndex], pool[nextIndex]].filter(Boolean).forEach((item) => {
         if (item.logoUrl) {
-          const img = new Image();
-          img.src = item.logoUrl;
+          const cands = buildAsianHeroImageCandidates(item.logoUrl);
+          if (cands[0]) {
+            const img = new Image();
+            img.referrerPolicy = "strict-origin-when-cross-origin";
+            img.crossOrigin = "anonymous";
+            img.src = cands[0];
+          }
         }
         if (item.thumb_url) {
-          const img = new Image();
-          img.src = item.thumb_url;
+          const cands = buildAsianHeroImageCandidates(item.thumb_url);
+          if (cands[0]) {
+            const img = new Image();
+            img.referrerPolicy = "strict-origin-when-cross-origin";
+            img.crossOrigin = "anonymous";
+            img.src = cands[0];
+          }
         }
       });
     }
@@ -363,13 +382,24 @@ function AnimeCuratedHeroBanner({
       </div>
 
       {/* ── Layer 2: Cinematic Multi-layer Gradient Overlays for Vignette & Bottom Blending ── */}
+      {/* Desktop 3-direction cinematic vignette */}
       <div
-        className="absolute inset-0 z-10 pointer-events-none"
+        className="hidden sm:block absolute inset-0 z-10 pointer-events-none"
         style={{
           background: `
             linear-gradient(to right, rgba(16,16,16,0.96) 0%, rgba(16,16,16,0.72) 36%, rgba(16,16,16,0.15) 68%, transparent 100%),
             linear-gradient(to top, #141414 0%, rgba(20,20,20,0.85) 28%, transparent 55%),
             linear-gradient(to bottom, rgba(16,16,16,0.65) 0%, transparent 25%)
+          `,
+        }}
+      />
+      {/* Mobile-optimized bottom vignette: maximizes artwork clarity while keeping text readable */}
+      <div
+        className="block sm:hidden absolute inset-0 z-10 pointer-events-none"
+        style={{
+          background: `
+            linear-gradient(to top, #141414 0%, rgba(20,20,20,0.92) 36%, rgba(20,20,20,0.4) 65%, transparent 100%),
+            linear-gradient(to bottom, rgba(16,16,16,0.6) 0%, transparent 25%)
           `,
         }}
       />

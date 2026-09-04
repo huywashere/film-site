@@ -31,11 +31,12 @@ export function buildAsianHeroImageCandidates(url?: string | null): string[] {
   if (!clean) return [];
 
   if (clean.includes("image.tmdb.org")) {
-    // Cloudflare Edge CDN (wsrv.nl) with WebP compression is universally reachable in VN (<100ms)
-    // and saves ~70% bandwidth compared to heavy raw TMDB JPEGs
+    // 1. Cloudflare Edge CDN (wsrv.nl) with WebP: unblocked in Vietnam, <80ms latency, saves 70% mobile bandwidth
     list.push(`https://wsrv.nl/?url=${encodeURIComponent(clean)}&output=webp&we=1`);
-    list.push(clean);
+    // 2. Local Next.js server image proxy: runs on app origin, immune to ISP DNS blocks
     list.push(`/api/image-proxy?url=${encodeURIComponent(clean)}&strict=1`);
+    // 3. Direct upstream TMDB CDN
+    list.push(clean);
   } else {
     list.push(clean);
     if (!clean.startsWith("/api/image-proxy")) {
