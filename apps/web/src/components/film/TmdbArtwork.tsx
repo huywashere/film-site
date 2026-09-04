@@ -7,7 +7,7 @@ import { useTmdbArtwork } from '@/hooks/useTmdbArtwork';
 import { alternateMovieArtworkUrl } from '@/lib/movie-image-url';
 import { cn } from '@/lib/utils';
 import { Clapperboard } from 'lucide-react';
-import { buildArtworkCandidates } from '@/lib/image-cdn';
+import { buildArtworkCandidates, wsrvImageUrl } from '@/lib/image-cdn';
 import { extractTmdbInfo } from '@/lib/tmdb';
 
 interface TmdbArtworkProps {
@@ -18,6 +18,36 @@ interface TmdbArtworkProps {
   priority?: boolean;
   enabled?: boolean;
   allowTitleLookup?: boolean;
+}
+
+// Shared IntersectionObserver Singleton: allows 100+ cards to share a single browser observer
+// drastically reducing memory footprint and DOM observer overhead during fast scrolling
+type ObserverCallback = () => void;
+let sharedArtworkObserver: IntersectionObserver | null = null;
+const artworkObserverCallbacks = new WeakMap<Element, ObserverCallback>();
+
+function getSharedArtworkObserver(): IntersectionObserver | null {
+  if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
+    return null;
+  }
+  if (!sharedArtworkObserver) {
+    sharedArtworkObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const cb = artworkObserverCallbacks.get(entry.target);
+            if (cb) {
+              cb();
+              artworkObserverCallbacks.delete(entry.target);
+            }
+            sharedArtworkObserver?.unobserve(entry.target);
+          }
+        }
+      },
+      { rootMargin: '200px 0px', threshold: 0.01 },
+    );
+  }
+  return sharedArtworkObserver;
 }
 
 export function TmdbArtwork({
@@ -50,21 +80,20 @@ export function TmdbArtwork({
     }
 
     const element = containerRef.current;
-    if (!element || !('IntersectionObserver' in window)) {
+    if (!element) return;
+
+    const observer = getSharedArtworkObserver();
+    if (!observer) {
       setNearViewport(true);
       return;
     }
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry?.isIntersecting) return;
-        setNearViewport(true);
-        observer.disconnect();
-      },
-      { rootMargin: '140px 0px', threshold: 0.01 },
-    );
+    artworkObserverCallbacks.set(element, () => setNearViewport(true));
     observer.observe(element);
-    return () => observer.disconnect();
+    return () => {
+      artworkObserverCallbacks.delete(element);
+      observer.unobserve(element);
+    };
   }, [enabled, priority, providerIsTmdb, film.slug]);
 
   // Shelf pages can render dozens of cards. Only query TMDB if the film lacks
@@ -93,28 +122,59 @@ export function TmdbArtwork({
   const candidates = useMemo(() => {
     const list: string[] = [];
     const add = (url?: string | null) => {
-      if (url && !list.includes(url)) list.push(url);
+      if (!url) return;
+      const clean = url.trim();
+      if (clean && !list.includes(clean)) list.push(clean);
     };
 
-    // Fast path: if provider already has high quality artwork (e.g. PhimImg 60KB WebP), use it directly!
+    const preset = kind === 'backdrop' ? 'backdrop' : 'poster';
+
+    // 1. Direct provider artwork
     if (providerPrimary) add(providerPrimary);
     if (providerAlternate) add(providerAlternate);
+
+    // 2. Direct TMDB artwork
     if (tmdbUrl) add(tmdbUrl);
+
+    // 3. TMDB proxies (edge wsrv + local proxy so ISP blocking never breaks TMDB in VN)
+    if (tmdbUrl) {
+      const wsrv = wsrvImageUrl(tmdbUrl, preset);
+      if (wsrv) add(wsrv);
+      add(`/api/image-proxy?url=${encodeURIComponent(tmdbUrl)}`);
+    }
+
+    // 4. Provider proxies
     if (providerPrimary) {
+      const wsrv = wsrvImageUrl(providerPrimary, preset);
+      if (wsrv) add(wsrv);
       add(`/api/image-proxy?url=${encodeURIComponent(providerPrimary)}`);
     }
 
-    return list.length > 0
-      ? list
-      : buildArtworkCandidates(
-          [tmdbUrl, providerPrimary, providerAlternate],
-          kind === 'backdrop' ? 'backdrop' : 'poster',
-        );
+    // 5. Cross-fallback: if backdrop is needed and only poster was passed (or vice versa)
+    const secondaryUrl =
+      kind === 'backdrop'
+        ? resolveImageUrl(film.poster_url)
+        : resolveImageUrl(film.thumb_url);
+    if (secondaryUrl && secondaryUrl !== providerPrimary) {
+      add(secondaryUrl);
+      const wsrv = wsrvImageUrl(secondaryUrl, preset);
+      if (wsrv) add(wsrv);
+      add(`/api/image-proxy?url=${encodeURIComponent(secondaryUrl)}`);
+    }
+
+    if (list.length > 0) return list;
+
+    return buildArtworkCandidates(
+      [tmdbUrl, providerPrimary, providerAlternate],
+      kind === 'backdrop' ? 'backdrop' : 'poster',
+    );
   }, [
     providerPrimary,
     providerAlternate,
     tmdbUrl,
     kind,
+    film.poster_url,
+    film.thumb_url,
   ]);
 
   const [candidateIndex, setCandidateIndex] = useState(0);
@@ -134,10 +194,11 @@ export function TmdbArtwork({
     return undefined;
   }, [src, kind]);
 
+  const candidatesKey = candidates.join('|');
   useEffect(() => {
     setCandidateIndex(0);
     setLoaded(false);
-  }, [film.slug, kind, candidates]);
+  }, [film.slug, kind, candidatesKey]);
 
   useEffect(() => {
     setLoaded(false);
@@ -164,7 +225,7 @@ export function TmdbArtwork({
           width={kind === 'backdrop' ? 1280 : 500}
           height={kind === 'backdrop' ? 720 : 750}
           loading={priority ? 'eager' : 'lazy'}
-          fetchPriority={priority ? 'high' : 'auto'}
+          fetchPriority={priority ? 'high' : 'low'}
           decoding="async"
           referrerPolicy="strict-origin-when-cross-origin"
           draggable={false}

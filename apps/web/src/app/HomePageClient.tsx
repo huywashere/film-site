@@ -1,5 +1,5 @@
 "use client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -492,8 +492,10 @@ export default function HomePageClient({
 
   const [showMoreSections, setShowMoreSections] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [catalogReady, setCatalogReady] = useState(false);
-  const [secondaryCatalogReady, setSecondaryCatalogReady] = useState(false);
+  const queryClient = useQueryClient();
+  const hasCachedFeed = Boolean(queryClient.getQueryData(["home-feed-v1", 24]));
+  const [catalogReady, setCatalogReady] = useState(hasCachedFeed);
+  const [secondaryCatalogReady, setSecondaryCatalogReady] = useState(hasCachedFeed);
   const { data: publicConfig } = useQuery({
     queryKey: ["public-site-configuration"],
     queryFn: () => siteConfigApi.getPublic().then((response) => response.data),
@@ -512,8 +514,9 @@ export default function HomePageClient({
 
   // The hero fills the first viewport. Load catalogue rows on the first sign
   // of scroll/touch intent, with a conservative fallback for idle visitors.
-  // This prevents every below-the-fold API from competing with the hero.
+  // If returning to Home with cached feed data, catalogue rows are already active.
   useEffect(() => {
+    if (hasCachedFeed) return;
     const reveal = () => setCatalogReady(true);
     const options: AddEventListenerOptions = { passive: true, once: true };
     window.addEventListener("wheel", reveal, options);
@@ -538,13 +541,13 @@ export default function HomePageClient({
       if (idleId !== undefined) window.cancelIdleCallback(idleId);
       if (fallbackTimer !== undefined) window.clearTimeout(fallbackTimer);
     };
-  }, []);
+  }, [hasCachedFeed]);
 
   useEffect(() => {
-    if (!catalogReady) return;
-    const timer = window.setTimeout(() => setSecondaryCatalogReady(true), 550);
+    if (!catalogReady || secondaryCatalogReady) return;
+    const timer = window.setTimeout(() => setSecondaryCatalogReady(true), 400);
     return () => window.clearTimeout(timer);
-  }, [catalogReady]);
+  }, [catalogReady, secondaryCatalogReady]);
 
   const {
     data: homeFeedData,

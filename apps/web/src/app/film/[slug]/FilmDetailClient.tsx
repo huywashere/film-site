@@ -1321,6 +1321,16 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
     ? `/watch/${slug}?ep=${firstEp.slug || firstEp.name}`
     : `/watch/${slug}`;
 
+  useEffect(() => {
+    if (watchLink) {
+      try {
+        router.prefetch(watchLink);
+      } catch (_e) {
+        // ignore prefetch errors
+      }
+    }
+  }, [watchLink, router]);
+
   const genres = Array.isArray(film?.category) ? film.category : [];
   const countries = Array.isArray(film?.country) ? film.country : [];
   const episodeCount = episodes.reduce(

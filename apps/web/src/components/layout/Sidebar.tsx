@@ -151,6 +151,52 @@ export function Sidebar() {
       if (warmedRoutesRef.current.has(href)) return;
       warmedRoutesRef.current.add(href);
 
+      if (href === "/") {
+        void queryClient.prefetchQuery({
+          queryKey: ["home-feed-v1", 24],
+          queryFn: () => movieApi.getHomeFeed(24).then((response) => response.data),
+          staleTime: 5 * 60 * 1000,
+          gcTime: 60 * 60 * 1000,
+        });
+      }
+
+      if (href === "/films/series") {
+        void queryClient.prefetchQuery({
+          queryKey: ["films-type", "series", 1],
+          queryFn: () => movieApi.getSeries(1).then((r) => r.data),
+          staleTime: 15 * 60 * 1000,
+        });
+      }
+
+      if (href === "/films/single") {
+        void queryClient.prefetchQuery({
+          queryKey: ["films-type", "single", 1],
+          queryFn: () => movieApi.getSingle(1).then((r) => r.data),
+          staleTime: 15 * 60 * 1000,
+        });
+      }
+
+      if (href === "/films/anime") {
+        void queryClient.prefetchQuery({
+          queryKey: ["films-type", "anime", 1],
+          queryFn: () => movieApi.getByCountryFast("nhat-ban", 1).then((r) => r.data),
+          staleTime: 15 * 60 * 1000,
+        });
+        void queryClient.prefetchQuery({
+          queryKey: ["anime-japan-page-2"],
+          queryFn: () => movieApi.getByCountryFast("nhat-ban", 2).then((r) => r.data),
+          staleTime: 1000 * 60 * 60,
+        });
+      }
+
+      if (href === "/films/tvshows") {
+        void queryClient.prefetchQuery({
+          queryKey: ["films-type", "tvshows", 1],
+          queryFn: () => movieApi.getTvShows(1).then((r) => r.data),
+          staleTime: 15 * 60 * 1000,
+        });
+      }
+
       const countrySlug = href.match(/^\/country\/([^/?]+)/)?.[1];
       if (countrySlug) {
         void queryClient.prefetchQuery({

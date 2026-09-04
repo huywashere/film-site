@@ -716,14 +716,28 @@ function isPureAnime(item: FilmItem): boolean {
 
   const country = (item as any).country;
   if (country) {
-    const cStr = JSON.stringify(country).toLowerCase();
-    if (
-      cStr.includes("trung quốc") ||
-      cStr.includes("china") ||
-      cStr.includes("thái lan") ||
-      cStr.includes("thailand")
-    ) {
-      return false;
+    if (Array.isArray(country)) {
+      for (const c of country) {
+        const text = `${c?.name || ""} ${c?.slug || ""}`.toLowerCase();
+        if (
+          text.includes("trung quốc") ||
+          text.includes("china") ||
+          text.includes("thái lan") ||
+          text.includes("thailand")
+        ) {
+          return false;
+        }
+      }
+    } else if (typeof country === "string") {
+      const text = country.toLowerCase();
+      if (
+        text.includes("trung quốc") ||
+        text.includes("china") ||
+        text.includes("thái lan") ||
+        text.includes("thailand")
+      ) {
+        return false;
+      }
     }
   }
 
@@ -806,36 +820,76 @@ export default function FilmsTypePage() {
     [films, page2Films, generalFilms],
   );
 
+function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
+  if (!f) return false;
+  const name = (f.name || "").toLowerCase();
+  const origin = (f.origin_name || "").toLowerCase();
+  const slug = (f.slug || "").toLowerCase();
+  const type = (f.type || "").toLowerCase();
+
+  for (const kw of keywords) {
+    const lk = kw.toLowerCase();
+    if (name.includes(lk) || origin.includes(lk) || slug.includes(lk) || type.includes(lk)) {
+      return true;
+    }
+  }
+
+  if (Array.isArray(f.category)) {
+    for (const c of f.category) {
+      const cName = (c?.name || "").toLowerCase();
+      const cSlug = (c?.slug || "").toLowerCase();
+      for (const kw of keywords) {
+        const lk = kw.toLowerCase();
+        if (cName.includes(lk) || cSlug.includes(lk)) return true;
+      }
+    }
+  }
+
+  return false;
+}
+
   const actionFilms: FilmItem[] = useMemo(() => {
+    const specialSlugs = [
+      "thanh-guom-diet-quy",
+      "chu-thuat-hoi-chien",
+      "toi-thang-cap-mot-minh",
+      "dai-chien-titan",
+      "tho-san-quy",
+      "naruto-shippuden",
+      "dragon-ball-super",
+      "dao-hai-tac",
+    ];
     return combinedPool.filter(
       (f) =>
-        JSON.stringify(f).toLowerCase().includes("hành động") ||
-        JSON.stringify(f).toLowerCase().includes("shounen") ||
-        JSON.stringify(f).toLowerCase().includes("phiêu lưu") ||
-        JSON.stringify(f).toLowerCase().includes("action") ||
-        ["thanh-guom-diet-quy", "chu-thuat-hoi-chien", "toi-thang-cap-mot-minh", "dai-chien-titan", "tho-san-quy", "naruto-shippuden", "dragon-ball-super", "dao-hai-tac"].includes(f.slug || "")
+        specialSlugs.includes(f.slug || "") ||
+        filmMatchesAnimeKeywords(f, ["hành động", "shounen", "phiêu lưu", "action"]),
     );
   }, [combinedPool]);
 
   const supernaturalFilms: FilmItem[] = useMemo(() => {
+    const specialSlugs = [
+      "phap-su-tien-tang-frieren",
+      "chu-thuat-hoi-chien",
+      "tho-san-ti-hon",
+      "khoa-chat-cua-nao-suzume",
+    ];
     return combinedPool.filter(
       (f) =>
-        JSON.stringify(f).toLowerCase().includes("viễn tưởng") ||
-        JSON.stringify(f).toLowerCase().includes("siêu nhiên") ||
-        JSON.stringify(f).toLowerCase().includes("phép thuật") ||
-        JSON.stringify(f).toLowerCase().includes("isekai") ||
-        ["phap-su-tien-tang-frieren", "chu-thuat-hoi-chien", "tho-san-ti-hon", "khoa-chat-cua-nao-suzume"].includes(f.slug || "")
+        specialSlugs.includes(f.slug || "") ||
+        filmMatchesAnimeKeywords(f, ["viễn tưởng", "siêu nhiên", "phép thuật", "isekai"]),
     );
   }, [combinedPool]);
 
   const romanceFilms: FilmItem[] = useMemo(() => {
+    const specialSlugs = [
+      "ten-cau-la-gi",
+      "gia-dinh-diep-vien",
+      "khoa-chat-cua-nao-suzume",
+    ];
     return combinedPool.filter(
       (f) =>
-        JSON.stringify(f).toLowerCase().includes("tình cảm") ||
-        JSON.stringify(f).toLowerCase().includes("học đường") ||
-        JSON.stringify(f).toLowerCase().includes("lãng mạn") ||
-        JSON.stringify(f).toLowerCase().includes("hài hước") ||
-        ["ten-cau-la-gi", "gia-dinh-diep-vien", "khoa-chat-cua-nao-suzume"].includes(f.slug || "")
+        specialSlugs.includes(f.slug || "") ||
+        filmMatchesAnimeKeywords(f, ["tình cảm", "học đường", "lãng mạn", "hài hước"]),
     );
   }, [combinedPool]);
 

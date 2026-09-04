@@ -56,32 +56,8 @@ interface FilmCardProps {
   preferHighQuality?: boolean;
 }
 
-// Helper: resolve image URL securely and normalize KKPhim/PhimImg CDN hosts
-function normalizeUpstreamImageUrl(url?: unknown): string | null {
-  return normalizeMovieArtworkUrl(url);
-}
-
-export function resolveImageUrl(url?: unknown, fallbackUrl?: unknown): string | null {
-  const resolved = normalizeUpstreamImageUrl(url);
-  if (!resolved) return null;
-  if (resolved.startsWith('/api/image-proxy')) return resolved;
-
-  // DIRECT CDN FAST-PATH OPTIMIZATION:
-  const isDirectCdnHost =
-    /^(https?:)?\/\/(img\.phimapi\.com|phimimg\.com|img\.ophim\.live|ophim1\.com|images\.nguonc\.com|image\.tmdb\.org|tmdb\.org)\//i.test(
-      resolved,
-    );
-  if (isDirectCdnHost) {
-    return resolved;
-  }
-
-  const fallback = normalizeUpstreamImageUrl(fallbackUrl);
-  const fallbackQuery =
-    fallback && fallback !== resolved && !fallback.startsWith('/api/image-proxy')
-      ? `&fallback=${encodeURIComponent(fallback)}`
-      : '';
-  return `/api/image-proxy?url=${encodeURIComponent(resolved)}${fallbackQuery}`;
-}
+export { resolveImageUrl } from '@/lib/movie-image-url';
+import { resolveImageUrl } from '@/lib/movie-image-url';
 
 function FilmCardComponent({
   film,
@@ -150,7 +126,7 @@ function FilmCardComponent({
     <div
       style={width ? { width } : undefined}
       className={cn(
-        `${cardFont.className} group/card relative flex flex-col select-none`,
+        `${cardFont.className} group/card relative flex flex-col select-none [contain:paint_layout]`,
         !width && 'w-full',
       )}
     >

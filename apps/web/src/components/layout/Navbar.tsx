@@ -369,7 +369,14 @@ export function Navbar() {
   const prefetchNav = useCallback(
     (href: string) => {
       router.prefetch(href);
-      if (href === "/films/series") {
+      if (href === "/") {
+        void queryClient.prefetchQuery({
+          queryKey: ["home-feed-v1", 24],
+          queryFn: () => movieApi.getHomeFeed(24).then((response) => response.data),
+          staleTime: 5 * 60 * 1000,
+          gcTime: 60 * 60 * 1000,
+        });
+      } else if (href === "/films/series") {
         void queryClient.prefetchQuery({
           queryKey: ["films-type", "series", 1],
           queryFn: () => movieApi.getSeries(1).then((r) => r.data),
@@ -384,8 +391,13 @@ export function Navbar() {
       } else if (href === "/films/anime") {
         void queryClient.prefetchQuery({
           queryKey: ["films-type", "anime", 1],
-          queryFn: () => movieApi.getAnime(1).then((r) => r.data),
+          queryFn: () => movieApi.getByCountryFast("nhat-ban", 1).then((r) => r.data),
           staleTime: 15 * 60 * 1000,
+        });
+        void queryClient.prefetchQuery({
+          queryKey: ["anime-japan-page-2"],
+          queryFn: () => movieApi.getByCountryFast("nhat-ban", 2).then((r) => r.data),
+          staleTime: 1000 * 60 * 60,
         });
       } else if (href === "/schedule") {
         void queryClient.prefetchQuery({

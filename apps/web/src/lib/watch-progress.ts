@@ -4,6 +4,8 @@ export interface WatchProgressEntry {
   epName: string;
   title: string;
   poster: string;
+  thumb?: string;
+  originName?: string;
   currentTime: number;
   duration: number;
   updatedAt: number;
@@ -46,9 +48,18 @@ export const watchProgressStorage = {
       const existingIndex = entries.findIndex(
         (e) => e.slug === entry.slug && e.epSlug === entry.epSlug,
       );
+      const existing = existingIndex >= 0 ? entries[existingIndex] : undefined;
+
+      const safePoster = entry.poster?.trim() || existing?.poster?.trim() || "";
+      const safeThumb = entry.thumb?.trim() || existing?.thumb?.trim() || safePoster || "";
+      const safeOriginName = entry.originName?.trim() || existing?.originName?.trim() || undefined;
 
       const newEntry: WatchProgressEntry = {
+        ...existing,
         ...entry,
+        poster: safePoster || safeThumb,
+        thumb: safeThumb || safePoster,
+        originName: safeOriginName,
         updatedAt: Date.now(),
       };
 
@@ -58,8 +69,8 @@ export const watchProgressStorage = {
         entries.unshift(newEntry);
       }
 
-      // Limit to 20 recent items
-      const trimmed = entries.slice(0, 20);
+      // Limit to 30 recent items
+      const trimmed = entries.slice(0, 30);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
 
       // Async sync to DB backend (throttled: at most once every 5 seconds)
@@ -70,7 +81,8 @@ export const watchProgressStorage = {
           api.put("/users/me/watch-history", {
             movieId: entry.slug,
             movieTitle: entry.title,
-            movieThumb: entry.poster,
+            movieThumb: newEntry.thumb || newEntry.poster,
+            moviePoster: newEntry.poster || newEntry.thumb,
             episode: entry.epSlug || "1",
             progress: entry.currentTime,
             duration: entry.duration,

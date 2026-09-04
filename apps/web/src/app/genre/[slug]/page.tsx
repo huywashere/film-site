@@ -698,8 +698,28 @@ export default function GenrePage() {
 
     const keywords = tabObj.keywords;
     const matched = rawFilms.filter((f) => {
-      const text = JSON.stringify(f).toLowerCase();
-      return keywords.some((kw) => text.includes(kw));
+      if (!f) return false;
+      const name = (f.name || "").toLowerCase();
+      const origin = (f.origin_name || "").toLowerCase();
+      const slug = (f.slug || "").toLowerCase();
+      const type = (f.type || "").toLowerCase();
+      for (const kw of keywords) {
+        const lk = kw.toLowerCase();
+        if (name.includes(lk) || origin.includes(lk) || slug.includes(lk) || type.includes(lk)) {
+          return true;
+        }
+      }
+      if (Array.isArray(f.category)) {
+        for (const c of f.category) {
+          const cName = (c?.name || "").toLowerCase();
+          const cSlug = (c?.slug || "").toLowerCase();
+          for (const kw of keywords) {
+            const lk = kw.toLowerCase();
+            if (cName.includes(lk) || cSlug.includes(lk)) return true;
+          }
+        }
+      }
+      return false;
     });
     return matched.length >= 6 ? matched : rawFilms;
   }, [rawFilms, activeTab, tabs]);

@@ -24,3 +24,12 @@ test("keeps legacy upload/vod artwork intact and only derives an alternate", () 
     "https://phimimg.com/uploads/movies/20240822-1/poster.jpg",
   );
 });
+
+test("rejects literal undefined and null strings", () => {
+  assert.equal(normalizeMovieArtworkUrl("undefined"), null);
+  assert.equal(normalizeMovieArtworkUrl("null"), null);
+  assert.equal(normalizeMovieArtworkUrl("none"), null);
+  assert.equal(normalizeMovieArtworkUrl("   "), null);
+  assert.equal(normalizeMovieArtworkUrl(undefined), null);
+});
+

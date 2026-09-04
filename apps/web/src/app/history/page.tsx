@@ -39,6 +39,7 @@ interface HistoryItem {
   movieId: string;
   movieTitle: string;
   movieThumb?: string;
+  moviePoster?: string;
   episode?: string;
   progress: number;
   duration: number;
@@ -63,7 +64,8 @@ export default function HistoryPage() {
         id: `guest-${item.slug}-${item.epSlug}`,
         movieId: item.slug,
         movieTitle: item.title,
-        movieThumb: item.poster,
+        movieThumb: item.thumb || item.poster,
+        moviePoster: item.poster || item.thumb,
         episode: item.epSlug,
         progress: item.currentTime,
         duration: item.duration,
@@ -262,8 +264,16 @@ export default function HistoryPage() {
                   slug: item.movieId,
                   name: catalogFilm?.name || item.movieTitle,
                   title: catalogFilm?.title || item.movieTitle,
-                  thumb_url: catalogFilm?.thumb_url || item.movieThumb,
-                  poster_url: catalogFilm?.poster_url || item.movieThumb,
+                  thumb_url:
+                    catalogFilm?.thumb_url ||
+                    item.movieThumb ||
+                    item.moviePoster ||
+                    catalogFilm?.poster_url,
+                  poster_url:
+                    catalogFilm?.poster_url ||
+                    item.moviePoster ||
+                    item.movieThumb ||
+                    catalogFilm?.thumb_url,
                 };
 
                 return (
@@ -297,6 +307,7 @@ export default function HistoryPage() {
                           kind="poster"
                           alt={item.movieTitle}
                           className="absolute inset-0 h-full w-full"
+                          allowTitleLookup
                         />
 
                         {/* Progress Bar Overlay */}

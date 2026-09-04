@@ -155,13 +155,13 @@ export function TabbedShowcaseSection({
       <div className="relative rounded-2xl sm:rounded-3xl border border-white/10 bg-[#0c0e14]/90 overflow-hidden shadow-2xl p-4 sm:p-6">
         {/* Dynamic Subtle Ambient Backdrop Glow */}
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-25">
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="popLayout">
             <motion.div
               key={spotlightFilm.slug}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.4 }}
+              transition={{ duration: 0.25 }}
               className="absolute inset-0 h-full w-full"
             >
               <TmdbArtwork
@@ -185,7 +185,7 @@ export function TabbedShowcaseSection({
               <div
                 key={film.slug || idx}
                 onMouseEnter={() => setHoveredSlug(film.slug)}
-                className="group relative flex flex-col space-y-2 cursor-pointer select-none"
+                className="group relative flex flex-col space-y-2 cursor-pointer select-none [contain:paint_layout]"
               >
                 {/* Poster Box */}
                 <div className="relative aspect-[2/3] w-full rounded-xl sm:rounded-2xl overflow-hidden border border-white/10 bg-neutral-900 shadow-lg transition-all duration-300 group-hover:scale-[1.04] group-hover:border-cyan-400/60 group-hover:shadow-[0_10px_25px_rgba(6,182,212,0.25)]">

@@ -877,60 +877,68 @@ export default function CountryPage() {
   // Combined country catalogue pool for reliable fallback and full row population
   const combinedPool = useMemo(() => [...films, ...page2Films], [films, page2Films]);
 
+function filmMatchesKeywords(f: FilmItem, keywords: string[]): boolean {
+  if (!f) return false;
+  const name = (f.name || "").toLowerCase();
+  const origin = (f.origin_name || "").toLowerCase();
+  const slug = (f.slug || "").toLowerCase();
+  const type = (f.type || "").toLowerCase();
+
+  for (const kw of keywords) {
+    const lk = kw.toLowerCase();
+    if (name.includes(lk) || origin.includes(lk) || slug.includes(lk) || type.includes(lk)) {
+      return true;
+    }
+  }
+
+  if (Array.isArray(f.category)) {
+    for (const c of f.category) {
+      const cName = (c?.name || "").toLowerCase();
+      const cSlug = (c?.slug || "").toLowerCase();
+      for (const kw of keywords) {
+        const lk = kw.toLowerCase();
+        if (cName.includes(lk) || cSlug.includes(lk)) return true;
+      }
+    }
+  }
+
+  return false;
+}
+
   const romanceFilms: FilmItem[] = useMemo(() => {
     const fromApi = romanceData?.data?.items || romanceData?.items;
     if (fromApi?.length) return fromApi;
-    return combinedPool.filter((f) =>
-      JSON.stringify(f).toLowerCase().includes("tình cảm") ||
-      JSON.stringify(f).toLowerCase().includes("lãng mạn")
-    );
+    return combinedPool.filter((f) => filmMatchesKeywords(f, ["tình cảm", "lãng mạn"]));
   }, [romanceData, combinedPool]);
 
   const actionFilms: FilmItem[] = useMemo(() => {
     const fromApi = actionData?.data?.items || actionData?.items;
     if (fromApi?.length) return fromApi;
-    return combinedPool.filter((f) =>
-      JSON.stringify(f).toLowerCase().includes("hành động") ||
-      JSON.stringify(f).toLowerCase().includes("võ thuật")
-    );
+    return combinedPool.filter((f) => filmMatchesKeywords(f, ["hành động", "võ thuật"]));
   }, [actionData, combinedPool]);
 
   const coTrangFilms: FilmItem[] = useMemo(() => {
     const fromApi = coTrangData?.data?.items || coTrangData?.items;
     if (fromApi?.length) return fromApi;
-    return combinedPool.filter((f) =>
-      JSON.stringify(f).toLowerCase().includes("cổ trang") ||
-      JSON.stringify(f).toLowerCase().includes("thần thoại") ||
-      JSON.stringify(f).toLowerCase().includes("tiên hiệp")
-    );
+    return combinedPool.filter((f) => filmMatchesKeywords(f, ["cổ trang", "thần thoại", "tiên hiệp"]));
   }, [coTrangData, combinedPool]);
 
   const crimeFilms: FilmItem[] = useMemo(() => {
     const fromApi = crimeData?.data?.items || crimeData?.items;
     if (fromApi?.length) return fromApi;
-    return combinedPool.filter((f) =>
-      JSON.stringify(f).toLowerCase().includes("hình sự") ||
-      JSON.stringify(f).toLowerCase().includes("trinh thám") ||
-      JSON.stringify(f).toLowerCase().includes("bí ẩn")
-    );
+    return combinedPool.filter((f) => filmMatchesKeywords(f, ["hình sự", "trinh thám", "bí ẩn"]));
   }, [crimeData, combinedPool]);
 
   const comedyFilms: FilmItem[] = useMemo(() => {
     const fromApi = comedyData?.data?.items || comedyData?.items;
     if (fromApi?.length) return fromApi;
-    return combinedPool.filter((f) =>
-      JSON.stringify(f).toLowerCase().includes("hài hước") ||
-      JSON.stringify(f).toLowerCase().includes("gia đình")
-    );
+    return combinedPool.filter((f) => filmMatchesKeywords(f, ["hài hước", "gia đình"]));
   }, [comedyData, combinedPool]);
 
   const dramaFilms: FilmItem[] = useMemo(() => {
     const fromApi = dramaData?.data?.items || dramaData?.items;
     if (fromApi?.length) return fromApi;
-    return combinedPool.filter((f) =>
-      JSON.stringify(f).toLowerCase().includes("tâm lý") ||
-      JSON.stringify(f).toLowerCase().includes("chính kịch")
-    );
+    return combinedPool.filter((f) => filmMatchesKeywords(f, ["tâm lý", "chính kịch"]));
   }, [dramaData, combinedPool]);
 
   const totalItems =

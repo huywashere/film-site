@@ -8,7 +8,7 @@ import { ChevronRight, ChevronLeft, Play, X } from 'lucide-react';
 import { watchProgressStorage, WatchProgressEntry } from '@/lib/watch-progress';
 import { useAuthStore } from '@/store/authStore';
 import { useQuery } from '@tanstack/react-query';
-import { watchHistoryApi } from '@/lib/api';
+import { movieApi, watchHistoryApi } from '@/lib/api';
 import { FilmItem } from './FilmCard';
 import { DashPagination } from './DashPagination';
 import { cardFont } from '@/lib/fonts';
@@ -29,7 +29,15 @@ const LEGACY_SHARED_HISTORY_ARTWORK =
 function historyArtwork(value?: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
   const artwork = value.trim();
-  if (!artwork || LEGACY_SHARED_HISTORY_ARTWORK.test(artwork)) return undefined;
+  if (
+    !artwork ||
+    artwork === 'undefined' ||
+    artwork === 'null' ||
+    artwork === 'none' ||
+    LEGACY_SHARED_HISTORY_ARTWORK.test(artwork)
+  ) {
+    return undefined;
+  }
   return artwork;
 }
 
@@ -54,33 +62,96 @@ function HistoryArtwork({
   className: string;
 }) {
   const title = item.title || item.name || 'Phim';
+  const rawPoster =
+    historyArtwork(item.poster) ||
+    historyArtwork(item.poster_url) ||
+    historyArtwork(item.moviePoster) ||
+    historyArtwork(item.thumb) ||
+    historyArtwork(item.thumb_url) ||
+    historyArtwork(item.movieThumb);
+  const rawThumb =
+    historyArtwork(item.thumb) ||
+    historyArtwork(item.thumb_url) ||
+    historyArtwork(item.movieThumb) ||
+    historyArtwork(item.poster) ||
+    historyArtwork(item.poster_url) ||
+    historyArtwork(item.moviePoster);
+
+  // Self-healing: if an old/corrupt localStorage entry has no artwork and no catalog match, recover it from API
+  const itemSlug = item.slug || item.movieId;
+  const needsRecovery = !catalogFilm && !rawPoster && !rawThumb && Boolean(itemSlug);
+
+  const { data: recoveryData } = useQuery({
+    queryKey: ['history-artwork-recovery', itemSlug],
+    queryFn: () => movieApi.getDetail(itemSlug).then((r) => r.data),
+    enabled: needsRecovery,
+    staleTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+
+  const recoveredMovie = recoveryData?.movie || recoveryData?.item || recoveryData;
+  const recoveredThumb =
+    historyArtwork(recoveredMovie?.thumb_url) || historyArtwork(recoveredMovie?.poster_url);
+  const recoveredPoster =
+    historyArtwork(recoveredMovie?.poster_url) || historyArtwork(recoveredMovie?.thumb_url);
+
+  // Auto-heal local entry so future renders have persistent artwork
+  useEffect(() => {
+    if ((recoveredThumb || recoveredPoster) && item.slug) {
+      watchProgressStorage.saveProgress({
+        slug: item.slug,
+        epSlug: item.epSlug || '1',
+        epName: item.epName || '',
+        title: item.title || title,
+        poster: recoveredPoster || recoveredThumb || '',
+        thumb: recoveredThumb || recoveredPoster || '',
+        originName: recoveredMovie?.origin_name || item.originName,
+        currentTime: item.currentTime || 0,
+        duration: item.duration || 5400,
+      });
+    }
+  }, [recoveredThumb, recoveredPoster, item, title, recoveredMovie?.origin_name]);
+
+  const effectivePoster =
+    catalogFilm?.poster_url ||
+    rawPoster ||
+    recoveredPoster ||
+    catalogFilm?.thumb_url ||
+    rawThumb ||
+    recoveredThumb;
+
+  const effectiveThumb =
+    catalogFilm?.thumb_url ||
+    rawThumb ||
+    recoveredThumb ||
+    catalogFilm?.poster_url ||
+    rawPoster ||
+    recoveredPoster;
+
   const filmForArtwork = useMemo<FilmItem>(
     () => ({
       ...catalogFilm,
-      slug: catalogFilm?.slug || item.slug || item.movieId || title,
+      slug: catalogFilm?.slug || itemSlug || title,
       name: catalogFilm?.name || title,
       title: catalogFilm?.title || title,
       origin_name:
         catalogFilm?.origin_name ||
         item.originName ||
         item.origin_name ||
+        recoveredMovie?.origin_name ||
         item.titleEn ||
         undefined,
-      year: catalogFilm?.year || Number(item.year || item.movieYear) || undefined,
-      type: catalogFilm?.type || item.type,
-      tmdb: catalogFilm?.tmdb || item.tmdb,
-      // A current catalogue match is authoritative. Stored history artwork can
-      // be stale after a provider merge or an earlier fallback mistake.
-      poster_url:
-        catalogFilm?.poster_url ||
-        historyArtwork(item.poster) ||
-        historyArtwork(item.poster_url),
-      thumb_url:
-        catalogFilm?.thumb_url ||
-        historyArtwork(item.thumb) ||
-        historyArtwork(item.thumb_url),
+      year:
+        catalogFilm?.year ||
+        Number(item.year || item.movieYear || recoveredMovie?.year) ||
+        undefined,
+      type: catalogFilm?.type || item.type || recoveredMovie?.type,
+      tmdb: catalogFilm?.tmdb || item.tmdb || recoveredMovie?.tmdb,
+      poster_url: effectivePoster,
+      thumb_url: effectiveThumb,
     }),
-    [catalogFilm, item, title],
+    [catalogFilm, item, title, itemSlug, effectivePoster, effectiveThumb, recoveredMovie],
   );
 
   return (
@@ -196,7 +267,7 @@ export function ContinueWatchingRow({ fallbackFilms = [] }: ContinueWatchingRowP
       title: item.movieTitle || item.name || 'Phim đã xem',
       originName: item.originName || item.origin_name || item.titleEn || '',
       poster: item.poster || item.moviePoster || item.poster_url || item.movieThumb || item.thumb,
-      thumb: item.movieThumb || item.thumb || item.thumb_url || item.backdrop || item.poster,
+      thumb: item.movieThumb || item.thumb || item.thumb_url || item.backdrop || item.poster || item.moviePoster,
       year: item.year || item.movieYear,
       lang: item.lang || item.movieLang,
       quality: item.quality || item.movieQuality,

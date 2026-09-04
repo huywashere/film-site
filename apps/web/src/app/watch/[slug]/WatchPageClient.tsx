@@ -1148,6 +1148,31 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       window.removeEventListener('load', schedule);
     };
   }, [primaryPlayerReady, slug]);
+
+  const [tabsPrefetchReady, setTabsPrefetchReady] = useState(false);
+
+  useEffect(() => {
+    setTabsPrefetchReady(false);
+    let idleId: number | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const schedule = () => {
+      setTabsPrefetchReady(true);
+    };
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      idleId = (window as any).requestIdleCallback(schedule, { timeout: 2500 });
+    } else {
+      timer = setTimeout(schedule, 1500);
+    }
+
+    return () => {
+      if (idleId !== undefined && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        (window as any).cancelIdleCallback(idleId);
+      }
+      if (timer) clearTimeout(timer);
+    };
+  }, [slug]);
+
   // Native HLS is the primary transport because it exposes real playback
   // events. Provider iframe remains the safe final transport fallback.
   const [playerEngine, setPlayerEngine] = useState<'hls' | 'iframe'>('hls');
@@ -1744,8 +1769,8 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     film,
     seasonNumber: vidsrcSeason || 1,
     enabled: secondaryDataReady && !!film,
-    fetchCredits: watchContentTab === 'cast',
-    fetchVideos: watchContentTab === 'trailer',
+    fetchCredits: watchContentTab === 'cast' || tabsPrefetchReady,
+    fetchVideos: watchContentTab === 'trailer' || tabsPrefetchReady,
     fetchSeason: true,
   });
 
@@ -1943,7 +1968,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
       return { items: unique.slice(0, 12) };
     },
-    enabled: watchContentTab === 'recommendations' && !!slug,
+    enabled: (watchContentTab === 'recommendations' || (recommendationsReady && tabsPrefetchReady)) && !!slug,
     staleTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
@@ -2289,8 +2314,28 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     (e: any) => (e.slug || e.name) === (currentEp || currentEpData?.slug || currentEpData?.name),
   );
 
-  const posterUrl =
-    resolveImageUrl(film?.thumb_url) || resolveImageUrl(film?.poster_url) || undefined;
+  const resolvedTmdbBackdrop = bestBackdrop?.file_path
+    ? `https://image.tmdb.org/t/p/w1280${bestBackdrop.file_path}`
+    : undefined;
+  const resolvedTmdbPoster = bestPoster?.file_path
+    ? `https://image.tmdb.org/t/p/w780${bestPoster.file_path}`
+    : undefined;
+
+  const movieThumb =
+    resolveImageUrl(film?.thumb_url) ||
+    resolvedTmdbBackdrop ||
+    resolveImageUrl(film?.poster_url) ||
+    resolvedTmdbPoster ||
+    undefined;
+
+  const moviePoster =
+    resolveImageUrl(film?.poster_url) ||
+    resolvedTmdbPoster ||
+    resolveImageUrl(film?.thumb_url) ||
+    resolvedTmdbBackdrop ||
+    undefined;
+
+  const posterUrl = movieThumb || moviePoster || undefined;
 
   // Auto-sync active episode range for long series (e.g. One Piece, Conan with 500-1100+ episodes)
   useEffect(() => {
@@ -2328,7 +2373,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     if (film && (film.name || film.origin_name) && slug) {
       const epName = currentEpData?.name || currentEp || 'Tập 1';
       const movieTitle = film.name || film.origin_name || 'Phim';
-      const moviePoster = posterUrl || resolveImageUrl(film.poster_url || film.thumb_url) || '';
 
       const currentKey = String(currentEpData?.slug || currentEpData?.name || currentEp || '')
         .toLowerCase()
@@ -2354,7 +2398,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         epSlug: String(currentEp || '1'),
         epName: String(epName).startsWith('Tập') ? String(epName) : `Tập ${epName}`,
         title: movieTitle,
-        poster: moviePoster,
+        poster: moviePoster || movieThumb || '',
+        thumb: movieThumb || moviePoster || '',
+        originName: film?.origin_name || undefined,
         currentTime: 10,
         duration: 100,
       });
@@ -2368,7 +2414,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             // history rows for the same movie.
             movieId: String(slug),
             movieTitle: movieTitle,
-            movieThumb: moviePoster,
+            movieThumb: movieThumb || moviePoster,
             episode: String(currentEp || '1'),
             progress: 10,
             duration: 100,
@@ -2468,7 +2514,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         epSlug: currentEpData?.slug || currentEpData?.name || '01',
         epName,
         title: film?.name || film?.origin_name || slug,
-        poster: posterUrl || '',
+        poster: moviePoster || movieThumb || posterUrl || '',
+        thumb: movieThumb || moviePoster || posterUrl || '',
+        originName: film?.origin_name || undefined,
         currentTime,
         duration,
       });
@@ -2482,7 +2530,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
           progress: currentTime,
           duration,
           movieTitle: film?.name || film?.origin_name || slug,
-          movieThumb: posterUrl,
+          movieThumb: movieThumb || moviePoster || posterUrl,
           serverName: server?.server_name,
         })
         .catch(() => {
