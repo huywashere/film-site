@@ -259,7 +259,7 @@ const LISTS_COLUMNS = [
   [
     { label: "Hoạt Hình", labelEn: "Animation / Anime", href: "/films/anime" },
     { label: "Phim Vietsub", labelEn: "Subtitled", href: "/films/vietsub" },
-    { label: "Phim Thuyết Minh", labelEn: "Dubbed", href: "/films/thuyet-minh" },
+    { label: "Thuyết Minh Song Ngữ AI", labelEn: "AI Dubbed & Bilingual", href: "/films/thuyet-minh-ai" },
     { label: "Phim Lồng Tiếng", labelEn: "Voiceover", href: "/films/long-tieng" },
   ],
   // Column 3

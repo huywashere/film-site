@@ -28,7 +28,10 @@ test("classifies Vietnamese server labels without leaking unknown servers", () =
   assert.equal(detectServerType("Vietsub #1"), "vietsub");
   assert.equal(detectServerType("ViCDN Song Ngữ"), "song-ngu");
   assert.equal(detectServerType("Bilingual MultiSub"), "song-ngu");
+  assert.equal(detectServerType("Song Ngữ AI"), "song-ngu");
   assert.equal(detectServerType("[KKPhim] Thuyết Minh"), "thuyet-minh");
+  assert.equal(detectServerType("Thuyết Minh AI Giọng Chuẩn"), "thuyet-minh");
+  assert.equal(detectServerType("Lồng Tiếng AI Studio"), "thuyet-minh");
   assert.equal(detectServerType("[NguonC] Lồng Tiếng #1"), "thuyet-minh");
   assert.equal(detectServerType("VidSrc Engsub"), "engsub");
   assert.equal(detectServerType("Server #1"), "raw");

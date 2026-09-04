@@ -317,7 +317,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                   { label: "Shows", href: "/films/shows" },
                   { label: "Hoạt Hình", href: "/films/anime" },
                   { label: "Phim Vietsub", href: "/films/vietsub" },
-                  { label: "Phim Thuyết Minh", href: "/films/thuyet-minh" },
+                  { label: "Thuyết Minh Song Ngữ AI", href: "/films/thuyet-minh-ai" },
                   { label: "Phim Lồng Tiếng", href: "/films/long-tieng" },
                   { label: "Phim Bộ Đang Chiếu", href: "/films/dang-chieu" },
                   { label: "Phim Bộ Đã Hoàn Thành", href: "/films/hoan-thanh" },

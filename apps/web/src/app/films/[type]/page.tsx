@@ -17,9 +17,11 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CURATED_ANIME_HERO_POOL,
+  CURATED_SONG_NGU_AI_HERO_POOL,
   AsianHeroItem,
   buildAsianHeroImageCandidates,
 } from "@/lib/curated-asian-hero";
+import { vicdnApi } from "@/lib/api";
 import { useTranslation } from "@/store/langStore";
 import {
   Play,
@@ -50,9 +52,15 @@ const TYPE_LABELS: Record<string, string> = {
   "hoat-hinh": "Hoạt Hình & Anime",
   vietsub: "Phim Vietsub",
   "phim-vietsub": "Phim Vietsub",
-  "thuyet-minh": "Phim Thuyết Minh",
-  thuyetminh: "Phim Thuyết Minh",
-  "phim-thuyet-minh": "Phim Thuyết Minh",
+  "thuyet-minh": "Phim Thuyết Minh & Song Ngữ AI",
+  thuyetminh: "Phim Thuyết Minh & Song Ngữ AI",
+  "phim-thuyet-minh": "Phim Thuyết Minh & Song Ngữ AI",
+  "thuyet-minh-ai": "Phim Thuyết Minh Song Ngữ AI",
+  "thuyetminhai": "Phim Thuyết Minh Song Ngữ AI",
+  "song-ngu-ai": "Phim Thuyết Minh Song Ngữ AI",
+  "song-ngu": "Phim Song Ngữ",
+  songngu: "Phim Song Ngữ",
+  "phim-song-ngu": "Phim Song Ngữ",
   "long-tieng": "Phim Lồng Tiếng",
   longtieng: "Phim Lồng Tiếng",
   "phim-long-tieng": "Phim Lồng Tiếng",
@@ -85,6 +93,12 @@ const TYPE_APIS: Record<string, (page: number) => Promise<any>> = {
   "thuyet-minh": (p) => movieApi.getThuyetMinh(p),
   thuyetminh: (p) => movieApi.getThuyetMinh(p),
   "phim-thuyet-minh": (p) => movieApi.getThuyetMinh(p),
+  "thuyet-minh-ai": (p) => movieApi.getThuyetMinh(p),
+  "thuyetminhai": (p) => movieApi.getThuyetMinh(p),
+  "song-ngu-ai": (p) => movieApi.getThuyetMinh(p),
+  "song-ngu": (p) => movieApi.getThuyetMinh(p),
+  songngu: (p) => movieApi.getThuyetMinh(p),
+  "phim-song-ngu": (p) => movieApi.getThuyetMinh(p),
   "long-tieng": (p) => movieApi.getLongTieng(p),
   longtieng: (p) => movieApi.getLongTieng(p),
   "phim-long-tieng": (p) => movieApi.getLongTieng(p),
@@ -754,10 +768,16 @@ export default function FilmsTypePage() {
   const page = Number(searchParams.get("page") || 1);
 
   const isAnime = type === "anime" || type === "hoat-hinh";
+  const isSongNguAI =
+    type === "thuyet-minh-ai" ||
+    type === "thuyetminhai" ||
+    type === "song-ngu-ai";
   const label = TYPE_LABELS[type] || "Danh Sách Phim";
   const apiFn = isAnime
     ? (p: number) => movieApi.getByCountryFast("nhat-ban", p)
-    : TYPE_APIS[type] || movieApi.getLatest;
+    : isSongNguAI
+      ? (p: number) => vicdnApi.getLatest(p)
+      : TYPE_APIS[type] || movieApi.getLatest;
 
   // Main Page Query
   const { data, isLoading } = useQuery({
@@ -789,11 +809,44 @@ export default function FilmsTypePage() {
     placeholderData: (prev) => prev,
   });
 
+  // Song Ngữ AI — additional ViCDN pages for richer catalog
+  const { data: vicdnPage2Data, isLoading: vicdnPage2Loading } = useQuery({
+    queryKey: ["vicdn-page-2"],
+    queryFn: () => vicdnApi.getLatest(2),
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
+    enabled: isSongNguAI,
+    placeholderData: (prev) => prev,
+  });
+
+  const { data: vicdnActionData, isLoading: vicdnActionLoading } = useQuery({
+    queryKey: ["vicdn-action"],
+    queryFn: () => vicdnApi.getByCategory("hanh-dong", 1),
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
+    enabled: isSongNguAI,
+    placeholderData: (prev) => prev,
+  });
+
+  const { data: vicdnScifiData, isLoading: vicdnScifiLoading } = useQuery({
+    queryKey: ["vicdn-scifi"],
+    queryFn: () => vicdnApi.getByCategory("vien-tuong", 1),
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
+    enabled: isSongNguAI,
+    placeholderData: (prev) => prev,
+  });
+
   const rawFilms: FilmItem[] = data?.data?.items || data?.items || [];
   const rawPage2Films: FilmItem[] =
     japanPage2Data?.data?.items || japanPage2Data?.items || [];
   const rawGeneralFilms: FilmItem[] =
     animeGeneralData?.data?.items || animeGeneralData?.items || [];
+
+  // ViCDN Song Ngữ AI film lists
+  const rawVicdnPage2Films: FilmItem[] = vicdnPage2Data?.items || [];
+  const rawVicdnActionFilms: FilmItem[] = vicdnActionData?.items || [];
+  const rawVicdnScifiFilms: FilmItem[] = vicdnScifiData?.items || [];
 
   // Filter 100% pure authentic Anime
   const films = useMemo(
@@ -819,6 +872,42 @@ export default function FilmsTypePage() {
       ]),
     [films, page2Films, generalFilms],
   );
+
+  // Song Ngữ AI combined pool
+  const vicdnCombinedPool = useMemo(
+    () =>
+      dedupeFilmsList([
+        ...CURATED_SONG_NGU_AI_HERO_POOL,
+        ...rawFilms,
+        ...rawVicdnPage2Films,
+        ...rawVicdnActionFilms,
+        ...rawVicdnScifiFilms,
+      ]),
+    [rawFilms, rawVicdnPage2Films, rawVicdnActionFilms, rawVicdnScifiFilms],
+  );
+
+  // Song Ngữ AI rows
+  const { vicdnRow1, vicdnRow2, vicdnRow3, vicdnRow4 } = useMemo(() => {
+    const used = new Set<string>();
+    const take = (list: FilmItem[], n = 16): FilmItem[] => {
+      const res: FilmItem[] = [];
+      for (const f of list) {
+        if (!f) continue;
+        const k = (f.slug || f._id || "").toLowerCase();
+        if (k && !used.has(k)) {
+          used.add(k);
+          res.push(f);
+          if (res.length >= n) break;
+        }
+      }
+      return res;
+    };
+    const r1 = take(rawFilms, 16);
+    const r2 = take(rawVicdnActionFilms, 16);
+    const r3 = take(rawVicdnScifiFilms, 16);
+    const r4 = take([...rawVicdnPage2Films, ...vicdnCombinedPool], 16);
+    return { vicdnRow1: r1, vicdnRow2: r2, vicdnRow3: r3, vicdnRow4: r4 };
+  }, [rawFilms, rawVicdnActionFilms, rawVicdnScifiFilms, rawVicdnPage2Films, vicdnCombinedPool]);
 
 function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
   if (!f) return false;
@@ -1025,13 +1114,97 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
       className={cn(
         cardFont.className,
         "min-h-screen w-full bg-background text-foreground",
-        isAnime
+        isAnime || isSongNguAI
           ? "-mt-20 sm:-mt-24 bg-[#0a0b10]"
           : "pb-20 pl-4 pr-4 pt-20 sm:pt-24 md:pr-10 lg:pl-24",
       )}
     >
-      {/* ── CASE 1: ANIME UNIVERSE HUB (Next-Gen Hero Banner + Curated Multi-Genre Rows + Full Catalog Grid) ── */}
-      {isAnime ? (
+      {/* ── CASE 3: SONG NGỮ AI UNIVERSE HUB ── */}
+      {isSongNguAI ? (
+        <>
+          {/* Hero Banner — reuses the same cinematic banner with Song Ngữ AI pool */}
+          <AnimeCuratedHeroBanner pool={CURATED_SONG_NGU_AI_HERO_POOL} />
+
+          {/* Curated Rows */}
+          <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 mt-3 sm:-mt-20 md:-mt-28 lg:-mt-36">
+            {/* Row 1: Phim Mới Song Ngữ AI */}
+            <AnimeCategoryRow
+              title="🎙️ Phim Song Ngữ AI Mới Cập Nhật"
+              films={vicdnRow1}
+              isLoading={isLoading}
+              variant="standard"
+            />
+
+            {/* Row 2: Bom Tấn Hành Động */}
+            <AnimeCategoryRow
+              title="💥 Bom Tấn Hành Động Song Ngữ AI"
+              films={vicdnRow2}
+              isLoading={isLoading || vicdnActionLoading}
+              variant="standard"
+            />
+
+            {/* Row 3: Khoa Học Viễn Tưởng */}
+            <AnimeCategoryRow
+              title="🚀 Khoa Học Viễn Tưởng Song Ngữ AI"
+              films={vicdnRow3}
+              isLoading={isLoading || vicdnScifiLoading}
+              variant="standard"
+            />
+
+            {/* Row 4: Tuyển Chọn Đặc Sắc */}
+            <AnimeCategoryRow
+              title="⭐ Tuyển Chọn Song Ngữ AI Đặc Sắc"
+              films={vicdnRow4}
+              isLoading={vicdnPage2Loading}
+              variant="standard"
+            />
+
+            {/* Full Catalog Header */}
+            <div className="mt-14 mb-8 pt-8 border-t border-white/10 flex flex-col md:flex-row md:items-end justify-between gap-2">
+              <div>
+                <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
+                  Tất Cả Phim Thuyết Minh Song Ngữ AI
+                </h2>
+                <p className="text-xs text-neutral-400 font-semibold mt-1">
+                  Công nghệ AI thuyết minh song ngữ — nghe tiếng Anh gốc + tiếng Việt cùng lúc
+                </p>
+              </div>
+              <div className="text-xs font-bold text-neutral-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 self-start md:self-auto">
+                Trang <span className="text-white font-extrabold">{page}</span> /{" "}
+                {totalPages}
+              </div>
+            </div>
+
+            {/* Full Catalog Grid */}
+            {isLoading ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
+                {Array.from({ length: 14 }).map((_, i) => (
+                  <FilmCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : rawFilms.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
+                {dedupeFilmsList(rawFilms).map((f, idx) => (
+                  <FilmCard key={`${f.slug || f._id || idx}-${idx}`} film={f} />
+                ))}
+              </div>
+            ) : (
+              <div className="py-20 text-center text-neutral-500 font-semibold text-sm">
+                Đang tải phim song ngữ AI từ ViCDN...
+              </div>
+            )}
+
+            {/* Pagination */}
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={handlePageChange}
+              onPrefetchPage={prefetchPage}
+            />
+          </div>
+        </>
+      ) : isAnime ? (
         <>
           {/* Next-Gen Hero Banner */}
           <AnimeCuratedHeroBanner

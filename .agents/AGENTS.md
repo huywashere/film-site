@@ -15,7 +15,7 @@
 
 ## UI & Navigation Design Rules (Anti-Slop Standard)
 - **Trang Duyệt Tìm (`/genres`)**:
-  - Giữ bố cục tối giản, sang trọng chỉ với các khối Card Cinematic chủ đạo (5 vũ trụ điện ảnh: Hàn Quốc, Trung Quốc, Anime, Khoa Học Viễn Tưởng, Chiến Tranh & Lịch Sử), không thêm thanh filter tab phụ dạng pill phía trên hay danh sách nút thể loại dàn trải phía dưới trừ khi có yêu cầu rõ ràng từ người dùng.
+  - Giữ bố cục tối giản, sang trọng chỉ với các khối Card Cinematic chủ đạo (6 vũ trụ điện ảnh: Hàn Quốc, Trung Quốc, Anime, Khoa Học Viễn Tưởng, Chiến Tranh & Lịch Sử, Thuyết Minh Song Ngữ AI), không thêm thanh filter tab phụ dạng pill phía trên hay danh sách nút thể loại dàn trải phía dưới trừ khi có yêu cầu rõ ràng từ người dùng.
 - **Thanh Tab Dọc (Sidebar)**:
   - **Trang chủ (`/`) & Các trang duyệt phim/thể loại/vũ trụ (`/genre/...`, `/country/...`, `/films/...`, `/genres`)**: Ẩn ở đầu trang khi xem Hero Banner; chỉ hiển thị (trượt vào) khi người dùng cuộn xuống phần thân trang (`body content`, `scrollY > ~380px`).
   - **Trang Xem phim (`/watch/...`) & Giới thiệu phim (`/film/...`)**: Luôn luôn hiển thị cố định.

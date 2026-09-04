@@ -69,6 +69,16 @@ const HUBS: HubCard[] = [
     image: "https://image.tmdb.org/t/p/w780/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg",
     countBadge: "Hơn 300+ Phim",
   },
+  {
+    slug: "thuyet-minh-song-ngu-ai",
+    title: "Thuyết Minh Song Ngữ AI",
+    tagline: "Giọng Đọc AI • Song Ngữ • Chuẩn Điện Ảnh",
+    category: "Thuyết Minh AI",
+    highlight: "Avengers, Interstellar, Blade Runner 2049, Dune, Spider-Man...",
+    href: "/films/thuyet-minh-ai",
+    image: "https://image.tmdb.org/t/p/w780/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg",
+    countBadge: "Hơn 550+ Phim",
+  },
 ];
 
 function ResilientHubCardImage({
@@ -132,10 +142,10 @@ export default function GenresPage() {
           </p>
         </div>
 
-        {/* ── 5 Curated Pillars Grid (Resilient Multi-CDN Fallback) ── */}
+        {/* ── 6 Curated Pillars Grid (Resilient Multi-CDN Fallback) ── */}
         <section
           aria-label="Danh sách tuyển tập phim nổi bật"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 sm:gap-4 lg:gap-4.5"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4.5 lg:gap-5"
         >
           {HUBS.map((hub) => (
             <Link

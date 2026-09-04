@@ -31,12 +31,12 @@ export function buildAsianHeroImageCandidates(url?: string | null): string[] {
   if (!clean) return [];
 
   if (clean.includes("image.tmdb.org")) {
-    // 1. Cloudflare Edge CDN (wsrv.nl) with WebP: unblocked in Vietnam, <80ms latency, saves 70% mobile bandwidth
-    list.push(`https://wsrv.nl/?url=${encodeURIComponent(clean)}&output=webp&we=1`);
-    // 2. Local Next.js server image proxy: runs on app origin, immune to ISP DNS blocks
-    list.push(`/api/image-proxy?url=${encodeURIComponent(clean)}&strict=1`);
-    // 3. Direct upstream TMDB CDN
+    // 1. Direct upstream TMDB CDN (zero hop, fastest)
     list.push(clean);
+    // 2. Cloudflare Edge CDN (wsrv.nl) with WebP fallback
+    list.push(`https://wsrv.nl/?url=${encodeURIComponent(clean)}&output=webp&we=1`);
+    // 3. Local Next.js server image proxy: runs on app origin
+    list.push(`/api/image-proxy?url=${encodeURIComponent(clean)}&strict=1`);
   } else {
     list.push(clean);
     if (!clean.startsWith("/api/image-proxy")) {
@@ -758,3 +758,136 @@ export const CURATED_ANIME_HERO_POOL: AsianHeroItem[] = [
   },
 ];
 
+/**
+ * Hero pool for the AI Bilingual Dubbing (Song Ngữ AI) universe hub.
+ * These are blockbuster Hollywood / international titles available via ViCDN's
+ * AI-generated bilingual dubbing track.
+ */
+export const CURATED_SONG_NGU_AI_HERO_POOL: AsianHeroItem[] = [
+  {
+    _id: "avengers-endgame",
+    name: "Avengers: Hồi Kết",
+    origin_name: "Avengers: Endgame",
+    slug: "avengers-endgame",
+    type: "single",
+    topBadge: "🎙️ SONG NGỮ AI · BOM TẤN MARVEL",
+    year: 2019,
+    quality: "4K Ultra HD",
+    lang: "Song Ngữ AI",
+    vote_average: 9.8,
+    rating: 9.8,
+    totalEpisodesText: "Phim Lẻ · 181 phút",
+    genres: ["Hành Động", "Khoa Học Viễn Tưởng", "Siêu Anh Hùng", "Phiêu Lưu"],
+    poster_url: "https://image.tmdb.org/t/p/w780/or06FN3Dka5tukK1e9sl16pB3iy.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg",
+    logoUrl: "https://image.tmdb.org/t/p/w500/9yjP4c6GBpBmFiqKh5MRFGbhvYP.png",
+    content:
+      "Sau thất bại thảm khốc trước Thanos, các siêu anh hùng còn sót lại bắt tay thực hiện kế hoạch du hành thời gian táo bạo để thay đổi vận mệnh vũ trụ và hồi sinh những người đã biến mất.",
+    calligraphyTitle: "Avengers: Endgame",
+  },
+  {
+    _id: "interstellar",
+    name: "Hành Trình Giữa Các Vì Sao",
+    origin_name: "Interstellar",
+    slug: "interstellar",
+    type: "single",
+    topBadge: "🌌 SONG NGỮ AI · CHRISTOPHER NOLAN",
+    year: 2014,
+    quality: "4K IMAX",
+    lang: "Song Ngữ AI",
+    vote_average: 9.7,
+    rating: 9.7,
+    totalEpisodesText: "Phim Lẻ · 169 phút",
+    genres: ["Khoa Học Viễn Tưởng", "Phiêu Lưu", "Chính Kịch", "Triết Học"],
+    poster_url: "https://image.tmdb.org/t/p/w780/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/pbrkL804c8yAv3zBZR4QPEafpAR.jpg",
+    logoUrl: "https://image.tmdb.org/t/p/w500/m7n3KQFcajHJFioCwhwpHRXSN9l.png",
+    content:
+      "Khi Trái Đất đứng trước thảm họa diệt vong, nhóm phi hành gia dũng cảm vượt qua lỗ sâu đục không-thời gian để tìm hành tinh mới cho nhân loại, chấp nhận hy sinh mọi thứ — kể cả gia đình.",
+    calligraphyTitle: "Interstellar",
+  },
+  {
+    _id: "the-dark-knight",
+    name: "Hiệp Sĩ Bóng Đêm",
+    origin_name: "The Dark Knight",
+    slug: "the-dark-knight",
+    type: "single",
+    topBadge: "🦇 SONG NGỮ AI · HUYỀN THOẠI DC",
+    year: 2008,
+    quality: "4K Ultra HD",
+    lang: "Song Ngữ AI",
+    vote_average: 9.9,
+    rating: 9.9,
+    totalEpisodesText: "Phim Lẻ · 152 phút",
+    genres: ["Hành Động", "Tội Phạm", "Siêu Anh Hùng", "Thriller"],
+    poster_url: "https://image.tmdb.org/t/p/w780/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/hkBaDkMWbLaf8B1lsWsKX7Ew3Xq.jpg",
+    logoUrl: "https://image.tmdb.org/t/p/w500/eSmmYVkYfpwRqBCrDs2hjNxFrTK.png",
+    content:
+      "Batman đối mặt với kẻ thù hỗn loạn và thiên tài tội ác nhất Gotham — Joker. Cuộc chiến không hồi kết giữa trật tự và hỗn loạn đặt ra câu hỏi: con người tốt đẹp sẽ đứng vững được bao lâu?",
+    calligraphyTitle: "The Dark Knight",
+  },
+  {
+    _id: "inception",
+    name: "Kẻ Đánh Cắp Giấc Mơ",
+    origin_name: "Inception",
+    slug: "inception",
+    type: "single",
+    topBadge: "💭 SONG NGỮ AI · MIND-BLOWING NOLAN",
+    year: 2010,
+    quality: "4K Ultra HD",
+    lang: "Song Ngữ AI",
+    vote_average: 9.6,
+    rating: 9.6,
+    totalEpisodesText: "Phim Lẻ · 148 phút",
+    genres: ["Khoa Học Viễn Tưởng", "Hành Động", "Thriller", "Bí Ẩn"],
+    poster_url: "https://image.tmdb.org/t/p/w780/ljsZTbVsrQSqZgWeep2B1QiDKuh.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/s3TBrRGB1iav7gFOCNx3H31MoES.jpg",
+    logoUrl: "https://image.tmdb.org/t/p/w500/tJHB0fq4k5b8QLEqNiVwqmWFX9E.png",
+    content:
+      "Dom Cobb — chuyên gia xâm nhập tiềm thức thông qua giấc mơ — nhận nhiệm vụ bất khả thi: không phải đánh cắp ý tưởng mà cấy ghép một ý tưởng vào đầu người khác mà không bị phát hiện.",
+    calligraphyTitle: "Inception",
+  },
+  {
+    _id: "oppenheimer",
+    name: "Cha Đẻ Bom Nguyên Tử",
+    origin_name: "Oppenheimer",
+    slug: "oppenheimer",
+    type: "single",
+    topBadge: "⚛️ SONG NGỮ AI · OSCAR 2024",
+    year: 2023,
+    quality: "4K IMAX",
+    lang: "Song Ngữ AI",
+    vote_average: 9.4,
+    rating: 9.4,
+    totalEpisodesText: "Phim Lẻ · 180 phút",
+    genres: ["Lịch Sử", "Tiểu Sử", "Chính Kịch", "Khoa Học"],
+    poster_url: "https://image.tmdb.org/t/p/w780/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/rLb2cwF3Pazuxaj0sRXQ037tGI1.jpg",
+    logoUrl: "https://image.tmdb.org/t/p/w500/dSi8wWlDQXDUq7GJOVAEZPtmEJT.png",
+    content:
+      "Thiên tài vật lý J. Robert Oppenheimer vật lộn giữa sứ mệnh khoa học và gánh nặng đạo đức khi dẫn đầu Dự án Manhattan — cha đẻ của vũ khí hủy diệt đã thay đổi lịch sử nhân loại mãi mãi.",
+    calligraphyTitle: "Oppenheimer",
+  },
+  {
+    _id: "dune-part-two",
+    name: "Hành Tinh Cát 2",
+    origin_name: "Dune: Part Two",
+    slug: "dune-part-two",
+    type: "single",
+    topBadge: "🏜️ SONG NGỮ AI · SỬ THI VŨ TRỤ 2024",
+    year: 2024,
+    quality: "4K IMAX",
+    lang: "Song Ngữ AI",
+    vote_average: 9.3,
+    rating: 9.3,
+    totalEpisodesText: "Phim Lẻ · 166 phút",
+    genres: ["Khoa Học Viễn Tưởng", "Sử Thi", "Hành Động", "Phiêu Lưu"],
+    poster_url: "https://image.tmdb.org/t/p/w780/1pdfLvkbY9ohJlDjQ92zSIOdMOs.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg",
+    logoUrl: "https://image.tmdb.org/t/p/w500/6ueJU8HpZwBCNxRJ2grPKYqLN7.png",
+    content:
+      "Paul Atreides liên minh cùng người Fremen để trả thù cho cha và bảo vệ hành tinh cát Arrakis. Nhưng định mệnh tiên tri đẩy anh tới một sự lựa chọn không thể tránh: trở thành vị cứu tinh hay kẻ hủy diệt.",
+    calligraphyTitle: "Dune: Part Two",
+  },
+];

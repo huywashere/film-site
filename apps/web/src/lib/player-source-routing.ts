@@ -413,13 +413,13 @@ export function normalizePlayerLabel(value: string) {
 export function detectServerType(serverName: string, serverLanguage?: string): ServerType {
   const value = normalizePlayerLabel(`${serverName || ""} ${serverLanguage || ""}`);
 
-  if (/\b(song ngu|songngu|bilingual|multi sub|multisub|vietsub\s*song\s*ngu)\b/.test(value)) {
+  if (/\b(song ngu|songngu|bilingual|multi sub|multisub|vietsub\s*song\s*ngu|song\s*ngu\s*ai|ai\s*song\s*ngu)\b/.test(value)) {
     return "song-ngu";
   }
-  if (/\b(thuyet minh|thuyetminh|voice over|voiceover|tm)\b/.test(value)) {
+  if (/\b(thuyet minh|thuyetminh|voice over|voiceover|tm|ai dub|ai dubbing|ai voice|thuyet\s*minh\s*ai|ai\s*thuyet\s*minh)\b/.test(value)) {
     return "thuyet-minh";
   }
-  if (/\b(long tieng|longtieng|dub|dubbed|lt)\b/.test(value)) {
+  if (/\b(long tieng|longtieng|dub|dubbed|lt|long\s*tieng\s*ai)\b/.test(value)) {
     return "thuyet-minh";
   }
   if (/\b(eng sub|engsub|english sub|english subtitle)\b/.test(value)) {
