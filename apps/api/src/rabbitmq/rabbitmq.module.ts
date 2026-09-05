@@ -19,6 +19,7 @@ import { RedisCacheModule } from '../redis/redis.module';
           'RABBITMQ_URL',
           'amqp://guest:guest@localhost:5672',
         );
+        const isRabbitEnabled = config.get<string>('RABBITMQ_ENABLED') === 'true';
         return {
           exchanges: [
             {
@@ -32,9 +33,10 @@ import { RedisCacheModule } from '../redis/redis.module';
           uri,
           connectionInitOptions: {
             wait: false, // Do not block server startup if broker is temporarily connecting
-            timeout: 10000,
+            timeout: 2000,
           },
-          enableControllerDiscovery: true,
+          registerHandlers: isRabbitEnabled,
+          enableControllerDiscovery: isRabbitEnabled,
         };
       },
     }),

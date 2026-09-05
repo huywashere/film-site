@@ -159,7 +159,9 @@ export function LandscapeSpotlightRow({
       >
         {cleanList.map((film, index) => {
           const rating = Number(
-            film.imdb_rating ||
+            film.imdb?.vote_average ||
+              film.imdb?.rating ||
+              film.imdb_rating ||
               film.vote_average ||
               film.tmdb?.vote_average ||
               film.tmdb?.rating ||
@@ -175,10 +177,10 @@ export function LandscapeSpotlightRow({
             '';
           const quality = film.quality?.trim() || 'FHD';
           const episodeLabel = episodeNumber
-            ? `P.Đ ${episodeNumber}`
+            ? `Vietsub ${episodeNumber}`
             : /full|hoàn tất|hoan tat/i.test(film.episode_current || '')
-              ? 'P.Đ Full'
-              : 'P.Đ';
+              ? 'Vietsub Full'
+              : 'Vietsub';
 
           return (
             <article
@@ -246,7 +248,7 @@ export function LandscapeSpotlightRow({
                     </span>
                     {(hasVoiceOver || hasDub) && (
                       <span className="rounded bg-emerald-500/90 px-1 sm:px-1.5 py-0.5 sm:py-1 text-[7px] sm:text-[8px] font-black uppercase leading-none text-white">
-                        {hasDub ? 'L.T' : 'T.M'}
+                        {hasDub ? 'L.Tiếng' : 'T.Minh'}
                         {episodeNumber ? ` ${episodeNumber}` : ''}
                       </span>
                     )}

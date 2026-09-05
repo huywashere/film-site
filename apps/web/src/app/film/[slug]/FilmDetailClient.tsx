@@ -40,14 +40,16 @@ import { movieApi, watchlistApi, ratingsApi, reviewsApi } from '@/lib/api';
 import { FilmNotFound } from '@/components/film/FilmNotFound';
 import { StarRating } from '@/components/film/StarRating';
 import { resolveImageUrl } from '@/components/film/FilmCard';
+import { alternateMovieArtworkUrl } from '@/lib/movie-image-url';
 import { useAuthStore } from '@/store/authStore';
+import { useAuthModalStore } from '@/store/authModalStore';
 import { useToast } from '@/providers/ToastProvider';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/store/langStore';
 import { Button } from '@/components/ui/button';
 import { useTmdb, useTmdbPerson } from '@/hooks/useTmdb';
 import { tmdbBackdrop, tmdbProfile, tmdbPoster } from '@/lib/tmdb';
-import { buildArtworkCandidates, type ImagePreset } from '@/lib/image-cdn';
+import { buildArtworkCandidates, wsrvImageUrl, type ImagePreset } from '@/lib/image-cdn';
 import { safeJsonLd } from '@/lib/safe-json-ld';
 import { cardFont } from '@/lib/fonts';
 import { guestDataStorage } from '@/lib/user-data';
@@ -89,28 +91,53 @@ function ResilientDetailImage({
   preset?: ImagePreset;
 }) {
   const sources = useMemo(
-    () => buildArtworkCandidates(candidates, preset),
+    () =>
+      buildArtworkCandidates(candidates, preset, {
+        includeWsrvForTmdb: true,
+        includeAlternatePhimimgPath: true,
+      }),
     [candidates, preset],
   );
   const sourceKey = sources.join('|');
   const [sourceIndex, setSourceIndex] = useState(0);
+  const [loaded, setLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
-  useEffect(() => setSourceIndex(0), [sourceKey]);
+  useEffect(() => {
+    setSourceIndex(0);
+    setLoaded(false);
+  }, [sourceKey]);
 
   const source = sources[sourceIndex];
+
+  useEffect(() => {
+    setLoaded(false);
+    if (imgRef.current?.complete && imgRef.current?.naturalWidth > 0) {
+      setLoaded(true);
+    }
+  }, [source]);
+
   if (!source) return null;
 
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
+      ref={imgRef}
+      key={source}
       src={source}
       alt={alt}
       loading={priority ? 'eager' : 'lazy'}
       decoding="async"
       fetchPriority={priority ? 'high' : 'auto'}
-      referrerPolicy="strict-origin-when-cross-origin"
-      className={cn('w-full h-full object-cover', className)}
+      referrerPolicy="no-referrer"
+      className={cn(
+        'w-full h-full object-cover transition-opacity duration-500',
+        loaded ? 'opacity-100' : 'opacity-0',
+        className,
+      )}
+      onLoad={() => setLoaded(true)}
       onError={() => {
+        setLoaded(false);
         if (sourceIndex < sources.length - 1) {
           setSourceIndex((index) => index + 1);
         }
@@ -119,30 +146,89 @@ function ResilientDetailImage({
   );
 }
 
-// ── Clean, High-Speed Detail Poster Card (Single Official TMDB Poster) ──
+// ── Clean, High-Speed Detail Poster Card (Multi-Tier Resilient Pipeline) ──
 function DetailPosterCard({
   src,
   fallbackSrc,
+  posterUrl,
+  thumbUrl,
   filmName,
   className = 'w-full h-full object-cover group-hover:scale-105 transition-transform duration-500',
   onOpenLightbox,
 }: {
   src?: string | null;
   fallbackSrc?: string | null;
+  posterUrl?: string | null;
+  thumbUrl?: string | null;
   filmName: string;
   className?: string;
   onOpenLightbox?: () => void;
 }) {
-  const primarySrc = src || fallbackSrc;
-  const [currentSrc, setCurrentSrc] = useState(primarySrc);
+  const candidates = useMemo(() => {
+    const list: string[] = [];
+    const add = (url?: string | null) => {
+      if (!url) return;
+      const clean = url.trim();
+      if (clean && !list.includes(clean)) list.push(clean);
+    };
+
+    // 1. TMDB Poster: edge proxy first to bypass VN ISP blocking, then local proxy, then direct
+    if (src && /image\.tmdb\.org/i.test(src)) {
+      const wsrv = wsrvImageUrl(src, 'poster');
+      if (wsrv) add(wsrv);
+      add(`/api/image-proxy?url=${encodeURIComponent(src)}`);
+      add(src);
+    } else if (src) {
+      add(src);
+    }
+
+    // 2. Direct provider poster
+    const provPoster = fallbackSrc || (posterUrl ? resolveImageUrl(posterUrl) : null);
+    if (provPoster) {
+      add(provPoster);
+      const alt = alternateMovieArtworkUrl(provPoster);
+      if (alt) add(alt);
+    }
+
+    // 3. Provider thumbnail (often valid when poster is missing or 404)
+    const provThumb = thumbUrl ? resolveImageUrl(thumbUrl) : null;
+    if (provThumb) {
+      add(provThumb);
+      const altThumb = alternateMovieArtworkUrl(provThumb);
+      if (altThumb) add(altThumb);
+    }
+
+    // 4. Local image proxy for provider artwork (Next.js server always reaches phimimg)
+    if (provPoster) {
+      add(`/api/image-proxy?url=${encodeURIComponent(provPoster)}`);
+    }
+    if (provThumb) {
+      add(`/api/image-proxy?url=${encodeURIComponent(provThumb)}`);
+    }
+
+    return list;
+  }, [src, fallbackSrc, posterUrl, thumbUrl]);
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [loaded, setLoaded] = useState(false);
   const [hasFailedAll, setHasFailedAll] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  const candidatesKey = candidates.join('|');
+  useEffect(() => {
+    setCurrentIndex(0);
+    setLoaded(false);
+    setHasFailedAll(false);
+  }, [candidatesKey]);
+
+  const currentSrc = candidates[currentIndex];
 
   useEffect(() => {
-    if (primarySrc) {
-      setCurrentSrc(primarySrc);
-      setHasFailedAll(false);
+    setLoaded(false);
+    if (imgRef.current?.complete && imgRef.current?.naturalWidth > 0) {
+      setLoaded(true);
     }
-  }, [primarySrc]);
+  }, [currentSrc]);
 
   if (!currentSrc || hasFailedAll) {
     return (
@@ -161,22 +247,37 @@ function DetailPosterCard({
       className="relative w-full h-full overflow-hidden cursor-pointer select-none group bg-[#12151b]"
       title="Bấm để xem ảnh phóng to"
     >
+      {/* Skeleton / Shimmer background while loading */}
+      {!loaded && (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,#101218_25%,#181b23_45%,#101218_65%)] bg-[length:220%_100%] motion-reduce:animate-none"
+        />
+      )}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
+        ref={imgRef}
+        key={currentSrc}
         src={currentSrc}
         alt={filmName}
-        referrerPolicy="strict-origin-when-cross-origin"
+        referrerPolicy="no-referrer"
         loading="eager"
         decoding="async"
         fetchPriority="high"
-        className={className}
+        onLoad={() => setLoaded(true)}
         onError={() => {
-          if (fallbackSrc && currentSrc !== fallbackSrc) {
-            setCurrentSrc(fallbackSrc);
+          setLoaded(false);
+          if (currentIndex < candidates.length - 1) {
+            setCurrentIndex((prev) => prev + 1);
           } else {
             setHasFailedAll(true);
           }
         }}
+        className={cn(
+          className,
+          loaded ? 'opacity-100' : 'opacity-0',
+          'transition-opacity duration-300',
+        )}
       />
 
       {/* Subtle hover overlay */}
@@ -906,12 +1007,13 @@ function WriteReview({ movieId }: { movieId: string }) {
         <span className="text-neutral-400 text-xs font-semibold">
           Đăng nhập để viết bình luận của bạn
         </span>
-        <Link
-          href="/login"
-          className="rounded-lg bg-white px-6 py-2.5 text-[11px] font-extrabold text-[#111317] transition-colors hover:bg-neutral-200"
+        <button
+          type="button"
+          onClick={() => useAuthModalStore.getState().openModal("login")}
+          className="rounded-lg bg-white px-6 py-2.5 text-[11px] font-extrabold text-[#111317] transition-colors hover:bg-neutral-200 cursor-pointer"
         >
           ĐĂNG NHẬP
-        </Link>
+        </button>
       </div>
     );
   }
@@ -1006,6 +1108,17 @@ export default function FilmDetailPage({
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [secondaryReadySlug, setSecondaryReadySlug] = useState('');
   const secondaryReady = secondaryReadySlug === slug;
+
+  // Always reset scroll position to top when entering or switching movie detail pages
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !window.location.hash) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+      const raf = requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [slug]);
 
   useEffect(() => {
     let timer: number | undefined;
@@ -1472,6 +1585,8 @@ export default function FilmDetailPage({
                 <DetailPosterCard
                   src={tmdbPosterUrl}
                   fallbackSrc={providerPosterUrl}
+                  posterUrl={film.poster_url}
+                  thumbUrl={film.thumb_url}
                   filmName={film.name}
                   onOpenLightbox={() => {
                     setLightboxIndex(0);
@@ -1924,6 +2039,8 @@ export default function FilmDetailPage({
               <DetailPosterCard
                 src={tmdbPosterUrl}
                 fallbackSrc={providerPosterUrl}
+                posterUrl={film.poster_url}
+                thumbUrl={film.thumb_url}
                 filmName={film.name}
                 onOpenLightbox={() => {
                   setLightboxIndex(0);

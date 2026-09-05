@@ -45,8 +45,20 @@ export async function GET(
   if (!searchParams.has("language") && !isMediaAssetEndpoint) {
     searchParams.set("language", "vi-VN");
   }
-  if (isMediaAssetEndpoint && !searchParams.has("include_image_language")) {
-    searchParams.set("include_image_language", "en,vi,null,ja,zh,ko");
+  if (isMediaAssetEndpoint) {
+    if (!searchParams.has("include_image_language")) {
+      searchParams.set("include_image_language", "vi,en,null,ja,ko");
+    } else {
+      const langs = searchParams
+        .get("include_image_language")!
+        .split(",")
+        .map((l) => l.trim().toLowerCase())
+        .filter((l) => !l.startsWith("zh") && l !== "cn");
+      searchParams.set(
+        "include_image_language",
+        langs.join(",") || "vi,en,null,ja,ko",
+      );
+    }
   }
 
   // Neu khong dung Bearer token hop le, them api_key vao query
@@ -72,7 +84,7 @@ export async function GET(
       ? [regionalHost, officialHost, workerHost]
       : [workerHost, regionalHost, officialHost]
     : [regionalHost, officialHost];
-  const cacheKey = hosts[0] + "/" + path + (qs ? "?" + qs : "");
+  const cacheKey = "v3:" + hosts[0] + "/" + path + (qs ? "?" + qs : "");
 
   const cached = cache.get(cacheKey);
   if (cached && cached.expiry > Date.now()) {
@@ -102,6 +114,24 @@ export async function GET(
 
       if (response.ok) {
         const data = await response.json();
+
+        // Strip any Chinese posters, backdrops, or logos
+        if (data && typeof data === "object") {
+          const isNonChinese = (img: any) => {
+            const lang = String(img?.iso_639_1 || "").toLowerCase().trim();
+            return !lang.startsWith("zh") && lang !== "cn";
+          };
+          if (Array.isArray(data.posters)) {
+            data.posters = data.posters.filter(isNonChinese);
+          }
+          if (Array.isArray(data.backdrops)) {
+            data.backdrops = data.backdrops.filter(isNonChinese);
+          }
+          if (Array.isArray(data.logos)) {
+            data.logos = data.logos.filter(isNonChinese);
+          }
+        }
+
         const ttl = getTtl(path);
         cache.set(cacheKey, { data, expiry: Date.now() + ttl * 1000 });
 

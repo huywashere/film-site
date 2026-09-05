@@ -28,3 +28,11 @@ prisma/migrations/dev.db
 ssl/
 .cloudflared/
 .env.production.local
+
+# Python venv & caches
+.venv/
+**/__pycache__/
+*.py[cod]
+*$py.class
+services/recommendation-engine/.venv/
+services/recommendation-engine/__pycache__/

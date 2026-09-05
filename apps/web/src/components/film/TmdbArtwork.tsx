@@ -133,32 +133,30 @@ export function TmdbArtwork({
     if (providerPrimary) add(providerPrimary);
     if (providerAlternate) add(providerAlternate);
 
-    // 2. Direct TMDB artwork
-    if (tmdbUrl) add(tmdbUrl);
-
-    // 3. TMDB proxies (edge wsrv + local proxy so ISP blocking never breaks TMDB in VN)
+    // 2. TMDB edge proxy (works in VN, bypasses TMDB block) & local proxy
     if (tmdbUrl) {
       const wsrv = wsrvImageUrl(tmdbUrl, preset);
       if (wsrv) add(wsrv);
       add(`/api/image-proxy?url=${encodeURIComponent(tmdbUrl)}`);
+      add(tmdbUrl);
     }
 
-    // 4. Provider proxies
+    // 3. Provider local proxy (server reliably fetches phimimg)
     if (providerPrimary) {
+      add(`/api/image-proxy?url=${encodeURIComponent(providerPrimary)}`);
       const wsrv = wsrvImageUrl(providerPrimary, preset);
       if (wsrv) add(wsrv);
-      add(`/api/image-proxy?url=${encodeURIComponent(providerPrimary)}`);
     }
 
-    // 5. Cross-fallback: if backdrop is needed and only poster was passed (or vice versa)
+    // 4. Cross-fallback: if backdrop is needed and only poster was passed (or vice versa)
     const secondaryUrl =
       kind === 'backdrop'
         ? resolveImageUrl(film.poster_url)
         : resolveImageUrl(film.thumb_url);
     if (secondaryUrl && secondaryUrl !== providerPrimary) {
       add(secondaryUrl);
-      const wsrv = wsrvImageUrl(secondaryUrl, preset);
-      if (wsrv) add(wsrv);
+      const altSec = alternateMovieArtworkUrl(secondaryUrl);
+      if (altSec) add(altSec);
       add(`/api/image-proxy?url=${encodeURIComponent(secondaryUrl)}`);
     }
 
@@ -227,7 +225,7 @@ export function TmdbArtwork({
           loading={priority ? 'eager' : 'lazy'}
           fetchPriority={priority ? 'high' : 'low'}
           decoding="async"
-          referrerPolicy="strict-origin-when-cross-origin"
+          referrerPolicy="no-referrer"
           draggable={false}
           onLoad={() => setLoaded(true)}
           onError={() => {
@@ -242,7 +240,7 @@ export function TmdbArtwork({
             src === tmdbUrl || /image\.tmdb\.org\/t\/p\//i.test(src) ? 'tmdb' : 'fallback'
           }
         />
-      ) : artworkQuery.isFetched || providerIsTmdb ? (
+      ) : (!src || candidateIndex >= candidates.length || artworkQuery.isFetched || providerIsTmdb) ? (
         <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-neutral-800 via-neutral-900 to-black p-2 text-center">
           <Clapperboard className="mb-1 h-5 w-5 text-neutral-600" />
           <p className="line-clamp-2 text-[10px] font-bold text-neutral-300">

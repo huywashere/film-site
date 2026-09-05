@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useState, useEffect, useRef, useMemo } from "react";
-import { ChevronRight, ChevronLeft, ChevronDown, Loader2 } from "lucide-react";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 import {
   movieApi,
   siteConfigApi,
@@ -352,7 +352,7 @@ function FilmSection({
           <div className="min-w-0 flex-1 sm:flex-none">
             <h2
               data-film-section-title="true"
-              className={`${cardFont.className} bg-gradient-to-r ${sectionTitleTone(title)} bg-clip-text text-xl font-extrabold tracking-[-0.025em] text-transparent sm:text-2xl`}
+              className={`${cardFont.className} text-xl font-extrabold tracking-[-0.025em] text-white sm:text-2xl`}
             >
               {title}
             </h2>
@@ -495,7 +495,33 @@ export default function HomePageClient({
   const { t } = useTranslation();
 
   const [showMoreSections, setShowMoreSections] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const infiniteSentinelRef = useRef<HTMLDivElement>(null);
+
+  // Progressive scroll-based loading: automatically fetch and reveal remaining sections as user approaches them
+  useEffect(() => {
+    if (showMoreSections) return;
+    const el = infiniteSentinelRef.current;
+    if (!el) return;
+
+    if (!("IntersectionObserver" in window)) {
+      setShowMoreSections(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setShowMoreSections(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "650px 0px" },
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [showMoreSections]);
+
   const queryClient = useQueryClient();
   const hasCachedFeed = Boolean(queryClient.getQueryData(["home-feed-v1", 24]));
   const [catalogReady, setCatalogReady] = useState(hasCachedFeed);
@@ -577,14 +603,6 @@ export default function HomePageClient({
       ]),
     [homeFeedSections],
   );
-
-  const handleShowMore = () => {
-    setIsLoadingMore(true);
-    setTimeout(() => {
-      setShowMoreSections(true);
-      setIsLoadingMore(false);
-    }, 450);
-  };
 
   // ── Initial 4 Sections Data (Prioritizing Hollywood/Western Live-Action & Fantasy Movies) ──
   // 1. Phim kỹ xảo (VFX, Fantasy & Myth Movies)
@@ -1226,33 +1244,18 @@ export default function HomePageClient({
             <div key={sectionId}>{primarySections[sectionId]}</div>
           ))}
 
-        {/* ── Ultra-Minimal Show More Sections Button ── */}
-        {!showMoreSections ? (
-          <div className="my-3 flex w-full justify-center px-1 sm:my-5 lg:my-6">
-            <button
-              onClick={handleShowMore}
-              disabled={isLoadingMore}
-              className={`${cardFont.className} group inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold text-neutral-300 hover:text-white bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 shadow-lg transition-all cursor-pointer active:scale-95`}
-            >
-              <span className="font-semibold tracking-wide">
-                {t("common.viewMore", "Xem thêm phim")}
-              </span>
-              {isLoadingMore ? (
-                <Loader2 size={13} className="animate-spin text-white" />
-              ) : (
-                <ChevronDown
-                  size={14}
-                  className="transition-transform duration-300 group-hover:translate-y-0.5 text-neutral-300 group-hover:text-white"
-                />
-              )}
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {/* ── 10 Lazy Loaded Sections ── */}
-            <LazySection>
-              <FilmSection
-                title={t("sections.nextWatch", "Gợi Ý Phim Tiếp Theo")}
+        {/* ── Progressive Infinite Scroll Sentinel (Triggers background fetch before reaching bottom) ── */}
+        <div
+          ref={infiniteSentinelRef}
+          className="h-2 w-full pointer-events-none"
+          aria-hidden="true"
+        />
+
+        <div className="space-y-2">
+          {/* ── 10 Progressively Loaded Sections as User Scrolls ── */}
+          <LazySection>
+            <FilmSection
+              title={t("sections.nextWatch", "Gợi Ý Phim Tiếp Theo")}
                 films={nextWatchRowList}
                 isLoading={nextWatchLoading}
                 href="/country/au-my"
@@ -1340,7 +1343,6 @@ export default function HomePageClient({
               />
             </LazySection>
           </div>
-        )}
       </div>
     </div>
   );

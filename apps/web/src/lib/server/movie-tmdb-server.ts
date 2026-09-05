@@ -1,4 +1,12 @@
-import { TmdbImage, TmdbImages, tmdbBackdrop, tmdbPoster, extractTmdbInfo } from "@/lib/tmdb";
+import {
+  TmdbImage,
+  TmdbImages,
+  tmdbBackdrop,
+  tmdbPoster,
+  extractTmdbInfo,
+  sortTmdbImages,
+  isNonChineseTmdbImage,
+} from "@/lib/tmdb";
 
 export interface ServerTmdbResult {
   tmdbId: number | null;
@@ -38,7 +46,7 @@ export async function getMovieTmdbServer(movie: any): Promise<ServerTmdbResult |
   if (!tmdbToken && !tmdbApiKey) return null;
 
   const { tmdbId: detectedId, type: detectedType, imdbId } = extractTmdbInfo(movie);
-  const cacheKey = `${detectedId || ""}_${detectedType || ""}_${movie?.slug || movie?.name || ""}`;
+  const cacheKey = `v3_${detectedId || ""}_${detectedType || ""}_${movie?.slug || movie?.name || ""}`;
 
   const cached = tmdbServerMemoryCache.get(cacheKey);
   if (cached && cached.expiry > Date.now()) {
@@ -124,16 +132,16 @@ export async function getMovieTmdbServer(movie: any): Promise<ServerTmdbResult |
 
     if (!resolvedId) return null;
 
-    // 3. Fetch images for the resolved ID
+    // 3. Fetch images for the resolved ID (excluding Chinese languages)
     let imagesUrl = appendAuth(
-      `${TMDB_HOST}/${resolvedType}/${resolvedId}/images?include_image_language=en,vi,null,ja,zh,ko`,
+      `${TMDB_HOST}/${resolvedType}/${resolvedId}/images?include_image_language=vi,en,null,ja,ko`,
     );
     let res = await fetch(imagesUrl, { headers, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (!res.ok && res.status === 404) {
       // Flip type and retry once (e.g. anime movie vs anime series)
       const altType = resolvedType === "tv" ? "movie" : "tv";
       imagesUrl = appendAuth(
-        `${TMDB_HOST}/${altType}/${resolvedId}/images?include_image_language=en,vi,null,ja,zh,ko`,
+        `${TMDB_HOST}/${altType}/${resolvedId}/images?include_image_language=vi,en,null,ja,ko`,
       );
       const altRes = await fetch(imagesUrl, { headers, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
       if (altRes.ok) {
@@ -144,11 +152,18 @@ export async function getMovieTmdbServer(movie: any): Promise<ServerTmdbResult |
     if (!res.ok) return null;
 
     const imagesData: TmdbImages = await res.json();
-    const backdrops = [...(imagesData.backdrops || [])].sort((a, b) => b.vote_average - a.vote_average);
-    const posters = [...(imagesData.posters || [])].sort((a, b) => b.vote_average - a.vote_average);
+    const cleanPosters = sortTmdbImages(imagesData.posters || []);
+    const cleanBackdrops = sortTmdbImages(imagesData.backdrops || []);
+    const cleanLogos = (imagesData.logos || []).filter(isNonChineseTmdbImage);
 
-    const bestBackdrop = backdrops[0] || null;
-    const bestPoster = posters[0] || null;
+    const bestBackdrop = cleanBackdrops[0] || null;
+    const bestPoster = cleanPosters[0] || null;
+
+    const filteredImages: TmdbImages = {
+      backdrops: cleanBackdrops,
+      posters: cleanPosters,
+      logos: cleanLogos,
+    };
 
     const result: ServerTmdbResult = {
       tmdbId: resolvedId,
@@ -157,7 +172,7 @@ export async function getMovieTmdbServer(movie: any): Promise<ServerTmdbResult |
       bestPoster,
       tmdbBackdropUrl: bestBackdrop?.file_path ? tmdbBackdrop(bestBackdrop.file_path, "w1280") : null,
       tmdbPosterUrl: bestPoster?.file_path ? tmdbPoster(bestPoster.file_path, "w500") : null,
-      images: imagesData,
+      images: filteredImages,
     };
 
     tmdbServerMemoryCache.set(cacheKey, { data: result, expiry: Date.now() + CACHE_TTL_MS });

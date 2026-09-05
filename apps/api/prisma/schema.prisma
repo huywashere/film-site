@@ -518,6 +518,22 @@ model AdminNotificationRead {
   @@map("admin_notification_reads")
 }
 
+model SystemNotification {
+  id          String    @id @default(cuid())
+  title       String
+  message     String    @db.Text
+  tag         String?   @default("Hệ thống")
+  link        String?
+  isActive    Boolean   @default(true)
+  priority    Int       @default(0)
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isActive, priority(sort: Desc), createdAt(sort: Desc)])
+  @@map("system_notifications")
+}
+
 model IssueReportEvent {
   id         String       @id @default(cuid())
   reportId   String

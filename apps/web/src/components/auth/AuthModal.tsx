@@ -45,13 +45,70 @@ import { useGoogleOneTap } from "@/hooks/useGoogleOneTap";
 import { getRandomAuthArtwork, type AuthArtwork } from "@/lib/auth-artworks";
 import { cn } from "@/lib/utils";
 
-export function AuthModal() {
+export interface AuthModalProps {
+  isPage?: boolean;
+  initialMode?: "login" | "register";
+}
+
+export function AuthModal({
+  isPage = false,
+  initialMode = "login",
+}: AuthModalProps = {}) {
   const router = useRouter();
-  const { isOpen, mode, closeModal, setMode } = useAuthModalStore();
+  const modalStore = useAuthModalStore();
   const { setUser, login, register } = useAuthStore();
   const { toast } = useToast();
 
-  const [currentArtwork, setCurrentArtwork] = useState<AuthArtwork>(getRandomAuthArtwork);
+  const [internalMode, setInternalMode] = useState<"login" | "register">(
+    initialMode,
+  );
+
+  useEffect(() => {
+    if (isPage && initialMode) {
+      setInternalMode(initialMode);
+    }
+  }, [isPage, initialMode]);
+
+  const mode = isPage ? internalMode : modalStore.mode;
+  const setMode = (newMode: "login" | "register") => {
+    if (isPage) {
+      setInternalMode(newMode);
+      if (typeof window !== "undefined") {
+        window.history.replaceState(
+          null,
+          "",
+          newMode === "login" ? "/login" : "/register",
+        );
+      }
+    } else {
+      modalStore.setMode(newMode);
+    }
+  };
+
+  const getRedirectTarget = () => {
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirect = searchParams.get("redirect");
+      if (redirect && redirect.startsWith("/") && !redirect.startsWith("//")) {
+        return redirect;
+      }
+    }
+    return "/";
+  };
+
+  const closeModal = () => {
+    if (isPage) {
+      router.push(getRedirectTarget());
+    } else {
+      modalStore.closeModal();
+    }
+  };
+
+  const isOpen = isPage ? true : modalStore.isOpen;
+
+  const [currentArtwork, setCurrentArtwork] = useState<AuthArtwork>(
+    getRandomAuthArtwork,
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -77,8 +134,12 @@ export function AuthModal() {
   useGoogleOneTap({
     enabled: isOpen && !isForgotMode,
     onSuccess: () => {
-      closeModal();
-      router.push("/");
+      if (isPage) {
+        router.push(getRedirectTarget());
+      } else {
+        modalStore.closeModal();
+        router.refresh();
+      }
     },
   });
 
@@ -96,8 +157,12 @@ export function AuthModal() {
       `Đăng nhập thành công! Chào mừng ${displayName}.`,
       "success",
     );
-    closeModal();
-    router.push("/");
+    if (isPage) {
+      router.push(getRedirectTarget());
+    } else {
+      modalStore.closeModal();
+      router.refresh();
+    }
   };
 
   useEffect(() => {
@@ -220,11 +285,19 @@ export function AuthModal() {
           );
           await handleFirebaseUserSuccess(res.user);
         } catch (fbErr: any) {
-          const res = await login(emailOrUsername, password);
+          const res = await login(
+            emailOrUsername,
+            password,
+            turnstileToken || undefined,
+          );
           if (res?.user) {
             toast(`Đăng nhập thành công!`, "success");
-            closeModal();
-            router.push("/");
+            if (isPage) {
+              router.push(getRedirectTarget());
+            } else {
+              modalStore.closeModal();
+              router.refresh();
+            }
           } else {
             setErrorMsg("Email hoặc mật khẩu không chính xác.");
           }
@@ -252,8 +325,12 @@ export function AuthModal() {
               "Tài khoản đã được tạo. Hãy kiểm tra email để xác minh.",
               "success",
             );
-            closeModal();
-            setMode("login");
+            if (isPage) {
+              setMode("login");
+            } else {
+              modalStore.closeModal();
+              modalStore.setMode("login");
+            }
           }
         } catch (fbErr: any) {
           const res = await register({
@@ -261,14 +338,19 @@ export function AuthModal() {
             username: cleanUsername,
             displayName: (displayName || username).trim(),
             password,
+            turnstileToken: turnstileToken || undefined,
           });
           if (res?.requiresEmailVerification) {
             toast(
               "Tạo tài khoản thành công. Hãy kiểm tra email để xác minh.",
               "success",
             );
-            closeModal();
-            setMode("login");
+            if (isPage) {
+              setMode("login");
+            } else {
+              modalStore.closeModal();
+              modalStore.setMode("login");
+            }
           } else {
             setErrorMsg("Không thể đăng ký. Email hoặc username đã tồn tại.");
           }
@@ -283,29 +365,33 @@ export function AuthModal() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeModal();
+      if (e.key === "Escape" && !isPage) closeModal();
     };
-    if (isOpen) window.addEventListener("keydown", handleKeyDown);
+    if (isOpen && !isPage) window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, closeModal]);
+  }, [isOpen, isPage, closeModal]);
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
-      {/* Background Movie Posters Collage Grid */}
-      <CinematicAuthBackground />
-
-      {/* Dark Backdrop Overlay */}
-      <div
-        onClick={closeModal}
-        className="fixed inset-0 bg-black/75 backdrop-blur-[4px] cursor-pointer z-0"
-      />
-
-      {/* Main 2-Column Modal Card (Solid, Non-Glass, Clean) */}
-      <div className="relative w-full max-w-4xl max-h-[94vh] overflow-y-auto sm:overflow-hidden bg-[#151923] border border-neutral-800 rounded-2xl sm:rounded-3xl shadow-[0_30px_90px_rgba(0,0,0,0.95)] z-10 my-auto flex flex-col md:flex-row [scrollbar-width:none] [&::-webkit-scrollbar]:hidden font-primary">
-        
-        {/* Close Button */}
+  const cardContent = (
+    <div
+      className={cn(
+        "relative w-full max-w-4xl max-h-[94vh] overflow-y-auto sm:overflow-hidden bg-[#151923] border border-neutral-800 rounded-2xl sm:rounded-3xl shadow-[0_30px_90px_rgba(0,0,0,0.95)] z-10 my-auto flex flex-col md:flex-row [scrollbar-width:none] [&::-webkit-scrollbar]:hidden font-primary",
+        isPage && "my-0 shadow-[0_30px_90px_rgba(0,0,0,0.9)]",
+      )}
+    >
+      {/* Close or Back Button */}
+      {isPage ? (
+        <Link
+          href="/"
+          className="absolute top-3.5 right-3.5 px-3 py-1.5 rounded-full bg-neutral-800/90 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer z-30 border border-neutral-700 shadow-md backdrop-blur-sm"
+          aria-label="Về trang chủ"
+          title="Về trang chủ"
+        >
+          <ArrowLeft size={14} />
+          <span className="text-[11px]">Trang chủ</span>
+        </Link>
+      ) : (
         <button
           onClick={closeModal}
           className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white flex items-center justify-center transition-all cursor-pointer z-30 border border-neutral-700"
@@ -313,16 +399,18 @@ export function AuthModal() {
         >
           <X size={16} />
         </button>
+      )}
 
-        {/* ── Left Column: Clean Cinematic Poster + Brand Logo (Single Fixed Image) ── */}
-        <div className="relative hidden md:flex md:w-[44%] flex-col justify-start overflow-hidden bg-black p-6 min-h-[560px] border-r border-neutral-800">
-          {/* Single High-Quality Fixed Backdrop Image */}
-          <div className="absolute inset-0 z-0">
-            <img
-              src={currentArtwork.url}
-              alt={currentArtwork.title}
-              className="w-full h-full object-cover object-center scale-105 brightness-[0.88] transition-all duration-700"
-            />
+      {/* ── Left Column: Clean Cinematic Poster + Brand Logo (Single Fixed Image) ── */}
+      <div className="relative hidden md:flex md:w-[44%] flex-col justify-start overflow-hidden bg-black p-6 min-h-[560px] border-r border-neutral-800">
+        {/* Single High-Quality Fixed Backdrop Image */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src={currentArtwork.url}
+            alt={currentArtwork.title}
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover object-center scale-105 brightness-[0.88] transition-all duration-700"
+          />
             {/* Gradient Overlays for smooth blend */}
             <div className="absolute inset-0 bg-gradient-to-t from-[#151923] via-transparent to-black/40" />
             <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-r from-transparent to-[#151923]" />
@@ -693,8 +781,54 @@ export function AuthModal() {
             </button>
           </div>
         </div>
-
       </div>
+  );
+
+  if (isPage) {
+    return (
+      <div className="min-h-screen w-full bg-[#0a0c14] flex items-center justify-center p-3 sm:p-6 relative overflow-hidden">
+        {/* Background Movie Posters Collage Grid */}
+        <CinematicAuthBackground />
+
+        {/* Ambient Dark Overlay */}
+        <div className="fixed inset-0 bg-[#0a0c14]/85 backdrop-blur-[3px] pointer-events-none z-0" />
+
+        {/* Mobile Brand Link when left column is hidden */}
+        <div className="md:hidden absolute top-4 left-4 z-20">
+          <Link href="/" className="inline-flex items-center gap-2 select-none group">
+            <NextImage
+              src="/cinephim-logo.png"
+              alt="NetPhim Logo"
+              width={26}
+              height={26}
+              className="h-6.5 w-6.5 object-contain transition-transform group-hover:scale-105"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = "/logo.png";
+              }}
+            />
+            <span className="text-lg font-black tracking-tight text-white flex items-center font-sans">
+              Net<span className="text-violet-400">Phim</span>
+            </span>
+          </Link>
+        </div>
+
+        {cardContent}
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
+      {/* Background Movie Posters Collage Grid */}
+      <CinematicAuthBackground />
+
+      {/* Dark Backdrop Overlay */}
+      <div
+        onClick={closeModal}
+        className="fixed inset-0 bg-black/75 backdrop-blur-[4px] cursor-pointer z-0"
+      />
+
+      {cardContent}
     </div>
   );
 }

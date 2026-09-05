@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Bookmark, History, Home, LayoutGrid, User } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { useAuthModalStore } from "@/store/authModalStore";
 import { cn } from "@/lib/utils";
 import { cardFont } from "@/lib/fonts";
 
@@ -161,19 +162,16 @@ export function MobileBottomNav() {
             </span>
           </Link>
         ) : (
-          <Link
-            href="/login"
-            className={cn(
-              "flex h-full min-w-0 flex-col items-center justify-center rounded-[1.1rem] py-1 text-[10.5px] font-semibold text-neutral-300 transition-[color,background-color,transform] hover:text-white active:scale-[0.96]",
-              (pathname === "/login" || pathname === "/register") &&
-                "bg-white/[0.12] text-white font-extrabold",
-            )}
+          <button
+            type="button"
+            onClick={() => useAuthModalStore.getState().openModal("login")}
+            className="flex h-full min-w-0 flex-col items-center justify-center rounded-[1.1rem] py-1 text-[10.5px] font-semibold text-neutral-300 transition-[color,background-color,transform] hover:text-white active:scale-[0.96] cursor-pointer"
           >
             <User size={19} />
             <span className="mt-1 max-w-full truncate px-0.5 tracking-tight">
               Đăng nhập
             </span>
-          </Link>
+          </button>
         )}
       </div>
     </nav>

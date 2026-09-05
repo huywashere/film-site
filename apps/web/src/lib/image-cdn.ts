@@ -98,7 +98,8 @@ export function localImageProxyUrl(
 /**
  * Direct CDN -> wsrv provider fallback -> same-origin fallback. TMDB already
  * serves correctly-sized edge images, so it skips wsrv and avoids a double CDN
- * hop. Duplicate and already-proxied sources are normalized automatically.
+ * hop unless includeWsrvForTmdb or preferEdge is set.
+ * Duplicate and already-proxied sources are normalized automatically.
  */
 export function buildArtworkCandidates(
   sources: Array<string | null | undefined>,

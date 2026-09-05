@@ -16,6 +16,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { useAuthModalStore } from "@/store/authModalStore";
 import { reviewsApi, watchHistoryApi, watchlistApi } from "@/lib/api";
 import { FilmCard, resolveImageUrl } from "@/components/film/FilmCard";
 import { Pagination } from "@/components/film/Pagination";
@@ -78,12 +79,13 @@ export default function LibraryPage() {
           <p className="mt-2 text-neutral-400">
             Lưu phim, tiếp tục xem và quản lý các đánh giá của bạn.
           </p>
-          <Link
-            href="/login"
-            className="mt-6 rounded-full bg-blue-500 px-8 py-3 font-semibold text-white transition-colors hover:bg-blue-600"
+          <button
+            type="button"
+            onClick={() => useAuthModalStore.getState().openModal("login")}
+            className="mt-6 rounded-full bg-violet-600 hover:bg-violet-500 px-8 py-3 font-semibold text-white transition-colors cursor-pointer shadow-lg shadow-violet-600/25"
           >
             Đăng nhập ngay
-          </Link>
+          </button>
         </div>
       </div>
     );

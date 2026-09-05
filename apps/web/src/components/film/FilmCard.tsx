@@ -25,6 +25,12 @@ export interface FilmItem {
   rating?: number;
   vote_average?: number;
   imdb_rating?: number;
+  imdb?: {
+    id?: string | null;
+    vote_average?: number;
+    vote_count?: number;
+    rating?: number;
+  };
   tmdb?: {
     type?: string;
     id?: string;
@@ -71,6 +77,9 @@ function FilmCardComponent({
   const rawLang = (film.lang || '').toLowerCase();
   const hasVoiceOver = /thuyết minh|thuyet minh|t\.minh|\btm\b/.test(rawLang);
   const hasDub = /lồng tiếng|long tieng|l\.tiếng|\blt\b/.test(rawLang);
+  const hasExplicitVietsub = /vietsub|phụ đề|phu de|\bpd\b/.test(rawLang);
+  // Default to Vietsub if neither voiceover nor dub is exclusive, or if explicitly noted
+  const hasVietsub = hasExplicitVietsub || (!hasVoiceOver && !hasDub);
 
   // Extract top-right quality badge (FHD / 4K / HD / CAM)
   const qualityBadge = (() => {
@@ -91,23 +100,48 @@ function FilmCardComponent({
   })();
 
   const ratingMeta = (() => {
-    const rawRating =
-      film.imdb_rating ||
-      film.vote_average ||
-      film.tmdb?.vote_average ||
-      film.tmdb?.rating ||
-      film.rating;
-    if (rawRating && Number(rawRating) > 0) {
+    // 1. Prioritize direct IMDb rating
+    const rawImdb =
+      film.imdb?.vote_average ??
+      film.imdb?.rating ??
+      film.imdb_rating;
+    const imdbNum =
+      typeof rawImdb === 'number'
+        ? rawImdb
+        : parseFloat(String(rawImdb || ''));
+    if (!isNaN(imdbNum) && imdbNum > 0) {
       return {
         label: 'IMDb',
-        value: Number(rawRating).toFixed(1),
+        value: imdbNum.toFixed(1),
       };
     }
+
+    // 2. Secondary TMDB / general vote_average
+    const rawGeneral =
+      film.tmdb?.vote_average ??
+      film.tmdb?.rating ??
+      film.vote_average ??
+      film.rating;
+    const generalNum =
+      typeof rawGeneral === 'number'
+        ? rawGeneral
+        : parseFloat(String(rawGeneral || ''));
+    if (!isNaN(generalNum) && generalNum > 0) {
+      return {
+        label: 'IMDb',
+        value: generalNum.toFixed(1),
+      };
+    }
+
     return null;
   })();
 
   const episodeNumber = (() => {
     const raw = film.episode_current || '';
+    // Completed series or movies don't need ongoing episode counter
+    if (/hoàn tất|hoan tat|full/i.test(raw)) {
+      return '';
+    }
     const fraction = raw.match(/(?:\(|\b)(\d+)\s*\/\s*\d+/);
     if (fraction?.[1]) return fraction[1];
     const explicit = raw.match(/(?:tập|tap|episode|ep)\s*[-.:]?\s*(\d+)/i);
@@ -115,12 +149,69 @@ function FilmCardComponent({
     return /^\d+$/.test(raw.trim()) ? raw.trim() : '';
   })();
 
-  const subtitleBadge = `P.Đ${episodeNumber ? ` ${episodeNumber}` : ''}`;
+  // Subtitle badge text (e.g. "VS 12" or "Vietsub")
+  const subtitleBadge = episodeNumber ? `VS ${episodeNumber}` : 'Vietsub';
+
+  // Voice/Dub badge info (always abbreviated to ensure enough space)
   const voiceBadge = hasVoiceOver
-    ? `T.M${episodeNumber ? ` ${episodeNumber}` : ''}`
+    ? { label: 'T.Minh', type: 'voice' as const }
     : hasDub
-      ? `L.T${episodeNumber ? ` ${episodeNumber}` : ''}`
+      ? { label: 'L.Tiếng', type: 'dub' as const }
       : null;
+
+  // ── Dynamic & Flexible Badge Placement ──
+  // If no IMDb rating is available, shift the subtitle or voice badge UP to top-left
+  // so the card never has an awkward blank top-left space!
+  const hasRating = Boolean(ratingMeta);
+
+  const topLeftBadge = hasRating
+    ? { type: 'imdb' as const, label: ratingMeta!.label, value: ratingMeta!.value }
+    : hasVietsub
+      ? { type: 'sub' as const, text: subtitleBadge }
+      : voiceBadge
+        ? {
+            type: 'voice' as const,
+            text: `${voiceBadge.label}${episodeNumber ? ` ${episodeNumber}` : ''}`,
+            voiceType: voiceBadge.type,
+          }
+        : null;
+
+  const bottomLeftBadge = (() => {
+    if (hasRating) {
+      if (hasVietsub) {
+        return { type: 'sub' as const, text: subtitleBadge };
+      }
+      if (voiceBadge) {
+        return {
+          type: 'voice' as const,
+          text: `${voiceBadge.label}${episodeNumber ? ` ${episodeNumber}` : ''}`,
+          voiceType: voiceBadge.type,
+        };
+      }
+      return null;
+    }
+    // If subtitle shifted UP to top-left, then voiceBadge (if present) takes bottom-left
+    if (hasVietsub && voiceBadge) {
+      return {
+        type: 'voice' as const,
+        text: voiceBadge.label,
+        voiceType: voiceBadge.type,
+      };
+    }
+    return null;
+  })();
+
+  const bottomRightBadge = (() => {
+    // Only used when rating is at top-left AND both subtitle and voiceBadge exist
+    if (hasRating && hasVietsub && voiceBadge) {
+      return {
+        type: 'voice' as const,
+        text: voiceBadge.label,
+        voiceType: voiceBadge.type,
+      };
+    }
+    return null;
+  })();
 
   return (
     <div
@@ -150,44 +241,74 @@ function FilmCardComponent({
               className="absolute inset-0 h-full w-full transition-transform duration-700 ease-out motion-safe:group-hover/card:scale-[1.035]"
             />
 
-            <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-12 bg-gradient-to-b from-black/55 to-transparent" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-14 bg-gradient-to-b from-black/65 via-black/20 to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
             <div className="pointer-events-none absolute inset-0 z-[11] bg-black/0 transition-colors duration-300 group-hover/card:bg-black/15" />
 
-            {/* ── Top-left: IMDb score ── */}
-            {ratingMeta && (
+            {/* ── Top-left: IMDb score OR flexibly shifted Subtitle/Voice badge (sát mép trên) ── */}
+            {topLeftBadge && (
               <div className="pointer-events-none absolute left-0 top-0 z-20">
-                <span className="inline-flex items-center gap-[3px] rounded-[3px] bg-[#f5c518] px-1.5 py-[3px] text-[8px] font-black leading-none text-black sm:text-[9px]">
-                  <span>IMDb</span>
-                  <span>{ratingMeta.value}</span>
-                </span>
+                {topLeftBadge.type === 'imdb' ? (
+                  <span className="inline-flex items-center gap-1 rounded-br-[4px] bg-[#f5c518] px-1.5 py-[2.5px] text-[8px] font-black leading-none text-black shadow-md sm:px-2 sm:py-[3px] sm:text-[9.5px]">
+                    <span>IMDb</span>
+                    <span>{topLeftBadge.value}</span>
+                  </span>
+                ) : topLeftBadge.type === 'sub' ? (
+                  <span className="inline-flex items-center rounded-br-[4px] bg-[#2563eb] px-1.5 py-[2.5px] text-[8px] font-black leading-none text-white shadow-md sm:px-2 sm:py-[3px] sm:text-[9px]">
+                    {topLeftBadge.text}
+                  </span>
+                ) : (
+                  <span
+                    className={cn(
+                      'inline-flex items-center rounded-br-[4px] px-1.5 py-[2.5px] text-[8px] font-black leading-none text-white shadow-md sm:px-2 sm:py-[3px] sm:text-[9px]',
+                      topLeftBadge.voiceType === 'dub' ? 'bg-[#9333ea]' : 'bg-[#16a34a]',
+                    )}
+                  >
+                    {topLeftBadge.text}
+                  </span>
+                )}
               </div>
             )}
 
-            {/* ── Top-right: Quality (FHD / HD / 4K) ── */}
+            {/* ── Top-right: Quality (FHD / HD / 4K - sát mép trên) ── */}
             {qualityBadge && (
               <div className="pointer-events-none absolute right-0 top-0 z-20">
-                <span className="rounded-[3px] bg-black/75 px-1.5 py-[3px] text-[8px] font-extrabold leading-none tracking-wider text-white sm:text-[9px]">
+                <span className="inline-flex items-center rounded-bl-[4px] border-b border-l border-white/15 bg-black/80 px-1.5 py-[2.5px] text-[8px] font-extrabold uppercase leading-none tracking-wider text-white shadow-md backdrop-blur-md sm:px-2 sm:py-[3px] sm:text-[9px]">
                   {qualityBadge}
                 </span>
               </div>
             )}
 
-            {/* ── Bottom-left: Subtitle badge (P.Đ) ── */}
-            <div className="pointer-events-none absolute bottom-0 left-0 z-20">
-              <span className="rounded-[3px] bg-[#2563eb] px-1.5 py-[3px] text-[8px] font-black leading-none text-white sm:text-[9px]">
-                {subtitleBadge}
-              </span>
-            </div>
+            {/* ── Bottom-left: Subtitle or Audio badge if not already at top ── */}
+            {bottomLeftBadge && (
+              <div className="pointer-events-none absolute bottom-1.5 left-1.5 z-20 sm:bottom-2 sm:left-2">
+                <span
+                  className={cn(
+                    'inline-flex items-center rounded-[4px] border px-1.5 py-[2px] text-[8px] font-black leading-none text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] backdrop-blur-md sm:px-2 sm:py-[2.5px] sm:text-[9px]',
+                    bottomLeftBadge.type === 'sub'
+                      ? 'border-blue-400/30 bg-[#2563eb]/90'
+                      : bottomLeftBadge.voiceType === 'dub'
+                        ? 'border-purple-400/30 bg-[#9333ea]/90'
+                        : 'border-emerald-400/30 bg-[#16a34a]/90',
+                  )}
+                >
+                  {bottomLeftBadge.text}
+                </span>
+              </div>
+            )}
 
-            {/* ── Bottom-right: Dub / Voiceover badge (L.T / T.M) ── */}
-            {voiceBadge && (
-              <div className="pointer-events-none absolute bottom-0 right-0 z-20">
-                <span className={cn(
-                  'rounded-[3px] px-1.5 py-[3px] text-[8px] font-black leading-none text-white sm:text-[9px]',
-                  hasDub ? 'bg-[#9333ea]' : 'bg-[#16a34a]',
-                )}>
-                  {voiceBadge}
+            {/* ── Bottom-right: Dub / Voiceover badge if has both Subtitle and Voiceover with IMDb at top ── */}
+            {bottomRightBadge && (
+              <div className="pointer-events-none absolute bottom-1.5 right-1.5 z-20 sm:bottom-2 sm:right-2">
+                <span
+                  className={cn(
+                    'inline-flex items-center rounded-[4px] border px-1.5 py-[2px] text-[8px] font-black leading-none text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] backdrop-blur-md sm:px-2 sm:py-[2.5px] sm:text-[9px]',
+                    bottomRightBadge.voiceType === 'dub'
+                      ? 'border-purple-400/30 bg-[#9333ea]/90'
+                      : 'border-emerald-400/30 bg-[#16a34a]/90',
+                  )}
+                >
+                  {bottomRightBadge.text}
                 </span>
               </div>
             )}

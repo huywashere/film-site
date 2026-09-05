@@ -254,8 +254,7 @@ function ResilientGenreHeroBackdrop({
       key={`${item.slug}-backdrop-${candidateIdx}`}
       src={currentSrc}
       alt={item.name}
-      referrerPolicy="strict-origin-when-cross-origin"
-      crossOrigin="anonymous"
+      referrerPolicy="no-referrer"
       loading="eager"
       decoding="async"
       fetchPriority="high"
@@ -310,8 +309,7 @@ function ResilientGenreHeroLogo({
         alt={item.name}
         loading="eager"
         decoding="async"
-        referrerPolicy="strict-origin-when-cross-origin"
-        crossOrigin="anonymous"
+        referrerPolicy="no-referrer"
         onError={() => {
           if (candidateIdx < candidates.length - 1) {
             setCandidateIdx((prev) => prev + 1);
@@ -355,8 +353,7 @@ function GenreCuratedHeroBanner({
         const cands = buildAsianHeroImageCandidates(nextItem.heroBackdrop);
         if (cands[0]) {
           const img = new Image();
-          img.referrerPolicy = "strict-origin-when-cross-origin";
-          img.crossOrigin = "anonymous";
+          img.referrerPolicy = "no-referrer";
           img.src = cands[0];
         }
       }
@@ -364,8 +361,7 @@ function GenreCuratedHeroBanner({
         const logoCands = buildAsianHeroImageCandidates(nextItem.titleLogo);
         if (logoCands[0]) {
           const logo = new Image();
-          logo.referrerPolicy = "strict-origin-when-cross-origin";
-          logo.crossOrigin = "anonymous";
+          logo.referrerPolicy = "no-referrer";
           logo.src = logoCands[0];
         }
       }

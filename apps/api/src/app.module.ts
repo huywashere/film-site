@@ -23,6 +23,8 @@ import { TelemetryModule } from "./telemetry/telemetry.module";
 import { ReportsModule } from "./reports/reports.module";
 import { SiteConfigModule } from "./site-config/site-config.module";
 import { AdsModule } from "./ads/ads.module";
+import { SystemNotificationsModule } from "./system-notifications/system-notifications.module";
+import { RecommendationsModule } from "./recommendations/recommendations.module";
 import { IpBlacklistGuard } from "./common/guards/ip-blacklist.guard";
 
 @Module({
@@ -71,6 +73,8 @@ import { IpBlacklistGuard } from "./common/guards/ip-blacklist.guard";
     ReportsModule,
     SiteConfigModule,
     AdsModule,
+    SystemNotificationsModule,
+    RecommendationsModule,
     StorageModule,
   ],
   providers: [

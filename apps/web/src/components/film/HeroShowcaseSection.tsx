@@ -117,7 +117,7 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
       <div className="mb-4 flex items-start justify-between gap-2 px-1 sm:items-end">
         <div className="min-w-0 flex-1">
           <h2
-            className={`${cardFont.className} bg-gradient-to-r from-violet-400 via-purple-400 to-fuchsia-300 bg-clip-text text-xl font-extrabold tracking-[-0.025em] text-transparent sm:text-2xl`}
+            className={`${cardFont.className} text-xl font-extrabold tracking-[-0.025em] text-white sm:text-2xl`}
           >
             {title}
           </h2>

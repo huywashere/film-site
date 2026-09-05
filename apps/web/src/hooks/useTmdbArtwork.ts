@@ -14,7 +14,7 @@ function normalizeTitle(value?: string): string {
     .toLowerCase();
 }
 
-const ARTWORK_CACHE_PREFIX = 'netphim:tmdb-artwork:v2:';
+const ARTWORK_CACHE_PREFIX = 'netphim:tmdb-artwork:v3:';
 const ARTWORK_CACHE_TTL = 1000 * 60 * 60 * 24 * 7;
 
 function readArtworkCache(identity: string): TmdbMovie | undefined {

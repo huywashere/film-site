@@ -12,6 +12,8 @@ import {
   type TmdbVideo,
   type TmdbImage,
   getYoutubeTrailer,
+  sortTmdbImages,
+  isNonChineseTmdbImage,
 } from "@/lib/tmdb";
 
 interface UseTmdbOptions {
@@ -215,18 +217,16 @@ export function useTmdb({
     (c) => c.job === "Director" || c.job === "Series Director",
   );
 
-  // Best backdrop (sort by vote_average)
-  const backdrops = [...(images?.backdrops || [])].sort(
-    (a, b) => b.vote_average - a.vote_average,
-  );
-  const posters = [...(images?.posters || [])].sort(
-    (a, b) => b.vote_average - a.vote_average,
-  );
-  const logos = images?.logos || [];
+  // Best backdrop & poster (Loại bỏ tiếng Trung và ưu tiên tiếng Việt / tiếng Anh / textless)
+  const backdrops = sortTmdbImages(images?.backdrops || []);
+  const posters = sortTmdbImages(images?.posters || []);
+  const logos = (images?.logos || []).filter(isNonChineseTmdbImage);
 
   const bestBackdrop =
     backdrops[0] ||
-    initialTmdb?.bestBackdrop ||
+    (initialTmdb?.bestBackdrop && isNonChineseTmdbImage(initialTmdb.bestBackdrop)
+      ? initialTmdb.bestBackdrop
+      : null) ||
     (searchResult?.backdrop_path
       ? {
           file_path: searchResult.backdrop_path,
@@ -239,7 +239,9 @@ export function useTmdb({
 
   const bestPoster =
     posters[0] ||
-    initialTmdb?.bestPoster ||
+    (initialTmdb?.bestPoster && isNonChineseTmdbImage(initialTmdb.bestPoster)
+      ? initialTmdb.bestPoster
+      : null) ||
     (searchResult?.poster_path
       ? {
           file_path: searchResult.poster_path,

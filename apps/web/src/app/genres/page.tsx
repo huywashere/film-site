@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { cardFont } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import { buildAsianHeroImageCandidates } from "@/lib/curated-asian-hero";
-import { movieApi } from "@/lib/api";
+import { movieApi, recommendationApi } from "@/lib/api";
 import { FilmItem } from "@/components/film/FilmCard";
 
 const Top10RankedRow = dynamic(
@@ -244,13 +244,13 @@ function ResilientHubCardImage({
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
+      key={currentSrc}
       src={currentSrc}
       alt={alt}
       loading="eager"
       decoding="async"
       fetchPriority="high"
-      referrerPolicy="strict-origin-when-cross-origin"
-      crossOrigin="anonymous"
+      referrerPolicy="no-referrer"
       onError={() => {
         if (candidateIdx < candidates.length - 1) {
           setCandidateIdx((prev) => prev + 1);
@@ -268,8 +268,16 @@ export default function GenresPage() {
     staleTime: 1000 * 60 * 10,
   });
 
+  const { data: aiTop10Data } = useQuery({
+    queryKey: ["ai-top10-recommendations"],
+    queryFn: () => recommendationApi.getTop10(),
+    staleTime: 1000 * 60 * 5,
+  });
+
   const top10Films = useMemo(() => {
-    const rawList: FilmItem[] = homeFeedData?.top10 || [];
+    const aiList: FilmItem[] = (aiTop10Data?.items as FilmItem[]) || [];
+    const rawList: FilmItem[] =
+      aiList.length > 0 ? aiList : (homeFeedData?.top10 || []);
     const pool = rawList.length > 0 ? rawList : DEFAULT_TOP10_FALLBACK;
     const combined: FilmItem[] = [];
     const seen = new Set<string>();
@@ -293,7 +301,7 @@ export default function GenresPage() {
     }
 
     return combined.slice(0, 10);
-  }, [homeFeedData?.top10]);
+  }, [aiTop10Data?.items, homeFeedData?.top10]);
 
   return (
     <main
@@ -320,8 +328,8 @@ export default function GenresPage() {
           </p>
         </div>
 
-        {/* ── TOP 10 Đang Được Xem Nhiều (Chỉ hiển thị trên Desktop, ẩn trên điện thoại) ── */}
-        <section aria-label="TOP 10 Đang Được Xem Nhiều" className="pt-1 hidden md:block">
+        {/* ── TOP 10 Đang Được Xem Nhiều (Hiển thị cả Desktop và Điện thoại) ── */}
+        <section aria-label="TOP 10 Đang Được Xem Nhiều" className="pt-1">
           <Top10RankedRow
             films={top10Films}
             showCrown={false}

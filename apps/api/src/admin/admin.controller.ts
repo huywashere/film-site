@@ -39,6 +39,11 @@ import { RequireAdminPermissions } from "./admin-permissions";
 import { AdminSecurityService } from "./admin-security.service";
 import { AdminSyncSchedulerService } from "./admin-sync-scheduler.service";
 import { AdsService } from "../ads/ads.service";
+import { SystemNotificationsService } from "../system-notifications/system-notifications.service";
+import {
+  CreateSystemNotificationDto,
+  UpdateSystemNotificationDto,
+} from "../system-notifications/system-notifications.dto";
 
 function paginationValue(
   value: string | undefined,
@@ -60,6 +65,7 @@ export class AdminController {
     private readonly securityService: AdminSecurityService,
     private readonly syncScheduler: AdminSyncSchedulerService,
     private readonly adsService: AdsService,
+    private readonly systemNotificationsService: SystemNotificationsService,
   ) {}
 
   // ── 1. Overview Dashboard ─────────────────────────────────────────
@@ -633,5 +639,49 @@ export class AdminController {
   @RequireAdminPermissions("cms.manage")
   deleteAdItem(@Param("id") id: string) {
     return this.adsService.deleteAd(id);
+  }
+
+  // ── 12. System Notifications Management ──────────────────────────────
+  @Get("system-notifications")
+  @RequireAdminPermissions("cms.manage")
+  getSystemNotifications(
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
+    @Query("search") search?: string,
+    @Query("tag") tag?: string,
+  ) {
+    return this.systemNotificationsService.getAllAdmin({
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      search,
+      tag,
+    });
+  }
+
+  @Post("system-notifications")
+  @RequireAdminPermissions("cms.manage")
+  createSystemNotification(@Body() body: CreateSystemNotificationDto) {
+    return this.systemNotificationsService.create(body);
+  }
+
+  @Patch("system-notifications/:id")
+  @RequireAdminPermissions("cms.manage")
+  updateSystemNotification(
+    @Param("id") id: string,
+    @Body() body: UpdateSystemNotificationDto,
+  ) {
+    return this.systemNotificationsService.update(id, body);
+  }
+
+  @Post("system-notifications/:id/toggle")
+  @RequireAdminPermissions("cms.manage")
+  toggleSystemNotification(@Param("id") id: string) {
+    return this.systemNotificationsService.toggle(id);
+  }
+
+  @Delete("system-notifications/:id")
+  @RequireAdminPermissions("cms.manage")
+  deleteSystemNotification(@Param("id") id: string) {
+    return this.systemNotificationsService.delete(id);
   }
 }

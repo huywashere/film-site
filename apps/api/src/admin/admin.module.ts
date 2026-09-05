@@ -14,6 +14,7 @@ import { AdminOperationsService } from "./admin-operations.service";
 
 import { MoviesModule } from "../movies/movies.module";
 import { AdsModule } from "../ads/ads.module";
+import { SystemNotificationsModule } from "../system-notifications/system-notifications.module";
 import { AdminSecurityService } from "./admin-security.service";
 import { AdminSyncSchedulerService } from "./admin-sync-scheduler.service";
 
@@ -25,6 +26,7 @@ import { AdminSyncSchedulerService } from "./admin-sync-scheduler.service";
     SiteConfigModule,
     MoviesModule,
     AdsModule,
+    SystemNotificationsModule,
   ],
   controllers: [AdminController, AdminAuthController],
   providers: [

@@ -165,10 +165,12 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
   // Calculate rating (Bottom Right): IMDb / TMDB score
   const displayRating = (() => {
     const rawRating =
+      film.imdb?.vote_average ||
+      film.imdb?.rating ||
       film.imdb_rating ||
-      film.vote_average ||
       film.tmdb?.vote_average ||
       film.tmdb?.rating ||
+      film.vote_average ||
       film.rating;
     if (rawRating && Number(rawRating) > 0) {
       return Number(rawRating).toFixed(1);
@@ -371,7 +373,7 @@ export function Top10RankedRow({
   if (top10.length === 0) return null;
 
   return (
-    <section className={cn("hidden md:block mb-10 relative group/section", className)}>
+    <section className={cn("mb-10 relative group/section", className)}>
       <div className="flex items-center justify-between mb-4">
         <h2
           className={`${cardFont.className} text-lg md:text-xl font-extrabold text-white flex items-center gap-2`}

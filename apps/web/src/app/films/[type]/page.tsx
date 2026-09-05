@@ -210,8 +210,7 @@ function ResilientAnimeHeroBackdrop({
         key={`${item.slug}-mobile-${mobileIdx}`}
         src={mobileSrc}
         alt={item.name}
-        referrerPolicy="strict-origin-when-cross-origin"
-        crossOrigin="anonymous"
+        referrerPolicy="no-referrer"
         loading="eager"
         decoding="async"
         fetchPriority={isActive ? "high" : "auto"}
@@ -229,8 +228,7 @@ function ResilientAnimeHeroBackdrop({
         key={`${item.slug}-desktop-${desktopIdx}`}
         src={desktopSrc}
         alt={item.name}
-        referrerPolicy="strict-origin-when-cross-origin"
-        crossOrigin="anonymous"
+        referrerPolicy="no-referrer"
         loading="eager"
         decoding="async"
         fetchPriority={isActive ? "high" : "auto"}
@@ -281,8 +279,7 @@ function ResilientAnimeHeroLogo({
         alt={item.name}
         loading="eager"
         decoding="async"
-        referrerPolicy="strict-origin-when-cross-origin"
-        crossOrigin="anonymous"
+        referrerPolicy="no-referrer"
         onError={() => {
           if (candidateIdx < logoCandidates.length - 1) {
             setCandidateIdx((prev) => prev + 1);
@@ -315,8 +312,7 @@ function AnimeCuratedHeroBanner({
           const cands = buildAsianHeroImageCandidates(item.logoUrl);
           if (cands[0]) {
             const img = new Image();
-            img.referrerPolicy = "strict-origin-when-cross-origin";
-            img.crossOrigin = "anonymous";
+            img.referrerPolicy = "no-referrer";
             img.src = cands[0];
           }
         }
@@ -324,8 +320,7 @@ function AnimeCuratedHeroBanner({
           const cands = buildAsianHeroImageCandidates(item.thumb_url);
           if (cands[0]) {
             const img = new Image();
-            img.referrerPolicy = "strict-origin-when-cross-origin";
-            img.crossOrigin = "anonymous";
+            img.referrerPolicy = "no-referrer";
             img.src = cands[0];
           }
         }

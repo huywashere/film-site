@@ -180,6 +180,34 @@ export interface TmdbImages {
   logos: TmdbImage[];
 }
 
+export function isNonChineseTmdbImage(
+  img: TmdbImage | null | undefined,
+): boolean {
+  if (!img) return false;
+  const lang = (img.iso_639_1 || "").toLowerCase().trim();
+  return !lang.startsWith("zh") && lang !== "cn";
+}
+
+export function sortTmdbImages(images: TmdbImage[] = []): TmdbImage[] {
+  return [...images]
+    .filter(isNonChineseTmdbImage)
+    .sort((a, b) => {
+      const getLangScore = (lang?: string | null) => {
+        const l = (lang || "").toLowerCase().trim();
+        if (l === "vi") return 100; // Vietnamese highest
+        if (l === "en") return 80;  // English
+        if (!l) return 70;          // Clean textless poster
+        if (l === "ja") return 40;  // Japanese
+        if (l === "ko") return 40;  // Korean
+        return 10;
+      };
+
+      const langDiff = getLangScore(b.iso_639_1) - getLangScore(a.iso_639_1);
+      if (langDiff !== 0) return langDiff;
+      return (b.vote_average || 0) - (a.vote_average || 0);
+    });
+}
+
 export interface TmdbVideo {
   id: string;
   key: string;
@@ -241,12 +269,12 @@ export const tmdbApi = {
   // ── Hình ảnh ──
   getMovieImages: (tmdbId: number) =>
     fetchTmdb<TmdbImages>(`movie/${tmdbId}/images`, {
-      include_image_language: "vi,en,zh,ko,ja,null",
+      include_image_language: "vi,en,null,ja,ko",
     }),
 
   getTvImages: (tmdbId: number) =>
     fetchTmdb<TmdbImages>(`tv/${tmdbId}/images`, {
-      include_image_language: "vi,en,zh,ko,ja,null",
+      include_image_language: "vi,en,null,ja,ko",
     }),
 
   // ── TV Season & Episode Details & Stills ──
@@ -271,7 +299,7 @@ export const tmdbApi = {
 
   getTvSeasonImages: (tvId: number, seasonNumber = 1) =>
     fetchTmdb<TmdbImages>(`tv/${tvId}/season/${seasonNumber}/images`, {
-      include_image_language: "vi,en,zh,ko,ja,null",
+      include_image_language: "vi,en,null,ja,ko",
     }),
 
   getImages: (type: "movie" | "tv", tmdbId: number | string) =>
@@ -289,21 +317,20 @@ export const tmdbApi = {
   // ── Trailer / Video ──
   getMovieVideos: (tmdbId: number) =>
     fetchTmdb<{ results: TmdbVideo[] }>(`movie/${tmdbId}/videos`, {
-      include_video_language: "vi,en,zh,ko,null",
+      include_video_language: "vi,en,null,ko,ja",
     }),
 
   getTvVideos: (tmdbId: number) =>
     fetchTmdb<{ results: TmdbVideo[] }>(`tv/${tmdbId}/videos`, {
-      include_video_language: "vi,en,zh,ko,null",
+      include_video_language: "vi,en,null,ko,ja",
     }),
 
-  // One round trip for interaction-critical country heroes. Chinese/Korean
-  // videos are frequently tagged zh/ko or have no language tag at all.
+  // One round trip for interaction-critical country heroes.
   getHeroAssets: (tmdbId: number, type: "movie" | "tv") =>
     fetchTmdb<TmdbHeroAssets>(`${type}/${tmdbId}`, {
       append_to_response: "images,videos",
-      include_image_language: "vi,en,zh,ko,null",
-      include_video_language: "vi,en,zh,ko,null",
+      include_image_language: "vi,en,null,ko,ja",
+      include_video_language: "vi,en,null,ko,ja",
     }),
 
   // ── Diễn viên chi tiết ──

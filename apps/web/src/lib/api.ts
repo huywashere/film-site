@@ -1868,3 +1868,41 @@ export const watchHistoryApi = {
   clearAll: () =>
     api.put("/users/me/watch-history/clear", {}).catch(() => ({ data: null })),
 };
+
+export type PublicSystemNotification = {
+  id: string;
+  title: string;
+  message: string;
+  tag?: string | null;
+  link?: string | null;
+  priority?: number;
+  createdAt: string;
+};
+
+export const systemNotificationApi = {
+  getBroadcasts: () =>
+    api
+      .get<PublicSystemNotification[]>("/system-notifications")
+      .then((res) => res.data)
+      .catch(() => [] as PublicSystemNotification[]),
+};
+
+export const recommendationApi = {
+  getTop10: (userId?: string) =>
+    api
+      .get<{ items: any[]; source: string }>(
+        `/recommendations/top10${userId ? `?userId=${encodeURIComponent(userId)}` : ""}`,
+      )
+      .then((res) => res.data)
+      .catch(() => ({ items: [] as any[], source: "error" })),
+
+  getSimilar: (slug: string, limit = 12) =>
+    api
+      .get<{ items: any[]; source: string }>(
+        `/recommendations/similar/${encodeURIComponent(slug)}?limit=${limit}`,
+      )
+      .then((res) => res.data)
+      .catch(() => ({ items: [] as any[], source: "error" })),
+};
+
+

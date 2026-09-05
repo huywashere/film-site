@@ -68,12 +68,13 @@ function ratingSignals(film: CatalogFilm) {
   const rating = Math.min(
     10,
     numberValue(
+      imdb.vote_average,
+      imdb.rating,
+      film.imdb_rating,
       tmdb.vote_average,
       tmdb.rating,
       film.vote_average,
-      film.imdb_rating,
       film.rating,
-      imdb.rating,
     ),
   );
   const votes = numberValue(

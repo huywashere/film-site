@@ -32,7 +32,7 @@ import { useAuthModalStore } from "@/store/authModalStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useTranslation } from "@/store/langStore";
 import { useThemeStore } from "@/store/themeStore";
-import { movieApi } from "@/lib/api";
+import { movieApi, systemNotificationApi } from "@/lib/api";
 import { resolveImageUrl } from "@/components/film/FilmCard";
 import { cn } from "@/lib/utils";
 import { cardFont } from "@/lib/fonts";
@@ -229,7 +229,6 @@ export function CountryFlagImage({
       width={20}
       height={14}
       referrerPolicy="no-referrer"
-      crossOrigin="anonymous"
       className={cn(
         "w-5 h-3.5 object-cover rounded-[3px] border border-white/20 shrink-0 shadow-sm",
         className,
@@ -487,6 +486,14 @@ export function Navbar() {
     refetchOnWindowFocus: false,
   });
 
+  const { data: dynamicSystemNotifs } = useQuery({
+    queryKey: ["navbar-system-notifications"],
+    queryFn: () => systemNotificationApi.getBroadcasts(),
+    staleTime: 1000 * 60 * 3,
+    enabled: notificationsOpen,
+    refetchOnWindowFocus: false,
+  });
+
   useEffect(() => {
     const syncStoredReadState = () => {
       const stored = readNotificationReadState(window.localStorage);
@@ -542,6 +549,34 @@ export function Navbar() {
     }
   }, [latestNotificationRes]);
 
+  useEffect(() => {
+    if (dynamicSystemNotifs && dynamicSystemNotifs.length > 0) {
+      const readSysIds = new Set(
+        readNotificationReadState(window.localStorage).system,
+      );
+      const items = dynamicSystemNotifs.map((item) => {
+        let timeLabel = "Hôm nay";
+        if (item.createdAt) {
+          const diffMs = Date.now() - new Date(item.createdAt).getTime();
+          const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+          if (diffHours < 1) timeLabel = "Vừa xong";
+          else if (diffHours < 24) timeLabel = `${diffHours} giờ trước`;
+          else timeLabel = `${Math.floor(diffHours / 24)} ngày trước`;
+        }
+        return {
+          id: item.id,
+          title: item.title,
+          message: item.message,
+          time: timeLabel,
+          tag: item.tag || "Hệ thống",
+          link: item.link || undefined,
+          read: readSysIds.has(String(item.id)),
+        };
+      });
+      setSystemNotifications(items);
+    }
+  }, [dynamicSystemNotifs]);
+
   const { newMovieNotifications, commentNotifications } = useSettingsStore();
 
   const unreadSystem = systemNotifications.filter((n) => !n.read).length;
@@ -567,13 +602,20 @@ export function Navbar() {
     );
   };
 
-  const markSystemAsRead = (id: string) => {
+  const markSystemAsRead = (id: string, link?: string) => {
     setSystemNotifications((current) =>
       current.map((notification) =>
         notification.id === id ? { ...notification, read: true } : notification,
       ),
     );
     persistNotificationReadIds(window.localStorage, "system", [id]);
+    if (link) {
+      if (link.startsWith("http://") || link.startsWith("https://")) {
+        window.open(link, "_blank", "noopener,noreferrer");
+      } else {
+        router.push(link);
+      }
+    }
   };
 
   const markMovieAsRead = (id: string | number, slug?: string) => {
@@ -840,7 +882,7 @@ export function Navbar() {
                       )}
                     >
                       <span>Phim mới</span>
-                      {movieNotifications.length > 0 && (
+                      {unreadMovies > 0 && (
                         <span
                           className={cn(
                             "text-[10px] px-1.5 py-0.2 rounded-full font-bold",
@@ -849,7 +891,7 @@ export function Navbar() {
                               : "bg-neutral-800 text-neutral-400",
                           )}
                         >
-                          {movieNotifications.length}
+                          {unreadMovies}
                         </span>
                       )}
                     </button>
@@ -869,7 +911,7 @@ export function Navbar() {
                         systemNotifications.map((n) => (
                           <div
                             key={n.id}
-                            onClick={() => markSystemAsRead(n.id)}
+                            onClick={() => markSystemAsRead(n.id, n.link)}
                             className={cn(
                               "p-3 rounded-xl cursor-pointer transition-all border block",
                               n.read
@@ -1139,15 +1181,16 @@ export function Navbar() {
                   </DropdownMenu>
                 </div>
               ) : (
-                /* Desktop Guest Login User Icon Button (Navigates to dedicated /login page) */
-                <Link
-                  href="/login"
+                /* Desktop Guest Login User Icon Button (Opens Unified Auth Modal) */
+                <button
+                  type="button"
+                  onClick={() => openAuthModal("login")}
                   aria-label="Đăng nhập"
                   title="Đăng nhập"
                   className="hidden lg:flex items-center justify-center p-1.5 text-neutral-300 hover:text-white transition-colors cursor-pointer active:scale-95"
                 >
                   <User size={20} className="stroke-[2.2]" />
-                </Link>
+                </button>
               )}
             </div>
 

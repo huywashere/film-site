@@ -57,7 +57,7 @@ import {
   Gauge,
   CheckCircle2,
 } from 'lucide-react';
-import { kkphimApi, movieApi, siteConfigApi, vicdnApi, viewApi, watchHistoryApi } from '@/lib/api';
+import { kkphimApi, movieApi, recommendationApi, siteConfigApi, vicdnApi, viewApi, watchHistoryApi } from '@/lib/api';
 import { canUseUnsandboxedEmbed } from '@/lib/player-source-routing';
 import { extractFilmItems, normalizeText } from '@/lib/movie-normalizer';
 import { resolveImageUrl } from '@/components/film/FilmCard';
@@ -2111,11 +2111,19 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     retry: 1,
   });
 
-  // The recommendation tab is intentionally broader than the genre/TMDB
-  // similarity rail: mix fresh single movies, series and catalogue pages.
+  // Intelligent AI Recommendations powered by Python Engine with resilient multi-tier fallback
   const { data: discoveryData, isLoading: discoveryLoading } = useQuery({
-    queryKey: ['watch-discovery-mix', slug],
+    queryKey: ['watch-ai-recommendations', slug],
     queryFn: async () => {
+      try {
+        const aiRes = await recommendationApi.getSimilar(slug, 12);
+        if (aiRes?.items && aiRes.items.length > 0) {
+          return { items: aiRes.items };
+        }
+      } catch {
+        // Fallback gracefully
+      }
+
       const seed = Array.from(slug || 'netphim').reduce(
         (total, character) => total + character.charCodeAt(0),
         0,
@@ -2137,21 +2145,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         return true;
       });
 
-      // A deterministic shuffle keeps the tab visually varied without
-      // changing order during hydration or on every React render.
-      unique.sort((left, right) => {
-        const score = (value: string) =>
-          Array.from(`${slug}:${value}`).reduce(
-            (total, character) => (total * 31 + character.charCodeAt(0)) % 2147483647,
-            7,
-          );
-        return score(left.slug) - score(right.slug);
-      });
-
       return { items: unique.slice(0, 12) };
     },
     enabled: (watchContentTab === 'recommendations' || (recommendationsReady && tabsPrefetchReady)) && !!slug,
-    staleTime: 1000 * 60 * 30,
+    staleTime: 1000 * 60 * 15,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: 1,

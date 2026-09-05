@@ -146,6 +146,11 @@ const NAV_GROUPS: Array<{
         icon: IconMessageCircle,
       },
       {
+        href: "/notifications",
+        label: { vi: "Thông báo hệ thống", en: "System Broadcasts" },
+        icon: IconSpeakerphone,
+      },
+      {
         href: "/watch-party",
         label: { vi: "Phòng xem chung", en: "Watch Party" },
         icon: IconBroadcast,

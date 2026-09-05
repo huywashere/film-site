@@ -105,7 +105,7 @@ export function GiantNumberRankSection({
       <div className="mb-4 flex items-center justify-between gap-2 px-1">
         <div className="flex items-center gap-3">
           <h2
-            className={`${cardFont.className} bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-300 bg-clip-text text-xl font-extrabold tracking-[-0.025em] text-transparent sm:text-2xl`}
+            className={`${cardFont.className} text-xl font-extrabold tracking-[-0.025em] text-white sm:text-2xl`}
           >
             {title}
           </h2>
