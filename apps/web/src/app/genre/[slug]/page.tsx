@@ -751,7 +751,7 @@ export default function GenrePage() {
     return matched.length >= 6 ? matched : rawFilms;
   }, [rawFilms, activeTab, tabs]);
 
-  // Curated Multi-Category Swiper Rows
+  // Curated Multi-Category Swiper Rows with Strict Thematic Matching & 100% Zero-Overlap Deduplication
   const { row1Films, row2Films, row3Films, row4Films, row5Films, row6Films } =
     useMemo(() => {
       if (!isShowcasePage) {
@@ -765,33 +765,230 @@ export default function GenrePage() {
         };
       }
 
-      // Row 1: Mới cập nhật & Đang thịnh hành
-      const r1 = dedupeFilms(rawFilms, rawPage2, 16);
+      // Comprehensive candidate pool
+      const fullCatalogPool = dedupeFilms(
+        [...rawFilms, ...rawPage2, ...rawAux1, ...rawAux2, ...heroPool],
+        [],
+        200,
+      );
 
-      // Row 2: Theme 1 (Không gian / Thế chiến II)
-      const r2Source = isSciFiPage
-        ? [...heroPool.slice(0, 4), ...rawAux1]
-        : [...heroPool.slice(0, 4), ...rawPage2];
-      const r2 = dedupeFilms(r2Source, rawFilms, 16);
+      const globalSeen = new Set<string>();
 
-      // Row 3: Theme 2 (AI Cyberpunk / Đại kỷ nguyên)
-      const r3Source = isSciFiPage
-        ? [...heroPool.slice(3, 7), ...rawPage2]
-        : [...heroPool.slice(2, 6), ...rawAux1];
-      const r3 = dedupeFilms(r3Source, rawAux2, 16);
+      const takeUnique = (
+        primary: FilmItem[],
+        fallback: FilmItem[],
+        targetCount = 16,
+      ): FilmItem[] => {
+        const list: FilmItem[] = [];
 
-      // Row 4: Theme 3 (Du hành thời gian / Chiến tranh cổ đại)
-      const r4Source = isSciFiPage
-        ? [...heroPool.slice(2, 6), ...rawAux2]
-        : [...heroPool.slice(4, 8), ...rawAux2];
-      const r4 = dedupeFilms(r4Source, rawFilms, 16);
+        const tryAdd = (f: FilmItem) => {
+          if (!f) return;
+          const key = (f.slug || f._id || (f as any).id || "").toLowerCase();
+          const base = getBaseTitle(f.name || f.title || "");
+          if (key && !globalSeen.has(key) && (!base || !globalSeen.has(base))) {
+            globalSeen.add(key);
+            if (base) globalSeen.add(base);
+            list.push(f);
+          }
+        };
 
-      // Row 5: Theme 4 (Siêu anh hùng / Tâm lý bi hùng)
-      const r5Source = isSciFiPage ? rawAux2 : rawAux2;
-      const r5 = dedupeFilms(r5Source, rawPage2, 16);
+        (primary || []).forEach(tryAdd);
 
-      // Row 6: Tuyển chọn đặc sắc
-      const r6 = dedupeFilms([...heroPool, ...rawPage2], rawFilms, 16);
+        if (list.length < targetCount && fallback?.length) {
+          (fallback || []).forEach((f) => {
+            if (list.length < targetCount) tryAdd(f);
+          });
+        }
+
+        return list.slice(0, targetCount);
+      };
+
+      const matchTheme = (keywords: string[]) => {
+        return fullCatalogPool.filter((f) => {
+          const key = (f.slug || f._id || (f as any).id || "").toLowerCase();
+          const base = getBaseTitle(f.name || f.title || "");
+          if (globalSeen.has(key) || (base && globalSeen.has(base))) return false;
+
+          const name = (f.name || "").toLowerCase();
+          const origin = (f.origin_name || "").toLowerCase();
+          const slugStr = (f.slug || "").toLowerCase();
+          const content = (f.content || "").toLowerCase();
+
+          for (const kw of keywords) {
+            const lk = kw.toLowerCase();
+            if (
+              name.includes(lk) ||
+              origin.includes(lk) ||
+              slugStr.includes(lk) ||
+              content.includes(lk)
+            ) {
+              return true;
+            }
+          }
+
+          if (Array.isArray(f.category)) {
+            for (const c of f.category) {
+              const cName = (c?.name || "").toLowerCase();
+              const cSlug = (c?.slug || "").toLowerCase();
+              for (const kw of keywords) {
+                const lk = kw.toLowerCase();
+                if (cName.includes(lk) || cSlug.includes(lk)) return true;
+              }
+            }
+          }
+
+          return false;
+        });
+      };
+
+      // ── ROW 1: MỚI CẬP NHẬT & ĐANG THỊNH HÀNH ──
+      const r1Candidates = [...rawFilms];
+      const r1 = takeUnique(r1Candidates, rawPage2, 16);
+
+      // ── ROW 2: THEME 1 (KHÁM PHÁ VŨ TRỤ / THẾ CHIẾN II) ──
+      const theme1Keywords = isSciFiPage
+        ? [
+            "vũ trụ",
+            "không gian",
+            "space",
+            "interstellar",
+            "dune",
+            "avatar",
+            "mars",
+            "hố đen",
+            "sao hỏa",
+            "alien",
+            "hành tinh",
+            "phi thuyền",
+            "thiên hà",
+            "gravity",
+            "apollo",
+            "star wars",
+          ]
+        : [
+            "thế chiến",
+            "thế chiến ii",
+            "quân đội",
+            "fury",
+            "dunkirk",
+            "ryan",
+            "chiến dịch",
+            "tăng",
+            "lính",
+            "trận đánh",
+            "hacksaw",
+            "trân châu cảng",
+            "quân sự",
+            "midway",
+          ];
+      const r2ThemeMatches = matchTheme(theme1Keywords);
+      const r2 = takeUnique(r2ThemeMatches, rawAux1, 16);
+
+      // ── ROW 3: THEME 2 (AI & CYBERPUNK / ĐẠI KỶ NGUYÊN & LỊCH SỬ) ──
+      const theme2Keywords = isSciFiPage
+        ? [
+            "trí tuệ",
+            "robot",
+            "cyberpunk",
+            "ma trận",
+            "matrix",
+            "máy móc",
+            "công nghệ",
+            "ai",
+            "blade runner",
+            "terminator",
+            "người máy",
+            "tương lai",
+            "ex machina",
+          ]
+        : [
+            "lịch sử",
+            "oppenheimer",
+            "kỷ nguyên",
+            "danh nhân",
+            "hào hùng",
+            "vương triều",
+            "1917",
+            "napoleon",
+            "hoàng gia",
+            "thời đại",
+            "anh hùng",
+            "schindler",
+          ];
+      const r3ThemeMatches = matchTheme(theme2Keywords);
+      const r3 = takeUnique(r3ThemeMatches, rawAux2, 16);
+
+      // ── ROW 4: THEME 3 (NGHỊCH LÝ THỜI GIAN / CHIẾN TRANH CỔ ĐẠI) ──
+      const theme3Keywords = isSciFiPage
+        ? [
+            "thời gian",
+            "vòng lặp",
+            "time",
+            "inception",
+            "tenet",
+            "luân hồi",
+            "đa vũ trụ",
+            "du hành",
+            "nghịch lý",
+            "chiều không gian",
+            "looper",
+            "edge of tomorrow",
+          ]
+        : [
+            "cổ đại",
+            "võ sĩ",
+            "giác đấu",
+            "gladiator",
+            "la mã",
+            "troy",
+            "300",
+            "kiếm",
+            "vương quyền",
+            "đế chế",
+            "thành bang",
+            "chiến binh",
+            "sparta",
+            "alexander",
+          ];
+      const r4ThemeMatches = matchTheme(theme3Keywords);
+      const r4 = takeUnique(r4ThemeMatches, rawPage2, 16);
+
+      // ── ROW 5: THEME 4 (SIÊU ANH HÙNG / BẮN TỈA & ĐẶC NHIỆM) ──
+      const theme4Keywords = isSciFiPage
+        ? [
+            "siêu anh hùng",
+            "avengers",
+            "hành động",
+            "action",
+            "marvel",
+            "chiến đấu",
+            "iron man",
+            "transformers",
+            "quái vật",
+            "godzilla",
+            "pacific rim",
+            "spider-man",
+          ]
+        : [
+            "bắn tỉa",
+            "sniper",
+            "đặc nhiệm",
+            "sinh tồn",
+            "diều hâu",
+            "black hawk",
+            "sát thủ",
+            "chiến tuyến",
+            "biệt kích",
+            "đơn độc",
+            "giải cứu",
+            "lone survivor",
+          ];
+      const r5ThemeMatches = matchTheme(theme4Keywords);
+      const r5 = takeUnique(r5ThemeMatches, fullCatalogPool, 16);
+
+      // ── ROW 6: KIỆT TÁC TUYỂN CHỌN (TOP RATED) ──
+      const r6Candidates = [...heroPool, ...fullCatalogPool];
+      const r6 = takeUnique(r6Candidates, fullCatalogPool, 16);
 
       return {
         row1Films: r1,
@@ -801,7 +998,15 @@ export default function GenrePage() {
         row5Films: r5,
         row6Films: r6,
       };
-    }, [isShowcasePage, isSciFiPage, rawFilms, rawPage2, rawAux1, rawAux2, heroPool]);
+    }, [
+      isShowcasePage,
+      isSciFiPage,
+      rawFilms,
+      rawPage2,
+      rawAux1,
+      rawAux2,
+      heroPool,
+    ]);
 
   // Total items & Pagination
   const totalItems =

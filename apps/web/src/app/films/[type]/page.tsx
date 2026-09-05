@@ -881,26 +881,61 @@ export default function FilmsTypePage() {
     [rawFilms, rawVicdnPage2Films, rawVicdnActionFilms, rawVicdnScifiFilms],
   );
 
-  // Song Ngữ AI rows
+  // Song Ngữ AI rows with strict thematic filtering and zero duplication across rows
   const { vicdnRow1, vicdnRow2, vicdnRow3, vicdnRow4 } = useMemo(() => {
     const used = new Set<string>();
-    const take = (list: FilmItem[], n = 16): FilmItem[] => {
+
+    const filterTheme = (primaryList: FilmItem[], keywords: string[], n = 16): FilmItem[] => {
       const res: FilmItem[] = [];
-      for (const f of list) {
-        if (!f) continue;
+
+      const tryAdd = (f: FilmItem) => {
+        if (!f) return;
         const k = (f.slug || f._id || "").toLowerCase();
-        if (k && !used.has(k)) {
+        const base = getBaseTitle(f.name || f.title || "");
+        if (k && !used.has(k) && (!base || !used.has(base))) {
           used.add(k);
+          if (base) used.add(base);
           res.push(f);
+        }
+      };
+
+      // 1. Primary list
+      for (const f of primaryList) {
+        tryAdd(f);
+        if (res.length >= n) break;
+      }
+
+      // 2. Fallback matching keywords from combined pool
+      if (res.length < n && keywords.length > 0) {
+        for (const f of vicdnCombinedPool) {
+          const k = (f.slug || f._id || "").toLowerCase();
+          const base = getBaseTitle(f.name || f.title || "");
+          if (used.has(k) || (base && used.has(base))) continue;
+
+          const text = `${f.name || ""} ${f.origin_name || ""} ${f.content || ""} ${(f.category || []).map((c: any) => c?.name || "").join(" ")}`.toLowerCase();
+          if (keywords.some((kw) => text.includes(kw.toLowerCase()))) {
+            tryAdd(f);
+            if (res.length >= n) break;
+          }
+        }
+      }
+
+      // 3. Fallback from remaining combined pool
+      if (res.length < n) {
+        for (const f of vicdnCombinedPool) {
+          tryAdd(f);
           if (res.length >= n) break;
         }
       }
+
       return res;
     };
-    const r1 = take(rawFilms, 16);
-    const r2 = take(rawVicdnActionFilms, 16);
-    const r3 = take(rawVicdnScifiFilms, 16);
-    const r4 = take([...rawVicdnPage2Films, ...vicdnCombinedPool], 16);
+
+    const r1 = filterTheme(rawFilms, [], 16);
+    const r2 = filterTheme(rawVicdnActionFilms, ["hành động", "action", "võ thuật", "chiến đấu", "bắn súng"], 16);
+    const r3 = filterTheme(rawVicdnScifiFilms, ["viễn tưởng", "sci-fi", "vũ trụ", "không gian", "robot", "tương lai", "siêu nhiên"], 16);
+    const r4 = filterTheme(rawVicdnPage2Films, ["tuyển chọn", "bom tấn", "kinh điển"], 16);
+
     return { vicdnRow1: r1, vicdnRow2: r2, vicdnRow3: r3, vicdnRow4: r4 };
   }, [rawFilms, rawVicdnActionFilms, rawVicdnScifiFilms, rawVicdnPage2Films, vicdnCombinedPool]);
 
