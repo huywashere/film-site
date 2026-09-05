@@ -379,48 +379,45 @@ export function AuthModal({
   const cardContent = (
     <div
       className={cn(
-        "relative w-full max-w-[430px] bg-[#11141d]/85 backdrop-blur-2xl border border-white/10 rounded-2xl sm:rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.92)] p-6 sm:p-8 text-white z-10 font-primary transition-all duration-300",
+        "relative w-full max-w-[390px] bg-[#11141d]/85 backdrop-blur-2xl border border-white/10 rounded-2xl sm:rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.92)] p-5 sm:p-6 sm:px-7 text-white z-10 font-primary transition-all duration-300",
       )}
     >
       {/* Integrated Close Button (X) right on top-right of the card */}
       <button
         onClick={closeModal}
-        className="absolute top-4 right-4 sm:top-5 sm:right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer border border-white/10 z-20 shadow-sm"
+        className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 w-7.5 h-7.5 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer border border-white/10 z-20 shadow-sm"
         aria-label="Đóng"
         title={isPage ? "Quay lại" : "Đóng"}
       >
-        <X size={16} />
+        <X size={15} />
       </button>
 
-      {/* Brand Logo integrated directly on the form header */}
-      <div className="flex justify-center mb-3">
+      {/* Brand Logo integrated directly on the form header - Clean without glow */}
+      <div className="flex justify-center mb-2.5">
         <Link
           href="/"
-          className="inline-flex items-center gap-2.5 select-none group"
+          className="inline-flex items-center gap-2 select-none group"
         >
           <NextImage
             src="/cinephim-logo.png"
             alt="NetPhim Logo"
-            width={36}
-            height={36}
+            width={32}
+            height={32}
             priority
-            className="h-9 w-9 object-contain transition-transform group-hover:scale-105"
+            className="h-8 w-8 object-contain transition-transform group-hover:scale-105"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src = "/logo.png";
             }}
           />
-          <span className="text-2xl font-black tracking-tight text-white flex items-center font-sans">
-            Net
-            <span className="text-violet-400 drop-shadow-[0_0_12px_rgba(167,139,250,0.6)]">
-              Phim
-            </span>
+          <span className="text-xl sm:text-[22px] font-black tracking-tight text-white flex items-center font-sans">
+            Net<span className="text-violet-400">Phim</span>
           </span>
         </Link>
       </div>
 
       {/* Title Header */}
-      <div className="text-center mb-5">
-        <h1 className="text-2xl sm:text-[25px] font-extrabold text-white tracking-tight">
+      <div className="text-center mb-4">
+        <h1 className="text-xl sm:text-[22px] font-extrabold text-white tracking-tight">
           {isForgotMode
             ? "Khôi phục mật khẩu"
             : mode === "login"
@@ -685,7 +682,7 @@ export function AuthModal({
       </div>
 
       {/* Divider */}
-      <div className="relative flex items-center justify-center my-5">
+      <div className="relative flex items-center justify-center my-4">
         <div className="flex-grow border-t border-white/10" />
         <span className="px-3 text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
           HOẶC
@@ -693,54 +690,42 @@ export function AuthModal({
         <div className="flex-grow border-t border-white/10" />
       </div>
 
-      {/* Social Login: Google Button (Full Width Matching Reference) */}
-      <div className="space-y-2">
+      {/* Social Login: Google Pill Button (Matching reference design) */}
+      <div>
         <button
           type="button"
           onClick={handleGoogleLogin}
           disabled={loading}
-          className="flex items-center justify-center gap-3 w-full rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 py-3 px-4 transition-all cursor-pointer text-sm font-medium text-white disabled:opacity-50 active:scale-[0.98]"
+          className="relative flex items-center w-full h-[46px] rounded-full bg-[#1c202a] hover:bg-[#252b38] border border-white/10 p-1.5 transition-all cursor-pointer shadow-md active:scale-[0.98] disabled:opacity-50 group"
         >
-          <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-            <path
-              fill="#4285F4"
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-            />
-            <path
-              fill="#34A853"
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-            />
-            <path
-              fill="#FBBC05"
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-            />
-            <path
-              fill="#EA4335"
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-            />
-          </svg>
-          <span>Đăng nhập bằng Google</span>
-        </button>
-
-        {/* Facebook Login Alternative */}
-        <button
-          type="button"
-          onClick={handleFacebookLogin}
-          disabled={loading}
-          className="flex items-center justify-center gap-3 w-full rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 py-2.5 px-4 transition-all cursor-pointer text-xs font-medium text-neutral-300 disabled:opacity-50 active:scale-[0.98]"
-        >
-          <svg
-            className="w-4 h-4 fill-[#1877F2] shrink-0"
-            viewBox="0 0 24 24"
-          >
-            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-          </svg>
-          <span>Đăng nhập bằng Facebook</span>
+          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm">
+            <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+              />
+            </svg>
+          </div>
+          <span className="flex-1 text-center font-medium text-white text-[13.5px] pr-8">
+            Đăng nhập bằng Google
+          </span>
         </button>
       </div>
 
       {/* Switch Mode Footer Link */}
-      <div className="text-center mt-5 text-xs text-neutral-400">
+      <div className="text-center mt-4 text-xs text-neutral-400">
         {mode === "login" ? (
           <>
             Chưa có tài khoản?{" "}
@@ -777,7 +762,7 @@ export function AuthModal({
   /* ── Page Layout View (/login & /register) ── */
   if (isPage) {
     return (
-      <div className="min-h-[100dvh] w-full flex flex-col justify-center items-center relative overflow-y-auto px-4 py-8 font-primary">
+      <div className="min-h-[100dvh] w-full flex flex-col justify-center items-center relative overflow-y-auto px-4 py-6 font-primary">
         {/* Fullscreen Random Movie Collage Backdrop - Fast High-Priority Load */}
         <CinematicAuthBackground artworkUrl={currentArtwork.url} />
 
@@ -785,13 +770,6 @@ export function AuthModal({
         <main className="w-full flex items-center justify-center my-auto relative z-10">
           {cardContent}
         </main>
-
-        {/* Bottom Footer Credits */}
-        <footer className="w-full max-w-md mx-auto text-center py-4 relative z-10">
-          <p className="text-xs text-neutral-400/80">
-            © {new Date().getFullYear()} NetPhim. Nền tảng xem phim trực tuyến độ nét cao.
-          </p>
-        </footer>
       </div>
     );
   }
