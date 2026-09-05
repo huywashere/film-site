@@ -20,12 +20,16 @@ export function CinematicAuthBackground({ artworkUrl }: CinematicAuthBackgroundP
 
   return (
     <div className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0 bg-[#07090e]">
-      {/* Fullscreen Random Movie Collage Backdrop */}
+      {/* Fullscreen Random Movie Collage Backdrop - Optimized for instant visual render */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={activeUrl}
         alt="Cinema Universe Collage"
-        className="w-full h-full object-cover object-center scale-[1.02] filter brightness-[0.72] contrast-[1.05] select-none pointer-events-none animate-in fade-in duration-700"
+        loading="eager"
+        decoding="async"
+        // @ts-ignore
+        fetchPriority="high"
+        className="w-full h-full object-cover object-center scale-[1.02] filter brightness-[0.72] contrast-[1.05] select-none pointer-events-none animate-in fade-in duration-300"
         referrerPolicy="no-referrer"
       />
 

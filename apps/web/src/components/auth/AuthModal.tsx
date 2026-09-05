@@ -376,19 +376,55 @@ export function AuthModal({
   const cardContent = (
     <div
       className={cn(
-        "relative w-full max-w-[420px] bg-[#11141d]/85 backdrop-blur-2xl border border-white/10 rounded-2xl sm:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.9)] p-6 sm:p-8 text-white z-10 font-primary transition-all duration-300",
+        "relative w-full max-w-[430px] bg-[#11141d]/85 backdrop-blur-2xl border border-white/10 rounded-2xl sm:rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.92)] p-6 sm:p-8 text-white z-10 font-primary transition-all duration-300",
       )}
     >
+      {/* Integrated Close Button (X) right on top-right of the card */}
+      <button
+        onClick={closeModal}
+        className="absolute top-4 right-4 sm:top-5 sm:right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer border border-white/10 z-20 shadow-sm"
+        aria-label="Đóng"
+        title={isPage ? "Quay lại" : "Đóng"}
+      >
+        <X size={16} />
+      </button>
+
+      {/* Brand Logo integrated directly on the form header */}
+      <div className="flex justify-center mb-3">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2.5 select-none group"
+        >
+          <NextImage
+            src="/cinephim-logo.png"
+            alt="NetPhim Logo"
+            width={36}
+            height={36}
+            priority
+            className="h-9 w-9 object-contain transition-transform group-hover:scale-105"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = "/logo.png";
+            }}
+          />
+          <span className="text-2xl font-black tracking-tight text-white flex items-center font-sans">
+            Net
+            <span className="text-violet-400 drop-shadow-[0_0_12px_rgba(167,139,250,0.6)]">
+              Phim
+            </span>
+          </span>
+        </Link>
+      </div>
+
       {/* Title Header */}
-      <div className="text-center mb-6">
-        <h1 className="text-2xl sm:text-[26px] font-extrabold text-white tracking-tight">
+      <div className="text-center mb-5">
+        <h1 className="text-2xl sm:text-[25px] font-extrabold text-white tracking-tight">
           {isForgotMode
             ? "Khôi phục mật khẩu"
             : mode === "login"
               ? "Chào mừng trở lại"
               : "Tạo tài khoản"}
         </h1>
-        <p className="text-xs text-neutral-400 mt-2 leading-relaxed">
+        <p className="text-xs text-neutral-400 mt-1.5 leading-relaxed">
           {isForgotMode
             ? "Nhập email đăng ký để nhận liên kết khôi phục mật khẩu."
             : mode === "login"
@@ -412,12 +448,12 @@ export function AuthModal({
             key={isForgotMode ? "forgot" : mode}
             initial={{
               opacity: 0,
-              y: 10,
+              y: 8,
             }}
             animate={{ opacity: 1, y: 0 }}
             exit={{
               opacity: 0,
-              y: -10,
+              y: -8,
             }}
             transition={{ duration: 0.18, ease: "easeInOut" }}
           >
@@ -701,7 +737,7 @@ export function AuthModal({
       </div>
 
       {/* Switch Mode Footer Link */}
-      <div className="text-center mt-6 text-xs text-neutral-400">
+      <div className="text-center mt-5 text-xs text-neutral-400">
         {mode === "login" ? (
           <>
             Chưa có tài khoản?{" "}
@@ -738,50 +774,17 @@ export function AuthModal({
   /* ── Page Layout View (/login & /register) ── */
   if (isPage) {
     return (
-      <div className="min-h-[100dvh] w-full flex flex-col justify-between items-center relative overflow-y-auto px-4 py-6 sm:px-8 font-primary">
-        {/* Fullscreen Random Movie Collage Backdrop */}
+      <div className="min-h-[100dvh] w-full flex flex-col justify-center items-center relative overflow-y-auto px-4 py-8 font-primary">
+        {/* Fullscreen Random Movie Collage Backdrop - Fast High-Priority Load */}
         <CinematicAuthBackground artworkUrl={currentArtwork.url} />
 
-        {/* Top Header Bar */}
-        <header className="w-full max-w-6xl mx-auto flex items-center justify-between relative z-10 py-2">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2.5 select-none group"
-          >
-            <NextImage
-              src="/cinephim-logo.png"
-              alt="NetPhim Logo"
-              width={34}
-              height={34}
-              className="h-8.5 w-8.5 object-contain transition-transform group-hover:scale-105"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = "/logo.png";
-              }}
-            />
-            <span className="text-2xl font-black tracking-tight text-white flex items-center font-sans">
-              Net
-              <span className="text-violet-400 drop-shadow-[0_0_12px_rgba(167,139,250,0.6)]">
-                Phim
-              </span>
-            </span>
-          </Link>
-
-          <Link
-            href="/"
-            className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-md border border-white/10 shadow-sm"
-          >
-            <ArrowLeft size={14} />
-            <span>Trang chủ</span>
-          </Link>
-        </header>
-
         {/* Centered Auth Card */}
-        <main className="w-full flex items-center justify-center my-auto py-6 relative z-10">
+        <main className="w-full flex items-center justify-center my-auto relative z-10">
           {cardContent}
         </main>
 
-        {/* Bottom Footer */}
-        <footer className="w-full max-w-6xl mx-auto text-center py-3 relative z-10">
+        {/* Bottom Footer Credits */}
+        <footer className="w-full max-w-md mx-auto text-center py-4 relative z-10">
           <p className="text-xs text-neutral-400/80">
             © {new Date().getFullYear()} NetPhim. Nền tảng xem phim trực tuyến độ nét cao.
           </p>
@@ -793,48 +796,14 @@ export function AuthModal({
   /* ── Modal Layout View (Header Popup) ── */
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200 font-primary">
-      {/* Fullscreen Random Movie Collage Backdrop */}
+      {/* Fullscreen Random Movie Collage Backdrop - Fast High-Priority Load */}
       <CinematicAuthBackground artworkUrl={currentArtwork.url} />
 
       {/* Click outside backdrop to close */}
       <div
         onClick={closeModal}
-        className="fixed inset-0 bg-black/40 backdrop-blur-[2px] cursor-pointer z-0"
+        className="fixed inset-0 bg-black/50 backdrop-blur-[2px] cursor-pointer z-0"
       />
-
-      {/* Top Header Bar for Modal */}
-      <div className="fixed top-4 left-4 sm:left-8 z-20">
-        <Link
-          href="/"
-          onClick={closeModal}
-          className="inline-flex items-center gap-2.5 select-none group"
-        >
-          <NextImage
-            src="/cinephim-logo.png"
-            alt="NetPhim Logo"
-            width={32}
-            height={32}
-            className="h-8 w-8 object-contain transition-transform group-hover:scale-105"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = "/logo.png";
-            }}
-          />
-          <span className="text-xl font-black tracking-tight text-white flex items-center font-sans">
-            Net
-            <span className="text-violet-400 drop-shadow-[0_0_12px_rgba(167,139,250,0.6)]">
-              Phim
-            </span>
-          </span>
-        </Link>
-      </div>
-
-      <button
-        onClick={closeModal}
-        className="fixed top-4 right-4 sm:right-8 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer backdrop-blur-md border border-white/10 z-20"
-        aria-label="Đóng"
-      >
-        <X size={18} />
-      </button>
 
       {/* Centered Auth Card */}
       <div className="relative z-10 my-auto py-4 w-full flex justify-center">
