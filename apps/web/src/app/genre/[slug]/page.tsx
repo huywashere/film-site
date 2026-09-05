@@ -557,8 +557,37 @@ function GenreCuratedHeroBanner({
         </AnimatePresence>
       </div>
 
-      {/* ── Bottom Controls: Sound Toggle, Maturity Rating & Slide Chevrons ── */}
-      <div className="absolute right-3.5 sm:right-12 top-20 sm:top-auto sm:bottom-28 md:bottom-36 lg:bottom-44 z-30 pointer-events-auto flex items-center gap-1.5 sm:gap-3 select-none">
+      {/* ── Mobile Side Navigation Chevrons (2 bên: Trái & Phải) ── */}
+      <div className="sm:hidden pointer-events-none">
+        {/* Nút chuyển đổi bên Trái */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            handlePrev();
+          }}
+          aria-label="Phim trước"
+          className="absolute left-2.5 top-1/2 -translate-y-1/2 z-30 w-9 h-9 rounded-full bg-black/50 active:bg-black/80 text-white flex items-center justify-center backdrop-blur-md border border-white/20 shadow-lg pointer-events-auto transition-transform active:scale-90 cursor-pointer"
+        >
+          <ChevronLeft size={22} strokeWidth={2.5} />
+        </button>
+
+        {/* Nút chuyển đổi bên Phải */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleNext();
+          }}
+          aria-label="Phim tiếp theo"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 z-30 w-9 h-9 rounded-full bg-black/50 active:bg-black/80 text-white flex items-center justify-center backdrop-blur-md border border-white/20 shadow-lg pointer-events-auto transition-transform active:scale-90 cursor-pointer"
+        >
+          <ChevronRight size={22} strokeWidth={2.5} />
+        </button>
+      </div>
+
+      {/* ── Desktop Controls: Sound Toggle, Maturity Rating & Slide Chevrons ── */}
+      <div className="hidden sm:flex absolute right-6 sm:right-12 bottom-28 md:bottom-36 lg:bottom-44 z-30 pointer-events-auto items-center gap-2 sm:gap-3 select-none">
         {/* Sound Toggle (Mute / Unmute) */}
         {ytKey && (
           <button
@@ -576,7 +605,7 @@ function GenreCuratedHeroBanner({
         )}
 
         {/* Maturity Rating Badge */}
-        <div className="hidden sm:flex items-center border-l-4 border-white/70 bg-black/60 backdrop-blur-md px-3.5 py-1.5 text-xs font-bold tracking-widest text-neutral-200 uppercase pointer-events-none">
+        <div className="flex items-center border-l-4 border-white/70 bg-black/60 backdrop-blur-md px-3.5 py-1.5 text-xs font-bold tracking-widest text-neutral-200 uppercase pointer-events-none">
           T16 • RẠP
         </div>
 
