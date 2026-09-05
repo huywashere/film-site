@@ -1,59 +1,38 @@
 "use client";
-import { useState } from "react";
-import { buildArtworkCandidates } from "@/lib/image-cdn";
 
-const TMDB_POSTERS = [
-  // 4 Phim Ngôn Tình Hàn Quốc Đình Đám
-  "/images/auth/queen-of-tears.webp",
-  "/images/auth/crash-landing-on-you.webp",
-  "/images/auth/goblin.webp",
-  "/images/auth/its-okay-to-not-be-okay.webp",
+import { useState, useEffect } from "react";
+import { getRandomAuthArtwork, LOGIN_COVER_ARTWORKS } from "@/lib/auth-artworks";
 
-  // Cinema & Blockbuster Backdrops
-  "https://image.tmdb.org/t/p/w342/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
-  "https://image.tmdb.org/t/p/w342/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg",
-  "https://image.tmdb.org/t/p/w342/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
-  "https://image.tmdb.org/t/p/w342/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg",
-  "https://image.tmdb.org/t/p/w342/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
-  "https://image.tmdb.org/t/p/w342/or06FN3Dka5tukK1e9sl16pB3iy.jpg",
-];
-
-function AuthPosterItem({ url, idx }: { url: string; idx: number }) {
-  const candidates = buildArtworkCandidates([url], "card");
-  const [candidateIdx, setCandidateIdx] = useState(0);
-
-  return (
-    <div className="aspect-[2/3] rounded-xl overflow-hidden bg-neutral-900 shadow-xl">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={candidates[candidateIdx]}
-        alt="TMDB Cinema Background"
-        className="w-full h-full object-cover"
-        loading={idx < 12 ? "eager" : "lazy"}
-        decoding="async"
-        referrerPolicy="no-referrer"
-        onError={() => {
-          if (candidateIdx < candidates.length - 1) {
-            setCandidateIdx((i) => i + 1);
-          }
-        }}
-      />
-    </div>
-  );
+export interface CinematicAuthBackgroundProps {
+  artworkUrl?: string;
 }
 
-export function CinematicAuthBackground() {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 bg-[#080a0f]">
-      {/* TMDB Movie Posters Collage Grid Wall */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 scale-105 opacity-60 filter saturate-110">
-        {TMDB_POSTERS.concat(TMDB_POSTERS).map((url, idx) => (
-          <AuthPosterItem key={idx} url={url} idx={idx} />
-        ))}
-      </div>
+export function CinematicAuthBackground({ artworkUrl }: CinematicAuthBackgroundProps) {
+  const [activeUrl, setActiveUrl] = useState<string>(() => {
+    return artworkUrl || getRandomAuthArtwork().url;
+  });
 
-      {/* Dark Gradient Overlay + Subtle Blur */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#040508] via-[#040508]/60 to-[#040508]/45 backdrop-blur-[2px]" />
+  useEffect(() => {
+    if (artworkUrl) {
+      setActiveUrl(artworkUrl);
+    }
+  }, [artworkUrl]);
+
+  return (
+    <div className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0 bg-[#07090e]">
+      {/* Fullscreen Random Movie Collage Backdrop */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={activeUrl}
+        alt="Cinema Universe Collage"
+        className="w-full h-full object-cover object-center scale-[1.02] filter brightness-[0.72] contrast-[1.05] select-none pointer-events-none animate-in fade-in duration-700"
+        referrerPolicy="no-referrer"
+      />
+
+      {/* Cinematic Vignette & Ambient Dark Scrim */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-[0.5px]" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#090b10] via-black/20 to-[#090b10]/85" />
+      <div className="absolute inset-0 [background:radial-gradient(ellipse_at_center,transparent_25%,rgba(0,0,0,0.85)_100%)]" />
     </div>
   );
 }

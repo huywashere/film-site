@@ -18,8 +18,6 @@ import {
   ShieldCheck,
   ArrowLeft,
   KeyRound,
-  Star,
-  Clapperboard,
 } from "lucide-react";
 import Link from "next/link";
 import NextImage from "next/image";
@@ -146,15 +144,16 @@ export function AuthModal({
   const handleFirebaseUserSuccess = async (fbUser: any) => {
     const user = await establishFirebaseSession(fbUser);
     const avatarUrl = user.avatarUrl || fbUser.photoURL || undefined;
-    const displayName = user.displayName || fbUser.displayName || user.username;
+    const resolvedDisplayName =
+      user.displayName || fbUser.displayName || user.username;
     setUser({
       ...user,
       avatarUrl,
-      displayName,
+      displayName: resolvedDisplayName,
     });
 
     toast(
-      `Đăng nhập thành công! Chào mừng ${displayName}.`,
+      `Đăng nhập thành công! Chào mừng ${resolvedDisplayName}.`,
       "success",
     );
     if (isPage) {
@@ -373,462 +372,474 @@ export function AuthModal({
 
   if (!isOpen) return null;
 
+  /* ── Sleek Centered Glass Card Content (Anti-Slop Cinematic Standard) ── */
   const cardContent = (
     <div
       className={cn(
-        "relative w-full max-w-4xl max-h-[94vh] overflow-y-auto sm:overflow-hidden bg-[#151923] border border-neutral-800 rounded-2xl sm:rounded-3xl shadow-[0_30px_90px_rgba(0,0,0,0.95)] z-10 my-auto flex flex-col md:flex-row [scrollbar-width:none] [&::-webkit-scrollbar]:hidden font-primary",
-        isPage && "my-0 shadow-[0_30px_90px_rgba(0,0,0,0.9)]",
+        "relative w-full max-w-[420px] bg-[#11141d]/85 backdrop-blur-2xl border border-white/10 rounded-2xl sm:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.9)] p-6 sm:p-8 text-white z-10 font-primary transition-all duration-300",
       )}
     >
-      {/* Close or Back Button */}
-      {isPage ? (
-        <Link
-          href="/"
-          className="absolute top-3.5 right-3.5 px-3 py-1.5 rounded-full bg-neutral-800/90 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer z-30 border border-neutral-700 shadow-md backdrop-blur-sm"
-          aria-label="Về trang chủ"
-          title="Về trang chủ"
-        >
-          <ArrowLeft size={14} />
-          <span className="text-[11px]">Trang chủ</span>
-        </Link>
-      ) : (
-        <button
-          onClick={closeModal}
-          className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white flex items-center justify-center transition-all cursor-pointer z-30 border border-neutral-700"
-          aria-label="Đóng"
-        >
-          <X size={16} />
-        </button>
+      {/* Title Header */}
+      <div className="text-center mb-6">
+        <h1 className="text-2xl sm:text-[26px] font-extrabold text-white tracking-tight">
+          {isForgotMode
+            ? "Khôi phục mật khẩu"
+            : mode === "login"
+              ? "Chào mừng trở lại"
+              : "Tạo tài khoản"}
+        </h1>
+        <p className="text-xs text-neutral-400 mt-2 leading-relaxed">
+          {isForgotMode
+            ? "Nhập email đăng ký để nhận liên kết khôi phục mật khẩu."
+            : mode === "login"
+              ? "Cùng thưởng thức những bộ phim tuyệt vời nhất."
+              : "Đăng ký thành viên để thưởng thức kho phim HD/4K không giới hạn."}
+        </p>
+      </div>
+
+      {/* Error Message */}
+      {errorMsg && (
+        <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-medium leading-relaxed text-red-300">
+          <span className="mt-0.5 shrink-0 text-red-400">⚠</span>
+          <span>{errorMsg}</span>
+        </div>
       )}
 
-      {/* ── Left Column: Clean Cinematic Poster + Brand Logo (Single Fixed Image) ── */}
-      <div className="relative hidden md:flex md:w-[44%] flex-col justify-start overflow-hidden bg-black p-6 min-h-[560px] border-r border-neutral-800">
-        {/* Single High-Quality Fixed Backdrop Image */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src={currentArtwork.url}
-            alt={currentArtwork.title}
-            referrerPolicy="no-referrer"
-            className="w-full h-full object-cover object-center scale-105 brightness-[0.88] transition-all duration-700"
-          />
-            {/* Gradient Overlays for smooth blend */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#151923] via-transparent to-black/40" />
-            <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-r from-transparent to-[#151923]" />
-          </div>
-
-          {/* Brand Logo at top-left */}
-          <div className="relative z-10">
-            <Link href="/" className="inline-flex items-center gap-2.5 select-none group">
-              <NextImage
-                src="/cinephim-logo.png"
-                alt="NetPhim Logo"
-                width={32}
-                height={32}
-                className="h-8 w-8 object-contain transition-transform group-hover:scale-105"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "/logo.png";
-                }}
-              />
-              <span className="text-2xl font-black tracking-tight text-white flex items-center font-sans">
-                Net<span className="text-violet-400 drop-shadow-[0_0_12px_rgba(167,139,250,0.6)]">Phim</span>
-              </span>
-            </Link>
-          </div>
-        </div>
-
-        {/* ── Right Column: Original Auth Form ── */}
-        <div className="flex-1 flex flex-col justify-center p-5 sm:p-7 md:p-8 relative z-10">
-          {/* Title Header */}
-          <div className="text-center mb-5">
-            <h1 className="text-2xl font-black text-white tracking-tight sm:text-3xl">
-              {isForgotMode
-                ? "Khôi phục mật khẩu"
-                : mode === "login"
-                  ? "Chào mừng trở lại"
-                  : "Tạo tài khoản"}
-            </h1>
-            <p className="text-[11px] text-neutral-400 mt-1.5 leading-relaxed max-w-xs mx-auto">
-              {isForgotMode
-                ? "Nhập email đăng ký để nhận liên kết khôi phục mật khẩu."
-                : mode === "login"
-                  ? "Đăng nhập để tiếp tục xem phim HD/4K và lưu yêu thích."
-                  : "Đăng ký miễn phí để xem phim HD/4K, lưu danh sách và đồng bộ lịch sử."}
-            </p>
-          </div>
-
-          {!isForgotMode && (
-            /* Mode Switching Tabs */
-            <div className="flex gap-1 mb-5 rounded-xl border border-neutral-800 bg-[#0d1017] p-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsForgotMode(false);
-                  setMode("login");
-                }}
-                className={`relative flex flex-1 items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${mode === "login"
-                  ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
-                  : "text-neutral-400 hover:text-neutral-200"
-                  }`}
+      {/* Form Body View */}
+      <div className="overflow-hidden relative">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={isForgotMode ? "forgot" : mode}
+            initial={{
+              opacity: 0,
+              y: 10,
+            }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{
+              opacity: 0,
+              y: -10,
+            }}
+            transition={{ duration: 0.18, ease: "easeInOut" }}
+          >
+            {isForgotMode ? (
+              /* Forgot Password Form */
+              <form
+                onSubmit={handleForgotPasswordSubmit}
+                className="space-y-4"
               >
-                <LogIn size={13} />
-                <span>Đăng nhập</span>
-              </button>
+                <div>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                    <input
+                      type="email"
+                      required
+                      value={emailOrUsername}
+                      onChange={(e) => setEmailOrUsername(e.target.value)}
+                      placeholder="Email đã đăng ký"
+                      className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-white/30 focus:bg-white/[0.08] focus:ring-1 focus:ring-white/20"
+                    />
+                  </div>
+                </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setIsForgotMode(false);
-                  setMode("register");
-                }}
-                className={`relative flex flex-1 items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${mode === "register"
-                  ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
-                  : "text-neutral-400 hover:text-neutral-200"
-                  }`}
-              >
-                <UserPlus size={13} />
-                <span>Tạo tài khoản</span>
-              </button>
-            </div>
-          )}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl bg-[#00b553] hover:bg-[#009e48] text-white text-sm font-bold tracking-wide transition-all shadow-lg shadow-[#00b553]/25 active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>Đang gửi...</span>
+                    </>
+                  ) : (
+                    <>
+                      <KeyRound size={16} />
+                      <span>Gửi email khôi phục</span>
+                    </>
+                  )}
+                </button>
 
-          {/* Error Message */}
-          {errorMsg && (
-            <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/[0.08] p-3 text-[11px] font-medium leading-relaxed text-red-300">
-              <span className="mt-0.5 shrink-0 text-red-400">⚠</span>
-              <span>{errorMsg}</span>
-            </div>
-          )}
-
-          {/* Form Body View */}
-          <div className="overflow-hidden relative">
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={isForgotMode ? "forgot" : mode}
-                initial={{
-                  opacity: 0,
-                  x: isForgotMode ? 0 : mode === "login" ? -35 : 35,
-                }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{
-                  opacity: 0,
-                  x: isForgotMode ? 0 : mode === "login" ? 35 : -35,
-                }}
-                transition={{ duration: 0.2, ease: "easeInOut" }}
-              >
-                {isForgotMode ? (
-                  /* Forgot Password Form */
-                  <form
-                    onSubmit={handleForgotPasswordSubmit}
-                    className="space-y-3.5"
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotMode(false)}
+                    className="text-xs text-neutral-400 hover:text-white font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
+                    <ArrowLeft size={13} />
+                    <span>Quay lại đăng nhập</span>
+                  </button>
+                </div>
+              </form>
+            ) : (
+              /* Login / Register Main Form */
+              <form onSubmit={handleSubmit} className="space-y-3.5">
+                {mode === "register" && (
+                  <>
+                    {/* Full Name */}
                     <div>
-                      <label className="block text-[11px] font-semibold text-neutral-400 mb-1.5 uppercase tracking-wide">
-                        Địa chỉ Email
-                      </label>
                       <div className="relative">
-                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-500 pointer-events-none" />
+                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
                         <input
-                          type="email"
+                          type="text"
                           required
-                          value={emailOrUsername}
-                          onChange={(e) => setEmailOrUsername(e.target.value)}
-                          placeholder="email"
-                          className="w-full rounded-xl border border-neutral-700/70 bg-[#1b202a] pl-9 pr-3.5 py-2.5 text-xs text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-500/80 focus:bg-[#202632] focus:ring-1 focus:ring-violet-500/20 sm:text-sm"
+                          value={displayName}
+                          onChange={(e) => setDisplayName(e.target.value)}
+                          placeholder="Họ và tên"
+                          className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-white/30 focus:bg-white/[0.08] focus:ring-1 focus:ring-white/20"
                         />
                       </div>
                     </div>
 
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold tracking-wide transition-all shadow-lg shadow-violet-600/20 active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      {loading ? (
-                        <>
-                          <Loader2 size={14} className="animate-spin" />
-                          <span>Đang gửi...</span>
-                        </>
-                      ) : (
-                        <>
-                          <KeyRound size={14} />
-                          <span>Gửi email khôi phục</span>
-                        </>
-                      )}
-                    </button>
+                    {/* Username */}
+                    <div>
+                      <div className="relative">
+                        <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                        <input
+                          type="text"
+                          required
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          placeholder="Tên tài khoản (username)"
+                          className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-white/30 focus:bg-white/[0.08] focus:ring-1 focus:ring-white/20"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
 
-                    <div className="text-center pt-2">
+                {/* Email / Username Field */}
+                <div>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                    <input
+                      type={mode === "login" ? "text" : "email"}
+                      autoComplete="email"
+                      required
+                      value={emailOrUsername}
+                      onChange={(e) => setEmailOrUsername(e.target.value)}
+                      placeholder={
+                        mode === "login"
+                          ? "Email hoặc Tên đăng nhập"
+                          : "Địa chỉ Email"
+                      }
+                      className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-white/30 focus:bg-white/[0.08] focus:ring-1 focus:ring-white/20"
+                    />
+                  </div>
+                </div>
+
+                {/* Password Fields */}
+                {mode === "login" ? (
+                  <div>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="current-password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Mật khẩu"
+                        className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-10 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-white/30 focus:bg-white/[0.08] focus:ring-1 focus:ring-white/20"
+                      />
                       <button
                         type="button"
-                        onClick={() => setIsForgotMode(false)}
-                        className="text-xs text-neutral-300 hover:text-white font-medium inline-flex items-center gap-1 transition-colors cursor-pointer"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1 transition-colors cursor-pointer"
+                        aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                       >
-                        <ArrowLeft size={13} />
-                        <span>Quay lại đăng nhập</span>
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
-                  </form>
+
+                    <div className="flex justify-end mt-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsForgotMode(true)}
+                        className="text-xs text-neutral-400 hover:text-white font-medium transition-colors cursor-pointer"
+                      >
+                        Quên mật khẩu?
+                      </button>
+                    </div>
+                  </div>
                 ) : (
-                  /* Login / Register Main Form */
-                  <form onSubmit={handleSubmit} className="space-y-3.5">
-                    {mode === "register" && (
-                      <>
-                        <div>
-                          <label className="block text-[11px] font-semibold uppercase tracking-wide text-neutral-400 mb-1.5">
-                            Họ và tên
-                          </label>
-                          <div className="relative">
-                            <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-500 pointer-events-none" />
-                            <input
-                              type="text"
-                              required
-                              value={displayName}
-                              onChange={(e) => setDisplayName(e.target.value)}
-                              placeholder="Nguyễn Văn A"
-                              className="w-full rounded-xl border border-neutral-700/70 bg-[#1b202a] pl-9 pr-3.5 py-2.5 text-xs text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-500/80 focus:bg-[#202632] focus:ring-1 focus:ring-violet-500/20 sm:text-sm"
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-semibold uppercase tracking-wide text-neutral-400 mb-1.5">
-                            Tên tài khoản
-                          </label>
-                          <div className="relative">
-                            <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-500 pointer-events-none" />
-                            <input
-                              type="text"
-                              required
-                              value={username}
-                              onChange={(e) => setUsername(e.target.value)}
-                              placeholder="tentaikhoan"
-                              className="w-full rounded-xl border border-neutral-700/70 bg-[#1b202a] pl-9 pr-3.5 py-2.5 text-xs text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-500/80 focus:bg-[#202632] focus:ring-1 focus:ring-violet-500/20 sm:text-sm"
-                            />
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    {/* Email Field */}
-                    <div>
-                      <label className="block text-[11px] font-semibold uppercase tracking-wide text-neutral-400 mb-1.5">
-                        {mode === "login" ? "Email hoặc Username" : "Địa chỉ Email"}
-                      </label>
-                      <div className="relative">
-                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-500 pointer-events-none" />
-                        <input
-                          type={mode === "login" ? "text" : "email"}
-                          autoComplete="email"
-                          required
-                          value={emailOrUsername}
-                          onChange={(e) => setEmailOrUsername(e.target.value)}
-                          placeholder={mode === "login" ? "email hoặc @username" : "email"}
-                          className="w-full rounded-xl border border-neutral-700/70 bg-[#1b202a] pl-9 pr-3.5 py-2.5 text-xs text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-500/80 focus:bg-[#202632] focus:ring-1 focus:ring-violet-500/20 sm:text-sm"
-                        />
-                      </div>
+                  /* Register Password Fields */
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="new-password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Mật khẩu (tối thiểu 6 ký tự)"
+                        className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-10 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-white/30 focus:bg-white/[0.08] focus:ring-1 focus:ring-white/20"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1 transition-colors cursor-pointer"
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
                     </div>
 
-                    {/* Password Fields */}
-                    {mode === "login" ? (
-                      <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <label className="block text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
-                            Mật khẩu
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => setIsForgotMode(true)}
-                            className="text-[10px] text-violet-400 hover:text-violet-300 font-semibold transition-colors cursor-pointer"
-                          >
-                            Quên mật khẩu?
-                          </button>
-                        </div>
-                        <div className="relative">
-                          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-500 pointer-events-none" />
-                          <input
-                            type={showPassword ? "text" : "password"}
-                            autoComplete="current-password"
-                            required
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="••••••••••••"
-                            className="w-full rounded-xl border border-neutral-700/70 bg-[#1b202a] pl-9 pr-10 py-2.5 text-xs text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-500/80 focus:bg-[#202632] focus:ring-1 focus:ring-violet-500/20 sm:text-sm"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white p-0.5 transition-colors cursor-pointer"
-                          >
-                            {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      /* Register Password Fields */
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-[11px] font-semibold uppercase tracking-wide text-neutral-400 mb-1.5">
-                            Mật khẩu
-                          </label>
-                          <div className="relative">
-                            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-500 pointer-events-none" />
-                            <input
-                              type={showPassword ? "text" : "password"}
-                              autoComplete="new-password"
-                              required
-                              value={password}
-                              onChange={(e) => setPassword(e.target.value)}
-                              placeholder="Tối thiểu 6 ký tự"
-                              className="w-full rounded-xl border border-neutral-700/70 bg-[#1b202a] pl-9 pr-3 py-2.5 text-[11px] text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-500/80 focus:bg-[#202632] focus:ring-1 focus:ring-violet-500/20"
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-semibold uppercase tracking-wide text-neutral-400 mb-1.5">
-                            Xác nhận
-                          </label>
-                          <div className="relative">
-                            <ShieldCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-500 pointer-events-none" />
-                            <input
-                              type={showConfirmPassword ? "text" : "password"}
-                              autoComplete="new-password"
-                              required
-                              value={confirmPassword}
-                              onChange={(e) => setConfirmPassword(e.target.value)}
-                              placeholder="Nhắc lại"
-                              className="w-full rounded-xl border border-neutral-700/70 bg-[#1b202a] pl-9 pr-3 py-2.5 text-[11px] text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-500/80 focus:bg-[#202632] focus:ring-1 focus:ring-violet-500/20"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Turnstile Bot Protection */}
-                    {turnstileEnabled && (
-                      <div className="py-1">
-                        <TurnstileWidget
-                          action={mode}
-                          onTokenChange={(token) => setTurnstileToken(token)}
-                        />
-                      </div>
-                    )}
-
-                    {/* Submit Action Button */}
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full py-3.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold tracking-wide transition-all shadow-lg shadow-violet-600/25 active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
-                    >
-                      {loading ? (
-                        <>
-                          <Loader2 size={14} className="animate-spin" />
-                          <span>Đang xử lý...</span>
-                        </>
-                      ) : mode === "login" ? (
-                        <>
-                          <LogIn size={14} />
-                          <span>Đăng nhập</span>
-                        </>
-                      ) : (
-                        <>
-                          <UserPlus size={14} />
-                          <span>Tạo tài khoản</span>
-                        </>
-                      )}
-                    </button>
-                  </form>
+                    <div className="relative">
+                      <ShieldCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        autoComplete="new-password"
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Xác nhận mật khẩu"
+                        className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-10 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-white/30 focus:bg-white/[0.08] focus:ring-1 focus:ring-white/20"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1 transition-colors cursor-pointer"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
 
-          {/* Divider */}
-          <div className="relative flex items-center justify-center my-4">
-            <div className="flex-grow border-t border-neutral-800" />
-            <span className="px-3 text-[11px] font-medium text-neutral-500 uppercase tracking-wider">
-              hoặc đăng nhập bằng
-            </span>
-            <div className="flex-grow border-t border-neutral-800" />
-          </div>
+                {/* Turnstile Bot Protection */}
+                {turnstileEnabled && (
+                  <div className="py-1 flex justify-center">
+                    <TurnstileWidget
+                      action={mode}
+                      onTokenChange={(token) => setTurnstileToken(token)}
+                    />
+                  </div>
+                )}
 
-          {/* Social Buttons */}
-          <div className="grid grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              className="flex items-center justify-center gap-2 rounded-xl border border-neutral-700 bg-[#1b202a] py-2.5 px-3 transition-all hover:bg-[#202632] hover:border-neutral-600 cursor-pointer text-xs font-semibold text-neutral-200 disabled:opacity-50 active:scale-[0.98]"
-            >
-              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-              </svg>
-              <span>Google</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleFacebookLogin}
-              disabled={loading}
-              className="flex items-center justify-center gap-2 rounded-xl border border-neutral-700 bg-[#1b202a] py-2.5 px-3 transition-all hover:bg-[#202632] hover:border-neutral-600 cursor-pointer text-xs font-semibold text-neutral-200 disabled:opacity-50 active:scale-[0.98]"
-            >
-              <svg className="w-4 h-4 fill-[#1877F2] shrink-0" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-              <span>Facebook</span>
-            </button>
-          </div>
-        </div>
+                {/* Submit Action Button (Clean Emerald Accent Matching Reference) */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl bg-[#00b553] hover:bg-[#009e48] text-white text-sm font-bold tracking-wide transition-all shadow-lg shadow-[#00b553]/25 active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>Đang xử lý...</span>
+                    </>
+                  ) : mode === "login" ? (
+                    <span>Đăng nhập</span>
+                  ) : (
+                    <span>Đăng ký tài khoản</span>
+                  )}
+                </button>
+              </form>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
+
+      {/* Divider */}
+      <div className="relative flex items-center justify-center my-5">
+        <div className="flex-grow border-t border-white/10" />
+        <span className="px-3 text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
+          HOẶC
+        </span>
+        <div className="flex-grow border-t border-white/10" />
+      </div>
+
+      {/* Social Login: Google Button (Full Width Matching Reference) */}
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          disabled={loading}
+          className="flex items-center justify-center gap-3 w-full rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 py-3 px-4 transition-all cursor-pointer text-sm font-medium text-white disabled:opacity-50 active:scale-[0.98]"
+        >
+          <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+            <path
+              fill="#4285F4"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+            />
+            <path
+              fill="#EA4335"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+            />
+          </svg>
+          <span>Đăng nhập bằng Google</span>
+        </button>
+
+        {/* Facebook Login Alternative */}
+        <button
+          type="button"
+          onClick={handleFacebookLogin}
+          disabled={loading}
+          className="flex items-center justify-center gap-3 w-full rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 py-2.5 px-4 transition-all cursor-pointer text-xs font-medium text-neutral-300 disabled:opacity-50 active:scale-[0.98]"
+        >
+          <svg
+            className="w-4 h-4 fill-[#1877F2] shrink-0"
+            viewBox="0 0 24 24"
+          >
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+          </svg>
+          <span>Đăng nhập bằng Facebook</span>
+        </button>
+      </div>
+
+      {/* Switch Mode Footer Link */}
+      <div className="text-center mt-6 text-xs text-neutral-400">
+        {mode === "login" ? (
+          <>
+            Chưa có tài khoản?{" "}
+            <button
+              type="button"
+              onClick={() => {
+                setIsForgotMode(false);
+                setMode("register");
+              }}
+              className="font-bold text-white hover:underline cursor-pointer ml-1 transition-colors"
+            >
+              Đăng ký ngay
+            </button>
+          </>
+        ) : (
+          <>
+            Đã có tài khoản?{" "}
+            <button
+              type="button"
+              onClick={() => {
+                setIsForgotMode(false);
+                setMode("login");
+              }}
+              className="font-bold text-white hover:underline cursor-pointer ml-1 transition-colors"
+            >
+              Đăng nhập ngay
+            </button>
+          </>
+        )}
+      </div>
+    </div>
   );
 
+  /* ── Page Layout View (/login & /register) ── */
   if (isPage) {
     return (
-      <div className="min-h-screen w-full bg-[#0a0c14] flex items-center justify-center p-3 sm:p-6 relative overflow-hidden">
-        {/* Background Movie Posters Collage Grid */}
-        <CinematicAuthBackground />
+      <div className="min-h-[100dvh] w-full flex flex-col justify-between items-center relative overflow-y-auto px-4 py-6 sm:px-8 font-primary">
+        {/* Fullscreen Random Movie Collage Backdrop */}
+        <CinematicAuthBackground artworkUrl={currentArtwork.url} />
 
-        {/* Ambient Dark Overlay */}
-        <div className="fixed inset-0 bg-[#0a0c14]/85 backdrop-blur-[3px] pointer-events-none z-0" />
-
-        {/* Mobile Brand Link when left column is hidden */}
-        <div className="md:hidden absolute top-4 left-4 z-20">
-          <Link href="/" className="inline-flex items-center gap-2 select-none group">
+        {/* Top Header Bar */}
+        <header className="w-full max-w-6xl mx-auto flex items-center justify-between relative z-10 py-2">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2.5 select-none group"
+          >
             <NextImage
               src="/cinephim-logo.png"
               alt="NetPhim Logo"
-              width={26}
-              height={26}
-              className="h-6.5 w-6.5 object-contain transition-transform group-hover:scale-105"
+              width={34}
+              height={34}
+              className="h-8.5 w-8.5 object-contain transition-transform group-hover:scale-105"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).src = "/logo.png";
               }}
             />
-            <span className="text-lg font-black tracking-tight text-white flex items-center font-sans">
-              Net<span className="text-violet-400">Phim</span>
+            <span className="text-2xl font-black tracking-tight text-white flex items-center font-sans">
+              Net
+              <span className="text-violet-400 drop-shadow-[0_0_12px_rgba(167,139,250,0.6)]">
+                Phim
+              </span>
             </span>
           </Link>
-        </div>
 
-        {cardContent}
+          <Link
+            href="/"
+            className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-md border border-white/10 shadow-sm"
+          >
+            <ArrowLeft size={14} />
+            <span>Trang chủ</span>
+          </Link>
+        </header>
+
+        {/* Centered Auth Card */}
+        <main className="w-full flex items-center justify-center my-auto py-6 relative z-10">
+          {cardContent}
+        </main>
+
+        {/* Bottom Footer */}
+        <footer className="w-full max-w-6xl mx-auto text-center py-3 relative z-10">
+          <p className="text-xs text-neutral-400/80">
+            © {new Date().getFullYear()} NetPhim. Nền tảng xem phim trực tuyến độ nét cao.
+          </p>
+        </footer>
       </div>
     );
   }
 
+  /* ── Modal Layout View (Header Popup) ── */
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
-      {/* Background Movie Posters Collage Grid */}
-      <CinematicAuthBackground />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200 font-primary">
+      {/* Fullscreen Random Movie Collage Backdrop */}
+      <CinematicAuthBackground artworkUrl={currentArtwork.url} />
 
-      {/* Dark Backdrop Overlay */}
+      {/* Click outside backdrop to close */}
       <div
         onClick={closeModal}
-        className="fixed inset-0 bg-black/75 backdrop-blur-[4px] cursor-pointer z-0"
+        className="fixed inset-0 bg-black/40 backdrop-blur-[2px] cursor-pointer z-0"
       />
 
-      {cardContent}
+      {/* Top Header Bar for Modal */}
+      <div className="fixed top-4 left-4 sm:left-8 z-20">
+        <Link
+          href="/"
+          onClick={closeModal}
+          className="inline-flex items-center gap-2.5 select-none group"
+        >
+          <NextImage
+            src="/cinephim-logo.png"
+            alt="NetPhim Logo"
+            width={32}
+            height={32}
+            className="h-8 w-8 object-contain transition-transform group-hover:scale-105"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = "/logo.png";
+            }}
+          />
+          <span className="text-xl font-black tracking-tight text-white flex items-center font-sans">
+            Net
+            <span className="text-violet-400 drop-shadow-[0_0_12px_rgba(167,139,250,0.6)]">
+              Phim
+            </span>
+          </span>
+        </Link>
+      </div>
+
+      <button
+        onClick={closeModal}
+        className="fixed top-4 right-4 sm:right-8 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer backdrop-blur-md border border-white/10 z-20"
+        aria-label="Đóng"
+      >
+        <X size={18} />
+      </button>
+
+      {/* Centered Auth Card */}
+      <div className="relative z-10 my-auto py-4 w-full flex justify-center">
+        {cardContent}
+      </div>
     </div>
   );
 }
