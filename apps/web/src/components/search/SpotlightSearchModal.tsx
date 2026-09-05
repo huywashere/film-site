@@ -89,7 +89,6 @@ function SearchCardImage({ film }: { film: FilmItem }) {
       film={film}
       kind="poster"
       priority={true}
-      allowTitleLookup={true}
       className="absolute inset-0 h-full w-full transition-transform duration-300 group-hover:scale-105"
       alt={film.name || film.title || "Poster"}
     />

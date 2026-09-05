@@ -212,22 +212,6 @@ export function TmdbArtwork({
     }
   }, [src]);
 
-  // When async TMDB artwork arrives and provider artwork has already failed (or is not yet loaded),
-  // ensure TMDB candidates get a chance to load
-  useEffect(() => {
-    if (tmdbUrl && !loaded) {
-      const tmdbIdx = candidates.findIndex(
-        (c) =>
-          c.includes('image.tmdb.org') ||
-          c.includes('wsrv.nl/?url=https%3A%2F%2Fimage.tmdb.org') ||
-          c.includes('/api/image-proxy?url=https%3A%2F%2Fimage.tmdb.org'),
-      );
-      if (tmdbIdx !== -1 && candidateIndex > tmdbIdx) {
-        setCandidateIndex(tmdbIdx);
-      }
-    }
-  }, [tmdbUrl, loaded, candidates, candidateIndex]);
-
   return (
     <div ref={containerRef} className={cn('relative overflow-hidden bg-[#101218]', className)}>
       {src ? (
@@ -268,8 +252,6 @@ export function TmdbArtwork({
             src === tmdbUrl || /image\.tmdb\.org\/t\/p\//i.test(src) ? 'tmdb' : 'fallback'
           }
         />
-      ) : (needsTmdbArtwork && !artworkQuery.isFetched) ? (
-        <div className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,#101218_25%,#181b23_45%,#101218_65%)] bg-[length:220%_100%] motion-reduce:animate-none" />
       ) : (!src || candidateIndex >= candidates.length || artworkQuery.isFetched || providerIsTmdb) ? (
         <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-neutral-800 via-neutral-900 to-black p-2 text-center">
           <Clapperboard className="mb-1 h-5 w-5 text-neutral-600" />
