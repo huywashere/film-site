@@ -25,7 +25,7 @@ import {
 import { movieApi } from "@/lib/api";
 import { tmdbProfile } from "@/lib/tmdb";
 import { resolveImageUrl, FilmItem } from "@/components/film/FilmCard";
-import { useTmdbArtwork } from "@/hooks/useTmdbArtwork";
+import { TmdbArtwork } from "@/components/film/TmdbArtwork";
 import { VoiceSearchButton } from "@/components/search/VoiceSearchButton";
 import { cardFont } from "@/lib/fonts";
 import { searchLocalFilms } from "@/lib/smart-search";
@@ -84,63 +84,14 @@ function filmSlugIdentity(film: FilmItem): string {
 }
 
 function SearchCardImage({ film }: { film: FilmItem }) {
-  const initialPoster =
-    resolveImageUrl(film.poster_url, film.thumb_url) ||
-    resolveImageUrl(film.thumb_url);
-
-  const [imgSrc, setImgSrc] = useState<string | null>(initialPoster);
-
-  // In search result cards, only use vertical poster artwork (never horizontal backdrop)
-  const { posterUrl: tmdbPosterUrl } = useTmdbArtwork(
-    film,
-    !imgSrc || imgSrc.startsWith("/api/image-proxy"),
-  );
-
-  const preferredTmdb = tmdbPosterUrl;
-
-  useEffect(() => {
-    const direct =
-      resolveImageUrl(film.poster_url, film.thumb_url) ||
-      resolveImageUrl(film.thumb_url);
-    if (direct) {
-      setImgSrc(direct);
-    } else if (preferredTmdb) {
-      setImgSrc(preferredTmdb);
-    }
-  }, [film.slug, film.poster_url, film.thumb_url, preferredTmdb]);
-
-  useEffect(() => {
-    if (preferredTmdb && (!imgSrc || imgSrc.startsWith("/api/image-proxy"))) {
-      setImgSrc(preferredTmdb);
-    }
-  }, [preferredTmdb, imgSrc]);
-
-  if (!imgSrc) {
-    return (
-      <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center bg-neutral-900 text-neutral-500">
-        <Film size={18} className="mb-0.5" />
-        <span className="text-[9px] font-bold text-neutral-300 line-clamp-1 leading-tight">
-          {film.name || film.title}
-        </span>
-      </div>
-    );
-  }
-
   return (
-    /* eslint-disable-next-line @next/next/no-img-element */
-    <img
-      src={imgSrc}
+    <TmdbArtwork
+      film={film}
+      kind="poster"
+      priority={true}
+      allowTitleLookup={true}
+      className="absolute inset-0 h-full w-full transition-transform duration-300 group-hover:scale-105"
       alt={film.name || film.title || "Poster"}
-      className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-      onError={() => {
-        if (preferredTmdb && imgSrc !== preferredTmdb) {
-          setImgSrc(preferredTmdb);
-        } else if (imgSrc && !imgSrc.startsWith("/api/image-proxy")) {
-          setImgSrc(`/api/image-proxy?url=${encodeURIComponent(imgSrc)}`);
-        } else {
-          setImgSrc(null);
-        }
-      }}
     />
   );
 }
@@ -1226,10 +1177,6 @@ export function SpotlightSearchModal({
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                     {uniqueSuggestions.slice(0, 12).map((film, idx) => {
-                      const poster =
-                        resolveImageUrl(film.poster_url) ||
-                        resolveImageUrl(film.thumb_url);
-
                       return (
                         <div
                           key={`${film.slug}-${idx}`}
@@ -1237,16 +1184,7 @@ export function SpotlightSearchModal({
                           className="group relative cursor-pointer overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.02] transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/[0.04]"
                         >
                           <div className="relative aspect-[2/3] w-full overflow-hidden bg-neutral-900">
-                            {poster && (
-                              <NextImage
-                                src={poster}
-                                alt={film.name}
-                                fill
-                                sizes="(max-width: 640px) 40vw, 180px"
-                                className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                unoptimized
-                              />
-                            )}
+                            <SearchCardImage film={film} />
                             <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
                               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-black">
                                 <Play
