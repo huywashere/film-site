@@ -192,16 +192,23 @@ export function TmdbArtwork({
     return undefined;
   }, [src, kind]);
 
-  const candidatesKey = candidates.join('|');
+  // Reset candidate index and loaded state only when movie identity or artwork kind changes
   useEffect(() => {
     setCandidateIndex(0);
     setLoaded(false);
-  }, [film.slug, kind, candidatesKey]);
+  }, [film.slug, kind]);
 
+  // Sync loaded state when src changes or when image is already cached/decoded in DOM
   useEffect(() => {
-    setLoaded(false);
-    if (imgRef.current?.complete && imgRef.current?.naturalWidth > 0) {
+    if (!src) {
+      setLoaded(false);
+      return;
+    }
+    const img = imgRef.current;
+    if (img && (img.naturalWidth > 0 || img.complete)) {
       setLoaded(true);
+    } else {
+      setLoaded(false);
     }
   }, [src]);
 
@@ -210,7 +217,12 @@ export function TmdbArtwork({
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          ref={imgRef}
+          ref={(node) => {
+            imgRef.current = node;
+            if (node && (node.naturalWidth > 0 || node.complete) && !loaded) {
+              setLoaded(true);
+            }
+          }}
           key={src}
           src={src}
           srcSet={mobileSrc && mobileSrc !== src ? `${mobileSrc} 640w, ${src} 1280w` : undefined}

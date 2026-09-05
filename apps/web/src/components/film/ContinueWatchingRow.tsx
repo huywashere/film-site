@@ -55,11 +55,13 @@ function HistoryArtwork({
   catalogFilm,
   landscape,
   className,
+  priority = false,
 }: {
   item: any;
   catalogFilm?: FilmItem;
   landscape: boolean;
   className: string;
+  priority?: boolean;
 }) {
   const title = item.title || item.name || 'Phim';
   const rawPoster =
@@ -160,6 +162,7 @@ function HistoryArtwork({
       kind={landscape ? 'backdrop' : 'poster'}
       alt={`Ảnh phim ${title}`}
       className={className}
+      priority={priority}
       allowTitleLookup
     />
   );
@@ -408,6 +411,7 @@ export function ContinueWatchingRow({ fallbackFilms = [] }: ContinueWatchingRowP
                           item={item}
                           catalogFilm={catalogFilm}
                           landscape
+                          priority={idx < 5}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
                         />
 

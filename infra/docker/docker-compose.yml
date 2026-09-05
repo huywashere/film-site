@@ -28,13 +28,13 @@ services:
     # Redis Stack không dùng --maxmemory-policy allkeys-lru với RediSearch
     # Cấu hình qua environment variables thay vì command args
     environment:
-      REDIS_ARGS: '--requirepass ${REDIS_PASSWORD} --maxmemory 512mb'
+      REDIS_ARGS: '--requirepass ${REDIS_PASSWORD:-netphim_redis_secret} --maxmemory 512mb'
     volumes:
       - redis_data:/data
     networks:
       - netphim_net
     healthcheck:
-      test: ['CMD', 'redis-cli', '--no-auth-warning', '-a', '${REDIS_PASSWORD}', 'ping']
+      test: ['CMD', 'redis-cli', '--no-auth-warning', '-a', '${REDIS_PASSWORD:-netphim_redis_secret}', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -46,7 +46,7 @@ services:
     restart: unless-stopped
     environment:
       MEILI_ENV: production
-      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?MEILI_MASTER_KEY must be set}
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-masterKeyLocalDev32CharactersMin}
       MEILI_NO_ANALYTICS: 'true'
     volumes:
       - meilisearch_data:/meili_data
@@ -269,8 +269,8 @@ services:
     restart: unless-stopped
     stop_grace_period: 15s
     environment:
-      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
-      HLS_ANALYZER_ALLOWED_HOSTS: ${HLS_PROXY_ALLOWED_HOSTS}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-netphim_redis_secret}@redis:6379
+      HLS_ANALYZER_ALLOWED_HOSTS: ${HLS_PROXY_ALLOWED_HOSTS:-*.phimapi.com,*.phim1280.tv,*.kkphimplayer*.com,*.ophim.live,*.ophim1.com,*.opstream*.com,*.nguonc.com,*.streamc.xyz,*.hihihoho*.top,*.vsmov.com,*.streamvsmov.com,vicdn.cc,*.vicdn.cc}
       HLS_ANALYZER_REQUIRE_HTTPS: ${HLS_ANALYZER_REQUIRE_HTTPS:-true}
       HLS_ANALYZER_JOB_STREAM: ${HLS_ANALYZER_JOB_STREAM:-netphim:hls:analysis:jobs}
       HLS_ANALYZER_RESULT_STREAM: ${HLS_ANALYZER_RESULT_STREAM:-netphim:hls:analysis:results}
