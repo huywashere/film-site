@@ -402,14 +402,15 @@ export function AuthModal({
           className="inline-flex items-center gap-2 select-none group"
         >
           <NextImage
-            src="/cinephim-logo.png"
+            src="/cinephim-logo.svg"
             alt="NetPhim Logo"
             width={32}
             height={32}
             priority
+            unoptimized
             className="h-8 w-8 object-contain transition-transform group-hover:scale-105"
             onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = "/logo.png";
+              (e.currentTarget as HTMLImageElement).src = "/cinephim-logo.png";
             }}
           />
           <span className="text-xl sm:text-[22px] font-black tracking-tight text-white flex items-center font-sans">
