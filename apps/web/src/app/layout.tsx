@@ -46,8 +46,11 @@ export const metadata: Metadata = {
     "NetPhim",
   ],
   icons: {
-    icon: "/cinephim-logo.png",
-    shortcut: "/cinephim-logo.png",
+    icon: [
+      { url: "/cinephim-logo.svg", type: "image/svg+xml" },
+      { url: "/cinephim-logo.png", type: "image/png" },
+    ],
+    shortcut: "/cinephim-logo.svg",
     apple: "/cinephim-logo.png",
   },
   manifest: "/manifest.json",
@@ -110,8 +113,8 @@ export default function RootLayout({
           }}
         />
         <meta name="referrer" content="strict-origin-when-cross-origin" />
-        <link rel="icon" href="/cinephim-logo.png" type="image/png" />
-        <link rel="shortcut icon" href="/cinephim-logo.png" type="image/png" />
+        <link rel="icon" href="/cinephim-logo.svg" type="image/svg+xml" />
+        <link rel="alternate icon" href="/cinephim-logo.png" type="image/png" />
         <link rel="apple-touch-icon" href="/cinephim-logo.png" />
         <link rel="dns-prefetch" href="https://wsrv.nl" />
         <link rel="dns-prefetch" href="https://img.phimapi.com" />

@@ -119,11 +119,12 @@ export function LogoSplashIntro() {
       <div className="netphim-intro-brand relative flex h-full flex-col items-center justify-center px-6">
         <div className="relative flex items-center gap-3.5 sm:gap-5">
           <Image
-            src="/cinephim-logo.png"
+            src="/cinephim-logo.svg"
             alt=""
             width={88}
             height={88}
             priority
+            unoptimized
             className="h-[62px] w-[62px] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,.75)] sm:h-[82px] sm:w-[82px]"
           />
           <span className="text-[36px] font-black tracking-[-.055em] text-white drop-shadow-[0_8px_30px_rgba(0,0,0,.7)] sm:text-[56px]">

@@ -291,14 +291,15 @@ function AnimatedNavbarLogo() {
     >
       <div className="relative flex cursor-pointer items-center justify-center active:scale-95">
         <NextImage
-          src="/cinephim-logo.png"
+          src="/cinephim-logo.svg"
           alt="NetPhim Logo"
           width={36}
           height={36}
           priority
+          unoptimized
           className="navbar-logo-reveal relative z-10 h-8 w-8 object-contain sm:h-9 sm:w-9"
           onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = "/logo.png";
+            (e.currentTarget as HTMLImageElement).src = "/cinephim-logo.png";
           }}
         />
       </div>

@@ -163,11 +163,11 @@ export function Footer() {
             <Link href="/" className="inline-flex items-center gap-2.5 group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/cinephim-logo.png"
+                src="/cinephim-logo.svg"
                 alt="NetPhim Logo"
                 className="h-9 w-auto sm:h-10 object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_0_12px_rgba(168,85,247,0.3)]"
                 onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                  (e.currentTarget as HTMLImageElement).src = "/cinephim-logo.png";
                 }}
               />
               <span className="text-xl sm:text-2xl font-black tracking-tight text-white">
