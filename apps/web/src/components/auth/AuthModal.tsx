@@ -379,17 +379,20 @@ export function AuthModal({
   const cardContent = (
     <div
       className={cn(
-        "relative w-full max-w-[390px] bg-[#11141d]/85 backdrop-blur-2xl border border-white/10 rounded-2xl sm:rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.92)] p-5 sm:p-6 sm:px-7 text-white z-10 font-primary transition-all duration-300",
+        "relative w-full max-w-[390px] overflow-hidden bg-gradient-to-b from-[#181a2e]/80 via-[#101222]/75 to-[#0b0d18]/85 backdrop-blur-2xl border border-white/[0.14] rounded-2xl sm:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.85),0_0_50px_-10px_rgba(139,92,246,0.22),inset_0_1px_0_0_rgba(255,255,255,0.18)] p-5 sm:p-6 sm:px-7 text-white z-10 font-primary transition-all duration-300",
       )}
     >
-      {/* Integrated Back Button on top-left of the card */}
+      {/* Decorative Ambient Glass Tint on Card Top */}
+      <div className="absolute -top-14 left-1/2 -translate-x-1/2 w-52 h-28 bg-violet-500/20 blur-3xl pointer-events-none rounded-full" />
+
+      {/* Integrated Back Button with Frosted Glass Pill & Glow */}
       <button
         onClick={closeModal}
-        className="absolute top-3.5 left-3.5 sm:top-4 sm:left-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer border border-white/10 z-20 shadow-sm group"
+        className="absolute top-4 left-4 sm:top-5 sm:left-5 w-8.5 h-8.5 rounded-full bg-white/[0.08] hover:bg-violet-500/20 border border-white/15 hover:border-violet-400/50 text-neutral-300 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm hover:shadow-[0_0_15px_rgba(167,139,250,0.35)] backdrop-blur-md active:scale-95 group z-20"
         aria-label="Quay lại"
         title="Quay lại"
       >
-        <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-0.5" />
+        <ArrowLeft size={16} className="transition-transform duration-200 group-hover:-translate-x-0.5 group-hover:text-violet-200" />
       </button>
 
       {/* Brand Logo integrated directly on the form header - Clean without glow */}
@@ -472,7 +475,7 @@ export function AuthModal({
                       value={emailOrUsername}
                       onChange={(e) => setEmailOrUsername(e.target.value)}
                       placeholder="Email đã đăng ký"
-                      className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-white/30 focus:bg-white/[0.08] focus:ring-1 focus:ring-white/20"
+                      className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-400/50 focus:bg-white/[0.08] focus:ring-1 focus:ring-violet-400/25"
                     />
                   </div>
                 </div>
@@ -480,7 +483,7 @@ export function AuthModal({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl bg-[#00b553] hover:bg-[#009e48] text-white text-sm font-bold tracking-wide transition-all shadow-lg shadow-[#00b553]/25 active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:via-purple-500 hover:to-indigo-500 text-white text-sm font-bold tracking-wide transition-all duration-200 shadow-lg shadow-violet-600/30 hover:shadow-violet-600/40 active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
                 >
                   {loading ? (
                     <>
@@ -521,7 +524,7 @@ export function AuthModal({
                           value={displayName}
                           onChange={(e) => setDisplayName(e.target.value)}
                           placeholder="Họ và tên"
-                          className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-white/30 focus:bg-white/[0.08] focus:ring-1 focus:ring-white/20"
+                          className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-400/50 focus:bg-white/[0.08] focus:ring-1 focus:ring-violet-400/25"
                         />
                       </div>
                     </div>
@@ -536,7 +539,7 @@ export function AuthModal({
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
                           placeholder="Tên tài khoản (username)"
-                          className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-white/30 focus:bg-white/[0.08] focus:ring-1 focus:ring-white/20"
+                          className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-400/50 focus:bg-white/[0.08] focus:ring-1 focus:ring-violet-400/25"
                         />
                       </div>
                     </div>
@@ -558,7 +561,7 @@ export function AuthModal({
                           ? "Email hoặc Tên đăng nhập"
                           : "Địa chỉ Email"
                       }
-                      className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-white/30 focus:bg-white/[0.08] focus:ring-1 focus:ring-white/20"
+                      className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-400/50 focus:bg-white/[0.08] focus:ring-1 focus:ring-violet-400/25"
                     />
                   </div>
                 </div>
@@ -575,7 +578,7 @@ export function AuthModal({
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Mật khẩu"
-                        className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-10 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-white/30 focus:bg-white/[0.08] focus:ring-1 focus:ring-white/20"
+                        className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-10 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-400/50 focus:bg-white/[0.08] focus:ring-1 focus:ring-violet-400/25"
                       />
                       <button
                         type="button"
@@ -609,7 +612,7 @@ export function AuthModal({
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Mật khẩu (tối thiểu 6 ký tự)"
-                        className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-10 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-white/30 focus:bg-white/[0.08] focus:ring-1 focus:ring-white/20"
+                        className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-10 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-400/50 focus:bg-white/[0.08] focus:ring-1 focus:ring-violet-400/25"
                       />
                       <button
                         type="button"
@@ -629,7 +632,7 @@ export function AuthModal({
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Xác nhận mật khẩu"
-                        className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-10 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-white/30 focus:bg-white/[0.08] focus:ring-1 focus:ring-white/20"
+                        className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-10 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-400/50 focus:bg-white/[0.08] focus:ring-1 focus:ring-violet-400/25"
                       />
                       <button
                         type="button"
@@ -658,11 +661,11 @@ export function AuthModal({
                   </div>
                 )}
 
-                {/* Submit Action Button (Clean Emerald Accent Matching Reference) */}
+                {/* Submit Action Button (Soft Violet Accent) */}
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl bg-[#00b553] hover:bg-[#009e48] text-white text-sm font-bold tracking-wide transition-all shadow-lg shadow-[#00b553]/25 active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:via-purple-500 hover:to-indigo-500 text-white text-sm font-bold tracking-wide transition-all duration-200 shadow-lg shadow-violet-600/30 hover:shadow-violet-600/40 active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
                 >
                   {loading ? (
                     <>
