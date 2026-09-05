@@ -17,6 +17,7 @@ import {
   AtSign,
   ShieldCheck,
   ArrowLeft,
+  ChevronLeft,
   KeyRound,
 } from "lucide-react";
 import Link from "next/link";
@@ -388,11 +389,11 @@ export function AuthModal({
       {/* Integrated Back Button with Frosted Glass Pill & Glow */}
       <button
         onClick={closeModal}
-        className="absolute top-4 left-4 sm:top-5 sm:left-5 w-8.5 h-8.5 rounded-full bg-white/[0.08] hover:bg-violet-500/20 border border-white/15 hover:border-violet-400/50 text-neutral-300 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm hover:shadow-[0_0_15px_rgba(167,139,250,0.35)] backdrop-blur-md active:scale-95 group z-20"
+        className="absolute top-4 left-4 sm:top-5 sm:left-5 w-8.5 h-8.5 rounded-full bg-white/[0.08] hover:bg-violet-500/20 border border-white/15 hover:border-violet-400/40 text-neutral-300 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm hover:shadow-[0_0_15px_rgba(167,139,250,0.35)] backdrop-blur-md active:scale-95 group z-20"
         aria-label="Quay lại"
         title="Quay lại"
       >
-        <ArrowLeft size={16} className="transition-transform duration-200 group-hover:-translate-x-0.5 group-hover:text-violet-200" />
+        <ChevronLeft size={19} strokeWidth={2.4} className="transition-transform duration-200 group-hover:-translate-x-0.5 group-hover:text-violet-200" />
       </button>
 
       {/* Brand Logo integrated directly on the form header - Clean without glow */}
@@ -425,15 +426,15 @@ export function AuthModal({
           {isForgotMode
             ? "Khôi phục mật khẩu"
             : mode === "login"
-              ? "Chào mừng trở lại"
-              : "Tạo tài khoản"}
+              ? "Đăng nhập tài khoản"
+              : "Tạo tài khoản mới"}
         </h1>
         <p className="text-xs text-neutral-400 mt-1.5 leading-relaxed">
           {isForgotMode
             ? "Nhập email đăng ký để nhận liên kết khôi phục mật khẩu."
             : mode === "login"
-              ? "Cùng thưởng thức những bộ phim tuyệt vời nhất."
-              : "Đăng ký thành viên để thưởng thức kho phim HD/4K không giới hạn."}
+              ? "Thế giới điện ảnh đỉnh cao đang chờ bạn khám phá."
+              : "Gia nhập NetPhim để xem phim chất lượng cao không giới hạn."}
         </p>
       </div>
 
