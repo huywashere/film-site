@@ -29,14 +29,14 @@ export function CinematicAuthBackground({ artworkUrl }: CinematicAuthBackgroundP
         decoding="async"
         // @ts-ignore
         fetchPriority="high"
-        className="w-full h-full object-cover object-center scale-[1.02] filter brightness-[0.72] contrast-[1.05] select-none pointer-events-none animate-in fade-in duration-300"
+        className="w-full h-full object-cover object-center scale-[1.02] filter brightness-[0.85] contrast-[1.03] select-none pointer-events-none animate-in fade-in duration-300"
         referrerPolicy="no-referrer"
       />
 
-      {/* Cinematic Vignette & Ambient Dark Scrim */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-[0.5px]" />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#090b10] via-black/20 to-[#090b10]/85" />
-      <div className="absolute inset-0 [background:radial-gradient(ellipse_at_center,transparent_25%,rgba(0,0,0,0.85)_100%)]" />
+      {/* Cinematic Vignette & Ambient Light Dark Scrim */}
+      <div className="absolute inset-0 bg-black/25" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-black/45" />
+      <div className="absolute inset-0 [background:radial-gradient(ellipse_at_center,transparent_35%,rgba(0,0,0,0.5)_100%)]" />
     </div>
   );
 }

@@ -382,14 +382,14 @@ export function AuthModal({
         "relative w-full max-w-[390px] bg-[#11141d]/85 backdrop-blur-2xl border border-white/10 rounded-2xl sm:rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.92)] p-5 sm:p-6 sm:px-7 text-white z-10 font-primary transition-all duration-300",
       )}
     >
-      {/* Integrated Close Button (X) right on top-right of the card */}
+      {/* Integrated Back Button on top-left of the card */}
       <button
         onClick={closeModal}
-        className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 w-7.5 h-7.5 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer border border-white/10 z-20 shadow-sm"
-        aria-label="Đóng"
-        title={isPage ? "Quay lại" : "Đóng"}
+        className="absolute top-3.5 left-3.5 sm:top-4 sm:left-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer border border-white/10 z-20 shadow-sm group"
+        aria-label="Quay lại"
+        title="Quay lại"
       >
-        <X size={15} />
+        <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-0.5" />
       </button>
 
       {/* Brand Logo integrated directly on the form header - Clean without glow */}
@@ -780,10 +780,10 @@ export function AuthModal({
       {/* Fullscreen Random Movie Collage Backdrop - Fast High-Priority Load */}
       <CinematicAuthBackground artworkUrl={currentArtwork.url} />
 
-      {/* Click outside backdrop to close */}
+      {/* Click outside backdrop to close - Light tint */}
       <div
         onClick={closeModal}
-        className="fixed inset-0 bg-black/50 backdrop-blur-[2px] cursor-pointer z-0"
+        className="fixed inset-0 bg-black/25 backdrop-blur-[1px] cursor-pointer z-0"
       />
 
       {/* Centered Auth Card */}
