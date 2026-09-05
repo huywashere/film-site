@@ -436,7 +436,6 @@ function GenreCuratedHeroBanner({
           </div>
         )}
       </div>
-
       {/* ── Cinematic Netflix Multi-Layer Vignette Gradients ── */}
       <div
         className="absolute inset-0 z-10 pointer-events-none"
@@ -450,7 +449,7 @@ function GenreCuratedHeroBanner({
       />
 
       {/* ── Left Content Overlay (Netflix Layout) ── */}
-      <div className="absolute inset-0 z-20 pointer-events-none flex flex-col justify-end sm:justify-center px-4 sm:px-14 md:px-20 lg:px-24 pb-16 sm:pb-20 lg:pb-6">
+      <div className="absolute inset-0 z-20 pointer-events-none flex flex-col justify-end sm:justify-center px-4 sm:px-14 md:px-20 lg:px-24 pb-24 sm:pb-32 lg:pb-12">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentItem.slug || currentIndex}
@@ -464,8 +463,8 @@ function GenreCuratedHeroBanner({
             {/* Large Netflix-Scale Title Logo PNG or Bold Typography */}
             <ResilientGenreHeroLogo item={currentItem} />
 
-            {/* Clean Prominent Subtitle */}
-            <p className="text-xs sm:text-base md:text-lg text-neutral-200 font-semibold tracking-wide drop-shadow truncate max-w-xl">
+            {/* Tagline / Subtitle */}
+            <p className="text-xs sm:text-base md:text-lg font-bold text-cyan-300 drop-shadow-md">
               {currentItem.name} {currentItem.origin_name ? `• ${currentItem.origin_name}` : ""}
             </p>
 
@@ -518,34 +517,37 @@ function GenreCuratedHeroBanner({
             </div>
 
             {/* Large Prominent Synopsis Description */}
-            <p className="line-clamp-2 sm:line-clamp-3 md:line-clamp-4 text-xs sm:text-base md:text-lg text-neutral-200 font-normal leading-relaxed drop-shadow max-w-2xl">
-              {currentItem.content}
+            <p className="line-clamp-2 sm:line-clamp-3 text-xs sm:text-sm md:text-base leading-relaxed text-neutral-200/90 font-medium drop-shadow-sm max-w-2xl">
+              {currentItem.content || "Khám phá siêu phẩm điện ảnh đỉnh cao với chất lượng hình ảnh sắc nét và âm thanh sống động."}
             </p>
 
-            {/* Prominent Netflix Action Buttons */}
-            <div className="flex items-center gap-2.5 sm:gap-3 pt-1 sm:pt-2">
+            {/* Netflix Action Callouts (3 CTA Buttons) */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-1 sm:pt-2">
+              {/* Button 1: Xem Ngay (Primary White Pill) */}
               <Link
                 href={`/film/${currentItem.slug}`}
-                className="inline-flex items-center gap-2 sm:gap-3 px-5 sm:px-9 py-2.5 sm:py-3.5 rounded-lg bg-white hover:bg-neutral-100 text-black font-black text-sm sm:text-lg transition-all shadow-2xl hover:scale-105 active:scale-95 cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 sm:px-7 sm:py-3 rounded-md bg-white hover:bg-white/90 text-black font-extrabold text-sm sm:text-base transition-all shadow-[0_4px_20px_rgba(255,255,255,0.25)] hover:scale-105 active:scale-95"
               >
-                <Play size={16} className="sm:w-5 sm:h-5" fill="currentColor" />
-                <span>Xem Phim</span>
+                <Play size={20} fill="currentColor" />
+                <span>Xem Ngay</span>
               </Link>
 
+              {/* Button 2: Xem Trailer (Secondary Glass with Play Trailer) */}
               {currentItem.trailer_url && (
                 <button
                   type="button"
                   onClick={() => onOpenTrailer(currentItem.name, currentItem.trailer_url)}
-                  className="inline-flex items-center gap-2 px-4 sm:px-7 py-2.5 sm:py-3.5 rounded-lg bg-neutral-900/85 hover:bg-neutral-800 text-white font-bold text-sm sm:text-lg backdrop-blur-md border border-white/20 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-lg"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3 rounded-md bg-white/20 hover:bg-white/30 text-white font-bold text-sm sm:text-base backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer border border-white/20"
                 >
-                  <Clapperboard size={16} className="sm:w-[19px] sm:h-[19px]" />
+                  <Clapperboard size={19} />
                   <span>Trailer</span>
                 </button>
               )}
 
+              {/* Button 3: Chi Tiết Phim */}
               <Link
                 href={`/film/${currentItem.slug}`}
-                className="hidden sm:inline-flex items-center gap-2 px-6 py-3 sm:py-3.5 rounded-lg bg-neutral-900/85 hover:bg-neutral-800 text-neutral-200 hover:text-white font-bold text-base sm:text-lg backdrop-blur-md border border-white/20 transition-all shadow-lg"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-5 sm:py-3 rounded-md bg-white/10 hover:bg-white/20 text-white font-medium text-sm sm:text-base backdrop-blur-md transition-all hover:scale-105 active:scale-95 border border-white/10"
               >
                 <Info size={19} />
                 <span>Chi Tiết</span>
@@ -556,7 +558,7 @@ function GenreCuratedHeroBanner({
       </div>
 
       {/* ── Bottom Controls: Sound Toggle, Maturity Rating & Slide Chevrons ── */}
-      <div className="absolute right-3 sm:right-12 bottom-3 sm:bottom-10 z-30 pointer-events-auto flex items-center gap-2 sm:gap-3 select-none">
+      <div className="absolute right-4 sm:right-12 bottom-16 sm:bottom-28 md:bottom-36 lg:bottom-44 z-30 pointer-events-auto flex items-center gap-2 sm:gap-3 select-none">
         {/* Sound Toggle (Mute / Unmute) */}
         {ytKey && (
           <button
@@ -813,32 +815,8 @@ export default function GenrePage() {
             onOpenTrailer={handleOpenTrailer}
           />
 
-          {/* ── CATEGORY TABS BAR (MINIMALIST PILLS - NO EMOJIS) ── */}
-          <div className="relative z-10 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-4 sm:pr-8 md:pr-12 pt-6 pb-2">
-            <div className="flex items-center gap-2 overflow-x-auto pb-3 scrollbar-none touch-pan-x select-none">
-              {tabs.map((tab) => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveTab(tab.id)}
-                    className={cn(
-                      "px-4 py-2 sm:px-5 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer",
-                      isActive
-                        ? "bg-white text-black font-extrabold shadow-sm scale-105"
-                        : "bg-white/[0.08] hover:bg-white/[0.16] text-neutral-300 hover:text-white border border-white/10",
-                    )}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* ── CURATED MULTI-CATEGORY SWIPER ROWS (CLEAN TITLES - NO EMOJIS) ── */}
-          <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-12 space-y-6 mt-4">
+          {/* ── CURATED MULTI-CATEGORY SWIPER ROWS (OVERLAPPING HERO BANNER & VIDEO) ── */}
+          <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 -mt-16 sm:-mt-24 md:-mt-32 lg:-mt-40">
             {/* Row 1 */}
             <GenreCategoryRow
               title={
