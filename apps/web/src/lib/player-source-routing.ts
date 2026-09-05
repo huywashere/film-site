@@ -23,6 +23,8 @@ export type SourceServer = {
 const DIRECT_HLS_HOST_SUFFIXES = [
   "phimapi.com",
   "phim1280.tv",
+  "phim1280.com",
+  "kkphimplayer8.com",
   "kkphimplayer7.com",
   "kkphimplayer6.com",
   "kkphimplayer5.com",
@@ -31,7 +33,10 @@ const DIRECT_HLS_HOST_SUFFIXES = [
   "ophim1.com",
   "ophim17.cc",
   "ophim.cc",
+  "opstream.com",
   "opstream12.com",
+  "opstream14.com",
+  "opstream15.com",
   "nguonc.com",
   "streamc.xyz",
   "vsmov.com",
@@ -128,8 +133,25 @@ const UNSANDBOXED_EMBED_HOST_SUFFIXES: Record<string, string[]> = {
   vicdn: ["vicdn.cc"],
   nguonc: ["streamc.xyz"],
   vsmov: ["streamvsmov.com", "vsmov.com", "vsphim.com"],
-  kkphim: ["phimapi.com"],
-  ophim: ["ophim.live", "ophim1.com", "opstream12.com"],
+  kkphim: [
+    "phimapi.com",
+    "phim1280.tv",
+    "phim1280.com",
+    "kkphimplayer.com",
+    "kkphimplayer5.com",
+    "kkphimplayer6.com",
+    "kkphimplayer7.com",
+    "kkphimplayer8.com",
+  ],
+  ophim: [
+    "ophim.live",
+    "ophim1.com",
+    "ophim17.cc",
+    "opstream.com",
+    "opstream12.com",
+    "opstream14.com",
+    "opstream15.com",
+  ],
 };
 
 const VIDSRC_EMBED_ORIGIN = "https://vidsrc.sbs";
@@ -383,14 +405,23 @@ export function isAutomaticPlaybackSource(source: string | undefined) {
 }
 
 export function canUseUnsandboxedEmbed(source: string | undefined, url: string) {
-  if (!source) return false;
-  const normalizedSource = source.toLowerCase().trim();
-  const allowedSuffixes = UNSANDBOXED_EMBED_HOST_SUFFIXES[normalizedSource];
-  if (!allowedSuffixes) return false;
+  if (!url) return false;
   try {
     const parsed = new URL(url);
     if (parsed.protocol !== "https:") return false;
     const hostname = parsed.hostname.toLowerCase();
+    const normalizedSource = source?.toLowerCase().trim() || "";
+
+    if ((!normalizedSource || normalizedSource === "kkphim") && /^([a-z0-9-]+\.)?kkphimplayer\d*\.com$/.test(hostname)) {
+      return true;
+    }
+    if ((!normalizedSource || normalizedSource === "ophim") && /^([a-z0-9-]+\.)?opstream\d*\.com$/.test(hostname)) {
+      return true;
+    }
+
+    if (!normalizedSource) return false;
+    const allowedSuffixes = UNSANDBOXED_EMBED_HOST_SUFFIXES[normalizedSource];
+    if (!allowedSuffixes) return false;
     return allowedSuffixes.some(
       (suffix) => hostname === suffix || hostname.endsWith(`.${suffix}`),
     );

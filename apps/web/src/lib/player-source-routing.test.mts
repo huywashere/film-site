@@ -139,6 +139,9 @@ test("only removes iframe sandbox for known VidSrc, ViCDN, NguonC, VSMov, and KK
   assert.equal(canUseUnsandboxedEmbed("vsmov", "https://v6.streamvsmov.com/video/525afddb"), true);
   assert.equal(canUseUnsandboxedEmbed("vsmov", "https://streamvsmov.com/player"), true);
   assert.equal(canUseUnsandboxedEmbed("kkphim", "https://player.phimapi.com/player/?url=test"), true);
+  assert.equal(canUseUnsandboxedEmbed("kkphim", "https://v7.kkphimplayer7.com/player/?url=test"), true);
+  assert.equal(canUseUnsandboxedEmbed("kkphim", "https://phim1280.tv/player/?url=test"), true);
+  assert.equal(canUseUnsandboxedEmbed("ophim", "https://opstream14.com/player/test"), true);
 });
 
 test("allows direct HLS playback for known CDN domains", () => {
