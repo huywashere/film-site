@@ -18,10 +18,16 @@ test("builds a pinned jsDelivr URL for a local decorative asset", () => {
 });
 
 test("keeps the local URL when CDN is disabled or invalid", () => {
-  assert.equal(decorativeAssetUrl("/images/cat1.gif", ""), "/images/cat1.gif");
   assert.equal(
-    decorativeAssetUrl("/images/cat1.gif", "https://example.com/assets"),
-    "/images/cat1.gif",
+    decorativeAssetUrl("/images/cat1-thumbnail.webp", ""),
+    "/images/cat1-thumbnail.webp",
+  );
+  assert.equal(
+    decorativeAssetUrl(
+      "/images/cat1-thumbnail.webp",
+      "https://example.com/assets",
+    ),
+    "/images/cat1-thumbnail.webp",
   );
   assert.equal(
     normalizeDecorativeAssetCdnBase("http://cdn.jsdelivr.net/x"),

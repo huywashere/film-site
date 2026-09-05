@@ -3,10 +3,6 @@
   "strategy": "jsdelivr-with-local-fallback",
   "groups": {
     "catMascots": [
-      "/images/cat1-optimized.webp",
-      "/images/cat2-optimized.webp",
-      "/images/cat3-optimized.webp",
-      "/images/cat4-optimized.webp",
       "/images/cat1-thumbnail.webp",
       "/images/cat2-thumbnail.webp",
       "/images/cat3-thumbnail.webp",
