@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuthModalStore } from "@/store/authModalStore";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/providers/ToastProvider";
@@ -116,6 +116,9 @@ export function AuthModal({
 
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const handleTurnstileChange = useCallback((token: string | null) => {
+    setTurnstileToken(token);
+  }, []);
 
   const [isForgotMode, setIsForgotMode] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -653,7 +656,7 @@ export function AuthModal({
                   <div className="py-1 flex justify-center">
                     <TurnstileWidget
                       action={mode}
-                      onTokenChange={(token) => setTurnstileToken(token)}
+                      onTokenChange={handleTurnstileChange}
                     />
                   </div>
                 )}

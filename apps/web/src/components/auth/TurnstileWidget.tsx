@@ -57,6 +57,9 @@ export function TurnstileWidget({
 }: TurnstileWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const onTokenChangeRef = useRef(onTokenChange);
+  onTokenChangeRef.current = onTokenChange;
+
   const configuredSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   
   // Use production key if in production, otherwise use Cloudflare's official test site key
@@ -73,7 +76,7 @@ export function TurnstileWidget({
 
   useEffect(() => {
     if (!siteKey || !containerRef.current) {
-      onTokenChange(null);
+      onTokenChangeRef.current(null);
       return;
     }
 
@@ -102,24 +105,24 @@ export function TurnstileWidget({
           size: "flexible",
           callback: (token) => {
             setStatus("ready");
-            onTokenChange(token);
+            onTokenChangeRef.current(token);
           },
           "error-callback": (code) => {
             setStatus("error");
             setErrorCode(code);
-            onTokenChange(null);
+            onTokenChangeRef.current(null);
             return true;
           },
           "expired-callback": () => {
             setStatus("loading");
-            onTokenChange(null);
+            onTokenChangeRef.current(null);
           },
         });
         setStatus("ready");
       } catch {
         setStatus("error");
         setErrorCode("render-failed");
-        onTokenChange(null);
+        onTokenChangeRef.current(null);
       }
     };
 
@@ -133,7 +136,7 @@ export function TurnstileWidget({
         () => {
           setStatus("error");
           setErrorCode("script-load-failed");
-          onTokenChange(null);
+          onTokenChangeRef.current(null);
         },
         { once: true },
       );
@@ -163,9 +166,9 @@ export function TurnstileWidget({
         window.turnstile.remove(widgetIdRef.current);
         widgetIdRef.current = null;
       }
-      onTokenChange(null);
+      onTokenChangeRef.current(null);
     };
-  }, [action, attempt, onTokenChange, siteKey]);
+  }, [action, attempt, siteKey]);
 
   return (
     <div aria-label="Xác minh chống bot" className="w-full my-1.5 flex flex-col items-center justify-center">
