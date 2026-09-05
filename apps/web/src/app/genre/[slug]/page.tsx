@@ -449,7 +449,7 @@ function GenreCuratedHeroBanner({
       />
 
       {/* ── Left Content Overlay (Netflix Layout) ── */}
-      <div className="absolute inset-0 z-20 pointer-events-none flex flex-col justify-end sm:justify-center px-4 sm:px-14 md:px-20 lg:px-24 pb-24 sm:pb-32 lg:pb-12">
+      <div className="absolute inset-0 z-20 pointer-events-none flex flex-col justify-end sm:justify-center px-4 sm:px-14 md:px-20 lg:px-24 pb-14 sm:pb-32 lg:pb-12">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentItem.slug || currentIndex}
@@ -558,7 +558,7 @@ function GenreCuratedHeroBanner({
       </div>
 
       {/* ── Bottom Controls: Sound Toggle, Maturity Rating & Slide Chevrons ── */}
-      <div className="absolute right-4 sm:right-12 bottom-16 sm:bottom-28 md:bottom-36 lg:bottom-44 z-30 pointer-events-auto flex items-center gap-2 sm:gap-3 select-none">
+      <div className="absolute right-3.5 sm:right-12 top-20 sm:top-auto sm:bottom-28 md:bottom-36 lg:bottom-44 z-30 pointer-events-auto flex items-center gap-1.5 sm:gap-3 select-none">
         {/* Sound Toggle (Mute / Unmute) */}
         {ytKey && (
           <button
@@ -816,7 +816,7 @@ export default function GenrePage() {
           />
 
           {/* ── CURATED MULTI-CATEGORY SWIPER ROWS (OVERLAPPING HERO BANNER & VIDEO) ── */}
-          <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 -mt-16 sm:-mt-24 md:-mt-32 lg:-mt-40">
+          <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 -mt-6 sm:-mt-24 md:-mt-32 lg:-mt-40">
             {/* Row 1 */}
             <GenreCategoryRow
               title={

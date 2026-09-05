@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "turbo run dev",
     "dev:all": "start-all.bat",
+    "stop:all": "stop-all.bat",
     "dev:admin": "pnpm --filter @netphim/admin-cms dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
