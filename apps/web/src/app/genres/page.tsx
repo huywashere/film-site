@@ -347,13 +347,13 @@ export default function GenresPage() {
           >
             Vũ Trụ Điện Ảnh
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4.5 lg:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3.5 lg:gap-4">
             {HUBS.map((hub) => (
               <Link
                 key={hub.slug}
                 href={hub.href}
                 prefetch={true}
-                className="group relative flex flex-col justify-end aspect-[16/10] min-h-[170px] sm:min-h-[190px] lg:min-h-[205px] overflow-hidden rounded-xl sm:rounded-2xl border border-white/[0.08] hover:border-white/30 bg-[#12141c] p-3.5 sm:p-4 lg:p-4.5 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_18px_45px_rgba(0,0,0,0.85)] cursor-pointer select-none"
+                className="group relative flex flex-col justify-end aspect-[16/8] min-h-[130px] sm:min-h-[145px] lg:min-h-[158px] overflow-hidden rounded-xl sm:rounded-2xl border border-white/[0.08] hover:border-white/30 bg-[#12141c] p-3 sm:p-3.5 lg:p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_35px_rgba(0,0,0,0.8)] cursor-pointer select-none"
               >
                 {/* High-Resolution Full-Bleed Backdrop with Resilient Multi-Tier Proxy */}
                 <div
@@ -366,33 +366,33 @@ export default function GenresPage() {
                   />
 
                   {/* Cinematic Vignette Gradients */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b10] via-[#0a0b10]/65 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b10] via-[#0a0b10]/70 to-transparent" />
                   <div className="absolute inset-0 bg-gradient-to-r from-[#0a0b10]/70 via-transparent to-black/20" />
                   <div className="absolute inset-0 bg-black/15 group-hover:bg-transparent transition-colors duration-300" />
                 </div>
 
                 {/* Lower Content Lockup */}
-                <div className="relative z-10 space-y-1">
-                  <p className="text-[9px] sm:text-[10px] font-bold text-cyan-400 uppercase tracking-wide">
+                <div className="relative z-10 space-y-0.5 sm:space-y-1">
+                  <p className="text-[8.5px] sm:text-[9.5px] font-bold text-cyan-400 uppercase tracking-wide">
                     {hub.tagline}
                   </p>
 
-                  <h2 className="text-base sm:text-lg lg:text-xl font-black text-white tracking-tight leading-tight group-hover:text-cyan-100 transition-colors">
+                  <h2 className="text-sm sm:text-base lg:text-[17px] font-black text-white tracking-tight leading-snug group-hover:text-cyan-100 transition-colors">
                     {hub.title}
                   </h2>
 
-                  <p className="text-[10px] sm:text-[11px] text-neutral-300 font-normal line-clamp-1 leading-relaxed opacity-90">
+                  <p className="text-[9px] sm:text-[10px] text-neutral-300 font-normal line-clamp-1 leading-relaxed opacity-85">
                     {hub.highlight}
                   </p>
 
                   {/* Action Row */}
-                  <div className="pt-1.5 sm:pt-2 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 sm:px-3.5 sm:py-1.2 rounded-lg bg-white/90 group-hover:bg-white text-black text-[10px] sm:text-[11px] font-extrabold transition-all duration-200 group-hover:shadow-sm">
-                      <Play size={10} fill="currentColor" />
+                  <div className="pt-1 sm:pt-1.5 flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-md bg-white/90 group-hover:bg-white text-black text-[9.5px] sm:text-[10px] font-extrabold transition-all duration-200 group-hover:shadow-sm">
+                      <Play size={9} fill="currentColor" />
                       <span>Khám phá</span>
                     </span>
 
-                    <span className="text-[9px] sm:text-[10px] font-semibold text-neutral-400 group-hover:text-neutral-200 transition-colors">
+                    <span className="text-[8.5px] sm:text-[9.5px] font-semibold text-neutral-400 group-hover:text-neutral-200 transition-colors">
                       {hub.countBadge || "Hơn 500+ Phim"}
                     </span>
                   </div>

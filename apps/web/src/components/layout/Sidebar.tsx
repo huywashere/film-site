@@ -94,17 +94,20 @@ export function Sidebar() {
   const isHomePage = pathname === "/";
   const isFilmDetailPage = pathname.startsWith("/film/");
   const isWatchPage = pathname.startsWith("/watch/");
-  const isGenrePage = pathname.startsWith("/genre/") || pathname === "/genres";
+  const isGenresPage = pathname === "/genres";
+  const isGenrePage = pathname.startsWith("/genre/") || isGenresPage;
   const isCountryPage = pathname.startsWith("/country/");
   const isFilmsPage = pathname.startsWith("/films/");
   const isBrowsePage = isHomePage || isGenrePage || isCountryPage || isFilmsPage;
 
-  const shouldShowSidebar = isFilmDetailPage || isWatchPage || isBrowsePage;
+  // Trang xem phim, giới thiệu phim và trang Duyệt Tìm (/genres) luôn ghim cố định sidebar
+  const isPinnedPage = isFilmDetailPage || isWatchPage || isGenresPage;
+  const shouldShowSidebar = isPinnedPage || isBrowsePage;
 
   const [scrolledPastBanner, setScrolledPastBanner] = useState(false);
 
   useEffect(() => {
-    if (!isBrowsePage) return;
+    if (!isBrowsePage || isPinnedPage) return;
 
     const handleScroll = () => {
       // Khi lướt đến phần body (qua Hero Banner khoảng 350-400px hoặc 40% viewport)
@@ -235,7 +238,7 @@ export function Sidebar() {
   // Thanh tab dọc hiển thị luôn ở trang xem phim & giới thiệu phim; ở trang chủ thì khi lướt tới phần body mới hiện
   if (!shouldShowSidebar) return null;
 
-  const isVisible = isFilmDetailPage || isWatchPage ? true : scrolledPastBanner;
+  const isVisible = isPinnedPage ? true : scrolledPastBanner;
 
   return (
     <>
