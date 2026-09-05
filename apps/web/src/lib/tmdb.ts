@@ -374,20 +374,21 @@ export function extractTmdbInfo(film: any): {
       ? Number(rawId)
       : null;
 
+  const explicitTmdbType = String(film?.tmdb?.type || "").toLowerCase();
   const type: "movie" | "tv" =
-    film?.tmdb?.type === "tv" ||
-    [
-      "series",
-      "tv",
-      "tvshows",
-      "tv-shows",
-      "phim-bo",
-      "hoat-hinh",
-      "hoathinh",
-      "anime",
-    ].includes(String(film?.type || "").toLowerCase())
+    explicitTmdbType === "tv"
       ? "tv"
-      : "movie";
+      : explicitTmdbType === "movie"
+        ? "movie"
+        : [
+            "series",
+            "tv",
+            "tvshows",
+            "tv-shows",
+            "phim-bo",
+          ].includes(String(film?.type || "").toLowerCase())
+          ? "tv"
+          : "movie";
 
   const imdbId =
     film?.imdb?.id && film.imdb.id !== "0"

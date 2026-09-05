@@ -52,6 +52,7 @@ import { safeJsonLd } from '@/lib/safe-json-ld';
 import { cardFont } from '@/lib/fonts';
 import { guestDataStorage } from '@/lib/user-data';
 import { useOmdb } from '@/hooks/useOmdb';
+import type { ServerTmdbResult } from '@/lib/server/movie-tmdb-server';
 
 const TrailerModal = dynamic(
   () => import('@/components/film/TrailerModal').then((module) => module.TrailerModal),
@@ -77,14 +78,13 @@ function ResilientDetailImage({
   candidates,
   alt,
   className,
-  sizes,
   priority = false,
   preset = 'backdrop',
 }: {
   candidates: Array<string | null | undefined>;
   alt: string;
-  className: string;
-  sizes: string;
+  className?: string;
+  sizes?: string;
   priority?: boolean;
   preset?: ImagePreset;
 }) {
@@ -101,16 +101,20 @@ function ResilientDetailImage({
   if (!source) return null;
 
   return (
-    <NextImage
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
       src={source}
       alt={alt}
-      fill
-      sizes={sizes}
-      className={className}
-      priority={priority}
-      unoptimized
+      loading={priority ? 'eager' : 'lazy'}
+      decoding="async"
+      fetchPriority={priority ? 'high' : 'auto'}
       referrerPolicy="strict-origin-when-cross-origin"
-      onError={() => setSourceIndex((index) => index + 1)}
+      className={cn('w-full h-full object-cover', className)}
+      onError={() => {
+        if (sourceIndex < sources.length - 1) {
+          setSourceIndex((index) => index + 1);
+        }
+      }}
     />
   );
 }
@@ -980,7 +984,13 @@ function WriteReview({ movieId }: { movieId: string }) {
 }
 
 // ── Main Detail Page (Plex Redesign) ──────────────────────────
-export default function FilmDetailPage({ initialData }: { initialData?: any }) {
+export default function FilmDetailPage({
+  initialData,
+  initialTmdb,
+}: {
+  initialData?: any;
+  initialTmdb?: ServerTmdbResult | null;
+}) {
   const router = useRouter();
   const params = useParams();
   const slug = params.slug as string;
@@ -1078,6 +1088,7 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
     fetchImages: true,
     fetchCredits: secondaryReady,
     fetchVideos: secondaryReady || showTrailer,
+    initialTmdb,
   });
 
   // OMDB data — ratings IMDb/RT/Metacritic + awards + box office (fetch immediately, 0ms cache)
@@ -1091,17 +1102,27 @@ export default function FilmDetailPage({ initialData }: { initialData?: any }) {
     : null;
   const posterUrl =
     (bestPoster ? tmdbPoster(bestPoster.file_path, 'w500') : null) ||
+    initialTmdb?.tmdbPosterUrl ||
     providerPosterUrl ||
     providerBackdropUrl ||
     undefined;
   const backdropUrl =
     (bestBackdrop ? tmdbBackdrop(bestBackdrop.file_path, 'w1280') : null) ||
+    initialTmdb?.tmdbBackdropUrl ||
     providerBackdropUrl ||
     providerPosterUrl ||
     undefined;
-  const tmdbPosterUrl = bestPoster ? tmdbPoster(bestPoster.file_path, 'w500') : null;
-  const tmdbBackdropUrl = bestBackdrop ? tmdbBackdrop(bestBackdrop.file_path, 'w1280') : null;
-  const tmdbOriginalPosterUrl = bestPoster ? tmdbPoster(bestPoster.file_path, 'original') : null;
+  const tmdbPosterUrl =
+    (bestPoster ? tmdbPoster(bestPoster.file_path, 'w500') : null) ||
+    initialTmdb?.tmdbPosterUrl ||
+    null;
+  const tmdbBackdropUrl =
+    (bestBackdrop ? tmdbBackdrop(bestBackdrop.file_path, 'w1280') : null) ||
+    initialTmdb?.tmdbBackdropUrl ||
+    null;
+  const tmdbOriginalPosterUrl =
+    (bestPoster ? tmdbPoster(bestPoster.file_path, 'original') : null) ||
+    (initialTmdb?.bestPoster ? tmdbPoster(initialTmdb.bestPoster.file_path, 'original') : null);
 
   const heroPosterCandidates = useMemo(() => {
     const list: string[] = [];

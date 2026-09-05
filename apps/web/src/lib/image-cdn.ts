@@ -108,6 +108,7 @@ export function buildArtworkCandidates(
     includeLocalProxy?: boolean;
     includeWsrvForTmdb?: boolean;
     preferEdge?: boolean;
+    includeAlternatePhimimgPath?: boolean;
   } = {},
 ): string[] {
   const direct: string[] = [];
@@ -122,6 +123,16 @@ export function buildArtworkCandidates(
 
   for (const source of direct) {
     directCandidates.push(source);
+
+    // If source is a phimimg URL and option enabled, add alternate path (upload/vod <-> uploads/movies)
+    if (options.includeAlternatePhimimgPath && (source.includes("/uploads/movies/") || source.includes("/upload/vod/"))) {
+      const altUrl = source.includes("/uploads/movies/")
+        ? source.replace("/uploads/movies/", "/upload/vod/")
+        : source.replace("/upload/vod/", "/uploads/movies/");
+      if (!directCandidates.includes(altUrl)) {
+        directCandidates.push(altUrl);
+      }
+    }
 
     if (!isTmdbImageUrl(source) || options.includeWsrvForTmdb || options.preferEdge) {
       const wsrv = wsrvImageUrl(source, preset);

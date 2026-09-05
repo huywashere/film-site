@@ -278,8 +278,12 @@ function isLikelySeries(film: FilmItem): boolean {
 
 const SECTION_TITLE_TONES: Record<string, string> = {
   "Phim Mới Cập Nhật": "from-cyan-400 via-sky-400 to-indigo-300",
+  "Series Âu-Mỹ Đỉnh Cao": "from-violet-400 via-purple-400 to-fuchsia-300",
+  "Series Âu Mỹ Đỉnh Cao": "from-violet-400 via-purple-400 to-fuchsia-300",
+  "Tuyệt Tác Khoa Học Viễn Tưởng": "from-orange-400 via-amber-400 to-yellow-300",
   "Phim Thần Thoại & Kỹ Xảo": "from-violet-400 via-fuchsia-400 to-rose-300",
   "Phim Hành Động": "from-orange-400 via-amber-400 to-yellow-300",
+  "Phim Hành Động Kịch Tính": "from-orange-400 via-amber-400 to-yellow-300",
   "Phim Âu-Mỹ Đáng Xem": "from-emerald-400 via-teal-400 to-cyan-300",
   "Series Quốc Tế": "from-blue-400 via-indigo-400 to-violet-300",
   "Anime & Hoạt Hình": "from-pink-400 via-rose-400 to-orange-300",
@@ -1091,7 +1095,9 @@ export default function HomePageClient({
   const primarySections: Record<string, React.ReactNode> = {
     top10: (
       <LazySection>
-        <Top10RankedRow films={configuredTop10List} />
+        <div className="hidden md:block">
+          <Top10RankedRow films={configuredTop10List} />
+        </div>
       </LazySection>
     ),
     continue: (
@@ -1101,12 +1107,22 @@ export default function HomePageClient({
     ),
     latest: (
       <LazySection>
-        <LandscapeSpotlightRow
-          title={t("sections.latest", "Phim Mới Cập Nhật")}
-          films={latestRowList}
-          isLoading={latestLoading}
-          href="/films"
-        />
+        <div className="hidden md:block">
+          <LandscapeSpotlightRow
+            title={t("sections.latest", "Phim Mới Cập Nhật")}
+            films={latestRowList}
+            isLoading={latestLoading}
+            href="/films"
+          />
+        </div>
+        <div className="md:hidden">
+          <FilmSection
+            title={t("sections.latest", "Phim Mới Cập Nhật")}
+            films={latestRowList}
+            isLoading={latestLoading}
+            href="/films"
+          />
+        </div>
       </LazySection>
     ),
     vfx: (
@@ -1121,12 +1137,22 @@ export default function HomePageClient({
     ),
     "usuk-series": (
       <LazySection>
-        <HeroShowcaseSection
-          title={t("sections.usUkSeries", "Series Âu-Mỹ Đỉnh Cao")}
-          films={usUkSeriesRowList}
-          isLoading={usUkSeriesLoading}
-          href="/search?type=series&country=au-my"
-        />
+        <div className="hidden md:block">
+          <HeroShowcaseSection
+            title={t("sections.usUkSeries", "Series Âu-Mỹ Đỉnh Cao")}
+            films={usUkSeriesRowList}
+            isLoading={usUkSeriesLoading}
+            href="/search?type=series&country=au-my"
+          />
+        </div>
+        <div className="md:hidden">
+          <FilmSection
+            title={t("sections.usUkSeries", "Series Âu-Mỹ Đỉnh Cao")}
+            films={usUkSeriesRowList}
+            isLoading={usUkSeriesLoading}
+            href="/search?type=series&country=au-my"
+          />
+        </div>
       </LazySection>
     ),
     action: (
@@ -1141,12 +1167,22 @@ export default function HomePageClient({
     ),
     scifi: (
       <LazySection>
-        <CuratedSpotlightSection
-          title={t("sections.scifi", "Tuyệt Tác Khoa Học Viễn Tưởng")}
-          films={scifiRowList}
-          isLoading={scifiLoading}
-          href="/genre/vien-tuong"
-        />
+        <div className="hidden md:block">
+          <CuratedSpotlightSection
+            title={t("sections.scifi", "Tuyệt Tác Khoa Học Viễn Tưởng")}
+            films={scifiRowList}
+            isLoading={scifiLoading}
+            href="/genre/vien-tuong"
+          />
+        </div>
+        <div className="md:hidden">
+          <FilmSection
+            title={t("sections.scifi", "Tuyệt Tác Khoa Học Viễn Tưởng")}
+            films={scifiRowList}
+            isLoading={scifiLoading}
+            href="/genre/vien-tuong"
+          />
+        </div>
       </LazySection>
     ),
     ...customFeaturedSections,

@@ -31,6 +31,8 @@ const rankFont = Montserrat({
 interface Top10RankedRowProps {
   films: FilmItem[];
   title?: string;
+  showCrown?: boolean;
+  className?: string;
 }
 
 function getRankColorStyle(rank: number) {
@@ -352,7 +354,12 @@ function dedupeTop10(films: FilmItem[]): FilmItem[] {
 }
 
 import { useTranslation } from "@/store/langStore";
-export function Top10RankedRow({ films, title }: Top10RankedRowProps) {
+export function Top10RankedRow({
+  films,
+  title,
+  showCrown = false,
+  className,
+}: Top10RankedRowProps) {
   const { t } = useTranslation();
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -364,14 +371,16 @@ export function Top10RankedRow({ films, title }: Top10RankedRowProps) {
   if (top10.length === 0) return null;
 
   return (
-    <section className="mb-10 relative group/section">
+    <section className={cn("hidden md:block mb-10 relative group/section", className)}>
       <div className="flex items-center justify-between mb-4">
         <h2
           className={`${cardFont.className} text-lg md:text-xl font-extrabold text-white flex items-center gap-2`}
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#f2c14e]/25 bg-[#f2c14e]/10 text-[#f2c14e] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-            <Crown size={16} strokeWidth={2} aria-hidden="true" />
-          </span>
+          {showCrown && (
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#f2c14e]/25 bg-[#f2c14e]/10 text-[#f2c14e] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+              <Crown size={16} strokeWidth={2} aria-hidden="true" />
+            </span>
+          )}
           <span className="tracking-[-0.015em]">{displayTitle}</span>
         </h2>
 

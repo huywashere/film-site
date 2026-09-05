@@ -348,23 +348,44 @@ pre,
 }
 
 /* ── Custom Theme Scrollbar ───────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 9px;
-  height: 9px;
+/* Desktop Scrollbar (>= 769px) */
+@media (min-width: 769px) {
+  ::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #141414;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #2e2e2e;
+    border-radius: 9999px;
+    border: 2px solid #141414;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3b4458;
+  }
 }
 
-::-webkit-scrollbar-track {
-  background: #141414;
-}
+/* ── Hide Vertical Browser Scrollbar on Mobile / Touch Devices ── */
+@media (max-width: 768px), (pointer: coarse) and (max-width: 1024px) {
+  html,
+  body {
+    -ms-overflow-style: none !important; /* IE and Edge */
+    scrollbar-width: none !important; /* Firefox */
+  }
 
-::-webkit-scrollbar-thumb {
-  background: #2e2e2e;
-  border-radius: 9999px;
-  border: 2px solid #141414;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #3b4458;
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  ::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+  }
 }
 
 /* Base html styling - scroll-behavior: auto prevents SPA route jump */
@@ -405,14 +426,16 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   background-color: #000000 !important;
 }
 
-html.pure-black ::-webkit-scrollbar-track,
-html[data-pure-black='true'] ::-webkit-scrollbar-track {
-  background: #000000 !important;
-}
+@media (min-width: 769px) {
+  html.pure-black ::-webkit-scrollbar-track,
+  html[data-pure-black='true'] ::-webkit-scrollbar-track {
+    background: #000000 !important;
+  }
 
-html.pure-black ::-webkit-scrollbar-thumb,
-html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
-  border-color: #000000 !important;
+  html.pure-black ::-webkit-scrollbar-thumb,
+  html[data-pure-black='true'] ::-webkit-scrollbar-thumb {
+    border-color: #000000 !important;
+  }
 }
 
 @supports (padding: env(safe-area-inset-bottom)) {

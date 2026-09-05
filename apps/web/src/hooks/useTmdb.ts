@@ -22,6 +22,13 @@ interface UseTmdbOptions {
   fetchCredits?: boolean;
   fetchVideos?: boolean;
   fetchSeason?: boolean;
+  initialTmdb?: {
+    tmdbId?: number | null;
+    mediaType?: "movie" | "tv";
+    bestBackdrop?: TmdbImage | null;
+    bestPoster?: TmdbImage | null;
+    images?: TmdbImages | null;
+  } | null;
 }
 
 function normalizeTmdbTitle(value: unknown): string {
@@ -85,6 +92,7 @@ export function useTmdb({
   fetchCredits = true,
   fetchVideos = true,
   fetchSeason = true,
+  initialTmdb,
 }: UseTmdbOptions) {
   const { tmdbId, type, imdbId } = extractTmdbInfo(film);
   const searchTitle = film?.origin_name || film?.title || film?.name || "";
@@ -94,7 +102,7 @@ export function useTmdb({
   const { data: findData, isLoading: findLoading } = useQuery({
     queryKey: ["tmdb-find", imdbId],
     queryFn: () => tmdbApi.findByImdbId(imdbId!),
-    enabled: isEnabled && !tmdbId && !!imdbId,
+    enabled: isEnabled && !tmdbId && !initialTmdb?.tmdbId && !!imdbId,
     staleTime: 1000 * 60 * 60 * 24, // 24h
   });
 
@@ -118,13 +126,14 @@ export function useTmdb({
       }
       return null;
     },
-    enabled: isEnabled && !tmdbId && !imdbId && !!searchTitle,
+    enabled: isEnabled && !tmdbId && !initialTmdb?.tmdbId && !imdbId && !!searchTitle,
     staleTime: 1000 * 60 * 60 * 24,
   });
 
   const searchResult = pickBestTmdbResult(searchData?.results || [], film);
 
   const resolvedId =
+    initialTmdb?.tmdbId ||
     tmdbId ||
     findData?.movie_results?.[0]?.id ||
     findData?.tv_results?.[0]?.id ||
@@ -132,6 +141,7 @@ export function useTmdb({
     null;
 
   const resolvedType: "movie" | "tv" =
+    initialTmdb?.mediaType ||
     type ||
     (findData?.tv_results?.length || searchResult?.media_type === "tv"
       ? "tv"
@@ -144,6 +154,7 @@ export function useTmdb({
       resolvedType === "tv"
         ? tmdbApi.getTvImages(resolvedId!)
         : tmdbApi.getMovieImages(resolvedId!),
+    initialData: initialTmdb?.images || undefined,
     enabled: isEnabled && fetchImages && !!resolvedId,
     staleTime: 1000 * 60 * 60 * 24,
   });
@@ -215,6 +226,7 @@ export function useTmdb({
 
   const bestBackdrop =
     backdrops[0] ||
+    initialTmdb?.bestBackdrop ||
     (searchResult?.backdrop_path
       ? {
           file_path: searchResult.backdrop_path,
@@ -227,6 +239,7 @@ export function useTmdb({
 
   const bestPoster =
     posters[0] ||
+    initialTmdb?.bestPoster ||
     (searchResult?.poster_path
       ? {
           file_path: searchResult.poster_path,

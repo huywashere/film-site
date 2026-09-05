@@ -6,6 +6,7 @@ import {
   getMovieFromPageData,
   getMoviePageData,
 } from "@/lib/server/movie-page-data";
+import { getMovieTmdbServer } from "@/lib/server/movie-tmdb-server";
 
 export const revalidate = 3600;
 
@@ -56,9 +57,13 @@ export async function generateMetadata({
         .slice(0, 180) + "..."
     : `Xem phim ${name} online Full HD Vietsub thuyết minh chất lượng cao miễn phí tại NetPhim.`;
 
+  const tmdbServer = await getMovieTmdbServer(movie);
   const rawImage = movie.poster_url || movie.thumb_url;
   const imageUrl =
-    normalizeMovieArtworkUrl(rawImage) || `${siteUrl}/cinephim-logo.png`;
+    tmdbServer?.tmdbBackdropUrl ||
+    tmdbServer?.tmdbPosterUrl ||
+    normalizeMovieArtworkUrl(rawImage) ||
+    `${siteUrl}/cinephim-logo.png`;
 
   const keywords = [
     name,
@@ -109,6 +114,7 @@ export default async function FilmPage({ params }: PageProps) {
   const slug = resolvedParams?.slug || "";
   const initialData = await getMoviePageData(slug);
   const movie = getMovieFromPageData(initialData);
+  const initialTmdb = await getMovieTmdbServer(movie);
 
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL || "https://netphim.app";
@@ -124,7 +130,10 @@ export default async function FilmPage({ params }: PageProps) {
         description: movie.content
           ? movie.content.replace(/<[^>]*>?/gm, "").trim()
           : undefined,
-        image: normalizeMovieArtworkUrl(movie.poster_url || movie.thumb_url),
+        image:
+          initialTmdb?.tmdbBackdropUrl ||
+          initialTmdb?.tmdbPosterUrl ||
+          normalizeMovieArtworkUrl(movie.poster_url || movie.thumb_url),
         url: filmUrl,
         datePublished: movie.year ? `${movie.year}-01-01` : undefined,
         genre: Array.isArray(movie.category)
@@ -149,13 +158,30 @@ export default async function FilmPage({ params }: PageProps) {
 
   return (
     <>
+      {initialTmdb?.tmdbBackdropUrl && (
+        <link
+          rel="preload"
+          as="image"
+          href={initialTmdb.tmdbBackdropUrl}
+          fetchPriority="high"
+        />
+      )}
+      {initialTmdb?.tmdbPosterUrl && (
+        <link
+          rel="preload"
+          as="image"
+          href={initialTmdb.tmdbPosterUrl}
+          fetchPriority="high"
+        />
+      )}
       {jsonLd && (
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
         />
       )}
-      <FilmDetailPage initialData={initialData} />
+      <FilmDetailPage initialData={initialData} initialTmdb={initialTmdb} />
     </>
   );
 }
+
