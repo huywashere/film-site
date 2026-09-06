@@ -49,7 +49,14 @@ const LandscapeSpotlightRow = dynamic(() =>
     (module) => module.LandscapeSpotlightRow,
   ),
 );
-import HeroBanner from "@/app/components/HeroBanner";
+const HeroBanner = dynamic(() => import("@/app/components/HeroBanner"), {
+  loading: () => (
+    <div
+      aria-label="Đang tải banner nổi bật"
+      className="min-h-[100dvh] w-full animate-pulse bg-[#141414]"
+    />
+  ),
+});
 import { cardFont } from "@/lib/fonts";
 
 // Helper: Làm sạch và trích xuất các khóa nhận diện thương hiệu/franchise (tránh đề xuất Phần 1, Phần 2, Phần 3 cùng lúc)
