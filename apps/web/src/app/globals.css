@@ -112,58 +112,58 @@ html[data-netphim-intro='done'] #netphim-entry-splash {
 }
 
 .netphim-intro-poster:nth-child(1) {
-  background-image: var(--netphim-intro-poster-1, url('/images/splash/tmdb/01.webp'));
+  background-image: var(--netphim-intro-poster-1, url('https://image.tmdb.org/t/p/w342/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg'));
 }
 .netphim-intro-poster:nth-child(2) {
-  background-image: var(--netphim-intro-poster-2, url('/images/splash/tmdb/02.webp'));
+  background-image: var(--netphim-intro-poster-2, url('https://image.tmdb.org/t/p/w342/ji3ecJphATlVgWNY0B0RVXZizdf.jpg'));
 }
 .netphim-intro-poster:nth-child(3) {
-  background-image: var(--netphim-intro-poster-3, url('/images/splash/tmdb/03.webp'));
+  background-image: var(--netphim-intro-poster-3, url('https://image.tmdb.org/t/p/w342/kW9LmvYHAaS9iA0tHmZVq8hQYoq.jpg'));
 }
 .netphim-intro-poster:nth-child(4) {
-  background-image: var(--netphim-intro-poster-4, url('/images/splash/tmdb/04.webp'));
+  background-image: var(--netphim-intro-poster-4, url('https://image.tmdb.org/t/p/w342/8j58iEBw9pOXFD2L0nt0ZXeHviB.jpg'));
 }
 .netphim-intro-poster:nth-child(5) {
-  background-image: var(--netphim-intro-poster-5, url('/images/splash/tmdb/05.webp'));
+  background-image: var(--netphim-intro-poster-5, url('https://image.tmdb.org/t/p/w342/mbm8k3GFhXS0ROd9AD1gqYbIFbM.jpg'));
 }
 .netphim-intro-poster:nth-child(6) {
-  background-image: var(--netphim-intro-poster-6, url('/images/splash/tmdb/06.webp'));
+  background-image: var(--netphim-intro-poster-6, url('https://image.tmdb.org/t/p/w342/nT97ifVT2J1yMQmeq20Qblg61T.jpg'));
 }
 .netphim-intro-poster:nth-child(7) {
-  background-image: var(--netphim-intro-poster-7, url('/images/splash/tmdb/07.webp'));
+  background-image: var(--netphim-intro-poster-7, url('https://image.tmdb.org/t/p/w342/umSVjVdbVwtx5ryCA2QXL44Durm.jpg'));
 }
 .netphim-intro-poster:nth-child(8) {
-  background-image: var(--netphim-intro-poster-8, url('/images/splash/tmdb/08.webp'));
+  background-image: var(--netphim-intro-poster-8, url('https://image.tmdb.org/t/p/w342/iQ5ztdjvteGeboxtmRdXEChJOHh.jpg'));
 }
 .netphim-intro-poster:nth-child(9) {
-  background-image: var(--netphim-intro-poster-9, url('/images/splash/tmdb/09.webp'));
+  background-image: var(--netphim-intro-poster-9, url('https://image.tmdb.org/t/p/w342/9OkCLM73MIU2CrKZbqiT8Ln1wY2.jpg'));
 }
 .netphim-intro-poster:nth-child(10) {
-  background-image: var(--netphim-intro-poster-10, url('/images/splash/tmdb/10.webp'));
+  background-image: var(--netphim-intro-poster-10, url('https://image.tmdb.org/t/p/w342/3bhkrj58Vtu7enYsRolD1fZdja1.jpg'));
 }
 .netphim-intro-poster:nth-child(11) {
-  background-image: var(--netphim-intro-poster-11, url('/images/splash/tmdb/11.webp'));
+  background-image: var(--netphim-intro-poster-11, url('https://image.tmdb.org/t/p/w342/sSuQTCZwqKrNBNIsksO9IAUoWP9.jpg'));
 }
 .netphim-intro-poster:nth-child(12) {
-  background-image: var(--netphim-intro-poster-12, url('/images/splash/tmdb/12.webp'));
+  background-image: var(--netphim-intro-poster-12, url('https://image.tmdb.org/t/p/w342/sX9idXDqRUxE5ffww3n3RV5gL55.jpg'));
 }
 .netphim-intro-poster:nth-child(13) {
-  background-image: var(--netphim-intro-poster-13, url('/images/splash/tmdb/13.webp'));
+  background-image: var(--netphim-intro-poster-13, url('https://image.tmdb.org/t/p/w342/lz8vNyXeidqqOdJW9ZjnDAMb5Vr.jpg'));
 }
 .netphim-intro-poster:nth-child(14) {
-  background-image: var(--netphim-intro-poster-14, url('/images/splash/tmdb/14.webp'));
+  background-image: var(--netphim-intro-poster-14, url('https://image.tmdb.org/t/p/w342/uhviyknTT5cEQXbn6vWIqfM4vGm.jpg'));
 }
 .netphim-intro-poster:nth-child(15) {
-  background-image: var(--netphim-intro-poster-15, url('/images/splash/tmdb/15.webp'));
+  background-image: var(--netphim-intro-poster-15, url('https://image.tmdb.org/t/p/w342/ts996lKsxvjkO2yiYG0ht4qAicO.jpg'));
 }
 .netphim-intro-poster:nth-child(16) {
-  background-image: var(--netphim-intro-poster-16, url('/images/splash/tmdb/16.webp'));
+  background-image: var(--netphim-intro-poster-16, url('https://image.tmdb.org/t/p/w342/nrmXQ0zcZUL8jFLrakWc90IR8z9.jpg'));
 }
 .netphim-intro-poster:nth-child(17) {
-  background-image: var(--netphim-intro-poster-17, url('/images/splash/tmdb/17.webp'));
+  background-image: var(--netphim-intro-poster-17, url('https://image.tmdb.org/t/p/w342/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg'));
 }
 .netphim-intro-poster:nth-child(18) {
-  background-image: var(--netphim-intro-poster-18, url('/images/splash/tmdb/18.webp'));
+  background-image: var(--netphim-intro-poster-18, url('https://image.tmdb.org/t/p/w342/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg'));
 }
 
 .netphim-intro-brand {

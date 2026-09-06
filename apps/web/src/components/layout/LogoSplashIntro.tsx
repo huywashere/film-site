@@ -102,19 +102,27 @@ export function LogoSplashIntro() {
       className={`fixed inset-0 z-[10000] overflow-hidden bg-[#07080a] transition-[opacity,filter] duration-300 ease-out ${leaving ? "pointer-events-none opacity-0 blur-[2px]" : "pointer-events-auto opacity-100"}`}
     >
       <div className="absolute -inset-[18%] overflow-hidden bg-[#06070a]">
-        <div className="netphim-intro-mosaic grid w-full grid-cols-3 gap-2 sm:grid-cols-6 sm:gap-3">
+        {/* Cinema Collage Backdrop: Đảm bảo ngay từ millisecond đầu tiên luôn có ảnh nền phim rực rỡ, không bao giờ bị đen */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-cover bg-center opacity-35 scale-105 blur-[0.5px] pointer-events-none"
+          style={{ backgroundImage: "url('/images/auth/login/login-1.webp')" }}
+        />
+
+        <div className="netphim-intro-mosaic relative grid w-full grid-cols-3 gap-2 sm:grid-cols-6 sm:gap-3">
           {Array.from({ length: WALL_TILE_COUNT }, (_, index) => (
             <div
               key={index}
               aria-hidden="true"
-              className="netphim-intro-poster relative aspect-[2/3] overflow-hidden rounded-[3px] bg-[#101116] ring-1 ring-white/[.04]"
+              className="netphim-intro-poster relative aspect-[2/3] overflow-hidden rounded-[4px] bg-[#101116] ring-1 ring-white/[.08] shadow-2xl"
             />
           ))}
         </div>
       </div>
 
-      <div className="absolute inset-0 bg-black/65" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(12,13,17,.22)_0%,rgba(6,7,10,.72)_48%,rgba(4,5,8,.97)_100%)]" />
+      {/* Lớp phủ điện ảnh hài hòa: cho phép ảnh poster bên dưới phát sáng lung linh, tương phản rõ rệt với Logo trung tâm */}
+      <div className="absolute inset-0 bg-black/45" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,7,10,.25)_0%,rgba(6,7,10,.65)_50%,rgba(6,7,10,.94)_100%)]" />
 
       <div className="netphim-intro-brand relative flex h-full flex-col items-center justify-center px-6">
         <div className="relative flex items-center gap-3.5 sm:gap-5">
