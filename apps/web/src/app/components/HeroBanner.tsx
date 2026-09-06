@@ -1320,15 +1320,11 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       }
 
       if (!active) return;
-      setFeatured(playlist);
-      setCurrent(
+      const selectedIndex =
         restoredIndex >= 0 && restoredIndex < playlist.length
           ? restoredIndex
-          : 0,
-      );
-      storeHeroPlaylist(playlist);
-
-      const selectedFilm = playlist[restoredIndex] || playlist[0];
+          : 0;
+      const selectedFilm = playlist[selectedIndex];
       const withLogos = selectedFilm?.titleLogo
         ? [selectedFilm]
         : selectedFilm
@@ -1338,9 +1334,12 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       const enrichedBySlug = new Map(
         withLogos.map((film) => [film.slug, film] as const),
       );
-      setFeatured((currentPlaylist) =>
-        currentPlaylist.map((film) => enrichedBySlug.get(film.slug) || film),
+      const initialPlaylist = playlist.map(
+        (film) => enrichedBySlug.get(film.slug) || film,
       );
+      setFeatured(initialPlaylist);
+      setCurrent(selectedIndex);
+      storeHeroPlaylist(initialPlaylist);
 
       // Pre-enrich ALL remaining playlist slides in background so upcoming slides are ready before rotation
       const remainingToEnrich = playlist.filter(
