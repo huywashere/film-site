@@ -398,10 +398,10 @@ function FilmSection({
             className="scrollbar-hide flex w-full snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain py-1 sm:gap-3 lg:gap-4"
           >
             {isLoading
-              ? Array.from({ length: 10 }, (_, index) => (
+              ? Array.from({ length: 14 }, (_, index) => (
                   <div
                     key={`film-skeleton-${index}`}
-                    className="w-[26%] min-w-[112px] shrink-0 snap-start sm:w-[19%] md:w-[18%] lg:w-[16%] xl:w-[15.4%]"
+                    className="w-[26%] min-w-[112px] shrink-0 snap-start sm:w-[22%] md:w-[18%] lg:w-[calc((100%-6*1rem)/7)] xl:w-[calc((100%-6*1rem)/7)]"
                   >
                     <FilmCardSkeleton />
                   </div>
@@ -409,7 +409,7 @@ function FilmSection({
               : films.map((film, idx) => (
                   <div
                     key={`slide-${title}-${film._id || film.slug || "film"}-${idx}`}
-                    className="w-[26%] min-w-[112px] shrink-0 snap-start sm:w-[19%] md:w-[18%] lg:w-[16%] xl:w-[15.4%]"
+                    className="w-[26%] min-w-[112px] shrink-0 snap-start sm:w-[22%] md:w-[18%] lg:w-[calc((100%-6*1rem)/7)] xl:w-[calc((100%-6*1rem)/7)]"
                   >
                     <FilmCard
                       film={film}
@@ -930,28 +930,28 @@ export default function HomePageClient({
     comedyRowList,
     romanceRowList,
   } = useMemo(() => {
-    const buildRow = (rawFilms: FilmItem[], targetCount = 12): FilmItem[] => {
+    const buildRow = (rawFilms: FilmItem[], targetCount = 14): FilmItem[] => {
       return deduplicate(rawFilms).slice(0, targetCount);
     };
 
     // Initial Sections
-    const latestRowList = buildRow(latestFilms);
-    const vfxRowList = buildRow(vfxFilms);
-    const usUkSeriesRowList = buildRow(usUkSeriesFilms, 24);
-    const actionRowList = buildRow(actionFilms);
-    const scifiRowList = buildRow(scifiFilms);
+    const latestRowList = buildRow(latestFilms, 21);
+    const vfxRowList = buildRow(vfxFilms, 14);
+    const usUkSeriesRowList = buildRow(usUkSeriesFilms, 21);
+    const actionRowList = buildRow(actionFilms, 14);
+    const scifiRowList = buildRow(scifiFilms, 14);
 
     // Lazy 10 Sections
-    const nextWatchRowList = buildRow(nextWatchFilms);
-    const seriesRowList = buildRow(seriesFilms);
-    const animeRowList = buildRow(animeFilms);
-    const adventureRowList = buildRow(adventureFilms);
-    const singleRowList = buildRow(singleFilms);
-    const dramaRowList = buildRow(dramaFilms);
-    const disasterRowList = buildRow(disasterFilms);
-    const warRowList = buildRow(warFilms);
-    const comedyRowList = buildRow(comedyFilms);
-    const romanceRowList = buildRow(romanceFilms);
+    const nextWatchRowList = buildRow(nextWatchFilms, 14);
+    const seriesRowList = buildRow(seriesFilms, 21);
+    const animeRowList = buildRow(animeFilms, 21);
+    const adventureRowList = buildRow(adventureFilms, 14);
+    const singleRowList = buildRow(singleFilms, 21);
+    const dramaRowList = buildRow(dramaFilms, 14);
+    const disasterRowList = buildRow(disasterFilms, 14);
+    const warRowList = buildRow(warFilms, 14);
+    const comedyRowList = buildRow(comedyFilms, 14);
+    const romanceRowList = buildRow(romanceFilms, 14);
 
     const sectionSlugs = new Set(
       [

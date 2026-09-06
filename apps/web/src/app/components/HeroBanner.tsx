@@ -30,6 +30,7 @@ import { useToast } from "@/providers/ToastProvider";
 import { cn } from "@/lib/utils";
 import { heroSerifFont, cardFont } from "@/lib/fonts";
 import { guestDataStorage } from "@/lib/user-data";
+import { cleanMovieDescription } from "@/lib/string-utils";
 import {
   buildHeroCardImageCandidates,
   buildHeroImageCandidates,
@@ -1822,7 +1823,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
               {/* Centered Overview Text */}
               <p className="text-[11px] sm:text-sm text-neutral-300/90 max-w-xl mx-auto leading-relaxed line-clamp-2 font-normal drop-shadow-md px-2">
                 {film.content
-                  ? film.content.replace(/<[^>]*>?/gm, "")
+                  ? cleanMovieDescription(film.content)
                   : film.origin_name
                     ? `${film.origin_name} - ` + t("home.heroDesc")
                     : t("home.heroDesc")}

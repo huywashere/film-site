@@ -46,7 +46,7 @@ import { cn } from "@/lib/utils";
 
 export interface AuthModalProps {
   isPage?: boolean;
-  initialMode?: "login" | "register";
+  initialMode?: "login" | "register" | "forgot";
 }
 
 export function AuthModal({
@@ -59,12 +59,19 @@ export function AuthModal({
   const { toast } = useToast();
 
   const [internalMode, setInternalMode] = useState<"login" | "register">(
-    initialMode,
+    initialMode === "forgot" ? "login" : initialMode,
   );
+  const [isForgotMode, setIsForgotMode] = useState(initialMode === "forgot");
 
   useEffect(() => {
     if (isPage && initialMode) {
-      setInternalMode(initialMode);
+      if (initialMode === "forgot") {
+        setIsForgotMode(true);
+        setInternalMode("login");
+      } else {
+        setIsForgotMode(false);
+        setInternalMode(initialMode);
+      }
     }
   }, [isPage, initialMode]);
 
@@ -96,8 +103,21 @@ export function AuthModal({
   };
 
   const closeModal = () => {
+    if (isForgotMode) {
+      if (isPage && initialMode === "forgot") {
+        router.push("/login");
+        return;
+      }
+      setIsForgotMode(false);
+      return;
+    }
     if (isPage) {
-      router.push(getRedirectTarget());
+      const redirect = getRedirectTarget();
+      if (redirect !== "/" || typeof window === "undefined" || window.history.length <= 1) {
+        router.push(redirect);
+      } else {
+        router.back();
+      }
     } else {
       modalStore.closeModal();
     }
@@ -121,7 +141,6 @@ export function AuthModal({
     setTurnstileToken(token);
   }, []);
 
-  const [isForgotMode, setIsForgotMode] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [username, setUsername] = useState("");
@@ -386,15 +405,37 @@ export function AuthModal({
       {/* Decorative Ambient Glass Tint on Card Top */}
       <div className="absolute -top-14 left-1/2 -translate-x-1/2 w-52 h-28 bg-violet-500/20 blur-3xl pointer-events-none rounded-full" />
 
-      {/* Integrated Back Button with Frosted Glass Pill & Glow */}
+      {/* Integrated Minimalist Back Button (Matching Reference Image) */}
       <button
+        type="button"
         onClick={closeModal}
-        className="absolute top-4 left-4 sm:top-5 sm:left-5 w-8.5 h-8.5 rounded-full bg-white/[0.08] hover:bg-violet-500/20 border border-white/15 hover:border-violet-400/40 text-neutral-300 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm hover:shadow-[0_0_15px_rgba(167,139,250,0.35)] backdrop-blur-md active:scale-95 group z-20"
+        className="absolute top-4 left-4 sm:top-5 sm:left-5 w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-white/30 text-neutral-300 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer backdrop-blur-md active:scale-95 group z-20"
         aria-label="Quay lại"
         title="Quay lại"
       >
-        <ChevronLeft size={19} strokeWidth={2.4} className="transition-transform duration-200 group-hover:-translate-x-0.5 group-hover:text-violet-200" />
+        <ChevronLeft
+          size={16}
+          strokeWidth={2.2}
+          className="transition-transform duration-200 group-hover:-translate-x-0.5 text-neutral-300 group-hover:text-white"
+        />
       </button>
+
+      {/* Symmetrical Close Button for Modal Mode (Matching Reference Image) */}
+      {!isPage && (
+        <button
+          type="button"
+          onClick={closeModal}
+          className="absolute top-4 right-4 sm:top-5 sm:right-5 w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-white/30 text-neutral-300 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer backdrop-blur-md active:scale-95 group z-20"
+          aria-label="Đóng"
+          title="Đóng"
+        >
+          <X
+            size={16}
+            strokeWidth={2.2}
+            className="transition-transform duration-200 group-hover:rotate-90 text-neutral-300 group-hover:text-white"
+          />
+        </button>
+      )}
 
       {/* Brand Logo integrated directly on the form header - Clean without glow */}
       <div className="flex justify-center mb-2.5">

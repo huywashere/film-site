@@ -47,18 +47,18 @@ export default function FilmSection({ title, icon, films, isLoading, href }: Fil
       <div className="overflow-x-auto pb-4 scrollbar-hide" aria-busy={isLoading}>
         <div className="flex gap-3.5 px-1 sm:gap-[18px]">
           {isLoading
-            ? Array.from({ length: 8 }).map((_, i) => (
+            ? Array.from({ length: 14 }).map((_, i) => (
                 <div
                   key={`skeleton-${i}`}
-                  className="w-[28vw] min-w-[88px] max-w-[132px] flex-shrink-0 sm:w-[164px] sm:max-w-none md:w-[194px] lg:w-[218px] 2xl:w-[228px]"
+                  className="w-[28vw] min-w-[88px] max-w-[132px] flex-shrink-0 sm:w-[164px] sm:max-w-none md:w-[18%] lg:w-[calc((100%-6*1rem)/7)] xl:w-[calc((100%-6*1rem)/7)]"
                 >
                   <FilmCardSkeleton hideDetails={false} />
                 </div>
               ))
-            : films.slice(0, 16).map((film) => (
+            : films.slice(0, 14).map((film) => (
                 <div
                   key={film.slug}
-                  className="w-[28vw] min-w-[88px] max-w-[132px] flex-shrink-0 sm:w-[164px] sm:max-w-none md:w-[194px] lg:w-[218px] 2xl:w-[228px]"
+                  className="w-[28vw] min-w-[88px] max-w-[132px] flex-shrink-0 sm:w-[164px] sm:max-w-none md:w-[18%] lg:w-[calc((100%-6*1rem)/7)] xl:w-[calc((100%-6*1rem)/7)]"
                 >
                   <FilmCard film={film} variant="standard" hideDetails={false} preferHighQuality />
                 </div>

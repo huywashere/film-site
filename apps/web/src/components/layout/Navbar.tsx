@@ -64,9 +64,8 @@ const SpotlightSearchModal = dynamic(
 );
 
 const NAV_LINKS = [
-  { href: "/films/series", key: "nav.series" },
-  { href: "/films/single", key: "nav.single" },
-  { href: "/actors", key: "nav.actors", label: "Diễn Viên" },
+  { href: "/films/series", key: "nav.series", label: "Phim Bộ" },
+  { href: "/films/single", key: "nav.single", label: "Phim Lẻ" },
 ];
 
 export const GENRES_LIST = [
@@ -246,40 +245,37 @@ export function CountryFlagImage({
   );
 }
 
-const LISTS_COLUMNS = [
-  // Column 1
-  [
-    { label: "Phim Mới", labelEn: "New Releases", href: "/films/latest" },
-    { label: "Phim Bộ", labelEn: "TV Series", href: "/films/series" },
-    { label: "Phim Lẻ", labelEn: "Feature Films", href: "/films/single" },
-    { label: "Shows", labelEn: "TV Shows", href: "/films/shows" },
-  ],
-  // Column 2
-  [
-    { label: "Hoạt Hình", labelEn: "Animation / Anime", href: "/films/anime" },
-    { label: "Phim Vietsub", labelEn: "Subtitled", href: "/films/vietsub" },
-    { label: "Thuyết Minh Song Ngữ AI", labelEn: "AI Dubbed & Bilingual", href: "/films/thuyet-minh-ai" },
-    { label: "Phim Lồng Tiếng", labelEn: "Voiceover", href: "/films/long-tieng" },
-  ],
-  // Column 3
-  [
-    {
-      label: "Phim Bộ Đang Chiếu",
-      labelEn: "Ongoing Series",
-      href: "/films/dang-chieu",
-    },
-    {
-      label: "Phim Bộ Đã Hoàn Thành",
-      labelEn: "Completed Series",
-      href: "/films/hoan-thanh",
-    },
-    { label: "Subteam", labelEn: "Subteam", href: "/films/subteam" },
-    {
-      label: "Phim Chiếu Rạp",
-      labelEn: "Theatrical Movies",
-      href: "/films/chieu-rap",
-    },
-  ],
+const MORE_NAV_ITEMS = [
+  {
+    href: "/watch-party",
+    key: "nav.watchParty",
+    label: "Xem Chung",
+    labelEn: "Watch Party",
+  },
+  {
+    href: "/actors",
+    key: "nav.actors",
+    label: "Diễn viên",
+    labelEn: "Actors",
+  },
+  {
+    href: "/schedule",
+    key: "nav.schedule",
+    label: "Lịch chiếu",
+    labelEn: "Schedule",
+  },
+  {
+    href: "/films/tv-shows",
+    key: "nav.tvshows",
+    label: "TV Shows",
+    labelEn: "TV Shows",
+  },
+  {
+    href: "/films",
+    key: "nav.yearFilter",
+    label: "Bộ lọc theo năm",
+    labelEn: "Filter by Year",
+  },
 ];
 
 function AnimatedNavbarLogo() {
@@ -354,6 +350,13 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  const isMoreActive =
+    pathname.startsWith("/watch-party") ||
+    pathname.startsWith("/actors") ||
+    pathname.startsWith("/schedule") ||
+    pathname.startsWith("/films/tv-shows") ||
+    pathname.startsWith("/films/shows");
 
   const { user, logout } = useAuthStore();
   const openAuthModal = useAuthModalStore((state) => state.openModal);
@@ -741,29 +744,51 @@ export function Navbar() {
               </div>
             </div>
 
+            {/* Thêm Dropdown Menu */}
             <div className="relative group py-5">
-              <button className="flex items-center space-x-1 whitespace-nowrap px-2.5 py-1.5 text-sm font-semibold text-neutral-300 transition-colors hover:text-white focus:outline-none min-[1700px]:px-3">
-                <span>{t("nav.list")}</span>
+              <button
+                className={cn(
+                  "relative flex items-center space-x-1 whitespace-nowrap px-2.5 py-1.5 text-sm font-semibold transition-all duration-150 select-none min-[1700px]:px-3.5 rounded-full",
+                  isMoreActive
+                    ? "text-white font-bold"
+                    : "text-neutral-300 hover:text-white hover:bg-white/[0.05]",
+                )}
+              >
+                {isMoreActive && (
+                  <div className="absolute inset-0 -z-10 rounded-full border border-white/20 bg-white/10 shadow-sm backdrop-blur-md motion-safe:animate-[route-in_150ms_ease-out]" />
+                )}
+                <span>{t("nav.more", "Thêm")}</span>
                 <ChevronDown
                   size={14}
                   className="transition-transform duration-200 group-hover:rotate-180 text-neutral-400"
                 />
               </button>
-              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[540px] p-4 bg-[#090c15]/95 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.7)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-3 gap-x-2 z-50">
-                {LISTS_COLUMNS.map((column, colIdx) => (
-                  <div key={colIdx} className="flex flex-col space-y-1">
-                    {column.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onMouseEnter={() => router.prefetch(item.href)}
-                        className="px-3 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/10 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-150 block truncate"
-                      >
-                        {lang === "en" ? item.labelEn || item.label : item.label}
-                      </Link>
-                    ))}
-                  </div>
-                ))}
+
+              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[170px] p-1.5 bg-[#12141c]/95 backdrop-blur-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 flex flex-col space-y-0.5">
+                {MORE_NAV_ITEMS.map((item) => {
+                  const isItemActive =
+                    pathname === item.href ||
+                    pathname.startsWith(item.href + "/");
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onMouseEnter={() => router.prefetch(item.href)}
+                      className={cn(
+                        "px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 block truncate",
+                        isItemActive
+                          ? "bg-white/15 text-white font-semibold"
+                          : "text-neutral-300 hover:text-white hover:bg-white/10 hover:translate-x-0.5",
+                      )}
+                    >
+                      {item.key
+                        ? t(item.key, lang === "en" ? item.labelEn : item.label)
+                        : lang === "en"
+                          ? item.labelEn
+                          : item.label}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
 

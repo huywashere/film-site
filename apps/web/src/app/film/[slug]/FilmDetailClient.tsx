@@ -35,7 +35,11 @@ import {
   ExternalLink,
   Sparkles,
   X,
+  Images,
+  Maximize2,
+  ChevronDown,
 } from 'lucide-react';
+import { cleanMovieDescription } from '@/lib/string-utils';
 import { movieApi, watchlistApi, ratingsApi, reviewsApi } from '@/lib/api';
 import { FilmNotFound } from '@/components/film/FilmNotFound';
 import { StarRating } from '@/components/film/StarRating';
@@ -445,6 +449,58 @@ function FilmImageLightboxModal({
         )}
       </motion.div>
     </AnimatePresence>
+  );
+}
+
+// ── Film Gallery Card Component with Lazy Load & Error Handling ──
+function FilmGalleryItem({
+  img,
+  index,
+  filmName,
+  onOpen,
+}: {
+  img: { url: string; highResUrl: string; label: string };
+  index: number;
+  filmName: string;
+  onOpen: (index: number) => void;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  if (failed) return null;
+
+  return (
+    <div
+      onClick={() => onOpen(index)}
+      className="group relative aspect-video overflow-hidden rounded-xl bg-neutral-900/80 border border-white/10 hover:border-cyan-400/60 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-cyan-950/40 select-none"
+      title="Bấm để xem ảnh phóng to"
+    >
+      {!loaded && (
+        <div className="absolute inset-0 animate-pulse bg-white/[0.04]" />
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={img.url}
+        alt={`${filmName} - ${img.label}`}
+        loading="lazy"
+        decoding="async"
+        referrerPolicy="no-referrer"
+        onLoad={() => setLoaded(true)}
+        onError={() => setFailed(true)}
+        className={cn(
+          'w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105',
+          loaded ? 'opacity-100' : 'opacity-0'
+        )}
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-between p-2.5">
+        <span className="text-[11px] font-semibold text-white/95 truncate drop-shadow">
+          {img.label}
+        </span>
+        <div className="p-1 rounded-full bg-black/70 text-cyan-400 backdrop-blur-sm border border-white/10 shadow-sm">
+          <Maximize2 size={12} />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1106,6 +1162,7 @@ export default function FilmDetailPage({
   const [showTrailer, setShowTrailer] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [showAllGallery, setShowAllGallery] = useState(false);
   const [secondaryReadySlug, setSecondaryReadySlug] = useState('');
   const secondaryReady = secondaryReadySlug === slug;
 
@@ -1171,17 +1228,8 @@ export default function FilmDetailPage({
     const d = parseList(film?.director);
     const a = parseList(film?.actor);
 
-    let content = film?.content || '';
-    if (content.includes('-->') && content.length > 1000) {
-      return {
-        cleanContent: 'Đang cập nhật nội dung mô tả cho phim này...',
-        directors: d,
-        actors: a,
-      };
-    }
-
-    content = content.replace(/<[^>]*>/g, '');
-    return { cleanContent: content, directors: d, actors: a };
+    const cleaned = cleanMovieDescription(film?.content);
+    return { cleanContent: cleaned, directors: d, actors: a };
   }, [film]);
 
   // TMDB data — fetch images immediately for gallery & alternative poster switcher
@@ -1195,6 +1243,8 @@ export default function FilmDetailPage({
     creditsLoading: tmdbCreditsLoading,
     isResolving: tmdbResolving,
     trailer,
+    overview: tmdbOverview,
+    tagline: tmdbTagline,
   } = useTmdb({
     film,
     enabled: !!film,
@@ -1203,6 +1253,19 @@ export default function FilmDetailPage({
     fetchVideos: secondaryReady || showTrailer,
     initialTmdb,
   });
+
+  // Hiển thị nội dung đầy đủ: ưu tiên nội dung đã làm sạch, fallback TMDB nếu thiếu
+  const displayOverview = useMemo<string>(() => {
+    const isCleanEmptyOrPlaceholder =
+      !cleanContent ||
+      cleanContent.length < 35 ||
+      cleanContent.toLowerCase().includes('đang cập nhật');
+
+    if (isCleanEmptyOrPlaceholder && tmdbOverview) {
+      return String(tmdbOverview);
+    }
+    return String(cleanContent || tmdbOverview || '');
+  }, [cleanContent, tmdbOverview]);
 
   // OMDB data — ratings IMDb/RT/Metacritic + awards + box office (fetch immediately, 0ms cache)
   const { omdb } = useOmdb(film, !!film);
@@ -1245,12 +1308,77 @@ export default function FilmDetailPage({
     return list;
   }, [tmdbPosterUrl, providerPosterUrl, providerBackdropUrl]);
 
+  // Bộ sưu tập ảnh liên quan (Backdrops & Posters độ phân giải cao từ TMDB)
+  const galleryImages = useMemo(() => {
+    const items: Array<{
+      url: string;
+      highResUrl: string;
+      label: string;
+    }> = [];
+    const seen = new Set<string>();
+
+    // 1. Backdrops (Cảnh phim 16:9 sắc nét)
+    (backdrops || []).forEach((b, idx) => {
+      const displayUrl = tmdbBackdrop(b.file_path, 'w780');
+      const highRes = tmdbBackdrop(b.file_path, 'original') || displayUrl;
+      if (displayUrl && highRes && !seen.has(b.file_path)) {
+        seen.add(b.file_path);
+        items.push({
+          url: displayUrl,
+          highResUrl: highRes,
+          label: `Cảnh phim ${idx + 1}`,
+        });
+      }
+    });
+
+    // 2. Posters (Poster tuyển chọn bổ sung)
+    if (items.length < 4) {
+      (posters || []).slice(0, 6).forEach((p, idx) => {
+        const displayUrl = tmdbPoster(p.file_path, 'w500');
+        const highRes = tmdbPoster(p.file_path, 'original') || displayUrl;
+        if (displayUrl && highRes && !seen.has(p.file_path)) {
+          seen.add(p.file_path);
+          items.push({
+            url: displayUrl,
+            highResUrl: highRes,
+            label: `Poster ${idx + 1}`,
+          });
+        }
+      });
+    }
+
+    // 3. Fallbacks từ nhà cung cấp nếu TMDB không có ảnh
+    if (items.length === 0) {
+      if (providerBackdropUrl && !seen.has(providerBackdropUrl)) {
+        seen.add(providerBackdropUrl);
+        items.push({
+          url: providerBackdropUrl,
+          highResUrl: providerBackdropUrl,
+          label: 'Hình nền phim',
+        });
+      }
+      if (providerPosterUrl && !seen.has(providerPosterUrl)) {
+        seen.add(providerPosterUrl);
+        items.push({
+          url: providerPosterUrl,
+          highResUrl: providerPosterUrl,
+          label: 'Poster chính',
+        });
+      }
+    }
+
+    return items;
+  }, [backdrops, posters, providerBackdropUrl, providerPosterUrl]);
+
   const allGalleryImages = useMemo(() => {
+    if (galleryImages.length > 0) {
+      return galleryImages.map((img) => img.highResUrl);
+    }
     const list: string[] = [];
     const main = tmdbOriginalPosterUrl || tmdbPosterUrl || providerPosterUrl;
     if (main) list.push(main);
     return list;
-  }, [tmdbOriginalPosterUrl, tmdbPosterUrl, providerPosterUrl]);
+  }, [galleryImages, tmdbOriginalPosterUrl, tmdbPosterUrl, providerPosterUrl]);
 
   // Watchlist status check
   useEffect(() => {
@@ -2201,10 +2329,17 @@ export default function FilmDetailPage({
               </section>
             )}
 
-          <section className="space-y-3 pt-4 border-t border-white/5">
-            <h2 className="text-base sm:text-lg font-bold text-white flex items-center">
+          <section className="space-y-3.5 pt-5 border-t border-white/5">
+            <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
               <span>{t('film.synopsis', 'Nội dung phim')}</span>
             </h2>
+
+            {/* Tagline từ TMDB nếu có */}
+            {tmdbTagline && (
+              <p className="text-xs sm:text-sm italic text-amber-400/90 font-serif border-l-2 border-amber-400/60 pl-3 py-0.5">
+                “{tmdbTagline}”
+              </p>
+            )}
 
             {film.origin_name && (
               <p className="text-xs text-neutral-400 leading-relaxed font-medium">
@@ -2215,10 +2350,12 @@ export default function FilmDetailPage({
               </p>
             )}
 
-            {cleanContent && (
-              <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-normal max-w-4xl">
-                {cleanContent}
-              </p>
+            {displayOverview && (
+              <div className="space-y-3 max-w-4xl text-xs sm:text-sm text-neutral-300 leading-relaxed font-normal">
+                {displayOverview.split('\n\n').map((para: string, idx: number) => (
+                  <p key={idx}>{para}</p>
+                ))}
+              </div>
             )}
           </section>
 
@@ -2246,6 +2383,64 @@ export default function FilmDetailPage({
               </span>
             </div>
           </section>
+
+          {/* ── Hình ảnh liên quan tới phim (Stills & Backdrops) ── */}
+          {galleryImages.length > 0 && (
+            <section className="space-y-4 pt-6 border-t border-white/5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                  <Images className="text-cyan-400" size={20} />
+                  <span>{t('film.relatedImages', 'Hình ảnh liên quan')}</span>
+                  <span className="text-xs font-normal text-neutral-400">
+                    ({galleryImages.length} ảnh)
+                  </span>
+                </h2>
+                {galleryImages.length > 4 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLightboxIndex(0);
+                      setLightboxOpen(true);
+                    }}
+                    className="text-xs text-neutral-400 hover:text-white transition-colors flex items-center gap-1 cursor-pointer font-medium"
+                  >
+                    <span>Xem tất cả</span>
+                    <ChevronRight size={14} />
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
+                {galleryImages
+                  .slice(0, showAllGallery ? undefined : 8)
+                  .map((img, idx) => (
+                    <FilmGalleryItem
+                      key={img.url + idx}
+                      img={img}
+                      index={idx}
+                      filmName={film?.name || ''}
+                      onOpen={(clickedIdx) => {
+                        setLightboxIndex(clickedIdx);
+                        setLightboxOpen(true);
+                      }}
+                    />
+                  ))}
+              </div>
+
+              {galleryImages.length > 8 && !showAllGallery && (
+                <div className="flex justify-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAllGallery(true)}
+                    className="px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-xs font-semibold text-neutral-200 hover:text-white transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-95"
+                  >
+                    <span>Xem thêm {galleryImages.length - 8} ảnh khác</span>
+                    <ChevronDown size={14} />
+                  </button>
+                </div>
+              )}
+            </section>
+          )}
 
         </div>
       </div>

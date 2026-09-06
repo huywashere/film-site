@@ -1,371 +1,628 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search,
-  Filter,
-  SlidersHorizontal,
   RotateCcw,
   Film,
-  Sparkles,
+  X,
   ChevronDown,
-  Loader2,
-  Clapperboard,
 } from "lucide-react";
 import {
   FilmCard,
   FilmCardSkeleton,
   FilmItem,
+  resolveImageUrl,
 } from "@/components/film/FilmCard";
 import { Pagination } from "@/components/film/Pagination";
 import { GENRES_LIST, COUNTRIES_LIST } from "@/components/layout/Navbar";
 import { movieApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { cardFont } from "@/lib/fonts";
 
-const YEARS = Array.from({ length: 25 }, (_, i) => 2026 - i);
+// ── Định nghĩa các tùy chọn bộ lọc ──────────────────────────────────────────
 
-const TYPES = [
-  { label: "Tất cả định dạng", value: "all" },
+const YEARS = Array.from({ length: 27 }, (_, i) => 2026 - i);
+
+const QUICK_TYPES = [
+  { label: "Tất cả", value: "all" },
   { label: "Phim Bộ", value: "series" },
   { label: "Phim Lẻ", value: "single" },
-  { label: "Hoạt Hình", value: "anime" },
+  { label: "Anime", value: "anime" },
   { label: "TV Shows", value: "tv-shows" },
+  { label: "Thuyết Minh", value: "thuyet-minh" },
+  { label: "Chiếu Rạp", value: "chieu-rap" },
+];
+
+const QUALITIES = [
+  { label: "Chất lượng", value: "all" },
+  { label: "4K Ultra HD", value: "4k" },
+  { label: "Full HD (1080p)", value: "fhd" },
+  { label: "HD (720p)", value: "hd" },
+];
+
+const AUDIOS = [
+  { label: "Bản dịch", value: "all" },
+  { label: "Vietsub", value: "vietsub" },
+  { label: "Thuyết Minh", value: "thuyet-minh" },
+  { label: "Lồng Tiếng", value: "long-tieng" },
 ];
 
 const SORTS = [
-  { label: "Thời gian cập nhật", value: "modified.time" },
+  { label: "Mới cập nhật", value: "modified.time" },
   { label: "Năm phát hành", value: "year" },
+  { label: "Đánh giá cao nhất", value: "rating" },
   { label: "Mức độ phổ biến", value: "view" },
 ];
 
-export default function BrowseFilmsPage() {
+function BrowseFilmsContent() {
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selectedType, setSelectedType] = useState("all");
   const [selectedGenre, setSelectedGenre] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
-  const [selectedType, setSelectedType] = useState("all");
+  const [selectedQuality, setSelectedQuality] = useState("all");
+  const [selectedAudio, setSelectedAudio] = useState("all");
   const [selectedSort, setSelectedSort] = useState("modified.time");
   const [page, setPage] = useState(1);
 
-  const isFiltered =
-    !!search ||
-    !!selectedGenre ||
-    !!selectedCountry ||
-    !!selectedYear ||
-    selectedType !== "all";
+  // Đồng bộ tiêu chí lọc từ URL query params
+  useEffect(() => {
+    const y = searchParams.get("year");
+    if (y !== null) setSelectedYear(y);
+    const t = searchParams.get("type");
+    if (t !== null) setSelectedType(t);
+    const g = searchParams.get("genre") || searchParams.get("category");
+    if (g !== null) setSelectedGenre(g);
+    const c = searchParams.get("country");
+    if (c !== null) setSelectedCountry(c);
+    const q = searchParams.get("q") || searchParams.get("search");
+    if (q !== null) {
+      setSearch(q);
+      setDebouncedSearch(q);
+    }
+    const s = searchParams.get("sort");
+    if (s !== null) setSelectedSort(s);
+    const p = searchParams.get("page");
+    if (p !== null && !isNaN(Number(p))) setPage(Number(p));
+  }, [searchParams]);
 
-  const handleReset = () => {
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Đếm số lượng bộ lọc đang kích hoạt
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (selectedType !== "all") count++;
+    if (selectedGenre) count++;
+    if (selectedCountry) count++;
+    if (selectedYear) count++;
+    if (selectedQuality !== "all") count++;
+    if (selectedAudio !== "all") count++;
+    if (debouncedSearch) count++;
+    return count;
+  }, [
+    selectedType,
+    selectedGenre,
+    selectedCountry,
+    selectedYear,
+    selectedQuality,
+    selectedAudio,
+    debouncedSearch,
+  ]);
+
+  const isFiltered = activeFiltersCount > 0;
+
+  const handleResetAll = useCallback(() => {
     setSearch("");
+    setDebouncedSearch("");
+    setSelectedType("all");
     setSelectedGenre("");
     setSelectedCountry("");
     setSelectedYear("");
-    setSelectedType("all");
+    setSelectedQuality("all");
+    setSelectedAudio("all");
     setSelectedSort("modified.time");
     setPage(1);
-  };
+  }, []);
 
-  // Query film list based on search vs filters
-  const { data, isLoading } = useQuery({
-    queryKey: [
-      "browse-films",
-      search,
+  // TanStack Query cache key
+  const queryKey = useMemo(() => {
+    return [
+      "browse-films-v2",
+      debouncedSearch,
+      selectedType,
       selectedGenre,
       selectedCountry,
       selectedYear,
-      selectedType,
       selectedSort,
       page,
-    ],
+    ];
+  }, [
+    debouncedSearch,
+    selectedType,
+    selectedGenre,
+    selectedCountry,
+    selectedYear,
+    selectedSort,
+    page,
+  ]);
+
+  const { data, isLoading } = useQuery({
+    queryKey,
     queryFn: async () => {
-      if (search.trim()) {
-        const res = await movieApi.search(search.trim(), page, 24);
-        return res.data;
+      // 1. Tìm kiếm từ khóa nếu có
+      if (debouncedSearch.trim()) {
+        const filters: any = {};
+        if (selectedGenre) filters.genre = selectedGenre;
+        if (selectedCountry) filters.country = selectedCountry;
+        if (selectedYear) filters.year = Number(selectedYear);
+        if (selectedType !== "all") filters.type = selectedType;
+        const res = await movieApi.search(debouncedSearch.trim(), page, 28, filters);
+        return res?.data?.data || res?.data || { items: [] };
       }
 
+      // 2. Lọc theo Thể loại
       if (selectedGenre) {
         const res = await movieApi.getByGenre(selectedGenre, page);
-        return res.data;
+        return res?.data?.data || res?.data || { items: [] };
       }
 
+      // 3. Lọc theo Quốc gia
       if (selectedCountry) {
         const res = await movieApi.getByCountry(selectedCountry, page);
-        return res.data;
+        return res?.data?.data || res?.data || { items: [] };
       }
 
+      // 4. Lọc theo Phân loại định dạng
       if (selectedType === "series") {
         const res = await movieApi.getSeries(page);
-        return res.data;
+        return res?.data?.data || res?.data || { items: [] };
       }
-
       if (selectedType === "single") {
         const res = await movieApi.getSingle(page);
-        return res.data;
+        return res?.data?.data || res?.data || { items: [] };
       }
-
       if (selectedType === "anime") {
         const res = await movieApi.getAnime(page);
-        return res.data;
+        return res?.data?.data || res?.data || { items: [] };
       }
-
       if (selectedType === "tv-shows") {
         const res = await movieApi.getTvShows(page);
-        return res.data;
+        return res?.data?.data || res?.data || { items: [] };
+      }
+      if (selectedType === "thuyet-minh") {
+        const res = await movieApi.getThuyetMinh(page);
+        return res?.data?.data || res?.data || { items: [] };
+      }
+      if (selectedType === "chieu-rap") {
+        const res = await movieApi.getChieuRap(page);
+        return res?.data?.data || res?.data || { items: [] };
       }
 
+      // 5. Mặc định: Phim mới cập nhật
       const res = await movieApi.getLatest(page);
-      return res.data;
+      return res?.data?.data || res?.data || { items: [] };
     },
-    staleTime: 5 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
-    retry: 1,
-    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 15,
+    gcTime: 1000 * 60 * 60,
     placeholderData: (previousData) => previousData,
   });
 
-  const rawItems: Array<Record<string, unknown>> = (data?.items ||
-    data?.data?.items ||
-    []) as Array<Record<string, unknown>>;
+  const rawItems: any[] = useMemo(() => {
+    return data?.items || data?.data?.items || [];
+  }, [data]);
+
   const totalPages =
     data?.params?.pagination?.totalPages ||
     data?.pagination?.totalPages ||
-    Math.ceil((data?.totalItems || 100) / 24);
+    Math.ceil((data?.totalItems || 100) / 28);
 
+  const totalItems =
+    data?.totalItems || data?.data?.params?.pagination?.totalItems || undefined;
+
+  // Client-side refining & sorting
   const films: FilmItem[] = useMemo(() => {
-    let list: FilmItem[] = rawItems.map((item): FilmItem => ({
-      _id: String(item._id || item.id || item.slug || ""),
-      name: String(item.name || item.title || ""),
-      origin_name: String(item.origin_name || item.original_title || ""),
-      slug: String(item.slug || ""),
-      poster_url: String(item.poster_url || item.thumb_url || ""),
-      thumb_url: String(item.thumb_url || item.poster_url || ""),
-      year: Number(item.year) || 2026,
-      episode_current: String(item.episode_current || "HD"),
-      quality: String(item.quality || "FHD"),
-      lang: String(item.lang || "Vietsub"),
-      category: Array.isArray(item.category) ? item.category : [],
-      country: Array.isArray(item.country) ? item.country : [],
-      vote_average: Number(item.vote_average || item.rating) || 8.5,
-    }));
+    let list: FilmItem[] = rawItems.map((item): FilmItem => {
+      const pUrl = String(item.poster_url || item.thumb_url || "");
+      const tUrl = String(item.thumb_url || item.poster_url || "");
+      return {
+        _id: String(item._id || item.id || item.slug || ""),
+        name: String(item.name || item.title || ""),
+        origin_name: String(item.origin_name || item.original_title || ""),
+        slug: String(item.slug || ""),
+        poster_url: resolveImageUrl(pUrl, tUrl) || pUrl,
+        thumb_url: resolveImageUrl(tUrl, pUrl) || tUrl,
+        year: Number(item.year) || 2026,
+        episode_current: String(item.episode_current || "HD"),
+        quality: String(item.quality || "FHD"),
+        lang: String(item.lang || "Vietsub"),
+        category: Array.isArray(item.category) ? item.category : [],
+        country: Array.isArray(item.country) ? item.country : [],
+        vote_average: Number(item.vote_average || item.rating) || 8.5,
+      };
+    });
 
     if (selectedYear) {
       list = list.filter((f) => String(f.year) === String(selectedYear));
     }
 
+    if (selectedQuality !== "all") {
+      if (selectedQuality === "4k") {
+        list = list.filter(
+          (f) =>
+            (f.quality || "").toLowerCase().includes("4k") ||
+            (f.name || "").toLowerCase().includes("4k"),
+        );
+      } else if (selectedQuality === "fhd") {
+        list = list.filter(
+          (f) =>
+            (f.quality || "").toLowerCase().includes("1080") ||
+            (f.quality || "").toLowerCase().includes("fhd"),
+        );
+      } else if (selectedQuality === "hd") {
+        list = list.filter(
+          (f) =>
+            (f.quality || "").toLowerCase().includes("720") ||
+            (f.quality || "").toLowerCase().includes("hd"),
+        );
+      }
+    }
+
+    if (selectedAudio !== "all") {
+      if (selectedAudio === "thuyet-minh") {
+        list = list.filter(
+          (f) =>
+            (f.lang || "").toLowerCase().includes("thuyết minh") ||
+            (f.lang || "").toLowerCase().includes("lồng tiếng"),
+        );
+      } else if (selectedAudio === "vietsub") {
+        list = list.filter((f) =>
+          (f.lang || "").toLowerCase().includes("vietsub"),
+        );
+      } else if (selectedAudio === "long-tieng") {
+        list = list.filter((f) =>
+          (f.lang || "").toLowerCase().includes("lồng tiếng"),
+        );
+      }
+    }
+
+    if (selectedSort === "rating") {
+      list = [...list].sort(
+        (a, b) => (b.vote_average || 0) - (a.vote_average || 0),
+      );
+    } else if (selectedSort === "year") {
+      list = [...list].sort((a, b) => (b.year || 0) - (a.year || 0));
+    }
+
     return list;
-  }, [rawItems, selectedYear]);
+  }, [rawItems, selectedYear, selectedQuality, selectedAudio, selectedSort]);
 
   return (
-    <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 pt-20 sm:pt-24 pb-20 bg-background min-h-screen text-foreground select-none font-sans">
-      {/* ── Page Title Header (Centered & Ultra-Minimalist) ── */}
-      <div className="flex flex-col items-center justify-center text-center gap-3 mb-10 pb-6 border-b border-white/5 max-w-3xl mx-auto">
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-neutral-400">
-            <Clapperboard size={18} />
+    <main
+      className={cn(
+        cardFont.className,
+        "relative min-h-[100dvh] bg-[#0a0b10] text-white pb-24 sm:pb-28 pt-16 sm:pt-20 select-none",
+      )}
+    >
+      {/* ── Ambient Studio Lighting (Đồng bộ trang chủ) ── */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[1200px] h-[500px] bg-gradient-to-b from-white/[0.025] to-transparent blur-[140px] rounded-full" />
+      </div>
+
+      <div className="relative z-10 mx-auto w-full max-w-[1720px] px-3.5 sm:px-8 lg:px-12 space-y-5 sm:space-y-6">
+        {/* ── Header Tiêu Đề Đơn Giản & Thanh Thoát (Đồng bộ Trang Chủ & Chủ Đề) ── */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-3 sm:pb-4 border-b border-white/[0.08] gap-1.5 sm:gap-2">
+          <div>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
+              Duyệt Tìm Phim
+            </h1>
           </div>
-          <span className="text-xs font-bold uppercase tracking-widest text-neutral-400">
-            Bộ Lọc Điện Ảnh
+          <p className="text-[11px] sm:text-xs text-neutral-400 font-medium">
+            Khám phá kho phim điện ảnh, phim bộ và hoạt hình chọn lọc
+          </p>
+        </div>
+
+        {/* ── Hàng 1: Thanh Tìm Kiếm & Quick Format Pills ── */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Quick Format Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
+            {QUICK_TYPES.map((type) => {
+              const isActive = selectedType === type.value;
+              return (
+                <button
+                  key={type.value}
+                  type="button"
+                  onClick={() => {
+                    setSelectedType(type.value);
+                    setPage(1);
+                  }}
+                  className={cn(
+                    "px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer select-none shrink-0",
+                    isActive
+                      ? "bg-white text-black shadow-sm"
+                      : "bg-[#12141c] text-neutral-400 hover:text-white hover:bg-white/[0.06] border border-white/[0.08]",
+                  )}
+                >
+                  {type.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Ô tìm kiếm nhanh nhỏ gọn */}
+          <div className="relative w-full md:w-72 shrink-0">
+            <Search
+              size={14}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+            />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm tên phim, diễn viên..."
+              className="w-full bg-[#12141c] border border-white/10 hover:border-white/20 focus:border-cyan-400/60 rounded-xl pl-9 pr-8 py-1.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none transition-colors"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-neutral-400 hover:text-white rounded-full transition-colors"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* ── Hàng 2: Bộ Lọc Tinh Gọn Dạng Select Pills (Không khung viền cồng kềnh) ── */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* 1. Thể Loại */}
+            <div className="relative">
+              <select
+                value={selectedGenre}
+                onChange={(e) => {
+                  setSelectedGenre(e.target.value);
+                  setPage(1);
+                }}
+                className={cn(
+                  "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
+                  selectedGenre
+                    ? "border-cyan-400/60 text-cyan-300"
+                    : "border-white/10 text-neutral-300 hover:border-white/20",
+                )}
+              >
+                <option value="">Thể Loại</option>
+                {GENRES_LIST.map((g) => (
+                  <option key={g.slug} value={g.slug} className="bg-[#12141c] text-white">
+                    {g.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+            </div>
+
+            {/* 2. Quốc Gia */}
+            <div className="relative">
+              <select
+                value={selectedCountry}
+                onChange={(e) => {
+                  setSelectedCountry(e.target.value);
+                  setPage(1);
+                }}
+                className={cn(
+                  "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
+                  selectedCountry
+                    ? "border-cyan-400/60 text-cyan-300"
+                    : "border-white/10 text-neutral-300 hover:border-white/20",
+                )}
+              >
+                <option value="">Quốc Gia</option>
+                {COUNTRIES_LIST.map((c) => (
+                  <option key={c.slug} value={c.slug} className="bg-[#12141c] text-white">
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+            </div>
+
+            {/* 3. Năm Phát Hành */}
+            <div className="relative">
+              <select
+                value={selectedYear}
+                onChange={(e) => {
+                  setSelectedYear(e.target.value);
+                  setPage(1);
+                }}
+                className={cn(
+                  "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
+                  selectedYear
+                    ? "border-cyan-400/60 text-cyan-300"
+                    : "border-white/10 text-neutral-300 hover:border-white/20",
+                )}
+              >
+                <option value="">Năm</option>
+                {YEARS.map((y) => (
+                  <option key={y} value={y} className="bg-[#12141c] text-white">
+                    {y}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+            </div>
+
+            {/* 4. Chất Lượng */}
+            <div className="relative">
+              <select
+                value={selectedQuality}
+                onChange={(e) => {
+                  setSelectedQuality(e.target.value);
+                  setPage(1);
+                }}
+                className={cn(
+                  "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
+                  selectedQuality !== "all"
+                    ? "border-cyan-400/60 text-cyan-300"
+                    : "border-white/10 text-neutral-300 hover:border-white/20",
+                )}
+              >
+                {QUALITIES.map((q) => (
+                  <option key={q.value} value={q.value} className="bg-[#12141c] text-white">
+                    {q.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+            </div>
+
+            {/* 5. Bản Dịch */}
+            <div className="relative">
+              <select
+                value={selectedAudio}
+                onChange={(e) => {
+                  setSelectedAudio(e.target.value);
+                  setPage(1);
+                }}
+                className={cn(
+                  "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
+                  selectedAudio !== "all"
+                    ? "border-cyan-400/60 text-cyan-300"
+                    : "border-white/10 text-neutral-300 hover:border-white/20",
+                )}
+              >
+                {AUDIOS.map((a) => (
+                  <option key={a.value} value={a.value} className="bg-[#12141c] text-white">
+                    {a.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+            </div>
+
+            {/* 6. Sắp Xếp */}
+            <div className="relative">
+              <select
+                value={selectedSort}
+                onChange={(e) => {
+                  setSelectedSort(e.target.value);
+                  setPage(1);
+                }}
+                className="appearance-none bg-[#12141c] border border-white/10 hover:border-white/20 rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold text-neutral-300 focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors"
+              >
+                {SORTS.map((s) => (
+                  <option key={s.value} value={s.value} className="bg-[#12141c] text-white">
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+            </div>
+
+            {/* Nút Xóa Lọc */}
+            {isFiltered && (
+              <button
+                type="button"
+                onClick={handleResetAll}
+                className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white px-2.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-colors cursor-pointer"
+              >
+                <RotateCcw size={11} />
+                <span>Đặt lại</span>
+              </button>
+            )}
+          </div>
+
+          {/* Số lượng phim */}
+          <span className="text-[11px] sm:text-xs text-neutral-400 font-medium self-center">
+            {films.length} phim {totalItems ? `• Tổng số ${totalItems}` : ""}
           </span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-          Duyệt Tìm Kho Phim
-        </h1>
-        <p className="text-xs sm:text-sm text-neutral-400">
-          Khám phá hàng ngàn bộ phim bom tấn, phim bộ, hoạt hình mới nhất
-        </p>
 
-        {/* Quick Search */}
-        <div className="relative w-full max-w-md mt-2">
-          <Search
-            size={16}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400"
-          />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Tìm tên phim, đạo diễn..."
-            className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none focus:border-white/30 transition-colors shadow-inner"
-          />
-        </div>
-      </div>
-
-      {/* ── Filter Controls Matrix (Ultra-Minimalist Dark) ── */}
-      <div className="bg-neutral-950/80 border border-white/10 rounded-3xl p-5 mb-8 backdrop-blur-xl shadow-2xl space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal size={16} className="text-neutral-400" />
-            <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">
-              Bộ Lọc Tìm Kiếm
-            </span>
+        {/* ── Lưới Thẻ Phim Chuẩn 7 Cột Phong Cách Trang Chủ (2xl:grid-cols-7) ── */}
+        {isLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2.5 sm:gap-3.5 lg:gap-4 pt-2">
+            {Array.from({ length: 14 }).map((_, i) => (
+              <FilmCardSkeleton key={i} />
+            ))}
           </div>
-
-          {isFiltered && (
-            <button
-              onClick={handleReset}
-              className="flex items-center gap-1.5 text-xs font-bold text-neutral-400 hover:text-white transition-colors px-3 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10"
-            >
-              <RotateCcw size={12} />
-              <span>Đặt lại bộ lọc</span>
-            </button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          {/* Genre Select */}
-          <div>
-            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-              Thể Loại
-            </label>
-            <select
-              value={selectedGenre}
-              onChange={(e) => {
-                setSelectedGenre(e.target.value);
-                setPage(1);
-              }}
-              className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-neutral-200 focus:outline-none focus:border-white/30 transition-colors cursor-pointer"
-            >
-              <option value="">Tất cả thể loại</option>
-              {GENRES_LIST.map((g) => (
-                <option key={g.slug} value={g.slug}>
-                  {g.label}
-                </option>
-              ))}
-            </select>
+        ) : films.length === 0 ? (
+          <div className="text-center py-20 bg-[#12141c]/50 border border-white/[0.08] rounded-2xl p-8 max-w-md mx-auto space-y-3">
+            <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-neutral-500">
+              <Film size={24} />
+            </div>
+            <h3 className="text-sm sm:text-base font-bold text-white">
+              Không tìm thấy bộ phim phù hợp
+            </h3>
+            <p className="text-xs text-neutral-400 leading-relaxed">
+              Hãy thử nới lỏng các tiêu chí lọc hoặc tìm bằng từ khóa khác.
+            </p>
+            {isFiltered && (
+              <button
+                type="button"
+                onClick={handleResetAll}
+                className="px-4 py-2 bg-white text-black font-extrabold text-xs rounded-xl hover:bg-neutral-200 transition-colors cursor-pointer"
+              >
+                Bỏ chọn bộ lọc
+              </button>
+            )}
           </div>
-
-          {/* Country Select */}
-          <div>
-            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-              Quốc Gia
-            </label>
-            <select
-              value={selectedCountry}
-              onChange={(e) => {
-                setSelectedCountry(e.target.value);
-                setPage(1);
-              }}
-              className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-neutral-200 focus:outline-none focus:border-white/30 transition-colors cursor-pointer"
-            >
-              <option value="">Tất cả quốc gia</option>
-              {COUNTRIES_LIST.map((c) => (
-                <option key={c.slug} value={c.slug}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Year Select */}
-          <div>
-            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-              Năm Phát Hành
-            </label>
-            <select
-              value={selectedYear}
-              onChange={(e) => {
-                setSelectedYear(e.target.value);
-                setPage(1);
-              }}
-              className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-neutral-200 focus:outline-none focus:border-white/30 transition-colors cursor-pointer"
-            >
-              <option value="">Tất cả các năm</option>
-              {YEARS.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Type Select */}
-          <div>
-            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-              Định Dạng
-            </label>
-            <select
-              value={selectedType}
-              onChange={(e) => {
-                setSelectedType(e.target.value);
-                setPage(1);
-              }}
-              className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-neutral-200 focus:outline-none focus:border-white/30 transition-colors cursor-pointer"
-            >
-              {TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Sort Select */}
-          <div>
-            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-              Sắp Xếp
-            </label>
-            <select
-              value={selectedSort}
-              onChange={(e) => setSelectedSort(e.target.value)}
-              className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-neutral-200 focus:outline-none focus:border-white/30 transition-colors cursor-pointer"
-            >
-              {SORTS.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Movie Results Grid ── */}
-      {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {Array.from({ length: 18 }).map((_, i) => (
-            <FilmCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : films.length === 0 ? (
-        <div className="text-center py-20 bg-white/[0.02] border border-white/5 rounded-3xl p-8">
-          <Film size={48} className="mx-auto text-neutral-600 mb-3" />
-          <h3 className="text-lg font-bold text-white mb-1">
-            Không tìm thấy phim phù hợp
-          </h3>
-          <p className="text-xs text-neutral-400 mb-6">
-            Thử thay đổi từ khóa tìm kiếm hoặc bỏ chọn bớt bộ lọc
-          </p>
-          <button
-            onClick={handleReset}
-            className="px-6 py-2.5 bg-white text-black font-extrabold text-xs rounded-xl hover:bg-neutral-200 transition-all shadow-lg active:scale-95 cursor-pointer"
-          >
-            Bỏ chọn bộ lọc
-          </button>
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2.5 sm:gap-3.5 lg:gap-4 pt-2">
             {films.map((film, idx) => (
               <FilmCard
-                key={film._id || idx}
+                key={`${film.slug || film._id || idx}-${idx}`}
                 film={film}
-                priority={idx < 6}
-                preferHighQuality={idx < 6}
+                priority={idx < 7}
               />
             ))}
           </div>
+        )}
 
-          {/* ── Pagination ── */}
-          <Pagination
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={(p) => setPage(p)}
-          />
-        </>
-      )}
-    </div>
+        {/* ── Phân Trang ── */}
+        {totalPages > 1 && (
+          <div className="pt-6">
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={(newPage) => {
+                setPage(newPage);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            />
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}
+
+export default function BrowseFilmsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#0a0b10] text-white pt-24 px-8 max-w-[1720px] mx-auto">
+          <div className="h-8 w-48 bg-white/10 rounded-xl animate-pulse mb-8" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
+            {Array.from({ length: 14 }).map((_, i) => (
+              <FilmCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
+      }
+    >
+      <BrowseFilmsContent />
+    </Suspense>
   );
 }

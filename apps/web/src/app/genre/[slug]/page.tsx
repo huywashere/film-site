@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -367,12 +367,12 @@ function GenreCuratedHeroBanner({
       }
     }
 
-    // After 1.8s on slide, start playing the background video trailer (Netflix style, desktop only)
+    // After 3.5s on slide, start playing the background video trailer (Netflix style, desktop only)
     const videoTimer = setTimeout(() => {
       if (ytKey && typeof window !== "undefined" && window.innerWidth >= 1024) {
         setIsPlayingVideo(true);
       }
-    }, 1800);
+    }, 3500);
 
     return () => clearTimeout(videoTimer);
   }, [currentIndex, ytKey, pool]);
@@ -431,6 +431,7 @@ function GenreCuratedHeroBanner({
               title={currentItem.name}
               allow="autoplay; encrypted-media"
               referrerPolicy="strict-origin-when-cross-origin"
+              loading="lazy"
               className="w-full h-full object-cover scale-[1.38] brightness-[0.78] contrast-[1.08] transition-opacity duration-700"
             />
           </div>
@@ -648,6 +649,7 @@ function GenreCuratedHeroBanner({
 export default function GenrePage() {
   const params = useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const slug = params.slug as string;
   const page = Number(searchParams.get("page") || 1);
@@ -677,6 +679,8 @@ export default function GenrePage() {
     queryKey: ["genre", slug, page],
     queryFn: () => movieApi.getByGenre(slug, page).then((r) => r.data),
     staleTime: 30 * 60 * 1000,
+    gcTime: 2 * 60 * 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Page 2 Query for Showcase Hubs
@@ -685,23 +689,26 @@ export default function GenrePage() {
     queryFn: () => movieApi.getByGenre(slug, 2).then((r) => r.data),
     enabled: isShowcasePage,
     staleTime: 30 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 
-  // Thematic Auxiliary Queries for Multi-Row Diversity
+  // Thematic Auxiliary Queries for Multi-Row Diversity (deferred after main content loads to prevent network choke)
   const { data: auxData1 } = useQuery({
     queryKey: ["genre-aux-1", isSciFiPage ? "phieu-luu" : "lich-su"],
     queryFn: () =>
       movieApi.getByGenre(isSciFiPage ? "phieu-luu" : "lich-su", 1).then((r) => r.data),
-    enabled: isShowcasePage,
+    enabled: isShowcasePage && !isLoading,
     staleTime: 30 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const { data: auxData2 } = useQuery({
     queryKey: ["genre-aux-2", isSciFiPage ? "hanh-dong" : "tam-ly"],
     queryFn: () =>
       movieApi.getByGenre(isSciFiPage ? "hanh-dong" : "tam-ly", 1).then((r) => r.data),
-    enabled: isShowcasePage,
+    enabled: isShowcasePage && !isLoading,
     staleTime: 30 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const rawFilms: FilmItem[] = data?.data?.items || data?.items || [];
@@ -1031,6 +1038,30 @@ export default function GenrePage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const prefetchPage = (targetPage: number) => {
+    if (targetPage < 1 || targetPage > totalPages) return;
+    void queryClient.prefetchQuery({
+      queryKey: ["genre", slug, targetPage],
+      queryFn: () => movieApi.getByGenre(slug, targetPage).then((r) => r.data),
+      staleTime: 30 * 60 * 1000,
+    });
+  };
+
+  // Auto-prefetch next page in idle time for instant pagination
+  useEffect(() => {
+    if (page < totalPages) {
+      const nextPage = page + 1;
+      const timer = setTimeout(() => {
+        void queryClient.prefetchQuery({
+          queryKey: ["genre", slug, nextPage],
+          queryFn: () => movieApi.getByGenre(slug, nextPage).then((r) => r.data),
+          staleTime: 30 * 60 * 1000,
+        });
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [page, totalPages, slug, queryClient]);
+
   return (
     <div
       className={cn(
@@ -1167,6 +1198,7 @@ export default function GenrePage() {
               totalPages={totalPages}
               totalItems={totalItems}
               onPageChange={handlePageChange}
+              onPrefetchPage={prefetchPage}
             />
           </div>
         </>
@@ -1190,18 +1222,18 @@ export default function GenrePage() {
           </div>
 
           {isLoading ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-y-6 sm:gap-y-8">
-              {Array.from({ length: 24 }).map((_, i) => (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-6 sm:gap-y-8">
+              {Array.from({ length: 21 }).map((_, i) => (
                 <FilmCardSkeleton key={i} />
               ))}
             </div>
           ) : rawFilms.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-y-6 sm:gap-y-8">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-6 sm:gap-y-8">
               {rawFilms.map((f, idx) => (
                 <FilmCard
                   key={`${f.slug || f._id || (f as any).id}-${idx}`}
                   film={f}
-                  priority={idx < 8}
+                  priority={idx < 7}
                 />
               ))}
             </div>
@@ -1217,6 +1249,7 @@ export default function GenrePage() {
             totalPages={totalPages}
             totalItems={totalItems}
             onPageChange={handlePageChange}
+            onPrefetchPage={prefetchPage}
           />
         </div>
       )}

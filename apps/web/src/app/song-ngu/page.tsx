@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   Languages,
@@ -29,6 +29,7 @@ const BILINGUAL_CATEGORIES = [
 ];
 
 export default function BilingualFilmsPage() {
+  const queryClient = useQueryClient();
   const [selectedCat, setSelectedCat] = useState("all");
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -50,7 +51,9 @@ export default function BilingualFilmsPage() {
         return { items: [] };
       }
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 
   const rawItems: FilmItem[] = (data as any)?.items || [];
@@ -62,6 +65,36 @@ export default function BilingualFilmsPage() {
     1,
     20,
   );
+
+  const prefetchPage = useCallback(
+    (targetPage: number) => {
+      if (targetPage < 1 || targetPage > totalPages) return;
+      void queryClient.prefetchQuery({
+        queryKey: ["bilingual-films", queryTerm, targetPage],
+        queryFn: async () => {
+          try {
+            const res = await movieApi.search(queryTerm, targetPage, 24);
+            return (res as any)?.data?.data || (res as any)?.data || { items: [] };
+          } catch {
+            return { items: [] };
+          }
+        },
+        staleTime: 30 * 60 * 1000,
+      });
+    },
+    [queryClient, queryTerm, totalPages],
+  );
+
+  // Auto-prefetch next page on idle
+  useEffect(() => {
+    if (page < totalPages) {
+      const nextPage = page + 1;
+      const timer = setTimeout(() => {
+        prefetchPage(nextPage);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [page, totalPages, prefetchPage]);
 
   return (
     <main className={cn("min-h-screen bg-[#101012] text-white pt-20 pb-28", cardFont.className)}>
@@ -156,8 +189,8 @@ export default function BilingualFilmsPage() {
         {/* ── FILM GRID ── */}
         <div className="mt-8">
           {isLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {Array.from({ length: 12 }).map((_, i) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-x-3.5 gap-y-6">
+              {Array.from({ length: 14 }).map((_, i) => (
                 <FilmCardSkeleton key={i} />
               ))}
             </div>
@@ -170,10 +203,10 @@ export default function BilingualFilmsPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-3.5 gap-y-6">
-              {rawItems.map((film) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-x-3.5 gap-y-6">
+              {rawItems.map((film, idx) => (
                 <div key={film.slug || film._id} className="relative group/card">
-                  <FilmCard film={film} />
+                  <FilmCard film={film} priority={idx < 7} />
                 </div>
               ))}
             </div>
@@ -189,6 +222,7 @@ export default function BilingualFilmsPage() {
                   setPage(newPage);
                   window.scrollTo({ top: 300, behavior: "smooth" });
                 }}
+                onPrefetchPage={prefetchPage}
               />
             </div>
           )}

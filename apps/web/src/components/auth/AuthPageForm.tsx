@@ -3,7 +3,7 @@
 import { AuthModal } from "./AuthModal";
 
 export interface AuthPageFormProps {
-  initialMode?: "login" | "register";
+  initialMode?: "login" | "register" | "forgot";
 }
 
 /**

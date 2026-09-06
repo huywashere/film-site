@@ -1139,6 +1139,21 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
     });
   };
 
+  // Auto-prefetch next page in idle time for instant pagination
+  useEffect(() => {
+    if (page < totalPages) {
+      const nextPage = page + 1;
+      const timer = setTimeout(() => {
+        void queryClient.prefetchQuery({
+          queryKey: ["films-type", type, nextPage],
+          queryFn: () => apiFn(nextPage).then((response) => response.data),
+          staleTime: 30 * 60 * 1000,
+        });
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [page, totalPages, type, apiFn, queryClient]);
+
   return (
     <div
       className={cn(
@@ -1215,7 +1230,11 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
             ) : rawFilms.length > 0 ? (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
                 {dedupeFilmsList(rawFilms).map((f, idx) => (
-                  <FilmCard key={`${f.slug || f._id || idx}-${idx}`} film={f} />
+                  <FilmCard
+                    key={`${f.slug || f._id || idx}-${idx}`}
+                    film={f}
+                    priority={idx < 7}
+                  />
                 ))}
               </div>
             ) : (
@@ -1309,7 +1328,11 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
             ) : films.length > 0 ? (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
                 {dedupeFilmsList(films).map((f, idx) => (
-                  <FilmCard key={`${f.slug || f._id || idx}-${idx}`} film={f} />
+                  <FilmCard
+                    key={`${f.slug || f._id || idx}-${idx}`}
+                    film={f}
+                    priority={idx < 7}
+                  />
                 ))}
               </div>
             ) : (
@@ -1346,19 +1369,19 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
           </div>
 
           {isLoading ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-y-6 sm:gap-y-8">
-              {Array.from({ length: 18 }).map((_, i) => (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-6 sm:gap-y-8">
+              {Array.from({ length: 21 }).map((_, i) => (
                 <FilmCardSkeleton key={i} />
               ))}
             </div>
           ) : films.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-y-6 sm:gap-y-8">
-              {films.slice(0, 18).map((film, idx) => (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-6 sm:gap-y-8">
+              {films.map((film, idx) => (
                 <FilmCard
                   key={`${film.slug || film._id || (film as any).id}-${idx}`}
                   film={film}
-                  priority={idx < 4}
-                  preferHighQuality={idx < 4}
+                  priority={idx < 7}
+                  preferHighQuality={idx < 7}
                 />
               ))}
             </div>

@@ -11,7 +11,8 @@ import {
   History,
   Clapperboard,
   Drama,
-  LayoutGrid,
+  LayoutDashboard,
+  SlidersHorizontal,
   TvMinimalPlay,
   MonitorPlay,
   CalendarDays,
@@ -47,7 +48,8 @@ function TelegramIcon({
 
 const SIDEBAR_ITEMS = [
   { title: "Trang chủ", href: "/", icon: Home },
-  { title: "Duyệt Tìm", href: "/genres", icon: LayoutGrid },
+  { title: "Duyệt Tìm", href: "/films", icon: SlidersHorizontal },
+  { title: "Chủ Đề", href: "/genres", icon: LayoutDashboard },
   { title: "Xem Chung", href: "/watch-party", icon: Popcorn },
   { title: "Bộ Sưu Tập", href: "/watchlist", icon: Layers },
   { title: "Lịch Sử", href: "/history", icon: History },
@@ -97,10 +99,10 @@ export function Sidebar() {
   const isGenresPage = pathname === "/genres";
   const isGenrePage = pathname.startsWith("/genre/") || isGenresPage;
   const isCountryPage = pathname.startsWith("/country/");
-  const isFilmsPage = pathname.startsWith("/films/");
+  const isFilmsPage = pathname === "/films" || pathname.startsWith("/films/");
   const isBrowsePage = isHomePage || isGenrePage || isCountryPage || isFilmsPage;
 
-  // Trang xem phim, giới thiệu phim và trang Duyệt Tìm (/genres) luôn ghim cố định sidebar
+  // Trang xem phim, giới thiệu phim và trang Chủ Đề (/genres) luôn ghim cố định sidebar
   const isPinnedPage = isFilmDetailPage || isWatchPage || isGenresPage;
   const shouldShowSidebar = isPinnedPage || isBrowsePage;
 

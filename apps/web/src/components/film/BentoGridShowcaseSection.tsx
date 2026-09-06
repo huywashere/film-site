@@ -18,6 +18,7 @@ import { FilmItem } from "@/components/film/FilmCard";
 import { TmdbArtwork } from "@/components/film/TmdbArtwork";
 import { cardFont } from "@/lib/fonts";
 import { useTranslation } from "@/store/langStore";
+import { cleanMovieDescription } from "@/lib/string-utils";
 import { deduplicateSectionRow } from "@/lib/recommendation-engine";
 import { cn } from "@/lib/utils";
 
@@ -189,7 +190,7 @@ export function BentoGridShowcaseSection({
                 {/* Synopsis */}
                 {heroFilm.content && (
                   <p className="text-xs sm:text-sm text-neutral-300/85 line-clamp-2 leading-relaxed max-w-xl">
-                    {heroFilm.content.replace(/<[^>]*>/g, "")}
+                    {cleanMovieDescription(heroFilm.content)}
                   </p>
                 )}
 

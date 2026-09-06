@@ -1,23 +1,16 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { Play } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { cardFont } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import { buildAsianHeroImageCandidates } from "@/lib/curated-asian-hero";
 import { movieApi, recommendationApi } from "@/lib/api";
 import { FilmItem } from "@/components/film/FilmCard";
-
-const Top10RankedRow = dynamic(
-  () =>
-    import("@/components/film/Top10RankedRow").then(
-      (mod) => mod.Top10RankedRow,
-    ),
-  { ssr: false },
-);
+import { Top10RankedRow } from "@/components/film/Top10RankedRow";
 
 interface HubCard {
   slug: string;
@@ -229,9 +222,11 @@ const DEFAULT_TOP10_FALLBACK: FilmItem[] = [
 function ResilientHubCardImage({
   src,
   alt,
+  isPriority = false,
 }: {
   src: string;
   alt: string;
+  isPriority?: boolean;
 }) {
   const candidates = useMemo(() => {
     return buildAsianHeroImageCandidates(src);
@@ -247,9 +242,9 @@ function ResilientHubCardImage({
       key={currentSrc}
       src={currentSrc}
       alt={alt}
-      loading="eager"
+      loading={isPriority ? "eager" : "lazy"}
       decoding="async"
-      fetchPriority="high"
+      fetchPriority={isPriority ? "high" : "auto"}
       referrerPolicy="no-referrer"
       onError={() => {
         if (candidateIdx < candidates.length - 1) {
@@ -262,17 +257,65 @@ function ResilientHubCardImage({
 }
 
 export default function GenresPage() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
   const { data: homeFeedData } = useQuery({
-    queryKey: ["home-feed", 24],
+    queryKey: ["home-feed-v1", 24],
     queryFn: () => movieApi.getHomeFeed(24).then((res) => res.data),
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 15,
+    placeholderData: (prev) => prev,
   });
 
   const { data: aiTop10Data } = useQuery({
     queryKey: ["ai-top10-recommendations"],
     queryFn: () => recommendationApi.getTop10(),
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 10,
+    placeholderData: (prev) => prev,
   });
+
+  const handlePrefetchHub = useCallback(
+    (hub: HubCard) => {
+      router.prefetch(hub.href);
+      if (hub.slug === "khoa-hoc-vien-tuong") {
+        void queryClient.prefetchQuery({
+          queryKey: ["genre", "vien-tuong", 1],
+          queryFn: () =>
+            movieApi.getByGenre("vien-tuong", 1).then((r) => r.data),
+          staleTime: 30 * 60 * 1000,
+        });
+      } else if (hub.slug === "chien-tranh") {
+        void queryClient.prefetchQuery({
+          queryKey: ["genre", "chien-tranh", 1],
+          queryFn: () =>
+            movieApi.getByGenre("chien-tranh", 1).then((r) => r.data),
+          staleTime: 30 * 60 * 1000,
+        });
+      } else if (hub.slug === "anime-hoat-hinh") {
+        void queryClient.prefetchQuery({
+          queryKey: ["films-type", "anime", 1],
+          queryFn: () =>
+            movieApi.getByCountryFast("nhat-ban", 1).then((r) => r.data),
+          staleTime: 30 * 60 * 1000,
+        });
+      } else if (hub.slug === "phim-han-quoc") {
+        void queryClient.prefetchQuery({
+          queryKey: ["country", "han-quoc", 1],
+          queryFn: () =>
+            movieApi.getByCountry("han-quoc", 1).then((r) => r.data),
+          staleTime: 30 * 60 * 1000,
+        });
+      } else if (hub.slug === "phim-trung-quoc") {
+        void queryClient.prefetchQuery({
+          queryKey: ["country", "trung-quoc", 1],
+          queryFn: () =>
+            movieApi.getByCountry("trung-quoc", 1).then((r) => r.data),
+          staleTime: 30 * 60 * 1000,
+        });
+      }
+    },
+    [queryClient, router],
+  );
 
   const top10Films = useMemo(() => {
     const aiList: FilmItem[] = (aiTop10Data?.items as FilmItem[]) || [];
@@ -320,7 +363,7 @@ export default function GenresPage() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-3 sm:pb-4 border-b border-white/[0.08] gap-1.5 sm:gap-2">
           <div>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
-              Duyệt Tìm
+              Chủ Đề
             </h1>
           </div>
           <p className="text-[11px] sm:text-xs text-neutral-400 font-medium">
@@ -348,11 +391,13 @@ export default function GenresPage() {
             Vũ Trụ Điện Ảnh
           </h2>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-3.5">
-            {HUBS.map((hub) => (
+            {HUBS.map((hub, idx) => (
               <Link
                 key={hub.slug}
                 href={hub.href}
                 prefetch={true}
+                onMouseEnter={() => handlePrefetchHub(hub)}
+                onFocus={() => handlePrefetchHub(hub)}
                 className="group relative flex flex-col justify-end h-[108px] sm:h-[125px] lg:h-[135px] overflow-hidden rounded-lg sm:rounded-xl lg:rounded-2xl border border-white/[0.08] hover:border-white/30 bg-[#12141c] p-2 sm:p-2.5 lg:p-3.5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(0,0,0,0.8)] cursor-pointer select-none"
               >
                 {/* High-Resolution Full-Bleed Backdrop with Resilient Multi-Tier Proxy */}
@@ -363,6 +408,7 @@ export default function GenresPage() {
                   <ResilientHubCardImage
                     src={hub.image}
                     alt={hub.title}
+                    isPriority={idx < 2}
                   />
 
                   {/* Cinematic Vignette Gradients */}

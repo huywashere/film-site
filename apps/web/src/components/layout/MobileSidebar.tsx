@@ -41,7 +41,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
   const { t, lang, setLang } = useTranslation();
-  const [showLists, setShowLists] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const [showGenres, setShowGenres] = useState(false);
   const [showCountries, setShowCountries] = useState(false);
 
@@ -51,7 +51,6 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
     { title: t("nav.single"), href: "/films/single", icon: FilmIcon },
     { title: t("nav.anime"), href: "/films/anime", icon: Clapperboard },
     { title: lang === "en" ? "Watch Party" : "Xem Chung", href: "/watch-party", icon: Users },
-    { title: t("nav.actors"), href: "/actors", icon: User },
   ];
 
   const personalItems = [
@@ -288,59 +287,6 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             </div>
           </div>
 
-          {/* Lists / Danh Sách Collapsible Grid */}
-          <div>
-            <button
-              type="button"
-              onClick={() => setShowLists(!showLists)}
-              className="flex min-h-11 w-full items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-neutral-300 hover:bg-white/5 hover:text-white transition-all cursor-pointer"
-            >
-              <div className="flex items-center space-x-3">
-                <ListFilter size={17} className="text-neutral-400" />
-                <span>{t("nav.list", "Danh sách")}</span>
-              </div>
-              <ChevronDown
-                size={15}
-                className={cn(
-                  "transition-transform duration-200 text-neutral-500",
-                  showLists && "rotate-180 text-white",
-                )}
-              />
-            </button>
-
-            {showLists && (
-              <div className="mt-2 grid grid-cols-2 gap-1.5 px-1 pt-1 animate-in fade-in duration-200">
-                {[
-                  { label: "Phim Mới", href: "/films/latest" },
-                  { label: "Phim Bộ", href: "/films/series" },
-                  { label: "Phim Lẻ", href: "/films/single" },
-                  { label: "Shows", href: "/films/shows" },
-                  { label: "Hoạt Hình", href: "/films/anime" },
-                  { label: "Phim Vietsub", href: "/films/vietsub" },
-                  { label: "Thuyết Minh Song Ngữ AI", href: "/films/thuyet-minh-ai" },
-                  { label: "Phim Lồng Tiếng", href: "/films/long-tieng" },
-                  { label: "Phim Bộ Đang Chiếu", href: "/films/dang-chieu" },
-                  { label: "Phim Bộ Đã Hoàn Thành", href: "/films/hoan-thanh" },
-                  { label: "Subteam", href: "/films/subteam" },
-                  { label: "Phim Chiếu Rạp", href: "/films/chieu-rap" },
-                ].map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "px-3 py-2 rounded-lg text-[11px] font-medium transition-all truncate border",
-                      pathname === item.href
-                        ? "bg-white/15 border-white/30 text-white font-bold"
-                        : "border-white/5 bg-white/[0.02] text-neutral-400 hover:text-white hover:bg-white/10",
-                    )}
-                    onClick={onClose}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
           <div>
             <button
               type="button"
@@ -425,6 +371,70 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                     </span>
                   </Link>
                 ))}
+              </div>
+            )}
+          </div>
+
+          {/* Thêm Collapsible Section */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowMore(!showMore)}
+              className="flex min-h-11 w-full items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-neutral-300 hover:bg-white/5 hover:text-white transition-all cursor-pointer"
+            >
+              <span>{t("nav.more", "Thêm")}</span>
+              <ChevronDown
+                size={15}
+                className={cn(
+                  "transition-transform duration-200 text-neutral-500",
+                  showMore && "rotate-180 text-white",
+                )}
+              />
+            </button>
+
+            {showMore && (
+              <div className="mt-1 space-y-1 px-1 pt-1 animate-in fade-in duration-200">
+                {[
+                  {
+                    title: t("nav.watchParty", "Xem Chung"),
+                    href: "/watch-party",
+                  },
+                  {
+                    title: t("nav.actors", "Diễn viên"),
+                    href: "/actors",
+                  },
+                  {
+                    title: t("nav.schedule", "Lịch chiếu"),
+                    href: "/schedule",
+                  },
+                  {
+                    title: t("nav.tvshows", "TV Shows"),
+                    href: "/films/tv-shows",
+                  },
+                  {
+                    title: t("nav.yearFilter", "Bộ lọc theo năm"),
+                    href: "/films",
+                  },
+                ].map((subItem) => {
+                  const isActive =
+                    pathname === subItem.href ||
+                    pathname.startsWith(subItem.href + "/");
+                  return (
+                    <Link
+                      key={subItem.href}
+                      href={subItem.href}
+                      className={cn(
+                        "flex items-center px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all",
+                        isActive
+                          ? "bg-white/15 text-white font-semibold"
+                          : "text-neutral-300 hover:bg-white/10 hover:text-white",
+                      )}
+                      onClick={onClose}
+                    >
+                      <span>{subItem.title}</span>
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </div>

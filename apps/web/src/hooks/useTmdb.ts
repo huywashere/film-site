@@ -30,6 +30,7 @@ interface UseTmdbOptions {
     bestBackdrop?: TmdbImage | null;
     bestPoster?: TmdbImage | null;
     images?: TmdbImages | null;
+    overview?: string | null;
   } | null;
 }
 
@@ -195,6 +196,17 @@ export function useTmdb({
     staleTime: 1000 * 60 * 60 * 24,
   });
 
+  // Movie / TV Details (full Vietnamese overview, tagline, runtime)
+  const { data: detailData } = useQuery({
+    queryKey: ["tmdb-detail", resolvedId, resolvedType],
+    queryFn: () =>
+      resolvedType === "tv"
+        ? tmdbApi.getTvDetail(resolvedId!)
+        : tmdbApi.getMovieDetail(resolvedId!),
+    enabled: isEnabled && !!resolvedId,
+    staleTime: 1000 * 60 * 60 * 24,
+  });
+
   // Videos / Trailers
   const { data: videosData, isLoading: videosLoading } = useQuery({
     queryKey: ["tmdb-videos", resolvedId, resolvedType],
@@ -255,6 +267,14 @@ export function useTmdb({
   return {
     tmdbId: resolvedId,
     type: resolvedType,
+    // Details & Overview
+    detail: detailData,
+    overview:
+      detailData?.overview ||
+      searchResult?.overview ||
+      initialTmdb?.overview ||
+      null,
+    tagline: detailData?.tagline || null,
     // Images
     images,
     backdrops,

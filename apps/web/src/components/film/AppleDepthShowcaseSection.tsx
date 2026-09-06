@@ -17,6 +17,7 @@ import { TmdbArtwork } from "@/components/film/TmdbArtwork";
 import { cardFont } from "@/lib/fonts";
 import { useTranslation } from "@/store/langStore";
 import { deduplicateSectionRow } from "@/lib/recommendation-engine";
+import { cleanMovieDescription } from "@/lib/string-utils";
 import { cn } from "@/lib/utils";
 
 interface AppleDepthShowcaseSectionProps {
@@ -238,7 +239,7 @@ export function AppleDepthShowcaseSection({
                 {/* Synopsis */}
                 {activeFilm.content && (
                   <p className="text-xs sm:text-sm text-neutral-300/85 line-clamp-2 leading-relaxed font-normal">
-                    {activeFilm.content.replace(/<[^>]*>/g, "")}
+                    {cleanMovieDescription(activeFilm.content)}
                   </p>
                 )}
 
