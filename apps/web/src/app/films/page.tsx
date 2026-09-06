@@ -145,6 +145,8 @@ function BrowseFilmsContent() {
       selectedGenre,
       selectedCountry,
       selectedYear,
+      selectedQuality,
+      selectedAudio,
       selectedSort,
       page,
     ];
@@ -154,6 +156,8 @@ function BrowseFilmsContent() {
     selectedGenre,
     selectedCountry,
     selectedYear,
+    selectedQuality,
+    selectedAudio,
     selectedSort,
     page,
   ]);
@@ -172,35 +176,33 @@ function BrowseFilmsContent() {
         return res?.data?.data || res?.data || { items: [] };
       }
 
-      // 2. Lọc theo Thể loại
-      if (selectedGenre) {
-        const res = await movieApi.getByGenre(selectedGenre, page);
+      // 2. Lọc kết hợp ở server để phân trang và tổng số kết quả chính xác.
+      const filteredTypes: Record<string, string> = {
+        series: "phim-bo",
+        single: "phim-le",
+        anime: "hoat-hinh",
+        "tv-shows": "tv-shows",
+      };
+      if (
+        selectedGenre ||
+        selectedCountry ||
+        selectedYear ||
+        filteredTypes[selectedType]
+      ) {
+        const res = await movieApi.getFiltered({
+          type: filteredTypes[selectedType],
+          category: selectedGenre || undefined,
+          country: selectedCountry || undefined,
+          year: selectedYear ? Number(selectedYear) : undefined,
+          page,
+          limit: 28,
+          sort_field: selectedSort,
+          sort_type: "desc",
+        });
         return res?.data?.data || res?.data || { items: [] };
       }
 
-      // 3. Lọc theo Quốc gia
-      if (selectedCountry) {
-        const res = await movieApi.getByCountry(selectedCountry, page);
-        return res?.data?.data || res?.data || { items: [] };
-      }
-
-      // 4. Lọc theo Phân loại định dạng
-      if (selectedType === "series") {
-        const res = await movieApi.getSeries(page);
-        return res?.data?.data || res?.data || { items: [] };
-      }
-      if (selectedType === "single") {
-        const res = await movieApi.getSingle(page);
-        return res?.data?.data || res?.data || { items: [] };
-      }
-      if (selectedType === "anime") {
-        const res = await movieApi.getAnime(page);
-        return res?.data?.data || res?.data || { items: [] };
-      }
-      if (selectedType === "tv-shows") {
-        const res = await movieApi.getTvShows(page);
-        return res?.data?.data || res?.data || { items: [] };
-      }
+      // 3. Lọc theo Phân loại định dạng đặc biệt
       if (selectedType === "thuyet-minh") {
         const res = await movieApi.getThuyetMinh(page);
         return res?.data?.data || res?.data || { items: [] };
@@ -210,7 +212,7 @@ function BrowseFilmsContent() {
         return res?.data?.data || res?.data || { items: [] };
       }
 
-      // 5. Mặc định: Phim mới cập nhật
+      // 4. Mặc định: Phim mới cập nhật
       const res = await movieApi.getLatest(page);
       return res?.data?.data || res?.data || { items: [] };
     },

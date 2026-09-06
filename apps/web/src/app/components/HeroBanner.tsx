@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import gsap from "gsap";
 import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import {
@@ -584,15 +585,24 @@ function HeroMovieTitle({
   }, [film.titleLogo]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
-  const [logoLoaded, setLogoLoaded] = useState(false);
-  const imgRef = useRef<HTMLImageElement>(null);
-
   const currentLogoSrc = candidateLogos[candidateIdx];
+  const isPreloaded = Boolean(
+    currentLogoSrc && preloadedHeroLogos.has(currentLogoSrc),
+  );
+  const [logoLoaded, setLogoLoaded] = useState(isPreloaded);
+  const [hasError, setHasError] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     setCandidateIdx(0);
-    setLogoLoaded(false);
-  }, [film.slug, film.titleLogo]);
+    setHasError(false);
+    if (currentLogoSrc && preloadedHeroLogos.has(currentLogoSrc)) {
+      setLogoLoaded(true);
+      onReady();
+    } else {
+      setLogoLoaded(false);
+    }
+  }, [film.slug, film.titleLogo, currentLogoSrc, onReady]);
 
   // Check if browser already has image in cache
   useEffect(() => {
@@ -608,28 +618,25 @@ function HeroMovieTitle({
   }, [currentLogoSrc, onReady]);
 
   const title = film.origin_name || film.name;
-  const hasLogoCandidate = Boolean(currentLogoSrc);
+  const hasLogoCandidate = Boolean(currentLogoSrc) && !hasError;
+  const showTextFallback = film.titleLogoResolved && !hasLogoCandidate;
 
   useEffect(() => {
-    if (!hasLogoCandidate) onReady();
-  }, [hasLogoCandidate, onReady]);
+    if (film.titleLogoResolved && !hasLogoCandidate) onReady();
+  }, [film.titleLogoResolved, hasLogoCandidate, onReady]);
 
   return (
     <div className="relative flex min-h-16 w-full items-center justify-center sm:min-h-24 md:min-h-28 overflow-visible">
-      {/* Cinematic Text Title - Always rendered so user never sees a blank gap or broken icon */}
-      <h1
-        className={cn(
-          "max-w-2xl line-clamp-2 text-xl font-black uppercase leading-[1.3] sm:leading-[1.25] tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl transition-opacity duration-300 pt-3 pb-2 px-2 overflow-visible",
-          logoLoaded
-            ? "opacity-0 absolute pointer-events-none"
-            : "opacity-100 relative",
-        )}
-        style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }}
-      >
-        {title}
-      </h1>
-
-      {hasLogoCandidate && (
+      {/* If there's NO logo candidate or logo completely failed to load, show styled text title */}
+      {showTextFallback ? (
+        <h1
+          className="max-w-2xl line-clamp-2 text-xl font-black uppercase leading-[1.3] sm:leading-[1.25] tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl pt-3 pb-2 px-2 overflow-visible transition-opacity duration-300"
+          style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }}
+        >
+          {title}
+        </h1>
+      ) : hasLogoCandidate ? (
+        /* Render logo directly - NEVER flash plain text title first */
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
           ref={imgRef}
@@ -649,17 +656,18 @@ function HeroMovieTitle({
             if (candidateIdx < candidateLogos.length - 1) {
               setCandidateIdx((i) => i + 1);
             } else {
+              setHasError(true);
               setLogoLoaded(false);
               onReady();
             }
           }}
           className={cn(
-            "max-h-16 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-opacity duration-300 sm:max-h-24 sm:max-w-[34rem] md:max-h-28",
-            logoLoaded
-              ? "opacity-100 relative"
-              : "opacity-0 absolute pointer-events-none invisible",
+            "h-auto max-h-16 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-all duration-300 sm:max-h-24 sm:max-w-[34rem] md:max-h-28",
+            logoLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95",
           )}
         />
+      ) : (
+        <span className="invisible h-16 sm:h-24 md:h-28" aria-hidden="true" />
       )}
     </div>
   );
@@ -1333,6 +1341,33 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       setFeatured((currentPlaylist) =>
         currentPlaylist.map((film) => enrichedBySlug.get(film.slug) || film),
       );
+
+      // Pre-enrich ALL remaining playlist slides in background so upcoming slides are ready before rotation
+      const remainingToEnrich = playlist.filter(
+        (f) => !f.titleLogo && !f.titleLogoResolved,
+      );
+      if (remainingToEnrich.length > 0) {
+        void enrichHeroTitleLogos(remainingToEnrich).then((enrichedList) => {
+          if (!active) return;
+          const enrichedMap = new Map(
+            enrichedList.map((film) => [film.slug, film] as const),
+          );
+          setFeatured((currentPlaylist) =>
+            currentPlaylist.map((film) => enrichedMap.get(film.slug) || film),
+          );
+
+          // Preload logo images into browser memory ahead of time
+          enrichedList.forEach((film) => {
+            if (film.titleLogo) {
+              const src =
+                buildHeroLogoCandidates(film.titleLogo)[0] || film.titleLogo;
+              const img = new window.Image();
+              img.src = src;
+              img.onload = () => preloadedHeroLogos.add(src);
+            }
+          });
+        });
+      }
     };
 
     void initialize();
@@ -1369,13 +1404,17 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
   // once starved the small, above-the-fold card artwork on cold production loads.
   useEffect(() => {
     if (typeof window === "undefined" || !featured.length) return;
-    const preloadItems = [featured[current]].filter(Boolean);
+    const nextIndex = featured.length > 1 ? (current + 1) % featured.length : current;
+    const preloadItems = [featured[current], featured[nextIndex]].filter(
+      (item, index, items): item is HeroFilm =>
+        Boolean(item) && items.indexOf(item) === index,
+    );
     preloadItems.forEach((item) => {
       if (item.titleLogo) {
         const img = new window.Image();
-        img.src = item.titleLogo;
+        img.src = buildHeroLogoCandidates(item.titleLogo)[0] || item.titleLogo;
         img.onload = () => {
-          preloadedHeroLogos.add(item.titleLogo!);
+          preloadedHeroLogos.add(img.src);
         };
       }
       const isMobile = window.matchMedia("(max-width: 767px)").matches;
@@ -1431,28 +1470,78 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
     return () => window.clearTimeout(timer);
   }, [autoRotateEnabled, current, featured.length, pageVisible, reduceMotion]);
 
-  const [fanCardSlugs, setFanCardSlugs] = useState<string[]>([]);
+  // The 3 cascading fan cards represent the UPCOMING films in the queue:
+  // (current + 1), (current + 2), (current + 3).
+  // They stay in lockstep with the hero slider and smoothly rotate without displaying stale films!
+  const fanCards = useMemo(() => {
+    if (featured.length <= 1) return [];
+    const count = Math.min(3, featured.length - 1);
+    const result: Array<{ film: HeroFilm; targetIndex: number }> = [];
+    for (let i = 1; i <= count; i++) {
+      const targetIndex = (current + i) % featured.length;
+      const cardFilm = featured[targetIndex];
+      if (cardFilm) {
+        result.push({ film: cardFilm, targetIndex });
+      }
+    }
+    return result;
+  }, [featured, current]);
 
+  const heroContainerRef = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const fanCardsRef = useRef<HTMLDivElement>(null);
+  const isFirstMount = useRef(true);
+
+  // GSAP 60fps Butter-Smooth Transition on Slide Change
   useEffect(() => {
-    if (!featured.length) return;
-    setFanCardSlugs((existing) => {
-      const stillValid =
-        existing.length === Math.min(3, featured.length) &&
-        existing.every((slug) => featured.some((film) => film.slug === slug));
-      if (stillValid) return existing;
-      return shuffled(featured)
-        .slice(0, 3)
-        .map((film) => film.slug);
-    });
-  }, [featured]);
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
 
-  const fanCards = useMemo(
-    () =>
-      fanCardSlugs
-        .map((slug) => featured.find((film) => film.slug === slug))
-        .filter((film): film is HeroFilm => Boolean(film)),
-    [fanCardSlugs, featured],
-  );
+    if (reduceMotion) return;
+
+    const ctx = gsap.context(() => {
+      // 1. Content entrance animation: smooth GPU glide & fade in without 550ms blank freeze
+      if (contentRef.current) {
+        gsap.killTweensOf(contentRef.current);
+        gsap.fromTo(
+          contentRef.current,
+          { opacity: 0, y: 14, scale: 0.985 },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.52,
+            ease: "power2.out",
+            clearProps: "transform",
+          },
+        );
+      }
+
+      // 2. Cascading Fan Cards shift: subtle staggered slide
+      if (fanCardsRef.current) {
+        const cards = fanCardsRef.current.querySelectorAll(".fan-card-item");
+        if (cards.length > 0) {
+          gsap.killTweensOf(cards);
+          gsap.fromTo(
+            cards,
+            { opacity: 0.5, x: "+=12" },
+            {
+              opacity: 1,
+              x: 0,
+              duration: 0.45,
+              stagger: 0.06,
+              ease: "power2.out",
+              clearProps: "transform,opacity",
+            },
+          );
+        }
+      }
+    }, heroContainerRef);
+
+    return () => ctx.revert();
+  }, [current, reduceMotion]);
 
   // Rolling window of thumbnails around current index (keeps active item visible and clickable across all 100 films)
   const visibleThumbnails = useMemo(() => {
@@ -1626,6 +1715,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
   return (
     <section
       data-hero-banner="true"
+      ref={heroContainerRef}
       className="font-cinema relative min-h-[100dvh] w-full overflow-hidden bg-[#141414] transform-gpu contain-paint"
     >
       <TrailerModal
@@ -1639,7 +1729,8 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         {featured.map((item, idx) => {
           const isActive = idx === current;
           const visualReady = Boolean(visualReadiness[item.slug]?.backdrop);
-          const shouldLoadBackdrop = isActive;
+          const shouldLoadBackdrop =
+            isActive || idx === (current + 1) % featured.length;
 
           return (
             <div
@@ -1688,9 +1779,13 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       <div
         className={`${cardFont.className} absolute left-6 top-1/2 z-30 hidden w-[420px] h-[300px] -translate-y-1/2 xl:block 2xl:left-14 pointer-events-none`}
       >
-        <div className="relative w-full h-full pointer-events-auto">
+        <div
+          ref={fanCardsRef}
+          className="relative w-full h-full pointer-events-auto"
+        >
           {showDesktopFanCards &&
-            fanCards.map((cardFilm, index) => {
+            fanCards.map((cardEntry, index) => {
+              const cardFilm = cardEntry.film;
               const fanConfigs = [
                 {
                   x: 0,
@@ -1729,6 +1824,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                   $layer={config.zIndex}
                   $order={index}
                   $featured={index === 0}
+                  className="fan-card-item"
                   onClick={() => {
                     const targetIndex = featured.findIndex(
                       (f) => f.slug === cardFilm.slug,
@@ -1771,16 +1867,11 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
 
       {/* Main Content Area */}
       <div className="absolute inset-0 z-20 flex flex-col items-center justify-end px-4 pb-8 sm:pb-18 md:pb-20 text-center">
-        <div className="max-w-2xl mx-auto w-full flex flex-col items-center space-y-3 sm:space-y-4">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={current}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className={`${heroSerifFont.className} flex w-full flex-col items-center space-y-2.5 sm:space-y-3.5`}
-            >
+        <div
+          ref={contentRef}
+          key={film.slug}
+          className={`${heroSerifFont.className} max-w-2xl mx-auto w-full flex flex-col items-center space-y-2.5 sm:space-y-3.5`}
+        >
               {/* Official TMDB title artwork with an accessible text fallback. */}
               <HeroMovieTitle
                 film={film}
@@ -1923,8 +2014,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                   </button>
                 </div>
               </div>
-            </motion.div>
-          </AnimatePresence>
+        </div>
 
           {/* Mobile previous / pagination / next controls - Placed outside AnimatePresence for rock-solid stability and zero flicker */}
           {featured.length > 1 && (
@@ -1982,7 +2072,6 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
             </div>
           )}
         </div>
-      </div>
 
       {/* Mouse Scroll Indicator */}
       <div
