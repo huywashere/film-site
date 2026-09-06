@@ -5,12 +5,24 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Play } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
 import { cardFont } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import { buildAsianHeroImageCandidates } from "@/lib/curated-asian-hero";
 import { movieApi, recommendationApi } from "@/lib/api";
 import { FilmItem } from "@/components/film/FilmCard";
-import { Top10RankedRow } from "@/components/film/Top10RankedRow";
+
+const Top10RankedRow = dynamic(
+  () =>
+    import("@/components/film/Top10RankedRow").then(
+      (module) => module.Top10RankedRow,
+    ),
+  {
+    loading: () => (
+      <div className="h-44 sm:h-56 w-full animate-pulse rounded-2xl bg-white/[0.04]" />
+    ),
+  },
+);
 
 interface HubCard {
   slug: string;

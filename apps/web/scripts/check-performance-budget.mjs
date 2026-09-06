@@ -13,6 +13,7 @@ const routes = JSON.parse(await readFile(reportPath, "utf8"));
 const defaultBudget = 1_235 * 1024;
 const routeBudgets = new Map([
   ["/", 1_250 * 1024],
+  ["/genres", 1_250 * 1024],
   ["/genre/[slug]", 1_250 * 1024],
   ["/watch/[slug]", 1_200 * 1024],
   ["/film/[slug]", 1_150 * 1024],
