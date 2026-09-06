@@ -619,7 +619,7 @@ function HeroMovieTitle({
 
   const title = film.origin_name || film.name;
   const hasLogoCandidate = Boolean(currentLogoSrc) && !hasError;
-  const showTextFallback = film.titleLogoResolved && !hasLogoCandidate;
+  const showTextFallback = !logoLoaded || !hasLogoCandidate;
 
   useEffect(() => {
     if (film.titleLogoResolved && !hasLogoCandidate) onReady();
@@ -628,14 +628,15 @@ function HeroMovieTitle({
   return (
     <div className="relative flex min-h-16 w-full items-center justify-center sm:min-h-24 md:min-h-28 overflow-visible">
       {/* If there's NO logo candidate or logo completely failed to load, show styled text title */}
-      {showTextFallback ? (
+      {showTextFallback && (
         <h1
           className="max-w-2xl line-clamp-2 text-xl font-black uppercase leading-[1.3] sm:leading-[1.25] tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl pt-3 pb-2 px-2 overflow-visible transition-opacity duration-300"
           style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }}
         >
           {title}
         </h1>
-      ) : hasLogoCandidate ? (
+      )}
+      {hasLogoCandidate && (
         /* Render logo directly - NEVER flash plain text title first */
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
@@ -666,8 +667,6 @@ function HeroMovieTitle({
             logoLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95",
           )}
         />
-      ) : (
-        <span className="invisible h-16 sm:h-24 md:h-28" aria-hidden="true" />
       )}
     </div>
   );
