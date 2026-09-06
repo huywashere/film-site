@@ -1,4 +1,4 @@
-const CACHE_NAME = "netphim-cache-v6";
+const CACHE_NAME = "netphim-cache-v7";
 const OFFLINE_URL = "/offline";
 
 // Never precache the homepage document. Serving cached HTML after a deploy can
@@ -62,26 +62,27 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  const isNextAsset = url.pathname.startsWith("/_next/static/");
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
-
-      return fetch(event.request)
-        .then((networkResponse) => {
-          // Cache static JS/CSS assets
-          if (
-            networkResponse.status === 200 &&
-            (url.pathname.includes("/_next/static/") ||
-              url.pathname.includes("/fonts/"))
-          ) {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          }
-          return networkResponse;
-        })
-        .catch(() => Response.error());
-    }),
+    (isNextAsset ? fetch(event.request) : caches.match(event.request))
+      .then((response) => {
+        if (response) return response;
+        return fetch(event.request);
+      })
+      .then((networkResponse) => {
+        if (
+          networkResponse.status === 200 &&
+          (isNextAsset || url.pathname.startsWith("/fonts/"))
+        ) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return networkResponse;
+      })
+      .catch(async () => {
+        return (await caches.match(event.request)) || Response.error();
+      }),
   );
 });
