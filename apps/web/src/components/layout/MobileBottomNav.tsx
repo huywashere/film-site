@@ -72,14 +72,14 @@ export function MobileBottomNav() {
       aria-label="Điều hướng nhanh"
       className={cn(
         cardFont.className,
-        "mobile-bottom-nav-surface fixed bottom-[max(0.8rem,env(safe-area-inset-bottom,0px))] left-5 right-5 z-50 overflow-visible rounded-xl px-2 shadow-[0_16px_48px_rgba(0,0,0,0.95)] transition-[transform,opacity] duration-300 ease-out will-change-transform lg:hidden",
+        "mobile-bottom-nav-surface fixed bottom-[max(0.65rem,env(safe-area-inset-bottom,0px))] left-4 right-4 z-50 overflow-visible rounded-[14px] px-2 shadow-[0_12px_34px_rgba(0,0,0,0.68)] transition-[transform,opacity] duration-300 ease-out will-change-transform lg:hidden",
         reduceMotion && "duration-0",
         isHidden
           ? "pointer-events-none translate-y-[calc(100%+2rem)] opacity-0"
           : "translate-y-0 opacity-100",
       )}
     >
-      <div className="grid h-16 grid-cols-5 items-center">
+      <div className="grid h-[3.75rem] grid-cols-5 items-center">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -89,7 +89,7 @@ export function MobileBottomNav() {
               prefetch={true}
               aria-current={item.isActive ? "page" : undefined}
               className={cn(
-                "relative flex h-full min-w-0 flex-col items-center justify-center text-[11px] font-semibold transition-colors active:scale-[0.96]",
+                "relative flex h-full min-w-0 flex-col items-center justify-center text-[10px] font-semibold transition-colors active:scale-[0.96]",
                 item.isActive
                   ? "font-extrabold text-white"
                   : "text-neutral-300 hover:text-white",
@@ -100,7 +100,7 @@ export function MobileBottomNav() {
                   <motion.span
                     layoutId="mobile-nav-active"
                     transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 430, damping: 32 }}
-                    className="absolute -top-8 h-[3.75rem] w-[3.75rem] rounded-full border border-black/15 bg-white shadow-[0_8px_22px_rgba(0,0,0,0.4)] ring-[6px] ring-[#090b10]"
+                    className="absolute -top-7 h-[3.25rem] w-[3.25rem] rounded-full border-2 border-neutral-300 bg-white shadow-[0_7px_18px_rgba(0,0,0,0.32)]"
                   />
                 )}
                 <Icon
@@ -108,7 +108,7 @@ export function MobileBottomNav() {
                   strokeWidth={2.1}
                   className={cn(
                     "relative z-10 transition-[color,transform] duration-300",
-                    item.isActive ? "-translate-y-8 text-[#11131a]" : "text-neutral-200",
+                    item.isActive ? "-translate-y-7 text-[#11131a]" : "text-neutral-200",
                   )}
                 />
               </span>
@@ -130,7 +130,7 @@ export function MobileBottomNav() {
           <Link
             href={`/user/${encodeURIComponent(user.username)}`}
             className={cn(
-              "relative flex h-full min-w-0 flex-col items-center justify-center text-[11px] font-semibold transition-colors active:scale-[0.96]",
+              "relative flex h-full min-w-0 flex-col items-center justify-center text-[10px] font-semibold transition-colors active:scale-[0.96]",
               isProfileRoute
                 ? "font-extrabold text-white"
                 : "text-neutral-300 hover:text-white",
@@ -141,7 +141,7 @@ export function MobileBottomNav() {
                 <motion.span
                   layoutId="mobile-nav-active"
                   transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 430, damping: 32 }}
-                  className="absolute -top-8 h-[3.75rem] w-[3.75rem] rounded-full border border-black/15 bg-white shadow-[0_8px_22px_rgba(0,0,0,0.4)] ring-[6px] ring-[#090b10]"
+                  className="absolute -top-7 h-[3.25rem] w-[3.25rem] rounded-full border-2 border-neutral-300 bg-white shadow-[0_7px_18px_rgba(0,0,0,0.32)]"
                 />
               )}
               {user.avatarUrl ? (
@@ -152,7 +152,7 @@ export function MobileBottomNav() {
                 referrerPolicy="no-referrer"
                 className={cn(
                   "relative z-10 h-5 w-5 rounded-full border border-white/20 object-cover transition-transform duration-300",
-                  isProfileRoute && "-translate-y-8 scale-110 border-black/20",
+                  isProfileRoute && "-translate-y-7 scale-110 border-black/20",
                 )}
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src =
@@ -163,7 +163,7 @@ export function MobileBottomNav() {
               <div
                 className={cn(
                   "relative z-10 flex h-5 w-5 items-center justify-center rounded-full border border-white/30 bg-neutral-800 text-[9px] font-black text-white transition-transform duration-300",
-                  isProfileRoute && "-translate-y-8 scale-110 border-black/20 bg-white text-black",
+                  isProfileRoute && "-translate-y-7 scale-110 border-black/20 bg-white text-black",
                 )}
               >
                 {(user.displayName || user.username || "U")

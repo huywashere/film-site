@@ -1618,7 +1618,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
 
         <div
           aria-hidden="true"
-          className="absolute inset-0 flex flex-col items-center justify-end px-4 pb-8 text-center sm:pb-18 md:pb-20"
+          className="absolute inset-0 flex flex-col items-center justify-end px-4 pb-28 text-center sm:pb-18 md:pb-20"
         >
           <div className="flex w-full max-w-2xl flex-col items-center gap-3 motion-safe:animate-pulse motion-reduce:animate-none sm:gap-4">
             <div className="h-6 w-36 rounded-full bg-white/[0.09] sm:w-44" />
@@ -1841,7 +1841,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       </div>
 
       {/* Main Content Area */}
-      <div className="absolute inset-0 z-20 flex flex-col items-center justify-end px-4 pb-8 sm:pb-18 md:pb-20 text-center">
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-end px-4 pb-28 sm:pb-18 md:pb-20 text-center">
         <div
           ref={contentRef}
           key={film.slug}
