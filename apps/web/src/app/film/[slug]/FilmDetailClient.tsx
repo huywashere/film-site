@@ -42,6 +42,7 @@ import {
 import { cleanMovieDescription } from '@/lib/string-utils';
 import { movieApi, watchlistApi, ratingsApi, reviewsApi } from '@/lib/api';
 import { FilmNotFound } from '@/components/film/FilmNotFound';
+import { FilmTitleLogo } from '@/components/film/FilmTitleLogo';
 import { StarRating } from '@/components/film/StarRating';
 import { resolveImageUrl } from '@/components/film/FilmCard';
 import { alternateMovieArtworkUrl } from '@/lib/movie-image-url';
@@ -1238,6 +1239,7 @@ export default function FilmDetailPage({
     posters,
     bestBackdrop,
     bestPoster,
+    bestLogo,
     cast: tmdbCast,
     directors: tmdbDirectors,
     creditsLoading: tmdbCreditsLoading,
@@ -1431,6 +1433,20 @@ export default function FilmDetailPage({
     });
   };
 
+  const firstEp = episodes?.[0]?.server_data?.[0];
+  const watchLink = firstEp
+    ? `/watch/${slug}?ep=${firstEp.slug || firstEp.name}`
+    : `/watch/${slug}`;
+
+  useEffect(() => {
+    if (!film || isNotFound) return;
+    try {
+      router.prefetch(watchLink);
+    } catch {
+      // Prefetch failures must not prevent the detail page from rendering.
+    }
+  }, [film, isNotFound, watchLink, router]);
+
   if (isLoading) return <FilmDetailSkeleton />;
 
   if (isNotFound || !film) return <FilmNotFound querySlug={slug} />;
@@ -1492,21 +1508,6 @@ export default function FilmDetailPage({
       toast('Không thể gửi đánh giá', 'error');
     }
   };
-
-  const firstEp = episodes?.[0]?.server_data?.[0];
-  const watchLink = firstEp
-    ? `/watch/${slug}?ep=${firstEp.slug || firstEp.name}`
-    : `/watch/${slug}`;
-
-  useEffect(() => {
-    if (watchLink) {
-      try {
-        router.prefetch(watchLink);
-      } catch (_e) {
-        // ignore prefetch errors
-      }
-    }
-  }, [watchLink, router]);
 
   const genres = Array.isArray(film?.category) ? film.category : [];
   const countries = Array.isArray(film?.country) ? film.country : [];
@@ -1939,7 +1940,15 @@ export default function FilmDetailPage({
               </div>
             </div>
 
-            {/* ── OMDB Ratings (below action buttons) ── */}
+            {bestLogo?.file_path && (
+              <FilmTitleLogo
+                key={`${film.slug}-${bestLogo.file_path}`}
+                path={bestLogo.file_path}
+                title={film.name}
+              />
+            )}
+
+            {/* ── OMDB Ratings (below action buttons and optional title logo) ── */}
             <AnimatePresence>
               {omdb && (
                 <motion.div

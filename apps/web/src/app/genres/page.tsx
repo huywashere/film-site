@@ -41,60 +41,60 @@ const HUBS: HubCard[] = [
     title: "Phim Hàn Quốc",
     tagline: "K-Drama • Tình Cảm • Hồi Hộp",
     category: "Hàn Quốc",
-    highlight: "Queen of Tears, Hạ Cánh Nơi Anh, Nữ Luật Sư Kỳ Lạ...",
+    highlight: "Tình cảm, gia đình, hình sự và các series Hàn nổi bật.",
     href: "/country/han-quoc",
     image: "https://image.tmdb.org/t/p/w780/8Dc24s2heFSqcpIsqDFlnjYICP.jpg",
-    countBadge: "Hơn 600+ Phim",
+    countBadge: "K-Drama tuyển chọn",
   },
   {
     slug: "phim-trung-quoc",
     title: "Phim Trung Quốc",
     tagline: "Cổ Trang • Tiên Hiệp • Ngôn Tình",
     category: "Trung Quốc",
-    highlight: "Dữ Phượng Hành, Trường Tương Tư, Tinh Hán Xán Lạn...",
+    highlight: "Cổ trang, tiên hiệp, ngôn tình và phim hiện đại Trung Quốc.",
     href: "/country/trung-quoc",
     image: "https://image.tmdb.org/t/p/w780/4J8znHxVaZY3vKb05IWqWfzczXR.jpg",
-    countBadge: "Hơn 500+ Phim",
+    countBadge: "Cổ trang & hiện đại",
   },
   {
     slug: "anime-hoat-hinh",
     title: "Anime & Hoạt Hình",
     tagline: "Shounen • Ghibli • 3D Chiếu Rạp",
     category: "Anime",
-    highlight: "Thanh Gươm Diệt Quỷ, Solo Leveling, Jujutsu Kaisen...",
+    highlight: "Anime dài tập, điện ảnh Nhật Bản và hoạt hình nổi bật.",
     href: "/films/anime",
     image: "https://image.tmdb.org/t/p/w780/3GQKYh6Trm8pxd2AypovoYQf4Ay.jpg",
-    countBadge: "Hơn 450+ Phim",
+    countBadge: "Anime & điện ảnh",
   },
   {
     slug: "khoa-hoc-vien-tuong",
     title: "Khoa Học Viễn Tưởng",
     tagline: "Vũ Trụ • Đa Chiều • Tương Lai",
     category: "Viễn Tưởng",
-    highlight: "Interstellar, Dune 2, Avatar, Inception, The Matrix...",
+    highlight: "Du hành vũ trụ, đa chiều, AI và những thế giới tương lai.",
     href: "/genre/vien-tuong",
     image: "https://image.tmdb.org/t/p/w780/eZ239CUp1d6OryZEBPnO2n87gMG.jpg",
-    countBadge: "Hơn 400+ Phim",
+    countBadge: "Không gian & tương lai",
   },
   {
     slug: "chien-tranh",
     title: "Chiến Tranh & Lịch Sử",
     tagline: "Khốc Liệt • Hùng Tráng • Quả Cảm",
     category: "Chiến Tranh",
-    highlight: "1917, Oppenheimer, Cuồng Nộ, Giải Cứu Binh Nhì Ryan...",
+    highlight: "Chiến trường, tiểu sử và những dấu mốc lịch sử trên màn ảnh.",
     href: "/genre/chien-tranh",
     image: "https://image.tmdb.org/t/p/w780/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg",
-    countBadge: "Hơn 300+ Phim",
+    countBadge: "Chiến trường & lịch sử",
   },
   {
     slug: "thuyet-minh-song-ngu-ai",
     title: "Thuyết Minh Song Ngữ AI",
     tagline: "Giọng Đọc AI • Song Ngữ • Chuẩn Điện Ảnh",
     category: "Thuyết Minh AI",
-    highlight: "Avengers, Interstellar, Blade Runner 2049, Dune, Spider-Man...",
+    highlight: "Kho phim có lựa chọn giọng đọc và phụ đề song ngữ.",
     href: "/films/thuyet-minh-ai",
     image: "https://image.tmdb.org/t/p/w780/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg",
-    countBadge: "Hơn 550+ Phim",
+    countBadge: "Giọng đọc & phụ đề",
   },
 ];
 
@@ -272,17 +272,13 @@ export default function GenresPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const { data: homeFeedData } = useQuery({
-    queryKey: ["home-feed-v1", 24],
-    queryFn: () => movieApi.getHomeFeed(24).then((res) => res.data),
-    staleTime: 1000 * 60 * 15,
-    placeholderData: (prev) => prev,
-  });
-
   const { data: aiTop10Data } = useQuery({
     queryKey: ["ai-top10-recommendations"],
     queryFn: () => recommendationApi.getTop10(),
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 60,
+    retry: 1,
+    refetchOnWindowFocus: false,
     placeholderData: (prev) => prev,
   });
 
@@ -331,9 +327,7 @@ export default function GenresPage() {
 
   const top10Films = useMemo(() => {
     const aiList: FilmItem[] = (aiTop10Data?.items as FilmItem[]) || [];
-    const rawList: FilmItem[] =
-      aiList.length > 0 ? aiList : (homeFeedData?.top10 || []);
-    const pool = rawList.length > 0 ? rawList : DEFAULT_TOP10_FALLBACK;
+    const pool = aiList.length > 0 ? aiList : DEFAULT_TOP10_FALLBACK;
     const combined: FilmItem[] = [];
     const seen = new Set<string>();
 
@@ -356,7 +350,7 @@ export default function GenresPage() {
     }
 
     return combined.slice(0, 10);
-  }, [aiTop10Data?.items, homeFeedData?.top10]);
+  }, [aiTop10Data?.items]);
 
   return (
     <main

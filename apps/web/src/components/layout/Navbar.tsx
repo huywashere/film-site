@@ -184,64 +184,18 @@ export function CountryFlagImage({
   className?: string;
 }) {
   const flagCode = code?.toLowerCase();
-  const candidates = useMemo(() => {
-    if (!flagCode || flagCode === "un") return [];
-    return [
-      `https://flagcdn.com/w40/${flagCode}.png`,
-      `https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/flags/4x3/${flagCode}.svg`,
-      `https://raw.githubusercontent.com/lipis/flag-icons/main/flags/4x3/${flagCode}.svg`,
-    ];
-  }, [flagCode]);
-
-  const [srcIndex, setSrcIndex] = useState(0);
-  const [allFailed, setAllFailed] = useState(false);
-
-  useEffect(() => {
-    setSrcIndex(0);
-    setAllFailed(false);
-  }, [flagCode]);
-
-  if (!flagCode || flagCode === "un" || allFailed || candidates.length === 0) {
-    const emoji = flagCode ? COUNTRY_EMOJIS[flagCode] || "🌐" : "🌐";
-    return (
-      <span
-        className={cn(
-          "inline-flex items-center justify-center text-sm leading-none shrink-0 select-none",
-          className,
-        )}
-        role="img"
-        aria-label={label}
-      >
-        {emoji}
-      </span>
-    );
-  }
-
-  const currentSrc = candidates[srcIndex];
-
+  const emoji = flagCode ? COUNTRY_EMOJIS[flagCode] || "🌐" : "🌐";
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      key={`${flagCode}-${srcIndex}`}
-      src={currentSrc}
-      alt={label}
-      width={20}
-      height={14}
-      referrerPolicy="no-referrer"
+    <span
       className={cn(
-        "w-5 h-3.5 object-cover rounded-[3px] border border-white/20 shrink-0 shadow-sm",
+        "inline-flex h-4 w-5 shrink-0 select-none items-center justify-center text-sm leading-none",
         className,
       )}
-      onError={() => {
-        if (srcIndex < candidates.length - 1) {
-          setSrcIndex((prev) => prev + 1);
-        } else {
-          setAllFailed(true);
-        }
-      }}
-      loading="lazy"
-      decoding="async"
-    />
+      role="img"
+      aria-label={label}
+    >
+      {emoji}
+    </span>
   );
 }
 
@@ -734,7 +688,7 @@ export function Navbar() {
                     <CountryFlagImage
                       code={item.code}
                       label={t(`countries_list.${item.slug}`, item.label)}
-                      className="w-5 h-3.5 object-cover rounded-[3px] border border-white/20 shrink-0 group-hover/flag:scale-110 transition-transform shadow-sm"
+                      className="group-hover/flag:scale-110 transition-transform"
                     />
                     <span className="truncate">
                       {t(`countries_list.${item.slug}`, item.label)}

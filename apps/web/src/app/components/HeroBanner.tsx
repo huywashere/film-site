@@ -155,7 +155,7 @@ interface HeroFilm extends FilmItem {
   tmdbOnly?: boolean;
 }
 
-const HERO_SESSION_KEY = "netphim.tmdb-hero.v6";
+const HERO_SESSION_KEY = "netphim.tmdb-hero.v7";
 const HERO_INDEX_SESSION_KEY = "netphim.tmdb-hero-index.v2";
 
 // Trailer IDs are tiny and safe to retain for the current browser session.
@@ -559,9 +559,8 @@ function buildHeroLogoCandidates(url?: string | null): string[] {
 
   const list: string[] = [];
   if (clean.includes("image.tmdb.org")) {
-    // Cloudflare Edge CDN with WebP conversion - loads in ~300ms, avoids direct TMDB latency/block in VN
-    list.push(`https://wsrv.nl/?url=${encodeURIComponent(clean)}&output=webp&we=1`);
     list.push(clean);
+    list.push(`https://wsrv.nl/?url=${encodeURIComponent(clean)}&output=webp&we=1`);
     list.push(`/api/image-proxy?url=${encodeURIComponent(clean)}&strict=1`);
   } else {
     list.push(clean);
@@ -596,13 +595,16 @@ function HeroMovieTitle({
   useEffect(() => {
     setCandidateIdx(0);
     setHasError(false);
+  }, [film.slug, film.titleLogo]);
+
+  useEffect(() => {
     if (currentLogoSrc && preloadedHeroLogos.has(currentLogoSrc)) {
       setLogoLoaded(true);
       onReady();
     } else {
       setLogoLoaded(false);
     }
-  }, [film.slug, film.titleLogo, currentLogoSrc, onReady]);
+  }, [currentLogoSrc, onReady]);
 
   // Check if browser already has image in cache
   useEffect(() => {
@@ -637,7 +639,6 @@ function HeroMovieTitle({
         </h1>
       )}
       {hasLogoCandidate && (
-        /* Render logo directly - NEVER flash plain text title first */
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
           ref={imgRef}
@@ -663,8 +664,8 @@ function HeroMovieTitle({
             }
           }}
           className={cn(
-            "h-auto max-h-16 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-all duration-300 sm:max-h-24 sm:max-w-[34rem] md:max-h-28",
-            logoLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95",
+            "h-auto max-h-24 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-[opacity,transform] duration-700 ease-out motion-reduce:transition-none sm:max-h-32 sm:max-w-[34rem] md:max-h-40",
+            logoLoaded ? "opacity-100 translate-y-0 scale-100" : "absolute opacity-0 translate-y-3 scale-95",
           )}
         />
       )}
@@ -1304,17 +1305,19 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                 }),
               )
             ).filter((film): film is HeroFilm => Boolean(film)).slice(0, 6);
+          } else if (stored?.length) {
+            playlist = stored.slice(0, 6);
+            restoredIndex = readStoredHeroIndex(playlist.length);
           } else {
-            // Fresh visit or refresh: pick a RANDOM 6 movies from the curated franchise pool!
-            playlist = shuffled(CURATED_HERO_FRANCHISE_POOL).slice(0, 6) as HeroFilm[];
+            playlist = CURATED_HERO_FRANCHISE_POOL.slice(0, 6) as HeroFilm[];
             restoredIndex = 0;
           }
         } catch {
-          playlist = shuffled(CURATED_HERO_FRANCHISE_POOL).slice(0, 6) as HeroFilm[];
+          playlist = CURATED_HERO_FRANCHISE_POOL.slice(0, 6) as HeroFilm[];
         }
 
         if (!playlist.length) {
-          playlist = shuffled(CURATED_HERO_FRANCHISE_POOL).slice(0, 6) as HeroFilm[];
+          playlist = CURATED_HERO_FRANCHISE_POOL.slice(0, 6) as HeroFilm[];
         }
       }
 
@@ -1340,32 +1343,6 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       setCurrent(selectedIndex);
       storeHeroPlaylist(initialPlaylist);
 
-      // Pre-enrich ALL remaining playlist slides in background so upcoming slides are ready before rotation
-      const remainingToEnrich = playlist.filter(
-        (f) => !f.titleLogo && !f.titleLogoResolved,
-      );
-      if (remainingToEnrich.length > 0) {
-        void enrichHeroTitleLogos(remainingToEnrich).then((enrichedList) => {
-          if (!active) return;
-          const enrichedMap = new Map(
-            enrichedList.map((film) => [film.slug, film] as const),
-          );
-          setFeatured((currentPlaylist) =>
-            currentPlaylist.map((film) => enrichedMap.get(film.slug) || film),
-          );
-
-          // Preload logo images into browser memory ahead of time
-          enrichedList.forEach((film) => {
-            if (film.titleLogo) {
-              const src =
-                buildHeroLogoCandidates(film.titleLogo)[0] || film.titleLogo;
-              const img = new window.Image();
-              img.src = src;
-              img.onload = () => preloadedHeroLogos.add(src);
-            }
-          });
-        });
-      }
     };
 
     void initialize();

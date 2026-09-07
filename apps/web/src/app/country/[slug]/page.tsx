@@ -30,7 +30,9 @@ import {
   tmdbProfile,
 } from "@/lib/tmdb";
 import { cardFont } from "@/lib/fonts";
+import { DeferredSection } from "@/components/layout/DeferredSection";
 import { useTranslation } from "@/store/langStore";
+import { useDeferredContent } from "@/hooks/useDeferredContent";
 import { useAuthStore } from "@/store/authStore";
 import {
   Play,
@@ -150,12 +152,14 @@ function CountryCategoryRow({
   isLoading,
   href,
   variant = "standard",
+  defer = false,
 }: {
   title: string;
   films: FilmItem[];
   isLoading: boolean;
   href?: string;
   variant?: "standard" | "landscape";
+  defer?: boolean;
 }) {
   const { t } = useTranslation();
   const prevRef = useRef<HTMLButtonElement>(null);
@@ -163,7 +167,7 @@ function CountryCategoryRow({
 
   if (!isLoading && !films.length) return null;
 
-  return (
+  const content = (
     <div className="mb-8 group/row relative" aria-busy={isLoading}>
       <div className="flex items-center justify-between mb-3 px-1">
         <h2 className="text-base sm:text-lg md:text-xl font-extrabold text-white">
@@ -268,6 +272,7 @@ function CountryCategoryRow({
       </div>
     </div>
   );
+  return defer ? <DeferredSection>{content}</DeferredSection> : content;
 }
 
 // Featured Actors Row
@@ -724,6 +729,7 @@ export default function CountryPage() {
   const isChinesePage = slug === "trung-quoc";
   const isCustomHeroPage = isKoreanPage || isChinesePage;
   const user = useAuthStore((s) => s.user);
+  const secondaryReady = useDeferredContent();
 
   // Deterministic SSR value avoids a production hydration mismatch. A fresh
   // seed is selected after navigation on the client.
@@ -747,7 +753,7 @@ export default function CountryPage() {
   const { data: mergedData } = useQuery({
     queryKey: ["country", slug, page, selectedGenre],
     queryFn: () => movieApi.getByCountry(slug, page).then((r) => r.data),
-    enabled: !selectedGenre && !!fastData,
+    enabled: !selectedGenre && !!fastData && secondaryReady,
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
     placeholderData: undefined,
@@ -773,7 +779,7 @@ export default function CountryPage() {
     queryFn: () => movieApi.getByCountry(slug, 2).then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: isCustomHeroPage,
+    enabled: isCustomHeroPage && secondaryReady,
     placeholderData: (prev) => prev,
   });
 
@@ -790,7 +796,7 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: isCustomHeroPage,
+    enabled: isCustomHeroPage && secondaryReady,
     placeholderData: (prev) => prev,
   });
 
@@ -807,7 +813,7 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: isCustomHeroPage,
+    enabled: isCustomHeroPage && secondaryReady,
     placeholderData: (prev) => prev,
   });
 
@@ -824,7 +830,7 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: isCustomHeroPage,
+    enabled: isCustomHeroPage && secondaryReady,
     placeholderData: (prev) => prev,
   });
 
@@ -836,7 +842,7 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: isCustomHeroPage,
+    enabled: isCustomHeroPage && secondaryReady,
     placeholderData: (prev) => prev,
   });
 
@@ -853,7 +859,7 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: isCustomHeroPage,
+    enabled: isCustomHeroPage && secondaryReady,
     placeholderData: (prev) => prev,
   });
 
@@ -865,7 +871,7 @@ export default function CountryPage() {
         .then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: isCustomHeroPage,
+    enabled: isCustomHeroPage && secondaryReady,
     placeholderData: (prev) => prev,
   });
 
@@ -1028,12 +1034,12 @@ function filmMatchesKeywords(f: FilmItem, keywords: string[]): boolean {
     };
 
     const r1 = buildRow(films, page2Films, 1);
-    const r2 = buildRow(romanceFilms, combinedPool, 2);
-    const r3 = buildRow(coTrangFilms, combinedPool, 3);
-    const r4 = buildRow(actionFilms, combinedPool, 4);
-    const r5 = buildRow(crimeFilms, combinedPool, 5);
-    const r6 = buildRow(comedyFilms, combinedPool, 6);
-    const r7 = buildRow(dramaFilms, combinedPool, 7);
+    const r2 = buildRow(romanceFilms, [], 2);
+    const r3 = buildRow(coTrangFilms, [], 3);
+    const r4 = buildRow(actionFilms, [], 4);
+    const r5 = buildRow(crimeFilms, [], 5);
+    const r6 = buildRow(comedyFilms, [], 6);
+    const r7 = buildRow(dramaFilms, [], 7);
     const r8 = buildRow(page2Films, combinedPool, 8);
 
     return {
@@ -1109,6 +1115,7 @@ function filmMatchesKeywords(f: FilmItem, keywords: string[]): boolean {
               films={row2Films}
               isLoading={mainLoading && !row2Films.length}
               variant="standard"
+              defer
             />
 
             {/* Row 3: Cổ Trang & Thần Thoại */}
@@ -1121,6 +1128,7 @@ function filmMatchesKeywords(f: FilmItem, keywords: string[]): boolean {
               films={row3Films}
               isLoading={mainLoading && !row3Films.length}
               variant="standard"
+              defer
             />
 
             {/* Row 4: Hành Động & Kịch Tính */}
@@ -1133,6 +1141,7 @@ function filmMatchesKeywords(f: FilmItem, keywords: string[]): boolean {
               films={row4Films}
               isLoading={mainLoading && !row4Films.length}
               variant="standard"
+              defer
             />
 
             {/* Row 5: Hình Sự & Trinh Thám */}
@@ -1145,6 +1154,7 @@ function filmMatchesKeywords(f: FilmItem, keywords: string[]): boolean {
               films={row5Films}
               isLoading={mainLoading && !row5Films.length}
               variant="standard"
+              defer
             />
 
             {/* Row 6: Hài Hước & Gia Đình */}
@@ -1157,6 +1167,7 @@ function filmMatchesKeywords(f: FilmItem, keywords: string[]): boolean {
               films={row6Films}
               isLoading={mainLoading && !row6Films.length}
               variant="standard"
+              defer
             />
 
             {/* Row 7: Tâm Lý & Đời Thường */}
@@ -1169,6 +1180,7 @@ function filmMatchesKeywords(f: FilmItem, keywords: string[]): boolean {
               films={row7Films}
               isLoading={mainLoading && !row7Films.length}
               variant="standard"
+              defer
             />
 
             {/* Row 8: Tuyển Chọn Đặc Sắc */}
@@ -1181,6 +1193,7 @@ function filmMatchesKeywords(f: FilmItem, keywords: string[]): boolean {
               films={row8Films}
               isLoading={mainLoading && !row8Films.length}
               variant="standard"
+              defer
             />
 
             {/* Full Catalog Header */}

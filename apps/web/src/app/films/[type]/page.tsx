@@ -13,6 +13,8 @@ import {
 } from "@/components/film/FilmCard";
 import { Pagination } from "@/components/film/Pagination";
 import { cardFont } from "@/lib/fonts";
+import { DeferredSection } from "@/components/layout/DeferredSection";
+import { useDeferredContent } from "@/hooks/useDeferredContent";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -204,27 +206,10 @@ function ResilientAnimeHeroBackdrop({
 
   return (
     <div className="w-full h-full relative overflow-hidden">
-      {/* Mobile portrait poster (vertical artwork, <768px): Dedicated <img> with direct onError handler */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        key={`${item.slug}-mobile-${mobileIdx}`}
-        src={mobileSrc}
-        alt={item.name}
-        referrerPolicy="no-referrer"
-        loading="eager"
-        decoding="async"
-        fetchPriority={isActive ? "high" : "auto"}
-        onError={() => {
-          if (mobileIdx < mobileCandidates.length - 1) {
-            setMobileIdx((prev) => prev + 1);
-          }
-        }}
-        className="block md:hidden w-full h-full object-cover object-center brightness-[0.88] contrast-[1.06]"
-      />
-
-      {/* Desktop widescreen backdrop (horizontal 16:9 artwork, >=768px): Dedicated <img> with direct onError handler */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <picture>
+        <source media="(max-width: 767px)" srcSet={mobileSrc} />
+        <img
         key={`${item.slug}-desktop-${desktopIdx}`}
         src={desktopSrc}
         alt={item.name}
@@ -233,12 +218,17 @@ function ResilientAnimeHeroBackdrop({
         decoding="async"
         fetchPriority={isActive ? "high" : "auto"}
         onError={() => {
-          if (desktopIdx < desktopCandidates.length - 1) {
+          if (window.matchMedia("(max-width: 767px)").matches) {
+            if (mobileIdx < mobileCandidates.length - 1) {
+              setMobileIdx((prev) => prev + 1);
+            }
+          } else if (desktopIdx < desktopCandidates.length - 1) {
             setDesktopIdx((prev) => prev + 1);
           }
         }}
-        className="hidden md:block w-full h-full object-cover object-top sm:object-center lg:object-[center_25%] brightness-[0.88] contrast-[1.06]"
-      />
+        className="block w-full h-full object-cover object-center lg:object-[center_25%] brightness-[0.88] contrast-[1.06]"
+        />
+      </picture>
     </div>
   );
 }
@@ -295,8 +285,10 @@ function ResilientAnimeHeroLogo({
 
 function AnimeCuratedHeroBanner({
   pool,
+  themeLabel = "Anime & Hoạt Hình",
 }: {
   pool: AsianHeroItem[];
+  themeLabel?: string;
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -454,7 +446,7 @@ function AnimeCuratedHeroBanner({
                 <span className="text-white font-bold">{currentItem.year}</span>
               )}
               <span className="text-neutral-400">|</span>
-              <span className="text-cyan-400 font-bold">Anime & Hoạt Hình</span>
+              <span className="text-cyan-400 font-bold">{themeLabel}</span>
               {currentItem.totalEpisodesText && (
                 <>
                   <span className="text-neutral-400">|</span>
@@ -557,18 +549,20 @@ function AnimeCategoryRow({
   films,
   isLoading,
   variant = "standard",
+  defer = false,
 }: {
   title: string;
   films: FilmItem[];
   isLoading: boolean;
   variant?: "standard" | "landscape";
+  defer?: boolean;
 }) {
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
 
   if (!isLoading && (!films || films.length === 0)) return null;
 
-  return (
+  const content = (
     <div className="relative group/row mb-6">
       {/* Clean Category Title without Icon */}
       <div className="flex items-center space-x-2.5 mb-3 px-1">
@@ -663,6 +657,7 @@ function AnimeCategoryRow({
       </div>
     </div>
   );
+  return defer ? <DeferredSection>{content}</DeferredSection> : content;
 }
 
 const CHINESE_DONGHUA_KEYWORDS = [
@@ -768,6 +763,7 @@ export default function FilmsTypePage() {
     type === "thuyetminhai" ||
     type === "song-ngu-ai";
   const label = TYPE_LABELS[type] || "Danh Sách Phim";
+  const secondaryReady = useDeferredContent();
   const apiFn = isAnime
     ? (p: number) => movieApi.getByCountryFast("nhat-ban", p)
     : isSongNguAI
@@ -791,7 +787,7 @@ export default function FilmsTypePage() {
     queryFn: () => movieApi.getByCountryFast("nhat-ban", 2).then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: isAnime,
+    enabled: isAnime && secondaryReady,
     placeholderData: (prev) => prev,
   });
 
@@ -800,7 +796,7 @@ export default function FilmsTypePage() {
     queryFn: () => movieApi.getAnime(1).then((r) => r.data),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: isAnime,
+    enabled: isAnime && secondaryReady,
     placeholderData: (prev) => prev,
   });
 
@@ -810,7 +806,7 @@ export default function FilmsTypePage() {
     queryFn: () => vicdnApi.getLatest(2),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: isSongNguAI,
+    enabled: isSongNguAI && secondaryReady,
     placeholderData: (prev) => prev,
   });
 
@@ -819,7 +815,7 @@ export default function FilmsTypePage() {
     queryFn: () => vicdnApi.getByCategory("hanh-dong", 1),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: isSongNguAI,
+    enabled: isSongNguAI && secondaryReady,
     placeholderData: (prev) => prev,
   });
 
@@ -828,7 +824,7 @@ export default function FilmsTypePage() {
     queryFn: () => vicdnApi.getByCategory("vien-tuong", 1),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    enabled: isSongNguAI,
+    enabled: isSongNguAI && secondaryReady,
     placeholderData: (prev) => prev,
   });
 
@@ -1168,7 +1164,10 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
       {isSongNguAI ? (
         <>
           {/* Hero Banner — reuses the same cinematic banner with Song Ngữ AI pool */}
-          <AnimeCuratedHeroBanner pool={CURATED_SONG_NGU_AI_HERO_POOL} />
+          <AnimeCuratedHeroBanner
+            pool={CURATED_SONG_NGU_AI_HERO_POOL}
+            themeLabel="Thuyết Minh Song Ngữ AI"
+          />
 
           {/* Curated Rows */}
           <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 mt-3 sm:-mt-20 md:-mt-28 lg:-mt-36">
@@ -1186,6 +1185,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
               films={vicdnRow2}
               isLoading={isLoading || vicdnActionLoading}
               variant="standard"
+              defer
             />
 
             {/* Row 3: Khoa Học Viễn Tưởng */}
@@ -1194,6 +1194,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
               films={vicdnRow3}
               isLoading={isLoading || vicdnScifiLoading}
               variant="standard"
+              defer
             />
 
             {/* Row 4: Tuyển Chọn Đặc Sắc */}
@@ -1202,6 +1203,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
               films={vicdnRow4}
               isLoading={vicdnPage2Loading}
               variant="standard"
+              defer
             />
 
             {/* Full Catalog Header */}
@@ -1276,6 +1278,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
               films={row2Films}
               isLoading={isLoading || japanPage2Loading}
               variant="standard"
+              defer
             />
 
             {/* Row 3: Siêu Nhiên & Kỳ Ảo */}
@@ -1284,6 +1287,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
               films={row3Films}
               isLoading={isLoading || japanPage2Loading}
               variant="standard"
+              defer
             />
 
             {/* Row 4: Học Đường & Lãng Mạn */}
@@ -1292,6 +1296,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
               films={row4Films}
               isLoading={isLoading || japanPage2Loading}
               variant="standard"
+              defer
             />
 
             {/* Row 5: Tuyển Chọn Đặc Sắc */}
@@ -1300,6 +1305,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
               films={row5Films}
               isLoading={japanPage2Loading || isLoading}
               variant="standard"
+              defer
             />
 
             {/* Full Catalog Header */}

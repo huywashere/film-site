@@ -30,6 +30,8 @@ import {
 import { Pagination } from "@/components/film/Pagination";
 import { TrailerModal } from "@/components/film/TrailerModal";
 import { cardFont } from "@/lib/fonts";
+import { DeferredSection } from "@/components/layout/DeferredSection";
+import { useDeferredContent } from "@/hooks/useDeferredContent";
 import { cn } from "@/lib/utils";
 import {
   CURATED_SCIFI_HERO_POOL,
@@ -135,17 +137,19 @@ function GenreCategoryRow({
   title,
   films,
   isLoading,
+  defer = false,
 }: {
   title: string;
   films: FilmItem[];
   isLoading: boolean;
+  defer?: boolean;
 }) {
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
 
   if (!isLoading && !films.length) return null;
 
-  return (
+  const content = (
     <div className="mb-8 group/row relative" aria-busy={isLoading}>
       <div className="flex items-center justify-between mb-3 px-1">
         <h2 className="text-base sm:text-lg md:text-xl font-bold text-white tracking-tight">
@@ -217,6 +221,7 @@ function GenreCategoryRow({
       </div>
     </div>
   );
+  return defer ? <DeferredSection>{content}</DeferredSection> : content;
 }
 
 // ── RESILIENT HERO MEDIA COMPONENTS ──
@@ -658,6 +663,7 @@ export default function GenrePage() {
   const isSciFiPage = slug === "vien-tuong" || slug === "khoa-hoc-vien-tuong";
   const isWarPage = slug === "chien-tranh";
   const isShowcasePage = isSciFiPage || isWarPage;
+  const secondaryReady = useDeferredContent();
 
   const [activeTab, setActiveTab] = useState("all");
   const [trailerState, setTrailerState] = useState<{
@@ -687,7 +693,7 @@ export default function GenrePage() {
   const { data: page2Data } = useQuery({
     queryKey: ["genre-page-2", slug],
     queryFn: () => movieApi.getByGenre(slug, 2).then((r) => r.data),
-    enabled: isShowcasePage,
+    enabled: isShowcasePage && secondaryReady,
     staleTime: 30 * 60 * 1000,
     placeholderData: (prev) => prev,
   });
@@ -697,7 +703,7 @@ export default function GenrePage() {
     queryKey: ["genre-aux-1", isSciFiPage ? "phieu-luu" : "lich-su"],
     queryFn: () =>
       movieApi.getByGenre(isSciFiPage ? "phieu-luu" : "lich-su", 1).then((r) => r.data),
-    enabled: isShowcasePage && !isLoading,
+    enabled: isShowcasePage && !isLoading && secondaryReady,
     staleTime: 30 * 60 * 1000,
     placeholderData: (prev) => prev,
   });
@@ -706,7 +712,7 @@ export default function GenrePage() {
     queryKey: ["genre-aux-2", isSciFiPage ? "hanh-dong" : "tam-ly"],
     queryFn: () =>
       movieApi.getByGenre(isSciFiPage ? "hanh-dong" : "tam-ly", 1).then((r) => r.data),
-    enabled: isShowcasePage && !isLoading,
+    enabled: isShowcasePage && !isLoading && secondaryReady,
     staleTime: 30 * 60 * 1000,
     placeholderData: (prev) => prev,
   });
@@ -1102,6 +1108,7 @@ export default function GenrePage() {
               }
               films={row2Films}
               isLoading={isLoading && !row2Films.length}
+              defer
             />
 
             {/* Row 3 */}
@@ -1113,6 +1120,7 @@ export default function GenrePage() {
               }
               films={row3Films}
               isLoading={isLoading && !row3Films.length}
+              defer
             />
 
             {/* Row 4 */}
@@ -1124,6 +1132,7 @@ export default function GenrePage() {
               }
               films={row4Films}
               isLoading={isLoading && !row4Films.length}
+              defer
             />
 
             {/* Row 5 */}
@@ -1135,6 +1144,7 @@ export default function GenrePage() {
               }
               films={row5Films}
               isLoading={isLoading && !row5Films.length}
+              defer
             />
 
             {/* Row 6 */}
@@ -1146,6 +1156,7 @@ export default function GenrePage() {
               }
               films={row6Films}
               isLoading={isLoading && !row6Films.length}
+              defer
             />
 
             {/* ── FULL CATALOG SECTION ── */}

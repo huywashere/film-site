@@ -1,5 +1,6 @@
 import HomePageClient from "./HomePageClient";
 import type { PublicSiteConfiguration } from "@/lib/api";
+import { CURATED_HERO_FRANCHISE_POOL } from "@/lib/curated-hero-pool";
 
 export const revalidate = 60;
 
@@ -26,5 +27,35 @@ async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration 
 
 export default async function HomePage() {
   const initialPublicConfig = await getInitialPublicConfiguration();
-  return <HomePageClient initialPublicConfig={initialPublicConfig} />;
+  const pinnedSlug = initialPublicConfig?.heroMovieSlugs?.[0];
+  const initialHero =
+    CURATED_HERO_FRANCHISE_POOL.find((film) => film.slug === pinnedSlug) ||
+    CURATED_HERO_FRANCHISE_POOL[0];
+
+  return (
+    <>
+      {initialHero?.heroBackdrop && (
+        <link
+          rel="preload"
+          as="image"
+          href={initialHero.heroBackdrop}
+          media="(min-width: 768px)"
+          fetchPriority="high"
+        />
+      )}
+      {initialHero?.poster_url && (
+        <link
+          rel="preload"
+          as="image"
+          href={initialHero.poster_url.replace('/t/p/w500/', '/t/p/w780/')}
+          media="(max-width: 767px)"
+          fetchPriority="high"
+        />
+      )}
+      {initialHero?.titleLogo && (
+        <link rel="preload" as="image" href={initialHero.titleLogo} fetchPriority="high" />
+      )}
+      <HomePageClient initialPublicConfig={initialPublicConfig} />
+    </>
+  );
 }
