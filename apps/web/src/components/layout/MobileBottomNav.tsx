@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Bookmark, History, Home, LayoutGrid, User } from "lucide-react";
+import { motion, useMotionValueEvent, useReducedMotion, useScroll } from "framer-motion";
 import { useAuthStore } from "@/store/authStore";
 import { useAuthModalStore } from "@/store/authModalStore";
 import { cn } from "@/lib/utils";
@@ -13,29 +14,14 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const { user } = useAuthStore();
   const [isHidden, setIsHidden] = useState(false);
-  const previousScrollY = useRef(0);
+  const reduceMotion = useReducedMotion();
+  const { scrollY } = useScroll();
 
-  useEffect(() => {
-    let frame = 0;
-    const onScroll = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(() => {
-        frame = 0;
-        const currentScrollY = window.scrollY;
-        const delta = currentScrollY - previousScrollY.current;
-        // Ignore micro scroll jitter
-        if (Math.abs(delta) < 6) return;
-        // Hide when scrolling down past 70px, show immediately when scrolling up
-        setIsHidden(currentScrollY > 70 && delta > 0);
-        previousScrollY.current = currentScrollY;
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (frame) window.cancelAnimationFrame(frame);
-    };
-  }, []);
+  useMotionValueEvent(scrollY, "change", (currentScrollY) => {
+    const delta = currentScrollY - (scrollY.getPrevious() ?? currentScrollY);
+    if (Math.abs(delta) < 6) return;
+    setIsHidden(currentScrollY > 70 && delta > 0);
+  });
 
   const isProfileRoute =
     pathname === "/user" ||
@@ -43,7 +29,7 @@ export function MobileBottomNav() {
     pathname === "/profile" ||
     pathname.startsWith("/profile/");
 
-  if (pathname === "/login" || pathname === "/register" || isProfileRoute) {
+  if (pathname === "/login" || pathname === "/register") {
     return null;
   }
 
@@ -79,13 +65,14 @@ export function MobileBottomNav() {
       aria-label="Điều hướng nhanh"
       className={cn(
         cardFont.className,
-        "fixed bottom-[max(0.6rem,env(safe-area-inset-bottom,0px))] left-3 right-3 z-50 overflow-hidden rounded-[1.65rem] border border-white/[0.14] bg-[#12141d] p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.95)] transition-[transform,opacity] duration-300 ease-out will-change-transform lg:hidden",
+        "mobile-bottom-nav-surface fixed bottom-[max(0.65rem,env(safe-area-inset-bottom,0px))] left-3 right-3 z-50 overflow-visible rounded-[1.35rem] px-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.95)] transition-[transform,opacity] duration-300 ease-out will-change-transform lg:hidden",
+        reduceMotion && "duration-0",
         isHidden
           ? "pointer-events-none translate-y-[calc(100%+2rem)] opacity-0"
           : "translate-y-0 opacity-100",
       )}
     >
-      <div className="grid h-[3.4rem] grid-cols-5 items-center">
+      <div className="grid h-[3.75rem] grid-cols-5 items-center">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -95,19 +82,29 @@ export function MobileBottomNav() {
               prefetch={true}
               aria-current={item.isActive ? "page" : undefined}
               className={cn(
-                "relative flex h-full min-w-0 flex-col items-center justify-center rounded-[1.1rem] py-1 text-[10.5px] font-semibold transition-[color,background-color,transform] active:scale-[0.94]",
+                "relative flex h-full min-w-0 flex-col items-center justify-center py-1 text-[10px] font-semibold transition-colors active:scale-[0.96]",
                 item.isActive
-                  ? "bg-white/[0.12] text-white font-extrabold shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] after:absolute after:bottom-0.5 after:h-0.5 after:w-4 after:rounded-full after:bg-[#23ade5]"
+                  ? "font-extrabold text-white"
                   : "text-neutral-300 hover:text-white",
               )}
             >
-              <Icon
-                size={19}
-                className={cn(
-                  "transition-transform duration-200",
-                  item.isActive && "scale-110 text-white",
+              <span className="relative flex h-7 w-full items-center justify-center">
+                {item.isActive && (
+                  <motion.span
+                    layoutId="mobile-nav-active"
+                    transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 430, damping: 32 }}
+                    className="absolute -top-7 h-14 w-14 rounded-full border border-black/10 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.42)] ring-[6px] ring-[#090b10]"
+                  />
                 )}
-              />
+                <Icon
+                  size={20}
+                  strokeWidth={2.1}
+                  className={cn(
+                    "relative z-10 transition-[color,transform] duration-300",
+                    item.isActive ? "-translate-y-7 text-[#11131a]" : "text-neutral-200",
+                  )}
+                />
+              </span>
               <span className="mt-0.5 max-w-full truncate px-0.5 tracking-tight">
                 {item.label}
               </span>
@@ -120,23 +117,29 @@ export function MobileBottomNav() {
           <Link
             href={`/user/${encodeURIComponent(user.username)}`}
             className={cn(
-              "relative flex h-full min-w-0 flex-col items-center justify-center rounded-[1.1rem] py-1 text-[10.5px] font-semibold transition-[color,background-color,transform] active:scale-[0.96]",
-              pathname.startsWith("/user/") || pathname.startsWith("/profile/")
-                ? "bg-white/[0.12] text-white font-extrabold after:absolute after:bottom-0.5 after:h-0.5 after:w-4 after:rounded-full after:bg-violet-400"
+              "relative flex h-full min-w-0 flex-col items-center justify-center py-1 text-[10px] font-semibold transition-colors active:scale-[0.96]",
+              isProfileRoute
+                ? "font-extrabold text-white"
                 : "text-neutral-300 hover:text-white",
             )}
           >
-            {user.avatarUrl ? (
+            <span className="relative flex h-7 w-full items-center justify-center">
+              {isProfileRoute && (
+                <motion.span
+                  layoutId="mobile-nav-active"
+                  transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 430, damping: 32 }}
+                  className="absolute -top-7 h-14 w-14 rounded-full border border-black/10 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.42)] ring-[6px] ring-[#090b10]"
+                />
+              )}
+              {user.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={user.avatarUrl}
                 alt={user.displayName || user.username}
                 referrerPolicy="no-referrer"
                 className={cn(
-                  "h-5 w-5 rounded-full border border-white/20 object-cover transition-transform",
-                  (pathname.startsWith("/user/") ||
-                    pathname.startsWith("/profile/")) &&
-                    "scale-110 border-white ring-2 ring-violet-400/50",
+                  "relative z-10 h-5 w-5 rounded-full border border-white/20 object-cover transition-transform duration-300",
+                  isProfileRoute && "-translate-y-7 scale-110 border-black/20",
                 )}
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src =
@@ -146,10 +149,8 @@ export function MobileBottomNav() {
             ) : (
               <div
                 className={cn(
-                  "flex h-5 w-5 items-center justify-center rounded-full border border-violet-400/40 bg-violet-600/30 text-[9px] font-black text-violet-200 transition-transform",
-                  (pathname.startsWith("/user/") ||
-                    pathname.startsWith("/profile/")) &&
-                    "scale-110 border-white ring-2 ring-violet-400/50",
+                  "relative z-10 flex h-5 w-5 items-center justify-center rounded-full border border-white/30 bg-neutral-800 text-[9px] font-black text-white transition-transform duration-300",
+                  isProfileRoute && "-translate-y-7 scale-110 border-black/20 bg-white text-black",
                 )}
               >
                 {(user.displayName || user.username || "U")
@@ -157,6 +158,7 @@ export function MobileBottomNav() {
                   .toUpperCase()}
               </div>
             )}
+            </span>
             <span className="mt-1 max-w-full truncate px-0.5 tracking-tight">
               Cá nhân
             </span>
@@ -165,7 +167,7 @@ export function MobileBottomNav() {
           <button
             type="button"
             onClick={() => useAuthModalStore.getState().openModal("login")}
-            className="flex h-full min-w-0 flex-col items-center justify-center rounded-[1.1rem] py-1 text-[10.5px] font-semibold text-neutral-300 transition-[color,background-color,transform] hover:text-white active:scale-[0.96] cursor-pointer"
+            className="flex h-full min-w-0 cursor-pointer flex-col items-center justify-center py-1 text-[10px] font-semibold text-neutral-300 transition-[color,transform] hover:text-white active:scale-[0.96]"
           >
             <User size={19} />
             <span className="mt-1 max-w-full truncate px-0.5 tracking-tight">
