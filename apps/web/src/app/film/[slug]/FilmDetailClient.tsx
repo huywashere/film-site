@@ -1726,9 +1726,11 @@ export default function FilmDetailPage({
               </div>
 
               <div className="flex flex-col space-y-2 sm:space-y-3 min-w-0 flex-1 items-center sm:items-start">
-                <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold text-white tracking-tight leading-[1.25] drop-shadow-xl line-clamp-3 pt-2 pb-1 overflow-visible">
-                  {film.name}
-                </h1>
+                <FilmTitleLogo
+                  key={`${film.slug}-${bestLogo?.file_path || 'text'}`}
+                  path={bestLogo?.file_path}
+                  title={film.name}
+                />
 
                 {film.origin_name && (
                   <p className="text-xs sm:text-base text-neutral-300 font-medium tracking-wide italic line-clamp-2">
@@ -1940,15 +1942,7 @@ export default function FilmDetailPage({
               </div>
             </div>
 
-            {bestLogo?.file_path && (
-              <FilmTitleLogo
-                key={`${film.slug}-${bestLogo.file_path}`}
-                path={bestLogo.file_path}
-                title={film.name}
-              />
-            )}
-
-            {/* ── OMDB Ratings (below action buttons and optional title logo) ── */}
+            {/* ── OMDB Ratings (below action buttons) ── */}
             <AnimatePresence>
               {omdb && (
                 <motion.div
