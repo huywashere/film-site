@@ -621,14 +621,17 @@ function HeroMovieTitle({
 
   const title = film.origin_name || film.name;
   const hasLogoCandidate = Boolean(currentLogoSrc) && !hasError;
-  const showTextFallback = !logoLoaded || !hasLogoCandidate;
+  const showTextFallback = !hasLogoCandidate;
 
   useEffect(() => {
     if (film.titleLogoResolved && !hasLogoCandidate) onReady();
   }, [film.titleLogoResolved, hasLogoCandidate, onReady]);
 
   return (
-    <div className="relative flex min-h-16 w-full items-center justify-center sm:min-h-24 md:min-h-28 overflow-visible">
+    <div
+      aria-busy={hasLogoCandidate && !logoLoaded}
+      className="relative flex min-h-16 w-full items-center justify-center overflow-visible sm:min-h-24 md:min-h-28"
+    >
       {/* If there's NO logo candidate or logo completely failed to load, show styled text title */}
       {showTextFallback && (
         <h1
@@ -663,10 +666,7 @@ function HeroMovieTitle({
               onReady();
             }
           }}
-          className={cn(
-            "h-auto max-h-24 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-[opacity,transform] duration-700 ease-out motion-reduce:transition-none sm:max-h-32 sm:max-w-[34rem] md:max-h-40",
-            logoLoaded ? "opacity-100 translate-y-0 scale-100" : "absolute opacity-0 translate-y-3 scale-95",
-          )}
+          className="h-auto max-h-24 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] sm:max-h-32 sm:max-w-[34rem] md:max-h-40"
         />
       )}
     </div>
@@ -1326,12 +1326,17 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         restoredIndex >= 0 && restoredIndex < playlist.length
           ? restoredIndex
           : 0;
-      const selectedFilm = playlist[selectedIndex];
-      const withLogos = selectedFilm?.titleLogo
-        ? [selectedFilm]
-        : selectedFilm
-          ? await enrichHeroTitleLogos([selectedFilm])
-          : [];
+      const nextIndex = playlist.length > 1
+        ? (selectedIndex + 1) % playlist.length
+        : selectedIndex;
+      const initialLogoTargets = [playlist[selectedIndex], playlist[nextIndex]]
+        .filter(
+          (film, index, items): film is HeroFilm =>
+            Boolean(film) && items.indexOf(film) === index && !film.titleLogo,
+        );
+      const withLogos = initialLogoTargets.length
+        ? await enrichHeroTitleLogos(initialLogoTargets)
+        : [];
       if (!active) return;
       const enrichedBySlug = new Map(
         withLogos.map((film) => [film.slug, film] as const),
@@ -1352,23 +1357,33 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
     };
   }, [films, initialConfig]);
 
-  // Resolve title artwork on demand. Fetching logo metadata for all six slides
-  // during startup generated five invisible TMDB requests in the LCP window.
+  // Resolve only the current and next title artwork. The next logo is decoded
+  // before navigation without recreating the old six-slide request fan-out.
   useEffect(() => {
-    const selected = featured[current];
-    if (
-      !selected ||
-      selected.titleLogo ||
-      attemptedTitleLogos.current.has(selected.slug)
-    )
-      return;
-    attemptedTitleLogos.current.add(selected.slug);
+    if (!featured.length) return;
+    const nextIndex = featured.length > 1 ? (current + 1) % featured.length : current;
+    const targets = [featured[current], featured[nextIndex]].filter(
+      (film, index, items): film is HeroFilm =>
+        Boolean(film) &&
+        items.indexOf(film) === index &&
+        !film.titleLogo &&
+        !attemptedTitleLogos.current.has(film.slug),
+    );
+    if (!targets.length) return;
+    targets.forEach((film) => attemptedTitleLogos.current.add(film.slug));
     let active = true;
-    void enrichHeroTitleLogos([selected]).then(([enriched]) => {
-      if (!active || !enriched) return;
-      setFeatured((playlist) =>
-        playlist.map((item) => (item.slug === enriched.slug ? enriched : item)),
+    void enrichHeroTitleLogos(targets).then((enrichedFilms) => {
+      if (!active || !enrichedFilms.length) return;
+      const enrichedBySlug = new Map(
+        enrichedFilms.map((film) => [film.slug, film] as const),
       );
+      setFeatured((playlist) => {
+        const updated = playlist.map(
+          (item) => enrichedBySlug.get(item.slug) || item,
+        );
+        storeHeroPlaylist(updated);
+        return updated;
+      });
     });
     return () => {
       active = false;

@@ -7,6 +7,7 @@ import {
   getMoviePageData,
 } from "@/lib/server/movie-page-data";
 import { getMovieTmdbServer } from "@/lib/server/movie-tmdb-server";
+import { tmdbLogo } from "@/lib/tmdb";
 
 export const revalidate = 3600;
 
@@ -115,6 +116,10 @@ export default async function FilmPage({ params }: PageProps) {
   const initialData = await getMoviePageData(slug);
   const movie = getMovieFromPageData(initialData);
   const initialTmdb = await getMovieTmdbServer(movie);
+  const initialLogoUrl = tmdbLogo(
+    initialTmdb?.images?.logos?.[0]?.file_path,
+    "w500",
+  );
 
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL || "https://netphim.app";
@@ -158,6 +163,14 @@ export default async function FilmPage({ params }: PageProps) {
 
   return (
     <>
+      {initialLogoUrl && (
+        <link
+          rel="preload"
+          as="image"
+          href={initialLogoUrl}
+          fetchPriority="high"
+        />
+      )}
       {initialTmdb?.tmdbBackdropUrl && (
         <link
           rel="preload"
@@ -184,4 +197,3 @@ export default async function FilmPage({ params }: PageProps) {
     </>
   );
 }
-
