@@ -1188,7 +1188,7 @@ export default function FilmDetailPage({
   }, [slug]);
 
   useEffect(() => {
-    const media = window.matchMedia('(max-width: 767px)');
+    const media = window.matchMedia('(max-width: 639px)');
     const syncViewport = () => setIsMobileViewport(media.matches);
     syncViewport();
     media.addEventListener('change', syncViewport);
@@ -1727,7 +1727,18 @@ export default function FilmDetailPage({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
           <div className="lg:col-span-8 flex flex-col space-y-4 md:space-y-5 items-center sm:items-start text-center sm:text-left">
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center sm:items-start w-full">
-              <div className="lg:hidden w-36 sm:w-40 aspect-[2/3] rounded-2xl overflow-hidden border border-white/15 bg-neutral-900 shadow-2xl shrink-0 relative group mx-auto sm:mx-0">
+              {isMobileViewport ? (
+                <MobileRelatedCarousel
+                  slug={slug}
+                  currentFilm={film}
+                  currentPosterUrl={tmdbPosterUrl || providerPosterUrl}
+                  onOpenCurrentPoster={() => {
+                    setLightboxIndex(0);
+                    setLightboxOpen(true);
+                  }}
+                />
+              ) : (
+              <div className="hidden sm:block lg:hidden w-40 aspect-[2/3] rounded-2xl overflow-hidden border border-white/15 bg-neutral-900 shadow-2xl shrink-0 relative group mx-auto sm:mx-0">
                 <DetailPosterCard
                   src={tmdbPosterUrl}
                   fallbackSrc={providerPosterUrl}
@@ -1741,6 +1752,7 @@ export default function FilmDetailPage({
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
+              )}
 
               <div className="flex flex-col space-y-2 sm:space-y-3 min-w-0 flex-1 items-center sm:items-start">
                 <FilmTitleLogo
@@ -2285,10 +2297,6 @@ export default function FilmDetailPage({
               </dl>
             </div>
           </section>
-
-          {isMobileViewport && (
-            <MobileRelatedCarousel slug={slug} enabled={secondaryReady} />
-          )}
 
           {secondaryReady &&
             !tmdbResolving &&
