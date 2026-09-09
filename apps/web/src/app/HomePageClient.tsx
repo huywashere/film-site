@@ -422,9 +422,9 @@ function FilmSection({
                   >
                     <FilmCard
                       film={film}
-                      priority={idx < 8}
+                      priority={idx < 4}
                       preferHighQuality={
-                        title === "Phim Mới Cập Nhật" && idx < 8
+                        title === "Phim Mới Cập Nhật" && idx < 4
                       }
                     />
                   </div>

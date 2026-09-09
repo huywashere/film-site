@@ -15,7 +15,6 @@ import { safeJsonLd } from "@/lib/safe-json-ld";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { ClientBackgroundServices } from "@/components/layout/ClientBackgroundServices";
 import { OperationalNotice } from "@/components/layout/OperationalNotice";
-import { LogoSplashIntro } from "@/components/layout/LogoSplashIntro";
 import { cardFont } from "@/lib/fonts";
 
 export const viewport: Viewport = {
@@ -107,11 +106,6 @@ export default function RootLayout({
   return (
     <html lang="vi" suppressHydrationWarning>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var r=document.documentElement;r.dataset.netphimIntro="show";var a=["8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg","ji3ecJphATlVgWNY0B0RVXZizdf.jpg","kW9LmvYHAaS9iA0tHmZVq8hQYoq.jpg","8j58iEBw9pOXFD2L0nt0ZXeHviB.jpg","mbm8k3GFhXS0ROd9AD1gqYbIFbM.jpg","nT97ifVT2J1yMQmeq20Qblg61T.jpg","umSVjVdbVwtx5ryCA2QXL44Durm.jpg","iQ5ztdjvteGeboxtmRdXEChJOHh.jpg","9OkCLM73MIU2CrKZbqiT8Ln1wY2.jpg","3bhkrj58Vtu7enYsRolD1fZdja1.jpg","sSuQTCZwqKrNBNIsksO9IAUoWP9.jpg","sX9idXDqRUxE5ffww3n3RV5gL55.jpg","lz8vNyXeidqqOdJW9ZjnDAMb5Vr.jpg","uhviyknTT5cEQXbn6vWIqfM4vGm.jpg","ts996lKsxvjkO2yiYG0ht4qAicO.jpg","nrmXQ0zcZUL8jFLrakWc90IR8z9.jpg","gEU2QniE6E77NI6lCU6MxlNBvIx.jpg","oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg","qJ2tW6WMUDux911r6m7haRef0WH.jpg","or06FN3Dka5tukK1e9sl16pB3iy.jpg","8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg","czembW0Rk1Ke7lCJGzyAi8Fscgt.jpg","7IiTTgloJzvGI1TAYymCfbfl3vT.jpg","q719jXXEzOoYaps6qFsVoMe0qtn.jpg","39wmItIWsg5sZMyRUHLkWBcuVCM.jpg","vIeu8WysZrTS7vxbtipRMQ0SSap.jpg","h8Rb9gBr48ODIwYUtZv5C9W0xRi.jpg","fqldf2t8ztc9aiwn3k6mlX3tvRT.jpg","hTP1DtLGFamjfu8WqjnuQdP1n4i.jpg","7jswQA9409iA9j5v079m19vN4mH.jpg","62HCnUTziyWcpDaBO2i1DX17ljH.jpg","muAuXW31r18aN5fX5zY8bF1BqN8.jpg","vZloFAK7NmvMGKE7VkF5UHaz0I.jpg","ty8TGRuvJLPUmAR1H1nRIsgwvim.jpg","f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg","pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg"];for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}for(var k=0;k<18;k++){var u="https://wsrv.nl/?url="+encodeURIComponent("https://image.tmdb.org/t/p/w300/"+a[k])+"&w=300&q=75&output=webp";r.style.setProperty("--netphim-intro-poster-"+(k+1),'url("'+u+'")')}}catch(e){document.documentElement.dataset.netphimIntro="show";}})();`,
-          }}
-        />
         <meta name="referrer" content="strict-origin-when-cross-origin" />
         <link rel="icon" href="/cinephim-logo.svg" type="image/svg+xml" />
         <link rel="alternate icon" href="/cinephim-logo.png" type="image/png" />
@@ -133,7 +127,6 @@ export default function RootLayout({
         className={`${cardFont.variable} ${cardFont.className} antialiased`}
         suppressHydrationWarning
       >
-        <LogoSplashIntro />
         <ThemeWatcher />
         <ThemeColorSync />
         <OperationalNotice />

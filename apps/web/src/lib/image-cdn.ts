@@ -135,7 +135,14 @@ export function buildArtworkCandidates(
       }
     }
 
-    if (!isTmdbImageUrl(source) || options.includeWsrvForTmdb || options.preferEdge) {
+    // wsrv rejects several Vietnamese movie CDNs with "Domain or TLD blocked
+    // by policy". Use it only for TMDB, where it is a useful regional
+    // fallback. Provider originals are resized by Next's image optimizer in
+    // the rendering component and retain the same-origin proxy as fallback.
+    if (
+      isTmdbImageUrl(source) &&
+      (options.includeWsrvForTmdb || options.preferEdge)
+    ) {
       const wsrv = wsrvImageUrl(source, preset);
       if (wsrv && !edgeCandidates.includes(wsrv) && !directCandidates.includes(wsrv)) {
         edgeCandidates.push(wsrv);

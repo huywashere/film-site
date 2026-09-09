@@ -1,14 +1,18 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { getImageProps } from 'next/image';
 import type { FilmItem } from '@/components/film/FilmCard';
 import { resolveImageUrl } from '@/components/film/FilmCard';
 import { useTmdbArtwork } from '@/hooks/useTmdbArtwork';
 import { alternateMovieArtworkUrl } from '@/lib/movie-image-url';
 import { cn } from '@/lib/utils';
 import { Clapperboard } from 'lucide-react';
-import { buildArtworkCandidates, wsrvImageUrl } from '@/lib/image-cdn';
-import { extractTmdbInfo } from '@/lib/tmdb';
+import {
+  buildArtworkCandidates,
+  isPreOptimizedImageUrl,
+  wsrvImageUrl,
+} from '@/lib/image-cdn';
 
 interface TmdbArtworkProps {
   film: FilmItem;
@@ -61,8 +65,6 @@ export function TmdbArtwork({
 }: TmdbArtworkProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [nearViewport, setNearViewport] = useState(priority);
-  const tmdbInfo = extractTmdbInfo(film);
-  const hasExactTmdbIdentity = Boolean(tmdbInfo.tmdbId || tmdbInfo.imdbId);
   const providerIsTmdb = Boolean(
     /image\.tmdb\.org\/t\/p\//i.test(
       String(
@@ -129,7 +131,19 @@ export function TmdbArtwork({
 
     const preset = kind === 'backdrop' ? 'backdrop' : 'poster';
 
-    // 1. Direct provider artwork. Go keeps alternatives from every merged
+    const addTmdbCandidates = () => {
+      if (!tmdbUrl) return;
+      const wsrv = wsrvImageUrl(tmdbUrl, preset);
+      if (wsrv) add(wsrv);
+      add(`/api/image-proxy?url=${encodeURIComponent(tmdbUrl)}`);
+      add(tmdbUrl);
+    };
+
+    // Curated/high-priority cards use a confident TMDB match first. Other
+    // cards keep the provider first so title lookup never floods a full shelf.
+    if (allowTitleLookup) addTmdbCandidates();
+
+    // Direct provider artwork. Go keeps alternatives from every merged
     // provider, so a dead CDN can fail over without another metadata request.
     if (providerPrimary) add(providerPrimary);
     if (providerAlternate) add(providerAlternate);
@@ -141,19 +155,12 @@ export function TmdbArtwork({
       add(alternateMovieArtworkUrl(resolved));
     });
 
-    // 2. TMDB edge proxy (works in VN, bypasses TMDB block) & local proxy
-    if (tmdbUrl) {
-      const wsrv = wsrvImageUrl(tmdbUrl, preset);
-      if (wsrv) add(wsrv);
-      add(`/api/image-proxy?url=${encodeURIComponent(tmdbUrl)}`);
-      add(tmdbUrl);
-    }
+    if (!allowTitleLookup) addTmdbCandidates();
 
-    // 3. Provider local proxy (server reliably fetches phimimg)
+    // 3. Provider local proxy (server reliably fetches phimimg). wsrv blocks
+    // these provider domains, so retrying it only delays the real fallback.
     if (providerPrimary) {
       add(`/api/image-proxy?url=${encodeURIComponent(providerPrimary)}`);
-      const wsrv = wsrvImageUrl(providerPrimary, preset);
-      if (wsrv) add(wsrv);
     }
 
     // 4. Cross-fallback: if backdrop is needed and only poster was passed (or vice versa)
@@ -183,6 +190,7 @@ export function TmdbArtwork({
     film.thumb_url,
     film._posterCandidates,
     film._thumbCandidates,
+    allowTitleLookup,
   ]);
 
   const [candidateIndex, setCandidateIndex] = useState(0);
@@ -191,16 +199,25 @@ export function TmdbArtwork({
 
   const src = candidates[candidateIndex];
 
-  // Mobile image optimization: Serve lightweight w342 poster / w780 backdrop on mobile (saving ~75% data)
-  const mobileSrc = useMemo(() => {
-    if (!src) return undefined;
-    if (/image\.tmdb\.org\/t\/p\//i.test(src)) {
-      return kind === 'backdrop'
-        ? src.replace(/\/t\/p\/(w1280|original)\//i, '/t/p/w780/')
-        : src.replace(/\/t\/p\/(w500|w780|original|w1280)\//i, '/t/p/w342/');
-    }
-    return undefined;
-  }, [src, kind]);
+  const responsiveSizes =
+    kind === 'backdrop'
+      ? '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
+      : '(max-width: 640px) 30vw, (max-width: 1024px) 22vw, 16vw';
+  const deliveredImageProps = useMemo(() => {
+    if (!src) return null;
+    const alreadySized = isPreOptimizedImageUrl(src);
+    return getImageProps({
+      src,
+      alt: alt || film.name,
+      width: kind === 'backdrop' ? 1280 : 500,
+      height: kind === 'backdrop' ? 720 : 750,
+      sizes: responsiveSizes,
+      quality: kind === 'backdrop' ? 85 : 75,
+      loading: priority ? 'eager' : 'lazy',
+      fetchPriority: priority ? 'high' : 'low',
+      unoptimized: alreadySized,
+    }).props;
+  }, [alt, film.name, kind, priority, responsiveSizes, src]);
 
   // Reset candidate index and loaded state only when movie identity or artwork kind changes
   useEffect(() => {
@@ -224,29 +241,18 @@ export function TmdbArtwork({
 
   return (
     <div ref={containerRef} className={cn('relative overflow-hidden bg-[#101218]', className)}>
-      {src ? (
+      {src && deliveredImageProps ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           ref={(node) => {
             imgRef.current = node;
-            if (node && (node.naturalWidth > 0 || node.complete) && !loaded) {
+            if (node && node.naturalWidth > 0 && !loaded) {
               setLoaded(true);
             }
           }}
           key={src}
-          src={src}
-          srcSet={mobileSrc && mobileSrc !== src ? `${mobileSrc} 640w, ${src} 1280w` : undefined}
-          sizes={
-            kind === 'backdrop'
-              ? '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
-              : '(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw'
-          }
+          {...deliveredImageProps}
           alt={alt || film.name}
-          width={kind === 'backdrop' ? 1280 : 500}
-          height={kind === 'backdrop' ? 720 : 750}
-          loading={priority ? 'eager' : 'lazy'}
-          fetchPriority={priority ? 'high' : 'low'}
-          decoding="async"
           referrerPolicy="no-referrer"
           draggable={false}
           onLoad={() => setLoaded(true)}

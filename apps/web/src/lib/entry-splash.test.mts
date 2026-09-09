@@ -6,13 +6,12 @@ function source(path: string) {
   return readFileSync(path, 'utf8');
 }
 
-test('entry splash is shown for each full document load without a stale session marker', () => {
+test('root layout renders content without a blocking poster splash', () => {
   const layout = source('src/app/layout.tsx');
-  const splash = source('src/components/layout/LogoSplashIntro.tsx');
+  const styles = source('src/app/globals.css');
 
-  assert.match(layout, /dataset\.netphimIntro=\"show\"/);
-  assert.doesNotMatch(layout, /sessionStorage/);
-  assert.match(splash, /const WALL_TILE_COUNT = 18/);
+  assert.doesNotMatch(layout, /LogoSplashIntro|netphimIntro|intro-poster/);
+  assert.doesNotMatch(styles, /netphim-intro|intro-poster/);
 });
 
 test('service worker never serves stale cached HTML after a deployment', () => {
@@ -20,9 +19,9 @@ test('service worker never serves stale cached HTML after a deployment', () => {
   const config = source('next.config.js');
 
   assert.doesNotMatch(worker, /ASSETS_TO_CACHE\s*=\s*\[[^\]]*["']\/["']/);
-  assert.match(worker, /event\.request\.mode === \"navigate\"/);
+  assert.match(worker, /event\.request\.mode === "navigate"/);
   assert.match(worker, /fetch\(event\.request\)\.catch/);
-  assert.match(config, /source: \"\/sw\.js\"/);
+  assert.match(config, /source: "\/sw\.js"/);
   assert.match(config, /no-cache, no-store, must-revalidate/);
   assert.match(
     source('src/components/layout/RegisterSW.tsx'),

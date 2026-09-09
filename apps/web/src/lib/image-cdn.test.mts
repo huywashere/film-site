@@ -11,11 +11,14 @@ import {
 const provider = "https://phimimg.com/uploads/movies/example.webp";
 
 test("builds deterministic wsrv presets", () => {
-  const result = wsrvImageUrl(provider, "poster");
+  const result = wsrvImageUrl("https://image.tmdb.org/t/p/w500/poster.jpg", "poster");
   assert.ok(result);
   const parsed = new URL(result);
   assert.equal(parsed.hostname, "wsrv.nl");
-  assert.equal(parsed.searchParams.get("url"), provider);
+  assert.equal(
+    parsed.searchParams.get("url"),
+    "https://image.tmdb.org/t/p/w500/poster.jpg",
+  );
   assert.equal(parsed.searchParams.get("w"), "400");
   assert.equal(parsed.searchParams.get("h"), "600");
   assert.equal(parsed.searchParams.get("output"), "webp");
@@ -50,7 +53,11 @@ test("deduplicates proxied and direct copies of the same source", () => {
     "poster",
   );
   assert.equal(candidates.filter((value) => value === provider).length, 1);
-  assert.equal(candidates.length, 3);
+  assert.equal(candidates.length, 2);
+  assert.equal(
+    candidates.some((value) => value.startsWith("https://wsrv.nl")),
+    false,
+  );
 });
 
 test("preferEdge prioritizes edge wsrv for fast delivery in restricted network regions", () => {

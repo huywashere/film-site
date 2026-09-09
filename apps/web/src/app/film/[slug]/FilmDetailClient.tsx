@@ -2,7 +2,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import NextImage from 'next/image';
+import NextImage, { getImageProps } from 'next/image';
 import dynamic from 'next/dynamic';
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -54,7 +54,12 @@ import { useTranslation } from '@/store/langStore';
 import { Button } from '@/components/ui/button';
 import { useTmdb, useTmdbPerson } from '@/hooks/useTmdb';
 import { tmdbBackdrop, tmdbProfile, tmdbPoster } from '@/lib/tmdb';
-import { buildArtworkCandidates, wsrvImageUrl, type ImagePreset } from '@/lib/image-cdn';
+import {
+  buildArtworkCandidates,
+  isPreOptimizedImageUrl,
+  wsrvImageUrl,
+  type ImagePreset,
+} from '@/lib/image-cdn';
 import { safeJsonLd } from '@/lib/safe-json-ld';
 import { cardFont } from '@/lib/fonts';
 import { guestDataStorage } from '@/lib/user-data';
@@ -93,6 +98,7 @@ function ResilientDetailImage({
   candidates,
   alt,
   className,
+  sizes = '100vw',
   priority = false,
   preset = 'backdrop',
 }: {
@@ -122,6 +128,25 @@ function ResilientDetailImage({
   }, [sourceKey]);
 
   const source = sources[sourceIndex];
+  const deliveredImageProps = useMemo(() => {
+    if (!source) return null;
+    const dimensions =
+      preset === 'poster'
+        ? { width: 500, height: 750 }
+        : preset === 'avatar'
+          ? { width: 160, height: 160 }
+          : { width: 1280, height: 720 };
+    return getImageProps({
+      src: source,
+      alt,
+      ...dimensions,
+      sizes,
+      quality: preset === 'backdrop' ? 85 : 75,
+      loading: priority ? 'eager' : 'lazy',
+      fetchPriority: priority ? 'high' : 'auto',
+      unoptimized: isPreOptimizedImageUrl(source),
+    }).props;
+  }, [alt, preset, priority, sizes, source]);
 
   useEffect(() => {
     setLoaded(false);
@@ -130,18 +155,15 @@ function ResilientDetailImage({
     }
   }, [source]);
 
-  if (!source) return null;
+  if (!source || !deliveredImageProps) return null;
 
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       ref={imgRef}
       key={source}
-      src={source}
+      {...deliveredImageProps}
       alt={alt}
-      loading={priority ? 'eager' : 'lazy'}
-      decoding="async"
-      fetchPriority={priority ? 'high' : 'auto'}
       referrerPolicy="no-referrer"
       className={cn(
         'w-full h-full object-cover transition-opacity duration-500',
@@ -235,6 +257,20 @@ function DetailPosterCard({
   }, [candidatesKey]);
 
   const currentSrc = candidates[currentIndex];
+  const deliveredPosterProps = useMemo(() => {
+    if (!currentSrc) return null;
+    return getImageProps({
+      src: currentSrc,
+      alt: filmName,
+      width: 500,
+      height: 750,
+      sizes: '(max-width: 1024px) 160px, 256px',
+      quality: 85,
+      loading: 'eager',
+      fetchPriority: 'high',
+      unoptimized: isPreOptimizedImageUrl(currentSrc),
+    }).props;
+  }, [currentSrc, filmName]);
 
   useEffect(() => {
     setLoaded(false);
@@ -243,7 +279,7 @@ function DetailPosterCard({
     }
   }, [currentSrc]);
 
-  if (!currentSrc || hasFailedAll) {
+  if (!currentSrc || !deliveredPosterProps || hasFailedAll) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-[#12151b] border border-white/10 rounded-2xl select-none">
         <Clapperboard className="w-10 h-10 text-amber-400/80 mb-2 drop-shadow" />
@@ -271,12 +307,9 @@ function DetailPosterCard({
       <img
         ref={imgRef}
         key={currentSrc}
-        src={currentSrc}
+        {...deliveredPosterProps}
         alt={filmName}
         referrerPolicy="no-referrer"
-        loading="eager"
-        decoding="async"
-        fetchPriority="high"
         onLoad={() => setLoaded(true)}
         onError={() => {
           setLoaded(false);

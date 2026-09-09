@@ -73,6 +73,7 @@ function FilmCardComponent({
   variant = 'standard',
   hideDetails = false,
   priority = false,
+  preferHighQuality = false,
 }: FilmCardProps) {
   const slug = film.slug;
   const title = film.name || film.title || 'Chưa có tên';
@@ -240,6 +241,7 @@ function FilmCardComponent({
               kind={variant === 'landscape' ? 'backdrop' : 'poster'}
               alt={title}
               priority={priority}
+              allowTitleLookup={preferHighQuality}
               className="absolute inset-0 h-full w-full transition-transform duration-700 ease-out motion-safe:group-hover/card:scale-[1.035]"
             />
 
