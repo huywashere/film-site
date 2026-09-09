@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "next dev --webpack -p 3000",
     "build": "next build && node scripts/check-performance-budget.mjs",
     "start": "next start",
     "lint": "eslint src --ext .ts,.tsx --max-warnings=9999",

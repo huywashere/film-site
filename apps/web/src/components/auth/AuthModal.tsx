@@ -41,7 +41,11 @@ import { establishFirebaseSession } from "@/lib/auth-session";
 import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
 import { CinematicAuthBackground } from "@/components/auth/CinematicAuthBackground";
 import { useGoogleOneTap } from "@/hooks/useGoogleOneTap";
-import { getRandomAuthArtwork, type AuthArtwork } from "@/lib/auth-artworks";
+import {
+  getRandomAuthArtwork,
+  LOGIN_COVER_ARTWORKS,
+  type AuthArtwork,
+} from "@/lib/auth-artworks";
 import { cn } from "@/lib/utils";
 
 export interface AuthModalProps {
@@ -126,7 +130,7 @@ export function AuthModal({
   const isOpen = isPage ? true : modalStore.isOpen;
 
   const [currentArtwork, setCurrentArtwork] = useState<AuthArtwork>(
-    getRandomAuthArtwork,
+    LOGIN_COVER_ARTWORKS[0],
   );
 
   useEffect(() => {

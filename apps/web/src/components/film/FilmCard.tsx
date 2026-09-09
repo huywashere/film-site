@@ -17,6 +17,8 @@ export interface FilmItem {
   origin_name?: string;
   thumb_url?: string;
   poster_url?: string;
+  _thumbCandidates?: string[];
+  _posterCandidates?: string[];
   year?: number;
   type?: string;
   episode_current?: string;

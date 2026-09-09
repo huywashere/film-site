@@ -129,9 +129,17 @@ export function TmdbArtwork({
 
     const preset = kind === 'backdrop' ? 'backdrop' : 'poster';
 
-    // 1. Direct provider artwork
+    // 1. Direct provider artwork. Go keeps alternatives from every merged
+    // provider, so a dead CDN can fail over without another metadata request.
     if (providerPrimary) add(providerPrimary);
     if (providerAlternate) add(providerAlternate);
+    const providerCandidates =
+      kind === 'backdrop' ? film._thumbCandidates : film._posterCandidates;
+    providerCandidates?.forEach((candidate) => {
+      const resolved = resolveImageUrl(candidate);
+      add(resolved);
+      add(alternateMovieArtworkUrl(resolved));
+    });
 
     // 2. TMDB edge proxy (works in VN, bypasses TMDB block) & local proxy
     if (tmdbUrl) {
@@ -173,6 +181,8 @@ export function TmdbArtwork({
     kind,
     film.poster_url,
     film.thumb_url,
+    film._posterCandidates,
+    film._thumbCandidates,
   ]);
 
   const [candidateIndex, setCandidateIndex] = useState(0);

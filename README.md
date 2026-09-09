@@ -72,6 +72,7 @@ This will start:
 
 - API on http://localhost:3001
 - Web on http://localhost:3000
+- Local PostgreSQL on localhost:5433 (`scripts\start-db.bat`)
 
 ## 🐳 Docker Deployment
 
@@ -157,9 +158,16 @@ See `docs/architecture/README.md` for service boundaries.
 - `npm run format:check` - Check code formatting
 - `npm run db:migrate` - Run database migrations
 - `npm run db:studio` - Open Prisma Studio
+- `pnpm db:performance` - Show slow statements, table scan ratios, and unused indexes
+- `pnpm --filter api metadata:backfill` - Fill missing movie metadata from configured providers
 - `npm run docker:build` - Build Docker images
 - `npm run docker:up` - Start Docker containers
 - `npm run docker:down` - Stop Docker containers
+
+The API creates a verified PostgreSQL custom-format backup every 24 hours by
+default. Configure `AUTO_BACKUP_ENABLED`, `BACKUP_INTERVAL_HOURS`, `BACKUP_DIR`,
+and optionally `POSTGRES_BIN` in the API environment. A backup is marked
+completed only after `pg_restore --list` accepts the archive.
 
 ## 🌐 Nginx Configuration
 

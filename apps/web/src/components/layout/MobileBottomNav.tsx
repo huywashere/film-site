@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { Bookmark, History, Home, LayoutGrid, User } from "lucide-react";
-import { motion, useMotionValueEvent, useReducedMotion, useScroll } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useAuthStore } from "@/store/authStore";
 import { useAuthModalStore } from "@/store/authModalStore";
 import { cn } from "@/lib/utils";
@@ -13,15 +12,10 @@ import { cardFont } from "@/lib/fonts";
 export function MobileBottomNav() {
   const pathname = usePathname();
   const { user } = useAuthStore();
-  const [isHidden, setIsHidden] = useState(false);
   const reduceMotion = useReducedMotion();
-  const { scrollY } = useScroll();
-
-  useMotionValueEvent(scrollY, "change", (currentScrollY) => {
-    const delta = currentScrollY - (scrollY.getPrevious() ?? currentScrollY);
-    if (Math.abs(delta) < 6) return;
-    setIsHidden(currentScrollY > 70 && delta > 0);
-  });
+  const dockTransition = reduceMotion
+    ? { duration: 0 }
+    : { type: "spring" as const, stiffness: 380, damping: 30, mass: 0.72 };
 
   const isProfileRoute =
     pathname === "/user" ||
@@ -72,14 +66,10 @@ export function MobileBottomNav() {
       aria-label="Điều hướng nhanh"
       className={cn(
         cardFont.className,
-        "mobile-bottom-nav-surface fixed bottom-[max(0.65rem,env(safe-area-inset-bottom,0px))] left-4 right-4 z-50 overflow-visible rounded-[14px] px-2 shadow-[0_12px_34px_rgba(0,0,0,0.68)] transition-[transform,opacity] duration-300 ease-out will-change-transform lg:hidden",
-        reduceMotion && "duration-0",
-        isHidden
-          ? "pointer-events-none translate-y-[calc(100%+2rem)] opacity-0"
-          : "translate-y-0 opacity-100",
+        "mobile-bottom-nav-surface fixed bottom-[max(0.45rem,env(safe-area-inset-bottom,0px))] left-1/2 z-50 w-[calc(100%-2.75rem)] max-w-[25rem] -translate-x-1/2 overflow-hidden rounded-[13px] px-1 lg:hidden",
       )}
     >
-      <div className="grid h-[3.75rem] grid-cols-5 items-center">
+      <div className="grid h-[52px] grid-cols-5 items-stretch">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -89,38 +79,39 @@ export function MobileBottomNav() {
               prefetch={true}
               aria-current={item.isActive ? "page" : undefined}
               className={cn(
-                "relative flex h-full min-w-0 flex-col items-center justify-center text-[10px] font-semibold transition-colors active:scale-[0.96]",
+                "relative flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-[9px] px-0.5 text-[8.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70 active:scale-[0.97]",
                 item.isActive
-                  ? "font-extrabold text-white"
-                  : "text-neutral-300 hover:text-white",
+                  ? "font-bold text-white"
+                  : "text-neutral-400 hover:text-neutral-100",
               )}
             >
-              <span className="relative flex h-7 w-full items-center justify-center">
-                {item.isActive && (
-                  <motion.span
-                    layoutId="mobile-nav-active"
-                    transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 430, damping: 32 }}
-                    className="absolute -top-7 h-[3.25rem] w-[3.25rem] rounded-full border-2 border-neutral-300 bg-white shadow-[0_7px_18px_rgba(0,0,0,0.32)]"
-                  />
-                )}
-                <Icon
-                  size={20}
-                  strokeWidth={2.1}
-                  className={cn(
-                    "relative z-10 transition-[color,transform] duration-300",
-                    item.isActive ? "-translate-y-7 text-[#11131a]" : "text-neutral-200",
-                  )}
-                />
-              </span>
               {item.isActive && (
                 <motion.span
-                  initial={reduceMotion ? false : { opacity: 0, y: 3 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-0.5 max-w-full truncate px-0.5 tracking-tight text-white"
-                >
-                  {item.label}
-                </motion.span>
+                  layoutId="mobile-nav-active-indicator"
+                  transition={dockTransition}
+                  className="mobile-nav-active-indicator"
+                />
               )}
+              <motion.span
+                animate={item.isActive ? { y: -1, scale: 1.04 } : { y: 0, scale: 1 }}
+                transition={dockTransition}
+                className={cn(
+                  "relative z-10 flex h-[22px] w-8 items-center justify-center rounded-[7px] transition-[background-color,color] duration-200",
+                  item.isActive
+                    ? "bg-white/[0.09] text-[#b8a3ff]"
+                    : "text-neutral-300",
+                )}
+              >
+                <Icon size={17} strokeWidth={item.isActive ? 2.3 : 2} />
+              </motion.span>
+              <span
+                className={cn(
+                  "relative z-10 block w-full truncate px-0.5 text-center leading-none tracking-[-0.01em]",
+                  item.isActive ? "text-white" : "text-neutral-400",
+                )}
+              >
+                {item.label}
+              </span>
             </Link>
           );
         })}
@@ -129,21 +120,30 @@ export function MobileBottomNav() {
         {user ? (
           <Link
             href={`/user/${encodeURIComponent(user.username)}`}
+            aria-current={isProfileRoute ? "page" : undefined}
+            aria-label="Trang cá nhân"
             className={cn(
-              "relative flex h-full min-w-0 flex-col items-center justify-center text-[10px] font-semibold transition-colors active:scale-[0.96]",
+              "relative flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-[9px] px-0.5 text-[8.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70 active:scale-[0.97]",
               isProfileRoute
-                ? "font-extrabold text-white"
-                : "text-neutral-300 hover:text-white",
+                ? "font-bold text-white"
+                : "text-neutral-400 hover:text-neutral-100",
             )}
           >
-            <span className="relative flex h-7 w-full items-center justify-center">
-              {isProfileRoute && (
-                <motion.span
-                  layoutId="mobile-nav-active"
-                  transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 430, damping: 32 }}
-                  className="absolute -top-7 h-[3.25rem] w-[3.25rem] rounded-full border-2 border-neutral-300 bg-white shadow-[0_7px_18px_rgba(0,0,0,0.32)]"
-                />
+            {isProfileRoute && (
+              <motion.span
+                layoutId="mobile-nav-active-indicator"
+                transition={dockTransition}
+                className="mobile-nav-active-indicator"
+              />
+            )}
+            <motion.span
+              animate={isProfileRoute ? { y: -1, scale: 1.04 } : { y: 0, scale: 1 }}
+              transition={dockTransition}
+              className={cn(
+                "relative z-10 flex h-[22px] w-8 items-center justify-center rounded-[7px] transition-[background-color,color] duration-200",
+                isProfileRoute ? "bg-white/[0.09]" : "",
               )}
+            >
               {user.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -151,8 +151,8 @@ export function MobileBottomNav() {
                 alt={user.displayName || user.username}
                 referrerPolicy="no-referrer"
                 className={cn(
-                  "relative z-10 h-5 w-5 rounded-full border border-white/20 object-cover transition-transform duration-300",
-                  isProfileRoute && "-translate-y-7 scale-110 border-black/20",
+                  "h-[17px] w-[17px] rounded-full border object-cover transition-colors duration-200",
+                  isProfileRoute ? "border-[#b8a3ff]" : "border-white/20",
                 )}
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src =
@@ -162,8 +162,10 @@ export function MobileBottomNav() {
             ) : (
               <div
                 className={cn(
-                  "relative z-10 flex h-5 w-5 items-center justify-center rounded-full border border-white/30 bg-neutral-800 text-[9px] font-black text-white transition-transform duration-300",
-                  isProfileRoute && "-translate-y-7 scale-110 border-black/20 bg-white text-black",
+                  "flex h-[17px] w-[17px] items-center justify-center rounded-full border bg-neutral-800 text-[7.5px] font-black transition-colors duration-200",
+                  isProfileRoute
+                    ? "border-[#b8a3ff] text-[#d4c8ff]"
+                    : "border-white/20 text-neutral-300",
                 )}
               >
                 {(user.displayName || user.username || "U")
@@ -171,26 +173,29 @@ export function MobileBottomNav() {
                   .toUpperCase()}
               </div>
             )}
+            </motion.span>
+            <span
+              className={cn(
+                "relative z-10 block w-full truncate px-0.5 text-center leading-none tracking-[-0.01em]",
+                isProfileRoute ? "text-white" : "text-neutral-400",
+              )}
+            >
+              Cá nhân
             </span>
-            {isProfileRoute && (
-              <motion.span
-                initial={reduceMotion ? false : { opacity: 0, y: 3 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-1 max-w-full truncate px-0.5 tracking-tight text-white"
-              >
-                Cá nhân
-              </motion.span>
-            )}
           </Link>
         ) : (
           <button
             type="button"
             onClick={() => useAuthModalStore.getState().openModal("login")}
-            aria-label="Đăng nhập"
             title="Đăng nhập"
-            className="flex h-full min-w-0 cursor-pointer items-center justify-center text-neutral-200 transition-[color,transform] hover:text-white active:scale-[0.96]"
+            className="relative flex min-w-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[9px] px-0.5 text-neutral-400 transition-[color,transform] hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70 active:scale-[0.97]"
           >
-            <User size={20} strokeWidth={2.1} />
+            <span className="flex h-[22px] w-8 items-center justify-center rounded-[7px] text-neutral-300">
+              <User size={17} strokeWidth={2} />
+            </span>
+            <span className="block w-full truncate px-0.5 text-center text-[8.5px] font-semibold leading-none">
+              Đăng nhập
+            </span>
           </button>
         )}
       </div>

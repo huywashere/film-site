@@ -3,17 +3,29 @@ version: '3.8'
 services:
   # PostgreSQL Database (Development Only)
   postgres:
-    image: postgres:15-alpine
-    container_name: movie_demo_postgres_dev
+    image: postgres:17.11-alpine
+    container_name: netphim_postgres_dev
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: movie_demo_db
     ports:
-      - '5432:5432'
+      - '127.0.0.1:5433:5432'
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - track_io_timing=on
     volumes:
-      - postgres_dev_data:/var/lib/postgresql/data
+      - netphim_postgres_dev_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d movie_demo_db']
+      interval: 5s
+      timeout: 5s
+      retries: 12
 
   # Redis Cache & RediSearch (Development Only)
   redis:
@@ -43,10 +55,26 @@ services:
       HLS_ANALYZER_ENABLED: ${HLS_ANALYZER_ENABLED:-true}
       HLS_ANALYZER_JOB_STREAM: ${HLS_ANALYZER_JOB_STREAM:-netphim:hls:analysis:jobs}
       MEDIA_INTERNAL_TOKEN: ${MEDIA_INTERNAL_TOKEN:-netphim-development-media-token-change-me}
+      MEILI_URL: http://meilisearch:7700
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-netphim-local-meili-master-key-32chars}
     ports:
       - '8081:8081'
     depends_on:
       - redis
+      - meilisearch
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.53.1
+    container_name: netphim_meilisearch
+    restart: unless-stopped
+    environment:
+      MEILI_ENV: development
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-netphim-local-meili-master-key-32chars}
+      MEILI_NO_ANALYTICS: 'true'
+    ports:
+      - '127.0.0.1:7700:7700'
+    volumes:
+      - meilisearch_dev_data:/meili_data
 
   media-worker-rs:
     profiles: ['media-analysis']
@@ -84,6 +112,7 @@ services:
       - rabbitmq_dev_data:/var/lib/rabbitmq
 
 volumes:
-  postgres_dev_data:
+  netphim_postgres_dev_data:
   redis_dev_data:
+  meilisearch_dev_data:
   rabbitmq_dev_data:

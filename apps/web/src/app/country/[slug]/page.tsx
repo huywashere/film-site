@@ -388,7 +388,6 @@ function ResilientAsianHeroBackdrop({
         media="(min-width: 768px)"
         srcSet={desktopSrc}
       />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         key={`${item.slug}-backdrop-${desktopIdx}-${mobileIdx}`}
         src={desktopSrc}
@@ -445,7 +444,7 @@ function ResilientAsianHeroLogo({
   }
 
   return (
-    <div className="relative w-44 sm:w-72 md:w-80 lg:w-[440px] h-14 sm:h-24 md:h-28 flex items-center">
+    <div className="relative flex h-12 w-36 items-center sm:h-24 sm:w-72 md:h-28 md:w-80 lg:w-[440px]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         key={`${item.slug}-logo-${candidateIdx}`}
@@ -533,7 +532,7 @@ function AsianCuratedHeroBanner({
     <section
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="relative w-full min-h-[580px] sm:min-h-[760px] lg:min-h-[840px] h-[88vh] sm:h-[96vh] lg:h-[100vh] max-h-[1080px] overflow-hidden bg-[#141414] select-none"
+      className="relative h-[68svh] min-h-[500px] max-h-[620px] w-full select-none overflow-hidden bg-[#141414] sm:h-[96vh] sm:min-h-[760px] sm:max-h-[1080px] lg:h-[100vh] lg:min-h-[840px]"
     >
       {/* ── High Resolution Dynamic Backdrop with Right-to-Left Gliding Motion ── */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -582,7 +581,7 @@ function AsianCuratedHeroBanner({
       />
 
       {/* ── Left Content Overlay (Responsive positioning: bottom-aligned on mobile, center-aligned on desktop) ── */}
-      <div className="absolute inset-0 z-20 flex flex-col justify-end sm:justify-center px-4 sm:px-14 md:px-20 lg:px-24 pb-8 sm:pb-20 lg:pb-0">
+      <div className="absolute inset-0 z-20 flex flex-col justify-end px-4 pb-14 sm:justify-center sm:px-14 sm:pb-20 md:px-20 lg:px-24 lg:pb-0">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentItem.slug || currentItem._id || currentIndex}
@@ -694,7 +693,7 @@ function AsianCuratedHeroBanner({
 
       {/* ── Pagination Dots (Centered on mobile, Bottom-Right on Desktop) ── */}
       {curatedList.length > 1 && (
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-5 sm:bottom-8 lg:left-auto lg:right-14 lg:translate-x-0 lg:bottom-44 z-30 flex items-center gap-1.5 sm:gap-2">
+        <div className="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 sm:bottom-8 sm:gap-2 lg:right-14 lg:left-auto lg:bottom-44 lg:translate-x-0">
           {curatedList.map((item, idx) => (
             <button
               key={item._id || item.slug || idx}

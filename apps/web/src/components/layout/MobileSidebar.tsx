@@ -82,7 +82,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       />
 
       {/* Minimalist Black & White Sheet Drawer */}
-      <aside className={`${cardFont.className} fixed bottom-0 left-0 top-0 z-[65] h-[100dvh] w-[88vw] max-w-[320px] overflow-y-auto overscroll-contain border-r border-white/10 bg-[#0a0c10] shadow-[0_0_40px_rgba(0,0,0,0.9)] touch-pan-y scrollbar-none animate-in slide-in-from-left duration-250 xl:hidden`}>
+      <aside className={`${cardFont.className} fixed bottom-0 left-0 top-0 z-[65] h-[100dvh] w-[84vw] max-w-[304px] overflow-y-auto overscroll-contain border-r border-white/10 bg-[#0a0c10] shadow-[0_0_40px_rgba(0,0,0,0.9)] touch-pan-y scrollbar-none animate-in slide-in-from-left duration-250 xl:hidden`}>
         {/* Sticky Header */}
         <div className="sticky top-0 z-20 flex items-center gap-1.5 border-b border-white/10 bg-[#0a0c10]/95 px-4 py-3.5 backdrop-blur-xl">
           <button

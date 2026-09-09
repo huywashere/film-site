@@ -102,8 +102,8 @@ test.describe("critical visitor flows", () => {
     });
 
     await page.goto("/login");
-    await page.locator('input[type="email"]').fill(user.email);
-    await page.locator('input[type="password"]').fill("correct-password");
+    await page.getByRole("textbox", { name: "Email hoặc Tên đăng nhập" }).fill(user.email);
+    await page.getByRole("textbox", { name: "Mật khẩu" }).fill("correct-password");
     await page
       .locator("form")
       .getByRole("button", { name: "Đăng nhập", exact: true })
@@ -134,9 +134,13 @@ test.describe("critical visitor flows", () => {
       );
     });
     await page.reload();
-    await expect(page.getByText("Phim khách thử nghiệm")).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Phim khách thử nghiệm", exact: true }),
+    ).toBeVisible();
     await page.reload();
-    await expect(page.getByText("Phim khách thử nghiệm")).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Phim khách thử nghiệm", exact: true }),
+    ).toBeVisible();
   });
 
   test("a guest watch progress is available in history", async ({ page }) => {
@@ -159,8 +163,15 @@ test.describe("critical visitor flows", () => {
       );
     });
     await page.reload();
-    await expect(page.getByText("Tiến độ khách thử nghiệm")).toBeVisible();
-    await expect(page.getByText("20%")).toBeVisible();
+    const historyItem = page.locator('a[href="/watch/demo-film?ep=tap-1"]');
+    await expect(historyItem).toBeVisible();
+    await expect(
+      historyItem.getByRole("heading", {
+        name: "Tiến độ khách thử nghiệm",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(historyItem.getByText("20%", { exact: true })).toBeVisible();
   });
 
   test("an unknown route renders the branded 404 page", async ({ page }) => {

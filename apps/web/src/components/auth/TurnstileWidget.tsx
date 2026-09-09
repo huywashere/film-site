@@ -132,10 +132,11 @@ export function TurnstileWidget({
       }
     };
 
-    const script = getTurnstileScript();
+    let script: HTMLScriptElement | null = null;
     if (window.turnstile) {
       render();
     } else {
+      script = getTurnstileScript();
       script.addEventListener("load", render, { once: true });
       script.addEventListener(
         "error",
@@ -165,7 +166,7 @@ export function TurnstileWidget({
 
     return () => {
       disposed = true;
-      script.removeEventListener("load", render);
+      script?.removeEventListener("load", render);
       window.clearInterval(readinessTimer);
       window.clearTimeout(timeoutTimer);
       if (widgetIdRef.current && window.turnstile) {

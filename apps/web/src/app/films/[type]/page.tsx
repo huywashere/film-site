@@ -206,7 +206,6 @@ function ResilientAnimeHeroBackdrop({
 
   return (
     <div className="w-full h-full relative overflow-hidden">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <picture>
         <source media="(max-width: 767px)" srcSet={mobileSrc} />
         <img
@@ -261,7 +260,7 @@ function ResilientAnimeHeroLogo({
   }
 
   return (
-    <div className="relative w-52 sm:w-72 md:w-80 lg:w-[460px] h-16 sm:h-24 md:h-32 lg:h-36 flex items-center">
+    <div className="relative flex h-14 w-40 items-center sm:h-24 sm:w-72 md:h-32 md:w-80 lg:h-36 lg:w-[460px]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         key={`${item.slug}-logo-${candidateIdx}`}
@@ -355,7 +354,7 @@ function AnimeCuratedHeroBanner({
     <section
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="relative w-full min-h-[580px] sm:min-h-[760px] lg:min-h-[840px] h-[88vh] sm:h-[96vh] lg:h-[100vh] max-h-[1080px] overflow-hidden bg-[#141414] select-none"
+      className="relative h-[68svh] min-h-[500px] max-h-[620px] w-full select-none overflow-hidden bg-[#141414] sm:h-[96vh] sm:min-h-[760px] sm:max-h-[1080px] lg:h-[100vh] lg:min-h-[840px]"
     >
       {/* ── Layer 1: GPU-Accelerated Pre-rendered Backdrop Stack (Responsive Mobile Poster vs Desktop 4K Backdrop) ── */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -406,7 +405,7 @@ function AnimeCuratedHeroBanner({
       />
 
       {/* ── Layer 3: Responsive Content Overlay (Bottom-aligned on mobile, Center-aligned on desktop) ── */}
-      <div className="absolute inset-0 z-20 flex flex-col justify-end sm:justify-center px-4 sm:px-14 md:px-20 lg:px-24 pb-8 sm:pb-20 lg:pb-0">
+      <div className="absolute inset-0 z-20 flex flex-col justify-end px-4 pb-14 sm:justify-center sm:px-14 sm:pb-20 md:px-20 lg:px-24 lg:pb-0">
         <AnimatePresence initial={false}>
           <motion.div
             key={currentItem.slug || currentItem._id || currentIndex}
@@ -764,11 +763,15 @@ export default function FilmsTypePage() {
     type === "song-ngu-ai";
   const label = TYPE_LABELS[type] || "Danh Sách Phim";
   const secondaryReady = useDeferredContent();
-  const apiFn = isAnime
-    ? (p: number) => movieApi.getByCountryFast("nhat-ban", p)
-    : isSongNguAI
-      ? (p: number) => vicdnApi.getLatest(p)
-      : TYPE_APIS[type] || movieApi.getLatest;
+  const apiFn = useMemo(
+    () =>
+      isAnime
+        ? (p: number) => movieApi.getByCountryFast("nhat-ban", p)
+        : isSongNguAI
+          ? (p: number) => vicdnApi.getLatest(p)
+          : TYPE_APIS[type] || movieApi.getLatest,
+    [isAnime, isSongNguAI, type],
+  );
 
   // Main Page Query
   const { data, isLoading } = useQuery({
@@ -828,16 +831,32 @@ export default function FilmsTypePage() {
     placeholderData: (prev) => prev,
   });
 
-  const rawFilms: FilmItem[] = data?.data?.items || data?.items || [];
-  const rawPage2Films: FilmItem[] =
-    japanPage2Data?.data?.items || japanPage2Data?.items || [];
-  const rawGeneralFilms: FilmItem[] =
-    animeGeneralData?.data?.items || animeGeneralData?.items || [];
+  const rawFilms = useMemo<FilmItem[]>(
+    () => data?.data?.items || data?.items || [],
+    [data],
+  );
+  const rawPage2Films = useMemo<FilmItem[]>(
+    () => japanPage2Data?.data?.items || japanPage2Data?.items || [],
+    [japanPage2Data],
+  );
+  const rawGeneralFilms = useMemo<FilmItem[]>(
+    () => animeGeneralData?.data?.items || animeGeneralData?.items || [],
+    [animeGeneralData],
+  );
 
   // ViCDN Song Ngữ AI film lists
-  const rawVicdnPage2Films: FilmItem[] = vicdnPage2Data?.items || [];
-  const rawVicdnActionFilms: FilmItem[] = vicdnActionData?.items || [];
-  const rawVicdnScifiFilms: FilmItem[] = vicdnScifiData?.items || [];
+  const rawVicdnPage2Films = useMemo<FilmItem[]>(
+    () => vicdnPage2Data?.items || [],
+    [vicdnPage2Data],
+  );
+  const rawVicdnActionFilms = useMemo<FilmItem[]>(
+    () => vicdnActionData?.items || [],
+    [vicdnActionData],
+  );
+  const rawVicdnScifiFilms = useMemo<FilmItem[]>(
+    () => vicdnScifiData?.items || [],
+    [vicdnScifiData],
+  );
 
   // Filter 100% pure authentic Anime
   const films = useMemo(
@@ -878,10 +897,15 @@ export default function FilmsTypePage() {
   );
 
   // Song Ngữ AI rows with strict thematic filtering and zero duplication across rows
-  const { vicdnRow1, vicdnRow2, vicdnRow3, vicdnRow4 } = useMemo(() => {
+  const { vicdnRow1, vicdnRow2, vicdnRow3, vicdnRow4, vicdnRow5, vicdnRow6 } = useMemo(() => {
     const used = new Set<string>();
 
-    const filterTheme = (primaryList: FilmItem[], keywords: string[], n = 16): FilmItem[] => {
+    const filterTheme = (
+      primaryList: FilmItem[],
+      keywords: string[],
+      n = 12,
+      fillRemaining = false,
+    ): FilmItem[] => {
       const res: FilmItem[] = [];
 
       const tryAdd = (f: FilmItem) => {
@@ -917,7 +941,7 @@ export default function FilmsTypePage() {
       }
 
       // 3. Fallback from remaining combined pool
-      if (res.length < n) {
+      if (fillRemaining && res.length < n) {
         for (const f of vicdnCombinedPool) {
           tryAdd(f);
           if (res.length >= n) break;
@@ -927,12 +951,21 @@ export default function FilmsTypePage() {
       return res;
     };
 
-    const r1 = filterTheme(rawFilms, [], 16);
-    const r2 = filterTheme(rawVicdnActionFilms, ["hành động", "action", "võ thuật", "chiến đấu", "bắn súng"], 16);
-    const r3 = filterTheme(rawVicdnScifiFilms, ["viễn tưởng", "sci-fi", "vũ trụ", "không gian", "robot", "tương lai", "siêu nhiên"], 16);
-    const r4 = filterTheme(rawVicdnPage2Films, ["tuyển chọn", "bom tấn", "kinh điển"], 16);
+    const r1 = filterTheme(rawFilms, [], 12);
+    const r2 = filterTheme(rawVicdnActionFilms, ["hành động", "action", "võ thuật", "chiến đấu", "bắn súng"], 12);
+    const r3 = filterTheme(rawVicdnScifiFilms, ["viễn tưởng", "sci-fi", "vũ trụ", "không gian", "robot", "tương lai", "siêu nhiên"], 12);
+    const r4 = filterTheme([], ["hình sự", "trinh thám", "tội phạm", "bí ẩn", "thriller", "điều tra"], 12);
+    const r5 = filterTheme([], ["tình cảm", "lãng mạn", "gia đình", "chính kịch", "tâm lý"], 12);
+    const r6 = filterTheme(rawVicdnPage2Films, [], 12, true);
 
-    return { vicdnRow1: r1, vicdnRow2: r2, vicdnRow3: r3, vicdnRow4: r4 };
+    return {
+      vicdnRow1: r1,
+      vicdnRow2: r2,
+      vicdnRow3: r3,
+      vicdnRow4: r4,
+      vicdnRow5: r5,
+      vicdnRow6: r6,
+    };
   }, [rawFilms, rawVicdnActionFilms, rawVicdnScifiFilms, rawVicdnPage2Films, vicdnCombinedPool]);
 
 function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
@@ -1008,11 +1041,27 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
     );
   }, [combinedPool]);
 
+  const comedyAnimeFilms = useMemo(
+    () =>
+      combinedPool.filter((film) =>
+        filmMatchesAnimeKeywords(film, ["hài hước", "gia đình", "đời thường", "comedy", "slice of life"]),
+      ),
+    [combinedPool],
+  );
+
+  const darkAnimeFilms = useMemo(
+    () =>
+      combinedPool.filter((film) =>
+        filmMatchesAnimeKeywords(film, ["kinh dị", "bí ẩn", "trinh thám", "tâm lý", "horror", "mystery"]),
+      ),
+    [combinedPool],
+  );
+
   // Strict Cross-Row Deduplication: ensures ZERO duplicate films across different rows
-  const { row1Films, row2Films, row3Films, row4Films, row5Films } = useMemo(() => {
+  const { row1Films, row2Films, row3Films, row4Films, row5Films, row6Films, row7Films } = useMemo(() => {
     const usedSlugs = new Set<string>();
 
-    const filterUnique = (list: FilmItem[], targetCount = 18): FilmItem[] => {
+    const filterUnique = (list: FilmItem[], targetCount = 12): FilmItem[] => {
       const result: FilmItem[] = [];
       for (const f of list) {
         if (!f || (isAnime && !isPureAnime(f))) continue;
@@ -1029,7 +1078,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
     };
 
     // Row 1: Mới cập nhật & Đang phát sóng
-    const r1 = filterUnique(films, 16);
+    const r1 = filterUnique(films, 12);
 
     // Row 2: Bom tấn Shounen & Hành Động
     const r2Candidates = [
@@ -1048,7 +1097,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
       ),
       ...actionFilms,
     ];
-    const r2 = filterUnique(r2Candidates, 16);
+    const r2 = filterUnique(r2Candidates, 12);
 
     // Row 3: Siêu Nhiên, Phép Thuật & Dị Giới
     const r3Candidates = [
@@ -1060,7 +1109,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
       ),
       ...supernaturalFilms,
     ];
-    const r3 = filterUnique(r3Candidates, 16);
+    const r3 = filterUnique(r3Candidates, 12);
 
     // Row 4: Học Đường, Lãng Mạn & Gia Đình
     const r4Candidates = [
@@ -1073,11 +1122,17 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
       ),
       ...romanceFilms,
     ];
-    const r4 = filterUnique(r4Candidates, 16);
+    const r4 = filterUnique(r4Candidates, 12);
 
-    // Row 5: Tuyển chọn đặc sắc
-    const r5Candidates = [...page2Films, ...generalFilms, ...combinedPool];
-    const r5 = filterUnique(r5Candidates, 16);
+    // Row 5: Hài hước, gia đình & đời thường
+    const r5 = filterUnique(comedyAnimeFilms, 12);
+
+    // Row 6: Bí ẩn, kinh dị & tâm lý
+    const r6 = filterUnique(darkAnimeFilms, 12);
+
+    // Row 7: Tuyển chọn đặc sắc
+    const r7Candidates = [...page2Films, ...generalFilms, ...combinedPool];
+    const r7 = filterUnique(r7Candidates, 12);
 
     return {
       row1Films: r1,
@@ -1085,12 +1140,16 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
       row3Films: r3,
       row4Films: r4,
       row5Films: r5,
+      row6Films: r6,
+      row7Films: r7,
     };
   }, [
     films,
     actionFilms,
     supernaturalFilms,
     romanceFilms,
+    comedyAnimeFilms,
+    darkAnimeFilms,
     page2Films,
     generalFilms,
     combinedPool,
@@ -1173,7 +1232,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
           <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 mt-3 sm:-mt-20 md:-mt-28 lg:-mt-36">
             {/* Row 1: Phim Mới Song Ngữ AI */}
             <AnimeCategoryRow
-              title="🎙️ Phim Song Ngữ AI Mới Cập Nhật"
+              title="Phim Song Ngữ AI Mới Cập Nhật"
               films={vicdnRow1}
               isLoading={isLoading}
               variant="standard"
@@ -1181,7 +1240,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
 
             {/* Row 2: Bom Tấn Hành Động */}
             <AnimeCategoryRow
-              title="💥 Bom Tấn Hành Động Song Ngữ AI"
+              title="Bom Tấn Hành Động Song Ngữ AI"
               films={vicdnRow2}
               isLoading={isLoading || vicdnActionLoading}
               variant="standard"
@@ -1190,18 +1249,36 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
 
             {/* Row 3: Khoa Học Viễn Tưởng */}
             <AnimeCategoryRow
-              title="🚀 Khoa Học Viễn Tưởng Song Ngữ AI"
+              title="Khoa Học Viễn Tưởng Song Ngữ AI"
               films={vicdnRow3}
               isLoading={isLoading || vicdnScifiLoading}
               variant="standard"
               defer
             />
 
-            {/* Row 4: Tuyển Chọn Đặc Sắc */}
+            {/* Row 4: Hình sự & trinh thám */}
             <AnimeCategoryRow
-              title="⭐ Tuyển Chọn Song Ngữ AI Đặc Sắc"
+              title="Hình Sự, Trinh Thám & Bí Ẩn Song Ngữ AI"
               films={vicdnRow4}
-              isLoading={vicdnPage2Loading}
+              isLoading={isLoading && !vicdnRow4.length}
+              variant="standard"
+              defer
+            />
+
+            {/* Row 5: Tình cảm & tâm lý */}
+            <AnimeCategoryRow
+              title="Tình Cảm, Gia Đình & Tâm Lý Song Ngữ AI"
+              films={vicdnRow5}
+              isLoading={isLoading && !vicdnRow5.length}
+              variant="standard"
+              defer
+            />
+
+            {/* Row 6: Tuyển Chọn Đặc Sắc */}
+            <AnimeCategoryRow
+              title="Tuyển Chọn Song Ngữ AI Đặc Sắc"
+              films={vicdnRow6}
+              isLoading={vicdnPage2Loading && !vicdnRow6.length}
               variant="standard"
               defer
             />
@@ -1299,10 +1376,28 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
               defer
             />
 
-            {/* Row 5: Tuyển Chọn Đặc Sắc */}
+            {/* Row 5: Hài hước & gia đình */}
+            <AnimeCategoryRow
+              title="Anime Hài Hước, Gia Đình & Đời Thường"
+              films={row5Films}
+              isLoading={isLoading && !row5Films.length}
+              variant="standard"
+              defer
+            />
+
+            {/* Row 6: Bí ẩn & kinh dị */}
+            <AnimeCategoryRow
+              title="Anime Bí Ẩn, Kinh Dị & Tâm Lý"
+              films={row6Films}
+              isLoading={isLoading && !row6Films.length}
+              variant="standard"
+              defer
+            />
+
+            {/* Row 7: Tuyển Chọn Đặc Sắc */}
             <AnimeCategoryRow
               title="Anime Tuyển Chọn Đặc Sắc"
-              films={row5Films}
+              films={row7Films}
               isLoading={japanPage2Loading || isLoading}
               variant="standard"
               defer

@@ -7,7 +7,7 @@ load_dotenv()
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5432/movie_demo_db",
+    "postgresql://postgres:postgres@localhost:5433/movie_demo_db",
 )
 
 def get_connection():

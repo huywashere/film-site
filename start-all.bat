@@ -7,19 +7,22 @@ echo       NETPHIM - KHOI DONG TOAN BO HE THONG LOCAL
 echo =========================================================
 echo.
 
-rem 1. Docker Redis va Rust Worker
-echo [1/5] Kiem tra Docker Redis va Rust Worker...
+rem 1. Docker infrastructure for local development
+echo [1/5] Kiem tra PostgreSQL, Redis, Meilisearch va RabbitMQ...
 docker info >nul 2>&1
 if not errorlevel 1 (
-    docker ps | findstr "netphim_redis" >nul
-    if not errorlevel 1 (
-        echo [OK] Docker Redis va Rust Worker da dang chay san.
-    ) else (
-        echo [INFO] Khoi dong Docker Redis va Media Worker RS...
-        docker compose -f infra/docker/docker-compose.yml up -d redis media-worker-rs
-    )
+    docker compose -p netphim-dev -f infra/docker/docker-compose.dev.yml up -d --wait postgres
+
+    docker inspect movie_demo_redis_dev >nul 2>&1
+    if errorlevel 1 (docker compose -f infra/docker/docker-compose.dev.yml up -d redis) else (docker start movie_demo_redis_dev >nul 2>&1)
+
+    docker inspect netphim_meilisearch >nul 2>&1
+    if errorlevel 1 (docker compose -f infra/docker/docker-compose.dev.yml up -d meilisearch) else (docker start netphim_meilisearch >nul 2>&1)
+
+    docker inspect netphim_rabbitmq_dev >nul 2>&1
+    if errorlevel 1 (docker compose -f infra/docker/docker-compose.dev.yml up -d rabbitmq) else (docker start netphim_rabbitmq_dev >nul 2>&1)
 ) else (
-    echo [WARN] Docker Desktop chua bat, bo qua Rust Worker.
+    echo [WARN] Docker Desktop chua bat, bo qua cac dich vu Docker.
 )
 echo.
 
@@ -75,6 +78,7 @@ if not errorlevel 1 (
     echo.
 ) else (
     echo [INFO] Dang khoi dong Next.js Web Frontend...
+    set MEDIA_GATEWAY_INTERNAL_URL=http://127.0.0.1:8081
     echo.
     echo =========================================================
     echo   Tat ca cac service da duoc kich hoat!

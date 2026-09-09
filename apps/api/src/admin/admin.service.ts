@@ -1380,7 +1380,7 @@ export class AdminService implements OnModuleInit {
       ).replace(/\/$/, "");
       const pathFor = (source: string, page: number) => {
         const paths: Record<string, string> = {
-          kkphim: `/api/kkphim/danh-sach/phim-moi-cap-nhat?page=${page}`,
+          kkphim: `/api/kkphim/v1/api/danh-sach/phim-moi-cap-nhat?page=${page}&limit=24`,
           ophim: `/api/ophim/danh-sach/phim-moi-cap-nhat?page=${page}`,
           nguonc: `/api/nguonc/films/phim-moi-cap-nhat?page=${page}`,
           vsmov: `/api/vsmov/danh-sach/phim-moi-cap-nhat?page=${page}`,
@@ -1394,6 +1394,13 @@ export class AdminService implements OnModuleInit {
               .filter(Boolean)
               .slice(0, 100)
           : [];
+      const imageUrl = (value: unknown, source: string) => {
+        const url = String(value || "").trim();
+        if (!url) return null;
+        return source === "kkphim" && !/^https?:\/\//i.test(url)
+          ? `https://phimimg.com/${url.replace(/^\/+/, "")}`
+          : url;
+      };
       let processedCount = job.processedCount;
       let createdCount = job.createdCount;
       let updatedCount = job.updatedCount;
@@ -1433,12 +1440,23 @@ export class AdminService implements OnModuleInit {
           try {
             const exists = await this.prisma.movie.findUnique({
               where: { id },
-              select: { id: true, sources: true },
+              select: {
+                id: true,
+                sources: true,
+                genres: true,
+                countries: true,
+                actors: true,
+                directors: true,
+              },
             });
             const title = String(
               item.name || item.title || item.original_name || id,
             ).slice(0, 300);
             const type = String(item.type || "unknown").slice(0, 40);
+            const genres = names(item.category || item.categories);
+            const countries = names(item.country || item.countries);
+            const actors = names(item.actor || item.actors);
+            const directors = names(item.director || item.directors);
             await this.prisma.movie.upsert({
               where: { id },
               create: {
@@ -1449,14 +1467,14 @@ export class AdminService implements OnModuleInit {
                     0,
                     300,
                   ) || null,
-                posterUrl: String(item.poster_url || "").slice(0, 2048) || null,
-                thumbUrl: String(item.thumb_url || "").slice(0, 2048) || null,
+                posterUrl: imageUrl(item.poster_url, job.source)?.slice(0, 2048),
+                thumbUrl: imageUrl(item.thumb_url, job.source)?.slice(0, 2048),
                 year: Number(item.year) || null,
                 type,
-                genres: names(item.category || item.categories),
-                countries: names(item.country || item.countries),
-                actors: names(item.actor || item.actors),
-                directors: names(item.director || item.directors),
+                genres,
+                countries,
+                actors,
+                directors,
                 trailerUrl:
                   String(item.trailer_url || item.trailer || "").slice(
                     0,
@@ -1472,13 +1490,15 @@ export class AdminService implements OnModuleInit {
                     300,
                   ) || undefined,
                 posterUrl:
-                  String(item.poster_url || "").slice(0, 2048) || undefined,
+                  imageUrl(item.poster_url, job.source)?.slice(0, 2048),
                 thumbUrl:
-                  String(item.thumb_url || "").slice(0, 2048) || undefined,
+                  imageUrl(item.thumb_url, job.source)?.slice(0, 2048),
                 year: Number(item.year) || undefined,
                 type,
-                genres: names(item.category || item.categories),
-                countries: names(item.country || item.countries),
+                ...(genres.length ? { genres } : {}),
+                ...(countries.length ? { countries } : {}),
+                ...(actors.length ? { actors } : {}),
+                ...(directors.length ? { directors } : {}),
                 sources: Array.from(
                   new Set([...(exists?.sources || []), job.source]),
                 ),

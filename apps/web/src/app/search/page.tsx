@@ -36,7 +36,7 @@ import { FilmNotFound } from "@/components/film/FilmNotFound";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/store/langStore";
 import { recordTelemetry } from "@/lib/telemetry";
-import { dedupeFilmItems } from "@/lib/movie-normalizer";
+import type { NormalizedFilmItem } from "@/lib/movie-normalizer";
 import { filterSearchResults } from "@/lib/search-filters";
 
 // ── Shared Lists ──────────────────────────────────────────────────
@@ -286,7 +286,7 @@ function SearchContent() {
     placeholderData: (previousData) => previousData,
   });
 
-  const rawFilms: FilmItem[] = useMemo(() => {
+  const rawFilms: NormalizedFilmItem[] = useMemo(() => {
     if (!data) return [];
     if (Array.isArray(data)) return data;
     if (data.items && Array.isArray(data.items)) return data.items;
@@ -304,10 +304,11 @@ function SearchContent() {
     ) ||
     1;
 
-  // Filter client-side if additional fields were not handled by backend
+  // movieApi.search already returns a deduplicated, relevance-ranked list
+  // from Go (or its provider fallback). Re-running dedupeFilmItems here used
+  // to group by provider and destroy the exact-match ordering from the engine.
   const films = useMemo(() => {
-    const unique = dedupeFilmItems(rawFilms);
-    return filterSearchResults(unique, activeFilters) as FilmItem[];
+    return filterSearchResults(rawFilms, activeFilters) as FilmItem[];
   }, [activeFilters, rawFilms]);
 
   useEffect(() => {

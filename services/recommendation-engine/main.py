@@ -1,8 +1,9 @@
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Query
-from fastapi.middleware.cors import CORSMiddleware
+from typing import Annotated
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
 from recommender import engine
+from security import admin_token_is_configured, admin_token_matches
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,13 +22,23 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+def require_admin_token(
+    token: Annotated[
+        str | None,
+        Header(alias="X-Recommendation-Admin-Token"),
+    ] = None,
+):
+    expected = os.getenv("RECOMMENDATION_ADMIN_TOKEN", "").strip()
+    if not admin_token_is_configured(expected):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Recommendation administration is not configured",
+        )
+    if not admin_token_matches(token, expected):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid recommendation administration token",
+        )
 
 @app.get("/health")
 def health_check():
@@ -73,7 +84,10 @@ def get_similar(
         "items": items,
     }
 
-@app.post("/recommendations/retrain")
+@app.post(
+    "/recommendations/retrain",
+    dependencies=[Depends(require_admin_token)],
+)
 def retrain():
     """Manual trigger to refresh movie feature matrix from DB."""
     engine.train()

@@ -191,6 +191,7 @@ func (s *Service) catalogHandler(c *gin.Context) {
 }
 
 func (s *Service) searchHandler(c *gin.Context) {
+	startedAt := time.Now()
 	query := cleanValue(c.Query("q"), 120)
 	page := boundedQueryInt(c, "page", 1, 1, 1000)
 	limit := boundedQueryInt(c, "limit", 24, 1, 64)
@@ -210,6 +211,7 @@ func (s *Service) searchHandler(c *gin.Context) {
 		c.JSON(http.StatusBadGateway, gin.H{"error": "search providers unavailable"})
 		return
 	}
+	c.Header("Server-Timing", fmt.Sprintf("search;dur=%.1f;desc=\"%s\"", float64(time.Since(startedAt).Microseconds())/1000, cacheStatus))
 	writeJSON(c, payload, cacheStatus, int(s.cfg.CatalogSearchTTL.Seconds()))
 }
 
@@ -557,6 +559,7 @@ func (s *Service) SearchFiltered(ctx context.Context, query string, page, limit 
 		result := map[string]any{
 			"status": "success", "data": map[string]any{"items": mapsToAny(items), "params": map[string]any{"pagination": pagination}},
 			"_sources": counts, "_totalMerged": mergedTotal, "_query": map[string]any{"original": query, "filters": filters},
+			"_engine": "go-providers",
 		}
 		ttl := s.cfg.CatalogSearchTTL
 		if len(items) == 0 && ttl > 30*time.Second {

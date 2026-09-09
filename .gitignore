@@ -2,6 +2,7 @@ node_modules
 services/media-worker-rs/target/
 .next
 .next-dev
+**/.next-dev.stale-*/
 dist
 .env
 .env.local
@@ -23,6 +24,8 @@ infra/terraform/.terraform.tfstate.lock.info
 .DS_Store
 prisma/migrations/dev.db
 *.tsbuildinfo
+.codex-artifacts/
+backups/
 
 # VPS Deploy (KHÔNG commit các file này)
 ssl/

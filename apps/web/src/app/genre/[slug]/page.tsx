@@ -306,7 +306,7 @@ function ResilientGenreHeroLogo({
   }
 
   return (
-    <div className="relative w-56 sm:w-80 md:w-[460px] lg:w-[540px] h-16 sm:h-28 md:h-40 lg:h-48 flex items-center">
+    <div className="relative flex h-14 w-44 items-center sm:h-28 sm:w-80 md:h-40 md:w-[460px] lg:h-48 lg:w-[540px]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         key={`${item.slug}-logo-${candidateIdx}`}
@@ -405,7 +405,7 @@ function GenreCuratedHeroBanner({
     <section
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="relative w-full min-h-[600px] sm:min-h-[740px] lg:min-h-[860px] h-[86vh] sm:h-[95vh] lg:h-[100vh] max-h-[1080px] overflow-hidden bg-[#0a0b10] select-none"
+      className="relative h-[68svh] min-h-[500px] max-h-[620px] w-full select-none overflow-hidden bg-[#0a0b10] sm:h-[95vh] sm:min-h-[740px] sm:max-h-[1080px] lg:h-[100vh] lg:min-h-[860px]"
     >
       {/* ── Background Media: Live Video Trailer or Dynamic Backdrop ── */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -455,7 +455,7 @@ function GenreCuratedHeroBanner({
       />
 
       {/* ── Left Content Overlay (Netflix Layout) ── */}
-      <div className="absolute inset-0 z-20 pointer-events-none flex flex-col justify-end sm:justify-center px-4 sm:px-14 md:px-20 lg:px-24 pb-14 sm:pb-32 lg:pb-12">
+      <div className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-end px-4 pb-12 sm:justify-center sm:px-14 sm:pb-32 md:px-20 lg:px-24 lg:pb-12">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentItem.slug || currentIndex}
@@ -477,7 +477,7 @@ function GenreCuratedHeroBanner({
             {/* Enhanced Metadata Row: IMDb | TMDB | Year | Movie Genres | Audio */}
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-3 text-[11px] sm:text-sm md:text-base font-semibold text-neutral-200">
               {/* IMDb Rating Chip */}
-              <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg bg-neutral-900/80 border border-white/15 backdrop-blur-md shadow-sm">
+              <div className="hidden items-center gap-1 rounded-md border border-white/15 bg-neutral-900/80 px-2 py-0.5 shadow-sm backdrop-blur-md sm:inline-flex sm:gap-1.5 sm:rounded-lg sm:px-2.5 sm:py-1">
                 <Star size={12} className="sm:w-3.5 sm:h-3.5 fill-[#f5c518] text-[#f5c518] shrink-0" />
                 <span className="text-white font-extrabold text-[11px] sm:text-sm tracking-tight">
                   {(currentItem.imdb_rating || currentItem.vote_average || 8.5).toFixed(1)}
@@ -523,7 +523,7 @@ function GenreCuratedHeroBanner({
             </div>
 
             {/* Large Prominent Synopsis Description */}
-            <p className="line-clamp-2 sm:line-clamp-3 text-xs sm:text-sm md:text-base leading-relaxed text-neutral-200/90 font-medium drop-shadow-sm max-w-2xl">
+            <p className="hidden max-w-2xl text-xs font-medium leading-relaxed text-neutral-200/90 drop-shadow-sm sm:line-clamp-3 sm:text-sm md:text-base">
               {currentItem.content || "Khám phá siêu phẩm điện ảnh đỉnh cao với chất lượng hình ảnh sắc nét và âm thanh sống động."}
             </p>
 
@@ -532,7 +532,7 @@ function GenreCuratedHeroBanner({
               {/* Button 1: Xem Ngay (Primary White Pill) */}
               <Link
                 href={`/film/${currentItem.slug}`}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 sm:px-7 sm:py-3 rounded-md bg-white hover:bg-white/90 text-black font-extrabold text-sm sm:text-base transition-all shadow-[0_4px_20px_rgba(255,255,255,0.25)] hover:scale-105 active:scale-95"
+                className="inline-flex items-center justify-center gap-1.5 rounded-md bg-white px-4 py-2 text-xs font-extrabold text-black shadow-[0_4px_20px_rgba(255,255,255,0.2)] transition-all hover:scale-105 hover:bg-white/90 active:scale-95 sm:gap-2 sm:px-7 sm:py-3 sm:text-base"
               >
                 <Play size={20} fill="currentColor" />
                 <span>Xem Ngay</span>
@@ -543,7 +543,7 @@ function GenreCuratedHeroBanner({
                 <button
                   type="button"
                   onClick={() => onOpenTrailer(currentItem.name, currentItem.trailer_url)}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3 rounded-md bg-white/20 hover:bg-white/30 text-white font-bold text-sm sm:text-base backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer border border-white/20"
+                  className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-md border border-white/20 bg-white/20 px-4 py-2 text-xs font-bold text-white backdrop-blur-md transition-all hover:scale-105 hover:bg-white/30 active:scale-95 sm:gap-2 sm:px-6 sm:py-3 sm:text-base"
                 >
                   <Clapperboard size={19} />
                   <span>Trailer</span>
@@ -553,7 +553,7 @@ function GenreCuratedHeroBanner({
               {/* Button 3: Chi Tiết Phim */}
               <Link
                 href={`/film/${currentItem.slug}`}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-5 sm:py-3 rounded-md bg-white/10 hover:bg-white/20 text-white font-medium text-sm sm:text-base backdrop-blur-md transition-all hover:scale-105 active:scale-95 border border-white/10"
+                className="hidden items-center justify-center gap-2 rounded-md border border-white/10 bg-white/10 px-4 py-2.5 text-sm font-medium text-white backdrop-blur-md transition-all hover:scale-105 hover:bg-white/20 active:scale-95 sm:inline-flex sm:px-5 sm:py-3 sm:text-base"
               >
                 <Info size={19} />
                 <span>Chi Tiết</span>
@@ -564,7 +564,7 @@ function GenreCuratedHeroBanner({
       </div>
 
       {/* ── Mobile Side Navigation Chevrons (2 bên: Trái & Phải) ── */}
-      <div className="sm:hidden pointer-events-none">
+      <div className="hidden pointer-events-none">
         {/* Nút chuyển đổi bên Trái */}
         <button
           type="button"
@@ -591,6 +591,26 @@ function GenreCuratedHeroBanner({
           <ChevronRight size={22} strokeWidth={2.5} />
         </button>
       </div>
+
+      {pool.length > 1 && (
+        <div className="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 sm:hidden">
+          {pool.map((item, index) => (
+            <button
+              key={item.slug || index}
+              type="button"
+              onClick={() => {
+                setDirection(index >= currentIndex ? 1 : -1);
+                setCurrentIndex(index);
+              }}
+              aria-label={`Chuyển đến phim ${item.name}`}
+              className={cn(
+                "h-1.5 rounded-full transition-[width,background-color] duration-300",
+                index === currentIndex ? "w-5 bg-white" : "w-1.5 bg-white/35",
+              )}
+            />
+          ))}
+        </div>
+      )}
 
       {/* ── Desktop Controls: Sound Toggle, Maturity Rating & Slide Chevrons ── */}
       <div className="hidden sm:flex absolute right-6 sm:right-12 bottom-28 md:bottom-36 lg:bottom-44 z-30 pointer-events-auto items-center gap-2 sm:gap-3 select-none">
@@ -717,18 +737,37 @@ export default function GenrePage() {
     placeholderData: (prev) => prev,
   });
 
-  const rawFilms: FilmItem[] = data?.data?.items || data?.items || [];
-  const rawPage2: FilmItem[] = page2Data?.data?.items || page2Data?.items || [];
-  const rawAux1: FilmItem[] = auxData1?.data?.items || auxData1?.items || [];
-  const rawAux2: FilmItem[] = auxData2?.data?.items || auxData2?.items || [];
+  const rawFilms = useMemo<FilmItem[]>(
+    () => data?.data?.items || data?.items || [],
+    [data],
+  );
+  const rawPage2 = useMemo<FilmItem[]>(
+    () => page2Data?.data?.items || page2Data?.items || [],
+    [page2Data],
+  );
+  const rawAux1 = useMemo<FilmItem[]>(
+    () => auxData1?.data?.items || auxData1?.items || [],
+    [auxData1],
+  );
+  const rawAux2 = useMemo<FilmItem[]>(
+    () => auxData2?.data?.items || auxData2?.items || [],
+    [auxData2],
+  );
 
-  const heroPool = isSciFiPage
-    ? CURATED_SCIFI_HERO_POOL
-    : isWarPage
-      ? CURATED_WAR_HERO_POOL
-      : [];
+  const heroPool = useMemo(
+    () =>
+      isSciFiPage
+        ? CURATED_SCIFI_HERO_POOL
+        : isWarPage
+          ? CURATED_WAR_HERO_POOL
+          : [],
+    [isSciFiPage, isWarPage],
+  );
 
-  const tabs = isSciFiPage ? SCIFI_TABS : isWarPage ? WAR_TABS : [];
+  const tabs = useMemo(
+    () => (isSciFiPage ? SCIFI_TABS : isWarPage ? WAR_TABS : []),
+    [isSciFiPage, isWarPage],
+  );
 
   // Filtered films for the full catalog grid based on active tab
   const filteredCatalogFilms = useMemo(() => {
@@ -765,7 +804,7 @@ export default function GenrePage() {
   }, [rawFilms, activeTab, tabs]);
 
   // Curated Multi-Category Swiper Rows with Strict Thematic Matching & 100% Zero-Overlap Deduplication
-  const { row1Films, row2Films, row3Films, row4Films, row5Films, row6Films } =
+  const { row1Films, row2Films, row3Films, row4Films, row5Films, row6Films, row7Films, row8Films } =
     useMemo(() => {
       if (!isShowcasePage) {
         return {
@@ -775,6 +814,8 @@ export default function GenrePage() {
           row4Films: [],
           row5Films: [],
           row6Films: [],
+          row7Films: [],
+          row8Films: [],
         };
       }
 
@@ -790,7 +831,7 @@ export default function GenrePage() {
       const takeUnique = (
         primary: FilmItem[],
         fallback: FilmItem[],
-        targetCount = 16,
+        targetCount = 12,
       ): FilmItem[] => {
         const list: FilmItem[] = [];
 
@@ -856,7 +897,7 @@ export default function GenrePage() {
 
       // ── ROW 1: MỚI CẬP NHẬT & ĐANG THỊNH HÀNH ──
       const r1Candidates = [...rawFilms];
-      const r1 = takeUnique(r1Candidates, rawPage2, 16);
+      const r1 = takeUnique(r1Candidates, rawPage2, 12);
 
       // ── ROW 2: THEME 1 (KHÁM PHÁ VŨ TRỤ / THẾ CHIẾN II) ──
       const theme1Keywords = isSciFiPage
@@ -895,7 +936,7 @@ export default function GenrePage() {
             "midway",
           ];
       const r2ThemeMatches = matchTheme(theme1Keywords);
-      const r2 = takeUnique(r2ThemeMatches, rawAux1, 16);
+      const r2 = takeUnique(r2ThemeMatches, rawAux1, 12);
 
       // ── ROW 3: THEME 2 (AI & CYBERPUNK / ĐẠI KỶ NGUYÊN & LỊCH SỬ) ──
       const theme2Keywords = isSciFiPage
@@ -929,7 +970,7 @@ export default function GenrePage() {
             "schindler",
           ];
       const r3ThemeMatches = matchTheme(theme2Keywords);
-      const r3 = takeUnique(r3ThemeMatches, rawAux2, 16);
+      const r3 = takeUnique(r3ThemeMatches, rawAux2, 12);
 
       // ── ROW 4: THEME 3 (NGHỊCH LÝ THỜI GIAN / CHIẾN TRANH CỔ ĐẠI) ──
       const theme3Keywords = isSciFiPage
@@ -964,7 +1005,7 @@ export default function GenrePage() {
             "alexander",
           ];
       const r4ThemeMatches = matchTheme(theme3Keywords);
-      const r4 = takeUnique(r4ThemeMatches, rawPage2, 16);
+      const r4 = takeUnique(r4ThemeMatches, rawPage2, 12);
 
       // ── ROW 5: THEME 4 (SIÊU ANH HÙNG / BẮN TỈA & ĐẶC NHIỆM) ──
       const theme4Keywords = isSciFiPage
@@ -997,11 +1038,23 @@ export default function GenrePage() {
             "lone survivor",
           ];
       const r5ThemeMatches = matchTheme(theme4Keywords);
-      const r5 = takeUnique(r5ThemeMatches, fullCatalogPool, 16);
+      const r5 = takeUnique(r5ThemeMatches, fullCatalogPool, 12);
 
-      // ── ROW 6: KIỆT TÁC TUYỂN CHỌN (TOP RATED) ──
-      const r6Candidates = [...heroPool, ...fullCatalogPool];
-      const r6 = takeUnique(r6Candidates, fullCatalogPool, 16);
+      // ── ROW 6: SINH TỒN / TÌNH BÁO & CHÍNH TRỊ ──
+      const theme5Keywords = isSciFiPage
+        ? ["sinh tồn", "thảm họa", "tận thế", "dịch bệnh", "quái vật", "survival", "apocalypse"]
+        : ["tình báo", "gián điệp", "chính trị", "mật vụ", "chiến lược", "intelligence", "spy"];
+      const r6 = takeUnique(matchTheme(theme5Keywords), fullCatalogPool, 12);
+
+      // ── ROW 7: BÍ ẨN / HẬU CHIẾN ──
+      const theme6Keywords = isSciFiPage
+        ? ["bí ẩn", "kinh dị", "ngoài hành tinh", "sinh vật", "mất tích", "horror", "mystery"]
+        : ["hậu chiến", "hòa bình", "chấn thương", "gia đình", "chính kịch", "drama", "peace"];
+      const r7 = takeUnique(matchTheme(theme6Keywords), fullCatalogPool, 12);
+
+      // ── ROW 8: KIỆT TÁC TUYỂN CHỌN ──
+      const r8Candidates = [...heroPool, ...fullCatalogPool];
+      const r8 = takeUnique(r8Candidates, fullCatalogPool, 12);
 
       return {
         row1Films: r1,
@@ -1010,6 +1063,8 @@ export default function GenrePage() {
         row4Films: r4,
         row5Films: r5,
         row6Films: r6,
+        row7Films: r7,
+        row8Films: r8,
       };
     }, [
       isShowcasePage,
@@ -1151,11 +1206,35 @@ export default function GenrePage() {
             <GenreCategoryRow
               title={
                 isSciFiPage
-                  ? "Kiệt Tác Tuyển Chọn"
-                  : "Kiệt Tác Điện Ảnh Tuyển Chọn"
+                  ? "Sinh Tồn, Thảm Họa & Tận Thế"
+                  : "Tình Báo, Gián Điệp & Chính Trị"
               }
               films={row6Films}
               isLoading={isLoading && !row6Films.length}
+              defer
+            />
+
+            {/* Row 7 */}
+            <GenreCategoryRow
+              title={
+                isSciFiPage
+                  ? "Bí Ẩn, Kinh Dị & Sinh Vật Ngoài Hành Tinh"
+                  : "Hậu Chiến, Hòa Bình & Số Phận Con Người"
+              }
+              films={row7Films}
+              isLoading={isLoading && !row7Films.length}
+              defer
+            />
+
+            {/* Row 8 */}
+            <GenreCategoryRow
+              title={
+                isSciFiPage
+                  ? "Kiệt Tác Khoa Học Viễn Tưởng Tuyển Chọn"
+                  : "Kiệt Tác Điện Ảnh Chiến Tranh Tuyển Chọn"
+              }
+              films={row8Films}
+              isLoading={isLoading && !row8Films.length}
               defer
             />
 

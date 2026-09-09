@@ -30,6 +30,8 @@ export interface UnifiedMovie {
   origin_name?: string;
   poster_url?: string;
   thumb_url?: string;
+  _posterCandidates?: string[];
+  _thumbCandidates?: string[];
   year?: number;
   type?: string;
   episode_current?: string;

@@ -21,6 +21,7 @@ const KNOWN_PLACEHOLDER_SECRETS = new Set([
   "replace-with-another-random-secret",
   "replace-with-a-dedicated-random-secret",
   "replace-with-a-dedicated-random-token",
+  "replace-with-a-dedicated-random-token-at-least-32-characters",
   "secret",
   "changeme",
 ]);
@@ -31,6 +32,8 @@ const REQUIRED_SECRETS = [
   "TOTP_ENCRYPTION_KEY",
   "ADMIN_METRICS_TOKEN",
   "REVALIDATE_SECRET",
+  "HLS_PROXY_SECRET",
+  "RECOMMENDATION_ADMIN_TOKEN",
 ] as const;
 
 /**

@@ -1,6 +1,7 @@
 @echo off
+cd /d "%~dp0.."
 echo ========================================
-echo   Starting PostgreSQL + Redis (Docker)
+echo   Starting NetPhim PostgreSQL 17.11
 echo ========================================
 echo.
 
@@ -15,8 +16,8 @@ if %errorlevel% neq 0 (
 echo Docker OK
 echo.
 
-echo Starting PostgreSQL and Redis...
-docker compose --project-directory . -f infra/docker/docker-compose.dev.yml up -d
+echo Starting the repository-owned PostgreSQL...
+docker compose -p netphim-dev -f infra/docker/docker-compose.dev.yml up -d --wait postgres
 
 if %errorlevel% neq 0 (
     echo ERROR: Failed to start services!
@@ -25,25 +26,19 @@ if %errorlevel% neq 0 (
 )
 echo.
 
-echo Waiting for PostgreSQL to be ready...
-timeout /t 5 /nobreak >nul
-echo.
-
 echo ========================================
-echo   Services are running!
+echo   PostgreSQL is ready!
 echo ========================================
-echo PostgreSQL: localhost:5432
-echo   Database: netphim_db
-echo   User: netphim
-echo   Password: netphim123
-echo.
-echo Redis: localhost:6379
+echo PostgreSQL: localhost:5433
+echo   Database: movie_demo_db
+echo   User: postgres
+echo   Password: postgres
 echo ========================================
 echo.
 echo Next steps:
-echo 1. Run migrations: npm run db:migrate
-echo 2. Start dev servers: npm run dev
+echo 1. Run migrations: pnpm db:migrate
+echo 2. Start dev servers: pnpm dev
 echo.
-echo To stop: docker compose --project-directory . -f infra/docker/docker-compose.dev.yml down
+echo To stop: docker compose -p netphim-dev -f infra/docker/docker-compose.dev.yml stop postgres
 echo ========================================
 pause

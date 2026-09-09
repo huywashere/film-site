@@ -8,6 +8,8 @@ function secureProductionEnv() {
     TOTP_ENCRYPTION_KEY: "c".repeat(48),
     ADMIN_METRICS_TOKEN: "d".repeat(48),
     REVALIDATE_SECRET: "e".repeat(48),
+    HLS_PROXY_SECRET: "f".repeat(48),
+    RECOMMENDATION_ADMIN_TOKEN: "g".repeat(48),
     FRONTEND_URL: "https://netphim.example",
     TURNSTILE_SECRET_KEY: "turnstile-secret",
     GITHUB_ADMIN_CLIENT_ID: "client-id",

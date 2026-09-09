@@ -5,6 +5,7 @@ import helmet from "helmet";
 import * as cookieParser from "cookie-parser";
 import * as Sentry from "@sentry/node";
 import { AppModule } from "./app.module";
+import { AdminOperationsService } from "./admin/admin-operations.service";
 
 // ── Clean & Pretty Console Logger (Suppresses RouterExplorer route mapping spam) ──
 class CleanLogger extends ConsoleLogger {
@@ -30,6 +31,9 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: new CleanLogger("NetPhim"),
   });
+  // Explicit startup keeps maintenance tasks active even when Nest lazily
+  // resolves the admin controller graph. The service guards against duplicates.
+  app.get(AdminOperationsService).startBackgroundTasks();
 
   // ── Proxy trust ───────────────────────────────────────────────
   const trustedProxyHops = Number(process.env.TRUSTED_PROXY_HOPS ?? 1);

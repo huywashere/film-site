@@ -28,13 +28,13 @@ services:
     # Redis Stack không dùng --maxmemory-policy allkeys-lru với RediSearch
     # Cấu hình qua environment variables thay vì command args
     environment:
-      REDIS_ARGS: '--requirepass ${REDIS_PASSWORD:-netphim_redis_secret} --maxmemory 512mb'
+      REDIS_ARGS: '--requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required} --maxmemory 512mb'
     volumes:
       - redis_data:/data
     networks:
       - netphim_net
     healthcheck:
-      test: ['CMD', 'redis-cli', '--no-auth-warning', '-a', '${REDIS_PASSWORD:-netphim_redis_secret}', 'ping']
+      test: ['CMD', 'redis-cli', '--no-auth-warning', '-a', '${REDIS_PASSWORD:?REDIS_PASSWORD is required}', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -46,7 +46,7 @@ services:
     restart: unless-stopped
     environment:
       MEILI_ENV: production
-      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-masterKeyLocalDev32CharactersMin}
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?MEILI_MASTER_KEY is required}
       MEILI_NO_ANALYTICS: 'true'
     volumes:
       - meilisearch_data:/meili_data
@@ -54,6 +54,31 @@ services:
       - '7700'
     networks:
       - netphim_net
+
+  # ── Internal Python recommendation engine ───────────────────
+  recommendation-engine:
+    build:
+      context: ./services/recommendation-engine
+      dockerfile: Dockerfile
+    container_name: netphim_recommendation_engine
+    restart: unless-stopped
+    environment:
+      PORT: 8000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-netphim}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-netphim_db}
+      RECOMMENDATION_ADMIN_TOKEN: ${RECOMMENDATION_ADMIN_TOKEN:?RECOMMENDATION_ADMIN_TOKEN is required}
+    expose:
+      - '8000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - netphim_net
+    healthcheck:
+      test: ['CMD', 'python', '-c', "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
 
   # ── NestJS API ──────────────────────────────────────────────
   api:
@@ -70,16 +95,19 @@ services:
       NODE_ENV: production
       PORT: 4000
       # Database
-      DATABASE_URL: postgresql://${POSTGRES_USER:-netphim}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-netphim_db}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-netphim}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-netphim_db}
       # Redis
-      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       # JWT
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      TOTP_ENCRYPTION_KEY: ${TOTP_ENCRYPTION_KEY}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required}
+      TOTP_ENCRYPTION_KEY: ${TOTP_ENCRYPTION_KEY:?TOTP_ENCRYPTION_KEY is required}
+      HLS_PROXY_SECRET: ${HLS_PROXY_SECRET:?HLS_PROXY_SECRET is required}
+      RECOMMENDATION_ADMIN_TOKEN: ${RECOMMENDATION_ADMIN_TOKEN:?RECOMMENDATION_ADMIN_TOKEN is required}
+      RECOMMENDATION_ENGINE_URL: http://recommendation-engine:8000
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
       # KKPhim API
@@ -90,13 +118,14 @@ services:
       # Cloudflare Turnstile
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
       # Internal admin performance metrics
-      ADMIN_METRICS_TOKEN: ${ADMIN_METRICS_TOKEN}
+      ADMIN_METRICS_TOKEN: ${ADMIN_METRICS_TOKEN:?ADMIN_METRICS_TOKEN is required}
       ADMIN_REQUIRE_2FA: ${ADMIN_REQUIRE_2FA:-true}
       GITHUB_ADMIN_CLIENT_ID: ${GITHUB_ADMIN_CLIENT_ID}
       GITHUB_ADMIN_CLIENT_SECRET: ${GITHUB_ADMIN_CLIENT_SECRET}
       ADMIN_GITHUB_CALLBACK_URL: ${ADMIN_GITHUB_CALLBACK_URL}
       ADMIN_GITHUB_ALLOWED_LOGINS: ${ADMIN_GITHUB_ALLOWED_LOGINS}
-      REVALIDATE_SECRET: ${REVALIDATE_SECRET}
+      ADMIN_GITHUB_ALLOWED_IDS: ${ADMIN_GITHUB_ALLOWED_IDS}
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:?REVALIDATE_SECRET is required}
       NETPHIM_WEB_URL: http://web:3000
       BACKUP_DIR: /app/backups
       ADMIN_ALERT_WEBHOOK_URL: ${ADMIN_ALERT_WEBHOOK_URL}
@@ -108,6 +137,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      recommendation-engine:
         condition: service_healthy
     networks:
       - netphim_net
@@ -166,8 +197,8 @@ services:
       NGUONC_API_ORIGINS: ${NGUONC_API_ORIGINS:-https://phim.nguonc.com/api}
       VSMOV_API_ORIGINS: ${VSMOV_API_ORIGINS:-https://vsmov.com/api}
       VICDN_API_ORIGINS: ${VICDN_API_ORIGINS:-https://vicdn.cc/api,https://api.vicdn.cc/api}
-      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
-      HLS_PROXY_SECRET: ${HLS_PROXY_SECRET}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
+      HLS_PROXY_SECRET: ${HLS_PROXY_SECRET:?HLS_PROXY_SECRET is required}
       HLS_PROXY_ALLOWED_HOSTS: ${HLS_PROXY_ALLOWED_HOSTS}
       TMDB_API_KEY: ${TMDB_API_KEY}
       TMDB_ACCESS_TOKEN: ${TMDB_ACCESS_TOKEN}
@@ -199,14 +230,14 @@ services:
     environment:
       GIN_MODE: release
       PORT: 8081
-      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
-      HLS_PROXY_SECRET: ${HLS_PROXY_SECRET}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
+      HLS_PROXY_SECRET: ${HLS_PROXY_SECRET:?HLS_PROXY_SECRET is required}
       HLS_PROXY_ALLOWED_HOSTS: ${HLS_PROXY_ALLOWED_HOSTS}
       HLS_ANALYZER_ENABLED: ${HLS_ANALYZER_ENABLED:-true}
       HLS_ANALYZER_JOB_STREAM: ${HLS_ANALYZER_JOB_STREAM:-netphim:hls:analysis:jobs}
       HLS_ANALYZER_DEDUP_TTL: ${HLS_ANALYZER_DEDUP_TTL:-30m}
       HLS_ANALYZER_ENQUEUE_TIMEOUT: ${HLS_ANALYZER_ENQUEUE_TIMEOUT:-500ms}
-      MEDIA_INTERNAL_TOKEN: ${MEDIA_INTERNAL_TOKEN}
+      MEDIA_INTERNAL_TOKEN: ${MEDIA_INTERNAL_TOKEN:?MEDIA_INTERNAL_TOKEN is required}
       MEDIA_UPSTREAM_TIMEOUT: ${MEDIA_UPSTREAM_TIMEOUT:-15s}
       MEDIA_MANIFEST_CACHE_TTL: ${MEDIA_MANIFEST_CACHE_TTL:-20s}
       MEDIA_RATE_PER_SECOND: ${MEDIA_RATE_PER_SECOND:-40}
@@ -231,7 +262,7 @@ services:
       MEDIA_CATALOG_HOME_STALE_TTL: ${MEDIA_CATALOG_HOME_STALE_TTL:-30m}
       MEDIA_CATALOG_MAX_BYTES: ${MEDIA_CATALOG_MAX_BYTES:-8388608}
       MEILI_URL: http://meilisearch:7700
-      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?MEILI_MASTER_KEY is required}
       MEILI_MOVIES_INDEX: ${MEILI_MOVIES_INDEX:-movies}
       MEILI_TIMEOUT: ${MEILI_TIMEOUT:-1200ms}
       MEILI_SYNC_INTERVAL: ${MEILI_SYNC_INTERVAL:-6h}
@@ -269,7 +300,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 15s
     environment:
-      REDIS_URL: redis://:${REDIS_PASSWORD:-netphim_redis_secret}@redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
       HLS_ANALYZER_ALLOWED_HOSTS: ${HLS_PROXY_ALLOWED_HOSTS:-*.phimapi.com,*.phim1280.tv,*.kkphimplayer*.com,*.ophim.live,*.ophim1.com,*.opstream*.com,*.nguonc.com,*.streamc.xyz,*.hihihoho*.top,*.vsmov.com,*.streamvsmov.com,vicdn.cc,*.vicdn.cc}
       HLS_ANALYZER_REQUIRE_HTTPS: ${HLS_ANALYZER_REQUIRE_HTTPS:-true}
       HLS_ANALYZER_JOB_STREAM: ${HLS_ANALYZER_JOB_STREAM:-netphim:hls:analysis:jobs}
@@ -309,9 +340,8 @@ services:
       dockerfile: infra/openresty/Dockerfile
     container_name: netphim_openresty
     restart: unless-stopped
-    ports:
-      - '80:80'
-      - '443:443'
+    expose:
+      - '80'
     volumes:
       - ./ssl:/etc/openresty/ssl
       - nginx_cache:/var/cache/nginx
@@ -330,6 +360,19 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  # Only Cloudflare Tunnel reaches OpenResty in production. No web port is
+  # published on the VPS, preventing direct-origin bypass of Cloudflare/WAF.
+  cloudflared:
+    image: cloudflare/cloudflared:2026.8.3
+    container_name: netphim_cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN:?TUNNEL_TOKEN is required}
+    depends_on:
+      openresty:
+        condition: service_healthy
+    networks:
+      - netphim_net
 
 volumes:
   postgres_data:

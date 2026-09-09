@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
 	"sort"
 	"strconv"
@@ -39,16 +40,87 @@ func slugify(value string) string {
 }
 
 func normalizePayload(source string, payload map[string]any) map[string]any {
+	var normalized map[string]any
 	switch source {
 	case "nguonc":
-		return normalizeNguonC(payload)
+		normalized = normalizeNguonC(payload)
 	case "vicdn":
-		return normalizeViCDN(payload)
+		normalized = normalizeViCDN(payload)
 	case "vsmov":
-		return normalizeVSMov(payload)
+		normalized = normalizeVSMov(payload)
 	default:
-		return tagPayload(source, payload)
+		normalized = tagPayload(source, payload)
 	}
+	normalizeArtworkPayload(source, normalized)
+	return normalized
+}
+
+func normalizeArtworkPayload(source string, payload map[string]any) {
+	base := artworkBase(payload)
+	if movie := movieFromPayload(payload); movie != nil {
+		normalizeArtwork(source, movie, base)
+	}
+	for _, movie := range extractItems(payload) {
+		normalizeArtwork(source, movie, base)
+	}
+}
+
+func artworkBase(payload map[string]any) string {
+	for _, record := range []map[string]any{payload, mapValue(payload["data"])} {
+		if record == nil {
+			continue
+		}
+		if value := firstString(record["APP_DOMAIN_CDN_IMAGE"], record["pathImage"], record["path_image"]); value != "" {
+			return value
+		}
+	}
+	return ""
+}
+
+func mapValue(value any) map[string]any {
+	record, _ := value.(map[string]any)
+	return record
+}
+
+func normalizeArtwork(source string, movie map[string]any, base string) {
+	for _, key := range []string{"poster_url", "thumb_url"} {
+		if value := absoluteArtworkURL(source, firstString(movie[key]), base); value != "" {
+			movie[key] = value
+		}
+	}
+	if poster := firstString(movie["poster_url"]); poster != "" {
+		movie["_posterCandidates"] = []any{poster}
+	}
+	if thumb := firstString(movie["thumb_url"]); thumb != "" {
+		movie["_thumbCandidates"] = []any{thumb}
+	}
+}
+
+func absoluteArtworkURL(source, value, base string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	if strings.HasPrefix(value, "//") {
+		return "https:" + value
+	}
+	if parsed, err := url.Parse(value); err == nil && parsed.IsAbs() {
+		if parsed.Scheme == "http" {
+			parsed.Scheme = "https"
+		}
+		return parsed.String()
+	}
+	if base == "" {
+		switch source {
+		case "kkphim":
+			base = "https://phimimg.com"
+		case "ophim":
+			base = "https://img.ophim.live/uploads/movies"
+		default:
+			return value
+		}
+	}
+	return strings.TrimRight(base, "/") + "/" + strings.TrimLeft(value, "/")
 }
 
 func tagPayload(source string, payload map[string]any) map[string]any {
@@ -274,6 +346,7 @@ func extractItems(payload map[string]any) []map[string]any {
 }
 
 func normalizeFilm(source string, film map[string]any, rank int) map[string]any {
+	normalizeArtwork(source, film, "")
 	name := firstString(film["name"], film["title"], film["origin_name"], film["slug"])
 	originName := firstString(film["origin_name"], film["original_name"])
 	slug := firstString(film["slug"], slugify(originName), slugify(name))
@@ -314,7 +387,13 @@ func canonicalAliases(film map[string]any) []string {
 	origin := firstString(film["origin_name"], film["original_name"])
 	year := numberValue(film["year"])
 	aliases := map[string]bool{canonicalKey(film, name, origin, year): true}
-	for _, value := range []string{name, origin, firstString(film["slug"])} {
+	// Provider slugs are stable identities even when one source omits year.
+	// Keeping this alias year-independent merges incomplete copies without
+	// collapsing remakes that use different provider slugs.
+	if slug := normalizeText(firstString(film["slug"])); slug != "" {
+		aliases["slug:"+slug] = true
+	}
+	for _, value := range []string{name, origin} {
 		title := normalizeText(value)
 		if title == "" {
 			continue
@@ -415,6 +494,38 @@ func mergeFilm(target, incoming map[string]any) {
 		}
 	}
 	target["_sourceSlugs"] = slugs
+	for _, key := range []string{"_posterCandidates", "_thumbCandidates"} {
+		candidates := orderedStringValues(target[key], incoming[key])
+		if len(candidates) > 0 {
+			target[key] = candidates
+		}
+	}
+}
+
+func orderedStringValues(values ...any) []string {
+	seen := make(map[string]bool)
+	result := make([]string, 0)
+	for _, value := range values {
+		switch typed := value.(type) {
+		case []string:
+			for _, entry := range typed {
+				entry = strings.TrimSpace(entry)
+				if entry != "" && !seen[entry] {
+					seen[entry] = true
+					result = append(result, entry)
+				}
+			}
+		case []any:
+			for _, raw := range typed {
+				entry := strings.TrimSpace(fmt.Sprint(raw))
+				if entry != "" && !seen[entry] {
+					seen[entry] = true
+					result = append(result, entry)
+				}
+			}
+		}
+	}
+	return result
 }
 
 func normalizeNamedList(value any) []any {

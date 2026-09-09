@@ -117,8 +117,10 @@ function deduplicate(films: FilmItem[]): FilmItem[] {
 
   return (films || []).filter((film) => {
     if (!film) return false;
-    const exactKey = film._id || film.slug;
-    if (exactKey && seenIds.has(exactKey.toLowerCase())) return false;
+    const exactKey = String(film.slug || film._id || "")
+      .trim()
+      .toLowerCase();
+    if (exactKey && seenIds.has(exactKey)) return false;
 
     const tokens = getFranchiseTokens(film);
     // Nếu phim này cùng tên franchise/series với phim đã có trong danh sách -> Bỏ qua phần trùng
@@ -127,7 +129,7 @@ function deduplicate(films: FilmItem[]): FilmItem[] {
     );
     if (hasDuplicateFranchise) return false;
 
-    if (exactKey) seenIds.add(exactKey.toLowerCase());
+    if (exactKey) seenIds.add(exactKey);
     tokens.forEach((token) => seenFranchiseTokens.add(token));
     return true;
   });
@@ -496,8 +498,10 @@ function LazySection({ children }: { children: React.ReactNode }) {
 
 export default function HomePageClient({
   initialPublicConfig,
+  initialHeroFilms,
 }: {
   initialPublicConfig?: PublicSiteConfiguration | null;
+  initialHeroFilms?: FilmItem[];
 }) {
   const { t } = useTranslation();
 
@@ -1235,7 +1239,10 @@ export default function HomePageClient({
     <div className="bg-background min-h-screen text-foreground overflow-hidden pb-12">
       <HomeAnnouncementPopup />
       {/* Hero Banner slider */}
-      <HeroBanner initialConfig={initialPublicConfig || undefined} />
+      <HeroBanner
+        films={initialHeroFilms}
+        initialConfig={initialPublicConfig || undefined}
+      />
 
       {/* Main Content Area */}
       <div

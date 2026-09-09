@@ -246,6 +246,7 @@ model Movie {
 
   @@index([type, isHidden, year])
   @@index([isHidden, updatedAt(sort: Desc)])
+  @@index([genres], type: Gin, map: "movies_genres_gin_idx")
   @@map("movies")
 }
 
@@ -311,6 +312,7 @@ model SyncJob {
   finishedAt     DateTime?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+  lastForSchedules SyncSchedule[] @relation("LastSyncJob")
 
   @@index([createdAt(sort: Desc)])
   @@index([source, status])
@@ -330,8 +332,10 @@ model SyncSchedule {
   createdBy String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  lastJob   SyncJob?  @relation("LastSyncJob", fields: [lastJobId], references: [id], onDelete: SetNull)
 
   @@index([enabled, nextRunAt])
+  @@index([lastJobId])
   @@map("sync_schedules")
 }
 
@@ -470,6 +474,7 @@ model PlaybackEvent {
   movie Movie? @relation(fields: [movieId], references: [id], onDelete: SetNull)
 
   @@index([occurredAt(sort: Desc), eventType])
+  @@index([eventType, occurredAt(sort: Desc)])
   @@index([movieId, occurredAt(sort: Desc)])
   @@index([provider, serverName, occurredAt(sort: Desc)])
   @@map("playback_events")

@@ -630,7 +630,7 @@ function HeroMovieTitle({
   return (
     <div
       aria-busy={hasLogoCandidate && !logoLoaded}
-      className="relative flex min-h-16 w-full items-center justify-center overflow-visible sm:min-h-24 md:min-h-28"
+      className="relative flex min-h-14 w-full items-center justify-center overflow-visible sm:min-h-24 md:min-h-28"
     >
       {/* If there's NO logo candidate or logo completely failed to load, show styled text title */}
       {showTextFallback && (
@@ -666,7 +666,7 @@ function HeroMovieTitle({
               onReady();
             }
           }}
-          className="h-auto max-h-24 w-auto max-w-[82vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] sm:max-h-32 sm:max-w-[34rem] md:max-h-40"
+          className="h-auto max-h-20 w-auto max-w-[78vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] sm:max-h-32 sm:max-w-[34rem] md:max-h-40"
         />
       )}
     </div>
@@ -1112,15 +1112,6 @@ function storeHeroPlaylist(playlist: HeroFilm[]) {
     // Storage can be disabled in private/restricted browsing. The memory cache
     // still keeps navigation within the current tab stable.
   }
-}
-
-function shuffled<T>(values: readonly T[]): T[] {
-  const result = [...values];
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
-  }
-  return result;
 }
 
 async function loadFreshTmdbPlaylist(): Promise<HeroFilm[]> {
@@ -1604,7 +1595,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         data-hero-banner="true"
         aria-busy="true"
         aria-label="Đang tải banner nổi bật"
-        className="relative min-h-[100dvh] w-full overflow-hidden bg-[#141414]"
+        className="relative h-[78svh] min-h-[590px] max-h-[680px] w-full overflow-hidden bg-[#141414] sm:h-auto sm:min-h-[100dvh] sm:max-h-none"
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_62%_34%,rgba(57,64,77,0.3),transparent_44%),linear-gradient(135deg,#101318_0%,#171b22_52%,#101216_100%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_24%,rgba(10,12,16,0.54)_70%,rgba(10,12,16,0.94)_100%),linear-gradient(to_top,#14181c_0%,rgba(20,24,28,0.78)_28%,transparent_62%),linear-gradient(to_bottom,rgba(10,12,16,0.76)_0%,transparent_30%)]" />
@@ -1633,7 +1624,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
 
         <div
           aria-hidden="true"
-          className="absolute inset-0 flex flex-col items-center justify-end px-4 pb-28 text-center sm:pb-18 md:pb-20"
+          className="absolute inset-0 flex flex-col items-center justify-end px-4 pb-5 text-center sm:pb-18 md:pb-20"
         >
           <div className="flex w-full max-w-2xl flex-col items-center gap-3 motion-safe:animate-pulse motion-reduce:animate-none sm:gap-4">
             <div className="h-6 w-36 rounded-full bg-white/[0.09] sm:w-44" />
@@ -1706,7 +1697,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
     <section
       data-hero-banner="true"
       ref={heroContainerRef}
-      className="font-cinema relative min-h-[100dvh] w-full overflow-hidden bg-[#141414] transform-gpu contain-paint"
+      className="font-cinema relative h-[78svh] min-h-[590px] max-h-[680px] w-full overflow-hidden bg-[#141414] transform-gpu contain-paint sm:h-auto sm:min-h-[100dvh] sm:max-h-none"
     >
       <TrailerModal
         film={trailerModalFilm}
@@ -1726,7 +1717,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
             <div
               key={`backdrop-${item.slug || idx}-${idx}`}
               className={cn(
-                "absolute inset-0 w-full h-full transition-all duration-1000 ease-[cubic-bezier(0.25,1,0.5,1)] will-change-[opacity,transform] pointer-events-none",
+                "absolute inset-0 w-full h-full transition-all duration-1000 [transition-timing-function:cubic-bezier(0.25,1,0.5,1)] will-change-[opacity,transform] pointer-events-none",
                 isActive
                   ? "opacity-100 scale-100 z-10"
                   : "opacity-0 scale-[1.02] z-0",
@@ -1856,11 +1847,11 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       </div>
 
       {/* Main Content Area */}
-      <div className="absolute inset-0 z-20 flex flex-col items-center justify-end px-4 pb-28 sm:pb-18 md:pb-20 text-center">
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-end px-4 pb-5 sm:pb-18 md:pb-20 text-center">
         <div
           ref={contentRef}
           key={film.slug}
-          className={`${heroSerifFont.className} max-w-2xl mx-auto w-full flex flex-col items-center space-y-2.5 sm:space-y-3.5`}
+          className={`${heroSerifFont.className} max-w-2xl mx-auto w-full flex flex-col items-center space-y-2 sm:space-y-3.5`}
         >
               {/* Official TMDB title artwork with an accessible text fallback. */}
               <HeroMovieTitle
@@ -2008,7 +1999,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
 
           {/* Mobile previous / pagination / next controls - Placed outside AnimatePresence for rock-solid stability and zero flicker */}
           {featured.length > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-1 sm:hidden select-none z-30">
+            <div className="mt-1.5 flex items-center justify-center gap-2 pt-1 sm:hidden select-none z-30">
               <button
                 type="button"
                 onClick={() =>

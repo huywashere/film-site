@@ -4,6 +4,15 @@ import { CURATED_HERO_FRANCHISE_POOL } from "@/lib/curated-hero-pool";
 
 export const revalidate = 60;
 
+function pickRandomHeroFilms() {
+  const pool = [...CURATED_HERO_FRANCHISE_POOL];
+  for (let index = pool.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [pool[index], pool[swapIndex]] = [pool[swapIndex], pool[index]];
+  }
+  return pool.slice(0, 6);
+}
+
 async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration | null> {
   const apiBase = (
     process.env.API_INTERNAL_URL ||
@@ -27,10 +36,14 @@ async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration 
 
 export default async function HomePage() {
   const initialPublicConfig = await getInitialPublicConfiguration();
-  const pinnedSlug = initialPublicConfig?.heroMovieSlugs?.[0];
-  const initialHero =
-    CURATED_HERO_FRANCHISE_POOL.find((film) => film.slug === pinnedSlug) ||
-    CURATED_HERO_FRANCHISE_POOL[0];
+  const pinnedHeroFilms = (initialPublicConfig?.heroMovieSlugs || [])
+    .map((slug) => CURATED_HERO_FRANCHISE_POOL.find((film) => film.slug === slug))
+    .filter((film): film is (typeof CURATED_HERO_FRANCHISE_POOL)[number] => Boolean(film))
+    .slice(0, 6);
+  const initialHeroFilms = pinnedHeroFilms.length
+    ? pinnedHeroFilms
+    : pickRandomHeroFilms();
+  const initialHero = initialHeroFilms[0];
 
   return (
     <>
@@ -55,7 +68,10 @@ export default async function HomePage() {
       {initialHero?.titleLogo && (
         <link rel="preload" as="image" href={initialHero.titleLogo} fetchPriority="high" />
       )}
-      <HomePageClient initialPublicConfig={initialPublicConfig} />
+      <HomePageClient
+        initialPublicConfig={initialPublicConfig}
+        initialHeroFilms={initialHeroFilms}
+      />
     </>
   );
 }

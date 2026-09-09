@@ -230,6 +230,41 @@ func TestSearchFiltersAndMergesTranslatedDuplicates(t *testing.T) {
 	}
 }
 
+func TestSearchKeepsArtworkFallbacksFromMergedProviders(t *testing.T) {
+	groups := map[string][]map[string]any{
+		"kkphim": {
+			{"name": "Oppenheimer", "slug": "oppenheimer", "year": 2023, "poster_url": "upload/vod/poster.jpg"},
+		},
+		"ophim": {
+			{"name": "Oppenheimer", "slug": "oppenheimer-2023", "year": 2023, "poster_url": "oppenheimer.jpg"},
+		},
+	}
+	items := dedupeGroups(groups, 0)
+	if len(items) != 1 {
+		t.Fatalf("expected one merged movie, got %#v", items)
+	}
+	candidates, ok := items[0]["_posterCandidates"].([]string)
+	if !ok || len(candidates) != 2 {
+		t.Fatalf("expected both artwork fallbacks, got %#v", items[0]["_posterCandidates"])
+	}
+	if candidates[0] != "https://phimimg.com/upload/vod/poster.jpg" || candidates[1] != "https://img.ophim.live/uploads/movies/oppenheimer.jpg" {
+		t.Fatalf("unexpected normalized artwork: %#v", candidates)
+	}
+}
+
+func TestDedupeMergesSameSlugWhenOneProviderOmitsYear(t *testing.T) {
+	items := dedupeGroups(map[string][]map[string]any{
+		"kkphim": {{"name": "Oppenheimer", "slug": "oppenheimer", "year": 2023}},
+		"nguonc": {{"name": "Oppenheimer", "slug": "oppenheimer"}},
+	}, 0)
+	if len(items) != 1 {
+		t.Fatalf("expected incomplete provider copy to merge, got %#v", items)
+	}
+	if numberValue(items[0]["_duplicateCount"]) != 2 {
+		t.Fatalf("expected both sources to survive: %#v", items[0])
+	}
+}
+
 func testConfig(origin string) config.Config {
 	return config.Config{
 		SigningSecret:           strings.Repeat("x", 32),

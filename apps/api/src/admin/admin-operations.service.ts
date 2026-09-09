@@ -3,19 +3,18 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  OnApplicationBootstrap,
   OnModuleDestroy,
   OnModuleInit,
 } from "@nestjs/common";
 import { BackupStatus, IncidentStatus } from "@prisma/client";
 import { createHash } from "crypto";
-import { createReadStream, promises as fs } from "fs";
+import { createReadStream, existsSync, promises as fs } from "fs";
 import { spawn } from "child_process";
 import { resolve, sep } from "path";
 import { PrismaService } from "../prisma/prisma.service";
 import { RedisCacheService } from "../redis/redis.service";
-import { AuditService } from "../audit/audit.service";
 import { StorageService } from "../common/storage/storage.service";
-import { AdminService } from "./admin.service";
 
 type Actor = { uid: string; email?: string; ipAddress?: string; userAgent?: string };
 
@@ -30,30 +29,40 @@ function normalizedTitle(value: string) {
 }
 
 @Injectable()
-export class AdminOperationsService implements OnModuleInit, OnModuleDestroy {
+export class AdminOperationsService
+  implements OnModuleInit, OnApplicationBootstrap, OnModuleDestroy
+{
   private readonly logger = new Logger(AdminOperationsService.name);
   private timer?: ReturnType<typeof setInterval>;
-  private scheduleBusy = false;
   private monitorBusy = false;
+  private backupScheduleBusy = false;
   private readonly backupDir = resolve(process.env.BACKUP_DIR || "./backups");
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: RedisCacheService,
-    private readonly audit: AuditService,
     private readonly storage: StorageService,
-    private readonly admin: AdminService,
   ) {}
 
   onModuleInit() {
+    this.startBackgroundTasks();
+  }
+
+  startBackgroundTasks() {
+    if (this.timer) return;
+    this.logger.log("Admin operations scheduler initialized");
     this.timer = setInterval(() => {
-      void this.runDueSchedules();
       void this.monitorSystem();
       void this.runLogPruning();
+      void this.runScheduledBackup();
     }, 60_000);
     (this.timer as unknown as { unref?: () => void }).unref?.();
-    void this.runDueSchedules();
     void this.runLogPruning();
+    void this.runScheduledBackup();
+  }
+
+  onApplicationBootstrap() {
+    this.startBackgroundTasks();
   }
 
   onModuleDestroy() {
@@ -110,6 +119,56 @@ export class AdminOperationsService implements OnModuleInit, OnModuleDestroy {
           err instanceof Error ? err.message : String(err)
         }`,
       );
+    }
+  }
+
+  private async runScheduledBackup() {
+    if (process.env.AUTO_BACKUP_ENABLED === "false" || this.backupScheduleBusy) {
+      return;
+    }
+
+    this.backupScheduleBusy = true;
+    try {
+      const configuredHours = Number(process.env.BACKUP_INTERVAL_HOURS || 24);
+      const intervalHours = Number.isFinite(configuredHours)
+        ? Math.min(168, Math.max(1, configuredHours))
+        : 24;
+      const cutoff = new Date(Date.now() - intervalHours * 3_600_000);
+      const recent = await this.prisma.databaseBackup.findFirst({
+        where: {
+          requestedBy: "system:auto-backup",
+          createdAt: { gte: cutoff },
+          status: {
+            in: [
+              BackupStatus.QUEUED,
+              BackupStatus.RUNNING,
+              BackupStatus.COMPLETED,
+            ],
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+      if (recent) return;
+
+      const acquired = await this.cache.acquireLock(
+        "database_auto_backup",
+        15 * 60_000,
+      );
+      if (!acquired) return;
+
+      const backup = await this.prisma.databaseBackup.create({
+        data: { requestedBy: "system:auto-backup" },
+      });
+      this.logger.log(`Starting scheduled PostgreSQL backup ${backup.id}`);
+      await this.runBackup(backup.id);
+    } catch (error) {
+      this.logger.error(
+        `Scheduled backup failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    } finally {
+      this.backupScheduleBusy = false;
     }
   }
 
@@ -338,26 +397,6 @@ export class AdminOperationsService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  private async runDueSchedules() {
-    if (this.scheduleBusy) return;
-    this.scheduleBusy = true;
-    try {
-      const due = await this.prisma.syncSchedule.findMany({ where: { enabled: true, nextRunAt: { lte: new Date() } }, take: 10 });
-      for (const schedule of due) {
-        const minutes = Number(schedule.cron.split(":")[1]) || 60;
-        const job = await this.admin.triggerManualSync(schedule.source, { uid: "sync-scheduler", email: schedule.createdBy }, schedule.pages);
-        await this.prisma.syncSchedule.update({ where: { id: schedule.id }, data: { lastRunAt: new Date(), lastJobId: job.id, nextRunAt: new Date(Date.now() + minutes * 60_000) } });
-      }
-    } catch (error) {
-      this.logger.error(`Scheduled sync failed: ${error instanceof Error ? error.message : String(error)}`);
-      await this.recordIncident("sync-scheduler", "Không chạy được lịch đồng bộ", error).catch((incidentError) => {
-        this.logger.error(`Could not persist sync incident: ${incidentError instanceof Error ? incidentError.message : String(incidentError)}`);
-      });
-    } finally {
-      this.scheduleBusy = false;
-    }
-  }
-
   private async monitorSystem() {
     if (this.monitorBusy) return;
     this.monitorBusy = true;
@@ -424,6 +463,9 @@ export class AdminOperationsService implements OnModuleInit, OnModuleDestroy {
       const file = this.safeBackupPath(filename);
       await this.prisma.databaseBackup.update({ where: { id }, data: { status: BackupStatus.RUNNING, startedAt: new Date(), filename } });
       await this.runPgCommand("pg_dump", ["--format=custom", "--no-owner", "--no-privileges", ...this.pgConnectionArgs(), "--file", file]);
+      // Reject truncated or malformed custom archives before they are advertised
+      // as restorable in the admin UI.
+      await this.runPgCommand("pg_restore", ["--list", file]);
       const stat = await fs.stat(file);
       const checksum = await this.fileChecksum(file);
 
@@ -450,12 +492,29 @@ export class AdminOperationsService implements OnModuleInit, OnModuleDestroy {
   private runPgCommand(command: string, args: string[]) {
     const url = new URL(process.env.DATABASE_URL || "");
     return new Promise<void>((resolvePromise, reject) => {
-      const child = spawn(command, args, { shell: false, env: { ...process.env, PGPASSWORD: decodeURIComponent(url.password) }, stdio: ["ignore", "ignore", "pipe"] });
+      const child = spawn(this.pgExecutable(command), args, { shell: false, env: { ...process.env, PGPASSWORD: decodeURIComponent(url.password) }, stdio: ["ignore", "ignore", "pipe"] });
       let error = "";
       child.stderr.on("data", (chunk) => { error = `${error}${chunk}`.slice(-8000); });
       child.once("error", reject);
       child.once("exit", (code) => code === 0 ? resolvePromise() : reject(new Error(`${command} exited ${code}: ${error}`)));
     });
+  }
+
+  private pgExecutable(command: string) {
+    const executable = process.platform === "win32" ? `${command}.exe` : command;
+    const configuredBin = process.env.POSTGRES_BIN;
+    if (configuredBin) {
+      const configuredPath = resolve(configuredBin, executable);
+      if (existsSync(configuredPath)) return configuredPath;
+    }
+    if (process.platform === "win32") {
+      const standardPath = resolve(
+        "C:\\Program Files\\PostgreSQL\\17\\bin",
+        executable,
+      );
+      if (existsSync(standardPath)) return standardPath;
+    }
+    return command;
   }
 
   private safeBackupPath(filename: string) {
@@ -476,6 +535,16 @@ export class AdminOperationsService implements OnModuleInit, OnModuleDestroy {
   }
 
   private log(actor: Actor, action: string, targetId?: string, details?: string) {
-    return this.audit.logAction({ adminId: actor.uid, adminEmail: actor.email, ipAddress: actor.ipAddress, userAgent: actor.userAgent, action, targetId, details });
+    return this.prisma.auditLog.create({
+      data: {
+        adminId: actor.uid,
+        adminEmail: actor.email || "admin@netphim.com",
+        ipAddress: actor.ipAddress,
+        userAgent: actor.userAgent,
+        action,
+        targetId,
+        details,
+      },
+    });
   }
 }
