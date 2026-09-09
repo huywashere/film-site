@@ -1,6 +1,6 @@
 import type { Socket } from "socket.io-client";
 
-export type PlaybackAction = "play" | "pause" | "seek";
+export type PlaybackAction = "play" | "pause" | "seek" | "ended" | "episode";
 
 export interface WatchPartyParticipant {
   id: string;
@@ -82,7 +82,14 @@ function getSocketOrigin() {
   }
 }
 
-export async function createWatchPartySocket(): Promise<Socket> {
+export async function createWatchPartySocket(
+  identity?: {
+    userId?: string;
+    name?: string;
+    avatar?: string;
+    reconnectToken?: string;
+  },
+): Promise<Socket> {
   const { io } = await import("socket.io-client");
   return io(`${getSocketOrigin()}/watch-party`, {
     autoConnect: false,
@@ -92,5 +99,6 @@ export async function createWatchPartySocket(): Promise<Socket> {
     reconnectionDelay: 800,
     reconnectionDelayMax: 5_000,
     timeout: 8_000,
+    auth: { identity },
   });
 }

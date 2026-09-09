@@ -33,6 +33,10 @@ export class WatchPartyGateway implements OnGatewayDisconnect, OnGatewayInit {
   private namespace!: Namespace;
 
   private readonly activity = new Map<string, Map<string, number[]>>();
+  private readonly disconnectTimers = new Map<
+    string,
+    ReturnType<typeof setTimeout>
+  >();
   private lobbyTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
@@ -71,12 +75,44 @@ export class WatchPartyGateway implements OnGatewayDisconnect, OnGatewayInit {
             avatar: user.avatarUrl || undefined,
           };
         } else {
-          const guestId = `guest-${randomUUID()}`;
-          const guestName = `Khách ${guestId.slice(-6).toUpperCase()}`;
+          const claimedIdentity = socket.handshake.auth?.identity as
+            | {
+                userId?: unknown;
+                name?: unknown;
+                avatar?: unknown;
+                reconnectToken?: unknown;
+              }
+            | undefined;
+          const claimedGuestId =
+            typeof claimedIdentity?.userId === "string" &&
+            claimedIdentity.userId.startsWith("guest-")
+              ? claimedIdentity.userId.slice(0, 100)
+              : "";
+          const claimedReconnectToken =
+            typeof claimedIdentity?.reconnectToken === "string" &&
+            claimedIdentity.reconnectToken.length >= 32
+              ? claimedIdentity.reconnectToken.slice(0, 100)
+              : "";
+          const hasStableGuestIdentity = Boolean(
+            claimedGuestId && claimedReconnectToken,
+          );
+          const guestId = hasStableGuestIdentity
+            ? claimedGuestId
+            : `guest-${randomUUID()}`;
+          const guestName =
+            typeof claimedIdentity?.name === "string" && claimedIdentity.name.trim()
+              ? claimedIdentity.name.trim().slice(0, 50)
+              : `Khách ${guestId.slice(-6).toUpperCase()}`;
           socket.data.identity = {
             userId: guestId,
             name: guestName,
-            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(guestName)}&background=17202a&color=ffffff`,
+            reconnectToken: hasStableGuestIdentity
+              ? claimedReconnectToken
+              : randomUUID(),
+            avatar:
+              typeof claimedIdentity?.avatar === "string"
+                ? claimedIdentity.avatar.slice(0, 500)
+                : `https://ui-avatars.com/api/?name=${encodeURIComponent(guestName)}&background=17202a&color=ffffff`,
           };
         }
         next();
@@ -215,15 +251,20 @@ export class WatchPartyGateway implements OnGatewayDisconnect, OnGatewayInit {
   }
 
   handleDisconnect(socket: Socket) {
-    const results = this.rooms.leaveAll(socket.id);
-    for (const result of results) {
-      if (result.room) {
-        this.namespace
-          .to(this.channel(result.roomId))
-          .emit("room:snapshot", result.room);
+    // Give automatic reconnect time to restore the same participant and host.
+    const timer = setTimeout(() => {
+      this.disconnectTimers.delete(socket.id);
+      const results = this.rooms.leaveAll(socket.id);
+      for (const result of results) {
+        if (result.room) {
+          this.namespace
+            .to(this.channel(result.roomId))
+            .emit("room:snapshot", result.room);
+        }
       }
-    }
-    if (results.length > 0) this.emitLobby();
+      if (results.length > 0) this.emitLobby();
+    }, 15_000);
+    this.disconnectTimers.set(socket.id, timer);
   }
 
   private async execute(callback: () => unknown | Promise<unknown>) {

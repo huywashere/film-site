@@ -13,8 +13,12 @@ import {
   WatchPartyRoomSnapshot,
 } from "./watch-party.types";
 
-interface InternalRoom extends WatchPartyRoomSnapshot {
-  participants: WatchPartyParticipant[];
+interface InternalParticipant extends WatchPartyParticipant {
+  reconnectToken?: string;
+}
+
+interface InternalRoom extends Omit<WatchPartyRoomSnapshot, "participants"> {
+  participants: InternalParticipant[];
   peakParticipants: number;
 }
 
@@ -101,6 +105,31 @@ export class WatchPartyService implements OnModuleDestroy {
     const room = this.requireRoom(roomId);
     const existing = room.participants.find((item) => item.id === socketId);
     if (existing) return { room: this.snapshot(room), participant: existing };
+
+    // Socket.IO assigns a new socket id after reconnecting. Rebind the stable
+    // identity so a short network interruption does not transfer host control.
+    const reconnecting = identity?.userId
+      ? room.participants.find(
+          (item) =>
+            item.userId === identity.userId &&
+            (!item.reconnectToken ||
+              (Boolean(identity.reconnectToken) &&
+                item.reconnectToken === identity.reconnectToken)),
+        )
+      : undefined;
+    if (reconnecting) {
+      const previousSocketId = reconnecting.id;
+      reconnecting.id = socketId;
+      reconnecting.name = this.clean(identity?.name, 50) || reconnecting.name;
+      reconnecting.avatar =
+        this.clean(identity?.avatar, 500) || reconnecting.avatar;
+      if (room.hostId === previousSocketId) room.hostId = socketId;
+      this.untrackSocketRoom(previousSocketId, room.id);
+      this.trackSocketRoom(socketId, room.id);
+      room.updatedAt = new Date().toISOString();
+      this.syncToRedis(room);
+      return { room: this.snapshot(room), participant: reconnecting };
+    }
     if (room.participants.length >= this.maxParticipantsPerRoom) {
       throw new Error("Phòng đã đủ người tham gia.");
     }
@@ -222,7 +251,7 @@ export class WatchPartyService implements OnModuleDestroy {
     if (room.hostId !== socketId) {
       throw new Error("Chỉ trưởng phòng mới có thể điều khiển video.");
     }
-    if (!["play", "pause", "seek"].includes(action)) {
+    if (!["play", "pause", "seek", "ended", "episode"].includes(action)) {
       throw new Error("Trạng thái player không hợp lệ.");
     }
 
@@ -294,7 +323,7 @@ export class WatchPartyService implements OnModuleDestroy {
     identity: WatchPartyIdentity | undefined,
     isHost: boolean,
     joinedAt: string,
-  ): WatchPartyParticipant {
+  ): InternalParticipant {
     const name = this.clean(identity?.name, 50) || "Khách NetPhim";
     return {
       id: socketId,
@@ -305,6 +334,7 @@ export class WatchPartyService implements OnModuleDestroy {
         `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=17202a&color=ffffff`,
       isHost,
       joinedAt,
+      reconnectToken: this.clean(identity?.reconnectToken, 100) || undefined,
     };
   }
 
@@ -324,7 +354,11 @@ export class WatchPartyService implements OnModuleDestroy {
     return {
       ...room,
       movie: { ...room.movie },
-      participants: room.participants.map((item) => ({ ...item })),
+      participants: room.participants.map((item) => {
+        const participant = { ...item };
+        delete participant.reconnectToken;
+        return participant;
+      }),
       messages: room.messages.map((item) => ({ ...item })),
       playerState: room.playerState ? { ...room.playerState } : null,
     };

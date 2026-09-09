@@ -1,9 +1,10 @@
-export type PlaybackAction = "play" | "pause" | "seek";
+export type PlaybackAction = "play" | "pause" | "seek" | "ended" | "episode";
 
 export interface WatchPartyIdentity {
   userId?: string;
   name?: string;
   avatar?: string;
+  reconnectToken?: string;
 }
 
 export interface WatchPartyMovie {

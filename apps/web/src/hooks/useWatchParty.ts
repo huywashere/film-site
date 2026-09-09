@@ -42,6 +42,16 @@ function getGuestId() {
   return id;
 }
 
+function getGuestReconnectToken() {
+  if (typeof window === "undefined") return "";
+  const key = "netphim-watch-party-reconnect";
+  const existing = window.localStorage.getItem(key);
+  if (existing) return existing;
+  const token = crypto.randomUUID();
+  window.localStorage.setItem(key, token);
+  return token;
+}
+
 export function useWatchParty(
   movieSlug: string,
   episodeName: string,
@@ -66,11 +76,13 @@ export function useWatchParty(
     userId: user?.id || getGuestId(),
     name: user?.displayName || user?.username || "Khách NetPhim",
     avatar: user?.avatarUrl,
+    reconnectToken: user ? undefined : getGuestReconnectToken(),
   });
   identityRef.current = {
     userId: user?.id || getGuestId(),
     name: user?.displayName || user?.username || "Khách NetPhim",
     avatar: user?.avatarUrl,
+    reconnectToken: user ? undefined : getGuestReconnectToken(),
   };
 
   const triggerReaction = useCallback(
@@ -101,13 +113,17 @@ export function useWatchParty(
 
     let active = true;
     setConnectionState("connecting");
-    void createWatchPartySocket().then((nextSocket) => {
-      if (!active) {
-        nextSocket.disconnect();
-        return;
-      }
-      setSocket(nextSocket);
-    });
+    void createWatchPartySocket(identityRef.current)
+      .then((nextSocket) => {
+        if (!active) {
+          nextSocket.disconnect();
+          return;
+        }
+        setSocket(nextSocket);
+      })
+      .catch(() => {
+        if (active) setConnectionState("offline");
+      });
 
     return () => {
       active = false;
@@ -124,10 +140,11 @@ export function useWatchParty(
     const handleConnect = () => {
       setConnectionState("online");
       if (roomIdRef.current) {
-        socket.emit(
+        socket.timeout(8_000).emit(
           "room:join",
           { roomId: roomIdRef.current, identity: identityRef.current },
-          (result: SocketAck) => {
+          (error: Error | null, result?: SocketAck) => {
+            if (error || !result) return;
             if (result.ok && result.room) setRoom(result.room);
           },
         );
@@ -171,7 +188,7 @@ export function useWatchParty(
           resolve(null);
           return;
         }
-        socket.emit(
+        socket.timeout(8_000).emit(
           "room:create",
           {
             identity: identityRef.current,
@@ -183,7 +200,12 @@ export function useWatchParty(
               episode: episodeName,
             },
           },
-          (result: SocketAck) => {
+          (error: Error | null, result?: SocketAck) => {
+            if (error || !result) {
+              toast("Máy chủ xem chung phản hồi quá lâu. Hãy thử lại.", "error");
+              resolve(null);
+              return;
+            }
             if (!result.ok || !result.room) {
               toast(result.error || "Không thể tạo phòng xem chung.", "error");
               resolve(null);
@@ -211,15 +233,23 @@ export function useWatchParty(
           resolve(false);
           return;
         }
+        let settled = false;
         const sendJoin = () => {
-          socket.emit(
+          socket.timeout(8_000).emit(
             "room:join",
             { roomId, identity: identityRef.current },
-            (result: SocketAck) => {
+            (error: Error | null, result?: SocketAck) => {
+              if (settled) return;
+              if (error || !result) {
+                roomIdRef.current = null;
+                toast("Máy chủ xem chung phản hồi quá lâu. Hãy thử lại.", "error");
+                finish(false);
+                return;
+              }
               if (!result.ok || !result.room) {
                 roomIdRef.current = null;
                 toast(result.error || "Không thể tham gia phòng.", "error");
-                resolve(false);
+                finish(false);
                 return;
               }
               setRoom(result.room);
@@ -227,10 +257,22 @@ export function useWatchParty(
               if (result.room.playerState) {
                 setRemotePlayerState(result.room.playerState);
               }
-              resolve(true);
+              finish(true);
             },
           );
         };
+        const finish = (value: boolean) => {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(connectTimer);
+          socket.off("connect", sendJoin);
+          resolve(value);
+        };
+        const connectTimer = window.setTimeout(() => {
+          roomIdRef.current = null;
+          toast("Kết nối phòng quá lâu. Hãy kiểm tra mạng và thử lại.", "error");
+          finish(false);
+        }, 10_000);
         if (socket.connected) sendJoin();
         else socket.once("connect", sendJoin);
       }),
@@ -279,7 +321,7 @@ export function useWatchParty(
   );
 
   const syncPlayerState = useCallback(
-    (action: PlaybackAction, currentTime: number) => {
+    (action: PlaybackAction, currentTime: number, episode = episodeName) => {
       if (
         !socket ||
         !room?.id ||
@@ -291,7 +333,7 @@ export function useWatchParty(
         roomId: room.id,
         action,
         currentTime,
-        episode: episodeName,
+        episode,
       });
     },
     [episodeName, room?.hostId, room?.id, socket],

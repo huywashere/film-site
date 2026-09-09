@@ -1490,7 +1490,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       if (!artInstance.playing) {
         artInstance.video?.play?.().catch?.(() => {});
       }
-    } else if (state.action === 'pause') {
+    } else if (state.action === 'pause' || state.action === 'ended') {
       if (artInstance.playing) {
         artInstance.video?.pause?.();
       }
@@ -2804,6 +2804,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     );
   }, [epName, progressKey, slug]);
   const resumeAt = Math.max(dbProgress, localProgress);
+  const watchPartyRoomId = wp.roomId;
+  const isWatchPartyHost = wp.isHost;
+  const syncWatchPartyPlayerState = wp.syncPlayerState;
 
   const handlePlaybackProgress = useCallback(
     (currentTime: number, duration: number) => {
@@ -2814,6 +2817,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       // ── Auto Next Episode Countdown Trigger (within 3 seconds of ending) ──
       if (
         autoNextConfig &&
+        (!watchPartyRoomId || isWatchPartyHost) &&
         duration > 30 &&
         currentTime >= duration - 3 &&
         autoNextCountdown === null &&
@@ -2866,6 +2870,8 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       serverData.length,
       slug,
       user,
+      isWatchPartyHost,
+      watchPartyRoomId,
     ],
   );
 
@@ -2886,16 +2892,39 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
   const goNextEpisode = useCallback(() => {
     setAutoNextCountdown(null);
+    if (watchPartyRoomId && !isWatchPartyHost) return;
     if (currentEpIndex >= 0 && currentEpIndex < serverData.length - 1) {
       const next = serverData[currentEpIndex + 1];
-      router.push(watchUrlForEpisode(next.slug || next.name));
+      const nextEpisode = next.slug || next.name;
+      if (isWatchPartyHost) syncWatchPartyPlayerState('episode', 0, nextEpisode);
+      router.push(watchUrlForEpisode(nextEpisode));
     }
-  }, [currentEpIndex, router, serverData, watchUrlForEpisode]);
+  }, [
+    currentEpIndex,
+    isWatchPartyHost,
+    router,
+    serverData,
+    syncWatchPartyPlayerState,
+    watchPartyRoomId,
+    watchUrlForEpisode,
+  ]);
 
   const handleVideoEnded = useCallback(() => {
+    if (isWatchPartyHost) {
+      syncWatchPartyPlayerState('ended', artInstance?.duration || artInstance?.currentTime || 0);
+    }
+    if (watchPartyRoomId && !isWatchPartyHost) return;
     if (!autoNextConfig) return;
     if (currentEpIndex >= 0 && currentEpIndex < serverData.length - 1) setAutoNextCountdown(5);
-  }, [autoNextConfig, currentEpIndex, serverData.length]);
+  }, [
+    artInstance,
+    autoNextConfig,
+    currentEpIndex,
+    isWatchPartyHost,
+    serverData.length,
+    syncWatchPartyPlayerState,
+    watchPartyRoomId,
+  ]);
 
   useEffect(() => {
     if (autoNextCountdown === null) return;
