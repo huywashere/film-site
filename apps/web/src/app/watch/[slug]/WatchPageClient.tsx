@@ -2890,24 +2890,33 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     [searchParams, slug],
   );
 
+  const navigateToEpisode = useCallback(
+    (episode: string) => {
+      if (watchPartyRoomId && !isWatchPartyHost) {
+        toast('Trưởng phòng đang điều khiển tập phim.', 'info');
+        return;
+      }
+      if (isWatchPartyHost) syncWatchPartyPlayerState('episode', 0, episode);
+      router.push(watchUrlForEpisode(episode));
+    },
+    [
+      isWatchPartyHost,
+      router,
+      syncWatchPartyPlayerState,
+      toast,
+      watchPartyRoomId,
+      watchUrlForEpisode,
+    ],
+  );
+
   const goNextEpisode = useCallback(() => {
     setAutoNextCountdown(null);
-    if (watchPartyRoomId && !isWatchPartyHost) return;
     if (currentEpIndex >= 0 && currentEpIndex < serverData.length - 1) {
       const next = serverData[currentEpIndex + 1];
       const nextEpisode = next.slug || next.name;
-      if (isWatchPartyHost) syncWatchPartyPlayerState('episode', 0, nextEpisode);
-      router.push(watchUrlForEpisode(nextEpisode));
+      navigateToEpisode(nextEpisode);
     }
-  }, [
-    currentEpIndex,
-    isWatchPartyHost,
-    router,
-    serverData,
-    syncWatchPartyPlayerState,
-    watchPartyRoomId,
-    watchUrlForEpisode,
-  ]);
+  }, [currentEpIndex, navigateToEpisode, serverData]);
 
   const handleVideoEnded = useCallback(() => {
     if (isWatchPartyHost) {
@@ -3894,7 +3903,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   <button
                     onClick={() => {
                       const p = serverData[currentEpIndex - 1];
-                      router.push(watchUrlForEpisode(p.slug || p.name));
+                      navigateToEpisode(p.slug || p.name);
                     }}
                     className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-neutral-300 bg-white/[0.04] border border-white/10 rounded-xl hover:text-white hover:bg-white/10 transition-colors"
                   >
@@ -3905,7 +3914,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   <button
                     onClick={() => {
                       const n = serverData[currentEpIndex + 1];
-                      router.push(watchUrlForEpisode(n.slug || n.name));
+                      navigateToEpisode(n.slug || n.name);
                     }}
                     className="flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-white/20"
                   >
@@ -4423,9 +4432,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                   <button
                                     key={ep.slug || ep.name || i}
                                     aria-current={isActive ? 'true' : undefined}
-                                    onClick={() =>
-                                      router.push(watchUrlForEpisode(ep.slug || ep.name))
-                                    }
+                                    onClick={() => navigateToEpisode(ep.slug || ep.name)}
                                     className={cn(
                                       'relative flex items-center justify-center gap-1.5 rounded-xl py-2 px-2.5 transition-all cursor-pointer border text-xs font-semibold select-none',
                                       isActive
@@ -4491,9 +4498,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                   <button
                                     key={ep.slug || ep.name || i}
                                     aria-current={isActive ? 'true' : undefined}
-                                    onClick={() =>
-                                      router.push(watchUrlForEpisode(ep.slug || ep.name))
-                                    }
+                                    onClick={() => navigateToEpisode(ep.slug || ep.name)}
                                     className={cn(
                                       'group/ep relative aspect-video rounded-xl overflow-hidden border transition-all cursor-pointer text-left bg-neutral-900',
                                       isActive
