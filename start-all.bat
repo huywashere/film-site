@@ -52,10 +52,13 @@ echo.
 
 rem 4. NestJS API Core (Port 3001)
 echo [4/5] Kiem tra NestJS API Core (Port 3001)...
-netstat -ano | findstr ":3001 " | findstr "LISTENING" >nul
+curl.exe -fsS --max-time 5 http://127.0.0.1:3001/api/v1/health >nul 2>&1
 if not errorlevel 1 (
     echo [OK] NestJS API Core da dang chay san tren cong 3001.
 ) else (
+    rem A process can keep the port open while its event loop is wedged. Remove
+    rem that stale process before launching a healthy API instance.
+    for /f "tokens=5" %%P in ('netstat -ano ^| findstr ":3001 " ^| findstr "LISTENING"') do taskkill /PID %%P /T /F >nul 2>&1
     echo [INFO] Dang khoi dong NestJS API Core...
     start "NetPhim - NestJS API (3001)" cmd /k "pnpm --filter api dev"
     ping -n 4 127.0.0.1 >nul
@@ -64,7 +67,7 @@ echo.
 
 rem 5. Next.js Web Frontend (Port 3000)
 echo [5/5] Kiem tra Next.js Web Frontend (Port 3000)...
-netstat -ano | findstr ":3000 " | findstr "LISTENING" >nul
+curl.exe -fsS --max-time 20 http://127.0.0.1:3000/api/health >nul 2>&1
 if not errorlevel 1 (
     echo [OK] Next.js Web Frontend da dang chay san tren cong 3000.
     echo.
@@ -77,6 +80,11 @@ if not errorlevel 1 (
     echo =========================================================
     echo.
 ) else (
+    rem Listening is not enough: a long-lived Next dev worker may retain the
+    rem socket while no longer serving responses.
+    for /f "tokens=5" %%P in ('netstat -ano ^| findstr ":3000 " ^| findstr "LISTENING"') do taskkill /PID %%P /T /F >nul 2>&1
+    ping -n 2 127.0.0.1 >nul
+    if exist "apps\web\.next-dev" move "apps\web\.next-dev" "apps\web\.next-dev.stale-%RANDOM%" >nul
     echo [INFO] Dang khoi dong Next.js Web Frontend...
     set MEDIA_GATEWAY_INTERNAL_URL=http://127.0.0.1:8081
     echo.
