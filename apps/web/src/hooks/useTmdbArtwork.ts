@@ -181,7 +181,9 @@ export function useTmdbArtwork(film: FilmItem, enabled = true) {
     },
     enabled: enabled && Boolean(extracted.tmdbId || extracted.imdbId || title),
     staleTime: 1000 * 60 * 60 * 24 * 7,
-    gcTime: 1000 * 60 * 60 * 24 * 30,
+    // Browser timers top out at roughly 24.8 days. A 30-day timeout overflows
+    // to 1ms in Node/browser runtimes and defeats the artwork cache entirely.
+    gcTime: 1000 * 60 * 60 * 24 * 24,
     retry: 1,
     refetchOnWindowFocus: false,
   });

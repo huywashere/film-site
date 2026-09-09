@@ -66,6 +66,14 @@ const TrailerModal = dynamic(
   { ssr: false },
 );
 
+const MobileRelatedCarousel = dynamic(
+  () =>
+    import('@/components/film/MobileRelatedCarousel').then(
+      (module) => module.MobileRelatedCarousel,
+    ),
+  { ssr: false },
+);
+
 function formatRating(value: number) {
   return Number.isFinite(value) && value > 0 ? value.toFixed(1) : null;
 }
@@ -1164,6 +1172,7 @@ export default function FilmDetailPage({
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [showAllGallery, setShowAllGallery] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [secondaryReadySlug, setSecondaryReadySlug] = useState('');
   const secondaryReady = secondaryReadySlug === slug;
 
@@ -1177,6 +1186,14 @@ export default function FilmDetailPage({
       return () => cancelAnimationFrame(raf);
     }
   }, [slug]);
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 767px)');
+    const syncViewport = () => setIsMobileViewport(media.matches);
+    syncViewport();
+    media.addEventListener('change', syncViewport);
+    return () => media.removeEventListener('change', syncViewport);
+  }, []);
 
   useEffect(() => {
     let timer: number | undefined;
@@ -2268,6 +2285,10 @@ export default function FilmDetailPage({
               </dl>
             </div>
           </section>
+
+          {isMobileViewport && (
+            <MobileRelatedCarousel slug={slug} enabled={secondaryReady} />
+          )}
 
           {secondaryReady &&
             !tmdbResolving &&
