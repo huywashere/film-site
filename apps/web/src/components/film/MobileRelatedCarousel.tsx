@@ -162,6 +162,7 @@ export function MobileRelatedCarousel({
   enabled = true,
 }: MobileRelatedCarouselProps) {
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [activeSlideIndex, setActiveSlideIndex] = useState(1);
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -170,6 +171,10 @@ export function MobileRelatedCarousel({
     media.addEventListener('change', syncMotionPreference);
     return () => media.removeEventListener('change', syncMotionPreference);
   }, []);
+
+  useEffect(() => {
+    setActiveSlideIndex(1);
+  }, [slug]);
 
   const genreSlug = currentFilm.category?.find((category) => category.slug)?.slug || '';
   const { data: relatedFilms = [], isLoading } = useQuery({
@@ -218,13 +223,17 @@ export function MobileRelatedCarousel({
         centeredSlides
         slidesPerView="auto"
         initialSlide={films.length > 1 ? 1 : 0}
-        speed={reduceMotion ? 0 : 420}
+        speed={reduceMotion ? 0 : 520}
         threshold={6}
-        resistanceRatio={0.8}
+        resistanceRatio={0.72}
+        longSwipesRatio={0.18}
+        longSwipesMs={180}
+        preventInteractionOnTransition
         grabCursor
         watchSlidesProgress
         loop={false}
-        lazyPreloadPrevNext={1}
+        lazyPreloadPrevNext={2}
+        onSlideChange={(swiper) => setActiveSlideIndex(swiper.activeIndex)}
         coverflowEffect={{
           rotate: 7,
           stretch: -18,
@@ -233,7 +242,7 @@ export function MobileRelatedCarousel({
           scale: 0.82,
           slideShadows: false,
         }}
-        className="!overflow-visible px-1"
+        className="mobile-related-swiper !overflow-visible px-1"
         aria-label="Vuốt để xem poster phim gợi ý"
       >
         {films.map((film, index) => {
@@ -246,9 +255,10 @@ export function MobileRelatedCarousel({
                 film={film}
                 kind="poster"
                 alt={title}
-                priority={index < 3}
+                priority={Math.abs(index - activeSlideIndex) <= 2}
                 className="absolute inset-0 h-full w-full"
               />
+              <div className="mobile-related-card-shade pointer-events-none absolute inset-0 bg-black/25" />
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black via-black/45 to-transparent" />
               {!isCurrentFilm && rating && (
                 <span className="absolute left-0 top-0 rounded-br-md bg-[#f5c518] px-2 py-1 text-[10px] font-black text-black shadow-md">
@@ -266,7 +276,7 @@ export function MobileRelatedCarousel({
           return (
             <SwiperSlide
               key={`${isCurrentFilm ? 'current' : 'related'}-${film.slug}`}
-              className="!w-[58vw] !max-w-[228px] !min-w-[196px] transform-gpu transition-[opacity,filter] duration-300 motion-reduce:transition-none [&:not(.swiper-slide-active)]:opacity-80 [&:not(.swiper-slide-active)]:brightness-[.72] [&:not(.swiper-slide-active)]:saturate-[.78]"
+              className="mobile-related-slide !w-[58vw] !max-w-[228px] !min-w-[196px] transform-gpu transition-opacity duration-500 ease-out motion-reduce:transition-none [&:not(.swiper-slide-active)]:opacity-80"
             >
               <article>
                 {isCurrentFilm ? (

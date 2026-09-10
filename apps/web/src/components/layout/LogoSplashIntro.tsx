@@ -60,10 +60,28 @@ export function LogoSplashIntro() {
           : 'pointer-events-auto opacity-100'
       }`}
     >
-      <div aria-hidden="true" className="netphim-splash-grid absolute -inset-[20%]" />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_46%,rgba(124,58,237,0.22),transparent_30%),radial-gradient(circle_at_50%_50%,transparent_22%,rgba(6,7,10,0.72)_68%,#06070a_100%)]"
+        className="netphim-splash-grid absolute -inset-[14%] block h-[128%] w-[128%] opacity-45"
+      >
+        <picture className="block h-full w-full">
+          <source media="(min-width: 640px)" srcSet="/images/splash/poster-grid-desktop.webp" />
+          <img
+            src="/images/splash/poster-grid-mobile.webp"
+            alt=""
+            width={456}
+            height={906}
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+            className="h-full w-full object-cover"
+          />
+        </picture>
+      </div>
+      <div aria-hidden="true" className="absolute inset-0 bg-black/50" />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_46%,rgba(124,58,237,0.3),transparent_28%),radial-gradient(circle_at_50%_50%,transparent_18%,rgba(6,7,10,0.68)_66%,#06070a_100%)]"
       />
 
       <div className="netphim-splash-brand relative flex h-full flex-col items-center justify-center px-6">

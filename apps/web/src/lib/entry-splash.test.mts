@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import test from 'node:test';
 
 function source(path: string) {
@@ -13,7 +13,13 @@ test('root layout renders a bounded splash without remote poster artwork', () =>
   assert.match(layout, /LogoSplashIntro/);
   assert.match(splash, /MAX_VISIBLE_MS = 1500/);
   assert.match(splash, /cinephim-logo\.svg/);
+  assert.match(splash, /poster-grid-mobile\.webp/);
+  assert.match(splash, /poster-grid-desktop\.webp/);
   assert.doesNotMatch(splash, /image\.tmdb\.org|wsrv\.nl|intro-poster|backgroundImage/);
+
+  for (const artwork of ['poster-grid-mobile.webp', 'poster-grid-desktop.webp']) {
+    assert.ok(statSync(`public/images/splash/${artwork}`).size < 80 * 1024);
+  }
 });
 
 test('service worker never serves stale cached HTML after a deployment', () => {

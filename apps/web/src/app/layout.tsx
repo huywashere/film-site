@@ -119,6 +119,22 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://images.nguonc.com" />
         <link rel="preconnect" href="https://image.tmdb.org" />
         <link rel="dns-prefetch" href="https://image.tmdb.org" />
+        <link
+          rel="preload"
+          as="image"
+          href="/images/splash/poster-grid-mobile.webp"
+          type="image/webp"
+          media="(max-width: 639px)"
+          fetchPriority="high"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/images/splash/poster-grid-desktop.webp"
+          type="image/webp"
+          media="(min-width: 640px)"
+          fetchPriority="high"
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteSchema) }}
