@@ -1,30 +1,23 @@
-import axios, { type AxiosResponse } from "axios";
-import type { User } from "@/store/authStore";
+import axios, { type AxiosResponse } from 'axios';
+import type { User } from '@/store/authStore';
 import {
   dedupeFilmsBySource,
   extractFilmItems,
   isUsableMovieDetail,
   tagMovieDetailSource,
   type MovieSource,
-} from "@/lib/movie-normalizer";
-import { rankSearchResults, expandQuery, normalize } from "@/lib/search-engine";
+} from '@/lib/movie-normalizer';
+import { rankSearchResults, expandQuery, normalize } from '@/lib/search-engine';
 import {
   filterSearchResults,
   searchFilterParams,
   type MovieSearchFilters,
-} from "@/lib/search-filters";
-import type {
-  PaginatedResponse,
-  WatchHistoryItem,
-  WatchlistItem,
-} from "@/types/movie";
-import { recordTelemetry } from "@/lib/telemetry";
-import { normalizeNguonCPayload } from "@/lib/nguonc-normalizer";
-import { normalizeVicdnPayload } from "@/lib/vicdn-normalizer";
-import {
-  curateCatalogFilms,
-  type CuratedCatalogKind,
-} from "@/lib/catalog-curation";
+} from '@/lib/search-filters';
+import type { PaginatedResponse, WatchHistoryItem, WatchlistItem } from '@/types/movie';
+import { recordTelemetry } from '@/lib/telemetry';
+import { normalizeNguonCPayload } from '@/lib/nguonc-normalizer';
+import { normalizeVicdnPayload } from '@/lib/vicdn-normalizer';
+import { curateCatalogFilms, type CuratedCatalogKind } from '@/lib/catalog-curation';
 
 // ── Search In-Memory Cache & Deduping ─────────────────────────────
 const SEARCH_CACHE_MAX_AGE_MS = 1000 * 60 * 10; // 10 phút
@@ -41,30 +34,27 @@ let catalogGatewayUnavailableUntil = 0;
 let catalogGatewayProbe: Promise<boolean> | null = null;
 
 // ── KKPhim API Configuration ──────────────────────────────────────
-const KKPHIM_PROXY = "/api/kkphim";
+const KKPHIM_PROXY = '/api/kkphim';
 
 const trackedMovieFetch = async (path: string) => {
   const startedAt = performance.now();
   try {
     const response = await fetch(path);
-    recordTelemetry("movie_api.response", {
-      path: path.split("?")[0],
+    recordTelemetry('movie_api.response', {
+      path: path.split('?')[0],
       status: response.status,
       duration_ms: Math.round(performance.now() - startedAt),
-      cache:
-        response.headers.get("x-cache") ||
-        response.headers.get("cache-status") ||
-        "unknown",
+      cache: response.headers.get('x-cache') || response.headers.get('cache-status') || 'unknown',
     });
     return response;
   } catch (error) {
     recordTelemetry(
-      "movie_api.error",
+      'movie_api.error',
       {
-        path: path.split("?")[0],
+        path: path.split('?')[0],
         duration_ms: Math.round(performance.now() - startedAt),
       },
-      "warning",
+      'warning',
     );
     throw error;
   }
@@ -73,20 +63,14 @@ const trackedMovieFetch = async (path: string) => {
 async function fetchCatalogGateway(endpoint: string): Promise<any> {
   const now = Date.now();
   if (catalogGatewayUnavailableUntil > now) {
-    throw new Error("Catalog Gateway unavailable");
+    throw new Error('Catalog Gateway unavailable');
   }
 
   if (catalogGatewayAvailableUntil <= now) {
-    catalogGatewayProbe ||= trackedMovieFetch(
-      "/api/catalog-gateway/catalog/providers/health",
-    )
+    catalogGatewayProbe ||= trackedMovieFetch('/api/catalog-gateway/catalog/providers/health')
       .then((response) => {
-        if (
-          !response.ok ||
-          response.headers.get("x-netphim-catalog-available") === "0"
-        ) {
-          catalogGatewayUnavailableUntil =
-            Date.now() + CATALOG_GATEWAY_RECHECK_MS;
+        if (!response.ok || response.headers.get('x-netphim-catalog-available') === '0') {
+          catalogGatewayUnavailableUntil = Date.now() + CATALOG_GATEWAY_RECHECK_MS;
           return false;
         }
         catalogGatewayAvailableUntil = Date.now() + CATALOG_GATEWAY_RECHECK_MS;
@@ -94,8 +78,7 @@ async function fetchCatalogGateway(endpoint: string): Promise<any> {
         return true;
       })
       .catch(() => {
-        catalogGatewayUnavailableUntil =
-          Date.now() + CATALOG_GATEWAY_RECHECK_MS;
+        catalogGatewayUnavailableUntil = Date.now() + CATALOG_GATEWAY_RECHECK_MS;
         return false;
       })
       .finally(() => {
@@ -103,7 +86,7 @@ async function fetchCatalogGateway(endpoint: string): Promise<any> {
       });
 
     if (!(await catalogGatewayProbe)) {
-      throw new Error("Catalog Gateway unavailable");
+      throw new Error('Catalog Gateway unavailable');
     }
   }
 
@@ -127,7 +110,7 @@ const fetchKKPhim = async (endpoint: string) => {
     }
     return await response.json();
   } catch (error) {
-    console.error("KKPhim API Error:", error);
+    console.error('KKPhim API Error:', error);
     throw error;
   }
 };
@@ -135,8 +118,7 @@ const fetchKKPhim = async (endpoint: string) => {
 // ── KKPhim Direct API (qua Next.js proxy) ──────────────────────────
 export const kkphimApi = {
   // Phim mới cập nhật
-  getLatest: (page = 1) =>
-    fetchKKPhim(`/danh-sach/phim-moi-cap-nhat?page=${page}`),
+  getLatest: (page = 1) => fetchKKPhim(`/danh-sach/phim-moi-cap-nhat?page=${page}`),
 
   // Danh sách theo loại (v1 API)
   getSeries: (page = 1, limit = 36) =>
@@ -155,14 +137,10 @@ export const kkphimApi = {
     fetchKKPhim(`/v1/api/danh-sach/phim-vietsub?page=${page}&limit=${limit}`),
 
   getThuyetMinh: (page = 1, limit = 36) =>
-    fetchKKPhim(
-      `/v1/api/danh-sach/phim-thuyet-minh?page=${page}&limit=${limit}`,
-    ),
+    fetchKKPhim(`/v1/api/danh-sach/phim-thuyet-minh?page=${page}&limit=${limit}`),
 
   getLongTieng: (page = 1, limit = 36) =>
-    fetchKKPhim(
-      `/v1/api/danh-sach/phim-long-tieng?page=${page}&limit=${limit}`,
-    ),
+    fetchKKPhim(`/v1/api/danh-sach/phim-long-tieng?page=${page}&limit=${limit}`),
 
   getDangChieu: (page = 1) =>
     fetchKKPhim(`/v1/api/danh-sach?type=phim-bo&status=ongoing&page=${page}`),
@@ -205,28 +183,26 @@ export const kkphimApi = {
   // Thông tin phim theo ID
   getById: (id: string) => fetchKKPhim(`/phim/id/${id}`),
 
-  getByTmdb: (tmdbId: string, type: "tv" | "movie", season?: number) => {
-    const seasonParam = season ? `&season=${season}` : "";
-    return fetchKKPhim(
-      `/phim/tmdb?tmdb_id=${tmdbId}&type=${type}${seasonParam}`,
-    );
+  getByTmdb: (tmdbId: string, type: 'tv' | 'movie', season?: number) => {
+    const seasonParam = season ? `&season=${season}` : '';
+    return fetchKKPhim(`/phim/tmdb?tmdb_id=${tmdbId}&type=${type}${seasonParam}`);
   },
 
   getByImdb: (imdbId: string) => fetchKKPhim(`/phim/imdb?imdb_id=${imdbId}`),
 
   // Hình ảnh, diễn viên, từ khóa
-  getImages: (tmdbType: "tv" | "movie", tmdbId: string) =>
+  getImages: (tmdbType: 'tv' | 'movie', tmdbId: string) =>
     fetchKKPhim(`/phim/images?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`),
 
-  getCast: (tmdbType: "tv" | "movie", tmdbId: string) =>
+  getCast: (tmdbType: 'tv' | 'movie', tmdbId: string) =>
     fetchKKPhim(`/phim/cast?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`),
 
-  getKeywords: (tmdbType: "tv" | "movie", tmdbId: string) =>
+  getKeywords: (tmdbType: 'tv' | 'movie', tmdbId: string) =>
     fetchKKPhim(`/phim/keywords?tmdb_type=${tmdbType}&tmdb_id=${tmdbId}`),
 
   // Tìm kiếm siêu tốc thông minh với Multi-Alias, Bộ nhớ đệm Client & Truy vấn song song
   search: async (keyword: string, page = 1, limit = 36) => {
-    const cleanKw = (keyword || "").trim();
+    const cleanKw = (keyword || '').trim();
     if (!cleanKw) return { data: { items: [] } };
 
     const cacheKey = `search:${cleanKw.toLowerCase()}:${page}:${limit}`;
@@ -245,8 +221,7 @@ export const kkphimApi = {
 
     const executeSearch = async () => {
       // Dynamic import smart search to prevent circular deps
-      const { getExpandedSearchTerms, searchLocalFilms } =
-        await import("@/lib/smart-search");
+      const { getExpandedSearchTerms, searchLocalFilms } = await import('@/lib/smart-search');
       const candidateTerms = getExpandedSearchTerms(cleanKw);
 
       const allItems: any[] = [];
@@ -274,9 +249,7 @@ export const kkphimApi = {
       // Nếu kết quả ít (<5), thử thêm 1 secondary term (VN↔EN alternate)
       // Tối đa 1 extra request — không phải 3 như trước
       if (allItems.length < 5 && candidateTerms.length > 1) {
-        const secondTerm = candidateTerms.find(
-          (t) => t !== primaryTerm && t.length > 2,
-        );
+        const secondTerm = candidateTerms.find((t) => t !== primaryTerm && t.length > 2);
         if (secondTerm) {
           const kkData2 = await fetchKKPhim(
             `/v1/api/tim-kiem?keyword=${encodeURIComponent(secondTerm)}&page=${page}&limit=${limit}`,
@@ -314,13 +287,11 @@ export const kkphimApi = {
           const ophimPromises = candidateTerms
             .slice(0, 2)
             .map((term) =>
-              fetchOphim(`/tim-kiem?keyword=${encodeURIComponent(term)}`).catch(
-                () => null,
-              ),
+              fetchOphim(`/tim-kiem?keyword=${encodeURIComponent(term)}`).catch(() => null),
             );
           const ophimResults = await Promise.allSettled(ophimPromises);
           for (const res of ophimResults) {
-            if (res.status === "fulfilled" && res.value) {
+            if (res.status === 'fulfilled' && res.value) {
               const items = res.value?.data?.items || res.value?.items || [];
               for (const item of items) {
                 if (item?.slug && !seenSlugs.has(item.slug)) {
@@ -410,7 +381,7 @@ const fetchOphim = async (endpoint: string) => {
   if (!ENABLE_OPHIM) {
     return {
       status: false,
-      msg: "OPhim API is disabled",
+      msg: 'OPhim API is disabled',
       items: [],
       data: { items: [] },
     };
@@ -426,7 +397,7 @@ const fetchOphim = async (endpoint: string) => {
   }
   return {
     status: false,
-    msg: "OPhim API unavailable",
+    msg: 'OPhim API unavailable',
     items: [],
     data: { items: [] },
   };
@@ -445,23 +416,18 @@ const fetchNguonc = async (endpoint: string) => {
     // Some serverless egress ranges are rejected by NguonC's Cloudflare edge.
   }
 
-  if (typeof window === "undefined") {
-    throw new Error(`NguonC API Error: ${proxyStatus || "proxy unavailable"}`);
+  if (typeof window === 'undefined') {
+    throw new Error(`NguonC API Error: ${proxyStatus || 'proxy unavailable'}`);
   }
 
   // NguonC's public API allows browser CORS. Use it only when our same-origin
   // proxy has failed so local/VPS cache behavior remains the primary path.
-  const normalizedEndpoint = endpoint.startsWith("/")
-    ? endpoint
-    : `/${endpoint}`;
-  const directUrl = new URL(
-    normalizedEndpoint.replace(/^\/+/, ""),
-    "https://phim.nguonc.com/api/",
-  );
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const directUrl = new URL(normalizedEndpoint.replace(/^\/+/, ''), 'https://phim.nguonc.com/api/');
   const directResponse = await fetch(directUrl, {
-    headers: { Accept: "application/json" },
-    credentials: "omit",
-    mode: "cors",
+    headers: { Accept: 'application/json' },
+    credentials: 'omit',
+    mode: 'cors',
     signal: AbortSignal.timeout(8000),
   });
   if (!directResponse.ok) {
@@ -484,12 +450,10 @@ const fetchVidsrc = async (endpoint: string) => {
 
 export const vsmovApi = {
   // Phim mới cập nhật
-  getLatest: (page = 1) =>
-    fetchVsmov(`/danh-sach/phim-moi-cap-nhat?page=${page}`),
+  getLatest: (page = 1) => fetchVsmov(`/danh-sach/phim-moi-cap-nhat?page=${page}`),
 
   // Danh sách theo loại
-  getByType: (slug: string, page = 1) =>
-    fetchVsmov(`/danh-sach/${slug}?page=${page}`),
+  getByType: (slug: string, page = 1) => fetchVsmov(`/danh-sach/${slug}?page=${page}`),
 
   getSeries: (page = 1) => fetchVsmov(`/danh-sach/phim-bo?page=${page}`),
   getSingle: (page = 1) => fetchVsmov(`/danh-sach/phim-le?page=${page}`),
@@ -502,12 +466,9 @@ export const vsmovApi = {
   getDetail: (slug: string) => fetchVsmov(`/phim/${slug}`),
 
   // Theo thể loại, quốc gia, năm
-  getByGenre: (slug: string, page = 1) =>
-    fetchVsmov(`/the-loai/${slug}?page=${page}`),
-  getByCountry: (slug: string, page = 1) =>
-    fetchVsmov(`/quoc-gia/${slug}?page=${page}`),
-  getByYear: (year: number, page = 1) =>
-    fetchVsmov(`/nam-phat-hanh/${year}?page=${page}`),
+  getByGenre: (slug: string, page = 1) => fetchVsmov(`/the-loai/${slug}?page=${page}`),
+  getByCountry: (slug: string, page = 1) => fetchVsmov(`/quoc-gia/${slug}?page=${page}`),
+  getByYear: (year: number, page = 1) => fetchVsmov(`/nam-phat-hanh/${year}?page=${page}`),
 
   // Tìm kiếm
   search: (keyword: string, page = 1) =>
@@ -526,21 +487,16 @@ const fetchVicdn = async (endpoint: string) => {
     // Ignore proxy fallback error
   }
 
-  if (typeof window === "undefined") {
-    throw new Error(`ViCDN API Error: ${proxyStatus || "proxy unavailable"}`);
+  if (typeof window === 'undefined') {
+    throw new Error(`ViCDN API Error: ${proxyStatus || 'proxy unavailable'}`);
   }
 
-  const normalizedEndpoint = endpoint.startsWith("/")
-    ? endpoint
-    : `/${endpoint}`;
-  const directUrl = new URL(
-    normalizedEndpoint.replace(/^\/+/, ""),
-    "https://vicdn.cc/api/",
-  );
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const directUrl = new URL(normalizedEndpoint.replace(/^\/+/, ''), 'https://vicdn.cc/api/');
   const directResponse = await fetch(directUrl, {
-    headers: { Accept: "application/json" },
-    credentials: "omit",
-    mode: "cors",
+    headers: { Accept: 'application/json' },
+    credentials: 'omit',
+    mode: 'cors',
     signal: AbortSignal.timeout(8000),
   });
   if (!directResponse.ok) {
@@ -563,12 +519,11 @@ export const vicdnApi = {
   // Helper tra cứu theo TMDB ID và mediaType
   getDetailByTmdb: async (
     tmdbId: string | number | undefined | null,
-    mediaType: "movie" | "tv" = "movie",
+    mediaType: 'movie' | 'tv' = 'movie',
     season = 1,
   ) => {
     if (!tmdbId) return null;
-    const primarySlug =
-      mediaType === "movie" ? `mv-${tmdbId}-1` : `tv-${tmdbId}-${season || 1}`;
+    const primarySlug = mediaType === 'movie' ? `mv-${tmdbId}-1` : `tv-${tmdbId}-${season || 1}`;
     try {
       const res: any = await fetchVicdn(`/info/${primarySlug}`);
       if (
@@ -583,7 +538,7 @@ export const vicdnApi = {
     } catch {
       // ignore
     }
-    if (mediaType === "movie") {
+    if (mediaType === 'movie') {
       try {
         const res: any = await fetchVicdn(`/info/mv-${tmdbId}`);
         if (
@@ -614,9 +569,7 @@ export const vidsrcApi = {
   getMovieEmbed: (tmdbId: string | number) =>
     fetchVidsrc(`/movie/${encodeURIComponent(String(tmdbId))}?sub=en`),
   getTvEmbed: (tmdbId: string | number, season: number, episode: number) =>
-    fetchVidsrc(
-      `/tv/${encodeURIComponent(String(tmdbId))}/${season}/${episode}?sub=en`,
-    ),
+    fetchVidsrc(`/tv/${encodeURIComponent(String(tmdbId))}/${season}/${episode}?sub=en`),
 };
 
 // ── VidLink embed adapter (TMDB IDs only; not a catalogue API) ────
@@ -649,43 +602,35 @@ export const nguoncApi = {
   getLatest: (page = 1) => fetchNguonc(`/films/phim-moi-cap-nhat?page=${page}`),
 
   // Danh sách theo loại
-  getByCategory: (slug: string, page = 1) =>
-    fetchNguonc(`/films/danh-sach/${slug}?page=${page}`),
+  getByCategory: (slug: string, page = 1) => fetchNguonc(`/films/danh-sach/${slug}?page=${page}`),
 
   getSeries: (page = 1) => fetchNguonc(`/films/danh-sach/phim-bo?page=${page}`),
   getSingle: (page = 1) => fetchNguonc(`/films/danh-sach/phim-le?page=${page}`),
-  getTvShows: (page = 1) =>
-    fetchNguonc(`/films/danh-sach/tv-shows?page=${page}`),
-  getNowShowing: (page = 1) =>
-    fetchNguonc(`/films/danh-sach/dang-chieu?page=${page}`),
+  getTvShows: (page = 1) => fetchNguonc(`/films/danh-sach/tv-shows?page=${page}`),
+  getNowShowing: (page = 1) => fetchNguonc(`/films/danh-sach/dang-chieu?page=${page}`),
 
   // Chi tiết phìm
   getDetail: (slug: string) => fetchNguonc(`/film/${slug}`),
 
   // Theo thể loại, quốc gia, năm
-  getByGenre: (slug: string, page = 1) =>
-    fetchNguonc(`/films/the-loai/${slug}?page=${page}`),
-  getByCountry: (slug: string, page = 1) =>
-    fetchNguonc(`/films/quoc-gia/${slug}?page=${page}`),
-  getByYear: (year: number, page = 1) =>
-    fetchNguonc(`/films/nam-phat-hanh/${year}?page=${page}`),
+  getByGenre: (slug: string, page = 1) => fetchNguonc(`/films/the-loai/${slug}?page=${page}`),
+  getByCountry: (slug: string, page = 1) => fetchNguonc(`/films/quoc-gia/${slug}?page=${page}`),
+  getByYear: (year: number, page = 1) => fetchNguonc(`/films/nam-phat-hanh/${year}?page=${page}`),
 
   // Tìm kiếm
   search: (keyword: string, page = 1) =>
-    fetchNguonc(
-      `/films/search?keyword=${encodeURIComponent(keyword)}&page=${page}`,
-    ),
+    fetchNguonc(`/films/search?keyword=${encodeURIComponent(keyword)}&page=${page}`),
 };
 
 function asRecord(value: unknown): Record<string, any> {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
     ? (value as Record<string, any>)
     : {};
 }
 
 function readNumber(value: unknown): number | undefined {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string") {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
     const parsed = Number.parseInt(value, 10);
     return Number.isFinite(parsed) ? parsed : undefined;
   }
@@ -715,14 +660,14 @@ async function searchAllSources(
   filters: MovieSearchFilters = {},
 ) {
   // Sanitize query: bỏ ký tự đặc biệt, gạch chéo vô tình gõ nhầm
-  const trimmed = (keyword || "")
-    .replace(/[\\/()[\]{}*+?^$|#@~`"']/g, " ")
-    .replace(/\s+/g, " ")
+  const trimmed = (keyword || '')
+    .replace(/[\\/()[\]{}*+?^$|#@~`"']/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 
   if (!trimmed) {
     return {
-      status: "success",
+      status: 'success',
       data: {
         items: [],
         params: {
@@ -743,12 +688,10 @@ async function searchAllSources(
   // fallback for Vercel/local environments without the gateway.
   try {
     const gatewayParams = searchFilterParams(filters);
-    gatewayParams.set("q", trimmed);
-    gatewayParams.set("page", String(page));
-    gatewayParams.set("limit", String(limit));
-    const gatewayResult = await fetchCatalogGateway(
-      `/search?${gatewayParams.toString()}`,
-    );
+    gatewayParams.set('q', trimmed);
+    gatewayParams.set('page', String(page));
+    gatewayParams.set('limit', String(limit));
+    const gatewayResult = await fetchCatalogGateway(`/search?${gatewayParams.toString()}`);
     if (gatewayResult?.data?.items) return gatewayResult;
   } catch {
     // Continue with the established multi-source fallback below.
@@ -756,31 +699,24 @@ async function searchAllSources(
 
   const normQuery = normalize(trimmed);
   const isMetaQuery = [
-    "thuyet minh",
-    "thuyết minh",
-    "thuyet-minh",
-    "long tieng",
-    "lồng tiếng",
-    "long-tieng",
-    "vietsub",
-    "subteam",
-    "chieu rap",
-    "chiếu rạp",
+    'thuyet minh',
+    'thuyết minh',
+    'thuyet-minh',
+    'long tieng',
+    'lồng tiếng',
+    'long-tieng',
+    'vietsub',
+    'subteam',
+    'chieu rap',
+    'chiếu rạp',
   ].includes(normQuery);
 
   if (isMetaQuery) {
     try {
-      const catalogData = await getFastCatalogPage(
-        page,
-        catalogRequests("latest", page),
-      );
-      const items = (
-        catalogData?.data?.items ||
-        catalogData?.items ||
-        []
-      ).slice(0, limit);
+      const catalogData = await getFastCatalogPage(page, catalogRequests('latest', page));
+      const items = (catalogData?.data?.items || catalogData?.items || []).slice(0, limit);
       return {
-        status: "success",
+        status: 'success',
         data: {
           items,
           params: {
@@ -792,7 +728,7 @@ async function searchAllSources(
             },
           },
         },
-        _sources: [{ source: "kkphim", count: items.length }],
+        _sources: [{ source: 'kkphim', count: items.length }],
         _totalMerged: items.length,
         _query: { original: trimmed, variants: [trimmed] },
       };
@@ -814,26 +750,24 @@ async function searchAllSources(
     request: () => Promise<unknown>;
   }> = [
     {
-      source: "kkphim",
+      source: 'kkphim',
       request: () => kkphimApi.search(primaryKeyword, page, limit),
     },
     {
-      source: "nguonc",
+      source: 'nguonc',
       // NguonC API hoạt động tốt nhất với từ khoá không dấu
       request: () =>
-        fetchNguonc(
-          `/films/search?keyword=${encodedUnaccented}&page=${page}`,
-        ).catch(() => null),
+        fetchNguonc(`/films/search?keyword=${encodedUnaccented}&page=${page}`).catch(() => null),
     },
     {
-      source: "vsmov",
+      source: 'vsmov',
       request: () => vsmovApi.search(primaryKeyword, page).catch(() => null),
     },
     ...(ENABLE_OPHIM
       ? [
           {
             // OPhim dùng /tim-kiem (không phải /v1/api/tim-kiem)
-            source: "ophim" as MovieSource,
+            source: 'ophim' as MovieSource,
             request: () =>
               fetchOphim(`/tim-kiem?keyword=${encodedKeyword}&page=${page}`).catch(() => null),
           },
@@ -841,14 +775,12 @@ async function searchAllSources(
       : []),
   ];
 
-  const primarySettled = await Promise.allSettled(
-    requests.map((entry) => entry.request()),
-  );
+  const primarySettled = await Promise.allSettled(requests.map((entry) => entry.request()));
 
   // Gom kết quả từ primary requests
   const groups = primarySettled.map((result, i) => ({
     source: requests[i].source,
-    items: result.status === "fulfilled" ? extractFilmItems(result.value) : [],
+    items: result.status === 'fulfilled' ? extractFilmItems(result.value) : [],
   }));
 
   // The normalized scorer already handles accents locally. Only ask upstreams
@@ -867,33 +799,30 @@ async function searchAllSources(
   }> = shouldExpandUpstream
     ? [
         {
-          source: "kkphim",
+          source: 'kkphim',
           request: () => kkphimApi.search(variants[1], page, limit),
         },
       ]
     : [];
 
-  const extraSettled = await Promise.allSettled(
-    extraRequests.map((entry) => entry.request()),
-  );
+  const extraSettled = await Promise.allSettled(extraRequests.map((entry) => entry.request()));
 
   // Gom kết quả từ extra requests (variant query)
   const extraGroups = extraSettled.map((result, i) => ({
     source: extraRequests[i].source,
-    items: result.status === "fulfilled" ? extractFilmItems(result.value) : [],
+    items: result.status === 'fulfilled' ? extractFilmItems(result.value) : [],
   }));
 
   // Merge tất cả groups (primary + extra)
   const allGroups = [...groups, ...extraGroups];
-  let merged =
-    extraGroups.length > 0 ? dedupeFilmsBySource(allGroups) : primaryMerged;
+  let merged = extraGroups.length > 0 ? dedupeFilmsBySource(allGroups) : primaryMerged;
 
   // ── Fallback thông minh: nếu tất cả nguồn upstream đều không có, tìm trong kho curated ──
   if (merged.length === 0) {
-    const { searchLocalFilms } = await import("@/lib/smart-search");
+    const { searchLocalFilms } = await import('@/lib/smart-search');
     const localMatches = searchLocalFilms(trimmed);
     if (localMatches.length > 0) {
-      merged = dedupeFilmsBySource([{ source: "kkphim", items: localMatches }]);
+      merged = dedupeFilmsBySource([{ source: 'kkphim', items: localMatches }]);
     }
   }
 
@@ -908,12 +837,12 @@ async function searchAllSources(
     1,
     Math.ceil(ranked.length / limit),
     ...primarySettled.map((result) =>
-      result.status === "fulfilled" ? getTotalPages(result.value) || 1 : 1,
+      result.status === 'fulfilled' ? getTotalPages(result.value) || 1 : 1,
     ),
   );
 
   return {
-    status: "success",
+    status: 'success',
     data: {
       items,
       params: {
@@ -931,14 +860,9 @@ async function searchAllSources(
   };
 }
 
-async function getDetailFromAnySource(
-  slug: string,
-  preferredSource?: MovieSource,
-): Promise<any> {
+async function getDetailFromAnySource(slug: string, preferredSource?: MovieSource): Promise<any> {
   try {
-    const bootstrap = await fetchCatalogGateway(
-      `/movies/${encodeURIComponent(slug)}/bootstrap`,
-    );
+    const bootstrap = await fetchCatalogGateway(`/movies/${encodeURIComponent(slug)}/bootstrap`);
     if (isUsableMovieDetail(bootstrap)) return bootstrap;
   } catch {
     // Preserve direct provider fallback when Go is unavailable.
@@ -949,27 +873,27 @@ async function getDetailFromAnySource(
     request: () => Promise<unknown>;
   }> = [
     {
-      source: "kkphim",
+      source: 'kkphim',
       request: () => kkphimApi.getDetail(slug),
     },
     ...(ENABLE_OPHIM
       ? [
           {
-            source: "ophim" as MovieSource,
+            source: 'ophim' as MovieSource,
             request: () => fetchOphim(`/phim/${slug}`),
           },
         ]
       : []),
     {
-      source: "nguonc",
+      source: 'nguonc',
       request: () => fetchNguonc(`/film/${slug}`),
     },
     {
-      source: "vsmov",
+      source: 'vsmov',
       request: () => vsmovApi.getDetail(slug),
     },
     {
-      source: "vicdn",
+      source: 'vicdn',
       request: () => fetchVicdn(`/info/${slug}`),
     },
   ];
@@ -991,7 +915,7 @@ async function getDetailFromAnySource(
         if (isUsableMovieDetail(data)) {
           return tagMovieDetailSource(data, entry.source);
         }
-        throw new Error("Detail not usable");
+        throw new Error('Detail not usable');
       }),
     );
   } catch {
@@ -1003,25 +927,20 @@ async function getDetailFromAnySource(
   }
 }
 
-async function getCatalogFromGateway(
-  kind: string,
-  page: number,
-  limit = 64,
-  value = "",
-) {
+async function getCatalogFromGateway(kind: string, page: number, limit = 64, value = '') {
   const query = new URLSearchParams({
     kind,
     page: String(page),
     limit: String(limit),
   });
-  if (value) query.set("value", value);
+  if (value) query.set('value', value);
   return fetchCatalogGateway(`/catalog?${query.toString()}`);
 }
 
 type HomeFeedPayload = {
   status: boolean;
   generatedAt?: string;
-  sections: Record<"latest" | "series" | "single" | "anime", any[]>;
+  sections: Record<'latest' | 'series' | 'single' | 'anime', any[]>;
   top10: any[];
 };
 
@@ -1034,16 +953,13 @@ async function getHomeFeed(limit = 24): Promise<HomeFeedPayload> {
     // running. The fallback preserves the same response contract so homepage
     // components never need provider-specific branches.
     const [latest, series, single, anime, top10] = await Promise.all([
-      getFastCatalogPage(1, catalogRequests("latest", 1)),
-      getFastCatalogPage(1, catalogRequests("series", 1), "series"),
-      getFastCatalogPage(1, catalogRequests("single", 1), "single"),
-      getFastCatalogPage(1, catalogRequests("anime", 1), "anime"),
-      fetchCatalogGateway(`/top10?limit=${Math.min(boundedLimit, 30)}`).catch(
-        () => [],
-      ),
+      getFastCatalogPage(1, catalogRequests('latest', 1)),
+      getFastCatalogPage(1, catalogRequests('series', 1), 'series'),
+      getFastCatalogPage(1, catalogRequests('single', 1), 'single'),
+      getFastCatalogPage(1, catalogRequests('anime', 1), 'anime'),
+      fetchCatalogGateway(`/top10?limit=${Math.min(boundedLimit, 30)}`).catch(() => []),
     ]);
-    const items = (payload: any) =>
-      payload?.data?.items || payload?.items || [];
+    const items = (payload: any) => payload?.data?.items || payload?.items || [];
     return {
       status: true,
       generatedAt: new Date().toISOString(),
@@ -1066,14 +982,10 @@ async function getDetailFromSource(source: MovieSource, slug: string) {
     vsmov: () => vsmovApi.getDetail(slug),
     ophim: () => fetchOphim(`/phim/${slug}`),
     vicdn: () => fetchVicdn(`/info/${slug}`),
-    vidsrc: () =>
-      Promise.reject(new Error("VidSrc chỉ hỗ trợ trình phát bằng TMDB ID.")),
-    vidlink: () =>
-      Promise.reject(new Error("VidLink chỉ hỗ trợ trình phát bằng TMDB ID.")),
-    "2embed": () =>
-      Promise.reject(new Error("2Embed chỉ hỗ trợ trình phát bằng TMDB ID.")),
-    vidcore: () =>
-      Promise.reject(new Error("VidCore chỉ hỗ trợ trình phát bằng TMDB ID.")),
+    vidsrc: () => Promise.reject(new Error('VidSrc chỉ hỗ trợ trình phát bằng TMDB ID.')),
+    vidlink: () => Promise.reject(new Error('VidLink chỉ hỗ trợ trình phát bằng TMDB ID.')),
+    '2embed': () => Promise.reject(new Error('2Embed chỉ hỗ trợ trình phát bằng TMDB ID.')),
+    vidcore: () => Promise.reject(new Error('VidCore chỉ hỗ trợ trình phát bằng TMDB ID.')),
   };
   try {
     const data = await requests[source]();
@@ -1102,18 +1014,13 @@ async function getMergedCatalogPage(
   requests: CatalogSourceRequest[],
   perSourceLimit = 36,
 ): Promise<any> {
-  const settled = await Promise.allSettled(
-    requests.map((entry) => entry.request()),
-  );
+  const settled = await Promise.allSettled(requests.map((entry) => entry.request()));
   const groups = requests.map((entry, index) => ({
     source: entry.source,
-    items:
-      settled[index].status === "fulfilled"
-        ? extractFilmItems(settled[index].value)
-        : [],
+    items: settled[index].status === 'fulfilled' ? extractFilmItems(settled[index].value) : [],
   }));
   const merged = dedupeFilmsBySource(groups);
-  const sourceOrder: MovieSource[] = ["kkphim", "nguonc", "vsmov", "ophim"];
+  const sourceOrder: MovieSource[] = ['kkphim', 'nguonc', 'vsmov', 'ophim'];
   const buckets = new Map<MovieSource, typeof merged>();
 
   for (const film of merged) {
@@ -1133,7 +1040,7 @@ async function getMergedCatalogPage(
 
   return {
     status: true,
-    msg: "done",
+    msg: 'done',
     items,
     params: {
       pagination: {
@@ -1189,9 +1096,7 @@ async function getFastCatalogPage(
         const data = await request();
         const rawItems = extractFilmItems(data);
         if (!rawItems.length) throw new Error(`${source} returned no films`);
-        const normalizedItems = dedupeFilmsBySource([
-          { source, items: rawItems },
-        ]);
+        const normalizedItems = dedupeFilmsBySource([{ source, items: rawItems }]);
         const items = curatedKind
           ? curateCatalogFilms(normalizedItems, curatedKind)
           : normalizedItems;
@@ -1231,9 +1136,7 @@ async function getFastCatalogPage(
 
         const pagination = {
           currentPage:
-            Number(sourcePagination.currentPage) ||
-            Number(sourcePagination.current_page) ||
-            page,
+            Number(sourcePagination.currentPage) || Number(sourcePagination.current_page) || page,
           totalItems,
           totalItemsPerPage,
           totalPages,
@@ -1252,11 +1155,10 @@ async function getFastCatalogPage(
 
   // KKPhim and healthy sources are fastest.
   const primary = requests.filter(
-    ({ source }) => source === "kkphim" || (ENABLE_OPHIM && source === "ophim"),
+    ({ source }) => source === 'kkphim' || (ENABLE_OPHIM && source === 'ophim'),
   );
   const fallback = requests.filter(
-    ({ source }) =>
-      source !== "kkphim" && (!ENABLE_OPHIM || source !== "ophim"),
+    ({ source }) => source !== 'kkphim' && (!ENABLE_OPHIM || source !== 'ophim'),
   );
 
   try {
@@ -1267,105 +1169,87 @@ async function getFastCatalogPage(
 }
 
 function catalogRequests(
-  kind:
-    "latest" | "series" | "single" | "anime" | "tvshows" | "genre" | "country",
+  kind: 'latest' | 'series' | 'single' | 'anime' | 'tvshows' | 'genre' | 'country',
   page: number,
   value?: string,
 ): CatalogSourceRequest[] {
-  const encodedValue = value ? encodeURIComponent(value) : "";
+  const encodedValue = value ? encodeURIComponent(value) : '';
   const requests: CatalogSourceRequest[] = [
     {
-      source: "kkphim",
+      source: 'kkphim',
       request: () => {
-        if (kind === "latest") return kkphimApi.getLatest(page);
-        if (kind === "series") return kkphimApi.getSeries(page, 64);
-        if (kind === "single") return kkphimApi.getSingle(page, 64);
-        if (kind === "anime") return kkphimApi.getAnime(page, 64);
-        if (kind === "tvshows") return kkphimApi.getTvShows(page, 36);
-        if (kind === "genre")
-          return kkphimApi.getByGenre(value || "", page, 36);
-        return kkphimApi.getByCountry(value || "", page, 36);
+        if (kind === 'latest') return kkphimApi.getLatest(page);
+        if (kind === 'series') return kkphimApi.getSeries(page, 64);
+        if (kind === 'single') return kkphimApi.getSingle(page, 64);
+        if (kind === 'anime') return kkphimApi.getAnime(page, 64);
+        if (kind === 'tvshows') return kkphimApi.getTvShows(page, 36);
+        if (kind === 'genre') return kkphimApi.getByGenre(value || '', page, 36);
+        return kkphimApi.getByCountry(value || '', page, 36);
       },
     },
     {
-      source: "nguonc",
+      source: 'nguonc',
       request: () => {
-        if (kind === "latest") return nguoncApi.getLatest(page);
-        if (kind === "series") return nguoncApi.getSeries(page);
-        if (kind === "single") return nguoncApi.getSingle(page);
-        if (kind === "tvshows") return nguoncApi.getTvShows(page);
-        if (kind === "genre") {
-          const nguonGenre =
-            value === "vien-tuong" ? "khoa-hoc-vien-tuong" : value;
-          return nguoncApi.getByGenre(nguonGenre || "", page);
+        if (kind === 'latest') return nguoncApi.getLatest(page);
+        if (kind === 'series') return nguoncApi.getSeries(page);
+        if (kind === 'single') return nguoncApi.getSingle(page);
+        if (kind === 'tvshows') return nguoncApi.getTvShows(page);
+        if (kind === 'genre') {
+          const nguonGenre = value === 'vien-tuong' ? 'khoa-hoc-vien-tuong' : value;
+          return nguoncApi.getByGenre(nguonGenre || '', page);
         }
-        if (kind === "country")
-          return nguoncApi.getByCountry(value || "", page);
-        return nguoncApi.getByCategory(
-          kind === "anime" ? "hoat-hinh" : kind,
-          page,
-        );
+        if (kind === 'country') return nguoncApi.getByCountry(value || '', page);
+        return nguoncApi.getByCategory(kind === 'anime' ? 'hoat-hinh' : kind, page);
       },
     },
     {
-      source: "vsmov",
+      source: 'vsmov',
       request: () => {
-        if (kind === "latest") return vsmovApi.getLatest(page);
-        if (kind === "series") return vsmovApi.getSeries(page);
-        if (kind === "single") return vsmovApi.getSingle(page);
-        if (kind === "anime") return vsmovApi.getAnime(page);
-        if (kind === "genre") return vsmovApi.getByGenre(value || "", page);
-        if (kind === "country") return vsmovApi.getByCountry(value || "", page);
-        return vsmovApi.getByType("tv-shows", page);
+        if (kind === 'latest') return vsmovApi.getLatest(page);
+        if (kind === 'series') return vsmovApi.getSeries(page);
+        if (kind === 'single') return vsmovApi.getSingle(page);
+        if (kind === 'anime') return vsmovApi.getAnime(page);
+        if (kind === 'genre') return vsmovApi.getByGenre(value || '', page);
+        if (kind === 'country') return vsmovApi.getByCountry(value || '', page);
+        return vsmovApi.getByType('tv-shows', page);
       },
     },
     {
-      source: "vicdn",
+      source: 'vicdn',
       request: () => {
-        if (kind === "latest") return vicdnApi.getLatest(page);
-        if (kind === "anime") return vicdnApi.getByCategory("hoat-hinh", page);
-        if (kind === "genre") {
+        if (kind === 'latest') return vicdnApi.getLatest(page);
+        if (kind === 'anime') return vicdnApi.getByCategory('hoat-hinh', page);
+        if (kind === 'genre') {
           const map: Record<string, string> = {
-            "hoat-hinh": "hoat-hinh",
-            "vien-tuong": "vien-tuong",
-            "khoa-hoc-vien-tuong": "vien-tuong",
-            "hinh-su": "hinh-su",
-            "bi-an": "bi-an",
-            "hanh-dong": "hanh-dong",
-            "chinh-kich": "chinh-kich",
+            'hoat-hinh': 'hoat-hinh',
+            'vien-tuong': 'vien-tuong',
+            'khoa-hoc-vien-tuong': 'vien-tuong',
+            'hinh-su': 'hinh-su',
+            'bi-an': 'bi-an',
+            'hanh-dong': 'hanh-dong',
+            'chinh-kich': 'chinh-kich',
           };
-          const categoryKey = map[value || ""] || value || "hanh-dong";
+          const categoryKey = map[value || ''] || value || 'hanh-dong';
           return vicdnApi.getByCategory(categoryKey, page);
         }
         return vicdnApi.getLatest(page);
       },
     },
-    ...(ENABLE_OPHIM && kind !== "tvshows"
+    ...(ENABLE_OPHIM && kind !== 'tvshows'
       ? [
           {
-            source: "ophim" as MovieSource,
+            source: 'ophim' as MovieSource,
             request: () => {
-              if (kind === "latest")
-                return fetchOphim(`/danh-sach/phim-moi-cap-nhat?page=${page}`);
-              if (kind === "series")
-                return fetchOphim(
-                  `/v1/api/danh-sach/phim-bo?page=${page}&limit=64`,
-                );
-              if (kind === "single")
-                return fetchOphim(
-                  `/v1/api/danh-sach/phim-le?page=${page}&limit=64`,
-                );
-              if (kind === "anime")
-                return fetchOphim(
-                  `/v1/api/danh-sach/hoat-hinh?page=${page}&limit=64`,
-                );
-              if (kind === "genre")
-                return fetchOphim(
-                  `/v1/api/the-loai/${encodedValue}?page=${page}&limit=36`,
-                );
-              return fetchOphim(
-                `/v1/api/quoc-gia/${encodedValue}?page=${page}&limit=36`,
-              );
+              if (kind === 'latest') return fetchOphim(`/danh-sach/phim-moi-cap-nhat?page=${page}`);
+              if (kind === 'series')
+                return fetchOphim(`/v1/api/danh-sach/phim-bo?page=${page}&limit=64`);
+              if (kind === 'single')
+                return fetchOphim(`/v1/api/danh-sach/phim-le?page=${page}&limit=64`);
+              if (kind === 'anime')
+                return fetchOphim(`/v1/api/danh-sach/hoat-hinh?page=${page}&limit=64`);
+              if (kind === 'genre')
+                return fetchOphim(`/v1/api/the-loai/${encodedValue}?page=${page}&limit=36`);
+              return fetchOphim(`/v1/api/quoc-gia/${encodedValue}?page=${page}&limit=36`);
             },
           } as CatalogSourceRequest,
         ]
@@ -1376,71 +1260,51 @@ function catalogRequests(
 
 // ── movieApi (alias for component compatibility) ──────────────────
 export const movieApi = {
-  getHomeFeed: (limit = 24) =>
-    getHomeFeed(limit).then((data) => ({ data })),
+  getHomeFeed: (limit = 24) => getHomeFeed(limit).then((data) => ({ data })),
   getLatest: (page = 1) =>
-    getCatalogFromGateway("latest", page)
-      .catch(() => getFastCatalogPage(page, catalogRequests("latest", page)))
+    getCatalogFromGateway('latest', page)
+      .catch(() => getFastCatalogPage(page, catalogRequests('latest', page)))
       .then((data) => ({ data })),
   getSeries: (page = 1) =>
-    getCatalogFromGateway("series", page)
-      .catch(() =>
-        getFastCatalogPage(page, catalogRequests("series", page), "series"),
-      )
+    getCatalogFromGateway('series', page)
+      .catch(() => getFastCatalogPage(page, catalogRequests('series', page), 'series'))
       .then((data) => ({ data })),
   getSingle: (page = 1) =>
-    getCatalogFromGateway("single", page)
-      .catch(() =>
-        getFastCatalogPage(page, catalogRequests("single", page), "single"),
-      )
+    getCatalogFromGateway('single', page)
+      .catch(() => getFastCatalogPage(page, catalogRequests('single', page), 'single'))
       .then((data) => ({ data })),
   getAnime: (page = 1) =>
-    getCatalogFromGateway("anime", page)
-      .catch(() =>
-        getFastCatalogPage(page, catalogRequests("anime", page), "anime"),
-      )
+    getCatalogFromGateway('anime', page)
+      .catch(() => getFastCatalogPage(page, catalogRequests('anime', page), 'anime'))
       .then((data) => ({ data })),
   getTvShows: (page = 1) =>
-    getCatalogFromGateway("tvshows", page)
-      .catch(() => getFastCatalogPage(page, catalogRequests("tvshows", page)))
+    getCatalogFromGateway('tvshows', page)
+      .catch(() => getFastCatalogPage(page, catalogRequests('tvshows', page)))
       .then((data) => ({ data })),
   getDetail: (slug: string, preferredSource?: MovieSource) =>
     getDetailFromAnySource(slug, preferredSource).then((data) => ({ data })),
   getDetailFromSource: (source: MovieSource, slug: string) =>
     getDetailFromSource(source, slug).then((data) => ({ data })),
-  getDetailV1: (slug: string) =>
-    kkphimApi.getDetailV1(slug).then((data) => ({ data })),
-  search: (
-    keyword: string,
-    page = 1,
-    limit = 24,
-    filters: MovieSearchFilters = {},
-  ) =>
+  getDetailV1: (slug: string) => kkphimApi.getDetailV1(slug).then((data) => ({ data })),
+  search: (keyword: string, page = 1, limit = 24, filters: MovieSearchFilters = {}) =>
     searchAllSources(keyword, page, limit, true, filters).then((data) => ({
       data,
     })),
   searchSourceAlternatives: (keyword: string, page = 1, limit = 24) =>
     searchAllSources(keyword, page, limit, false).then((data) => ({ data })),
   getByGenre: (slug: string, page = 1) =>
-    getCatalogFromGateway("genre", page, 64, slug)
-      .catch(() =>
-        getFastCatalogPage(page, catalogRequests("genre", page, slug)),
-      )
+    getCatalogFromGateway('genre', page, 64, slug)
+      .catch(() => getFastCatalogPage(page, catalogRequests('genre', page, slug)))
       .then((data) => ({ data })),
   getByCountry: (slug: string, page = 1) =>
-    getCatalogFromGateway("country", page, 64, slug)
-      .catch(() =>
-        getFastCatalogPage(page, catalogRequests("country", page, slug)),
-      )
+    getCatalogFromGateway('country', page, 64, slug)
+      .catch(() => getFastCatalogPage(page, catalogRequests('country', page, slug)))
       .then((data) => ({ data })),
   getByCountryFast: (slug: string, page = 1) =>
-    getCatalogFromGateway("country", page, 64, slug)
-      .catch(() =>
-        getFastCatalogPage(page, catalogRequests("country", page, slug)),
-      )
+    getCatalogFromGateway('country', page, 64, slug)
+      .catch(() => getFastCatalogPage(page, catalogRequests('country', page, slug)))
       .then((data) => ({ data })),
-  getByYear: (year: number, page = 1) =>
-    kkphimApi.getByYear(year, page).then((data) => ({ data })),
+  getByYear: (year: number, page = 1) => kkphimApi.getByYear(year, page).then((data) => ({ data })),
   getGenres: () => kkphimApi.getGenres().then((data) => ({ data })),
   getCountries: () => kkphimApi.getCountries().then((data) => ({ data })),
   getYears: () => kkphimApi.getYears().then((data) => ({ data })),
@@ -1448,91 +1312,54 @@ export const movieApi = {
     const page = params.page || 1;
     const limit = params.limit || 36;
     const value = [
-      params.type || "",
-      params.category || "",
-      params.country || "",
-      params.year || "",
-    ].join("|");
-    return getCatalogFromGateway("filter", page, limit, value)
+      params.type || '',
+      params.category || '',
+      params.country || '',
+      params.year || '',
+    ].join('|');
+    return getCatalogFromGateway('filter', page, limit, value)
       .catch(() => kkphimApi.getFiltered(params))
       .then((data) => ({ data }));
   },
-  getTop10: (limit = 10) =>
-    fetchCatalogGateway(`/top10?limit=${Math.max(1, Math.min(limit, 30))}`),
-  getVietsub: (page = 1) =>
-    kkphimApi.getVietsub(page).then((data) => ({ data })),
-  getThuyetMinh: (page = 1) =>
-    kkphimApi.getThuyetMinh(page).then((data) => ({ data })),
-  getLongTieng: (page = 1) =>
-    kkphimApi.getLongTieng(page).then((data) => ({ data })),
-  getDangChieu: (page = 1) =>
-    kkphimApi.getDangChieu(page).then((data) => ({ data })),
-  getHoanThanh: (page = 1) =>
-    kkphimApi.getHoanThanh(page).then((data) => ({ data })),
-  getSubteam: (page = 1) =>
-    kkphimApi.getSubteam(page).then((data) => ({ data })),
-  getChieuRap: (page = 1) =>
-    kkphimApi.getChieuRap(page).then((data) => ({ data })),
+  getTop10: (limit = 10) => fetchCatalogGateway(`/top10?limit=${Math.max(1, Math.min(limit, 30))}`),
+  getVietsub: (page = 1) => kkphimApi.getVietsub(page).then((data) => ({ data })),
+  getThuyetMinh: (page = 1) => kkphimApi.getThuyetMinh(page).then((data) => ({ data })),
+  getLongTieng: (page = 1) => kkphimApi.getLongTieng(page).then((data) => ({ data })),
+  getDangChieu: (page = 1) => kkphimApi.getDangChieu(page).then((data) => ({ data })),
+  getHoanThanh: (page = 1) => kkphimApi.getHoanThanh(page).then((data) => ({ data })),
+  getSubteam: (page = 1) => kkphimApi.getSubteam(page).then((data) => ({ data })),
+  getChieuRap: (page = 1) => kkphimApi.getChieuRap(page).then((data) => ({ data })),
   getFilmsByType: (type?: string, page = 1, _limit = 24) => {
-    if (type === "phim-bo" || type === "series")
-      return movieApi.getSeries(page);
-    if (type === "phim-le" || type === "single")
-      return movieApi.getSingle(page);
-    if (type === "hoat-hinh" || type === "anime")
-      return movieApi.getAnime(page);
-    if (type === "tv-shows" || type === "shows" || type === "tvshows")
+    if (type === 'phim-bo' || type === 'series') return movieApi.getSeries(page);
+    if (type === 'phim-le' || type === 'single') return movieApi.getSingle(page);
+    if (type === 'hoat-hinh' || type === 'anime') return movieApi.getAnime(page);
+    if (type === 'tv-shows' || type === 'shows' || type === 'tvshows')
       return movieApi.getTvShows(page);
-    if (type === "vietsub" || type === "phim-vietsub")
-      return movieApi.getVietsub(page);
-    if (
-      type === "thuyet-minh" ||
-      type === "thuyetminh" ||
-      type === "phim-thuyet-minh"
-    )
+    if (type === 'vietsub' || type === 'phim-vietsub') return movieApi.getVietsub(page);
+    if (type === 'thuyet-minh' || type === 'thuyetminh' || type === 'phim-thuyet-minh')
       return movieApi.getThuyetMinh(page);
-    if (
-      type === "long-tieng" ||
-      type === "longtieng" ||
-      type === "phim-long-tieng"
-    )
+    if (type === 'long-tieng' || type === 'longtieng' || type === 'phim-long-tieng')
       return movieApi.getLongTieng(page);
-    if (
-      type === "dang-chieu" ||
-      type === "ongoing" ||
-      type === "phim-bo-dang-chieu"
-    )
+    if (type === 'dang-chieu' || type === 'ongoing' || type === 'phim-bo-dang-chieu')
       return movieApi.getDangChieu(page);
-    if (
-      type === "hoan-thanh" ||
-      type === "completed" ||
-      type === "phim-bo-hoan-thanh"
-    )
+    if (type === 'hoan-thanh' || type === 'completed' || type === 'phim-bo-hoan-thanh')
       return movieApi.getHoanThanh(page);
-    if (type === "subteam") return movieApi.getSubteam(page);
-    if (
-      type === "chieu-rap" ||
-      type === "chieurap" ||
-      type === "phim-chieu-rap"
-    )
+    if (type === 'subteam') return movieApi.getSubteam(page);
+    if (type === 'chieu-rap' || type === 'chieurap' || type === 'phim-chieu-rap')
       return movieApi.getChieuRap(page);
     return movieApi.getLatest(page);
   },
 };
 
 // ── NestJS Backend API (cần backend chạy) ───────────────────────────
-const configuredApiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(
-  /\/$/,
-  "",
-);
+const configuredApiBase = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
 const defaultApiBase =
-  process.env.NODE_ENV === "production"
-    ? "/api/v1"
-    : "http://localhost:3001/api/v1";
+  process.env.NODE_ENV === 'production' ? '/api/v1' : 'http://localhost:3001/api/v1';
 
 // The Nest application has a fixed `/api/v1` prefix. Older local env files
 // used `/api`, which made every authenticated request return 404 after login.
 const API_BASE = configuredApiBase
-  ? configuredApiBase.endsWith("/api")
+  ? configuredApiBase.endsWith('/api')
     ? `${configuredApiBase}/v1`
     : configuredApiBase
   : defaultApiBase;
@@ -1558,55 +1385,39 @@ api.interceptors.response.use(
         metadata?: { startedAt: number };
       }
     ).metadata;
-    recordTelemetry("api.response", {
-      path: res.config.url || "unknown",
+    recordTelemetry('api.response', {
+      path: res.config.url || 'unknown',
       status: res.status,
-      duration_ms: metadata
-        ? Math.round(performance.now() - metadata.startedAt)
-        : 0,
-      cache: res.headers["x-cache"] || res.headers["cache-status"] || "unknown",
+      duration_ms: metadata ? Math.round(performance.now() - metadata.startedAt) : 0,
+      cache: res.headers['x-cache'] || res.headers['cache-status'] || 'unknown',
     });
     return res;
   },
   async (err) => {
     const original = err.config;
-    const metadata = (
-      original as { metadata?: { startedAt: number } } | undefined
-    )?.metadata;
+    const metadata = (original as { metadata?: { startedAt: number } } | undefined)?.metadata;
     recordTelemetry(
-      "api.error",
+      'api.error',
       {
-        path: original?.url || "unknown",
+        path: original?.url || 'unknown',
         status: err.response?.status || 0,
-        duration_ms: metadata
-          ? Math.round(performance.now() - metadata.startedAt)
-          : 0,
+        duration_ms: metadata ? Math.round(performance.now() - metadata.startedAt) : 0,
       },
-      "warning",
+      'warning',
     );
-    const requestPath = String(original?.url || "");
+    const requestPath = String(original?.url || '');
     // Authentication endpoints deliberately return 401/400 while a user is
     // signing in, exchanging a Firebase token, or recovering a session.  A
     // global redirect here races the login UI and can send an already signed-in
     // user back to /login. Let the calling form surface that error instead.
     const isAuthFlowRequest =
-      /^\/auth\/(?:me|login|register|firebase|refresh|2fa\/login-verify)/.test(
-        requestPath,
-      );
+      /^\/auth\/(?:me|login|register|firebase|refresh|2fa\/login-verify)/.test(requestPath);
 
-    if (
-      err.response?.status === 401 &&
-      !original._retry &&
-      !isAuthFlowRequest
-    ) {
+    if (err.response?.status === 401 && !original._retry && !isAuthFlowRequest) {
       original._retry = true;
       try {
         // Because withCredentials is true, this post will automatically send the refreshToken cookie
-        await axios.post(
-          `${API_BASE}/auth/refresh`,
-          {},
-          { withCredentials: true },
-        );
+        await axios.post(`${API_BASE}/auth/refresh`, {}, { withCredentials: true });
 
         // Retry original request (cookies are automatically sent)
         return api(original);
@@ -1626,7 +1437,7 @@ let getMeInFlight: Promise<AxiosResponse<User>> | null = null;
 
 function getCurrentUserOnce(): Promise<AxiosResponse<User>> {
   if (!getMeInFlight) {
-    getMeInFlight = api.get<User>("/auth/me").finally(() => {
+    getMeInFlight = api.get<User>('/auth/me').finally(() => {
       getMeInFlight = null;
     });
   }
@@ -1639,12 +1450,12 @@ export const authApi = {
     username: string;
     password: string;
     turnstileToken?: string;
-  }) => api.post("/auth/register", data),
+  }) => api.post('/auth/register', data),
   login: (data: { email: string; password: string; turnstileToken?: string }) =>
-    api.post("/auth/login", data),
+    api.post('/auth/login', data),
   firebaseLogin: (idToken: string) =>
-    api.post<{ success: true; user: import("@/store/authStore").User }>(
-      "/auth/firebase",
+    api.post<{ success: true; user: import('@/store/authStore').User }>(
+      '/auth/firebase',
       {},
       {
         headers: { Authorization: `Bearer ${idToken}` },
@@ -1654,19 +1465,17 @@ export const authApi = {
   // their bootstrap request so guests do not trigger several 401/refresh
   // round-trips and signed-in users only hydrate once.
   getMe: getCurrentUserOnce,
-  verifyEmail: (data: { token: string }) =>
-    api.post("/auth/verify-email", data),
-  forgotPassword: (data: { email: string }) =>
-    api.post("/auth/forgot-password", data),
+  verifyEmail: (data: { token: string }) => api.post('/auth/verify-email', data),
+  forgotPassword: (data: { email: string }) => api.post('/auth/forgot-password', data),
   resetPassword: (data: { token: string; newPassword: string }) =>
-    api.post("/auth/reset-password", data),
+    api.post('/auth/reset-password', data),
 
   // 2FA Endpoints
-  setup2FA: () => api.post("/auth/2fa/setup"),
-  verify2FA: (data: { code: string }) => api.post("/auth/2fa/verify", data),
-  disable2FA: (data: { code: string }) => api.post("/auth/2fa/disable", data),
+  setup2FA: () => api.post('/auth/2fa/setup'),
+  verify2FA: (data: { code: string }) => api.post('/auth/2fa/verify', data),
+  disable2FA: (data: { code: string }) => api.post('/auth/2fa/disable', data),
   loginVerify2FA: (data: { tempToken: string; code: string }) =>
-    api.post("/auth/2fa/login-verify", data),
+    api.post('/auth/2fa/login-verify', data),
 
   // Profile & Password Endpoints
   updateProfile: (data: {
@@ -1676,13 +1485,13 @@ export const authApi = {
     nameColor?: string;
     avatarFrameColor?: string;
     bio?: string;
-  }) => api.put("/users/me", data),
+  }) => api.put('/users/me', data),
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
-    api.put("/auth/change-password", data),
-  getSessions: () => api.get("/auth/sessions"),
+    api.put('/auth/change-password', data),
+  getSessions: () => api.get('/auth/sessions'),
   revokeSession: (id: string) => api.post(`/auth/sessions/${id}/revoke`),
-  revokeAllSessions: () => api.post("/auth/sessions/revoke-all"),
-  logout: () => api.post("/auth/logout"),
+  revokeAllSessions: () => api.post('/auth/sessions/revoke-all'),
+  logout: () => api.post('/auth/logout'),
 };
 
 // ── Watchlist API ──────────────────────────────────────────
@@ -1691,14 +1500,12 @@ let cachedWatchlistTime = 0;
 
 export const watchlistApi = {
   get: (page = 1) =>
-    api
-      .get<PaginatedResponse<WatchlistItem>>(`/users/me/watchlist?page=${page}`)
-      .catch(() => ({
-        data: { items: [], total: 0, totalPages: 1, page: 1, limit: 20 } as any,
-      })),
+    api.get<PaginatedResponse<WatchlistItem>>(`/users/me/watchlist?page=${page}`).catch(() => ({
+      data: { items: [], total: 0, totalPages: 1, page: 1, limit: 20 } as any,
+    })),
   add: (movieId: string, movieData?: any) => {
     cachedWatchlistPromise = null;
-    return api.put("/users/me/watchlist", {
+    return api.put('/users/me/watchlist', {
       movieId,
       title: movieData?.title,
       thumbUrl: movieData?.thumbUrl || movieData?.posterUrl,
@@ -1706,21 +1513,17 @@ export const watchlistApi = {
   },
   remove: (movieId: string) => {
     cachedWatchlistPromise = null;
-    return api.put("/users/me/watchlist/remove", { movieId });
+    return api.put('/users/me/watchlist/remove', { movieId });
   },
   check: async (movieId: string) => {
     const now = Date.now();
     if (!cachedWatchlistPromise || now - cachedWatchlistTime > 5000) {
       cachedWatchlistTime = now;
-      cachedWatchlistPromise = api
-        .get(`/users/me/watchlist`)
-        .catch(() => ({ data: [] }));
+      cachedWatchlistPromise = api.get(`/users/me/watchlist`).catch(() => ({ data: [] }));
     }
     const r = await cachedWatchlistPromise;
     const list = Array.isArray(r.data) ? r.data : r.data?.items || [];
-    const exists = list.some(
-      (item: any) => item.movieId === movieId || item.movie?.id === movieId,
-    );
+    const exists = list.some((item: any) => item.movieId === movieId || item.movie?.id === movieId);
     return { data: { inWatchlist: exists, isWatchlisted: exists } };
   },
 };
@@ -1728,15 +1531,11 @@ export const watchlistApi = {
 // ── Reviews API ────────────────────────────────────────────
 export const reviewsApi = {
   getByMovie: (movieId: string, page = 1) =>
-    api
-      .get(`/reviews/movie/${movieId}?page=${page}`)
-      .catch(() => ({ data: [] })),
-  getRecent: (page = 1) =>
-    api.get(`/reviews?page=${page}`).catch(() => ({ data: [] })),
-  getMine: (page = 1) =>
-    api.get(`/reviews/mine?page=${page}`).catch(() => ({ data: [] })),
+    api.get(`/reviews/movie/${movieId}?page=${page}`).catch(() => ({ data: [] })),
+  getRecent: (page = 1) => api.get(`/reviews?page=${page}`).catch(() => ({ data: [] })),
+  getMine: (page = 1) => api.get(`/reviews/mine?page=${page}`).catch(() => ({ data: [] })),
   create: (data: { movieId: string; content: string; rating?: number }) =>
-    api.post("/reviews", data),
+    api.post('/reviews', data),
   delete: (id: string) => api.delete(`/reviews/${id}`),
   like: (id: string) => api.post(`/reviews/${id}/like`),
 };
@@ -1752,7 +1551,18 @@ export const reportsApi = {
     screenshotUrl?: string;
     description: string;
     email?: string;
-  }) => api.post("/reports", data),
+  }) => api.post('/reports', data),
+};
+
+export const contactApi = {
+  create: (data: {
+    topic: string;
+    name?: string;
+    email: string;
+    subject?: string;
+    message: string;
+    turnstileToken?: string;
+  }) => api.post('/contact', data),
 };
 
 export type PublicSiteConfiguration = {
@@ -1781,9 +1591,7 @@ export type PublicSiteConfiguration = {
   updatedAt?: string | null;
 };
 
-let publicSiteConfigurationRequest: Promise<
-  AxiosResponse<PublicSiteConfiguration>
-> | null = null;
+let publicSiteConfigurationRequest: Promise<AxiosResponse<PublicSiteConfiguration>> | null = null;
 let publicSiteConfigurationRequestedAt = 0;
 
 export const siteConfigApi = {
@@ -1794,7 +1602,7 @@ export const siteConfigApi = {
     ) {
       publicSiteConfigurationRequestedAt = Date.now();
       publicSiteConfigurationRequest = api
-        .get<PublicSiteConfiguration>("/config/public")
+        .get<PublicSiteConfiguration>('/config/public')
         .catch((error) => {
           publicSiteConfigurationRequest = null;
           publicSiteConfigurationRequestedAt = 0;
@@ -1823,16 +1631,11 @@ export const viewApi = {
 
 // ── Ratings API ────────────────────────────────────────────
 export const ratingsApi = {
-  rate: (movieId: string, score: number) =>
-    api.post("/ratings", { movieId, score }),
+  rate: (movieId: string, score: number) => api.post('/ratings', { movieId, score }),
   getAverage: (movieId: string) =>
-    api
-      .get(`/ratings/movie/${movieId}/average`)
-      .catch(() => ({ data: { average: 0, count: 0 } })),
+    api.get(`/ratings/movie/${movieId}/average`).catch(() => ({ data: { average: 0, count: 0 } })),
   getMine: (movieId: string) =>
-    api
-      .get(`/ratings/movie/${movieId}/mine`)
-      .catch(() => ({ data: { score: 0 } })),
+    api.get(`/ratings/movie/${movieId}/mine`).catch(() => ({ data: { score: 0 } })),
 };
 
 // ── Watch History API ──────────────────────────────────────
@@ -1846,27 +1649,21 @@ export const watchHistoryApi = {
     movieTitle: string;
     movieThumb?: string;
     serverName?: string;
-  }) => api.put("/users/me/watch-history", data),
+  }) => api.put('/users/me/watch-history', data),
 
   /** Get paginated history list */
   getHistory: (page = 1, limit = 20) =>
-    api
-      .get<any>(`/users/me/watch-history?page=${page}&limit=${limit}`)
-      .catch(() => ({ data: [] })),
+    api.get<any>(`/users/me/watch-history?page=${page}&limit=${limit}`).catch(() => ({ data: [] })),
 
   /** Get resume data for a specific movie (returns all episodes) */
-  getResume: (movieId: string) =>
-    api.get(`/users/me/watch-history`).catch(() => ({ data: [] })),
+  getResume: (movieId: string) => api.get(`/users/me/watch-history`).catch(() => ({ data: [] })),
 
   /** Delete a single history entry */
   deleteEntry: (id: string) =>
-    api
-      .put("/users/me/watch-history/remove", { id })
-      .catch(() => ({ data: null })),
+    api.put('/users/me/watch-history/remove', { id }).catch(() => ({ data: null })),
 
   /** Clear all history */
-  clearAll: () =>
-    api.put("/users/me/watch-history/clear", {}).catch(() => ({ data: null })),
+  clearAll: () => api.put('/users/me/watch-history/clear', {}).catch(() => ({ data: null })),
 };
 
 export type PublicSystemNotification = {
@@ -1882,7 +1679,7 @@ export type PublicSystemNotification = {
 export const systemNotificationApi = {
   getBroadcasts: () =>
     api
-      .get<PublicSystemNotification[]>("/system-notifications")
+      .get<PublicSystemNotification[]>('/system-notifications')
       .then((res) => res.data)
       .catch(() => [] as PublicSystemNotification[]),
 };
@@ -1891,10 +1688,10 @@ export const recommendationApi = {
   getTop10: (userId?: string) =>
     api
       .get<{ items: any[]; source: string }>(
-        `/recommendations/top10${userId ? `?userId=${encodeURIComponent(userId)}` : ""}`,
+        `/recommendations/top10${userId ? `?userId=${encodeURIComponent(userId)}` : ''}`,
       )
       .then((res) => res.data)
-      .catch(() => ({ items: [] as any[], source: "error" })),
+      .catch(() => ({ items: [] as any[], source: 'error' })),
 
   getSimilar: (slug: string, limit = 12) =>
     api
@@ -1902,7 +1699,5 @@ export const recommendationApi = {
         `/recommendations/similar/${encodeURIComponent(slug)}?limit=${limit}`,
       )
       .then((res) => res.data)
-      .catch(() => ({ items: [] as any[], source: "error" })),
+      .catch(() => ({ items: [] as any[], source: 'error' })),
 };
-
-

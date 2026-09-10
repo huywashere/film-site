@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   HelpCircle,
   ShieldCheck,
@@ -32,136 +32,169 @@ import {
   MessageCircle,
   FileCheck,
   SendHorizontal,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { cardFont } from "@/lib/fonts";
-import { useToast } from "@/providers/ToastProvider";
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { cardFont } from '@/lib/fonts';
+import { useToast } from '@/providers/ToastProvider';
+import { contactApi, reportsApi } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
+import { useAuthModalStore } from '@/store/authModalStore';
+import { TurnstileWidget } from '@/components/auth/TurnstileWidget';
 
-export type SupportTab = "report" | "privacy" | "terms" | "contact";
+export type SupportTab = 'report' | 'privacy' | 'terms' | 'contact';
 
 interface SupportHubProps {
   initialTab?: SupportTab;
 }
 
 const TABS: { id: SupportTab; label: string; icon: React.ElementType }[] = [
-  { id: "report", label: "Báo lỗi", icon: HelpCircle },
-  { id: "privacy", label: "Chính sách bảo mật", icon: ShieldCheck },
-  { id: "terms", label: "Điều khoản sử dụng", icon: FileText },
-  { id: "contact", label: "Liên hệ", icon: Mail },
+  { id: 'report', label: 'Báo lỗi', icon: HelpCircle },
+  { id: 'privacy', label: 'Chính sách bảo mật', icon: ShieldCheck },
+  { id: 'terms', label: 'Điều khoản sử dụng', icon: FileText },
+  { id: 'contact', label: 'Liên hệ', icon: Mail },
 ];
 
 const ISSUE_CATEGORIES = [
-  { id: "playback", label: "Video không phát / Link hỏng", icon: Film },
-  { id: "subtitles", label: "Lỗi phụ đề / Sai Vietsub", icon: Subtitles },
-  { id: "audio", label: "Lệch tiếng / Mất âm thanh", icon: Volume2 },
-  { id: "lag", label: "Giật lag / Tải chậm 4K", icon: WifiOff },
-  { id: "duplicate", label: "Trùng tập / Thiếu tập phim", icon: RefreshCw },
-  { id: "ui_bug", label: "Lỗi giao diện / Tính năng web", icon: Sliders },
+  { id: 'playback', label: 'Video không phát / Link hỏng', icon: Film },
+  { id: 'subtitles', label: 'Lỗi phụ đề / Sai Vietsub', icon: Subtitles },
+  { id: 'audio', label: 'Lệch tiếng / Mất âm thanh', icon: Volume2 },
+  { id: 'lag', label: 'Giật lag / Tải chậm 4K', icon: WifiOff },
+  { id: 'duplicate', label: 'Trùng tập / Thiếu tập phim', icon: RefreshCw },
+  { id: 'ui_bug', label: 'Lỗi giao diện / Tính năng web', icon: Sliders },
 ];
 
 const CONTACT_TOPICS = [
-  { id: "support", label: "Hỗ trợ tài khoản & kỹ thuật" },
-  { id: "feedback", label: "Đóng góp ý kiến & Đề xuất phim" },
-  { id: "ads", label: "Hợp tác quảng cáo & Truyền thông" },
-  { id: "dmca", label: "Khiếu nại bản quyền DMCA" },
-  { id: "other", label: "Vấn đề khác" },
+  { id: 'support', label: 'Hỗ trợ tài khoản & kỹ thuật' },
+  { id: 'feedback', label: 'Đóng góp ý kiến & Đề xuất phim' },
+  { id: 'ads', label: 'Hợp tác quảng cáo & Truyền thông' },
+  { id: 'dmca', label: 'Khiếu nại bản quyền DMCA' },
+  { id: 'other', label: 'Vấn đề khác' },
 ];
 
-export function SupportHub({ initialTab = "report" }: SupportHubProps) {
+export function SupportHub({ initialTab = 'report' }: SupportHubProps) {
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const user = useAuthStore((state) => state.user);
+  const openAuthModal = useAuthModalStore((state) => state.openModal);
 
-  const tabParam = searchParams.get("tab") as SupportTab | null;
+  const tabParam = searchParams.get('tab') as SupportTab | null;
   const [activeTab, setActiveTab] = useState<SupportTab>(
-    tabParam && ["report", "privacy", "terms", "contact"].includes(tabParam)
+    tabParam && ['report', 'privacy', 'terms', 'contact'].includes(tabParam)
       ? tabParam
       : initialTab,
   );
 
   // Sync tab with URL parameter when it changes
   useEffect(() => {
-    if (tabParam && ["report", "privacy", "terms", "contact"].includes(tabParam)) {
+    if (tabParam && ['report', 'privacy', 'terms', 'contact'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [tabParam]);
 
   const switchTab = (tab: SupportTab) => {
     setActiveTab(tab);
-    window.history.replaceState(null, "", `/${tab}`);
+    window.history.replaceState(null, '', `/${tab}`);
   };
 
   // ── Form States for Báo Lỗi ──
-  const [reportCategory, setReportCategory] = useState("playback");
-  const [filmTitle, setFilmTitle] = useState("");
-  const [episode, setEpisode] = useState("");
-  const [deviceInfo, setDeviceInfo] = useState("");
-  const [reportDesc, setReportDesc] = useState("");
-  const [reportEmail, setReportEmail] = useState("");
+  const [reportCategory, setReportCategory] = useState('playback');
+  const [filmTitle, setFilmTitle] = useState('');
+  const [episode, setEpisode] = useState('');
+  const [deviceInfo, setDeviceInfo] = useState('');
+  const [reportDesc, setReportDesc] = useState('');
+  const [reportEmail, setReportEmail] = useState('');
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const [reportSubmitted, setReportSubmitted] = useState(false);
 
   // ── Form States for Liên Hệ ──
-  const [contactTopic, setContactTopic] = useState("support");
-  const [contactName, setContactName] = useState("");
-  const [contactEmail, setContactEmail] = useState("");
-  const [contactSubject, setContactSubject] = useState("");
-  const [contactMessage, setContactMessage] = useState("");
+  const [contactTopic, setContactTopic] = useState('support');
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactSubject, setContactSubject] = useState('');
+  const [contactMessage, setContactMessage] = useState('');
   const [isSubmittingContact, setIsSubmittingContact] = useState(false);
   const [contactSubmitted, setContactSubmitted] = useState(false);
+  const [contactTurnstileToken, setContactTurnstileToken] = useState<string | null>(null);
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   // Auto-detect device for Report form
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       const ua = navigator.userAgent;
       const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
-      const os = isMobile ? "Điện thoại / Di động" : "Máy tính Desktop";
-      setDeviceInfo(`${os} — ${navigator.platform || "Web Browser"}`);
+      const os = isMobile ? 'Điện thoại / Di động' : 'Máy tính Desktop';
+      setDeviceInfo(`${os} — ${navigator.platform || 'Web Browser'}`);
     }
   }, []);
 
   const handleAutoDetectDevice = () => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       setDeviceInfo(
         `${navigator.userAgent} (Màn hình: ${window.innerWidth}x${window.innerHeight})`,
       );
-      toast("Đã tự động nhận diện thiết bị của bạn", "success");
+      toast('Đã tự động nhận diện thiết bị của bạn', 'success');
     }
   };
 
-  const handleReportSubmit = (e: React.FormEvent) => {
+  const handleReportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!reportDesc.trim()) {
-      toast("Vui lòng nhập chi tiết mô tả lỗi", "error");
+    if (!user) {
+      toast('Vui lòng đăng nhập để gửi báo cáo', 'error');
+      openAuthModal('login');
+      return;
+    }
+    if (reportDesc.trim().length < 10) {
+      toast('Vui lòng nhập mô tả lỗi ít nhất 10 ký tự', 'error');
       return;
     }
 
     setIsSubmittingReport(true);
-    setTimeout(() => {
+    try {
+      await reportsApi.create({
+        category: reportCategory,
+        filmTitle: filmTitle.trim() || undefined,
+        episode: episode.trim() || undefined,
+        deviceInfo: deviceInfo.trim() || undefined,
+        description: reportDesc.trim(),
+        email: reportEmail.trim() || undefined,
+      });
       setIsSubmittingReport(false);
       setReportSubmitted(true);
-      toast(
-        "Báo cáo sự cố đã được gửi thành công đến đội ngũ kỹ thuật!",
-        "success",
-      );
-    }, 900);
+      toast('Báo cáo sự cố đã được gửi thành công đến đội ngũ kỹ thuật!', 'success');
+    } catch {
+      setIsSubmittingReport(false);
+      toast('Không thể gửi báo cáo lúc này. Vui lòng thử lại sau.', 'error');
+    }
   };
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contactMessage.trim() || !contactEmail.trim()) {
-      toast("Vui lòng điền email và nội dung tin nhắn", "error");
+    if (contactMessage.trim().length < 10 || !contactEmail.trim()) {
+      toast('Vui lòng nhập email và nội dung ít nhất 10 ký tự', 'error');
+      return;
+    }
+    if (turnstileEnabled && !contactTurnstileToken) {
+      toast('Vui lòng hoàn tất xác minh chống bot', 'error');
       return;
     }
 
     setIsSubmittingContact(true);
-    setTimeout(() => {
+    try {
+      await contactApi.create({
+        topic: contactTopic,
+        name: contactName.trim() || undefined,
+        email: contactEmail.trim(),
+        subject: contactSubject.trim() || undefined,
+        message: contactMessage.trim(),
+        turnstileToken: contactTurnstileToken || undefined,
+      });
       setIsSubmittingContact(false);
       setContactSubmitted(true);
-      toast(
-        "Tin nhắn liên hệ đã được gửi thành công đến ban quản trị NetPhim!",
-        "success",
-      );
-    }, 900);
+      toast('Tin nhắn liên hệ đã được gửi thành công đến ban quản trị NetPhim!', 'success');
+    } catch {
+      setIsSubmittingContact(false);
+      toast('Không thể gửi tin nhắn lúc này. Vui lòng thử lại sau.', 'error');
+    }
   };
 
   const currentTab = TABS.find((t) => t.id === activeTab) || TABS[0];
@@ -170,7 +203,7 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
     <div
       className={cn(
         cardFont.className,
-        "bg-background min-h-screen text-foreground pb-20 pt-20 sm:pt-24",
+        'bg-background min-h-screen text-foreground pb-20 pt-20 sm:pt-24',
       )}
     >
       <div className="w-full pl-4 lg:pl-24 pr-4 md:pr-10 relative z-10 max-w-[1400px] mx-auto space-y-8">
@@ -186,9 +219,7 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
           <ChevronRight size={13} className="text-neutral-600" />
           <span className="text-neutral-500">Hỗ trợ & Bản quyền</span>
           <ChevronRight size={13} className="text-neutral-600" />
-          <span className="font-semibold text-white">
-            {currentTab.label}
-          </span>
+          <span className="font-semibold text-white">{currentTab.label}</span>
         </nav>
 
         {/* Section Header Title */}
@@ -197,7 +228,8 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
             Hỗ Trợ & Bản Quyền
           </h1>
           <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed max-w-2xl">
-            Báo cáo sự cố phát video, tìm hiểu chính sách bảo mật dữ liệu, điều khoản bản quyền DMCA hoặc gửi thư trực tiếp đến NetPhim.
+            Báo cáo sự cố phát video, tìm hiểu chính sách bảo mật dữ liệu, điều khoản bản quyền DMCA
+            hoặc gửi thư trực tiếp đến NetPhim.
           </p>
         </div>
 
@@ -211,13 +243,13 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                 type="button"
                 onClick={() => switchTab(tab.id)}
                 className={cn(
-                  "inline-flex items-center gap-2 px-4 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none",
+                  'inline-flex items-center gap-2 px-4 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none',
                   isSelected
-                    ? "bg-white text-black font-extrabold shadow-sm"
-                    : "text-neutral-400 hover:text-white hover:bg-white/[0.04]",
+                    ? 'bg-white text-black font-extrabold shadow-sm'
+                    : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]',
                 )}
               >
-                <tab.icon size={15} className={isSelected ? "text-black" : "text-neutral-400"} />
+                <tab.icon size={15} className={isSelected ? 'text-black' : 'text-neutral-400'} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -227,7 +259,7 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
         {/* ── Content Container: Seamless background layout ── */}
         <div className="rounded-3xl border border-white/[0.08] bg-white/[0.02] p-5 sm:p-8 md:p-10">
           {/* ════════ TAB 1: BÁO LỖI ════════ */}
-          {activeTab === "report" && (
+          {activeTab === 'report' && (
             <div className="space-y-8">
               {/* Quick Troubleshooting Banner */}
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 sm:p-6">
@@ -242,7 +274,11 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                   </div>
                   <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
                     <strong className="text-white block mb-1">2. Xóa Cache nhanh</strong>
-                    Nhấn phím <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-[10px] font-mono">Ctrl + F5</kbd> để tải lại toàn bộ luồng phát.
+                    Nhấn phím{' '}
+                    <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-[10px] font-mono">
+                      Ctrl + F5
+                    </kbd>{' '}
+                    để tải lại toàn bộ luồng phát.
                   </div>
                   <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
                     <strong className="text-white block mb-1">3. Tắt chặn quảng cáo</strong>
@@ -258,7 +294,8 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                     Biểu Mẫu Gửi Báo Cáo Sự Cố
                   </h2>
                   <p className="text-xs sm:text-sm text-neutral-400">
-                    Nếu các bước trên không giải quyết được, vui lòng điền thông tin bên dưới. Kỹ thuật viên sẽ kiểm tra và fix link trong vòng 1-6 giờ.
+                    Nếu các bước trên không giải quyết được, vui lòng điền thông tin bên dưới. Kỹ
+                    thuật viên sẽ kiểm tra và fix link trong vòng 1-6 giờ.
                   </p>
                 </div>
 
@@ -267,13 +304,14 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                     <CheckCircle2 className="w-12 h-12 text-white mx-auto" />
                     <h3 className="text-lg font-bold text-white">Đã tiếp nhận báo cáo sự cố!</h3>
                     <p className="text-xs sm:text-sm text-neutral-300 max-w-md mx-auto leading-relaxed">
-                      Cảm ơn bạn đã hỗ trợ xây dựng NetPhim! Kỹ thuật viên đang kiểm tra lại nguồn phát của tập phim.
+                      Cảm ơn bạn đã hỗ trợ xây dựng NetPhim! Kỹ thuật viên đang kiểm tra lại nguồn
+                      phát của tập phim.
                     </p>
                     <button
                       type="button"
                       onClick={() => {
                         setReportSubmitted(false);
-                        setReportDesc("");
+                        setReportDesc('');
                       }}
                       className="mt-2 inline-flex items-center gap-2 rounded-full bg-white text-black hover:bg-neutral-200 px-5 py-2.5 text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-95"
                     >
@@ -297,13 +335,16 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                               type="button"
                               onClick={() => setReportCategory(cat.id)}
                               className={cn(
-                                "flex items-center gap-2.5 p-3 rounded-xl border text-xs transition-all text-left cursor-pointer",
+                                'flex items-center gap-2.5 p-3 rounded-xl border text-xs transition-all text-left cursor-pointer',
                                 isSelected
-                                  ? "border-white/30 bg-white/10 text-white font-bold"
-                                  : "border-white/[0.08] bg-white/[0.03] text-neutral-400 hover:text-white hover:bg-white/[0.06]",
+                                  ? 'border-white/30 bg-white/10 text-white font-bold'
+                                  : 'border-white/[0.08] bg-white/[0.03] text-neutral-400 hover:text-white hover:bg-white/[0.06]',
                               )}
                             >
-                              <cat.icon size={15} className={isSelected ? "text-white" : "text-neutral-400"} />
+                              <cat.icon
+                                size={15}
+                                className={isSelected ? 'text-white' : 'text-neutral-400'}
+                              />
                               <span className="truncate">{cat.label}</span>
                             </button>
                           );
@@ -321,6 +362,7 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                           type="text"
                           value={filmTitle}
                           onChange={(e) => setFilmTitle(e.target.value)}
+                          maxLength={300}
                           placeholder="Ví dụ: Spider-Man, Avengers..."
                           className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-white/30 transition-all"
                         />
@@ -333,6 +375,7 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                           type="text"
                           value={episode}
                           onChange={(e) => setEpisode(e.target.value)}
+                          maxLength={100}
                           placeholder="Ví dụ: Tập 03, phút 15:20..."
                           className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-white/30 transition-all"
                         />
@@ -358,6 +401,7 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                         type="text"
                         value={deviceInfo}
                         onChange={(e) => setDeviceInfo(e.target.value)}
+                        maxLength={2000}
                         placeholder="Chrome trên Windows 11, Safari iPhone..."
                         className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-white/30 transition-all"
                       />
@@ -373,6 +417,8 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                         required
                         value={reportDesc}
                         onChange={(e) => setReportDesc(e.target.value)}
+                        minLength={10}
+                        maxLength={10000}
                         placeholder="Mô tả cụ thể sự cố bạn gặp phải (ví dụ: màn hình đen khi tua, phụ đề bị nhảy dòng, âm thanh bị rè...)"
                         className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] p-3.5 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-white/30 transition-all resize-y"
                       />
@@ -416,7 +462,7 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
           )}
 
           {/* ════════ TAB 2: CHÍNH SÁCH BẢO MẬT ════════ */}
-          {activeTab === "privacy" && (
+          {activeTab === 'privacy' && (
             <div className="space-y-8 text-neutral-300 text-xs sm:text-sm leading-relaxed">
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 sm:p-6">
                 <div className="flex items-center gap-2 text-white font-bold text-sm mb-2">
@@ -424,9 +470,18 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                   <span>Tóm tắt nhanh chính sách bảo mật (TL;DR)</span>
                 </div>
                 <ul className="space-y-1.5 list-disc list-inside text-neutral-400">
-                  <li><strong className="text-neutral-200">Không thương mại hóa dữ liệu:</strong> NetPhim tuyệt đối không bán hay cho thuê thông tin cá nhân cho bên thứ ba.</li>
-                  <li><strong className="text-neutral-200">Mã hóa chuẩn cao:</strong> Mật khẩu được băm một chiều an toàn và đường truyền được bảo vệ bằng SSL/TLS 1.3.</li>
-                  <li><strong className="text-neutral-200">Toàn quyền quản lý:</strong> Bạn có thể xuất dữ liệu hoặc yêu cầu xóa vĩnh viễn tài khoản bất kỳ lúc nào.</li>
+                  <li>
+                    <strong className="text-neutral-200">Không thương mại hóa dữ liệu:</strong>{' '}
+                    NetPhim tuyệt đối không bán hay cho thuê thông tin cá nhân cho bên thứ ba.
+                  </li>
+                  <li>
+                    <strong className="text-neutral-200">Mã hóa chuẩn cao:</strong> Mật khẩu được
+                    băm một chiều an toàn và đường truyền được bảo vệ bằng SSL/TLS 1.3.
+                  </li>
+                  <li>
+                    <strong className="text-neutral-200">Toàn quyền quản lý:</strong> Bạn có thể
+                    xuất dữ liệu hoặc yêu cầu xóa vĩnh viễn tài khoản bất kỳ lúc nào.
+                  </li>
                 </ul>
               </div>
 
@@ -435,20 +490,26 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                   <span className="text-neutral-400">1.</span> Thông tin thu thập
                 </h3>
                 <p className="text-neutral-400">
-                  Chúng tôi chỉ thu thập dữ liệu tối thiểu cần thiết gồm: Email, Username, Tên hiển thị, Lịch sử xem gần đây (để hỗ trợ tua tiếp), và Danh sách phim yêu thích của bạn.
+                  Chúng tôi chỉ thu thập dữ liệu tối thiểu cần thiết gồm: Email, Username, Tên hiển
+                  thị, Lịch sử xem gần đây (để hỗ trợ tua tiếp), và Danh sách phim yêu thích của
+                  bạn.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <div className="p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02]">
                     <strong className="text-white block mb-1 flex items-center gap-1.5 text-xs">
                       <UserCheck size={14} className="text-neutral-400" /> Tài khoản cá nhân
                     </strong>
-                    <span className="text-neutral-400 text-xs">Email, tên tài khoản và mật khẩu đã mã hóa.</span>
+                    <span className="text-neutral-400 text-xs">
+                      Email, tên tài khoản và mật khẩu đã mã hóa.
+                    </span>
                   </div>
                   <div className="p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02]">
                     <strong className="text-white block mb-1 flex items-center gap-1.5 text-xs">
                       <Database size={14} className="text-neutral-400" /> Tiến trình xem phim
                     </strong>
-                    <span className="text-neutral-400 text-xs">Thời điểm dừng phim để bạn có thể xem tiếp đa thiết bị.</span>
+                    <span className="text-neutral-400 text-xs">
+                      Thời điểm dừng phim để bạn có thể xem tiếp đa thiết bị.
+                    </span>
                   </div>
                 </div>
               </section>
@@ -458,7 +519,9 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                   <span className="text-neutral-400">2.</span> Bảo mật & Mã hóa đường truyền
                 </h3>
                 <p className="text-neutral-400">
-                  Mọi kết nối giữa thiết bị của bạn và hệ thống máy chủ NetPhim đều được mã hóa bằng chuẩn <strong className="text-neutral-200">SSL/TLS 1.3</strong>. Mật khẩu không bao giờ được lưu dưới dạng văn bản thô.
+                  Mọi kết nối giữa thiết bị của bạn và hệ thống máy chủ NetPhim đều được mã hóa bằng
+                  chuẩn <strong className="text-neutral-200">SSL/TLS 1.3</strong>. Mật khẩu không
+                  bao giờ được lưu dưới dạng văn bản thô.
                 </p>
               </section>
 
@@ -467,7 +530,9 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                   <span className="text-neutral-400">3.</span> Cookie & Bộ nhớ trình duyệt
                 </h3>
                 <p className="text-neutral-400">
-                  NetPhim sử dụng Cookie và LocalStorage để lưu phiên đăng nhập an toàn, âm lượng mặc định và tùy chọn phụ đề của bạn. Bạn có thể xóa dữ liệu này trong Cài đặt trình duyệt bất cứ lúc nào.
+                  NetPhim sử dụng Cookie và LocalStorage để lưu phiên đăng nhập an toàn, âm lượng
+                  mặc định và tùy chọn phụ đề của bạn. Bạn có thể xóa dữ liệu này trong Cài đặt
+                  trình duyệt bất cứ lúc nào.
                 </p>
               </section>
 
@@ -476,14 +541,19 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                   <span className="text-neutral-400">4.</span> Quyền của người dùng
                 </h3>
                 <p className="text-neutral-400">
-                  Bạn có toàn quyền chỉnh sửa thông tin, yêu cầu trích xuất dữ liệu lịch sử hoặc xóa vĩnh viễn tài khoản qua trang Cài Đặt hoặc liên hệ qua email <a href="mailto:privacy@netphim.tv" className="text-white underline font-medium">privacy@netphim.tv</a>.
+                  Bạn có toàn quyền chỉnh sửa thông tin, yêu cầu trích xuất dữ liệu lịch sử hoặc xóa
+                  vĩnh viễn tài khoản qua trang Cài Đặt hoặc liên hệ qua email{' '}
+                  <a href="mailto:privacy@netphim.tv" className="text-white underline font-medium">
+                    privacy@netphim.tv
+                  </a>
+                  .
                 </p>
               </section>
             </div>
           )}
 
           {/* ════════ TAB 3: ĐIỀU KHOẢN SỬ DỤNG ════════ */}
-          {activeTab === "terms" && (
+          {activeTab === 'terms' && (
             <div className="space-y-8 text-neutral-300 text-xs sm:text-sm leading-relaxed">
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 sm:p-6">
                 <div className="flex items-center gap-2 text-white font-bold text-sm mb-2">
@@ -491,7 +561,9 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                   <span>Tuyên bố miễn trừ trách nhiệm nội dung</span>
                 </div>
                 <p className="text-neutral-400">
-                  NetPhim là nền tảng chia sẻ và chỉ mục siêu liên kết từ các nguồn bên thứ ba công khai trên Internet. Chúng tôi không trực tiếp tải lên, lưu trữ hoặc sở hữu bản quyền các video phát hành. Chúng tôi cam kết tôn trọng luật bản quyền DMCA.
+                  NetPhim là nền tảng chia sẻ và chỉ mục siêu liên kết từ các nguồn bên thứ ba công
+                  khai trên Internet. Chúng tôi không trực tiếp tải lên, lưu trữ hoặc sở hữu bản
+                  quyền các video phát hành. Chúng tôi cam kết tôn trọng luật bản quyền DMCA.
                 </p>
               </div>
 
@@ -500,7 +572,8 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                   <span className="text-neutral-400">1.</span> Chấp thuận điều khoản
                 </h3>
                 <p className="text-neutral-400">
-                  Bằng việc truy cập hoặc sử dụng NetPhim, bạn đồng ý tuân thủ toàn bộ các điều khoản và quy định tại đây. Nếu không đồng ý, vui lòng dừng sử dụng dịch vụ.
+                  Bằng việc truy cập hoặc sử dụng NetPhim, bạn đồng ý tuân thủ toàn bộ các điều
+                  khoản và quy định tại đây. Nếu không đồng ý, vui lòng dừng sử dụng dịch vụ.
                 </p>
               </section>
 
@@ -509,11 +582,14 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                   <span className="text-neutral-400">2.</span> Chính sách bản quyền & DMCA Takedown
                 </h3>
                 <p className="text-neutral-400">
-                  Nếu bạn là chủ sở hữu bản quyền hợp pháp và phát hiện nội dung vi phạm, vui lòng gửi email yêu cầu gỡ bỏ tới hòm thư chuyên trách:
+                  Nếu bạn là chủ sở hữu bản quyền hợp pháp và phát hiện nội dung vi phạm, vui lòng
+                  gửi email yêu cầu gỡ bỏ tới hòm thư chuyên trách:
                 </p>
                 <div className="p-4 rounded-xl border border-white/[0.08] bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <span className="text-xs text-neutral-400 block">Hòm thư tiếp nhận khiếu nại bản quyền:</span>
+                    <span className="text-xs text-neutral-400 block">
+                      Hòm thư tiếp nhận khiếu nại bản quyền:
+                    </span>
                     <strong className="text-white text-sm">dmca@netphim.tv</strong>
                   </div>
                   <a
@@ -532,11 +608,15 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex items-start gap-2.5 p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02]">
                     <Ban size={16} className="text-neutral-400 shrink-0 mt-0.5" />
-                    <span className="text-neutral-300">Không spam quảng cáo, cờ bạc, lừa đảo trong phần bình luận.</span>
+                    <span className="text-neutral-300">
+                      Không spam quảng cáo, cờ bạc, lừa đảo trong phần bình luận.
+                    </span>
                   </div>
                   <div className="flex items-start gap-2.5 p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02]">
                     <Ban size={16} className="text-neutral-400 shrink-0 mt-0.5" />
-                    <span className="text-neutral-300">Không xúc phạm thành viên khác, phân biệt vùng miền hay quấy rối.</span>
+                    <span className="text-neutral-300">
+                      Không xúc phạm thành viên khác, phân biệt vùng miền hay quấy rối.
+                    </span>
                   </div>
                 </div>
               </section>
@@ -544,7 +624,7 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
           )}
 
           {/* ════════ TAB 4: LIÊN HỆ ════════ */}
-          {activeTab === "contact" && (
+          {activeTab === 'contact' && (
             <div className="space-y-8">
               {/* Channels Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -596,7 +676,8 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                     Gửi Tin Nhắn Đến Ban Quản Trị
                   </h2>
                   <p className="text-xs sm:text-sm text-neutral-400">
-                    Điền lời nhắn vào biểu mẫu bên dưới. Chúng tôi sẽ phản hồi lại email của bạn trong vòng 24 giờ.
+                    Điền lời nhắn vào biểu mẫu bên dưới. Chúng tôi sẽ phản hồi lại email của bạn
+                    trong vòng 24 giờ.
                   </p>
                 </div>
 
@@ -605,13 +686,14 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                     <CheckCircle2 className="w-12 h-12 text-white mx-auto" />
                     <h3 className="text-lg font-bold text-white">Đã gửi tin nhắn thành công!</h3>
                     <p className="text-xs sm:text-sm text-neutral-300 max-w-md mx-auto leading-relaxed">
-                      Cảm ơn bạn đã liên hệ! Chúng tôi đã nhận được thông điệp và sẽ phản hồi đến <strong>{contactEmail}</strong> sớm nhất.
+                      Cảm ơn bạn đã liên hệ! Chúng tôi đã nhận được thông điệp và sẽ phản hồi đến{' '}
+                      <strong>{contactEmail}</strong> sớm nhất.
                     </p>
                     <button
                       type="button"
                       onClick={() => {
                         setContactSubmitted(false);
-                        setContactMessage("");
+                        setContactMessage('');
                       }}
                       className="mt-2 inline-flex items-center gap-2 rounded-full bg-white text-black hover:bg-neutral-200 px-5 py-2.5 text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-95"
                     >
@@ -635,10 +717,10 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                               type="button"
                               onClick={() => setContactTopic(t.id)}
                               className={cn(
-                                "p-3 rounded-xl border text-xs transition-all text-left truncate cursor-pointer",
+                                'p-3 rounded-xl border text-xs transition-all text-left truncate cursor-pointer',
                                 isSelected
-                                  ? "border-white/30 bg-white/10 text-white font-bold"
-                                  : "border-white/[0.08] bg-white/[0.03] text-neutral-400 hover:text-white hover:bg-white/[0.06]",
+                                  ? 'border-white/30 bg-white/10 text-white font-bold'
+                                  : 'border-white/[0.08] bg-white/[0.03] text-neutral-400 hover:text-white hover:bg-white/[0.06]',
                               )}
                             >
                               {t.label}
@@ -658,6 +740,7 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                           type="text"
                           value={contactName}
                           onChange={(e) => setContactName(e.target.value)}
+                          maxLength={120}
                           placeholder="Nguyễn Văn A"
                           className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-white/30 transition-all"
                         />
@@ -671,6 +754,7 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                           required
                           value={contactEmail}
                           onChange={(e) => setContactEmail(e.target.value)}
+                          maxLength={320}
                           placeholder="name@example.com"
                           className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-white/30 transition-all"
                         />
@@ -686,6 +770,7 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                         type="text"
                         value={contactSubject}
                         onChange={(e) => setContactSubject(e.target.value)}
+                        maxLength={300}
                         placeholder="Tóm tắt ngắn gọn nội dung liên hệ..."
                         className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-white/30 transition-all"
                       />
@@ -701,10 +786,16 @@ export function SupportHub({ initialTab = "report" }: SupportHubProps) {
                         required
                         value={contactMessage}
                         onChange={(e) => setContactMessage(e.target.value)}
+                        minLength={10}
+                        maxLength={10000}
                         placeholder="Nhập nội dung lời nhắn, câu hỏi hoặc đề xuất hợp tác của bạn..."
                         className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] p-3.5 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-white/30 transition-all resize-y"
                       />
                     </div>
+
+                    {turnstileEnabled && (
+                      <TurnstileWidget action="contact" onTokenChange={setContactTurnstileToken} />
+                    )}
 
                     <button
                       type="submit"

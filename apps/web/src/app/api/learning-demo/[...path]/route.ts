@@ -1,25 +1,34 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-const demoCatalog: Record<string, { title: string; episodes: Array<{ server_name: string; server_data: Array<{ name: string; slug: string; link_embed: string; link_m3u8: string }> }> }> = {
+const demoCatalog: Record<
+  string,
+  {
+    title: string;
+    episodes: Array<{
+      server_name: string;
+      server_data: Array<{ name: string; slug: string; link_embed: string; link_m3u8: string }>;
+    }>;
+  }
+> = {
   demo: {
-    title: "Demo movie",
+    title: 'Demo movie',
     episodes: [
       {
-        server_name: "Demo Engsub (học tập)",
+        server_name: 'Demo Engsub (học tập)',
         server_data: [
           {
-            name: "Tập 1",
-            slug: "tap-1",
-            link_embed: "https://www.youtube.com/embed/aqz-KE-bpKQ?autoplay=1",
-            link_m3u8: "",
+            name: 'Tập 1',
+            slug: 'tap-1',
+            link_embed: 'https://www.youtube.com/embed/aqz-KE-bpKQ?autoplay=1',
+            link_m3u8: '',
           },
           {
-            name: "Tập 2",
-            slug: "tap-2",
-            link_embed: "https://www.youtube.com/embed/ScMzIvxBSi4?autoplay=1",
-            link_m3u8: "",
+            name: 'Tập 2',
+            slug: 'tap-2',
+            link_embed: 'https://www.youtube.com/embed/ScMzIvxBSi4?autoplay=1',
+            link_m3u8: '',
           },
         ],
       },
@@ -34,24 +43,25 @@ function buildDemoPayload(slug: string) {
       slug,
       name: item.title,
       origin_name: item.title,
-      lang: "English",
+      lang: 'English',
     },
     episodes: item.episodes,
   };
 }
 
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ path: string[] }> },
-) {
-  const { path: segments = [] } = await params;
-  const maybeSlug = segments[1] || segments[0] || "demo";
+export async function GET(_request: Request, { params }: { params: Promise<{ path: string[] }> }) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
 
-  if (segments[0] === "movie") {
+  const { path: segments = [] } = await params;
+  const maybeSlug = segments[1] || segments[0] || 'demo';
+
+  if (segments[0] === 'movie') {
     return NextResponse.json(buildDemoPayload(maybeSlug));
   }
 
-  if (segments[0] === "search") {
+  if (segments[0] === 'search') {
     return NextResponse.json({
       data: {
         items: Object.entries(demoCatalog).map(([slug, item]) => ({

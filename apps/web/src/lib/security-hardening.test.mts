@@ -47,3 +47,9 @@ test('custom advertisement HTML uses DOMPurify before rendering', () => {
   assert.match(banner, /DOMPurify\.sanitize/);
   assert.match(banner, /dangerouslySetInnerHTML=\{\{ __html: sanitizedHtml \}\}/);
 });
+
+test('learning demo API is unavailable in production', () => {
+  const route = source('src/app/api/learning-demo/[...path]/route.ts');
+  assert.match(route, /process\.env\.NODE_ENV === ["']production["']/);
+  assert.match(route, /status:\s*404/);
+});

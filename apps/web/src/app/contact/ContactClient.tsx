@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { LegalPageLayout, TOCItem } from "@/components/legal/LegalPageLayout";
+import React, { useState } from 'react';
+import { LegalPageLayout, TOCItem } from '@/components/legal/LegalPageLayout';
 import {
   Mail,
   MessageSquare,
@@ -14,48 +14,68 @@ import {
   Sparkles,
   ExternalLink,
   MessageCircle,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useToast } from "@/providers/ToastProvider";
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/providers/ToastProvider';
+import { contactApi } from '@/lib/api';
+import { TurnstileWidget } from '@/components/auth/TurnstileWidget';
 
 const TOC: TOCItem[] = [
-  { id: "channels", title: "1. Các kênh hỗ trợ chính thức" },
-  { id: "contact-form", title: "2. Biểu mẫu gửi tin nhắn liên hệ" },
-  { id: "partnership", title: "3. Hợp tác quảng cáo & Bản quyền" },
-  { id: "faq", title: "4. Câu hỏi thường gặp" },
+  { id: 'channels', title: '1. Các kênh hỗ trợ chính thức' },
+  { id: 'contact-form', title: '2. Biểu mẫu gửi tin nhắn liên hệ' },
+  { id: 'partnership', title: '3. Hợp tác quảng cáo & Bản quyền' },
+  { id: 'faq', title: '4. Câu hỏi thường gặp' },
 ];
 
 const CONTACT_TOPICS = [
-  { id: "support", label: "Hỗ trợ tài khoản & kỹ thuật" },
-  { id: "feedback", label: "Đóng góp ý kiến & Đề xuất phim" },
-  { id: "ads", label: "Hợp tác quảng cáo & Truyền thông" },
-  { id: "dmca", label: "Khiếu nại bản quyền DMCA" },
-  { id: "other", label: "Vấn đề khác" },
+  { id: 'support', label: 'Hỗ trợ tài khoản & kỹ thuật' },
+  { id: 'feedback', label: 'Đóng góp ý kiến & Đề xuất phim' },
+  { id: 'ads', label: 'Hợp tác quảng cáo & Truyền thông' },
+  { id: 'dmca', label: 'Khiếu nại bản quyền DMCA' },
+  { id: 'other', label: 'Vấn đề khác' },
 ];
 
 export function ContactClient() {
   const { toast } = useToast();
-  const [topic, setTopic] = useState("support");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
+  const [topic, setTopic] = useState('support');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() || !email.trim()) {
-      toast("Vui lòng điền đầy đủ email và nội dung tin nhắn", "error");
+    if (message.trim().length < 10 || !email.trim()) {
+      toast('Vui lòng nhập email và nội dung ít nhất 10 ký tự', 'error');
+      return;
+    }
+
+    if (turnstileEnabled && !turnstileToken) {
+      toast('Vui lòng hoàn tất xác minh chống bot', 'error');
       return;
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      await contactApi.create({
+        topic,
+        name: name.trim() || undefined,
+        email: email.trim(),
+        subject: subject.trim() || undefined,
+        message: message.trim(),
+        turnstileToken: turnstileToken || undefined,
+      });
       setIsSubmitting(false);
       setSubmitted(true);
-      toast("Tin nhắn của bạn đã được gửi thành công đến ban quản trị NetPhim!", "success");
-    }, 1000);
+      toast('Tin nhắn của bạn đã được gửi thành công đến ban quản trị NetPhim!', 'success');
+    } catch {
+      setIsSubmitting(false);
+      toast('Không thể gửi tin nhắn lúc này. Vui lòng thử lại sau.', 'error');
+    }
   };
 
   return (
@@ -121,7 +141,10 @@ export function ContactClient() {
       </section>
 
       {/* Section 2: Interactive Contact Form */}
-      <section id="contact-form" className="scroll-mt-24 space-y-6 pt-4 border-t border-neutral-800">
+      <section
+        id="contact-form"
+        className="scroll-mt-24 space-y-6 pt-4 border-t border-neutral-800"
+      >
         <div>
           <div className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-semibold text-violet-300 mb-2">
             <Sparkles size={13} />
@@ -131,7 +154,8 @@ export function ContactClient() {
             <span className="text-violet-400">2.</span> Gửi tin nhắn trực tiếp đến ban quản trị
           </h2>
           <p className="mt-1 text-xs sm:text-sm text-neutral-400">
-            Điền thông tin và lời nhắn của bạn vào biểu mẫu bên dưới. Chúng tôi sẽ phản hồi qua email trong vòng 24 giờ.
+            Điền thông tin và lời nhắn của bạn vào biểu mẫu bên dưới. Chúng tôi sẽ phản hồi qua
+            email trong vòng 24 giờ.
           </p>
         </div>
 
@@ -140,14 +164,16 @@ export function ContactClient() {
             <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
             <h3 className="text-lg font-bold text-white">Đã gửi tin nhắn thành công!</h3>
             <p className="text-xs sm:text-sm text-neutral-300 max-w-md mx-auto leading-relaxed">
-              Cảm ơn bạn đã liên hệ với NetPhim. Đội ngũ phụ trách sẽ xem xét và phản hồi đến email <strong>{email}</strong> sớm nhất có thể.
+              Cảm ơn bạn đã liên hệ với NetPhim. Đội ngũ phụ trách sẽ xem xét và phản hồi đến email{' '}
+              <strong>{email}</strong> sớm nhất có thể.
             </p>
             <button
               type="button"
               onClick={() => {
                 setSubmitted(false);
-                setMessage("");
-                setSubject("");
+                setMessage('');
+                setSubject('');
+                setTurnstileToken(null);
               }}
               className="mt-2 inline-flex items-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 px-4 py-2 text-xs font-bold text-white transition-all cursor-pointer"
             >
@@ -156,7 +182,10 @@ export function ContactClient() {
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-neutral-800/80 bg-[#161a26] p-5 sm:p-7">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-5 rounded-2xl border border-neutral-800/80 bg-[#161a26] p-5 sm:p-7"
+          >
             {/* Topic Selection */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-neutral-300 mb-2.5">
@@ -171,10 +200,10 @@ export function ContactClient() {
                       type="button"
                       onClick={() => setTopic(item.id)}
                       className={cn(
-                        "p-2.5 rounded-xl border text-xs font-semibold transition-all text-left truncate cursor-pointer",
+                        'p-2.5 rounded-xl border text-xs font-semibold transition-all text-left truncate cursor-pointer',
                         isSelected
-                          ? "border-violet-500 bg-violet-600/20 text-violet-200 shadow-sm"
-                          : "border-neutral-800 bg-[#1b202c] text-neutral-400 hover:text-white hover:border-neutral-700",
+                          ? 'border-violet-500 bg-violet-600/20 text-violet-200 shadow-sm'
+                          : 'border-neutral-800 bg-[#1b202c] text-neutral-400 hover:text-white hover:border-neutral-700',
                       )}
                     >
                       {item.label}
@@ -194,6 +223,7 @@ export function ContactClient() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  maxLength={120}
                   placeholder="Nguyễn Văn A"
                   className="w-full rounded-xl border border-neutral-700/70 bg-[#1b202c] px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-violet-500/80 focus:ring-1 focus:ring-violet-500/20 transition-all"
                 />
@@ -207,6 +237,7 @@ export function ContactClient() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  maxLength={320}
                   placeholder="name@example.com"
                   className="w-full rounded-xl border border-neutral-700/70 bg-[#1b202c] px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-violet-500/80 focus:ring-1 focus:ring-violet-500/20 transition-all"
                 />
@@ -222,6 +253,7 @@ export function ContactClient() {
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
+                maxLength={300}
                 placeholder="Tóm tắt ngắn gọn nội dung cần liên hệ..."
                 className="w-full rounded-xl border border-neutral-700/70 bg-[#1b202c] px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-violet-500/80 focus:ring-1 focus:ring-violet-500/20 transition-all"
               />
@@ -237,10 +269,16 @@ export function ContactClient() {
                 required
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
+                minLength={10}
+                maxLength={10000}
                 placeholder="Nhập nội dung lời nhắn, góp ý hoặc câu hỏi của bạn..."
                 className="w-full rounded-xl border border-neutral-700/70 bg-[#1b202c] p-3.5 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-violet-500/80 focus:ring-1 focus:ring-violet-500/20 transition-all resize-y"
               />
             </div>
+
+            {turnstileEnabled && (
+              <TurnstileWidget action="contact" onTokenChange={setTurnstileToken} />
+            )}
 
             {/* Submit */}
             <button
@@ -270,18 +308,27 @@ export function ContactClient() {
           <span className="text-violet-400">3.</span> Hợp tác quảng cáo & Bản quyền
         </h2>
         <p className="text-neutral-300">
-          Đối với các vấn đề liên quan đến hợp tác truyền thông, tài trợ hoặc khiếu nại bản quyền nội dung DMCA, xin vui lòng gửi thư trực tiếp đến các địa chỉ chuyên trách:
+          Đối với các vấn đề liên quan đến hợp tác truyền thông, tài trợ hoặc khiếu nại bản quyền
+          nội dung DMCA, xin vui lòng gửi thư trực tiếp đến các địa chỉ chuyên trách:
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
           <div className="p-3.5 rounded-xl border border-neutral-800 bg-[#161a26]">
             <span className="text-xs text-neutral-400 block mb-1">Hợp tác kinh doanh & Ads:</span>
-            <a href="mailto:business@netphim.tv" className="text-sm font-bold text-violet-400 hover:underline">
+            <a
+              href="mailto:business@netphim.tv"
+              className="text-sm font-bold text-violet-400 hover:underline"
+            >
               business@netphim.tv
             </a>
           </div>
           <div className="p-3.5 rounded-xl border border-neutral-800 bg-[#161a26]">
-            <span className="text-xs text-neutral-400 block mb-1">Ban pháp chế & Bản quyền DMCA:</span>
-            <a href="mailto:dmca@netphim.tv" className="text-sm font-bold text-violet-400 hover:underline">
+            <span className="text-xs text-neutral-400 block mb-1">
+              Ban pháp chế & Bản quyền DMCA:
+            </span>
+            <a
+              href="mailto:dmca@netphim.tv"
+              className="text-sm font-bold text-violet-400 hover:underline"
+            >
               dmca@netphim.tv
             </a>
           </div>
@@ -295,15 +342,22 @@ export function ContactClient() {
         </h2>
         <div className="space-y-3">
           <div className="rounded-xl border border-neutral-800 bg-[#161a26] p-4">
-            <h4 className="text-sm font-bold text-white mb-1">NetPhim có thu phí người dùng khi xem phim không?</h4>
+            <h4 className="text-sm font-bold text-white mb-1">
+              NetPhim có thu phí người dùng khi xem phim không?
+            </h4>
             <p className="text-xs text-neutral-400">
-              Không. NetPhim cung cấp dịch vụ xem phim hoàn toàn miễn phí cho tất cả mọi người với chất lượng lên tới 4K Ultra HD.
+              Không. NetPhim cung cấp dịch vụ xem phim hoàn toàn miễn phí cho tất cả mọi người với
+              chất lượng lên tới 4K Ultra HD.
             </p>
           </div>
           <div className="rounded-xl border border-neutral-800 bg-[#161a26] p-4">
-            <h4 className="text-sm font-bold text-white mb-1">Làm thế nào để yêu cầu thêm bộ phim tôi muốn xem?</h4>
+            <h4 className="text-sm font-bold text-white mb-1">
+              Làm thế nào để yêu cầu thêm bộ phim tôi muốn xem?
+            </h4>
             <p className="text-xs text-neutral-400">
-              Bạn có thể sử dụng biểu mẫu phía trên, chọn chủ đề <em>&quot;Đóng góp ý kiến &amp; Đề xuất phim&quot;</em> và gửi tên bộ phim cùng năm phát hành.
+              Bạn có thể sử dụng biểu mẫu phía trên, chọn chủ đề{' '}
+              <em>&quot;Đóng góp ý kiến &amp; Đề xuất phim&quot;</em> và gửi tên bộ phim cùng năm
+              phát hành.
             </p>
           </div>
         </div>
