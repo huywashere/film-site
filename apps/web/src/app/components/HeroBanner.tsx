@@ -1598,7 +1598,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         data-hero-banner="true"
         aria-busy="true"
         aria-label="Đang tải banner nổi bật"
-        className="relative h-[78svh] min-h-[590px] max-h-[680px] w-full overflow-hidden bg-[#141414] sm:h-auto sm:min-h-[100dvh] sm:max-h-none"
+        className="relative mt-16 h-[78svh] min-h-[590px] max-h-[680px] w-full overflow-hidden bg-[#141414] sm:mt-0 sm:h-auto sm:min-h-[100dvh] sm:max-h-none"
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_62%_34%,rgba(57,64,77,0.3),transparent_44%),linear-gradient(135deg,#101318_0%,#171b22_52%,#101216_100%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_24%,rgba(10,12,16,0.54)_70%,rgba(10,12,16,0.94)_100%),linear-gradient(to_top,#14181c_0%,rgba(20,24,28,0.78)_28%,transparent_62%),linear-gradient(to_bottom,rgba(10,12,16,0.76)_0%,transparent_30%)]" />
@@ -1700,7 +1700,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
     <section
       data-hero-banner="true"
       ref={heroContainerRef}
-      className="font-cinema relative h-[78svh] min-h-[590px] max-h-[680px] w-full overflow-hidden bg-[#141414] transform-gpu contain-paint sm:h-auto sm:min-h-[100dvh] sm:max-h-none"
+      className="font-cinema relative mt-16 h-[78svh] min-h-[590px] max-h-[680px] w-full overflow-hidden bg-[#141414] transform-gpu contain-paint sm:mt-0 sm:h-auto sm:min-h-[100dvh] sm:max-h-none"
     >
       <TrailerModal
         film={trailerModalFilm}

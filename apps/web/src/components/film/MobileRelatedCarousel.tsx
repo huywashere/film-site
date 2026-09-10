@@ -66,6 +66,44 @@ function discoveryFallbacks(slug: string) {
   return MOBILE_DISCOVERY_FALLBACKS.filter((film) => film.slug !== slug);
 }
 
+function hashSeed(value: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function shuffleWithSeed<T>(items: T[], seed: number) {
+  const result = [...items];
+  let state = seed || 1;
+  const random = () => {
+    state = Math.imul(state ^ (state >>> 15), 1 | state);
+    state ^= state + Math.imul(state ^ (state >>> 7), 61 | state);
+    return ((state ^ (state >>> 14)) >>> 0) / 4294967296;
+  };
+
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const target = Math.floor(random() * (index + 1));
+    [result[index], result[target]] = [result[target], result[index]];
+  }
+  return result;
+}
+
+function getRecommendationSessionSeed() {
+  const storageKey = 'netphim-mobile-related-seed-v1';
+  try {
+    const stored = window.sessionStorage.getItem(storageKey);
+    if (stored) return stored;
+    const created = window.crypto.randomUUID();
+    window.sessionStorage.setItem(storageKey, created);
+    return created;
+  } catch {
+    return String(Date.now());
+  }
+}
+
 function getRating(film: FilmItem) {
   const value = Number(
     film.imdb?.vote_average ||
@@ -85,6 +123,10 @@ function isSeries(film: FilmItem) {
   );
 }
 
+function belongsToGenre(film: FilmItem, genreSlug: string) {
+  return film.category?.some((category) => category.slug === genreSlug) ?? false;
+}
+
 async function getCatalogFilms(request: () => Promise<{ data: unknown }>) {
   try {
     const response = await request();
@@ -94,13 +136,30 @@ async function getCatalogFilms(request: () => Promise<{ data: unknown }>) {
   }
 }
 
-async function loadRelatedFilms(film: FilmItem, slug: string) {
-  const genreSlug = film.category?.find((category) => category.slug)?.slug;
-  let candidates = genreSlug ? await getCatalogFilms(() => movieApi.getByGenre(genreSlug, 1)) : [];
+async function loadRelatedFilms(film: FilmItem, slug: string, sessionSeed: string) {
+  const genreSlugs = (film.category || [])
+    .map((category) => category.slug)
+    .filter((genreSlug): genreSlug is string => Boolean(genreSlug));
+  const seed = hashSeed(`${sessionSeed}:${slug}`);
+  const genreSlug = genreSlugs.length ? genreSlugs[seed % genreSlugs.length] : '';
+  const firstPage = 1 + ((seed >>> 5) % 3);
+  let candidates = genreSlug
+    ? await getCatalogFilms(() => movieApi.getByGenre(genreSlug, firstPage))
+    : [];
 
-  candidates = deduplicateSectionRow(candidates).filter((item) => item.slug !== slug);
+  candidates = deduplicateSectionRow(candidates).filter(
+    (item) => item.slug !== slug && belongsToGenre(item, genreSlug),
+  );
 
-  if (candidates.length < 4) {
+  if (genreSlug && candidates.length < 8) {
+    const nextPage = firstPage === 3 ? 1 : firstPage + 1;
+    const moreInGenre = await getCatalogFilms(() => movieApi.getByGenre(genreSlug, nextPage));
+    candidates = deduplicateSectionRow([...candidates, ...moreInGenre]).filter(
+      (item) => item.slug !== slug && belongsToGenre(item, genreSlug),
+    );
+  }
+
+  if (!genreSlug) {
     const sameType = await getCatalogFilms(() =>
       isSeries(film) ? movieApi.getSeries(1) : movieApi.getSingle(1),
     );
@@ -109,21 +168,8 @@ async function loadRelatedFilms(film: FilmItem, slug: string) {
     );
   }
 
-  if (candidates.length < 2) {
-    const latest = await getCatalogFilms(() => movieApi.getLatest(1));
-    candidates = deduplicateSectionRow([...candidates, ...latest]).filter(
-      (item) => item.slug !== slug,
-    );
-  }
-
-  // Keep the first two editorial cards stable while the live catalogue loads.
-  // Their TMDB posters are fast and prevent a flash back to empty side cards.
-  const editorial = discoveryFallbacks(slug);
-  return deduplicateSectionRow([
-    ...editorial.slice(0, 2),
-    ...candidates,
-    ...editorial.slice(2),
-  ]).slice(0, 12);
+  if (candidates.length === 0 && !genreSlug) return discoveryFallbacks(slug);
+  return shuffleWithSeed(candidates, seed).slice(0, 12);
 }
 
 function RecommendationSkeleton({ film, onOpen }: { film: FilmItem; onOpen?: () => void }) {
@@ -163,6 +209,7 @@ export function MobileRelatedCarousel({
 }: MobileRelatedCarouselProps) {
   const [reduceMotion, setReduceMotion] = useState(false);
   const [activeSlideIndex, setActiveSlideIndex] = useState(1);
+  const [sessionSeed] = useState(getRecommendationSessionSeed);
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -176,11 +223,19 @@ export function MobileRelatedCarousel({
     setActiveSlideIndex(1);
   }, [slug]);
 
-  const genreSlug = currentFilm.category?.find((category) => category.slug)?.slug || '';
+  const genreKey = (currentFilm.category || [])
+    .map((category) => category.slug)
+    .filter(Boolean)
+    .join(',');
   const { data: relatedFilms = [], isLoading } = useQuery({
-    queryKey: ['film-detail-mobile-related-v2', slug, genreSlug, currentFilm.type || ''],
-    queryFn: () => loadRelatedFilms(currentFilm, slug),
-    placeholderData: () => discoveryFallbacks(slug),
+    queryKey: [
+      'film-detail-mobile-related-v3',
+      slug,
+      genreKey,
+      currentFilm.type || '',
+      sessionSeed,
+    ],
+    queryFn: () => loadRelatedFilms(currentFilm, slug, sessionSeed),
     enabled: enabled && Boolean(slug),
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
