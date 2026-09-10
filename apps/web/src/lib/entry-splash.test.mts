@@ -6,12 +6,14 @@ function source(path: string) {
   return readFileSync(path, 'utf8');
 }
 
-test('root layout renders content without a blocking poster splash', () => {
+test('root layout renders a bounded splash without remote poster artwork', () => {
   const layout = source('src/app/layout.tsx');
-  const styles = source('src/app/globals.css');
+  const splash = source('src/components/layout/LogoSplashIntro.tsx');
 
-  assert.doesNotMatch(layout, /LogoSplashIntro|netphimIntro|intro-poster/);
-  assert.doesNotMatch(styles, /netphim-intro|intro-poster/);
+  assert.match(layout, /LogoSplashIntro/);
+  assert.match(splash, /MAX_VISIBLE_MS = 1500/);
+  assert.match(splash, /cinephim-logo\.svg/);
+  assert.doesNotMatch(splash, /image\.tmdb\.org|wsrv\.nl|intro-poster|backgroundImage/);
 });
 
 test('service worker never serves stale cached HTML after a deployment', () => {

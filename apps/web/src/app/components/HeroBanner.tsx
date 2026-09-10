@@ -560,7 +560,6 @@ function buildHeroLogoCandidates(url?: string | null): string[] {
   const list: string[] = [];
   if (clean.includes("image.tmdb.org")) {
     list.push(clean);
-    list.push(`https://wsrv.nl/?url=${encodeURIComponent(clean)}&output=webp&we=1`);
     list.push(`/api/image-proxy?url=${encodeURIComponent(clean)}&strict=1`);
   } else {
     list.push(clean);
@@ -621,7 +620,7 @@ function HeroMovieTitle({
 
   const title = film.origin_name || film.name;
   const hasLogoCandidate = Boolean(currentLogoSrc) && !hasError;
-  const showTextFallback = !hasLogoCandidate;
+  const showTextFallback = !hasLogoCandidate || !logoLoaded;
 
   useEffect(() => {
     if (film.titleLogoResolved && !hasLogoCandidate) onReady();
@@ -652,6 +651,7 @@ function HeroMovieTitle({
           decoding="async"
           loading="eager"
           fetchPriority="high"
+          aria-hidden={!logoLoaded}
           onLoad={() => {
             if (currentLogoSrc) preloadedHeroLogos.add(currentLogoSrc);
             setLogoLoaded(true);
@@ -666,7 +666,10 @@ function HeroMovieTitle({
               onReady();
             }
           }}
-          className="h-auto max-h-20 w-auto max-w-[78vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] sm:max-h-32 sm:max-w-[34rem] md:max-h-40"
+          className={cn(
+            "absolute h-auto max-h-20 w-auto max-w-[78vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-opacity duration-300 sm:max-h-32 sm:max-w-[34rem] md:max-h-40",
+            logoLoaded ? "opacity-100" : "opacity-0",
+          )}
         />
       )}
     </div>

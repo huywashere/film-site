@@ -15,6 +15,7 @@ import { safeJsonLd } from "@/lib/safe-json-ld";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { ClientBackgroundServices } from "@/components/layout/ClientBackgroundServices";
 import { OperationalNotice } from "@/components/layout/OperationalNotice";
+import { LogoSplashIntro } from "@/components/layout/LogoSplashIntro";
 import { cardFont } from "@/lib/fonts";
 
 export const viewport: Viewport = {
@@ -127,6 +128,7 @@ export default function RootLayout({
         className={`${cardFont.variable} ${cardFont.className} antialiased`}
         suppressHydrationWarning
       >
+        <LogoSplashIntro />
         <ThemeWatcher />
         <ThemeColorSync />
         <OperationalNotice />
