@@ -191,8 +191,10 @@ function RecommendationSkeleton({ film, onOpen }: { film: FilmItem; onOpen?: () 
             kind="poster"
             alt={film.name || film.title || ''}
             priority
+            allowTitleLookup
             className="absolute inset-0 h-full w-full"
           />
+
         </button>
         <div className="h-60 w-[26vw] max-w-28 rotate-6 animate-pulse rounded-[20px] border border-white/10 bg-white/[0.05]" />
       </div>
@@ -304,6 +306,7 @@ export function MobileRelatedCarousel({
           const title = film.name || film.title || 'Phim đề xuất';
           const rating = getRating(film);
           const isCurrentFilm = film.slug === slug;
+          const isNearCenter = Math.abs(index - activeSlideIndex) <= 1;
           const poster = (
             <>
               <TmdbArtwork
@@ -311,8 +314,10 @@ export function MobileRelatedCarousel({
                 kind="poster"
                 alt={title}
                 priority={Math.abs(index - activeSlideIndex) <= 2}
+                allowTitleLookup={isNearCenter}
                 className="absolute inset-0 h-full w-full"
               />
+
               <div className="mobile-related-card-shade pointer-events-none absolute inset-0 bg-black/25" />
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black via-black/45 to-transparent" />
               {!isCurrentFilm && rating && (

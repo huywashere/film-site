@@ -804,10 +804,11 @@ function getMobileHeroBackdrop(src: string) {
   return src.includes("image.tmdb.org/t/p/")
     ? src.replace(
         /\/t\/p\/(?:original|w300|w342|w500|w780|w1280)\//i,
-        "/t/p/w780/",
+        "/t/p/w500/", // w500 (~80-100KB) tải nhanh hơn 2-3x so với w780/w1280 trên 4G
       )
     : src;
 }
+
 
 function HeroBackdropImage({
   film,
@@ -872,14 +873,17 @@ function HeroBackdropImage({
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_35%,rgba(50,58,72,0.3),transparent_44%),linear-gradient(135deg,#0b0e13_0%,#151a22_52%,#0b0d12_100%)]" />
       {src && (
         <picture className="block h-full w-full">
-          <source media="(max-width: 767px)" srcSet={mobileSrc} />
+          {/* Mobile: poster w500 (~90KB) tải nhanh hơn 2-3x so với backdrop w1280 trên 4G */}
+          <source media="(max-width: 767px)" srcSet={mobileSrc} width={500} height={750} />
+
           <img
             ref={imageRef}
             src={src}
             alt={film.name}
             referrerPolicy="strict-origin-when-cross-origin"
             loading={isActive ? "eager" : "lazy"}
-            decoding="async"
+            decoding={isActive ? "sync" : "async"}
+
             fetchPriority={isActive ? "high" : "low"}
             onLoad={() => {
               preloadedHeroBackdrops.add(src);
