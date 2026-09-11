@@ -27,6 +27,7 @@ type HlsVideoPlayerProps = {
   onTheaterModeToggle?: (active: boolean) => void;
   autoSkipIntro?: boolean;
   autoSkipAds?: boolean;
+  minAdStartTime?: number;
 };
 
 /**
@@ -52,6 +53,7 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
   onTheaterModeToggle,
   autoSkipIntro = true,
   autoSkipAds = true,
+  minAdStartTime = 180,
 }: HlsVideoPlayerProps) {
   return (
     <div className="w-full h-full relative">
@@ -66,6 +68,7 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
         autoplay={autoPlay}
         autoSkipIntro={autoSkipIntro}
         autoSkipAds={autoSkipAds}
+        minAdStartTime={minAdStartTime}
         isTheaterMode={isTheaterMode}
         onTheaterModeToggle={onTheaterModeToggle}
         onReady={(player) => {

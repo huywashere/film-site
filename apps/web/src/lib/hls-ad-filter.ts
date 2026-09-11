@@ -383,9 +383,11 @@ export function detectExplicitHlsAdRanges(fragments: HlsFragmentLike[]): HlsDete
       const end = start + duration;
 
       const hasExplicitAdUrl = frags.some((f) => isLikelyAdUrl(f.url || ''));
-      // A spliced discontinuity with short duration (4s - 50s) in a full-length film
+      // A spliced discontinuity with short duration (4s - 50s) in a full-length film.
+      // Only recognize mid-roll/later discontinuities (start >= 180s) as ads to avoid
+      // falsely flagging studio bumpers, distributor logos, or movie intros in the opening minutes.
       const isSplicedDiscontinuity =
-        duration >= 4 && duration <= 50 && totalDuration >= 180 && frags.length <= 30;
+        start >= 180 && duration >= 4 && duration <= 50 && totalDuration >= 180 && frags.length <= 30;
 
       if (hasExplicitAdUrl || isSplicedDiscontinuity) {
         ranges.push({

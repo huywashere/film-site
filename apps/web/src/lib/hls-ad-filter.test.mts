@@ -105,3 +105,26 @@ test('a malformed cue-out cannot remove the rest of a movie', () => {
   assert.ok(result.stats.removedSegments <= 30);
   assert.match(result.manifest, /segment-39\.ts/);
 });
+
+test('does not classify early spliced discontinuities (<180s) without explicit ad URLs as ads', () => {
+  const result = detectExplicitHlsAdRanges([
+    { cc: 0, start: 0, duration: 30, url: 'movie/part-1.ts' },
+    // A 15s spliced block early in a full movie (e.g. studio logo/intro transition)
+    { cc: 1, start: 30, duration: 15, url: 'movie/part-intro.ts' },
+    { cc: 2, start: 45, duration: 500, url: 'movie/part-main.ts' },
+  ]);
+
+  assert.deepEqual(result, []);
+});
+
+test('detects mid-roll spliced discontinuities (>=180s) as skippable ads in full movies', () => {
+  const result = detectExplicitHlsAdRanges([
+    { cc: 0, start: 0, duration: 300, url: 'movie/part-1.ts' },
+    // A 20s spliced commercial block at 300s (5 minutes in)
+    { cc: 1, start: 300, duration: 20, url: 'cdn/commercial-segment.ts' },
+    { cc: 2, start: 320, duration: 500, url: 'movie/part-2.ts' },
+  ]);
+
+  assert.deepEqual(result, [{ start: 300, end: 320, duration: 20, skippable: true }]);
+});
+

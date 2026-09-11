@@ -50,6 +50,7 @@ export interface ArtPlayerProps {
   skipOutroStart?: number;
   autoSkipIntro?: boolean;
   autoSkipAds?: boolean;
+  minAdStartTime?: number;
   adRanges?: Array<{ start: number; end: number; title?: string }>;
 }
 
@@ -75,6 +76,7 @@ export default function ArtPlayer({
   skipIntroEnd = 85,
   autoSkipIntro = true,
   autoSkipAds = true,
+  minAdStartTime = 180,
   adRanges,
 }: ArtPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,12 +99,14 @@ export default function ArtPlayer({
   const skipIntroEndRef = useRef(skipIntroEnd);
   const autoSkipIntroRef = useRef(autoSkipIntro);
   const autoSkipAdsRef = useRef(autoSkipAds);
+  const minAdStartTimeRef = useRef(minAdStartTime);
   const introAutoSkippedRef = useRef(false);
   const skippedAdIntervalsRef = useRef(new Set<string>());
   skipIntroStartRef.current = skipIntroStart;
   skipIntroEndRef.current = skipIntroEnd;
   autoSkipIntroRef.current = autoSkipIntro;
   autoSkipAdsRef.current = autoSkipAds;
+  minAdStartTimeRef.current = minAdStartTime;
 
   const onReadyRef = useRef(onReady);
   const onEndedRef = useRef(onEnded);
@@ -164,7 +168,12 @@ export default function ArtPlayer({
         skippable?: boolean;
       }>,
     ) => {
+      const minStart = Math.max(minAdStartTimeRef.current ?? 180, skipIntroEndRef.current ?? 0);
       for (const range of nextRanges) {
+        // Chỉ ngắt quảng cáo ở các đoạn sau phim, bỏ qua đoạn đầu phim để tránh cắt nhầm cảnh/intro
+        if (range.start < minStart) {
+          continue;
+        }
         const existingRange = detectedAdRangesRef.current.find(
           (current) => Math.abs(current.start - range.start) < 0.75,
         );
@@ -227,7 +236,9 @@ export default function ArtPlayer({
         appendMarker('intro', introEnd, introEnd, 'Hết đoạn mở đầu');
       }
 
+      const minStart = Math.max(minAdStartTimeRef.current ?? 180, skipIntroEndRef.current ?? 0);
       detectedAdRangesRef.current.forEach((range, index) => {
+        if (range.start < minStart) return;
         appendMarker('ad', range.start, range.end, `Quảng cáo ${index + 1}`);
       });
     };
@@ -766,16 +777,19 @@ export default function ArtPlayer({
       <span class="netphim-skip-ad-countdown" aria-hidden="true"></span>
       <span class="netphim-skip-ad-arrow" aria-hidden="true">›</span>
     `;
-    const findActiveAd = (time: number) =>
-      detectedAdRangesRef.current.find(
+    const findActiveAd = (time: number) => {
+      const minStart = Math.max(minAdStartTimeRef.current ?? 180, skipIntroEndRef.current ?? 0);
+      return detectedAdRangesRef.current.find(
         (ad) =>
           ad.skippable === true &&
           !ad.removed &&
           ad.duration > 0 &&
           ad.duration <= 180 &&
+          ad.start >= minStart &&
           time >= ad.start - 0.05 &&
           time < ad.end - 0.15,
       );
+    };
 
     const syncSkipAdButton = () => {
       const activeAd = findActiveAd(player.currentTime);
