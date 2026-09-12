@@ -76,7 +76,7 @@ export default function ArtPlayer({
   skipIntroEnd = 85,
   autoSkipIntro = true,
   autoSkipAds = true,
-  minAdStartTime = 180,
+  minAdStartTime = 360,
   adRanges,
 }: ArtPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -168,7 +168,7 @@ export default function ArtPlayer({
         skippable?: boolean;
       }>,
     ) => {
-      const minStart = Math.max(minAdStartTimeRef.current ?? 180, skipIntroEndRef.current ?? 0);
+      const minStart = Math.max(minAdStartTimeRef.current ?? 360, skipIntroEndRef.current ?? 0, 360);
       for (const range of nextRanges) {
         // Chỉ ngắt quảng cáo ở các đoạn sau phim, bỏ qua đoạn đầu phim để tránh cắt nhầm cảnh/intro
         if (range.start < minStart) {
@@ -236,7 +236,7 @@ export default function ArtPlayer({
         appendMarker('intro', introEnd, introEnd, 'Hết đoạn mở đầu');
       }
 
-      const minStart = Math.max(minAdStartTimeRef.current ?? 180, skipIntroEndRef.current ?? 0);
+      const minStart = Math.max(minAdStartTimeRef.current ?? 360, skipIntroEndRef.current ?? 0, 360);
       detectedAdRangesRef.current.forEach((range, index) => {
         if (range.start < minStart) return;
         appendMarker('ad', range.start, range.end, `Quảng cáo ${index + 1}`);
@@ -778,7 +778,7 @@ export default function ArtPlayer({
       <span class="netphim-skip-ad-arrow" aria-hidden="true">›</span>
     `;
     const findActiveAd = (time: number) => {
-      const minStart = Math.max(minAdStartTimeRef.current ?? 180, skipIntroEndRef.current ?? 0);
+      const minStart = Math.max(minAdStartTimeRef.current ?? 360, skipIntroEndRef.current ?? 0, 360);
       return detectedAdRangesRef.current.find(
         (ad) =>
           ad.skippable === true &&

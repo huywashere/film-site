@@ -27,12 +27,6 @@ function filmHref(film: FilmItem, mode: 'watch' | 'detail') {
   return `/${mode === 'watch' ? 'watch' : 'film'}/${film.slug}${suffix}`;
 }
 
-function sourceName(source?: string) {
-  if (source === 'nguonc') return 'NguonC';
-  if (source === 'vsmov') return 'VSMov';
-  if (source === 'ophim') return 'OPhim';
-  return 'KKPhim';
-}
 
 export function CuratedSpotlightSection({
   title,
@@ -165,11 +159,13 @@ export function CuratedSpotlightSection({
                 priority
                 allowTitleLookup
                 preferOriginal
+                sizes="(max-width: 1024px) 100vw, 75vw"
+                imageClassName="object-[center_25%]"
                 className="h-full w-full"
               />
               {/* Dark gradient scrim */}
-              <div className="absolute inset-0 bg-gradient-to-r from-[#141414]/95 via-[#141414]/65 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#141414]/95 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#0a0b10]/92 via-[#0a0b10]/30 via-45% to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b10]/85 via-transparent to-transparent" />
             </motion.div>
           </AnimatePresence>
 
@@ -326,7 +322,7 @@ export function CuratedSpotlightSection({
                   }`}
                 >
                   {/* Thumbnail */}
-                  <div className="relative aspect-[2/3] w-full shrink-0 overflow-hidden rounded-lg bg-neutral-900 lg:aspect-[16/10] lg:w-[72px] lg:rounded-lg">
+                  <div className="relative aspect-[2/3] w-full shrink-0 overflow-hidden rounded-lg bg-neutral-900 lg:w-[48px] lg:aspect-[2/3] lg:rounded-lg">
                     <TmdbArtwork
                       film={film}
                       kind="poster"
@@ -353,7 +349,7 @@ export function CuratedSpotlightSection({
                   <div className="hidden lg:block min-w-0 flex-1">
                     <p className="text-[10px] text-neutral-500 font-medium">
                       {String(index + 1).padStart(2, '0')}&nbsp;·&nbsp;
-                      {film.year || 'Mới'}&nbsp;·&nbsp;{sourceName(film._source)}
+                      {film.year || 'Mới'}
                     </p>
                     <h4
                       className={`mt-0.5 text-xs font-bold line-clamp-1 ${isActive ? 'text-orange-300' : 'text-neutral-200 group-hover:text-white'}`}

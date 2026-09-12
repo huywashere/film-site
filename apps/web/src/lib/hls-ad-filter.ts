@@ -247,7 +247,7 @@ const AD_HOST_TOKENS = [
 const AD_HOST_SUFFIXES = ['ads.google.com', 'adf.ly', 'shorte.st', 'ouo.io'];
 
 const AD_PATH_PATTERN =
-  /(?:^|[/_.,?=&-])(ads?|advert(?:isement|ising)?|commercial|preroll|midroll|postroll|sponsor(?:ed)?|betting|casino|nha-?cai|quang-?cao|convertv8|segment_\d+)(?:$|[/_.,?=&-])|(?:\/v8\/[a-f0-9]{20,})/i;
+  /(?:^|[/_.,?=&-])(ads?|advert(?:isement|ising)?|commercial|preroll|midroll|postroll|sponsor(?:ed)?|betting|casino|nha-?cai|quang-?cao|convertv8)(?:$|[/_.,?=&-])|(?:\/v8\/[a-f0-9]{20,})/i;
 
 const AD_MARKER_PATTERN =
   /(?:^|[\s._:-])(ad|ads|advert|commercial|preroll|midroll|postroll|interstitial|scte|splice)(?:$|[\s._:-])/i;

@@ -53,7 +53,7 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
   onTheaterModeToggle,
   autoSkipIntro = true,
   autoSkipAds = true,
-  minAdStartTime = 180,
+  minAdStartTime = 360,
 }: HlsVideoPlayerProps) {
   return (
     <div className="w-full h-full relative">

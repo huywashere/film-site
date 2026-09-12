@@ -751,7 +751,7 @@ function ServerHealthSpeedModal({
               >
                 <div className="flex items-center gap-3.5 min-w-0">
                   <div className="flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-black/50 border border-white/10 shrink-0">
-                    <span className="text-[11px] font-black text-white">{sourceAbbr}</span>
+                    <Server size={16} className="text-purple-400" />
                     <span className="text-[8px] text-neutral-400">#{idx + 1}</span>
                   </div>
                   <div className="min-w-0">
@@ -2483,7 +2483,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
           const serverData = s.server_data;
           return {
             ...s,
-            server_name: `Server ${i + 1} (${sourceLabel})`,
+            server_name: `Server ${i + 1}`,
             server_data: serverData,
             _source: sourceKey,
             _type: resolveServerType(sourceKey, originalName, s.lang || s.language || s.audio || ''),
@@ -2511,16 +2511,15 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         (right.priority ?? 0) - (left.priority ?? 0),
     );
 
-    // Number servers sequentially per version type (e.g. Vietsub: Server 1 (KKPhim), Server 2 (NguonC), Server 3 (VSMov), Server 4 (OPhim))
+    // Number servers sequentially per version type (e.g. Vietsub: Server 1, Server 2, Server 3, Server 4)
     const byTypeCount = new Map<string, number>();
     return sorted.map((item) => {
       const typeKey = item._type || 'vietsub';
       const count = (byTypeCount.get(typeKey) || 0) + 1;
       byTypeCount.set(typeKey, count);
-      const sourceLabel = getSourceLabel(item._source || '');
       return {
         ...item,
-        server_name: `Server ${count} (${sourceLabel})`,
+        server_name: `Server ${count}`,
       };
     });
   }, [
@@ -4199,7 +4198,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                 )}
                               >
                                 <span>
-                                  Server {serverNumber} ({getSourceLabel(ep._source)})
+                                  Server {serverNumber}
                                 </span>
                                 {isActive && (
                                   <CheckCircle2

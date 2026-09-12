@@ -18,6 +18,9 @@ interface TmdbArtworkProps {
   film: FilmItem;
   kind: 'backdrop' | 'poster';
   className?: string;
+  imageClassName?: string;
+  objectPosition?: string;
+  sizes?: string;
   alt?: string;
   priority?: boolean;
   enabled?: boolean;
@@ -59,6 +62,9 @@ export function TmdbArtwork({
   film,
   kind,
   className,
+  imageClassName,
+  objectPosition,
+  sizes,
   alt,
   priority = false,
   enabled = true,
@@ -67,6 +73,7 @@ export function TmdbArtwork({
 }: TmdbArtworkProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [nearViewport, setNearViewport] = useState(priority);
+  const [autoRecovery, setAutoRecovery] = useState(false);
   const providerIsTmdb = Boolean(
     /image\.tmdb\.org\/t\/p\//i.test(
       String(
@@ -101,7 +108,7 @@ export function TmdbArtwork({
   }, [enabled, priority, providerIsTmdb, film.slug]);
 
   // Shelf pages can render dozens of cards. Only query TMDB if the film lacks
-  // provider artwork or if title lookup is explicitly requested.
+  // provider artwork or if title lookup is explicitly requested or auto-recovering.
   // This avoids choking the browser's HTTP network queue with 100+ concurrent TMDB requests.
   const providerPrimary =
     kind === 'backdrop'
@@ -113,8 +120,8 @@ export function TmdbArtwork({
   const needsTmdbArtwork =
     enabled &&
     nearViewport &&
-    !providerIsTmdb &&
-    (!providerPrimary || allowTitleLookup);
+    (!providerIsTmdb || autoRecovery) &&
+    (!providerPrimary || allowTitleLookup || autoRecovery);
 
   const artworkQuery = useTmdbArtwork(
     film,
@@ -213,9 +220,12 @@ export function TmdbArtwork({
   const src = candidates[candidateIndex];
 
   const responsiveSizes =
-    kind === 'backdrop'
-      ? '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
-      : '(max-width: 640px) 30vw, (max-width: 1024px) 22vw, 16vw';
+    sizes ||
+    (kind === 'backdrop'
+      ? (preferOriginal
+          ? '100vw'
+          : '(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1920px')
+      : '(max-width: 640px) 30vw, (max-width: 1024px) 22vw, 16vw');
   const deliveredImageProps = useMemo(() => {
     if (!src) return null;
     const alreadySized = isPreOptimizedImageUrl(src);
@@ -267,19 +277,27 @@ export function TmdbArtwork({
           alt={alt || film.name}
           referrerPolicy="no-referrer"
           draggable={false}
+          style={objectPosition ? { objectPosition } : undefined}
           onLoad={() => setLoaded(true)}
           onError={() => {
-            setCandidateIndex((index) => index + 1);
+            setCandidateIndex((index) => {
+              const next = index + 1;
+              if (next >= candidates.length && !autoRecovery) {
+                setAutoRecovery(true);
+              }
+              return next;
+            });
           }}
           className={cn(
             'h-full w-full object-cover transition-opacity duration-200 motion-reduce:transition-none',
+            imageClassName,
             loaded || priority ? 'opacity-100' : 'opacity-0',
           )}
           data-artwork-source={
             src === tmdbUrl || /image\.tmdb\.org\/t\/p\//i.test(src) ? 'tmdb' : 'fallback'
           }
         />
-      ) : (!src || candidateIndex >= candidates.length || artworkQuery.isFetched || providerIsTmdb) ? (
+      ) : (!src || candidateIndex >= candidates.length) && (!autoRecovery || (artworkQuery.isFetched && !tmdbUrl)) ? (
         <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-neutral-800 via-neutral-900 to-black p-2 text-center">
           <Clapperboard className="mb-1 h-5 w-5 text-neutral-600" />
           <p className="line-clamp-2 text-[10px] font-bold text-neutral-300">

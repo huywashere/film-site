@@ -100,14 +100,22 @@ function selectBestMatch(results: TmdbMovie[], film: FilmItem): TmdbMovie | null
       );
       const candidateYear = releaseYear(movie);
       const yearDelta = film.year && candidateYear ? Math.abs(film.year - candidateYear) : null;
-      const yearCompatible = yearDelta === null || yearDelta <= 1;
+      const isSeries =
+        movie.media_type === 'tv' ||
+        Boolean(movie.first_air_date) ||
+        ['series', 'tv', 'tvshows', 'phim-bo'].includes(film.type || '');
+
+      const yearCompatible =
+        yearDelta === null ||
+        yearDelta <= 1 ||
+        (isSeries && yearDelta <= 5);
 
       // Never use a merely popular TMDB result as artwork for another movie.
-      // Exact/near-exact titles tolerate a one-year release offset; weaker
-      // localized-title matches must also agree on the year.
+      // Exact/near-exact titles tolerate a one-year release offset (up to 5 for series);
+      // weaker localized-title matches must also agree on the year.
       const confident =
         similarity === 1 ||
-        (similarity >= 0.92 && yearCompatible) ||
+        (similarity >= 0.88 && yearCompatible) ||
         (similarity >= 0.72 && yearDelta !== null && yearDelta <= 1);
 
       return {

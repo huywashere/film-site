@@ -139,7 +139,7 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
       {/* Main Card */}
       <div className="relative">
         {/* Hero Backdrop */}
-        <div className="relative h-[260px] overflow-hidden rounded-2xl border border-white/[0.08] sm:h-[340px] sm:rounded-[24px] lg:h-[420px]">
+        <div className="relative min-h-[380px] h-[380px] overflow-hidden rounded-2xl border border-white/[0.08] sm:min-h-[460px] sm:h-[460px] sm:rounded-[24px] lg:min-h-[520px] lg:h-[520px] xl:min-h-[560px] xl:h-[560px]">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeFilm.slug}
@@ -156,16 +156,18 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
                 priority
                 allowTitleLookup
                 preferOriginal
+                sizes="100vw"
+                imageClassName="object-[center_20%] sm:object-[center_25%]"
                 className="h-full w-full"
               />
               {/* Gradients */}
-              <div className="absolute inset-0 bg-gradient-to-r from-[#141414]/95 via-[#141414]/65 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#141414]/95 via-[#141414]/15 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#0a0b10]/92 via-[#0a0b10]/35 via-50% to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b10]/90 via-[#0a0b10]/20 via-35% to-transparent" />
             </motion.div>
           </AnimatePresence>
 
           {/* Content Overlay */}
-          <div className="relative z-10 flex h-full flex-col justify-between px-4 pb-16 pt-4 sm:px-8 sm:pb-24 sm:pt-8 lg:px-10 lg:pb-28 lg:pt-10">
+          <div className="relative z-10 flex h-full flex-col justify-between px-4 pb-20 pt-4 sm:px-8 sm:pb-28 sm:pt-8 lg:px-10 lg:pb-32 lg:pt-10">
             {/* Top row: counter + nav */}
             <div className="flex items-center justify-between">
               <span className="rounded-full border border-white/15 bg-black/50 px-2.5 py-1 text-[9px] font-semibold text-neutral-300 backdrop-blur-sm">
@@ -267,7 +269,7 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
         </div>
 
         {/* Thumbnail Strip: floats over the lower edge of the banner */}
-        <div className="relative z-20 -mt-12 px-3 sm:-mt-14 sm:px-6 lg:-mt-16">
+        <div className="relative z-20 -mt-8 px-3 sm:-mt-10 sm:px-6 lg:-mt-12">
           {/* Fade masks for scroll hint */}
           <div className="pointer-events-none absolute inset-y-0 left-3 z-10 w-8 bg-gradient-to-r from-[#141414]/80 to-transparent sm:left-6 sm:w-12" />
           <div className="pointer-events-none absolute inset-y-0 right-3 z-10 w-8 bg-gradient-to-l from-[#141414]/80 to-transparent sm:right-6 sm:w-12" />
