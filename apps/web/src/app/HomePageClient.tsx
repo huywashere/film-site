@@ -60,7 +60,10 @@ const HeroBanner = dynamic(() => import("@/app/components/HeroBanner"), {
   ),
 });
 import { cardFont } from "@/lib/fonts";
-import { CURATED_SCIFI_HERO_POOL } from "@/lib/curated-genre-pools";
+import {
+  CURATED_SCIFI_HERO_POOL,
+  CURATED_ACTION_HERO_POOL,
+} from "@/lib/curated-genre-pools";
 
 const CURATED_SCIFI_FILM_ITEMS: FilmItem[] = CURATED_SCIFI_HERO_POOL.map((item) => ({
   _id: item._id,
@@ -69,6 +72,7 @@ const CURATED_SCIFI_FILM_ITEMS: FilmItem[] = CURATED_SCIFI_HERO_POOL.map((item) 
   origin_name: item.origin_name,
   poster_url: item.poster_url,
   thumb_url: item.thumb_url,
+  heroBackdrop: item.heroBackdrop,
   quality: item.quality || "4K",
   lang: item.lang || "Vietsub + Thuyết Minh",
   year: item.year,
@@ -78,6 +82,30 @@ const CURATED_SCIFI_FILM_ITEMS: FilmItem[] = CURATED_SCIFI_HERO_POOL.map((item) 
   imdb_rating: item.imdb_rating,
   content: item.content,
   category: (item.genres || ["Khoa Học Viễn Tưởng"]).map((name) => ({
+    name,
+    slug: name.toLowerCase().replace(/\s+/g, "-"),
+  })),
+  country: [{ name: "Âu Mỹ", slug: "au-my" }],
+  tmdb: item.tmdb,
+}));
+
+const CURATED_ACTION_FILM_ITEMS: FilmItem[] = CURATED_ACTION_HERO_POOL.map((item) => ({
+  _id: item._id,
+  slug: item.slug,
+  name: item.name,
+  origin_name: item.origin_name,
+  poster_url: item.poster_url,
+  thumb_url: item.thumb_url,
+  heroBackdrop: item.heroBackdrop,
+  quality: item.quality || "4K",
+  lang: item.lang || "Vietsub + Thuyết Minh",
+  year: item.year,
+  type: item.type || "single",
+  vote_average: item.vote_average,
+  rating: item.rating,
+  imdb_rating: item.imdb_rating,
+  content: item.content,
+  category: (item.genres || ["Hành Động"]).map((name) => ({
     name,
     slug: name.toLowerCase().replace(/\s+/g, "-"),
   })),
@@ -964,9 +992,27 @@ export default function HomePageClient({
   }, [usUkSeriesData]);
 
   const actionFilms = useMemo(() => {
-    const usUkList = actionUsUkData?.data?.items || actionUsUkData?.items || [];
-    const genList = actionData?.data?.items || actionData?.items || [];
-    return filterLiveActionOnly(deduplicate([...usUkList, ...genList]));
+    // Only allow genuine Action Blockbusters (strictly filter out Asian BL, monk comedies, tiên hiệp, donghua, teen romance, etc.)
+    const isGenuineAction = (film: FilmItem) => {
+      if (!film?.name || !film?.slug) return false;
+      const combined = `${film.name} ${film.origin_name || ""} ${film.content || ""}`.toLowerCase();
+      if (
+        /chiến binh ánh sáng|tàn thuốc|luang pho|người yêu xui xẻo|unlucky bae|độc kiếm cửu thiên|sư huynh quá cẩn trọng|tiên hiệp|kiếm hiệp|ngôn tình|học đường|đam mỹ|boys love|tình cảm gia đình|hài kịch thái lan|gián đột biến/i.test(
+          combined,
+        )
+      ) {
+        return false;
+      }
+      return movieTaxonomyContains(film.category, ["hành động", "hanh-dong", "action"]);
+    };
+
+    const usUkList = (actionUsUkData?.data?.items || actionUsUkData?.items || []).filter(isGenuineAction);
+    const genList = (actionData?.data?.items || actionData?.items || []).filter(isGenuineAction);
+
+    return deduplicate([
+      ...CURATED_ACTION_FILM_ITEMS,
+      ...filterLiveActionOnly([...usUkList, ...genList]),
+    ]);
   }, [actionUsUkData, actionData]);
 
   const scifiFilms = useMemo(() => {
