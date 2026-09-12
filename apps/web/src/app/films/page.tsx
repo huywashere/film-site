@@ -387,23 +387,23 @@ function BrowseFilmsContent() {
         <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[1200px] h-[500px] bg-gradient-to-b from-white/[0.025] to-transparent blur-[140px] rounded-full" />
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-[1720px] px-3.5 sm:px-8 lg:px-12 space-y-5 sm:space-y-6">
+      <div className="relative z-10 mx-auto w-full max-w-[1720px] px-3.5 sm:px-6 md:pl-20 md:pr-6 lg:pl-24 lg:pr-10 xl:pl-28 xl:pr-12 space-y-5 sm:space-y-6">
         {/* ── Header Tiêu Đề Đơn Giản & Thanh Thoát (Đồng bộ Trang Chủ & Chủ Đề) ── */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-3 sm:pb-4 border-b border-white/[0.08] gap-1.5 sm:gap-2">
           <div>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
               {selectedType === "marvel"
-                ? "Vũ Trụ Điện Ảnh Marvel (MCU)"
+                ? "Vũ Trụ Marvel"
                 : selectedType === "dc"
-                  ? "Vũ Trụ Điện Ảnh DC (DC Universe)"
+                  ? "Vũ Trụ DC"
                   : "Duyệt Tìm Phim"}
             </h1>
           </div>
           <p className="text-[11px] sm:text-xs text-neutral-400 font-medium">
             {selectedType === "marvel"
-              ? "Khám phá toàn bộ 175+ bom tấn Marvel Studios, Avengers và Đa Vũ Trụ"
+              ? "Khám phá bom tấn Marvel Studios & Avengers"
               : selectedType === "dc"
-                ? "Khám phá toàn bộ 180+ kiệt tác điện ảnh DC, Batman, Superman và Justice League"
+                ? "Khám phá kiệt tác điện ảnh DC Universe"
                 : "Khám phá kho phim điện ảnh, phim bộ và hoạt hình chọn lọc"}
           </p>
         </div>
