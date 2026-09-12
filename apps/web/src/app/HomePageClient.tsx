@@ -63,7 +63,32 @@ import { cardFont } from "@/lib/fonts";
 import {
   CURATED_SCIFI_HERO_POOL,
   CURATED_ACTION_HERO_POOL,
+  CURATED_VFX_HERO_POOL,
 } from "@/lib/curated-genre-pools";
+
+const CURATED_VFX_FILM_ITEMS: FilmItem[] = CURATED_VFX_HERO_POOL.map((item) => ({
+  _id: item._id,
+  slug: item.slug,
+  name: item.name,
+  origin_name: item.origin_name,
+  poster_url: item.poster_url,
+  thumb_url: item.thumb_url,
+  heroBackdrop: item.heroBackdrop,
+  quality: item.quality || "4K",
+  lang: item.lang || "Vietsub + Thuyết Minh",
+  year: item.year,
+  type: item.type || "single",
+  vote_average: item.vote_average,
+  rating: item.rating,
+  imdb_rating: item.imdb_rating,
+  content: item.content,
+  category: (item.genres || ["Kỹ Xảo"]).map((name) => ({
+    name,
+    slug: name.toLowerCase().replace(/\s+/g, "-"),
+  })),
+  country: [{ name: "Âu Mỹ", slug: "au-my" }],
+  tmdb: item.tmdb,
+}));
 
 const CURATED_SCIFI_FILM_ITEMS: FilmItem[] = CURATED_SCIFI_HERO_POOL.map((item) => ({
   _id: item._id,
@@ -977,9 +1002,45 @@ export default function HomePageClient({
 
   // ── Process arrays with STRICT Live-Action filtering for Hollywood rows ──
   const vfxFilms = useMemo(() => {
-    const list1 = vfxGenreData?.data?.items || vfxGenreData?.items || [];
-    const list2 = vfxUsUkData?.data?.items || vfxUsUkData?.items || [];
-    return filterLiveActionOnly(deduplicate([...list1, ...list2]));
+    // Strictly filter out mistagged titles (Asian BL, monk comedies, tiên hiệp, donghua, 3D animation, etc.)
+    const isGenuineVfx = (film: FilmItem) => {
+      if (!film?.name || !film?.slug) return false;
+      const combined = `${film.name} ${film.origin_name || ""} ${film.content || ""}`.toLowerCase();
+      if (
+        /chiến binh ánh sáng|chiến binh nụ cười|ultraman|cả thế giới chỉ có anh kết nối|người yêu xui xẻo|unlucky bae|độc kiếm cửu thiên|sword god|nour|sư huynh quá cẩn trọng|pull strings|gián đột biến|the nest|tàn thuốc|luang pho|tiên hiệp|kiếm hiệp|ngôn tình|học đường|đam mỹ|boys love|tình cảm gia đình|hài kịch thái lan/i.test(
+          combined,
+        )
+      ) {
+        return false;
+      }
+      return (
+        movieTaxonomyContains(film.category, [
+          "thần thoại",
+          "than-thoai",
+          "viễn tưởng",
+          "vien-tuong",
+          "fantasy",
+          "sci-fi",
+          "kỹ xảo",
+          "hành động",
+        ]) &&
+        (movieTaxonomyContains(film.country, [
+          "âu mỹ",
+          "au-my",
+          "mỹ",
+          "anh",
+          "united states",
+        ]) || !film.country?.length)
+      );
+    };
+
+    const list1 = (vfxGenreData?.data?.items || vfxGenreData?.items || []).filter(isGenuineVfx);
+    const list2 = (vfxUsUkData?.data?.items || vfxUsUkData?.items || []).filter(isGenuineVfx);
+
+    return deduplicate([
+      ...CURATED_VFX_FILM_ITEMS,
+      ...filterLiveActionOnly([...list1, ...list2]),
+    ]);
   }, [vfxGenreData, vfxUsUkData]);
 
   const usUkSeriesFilms = useMemo(() => {
