@@ -60,6 +60,30 @@ const HeroBanner = dynamic(() => import("@/app/components/HeroBanner"), {
   ),
 });
 import { cardFont } from "@/lib/fonts";
+import { CURATED_SCIFI_HERO_POOL } from "@/lib/curated-genre-pools";
+
+const CURATED_SCIFI_FILM_ITEMS: FilmItem[] = CURATED_SCIFI_HERO_POOL.map((item) => ({
+  _id: item._id,
+  slug: item.slug,
+  name: item.name,
+  origin_name: item.origin_name,
+  poster_url: item.poster_url,
+  thumb_url: item.thumb_url,
+  quality: item.quality || "4K",
+  lang: item.lang || "Vietsub + Thuyết Minh",
+  year: item.year,
+  type: item.type || "single",
+  vote_average: item.vote_average,
+  rating: item.rating,
+  imdb_rating: item.imdb_rating,
+  content: item.content,
+  category: (item.genres || ["Khoa Học Viễn Tưởng"]).map((name) => ({
+    name,
+    slug: name.toLowerCase().replace(/\s+/g, "-"),
+  })),
+  country: [{ name: "Âu Mỹ", slug: "au-my" }],
+  tmdb: item.tmdb,
+}));
 
 // Helper: Làm sạch và trích xuất các khóa nhận diện thương hiệu/franchise (tránh đề xuất Phần 1, Phần 2, Phần 3 cùng lúc)
 function getFranchiseTokens(film: FilmItem): string[] {
@@ -946,9 +970,27 @@ export default function HomePageClient({
   }, [actionUsUkData, actionData]);
 
   const scifiFilms = useMemo(() => {
-    const usUkList = vfxUsUkData?.data?.items || vfxUsUkData?.items || [];
-    const genList = scifiData?.data?.items || scifiData?.items || [];
-    return filterLiveActionOnly(deduplicate([...usUkList, ...genList]));
+    // Only allow genuine Sci-Fi live-action films (strictly filter out Asian BL/teen romance, tiên hiệp, donghua, or comedy series that are mistagged by upstream APIs)
+    const isGenuineSciFi = (film: FilmItem) => {
+      if (!film?.name || !film?.slug) return false;
+      const combined = `${film.name} ${film.origin_name || ""} ${film.content || ""}`.toLowerCase();
+      if (
+        /người yêu xui xẻo|unlucky bae|độc kiếm cửu thiên|sư huynh quá cẩn trọng|chiến binh ánh sáng|chiến binh nụ cười|tiên hiệp|kiếm hiệp|ngôn tình|học đường|đam mỹ|boys love|tình cảm gia đình|hài kịch thái lan|gián đột biến/i.test(
+          combined,
+        )
+      ) {
+        return false;
+      }
+      return movieTaxonomyContains(film.category, ["viễn tưởng", "vien-tuong", "sci-fi"]);
+    };
+
+    const usUkList = (vfxUsUkData?.data?.items || vfxUsUkData?.items || []).filter(isGenuineSciFi);
+    const genList = (scifiData?.data?.items || scifiData?.items || []).filter(isGenuineSciFi);
+
+    return deduplicate([
+      ...CURATED_SCIFI_FILM_ITEMS,
+      ...filterLiveActionOnly([...usUkList, ...genList]),
+    ]);
   }, [vfxUsUkData, scifiData]);
 
   const nextWatchFilms = useMemo(() => {

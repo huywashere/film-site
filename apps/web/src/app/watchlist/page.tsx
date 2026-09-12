@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { Bookmark, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Bookmark, Loader2, ArrowLeft } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { watchlistApi } from "@/lib/api";
 import { FilmCard } from "@/components/film/FilmCard";
@@ -13,6 +14,7 @@ import { guestDataStorage, type GuestWatchlistItem } from "@/lib/user-data";
 import { cardFont } from "@/lib/fonts";
 
 export default function WatchlistPage() {
+  const router = useRouter();
   const { user } = useAuthStore();
   const [page, setPage] = useState(1);
   const [guestItems, setGuestItems] = useState<GuestWatchlistItem[]>([]);
@@ -89,9 +91,27 @@ export default function WatchlistPage() {
     >
       {/* Header */}
       <div className="relative z-10 border-b border-white/10 bg-background">
-        <div className="mx-auto max-w-[1600px] px-4 py-5 md:px-8 md:py-6">
-          {/* Back Button & Title (Centered) */}
-          <div className="flex flex-col items-center justify-center text-center max-w-2xl mx-auto py-2">
+        <div className="relative mx-auto max-w-[1600px] px-4 py-4 md:px-8 md:py-5">
+          {/* Back Button */}
+          <div className="mb-2 sm:mb-0 sm:absolute sm:left-4 md:left-8 sm:top-1/2 sm:-translate-y-1/2 z-20">
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined" && window.history.length > 1) {
+                  router.back();
+                } else {
+                  router.push("/");
+                }
+              }}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-neutral-300 hover:text-white transition-all hover:bg-white/[0.08] hover:border-white/20 cursor-pointer select-none active:scale-95 group"
+            >
+              <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+              <span>Quay lại</span>
+            </button>
+          </div>
+
+          {/* Centered Title */}
+          <div className="flex flex-col items-center justify-center text-center max-w-2xl mx-auto py-1">
             <h1 className="text-2xl font-extrabold tracking-tight text-white md:text-3xl">
               Xem Sau
             </h1>

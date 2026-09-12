@@ -8,6 +8,7 @@ import {
   History as HistoryIcon,
   ChevronLeft,
   ChevronRight,
+  ArrowLeft,
   X,
   Play,
   Trash2,
@@ -222,9 +223,27 @@ export default function HistoryPage() {
     <div className={`${cardFont.className} min-h-screen bg-background pb-16 pt-16 lg:ml-20`}>
       {/* Header */}
       <div className="relative z-10 border-b border-white/10 bg-background">
-        <div className="mx-auto max-w-[1600px] px-4 py-5 md:px-8 md:py-6">
+        <div className="relative mx-auto max-w-[1600px] px-4 py-4 md:px-8 md:py-5">
+          {/* Back Button */}
+          <div className="mb-2 sm:mb-0 sm:absolute sm:left-4 md:left-8 sm:top-1/2 sm:-translate-y-1/2 z-20">
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined" && window.history.length > 1) {
+                  router.back();
+                } else {
+                  router.push("/");
+                }
+              }}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-neutral-300 hover:text-white transition-all hover:bg-white/[0.08] hover:border-white/20 cursor-pointer select-none active:scale-95 group"
+            >
+              <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+              <span>Quay lại</span>
+            </button>
+          </div>
+
           {/* Header (Centered) */}
-          <div className="flex flex-col items-center justify-center text-center max-w-2xl mx-auto py-2 gap-2.5">
+          <div className="flex flex-col items-center justify-center text-center max-w-2xl mx-auto py-1 gap-2.5">
             <h1 className="text-2xl font-extrabold tracking-tight text-white md:text-3xl">
               Lịch Sử Xem
             </h1>
@@ -237,7 +256,7 @@ export default function HistoryPage() {
               <button
                 onClick={() => setShowClearConfirm(true)}
                 disabled={clearAllMutation.isPending}
-                className="mt-1 flex items-center space-x-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl font-semibold text-xs transition-colors border border-red-500/20 disabled:opacity-50"
+                className="mt-0.5 flex items-center space-x-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl font-semibold text-xs transition-colors border border-red-500/20 disabled:opacity-50"
               >
                 <Trash2 size={14} />
                 <span>Xóa tất cả lịch sử</span>
