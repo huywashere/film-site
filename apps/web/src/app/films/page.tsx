@@ -19,6 +19,10 @@ import {
 import dynamic from "next/dynamic";
 import { Pagination } from "@/components/film/Pagination";
 import { GENRES_LIST, COUNTRIES_LIST } from "@/components/layout/Navbar";
+import {
+  MARVEL_SUB_FRANCHISES,
+  DC_SUB_FRANCHISES,
+} from "@/lib/universe-catalog";
 import { movieApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { cardFont } from "@/lib/fonts";
@@ -137,6 +141,19 @@ function BrowseFilmsContent() {
   ]);
 
   const isFiltered = activeFiltersCount > 0;
+  const isUniverse = selectedType === "marvel" || selectedType === "dc";
+
+  const activeSubLabel = useMemo(() => {
+    if (selectedType === "marvel") {
+      const match = MARVEL_SUB_FRANCHISES.find((s) => s.id === selectedSubFranchise);
+      return match?.label || "Tất Cả Marvel";
+    }
+    if (selectedType === "dc") {
+      const match = DC_SUB_FRANCHISES.find((s) => s.id === selectedSubFranchise);
+      return match?.label || "Tất Cả DC";
+    }
+    return "";
+  }, [selectedType, selectedSubFranchise]);
 
   const handleResetAll = useCallback(() => {
     setSearch("");
@@ -420,190 +437,27 @@ function BrowseFilmsContent() {
           />
         )}
 
-        {/* ── Hàng 1: Thanh Tìm Kiếm & Quick Format Pills ── */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          {/* Quick Format Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
-            {QUICK_TYPES.map((type) => {
-              const isActive = selectedType === type.value;
-              const pillStyle = isActive
-                ? "bg-white text-black shadow-sm font-black border-white"
-                : "bg-[#12141c] text-neutral-400 hover:text-white hover:bg-white/[0.06] border border-white/[0.08]";
-
-              return (
-                <button
-                  key={type.value}
-                  type="button"
-                  onClick={() => {
-                    setSelectedType(type.value);
-                    if (type.value !== "marvel" && type.value !== "dc") {
-                      setSelectedSubFranchise("all");
-                    }
-                    setPage(1);
-                  }}
-                  className={cn(
-                    "px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all duration-200 cursor-pointer select-none shrink-0",
-                    pillStyle,
-                  )}
-                >
-                  {type.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Ô tìm kiếm nhanh nhỏ gọn */}
-          <div className="relative w-full md:w-72 shrink-0">
-            <Search
-              size={14}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
-            />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm tên phim, diễn viên..."
-              className="w-full bg-[#12141c] border border-white/10 hover:border-white/20 focus:border-cyan-400/60 rounded-xl pl-9 pr-8 py-1.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none transition-colors"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-neutral-400 hover:text-white rounded-full transition-colors"
-              >
-                <X size={12} />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* ── Hàng 2: Bộ Lọc Tinh Gọn Dạng Select Pills (Không khung viền cồng kềnh) ── */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
-          <div className="flex flex-wrap items-center gap-2">
-            {/* 1. Thể Loại */}
-            <div className="relative">
-              <select
-                value={selectedGenre}
-                onChange={(e) => {
-                  setSelectedGenre(e.target.value);
-                  setPage(1);
-                }}
+        {isUniverse ? (
+          /* ── Tiêu Đề Danh Sách Phim Vũ Trụ Tinh Gọn (Không thanh duyệt tìm) ── */
+          <div className="flex items-center justify-between pt-1 pb-1 border-b border-white/[0.08]">
+            <div className="flex items-center gap-2.5">
+              <div
                 className={cn(
-                  "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
-                  selectedGenre
-                    ? "border-cyan-400/60 text-cyan-300"
-                    : "border-white/10 text-neutral-300 hover:border-white/20",
+                  "w-1.5 h-4.5 rounded-full",
+                  selectedType === "marvel"
+                    ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]"
+                    : "bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.5)]",
                 )}
-              >
-                <option value="">Thể Loại</option>
-                {GENRES_LIST.map((g) => (
-                  <option key={g.slug} value={g.slug} className="bg-[#12141c] text-white">
-                    {g.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+              />
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                <span>{activeSubLabel}</span>
+                <span className="text-xs font-semibold text-neutral-400">
+                  ({totalItems || films.length} phim)
+                </span>
+              </h2>
             </div>
 
-            {/* 2. Quốc Gia */}
-            <div className="relative">
-              <select
-                value={selectedCountry}
-                onChange={(e) => {
-                  setSelectedCountry(e.target.value);
-                  setPage(1);
-                }}
-                className={cn(
-                  "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
-                  selectedCountry
-                    ? "border-cyan-400/60 text-cyan-300"
-                    : "border-white/10 text-neutral-300 hover:border-white/20",
-                )}
-              >
-                <option value="">Quốc Gia</option>
-                {COUNTRIES_LIST.map((c) => (
-                  <option key={c.slug} value={c.slug} className="bg-[#12141c] text-white">
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
-            </div>
-
-            {/* 3. Năm Phát Hành */}
-            <div className="relative">
-              <select
-                value={selectedYear}
-                onChange={(e) => {
-                  setSelectedYear(e.target.value);
-                  setPage(1);
-                }}
-                className={cn(
-                  "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
-                  selectedYear
-                    ? "border-cyan-400/60 text-cyan-300"
-                    : "border-white/10 text-neutral-300 hover:border-white/20",
-                )}
-              >
-                <option value="">Năm</option>
-                {YEARS.map((y) => (
-                  <option key={y} value={y} className="bg-[#12141c] text-white">
-                    {y}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
-            </div>
-
-            {/* 4. Chất Lượng */}
-            <div className="relative">
-              <select
-                value={selectedQuality}
-                onChange={(e) => {
-                  setSelectedQuality(e.target.value);
-                  setPage(1);
-                }}
-                className={cn(
-                  "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
-                  selectedQuality !== "all"
-                    ? "border-cyan-400/60 text-cyan-300"
-                    : "border-white/10 text-neutral-300 hover:border-white/20",
-                )}
-              >
-                {QUALITIES.map((q) => (
-                  <option key={q.value} value={q.value} className="bg-[#12141c] text-white">
-                    {q.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
-            </div>
-
-            {/* 5. Bản Dịch */}
-            <div className="relative">
-              <select
-                value={selectedAudio}
-                onChange={(e) => {
-                  setSelectedAudio(e.target.value);
-                  setPage(1);
-                }}
-                className={cn(
-                  "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
-                  selectedAudio !== "all"
-                    ? "border-cyan-400/60 text-cyan-300"
-                    : "border-white/10 text-neutral-300 hover:border-white/20",
-                )}
-              >
-                {AUDIOS.map((a) => (
-                  <option key={a.value} value={a.value} className="bg-[#12141c] text-white">
-                    {a.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
-            </div>
-
-            {/* 6. Sắp Xếp */}
+            {/* Sắp xếp nhanh */}
             <div className="relative">
               <select
                 value={selectedSort}
@@ -611,35 +465,285 @@ function BrowseFilmsContent() {
                   setSelectedSort(e.target.value);
                   setPage(1);
                 }}
-                className="appearance-none bg-[#12141c] border border-white/10 hover:border-white/20 rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold text-neutral-300 focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors"
+                className="appearance-none bg-[#12141c] border border-white/10 hover:border-white/20 rounded-xl pl-3 pr-7 py-1.5 text-xs font-medium text-neutral-300 focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors"
               >
-                {SORTS.map((s) => (
-                  <option key={s.value} value={s.value} className="bg-[#12141c] text-white">
-                    {s.label}
-                  </option>
-                ))}
+                <option value="modified.time">Mới cập nhật</option>
+                <option value="year">Năm phát hành</option>
+                <option value="rating">Đánh giá cao nhất</option>
               </select>
-              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+              <ChevronDown
+                size={12}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+              />
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* ── Hàng 1: Thanh Tìm Kiếm & Quick Format Pills ── */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              {/* Quick Format Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
+                {QUICK_TYPES.map((type) => {
+                  const isActive = selectedType === type.value;
+                  const pillStyle = isActive
+                    ? "bg-white text-black shadow-sm font-black border-white"
+                    : "bg-[#12141c] text-neutral-400 hover:text-white hover:bg-white/[0.06] border border-white/[0.08]";
+
+                  return (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => {
+                        setSelectedType(type.value);
+                        if (type.value !== "marvel" && type.value !== "dc") {
+                          setSelectedSubFranchise("all");
+                        }
+                        setPage(1);
+                      }}
+                      className={cn(
+                        "px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all duration-200 cursor-pointer select-none shrink-0",
+                        pillStyle,
+                      )}
+                    >
+                      {type.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Ô tìm kiếm nhanh nhỏ gọn */}
+              <div className="relative w-full md:w-72 shrink-0">
+                <Search
+                  size={14}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+                />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Tìm tên phim, diễn viên..."
+                  className="w-full bg-[#12141c] border border-white/10 hover:border-white/20 focus:border-cyan-400/60 rounded-xl pl-9 pr-8 py-1.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none transition-colors"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-neutral-400 hover:text-white rounded-full transition-colors"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* Nút Xóa Lọc */}
-            {isFiltered && (
-              <button
-                type="button"
-                onClick={handleResetAll}
-                className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white px-2.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-colors cursor-pointer"
-              >
-                <RotateCcw size={11} />
-                <span>Đặt lại</span>
-              </button>
-            )}
-          </div>
+            {/* ── Hàng 2: Bộ Lọc Tinh Gọn Dạng Select Pills (Không khung viền cồng kềnh) ── */}
+            <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+              <div className="flex flex-wrap items-center gap-2">
+                {/* 1. Thể Loại */}
+                <div className="relative">
+                  <select
+                    value={selectedGenre}
+                    onChange={(e) => {
+                      setSelectedGenre(e.target.value);
+                      setPage(1);
+                    }}
+                    className={cn(
+                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
+                      selectedGenre
+                        ? "border-cyan-400/60 text-cyan-300"
+                        : "border-white/10 text-neutral-300 hover:border-white/20",
+                    )}
+                  >
+                    <option value="">Thể Loại</option>
+                    {GENRES_LIST.map((g) => (
+                      <option
+                        key={g.slug}
+                        value={g.slug}
+                        className="bg-[#12141c] text-white"
+                      >
+                        {g.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={12}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+                  />
+                </div>
 
-          {/* Số lượng phim */}
-          <span className="text-[11px] sm:text-xs text-neutral-400 font-medium self-center">
-            {films.length} phim {totalItems ? `• Tổng số ${totalItems}` : ""}
-          </span>
-        </div>
+                {/* 2. Quốc Gia */}
+                <div className="relative">
+                  <select
+                    value={selectedCountry}
+                    onChange={(e) => {
+                      setSelectedCountry(e.target.value);
+                      setPage(1);
+                    }}
+                    className={cn(
+                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
+                      selectedCountry
+                        ? "border-cyan-400/60 text-cyan-300"
+                        : "border-white/10 text-neutral-300 hover:border-white/20",
+                    )}
+                  >
+                    <option value="">Quốc Gia</option>
+                    {COUNTRIES_LIST.map((c) => (
+                      <option
+                        key={c.slug}
+                        value={c.slug}
+                        className="bg-[#12141c] text-white"
+                      >
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={12}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+                  />
+                </div>
+
+                {/* 3. Năm Phát Hành */}
+                <div className="relative">
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => {
+                      setSelectedYear(e.target.value);
+                      setPage(1);
+                    }}
+                    className={cn(
+                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
+                      selectedYear
+                        ? "border-cyan-400/60 text-cyan-300"
+                        : "border-white/10 text-neutral-300 hover:border-white/20",
+                    )}
+                  >
+                    <option value="">Năm</option>
+                    {YEARS.map((y) => (
+                      <option
+                        key={y}
+                        value={y}
+                        className="bg-[#12141c] text-white"
+                      >
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={12}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+                  />
+                </div>
+
+                {/* 4. Chất Lượng */}
+                <div className="relative">
+                  <select
+                    value={selectedQuality}
+                    onChange={(e) => {
+                      setSelectedQuality(e.target.value);
+                      setPage(1);
+                    }}
+                    className={cn(
+                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
+                      selectedQuality !== "all"
+                        ? "border-cyan-400/60 text-cyan-300"
+                        : "border-white/10 text-neutral-300 hover:border-white/20",
+                    )}
+                  >
+                    {QUALITIES.map((q) => (
+                      <option
+                        key={q.value}
+                        value={q.value}
+                        className="bg-[#12141c] text-white"
+                      >
+                        {q.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={12}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+                  />
+                </div>
+
+                {/* 5. Bản Dịch */}
+                <div className="relative">
+                  <select
+                    value={selectedAudio}
+                    onChange={(e) => {
+                      setSelectedAudio(e.target.value);
+                      setPage(1);
+                    }}
+                    className={cn(
+                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
+                      selectedAudio !== "all"
+                        ? "border-cyan-400/60 text-cyan-300"
+                        : "border-white/10 text-neutral-300 hover:border-white/20",
+                    )}
+                  >
+                    {AUDIOS.map((a) => (
+                      <option
+                        key={a.value}
+                        value={a.value}
+                        className="bg-[#12141c] text-white"
+                      >
+                        {a.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={12}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+                  />
+                </div>
+
+                {/* 6. Sắp Xếp */}
+                <div className="relative">
+                  <select
+                    value={selectedSort}
+                    onChange={(e) => {
+                      setSelectedSort(e.target.value);
+                      setPage(1);
+                    }}
+                    className="appearance-none bg-[#12141c] border border-white/10 hover:border-white/20 rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold text-neutral-300 focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors"
+                  >
+                    {SORTS.map((s) => (
+                      <option
+                        key={s.value}
+                        value={s.value}
+                        className="bg-[#12141c] text-white"
+                      >
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={12}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+                  />
+                </div>
+
+                {/* Nút Xóa Lọc */}
+                {isFiltered && (
+                  <button
+                    type="button"
+                    onClick={handleResetAll}
+                    className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white px-2.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-colors cursor-pointer"
+                  >
+                    <RotateCcw size={11} />
+                    <span>Đặt lại</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Số lượng phim */}
+              <span className="text-[11px] sm:text-xs text-neutral-400 font-medium self-center">
+                {films.length} phim{" "}
+                {totalItems ? `• Tổng số ${totalItems}` : ""}
+              </span>
+            </div>
+          </>
+        )}
 
         {/* ── Lưới Thẻ Phim Chuẩn 7 Cột Phong Cách Trang Chủ (2xl:grid-cols-7) ── */}
         {isLoading ? (
