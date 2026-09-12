@@ -163,6 +163,8 @@ export function CuratedSpotlightSection({
                 kind="backdrop"
                 alt={activeFilm.name}
                 priority
+                allowTitleLookup
+                preferOriginal
                 className="h-full w-full"
               />
               {/* Dark gradient scrim */}
@@ -329,6 +331,7 @@ export function CuratedSpotlightSection({
                       film={film}
                       kind="poster"
                       alt={film.name}
+                      allowTitleLookup
                       className="h-full w-full transition-transform duration-300 group-hover:scale-105"
                     />
                     {/* Active left bar — desktop only */}

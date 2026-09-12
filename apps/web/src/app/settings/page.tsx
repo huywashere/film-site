@@ -16,6 +16,7 @@ import {
   Lock,
   CheckCircle2,
   ShieldCheck,
+  LayoutGrid,
 } from "lucide-react";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useAuthStore } from "@/store/authStore";
@@ -23,7 +24,7 @@ import { useToast } from "@/providers/ToastProvider";
 import { cn } from "@/lib/utils";
 import { cardFont } from "@/lib/fonts";
 
-type SettingsTab = "all" | "player" | "notifications" | "storage";
+type SettingsTab = "all" | "display" | "player" | "notifications" | "storage";
 
 // ── Toggle component (Identical to Profile page) ───────────────────
 function Toggle({
@@ -87,15 +88,27 @@ export default function SettingsPage() {
     theaterMode,
     newMovieNotifications,
     commentNotifications,
+    cardLayout,
     setAutoplay,
     setAutoNextEpisode,
     setTheaterMode,
     setNewMovieNotifications,
     setCommentNotifications,
+    setCardLayout,
   } = useSettingsStore();
 
   const [clearingCache, setClearingCache] = useState(false);
   const [clearingSearch, setClearingSearch] = useState(false);
+
+  const handleSelectCardLayout = (layout: "vertical" | "horizontal") => {
+    setCardLayout(layout);
+    toast(
+      layout === "horizontal"
+        ? "Đã chuyển hiển thị sang Card Ngang (Backdrop 16:9)!"
+        : "Đã chuyển hiển thị sang Card Dọc (Poster 2:3)!",
+      "success",
+    );
+  };
 
   const handleClearCache = () => {
     setClearingCache(true);
@@ -150,6 +163,7 @@ export default function SettingsPage() {
 
   const TABS = [
     { id: "all" as const, label: "Tất cả cài đặt", icon: Sliders },
+    { id: "display" as const, label: "Giao diện & Thẻ phim", icon: LayoutGrid },
     { id: "player" as const, label: "Trình phát phim", icon: Tv },
     { id: "notifications" as const, label: "Thông báo & Tương tác", icon: Bell },
     { id: "storage" as const, label: "Bộ nhớ & Lưu trữ", icon: HardDrive },
@@ -306,7 +320,124 @@ export default function SettingsPage() {
 
           {/* ── RIGHT MAIN CONTENT AREA ── */}
           <div className="flex-1 min-w-0 space-y-6">
-            {/* 1. TRÌNH PHÁT PHIM */}
+            {/* 1. GIAO DIỆN & KIỂU THẺ PHIM */}
+            {(activeTab === "all" || activeTab === "display") && (
+              <div className="animate-fade-in space-y-5 rounded-2xl border border-white/10 bg-[#161618] p-5 sm:p-7 shadow-xl">
+                <div className="border-b border-white/[0.07] pb-4 flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center shrink-0">
+                    <LayoutGrid className="h-5 w-5 text-cyan-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-white">
+                      Giao diện & Kiểu thẻ phim
+                    </h2>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      Tùy chọn định dạng thẻ hiển thị phim trên trang chủ và các danh mục.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  {/* Option 1: Card Dọc (Poster 2:3) */}
+                  <button
+                    type="button"
+                    onClick={() => handleSelectCardLayout("vertical")}
+                    className={cn(
+                      "group relative flex flex-col p-5 rounded-2xl border text-left transition-all cursor-pointer select-none",
+                      cardLayout === "vertical"
+                        ? "border-cyan-500/80 bg-gradient-to-b from-cyan-500/10 via-cyan-500/[0.03] to-transparent shadow-[0_0_28px_-8px_rgba(6,182,212,0.35)] ring-1 ring-cyan-500/50"
+                        : "border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20",
+                    )}
+                  >
+                    <div className="flex items-center justify-between w-full mb-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-400/15 text-cyan-300 border border-cyan-400/25">
+                        Chuẩn Mặc Định
+                      </span>
+                      <div
+                        className={cn(
+                          "h-5 w-5 rounded-full flex items-center justify-center border transition-all",
+                          cardLayout === "vertical"
+                            ? "border-cyan-400 bg-cyan-400 text-black"
+                            : "border-white/20 bg-transparent text-transparent",
+                        )}
+                      >
+                        <CheckCircle2 size={13} className="stroke-[3]" />
+                      </div>
+                    </div>
+
+                    {/* Miniature Preview Card Dọc */}
+                    <div className="mx-auto my-3 flex items-center justify-center py-1">
+                      <div className="relative w-20 aspect-[2/3] rounded-lg border border-cyan-400/40 bg-[#12141a] shadow-lg overflow-hidden flex flex-col justify-between p-1.5 transition-transform group-hover:scale-105">
+                        <span className="self-start rounded bg-amber-400 text-[6.5px] font-black text-black px-1">
+                          IMDb 9.0
+                        </span>
+                        <div className="space-y-1">
+                          <div className="h-1.5 w-3/4 rounded bg-white/80" />
+                          <div className="h-1 w-1/2 rounded bg-white/40" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-sm font-bold text-white mt-1">
+                      Card Dọc (Poster 2:3)
+                    </p>
+                    <p className="text-xs text-neutral-400 mt-1 leading-5">
+                      Bố cục poster dọc chuẩn điện ảnh (7 phim/hàng), tối ưu duyệt nhiều tựa phim cùng lúc với ảnh bìa phim sắc nét.
+                    </p>
+                  </button>
+
+                  {/* Option 2: Card Ngang (Backdrop 16:9) */}
+                  <button
+                    type="button"
+                    onClick={() => handleSelectCardLayout("horizontal")}
+                    className={cn(
+                      "group relative flex flex-col p-5 rounded-2xl border text-left transition-all cursor-pointer select-none",
+                      cardLayout === "horizontal"
+                        ? "border-violet-500/80 bg-gradient-to-b from-violet-500/10 via-violet-500/[0.03] to-transparent shadow-[0_0_28px_-8px_rgba(139,92,246,0.35)] ring-1 ring-violet-500/50"
+                        : "border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20",
+                    )}
+                  >
+                    <div className="flex items-center justify-between w-full mb-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-violet-400/15 text-violet-300 border border-violet-400/25">
+                        Cinematic 16:9
+                      </span>
+                      <div
+                        className={cn(
+                          "h-5 w-5 rounded-full flex items-center justify-center border transition-all",
+                          cardLayout === "horizontal"
+                            ? "border-violet-400 bg-violet-400 text-black"
+                            : "border-white/20 bg-transparent text-transparent",
+                        )}
+                      >
+                        <CheckCircle2 size={13} className="stroke-[3]" />
+                      </div>
+                    </div>
+
+                    {/* Miniature Preview Card Ngang */}
+                    <div className="mx-auto my-3 flex items-center justify-center py-1">
+                      <div className="relative w-32 aspect-video rounded-lg border border-violet-400/40 bg-[#12141a] shadow-lg overflow-hidden flex flex-col justify-between p-1.5 transition-transform group-hover:scale-105">
+                        <span className="self-start rounded bg-amber-400 text-[6.5px] font-black text-black px-1">
+                          IMDb 9.0
+                        </span>
+                        <div className="space-y-1">
+                          <div className="h-1.5 w-3/4 rounded bg-white/80" />
+                          <div className="h-1 w-1/2 rounded bg-white/40" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-sm font-bold text-white mt-1">
+                      Card Ngang (Backdrop 16:9)
+                    </p>
+                    <p className="text-xs text-neutral-400 mt-1 leading-5">
+                      Bố cục khung hình ngang điện ảnh (5 phim/hàng), làm nổi bật đại cảnh và chi tiết hình ảnh chất lượng cao.
+                    </p>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 2. TRÌNH PHÁT PHIM */}
             {(activeTab === "all" || activeTab === "player") && (
               <div className="animate-fade-in space-y-5 rounded-2xl border border-white/10 bg-[#161618] p-5 sm:p-7 shadow-xl">
                 <div className="border-b border-white/[0.07] pb-4 flex items-center gap-3">

@@ -8,6 +8,7 @@ import type { MovieSource } from '@/lib/movie-normalizer';
 import { cardFont } from '@/lib/fonts';
 import { normalizeMovieArtworkUrl } from '@/lib/movie-image-url';
 import { TmdbArtwork } from '@/components/film/TmdbArtwork';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export interface FilmItem {
   _id?: string;
@@ -70,11 +71,13 @@ import { resolveImageUrl } from '@/lib/movie-image-url';
 function FilmCardComponent({
   film,
   width,
-  variant = 'standard',
+  variant,
   hideDetails = false,
   priority = false,
   preferHighQuality = false,
 }: FilmCardProps) {
+  const globalCardLayout = useSettingsStore((s) => s.cardLayout);
+  const effectiveVariant = variant || (globalCardLayout === 'horizontal' ? 'landscape' : 'standard');
   const slug = film.slug;
   const title = film.name || film.title || 'Chưa có tên';
   const rawLang = (film.lang || '').toLowerCase();
@@ -233,12 +236,12 @@ function FilmCardComponent({
           <div
             className={cn(
               'relative w-full overflow-hidden bg-neutral-900',
-              variant === 'landscape' ? 'aspect-video' : 'aspect-[2/3]',
+              effectiveVariant === 'landscape' ? 'aspect-video' : 'aspect-[2/3]',
             )}
           >
             <TmdbArtwork
               film={film}
-              kind={variant === 'landscape' ? 'backdrop' : 'poster'}
+              kind={effectiveVariant === 'landscape' ? 'backdrop' : 'poster'}
               alt={title}
               priority={priority}
               allowTitleLookup={preferHighQuality}
@@ -352,7 +355,7 @@ function FilmCardComponent({
 export const FilmCard = memo(FilmCardComponent);
 
 export function FilmCardSkeleton({
-  variant = 'standard',
+  variant,
   width,
   hideDetails,
 }: {
@@ -360,6 +363,9 @@ export function FilmCardSkeleton({
   width?: number;
   hideDetails?: boolean;
 }) {
+  const globalCardLayout = useSettingsStore((s) => s.cardLayout);
+  const effectiveVariant = variant || (globalCardLayout === 'horizontal' ? 'landscape' : 'standard');
+
   return (
     <div
       style={width ? { width } : undefined}
@@ -368,7 +374,7 @@ export function FilmCardSkeleton({
       <div
         className={cn(
           'relative overflow-hidden rounded-[8px] border border-white/5 bg-neutral-900',
-          variant === 'landscape' ? 'aspect-video w-full' : 'aspect-[2/3] w-full',
+          effectiveVariant === 'landscape' ? 'aspect-video w-full' : 'aspect-[2/3] w-full',
         )}
       >
         <div className="absolute inset-0 bg-neutral-800/40" />

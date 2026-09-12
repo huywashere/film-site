@@ -125,6 +125,15 @@ function selectBestMatch(results: TmdbMovie[], film: FilmItem): TmdbMovie | null
   return scored[0]?.movie || null;
 }
 
+function cleanSearchTitle(s?: string): string {
+  if (!s) return '';
+  return s
+    .replace(/\s*\([^)]*\)/g, ' ')
+    .replace(/\s*[-:]?\s*(?:phần|phan|season|part|tập|tap|mùa|mua|ss|ep|episode)\s*\d+/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 async function resolveArtwork(film: FilmItem): Promise<TmdbMovie | null> {
   const extracted = extractTmdbInfo(film);
   const tmdbId = extracted.tmdbId && Number.isFinite(extracted.tmdbId) ? extracted.tmdbId : null;
@@ -140,25 +149,50 @@ async function resolveArtwork(film: FilmItem): Promise<TmdbMovie | null> {
     if (exact) return { ...exact, media_type: extracted.type };
   }
 
-  const title = (film.origin_name || film.name || film.title || '')
-    .replace(/\s*\([^)]*\)/g, ' ')
-    .trim();
-  if (!title) return null;
-
-  const primaryResults =
-    extracted.type === 'tv'
-      ? (await tmdbApi.searchTv(title))?.results || []
-      : (await tmdbApi.searchMovie(title))?.results || [];
-  const primaryMatch = selectBestMatch(primaryResults, film);
-  if (primaryMatch) {
-    return { ...primaryMatch, media_type: extracted.type };
+  const rawTitles = [film.origin_name, film.name, film.title].filter(Boolean) as string[];
+  const searchTitles: string[] = [];
+  for (const raw of rawTitles) {
+    const cleaned = cleanSearchTitle(raw);
+    if (cleaned && !searchTitles.includes(cleaned)) searchTitles.push(cleaned);
+    const stripped = raw.replace(/\s*\([^)]*\)/g, ' ').trim();
+    if (stripped && !searchTitles.includes(stripped)) searchTitles.push(stripped);
   }
 
-  const multiResults = (await tmdbApi.searchMulti(title))?.results || [];
-  return selectBestMatch(
-    multiResults.filter((item) => item.media_type === 'movie' || item.media_type === 'tv'),
-    film,
-  );
+  if (!searchTitles.length) return null;
+
+  for (const title of searchTitles) {
+    // 1. Primary search with assumed media type
+    const primaryResults =
+      extracted.type === 'tv'
+        ? (await tmdbApi.searchTv(title))?.results || []
+        : (await tmdbApi.searchMovie(title))?.results || [];
+    const primaryMatch = selectBestMatch(primaryResults, film);
+    if (primaryMatch) {
+      return { ...primaryMatch, media_type: extracted.type };
+    }
+
+    // 2. Multi search (covers movies, tv series)
+    const multiResults = (await tmdbApi.searchMulti(title))?.results || [];
+    const multiFiltered = multiResults.filter(
+      (item) => item.media_type === 'movie' || item.media_type === 'tv',
+    );
+    const multiMatch = selectBestMatch(multiFiltered, film);
+    if (multiMatch) {
+      return multiMatch;
+    }
+
+    // 3. Alternate media type search (in case provider tagged a series as single or vice versa)
+    const altResults =
+      extracted.type === 'tv'
+        ? (await tmdbApi.searchMovie(title))?.results || []
+        : (await tmdbApi.searchTv(title))?.results || [];
+    const altMatch = selectBestMatch(altResults, film);
+    if (altMatch) {
+      return { ...altMatch, media_type: extracted.type === 'tv' ? 'movie' : 'tv' };
+    }
+  }
+
+  return null;
 }
 
 export function useTmdbArtwork(film: FilmItem, enabled = true) {
@@ -191,7 +225,15 @@ export function useTmdbArtwork(film: FilmItem, enabled = true) {
   return {
     ...query,
     movie: query.data || null,
-    backdropUrl: tmdbBackdrop(query.data?.backdrop_path, 'w1280'),
-    posterUrl: tmdbPoster(query.data?.poster_path, 'w500'),
+    backdropUrl:
+      tmdbBackdrop(query.data?.backdrop_path, 'original') ||
+      tmdbBackdrop(query.data?.backdrop_path, 'w1280'),
+    backdropW1280: tmdbBackdrop(query.data?.backdrop_path, 'w1280'),
+    backdropOriginal: tmdbBackdrop(query.data?.backdrop_path, 'original'),
+    posterUrl:
+      tmdbPoster(query.data?.poster_path, 'w780') ||
+      tmdbPoster(query.data?.poster_path, 'w500'),
+    posterW500: tmdbPoster(query.data?.poster_path, 'w500'),
+    posterW780: tmdbPoster(query.data?.poster_path, 'w780'),
   };
 }

@@ -113,10 +113,10 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
     return "Vietsub";
   })();
 
-  // Extract top-right quality badge (FHD / 4K / HD / CAM)
+  // Extract top-right quality badge (FHD / HD / CAM) - Xóa bỏ chữ 4K theo yêu cầu người dùng
   const qualityBadge = (() => {
     const raw = (film.quality || "").toUpperCase();
-    if (raw.includes("4K")) return "4K";
+    if (raw.includes("4K")) return "";
     if (
       raw.includes("FHD") ||
       raw.includes("FULL HD") ||
@@ -128,7 +128,7 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
     if (raw.includes("CAM") || raw.includes("HDCAM")) return "CAM";
     if (raw.includes("TRAILER")) return "Trailer";
     if (raw.includes("HD") || raw.includes("720P")) return "HD";
-    return "FHD";
+    return "";
   })();
 
   // Normalize episode text (Bottom Left): e.g. "Full", "Tập 12", "12/12"
@@ -227,9 +227,11 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
                 {filmTitle}
               </h3>
             </div>
-            <span className="text-[9px] text-neutral-400 font-bold uppercase tracking-wider">
-              {qualityBadge}
-            </span>
+            {qualityBadge ? (
+              <span className="text-[9px] text-neutral-400 font-bold uppercase tracking-wider">
+                {qualityBadge}
+              </span>
+            ) : null}
           </div>
 
           {/* Top Badges: [T.Minh] (left) ... [FHD] (right) */}

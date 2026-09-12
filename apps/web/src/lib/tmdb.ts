@@ -7,11 +7,16 @@ const TMDB_PROXY = "/api/tmdb";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
 
 function tmdbImageUrl(path: string, size: string): string {
-  // Use TMDB's public image CDN as the primary path. Sending every image
-  // through a serverless function added a cold-start + DNS lookup to each
-  // poster and caused production grids to time out before the image arrived.
-  // Components that need it can still fall back to /api/image-proxy on error.
-  return `${TMDB_IMAGE_BASE}/${size}${path}`;
+  if (!path) return "";
+  if (
+    path.startsWith("http://") ||
+    path.startsWith("https://") ||
+    path.startsWith("/api/")
+  ) {
+    return path;
+  }
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  return `${TMDB_IMAGE_BASE}/${size}${cleanPath}`;
 }
 
 export function tmdbImageProxyUrl(url: string): string {
@@ -206,6 +211,40 @@ export function sortTmdbImages(images: TmdbImage[] = []): TmdbImage[] {
       if (langDiff !== 0) return langDiff;
       return (b.vote_average || 0) - (a.vote_average || 0);
     });
+}
+
+export function sortTmdbLogos(logos: TmdbImage[] = []): TmdbImage[] {
+  const languagePriority = (language?: string | null) => {
+    const l = (language || "").toLowerCase().trim();
+    if (l === "vi") return 4;
+    if (l === "en") return 3;
+    if (l === "ko" || l === "ja") return 2;
+    if (!l) return 1;
+    return 0;
+  };
+
+  return [...logos]
+    .filter(
+      (logo) =>
+        Boolean(logo.file_path) &&
+        (logo.width || 0) > 0 &&
+        (logo.height || 0) > 0 &&
+        isNonChineseTmdbImage(logo),
+    )
+    .sort((a, b) => {
+      const languageScore =
+        languagePriority(b.iso_639_1) - languagePriority(a.iso_639_1);
+      if (languageScore !== 0) return languageScore;
+      if ((b.vote_average || 0) !== (a.vote_average || 0)) {
+        return (b.vote_average || 0) - (a.vote_average || 0);
+      }
+      return (b.width || 0) - (a.width || 0);
+    });
+}
+
+export function getBestTitleLogo(logos: TmdbImage[] = []): TmdbImage | null {
+  const sorted = sortTmdbLogos(logos);
+  return sorted[0] || null;
 }
 
 export interface TmdbVideo {

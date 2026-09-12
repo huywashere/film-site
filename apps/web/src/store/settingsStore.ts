@@ -7,6 +7,7 @@ export type SubtitleLangSetting = "vi" | "en" | "off";
 export type SubtitleSizeSetting = "small" | "medium" | "large";
 export type SubtitleColorSetting = "white" | "yellow" | "cyan";
 export type AudioModeSetting = "vietsub" | "thuyetminh" | "longtieng";
+export type CardLayoutSetting = "vertical" | "horizontal";
 
 export interface SettingsState {
   autoplay: boolean;
@@ -21,6 +22,7 @@ export interface SettingsState {
   newMovieNotifications: boolean;
   commentNotifications: boolean;
   autoSkipAds: boolean;
+  cardLayout: CardLayoutSetting;
 
   setAutoplay: (val: boolean) => void;
   setAutoNextEpisode: (val: boolean) => void;
@@ -34,6 +36,7 @@ export interface SettingsState {
   setNewMovieNotifications: (val: boolean) => void;
   setCommentNotifications: (val: boolean) => void;
   setAutoSkipAds: (val: boolean) => void;
+  setCardLayout: (val: CardLayoutSetting) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -51,6 +54,7 @@ export const useSettingsStore = create<SettingsState>()(
       newMovieNotifications: true,
       commentNotifications: true,
       autoSkipAds: true,
+      cardLayout: "vertical",
 
       setAutoplay: (val) => set({ autoplay: val }),
       setAutoNextEpisode: (val) => set({ autoNextEpisode: val }),
@@ -64,9 +68,20 @@ export const useSettingsStore = create<SettingsState>()(
       setNewMovieNotifications: (val) => set({ newMovieNotifications: val }),
       setCommentNotifications: (val) => set({ commentNotifications: val }),
       setAutoSkipAds: (val) => set({ autoSkipAds: val }),
+      setCardLayout: (val) => set({ cardLayout: val }),
     }),
     {
       name: "netphim_user_settings",
+      version: 2,
+      migrate: (persistedState: any, version: number) => {
+        if (!persistedState || version < 2) {
+          return {
+            ...(persistedState || {}),
+            cardLayout: "vertical",
+          };
+        }
+        return persistedState;
+      },
     },
   ),
 );

@@ -116,10 +116,13 @@ export default async function FilmPage({ params }: PageProps) {
   const initialData = await getMoviePageData(slug);
   const movie = getMovieFromPageData(initialData);
   const initialTmdb = await getMovieTmdbServer(movie);
-  const initialLogoUrl = tmdbLogo(
-    initialTmdb?.images?.logos?.[0]?.file_path,
-    "w500",
-  );
+  const initialLogoUrl =
+    initialTmdb?.tmdbLogoUrl ||
+    tmdbLogo(
+      initialTmdb?.bestLogo?.file_path ||
+        initialTmdb?.images?.logos?.[0]?.file_path,
+      "w500",
+    );
 
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL || "https://netphim.app";

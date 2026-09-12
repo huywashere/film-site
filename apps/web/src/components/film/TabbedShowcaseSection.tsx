@@ -167,6 +167,7 @@ export function TabbedShowcaseSection({
               <TmdbArtwork
                 film={spotlightFilm}
                 kind="backdrop"
+                allowTitleLookup
                 className="h-full w-full object-cover blur-2xl scale-110"
                 alt=""
               />
@@ -192,6 +193,7 @@ export function TabbedShowcaseSection({
                   <TmdbArtwork
                     film={film}
                     kind="poster"
+                    allowTitleLookup
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     alt={film.name}
                   />

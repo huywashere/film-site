@@ -22,6 +22,7 @@ interface TmdbArtworkProps {
   priority?: boolean;
   enabled?: boolean;
   allowTitleLookup?: boolean;
+  preferOriginal?: boolean;
 }
 
 // Shared IntersectionObserver Singleton: allows 100+ cards to share a single browser observer
@@ -62,6 +63,7 @@ export function TmdbArtwork({
   priority = false,
   enabled = true,
   allowTitleLookup = false,
+  preferOriginal = false,
 }: TmdbArtworkProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [nearViewport, setNearViewport] = useState(priority);
@@ -133,10 +135,19 @@ export function TmdbArtwork({
 
     const addTmdbCandidates = () => {
       if (!tmdbUrl) return;
+      // 1. Direct TMDB Cloudflare edge CDN (độ sắc nét gốc cao nhất, không nén trung gian)
+      add(tmdbUrl);
+      if (artworkQuery.backdropW1280 && artworkQuery.backdropW1280 !== tmdbUrl) {
+        add(artworkQuery.backdropW1280);
+      }
+      if (artworkQuery.posterW500 && artworkQuery.posterW500 !== tmdbUrl) {
+        add(artworkQuery.posterW500);
+      }
+      // 2. wsrv edge proxy fallback
       const wsrv = wsrvImageUrl(tmdbUrl, preset);
       if (wsrv) add(wsrv);
+      // 3. Local proxy fallback
       add(`/api/image-proxy?url=${encodeURIComponent(tmdbUrl)}`);
-      add(tmdbUrl);
     };
 
     // Curated/high-priority cards use a confident TMDB match first. Other
@@ -191,6 +202,8 @@ export function TmdbArtwork({
     film._posterCandidates,
     film._thumbCandidates,
     allowTitleLookup,
+    artworkQuery.backdropW1280,
+    artworkQuery.posterW500,
   ]);
 
   const [candidateIndex, setCandidateIndex] = useState(0);
@@ -209,21 +222,21 @@ export function TmdbArtwork({
     return getImageProps({
       src,
       alt: alt || film.name,
-      width: kind === 'backdrop' ? 1280 : 500,
-      height: kind === 'backdrop' ? 720 : 750,
+      width: kind === 'backdrop' ? (preferOriginal ? 1920 : 1280) : 780,
+      height: kind === 'backdrop' ? (preferOriginal ? 1080 : 720) : 1170,
       sizes: responsiveSizes,
-      quality: kind === 'backdrop' ? 85 : 75,
+      quality: kind === 'backdrop' ? 90 : 85,
       loading: priority ? 'eager' : 'lazy',
       fetchPriority: priority ? 'high' : 'low',
       unoptimized: alreadySized,
     }).props;
-  }, [alt, film.name, kind, priority, responsiveSizes, src]);
+  }, [alt, film.name, kind, priority, responsiveSizes, src, preferOriginal]);
 
-  // Reset candidate index and loaded state only when movie identity or artwork kind changes
+  // Reset candidate index and loaded state when movie identity, kind, or tmdbUrl updates
   useEffect(() => {
     setCandidateIndex(0);
     setLoaded(false);
-  }, [film.slug, kind]);
+  }, [film.slug, kind, tmdbUrl]);
 
   // Sync loaded state when src changes or when image is already cached/decoded in DOM
   useEffect(() => {
@@ -246,23 +259,21 @@ export function TmdbArtwork({
         <img
           ref={(node) => {
             imgRef.current = node;
-            if (node && node.naturalWidth > 0 && !loaded) {
+            if (node && (node.naturalWidth > 0 || node.complete) && !loaded) {
               setLoaded(true);
             }
           }}
-          key={src}
           {...deliveredImageProps}
           alt={alt || film.name}
           referrerPolicy="no-referrer"
           draggable={false}
           onLoad={() => setLoaded(true)}
           onError={() => {
-            setLoaded(false);
             setCandidateIndex((index) => index + 1);
           }}
           className={cn(
-            'h-full w-full object-cover transition-opacity duration-300 motion-reduce:transition-none',
-            loaded ? 'opacity-100' : 'opacity-0',
+            'h-full w-full object-cover transition-opacity duration-200 motion-reduce:transition-none',
+            loaded || priority ? 'opacity-100' : 'opacity-0',
           )}
           data-artwork-source={
             src === tmdbUrl || /image\.tmdb\.org\/t\/p\//i.test(src) ? 'tmdb' : 'fallback'
@@ -278,7 +289,7 @@ export function TmdbArtwork({
       ) : (
         <div className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,#101218_25%,#181b23_45%,#101218_65%)] bg-[length:220%_100%] motion-reduce:animate-none" />
       )}
-      {!loaded && src && (
+      {!loaded && !priority && src && (
         <div
           aria-hidden="true"
           className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,#101218_25%,#181b23_45%,#101218_65%)] bg-[length:220%_100%] motion-reduce:animate-none"

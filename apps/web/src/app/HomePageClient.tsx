@@ -17,6 +17,8 @@ import {
 import { useTranslation } from "@/store/langStore";
 import { deduplicateSectionRow } from "@/lib/recommendation-engine";
 import { extractFilmItems } from "@/lib/movie-normalizer";
+import { watchProgressStorage } from "@/lib/watch-progress";
+import { useSettingsStore } from "@/store/settingsStore";
 const HomeAnnouncementPopup = dynamic(
   () =>
     import("@/components/layout/HomeAnnouncementPopup").then(
@@ -156,11 +158,63 @@ function asCatalogPayload(items: FilmItem[]) {
   return { items, data: { items } };
 }
 
-// Fallback riêng cho hàng Top 10. Hero không còn dùng bộ banner tĩnh này.
-const HOLLYWOOD_TOP10_POOL: FilmItem[] = [
+// Danh sách thực tế Top 10 thịnh hành được xem nhiều trên hệ thống (chuẩn chất lượng FHD, không gán mác 4K ảo)
+const REAL_TRENDING_TOP10_POOL: FilmItem[] = [
+  {
+    _id: "son-hai-kinh-thiet-lap-lai-trat-tu",
+    name: "Sơn Hải Kinh: Thiết Lập Lại Trật Tự",
+    origin_name: "The Classic of Mountains and Seas: Return to Order",
+    slug: "son-hai-kinh-thiet-lap-lai-trat-tu",
+    type: "single",
+    poster_url:
+      "https://phimimg.com/uploads/movies/20260719/son-hai-kinh-thiet-lap-lai-trat-tu-poster.webp",
+    thumb_url:
+      "https://phimimg.com/uploads/movies/20260719/son-hai-kinh-thiet-lap-lai-trat-tu-thumb.webp",
+    quality: "FHD",
+    lang: "Vietsub",
+  },
+  {
+    _id: "tham-uyen-vo-gian",
+    name: "Thâm Uyên Vô Gian",
+    origin_name: "Abyss",
+    slug: "tham-uyen-vo-gian",
+    type: "series",
+    poster_url:
+      "https://phimimg.com/uploads/movies/20260910/tham-uyen-vo-gian-poster.webp",
+    thumb_url:
+      "https://phimimg.com/uploads/movies/20260910/tham-uyen-vo-gian-thumb.webp",
+    quality: "FHD",
+    lang: "Vietsub",
+  },
+  {
+    _id: "tro-choi-con-muc-phan-2",
+    name: "Trò Chơi Con Mực (Phần 2)",
+    origin_name: "Squid Game (Season 2)",
+    slug: "tro-choi-con-muc-phan-2",
+    type: "series",
+    poster_url:
+      "https://phimimg.com/upload/vod/20241222-1/7f75c16e63ade7d45ad56f2f3e7a0453.jpg",
+    thumb_url:
+      "https://phimimg.com/upload/vod/20241222-1/2c3095b8830832b8630d6d002975513b.jpg",
+    quality: "FHD",
+    lang: "Vietsub",
+  },
+  {
+    _id: "nu-hoang-nuoc-mat",
+    name: "Nữ Hoàng Nước Mắt",
+    origin_name: "Queen Of Tears",
+    slug: "nu-hoang-nuoc-mat",
+    type: "series",
+    poster_url:
+      "https://phimimg.com/uploads/movies/20260723/nu-hoang-nuoc-mat-poster.webp",
+    thumb_url:
+      "https://phimimg.com/uploads/movies/20260723/nu-hoang-nuoc-mat-thumb.webp",
+    quality: "FHD",
+    lang: "Vietsub",
+  },
   {
     _id: "deadpool-va-wolverine",
-    name: "Deadpool & Wolverine",
+    name: "Deadpool Và Wolverine",
     origin_name: "Deadpool & Wolverine",
     slug: "deadpool-va-wolverine",
     type: "single",
@@ -168,35 +222,64 @@ const HOLLYWOOD_TOP10_POOL: FilmItem[] = [
       "https://phimimg.com/upload/vod/20250821-1/45b6b9aad03ae0aa2aceb5d73419831a.jpg",
     thumb_url:
       "https://phimimg.com/upload/vod/20250821-1/1ec414f82adc729512410edd1b083996.jpg",
-    quality: "4K Ultra HD",
+    quality: "FHD",
+    lang: "Vietsub",
   },
   {
-    _id: "nguoi-nhen-khong-con-nha",
-    name: "Spider-Man: No Way Home",
-    origin_name: "Spider-Man: No Way Home",
-    slug: "nguoi-nhen-khong-con-nha",
-    type: "single",
+    _id: "sinh-dung-thoi-diem",
+    name: "Sinh Đúng Thời Điểm",
+    origin_name: "In My Prime",
+    slug: "sinh-dung-thoi-diem",
+    type: "series",
     poster_url:
-      "https://phimimg.com/upload/vod/20250828-1/08fd0a68865ce452e959ae2bf58b7a8c.jpg",
+      "https://phimimg.com/uploads/movies/20260904/sinh-dung-thoi-diem-poster.webp",
     thumb_url:
-      "https://phimimg.com/upload/vod/20250828-1/db868e69da1af78d124ed464063b27a6.jpg",
-    quality: "4K Ultra HD",
+      "https://phimimg.com/uploads/movies/20260904/sinh-dung-thoi-diem-thumb.webp",
+    quality: "FHD",
+    lang: "Vietsub",
   },
   {
-    _id: "ky-si-bong-dem",
-    name: "The Dark Knight",
-    origin_name: "The Dark Knight",
-    slug: "ky-si-bong-dem",
+    _id: "duoi-lan-lua-dan",
+    name: "Dưới Làn Lửa Đạn",
+    origin_name: "Under Fire",
+    slug: "duoi-lan-lua-dan",
     type: "single",
     poster_url:
-      "https://phimimg.com/upload/vod/20240104-1/2cae46be24f514793c9e873f6de0fc32.jpg",
+      "https://phimimg.com/uploads/movies/20260911/duoi-lan-lua-dan-poster.webp",
     thumb_url:
-      "https://phimimg.com/upload/vod/20240104-1/b2748e456090a1c43b246c014b60fa1a.jpg",
-    quality: "4K Ultra HD",
+      "https://phimimg.com/uploads/movies/20260911/duoi-lan-lua-dan-thumb.webp",
+    quality: "FHD",
+    lang: "Vietsub",
+  },
+  {
+    _id: "ham-tru-an",
+    name: "Hầm Trú Ẩn",
+    origin_name: "Silo / Dugout",
+    slug: "ham-tru-an",
+    type: "series",
+    poster_url:
+      "https://phimimg.com/upload/vod/20250512-1/c0bc3e1895fc6a849bc27346e05c9ddb.jpg",
+    thumb_url:
+      "https://phimimg.com/upload/vod/20250512-1/1b8e245bf2a817ca4d0ef01cc310216c.jpg",
+    quality: "FHD",
+    lang: "Vietsub",
+  },
+  {
+    _id: "sat-thu-john-wick-phan-4",
+    name: "Sát Thủ John Wick: Phần 4",
+    origin_name: "John Wick: Chapter 4",
+    slug: "sat-thu-john-wick-phan-4",
+    type: "single",
+    poster_url:
+      "https://phimimg.com/upload/vod/20230922-1/ee89142558805b924282cf86bc015dc9.jpg",
+    thumb_url:
+      "https://phimimg.com/upload/vod/20230922-1/b6beb41b9fdf9449c4313e6ff28975e8.jpg",
+    quality: "FHD",
+    lang: "Vietsub",
   },
   {
     _id: "avatar-dong-chay-cua-nuoc",
-    name: "Avatar: The Way Of Water",
+    name: "Avatar: Dòng Chảy Của Nước",
     origin_name: "Avatar: The Way Of Water",
     slug: "avatar-dong-chay-cua-nuoc",
     type: "single",
@@ -204,31 +287,8 @@ const HOLLYWOOD_TOP10_POOL: FilmItem[] = [
       "https://phimimg.com/upload/vod/20250513-1/59fc5ffe0025ca40c99d48b070b59320.jpg",
     thumb_url:
       "https://phimimg.com/upload/vod/20250513-1/7b4e51db1a258ef9602558352066bfec.jpg",
-    quality: "4K Ultra HD",
-  },
-  {
-    _id: "avengers-tran-chien-cuoi-cung",
-    name: "Avengers: Endgame",
-    origin_name: "Avengers: Endgame",
-    slug: "avengers-tran-chien-cuoi-cung",
-    type: "single",
-    poster_url:
-      "https://phimimg.com/upload/vod/20240128-1/4278b5bc228cbc7963f50547e6c76cff.jpg",
-    thumb_url:
-      "https://phimimg.com/upload/vod/20240128-1/72824a2b39de2fbb3e9617058b2f9eb3.jpg",
-    quality: "4K Ultra HD",
-  },
-  {
-    _id: "ho-den-tu-than",
-    name: "Interstellar",
-    origin_name: "Interstellar",
-    slug: "ho-den-tu-than",
-    type: "single",
-    poster_url:
-      "https://phimimg.com/upload/vod/20250302-1/4cee31c3afd0fbfd11ed4f14b1bfd816.jpg",
-    thumb_url:
-      "https://phimimg.com/upload/vod/20250302-1/6012710a981edf1b6209bdb7fa82d1a6.jpg",
-    quality: "4K Ultra HD",
+    quality: "FHD",
+    lang: "Vietsub",
   },
 ];
 
@@ -325,8 +385,14 @@ function FilmSection({
   href?: string;
 }) {
   const { t } = useTranslation();
+  const cardLayout = useSettingsStore((s) => s.cardLayout);
+  const isLandscape = cardLayout === "horizontal";
   const rowRef = useRef<HTMLDivElement>(null);
   const [scrollStep, setScrollStep] = useState(0);
+
+  const itemWidthClass = isLandscape
+    ? "w-[72%] min-w-[220px] shrink-0 snap-start sm:w-[46%] md:w-[32%] lg:w-[calc((100%-4*1rem)/5)] xl:w-[calc((100%-4*1rem)/5)]"
+    : "w-[26%] min-w-[112px] shrink-0 snap-start sm:w-[22%] md:w-[18%] lg:w-[calc((100%-6*1rem)/7)] xl:w-[calc((100%-6*1rem)/7)]";
 
   const updateScrollStep = () => {
     const row = rowRef.current;
@@ -410,7 +476,7 @@ function FilmSection({
               ? Array.from({ length: 14 }, (_, index) => (
                   <div
                     key={`film-skeleton-${index}`}
-                    className="w-[26%] min-w-[112px] shrink-0 snap-start sm:w-[22%] md:w-[18%] lg:w-[calc((100%-6*1rem)/7)] xl:w-[calc((100%-6*1rem)/7)]"
+                    className={itemWidthClass}
                   >
                     <FilmCardSkeleton />
                   </div>
@@ -418,7 +484,7 @@ function FilmSection({
               : films.map((film, idx) => (
                   <div
                     key={`slide-${title}-${film._id || film.slug || "film"}-${idx}`}
-                    className="w-[26%] min-w-[112px] shrink-0 snap-start sm:w-[22%] md:w-[18%] lg:w-[calc((100%-6*1rem)/7)] xl:w-[calc((100%-6*1rem)/7)]"
+                    className={itemWidthClass}
                   >
                     <FilmCard
                       film={film}
@@ -506,7 +572,34 @@ export default function HomePageClient({
   const { t } = useTranslation();
 
   const [showMoreSections, setShowMoreSections] = useState(false);
+  const [userHistoryFilms, setUserHistoryFilms] = useState<FilmItem[]>([]);
   const infiniteSentinelRef = useRef<HTMLDivElement>(null);
+
+  // Đọc danh sách phim người dùng thực tế đang xem / yêu thích trên hệ thống
+  useEffect(() => {
+    try {
+      const history = watchProgressStorage.getHistoryEntries();
+      if (Array.isArray(history) && history.length > 0) {
+        const mapped: FilmItem[] = history
+          .filter((item) => item.slug && item.title)
+          .slice(0, 10)
+          .map((item) => ({
+            _id: item.slug,
+            slug: item.slug,
+            name: item.title,
+            origin_name: item.originName || item.title,
+            poster_url: item.poster || item.thumb || "",
+            thumb_url: item.thumb || item.poster || "",
+            quality: "FHD",
+            lang: "Vietsub",
+            type: "single",
+          }));
+        setUserHistoryFilms(mapped);
+      }
+    } catch {
+      // Bỏ qua nếu môi trường không hỗ trợ localStorage
+    }
+  }, []);
 
   // Progressive scroll-based loading: automatically fetch and reveal remaining sections as user approaches them
   useEffect(() => {
@@ -984,36 +1077,31 @@ export default function HomePageClient({
       ].map((film) => film.slug),
     );
 
-    const highInterestFilms = deduplicate([
+    // Phim thực tế người dùng xem nhiều & yêu thích trên hệ thống
+    const realCandidates = deduplicate([
+      ...userHistoryFilms,
       ...trendingFilms,
+      ...latestFilms,
+      ...usUkSeriesFilms,
       ...actionFilms,
+      ...vfxFilms,
       ...scifiFilms,
-      ...HOLLYWOOD_TOP10_POOL,
+      ...REAL_TRENDING_TOP10_POOL,
     ]);
 
-    const top10List = filterLiveActionOnly(highInterestFilms)
-      .filter((film) => !sectionSlugs.has(film.slug))
-      .slice(0, 10);
-    if (top10List.length < 10) {
-      top10List.push(
-        ...filterLiveActionOnly(highInterestFilms)
-          .filter(
-            (film) =>
-              !sectionSlugs.has(film.slug) &&
-              !top10List.some((ranked) => ranked.slug === film.slug),
-          )
-          .slice(0, 10 - top10List.length),
-      );
-    }
-    if (top10List.length < 10) {
-      top10List.push(
-        ...filterLiveActionOnly(highInterestFilms)
-          .filter(
-            (film) => !top10List.some((ranked) => ranked.slug === film.slug),
-          )
-          .slice(0, 10 - top10List.length),
-      );
-    }
+    const sanitizedCandidates = realCandidates.map((film) => {
+      const safeQuality = (film.quality || "FHD")
+        .replace(/4K\s*Ultra\s*HD|4K/gi, "FHD")
+        .trim();
+      return {
+        ...film,
+        quality: safeQuality || "FHD",
+      };
+    });
+
+    const top10List = deduplicateSectionRow(
+      filterLiveActionOnly(sanitizedCandidates),
+    ).slice(0, 10);
 
     return {
       top10List,
@@ -1034,6 +1122,7 @@ export default function HomePageClient({
       romanceRowList,
     };
   }, [
+    userHistoryFilms,
     trendingFilms,
     latestFilms,
     vfxFilms,

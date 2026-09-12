@@ -43,9 +43,18 @@ import {
   tmdbPoster,
   extractTmdbInfo,
   getYoutubeTrailer,
+  getBestTitleLogo,
+  sortTmdbLogos,
   type TmdbImage,
   type TmdbMovie,
 } from "@/lib/tmdb";
+import {
+  getMovieLogo,
+  setMovieLogo,
+  isMovieLogoPreloaded,
+  markMovieLogoPreloaded,
+  preloadMovieLogo,
+} from "@/lib/movie-logo-cache";
 import {
   CURATED_HERO_FRANCHISE_POOL,
 } from "@/lib/curated-hero-pool";
@@ -434,31 +443,7 @@ function getFilmDetailMeta(film: HeroFilm) {
   return { durationStr, genresStr, ageRating, qualityBadge, langBadge };
 }
 
-function getBestTitleLogo(logos: TmdbImage[]): TmdbImage | null {
-  const languagePriority = (language?: string | null) => {
-    if (language === "vi") return 4;
-    if (language === "en") return 3;
-    if (language === "zh" || language === "ko" || language === "ja") return 2;
-    if (!language) return 1;
-    return 0;
-  };
-
-  return (
-    [...logos]
-      .filter(
-        (logo) => Boolean(logo.file_path) && logo.width > 0 && logo.height > 0,
-      )
-      .sort((a, b) => {
-        const languageScore =
-          languagePriority(b.iso_639_1) - languagePriority(a.iso_639_1);
-        if (languageScore !== 0) return languageScore;
-        if (b.vote_average !== a.vote_average) {
-          return b.vote_average - a.vote_average;
-        }
-        return b.width - a.width;
-      })[0] || null
-  );
-}
+// getBestTitleLogo and sortTmdbLogos are imported from @/lib/tmdb
 
 async function enrichHeroTitleLogos(playlist: HeroFilm[]): Promise<HeroFilm[]> {
   return Promise.all(
@@ -531,13 +516,21 @@ async function enrichHeroTitleLogos(playlist: HeroFilm[]): Promise<HeroFilm[]> {
           ? tmdbBackdrop(images.backdrops[0].file_path, "w1280")
           : undefined;
 
+        const resolvedTitleLogo =
+          tmdbLogo(bestLogo?.file_path, "w500") ||
+          film.titleLogo ||
+          getMovieLogo(film.slug) ||
+          undefined;
+
+        if (film.slug && resolvedTitleLogo) {
+          setMovieLogo(film.slug, resolvedTitleLogo);
+          preloadMovieLogo(resolvedTitleLogo);
+        }
+
         return {
           ...film,
           tmdb: { ...film.tmdb, id: String(tmdbId), type: mediaType },
-          titleLogo:
-            tmdbLogo(bestLogo?.file_path, "w500") ||
-            film.titleLogo ||
-            undefined,
+          titleLogo: resolvedTitleLogo,
           // A curated/provider backdrop is already tied to this exact film.
           // Logo enrichment must not replace it with a loose TMDB search hit.
           heroBackdrop: film.heroBackdrop || bestBackdrop || undefined,
@@ -577,15 +570,18 @@ function HeroMovieTitle({
   film: HeroFilm;
   onReady: () => void;
 }) {
+  const rawLogo = film.titleLogo || getMovieLogo(film.slug);
   const candidateLogos = useMemo(() => {
-    if (!film.titleLogo) return [];
-    return buildHeroLogoCandidates(film.titleLogo);
-  }, [film.titleLogo]);
+    if (!rawLogo) return [];
+    return buildHeroLogoCandidates(rawLogo);
+  }, [rawLogo]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
   const currentLogoSrc = candidateLogos[candidateIdx];
   const isPreloaded = Boolean(
-    currentLogoSrc && preloadedHeroLogos.has(currentLogoSrc),
+    currentLogoSrc &&
+      (preloadedHeroLogos.has(currentLogoSrc) ||
+        isMovieLogoPreloaded(currentLogoSrc)),
   );
   const [logoLoaded, setLogoLoaded] = useState(isPreloaded);
   const [hasError, setHasError] = useState(false);
@@ -594,10 +590,14 @@ function HeroMovieTitle({
   useEffect(() => {
     setCandidateIdx(0);
     setHasError(false);
-  }, [film.slug, film.titleLogo]);
+  }, [film.slug, rawLogo]);
 
   useEffect(() => {
-    if (currentLogoSrc && preloadedHeroLogos.has(currentLogoSrc)) {
+    if (
+      currentLogoSrc &&
+      (preloadedHeroLogos.has(currentLogoSrc) ||
+        isMovieLogoPreloaded(currentLogoSrc))
+    ) {
       setLogoLoaded(true);
       onReady();
     } else {
@@ -613,6 +613,7 @@ function HeroMovieTitle({
       currentLogoSrc
     ) {
       preloadedHeroLogos.add(currentLogoSrc);
+      markMovieLogoPreloaded(currentLogoSrc);
       setLogoLoaded(true);
       onReady();
     }
@@ -620,7 +621,7 @@ function HeroMovieTitle({
 
   const title = film.origin_name || film.name;
   const hasLogoCandidate = Boolean(currentLogoSrc) && !hasError;
-  const showTextFallback = !hasLogoCandidate || !logoLoaded;
+  const showTextFallback = !hasLogoCandidate || hasError;
 
   useEffect(() => {
     if (film.titleLogoResolved && !hasLogoCandidate) onReady();
@@ -632,45 +633,46 @@ function HeroMovieTitle({
       className="relative flex min-h-14 w-full items-center justify-center overflow-visible sm:min-h-24 md:min-h-28"
     >
       {/* If there's NO logo candidate or logo completely failed to load, show styled text title */}
-      {showTextFallback && (
+      {showTextFallback ? (
         <h1
-          className="max-w-2xl line-clamp-2 text-xl font-black uppercase leading-[1.3] sm:leading-[1.25] tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl pt-3 pb-2 px-2 overflow-visible transition-opacity duration-300"
+          className="max-w-2xl line-clamp-2 text-xl font-black uppercase leading-[1.3] sm:leading-[1.25] tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl pt-3 pb-2 px-2 overflow-visible"
           style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }}
         >
           {title}
         </h1>
-      )}
-      {hasLogoCandidate && (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
-          ref={imgRef}
-          key={`${film.slug}-${candidateIdx}`}
-          src={currentLogoSrc}
-          alt={title}
-          referrerPolicy="strict-origin-when-cross-origin"
-          decoding="async"
-          loading="eager"
-          fetchPriority="high"
-          aria-hidden={!logoLoaded}
-          onLoad={() => {
-            if (currentLogoSrc) preloadedHeroLogos.add(currentLogoSrc);
-            setLogoLoaded(true);
-            onReady();
-          }}
-          onError={() => {
-            if (candidateIdx < candidateLogos.length - 1) {
-              setCandidateIdx((i) => i + 1);
-            } else {
-              setHasError(true);
-              setLogoLoaded(false);
+      ) : (
+        <>
+          <h1 className="sr-only">{title}</h1>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            ref={imgRef}
+            key={`${film.slug}-${candidateIdx}`}
+            src={currentLogoSrc}
+            alt={title}
+            referrerPolicy="strict-origin-when-cross-origin"
+            decoding="sync"
+            loading="eager"
+            fetchPriority="high"
+            onLoad={() => {
+              if (currentLogoSrc) {
+                preloadedHeroLogos.add(currentLogoSrc);
+                markMovieLogoPreloaded(currentLogoSrc);
+              }
+              setLogoLoaded(true);
               onReady();
-            }
-          }}
-          className={cn(
-            "absolute h-auto max-h-20 w-auto max-w-[78vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-opacity duration-300 sm:max-h-32 sm:max-w-[34rem] md:max-h-40",
-            logoLoaded ? "opacity-100" : "opacity-0",
-          )}
-        />
+            }}
+            onError={() => {
+              if (candidateIdx < candidateLogos.length - 1) {
+                setCandidateIdx((i) => i + 1);
+              } else {
+                setHasError(true);
+                setLogoLoaded(false);
+                onReady();
+              }
+            }}
+            className="h-auto max-h-20 w-auto max-w-[78vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] sm:max-h-32 sm:max-w-[34rem] md:max-h-40"
+          />
+        </>
       )}
     </div>
   );
@@ -1355,16 +1357,14 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
     };
   }, [films, initialConfig]);
 
-  // Resolve only the current and next title artwork. The next logo is decoded
-  // before navigation without recreating the old six-slide request fan-out.
+  // Resolve featured title artwork in the background.
   useEffect(() => {
     if (!featured.length) return;
-    const nextIndex = featured.length > 1 ? (current + 1) % featured.length : current;
-    const targets = [featured[current], featured[nextIndex]].filter(
-      (film, index, items): film is HeroFilm =>
+    const targets = featured.filter(
+      (film) =>
         Boolean(film) &&
-        items.indexOf(film) === index &&
         !film.titleLogo &&
+        !getMovieLogo(film.slug) &&
         !attemptedTitleLogos.current.has(film.slug),
     );
     if (!targets.length) return;
@@ -1386,9 +1386,32 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
     return () => {
       active = false;
     };
-  }, [current, featured]);
+  }, [featured]);
 
-  // Warm only the visible and next slide. Preloading every w1280 backdrop at
+  // Eagerly preload ALL title logos for all 6 slides in the hero banner.
+  // Small transparent PNGs/SVGs (~15-30KB) ensure 0ms slide transitions without text flashing.
+  useEffect(() => {
+    if (typeof window === "undefined" || !featured.length) return;
+    featured.forEach((item) => {
+      const logoUrl = item.titleLogo || getMovieLogo(item.slug);
+      if (logoUrl) {
+        if (item.slug) setMovieLogo(item.slug, logoUrl);
+        const candidates = buildHeroLogoCandidates(logoUrl);
+        const primary = candidates[0] || logoUrl;
+        if (!preloadedHeroLogos.has(primary) && !isMovieLogoPreloaded(primary)) {
+          const img = new window.Image();
+          img.decoding = "sync";
+          img.src = primary;
+          img.onload = () => {
+            preloadedHeroLogos.add(primary);
+            markMovieLogoPreloaded(primary);
+          };
+        }
+      }
+    });
+  }, [featured]);
+
+  // Warm only the visible and next backdrop. Preloading every w1280 backdrop at
   // once starved the small, above-the-fold card artwork on cold production loads.
   useEffect(() => {
     if (typeof window === "undefined" || !featured.length) return;
@@ -1398,13 +1421,6 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         Boolean(item) && items.indexOf(item) === index,
     );
     preloadItems.forEach((item) => {
-      if (item.titleLogo) {
-        const img = new window.Image();
-        img.src = buildHeroLogoCandidates(item.titleLogo)[0] || item.titleLogo;
-        img.onload = () => {
-          preloadedHeroLogos.add(img.src);
-        };
-      }
       const isMobile = window.matchMedia("(max-width: 767px)").matches;
       const candidates = isMobile
         ? buildHeroCardImageCandidates(

@@ -8,6 +8,10 @@
   - Do not introduce custom overlay drawers, locks, or CSS overrides that break ArtPlayer's official styling.
   - Seek controls (10s): Use modern circular arc SVG icons with crisp typography.
   - Timeline markers: Clear Cyan/Sky (`#23ade5`) for Intro with skip button; Amber/Gold (`#fbbf24`) for Ads with countdown skip.
+  - Opening Window Protection: Never flag spliced stream discontinuities occurring in the opening window (first 180s or before skipIntroEnd) as ads unless an explicit ad URL is detected. Only recognize mid-roll/post-roll discontinuities (start >= 180s) as ads.
+
+## Documentation Standards
+- **Zero Emojis / Icons**: Never use emojis or decorative icons in `README.md` or any architectural/operational documentation in `docs/`. All documentation must maintain a clean, formal, engineering-standard presentation.
 
 ## Trailer & Media Artwork Guidelines
 - **Trailer**: Prioritize official studio TMDB trailers (`official: true`, `type: "Trailer"`, `size >= 1080/2160`). Always embed via `https://www.youtube.com/embed/{key}?autoplay=1&rel=0&playsinline=1` with `referrerPolicy="strict-origin-when-cross-origin"` and proper allow permissions to ensure flawless playback without Error 153.

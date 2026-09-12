@@ -74,9 +74,9 @@ test('deduplicates equivalent hero sources', () => {
   assert.equal(candidates.filter((candidate) => candidate === image).length, 1);
 });
 
-test('keeps the text title visible until the hero logo finishes loading', () => {
+test('displays the hero logo immediately without flashing plain text fallback when logo artwork exists', () => {
   const source = readFileSync('src/app/components/HeroBanner.tsx', 'utf8');
 
-  assert.match(source, /!hasLogoCandidate \|\| !logoLoaded/);
-  assert.match(source, /logoLoaded \? ["']opacity-100["'] : ["']opacity-0["']/);
+  assert.match(source, /!hasLogoCandidate \|\| hasError/);
+  assert.match(source, /preloadMovieLogo/);
 });

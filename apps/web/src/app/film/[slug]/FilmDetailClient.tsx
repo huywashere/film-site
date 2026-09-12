@@ -43,6 +43,7 @@ import { cleanMovieDescription } from '@/lib/string-utils';
 import { movieApi, watchlistApi, ratingsApi, reviewsApi } from '@/lib/api';
 import { FilmNotFound } from '@/components/film/FilmNotFound';
 import { FilmTitleLogo } from '@/components/film/FilmTitleLogo';
+import { getMovieLogo } from '@/lib/movie-logo-cache';
 import { StarRating } from '@/components/film/StarRating';
 import { resolveImageUrl } from '@/components/film/FilmCard';
 import { alternateMovieArtworkUrl } from '@/lib/movie-image-url';
@@ -66,31 +67,11 @@ import { guestDataStorage } from '@/lib/user-data';
 import { useOmdb } from '@/hooks/useOmdb';
 import type { ServerTmdbResult } from '@/lib/server/movie-tmdb-server';
 
+import { MobileRelatedCarousel } from '@/components/film/MobileRelatedCarousel';
+
 const TrailerModal = dynamic(
   () => import('@/components/film/TrailerModal').then((module) => module.TrailerModal),
   { ssr: false },
-);
-
-const MobileRelatedCarousel = dynamic(
-  () =>
-    import('@/components/film/MobileRelatedCarousel').then(
-      (module) => module.MobileRelatedCarousel,
-    ),
-  {
-    ssr: false,
-    // Hiển thị skeleton ngay lập tức khi JS đang load để tránh layout shift
-    loading: () => (
-      <section className="w-screen max-w-none shrink-0 overflow-hidden py-2 sm:hidden" aria-hidden="true">
-        <div className="flex items-center justify-center gap-2 px-2">
-          <div className="h-60 w-[26vw] max-w-28 -rotate-6 rounded-[20px] border border-white/10 bg-white/[0.05]" />
-          <div className="relative aspect-[2/3] w-[58vw] min-w-[196px] max-w-[228px] shrink-0 overflow-hidden rounded-[22px] border border-violet-300/55 bg-[#111318] shadow-[0_24px_70px_rgba(0,0,0,0.68)]">
-            <div className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,#111318_25%,#1a1f2b_45%,#111318_65%)] bg-[length:220%_100%]" />
-          </div>
-          <div className="h-60 w-[26vw] max-w-28 rotate-6 rounded-[20px] border border-white/10 bg-white/[0.05]" />
-        </div>
-      </section>
-    ),
-  },
 );
 
 
@@ -1804,8 +1785,8 @@ export default function FilmDetailPage({
 
               <div className="flex flex-col space-y-2 sm:space-y-3 min-w-0 flex-1 items-center sm:items-start">
                 <FilmTitleLogo
-                  key={`${film.slug}-${bestLogo?.file_path || 'text'}`}
-                  path={bestLogo?.file_path}
+                  key={`${film.slug}-${bestLogo?.file_path || getMovieLogo(film.slug) || 'text'}`}
+                  path={bestLogo?.file_path || getMovieLogo(film.slug)}
                   title={film.name}
                 />
 

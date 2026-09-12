@@ -10,11 +10,13 @@ export function FilmTitleLogo({ path, title }: { path?: string | null; title: st
   const showLogo = Boolean(src) && candidate <= 1;
 
   return (
-    <h1 className="flex min-h-10 w-full items-center justify-center pt-2 pb-1 sm:justify-start">
-      {!showLogo && (
-        <span className="line-clamp-3 overflow-visible text-2xl font-extrabold leading-[1.25] tracking-tight text-white drop-shadow-xl sm:text-3xl md:text-5xl">
+    <h1 className="flex min-h-8 w-full items-center justify-center pt-1 pb-1 sm:pt-1.5 sm:justify-start">
+      {!showLogo ? (
+        <span className="line-clamp-2 overflow-visible text-xl font-extrabold leading-[1.2] tracking-tight text-white drop-shadow-xl sm:text-2xl md:text-4xl text-center sm:text-left">
           {title}
         </span>
+      ) : (
+        <span className="sr-only">{title}</span>
       )}
 
       {src && candidate <= 1 && (
@@ -32,7 +34,7 @@ export function FilmTitleLogo({ path, title }: { path?: string | null; title: st
           onError={() => {
             setCandidate((value) => value + 1);
           }}
-          className="h-auto max-h-24 w-auto max-w-full object-contain object-left drop-shadow-[0_8px_20px_rgba(0,0,0,0.6)] sm:max-h-28 sm:max-w-[28rem]"
+          className="h-auto max-h-14 sm:max-h-18 md:max-h-20 w-auto max-w-[16rem] sm:max-w-[20rem] md:max-w-[24rem] object-contain object-center sm:object-left drop-shadow-[0_8px_20px_rgba(0,0,0,0.6)]"
         />
       )}
     </h1>

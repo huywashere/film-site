@@ -154,6 +154,8 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
                 kind="backdrop"
                 alt={activeFilm.name}
                 priority
+                allowTitleLookup
+                preferOriginal
                 className="h-full w-full"
               />
               {/* Gradients */}
@@ -296,6 +298,7 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
                       film={film}
                       kind="poster"
                       alt={film.name}
+                      allowTitleLookup
                       className="aspect-[2/3] w-full transition-transform duration-300 group-hover:scale-105"
                     />
                     {/* Active indicator */}

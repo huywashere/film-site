@@ -1014,72 +1014,76 @@ function ReportStreamModal({
   );
 }
 
-// ── Recommendation Item Component with TMDB Artwork Resolution ──
+// ── Recommendation Item Component with Fast Direct CDN & Anti-Flicker ──
 function RecMovieItem({ item, index = 0 }: { item: any; index?: number }) {
-  const { posterUrl: tmdbPosterUrl, backdropUrl: tmdbBackdropUrl } = useTmdbArtwork(
-    item,
-    !item?.poster_url && !item?.thumb_url,
-  );
+  const itemPoster = item?.poster_url || item?.thumb_url || '';
+  const itemThumb = item?.thumb_url || item?.poster_url || '';
+  const rawPrimary = resolveImageUrl(itemPoster, itemThumb);
 
+  // Fast direct CDN URLs: prioritize direct CDN edge (20-50ms)
   const candidateUrls = useMemo(() => {
-    const sources: string[] = [];
-    const add = (url?: unknown) => {
-      const resolved = resolveImageUrl(url);
-      if (resolved && !sources.includes(resolved)) sources.push(resolved);
+    const list: string[] = [];
+    const add = (u?: string | null) => {
+      if (!u) return;
+      const clean = u.trim();
+      if (clean && !list.includes(clean)) list.push(clean);
     };
 
-    if (tmdbPosterUrl) add(tmdbPosterUrl);
-    if (item?.poster_url) add(item.poster_url);
-    if (item?.thumb_url) add(item.thumb_url);
-    if (tmdbBackdropUrl) add(tmdbBackdropUrl);
+    // 1. Direct primary image URL (fastest direct CDN)
+    if (rawPrimary) add(rawPrimary);
 
-    // Alternate path for KKPhim
-    const primary = item?.poster_url || item?.thumb_url;
-    if (primary && typeof primary === 'string') {
-      if (primary.includes('/uploads/movies/')) {
-        add(primary.replace('/uploads/movies/', '/upload/vod/'));
-      } else if (primary.includes('/upload/vod/')) {
-        add(primary.replace('/upload/vod/', '/uploads/movies/'));
+    // 2. Alternate path for PhimImg (/uploads/movies/ <-> /upload/vod/)
+    if (rawPrimary && typeof rawPrimary === 'string') {
+      if (rawPrimary.includes('/uploads/movies/')) {
+        add(rawPrimary.replace('/uploads/movies/', '/upload/vod/'));
+      } else if (rawPrimary.includes('/upload/vod/')) {
+        add(rawPrimary.replace('/upload/vod/', '/uploads/movies/'));
       }
     }
 
-    return buildArtworkCandidates(sources, 'card', {
-      includeWsrvForTmdb: true,
-      preferEdge: true,
-    });
-  }, [item?.poster_url, item?.thumb_url, tmdbBackdropUrl, tmdbPosterUrl]);
+    // 3. Alternate artwork from item if distinct
+    if (itemThumb && itemThumb !== itemPoster) {
+      const resolvedThumb = resolveImageUrl(itemThumb);
+      if (resolvedThumb) add(resolvedThumb);
+    }
 
-  const [candidateIdx, setCandidateIdx] = useState(0);
+    // 4. Same-origin proxy fallback
+    if (rawPrimary) {
+      add(`/api/image-proxy?url=${encodeURIComponent(rawPrimary)}`);
+    }
 
+    return list;
+  }, [rawPrimary, itemPoster, itemThumb]);
+
+  const [srcIndex, setSrcIndex] = useState(0);
+  const currentSrc = candidateUrls[srcIndex] || candidateUrls[0] || '';
+
+  // Reset fallback index only if movie slug actually changes
   useEffect(() => {
-    setCandidateIdx(0);
-  }, [item?.slug, candidateUrls]);
+    setSrcIndex(0);
+  }, [item?.slug]);
 
-  const src = candidateUrls[candidateIdx];
   const rating = Number(item?.tmdb?.vote_average || item?.vote_average || item?.rating || 0);
 
   return (
     <Link
       href={`/film/${item.slug}`}
-      className="flex gap-3 group p-2 rounded-xl hover:bg-white/[0.04] transition-all duration-200 cursor-pointer animate-in fade-in slide-in-from-bottom-1 fill-mode-both"
-      style={{ animationDelay: `${Math.min(index, 7) * 35}ms` }}
+      className="flex gap-3 group p-2 rounded-xl hover:bg-white/[0.04] transition-colors duration-150 cursor-pointer select-none"
     >
-      <div className="relative w-16 h-24 rounded-lg bg-neutral-900 flex-shrink-0 overflow-hidden border border-white/[0.08] group-hover:border-white/25 shadow-md">
-        {src ? (
+      <div className="relative w-16 h-24 rounded-lg bg-neutral-900/90 flex-shrink-0 overflow-hidden border border-white/[0.08] group-hover:border-white/25 shadow-md">
+        {currentSrc ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
-            key={`${item.slug}-${candidateIdx}`}
-            src={src}
-            alt={item.name}
+            src={currentSrc}
+            alt={item.name || 'Phim'}
             referrerPolicy="strict-origin-when-cross-origin"
-            loading="lazy"
+            loading={index < 8 ? 'eager' : 'lazy'}
+            fetchPriority={index < 4 ? 'high' : 'auto'}
             decoding="async"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             onError={() => {
-              if (candidateIdx < candidateUrls.length - 1) {
-                setCandidateIdx((i) => i + 1);
-              }
+              setSrcIndex((prev) => (prev < candidateUrls.length - 1 ? prev + 1 : prev));
             }}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center p-1 text-center bg-neutral-900 text-neutral-500">
@@ -1090,6 +1094,7 @@ function RecMovieItem({ item, index = 0 }: { item: any; index?: number }) {
           </div>
         )}
       </div>
+
       <div className="flex-1 min-w-0 py-0.5 flex flex-col justify-between">
         <div className="space-y-0.5">
           <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-amber-400 line-clamp-1 transition-colors">
@@ -1154,9 +1159,18 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   const [failedServers, setFailedServers] = useState<number[]>([]);
   const [episodeSearch, setEpisodeSearch] = useState('');
   const [episodeSortOrder, setEpisodeSortOrder] = useState<'oldest' | 'newest'>('oldest');
-  const [watchContentTab, setWatchContentTab] = useState<
-    'episodes' | 'recommendations' | 'cast' | 'trailer' | 'collection'
-  >('episodes');
+  type WatchContentTab = 'episodes' | 'recommendations' | 'cast' | 'trailer' | 'collection';
+  const [watchContentTab, setWatchContentTab] = useState<WatchContentTab>('episodes');
+  const [visitedTabs, setVisitedTabs] = useState<Set<WatchContentTab>>(() => new Set(['episodes', 'recommendations']));
+
+  useEffect(() => {
+    setVisitedTabs((prev) => {
+      if (prev.has(watchContentTab)) return prev;
+      const next = new Set(prev);
+      next.add(watchContentTab);
+      return next;
+    });
+  }, [watchContentTab]);
   const [autoNextConfig, setAutoNextConfig] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('netphim_auto_next') !== 'false';
@@ -2147,8 +2161,8 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
       return { items: unique.slice(0, 12) };
     },
-    enabled: (watchContentTab === 'recommendations' || (recommendationsReady && tabsPrefetchReady)) && !!slug,
-    staleTime: 1000 * 60 * 15,
+    enabled: Boolean(slug),
+    staleTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: 1,
@@ -3980,7 +3994,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
               </nav>
             </div>
 
-            {watchContentTab === 'episodes' && (
+            <div className={watchContentTab === 'episodes' ? 'block' : 'hidden'}>
               <div className="space-y-3.5 py-1">
                 {/* ── Seamless Cinema Streaming Controls ── */}
                 {(() => {
@@ -4538,9 +4552,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   })()}
                 </section>
               </div>
-            )}
+            </div>
 
-            {watchContentTab === 'recommendations' && (
+            {/* ── 2. RECOMMENDATIONS (Kept in DOM for instant 0ms tab switching & zero image flicker) ── */}
+            <div className={watchContentTab === 'recommendations' ? 'block' : 'hidden'}>
               <section className="min-h-52 py-5">
                 {discoveryLoading ? (
                   <div className="grid gap-2 sm:grid-cols-2">
@@ -4569,55 +4584,58 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   </div>
                 )}
               </section>
+            </div>
+
+            {/* ── 3. CAST (Preserved once visited) ── */}
+            {visitedTabs.has('cast') && (
+              <div className={watchContentTab === 'cast' ? 'block' : 'hidden'}>
+                <section className="min-h-52 py-5">
+                  {creditsLoading ? (
+                    <div className="grid grid-cols-4 gap-4 sm:grid-cols-6 lg:grid-cols-8">
+                      {Array.from({ length: 8 }).map((_, index) => (
+                        <div
+                          key={index}
+                          className="aspect-square animate-pulse rounded-full bg-white/[0.035]"
+                        />
+                      ))}
+                    </div>
+                  ) : tmdbCast.length ? (
+                    <div className="grid grid-cols-4 gap-x-4 gap-y-5 sm:grid-cols-6 lg:grid-cols-8">
+                      {tmdbCast.slice(0, 16).map((person) => {
+                        return (
+                          <Link
+                            key={person.id}
+                            href={`/actors/${person.id}`}
+                            className="group min-w-0 text-center"
+                          >
+                            <div className="mx-auto aspect-square w-full max-w-28 overflow-hidden rounded-full border-2 border-white/[0.09] bg-white/[0.035] transition-all group-hover:-translate-y-0.5 group-hover:border-fuchsia-400/55 group-hover:shadow-[0_10px_28px_-14px_rgba(244,114,182,0.6)]">
+                              <WatchCastAvatar name={person.name} profilePath={person.profile_path} />
+                            </div>
+                            <p className="mt-2 truncate text-[11px] font-bold text-neutral-200 group-hover:text-fuchsia-200 sm:text-xs">
+                              {person.name}
+                            </p>
+                            <p className="truncate text-[9px] text-neutral-500 sm:text-[10px]">
+                              {person.character || (lang === 'en' ? 'Cast member' : 'Diễn viên')}
+                            </p>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex min-h-44 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/[0.09] text-center text-neutral-500">
+                      <Users size={22} />
+                      <p className="text-xs font-semibold">
+                        {lang === 'en'
+                          ? 'Cast information is unavailable.'
+                          : 'Chưa có thông tin diễn viên.'}
+                      </p>
+                    </div>
+                  )}
+                </section>
+              </div>
             )}
 
-            {watchContentTab === 'cast' && (
-              <section className="min-h-52 py-5">
-                {creditsLoading ? (
-                  <div className="grid grid-cols-4 gap-4 sm:grid-cols-6 lg:grid-cols-8">
-                    {Array.from({ length: 8 }).map((_, index) => (
-                      <div
-                        key={index}
-                        className="aspect-square animate-pulse rounded-full bg-white/[0.035]"
-                      />
-                    ))}
-                  </div>
-                ) : tmdbCast.length ? (
-                  <div className="grid grid-cols-4 gap-x-4 gap-y-5 sm:grid-cols-6 lg:grid-cols-8">
-                    {tmdbCast.slice(0, 16).map((person) => {
-                      const profile = tmdbProfile(person.profile_path, 'w185');
-                      return (
-                        <Link
-                          key={person.id}
-                          href={`/actors/${person.id}`}
-                          className="group min-w-0 text-center"
-                        >
-                          <div className="mx-auto aspect-square w-full max-w-28 overflow-hidden rounded-full border-2 border-white/[0.09] bg-white/[0.035] transition-all group-hover:-translate-y-0.5 group-hover:border-fuchsia-400/55 group-hover:shadow-[0_10px_28px_-14px_rgba(244,114,182,0.6)]">
-                            <WatchCastAvatar name={person.name} profilePath={person.profile_path} />
-                          </div>
-                          <p className="mt-2 truncate text-[11px] font-bold text-neutral-200 group-hover:text-fuchsia-200 sm:text-xs">
-                            {person.name}
-                          </p>
-                          <p className="truncate text-[9px] text-neutral-500 sm:text-[10px]">
-                            {person.character || (lang === 'en' ? 'Cast member' : 'Diễn viên')}
-                          </p>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="flex min-h-44 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/[0.09] text-center text-neutral-500">
-                    <Users size={22} />
-                    <p className="text-xs font-semibold">
-                      {lang === 'en'
-                        ? 'Cast information is unavailable.'
-                        : 'Chưa có thông tin diễn viên.'}
-                    </p>
-                  </div>
-                )}
-              </section>
-            )}
-
+            {/* ── 4. TRAILER (Mounts only when active to prevent background YouTube audio) ── */}
             {watchContentTab === 'trailer' && (
               <section className="min-h-52 py-5">
                 {(() => {
@@ -4677,41 +4695,44 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
               </section>
             )}
 
-            {watchContentTab === 'collection' && (
-              <section className="min-h-52 py-5">
-                {diverseTmdbBackdrops.length ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    {diverseTmdbBackdrops.map((image, index) => {
-                      const rawUrl = tmdbBackdrop(image.file_path, 'w780');
-                      const imageUrl = rawUrl ? wsrvImageUrl(rawUrl, 'thumbnail') || rawUrl : null;
-                      return imageUrl ? (
-                        <div
-                          key={`${image.file_path}-${index}`}
-                          className="group relative aspect-video overflow-hidden rounded-xl border border-white/[0.08] bg-[#12151b] transition-all hover:border-white/25 hover:shadow-lg"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={imageUrl}
-                            alt={`${film?.name || 'NetPhim'} ${index + 1}`}
-                            loading="lazy"
-                            decoding="async"
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                          />
-                        </div>
-                      ) : null;
-                    })}
-                  </div>
-                ) : (
-                  <div className="flex min-h-44 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/[0.09] text-center text-neutral-500">
-                    <FolderOpen size={22} />
-                    <p className="text-xs font-semibold">
-                      {lang === 'en'
-                        ? 'This movie has no gallery yet.'
-                        : 'Phim này chưa có bộ sưu tập hình ảnh.'}
-                    </p>
-                  </div>
-                )}
-              </section>
+            {/* ── 5. COLLECTION (Preserved once visited) ── */}
+            {visitedTabs.has('collection') && (
+              <div className={watchContentTab === 'collection' ? 'block' : 'hidden'}>
+                <section className="min-h-52 py-5">
+                  {diverseTmdbBackdrops.length ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {diverseTmdbBackdrops.map((image, index) => {
+                        const rawUrl = tmdbBackdrop(image.file_path, 'w780');
+                        const imageUrl = rawUrl ? wsrvImageUrl(rawUrl, 'thumbnail') || rawUrl : null;
+                        return imageUrl ? (
+                          <div
+                            key={`${image.file_path}-${index}`}
+                            className="group relative aspect-video overflow-hidden rounded-xl border border-white/[0.08] bg-[#12151b] transition-all hover:border-white/25 hover:shadow-lg"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={imageUrl}
+                              alt={`${film?.name || 'NetPhim'} ${index + 1}`}
+                              loading="lazy"
+                              decoding="async"
+                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                            />
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex min-h-44 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/[0.09] text-center text-neutral-500">
+                      <FolderOpen size={22} />
+                      <p className="text-xs font-semibold">
+                        {lang === 'en'
+                          ? 'This movie has no gallery yet.'
+                          : 'Phim này chưa có bộ sưu tập hình ảnh.'}
+                      </p>
+                    </div>
+                  )}
+                </section>
+              </div>
             )}
 
             {/* 6. COMMENTS */}

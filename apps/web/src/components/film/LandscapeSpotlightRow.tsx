@@ -195,6 +195,7 @@ export function LandscapeSpotlightRow({
                   film={film}
                   kind="backdrop"
                   priority={index < 2}
+                  allowTitleLookup
                   className="h-full w-full transition-transform duration-500 group-hover:scale-[1.025] motion-reduce:transform-none"
                   alt={film.name}
                 />
@@ -228,7 +229,7 @@ export function LandscapeSpotlightRow({
                   aria-label={`${t('common.watch', 'Xem')} ${film.name}`}
                   className="relative z-10 aspect-[2/3] w-[52px] sm:w-[76px] overflow-hidden rounded-md border border-white/25 bg-[#111318] shadow-[0_10px_24px_rgba(0,0,0,0.62)] transition-transform duration-300 group-hover:-translate-y-0.5 motion-reduce:transform-none"
                 >
-                  <TmdbArtwork film={film} kind="poster" className="h-full w-full" alt="" />
+                  <TmdbArtwork film={film} kind="poster" allowTitleLookup className="h-full w-full" alt="" />
                 </Link>
 
                 <div className="min-w-0 pb-1">

@@ -178,5 +178,12 @@ export function buildArtworkCandidates(
 }
 
 export function isPreOptimizedImageUrl(value?: string | null): boolean {
-  return isWsrvImageUrl(value) || isTmdbImageUrl(value);
+  if (!value) return false;
+  return (
+    isWsrvImageUrl(value) ||
+    isTmdbImageUrl(value) ||
+    /^(https?:)?\/\/(img\.phimapi\.com|phimimg\.com|img\.ophim\.live|ophim1\.com|images\.nguonc\.com|image\.tmdb\.org|tmdb\.org)\//i.test(
+      value,
+    )
+  );
 }

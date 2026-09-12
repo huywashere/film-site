@@ -5,6 +5,8 @@ import {
   tmdbPoster,
   isNonChineseTmdbImage,
   sortTmdbImages,
+  sortTmdbLogos,
+  getBestTitleLogo,
   type TmdbImage,
 } from "./tmdb.ts";
 
@@ -134,5 +136,42 @@ test("sortTmdbImages excludes Chinese posters and prioritizes Vietnamese and Eng
 
   // Textless clean poster should be #3
   assert.equal(sorted[2].file_path, "/textless-reacher.jpg");
+});
+
+test("sortTmdbLogos excludes Chinese logos and prioritizes Vietnamese and English title logos", () => {
+  const rawLogos: TmdbImage[] = [
+    {
+      file_path: "/chinese-logo.png",
+      iso_639_1: "zh",
+      vote_average: 10,
+      width: 800,
+      height: 300,
+      aspect_ratio: 2.66,
+    },
+    {
+      file_path: "/english-logo.png",
+      iso_639_1: "en",
+      vote_average: 8.5,
+      width: 1200,
+      height: 400,
+      aspect_ratio: 3,
+    },
+    {
+      file_path: "/vietnamese-logo.png",
+      iso_639_1: "vi",
+      vote_average: 7.0,
+      width: 800,
+      height: 300,
+      aspect_ratio: 2.66,
+    },
+  ];
+
+  const sorted = sortTmdbLogos(rawLogos);
+  assert.equal(sorted.some((l) => l.iso_639_1 === "zh"), false);
+  assert.equal(sorted[0].file_path, "/vietnamese-logo.png");
+  assert.equal(sorted[1].file_path, "/english-logo.png");
+
+  const best = getBestTitleLogo(rawLogos);
+  assert.equal(best?.file_path, "/vietnamese-logo.png");
 });
 

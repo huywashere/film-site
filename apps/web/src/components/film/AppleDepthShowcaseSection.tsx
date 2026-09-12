@@ -160,6 +160,8 @@ export function AppleDepthShowcaseSection({
               <TmdbArtwork
                 film={activeFilm}
                 kind="backdrop"
+                allowTitleLookup
+                preferOriginal
                 className="h-full w-full object-cover object-center opacity-40 blur-[2px] scale-105"
                 alt=""
               />
@@ -283,6 +285,7 @@ export function AppleDepthShowcaseSection({
                   <TmdbArtwork
                     film={film}
                     kind="poster"
+                    allowTitleLookup
                     className="h-full w-full object-cover"
                     alt={film.name}
                   />

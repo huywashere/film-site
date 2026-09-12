@@ -92,6 +92,7 @@ function shuffleWithSeed<T>(items: T[], seed: number) {
 }
 
 function getRecommendationSessionSeed() {
+  if (typeof window === 'undefined') return 'netphim-seed';
   const storageKey = 'netphim-mobile-related-seed-v1';
   try {
     const stored = window.sessionStorage.getItem(storageKey);
@@ -142,24 +143,16 @@ async function loadRelatedFilms(film: FilmItem, slug: string, sessionSeed: strin
     .filter((genreSlug): genreSlug is string => Boolean(genreSlug));
   const seed = hashSeed(`${sessionSeed}:${slug}`);
   const genreSlug = genreSlugs.length ? genreSlugs[seed % genreSlugs.length] : '';
-  const firstPage = 1 + ((seed >>> 5) % 3);
+  
   let candidates = genreSlug
-    ? await getCatalogFilms(() => movieApi.getByGenre(genreSlug, firstPage))
+    ? await getCatalogFilms(() => movieApi.getByGenre(genreSlug, 1))
     : [];
 
   candidates = deduplicateSectionRow(candidates).filter(
-    (item) => item.slug !== slug && belongsToGenre(item, genreSlug),
+    (item) => item.slug !== slug,
   );
 
-  if (genreSlug && candidates.length < 8) {
-    const nextPage = firstPage === 3 ? 1 : firstPage + 1;
-    const moreInGenre = await getCatalogFilms(() => movieApi.getByGenre(genreSlug, nextPage));
-    candidates = deduplicateSectionRow([...candidates, ...moreInGenre]).filter(
-      (item) => item.slug !== slug && belongsToGenre(item, genreSlug),
-    );
-  }
-
-  if (!genreSlug) {
+  if (candidates.length === 0) {
     const sameType = await getCatalogFilms(() =>
       isSeries(film) ? movieApi.getSeries(1) : movieApi.getSingle(1),
     );
@@ -168,7 +161,7 @@ async function loadRelatedFilms(film: FilmItem, slug: string, sessionSeed: strin
     );
   }
 
-  if (candidates.length === 0 && !genreSlug) return discoveryFallbacks(slug);
+  if (candidates.length === 0) return discoveryFallbacks(slug);
   return shuffleWithSeed(candidates, seed).slice(0, 12);
 }
 
@@ -229,7 +222,7 @@ export function MobileRelatedCarousel({
     .map((category) => category.slug)
     .filter(Boolean)
     .join(',');
-  const { data: relatedFilms = [], isLoading } = useQuery({
+  const { data: relatedFilms = [] } = useQuery({
     queryKey: [
       'film-detail-mobile-related-v3',
       slug,
@@ -238,6 +231,7 @@ export function MobileRelatedCarousel({
       sessionSeed,
     ],
     queryFn: () => loadRelatedFilms(currentFilm, slug, sessionSeed),
+    initialData: () => discoveryFallbacks(slug),
     enabled: enabled && Boolean(slug),
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
@@ -263,10 +257,8 @@ export function MobileRelatedCarousel({
     return [relatedFilms[0], currentCard, ...relatedFilms.slice(1)];
   }, [currentCard, relatedFilms]);
 
-  if (!enabled || isLoading) {
-    return enabled ? (
-      <RecommendationSkeleton film={currentCard} onOpen={onOpenCurrentPoster} />
-    ) : null;
+  if (!enabled) {
+    return null;
   }
 
   return (
@@ -314,7 +306,7 @@ export function MobileRelatedCarousel({
                 kind="poster"
                 alt={title}
                 priority={Math.abs(index - activeSlideIndex) <= 2}
-                allowTitleLookup={isNearCenter}
+                allowTitleLookup={false}
                 className="absolute inset-0 h-full w-full"
               />
 

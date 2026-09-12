@@ -3,8 +3,10 @@ import {
   TmdbImages,
   tmdbBackdrop,
   tmdbPoster,
+  tmdbLogo,
   extractTmdbInfo,
   sortTmdbImages,
+  sortTmdbLogos,
   isNonChineseTmdbImage,
 } from "@/lib/tmdb";
 
@@ -13,8 +15,10 @@ export interface ServerTmdbResult {
   mediaType: "movie" | "tv";
   bestBackdrop: TmdbImage | null;
   bestPoster: TmdbImage | null;
+  bestLogo: TmdbImage | null;
   tmdbBackdropUrl: string | null;
   tmdbPosterUrl: string | null;
+  tmdbLogoUrl: string | null;
   images: TmdbImages | null;
 }
 
@@ -154,10 +158,11 @@ export async function getMovieTmdbServer(movie: any): Promise<ServerTmdbResult |
     const imagesData: TmdbImages = await res.json();
     const cleanPosters = sortTmdbImages(imagesData.posters || []);
     const cleanBackdrops = sortTmdbImages(imagesData.backdrops || []);
-    const cleanLogos = (imagesData.logos || []).filter(isNonChineseTmdbImage);
+    const cleanLogos = sortTmdbLogos(imagesData.logos || []);
 
     const bestBackdrop = cleanBackdrops[0] || null;
     const bestPoster = cleanPosters[0] || null;
+    const bestLogo = cleanLogos[0] || null;
 
     const filteredImages: TmdbImages = {
       backdrops: cleanBackdrops,
@@ -170,8 +175,10 @@ export async function getMovieTmdbServer(movie: any): Promise<ServerTmdbResult |
       mediaType: resolvedType,
       bestBackdrop,
       bestPoster,
+      bestLogo,
       tmdbBackdropUrl: bestBackdrop?.file_path ? tmdbBackdrop(bestBackdrop.file_path, "w1280") : null,
       tmdbPosterUrl: bestPoster?.file_path ? tmdbPoster(bestPoster.file_path, "w500") : null,
+      tmdbLogoUrl: bestLogo?.file_path ? tmdbLogo(bestLogo.file_path, "w500") : null,
       images: filteredImages,
     };
 

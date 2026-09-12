@@ -16,11 +16,17 @@ import {
   FilmItem,
   resolveImageUrl,
 } from "@/components/film/FilmCard";
+import dynamic from "next/dynamic";
 import { Pagination } from "@/components/film/Pagination";
 import { GENRES_LIST, COUNTRIES_LIST } from "@/components/layout/Navbar";
 import { movieApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { cardFont } from "@/lib/fonts";
+
+const UniverseHeroBanner = dynamic(
+  () => import("@/components/universe/UniverseHeroBanner").then((m) => m.UniverseHeroBanner),
+  { ssr: false },
+);
 
 // ── Định nghĩa các tùy chọn bộ lọc ──────────────────────────────────────────
 
@@ -28,6 +34,8 @@ const YEARS = Array.from({ length: 27 }, (_, i) => 2026 - i);
 
 const QUICK_TYPES = [
   { label: "Tất cả", value: "all" },
+  { label: "Marvel Studios", value: "marvel", isUniverse: true, theme: "marvel" },
+  { label: "DC Universe", value: "dc", isUniverse: true, theme: "dc" },
   { label: "Phim Bộ", value: "series" },
   { label: "Phim Lẻ", value: "single" },
   { label: "Anime", value: "anime" },
@@ -62,6 +70,7 @@ function BrowseFilmsContent() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedType, setSelectedType] = useState("all");
+  const [selectedSubFranchise, setSelectedSubFranchise] = useState("all");
   const [selectedGenre, setSelectedGenre] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
@@ -72,6 +81,10 @@ function BrowseFilmsContent() {
 
   // Đồng bộ tiêu chí lọc từ URL query params
   useEffect(() => {
+    const u = searchParams.get("universe");
+    if (u === "marvel" || u === "dc") setSelectedType(u);
+    const sub = searchParams.get("sub");
+    if (sub) setSelectedSubFranchise(sub);
     const y = searchParams.get("year");
     if (y !== null) setSelectedYear(y);
     const t = searchParams.get("type");
@@ -104,6 +117,7 @@ function BrowseFilmsContent() {
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (selectedType !== "all") count++;
+    if (selectedSubFranchise !== "all") count++;
     if (selectedGenre) count++;
     if (selectedCountry) count++;
     if (selectedYear) count++;
@@ -113,6 +127,7 @@ function BrowseFilmsContent() {
     return count;
   }, [
     selectedType,
+    selectedSubFranchise,
     selectedGenre,
     selectedCountry,
     selectedYear,
@@ -127,6 +142,7 @@ function BrowseFilmsContent() {
     setSearch("");
     setDebouncedSearch("");
     setSelectedType("all");
+    setSelectedSubFranchise("all");
     setSelectedGenre("");
     setSelectedCountry("");
     setSelectedYear("");
@@ -142,6 +158,7 @@ function BrowseFilmsContent() {
       "browse-films-v2",
       debouncedSearch,
       selectedType,
+      selectedSubFranchise,
       selectedGenre,
       selectedCountry,
       selectedYear,
@@ -153,6 +170,7 @@ function BrowseFilmsContent() {
   }, [
     debouncedSearch,
     selectedType,
+    selectedSubFranchise,
     selectedGenre,
     selectedCountry,
     selectedYear,
@@ -165,7 +183,32 @@ function BrowseFilmsContent() {
   const { data, isLoading } = useQuery({
     queryKey,
     queryFn: async () => {
-      // 1. Tìm kiếm từ khóa nếu có
+      // 0. Nếu đang chọn Vũ trụ Marvel hoặc DC: Nạp toàn bộ kho phim vũ trụ tương ứng
+      if (selectedType === "marvel" || selectedType === "dc") {
+        const { getUniverseFilms } = await import("@/lib/universe-catalog");
+        const universeFilms = getUniverseFilms(selectedType as "marvel" | "dc", {
+          subFranchise: selectedSubFranchise,
+          year: selectedYear,
+          quality: selectedQuality,
+          audio: selectedAudio,
+          search: debouncedSearch,
+          sort: selectedSort,
+        });
+        const pageSize = 28;
+        const start = (page - 1) * pageSize;
+        const pagedItems = universeFilms.slice(start, start + pageSize);
+        return {
+          items: pagedItems,
+          totalItems: universeFilms.length,
+          pagination: {
+            currentPage: page,
+            totalPages: Math.ceil(universeFilms.length / pageSize),
+            totalItems: universeFilms.length,
+          },
+        };
+      }
+
+      // 1. Tìm kiếm từ khóa nếu có (các tab khác)
       if (debouncedSearch.trim()) {
         const filters: any = {};
         if (selectedGenre) filters.genre = selectedGenre;
@@ -235,6 +278,28 @@ function BrowseFilmsContent() {
 
   // Client-side refining & sorting
   const films: FilmItem[] = useMemo(() => {
+    if (selectedType === "marvel" || selectedType === "dc") {
+      return rawItems.map((item): FilmItem => {
+        const pUrl = String(item.poster_url || item.thumb_url || "");
+        const tUrl = String(item.thumb_url || item.poster_url || "");
+        return {
+          _id: String(item._id || item.id || item.slug || ""),
+          name: String(item.name || item.title || ""),
+          origin_name: String(item.origin_name || item.original_title || ""),
+          slug: String(item.slug || ""),
+          poster_url: resolveImageUrl(pUrl, tUrl) || pUrl,
+          thumb_url: resolveImageUrl(tUrl, pUrl) || tUrl,
+          year: Number(item.year) || 2024,
+          episode_current: String(item.episode_current || "HD"),
+          quality: String(item.quality || "FHD"),
+          lang: String(item.lang || "Vietsub"),
+          category: Array.isArray(item.category) ? item.category : [],
+          country: Array.isArray(item.country) ? item.country : [],
+          vote_average: Number(item.vote_average || item.rating) || 8.2,
+        };
+      });
+    }
+
     let list: FilmItem[] = rawItems.map((item): FilmItem => {
       const pUrl = String(item.poster_url || item.thumb_url || "");
       const tUrl = String(item.thumb_url || item.poster_url || "");
@@ -308,7 +373,7 @@ function BrowseFilmsContent() {
     }
 
     return list;
-  }, [rawItems, selectedYear, selectedQuality, selectedAudio, selectedSort]);
+  }, [rawItems, selectedType, selectedYear, selectedQuality, selectedAudio, selectedSort]);
 
   return (
     <main
@@ -327,13 +392,33 @@ function BrowseFilmsContent() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-3 sm:pb-4 border-b border-white/[0.08] gap-1.5 sm:gap-2">
           <div>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
-              Duyệt Tìm Phim
+              {selectedType === "marvel"
+                ? "Vũ Trụ Điện Ảnh Marvel (MCU)"
+                : selectedType === "dc"
+                  ? "Vũ Trụ Điện Ảnh DC (DC Universe)"
+                  : "Duyệt Tìm Phim"}
             </h1>
           </div>
           <p className="text-[11px] sm:text-xs text-neutral-400 font-medium">
-            Khám phá kho phim điện ảnh, phim bộ và hoạt hình chọn lọc
+            {selectedType === "marvel"
+              ? "Khám phá toàn bộ 175+ bom tấn Marvel Studios, Avengers và Đa Vũ Trụ"
+              : selectedType === "dc"
+                ? "Khám phá toàn bộ 180+ kiệt tác điện ảnh DC, Batman, Superman và Justice League"
+                : "Khám phá kho phim điện ảnh, phim bộ và hoạt hình chọn lọc"}
           </p>
         </div>
+
+        {/* ── Dedicated Universe Hero Banner (Marvel Studios / DC Universe) ── */}
+        {(selectedType === "marvel" || selectedType === "dc") && (
+          <UniverseHeroBanner
+            universe={selectedType as "marvel" | "dc"}
+            activeSubFranchise={selectedSubFranchise}
+            onSelectSubFranchise={(subId) => {
+              setSelectedSubFranchise(subId);
+              setPage(1);
+            }}
+          />
+        )}
 
         {/* ── Hàng 1: Thanh Tìm Kiếm & Quick Format Pills ── */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -341,19 +426,24 @@ function BrowseFilmsContent() {
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
             {QUICK_TYPES.map((type) => {
               const isActive = selectedType === type.value;
+              const pillStyle = isActive
+                ? "bg-white text-black shadow-sm font-black border-white"
+                : "bg-[#12141c] text-neutral-400 hover:text-white hover:bg-white/[0.06] border border-white/[0.08]";
+
               return (
                 <button
                   key={type.value}
                   type="button"
                   onClick={() => {
                     setSelectedType(type.value);
+                    if (type.value !== "marvel" && type.value !== "dc") {
+                      setSelectedSubFranchise("all");
+                    }
                     setPage(1);
                   }}
                   className={cn(
-                    "px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer select-none shrink-0",
-                    isActive
-                      ? "bg-white text-black shadow-sm"
-                      : "bg-[#12141c] text-neutral-400 hover:text-white hover:bg-white/[0.06] border border-white/[0.08]",
+                    "px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all duration-200 cursor-pointer select-none shrink-0",
+                    pillStyle,
                   )}
                 >
                   {type.label}

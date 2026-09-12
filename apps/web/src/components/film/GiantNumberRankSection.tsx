@@ -189,6 +189,7 @@ export function GiantNumberRankSection({
                 <TmdbArtwork
                   film={film}
                   kind="poster"
+                  allowTitleLookup
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-108"
                   alt={film.name}
                 />

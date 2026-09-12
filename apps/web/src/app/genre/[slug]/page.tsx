@@ -685,6 +685,14 @@ export default function GenrePage() {
   const isShowcasePage = isSciFiPage || isWarPage;
   const secondaryReady = useDeferredContent();
 
+  useEffect(() => {
+    if (slug === "marvel") {
+      router.replace("/films?universe=marvel");
+    } else if (slug === "dc") {
+      router.replace("/films?universe=dc");
+    }
+  }, [slug, router]);
+
   const [activeTab, setActiveTab] = useState("all");
   const [trailerState, setTrailerState] = useState<{
     isOpen: boolean;

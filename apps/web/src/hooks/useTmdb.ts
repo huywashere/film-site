@@ -13,8 +13,10 @@ import {
   type TmdbImage,
   getYoutubeTrailer,
   sortTmdbImages,
+  sortTmdbLogos,
   isNonChineseTmdbImage,
 } from "@/lib/tmdb";
+import { getMovieLogo, setMovieLogo } from "@/lib/movie-logo-cache";
 
 interface UseTmdbOptions {
   film: any; // film data từ KKPhim/OPhim/NguonC
@@ -29,6 +31,7 @@ interface UseTmdbOptions {
     mediaType?: "movie" | "tv";
     bestBackdrop?: TmdbImage | null;
     bestPoster?: TmdbImage | null;
+    bestLogo?: TmdbImage | null;
     images?: TmdbImages | null;
     overview?: string | null;
   } | null;
@@ -232,7 +235,7 @@ export function useTmdb({
   // Best backdrop & poster (Loại bỏ tiếng Trung và ưu tiên tiếng Việt / tiếng Anh / textless)
   const backdrops = sortTmdbImages(images?.backdrops || []);
   const posters = sortTmdbImages(images?.posters || []);
-  const logos = (images?.logos || []).filter(isNonChineseTmdbImage);
+  const logos = sortTmdbLogos(images?.logos || []);
 
   const bestBackdrop =
     backdrops[0] ||
@@ -264,6 +267,29 @@ export function useTmdb({
         }
       : null);
 
+  const cachedLogoPath = getMovieLogo(film?.slug);
+  const bestLogo =
+    logos[0] ||
+    (initialTmdb?.bestLogo && isNonChineseTmdbImage(initialTmdb.bestLogo)
+      ? initialTmdb.bestLogo
+      : null) ||
+    (initialTmdb?.images?.logos
+      ? sortTmdbLogos(initialTmdb.images.logos)[0]
+      : null) ||
+    (cachedLogoPath
+      ? {
+          file_path: cachedLogoPath,
+          width: 500,
+          height: 200,
+          vote_average: 10,
+          aspect_ratio: 2.5,
+        }
+      : null);
+
+  if (film?.slug && bestLogo?.file_path) {
+    setMovieLogo(film.slug, bestLogo.file_path);
+  }
+
   return {
     tmdbId: resolvedId,
     type: resolvedType,
@@ -282,7 +308,7 @@ export function useTmdb({
     logos,
     bestBackdrop,
     bestPoster,
-    bestLogo: logos[0] || null,
+    bestLogo,
     imagesLoading,
     // Season & Episode stills
     seasonData,
