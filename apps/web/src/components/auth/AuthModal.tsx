@@ -5,7 +5,6 @@ import { useAuthModalStore } from "@/store/authModalStore";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/providers/ToastProvider";
 import {
-  X,
   Loader2,
   Eye,
   EyeOff,
@@ -424,22 +423,6 @@ export function AuthModal({
         />
       </button>
 
-      {/* Symmetrical Close Button for Modal Mode (Matching Reference Image) */}
-      {!isPage && (
-        <button
-          type="button"
-          onClick={closeModal}
-          className="absolute top-4 right-4 sm:top-5 sm:right-5 w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-white/30 text-neutral-300 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer backdrop-blur-md active:scale-95 group z-20"
-          aria-label="Đóng"
-          title="Đóng"
-        >
-          <X
-            size={16}
-            strokeWidth={2.2}
-            className="transition-transform duration-200 group-hover:rotate-90 text-neutral-300 group-hover:text-white"
-          />
-        </button>
-      )}
 
       {/* Brand Logo integrated directly on the form header - Clean without glow */}
       <div className="flex justify-center mb-2.5">
