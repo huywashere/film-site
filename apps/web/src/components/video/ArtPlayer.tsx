@@ -123,6 +123,8 @@ export default function ArtPlayer({
   onBufferingRef.current = onBuffering;
   onPlaybackStateChangeRef.current = onPlaybackStateChange;
 
+  const triggerSeekRippleRef = useRef<((isLeft: boolean) => void) | null>(null);
+
   useEffect(() => {
     if (!containerRef.current || !url) return;
     detectedAdRangesRef.current = [];
@@ -637,10 +639,11 @@ export default function ArtPlayer({
           html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;">${ARTPLAYER_SEEK_BACKWARD_10_SVG}</span>`,
           tooltip: 'Tua lại 10s',
           click: function () {
-            if (playerRef.current) {
+            if (triggerSeekRippleRef.current) {
+              triggerSeekRippleRef.current(true);
+            } else if (playerRef.current) {
               const art = playerRef.current;
               art.seek = Math.max(0, art.currentTime - 10);
-              art.notice.show = 'Tua lại 10s';
             }
           },
         },
@@ -651,10 +654,11 @@ export default function ArtPlayer({
           html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;">${ARTPLAYER_SEEK_FORWARD_10_SVG}</span>`,
           tooltip: 'Tua tới 10s',
           click: function () {
-            if (playerRef.current) {
+            if (triggerSeekRippleRef.current) {
+              triggerSeekRippleRef.current(false);
+            } else if (playerRef.current) {
               const art = playerRef.current;
               art.seek = Math.min(art.duration || Infinity, art.currentTime + 10);
-              art.notice.show = 'Tua tới 10s';
             }
           },
         },
@@ -830,21 +834,21 @@ export default function ArtPlayer({
     seekOverlay.setAttribute('aria-hidden', 'true');
     seekOverlay.innerHTML = `
       <div class="netphim-mobile-seek-side is-left">
-        <div class="netphim-mobile-seek-badge">
-          <div class="netphim-mobile-seek-icons">
-            <svg class="chevron-1" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-            <svg class="chevron-2" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-            <svg class="chevron-3" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <div class="netphim-mobile-seek-content">
+          <div class="netphim-mobile-seek-triangles">
+            <svg class="seek-tri seek-tri-3" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 3 5 12 19 21 19 3"/></svg>
+            <svg class="seek-tri seek-tri-2" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 3 5 12 19 21 19 3"/></svg>
+            <svg class="seek-tri seek-tri-1" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 3 5 12 19 21 19 3"/></svg>
           </div>
           <span class="netphim-mobile-seek-text" data-text-left>10 giây</span>
         </div>
       </div>
       <div class="netphim-mobile-seek-side is-right">
-        <div class="netphim-mobile-seek-badge">
-          <div class="netphim-mobile-seek-icons">
-            <svg class="chevron-1" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-            <svg class="chevron-2" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-            <svg class="chevron-3" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        <div class="netphim-mobile-seek-content">
+          <div class="netphim-mobile-seek-triangles">
+            <svg class="seek-tri seek-tri-1" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <svg class="seek-tri seek-tri-2" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <svg class="seek-tri seek-tri-3" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           </div>
           <span class="netphim-mobile-seek-text" data-text-right>10 giây</span>
         </div>
@@ -902,6 +906,21 @@ export default function ArtPlayer({
         activeDirection = null;
       }, 700);
     };
+
+    triggerSeekRippleRef.current = triggerSeekRipple;
+
+    try {
+      (player as any).hotkey?.add(37, (event: Event) => {
+        event.preventDefault();
+        triggerSeekRipple(true);
+      });
+      (player as any).hotkey?.add(39, (event: Event) => {
+        event.preventDefault();
+        triggerSeekRipple(false);
+      });
+    } catch {
+      // safe fallback
+    }
 
     let lastTapTime = 0;
     let lastTapX = 0;
@@ -1185,6 +1204,7 @@ export default function ArtPlayer({
       }
       seekOverlay.remove();
       clearTimeout(seekTimer);
+      triggerSeekRippleRef.current = null;
     };
     // Recreate only when the primary/fallback transport changes. Other props use refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
