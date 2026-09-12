@@ -635,7 +635,7 @@ function HeroMovieTitle({
       {/* If there's NO logo candidate or logo completely failed to load, show styled text title */}
       {showTextFallback ? (
         <h1
-          className="max-w-2xl line-clamp-2 text-xl font-black uppercase leading-[1.3] sm:leading-[1.25] tracking-wide text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] sm:text-4xl md:text-5xl pt-3 pb-2 px-2 overflow-visible"
+          className="max-w-xl sm:max-w-2xl line-clamp-2 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase leading-[1.2] sm:leading-[1.15] tracking-tight text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] pt-2 pb-1 px-2 overflow-visible"
           style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }}
         >
           {title}
@@ -670,7 +670,7 @@ function HeroMovieTitle({
                 onReady();
               }
             }}
-            className="h-auto max-h-20 w-auto max-w-[78vw] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] sm:max-h-32 sm:max-w-[34rem] md:max-h-40"
+            className="h-auto max-h-16 sm:max-h-24 md:max-h-28 lg:max-h-36 w-auto max-w-[76vw] sm:max-w-[28rem] md:max-w-[34rem] lg:max-w-[40rem] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)]"
           />
         </>
       )}
@@ -1474,6 +1474,55 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
     return () => window.clearTimeout(timer);
   }, [autoRotateEnabled, current, featured.length, pageVisible, reduceMotion]);
 
+  const nextSlide = useCallback(() => {
+    setCurrent((c) => (c + 1) % featured.length);
+  }, [featured.length]);
+
+  const prevSlide = useCallback(() => {
+    setCurrent((c) => (c - 1 + featured.length) % featured.length);
+  }, [featured.length]);
+
+  // Touch Swipe Gesture support for mobile devices
+  const touchStartXRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
+  const isHorizontalSwipe = useRef(false);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLElement>) => {
+    if (e.touches.length !== 1) return;
+    touchStartXRef.current = e.touches[0].clientX;
+    touchStartYRef.current = e.touches[0].clientY;
+    isHorizontalSwipe.current = false;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLElement>) => {
+    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
+    const diffX = e.touches[0].clientX - touchStartXRef.current;
+    const diffY = e.touches[0].clientY - touchStartYRef.current;
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
+      isHorizontalSwipe.current = true;
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent<HTMLElement>) => {
+    if (!isHorizontalSwipe.current || touchStartXRef.current === null) {
+      touchStartXRef.current = null;
+      touchStartYRef.current = null;
+      isHorizontalSwipe.current = false;
+      return;
+    }
+    const touchEndX = e.changedTouches[0].clientX;
+    const diffX = touchEndX - touchStartXRef.current;
+    const SWIPE_THRESHOLD = 40;
+    if (diffX < -SWIPE_THRESHOLD) {
+      nextSlide();
+    } else if (diffX > SWIPE_THRESHOLD) {
+      prevSlide();
+    }
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+    isHorizontalSwipe.current = false;
+  }, [nextSlide, prevSlide]);
+
   // The 3 cascading fan cards represent the UPCOMING films in the queue:
   // (current + 1), (current + 2), (current + 3).
   // They stay in lockstep with the hero slider and smoothly rotate without displaying stale films!
@@ -1720,7 +1769,10 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
     <section
       data-hero-banner="true"
       ref={heroContainerRef}
-      className="font-cinema relative mt-16 h-[78svh] min-h-[590px] max-h-[680px] w-full overflow-hidden bg-[#141414] transform-gpu contain-paint sm:mt-0 sm:h-auto sm:min-h-[100dvh] sm:max-h-none"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      className="font-cinema relative mt-0 h-[100dvh] min-h-[580px] max-h-[860px] sm:min-h-[680px] sm:max-h-[940px] md:h-[94vh] md:min-h-[720px] lg:h-[96vh] lg:min-h-[760px] lg:max-h-[1050px] xl:h-[100dvh] w-full overflow-hidden bg-[#0c0d14] transform-gpu contain-paint select-none"
     >
       <TrailerModal
         film={trailerModalFilm}
@@ -1767,14 +1819,14 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         />
       </div>
 
-      {/* Vignette Dark Gradient Overlay */}
+      {/* Vignette Dark Gradient Overlay (Edge-to-Edge Seamless Obsidian Fade) */}
       <div
         className="absolute inset-0 z-10 pointer-events-none"
         style={{
           background: `
-            radial-gradient(circle at center, transparent 25%, rgba(10, 12, 16, 0.55) 70%, rgba(10, 12, 16, 0.95) 100%),
-            linear-gradient(to top, #14181c 0%, rgba(20, 24, 28, 0.8) 25%, transparent 60%),
-            linear-gradient(to bottom, rgba(10, 12, 16, 0.8) 0%, transparent 30%)
+            radial-gradient(circle at center, transparent 25%, rgba(10, 12, 16, 0.45) 70%, rgba(10, 12, 16, 0.92) 100%),
+            linear-gradient(to top, #0c0d14 0%, rgba(12, 13, 20, 0.9) 30%, rgba(12, 13, 20, 0.45) 55%, transparent 78%),
+            linear-gradient(to bottom, rgba(10, 12, 16, 0.85) 0%, rgba(10, 12, 16, 0.3) 16%, transparent 32%)
           `,
         }}
       />
@@ -1869,12 +1921,12 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="absolute inset-0 z-20 flex flex-col items-center justify-end px-4 pb-5 sm:pb-18 md:pb-20 text-center">
+      {/* Main Content Area (Fluid Responsive Spacing with Safe Area Bottom Clearance) */}
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-end px-4 sm:px-6 md:px-8 pt-18 sm:pt-24 md:pt-28 pb-22 sm:pb-16 md:pb-20 lg:pb-22 text-center pointer-events-none">
         <div
           ref={contentRef}
           key={film.slug}
-          className={`${heroSerifFont.className} max-w-2xl mx-auto w-full flex flex-col items-center space-y-2 sm:space-y-3.5`}
+          className={`${heroSerifFont.className} max-w-2xl mx-auto w-full flex flex-col items-center space-y-2 sm:space-y-3 pointer-events-auto`}
         >
               {/* Official TMDB title artwork with an accessible text fallback. */}
               <HeroMovieTitle
@@ -2020,19 +2072,14 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
               </div>
         </div>
 
-          {/* Mobile previous / pagination / next controls - Placed outside AnimatePresence for rock-solid stability and zero flicker */}
+          {/* Mobile previous / pagination / next controls - Perfectly positioned above mobile bottom bar */}
           {featured.length > 1 && (
-            <div className="mt-1.5 flex items-center justify-center gap-2 pt-1 sm:hidden select-none z-30">
+            <div className="mt-2 flex items-center justify-center gap-2 pt-1 sm:hidden select-none z-30">
               <button
                 type="button"
-                onClick={() =>
-                  setCurrent(
-                    (index) =>
-                      (index - 1 + featured.length) % featured.length,
-                  )
-                }
+                onClick={prevSlide}
                 aria-label="Banner trước"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-90 cursor-pointer shadow-md"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-90 cursor-pointer shadow-md"
               >
                 <ChevronLeft size={17} aria-hidden="true" />
               </button>
@@ -2065,11 +2112,9 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
 
               <button
                 type="button"
-                onClick={() =>
-                  setCurrent((index) => (index + 1) % featured.length)
-                }
+                onClick={nextSlide}
                 aria-label="Banner tiếp theo"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-90 cursor-pointer shadow-md"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-90 cursor-pointer shadow-md"
               >
                 <ChevronRight size={17} aria-hidden="true" />
               </button>
@@ -2137,7 +2182,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         </div>
 
         {showDesktopFanCards && (
-          <div className="flex items-center gap-2 overflow-x-auto p-1 scrollbar-none [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none]">
+          <div className="hidden xl:flex items-center gap-2 overflow-x-auto p-1 scrollbar-none [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none]">
             {visibleThumbnails.map(({ item, index: i }) => {
               const cardImg =
                 item.thumb_url ||
