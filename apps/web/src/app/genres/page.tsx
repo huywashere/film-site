@@ -24,7 +24,6 @@ import { cn } from "@/lib/utils";
 import { buildAsianHeroImageCandidates } from "@/lib/curated-asian-hero";
 import { movieApi, recommendationApi } from "@/lib/api";
 import { FilmItem } from "@/components/film/FilmCard";
-import { getUniverseCatalog } from "@/lib/universe-catalog";
 
 const Top10RankedRow = dynamic(
   () =>
@@ -416,13 +415,19 @@ export default function GenresPage() {
       if (hub.slug === "marvel") {
         void queryClient.prefetchQuery({
           queryKey: ["films-universe", "marvel", 1],
-          queryFn: () => Promise.resolve(getUniverseCatalog("marvel")),
+          queryFn: async () => {
+            const { getUniverseFilms } = await import("@/lib/universe-catalog");
+            return getUniverseFilms("marvel");
+          },
           staleTime: 30 * 60 * 1000,
         });
       } else if (hub.slug === "dc") {
         void queryClient.prefetchQuery({
           queryKey: ["films-universe", "dc", 1],
-          queryFn: () => Promise.resolve(getUniverseCatalog("dc")),
+          queryFn: async () => {
+            const { getUniverseFilms } = await import("@/lib/universe-catalog");
+            return getUniverseFilms("dc");
+          },
           staleTime: 30 * 60 * 1000,
         });
       } else if (hub.slug === "khoa-hoc-vien-tuong") {

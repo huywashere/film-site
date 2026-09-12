@@ -15206,6 +15206,8 @@ export function getUniverseSpotlights(universe: "marvel" | "dc"): UniverseSpotli
   return universe === "marvel" ? MARVEL_SPOTLIGHTS : DC_SPOTLIGHTS;
 }
 
+export const getUniverseCatalog = getUniverseFilms;
+
 export function getUniverseFilms(
   universe: "marvel" | "dc",
   options?: {
