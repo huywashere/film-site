@@ -87,6 +87,11 @@ jobs:
           JWT_REFRESH_SECRET: ci-jwt-refresh-secret
           TOTP_ENCRYPTION_KEY: ci-totp-encryption-key
           HLS_PROXY_SECRET: ci-hls-proxy-secret
+          RECOMMENDATION_ADMIN_TOKEN: ci-recommendation-admin-token
+          ADMIN_METRICS_TOKEN: ci-admin-metrics-token
+          REVALIDATE_SECRET: ci-revalidate-secret
+          MEDIA_INTERNAL_TOKEN: ci-media-internal-token
+          TUNNEL_TOKEN: ci-tunnel-token
 
       - name: Validate Terraform infrastructure
         run: |

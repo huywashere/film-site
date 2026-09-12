@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Play,
   Film,
@@ -25,7 +24,6 @@ import {
   DC_SUB_FRANCHISES,
   UniverseSpotlightItem,
 } from "@/lib/universe-catalog";
-import { cardFont } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 
 const TrailerModal = dynamic(
