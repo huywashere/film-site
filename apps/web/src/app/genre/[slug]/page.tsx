@@ -687,9 +687,9 @@ export default function GenrePage() {
 
   useEffect(() => {
     if (slug === "marvel") {
-      router.replace("/films?universe=marvel");
+      router.replace("/universe/marvel");
     } else if (slug === "dc") {
-      router.replace("/films?universe=dc");
+      router.replace("/universe/dc");
     }
   }, [slug, router]);
 

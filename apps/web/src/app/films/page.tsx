@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search,
@@ -16,21 +16,11 @@ import {
   FilmItem,
   resolveImageUrl,
 } from "@/components/film/FilmCard";
-import dynamic from "next/dynamic";
 import { Pagination } from "@/components/film/Pagination";
 import { GENRES_LIST, COUNTRIES_LIST } from "@/components/layout/Navbar";
-import {
-  MARVEL_SUB_FRANCHISES,
-  DC_SUB_FRANCHISES,
-} from "@/lib/universe-catalog";
 import { movieApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { cardFont } from "@/lib/fonts";
-
-const UniverseHeroBanner = dynamic(
-  () => import("@/components/universe/UniverseHeroBanner").then((m) => m.UniverseHeroBanner),
-  { ssr: false },
-);
 
 // ── Định nghĩa các tùy chọn bộ lọc ──────────────────────────────────────────
 
@@ -58,8 +48,8 @@ const QUALITIES = [
 const AUDIOS = [
   { label: "Bản dịch", value: "all" },
   { label: "Vietsub", value: "vietsub" },
-  { label: "Thuyết Minh", value: "thuyet-minh" },
-  { label: "Lồng Tiếng", value: "long-tieng" },
+  { label: "Thuyết minh", value: "thuyet-minh" },
+  { label: "Lồng tiếng", value: "long-tieng" },
 ];
 
 const SORTS = [
@@ -70,6 +60,7 @@ const SORTS = [
 ];
 
 function BrowseFilmsContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -86,12 +77,19 @@ function BrowseFilmsContent() {
   // Đồng bộ tiêu chí lọc từ URL query params
   useEffect(() => {
     const u = searchParams.get("universe");
-    if (u === "marvel" || u === "dc") setSelectedType(u);
+    if (u === "marvel" || u === "dc") {
+      router.replace(`/universe/${u}`);
+      return;
+    }
+    const t = searchParams.get("type");
+    if (t === "marvel" || t === "dc") {
+      router.replace(`/universe/${t}`);
+      return;
+    }
     const sub = searchParams.get("sub");
     if (sub) setSelectedSubFranchise(sub);
     const y = searchParams.get("year");
     if (y !== null) setSelectedYear(y);
-    const t = searchParams.get("type");
     if (t !== null) setSelectedType(t);
     const g = searchParams.get("genre") || searchParams.get("category");
     if (g !== null) setSelectedGenre(g);
@@ -106,7 +104,7 @@ function BrowseFilmsContent() {
     if (s !== null) setSelectedSort(s);
     const p = searchParams.get("page");
     if (p !== null && !isNaN(Number(p))) setPage(Number(p));
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   // Debounce search input
   useEffect(() => {
@@ -141,19 +139,6 @@ function BrowseFilmsContent() {
   ]);
 
   const isFiltered = activeFiltersCount > 0;
-  const isUniverse = selectedType === "marvel" || selectedType === "dc";
-
-  const activeSubLabel = useMemo(() => {
-    if (selectedType === "marvel") {
-      const match = MARVEL_SUB_FRANCHISES.find((s) => s.id === selectedSubFranchise);
-      return match?.label || "Tất Cả Marvel";
-    }
-    if (selectedType === "dc") {
-      const match = DC_SUB_FRANCHISES.find((s) => s.id === selectedSubFranchise);
-      return match?.label || "Tất Cả DC";
-    }
-    return "";
-  }, [selectedType, selectedSubFranchise]);
 
   const handleResetAll = useCallback(() => {
     setSearch("");
@@ -405,111 +390,51 @@ function BrowseFilmsContent() {
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-[1720px] px-3.5 sm:px-6 md:pl-20 md:pr-6 lg:pl-24 lg:pr-10 xl:pl-28 xl:pr-12 space-y-5 sm:space-y-6">
-        {/* ── Header Tiêu Đề Đơn Giản & Thanh Thoát (Đồng bộ Trang Chủ & Chủ Đề) ── */}
+        {/* ── Header Tiêu Đề Đơn Giản & Thanh Thoát ── */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-3 sm:pb-4 border-b border-white/[0.08] gap-1.5 sm:gap-2">
           <div>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
-              {selectedType === "marvel"
-                ? "Vũ Trụ Marvel"
-                : selectedType === "dc"
-                  ? "Vũ Trụ DC"
-                  : "Duyệt Tìm Phim"}
+              Duyệt Tìm Phim
             </h1>
           </div>
           <p className="text-[11px] sm:text-xs text-neutral-400 font-medium">
-            {selectedType === "marvel"
-              ? "Khám phá bom tấn Marvel Studios & Avengers"
-              : selectedType === "dc"
-                ? "Khám phá kiệt tác điện ảnh DC Universe"
-                : "Khám phá kho phim điện ảnh, phim bộ và hoạt hình chọn lọc"}
+            Khám phá kho phim điện ảnh, phim bộ và hoạt hình chọn lọc
           </p>
         </div>
 
-        {/* ── Dedicated Universe Hero Banner (Marvel Studios / DC Universe) ── */}
-        {(selectedType === "marvel" || selectedType === "dc") && (
-          <UniverseHeroBanner
-            universe={selectedType as "marvel" | "dc"}
-            activeSubFranchise={selectedSubFranchise}
-            onSelectSubFranchise={(subId) => {
-              setSelectedSubFranchise(subId);
-              setPage(1);
-            }}
-          />
-        )}
+        {/* ── Hàng 1: Thanh Tìm Kiếm & Quick Format Pills ── */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Quick Format Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
+            {QUICK_TYPES.map((type) => {
+              const isActive = selectedType === type.value;
+              const pillStyle = isActive
+                ? "bg-white text-black shadow-sm font-black border-white"
+                : "bg-[#12141c] text-neutral-400 hover:text-white hover:bg-white/[0.06] border border-white/[0.08]";
 
-        {isUniverse ? (
-          /* ── Tiêu Đề Danh Sách Phim Vũ Trụ Tinh Gọn (Không thanh duyệt tìm) ── */
-          <div className="flex items-center justify-between pt-1 pb-1 border-b border-white/[0.08]">
-            <div className="flex items-center gap-2.5">
-              <div
-                className={cn(
-                  "w-1.5 h-4.5 rounded-full",
-                  selectedType === "marvel"
-                    ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]"
-                    : "bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.5)]",
-                )}
-              />
-              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                <span>{activeSubLabel}</span>
-                <span className="text-xs font-semibold text-neutral-400">
-                  ({totalItems || films.length} phim)
-                </span>
-              </h2>
-            </div>
-
-            {/* Sắp xếp nhanh */}
-            <div className="relative">
-              <select
-                value={selectedSort}
-                onChange={(e) => {
-                  setSelectedSort(e.target.value);
-                  setPage(1);
-                }}
-                className="appearance-none bg-[#12141c] border border-white/10 hover:border-white/20 rounded-xl pl-3 pr-7 py-1.5 text-xs font-medium text-neutral-300 focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors"
-              >
-                <option value="modified.time">Mới cập nhật</option>
-                <option value="year">Năm phát hành</option>
-                <option value="rating">Đánh giá cao nhất</option>
-              </select>
-              <ChevronDown
-                size={12}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
-              />
-            </div>
+              return (
+                <button
+                  key={type.value}
+                  type="button"
+                  onClick={() => {
+                    if (type.value === "marvel" || type.value === "dc") {
+                      router.push(`/universe/${type.value}`);
+                      return;
+                    }
+                    setSelectedType(type.value);
+                    setSelectedSubFranchise("all");
+                    setPage(1);
+                  }}
+                  className={cn(
+                    "px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all duration-200 cursor-pointer select-none shrink-0",
+                    pillStyle,
+                  )}
+                >
+                  {type.label}
+                </button>
+              );
+            })}
           </div>
-        ) : (
-          <>
-            {/* ── Hàng 1: Thanh Tìm Kiếm & Quick Format Pills ── */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-              {/* Quick Format Pills */}
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
-                {QUICK_TYPES.map((type) => {
-                  const isActive = selectedType === type.value;
-                  const pillStyle = isActive
-                    ? "bg-white text-black shadow-sm font-black border-white"
-                    : "bg-[#12141c] text-neutral-400 hover:text-white hover:bg-white/[0.06] border border-white/[0.08]";
-
-                  return (
-                    <button
-                      key={type.value}
-                      type="button"
-                      onClick={() => {
-                        setSelectedType(type.value);
-                        if (type.value !== "marvel" && type.value !== "dc") {
-                          setSelectedSubFranchise("all");
-                        }
-                        setPage(1);
-                      }}
-                      className={cn(
-                        "px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all duration-200 cursor-pointer select-none shrink-0",
-                        pillStyle,
-                      )}
-                    >
-                      {type.label}
-                    </button>
-                  );
-                })}
-              </div>
 
               {/* Ô tìm kiếm nhanh nhỏ gọn */}
               <div className="relative w-full md:w-72 shrink-0">
@@ -742,8 +667,6 @@ function BrowseFilmsContent() {
                 {totalItems ? `• Tổng số ${totalItems}` : ""}
               </span>
             </div>
-          </>
-        )}
 
         {/* ── Lưới Thẻ Phim Chuẩn 7 Cột Phong Cách Trang Chủ (2xl:grid-cols-7) ── */}
         {isLoading ? (
