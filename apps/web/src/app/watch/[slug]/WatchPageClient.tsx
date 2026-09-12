@@ -130,6 +130,11 @@ const AdvancedCommentSection = dynamic(
   },
 );
 
+const MoviePartSelector = dynamic(
+  () => import('@/components/film/MoviePartSelector').then((module) => module.MoviePartSelector),
+  { ssr: false },
+);
+
 const TYPE_CFG: Record<ServerType, { label: string; Icon: any; active: string; inactive: string }> =
   {
     vietsub: {
@@ -4301,7 +4306,13 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       <div className="space-y-2.5">
                         {/* Episode Header & Action Controls Bar */}
                         <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 sm:gap-2">
+                            <MoviePartSelector
+                              film={film}
+                              currentSlug={slug}
+                              target="watch"
+                              currentEp={currentEp}
+                            />
                             <span className="text-xs font-bold text-neutral-200">
                               Danh sách tập
                             </span>
