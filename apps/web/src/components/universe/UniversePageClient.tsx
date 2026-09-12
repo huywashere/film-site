@@ -14,7 +14,7 @@ import {
   Tv,
 } from "lucide-react";
 import dynamic from "next/dynamic";
-import { FilmCard, FilmItem, resolveImageUrl } from "@/components/film/FilmCard";
+import { FilmCard, FilmItem } from "@/components/film/FilmCard";
 import { Pagination } from "@/components/film/Pagination";
 import { LandscapeSpotlightRow } from "@/components/film/LandscapeSpotlightRow";
 import {
@@ -25,11 +25,191 @@ import {
   UniverseSpotlightItem,
 } from "@/lib/universe-catalog";
 import { cn } from "@/lib/utils";
+import { wsrvImageUrl, isWsrvImageUrl } from "@/lib/image-cdn";
+import { resolveImageUrl } from "@/lib/movie-image-url";
 
 const TrailerModal = dynamic(
   () => import("@/components/film/TrailerModal").then((m) => m.TrailerModal),
   { ssr: false },
 );
+
+function UniverseSpotlightBackdrop({
+  item,
+  isActive,
+  isPriority,
+}: {
+  item: UniverseSpotlightItem;
+  isActive: boolean;
+  isPriority: boolean;
+}) {
+  const candidates = useMemo(() => {
+    const list: string[] = [];
+    if (item.heroBackdrop) {
+      // 1. Primary TMDB image (processed through Next.js Image Optimization)
+      list.push(item.heroBackdrop);
+      // 2. Cloudflare edge proxy (wsrv.nl - globally unblocked in VN)
+      const wsrv = wsrvImageUrl(item.heroBackdrop, "backdrop");
+      if (wsrv) list.push(wsrv);
+      // 3. Same-origin local image proxy
+      list.push(`/api/image-proxy?url=${encodeURIComponent(item.heroBackdrop)}&strict=1`);
+    }
+    return list;
+  }, [item.heroBackdrop]);
+
+  const [candidateIdx, setCandidateIdx] = useState(0);
+
+  useEffect(() => {
+    setCandidateIdx(0);
+  }, [item.heroBackdrop]);
+
+  const src = candidates[candidateIdx] || candidates[0];
+
+  return (
+    <div
+      className={cn(
+        "absolute inset-0 transition-opacity duration-1000 ease-in-out bg-[#07080c]",
+        isActive
+          ? "opacity-100 z-0 pointer-events-auto"
+          : "opacity-0 -z-10 pointer-events-none",
+      )}
+    >
+      {/* Ambient atmospheric backdrop glow so hero is never pitch black */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_35%,rgba(35,173,229,0.14),transparent_50%),linear-gradient(135deg,#07080c_0%,#111620_52%,#07080c_100%)]" />
+
+      {src && (
+        <Image
+          key={src}
+          src={src}
+          alt={item.name}
+          fill
+          priority={isPriority}
+          fetchPriority={isPriority ? "high" : "low"}
+          loading={isPriority ? "eager" : "lazy"}
+          decoding={isPriority ? "sync" : "async"}
+          unoptimized={isWsrvImageUrl(src) || src.startsWith("/api/")}
+          sizes="100vw"
+          onError={() => {
+            if (candidateIdx < candidates.length - 1) {
+              setCandidateIdx((prev) => prev + 1);
+            }
+          }}
+          className="object-cover object-center sm:object-[center_22%]"
+        />
+      )}
+    </div>
+  );
+}
+
+function UniverseSpotlightLogo({
+  titleLogo,
+  name,
+}: {
+  titleLogo?: string | null;
+  name: string;
+}) {
+  const candidates = useMemo(() => {
+    const list: string[] = [];
+    if (titleLogo) {
+      // 1. Primary logo (processed through Next.js Image Optimization)
+      list.push(titleLogo);
+      // 2. Cloudflare edge proxy (wsrv.nl - globally unblocked in VN)
+      const wsrv = wsrvImageUrl(titleLogo, "titleLogo");
+      if (wsrv) list.push(wsrv);
+      // 3. Same-origin local image proxy
+      list.push(`/api/image-proxy?url=${encodeURIComponent(titleLogo)}&strict=1`);
+    }
+    return list;
+  }, [titleLogo]);
+
+  const [candidateIdx, setCandidateIdx] = useState(0);
+  const [hasFailedAll, setHasFailedAll] = useState(false);
+
+  useEffect(() => {
+    setCandidateIdx(0);
+    setHasFailedAll(!titleLogo);
+  }, [titleLogo]);
+
+  const src = candidates[candidateIdx];
+
+  if (!titleLogo || hasFailedAll || !src) {
+    return (
+      <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]">
+        {name}
+      </h1>
+    );
+  }
+
+  return (
+    <div className="relative h-14 sm:h-20 lg:h-24 w-60 sm:w-80 lg:w-96 max-w-full drop-shadow-[0_8px_24px_rgba(0,0,0,0.9)]">
+      <Image
+        key={src}
+        src={src}
+        alt={name}
+        fill
+        priority
+        fetchPriority="high"
+        loading="eager"
+        decoding="sync"
+        unoptimized={isWsrvImageUrl(src) || src.startsWith("/api/")}
+        onError={() => {
+          if (candidateIdx < candidates.length - 1) {
+            setCandidateIdx((prev) => prev + 1);
+          } else {
+            setHasFailedAll(true);
+          }
+        }}
+        className="object-contain object-left"
+        sizes="(max-width: 768px) 240px, 384px"
+      />
+    </div>
+  );
+}
+
+function UniverseThumbnailButton({
+  item,
+  isActive,
+  onClick,
+}: {
+  item: UniverseSpotlightItem;
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  const [useFallback, setUseFallback] = useState(false);
+  const src = useFallback
+    ? wsrvImageUrl(item.heroBackdrop, "thumbnail") || item.heroBackdrop
+    : item.heroBackdrop;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "relative h-14 w-24 sm:h-16 sm:w-28 rounded-xl overflow-hidden border transition-all duration-300 cursor-pointer shrink-0 bg-neutral-900",
+        isActive
+          ? "border-white ring-2 ring-white/60 scale-105 shadow-xl"
+          : "border-white/20 opacity-60 hover:opacity-100 hover:border-white/50",
+      )}
+    >
+      <Image
+        key={src}
+        src={src}
+        alt={item.name}
+        fill
+        sizes="112px"
+        loading="lazy"
+        unoptimized={useFallback}
+        onError={() => {
+          if (!useFallback) setUseFallback(true);
+        }}
+        className="object-cover"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+      <span className="absolute bottom-1 left-1.5 right-1.5 text-[9px] font-bold text-white truncate text-left">
+        {item.name}
+      </span>
+    </button>
+  );
+}
 
 interface UniversePageClientProps {
   universe: "marvel" | "dc";
@@ -78,14 +258,16 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
     const handle = idleCallback(() => {
       spotlights.slice(1).forEach((item) => {
         if (item.heroBackdrop) {
+          const wsrv = wsrvImageUrl(item.heroBackdrop, "backdrop");
           const img = new window.Image();
           img.decoding = "async";
-          img.src = item.heroBackdrop;
+          img.src = wsrv || item.heroBackdrop;
         }
         if (item.titleLogo) {
+          const wsrv = wsrvImageUrl(item.titleLogo, "titleLogo");
           const img = new window.Image();
           img.decoding = "async";
-          img.src = item.titleLogo;
+          img.src = wsrv || item.titleLogo;
         }
       });
     });
@@ -104,9 +286,9 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
       slug: activeSpotlight.slug,
       name: activeSpotlight.name,
       origin_name: activeSpotlight.origin_name,
-      poster_url: activeSpotlight.heroBackdrop,
+      type: "single",
       thumb_url: activeSpotlight.heroBackdrop,
-      heroBackdrop: activeSpotlight.heroBackdrop,
+      poster_url: activeSpotlight.heroBackdrop,
       year: activeSpotlight.year,
       quality: activeSpotlight.quality,
       lang: activeSpotlight.lang,
@@ -115,7 +297,8 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
     };
   }, [activeSpotlight]);
 
-  // Themed rails data
+  // Rails categorized by franchise
+  const isDc = !isMarvel;
   const rail1 = useMemo(() => {
     const raw = getUniverseFilms(universe, {
       subFranchise: isMarvel ? "avengers" : "batman",
@@ -125,14 +308,14 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
 
   const rail2 = useMemo(() => {
     const raw = getUniverseFilms(universe, {
-      subFranchise: isMarvel ? "spiderman" : "justiceleague",
+      subFranchise: isMarvel ? "spiderman" : "justice-league",
     });
     return mapRawToFilmItems(raw);
   }, [universe, isMarvel]);
 
   const rail3 = useMemo(() => {
     const raw = getUniverseFilms(universe, {
-      subFranchise: isMarvel ? "xmen" : "villains",
+      subFranchise: isMarvel ? "xmen" : "superman",
     });
     return mapRawToFilmItems(raw);
   }, [universe, isMarvel]);
@@ -165,33 +348,14 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
         className="relative w-full h-[76vh] sm:h-[82vh] lg:h-[88vh] min-h-[580px] max-h-[960px] overflow-hidden select-none"
       >
         {/* Backdrop Crossfade (Preloaded & Seamless) */}
-        {spotlights.map((item, idx) => {
-          const isActive = idx === currentIdx;
-          return (
-            <div
-              key={item.id}
-              className={cn(
-                "absolute inset-0 transition-opacity duration-1000 ease-in-out",
-                isActive
-                  ? "opacity-100 z-0 pointer-events-auto"
-                  : "opacity-0 -z-10 pointer-events-none",
-              )}
-            >
-              <Image
-                src={item.heroBackdrop}
-                alt={item.name}
-                fill
-                priority={idx === 0}
-                fetchPriority={idx === 0 ? "high" : "low"}
-                loading={idx === 0 ? "eager" : "lazy"}
-                decoding={idx === 0 ? "sync" : "async"}
-                unoptimized={Boolean(item.heroBackdrop?.includes("image.tmdb.org"))}
-                sizes="100vw"
-                className="object-cover object-center sm:object-[center_22%]"
-              />
-            </div>
-          );
-        })}
+        {spotlights.map((item, idx) => (
+          <UniverseSpotlightBackdrop
+            key={item.id}
+            item={item}
+            isActive={idx === currentIdx}
+            isPriority={idx === 0}
+          />
+        ))}
 
         {/* Cinematic Lighting Gradients */}
         {/* Left readable text shadow mask */}
@@ -216,10 +380,6 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                   alt={isMarvel ? "Marvel Studios" : "DC Universe"}
                   fill
                   priority
-                  fetchPriority="high"
-                  loading="eager"
-                  decoding="sync"
-                  unoptimized
                   className="object-contain object-left"
                 />
               </div>
@@ -230,29 +390,10 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
 
             {/* Movie Title or Logo */}
             <div key={activeSpotlight.slug} className="space-y-2">
-              {activeSpotlight.titleLogo ? (
-                <div className="relative h-14 sm:h-20 lg:h-24 w-60 sm:w-80 lg:w-96 max-w-full drop-shadow-[0_8px_24px_rgba(0,0,0,0.9)]">
-                  <Image
-                    src={activeSpotlight.titleLogo}
-                    alt={activeSpotlight.name}
-                    fill
-                    priority
-                    fetchPriority="high"
-                    loading="eager"
-                    decoding="sync"
-                    unoptimized={Boolean(
-                      activeSpotlight.titleLogo?.includes("image.tmdb.org") ||
-                      activeSpotlight.titleLogo?.endsWith(".svg")
-                    )}
-                    className="object-contain object-left"
-                    sizes="(max-width: 768px) 240px, 384px"
-                  />
-                </div>
-              ) : (
-                <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]">
-                  {activeSpotlight.name}
-                </h1>
-              )}
+              <UniverseSpotlightLogo
+                titleLogo={activeSpotlight.titleLogo}
+                name={activeSpotlight.name}
+              />
 
               <div className="text-xs sm:text-sm font-medium text-neutral-300 drop-shadow">
                 <span>{activeSpotlight.origin_name}</span>
@@ -315,35 +456,14 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
 
           {/* Bottom Right Carousel Thumbnails */}
           <div className="mt-8 lg:mt-0 lg:absolute lg:right-14 lg:bottom-16 flex items-center gap-2.5 overflow-x-auto no-scrollbar py-2">
-            {spotlights.map((item, idx) => {
-              const isActive = idx === currentIdx;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setCurrentIdx(idx)}
-                  className={cn(
-                    "relative h-14 w-24 sm:h-16 sm:w-28 rounded-xl overflow-hidden border transition-all duration-300 cursor-pointer shrink-0",
-                    isActive
-                      ? "border-white ring-2 ring-white/60 scale-105 shadow-xl"
-                      : "border-white/20 opacity-60 hover:opacity-100 hover:border-white/50",
-                  )}
-                >
-                  <Image
-                    src={item.heroBackdrop}
-                    alt={item.name}
-                    fill
-                    sizes="112px"
-                    loading="lazy"
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                  <span className="absolute bottom-1 left-1.5 right-1.5 text-[9px] font-bold text-white truncate text-left">
-                    {item.name}
-                  </span>
-                </button>
-              );
-            })}
+            {spotlights.map((item, idx) => (
+              <UniverseThumbnailButton
+                key={item.id}
+                item={item}
+                isActive={idx === currentIdx}
+                onClick={() => setCurrentIdx(idx)}
+              />
+            ))}
 
             {/* Prev / Next Arrows */}
             <div className="flex items-center gap-1 pl-1 shrink-0">

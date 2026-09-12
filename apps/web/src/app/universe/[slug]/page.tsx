@@ -1,7 +1,6 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { UniversePageClient } from "@/components/universe/UniversePageClient";
-import { getUniverseSpotlights } from "@/lib/universe-catalog";
 
 interface UniversePageProps {
   params: Promise<{ slug: string }>;
@@ -37,39 +36,5 @@ export default async function UniversePage({ params }: UniversePageProps) {
   }
 
   const universe = slug as "marvel" | "dc";
-  const spotlights = getUniverseSpotlights(universe);
-  const initial = spotlights[0];
-  const universeBrandLogo =
-    universe === "marvel"
-      ? "/images/logos/marvel-studios.svg"
-      : "/images/logos/dc-universe.svg";
-
-  return (
-    <>
-      {/* ── HIGH-PRIORITY PRELOAD HEADERS FOR 0MS HERO RENDER ── */}
-      {initial?.heroBackdrop && (
-        <link
-          rel="preload"
-          as="image"
-          href={initial.heroBackdrop}
-          fetchPriority="high"
-        />
-      )}
-      <link
-        rel="preload"
-        as="image"
-        href={universeBrandLogo}
-        fetchPriority="high"
-      />
-      {initial?.titleLogo && (
-        <link
-          rel="preload"
-          as="image"
-          href={initial.titleLogo}
-          fetchPriority="high"
-        />
-      )}
-      <UniversePageClient universe={universe} />
-    </>
-  );
+  return <UniversePageClient universe={universe} />;
 }
