@@ -446,11 +446,24 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             </p>
             <div className="space-y-1">
               {[
-                { title: "Báo lỗi", href: "/report", icon: HelpCircle },
-                { title: "Chính sách bảo mật", href: "/privacy", icon: Shield },
-                { title: "Điều khoản sử dụng", href: "/terms", icon: FileText },
-                { title: "Liên hệ", href: "/contact", icon: Mail },
+                { title: "Báo lỗi", href: "/report", icon: HelpCircle, disabled: true },
+                { title: "Chính sách bảo mật", href: "/privacy", icon: Shield, disabled: true },
+                { title: "Điều khoản sử dụng", href: "/terms", icon: FileText, disabled: true },
+                { title: "Liên hệ", href: "/contact", icon: Mail, disabled: true },
               ].map((item) => {
+                if (item.disabled) {
+                  return (
+                    <div
+                      key={item.href}
+                      className="flex min-h-11 items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-neutral-500 cursor-not-allowed select-none opacity-50"
+                      title="Tính năng đang tạm đóng để nâng cấp và bảo trì"
+                    >
+                      <item.icon size={17} className="text-neutral-600" strokeWidth={2} />
+                      <span>{item.title}</span>
+                    </div>
+                  );
+                }
+
                 const isActive = pathname.startsWith(item.href);
 
                 return (

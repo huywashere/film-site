@@ -3995,6 +3995,23 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
             <div className={watchContentTab === 'episodes' ? 'block' : 'hidden'}>
               <div className="space-y-3.5 py-1">
+                {/* ── Server Quality & Fallback Notice ── */}
+                <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs sm:text-[13px] leading-snug shadow-sm">
+                  <AlertTriangle size={16} className="shrink-0 text-amber-400" />
+                  <p className="flex-1 font-medium">
+                    <span className="font-semibold text-amber-200">
+                      {lang === 'en'
+                        ? 'Audio glitch, lag or poor quality?'
+                        : 'Phim bị lỗi âm thanh, giật lag, chất lượng kém?'}
+                    </span>{' '}
+                    <span className="text-amber-300/90">
+                      {lang === 'en'
+                        ? 'Please switch to the Backup Server below.'
+                        : 'Vui lòng chuyển sang Máy chủ Dự phòng bên dưới.'}
+                    </span>
+                  </p>
+                </div>
+
                 {/* ── Seamless Cinema Streaming Controls ── */}
                 {(() => {
                   const subEps = episodes.filter((ep) => ep._type === 'vietsub');

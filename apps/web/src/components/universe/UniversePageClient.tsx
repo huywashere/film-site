@@ -66,6 +66,37 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
     return () => clearInterval(timer);
   }, [isPaused, spotlights.length]);
 
+  // Idle-preload remaining spotlight backdrops and logos into browser memory for 0ms transitions
+  useEffect(() => {
+    if (typeof window === "undefined" || !spotlights.length) return;
+
+    const idleCallback =
+      typeof window.requestIdleCallback === "function"
+        ? window.requestIdleCallback
+        : (cb: () => void) => window.setTimeout(cb, 150);
+
+    const handle = idleCallback(() => {
+      spotlights.slice(1).forEach((item) => {
+        if (item.heroBackdrop) {
+          const img = new window.Image();
+          img.decoding = "async";
+          img.src = item.heroBackdrop;
+        }
+        if (item.titleLogo) {
+          const img = new window.Image();
+          img.decoding = "async";
+          img.src = item.titleLogo;
+        }
+      });
+    });
+
+    return () => {
+      if (typeof window.cancelIdleCallback === "function" && typeof handle === "number") {
+        window.cancelIdleCallback(handle);
+      }
+    };
+  }, [spotlights]);
+
   // Convert spotlight to FilmItem for trailer modal
   const activeFilmItem: FilmItem & { trailer_url?: string } = useMemo(() => {
     return {
@@ -151,6 +182,10 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                 alt={item.name}
                 fill
                 priority={idx === 0}
+                fetchPriority={idx === 0 ? "high" : "low"}
+                loading={idx === 0 ? "eager" : "lazy"}
+                decoding={idx === 0 ? "sync" : "async"}
+                unoptimized={Boolean(item.heroBackdrop?.includes("image.tmdb.org"))}
                 sizes="100vw"
                 className="object-cover object-center sm:object-[center_22%]"
               />
@@ -180,6 +215,11 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                   }
                   alt={isMarvel ? "Marvel Studios" : "DC Universe"}
                   fill
+                  priority
+                  fetchPriority="high"
+                  loading="eager"
+                  decoding="sync"
+                  unoptimized
                   className="object-contain object-left"
                 />
               </div>
@@ -196,6 +236,14 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                     src={activeSpotlight.titleLogo}
                     alt={activeSpotlight.name}
                     fill
+                    priority
+                    fetchPriority="high"
+                    loading="eager"
+                    decoding="sync"
+                    unoptimized={Boolean(
+                      activeSpotlight.titleLogo?.includes("image.tmdb.org") ||
+                      activeSpotlight.titleLogo?.endsWith(".svg")
+                    )}
                     className="object-contain object-left"
                     sizes="(max-width: 768px) 240px, 384px"
                   />
@@ -285,6 +333,8 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                     src={item.heroBackdrop}
                     alt={item.name}
                     fill
+                    sizes="112px"
+                    loading="lazy"
                     className="object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />

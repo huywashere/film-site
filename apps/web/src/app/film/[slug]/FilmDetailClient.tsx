@@ -64,7 +64,7 @@ import {
 import { safeJsonLd } from '@/lib/safe-json-ld';
 import { cardFont } from '@/lib/fonts';
 import { guestDataStorage } from '@/lib/user-data';
-import { useOmdb } from '@/hooks/useOmdb';
+import { useOmdb, type OmdbData } from '@/hooks/useOmdb';
 import type { ServerTmdbResult } from '@/lib/server/movie-tmdb-server';
 
 import { MobileRelatedCarousel } from '@/components/film/MobileRelatedCarousel';
@@ -1572,6 +1572,37 @@ export default function FilmDetailPage({
   const imdbRatingLabel = formatRating(imdbRating);
   const tmdbVoteLabel = formatVoteCount(tmdbVoteCount);
   const imdbVoteLabel = formatVoteCount(imdbVoteCount);
+
+  // Effective OMDB ratings: use OMDB API data when available, with instant seamless fallback from film IMDb/TMDB data
+  const effectiveOmdb = useMemo<OmdbData | null>(() => {
+    if (omdb) return omdb;
+    const resolvedImdbId =
+      film?.imdb?.id && film.imdb.id !== '0' ? film.imdb.id : film?.imdb_id || null;
+    const resolvedImdbVoteAvg = Number(
+      film?.imdb?.vote_average || film?.imdb_rating || film?.imdb?.rating || 0,
+    );
+    const resolvedImdbVoteCount = Number(film?.imdb?.vote_count || 0);
+
+    if (!resolvedImdbId && !resolvedImdbVoteAvg) return null;
+
+    return {
+      imdbId: resolvedImdbId,
+      title: film?.origin_name || film?.name || null,
+      year: film?.year ? String(film.year) : null,
+      rated: null,
+      runtime: film?.time || null,
+      imdbRating: resolvedImdbVoteAvg > 0 ? formatRating(resolvedImdbVoteAvg) : null,
+      imdbVotes: resolvedImdbVoteCount > 0 ? formatVoteCount(resolvedImdbVoteCount) : null,
+      rottenTomatoes: null,
+      metacritic: null,
+      awards: null,
+      boxOffice: null,
+      plot: null,
+      language: null,
+      country: countries[0]?.name || null,
+      type: film?.type || null,
+    };
+  }, [omdb, film, countries]);
   const statusLabel =
     film?.status === 'completed' ||
     String(film?.episode_current || '')
@@ -2002,7 +2033,7 @@ export default function FilmDetailPage({
 
             {/* ── OMDB Ratings (below action buttons) ── */}
             <AnimatePresence>
-              {omdb && (
+              {effectiveOmdb && (
                 <motion.div
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -2011,12 +2042,16 @@ export default function FilmDetailPage({
                   className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-2 pt-3 w-full"
                 >
                   {/* IMDb chip */}
-                  {omdb.imdbRating && (
+                  {effectiveOmdb.imdbRating && (
                     <a
-                      href={omdb.imdbId ? `https://www.imdb.com/title/${omdb.imdbId}` : undefined}
+                      href={
+                        effectiveOmdb.imdbId
+                          ? `https://www.imdb.com/title/${effectiveOmdb.imdbId}`
+                          : undefined
+                      }
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group flex items-center gap-1.5 rounded-lg border border-[#f5c518]/25 bg-[#f5c518]/8 px-2.5 py-1.5 hover:border-[#f5c518]/50 transition-all"
+                      className="group flex items-center gap-1.5 rounded-lg border border-[#f5c518]/25 bg-[#f5c518]/8 px-2.5 py-1.5 hover:border-[#f5c518]/50 hover:bg-[#f5c518]/15 transition-all cursor-pointer active:scale-95 shadow-sm"
                     >
                       <svg viewBox="0 0 64 32" width="32" height="16" aria-label="IMDb">
                         <rect width="64" height="32" rx="4" fill="#F5C518" />
@@ -2032,26 +2067,26 @@ export default function FilmDetailPage({
                         </text>
                       </svg>
                       <span className="text-xs font-black text-white">
-                        {omdb.imdbRating}
+                        {effectiveOmdb.imdbRating}
                         <span className="text-neutral-500 font-normal">/10</span>
                       </span>
-                      {omdb.imdbVotes && (
-                        <span className="text-[10px] text-neutral-500 hidden sm:inline">
-                          ({omdb.imdbVotes})
+                      {effectiveOmdb.imdbVotes && (
+                        <span className="text-[10px] text-neutral-400 hidden sm:inline">
+                          ({effectiveOmdb.imdbVotes})
                         </span>
                       )}
                     </a>
                   )}
 
                   {/* RT chip */}
-                  {omdb.rottenTomatoes &&
+                  {effectiveOmdb.rottenTomatoes &&
                     (() => {
-                      const pct = parseInt(omdb.rottenTomatoes!);
+                      const pct = parseInt(effectiveOmdb.rottenTomatoes!);
                       const isFresh = pct >= 60;
                       return (
                         <div
                           className={cn(
-                            'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5',
+                            'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 shadow-sm',
                             isFresh
                               ? 'border-red-500/25 bg-red-500/8'
                               : 'border-white/10 bg-white/[0.03]',
@@ -2100,7 +2135,7 @@ export default function FilmDetailPage({
                               isFresh ? 'text-red-400' : 'text-neutral-400',
                             )}
                           >
-                            {omdb.rottenTomatoes}
+                            {effectiveOmdb.rottenTomatoes}
                           </span>
                           <span
                             className={cn(
@@ -2117,12 +2152,13 @@ export default function FilmDetailPage({
                     })()}
 
                   {/* Metacritic chip */}
-                  {omdb.metacritic &&
+                  {effectiveOmdb.metacritic &&
                     (() => {
-                      const score = parseInt(omdb.metacritic!);
-                      const color = score >= 61 ? '#43d45a' : score >= 40 ? '#ffbd3f' : '#ff4c4c';
+                      const score = parseInt(effectiveOmdb.metacritic!);
+                      const color =
+                        score >= 61 ? '#43d45a' : score >= 40 ? '#ffbd3f' : '#ff4c4c';
                       return (
-                        <div className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5">
+                        <div className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 shadow-sm">
                           <span
                             className="text-[10px] font-black w-7 h-6 rounded flex items-center justify-center leading-none"
                             style={{ background: color, color: '#000' }}
@@ -2135,33 +2171,33 @@ export default function FilmDetailPage({
                     })()}
 
                   {/* Awards */}
-                  {omdb.awards && (
+                  {effectiveOmdb.awards && (
                     <div className="flex items-center justify-center sm:justify-start gap-1.5 w-full mt-0.5">
                       <Trophy size={11} className="text-amber-400 shrink-0" />
-                      <span className="text-[11px] text-neutral-500 leading-snug line-clamp-2">
-                        {omdb.awards}
+                      <span className="text-[11px] text-neutral-400 leading-snug line-clamp-2">
+                        {effectiveOmdb.awards}
                       </span>
                     </div>
                   )}
 
                   {/* Meta row */}
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-1 text-[11px] text-neutral-500 w-full pt-0.5">
-                    {omdb.boxOffice && (
+                    {effectiveOmdb.boxOffice && (
                       <span className="flex items-center gap-1">
                         <DollarSign size={10} />
-                        <span className="text-neutral-400">{omdb.boxOffice}</span>
+                        <span className="text-neutral-400">{effectiveOmdb.boxOffice}</span>
                       </span>
                     )}
-                    {omdb.rated && (
+                    {effectiveOmdb.rated && (
                       <span className="border border-white/15 text-neutral-400 px-1.5 py-px rounded text-[10px] font-bold tracking-wider">
-                        {omdb.rated}
+                        {effectiveOmdb.rated}
                       </span>
                     )}
-                    {omdb.language && (
+                    {effectiveOmdb.language && (
                       <span className="flex items-center gap-1">
                         <Globe size={10} />
                         <span>
-                          {omdb.language
+                          {effectiveOmdb.language
                             ?.split(', ')
                             .map(
                               (l: string) =>
@@ -2188,10 +2224,10 @@ export default function FilmDetailPage({
                         </span>
                       </span>
                     )}
-                    {omdb.country && (
+                    {effectiveOmdb.country && (
                       <span>
                         ·{' '}
-                        {omdb.country
+                        {effectiveOmdb.country
                           ?.split(', ')
                           .map(
                             (c: string) =>

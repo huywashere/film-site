@@ -258,6 +258,15 @@ export function SupportHub({ initialTab = 'report' }: SupportHubProps) {
 
         {/* ── Content Container: Seamless background layout ── */}
         <div className="rounded-3xl border border-white/[0.08] bg-white/[0.02] p-5 sm:p-8 md:p-10">
+          {/* ── Temporary Maintenance Notice ── */}
+          <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs sm:text-sm font-medium">
+            <AlertTriangle size={18} className="shrink-0 text-amber-400" />
+            <p>
+              <strong className="font-semibold text-amber-200">Thông báo:</strong>{' '}
+              <span>Hệ thống biểu mẫu hỗ trợ và liên hệ đang tạm thời đóng để bảo trì và nâng cấp. Chức năng sẽ sớm được mở lại trong thời gian tới.</span>
+            </p>
+          </div>
+
           {/* ════════ TAB 1: BÁO LỖI ════════ */}
           {activeTab === 'report' && (
             <div className="space-y-8">
@@ -440,20 +449,12 @@ export function SupportHub({ initialTab = 'report' }: SupportHubProps) {
 
                     <button
                       type="submit"
-                      disabled={isSubmittingReport}
-                      className="inline-flex items-center justify-center gap-2 rounded-full bg-white hover:bg-neutral-200 text-black px-8 py-3.5 text-xs sm:text-sm font-extrabold shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                      disabled={true}
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-white/10 text-neutral-400 px-8 py-3.5 text-xs sm:text-sm font-extrabold shadow-sm transition-all cursor-not-allowed border border-white/10"
+                      title="Biểu mẫu đang tạm đóng để nâng cấp"
                     >
-                      {isSubmittingReport ? (
-                        <>
-                          <Loader2 size={16} className="animate-spin text-black" />
-                          <span>Đang gửi báo cáo...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send size={15} />
-                          <span>Gửi Báo Cáo Sự Cố</span>
-                        </>
-                      )}
+                      <Ban size={15} />
+                      <span>Biểu mẫu đang tạm đóng</span>
                     </button>
                   </form>
                 )}
@@ -799,20 +800,12 @@ export function SupportHub({ initialTab = 'report' }: SupportHubProps) {
 
                     <button
                       type="submit"
-                      disabled={isSubmittingContact}
-                      className="inline-flex items-center justify-center gap-2 rounded-full bg-white hover:bg-neutral-200 text-black px-8 py-3.5 text-xs sm:text-sm font-extrabold shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                      disabled={true}
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-white/10 text-neutral-400 px-8 py-3.5 text-xs sm:text-sm font-extrabold shadow-sm transition-all cursor-not-allowed border border-white/10"
+                      title="Biểu mẫu đang tạm đóng để nâng cấp"
                     >
-                      {isSubmittingContact ? (
-                        <>
-                          <Loader2 size={16} className="animate-spin text-black" />
-                          <span>Đang gửi tin nhắn...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send size={15} />
-                          <span>Gửi Tin Nhắn</span>
-                        </>
-                      )}
+                      <Ban size={15} />
+                      <span>Biểu mẫu đang tạm đóng</span>
                     </button>
                   </form>
                 )}

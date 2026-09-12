@@ -59,19 +59,29 @@ async function fetchOmdbData(film: any, cacheKey: string): Promise<OmdbData | nu
   const cached = readClientCachedOmdb(cacheKey);
   if (cached) return cached;
 
-  const { imdbId } = extractTmdbInfo(film);
+  const { imdbId, tmdbId, type } = extractTmdbInfo(film);
   const title = film?.origin_name || film?.name || film?.title || "";
   const year = film?.year ? String(film.year) : undefined;
-  const type = film?.type;
+  const filmType = film?.type || type;
 
   const params = new URLSearchParams();
   if (imdbId) {
     params.set("imdbId", imdbId);
-  } else if (title) {
+  }
+  if (tmdbId) {
+    params.set("tmdbId", String(tmdbId));
+  }
+  if (title) {
     params.set("title", title);
-    if (year) params.set("year", year);
-    if (type) params.set("type", type);
-  } else {
+  }
+  if (year) {
+    params.set("year", year);
+  }
+  if (filmType) {
+    params.set("type", filmType);
+  }
+
+  if (!imdbId && !tmdbId && !title) {
     return null;
   }
 
@@ -93,7 +103,7 @@ async function fetchOmdbData(film: any, cacheKey: string): Promise<OmdbData | nu
  * Sẽ tìm bằng IMDb ID (nếu có) hoặc tiêu đề gốc + năm.
  */
 export function useOmdb(film: any, enabled = true) {
-  const { imdbId } = extractTmdbInfo(film ?? {});
+  const { imdbId, tmdbId } = extractTmdbInfo(film ?? {});
   const title = film?.origin_name || film?.name || film?.title || "";
   const cacheKey = getCacheKey(imdbId, title, film?.year);
 
@@ -103,7 +113,7 @@ export function useOmdb(film: any, enabled = true) {
     queryKey: ["omdb", cacheKey],
     queryFn: () => fetchOmdbData(film, cacheKey),
     initialData: initialCached || undefined,
-    enabled: enabled && !!film && !!(imdbId || title),
+    enabled: enabled && !!film && !!(imdbId || tmdbId || title),
     staleTime: 1000 * 60 * 60 * 24,    // 24h
     gcTime: 1000 * 60 * 60 * 24 * 7,   // 7 days
     retry: 1,

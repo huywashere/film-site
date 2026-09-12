@@ -86,7 +86,13 @@ export function Footer() {
   const [catIndex, setCatIndex] = useState(0);
   const { t, lang } = useTranslation();
 
-  const footerColumns = [
+  interface FooterLinkItem {
+    label: string;
+    href: string;
+    disabled?: boolean;
+  }
+
+  const footerColumns: { heading: string; links: FooterLinkItem[] }[] = [
     {
       heading: t("footer.quickLinks", "Khám phá"),
       links: [
@@ -135,10 +141,10 @@ export function Footer() {
     {
       heading: t("footer.support", "Hỗ trợ & Bản quyền"),
       links: [
-        { label: t("footer.report", "Báo lỗi"), href: "/report" },
-        { label: t("footer.privacy", "Chính sách bảo mật"), href: "/privacy" },
-        { label: t("footer.terms", "Điều khoản sử dụng"), href: "/terms" },
-        { label: t("footer.contact", "Liên hệ"), href: "/contact" },
+        { label: t("footer.report", "Báo lỗi"), href: "/report", disabled: true },
+        { label: t("footer.privacy", "Chính sách bảo mật"), href: "/privacy", disabled: true },
+        { label: t("footer.terms", "Điều khoản sử dụng"), href: "/terms", disabled: true },
+        { label: t("footer.contact", "Liên hệ"), href: "/contact", disabled: true },
       ],
     },
   ];
@@ -192,13 +198,22 @@ export function Footer() {
                 <ul className="space-y-2 sm:space-y-2.5">
                   {column.links.map((link) => (
                     <li key={link.label}>
-                      <Link
-                        href={link.href}
-                        data-footer-link="true"
-                        className="text-[12px] sm:text-[13px] text-neutral-400 transition-colors duration-150 hover:text-white"
-                      >
-                        {link.label}
-                      </Link>
+                      {link.disabled ? (
+                        <span
+                          className="text-[12px] sm:text-[13px] text-neutral-500 cursor-not-allowed select-none transition-none"
+                          title="Tính năng đang tạm đóng để nâng cấp và bảo trì"
+                        >
+                          {link.label}
+                        </span>
+                      ) : (
+                        <Link
+                          href={link.href}
+                          data-footer-link="true"
+                          className="text-[12px] sm:text-[13px] text-neutral-400 transition-colors duration-150 hover:text-white"
+                        >
+                          {link.label}
+                        </Link>
+                      )}
                     </li>
                   ))}
                 </ul>

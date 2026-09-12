@@ -78,10 +78,10 @@ export function LegalPageLayout({
   };
 
   const navLinks = [
-    { label: "Báo lỗi", href: "/report", icon: HelpCircle },
-    { label: "Chính sách bảo mật", href: "/privacy", icon: Shield },
-    { label: "Điều khoản sử dụng", href: "/terms", icon: FileText },
-    { label: "Liên hệ", href: "/contact", icon: Mail },
+    { label: "Báo lỗi", href: "/report", icon: HelpCircle, disabled: true },
+    { label: "Chính sách bảo mật", href: "/privacy", icon: Shield, disabled: true },
+    { label: "Điều khoản sử dụng", href: "/terms", icon: FileText, disabled: true },
+    { label: "Liên hệ", href: "/contact", icon: Mail, disabled: true },
   ];
 
   return (
@@ -166,6 +166,19 @@ export function LegalPageLayout({
               </p>
               <div className="space-y-1">
                 {navLinks.map((link) => {
+                  if (link.disabled) {
+                    return (
+                      <div
+                        key={link.href}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-neutral-500 cursor-not-allowed select-none opacity-60"
+                        title="Tính năng đang tạm đóng để nâng cấp"
+                      >
+                        <link.icon size={15} className="text-neutral-600 shrink-0" />
+                        <span>{link.label}</span>
+                      </div>
+                    );
+                  }
+
                   const isCurrent =
                     typeof window !== "undefined" &&
                     window.location.pathname.startsWith(link.href);
