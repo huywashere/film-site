@@ -68,6 +68,7 @@ import { useOmdb, type OmdbData } from '@/hooks/useOmdb';
 import type { ServerTmdbResult } from '@/lib/server/movie-tmdb-server';
 
 import { MobileRelatedCarousel } from '@/components/film/MobileRelatedCarousel';
+import { EpisodeNotificationBanner } from '@/components/film/EpisodeNotificationBanner';
 
 const TrailerModal = dynamic(
   () => import('@/components/film/TrailerModal').then((module) => module.TrailerModal),
@@ -2278,6 +2279,9 @@ export default function FilmDetailPage({
         </div>
 
         <div className="mt-8 space-y-8">
+          {/* Episode Air Notification Banner */}
+          <EpisodeNotificationBanner film={film} episodes={episodes} />
+
           <section
             aria-label={t('home.details', 'Thông tin phim')}
             className="grid grid-cols-2 overflow-hidden rounded-[14px] border border-white/10 bg-[#0d0f12]/65 shadow-[0_14px_50px_rgba(0,0,0,0.18)] backdrop-blur-xl sm:grid-cols-3 sm:divide-x sm:divide-white/10"
