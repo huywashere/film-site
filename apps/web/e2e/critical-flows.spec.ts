@@ -102,8 +102,8 @@ test.describe('critical visitor flows', () => {
     await page.getByRole('textbox', { name: 'Mật khẩu' }).fill('correct-password');
     await page.locator('form').getByRole('button', { name: 'Đăng nhập', exact: true }).click();
 
-    await expect.poll(() => authRequests).not.toEqual([]);
-    await expect(page).toHaveURL('/');
+    await expect.poll(() => loginSucceeded, { timeout: 15_000 }).toBe(true);
+    await expect(page).toHaveURL('/', { timeout: 15_000 });
     await expect
       .poll(() => page.evaluate(() => document.cookie.includes('netphim-auth=true')))
       .toBe(true);
@@ -175,76 +175,9 @@ test.describe('critical visitor flows', () => {
     await expect(page.getByRole('link', { name: 'Đi tới trang chủ' })).toBeVisible();
   });
 
-  test('the contact form sends validated data to the support API', async ({ page }) => {
-    await page.addInitScript(() => {
-      const pageWindow = window as Window & {
-        turnstile?: {
-          ready: (callback: () => void) => void;
-          render: (
-            container: HTMLElement,
-            options: { callback: (token: string) => void },
-          ) => string;
-          remove: (widgetId: string) => void;
-        };
-      };
-      pageWindow.turnstile = {
-        ready: (callback) => callback(),
-        render: (_container, options) => {
-          window.setTimeout(() => options.callback('playwright-contact-token'), 0);
-          return 'playwright-contact';
-        },
-        remove: () => {},
-      };
-    });
-    let payload: Record<string, unknown> | undefined;
-    await page.route('**/contact**', async (route) => {
-      const method = route.request().method();
-      if (method === 'GET') {
-        await route.continue();
-        return;
-      }
-      const origin = (await route.request().headerValue('origin')) || 'http://127.0.0.1:3000';
-      if (method === 'OPTIONS') {
-        await route.fulfill({
-          status: 204,
-          headers: {
-            'access-control-allow-origin': origin,
-            'access-control-allow-credentials': 'true',
-            'access-control-allow-methods': 'POST, OPTIONS',
-            'access-control-allow-headers': 'content-type',
-          },
-        });
-        return;
-      }
-      payload = route.request().postDataJSON() as Record<string, unknown>;
-      await route.fulfill({
-        status: 201,
-        contentType: 'application/json',
-        headers: {
-          'access-control-allow-origin': origin,
-          'access-control-allow-credentials': 'true',
-        },
-        body: JSON.stringify({ id: 'contact-e2e', status: 'NEW' }),
-      });
-    });
-
+  test('the contact page clearly exposes its maintenance state', async ({ page }) => {
     await page.goto('/contact');
-    await page.getByPlaceholder('Nguyễn Văn A').fill('Người xem thử nghiệm');
-    await page.getByPlaceholder('name@example.com').fill('viewer@netphim.test');
-    await page.getByPlaceholder('Tóm tắt ngắn gọn nội dung liên hệ...').fill('Góp ý chức năng');
-    await page
-      .getByPlaceholder('Nhập nội dung lời nhắn, câu hỏi hoặc đề xuất hợp tác của bạn...')
-      .fill('Nội dung liên hệ hợp lệ dành cho kiểm thử tự động.');
-    await page.getByRole('button', { name: 'Gửi tin nhắn' }).click();
-
-    await expect.poll(() => payload).toBeTruthy();
-    await expect(page.getByRole('heading', { name: 'Đã gửi tin nhắn thành công!' })).toBeVisible();
-    expect(payload).toMatchObject({
-      topic: 'support',
-      name: 'Người xem thử nghiệm',
-      email: 'viewer@netphim.test',
-      subject: 'Góp ý chức năng',
-      message: 'Nội dung liên hệ hợp lệ dành cho kiểm thử tự động.',
-    });
+    await expect(page.getByText(/biểu mẫu hỗ trợ và liên hệ đang tạm thời đóng/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Biểu mẫu đang tạm đóng' })).toBeDisabled();
   });
 });

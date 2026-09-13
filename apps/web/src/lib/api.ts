@@ -1465,6 +1465,9 @@ export const authApi = {
   // their bootstrap request so guests do not trigger several 401/refresh
   // round-trips and signed-in users only hydrate once.
   getMe: getCurrentUserOnce,
+  // Authentication just changed on the server, so a pre-login coalesced 401
+  // must never be reused to hydrate the newly signed-in session.
+  getMeFresh: () => api.get<User>('/auth/me'),
   verifyEmail: (data: { token: string }) => api.post('/auth/verify-email', data),
   forgotPassword: (data: { email: string }) => api.post('/auth/forgot-password', data),
   resetPassword: (data: { token: string; newPassword: string }) =>

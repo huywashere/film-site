@@ -87,7 +87,7 @@ export const useAuthStore = create<AuthState>()(
             return data as LoginResult;
           }
           set({ isLoading: false });
-          const { data: user } = await authApi.getMe();
+          const { data: user } = await authApi.getMeFresh();
           get().setUser(user);
           return { success: true, user };
         } catch (err) {

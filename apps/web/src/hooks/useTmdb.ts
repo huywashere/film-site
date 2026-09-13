@@ -177,7 +177,10 @@ export function useTmdb({
     staleTime: 1000 * 60 * 60 * 24,
   });
 
-  const seasonEpisodes = seasonData?.episodes || [];
+  const seasonEpisodes = useMemo(
+    () => seasonData?.episodes || [],
+    [seasonData?.episodes],
+  );
   const episodeStillsMap: Record<number, string> = useMemo(() => {
     const map: Record<number, string> = {};
     seasonEpisodes.forEach((ep) => {

@@ -82,6 +82,7 @@ import {
   markSourceSuccess,
   rankHealthyCandidates,
 } from '@/lib/player-source-health';
+
 import { recordTelemetry } from '@/lib/telemetry';
 import { matchMovies } from '@/lib/dedupe';
 import type { MovieSource } from '@/types/movie';
@@ -106,6 +107,8 @@ import {
 } from '@/lib/player-source-routing';
 import { buildArtworkCandidates, wsrvImageUrl, isTmdbImageUrl } from '@/lib/image-cdn';
 import { preloadNextEpisodeStream } from '@/lib/stream-preloader';
+
+const DISABLE_ARTPLAYER = false;
 
 const HlsVideoPlayer = dynamic(
   () => import('@/components/video/HlsVideoPlayer').then((module) => module.HlsVideoPlayer),
@@ -1157,6 +1160,11 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   );
   const [manualPartyCreateRequested, setManualPartyCreateRequested] = useState(false);
   const wp = useWatchParty(slug, currentEp, watchPartyRequested);
+  const {
+    isHost: watchPartyIsHost,
+    roomId: watchPartyActiveRoomId,
+    syncPlayerState: syncWatchPartyState,
+  } = wp;
   const joinWatchPartyRoom = wp.joinRoom;
   const createWatchPartyRoom = wp.createRoom;
 
@@ -1438,20 +1446,20 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   const lastSyncTimeRef = useRef<number>(0);
 
   useEffect(() => {
-    if (!artInstance || !wp.roomId || !wp.isHost) return;
+    if (!artInstance || !watchPartyActiveRoomId || !watchPartyIsHost) return;
 
     const handlePlay = () => {
       if (applyingRemoteStateRef.current) return;
       lastSyncActionRef.current = 'play';
       lastSyncTimeRef.current = artInstance.currentTime || 0;
-      wp.syncPlayerState('play', artInstance.currentTime || 0);
+      syncWatchPartyState('play', artInstance.currentTime || 0);
     };
 
     const handlePause = () => {
       if (applyingRemoteStateRef.current) return;
       lastSyncActionRef.current = 'pause';
       lastSyncTimeRef.current = artInstance.currentTime || 0;
-      wp.syncPlayerState('pause', artInstance.currentTime || 0);
+      syncWatchPartyState('pause', artInstance.currentTime || 0);
     };
 
     let seekTimer: ReturnType<typeof setTimeout> | null = null;
@@ -1461,7 +1469,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       seekTimer = setTimeout(() => {
         lastSyncActionRef.current = 'seek';
         lastSyncTimeRef.current = artInstance.currentTime || 0;
-        wp.syncPlayerState('seek', artInstance.currentTime || 0);
+        syncWatchPartyState('seek', artInstance.currentTime || 0);
       }, 150);
     };
 
@@ -1469,7 +1477,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     const heartbeat = setInterval(() => {
       if (applyingRemoteStateRef.current) return;
       if (artInstance.playing) {
-        wp.syncPlayerState('play', artInstance.currentTime || 0);
+        syncWatchPartyState('play', artInstance.currentTime || 0);
       }
     }, 6000);
 
@@ -1484,7 +1492,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       artInstance.off('pause', handlePause);
       artInstance.off('seek', handleSeek);
     };
-  }, [artInstance, wp.isHost, wp.roomId, wp.syncPlayerState]);
+  }, [artInstance, syncWatchPartyState, watchPartyActiveRoomId, watchPartyIsHost]);
 
   // ── Watch Party: Guest <- Room Playback Synchronization with Smart Drift Threshold ──
   useEffect(() => {
@@ -2805,7 +2813,17 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
           .catch(() => {});
       }
     }
-  }, [film, slug, currentEp, currentEpData?.slug, currentEpData?.name, posterUrl, user]);
+  }, [
+    currentEp,
+    currentEpData?.name,
+    currentEpData?.slug,
+    film,
+    moviePoster,
+    movieThumb,
+    posterUrl,
+    slug,
+    user,
+  ]);
 
   const createCurrentMovieParty = useCallback(async () => {
     const newRoomId = await createWatchPartyRoom({
@@ -2950,9 +2968,11 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       epName,
       film?.name,
       film?.origin_name,
+      moviePoster,
+      movieThumb,
       posterUrl,
       server?.server_name,
-      serverData.length,
+      serverData,
       slug,
       user,
       isWatchPartyHost,
@@ -3297,8 +3317,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       }
     }
   }, [episodes, searchParams]);
-
-  const DISABLE_ARTPLAYER = false;
 
   useEffect(() => {
     setFailedServers([]);

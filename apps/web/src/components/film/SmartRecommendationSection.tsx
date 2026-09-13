@@ -27,6 +27,9 @@ export function SmartRecommendationSection() {
   // 1. Compute dynamic User Taste Vector from watch history & bookmarks
   const userVector = useMemo(() => {
     return buildUserTasteVector();
+    // The seed and signed-in user deliberately invalidate the local-storage
+    // derived vector even though the function does not accept arguments.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshSeed, user]);
 
   const userHistory = useMemo(() => {
@@ -54,12 +57,11 @@ export function SmartRecommendationSection() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const rawFilms: FilmItem[] = data?.data?.items || data?.items || [];
-
   // 2. Rank candidate films using our personalized user taste scoring algorithm
   const rankedFilms = useMemo(() => {
+    const rawFilms: FilmItem[] = data?.data?.items || data?.items || [];
     return rankFilmsByUserTaste(rawFilms, userVector, false);
-  }, [rawFilms, userVector]);
+  }, [data, userVector]);
 
   const handleRefresh = () => {
     setRefreshSeed((prev) => prev + 1);

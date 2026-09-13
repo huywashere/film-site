@@ -52,12 +52,24 @@ export interface AuthModalProps {
   initialMode?: "login" | "register" | "forgot";
 }
 
+function getRedirectTarget() {
+  if (typeof window !== "undefined") {
+    const searchParams = new URLSearchParams(window.location.search);
+    const redirect = searchParams.get("redirect");
+    if (redirect && redirect.startsWith("/") && !redirect.startsWith("//")) {
+      return redirect;
+    }
+  }
+  return "/";
+}
+
 export function AuthModal({
   isPage = false,
   initialMode = "login",
 }: AuthModalProps = {}) {
   const router = useRouter();
   const modalStore = useAuthModalStore();
+  const closeAuthModal = modalStore.closeModal;
   const { setUser, login, register } = useAuthStore();
   const { toast } = useToast();
 
@@ -94,18 +106,7 @@ export function AuthModal({
     }
   };
 
-  const getRedirectTarget = () => {
-    if (typeof window !== "undefined") {
-      const searchParams = new URLSearchParams(window.location.search);
-      const redirect = searchParams.get("redirect");
-      if (redirect && redirect.startsWith("/") && !redirect.startsWith("//")) {
-        return redirect;
-      }
-    }
-    return "/";
-  };
-
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     if (isForgotMode) {
       if (isPage && initialMode === "forgot") {
         router.push("/login");
@@ -122,9 +123,9 @@ export function AuthModal({
         router.back();
       }
     } else {
-      modalStore.closeModal();
+      closeAuthModal();
     }
-  };
+  }, [closeAuthModal, initialMode, isForgotMode, isPage, router]);
 
   const isOpen = isPage ? true : modalStore.isOpen;
 
@@ -159,7 +160,7 @@ export function AuthModal({
     enabled: isOpen && !isForgotMode,
     onSuccess: () => {
       if (isPage) {
-        router.push(getRedirectTarget());
+        window.location.assign(getRedirectTarget());
       } else {
         modalStore.closeModal();
         router.refresh();
@@ -167,7 +168,7 @@ export function AuthModal({
     },
   });
 
-  const handleFirebaseUserSuccess = async (fbUser: any) => {
+  const handleFirebaseUserSuccess = useCallback(async (fbUser: any) => {
     const user = await establishFirebaseSession(fbUser);
     const avatarUrl = user.avatarUrl || fbUser.photoURL || undefined;
     const resolvedDisplayName =
@@ -183,12 +184,12 @@ export function AuthModal({
       "success",
     );
     if (isPage) {
-      router.push(getRedirectTarget());
+      window.location.assign(getRedirectTarget());
     } else {
-      modalStore.closeModal();
+      closeAuthModal();
       router.refresh();
     }
-  };
+  }, [closeAuthModal, isPage, router, setUser, toast]);
 
   useEffect(() => {
     if (!isFirebaseConfigured) return;
@@ -202,7 +203,7 @@ export function AuthModal({
       .catch((e) => console.warn("Redirect result check:", e));
 
     return undefined;
-  }, []);
+  }, [handleFirebaseUserSuccess]);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -303,13 +304,6 @@ export function AuthModal({
         }
 
         try {
-          const res = await signInWithEmailAndPassword(
-            getFirebaseAuth(),
-            loginEmail,
-            password,
-          );
-          await handleFirebaseUserSuccess(res.user);
-        } catch (fbErr: any) {
           const res = await login(
             emailOrUsername,
             password,
@@ -318,13 +312,28 @@ export function AuthModal({
           if (res?.user) {
             toast(`Đăng nhập thành công!`, "success");
             if (isPage) {
-              router.push(getRedirectTarget());
+              // A full navigation makes the new cookie visible to every
+              // server component and avoids a stale pre-login router cache.
+              window.location.assign(getRedirectTarget());
             } else {
               modalStore.closeModal();
               router.refresh();
             }
           } else {
             setErrorMsg("Email hoặc mật khẩu không chính xác.");
+          }
+        } catch (apiError) {
+          // Firebase-only email accounts remain supported, while normal API
+          // accounts no longer wait for an external Firebase failure first.
+          try {
+            const firebaseResult = await signInWithEmailAndPassword(
+              getFirebaseAuth(),
+              loginEmail,
+              password,
+            );
+            await handleFirebaseUserSuccess(firebaseResult.user);
+          } catch {
+            throw apiError;
           }
         }
       } else {

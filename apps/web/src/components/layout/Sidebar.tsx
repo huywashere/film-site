@@ -123,7 +123,7 @@ export function Sidebar() {
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isBrowsePage, pathname]);
+  }, [isBrowsePage, isPinnedPage, pathname]);
 
   useEffect(() => {
     try {

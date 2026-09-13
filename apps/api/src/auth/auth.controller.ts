@@ -130,7 +130,7 @@ export class AuthController {
 
   @Get("google")
   @UseGuards(GoogleOAuthGuard)
-  async googleAuth(@Request() req) {}
+  googleAuth() {}
 
   @Get("google/callback")
   @UseGuards(GoogleOAuthGuard)
