@@ -10,6 +10,7 @@ const EXIT_DURATION_MS = 260;
 export function LogoSplashIntro() {
   const [visible, setVisible] = useState(true);
   const [leaving, setLeaving] = useState(false);
+  const [artworkReady, setArtworkReady] = useState(false);
 
   useEffect(() => {
     const startedAt = performance.now();
@@ -54,18 +55,18 @@ export function LogoSplashIntro() {
       role="status"
       aria-live="polite"
       aria-label="Đang mở NetPhim"
-      className={`netphim-splash-shell fixed inset-0 z-[10000] overflow-hidden bg-[#06070a] transition-[opacity,filter] duration-300 ease-out ${
+      className={`fixed inset-0 z-[10000] overflow-hidden bg-[#06070a] transition-opacity duration-300 ease-out ${
         leaving
-          ? 'netphim-splash-shell--leaving pointer-events-none opacity-0 blur-[2px]'
+          ? 'pointer-events-none opacity-0'
           : 'pointer-events-auto opacity-100'
       }`}
     >
       <div
         aria-hidden="true"
-        className="netphim-splash-grid absolute -inset-[14%] block h-[128%] w-[128%] opacity-45"
+        className={`netphim-splash-artwork absolute inset-0 block transition-opacity duration-500 ${artworkReady ? 'opacity-45' : 'opacity-0'}`}
       >
         <picture className="block h-full w-full">
-          <source media="(min-width: 640px)" srcSet="/images/splash/poster-grid-desktop.webp" />
+          <source media="(min-width: 640px)" srcSet="/images/auth/login/login-2.webp" />
           <img
             src="/images/splash/poster-grid-mobile.webp"
             alt=""
@@ -74,6 +75,7 @@ export function LogoSplashIntro() {
             loading="eager"
             fetchPriority="high"
             decoding="async"
+            onLoad={() => setArtworkReady(true)}
             className="h-full w-full object-cover"
           />
         </picture>

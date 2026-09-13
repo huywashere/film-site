@@ -74,9 +74,20 @@ test('deduplicates equivalent hero sources', () => {
   assert.equal(candidates.filter((candidate) => candidate === image).length, 1);
 });
 
-test('displays the hero logo immediately without flashing plain text fallback when logo artwork exists', () => {
+test('keeps a clean text title visible until remote hero logo artwork is decoded', () => {
   const source = readFileSync('src/app/components/HeroBanner.tsx', 'utf8');
 
-  assert.match(source, /!hasLogoCandidate \|\| hasError/);
+  assert.match(source, /logoLoaded && hasLogoCandidate \? "opacity-0"/);
+  assert.match(source, /decoding="async"/);
+  assert.match(source, /failedHeroLogos/);
   assert.match(source, /preloadMovieLogo/);
+});
+
+test('uses a brand-free HLS video element instead of a YouTube iframe for the hero background', () => {
+  const source = readFileSync('src/app/components/HeroBanner.tsx', 'utf8');
+
+  assert.match(source, /function HeroPreviewLayer/);
+  assert.match(source, /await import\("hls\.js"\)/);
+  assert.match(source, /<video/);
+  assert.doesNotMatch(source, /youtube\.com\/embed/);
 });

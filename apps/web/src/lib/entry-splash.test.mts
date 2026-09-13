@@ -14,12 +14,12 @@ test('root layout renders a bounded splash without remote poster artwork', () =>
   assert.match(splash, /MAX_VISIBLE_MS = 1500/);
   assert.match(splash, /cinephim-logo\.svg/);
   assert.match(splash, /poster-grid-mobile\.webp/);
-  assert.match(splash, /poster-grid-desktop\.webp/);
+  assert.match(splash, /auth\/login\/login-2\.webp/);
   assert.doesNotMatch(splash, /image\.tmdb\.org|wsrv\.nl|intro-poster|backgroundImage/);
+  assert.doesNotMatch(splash, /blur-\[2px\]|netphim-splash-shell--leaving/);
 
-  for (const artwork of ['poster-grid-mobile.webp', 'poster-grid-desktop.webp']) {
-    assert.ok(statSync(`public/images/splash/${artwork}`).size < 80 * 1024);
-  }
+  assert.ok(statSync('public/images/splash/poster-grid-mobile.webp').size < 80 * 1024);
+  assert.ok(statSync('public/images/auth/login/login-2.webp').size < 320 * 1024);
 });
 
 test('service worker never serves stale cached HTML after a deployment', () => {

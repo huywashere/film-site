@@ -41,8 +41,6 @@ import {
   tmdbBackdrop,
   tmdbLogo,
   tmdbPoster,
-  extractTmdbInfo,
-  getYoutubeTrailer,
   getBestTitleLogo,
   sortTmdbLogos,
   type TmdbImage,
@@ -59,6 +57,7 @@ import {
   CURATED_HERO_FRANCHISE_POOL,
 } from "@/lib/curated-hero-pool";
 import { buildArtworkCandidates } from "@/lib/image-cdn";
+import { selectInitialHlsTransport } from "@/lib/player-source-routing";
 
 const TrailerModal = dynamic(
   () => import("@/components/film/TrailerModal").then((m) => m.TrailerModal),
@@ -167,9 +166,15 @@ interface HeroFilm extends FilmItem {
 const HERO_SESSION_KEY = "netphim.tmdb-hero.v7";
 const HERO_INDEX_SESSION_KEY = "netphim.tmdb-hero-index.v2";
 
-// Trailer IDs are tiny and safe to retain for the current browser session.
-// This avoids repeating the TMDB request when a hero slide cycles back.
-const heroTrailerCache = new Map<string, string>();
+type HeroPreviewSource = {
+  primary: string;
+  fallback?: string;
+};
+
+// Reuse the resolved playback transport when a hero slide cycles back. The
+// media itself remains browser/CDN cached; this only avoids another detail
+// request for the same film.
+const heroPreviewSourceCache = new Map<string, HeroPreviewSource>();
 
 const HERO_MARKETS = [
   { code: "US", region: "US", language: "en" },
@@ -544,6 +549,7 @@ async function enrichHeroTitleLogos(playlist: HeroFilm[]): Promise<HeroFilm[]> {
 }
 
 const preloadedHeroLogos = new Set<string>();
+const failedHeroLogos = new Set<string>();
 
 function buildHeroLogoCandidates(url?: string | null): string[] {
   if (!url) return [];
@@ -560,7 +566,7 @@ function buildHeroLogoCandidates(url?: string | null): string[] {
       list.push(`/api/image-proxy?url=${encodeURIComponent(clean)}&strict=1`);
     }
   }
-  return list;
+  return list.filter((src) => !failedHeroLogos.has(src));
 }
 
 function HeroMovieTitle({
@@ -592,6 +598,11 @@ function HeroMovieTitle({
     setHasError(false);
   }, [film.slug, rawLogo]);
 
+  // Text is a complete visual fallback, so the hero never waits on remote logo artwork.
+  useEffect(() => {
+    onReady();
+  }, [film.slug, onReady]);
+
   useEffect(() => {
     if (
       currentLogoSrc &&
@@ -621,7 +632,6 @@ function HeroMovieTitle({
 
   const title = film.origin_name || film.name;
   const hasLogoCandidate = Boolean(currentLogoSrc) && !hasError;
-  const showTextFallback = !hasLogoCandidate || hasError;
 
   useEffect(() => {
     if (film.titleLogoResolved && !hasLogoCandidate) onReady();
@@ -629,51 +639,47 @@ function HeroMovieTitle({
 
   return (
     <div
-      aria-busy={hasLogoCandidate && !logoLoaded}
       className="relative flex min-h-14 w-full items-center justify-center overflow-visible sm:min-h-24 md:min-h-28"
     >
-      {/* If there's NO logo candidate or logo completely failed to load, show styled text title */}
-      {showTextFallback ? (
-        <h1
-          className="max-w-xl sm:max-w-2xl line-clamp-2 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase leading-[1.2] sm:leading-[1.15] tracking-tight text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] pt-2 pb-1 px-2 overflow-visible"
-          style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }}
-        >
-          {title}
-        </h1>
-      ) : (
-        <>
-          <h1 className="sr-only">{title}</h1>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            ref={imgRef}
-            key={`${film.slug}-${candidateIdx}`}
-            src={currentLogoSrc}
-            alt={title}
-            referrerPolicy="strict-origin-when-cross-origin"
-            decoding="sync"
-            loading="eager"
-            fetchPriority="high"
-            onLoad={() => {
-              if (currentLogoSrc) {
-                preloadedHeroLogos.add(currentLogoSrc);
-                markMovieLogoPreloaded(currentLogoSrc);
-              }
-              setLogoLoaded(true);
+      <h1
+        className={`absolute inset-x-0 max-w-xl sm:max-w-2xl mx-auto line-clamp-2 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase leading-[1.2] sm:leading-[1.15] tracking-tight text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] pt-2 pb-1 px-2 overflow-visible transition-opacity duration-200 ${logoLoaded && hasLogoCandidate ? "opacity-0" : "opacity-100"}`}
+        style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }}
+      >
+        {title}
+      </h1>
+      {hasLogoCandidate ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          ref={imgRef}
+          key={`${film.slug}-${candidateIdx}`}
+          src={currentLogoSrc}
+          alt=""
+          aria-hidden="true"
+          referrerPolicy="strict-origin-when-cross-origin"
+          decoding="async"
+          loading="eager"
+          fetchPriority="high"
+          onLoad={() => {
+            if (currentLogoSrc) {
+              preloadedHeroLogos.add(currentLogoSrc);
+              markMovieLogoPreloaded(currentLogoSrc);
+            }
+            setLogoLoaded(true);
+            onReady();
+          }}
+          onError={() => {
+            if (currentLogoSrc) failedHeroLogos.add(currentLogoSrc);
+            if (candidateIdx < candidateLogos.length - 1) {
+              setCandidateIdx((i) => i + 1);
+            } else {
+              setHasError(true);
+              setLogoLoaded(false);
               onReady();
-            }}
-            onError={() => {
-              if (candidateIdx < candidateLogos.length - 1) {
-                setCandidateIdx((i) => i + 1);
-              } else {
-                setHasError(true);
-                setLogoLoaded(false);
-                onReady();
-              }
-            }}
-            className="h-auto max-h-16 sm:max-h-24 md:max-h-28 lg:max-h-36 w-auto max-w-[76vw] sm:max-w-[28rem] md:max-w-[34rem] lg:max-w-[40rem] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)]"
-          />
-        </>
-      )}
+            }
+          }}
+          className={`h-auto max-h-16 sm:max-h-24 md:max-h-28 lg:max-h-36 w-auto max-w-[76vw] sm:max-w-[28rem] md:max-w-[34rem] lg:max-w-[40rem] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-opacity duration-200 ${logoLoaded ? "opacity-100" : "opacity-0"}`}
+        />
+      ) : null}
     </div>
   );
 }
@@ -900,17 +906,12 @@ function HeroBackdropImage({
   );
 }
 
-function HeroTrailerLayer({
-  film,
-  enabled,
-}: {
-  film: HeroFilm;
-  enabled: boolean;
-}) {
+function HeroPreviewLayer({ film, enabled }: { film: HeroFilm; enabled: boolean }) {
   const layerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [isInView, setIsInView] = useState(false);
   const [canStream, setCanStream] = useState(false);
-  const [trailerKey, setTrailerKey] = useState<string | null>(null);
+  const [previewSource, setPreviewSource] = useState<HeroPreviewSource | null>(null);
   const [frameReady, setFrameReady] = useState(false);
 
   useEffect(() => {
@@ -920,10 +921,9 @@ function HeroTrailerLayer({
       return;
     }
 
-    const observer = new IntersectionObserver(
-      ([entry]) => setIsInView(entry.isIntersecting),
-      { threshold: 0.25 },
-    );
+    const observer = new IntersectionObserver(([entry]) => setIsInView(entry.isIntersecting), {
+      threshold: 0.25,
+    });
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
@@ -963,48 +963,202 @@ function HeroTrailerLayer({
 
   useEffect(() => {
     let cancelled = false;
-    setTrailerKey(null);
+    setPreviewSource(null);
     setFrameReady(false);
 
     if (!enabled || !isInView || !canStream) return;
 
-    const { tmdbId, type } = extractTmdbInfo(film);
-    if (!tmdbId) return;
+    const sourceSlug = film._source ? film._sourceSlugs?.[film._source] || film.slug : film.slug;
+    if (!sourceSlug) return;
 
-    const cacheKey = `${type}:${tmdbId}`;
-    const loadTrailer = async () => {
-      const cachedKey = heroTrailerCache.get(cacheKey);
-      if (cachedKey) {
-        if (!cancelled) setTrailerKey(cachedKey);
+    const cacheKey = `${film._source || "auto"}:${sourceSlug}`;
+    const resolvePreviewTransport = (payload: any): HeroPreviewSource | null => {
+      const episodeGroups = [
+        payload?.episodes,
+        payload?.data?.episodes,
+        payload?.movie?.episodes,
+        payload?.data?.movie?.episodes,
+        payload?.item?.episodes,
+        payload?.data?.item?.episodes,
+      ].find(Array.isArray) as any[] | undefined;
+
+      for (const group of episodeGroups || []) {
+        const episodes = Array.isArray(group?.server_data)
+          ? group.server_data
+          : Array.isArray(group?.items)
+            ? group.items
+            : [];
+        for (const episode of episodes) {
+          const directUrl = String(episode?.link_m3u8 || episode?.m3u8 || "").trim();
+          const proxyUrl = String(episode?.link_m3u8_proxy || "").trim() || undefined;
+          if (!directUrl && !proxyUrl) continue;
+          const transport = selectInitialHlsTransport(directUrl, proxyUrl, false);
+          if (transport.primary) return transport;
+        }
+      }
+      return null;
+    };
+
+    const loadPreview = async () => {
+      const cachedSource = heroPreviewSourceCache.get(cacheKey);
+      if (cachedSource) {
+        if (!cancelled) setPreviewSource(cachedSource);
         return;
       }
 
       try {
-        const response =
-          type === "tv"
-            ? await tmdbApi.getTvVideos(tmdbId)
-            : await tmdbApi.getMovieVideos(tmdbId);
-        const trailer = getYoutubeTrailer(response?.results || []);
-        if (!trailer?.key || cancelled) return;
-        heroTrailerCache.set(cacheKey, trailer.key);
-        setTrailerKey(trailer.key);
+        let resolved: HeroPreviewSource | null = null;
+        if (!film.tmdbOnly) {
+          try {
+            const response = await movieApi.getDetail(sourceSlug, film._source);
+            resolved = resolvePreviewTransport(response?.data);
+          } catch {
+            // Search below can still recover a stale or provider-specific slug.
+          }
+        }
+
+        // Curated presentation slugs do not always match provider slugs. Find
+        // the exact catalogue copy before giving up on the background preview.
+        if (!resolved) {
+          const playableFilm = await attachPlayableSource(
+            film.tmdbOnly ? film : { ...film, tmdbOnly: true },
+          );
+          if (playableFilm?.slug) {
+            const playableSlug = playableFilm._source
+              ? playableFilm._sourceSlugs?.[playableFilm._source] || playableFilm.slug
+              : playableFilm.slug;
+            const playableResponse = await movieApi.getDetail(
+              playableSlug,
+              playableFilm._source,
+            );
+            resolved = resolvePreviewTransport(playableResponse?.data);
+          }
+        }
+
+        if (!resolved || cancelled) return;
+        heroPreviewSourceCache.set(cacheKey, resolved);
+        setPreviewSource(resolved);
       } catch {
-        // The TMDB image remains visible when a trailer is missing or blocked.
+        // The high-resolution backdrop remains visible when direct preview
+        // playback is missing, blocked, or temporarily unavailable.
       }
     };
 
-    // Let the high-priority backdrop settle first. The third-party player is
+    // Let the high-priority backdrop settle first. Preview resolution is
     // deliberately deferred so it never competes with the initial hero paint.
-    const timer = window.setTimeout(() => void loadTrailer(), 1400);
+    const timer = window.setTimeout(() => void loadPreview(), 1400);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
     };
   }, [canStream, enabled, film, isInView]);
 
-  const embedUrl = trailerKey
-    ? `https://www.youtube.com/embed/${encodeURIComponent(trailerKey)}?autoplay=1&mute=1&controls=0&loop=1&playlist=${encodeURIComponent(trailerKey)}&playsinline=1&rel=0&disablekb=1&fs=0`
-    : null;
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !previewSource || !canStream || !isInView) return;
+
+    let disposed = false;
+    let activeUrl = previewSource.primary;
+    let fallbackUsed = false;
+    let hlsInstance: {
+      destroy: () => void;
+      stopLoad: () => void;
+      loadSource: (url: string) => void;
+      startLoad: (position?: number) => void;
+    } | null = null;
+
+    const play = () => {
+      if (disposed) return;
+      video.muted = true;
+      void video.play().catch(() => {
+        setFrameReady(false);
+      });
+    };
+    const reveal = () => {
+      if (!disposed) setFrameReady(true);
+    };
+    const tryFallback = () => {
+      if (!previewSource.fallback || fallbackUsed) return false;
+      fallbackUsed = true;
+      activeUrl = previewSource.fallback;
+      setFrameReady(false);
+      return true;
+    };
+
+    video.addEventListener("playing", reveal);
+
+    const attach = async () => {
+      const { default: Hls } = await import("hls.js");
+      if (disposed) return;
+
+      if (Hls.isSupported()) {
+        const hls = new Hls({
+          enableWorker: true,
+          startLevel: 0,
+          startPosition: 30,
+          backBufferLength: 0,
+          maxBufferLength: 12,
+          maxMaxBufferLength: 18,
+          maxBufferSize: 18 * 1000 * 1000,
+          capLevelToPlayerSize: true,
+          lowLatencyMode: false,
+          manifestLoadingTimeOut: 6_000,
+          levelLoadingTimeOut: 6_000,
+          fragLoadingTimeOut: 10_000,
+        });
+        hlsInstance = hls;
+        hls.on(Hls.Events.MANIFEST_PARSED, play);
+        hls.on(Hls.Events.ERROR, (_event, data) => {
+          if (!data.fatal || disposed) return;
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR && tryFallback()) {
+            hls.stopLoad();
+            hls.loadSource(activeUrl);
+            hls.startLoad(30);
+            return;
+          }
+          setFrameReady(false);
+          hls.destroy();
+          hlsInstance = null;
+        });
+        hls.loadSource(activeUrl);
+        hls.attachMedia(video);
+        return;
+      }
+
+      if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        video.src = activeUrl;
+        video.addEventListener(
+          "loadedmetadata",
+          () => {
+            if (Number.isFinite(video.duration) && video.duration > 45) {
+              video.currentTime = 30;
+            }
+            play();
+          },
+          { once: true },
+        );
+        video.addEventListener("error", () => {
+          if (tryFallback()) {
+            video.src = activeUrl;
+            video.load();
+          } else {
+            setFrameReady(false);
+          }
+        });
+        video.load();
+      }
+    };
+
+    void attach();
+    return () => {
+      disposed = true;
+      video.removeEventListener("playing", reveal);
+      hlsInstance?.destroy();
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+    };
+  }, [canStream, isInView, previewSource]);
 
   return (
     <div
@@ -1012,18 +1166,17 @@ function HeroTrailerLayer({
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 z-20 hidden overflow-hidden lg:block"
     >
-      {embedUrl && canStream && isInView && (
-        <iframe
-          key={`${film.slug}-${trailerKey}`}
-          src={embedUrl}
-          title={`Trailer nền ${film.name}`}
-          tabIndex={-1}
-          loading="lazy"
-          allow="autoplay; encrypted-media; picture-in-picture"
-          referrerPolicy="strict-origin-when-cross-origin"
-          onLoad={() => setFrameReady(true)}
+      {previewSource && canStream && isInView && (
+        <video
+          ref={videoRef}
+          key={`${film.slug}-${previewSource.primary}`}
+          muted
+          autoPlay
+          playsInline
+          preload="metadata"
+          disablePictureInPicture
           className={cn(
-            "absolute left-1/2 top-1/2 h-[56.25vw] min-h-full w-[100vw] min-w-[177.78vh] -translate-x-1/2 -translate-y-1/2 border-0 object-cover transition-opacity duration-1000 ease-out",
+            "absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 ease-out",
             frameReady ? "opacity-100" : "opacity-0",
           )}
         />
@@ -1809,7 +1962,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
             </div>
           );
         })}
-        <HeroTrailerLayer
+        <HeroPreviewLayer
           film={film}
           enabled={Boolean(
             visualReadiness[film.slug]?.backdrop &&

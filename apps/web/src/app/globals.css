@@ -41,15 +41,6 @@ html, body {
   -webkit-overflow-scrolling: touch;
 }
 
-@keyframes netphim-splash-grid-drift {
-  from {
-    transform: rotate(-8deg) scale(1.02) translate3d(-1%, -1%, 0);
-  }
-  to {
-    transform: rotate(-8deg) scale(1.08) translate3d(1%, 1%, 0);
-  }
-}
-
 @keyframes netphim-splash-brand-reveal {
   from {
     opacity: 0;
@@ -73,34 +64,10 @@ html, body {
   }
 }
 
-@keyframes netphim-splash-auto-exit {
-  0%,
-  76% {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-  }
-  100% {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-  }
-}
-
-.netphim-splash-shell {
-  animation: netphim-splash-auto-exit 1.76s ease-out forwards;
-}
-
-.netphim-splash-shell--leaving {
-  animation: none;
-}
-
-.netphim-splash-grid {
+.netphim-splash-artwork {
   backface-visibility: hidden;
-  filter: saturate(0.78) contrast(1.04);
   transform: translateZ(0);
-  will-change: transform;
-  animation: netphim-splash-grid-drift 2.2s ease-out both;
+  will-change: opacity;
 }
 
 .netphim-splash-brand {
@@ -128,7 +95,6 @@ html, body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .netphim-splash-grid,
   .netphim-splash-brand {
     animation: none;
   }
