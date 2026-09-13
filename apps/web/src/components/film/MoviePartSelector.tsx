@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ChevronDown, Check, Sparkles, Layers } from "lucide-react";
+import { ChevronDown, Check, Layers } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   MoviePartItem,
@@ -30,38 +29,15 @@ export interface MoviePartSelectorProps {
   onSelectPart?: (part: MoviePartItem) => void;
 }
 
-/**
- * Biểu tượng 3 thanh ngang màu Amber chuẩn theo design gốc của người dùng
- */
-function AmberBarsIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      width="15"
-      height="12"
-      viewBox="0 0 15 12"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      aria-hidden="true"
-    >
-      <rect x="0" y="0.5" width="15" height="2.2" rx="1.1" fill="#f59e0b" />
-      <rect x="0" y="5" width="11" height="2.2" rx="1.1" fill="#f59e0b" />
-      <rect x="0" y="9.5" width="13.5" height="2.2" rx="1.1" fill="#f59e0b" />
-    </svg>
-  );
-}
-
 export function MoviePartSelector({
   film,
   currentSlug,
   target = "watch",
-  currentEp,
   className,
   onSelectPart,
 }: MoviePartSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
   const filmName = film?.name || film?.title || "";
   const filmOrigin = film?.origin_name || "";
@@ -154,22 +130,22 @@ export function MoviePartSelector({
         className={cn(
           "inline-flex items-center gap-1.5 py-1 px-2 rounded-lg transition-all cursor-pointer group",
           isOpen
-            ? "bg-white/15 text-white ring-1 ring-amber-400/50"
+            ? "bg-violet-500/15 text-white ring-1 ring-violet-400/45"
             : "hover:bg-white/10 active:bg-white/15 text-neutral-200 hover:text-white",
         )}
         title="Chọn phần phim khác"
         aria-haspopup="true"
         aria-expanded={isOpen}
       >
-        <AmberBarsIcon className="shrink-0 drop-shadow-[0_1px_3px_rgba(245,158,11,0.5)] transition-transform group-hover:scale-105" />
-        <span className="font-bold text-white text-xs sm:text-[13px] tracking-tight group-hover:text-amber-200 transition-colors">
+        <Layers size={15} className="shrink-0 text-violet-300 transition-transform group-hover:scale-105" />
+        <span className="font-bold text-white text-xs sm:text-[13px] tracking-tight group-hover:text-violet-200 transition-colors">
           {currentPartLabel}
         </span>
         <ChevronDown
           size={13}
           className={cn(
             "text-neutral-400 group-hover:text-white transition-transform duration-200 shrink-0",
-            isOpen && "rotate-180 text-amber-400",
+            isOpen && "rotate-180 text-violet-300",
           )}
         />
       </button>
@@ -183,10 +159,10 @@ export function MoviePartSelector({
           {/* Header */}
           <div className="px-2.5 py-1.5 text-[10px] font-bold text-neutral-400 uppercase tracking-wider flex items-center justify-between border-b border-white/10 mb-1">
             <span className="flex items-center gap-1.5">
-              <Sparkles size={11} className="text-amber-400" />
+              <Layers size={11} className="text-violet-300" />
               <span>Danh sách các phần ({parts.length})</span>
             </span>
-            <span className="text-[10px] text-amber-400 font-mono">
+            <span className="text-[10px] text-violet-300 font-mono">
               Series
             </span>
           </div>
@@ -200,7 +176,7 @@ export function MoviePartSelector({
                 <Link
                   key={part.slug}
                   href={buildTargetLink(part.slug)}
-                  onClick={(e) => {
+                  onClick={() => {
                     setIsOpen(false);
                     if (onSelectPart) {
                       onSelectPart(part);
@@ -209,7 +185,7 @@ export function MoviePartSelector({
                   className={cn(
                     "flex items-center justify-between gap-2.5 px-3 py-2 rounded-lg text-xs transition-all cursor-pointer",
                     isSelected
-                      ? "bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold shadow-sm"
+                      ? "bg-violet-500/15 border border-violet-400/35 text-white font-bold shadow-sm"
                       : "text-neutral-300 hover:text-white hover:bg-white/10 border border-transparent",
                   )}
                 >
@@ -218,7 +194,7 @@ export function MoviePartSelector({
                       className={cn(
                         "shrink-0 text-xs font-black px-1.5 py-0.5 rounded",
                         isSelected
-                          ? "bg-amber-400/30 text-amber-200"
+                          ? "bg-violet-400/20 text-violet-200"
                           : "bg-white/10 text-neutral-300",
                       )}
                     >
@@ -230,7 +206,7 @@ export function MoviePartSelector({
                   </div>
 
                   {isSelected ? (
-                    <span className="shrink-0 inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-bold">
+                    <span className="shrink-0 inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-violet-400/15 text-violet-200 font-bold">
                       <Check size={10} />
                       <span>Đang xem</span>
                     </span>

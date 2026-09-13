@@ -1,5 +1,5 @@
 // Engine phát hiện và đồng bộ các phần phim (Seasons / Multi-part series) cho NetPhim
-import { movieApi } from "@/lib/api";
+import { kkphimApi, movieApi } from "@/lib/api";
 import { extractFilmItems } from "@/lib/movie-normalizer";
 
 export interface MoviePartItem {
@@ -139,6 +139,55 @@ export function normalizeBaseTitle(str: string): string {
     .trim();
 }
 
+type SeriesIdentity = {
+  name?: string;
+  origin_name?: string;
+  slug?: string;
+};
+
+function seriesBaseAliases(film: SeriesIdentity): Set<string> {
+  return new Set(
+    [film.name, film.origin_name]
+      .map((title) => {
+        const cleanTitle = String(title || "").trim();
+        if (!cleanTitle) return "";
+        const parsed = parsePartInfo(cleanTitle);
+        return normalizeBaseTitle(parsed?.baseTitle || cleanBaseTitle(cleanTitle));
+      })
+      .filter(Boolean),
+  );
+}
+
+/** Match only seasons of the same show, never similarly prefixed spin-offs. */
+export function isSameMovieSeries(
+  current: SeriesIdentity,
+  candidate: SeriesIdentity,
+): boolean {
+  const currentAliases = seriesBaseAliases(current);
+  const candidateAliases = seriesBaseAliases(candidate);
+  if (
+    Array.from(currentAliases).some((alias) => candidateAliases.has(alias))
+  ) {
+    return true;
+  }
+
+  const currentBaseSlug = parsePartInfo(
+    current.name,
+    current.origin_name,
+    current.slug,
+  )?.baseSlug;
+  const candidateBaseSlug = parsePartInfo(
+    candidate.name,
+    candidate.origin_name,
+    candidate.slug,
+  )?.baseSlug;
+  return Boolean(
+    currentBaseSlug &&
+      candidateBaseSlug &&
+      currentBaseSlug === candidateBaseSlug,
+  );
+}
+
 /**
  * Tìm kiếm các phần phim có sẵn trong catalog vũ trụ điện ảnh (Marvel & DC)
  * Dùng dynamic import để không làm phình bundle kích thước các trang khác.
@@ -158,8 +207,6 @@ export async function findUniverseParts(film: {
     ];
 
     const currentParsed = parsePartInfo(film.name, film.origin_name, film.slug);
-    const currentBaseNorm = currentParsed ? normalizeBaseTitle(currentParsed.baseTitle) : normalizeBaseTitle(film.name);
-    const currentBaseSlug = currentParsed?.baseSlug || film.slug.replace(SLUG_PART_REGEX, "");
 
     const matchedPartsMap = new Map<number, MoviePartItem>();
 
@@ -167,14 +214,7 @@ export async function findUniverseParts(film: {
       const itemParsed = parsePartInfo(item.name, item.origin_name, item.slug);
       if (!itemParsed) continue;
 
-      const itemBaseNorm = normalizeBaseTitle(itemParsed.baseTitle);
-      const itemBaseSlug = itemParsed.baseSlug;
-
-      const isMatch =
-        (currentBaseNorm && (itemBaseNorm === currentBaseNorm || itemBaseNorm.includes(currentBaseNorm) || currentBaseNorm.includes(itemBaseNorm))) ||
-        (currentBaseSlug && (itemBaseSlug === currentBaseSlug || item.slug.startsWith(currentBaseSlug)));
-
-      if (isMatch) {
+      if (isSameMovieSeries(film, item)) {
         matchedPartsMap.set(itemParsed.partNumber, {
           partNumber: itemParsed.partNumber,
           partLabel: `Phần ${itemParsed.partNumber}`,
@@ -226,20 +266,20 @@ export async function resolveAllMovieParts(film: {
 }): Promise<MoviePartItem[]> {
   // 1. Kiểm tra catalog vũ trụ trước
   const universeParts = await findUniverseParts(film);
-  if (universeParts.length > 1) {
-    return universeParts;
-  }
 
   // 2. Phân tích phần phim hiện tại
   const parsed = parsePartInfo(film.name, film.origin_name, film.slug);
   if (!parsed) {
-    return [];
+    return universeParts;
   }
 
-  const { baseTitle, baseSlug, partNumber } = parsed;
-  const currentBaseNorm = normalizeBaseTitle(baseTitle);
+  const { baseTitle, partNumber } = parsed;
 
   const partsMap = new Map<number, MoviePartItem>();
+
+  for (const part of universeParts) {
+    partsMap.set(part.partNumber, part);
+  }
 
   // Thêm phần hiện tại vào map
   partsMap.set(partNumber, {
@@ -255,23 +295,28 @@ export async function resolveAllMovieParts(film: {
   });
 
   try {
-    // 3. Tìm kiếm mở rộng theo tên gốc của series/phim
-    const searchRes = await movieApi.search(baseTitle, 1, 24);
-    const searchItems = (extractFilmItems(searchRes.data) || []) as any[];
+    // 3. Gateway ưu tiên tốc độ nên có thể chỉ trả một nhóm nhỏ. Truy vấn
+    // KKPhim với limit lớn bổ sung đủ season, sau đó hợp nhất theo slug.
+    const originParsed = parsePartInfo(film.origin_name);
+    const directQuery = originParsed?.baseTitle || baseTitle;
+    const searchResults = await Promise.allSettled([
+      movieApi.search(baseTitle, 1, 100),
+      kkphimApi.search(directQuery, 1, 100),
+    ]);
+    const searchItems = searchResults.flatMap((result) =>
+      result.status === "fulfilled"
+        ? (extractFilmItems(result.value) as any[])
+        : [],
+    );
+    const seenSlugs = new Set<string>();
 
     for (const item of searchItems) {
-      if (!item?.slug || !item?.name) continue;
+      if (!item?.slug || !item?.name || seenSlugs.has(item.slug)) continue;
+      seenSlugs.add(item.slug);
       const itemParsed = parsePartInfo(item.name, item.origin_name, item.slug);
       if (!itemParsed) continue;
 
-      const itemBaseNorm = normalizeBaseTitle(itemParsed.baseTitle);
-      const isSameBase =
-        itemBaseNorm === currentBaseNorm ||
-        itemBaseNorm.startsWith(currentBaseNorm) ||
-        currentBaseNorm.startsWith(itemBaseNorm) ||
-        (baseSlug && item.slug.startsWith(baseSlug));
-
-      if (isSameBase) {
+      if (isSameMovieSeries(film, item)) {
         const existing = partsMap.get(itemParsed.partNumber);
         if (!existing || (!existing.isCurrent && item.slug === film.slug)) {
           partsMap.set(itemParsed.partNumber, {

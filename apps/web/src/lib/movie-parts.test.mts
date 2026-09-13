@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   parseRomanOrArabic,
   parsePartInfo,
   normalizeBaseTitle,
   findUniverseParts,
+  isSameMovieSeries,
 } from "./movie-parts.ts";
 
 test("parseRomanOrArabic converts both arabic and roman numbers", () => {
@@ -55,6 +57,49 @@ test("parsePartInfo handles roman numeral parts", () => {
 test("parsePartInfo returns null for standalone films without parts", () => {
   const single = parsePartInfo("Inception", "Inception", "inception");
   assert.equal(single, null);
+});
+
+test("matches every season of one show without mixing in spin-offs", () => {
+  const current = {
+    name: "Xác Sống (Phần 11)",
+    origin_name: "The Walking Dead (Season 11)",
+    slug: "xac-song-phan-11",
+  };
+
+  assert.equal(
+    isSameMovieSeries(current, {
+      name: "Xác Sống (Phần 1)",
+      origin_name: "The Walking Dead (Season 1)",
+      slug: "xac-song-phan-1",
+    }),
+    true,
+  );
+  assert.equal(
+    isSameMovieSeries(current, {
+      name: "Xác Sống: Daryl Dixon (Phần 1)",
+      origin_name: "The Walking Dead: Daryl Dixon (Season 1)",
+      slug: "xac-song-daryl-dixon-phan-1",
+    }),
+    false,
+  );
+  assert.equal(
+    isSameMovieSeries(current, {
+      name: "Xác Sống: Thành Phố Chết (Phần 3)",
+      origin_name: "The Walking Dead: Dead City (Season 3)",
+      slug: "xac-song-thanh-pho-chet-phan-3",
+    }),
+    false,
+  );
+});
+
+test("movie part selector uses the NetPhim accent without yellow states", () => {
+  const source = readFileSync(
+    "src/components/film/MoviePartSelector.tsx",
+    "utf8",
+  );
+
+  assert.match(source, /violet-/);
+  assert.doesNotMatch(source, /amber-|yellow-|#f59e0b|AmberBarsIcon/);
 });
 
 test("findUniverseParts discovers multi-season films in catalog", async () => {
