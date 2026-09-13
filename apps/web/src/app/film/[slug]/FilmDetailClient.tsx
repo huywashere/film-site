@@ -2284,9 +2284,6 @@ export default function FilmDetailPage({
         </div>
 
         <div className="mt-8 space-y-8">
-          {/* Episode Air Notification Banner */}
-          <EpisodeNotificationBanner film={film} episodes={episodes} />
-
           <section
             aria-label={t('home.details', 'Thông tin phim')}
             className="grid grid-cols-2 overflow-hidden rounded-[14px] border border-white/10 bg-[#0d0f12]/65 shadow-[0_14px_50px_rgba(0,0,0,0.18)] backdrop-blur-xl sm:grid-cols-3 sm:divide-x sm:divide-white/10"
@@ -2434,6 +2431,9 @@ export default function FilmDetailPage({
                 </CastScroller>
               </section>
             )}
+
+          {/* Episode Air Notification Banner */}
+          <EpisodeNotificationBanner film={film} episodes={episodes} />
 
           <section className="space-y-3.5 pt-5 border-t border-white/5">
             <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
