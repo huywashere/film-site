@@ -17,7 +17,11 @@ export function EpisodeNotificationBanner({
   className,
 }: EpisodeNotificationBannerProps) {
   const airInfo = useMemo(() => {
-    return calculateNextAirInfo(film, episodes);
+    try {
+      return calculateNextAirInfo(film, episodes);
+    } catch {
+      return null;
+    }
   }, [film, episodes]);
 
   if (!airInfo) return null;

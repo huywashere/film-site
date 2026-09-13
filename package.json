@@ -4,6 +4,7 @@
   "packageManager": "pnpm@9.5.0",
   "scripts": {
     "dev": "turbo run dev",
+    "dev:web": "pnpm --filter web dev",
     "dev:all": "start-all.bat",
     "stop:all": "stop-all.bat",
     "dev:admin": "pnpm --filter @netphim/admin-cms dev",

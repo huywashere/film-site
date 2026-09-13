@@ -8,9 +8,9 @@ export interface EpisodeAirInfo {
   message: string;      // Full notification text
 }
 
-export function parseCurrentEpisodeNumber(episodeCurrent?: string): number | null {
-  if (!episodeCurrent) return null;
-  const clean = episodeCurrent.trim();
+export function parseCurrentEpisodeNumber(episodeCurrent?: unknown): number | null {
+  if (episodeCurrent == null) return null;
+  const clean = String(episodeCurrent).trim();
   const match = clean.match(/(?:Tập|Tap|Ep\.?|E)?\s*([0-9]+)/i);
   if (match) {
     const num = parseInt(match[1], 10);
@@ -19,9 +19,9 @@ export function parseCurrentEpisodeNumber(episodeCurrent?: string): number | nul
   return null;
 }
 
-export function isCompletedFilm(status?: string, episodeCurrent?: string): boolean {
-  if (status === "completed") return true;
-  const ep = (episodeCurrent || "").toLowerCase().trim();
+export function isCompletedFilm(status?: unknown, episodeCurrent?: unknown): boolean {
+  if (String(status || "").toLowerCase() === "completed") return true;
+  const ep = String(episodeCurrent || "").toLowerCase().trim();
   if (
     ep.includes("full") ||
     ep.includes("hoàn tất") ||
@@ -46,8 +46,8 @@ export function calculateNextAirInfo(
     slug?: string;
     type?: string;
     status?: string;
-    episode_current?: string;
-    episode_total?: string;
+    episode_current?: any;
+    episode_total?: any;
     tmdb?: any;
     year?: number | string;
   } | null,
@@ -56,111 +56,118 @@ export function calculateNextAirInfo(
 ): EpisodeAirInfo | null {
   if (!film) return null;
 
-  // Nếu phim đã hoàn tất trọn bộ thì không cần hiển thị thông báo phát sóng
-  if (isCompletedFilm(film.status, film.episode_current)) {
-    return null;
-  }
+  try {
+    // Nếu phim đã hoàn tất trọn bộ thì không cần hiển thị thông báo phát sóng
+    if (isCompletedFilm(film.status, film.episode_current)) {
+      return null;
+    }
 
-  // Kiểm tra nếu là phim lẻ sắp chiếu (trailer / upcoming)
-  const isUpcomingSingle =
-    (film.type === "single" || film.type === "movie") &&
-    (film.status === "trailer" ||
-      film.status === "upcoming" ||
-      (film.episode_current && film.episode_current.toLowerCase().includes("trailer")));
+    const currentEpStr = String(film.episode_current || "");
 
-  const isSeries =
-    film.type === "series" ||
-    film.type === "hoat-hinh" ||
-    film.type === "tv" ||
-    film.type === "tvshows" ||
-    Boolean(film.episode_current && !isCompletedFilm(film.status, film.episode_current));
+    // Kiểm tra nếu là phim lẻ sắp chiếu (trailer / upcoming)
+    const isUpcomingSingle =
+      (film.type === "single" || film.type === "movie") &&
+      (film.status === "trailer" ||
+        film.status === "upcoming" ||
+        currentEpStr.toLowerCase().includes("trailer"));
 
-  if (!isSeries && !isUpcomingSingle) {
-    return null;
-  }
+    const isSeries =
+      film.type === "series" ||
+      film.type === "hoat-hinh" ||
+      film.type === "tv" ||
+      film.type === "tvshows" ||
+      Boolean(film.episode_current && !isCompletedFilm(film.status, film.episode_current));
 
-  // Xác định số tập hiện tại
-  let currentEpNum = parseCurrentEpisodeNumber(film.episode_current);
-  const serverEpsCount =
-    Array.isArray(episodes) && episodes[0]?.server_data?.length
-      ? episodes[0].server_data.length
-      : 0;
+    if (!isSeries && !isUpcomingSingle) {
+      return null;
+    }
 
-  if (serverEpsCount > 0 && (!currentEpNum || serverEpsCount > currentEpNum)) {
-    currentEpNum = serverEpsCount;
-  }
+    // Xác định số tập hiện tại
+    let currentEpNum = parseCurrentEpisodeNumber(film.episode_current);
+    const serverEpsCount =
+      Array.isArray(episodes) && episodes[0]?.server_data?.length
+        ? episodes[0].server_data.length
+        : 0;
 
-  // Kiểm tra nếu đã đạt tổng số tập (episode_total)
-  if (film.episode_total) {
-    const totalMatch = film.episode_total.match(/([0-9]+)/);
-    if (totalMatch) {
-      const total = parseInt(totalMatch[1], 10);
-      if (total > 0 && (currentEpNum || 0) >= total) {
-        return null;
+    if (serverEpsCount > 0 && (!currentEpNum || serverEpsCount > currentEpNum)) {
+      currentEpNum = serverEpsCount;
+    }
+
+    // Kiểm tra nếu đã đạt tổng số tập (episode_total)
+    if (film.episode_total != null) {
+      const totalStr = String(film.episode_total).trim();
+      const totalMatch = totalStr.match(/([0-9]+)/);
+      if (totalMatch) {
+        const total = parseInt(totalMatch[1], 10);
+        if (total > 0 && (currentEpNum || 0) >= total) {
+          return null;
+        }
       }
     }
-  }
 
-  const nextEp = isUpcomingSingle ? 1 : (currentEpNum || 1) + 1;
-  const episodeLabel = isUpcomingSingle ? "Bản Full HD" : `Tập ${nextEp}`;
+    const nextEp = isUpcomingSingle ? 1 : (currentEpNum || 1) + 1;
+    const episodeLabel = isUpcomingSingle ? "Bản Full HD" : `Tập ${nextEp}`;
 
-  // Xác định ngày phát sóng tiếp theo
-  let airDateStr = "";
-  const tmdbNextAir = film.tmdb?.next_episode_to_air?.air_date;
-  if (tmdbNextAir && typeof tmdbNextAir === "string") {
-    const parts = tmdbNextAir.split("-");
-    if (parts.length === 3) {
-      const tmdbYear = parseInt(parts[0], 10);
-      const tmdbMonth = parseInt(parts[1], 10) - 1;
-      const tmdbDay = parseInt(parts[2], 10);
-      const tmdbDate = new Date(tmdbYear, tmdbMonth, tmdbDay);
-      // Chỉ dùng TMDB air date nếu là ngày trong tương lai hoặc hôm nay
-      if (tmdbDate.getTime() >= baseDate.getTime() - 24 * 60 * 60 * 1000) {
-        airDateStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
+    // Xác định ngày phát sóng tiếp theo
+    let airDateStr = "";
+    const tmdbNextAir = film.tmdb?.next_episode_to_air?.air_date;
+    if (tmdbNextAir && typeof tmdbNextAir === "string") {
+      const parts = tmdbNextAir.split("-");
+      if (parts.length === 3) {
+        const tmdbYear = parseInt(parts[0], 10);
+        const tmdbMonth = parseInt(parts[1], 10) - 1;
+        const tmdbDay = parseInt(parts[2], 10);
+        const tmdbDate = new Date(tmdbYear, tmdbMonth, tmdbDay);
+        // Chỉ dùng TMDB air date nếu là ngày trong tương lai hoặc hôm nay
+        if (tmdbDate.getTime() >= baseDate.getTime() - 24 * 60 * 60 * 1000) {
+          airDateStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
       }
     }
-  }
 
-  if (!airDateStr) {
-    // Phân bổ ngày phát sóng theo lịch tuần
-    const lowerName = (film.name || "").toLowerCase();
-    const lowerSlug = (film.slug || "").toLowerCase();
+    if (!airDateStr) {
+      // Phân bổ ngày phát sóng theo lịch tuần
+      const lowerName = (film.name || "").toLowerCase();
+      const lowerSlug = (film.slug || "").toLowerCase();
 
-    let targetDay: number;
-    if (lowerSlug.includes("one-piece") || lowerName.includes("đảo hải tặc")) {
-      targetDay = 0; // Chủ Nhật
-    } else if (lowerSlug.includes("conan") || lowerName.includes("thám tử lừng danh")) {
-      targetDay = 6; // Thứ Bảy
-    } else if (lowerSlug.includes("sat-thu") || lowerName.includes("cửa hàng sát thủ")) {
-      targetDay = 3; // Thứ Tư
-    } else if (lowerSlug.includes("solo-leveling") || lowerName.includes("tôi thăng cấp")) {
-      targetDay = 6; // Thứ Bảy
-    } else if (lowerSlug.includes("jujutsu") || lowerName.includes("chú thuật")) {
-      targetDay = 4; // Thứ Năm
-    } else {
-      const seed = (film.slug || film.name || "")
-        .split("")
-        .reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
-      targetDay = seed % 7;
+      let targetDay: number;
+      if (lowerSlug.includes("one-piece") || lowerName.includes("đảo hải tặc")) {
+        targetDay = 0; // Chủ Nhật
+      } else if (lowerSlug.includes("conan") || lowerName.includes("thám tử lừng danh")) {
+        targetDay = 6; // Thứ Bảy
+      } else if (lowerSlug.includes("sat-thu") || lowerName.includes("cửa hàng sát thủ")) {
+        targetDay = 3; // Thứ Tư
+      } else if (lowerSlug.includes("solo-leveling") || lowerName.includes("tôi thăng cấp")) {
+        targetDay = 6; // Thứ Bảy
+      } else if (lowerSlug.includes("jujutsu") || lowerName.includes("chú thuật")) {
+        targetDay = 4; // Thứ Năm
+      } else {
+        const seed = (film.slug || film.name || "")
+          .split("")
+          .reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+        targetDay = seed % 7;
+      }
+
+      const currentDay = baseDate.getDay();
+      let diff = (targetDay - currentDay + 7) % 7;
+      if (diff === 0) diff = 7; // Nếu trùng ngày thì thông báo ngày phát sóng tuần sau
+
+      const nextDate = new Date(baseDate.getTime() + diff * 24 * 60 * 60 * 1000);
+      const dd = String(nextDate.getDate()).padStart(2, "0");
+      const mm = String(nextDate.getMonth() + 1).padStart(2, "0");
+      const yyyy = nextDate.getFullYear();
+      airDateStr = `${dd}-${mm}-${yyyy}`;
     }
 
-    const currentDay = baseDate.getDay();
-    let diff = (targetDay - currentDay + 7) % 7;
-    if (diff === 0) diff = 7; // Nếu trùng ngày thì thông báo ngày phát sóng tuần sau
-
-    const nextDate = new Date(baseDate.getTime() + diff * 24 * 60 * 60 * 1000);
-    const dd = String(nextDate.getDate()).padStart(2, "0");
-    const mm = String(nextDate.getMonth() + 1).padStart(2, "0");
-    const yyyy = nextDate.getFullYear();
-    airDateStr = `${dd}-${mm}-${yyyy}`;
+    return {
+      isUpcoming: true,
+      type: isUpcomingSingle ? "single" : "series",
+      nextEpisode: nextEp,
+      episodeLabel,
+      airDateStr,
+      message: `${episodeLabel} sẽ phát sóng ngày ${airDateStr}. Các bạn nhớ đón xem nhé 😚`,
+    };
+  } catch {
+    return null;
   }
-
-  return {
-    isUpcoming: true,
-    type: isUpcomingSingle ? "single" : "series",
-    nextEpisode: nextEp,
-    episodeLabel,
-    airDateStr,
-    message: `${episodeLabel} sẽ phát sóng ngày ${airDateStr}. Các bạn nhớ đón xem nhé 😚`,
-  };
 }
