@@ -18,7 +18,6 @@ import dynamic from "next/dynamic";
 import { FilmCard, FilmItem } from "@/components/film/FilmCard";
 import { Pagination } from "@/components/film/Pagination";
 import { LandscapeSpotlightRow } from "@/components/film/LandscapeSpotlightRow";
-import { UniverseTimelineSection } from "@/components/universe/UniverseTimelineSection";
 import {
   getUniverseFilms,
   getUniverseSpotlights,
@@ -33,6 +32,21 @@ import { resolveImageUrl } from "@/lib/movie-image-url";
 const TrailerModal = dynamic(
   () => import("@/components/film/TrailerModal").then((m) => m.TrailerModal),
   { ssr: false },
+);
+
+const UniverseTimelineSection = dynamic(
+  () =>
+    import("@/components/universe/UniverseTimelineSection").then(
+      (m) => m.UniverseTimelineSection,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="max-w-[1760px] mx-auto px-4 sm:px-8 lg:px-14 py-12">
+        <div className="h-48 rounded-2xl bg-neutral-900/40 border border-white/5 animate-pulse" />
+      </div>
+    ),
+  },
 );
 
 function UniverseSpotlightBackdrop({
