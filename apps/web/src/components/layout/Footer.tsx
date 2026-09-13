@@ -66,7 +66,7 @@ function IconEmail() {
 const SOCIAL_LINKS = [
   { href: "https://facebook.com", icon: IconFacebook, label: "Facebook" },
   {
-    href: "https://t.me/netphim_official",
+    href: "https://t.me/+ijCR1KCdx2E0ZTA9",
     icon: IconTelegram,
     label: "Telegram",
   },

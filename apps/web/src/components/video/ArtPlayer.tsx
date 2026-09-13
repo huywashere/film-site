@@ -16,6 +16,7 @@ import {
   ARTPLAYER_SCREENSHOT_SVG,
   ARTPLAYER_PIP_SVG,
 } from './artplayer-editor-assets';
+import { attachNightModeAudio, isNightModeEnabled, setNightMode } from '@/lib/audio-effects';
 
 // Reduced from 8s → 6s for desktop. Mobile timeout is extended in the watchdog
 // itself. Faster timeout = faster automatic fallback to an alternate server.
@@ -52,6 +53,7 @@ export interface ArtPlayerProps {
   autoSkipAds?: boolean;
   minAdStartTime?: number;
   adRanges?: Array<{ start: number; end: number; title?: string }>;
+  onStallSuggestServer?: () => void;
 }
 
 export default function ArtPlayer({
@@ -78,9 +80,13 @@ export default function ArtPlayer({
   autoSkipAds = true,
   minAdStartTime = 360,
   adRanges,
+  onStallSuggestServer,
 }: ArtPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Artplayer | null>(null);
+  const onStallSuggestServerRef = useRef(onStallSuggestServer);
+  onStallSuggestServerRef.current = onStallSuggestServer;
+  const stallIncidentTimesRef = useRef<number[]>([]);
 
   const detectedAdRangesRef = useRef<
     Array<{
@@ -260,6 +266,7 @@ export default function ArtPlayer({
       startupReadyHandler = clearStartupTimer;
       video.addEventListener('loadedmetadata', startupReadyHandler);
       video.addEventListener('canplay', startupReadyHandler);
+      video.addEventListener('canplay', () => attachNightModeAudio(video), { once: true });
 
       if (Hls.isSupported()) {
         const hls = new Hls({
@@ -502,46 +509,95 @@ export default function ArtPlayer({
         armStartupWatchdog();
         (video as HTMLVideoElement & { hls: Hls }).hls = hls;
 
-        // Non-fatal HLS stalls do not reach the page-level fallback handler.
-        // Recover an empty buffer in stages and only switch provider after a
-        // sustained stall, avoiding both endless spinners and premature jumps.
+        // HLS Playback Watchdog: Chống đứng hình thông minh 2 tầng
+        let lastPlaybackTime = -1;
+        let freezeCounter = 0;
         let stalledSince = 0;
         let stallRecoveries = 0;
+
         stallRecoveryTimer = setInterval(() => {
-          if (
-            video.paused ||
-            video.ended ||
-            video.seeking ||
-            video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA
-          ) {
+          if (video.paused || video.ended || video.seeking) {
+            lastPlaybackTime = video.currentTime;
+            freezeCounter = 0;
             stalledSince = 0;
             stallRecoveries = 0;
             return;
           }
 
-          const now = Date.now();
-          if (!stalledSince) stalledSince = now;
-          const stalledFor = now - stalledSince;
+          // Case A: Playback stall detection (currentTime frozen while supposed to be playing)
+          if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+            if (Math.abs(video.currentTime - lastPlaybackTime) < 0.05) {
+              freezeCounter++;
 
-          if (stalledFor >= 3_000 && stallRecoveries === 0) {
-            stallRecoveries = 1;
-            if (hls.autoLevelEnabled && hls.loadLevel > 0) {
-              hls.nextAutoLevel = hls.loadLevel - 1;
+              // Giai đoạn 1: Soft stall (khựng >= 1s): nhích nhẹ currentTime += 0.1s vượt qua micro-gap
+              if (freezeCounter === 2 || freezeCounter === 3) {
+                const incidentNow = Date.now();
+                stallIncidentTimesRef.current.push(incidentNow);
+                stallIncidentTimesRef.current = stallIncidentTimesRef.current.filter((t) => incidentNow - t <= 60000);
+                if (stallIncidentTimesRef.current.length >= 2) {
+                  onStallSuggestServerRef.current?.();
+                }
+
+                try {
+                  const targetTime = Math.min((video.duration || Infinity) - 0.1, video.currentTime + 0.1);
+                  video.currentTime = targetTime;
+                  void video.play().catch(() => {});
+                } catch {}
+              }
+
+              // Giai đoạn 2: Hard stall (đứng >= 3.5s): tự phục hồi media error & tái khởi động tải luồng
+              if (freezeCounter >= 7) {
+                freezeCounter = 0;
+                try {
+                  const resumeTime = video.currentTime;
+                  hls.recoverMediaError();
+                  hls.startLoad(resumeTime);
+                  video.currentTime = resumeTime;
+                  void video.play().catch(() => {});
+                } catch {}
+              }
+            } else {
+              lastPlaybackTime = video.currentTime;
+              freezeCounter = 0;
             }
-            hls.startLoad(video.currentTime);
-          } else if (stalledFor >= 6_000 && stallRecoveries === 1) {
-            stallRecoveries = 2;
-            if (!switchTransport()) {
-              hls.recoverMediaError();
-            }
-          } else if (stalledFor >= 10_000 && stallRecoveries === 2) {
-            stallRecoveries = 3;
-            onErrorRef.current?.({
-              type: 'HLS_STALL_TIMEOUT',
-              details: { currentTime: video.currentTime },
-            });
           }
-        }, 1_000);
+
+          // Case B: Buffer starvation (readyState < HAVE_FUTURE_DATA)
+          if (video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
+            const now = Date.now();
+            if (!stalledSince) stalledSince = now;
+            const stalledFor = now - stalledSince;
+
+            if (stalledFor >= 3_000 && stallRecoveries === 0) {
+              stallRecoveries = 1;
+              const incidentNow = Date.now();
+              stallIncidentTimesRef.current.push(incidentNow);
+              stallIncidentTimesRef.current = stallIncidentTimesRef.current.filter((t) => incidentNow - t <= 60000);
+              if (stallIncidentTimesRef.current.length >= 2) {
+                onStallSuggestServerRef.current?.();
+              }
+
+              if (hls.autoLevelEnabled && hls.loadLevel > 0) {
+                hls.nextAutoLevel = hls.loadLevel - 1;
+              }
+              hls.startLoad(video.currentTime);
+            } else if (stalledFor >= 6_000 && stallRecoveries === 1) {
+              stallRecoveries = 2;
+              if (!switchTransport()) {
+                hls.recoverMediaError();
+              }
+            } else if (stalledFor >= 10_000 && stallRecoveries === 2) {
+              stallRecoveries = 3;
+              onErrorRef.current?.({
+                type: 'HLS_STALL_TIMEOUT',
+                details: { currentTime: video.currentTime },
+              });
+            }
+          } else {
+            stalledSince = 0;
+            stallRecoveries = 0;
+          }
+        }, 500);
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.setAttribute('playsinline', 'true');
         video.setAttribute('webkit-playsinline', 'true');
@@ -717,10 +773,11 @@ export default function ArtPlayer({
           tooltip: autoSkipAds ? 'Bật' : 'Tắt',
           switch: autoSkipAds,
           onSwitch: function (item: any) {
-            item.tooltip = item.switch ? 'Bật' : 'Tắt';
-            autoSkipAdsRef.current = item.switch;
-            useSettingsStore.getState().setAutoSkipAds(item.switch);
-            return item.switch;
+            const next = !item.switch;
+            item.tooltip = next ? 'Bật' : 'Tắt';
+            autoSkipAdsRef.current = next;
+            useSettingsStore.getState().setAutoSkipAds(next);
+            return next;
           },
         },
         {
@@ -728,9 +785,26 @@ export default function ArtPlayer({
           tooltip: autoSkipIntro ? 'Bật' : 'Tắt',
           switch: autoSkipIntro,
           onSwitch: function (item: any) {
-            item.tooltip = item.switch ? 'Bật' : 'Tắt';
-            autoSkipIntroRef.current = item.switch;
-            return item.switch;
+            const next = !item.switch;
+            item.tooltip = next ? 'Bật' : 'Tắt';
+            autoSkipIntroRef.current = next;
+            return next;
+          },
+        },
+        {
+          html: 'Chế độ Ban đêm (Kích thoại)',
+          tooltip: isNightModeEnabled() ? 'Bật' : 'Tắt',
+          switch: isNightModeEnabled(),
+          onSwitch: function (item: any) {
+            const nextState = !item.switch;
+            item.tooltip = nextState ? 'Bật' : 'Tắt';
+            setNightMode(nextState);
+            if (playerRef.current) {
+              playerRef.current.notice.show = nextState
+                ? 'Đã bật Chế độ Ban đêm: Giọng thoại rõ nét, giảm âm nổ'
+                : 'Đã tắt Chế độ Ban đêm';
+            }
+            return nextState;
           },
         },
       ],
@@ -1071,6 +1145,9 @@ export default function ArtPlayer({
 
     // Keep business callbacks around ArtPlayer's native UI lifecycle.
     player.on('ready', () => {
+      if (player.video) {
+        attachNightModeAudio(player.video);
+      }
       onReadyRef.current?.(player);
       if (player.loading) {
         player.loading.show = false;

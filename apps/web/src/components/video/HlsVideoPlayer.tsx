@@ -28,6 +28,7 @@ type HlsVideoPlayerProps = {
   autoSkipIntro?: boolean;
   autoSkipAds?: boolean;
   minAdStartTime?: number;
+  onStallSuggestServer?: () => void;
 };
 
 /**
@@ -54,6 +55,7 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
   autoSkipIntro = true,
   autoSkipAds = true,
   minAdStartTime = 360,
+  onStallSuggestServer,
 }: HlsVideoPlayerProps) {
   return (
     <div className="w-full h-full relative">
@@ -69,6 +71,7 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
         autoSkipIntro={autoSkipIntro}
         autoSkipAds={autoSkipAds}
         minAdStartTime={minAdStartTime}
+        onStallSuggestServer={onStallSuggestServer}
         isTheaterMode={isTheaterMode}
         onTheaterModeToggle={onTheaterModeToggle}
         onReady={(player) => {

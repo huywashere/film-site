@@ -64,6 +64,7 @@ import {
 import { safeJsonLd } from '@/lib/safe-json-ld';
 import { cardFont } from '@/lib/fonts';
 import { guestDataStorage } from '@/lib/user-data';
+import { watchProgressStorage } from '@/lib/watch-progress';
 import { useOmdb, type OmdbData } from '@/hooks/useOmdb';
 import type { ServerTmdbResult } from '@/lib/server/movie-tmdb-server';
 
@@ -812,6 +813,12 @@ function EpisodeList({
 }) {
   const [activeType, setActiveType] = useState<EpServerType>('vietsub');
   const [serverIdx, setServerIdx] = useState(0);
+  const [progressMap, setProgressMap] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (!slug) return;
+    setProgressMap(watchProgressStorage.getMovieEpisodeProgressMap(slug));
+  }, [slug]);
 
   if (!episodes?.length) return null;
 
@@ -898,20 +905,52 @@ function EpisodeList({
 
       {/* Episode grid */}
       <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 lg:grid-cols-10 gap-1.5 max-h-64 overflow-y-auto pr-1 scrollbar-hide">
-        {items.map((ep: any, i: number) => (
-          <Link
-            key={ep.slug || i}
-            href={firstEpLink(ep)}
-            className={cn(
-              'flex items-center justify-center aspect-square rounded-lg',
-              'text-xs font-bold transition-all',
-              'bg-white/5 text-white/60 border border-white/[0.06]',
-              'hover:border-white/30 hover:bg-white/10 hover:text-white',
-            )}
-          >
-            {ep.name.replace(/^tập\s*/i, '')}
-          </Link>
-        ))}
+        {items.map((ep: any, i: number) => {
+          const epNum = ep.name.replace(/^tập\s*/i, '');
+          const epIdentifier = String(ep.slug || ep.name || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim();
+          const rawSlugKey = String(ep.slug || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim();
+          const rawNameKey = String(ep.name || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim();
+          const numKey = String(epNum).toLowerCase().replace(/^0+/, '').trim();
+          const progressPercent = Math.min(
+            100,
+            Math.max(
+              0,
+              progressMap[epIdentifier] ??
+                progressMap[rawSlugKey] ??
+                progressMap[rawNameKey] ??
+                progressMap[numKey] ??
+                progressMap[String(ep.slug || '')] ??
+                progressMap[String(ep.name || '')] ??
+                0,
+            ),
+          );
+
+          return (
+            <Link
+              key={ep.slug || i}
+              href={firstEpLink(ep)}
+              className={cn(
+                'relative overflow-hidden flex items-center justify-center aspect-square rounded-lg',
+                'text-xs font-bold transition-all',
+                'bg-white/5 text-white/60 border border-white/[0.06]',
+                'hover:border-white/30 hover:bg-white/10 hover:text-white',
+              )}
+            >
+              {epNum}
+              {progressPercent > 0 && (
+                <div className="absolute inset-x-0 bottom-0 h-[2.5px] bg-white/20 overflow-hidden pointer-events-none">
+                  <div
+                    className={cn(
+                      'h-full transition-all duration-300',
+                      progressPercent >= 90 ? 'bg-emerald-500' : 'bg-[#23ade5]',
+                    )}
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              )}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

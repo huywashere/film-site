@@ -134,53 +134,47 @@ export function UniverseHeroBanner({
       {/* ── Main Single-Zone Cinematic Content Canvas ── */}
       <div className="relative z-10 flex flex-col justify-between min-h-[440px] sm:min-h-[480px] lg:min-h-[520px] px-5 sm:px-8 lg:px-12 pt-6 sm:pt-8 pb-5 sm:pb-6">
         {/* Top Row: Floating Universe Brand Capsule */}
-        <div className="flex items-center justify-start">
-          {/* Brand Capsule */}
-          <div className="inline-flex items-center gap-2.5 px-3 sm:px-3.5 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 shadow-lg">
+          {/* Universe Official Brand Logo (Original Logo, no custom container wrapper) */}
+          <div className="flex items-center select-none ml-0.5 sm:ml-1">
             {isMarvel ? (
-              // Official Marvel Studios Vector Logo
-              <div className="relative h-6 sm:h-7 w-28 sm:w-32 select-none">
+              // Official Marvel Brand Logo
+              <div className="relative h-7 sm:h-9 md:h-10 w-20 sm:w-24 md:w-28 shrink-0">
                 <Image
-                  src="/images/logos/marvel-studios.svg?v=2"
-                  alt="Marvel Studios"
+                  src="/images/logos/marvel-logo.svg"
+                  alt="Marvel"
                   fill
-                  className="object-contain object-left drop-shadow-sm"
                   priority
+                  sizes="(max-width: 640px) 80px, 112px"
+                  className="object-contain object-left"
                 />
               </div>
             ) : (
-              // Official DC Universe Vector Logo
-              <div className="relative h-6 sm:h-7 w-32 sm:w-36 select-none">
+              // Official DC Comics Vector Logo
+              <div className="relative h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 shrink-0">
                 <Image
-                  src="/images/logos/dc-universe.svg?v=2"
-                  alt="DC Universe"
+                  src="/images/logos/dc-logo.svg"
+                  alt="DC Comics"
                   fill
-                  className="object-contain object-left drop-shadow-sm"
                   priority
+                  sizes="(max-width: 640px) 48px, 56px"
+                  className="object-contain object-left"
                 />
               </div>
             )}
-
-            <div className="h-3 w-[1px] bg-white/20" />
-
-            <span className="text-[11px] sm:text-xs font-semibold text-neutral-300">
-              {isMarvel ? "Multiverse Saga" : "Gods & Monsters"}
-            </span>
           </div>
-        </div>
 
         {/* Center / Lower-Left: Featured Movie Information & CTA */}
         <div className="my-auto py-6 sm:py-8 max-w-2xl space-y-3.5 sm:space-y-4">
           {/* Movie Title Logo or Crisp Typography */}
           <div>
             {current.titleLogo ? (
-              <div className="relative h-14 sm:h-20 lg:h-24 w-64 sm:w-84 lg:w-96 max-w-full">
+              <div className="relative h-16 sm:h-24 md:h-28 lg:h-32 xl:h-36 w-72 sm:w-96 md:w-[420px] lg:w-[480px] xl:w-[520px] max-w-full">
                 <Image
                   src={current.titleLogo}
                   alt={current.name}
                   fill
-                  sizes="(max-width: 640px) 256px, 384px"
-                  className="object-contain object-left filter drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]"
+                  sizes="(max-width: 768px) 320px, 520px"
+                  className="object-contain object-left filter drop-shadow-[0_10px_30px_rgba(0,0,0,0.95)]"
                   priority
                 />
               </div>
@@ -200,11 +194,11 @@ export function UniverseHeroBanner({
 
           {/* Key Meta Badges */}
           <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-xs">
-            <span className="flex items-center gap-1 font-bold text-amber-400 bg-amber-400/10 border border-amber-400/30 px-2.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm">
+            <span className="flex items-center gap-1 font-bold text-amber-400 bg-amber-400/10 border border-amber-400/30 px-2.5 py-0.5 rounded-md shadow-sm">
               <Star size={11} fill="currentColor" />
               {current.rating} TMDB
             </span>
-            <span className="font-medium text-neutral-200 bg-white/5 border border-white/10 px-2.5 py-0.5 rounded-md backdrop-blur-sm flex items-center gap-1">
+            <span className="font-medium text-neutral-300 bg-[#141720] border border-white/10 px-2.5 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
               <Volume2 size={11} className="text-neutral-400" />
               {current.lang}
             </span>
@@ -219,7 +213,7 @@ export function UniverseHeroBanner({
           <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 pt-1">
             <Link
               href={`/watch/${current.slug}`}
-              className="inline-flex items-center gap-2.5 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm bg-white text-black hover:bg-neutral-100 shadow-xl transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] cursor-pointer group"
+              className="inline-flex items-center gap-2.5 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm bg-white text-black hover:bg-neutral-100 shadow-lg shadow-black/40 transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] cursor-pointer group"
             >
               <Play
                 size={15}
@@ -233,7 +227,7 @@ export function UniverseHeroBanner({
               <button
                 type="button"
                 onClick={() => setShowTrailerModal(true)}
-                className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm text-white bg-white/10 hover:bg-white/20 border border-white/15 backdrop-blur-md transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm text-white bg-[#181b24] hover:bg-[#232836] border border-white/10 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-md"
               >
                 <Film size={15} />
                 <span>Xem Trailer</span>
@@ -242,7 +236,7 @@ export function UniverseHeroBanner({
 
             <Link
               href={`/film/${current.slug}`}
-              className="inline-flex items-center gap-1 px-3.5 py-2.5 sm:py-3 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white bg-black/40 hover:bg-black/60 border border-white/10 backdrop-blur-sm transition-all duration-200 cursor-pointer"
+              className="inline-flex items-center gap-1 px-3.5 py-2.5 sm:py-3 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white transition-all duration-200 cursor-pointer hover:bg-white/5"
             >
               <span>Chi tiết</span>
               <ChevronRight size={13} />

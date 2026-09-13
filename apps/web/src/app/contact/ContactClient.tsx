@@ -128,12 +128,12 @@ export function ContactClient() {
               </div>
             </div>
             <a
-              href="https://t.me/netphim_support"
+              href="https://t.me/nguyenphuhuy"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-400 hover:text-sky-300 underline pt-1"
             >
-              @netphim_support
+              @nguyenphuhuy
               <ExternalLink size={12} />
             </a>
           </div>

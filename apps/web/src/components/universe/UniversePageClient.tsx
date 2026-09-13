@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -12,11 +12,13 @@ import {
   Sparkles,
   Clapperboard,
   Tv,
+  Clock,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { FilmCard, FilmItem } from "@/components/film/FilmCard";
 import { Pagination } from "@/components/film/Pagination";
 import { LandscapeSpotlightRow } from "@/components/film/LandscapeSpotlightRow";
+import { UniverseTimelineSection } from "@/components/universe/UniverseTimelineSection";
 import {
   getUniverseFilms,
   getUniverseSpotlights,
@@ -140,7 +142,7 @@ function UniverseSpotlightLogo({
   }
 
   return (
-    <div className="relative h-14 sm:h-20 lg:h-24 w-60 sm:w-80 lg:w-96 max-w-full drop-shadow-[0_8px_24px_rgba(0,0,0,0.9)]">
+    <div className="relative h-16 sm:h-24 md:h-28 lg:h-32 xl:h-36 w-72 sm:w-96 md:w-[420px] lg:w-[480px] xl:w-[520px] max-w-full drop-shadow-[0_10px_30px_rgba(0,0,0,0.95)]">
       <Image
         key={src}
         src={src}
@@ -159,7 +161,7 @@ function UniverseSpotlightLogo({
           }
         }}
         className="object-contain object-left"
-        sizes="(max-width: 768px) 240px, 384px"
+        sizes="(max-width: 768px) 320px, 520px"
       />
     </div>
   );
@@ -184,10 +186,10 @@ function UniverseThumbnailButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "relative h-14 w-24 sm:h-16 sm:w-28 rounded-xl overflow-hidden border transition-all duration-300 cursor-pointer shrink-0 bg-neutral-900",
+        "group relative h-14 w-24 sm:h-[62px] sm:w-[110px] lg:h-[68px] lg:w-[120px] rounded-xl overflow-hidden border transition-all duration-300 cursor-pointer shrink-0 bg-neutral-900/90",
         isActive
-          ? "border-white ring-2 ring-white/60 scale-105 shadow-xl"
-          : "border-white/20 opacity-60 hover:opacity-100 hover:border-white/50",
+          ? "border-white ring-2 ring-white/70 shadow-[0_4px_20px_rgba(0,0,0,0.8),0_0_12px_rgba(255,255,255,0.3)] z-10"
+          : "border-white/20 opacity-65 hover:opacity-100 hover:border-white/60",
       )}
     >
       <Image
@@ -195,16 +197,19 @@ function UniverseThumbnailButton({
         src={src}
         alt={item.name}
         fill
-        sizes="112px"
+        sizes="(max-width: 640px) 96px, 120px"
         loading="lazy"
         unoptimized={useFallback}
         onError={() => {
           if (!useFallback) setUseFallback(true);
         }}
-        className="object-cover"
+        className={cn(
+          "object-cover transition-transform duration-500",
+          isActive ? "scale-105" : "group-hover:scale-105",
+        )}
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-      <span className="absolute bottom-1 left-1.5 right-1.5 text-[9px] font-bold text-white truncate text-left">
+      <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/95 via-black/60 to-transparent pointer-events-none" />
+      <span className="absolute bottom-1.5 left-2 right-2 text-[10px] sm:text-[11px] font-bold text-white truncate text-left drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
         {item.name}
       </span>
     </button>
@@ -236,6 +241,17 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
   const activeSpotlight: UniverseSpotlightItem = useMemo(() => {
     return spotlights[currentIdx] || spotlights[0];
   }, [spotlights, currentIdx]);
+
+  const thumbnailScrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll active thumbnail into view smoothly
+  useEffect(() => {
+    if (!thumbnailScrollRef.current) return;
+    const activeBtn = thumbnailScrollRef.current.children[currentIdx] as HTMLElement | undefined;
+    if (activeBtn && typeof activeBtn.scrollIntoView === "function") {
+      activeBtn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+  }, [currentIdx]);
 
   // Auto-rotate spotlight every 8 seconds
   useEffect(() => {
@@ -345,7 +361,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
       <section
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        className="relative w-full h-[76vh] sm:h-[82vh] lg:h-[88vh] min-h-[580px] max-h-[960px] overflow-hidden select-none"
+        className="relative w-full min-h-[640px] sm:min-h-[700px] lg:min-h-[740px] lg:h-[90vh] max-h-[1020px] overflow-hidden select-none"
       >
         {/* Backdrop Crossfade (Preloaded & Seamless) */}
         {spotlights.map((item, idx) => (
@@ -366,129 +382,154 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
         <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#07080c]/80 to-transparent pointer-events-none z-[1]" />
 
         {/* Spotlight Content Overlay */}
-        <div className="relative z-10 h-full max-w-[1760px] mx-auto px-4 sm:px-8 lg:px-14 flex flex-col justify-end pb-10 sm:pb-14 lg:pb-16">
-          <div className="max-w-2xl lg:max-w-3xl space-y-4">
-            {/* Universe Brand Capsule */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/15 shadow-xl">
-              <div className="relative h-4 w-16 sm:h-5 sm:w-20">
-                <Image
-                  src={
-                    isMarvel
-                      ? "/images/logos/marvel-studios.svg"
-                      : "/images/logos/dc-universe.svg"
-                  }
-                  alt={isMarvel ? "Marvel Studios" : "DC Universe"}
-                  fill
-                  priority
-                  className="object-contain object-left"
+        <div className="relative z-10 h-full max-w-[1760px] mx-auto px-4 sm:px-8 lg:px-14 flex flex-col justify-end pb-8 sm:pb-10 lg:pb-12 pt-20">
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 lg:gap-8">
+            {/* Left Column: Movie Info & Actions */}
+            <div className="max-w-xl xl:max-w-2xl 2xl:max-w-3xl space-y-3.5 sm:space-y-4">
+              {/* Universe Official Brand Logo (Original Logo, no custom container wrapper) */}
+              <div className="flex items-center select-none ml-0.5 sm:ml-1">
+                {isMarvel ? (
+                  // Official Marvel Brand Logo
+                  <div className="relative h-7 sm:h-9 md:h-10 w-20 sm:w-24 md:w-28 shrink-0">
+                    <Image
+                      src="/images/logos/marvel-logo.svg"
+                      alt="Marvel"
+                      fill
+                      priority
+                      sizes="(max-width: 640px) 80px, 112px"
+                      className="object-contain object-left"
+                    />
+                  </div>
+                ) : (
+                  // Official DC Comics Vector Logo
+                  <div className="relative h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 shrink-0">
+                    <Image
+                      src="/images/logos/dc-logo.svg"
+                      alt="DC Comics"
+                      fill
+                      priority
+                      sizes="(max-width: 640px) 48px, 56px"
+                      className="object-contain object-left"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Movie Title or Logo */}
+              <div key={activeSpotlight.slug} className="space-y-2">
+                <UniverseSpotlightLogo
+                  titleLogo={activeSpotlight.titleLogo}
+                  name={activeSpotlight.name}
                 />
+
+                <div className="text-xs sm:text-sm font-medium text-neutral-300 drop-shadow">
+                  <span>{activeSpotlight.origin_name}</span>
+                  <span className="mx-2 text-neutral-500">•</span>
+                  <span>{activeSpotlight.year}</span>
+                </div>
               </div>
-              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-neutral-300 pl-1 border-l border-white/20">
-                {isMarvel ? "Vũ Trụ Điện Ảnh Marvel" : "Vũ Trụ Điện Ảnh DC"}
-              </span>
-            </div>
 
-            {/* Movie Title or Logo */}
-            <div key={activeSpotlight.slug} className="space-y-2">
-              <UniverseSpotlightLogo
-                titleLogo={activeSpotlight.titleLogo}
-                name={activeSpotlight.name}
-              />
+              {/* Meta tags */}
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold shadow-sm">
+                  <Star size={12} className="fill-amber-400 text-amber-400" />
+                  <span>{activeSpotlight.rating.toFixed(1)} TMDB</span>
+                </span>
 
-              <div className="text-xs sm:text-sm font-medium text-neutral-300 drop-shadow">
-                <span>{activeSpotlight.origin_name}</span>
-                <span className="mx-2 text-neutral-500">•</span>
-                <span>{activeSpotlight.year}</span>
+                <span className="px-2.5 py-1 rounded-lg bg-[#141720] border border-white/10 text-neutral-300 font-medium shadow-sm">
+                  {activeSpotlight.lang}
+                </span>
+
+                <span className="px-2.5 py-1 rounded-lg bg-[#141720] border border-white/10 text-neutral-300 font-medium shadow-sm">
+                  {activeSpotlight.quality}
+                </span>
+              </div>
+
+              {/* Synopsis */}
+              <p className="text-xs sm:text-sm text-neutral-300/90 line-clamp-2 sm:line-clamp-3 leading-relaxed max-w-xl drop-shadow">
+                {activeSpotlight.content}
+              </p>
+
+              {/* Actions Buttons */}
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Link
+                  href={`/watch/${activeSpotlight.slug}`}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-black font-extrabold text-xs sm:text-sm hover:bg-neutral-100 transition-all shadow-lg shadow-black/40 active:scale-95"
+                >
+                  <Play size={16} className="fill-black" />
+                  <span>Xem Phim Ngay</span>
+                </Link>
+
+                {activeSpotlight.trailer_url && (
+                  <button
+                    type="button"
+                    onClick={() => setTrailerFilm(activeFilmItem)}
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#181b24] hover:bg-[#232836] text-white font-bold text-xs sm:text-sm border border-white/10 transition-all shadow-md active:scale-95 cursor-pointer"
+                  >
+                    <Clapperboard size={16} />
+                    <span>Xem Trailer</span>
+                  </button>
+                )}
+
+                <Link
+                  href={`/film/${activeSpotlight.slug}`}
+                  className="inline-flex items-center gap-1.5 px-4 py-3 rounded-xl text-neutral-300 hover:text-white font-semibold text-xs sm:text-sm transition-colors hover:bg-white/5"
+                >
+                  <span>Chi tiết</span>
+                  <ChevronRight size={14} />
+                </Link>
+
+                <a
+                  href="#universe-timeline"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-3 rounded-xl text-neutral-300 hover:text-white font-semibold text-xs sm:text-sm transition-colors bg-[#181b24]/80 hover:bg-[#232836] border border-white/10"
+                >
+                  <Clock size={14} className={isMarvel ? "text-red-400" : "text-sky-400"} />
+                  <span>Dòng Thời Gian</span>
+                </a>
               </div>
             </div>
 
-            {/* Meta tags */}
-            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold">
-                <Star size={12} className="fill-amber-400 text-amber-400" />
-                <span>{activeSpotlight.rating.toFixed(1)} TMDB</span>
-              </span>
-
-              <span className="px-2.5 py-1 rounded-lg bg-white/10 backdrop-blur-sm border border-white/15 text-neutral-200 font-medium">
-                {activeSpotlight.lang}
-              </span>
-
-              <span className="px-2.5 py-1 rounded-lg bg-white/10 backdrop-blur-sm border border-white/15 text-neutral-200 font-medium">
-                {activeSpotlight.quality}
-              </span>
-            </div>
-
-            {/* Synopsis */}
-            <p className="text-xs sm:text-sm text-neutral-300/90 line-clamp-2 sm:line-clamp-3 leading-relaxed max-w-xl drop-shadow">
-              {activeSpotlight.content}
-            </p>
-
-            {/* Actions Buttons */}
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Link
-                href={`/watch/${activeSpotlight.slug}`}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-black font-extrabold text-xs sm:text-sm hover:bg-neutral-200 transition-all shadow-[0_8px_24px_rgba(255,255,255,0.25)] active:scale-95"
+            {/* Right Column: Carousel Thumbnails */}
+            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 max-w-full lg:max-w-[580px] xl:max-w-[700px]">
+              <div
+                ref={thumbnailScrollRef}
+                className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto no-scrollbar py-2.5 px-0.5 scroll-smooth overscroll-x-contain"
               >
-                <Play size={16} className="fill-black" />
-                <span>Xem Phim Ngay</span>
-              </Link>
+                {spotlights.map((item, idx) => (
+                  <UniverseThumbnailButton
+                    key={item.id}
+                    item={item}
+                    isActive={idx === currentIdx}
+                    onClick={() => setCurrentIdx(idx)}
+                  />
+                ))}
+              </div>
 
-              {activeSpotlight.trailer_url && (
+              {/* Prev / Next Arrows */}
+              <div className="flex items-center gap-1 pl-1 shrink-0">
                 <button
                   type="button"
-                  onClick={() => setTrailerFilm(activeFilmItem)}
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs sm:text-sm backdrop-blur-md border border-white/20 transition-all active:scale-95 cursor-pointer"
+                  onClick={() =>
+                    setCurrentIdx(
+                      (prev) => (prev - 1 + spotlights.length) % spotlights.length,
+                    )
+                  }
+                  className="p-2 sm:p-2.5 rounded-xl bg-black/75 hover:bg-white/20 text-white/90 hover:text-white border border-white/15 backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-lg"
+                  aria-label="Previous"
                 >
-                  <Clapperboard size={16} />
-                  <span>Xem Trailer</span>
+                  <ChevronLeft size={16} />
                 </button>
-              )}
-
-              <Link
-                href={`/film/${activeSpotlight.slug}`}
-                className="inline-flex items-center gap-1.5 px-4 py-3 rounded-xl text-neutral-300 hover:text-white font-semibold text-xs sm:text-sm transition-colors"
-              >
-                <span>Chi tiết</span>
-                <ChevronRight size={14} />
-              </Link>
-            </div>
-          </div>
-
-          {/* Bottom Right Carousel Thumbnails */}
-          <div className="mt-8 lg:mt-0 lg:absolute lg:right-14 lg:bottom-16 flex items-center gap-2.5 overflow-x-auto no-scrollbar py-2">
-            {spotlights.map((item, idx) => (
-              <UniverseThumbnailButton
-                key={item.id}
-                item={item}
-                isActive={idx === currentIdx}
-                onClick={() => setCurrentIdx(idx)}
-              />
-            ))}
-
-            {/* Prev / Next Arrows */}
-            <div className="flex items-center gap-1 pl-1 shrink-0">
-              <button
-                type="button"
-                onClick={() =>
-                  setCurrentIdx(
-                    (prev) => (prev - 1 + spotlights.length) % spotlights.length,
-                  )
-                }
-                className="p-2 rounded-lg bg-black/60 hover:bg-black/90 text-white/80 hover:text-white border border-white/10 transition-colors cursor-pointer"
-                aria-label="Previous"
-              >
-                <ChevronLeft size={14} />
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setCurrentIdx((prev) => (prev + 1) % spotlights.length)
-                }
-                className="p-2 rounded-lg bg-black/60 hover:bg-black/90 text-white/80 hover:text-white border border-white/10 transition-colors cursor-pointer"
-                aria-label="Next"
-              >
-                <ChevronRight size={14} />
-              </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentIdx((prev) => (prev + 1) % spotlights.length)
+                  }
+                  className="p-2 sm:p-2.5 rounded-xl bg-black/75 hover:bg-white/20 text-white/90 hover:text-white border border-white/15 backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-lg"
+                  aria-label="Next"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -536,7 +577,10 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
           films={rail4}
         />
 
-        {/* ── 3. FULL UNIVERSE CATALOG (LƯỚI PHIM TOÀN BỘ 7 CỘT) ─────────────── */}
+        {/* ── 3. CHRONOLOGICAL TIMELINE ROADMAP ─────────────────────────────── */}
+        <UniverseTimelineSection universe={universe} />
+
+        {/* ── 4. FULL UNIVERSE CATALOG (LƯỚI PHIM TOÀN BỘ 7 CỘT) ─────────────── */}
         <section id="full-catalog" className="pt-8 sm:pt-12 pb-16 border-t border-white/[0.08]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6">
             <div className="flex items-center gap-3">

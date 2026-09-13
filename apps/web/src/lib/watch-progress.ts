@@ -73,6 +73,56 @@ export const watchProgressStorage = {
       const trimmed = entries.slice(0, 30);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
 
+      // Dedicated per-movie episode progress map (Netflix-style persistent progress for all episodes)
+      try {
+        const movieProgressKey = `netphim_ep_progress_${entry.slug}`;
+        const movieRaw = localStorage.getItem(movieProgressKey);
+        const movieMap: Record<string, { time: number; duration: number; percent: number; updatedAt: number }> =
+          movieRaw ? JSON.parse(movieRaw) : {};
+        const percent =
+          entry.duration > 0
+            ? Math.min(100, Math.round((entry.currentTime / entry.duration) * 100))
+            : 0;
+        const epKey = String(entry.epSlug || entry.epName || '')
+          .toLowerCase()
+          .replace(/^tập\s*/i, '')
+          .replace(/^tap-/i, '')
+          .replace(/^0+/, '')
+          .trim();
+
+        if (epKey) {
+          movieMap[epKey] = {
+            time: entry.currentTime,
+            duration: entry.duration,
+            percent,
+            updatedAt: Date.now(),
+          };
+        }
+        if (entry.epSlug) {
+          movieMap[entry.epSlug] = {
+            time: entry.currentTime,
+            duration: entry.duration,
+            percent,
+            updatedAt: Date.now(),
+          };
+        }
+        localStorage.setItem(movieProgressKey, JSON.stringify(movieMap));
+      } catch {}
+
+      // Dispatch event for real-time UI updates
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('netphim_episode_progress_changed', {
+            detail: {
+              slug: entry.slug,
+              epSlug: entry.epSlug,
+              currentTime: entry.currentTime,
+              duration: entry.duration,
+            },
+          }),
+        );
+      }
+
       // Async sync to DB backend (throttled: at most once every 5 seconds)
       const now = Date.now();
       if (now - lastSyncTimestamp > 5000) {
@@ -92,6 +142,53 @@ export const watchProgressStorage = {
     } catch (e) {
       console.error("Failed to save watch progress:", e);
     }
+  },
+
+  getMovieEpisodeProgressMap: (movieSlug: string): Record<string, number> => {
+    if (typeof window === "undefined" || !movieSlug) return {};
+    const map: Record<string, number> = {};
+    try {
+      // 1. Check dedicated per-movie store
+      const movieProgressKey = `netphim_ep_progress_${movieSlug}`;
+      const movieRaw = localStorage.getItem(movieProgressKey);
+      if (movieRaw) {
+        const movieData = JSON.parse(movieRaw) as Record<
+          string,
+          { percent?: number; time?: number; duration?: number }
+        >;
+        for (const [k, v] of Object.entries(movieData as any)) {
+          if (typeof v === 'number') {
+            map[k] = Math.min(100, Math.max(0, Math.round(v)));
+          } else if (typeof (v as any)?.percent === 'number') {
+            map[k] = (v as any).percent;
+          } else if ((v as any)?.duration && (v as any).duration > 0 && typeof (v as any).time === 'number') {
+            map[k] = Math.min(100, Math.round(((v as any).time / (v as any).duration) * 100));
+          }
+        }
+      }
+
+      // 2. Also merge with global history entries (for backwards compatibility)
+      const globalEntries = watchProgressStorage
+        .getHistoryEntries()
+        .filter((e) => e.slug === movieSlug);
+      for (const entry of globalEntries) {
+        if (entry.duration > 0 && entry.currentTime > 0) {
+          const percent = Math.min(
+            100,
+            Math.round((entry.currentTime / entry.duration) * 100),
+          );
+          const epKey = String(entry.epSlug || entry.epName || '')
+            .toLowerCase()
+            .replace(/^tập\s*/i, '')
+            .replace(/^tap-/i, '')
+            .replace(/^0+/, '')
+            .trim();
+          if (epKey) map[epKey] = Math.max(map[epKey] || 0, percent);
+          if (entry.epSlug) map[entry.epSlug] = Math.max(map[entry.epSlug] || 0, percent);
+        }
+      }
+    } catch {}
+    return map;
   },
 
   removeEntry: (slug: string, epSlug?: string) => {

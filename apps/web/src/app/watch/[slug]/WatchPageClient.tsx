@@ -105,6 +105,7 @@ import {
   type SourceServer,
 } from '@/lib/player-source-routing';
 import { buildArtworkCandidates, wsrvImageUrl, isTmdbImageUrl } from '@/lib/image-cdn';
+import { preloadNextEpisodeStream } from '@/lib/stream-preloader';
 
 const HlsVideoPlayer = dynamic(
   () => import('@/components/video/HlsVideoPlayer').then((module) => module.HlsVideoPlayer),
@@ -1333,6 +1334,15 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   const [showEpThumbnails, setShowEpThumbnails] = useState(false);
   const [artInstance, setArtInstance] = useState<any>(null);
 
+  // Preload & Smart Failover states
+  const hasPreloadedNextEpRef = useRef(false);
+  const lastServerSwitchTimeRef = useRef(0);
+  const [suggestedServerToast, setSuggestedServerToast] = useState<{
+    serverIndex: number;
+    serverName: string;
+    ping: number;
+  } | null>(null);
+
   // Under-player toolbar states
   const [isFavorite, setIsFavorite] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
@@ -2179,6 +2189,47 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     enabled: !!user && !!slug,
   });
 
+  // Track episode progress per episode for Netflix-style progress bars
+  const [episodeProgressMap, setEpisodeProgressMap] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (!slug) return;
+    const loadProgress = () => {
+      const localMap = watchProgressStorage.getMovieEpisodeProgressMap(slug);
+      if (Array.isArray(resumeData)) {
+        for (const item of resumeData) {
+          if (!item?.episode || !item?.duration || item.duration <= 0) continue;
+          const pct = Math.min(100, Math.max(0, Math.round((item.progress / item.duration) * 100)));
+          const epKey =
+            String(item.episode)
+              .toLowerCase()
+              .replace(/^tập\s*/i, '')
+              .replace(/^tap-/i, '')
+              .replace(/^0+/, '')
+              .trim() || String(item.episode);
+          if (!localMap[epKey] || pct > localMap[epKey]) {
+            localMap[epKey] = pct;
+          }
+        }
+      }
+      setEpisodeProgressMap(localMap);
+    };
+
+    loadProgress();
+
+    const handleProgressUpdate = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.slug === slug) {
+        loadProgress();
+      }
+    };
+
+    window.addEventListener('netphim_episode_progress_changed', handleProgressUpdate);
+    return () => {
+      window.removeEventListener('netphim_episode_progress_changed', handleProgressUpdate);
+    };
+  }, [slug, resumeData]);
+
   // Fetch TMDB Scene Stills / Backdrops for Episode Scene Thumbnails
   const sceneStills: any[] = useMemo(() => {
     return tmdbBackdrops || [];
@@ -2832,6 +2883,22 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
       lastKnownPlaybackTimeRef.current = currentTime;
 
+      // ── Zero-Spinner Next Episode Preload (final 3 minutes) ──
+      if (
+        duration > 60 &&
+        duration - currentTime <= 180 &&
+        !hasPreloadedNextEpRef.current &&
+        currentEpIndex >= 0 &&
+        currentEpIndex < serverData.length - 1
+      ) {
+        const nextEpItem = serverData[currentEpIndex + 1];
+        const nextStream = nextEpItem?.link_m3u8;
+        if (nextStream) {
+          hasPreloadedNextEpRef.current = true;
+          preloadNextEpisodeStream(nextStream);
+        }
+      }
+
       // ── Auto Next Episode Countdown Trigger (within 3 seconds of ending) ──
       if (
         autoNextConfig &&
@@ -3245,6 +3312,8 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     playedSourceKeysRef.current.clear();
     lastKnownPlaybackTimeRef.current = resumeAt;
     clearIframeLoadTimeout();
+    hasPreloadedNextEpRef.current = false;
+    setSuggestedServerToast(null);
     setPlayerEngine(DISABLE_ARTPLAYER ? 'iframe' : m3u8Url ? 'hls' : 'iframe');
     // A new episode intentionally resets source failures; changing source for
     // the same episode must retain them so fallback never retries a bad server.
@@ -3293,6 +3362,68 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       document.title = `Xem Phim ${film.name} ${currentEpData?.name ? `- Tập ${currentEpData.name}` : ''} Vietsub HD | NetPhim`;
     }
   }, [film?.name, currentEpData?.name]);
+
+  const handleStallSuggestServer = useCallback(async () => {
+    if (suggestedServerToast || Date.now() - lastServerSwitchTimeRef.current < 45000) {
+      return;
+    }
+    const candidates = episodes
+      .map((ep, idx) => ({ ep, idx }))
+      .filter(({ idx }) => idx !== currentServer && !failedServers.includes(idx));
+
+    if (candidates.length === 0) return;
+
+    let bestCandidate: { idx: number; name: string; ping: number } | null = null;
+    let minPing = 9999;
+
+    for (const { ep, idx } of candidates.slice(0, 3)) {
+      const stream = ep.server_data?.[0]?.link_m3u8 || ep.server_data?.[0]?.link_embed;
+      if (!stream) continue;
+      const start = performance.now();
+      try {
+        await fetch(stream, { method: 'HEAD', mode: 'no-cors' });
+        const ping = Math.max(15, Math.round(performance.now() - start));
+        if (ping < minPing) {
+          minPing = ping;
+          bestCandidate = { idx, name: ep.server_name || `Server ${idx + 1}`, ping };
+        }
+      } catch {
+        const ping = Math.max(25, Math.round(performance.now() - start));
+        if (ping < 300 && ping < minPing) {
+          minPing = ping;
+          bestCandidate = { idx, name: ep.server_name || `Server ${idx + 1}`, ping };
+        }
+      }
+    }
+
+    if (bestCandidate && bestCandidate.ping < 350) {
+      const chosen = bestCandidate;
+      setSuggestedServerToast({
+        serverIndex: chosen.idx,
+        serverName: chosen.name,
+        ping: chosen.ping,
+      });
+      setTimeout(() => {
+        setSuggestedServerToast((prev) => (prev?.serverIndex === chosen.idx ? null : prev));
+      }, 10000);
+    }
+  }, [episodes, currentServer, failedServers, suggestedServerToast]);
+
+  const handleAcceptSuggestedServer = useCallback(() => {
+    if (!suggestedServerToast) return;
+    const targetIdx = suggestedServerToast.serverIndex;
+    const serverName = suggestedServerToast.serverName;
+    const ping = suggestedServerToast.ping;
+    setSuggestedServerToast(null);
+    lastServerSwitchTimeRef.current = Date.now();
+    preserveServerOnTypeChangeRef.current = true;
+    setCurrentServer(targetIdx);
+    const targetEp = episodes[targetIdx];
+    if (targetEp?._type) {
+      setActiveServerType(targetEp._type as ServerType);
+    }
+    toast(`Đã chuyển sang ${serverName} (Ping ${ping}ms)`, 'success');
+  }, [suggestedServerToast, episodes, toast]);
 
   if (isLoading) return <WatchSkeleton />;
 
@@ -3708,6 +3839,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     }}
                     onProgress={handlePlaybackProgress}
                     onEnded={handleVideoEnded}
+                    onStallSuggestServer={handleStallSuggestServer}
                     onError={(error) => handlePlayerFailure(error.type)}
                   />
                 ) : iframeUrl ? (
@@ -3781,6 +3913,37 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     onSkip={goNextEpisode}
                     onCancel={() => setAutoNextCountdown(null)}
                   />
+                )}
+
+                {/* Smart Server Failover Suggestion Toast */}
+                {suggestedServerToast && (
+                  <div className="absolute bottom-16 left-4 z-50 max-w-sm rounded-2xl border border-sky-500/40 bg-[#12141c]/95 p-3.5 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-500/20 text-sky-400">
+                        <Sparkles size={18} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-white">Đường truyền hiện tại đang chậm</p>
+                        <p className="mt-0.5 text-[11px] text-neutral-300 leading-snug">
+                          <span className="font-bold text-sky-300">{suggestedServerToast.serverName}</span> (Ping {suggestedServerToast.ping}ms) đang phản hồi rất nhanh. Bạn có muốn đổi không?
+                        </p>
+                        <div className="mt-2.5 flex items-center gap-2">
+                          <button
+                            onClick={handleAcceptSuggestedServer}
+                            className="rounded-lg bg-sky-500 hover:bg-sky-400 px-3 py-1.5 text-xs font-extrabold text-white shadow-md transition-colors cursor-pointer"
+                          >
+                            Đổi ngay
+                          </button>
+                          <button
+                            onClick={() => setSuggestedServerToast(null)}
+                            className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                          >
+                            Bỏ qua
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </>
             ) : (
@@ -4453,13 +4616,29 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                   ep.slug === activeEpisodeKey || ep.name === activeEpisodeKey;
                                 const epNum = ep.name.replace(/^tập\s*/i, '');
                                 const epIdentifier = String(ep.slug || ep.name || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim();
+                                const rawSlugKey = String(ep.slug || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim();
+                                const rawNameKey = String(ep.name || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim();
+                                const numKey = String(epNum).toLowerCase().replace(/^0+/, '').trim();
+                                const progressPercent = Math.min(
+                                  100,
+                                  Math.max(
+                                    0,
+                                    episodeProgressMap[epIdentifier] ??
+                                      episodeProgressMap[rawSlugKey] ??
+                                      episodeProgressMap[rawNameKey] ??
+                                      episodeProgressMap[numKey] ??
+                                      episodeProgressMap[String(ep.slug || '')] ??
+                                      episodeProgressMap[String(ep.name || '')] ??
+                                      0,
+                                  ),
+                                );
                                 const isWatched =
                                   !isActive &&
                                   (
                                     watchedEpisodeKeys.has(epIdentifier) ||
-                                    watchedEpisodeKeys.has(String(ep.slug || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim()) ||
-                                    watchedEpisodeKeys.has(String(ep.name || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim()) ||
-                                    watchedEpisodeKeys.has(String(epNum).toLowerCase().replace(/^0+/, '').trim()) ||
+                                    watchedEpisodeKeys.has(rawSlugKey) ||
+                                    watchedEpisodeKeys.has(rawNameKey) ||
+                                    watchedEpisodeKeys.has(numKey) ||
                                     watchProgressStorage
                                       .getHistoryEntries()
                                       .some(
@@ -4469,13 +4648,14 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                             String(entry.epName || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim() === epIdentifier),
                                       )
                                   );
+                                const effectiveProgress = progressPercent > 0 ? progressPercent : (isWatched ? 100 : 0);
                                 return (
                                   <button
                                     key={ep.slug || ep.name || i}
                                     aria-current={isActive ? 'true' : undefined}
                                     onClick={() => navigateToEpisode(ep.slug || ep.name)}
                                     className={cn(
-                                      'relative flex items-center justify-center gap-1.5 rounded-xl py-2 px-2.5 transition-all cursor-pointer border text-xs font-semibold select-none',
+                                      'relative flex items-center justify-center gap-1.5 rounded-xl py-2 px-2.5 transition-all cursor-pointer border text-xs font-semibold select-none overflow-hidden',
                                       isActive
                                         ? 'border-white/30 bg-[#282a32] text-white font-extrabold shadow-sm scale-[1.02]'
                                         : isWatched
@@ -4503,6 +4683,19 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                       />
                                     )}
                                     <span>Tập {epNum}</span>
+
+                                    {/* Mini Netflix-Style Episode Progress Bar */}
+                                    {effectiveProgress > 0 && (
+                                      <div className="absolute inset-x-0 bottom-0 h-[3px] bg-white/20 overflow-hidden pointer-events-none z-10">
+                                        <div
+                                          className={cn(
+                                            'h-full transition-all duration-300',
+                                            effectiveProgress >= 90 ? 'bg-emerald-500' : 'bg-[#23ade5]',
+                                          )}
+                                          style={{ width: `${effectiveProgress}%` }}
+                                        />
+                                      </div>
+                                    )}
                                   </button>
                                 );
                               })}
@@ -4518,13 +4711,29 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                   ep.slug === activeEpisodeKey || ep.name === activeEpisodeKey;
                                 const epNum = ep.name.replace(/^tập\s*/i, '');
                                 const epIdentifier = String(ep.slug || ep.name || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim();
+                                const rawSlugKey = String(ep.slug || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim();
+                                const rawNameKey = String(ep.name || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim();
+                                const numKey = String(epNum).toLowerCase().replace(/^0+/, '').trim();
+                                const progressPercent = Math.min(
+                                  100,
+                                  Math.max(
+                                    0,
+                                    episodeProgressMap[epIdentifier] ??
+                                      episodeProgressMap[rawSlugKey] ??
+                                      episodeProgressMap[rawNameKey] ??
+                                      episodeProgressMap[numKey] ??
+                                      episodeProgressMap[String(ep.slug || '')] ??
+                                      episodeProgressMap[String(ep.name || '')] ??
+                                      0,
+                                  ),
+                                );
                                 const isWatched =
                                   !isActive &&
                                   (
                                     watchedEpisodeKeys.has(epIdentifier) ||
-                                    watchedEpisodeKeys.has(String(ep.slug || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim()) ||
-                                    watchedEpisodeKeys.has(String(ep.name || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim()) ||
-                                    watchedEpisodeKeys.has(String(epNum).toLowerCase().replace(/^0+/, '').trim()) ||
+                                    watchedEpisodeKeys.has(rawSlugKey) ||
+                                    watchedEpisodeKeys.has(rawNameKey) ||
+                                    watchedEpisodeKeys.has(numKey) ||
                                     watchProgressStorage
                                       .getHistoryEntries()
                                       .some(
@@ -4534,6 +4743,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                             String(entry.epName || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim() === epIdentifier),
                                       )
                                   );
+                                const effectiveProgress = progressPercent > 0 ? progressPercent : (isWatched ? 100 : 0);
 
                                 return (
                                   <button
@@ -4568,6 +4778,19 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                         />
                                       );
                                     })()}
+
+                                    {/* Mini Netflix-Style Episode Progress Bar */}
+                                    {effectiveProgress > 0 && (
+                                      <div className="absolute inset-x-0 bottom-0 h-[3.5px] bg-white/20 overflow-hidden pointer-events-none z-20">
+                                        <div
+                                          className={cn(
+                                            'h-full transition-all duration-300',
+                                            effectiveProgress >= 90 ? 'bg-emerald-500' : 'bg-[#23ade5]',
+                                          )}
+                                          style={{ width: `${effectiveProgress}%` }}
+                                        />
+                                      </div>
+                                    )}
                                   </button>
                                 );
                               })}

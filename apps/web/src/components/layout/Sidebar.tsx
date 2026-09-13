@@ -54,8 +54,8 @@ const SIDEBAR_ITEMS = [
   { title: "Bộ Sưu Tập", href: "/watchlist", icon: Layers },
   { title: "Lịch Sử", href: "/history", icon: History },
   {
-    title: "Kênh Telegram",
-    href: "https://t.me/cinephim_official",
+    title: "Nhóm Telegram",
+    href: "https://t.me/+ijCR1KCdx2E0ZTA9",
     isExternal: true,
     icon: TelegramIcon,
     isSpecial: true,

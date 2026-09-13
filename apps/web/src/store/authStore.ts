@@ -59,6 +59,13 @@ export const useAuthStore = create<AuthState>()(
           const secure = window.location.protocol === "https:" ? "; Secure" : "";
           if (user) {
             document.cookie = `netphim-auth=true; Path=/; Max-Age=604800; SameSite=Lax${secure}`;
+            if (user.id) {
+              import("@/lib/user-data")
+                .then(({ autoMergeGuestDataOnLogin }) => {
+                  void autoMergeGuestDataOnLogin(user.id);
+                })
+                .catch(() => {});
+            }
           } else {
             document.cookie =
               `netphim-auth=; Path=/; Max-Age=0; SameSite=Lax${secure}`;

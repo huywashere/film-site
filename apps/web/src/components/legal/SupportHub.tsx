@@ -659,12 +659,12 @@ export function SupportHub({ initialTab = 'report' }: SupportHubProps) {
                     </div>
                   </div>
                   <a
-                    href="https://t.me/netphim_support"
+                    href="https://t.me/nguyenphuhuy"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-300 hover:text-white underline pt-1"
                   >
-                    @netphim_support
+                    @nguyenphuhuy
                     <ExternalLink size={12} />
                   </a>
                 </div>
