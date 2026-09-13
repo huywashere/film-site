@@ -1363,3 +1363,31 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 .netphim-mobile-seek-side.is-left.is-active .seek-tri-3 {
   animation: netphim-tri-wave 0.52s infinite 0.24s;
 }
+
+/* Bell swing/shake animation for episode notification banners */
+@keyframes netphim-bell-ring {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  5%, 15%, 25% {
+    transform: rotate(14deg);
+  }
+  10%, 20%, 30% {
+    transform: rotate(-14deg);
+  }
+  35% {
+    transform: rotate(6deg);
+  }
+  40% {
+    transform: rotate(-6deg);
+  }
+  45% {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-bell-ring {
+  transform-origin: top center;
+  animation: netphim-bell-ring 2.6s ease-in-out infinite;
+  display: inline-block;
+}
