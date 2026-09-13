@@ -6,6 +6,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Info, Play, Star, Calendar } from 'lucide-react';
 import { FilmItem } from '@/components/film/FilmCard';
 import { TmdbArtwork } from '@/components/film/TmdbArtwork';
+import { ShowcaseTitleLogo } from '@/components/film/ShowcaseTitleLogo';
 import { cardFont } from '@/lib/fonts';
 import { useTranslation } from '@/store/langStore';
 import { deduplicateSectionRow } from '@/lib/recommendation-engine';
@@ -140,9 +141,9 @@ export function CuratedSpotlightSection({
       </div>
 
       {/* Main Grid Card */}
-      <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-background sm:rounded-[24px] lg:grid lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-background sm:rounded-[24px] lg:grid lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px] lg:min-h-[520px] xl:min-h-[540px]">
         {/* Left: Hero Spotlight */}
-        <div className="relative aspect-[4/3] min-h-[240px] overflow-hidden sm:aspect-[16/9] sm:min-h-0 lg:aspect-auto lg:min-h-[480px]">
+        <div className="relative aspect-[4/3] min-h-[280px] overflow-hidden sm:aspect-[16/9] sm:min-h-0 lg:aspect-auto lg:min-h-[520px] xl:min-h-[540px]">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeFilm.slug}
@@ -170,7 +171,7 @@ export function CuratedSpotlightSection({
           </AnimatePresence>
 
           {/* Content overlay */}
-          <div className="relative z-10 flex h-full flex-col justify-between p-4 sm:p-8 lg:p-10">
+          <div className="relative z-10 flex h-full flex-col justify-between p-4 sm:p-6 lg:p-7">
             <div className="flex items-center justify-between">
               <span className="rounded-full border border-white/15 bg-black/50 px-2.5 py-1 text-[9px] font-semibold text-neutral-300 backdrop-blur-sm">
                 {String(activeIndex + 1).padStart(2, '0')}&nbsp;/&nbsp;
@@ -234,17 +235,14 @@ export function CuratedSpotlightSection({
                   )}
                 </div>
 
-                {/* Title */}
-                <h3
-                  className={`${cardFont.className} text-lg font-extrabold tracking-tight text-white line-clamp-2 sm:text-2xl lg:text-3xl`}
-                >
-                  {activeFilm.name}
-                </h3>
-                {activeFilm.origin_name && (
-                  <p className="mt-0.5 text-xs text-neutral-400 sm:text-sm">
-                    {activeFilm.origin_name}
-                  </p>
-                )}
+                {/* Title Logo / Banner */}
+                <ShowcaseTitleLogo
+                  film={activeFilm}
+                  fallbackTextClassName={`${cardFont.className} text-lg font-extrabold tracking-tight text-white line-clamp-2 sm:text-2xl lg:text-3xl`}
+                  imageClassName="max-h-12 sm:max-h-16 md:max-h-20 lg:max-h-22"
+                  showSubtitle
+                  subtitleClassName="mt-1 text-xs text-neutral-400 sm:text-sm"
+                />
 
                 {/* Genre tags */}
                 {categories.length > 0 && (

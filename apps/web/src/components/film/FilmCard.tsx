@@ -18,6 +18,8 @@ export interface FilmItem {
   origin_name?: string;
   thumb_url?: string;
   poster_url?: string;
+  heroBackdrop?: string;
+  titleLogo?: string;
   _thumbCandidates?: string[];
   _posterCandidates?: string[];
   year?: number;

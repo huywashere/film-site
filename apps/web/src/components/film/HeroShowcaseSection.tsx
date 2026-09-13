@@ -6,6 +6,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Info, Play, Star, Calendar } from 'lucide-react';
 import { FilmItem } from '@/components/film/FilmCard';
 import { TmdbArtwork } from '@/components/film/TmdbArtwork';
+import { ShowcaseTitleLogo } from '@/components/film/ShowcaseTitleLogo';
 import { cardFont } from '@/lib/fonts';
 import { useTranslation } from '@/store/langStore';
 import { deduplicateSectionRow } from '@/lib/recommendation-engine';
@@ -228,19 +229,14 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
                   )}
                 </div>
 
-                {/* Title */}
-                <h3
-                  className={`${cardFont.className} text-base font-extrabold tracking-tight text-white line-clamp-2 sm:text-2xl lg:text-3xl`}
-                >
-                  {activeFilm.name}
-                </h3>
-
-                {/* Origin name */}
-                {activeFilm.origin_name && (
-                  <p className="mt-0.5 text-xs text-neutral-400 sm:text-sm">
-                    {activeFilm.origin_name}
-                  </p>
-                )}
+                {/* Title Logo / Banner */}
+                <ShowcaseTitleLogo
+                  film={activeFilm}
+                  fallbackTextClassName={`${cardFont.className} text-base font-extrabold tracking-tight text-white line-clamp-2 sm:text-2xl lg:text-3xl`}
+                  imageClassName="max-h-12 sm:max-h-16 md:max-h-20 lg:max-h-22"
+                  showSubtitle
+                  subtitleClassName="mt-1 text-xs text-neutral-400 sm:text-sm"
+                />
 
                 {/* Description */}
                 <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-neutral-300 sm:text-sm">
