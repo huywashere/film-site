@@ -191,6 +191,7 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
     <Link
       ref={itemRef}
       href={`/film/${film.slug}`}
+      prefetch={false}
       className="flex w-full flex-col group/item relative select-none cursor-pointer pt-4 pb-2 pr-1 sm:w-auto sm:pr-2"
     >
       {/* Bold Rank Number Peeking Behind the Top-Left of Poster Card */}

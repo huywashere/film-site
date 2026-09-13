@@ -57,7 +57,6 @@ import {
   CURATED_HERO_FRANCHISE_POOL,
 } from "@/lib/curated-hero-pool";
 import { buildArtworkCandidates } from "@/lib/image-cdn";
-import { selectInitialHlsTransport } from "@/lib/player-source-routing";
 
 const TrailerModal = dynamic(
   () => import("@/components/film/TrailerModal").then((m) => m.TrailerModal),
@@ -165,16 +164,6 @@ interface HeroFilm extends FilmItem {
 
 const HERO_SESSION_KEY = "netphim.tmdb-hero.v7";
 const HERO_INDEX_SESSION_KEY = "netphim.tmdb-hero-index.v2";
-
-type HeroPreviewSource = {
-  primary: string;
-  fallback?: string;
-};
-
-// Reuse the resolved playback transport when a hero slide cycles back. The
-// media itself remains browser/CDN cached; this only avoids another detail
-// request for the same film.
-const heroPreviewSourceCache = new Map<string, HeroPreviewSource>();
 
 const HERO_MARKETS = [
   { code: "US", region: "US", language: "en" },
@@ -903,285 +892,6 @@ function HeroBackdropImage({
         </picture>
       )}
     </>
-  );
-}
-
-function HeroPreviewLayer({ film, enabled }: { film: HeroFilm; enabled: boolean }) {
-  const layerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isInView, setIsInView] = useState(false);
-  const [canStream, setCanStream] = useState(false);
-  const [previewSource, setPreviewSource] = useState<HeroPreviewSource | null>(null);
-  const [frameReady, setFrameReady] = useState(false);
-
-  useEffect(() => {
-    const node = layerRef.current;
-    if (!node || typeof IntersectionObserver === "undefined") {
-      setIsInView(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(([entry]) => setIsInView(entry.isIntersecting), {
-      threshold: 0.25,
-    });
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const desktopQuery = window.matchMedia("(min-width: 1024px)");
-    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const connection = (
-      navigator as Navigator & {
-        connection?: { saveData?: boolean; effectiveType?: string };
-      }
-    ).connection;
-
-    const updateEligibility = () => {
-      const constrainedConnection =
-        connection?.saveData === true ||
-        connection?.effectiveType === "slow-2g" ||
-        connection?.effectiveType === "2g";
-      setCanStream(
-        desktopQuery.matches &&
-          !motionQuery.matches &&
-          !constrainedConnection &&
-          document.visibilityState === "visible",
-      );
-    };
-
-    updateEligibility();
-    desktopQuery.addEventListener("change", updateEligibility);
-    motionQuery.addEventListener("change", updateEligibility);
-    document.addEventListener("visibilitychange", updateEligibility);
-    return () => {
-      desktopQuery.removeEventListener("change", updateEligibility);
-      motionQuery.removeEventListener("change", updateEligibility);
-      document.removeEventListener("visibilitychange", updateEligibility);
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    setPreviewSource(null);
-    setFrameReady(false);
-
-    if (!enabled || !isInView || !canStream) return;
-
-    const sourceSlug = film._source ? film._sourceSlugs?.[film._source] || film.slug : film.slug;
-    if (!sourceSlug) return;
-
-    const cacheKey = `${film._source || "auto"}:${sourceSlug}`;
-    const resolvePreviewTransport = (payload: any): HeroPreviewSource | null => {
-      const episodeGroups = [
-        payload?.episodes,
-        payload?.data?.episodes,
-        payload?.movie?.episodes,
-        payload?.data?.movie?.episodes,
-        payload?.item?.episodes,
-        payload?.data?.item?.episodes,
-      ].find(Array.isArray) as any[] | undefined;
-
-      for (const group of episodeGroups || []) {
-        const episodes = Array.isArray(group?.server_data)
-          ? group.server_data
-          : Array.isArray(group?.items)
-            ? group.items
-            : [];
-        for (const episode of episodes) {
-          const directUrl = String(episode?.link_m3u8 || episode?.m3u8 || "").trim();
-          const proxyUrl = String(episode?.link_m3u8_proxy || "").trim() || undefined;
-          if (!directUrl && !proxyUrl) continue;
-          const transport = selectInitialHlsTransport(directUrl, proxyUrl, false);
-          if (transport.primary) return transport;
-        }
-      }
-      return null;
-    };
-
-    const loadPreview = async () => {
-      const cachedSource = heroPreviewSourceCache.get(cacheKey);
-      if (cachedSource) {
-        if (!cancelled) setPreviewSource(cachedSource);
-        return;
-      }
-
-      try {
-        let resolved: HeroPreviewSource | null = null;
-        if (!film.tmdbOnly) {
-          try {
-            const response = await movieApi.getDetail(sourceSlug, film._source);
-            resolved = resolvePreviewTransport(response?.data);
-          } catch {
-            // Search below can still recover a stale or provider-specific slug.
-          }
-        }
-
-        // Curated presentation slugs do not always match provider slugs. Find
-        // the exact catalogue copy before giving up on the background preview.
-        if (!resolved) {
-          const playableFilm = await attachPlayableSource(
-            film.tmdbOnly ? film : { ...film, tmdbOnly: true },
-          );
-          if (playableFilm?.slug) {
-            const playableSlug = playableFilm._source
-              ? playableFilm._sourceSlugs?.[playableFilm._source] || playableFilm.slug
-              : playableFilm.slug;
-            const playableResponse = await movieApi.getDetail(
-              playableSlug,
-              playableFilm._source,
-            );
-            resolved = resolvePreviewTransport(playableResponse?.data);
-          }
-        }
-
-        if (!resolved || cancelled) return;
-        heroPreviewSourceCache.set(cacheKey, resolved);
-        setPreviewSource(resolved);
-      } catch {
-        // The high-resolution backdrop remains visible when direct preview
-        // playback is missing, blocked, or temporarily unavailable.
-      }
-    };
-
-    // Let the high-priority backdrop settle first. Preview resolution is
-    // deliberately deferred so it never competes with the initial hero paint.
-    const timer = window.setTimeout(() => void loadPreview(), 1400);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [canStream, enabled, film, isInView]);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !previewSource || !canStream || !isInView) return;
-
-    let disposed = false;
-    let activeUrl = previewSource.primary;
-    let fallbackUsed = false;
-    let hlsInstance: {
-      destroy: () => void;
-      stopLoad: () => void;
-      loadSource: (url: string) => void;
-      startLoad: (position?: number) => void;
-    } | null = null;
-
-    const play = () => {
-      if (disposed) return;
-      video.muted = true;
-      void video.play().catch(() => {
-        setFrameReady(false);
-      });
-    };
-    const reveal = () => {
-      if (!disposed) setFrameReady(true);
-    };
-    const tryFallback = () => {
-      if (!previewSource.fallback || fallbackUsed) return false;
-      fallbackUsed = true;
-      activeUrl = previewSource.fallback;
-      setFrameReady(false);
-      return true;
-    };
-
-    video.addEventListener("playing", reveal);
-
-    const attach = async () => {
-      const { default: Hls } = await import("hls.js");
-      if (disposed) return;
-
-      if (Hls.isSupported()) {
-        const hls = new Hls({
-          enableWorker: true,
-          startLevel: 0,
-          startPosition: 30,
-          backBufferLength: 0,
-          maxBufferLength: 12,
-          maxMaxBufferLength: 18,
-          maxBufferSize: 18 * 1000 * 1000,
-          capLevelToPlayerSize: true,
-          lowLatencyMode: false,
-          manifestLoadingTimeOut: 6_000,
-          levelLoadingTimeOut: 6_000,
-          fragLoadingTimeOut: 10_000,
-        });
-        hlsInstance = hls;
-        hls.on(Hls.Events.MANIFEST_PARSED, play);
-        hls.on(Hls.Events.ERROR, (_event, data) => {
-          if (!data.fatal || disposed) return;
-          if (data.type === Hls.ErrorTypes.NETWORK_ERROR && tryFallback()) {
-            hls.stopLoad();
-            hls.loadSource(activeUrl);
-            hls.startLoad(30);
-            return;
-          }
-          setFrameReady(false);
-          hls.destroy();
-          hlsInstance = null;
-        });
-        hls.loadSource(activeUrl);
-        hls.attachMedia(video);
-        return;
-      }
-
-      if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        video.src = activeUrl;
-        video.addEventListener(
-          "loadedmetadata",
-          () => {
-            if (Number.isFinite(video.duration) && video.duration > 45) {
-              video.currentTime = 30;
-            }
-            play();
-          },
-          { once: true },
-        );
-        video.addEventListener("error", () => {
-          if (tryFallback()) {
-            video.src = activeUrl;
-            video.load();
-          } else {
-            setFrameReady(false);
-          }
-        });
-        video.load();
-      }
-    };
-
-    void attach();
-    return () => {
-      disposed = true;
-      video.removeEventListener("playing", reveal);
-      hlsInstance?.destroy();
-      video.pause();
-      video.removeAttribute("src");
-      video.load();
-    };
-  }, [canStream, isInView, previewSource]);
-
-  return (
-    <div
-      ref={layerRef}
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-20 hidden overflow-hidden lg:block"
-    >
-      {previewSource && canStream && isInView && (
-        <video
-          ref={videoRef}
-          key={`${film.slug}-${previewSource.primary}`}
-          muted
-          autoPlay
-          playsInline
-          preload="metadata"
-          disablePictureInPicture
-          className={cn(
-            "absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 ease-out",
-            frameReady ? "opacity-100" : "opacity-0",
-          )}
-        />
-      )}
-    </div>
   );
 }
 
@@ -1962,14 +1672,8 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
             </div>
           );
         })}
-        <HeroPreviewLayer
-          film={film}
-          enabled={Boolean(
-            visualReadiness[film.slug]?.backdrop &&
-            visualReadiness[film.slug]?.title &&
-            !reduceMotion,
-          )}
-        />
+        {/* Keep the hero static: auto-decoding a full HLS stream made the
+            homepage tab CPU and bandwidth heavy. */}
       </div>
 
       {/* Vignette Dark Gradient Overlay (Edge-to-Edge Seamless Obsidian Fade) */}
@@ -2136,6 +1840,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                 {hasWatched ? (
                   <Link
                     href={getWatchHref(film)}
+                    prefetch={false}
                     className={`${cardFont.className} flex flex-col items-center justify-center bg-white hover:bg-neutral-200 text-black px-6 py-2 sm:px-7 sm:py-2.5 rounded-full transition-all duration-200 shadow-2xl hover:scale-105 active:scale-95 group min-w-[145px]`}
                   >
                     <div className="flex items-center gap-1.5 text-xs font-black tracking-wide uppercase">
@@ -2157,6 +1862,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                 ) : (
                   <Link
                     href={getWatchHref(film)}
+                    prefetch={false}
                     className={`${cardFont.className} flex items-center gap-1.5 sm:gap-2 bg-white hover:bg-neutral-200 text-black px-5 py-2.5 sm:px-7 sm:py-3 rounded-full text-xs font-black tracking-wide uppercase transition-all duration-200 shadow-2xl hover:scale-105 active:scale-95`}
                   >
                     <Play size={14} className="fill-black" />

@@ -232,6 +232,7 @@ function FilmCardComponent({
       <div className="relative transition-transform duration-300 ease-out motion-safe:group-hover/card:-translate-y-1.5">
         <Link
           href={`/film/${slug}`}
+          prefetch={false}
           className="relative block overflow-hidden rounded-[8px] border border-white/[0.08] bg-[#111216] shadow-[0_8px_22px_rgba(0,0,0,0.24)] transition-[border-color,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111214] group-hover/card:border-white/25 group-hover/card:shadow-[0_16px_36px_rgba(0,0,0,0.44)]"
         >
           {/* Poster Container Aspect Ratio */}
@@ -337,6 +338,7 @@ function FilmCardComponent({
         <div className="mt-2 flex flex-col px-0.5">
           <Link
             href={`/film/${slug}`}
+            prefetch={false}
             className="block truncate whitespace-nowrap text-[11px] font-extrabold leading-[1.3] tracking-[-0.015em] text-[#f2f2f3] transition-colors hover:text-white sm:text-[13px]"
             title={title}
           >

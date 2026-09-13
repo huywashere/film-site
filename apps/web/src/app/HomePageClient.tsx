@@ -636,7 +636,7 @@ function LazySection({ children }: { children: React.ReactNode }) {
       {isVisible ? (
         children
       ) : (
-        <div className="mb-8 h-[260px] w-full rounded-2xl bg-white/[0.01] motion-safe:animate-pulse sm:h-[340px] lg:h-[360px]" />
+        <div className="mb-8 h-[260px] w-full rounded-2xl bg-white/[0.01] motion-safe:animate-pulse motion-safe:[animation-iteration-count:3] sm:h-[340px] lg:h-[360px]" />
       )}
     </div>
   );

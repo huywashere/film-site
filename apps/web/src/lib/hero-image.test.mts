@@ -83,11 +83,34 @@ test('keeps a clean text title visible until remote hero logo artwork is decoded
   assert.match(source, /preloadMovieLogo/);
 });
 
-test('uses a brand-free HLS video element instead of a YouTube iframe for the hero background', () => {
+test('keeps the hero background brand-free without autoplaying streamed video', () => {
   const source = readFileSync('src/app/components/HeroBanner.tsx', 'utf8');
 
-  assert.match(source, /function HeroPreviewLayer/);
-  assert.match(source, /await import\("hls\.js"\)/);
-  assert.match(source, /<video/);
+  assert.doesNotMatch(source, /<HeroPreviewLayer/);
   assert.doesNotMatch(source, /youtube\.com\/embed/);
+});
+
+test('visible film cards do not prefetch every detail route in the background', () => {
+  const source = readFileSync('src/components/film/FilmCard.tsx', 'utf8');
+  const disabledPrefetchLinks = source.match(/prefetch=\{false\}/g) || [];
+
+  assert.ok(disabledPrefetchLinks.length >= 2);
+});
+
+test('hidden desktop and mobile navigation menus do not preload the whole site', () => {
+  const navbar = readFileSync('src/components/layout/Navbar.tsx', 'utf8');
+  const sidebar = readFileSync('src/components/layout/Sidebar.tsx', 'utf8');
+  const mobileBottomNav = readFileSync('src/components/layout/MobileBottomNav.tsx', 'utf8');
+
+  assert.doesNotMatch(sidebar, /prefetch=\{true\}/);
+  assert.doesNotMatch(mobileBottomNav, /prefetch=\{true\}/);
+  assert.ok((navbar.match(/prefetch=\{false\}/g) || []).length >= 5);
+});
+
+test('homepage loading placeholders stop animating after a short warm-up', () => {
+  const homepage = readFileSync('src/app/HomePageClient.tsx', 'utf8');
+  const artwork = readFileSync('src/components/film/TmdbArtwork.tsx', 'utf8');
+
+  assert.match(homepage, /animation-iteration-count:3/);
+  assert.match(artwork, /animation-iteration-count:3/);
 });

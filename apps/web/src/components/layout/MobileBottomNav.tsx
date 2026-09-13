@@ -83,7 +83,7 @@ export function MobileBottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              prefetch={true}
+              prefetch={false}
               aria-current={item.isActive ? "page" : undefined}
               className={cn(
                 "group relative flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-2xl py-1 text-[9.5px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 active:scale-95",
@@ -152,6 +152,7 @@ export function MobileBottomNav() {
         {user ? (
           <Link
             href={`/user/${encodeURIComponent(user.username)}`}
+            prefetch={false}
             aria-current={isProfileRoute ? "page" : undefined}
             aria-label="Trang cá nhân"
             className={cn(
@@ -255,4 +256,3 @@ export function MobileBottomNav() {
     </nav>
   );
 }
-

@@ -305,12 +305,12 @@ export function TmdbArtwork({
           </p>
         </div>
       ) : (
-        <div className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,#101218_25%,#181b23_45%,#101218_65%)] bg-[length:220%_100%] motion-reduce:animate-none" />
+        <div className="absolute inset-0 animate-pulse [animation-iteration-count:3] bg-[linear-gradient(110deg,#101218_25%,#181b23_45%,#101218_65%)] bg-[length:220%_100%] motion-reduce:animate-none" />
       )}
       {!loaded && !priority && src && (
         <div
           aria-hidden="true"
-          className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,#101218_25%,#181b23_45%,#101218_65%)] bg-[length:220%_100%] motion-reduce:animate-none"
+          className="absolute inset-0 animate-pulse [animation-iteration-count:3] bg-[linear-gradient(110deg,#101218_25%,#181b23_45%,#101218_65%)] bg-[length:220%_100%] motion-reduce:animate-none"
         />
       )}
     </div>

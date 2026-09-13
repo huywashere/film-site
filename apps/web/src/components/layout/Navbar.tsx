@@ -236,6 +236,7 @@ function AnimatedNavbarLogo() {
   return (
     <Link
       href="/"
+      prefetch={false}
       aria-label="NetPhim - Trang chủ"
       className="group flex select-none items-center space-x-2.5"
     >
@@ -658,6 +659,7 @@ export function Navbar() {
                   <Link
                     key={item.slug}
                     href={`/genre/${item.slug}`}
+                    prefetch={false}
                     onMouseEnter={() => router.prefetch(`/genre/${item.slug}`)}
                     className="px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 block truncate"
                   >
@@ -680,6 +682,7 @@ export function Navbar() {
                   <Link
                     key={item.slug}
                     href={`/country/${item.slug}`}
+                    prefetch={false}
                     onMouseEnter={() =>
                       router.prefetch(`/country/${item.slug}`)
                     }
@@ -727,6 +730,7 @@ export function Navbar() {
                     <Link
                       key={item.href}
                       href={item.href}
+                      prefetch={false}
                       onMouseEnter={() => router.prefetch(item.href)}
                       className={cn(
                         "px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 block truncate",
@@ -752,6 +756,7 @@ export function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  prefetch={false}
                   onMouseEnter={() => prefetchNav(link.href)}
                   onTouchStart={() => prefetchNav(link.href)}
                   className={cn(

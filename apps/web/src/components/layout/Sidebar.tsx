@@ -375,7 +375,7 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                prefetch={true}
+                prefetch={false}
                 aria-label={item.title}
                 title={item.title}
                 onMouseEnter={() => warmRoute(item.href)}
