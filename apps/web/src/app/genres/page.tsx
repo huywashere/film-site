@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -48,7 +48,7 @@ interface HubCard {
 const HUBS: HubCard[] = [
   {
     slug: "marvel",
-    title: "Vũ Trụ Điện Ảnh Marvel",
+    title: "Vũ Trụ Marvel",
     tagline: "MCU • Multiverse • Avengers",
     category: "Marvel Studios",
     highlight: "Kỷ nguyên siêu anh hùng, biệt đội Avengers, Spider-Man và đa vũ trụ.",
@@ -59,7 +59,7 @@ const HUBS: HubCard[] = [
   },
   {
     slug: "dc",
-    title: "Vũ Trụ Điện Ảnh DC",
+    title: "Vũ Trụ DC",
     tagline: "Batman • Superman • Justice League",
     category: "DC Universe",
     highlight: "Hiệp sĩ bóng đêm Batman, Superman, Justice League và thế giới siêu anh hùng DC.",
@@ -271,30 +271,20 @@ const DEFAULT_TOP10_FALLBACK: FilmItem[] = [
 
 function ResilientHubCardImage({
   src,
-  alt,
   isPriority,
 }: {
   src: string;
-  alt: string;
   isPriority?: boolean;
 }) {
   const candidates = useMemo(() => {
     return buildAsianHeroImageCandidates(src);
   }, [src]);
 
-  const [candidateIdx, setCandidateIdx] = useMemo(() => {
-    let idx = 0;
-    return [
-      idx,
-      (nextVal: number | ((prev: number) => number)) => {
-        if (typeof nextVal === "function") {
-          idx = nextVal(idx);
-        } else {
-          idx = nextVal;
-        }
-      },
-    ];
-  }, []);
+  const [candidateIdx, setCandidateIdx] = useState(0);
+
+  useEffect(() => {
+    setCandidateIdx(0);
+  }, [src]);
 
   const currentSrc = candidates[candidateIdx] || src;
 
@@ -302,17 +292,18 @@ function ResilientHubCardImage({
     <img
       key={currentSrc}
       src={currentSrc}
-      alt={alt}
+      alt=""
+      aria-hidden="true"
       loading={isPriority ? "eager" : "lazy"}
       decoding="async"
       fetchPriority={isPriority ? "high" : "auto"}
       referrerPolicy="no-referrer"
       onError={() => {
         if (candidateIdx < candidates.length - 1) {
-          setCandidateIdx((prev) => prev + 1);
+          setCandidateIdx((prev: number) => prev + 1);
         }
       }}
-      className="w-full h-full object-cover object-center brightness-[0.58] contrast-[1.1] transition-transform duration-500 ease-out group-hover:scale-105 group-hover:brightness-[0.72]"
+      className="w-full h-full object-cover object-center brightness-[0.45] contrast-[1.08] transition-transform duration-500 ease-out group-hover:scale-105 group-hover:brightness-[0.58]"
     />
   );
 }
@@ -435,7 +426,7 @@ export default function GenresPage() {
             </h1>
           </div>
           <p className="text-[11px] sm:text-xs text-neutral-400 font-medium">
-            Khám phá Top 10 thịnh hành và các vũ trụ điện ảnh đặc sắc
+            Khám phá Top 10 thịnh hành và các chủ đề phim đặc sắc
           </p>
         </div>
 
@@ -448,22 +439,22 @@ export default function GenresPage() {
           />
         </section>
 
-        {/* ── 8 Vũ Trụ Điện Ảnh Chuẩn Dark Cinematic ── */}
+        {/* ── 8 Chủ Đề Chuẩn Dark Cinematic ── */}
         <section
-          aria-label="Danh sách vũ trụ điện ảnh"
+          aria-label="Danh sách chủ đề điện ảnh"
           className="space-y-4"
         >
           {/* Section Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="h-5 w-1 rounded-full bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
+              <div className="h-5 w-1 rounded-full bg-red-600" />
               <h2
                 className={`${cardFont.className} text-lg md:text-xl font-extrabold text-white tracking-[-0.015em] flex items-center gap-2`}
               >
-                Vũ Trụ Điện Ảnh
+                Chủ Đề
               </h2>
               <span className="text-[10px] sm:text-[11px] font-semibold text-neutral-400 bg-white/[0.04] border border-white/[0.08] px-2.5 py-0.5 rounded-full">
-                8 Vũ Trụ
+                8 Chủ Đề
               </span>
             </div>
           </div>
@@ -479,7 +470,7 @@ export default function GenresPage() {
                   prefetch={true}
                   onMouseEnter={() => handlePrefetchHub(hub)}
                   onFocus={() => handlePrefetchHub(hub)}
-                  className="group relative flex flex-col justify-between h-[132px] sm:h-[150px] lg:h-[162px] overflow-hidden rounded-xl sm:rounded-2xl border border-white/[0.08] hover:border-white/25 bg-[#0e1017] p-3 sm:p-3.5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_36px_rgba(0,0,0,0.85)] cursor-pointer select-none"
+                  className="group relative flex flex-col justify-between h-[132px] sm:h-[150px] lg:h-[162px] overflow-hidden rounded-xl sm:rounded-2xl border border-white/[0.06] hover:border-white/15 bg-[#0e1017] p-3 sm:p-3.5 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer select-none"
                 >
                   {/* Backdrop Image with Deep Cinematic Vignette */}
                   <div
@@ -488,29 +479,27 @@ export default function GenresPage() {
                   >
                     <ResilientHubCardImage
                       src={hub.image}
-                      alt={hub.title}
                       isPriority={idx < 4}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b10] via-[#0a0b10]/80 to-transparent" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#0a0b10]/85 via-[#0a0b10]/30 to-black/30" />
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/5 transition-colors duration-300" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b10] via-[#0a0b10]/85 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#0a0b10]/90 via-[#0a0b10]/40 to-black/40" />
                   </div>
 
                   {/* Top Category Badge Row */}
                   <div className="relative z-10 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black/60 border border-white/[0.08] text-[9px] sm:text-[10px] font-semibold text-neutral-300 backdrop-blur-md">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black/70 border border-white/[0.05] text-[9px] sm:text-[10px] font-medium text-neutral-300">
                       <Icon size={11} className="text-white/70" />
                       <span>{hub.category}</span>
                     </span>
 
-                    <span className="text-[8.5px] sm:text-[9.5px] font-medium text-neutral-400 bg-black/50 border border-white/[0.06] px-2 py-0.5 rounded-md backdrop-blur-sm">
+                    <span className="text-[8.5px] sm:text-[9.5px] font-medium text-neutral-400 bg-black/60 border border-white/[0.05] px-2 py-0.5 rounded-md">
                       {hub.countBadge}
                     </span>
                   </div>
 
                   {/* Bottom Info Lockup */}
                   <div className="relative z-10 space-y-1">
-                    <h3 className="text-xs sm:text-sm lg:text-[15px] font-black text-white tracking-tight leading-snug group-hover:text-cyan-300 transition-colors line-clamp-1">
+                    <h3 className="text-xs sm:text-sm lg:text-[15px] font-extrabold text-white tracking-tight leading-snug group-hover:text-white transition-colors line-clamp-1">
                       {hub.title}
                     </h3>
 
@@ -518,16 +507,16 @@ export default function GenresPage() {
                       {hub.highlight}
                     </p>
 
-                    {/* Sleek Dark Action Bar (Zero bright white buttons) */}
-                    <div className="pt-1 flex items-center justify-between border-t border-white/[0.06]">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.06] group-hover:bg-white/[0.14] border border-white/[0.1] text-white/90 text-[9px] sm:text-[10px] font-bold transition-all duration-200 backdrop-blur-md">
-                        <Play size={9} fill="currentColor" className="text-white/80" />
+                    {/* Clean Dark Action Bar */}
+                    <div className="pt-1.5 flex items-center justify-between border-t border-white/[0.05]">
+                      <span className="inline-flex items-center gap-1.5 text-[9.5px] sm:text-[10.5px] font-medium text-neutral-400 group-hover:text-neutral-200 transition-colors">
+                        <Play size={9} fill="currentColor" className="text-neutral-500 group-hover:text-neutral-300" />
                         <span>Khám phá</span>
                       </span>
 
-                      <span className="text-[9px] sm:text-[10px] font-semibold text-neutral-400 group-hover:text-white transition-colors flex items-center gap-0.5">
+                      <span className="text-[9.5px] sm:text-[10.5px] font-medium text-neutral-500 group-hover:text-neutral-300 transition-colors flex items-center gap-0.5">
                         <span>Xem phim</span>
-                        <ChevronRight size={12} className="group-hover:translate-x-0.5 transition-transform text-neutral-400 group-hover:text-cyan-400" />
+                        <ChevronRight size={11} className="group-hover:translate-x-0.5 transition-transform text-neutral-500 group-hover:text-neutral-300" />
                       </span>
                     </div>
                   </div>
