@@ -1319,6 +1319,41 @@ export default function FilmDetailPage({
   // OMDB data — ratings IMDb/RT/Metacritic + awards + box office (fetch immediately, 0ms cache)
   const { omdb } = useOmdb(film, !!film);
 
+  const countries = useMemo(() => {
+    return Array.isArray(film?.country) ? film.country : [];
+  }, [film]);
+
+  // Effective OMDB ratings: use OMDB API data when available, with instant seamless fallback from film IMDb/TMDB data
+  const effectiveOmdb = useMemo<OmdbData | null>(() => {
+    if (omdb) return omdb;
+    const resolvedImdbId =
+      film?.imdb?.id && film.imdb.id !== '0' ? film.imdb.id : film?.imdb_id || null;
+    const resolvedImdbVoteAvg = Number(
+      film?.imdb?.vote_average || film?.imdb_rating || film?.imdb?.rating || 0,
+    );
+    const resolvedImdbVoteCount = Number(film?.imdb?.vote_count || 0);
+
+    if (!resolvedImdbId && !resolvedImdbVoteAvg) return null;
+
+    return {
+      imdbId: resolvedImdbId,
+      title: film?.origin_name || film?.name || null,
+      year: film?.year ? String(film.year) : null,
+      rated: null,
+      runtime: film?.time || null,
+      imdbRating: resolvedImdbVoteAvg > 0 ? formatRating(resolvedImdbVoteAvg) : null,
+      imdbVotes: resolvedImdbVoteCount > 0 ? formatVoteCount(resolvedImdbVoteCount) : null,
+      rottenTomatoes: null,
+      metacritic: null,
+      awards: null,
+      boxOffice: null,
+      plot: null,
+      language: null,
+      country: countries[0]?.name || null,
+      type: film?.type || null,
+    };
+  }, [omdb, film, countries]);
+
   const providerPosterUrl = film
     ? resolveImageUrl(film.poster_url, film.thumb_url) || resolveImageUrl(film.thumb_url)
     : null;
@@ -1557,7 +1592,6 @@ export default function FilmDetailPage({
   };
 
   const genres = Array.isArray(film?.category) ? film.category : [];
-  const countries = Array.isArray(film?.country) ? film.country : [];
   const episodeCount = episodes.reduce(
     (total: number, server: any) => Math.max(total, server?.server_data?.length || 0),
     0,
@@ -1574,36 +1608,7 @@ export default function FilmDetailPage({
   const tmdbVoteLabel = formatVoteCount(tmdbVoteCount);
   const imdbVoteLabel = formatVoteCount(imdbVoteCount);
 
-  // Effective OMDB ratings: use OMDB API data when available, with instant seamless fallback from film IMDb/TMDB data
-  const effectiveOmdb = useMemo<OmdbData | null>(() => {
-    if (omdb) return omdb;
-    const resolvedImdbId =
-      film?.imdb?.id && film.imdb.id !== '0' ? film.imdb.id : film?.imdb_id || null;
-    const resolvedImdbVoteAvg = Number(
-      film?.imdb?.vote_average || film?.imdb_rating || film?.imdb?.rating || 0,
-    );
-    const resolvedImdbVoteCount = Number(film?.imdb?.vote_count || 0);
 
-    if (!resolvedImdbId && !resolvedImdbVoteAvg) return null;
-
-    return {
-      imdbId: resolvedImdbId,
-      title: film?.origin_name || film?.name || null,
-      year: film?.year ? String(film.year) : null,
-      rated: null,
-      runtime: film?.time || null,
-      imdbRating: resolvedImdbVoteAvg > 0 ? formatRating(resolvedImdbVoteAvg) : null,
-      imdbVotes: resolvedImdbVoteCount > 0 ? formatVoteCount(resolvedImdbVoteCount) : null,
-      rottenTomatoes: null,
-      metacritic: null,
-      awards: null,
-      boxOffice: null,
-      plot: null,
-      language: null,
-      country: countries[0]?.name || null,
-      type: film?.type || null,
-    };
-  }, [omdb, film, countries]);
   const statusLabel =
     film?.status === 'completed' ||
     String(film?.episode_current || '')
