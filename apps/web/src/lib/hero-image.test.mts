@@ -130,6 +130,8 @@ test('shared artwork never hides a successfully decoded native image', () => {
 
   assert.match(source, /image\?\.complete && image\.naturalWidth > 0/);
   assert.match(source, /backdropW1280/);
+  assert.match(source, /const shouldAttemptArtwork = enabled && \(priority \|\| nearViewport\)/);
+  assert.match(source, /const src = shouldAttemptArtwork \? candidates\[candidateIndex\] : undefined/);
   assert.doesNotMatch(source, /loaded \? 'opacity-100'/);
 });
 

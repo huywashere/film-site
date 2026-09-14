@@ -86,8 +86,12 @@ export function TmdbArtwork({
   );
 
   useEffect(() => {
-    if (!enabled || priority || providerIsTmdb) {
-      setNearViewport(enabled);
+    if (!enabled) {
+      setNearViewport(false);
+      return;
+    }
+    if (priority) {
+      setNearViewport(true);
       return;
     }
 
@@ -106,7 +110,7 @@ export function TmdbArtwork({
       artworkObserverCallbacks.delete(element);
       observer.unobserve(element);
     };
-  }, [enabled, priority, providerIsTmdb, film.slug]);
+  }, [enabled, priority, film.slug]);
 
   // Shelf pages can render dozens of cards. Only query TMDB if the film lacks
   // provider artwork or if title lookup is explicitly requested or auto-recovering.
@@ -219,8 +223,17 @@ export function TmdbArtwork({
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
-  const src = candidates[candidateIndex];
+  const shouldAttemptArtwork = enabled && (priority || nearViewport);
+  const src = shouldAttemptArtwork ? candidates[candidateIndex] : undefined;
   const loaded = Boolean(src && loadedSrc === src);
+  const exhaustedCandidates = candidateIndex >= candidates.length;
+  const lookupSettledWithoutArtwork = artworkQuery.isFetched && !tmdbUrl;
+  const terminalFailure =
+    shouldAttemptArtwork &&
+    exhaustedCandidates &&
+    ((!autoRecovery && candidates.length > 0) ||
+      (autoRecovery && lookupSettledWithoutArtwork) ||
+      (candidates.length === 0 && lookupSettledWithoutArtwork));
 
   const responsiveSizes =
     sizes ||
@@ -314,16 +327,14 @@ export function TmdbArtwork({
             src === tmdbUrl || /image\.tmdb\.org\/t\/p\//i.test(src) ? 'tmdb' : 'fallback'
           }
         />
-      ) : (!src || candidateIndex >= candidates.length) && (!autoRecovery || (artworkQuery.isFetched && !tmdbUrl)) ? (
+      ) : terminalFailure ? (
         <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-neutral-800 via-neutral-900 to-black p-2 text-center">
           <Clapperboard className="mb-1 h-5 w-5 text-neutral-600" />
           <p className="line-clamp-2 text-[10px] font-bold text-neutral-300">
             {film.name || film.title}
           </p>
         </div>
-      ) : (
-        <div className="absolute inset-0 animate-pulse [animation-iteration-count:3] bg-[linear-gradient(110deg,#101218_25%,#181b23_45%,#101218_65%)] bg-[length:220%_100%] motion-reduce:animate-none" />
-      )}
+      ) : null}
     </div>
   );
 }
