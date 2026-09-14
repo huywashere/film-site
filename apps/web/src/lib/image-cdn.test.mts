@@ -37,6 +37,15 @@ test("unwraps wsrv and local proxy URLs to prevent double proxying", () => {
   assert.equal(isPreOptimizedImageUrl(local), true);
 });
 
+test("adds an independent provider fallback to one same-origin relay", () => {
+  const primary = "https://phimimg.com/primary.webp";
+  const fallback = "https://phim.nguonc.com/fallback.jpg";
+  const local = localImageProxyUrl(primary, { fallback })!;
+  const parsed = new URL(local, "https://netphim.local");
+  assert.equal(parsed.searchParams.get("url"), primary);
+  assert.equal(parsed.searchParams.get("fallback"), fallback);
+});
+
 test("keeps TMDB direct and skips the wsrv hop", () => {
   const tmdb = "https://image.tmdb.org/t/p/w500/poster.jpg";
   const candidates = buildArtworkCandidates([tmdb], "poster");

@@ -5,7 +5,6 @@ import { getImageProps } from 'next/image';
 import type { FilmItem } from '@/components/film/FilmCard';
 import { resolveImageUrl } from '@/components/film/FilmCard';
 import { useTmdbArtwork } from '@/hooks/useTmdbArtwork';
-import { alternateMovieArtworkUrl } from '@/lib/movie-image-url';
 import { cn } from '@/lib/utils';
 import { Clapperboard } from 'lucide-react';
 import {
@@ -36,6 +35,15 @@ interface TmdbArtworkProps {
 type ObserverCallback = () => void;
 let sharedArtworkObserver: IntersectionObserver | null = null;
 const artworkObserverCallbacks = new WeakMap<Element, ObserverCallback>();
+
+function imageHostname(value?: string | null): string | null {
+  if (!value) return null;
+  try {
+    return new URL(value).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
 
 function getSharedArtworkObserver(): IntersectionObserver | null {
   if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
@@ -125,8 +133,25 @@ export function TmdbArtwork({
     ? unwrapImageUrl(rawProviderPrimary) || rawProviderPrimary
     : null;
 
-  const providerAlternate = providerPrimary ? alternateMovieArtworkUrl(providerPrimary) : null;
-  const providerProxy = providerPrimary ? localImageProxyUrl(providerPrimary) : null;
+  const providerCandidates =
+    kind === 'backdrop' ? film._thumbCandidates : film._posterCandidates;
+  const providerFallback = useMemo(() => {
+    const primaryHost = imageHostname(providerPrimary);
+    for (const candidate of providerCandidates || []) {
+      const resolved = resolveImageUrl(candidate);
+      const clean = resolved ? unwrapImageUrl(resolved) || resolved : null;
+      if (
+        clean &&
+        clean !== providerPrimary &&
+        !isTmdbImageUrl(clean) &&
+        imageHostname(clean) !== primaryHost
+      ) return clean;
+    }
+    return null;
+  }, [providerCandidates, providerPrimary]);
+  const providerProxy = providerPrimary
+    ? localImageProxyUrl(providerPrimary, { fallback: providerFallback })
+    : null;
 
   const needsTmdbArtwork =
     enabled &&
@@ -173,58 +198,69 @@ export function TmdbArtwork({
     // our cached same-origin relay so a blocked CDN cannot leave an entire
     // shelf pending. TMDB remains direct because its regional CDN is stable.
     if (providerPrimary && !isTmdbImageUrl(providerPrimary)) add(providerProxy);
-    if (providerPrimary) add(providerPrimary);
-    if (providerAlternate) add(providerAlternate);
-    const providerCandidates =
-      kind === 'backdrop' ? film._thumbCandidates : film._posterCandidates;
+    if (providerPrimary && isTmdbImageUrl(providerPrimary)) add(providerPrimary);
+    // Once the relay reports a real upstream failure, put the asynchronously
+    // resolved TMDB image directly behind it. Otherwise a dead provider URL
+    // and its generated variants can keep a card blank for close to a minute.
+    if (autoRecovery) addTmdbCandidates();
+    let providerRecoveryCount = 0;
+    const recoveryHosts = new Set([imageHostname(providerPrimary)]);
     providerCandidates?.forEach((candidate) => {
       const resolved = resolveImageUrl(candidate);
-      add(resolved);
-      add(alternateMovieArtworkUrl(resolved));
+      const clean = resolved ? unwrapImageUrl(resolved) || resolved : null;
+      if (!clean || clean === providerPrimary || clean === providerFallback) return;
+      if (isTmdbImageUrl(clean)) {
+        add(clean);
+        return;
+      }
+      if (providerRecoveryCount >= 2) return;
+      const host = imageHostname(clean);
+      if (recoveryHosts.has(host)) return;
+      add(localImageProxyUrl(clean));
+      recoveryHosts.add(host);
+      providerRecoveryCount += 1;
     });
 
     // Never replace artwork that is already loading or painted just because a
     // title lookup finishes. TMDB is a recovery source, not a mid-paint
     // upgrade, so provider artwork remains stable and the card cannot flash.
-    addTmdbCandidates();
+    if (!autoRecovery) addTmdbCandidates();
 
-    // 3. Provider local proxy (server reliably fetches phimimg). wsrv blocks
-    // these provider domains, so retrying it only delays the real fallback.
-    if (providerPrimary) {
-      add(`/api/image-proxy?url=${encodeURIComponent(providerPrimary)}`);
-    }
-
-    // 4. Cross-fallback: if backdrop is needed and only poster was passed (or vice versa)
-    const secondaryUrl =
+    // Cross-fallback: if backdrop is needed and only poster was passed (or vice versa).
+    const rawSecondaryUrl =
       kind === 'backdrop'
         ? resolveImageUrl(film.poster_url)
         : resolveImageUrl(film.thumb_url);
-    if (secondaryUrl && secondaryUrl !== providerPrimary) {
-      add(secondaryUrl);
-      const altSec = alternateMovieArtworkUrl(secondaryUrl);
-      if (altSec) add(altSec);
-      add(`/api/image-proxy?url=${encodeURIComponent(secondaryUrl)}`);
+    const secondaryUrl = rawSecondaryUrl
+      ? unwrapImageUrl(rawSecondaryUrl) || rawSecondaryUrl
+      : null;
+    if (
+      secondaryUrl &&
+      secondaryUrl !== providerPrimary &&
+      secondaryUrl !== providerFallback
+    ) {
+      add(isTmdbImageUrl(secondaryUrl) ? secondaryUrl : localImageProxyUrl(secondaryUrl));
     }
 
     if (list.length > 0) return list;
 
     return buildArtworkCandidates(
-      [tmdbUrl, providerPrimary, providerAlternate],
+      [tmdbUrl, providerPrimary, providerFallback],
       kind === 'backdrop' ? 'backdrop' : 'poster',
     );
   }, [
     providerPrimary,
-    providerAlternate,
+    providerFallback,
     providerProxy,
     tmdbUrl,
     kind,
     film.poster_url,
     film.thumb_url,
-    film._posterCandidates,
-    film._thumbCandidates,
+    providerCandidates,
     artworkQuery.backdropW1280,
     artworkQuery.posterW500,
     preferOriginal,
+    autoRecovery,
   ]);
 
   const [candidateIndex, setCandidateIndex] = useState(0);
@@ -266,11 +302,13 @@ export function TmdbArtwork({
     }).props;
   }, [alt, film.name, kind, nearViewport, priority, responsiveSizes, src, preferOriginal]);
 
-  // Reset candidate index and loaded state when movie identity, kind, or tmdbUrl updates
+  // Reset only when the card identity changes. Resetting when recovery finds a
+  // TMDB URL would retry the already-failed provider relay before using it.
   useEffect(() => {
     setCandidateIndex(0);
     setLoadedSrc(null);
-  }, [film.slug, kind, tmdbUrl]);
+    setAutoRecovery(false);
+  }, [film.slug, kind]);
 
   // Sync loaded state when src changes or when image is already cached/decoded in DOM
   useEffect(() => {
@@ -291,6 +329,9 @@ export function TmdbArtwork({
         setLoadedSrc(src);
         return;
       }
+      if (providerPrimary && !isTmdbImageUrl(providerPrimary)) {
+        setAutoRecovery(true);
+      }
       setCandidateIndex((index) => {
         const next = index + 1;
         if (next >= candidates.length && !autoRecovery) {
@@ -298,9 +339,9 @@ export function TmdbArtwork({
         }
         return next;
       });
-    }, priority ? 3_500 : nearViewport ? 4_500 : 7_500);
+    }, src.startsWith('/api/image-proxy?') ? 6_000 : priority ? 3_500 : nearViewport ? 4_500 : 7_500);
     return () => window.clearTimeout(timer);
-  }, [autoRecovery, candidates.length, loaded, nearViewport, priority, src]);
+  }, [autoRecovery, candidates.length, loaded, nearViewport, priority, providerPrimary, src]);
 
   return (
     <div ref={containerRef} className={cn('relative overflow-hidden bg-[#101218]', className)}>
@@ -319,6 +360,9 @@ export function TmdbArtwork({
           style={objectPosition ? { objectPosition } : undefined}
           onLoad={() => setLoadedSrc(src)}
           onError={() => {
+            if (providerPrimary && !isTmdbImageUrl(providerPrimary)) {
+              setAutoRecovery(true);
+            }
             setCandidateIndex((index) => {
               const next = index + 1;
               if (next >= candidates.length && !autoRecovery) {

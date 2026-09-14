@@ -9,11 +9,16 @@ export const dynamic = "force-dynamic";
 /** Refuse to relay anything larger than this (bytes). */
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 /** Abort slow upstreams so a request can't pin a serverless function open. */
-const FETCH_TIMEOUT_MS = 4500;
+const FETCH_TIMEOUT_MS = 3000;
 /** A broken poster must never hold a card request for tens of seconds. */
-const TOTAL_FALLBACK_BUDGET_MS = 9000;
+const TOTAL_FALLBACK_BUDGET_MS = 4500;
 const FALLBACK_BATCH_SIZE = 3;
 const MAX_REDIRECTS = 3;
+const PUBLIC_DNS_CACHE_TTL_MS = 60_000;
+const publicDnsValidationCache = new Map<
+  string,
+  { expiresAt: number; validation: Promise<void> }
+>();
 
 const RELIABLE_DIRECT_IMAGE_HOSTS = new Set([
   "image.tmdb.org",
@@ -59,8 +64,7 @@ function isPrivateAddress(address: string): boolean {
   );
 }
 
-async function assertPublicDns(url: string): Promise<void> {
-  const hostname = new URL(url).hostname;
+async function validatePublicDns(hostname: string): Promise<void> {
   const addresses = await lookup(hostname, { all: true, verbatim: true });
   if (
     addresses.length === 0 ||
@@ -68,6 +72,32 @@ async function assertPublicDns(url: string): Promise<void> {
   ) {
     throw new Error("unsafe-address");
   }
+}
+
+async function assertPublicDns(url: string): Promise<void> {
+  const hostname = new URL(url).hostname.toLowerCase();
+  const now = Date.now();
+  const cached = publicDnsValidationCache.get(hostname);
+  if (cached && cached.expiresAt > now) {
+    await cached.validation;
+    return;
+  }
+
+  const validation = validatePublicDns(hostname).catch((error) => {
+    publicDnsValidationCache.delete(hostname);
+    throw error;
+  });
+  publicDnsValidationCache.set(hostname, {
+    expiresAt: now + PUBLIC_DNS_CACHE_TTL_MS,
+    validation,
+  });
+
+  if (publicDnsValidationCache.size > 64) {
+    for (const [key, entry] of publicDnsValidationCache) {
+      if (entry.expiresAt <= now) publicDnsValidationCache.delete(key);
+    }
+  }
+  await validation;
 }
 
 function failedImageResponse(status = 404) {
@@ -256,10 +286,19 @@ export async function GET(request: NextRequest) {
     return new NextResponse("Missing url parameter", { status: 400 });
   }
 
+  const primaryCandidates = generateCandidateUrls(rawUrl).slice(0, 8);
+  const fallbackCandidates = fallbackUrl
+    ? generateCandidateUrls(fallbackUrl).slice(0, 4)
+    : [];
+  // Try the original URLs from two independent providers in the first
+  // parallel batch. Generated path/format guesses are recovery candidates,
+  // not a reason to postpone a known cross-provider fallback.
   const candidateUrls = [
-    ...generateCandidateUrls(rawUrl).slice(0, 8),
-    ...(fallbackUrl ? generateCandidateUrls(fallbackUrl).slice(0, 4) : []),
-  ];
+    primaryCandidates[0],
+    fallbackCandidates[0],
+    ...primaryCandidates.slice(1),
+    ...fallbackCandidates.slice(1),
+  ].filter((url): url is string => Boolean(url));
 
   const safeUrls = prioritizeCandidateUrls(candidateUrls)
     .map(validateImageUrl)

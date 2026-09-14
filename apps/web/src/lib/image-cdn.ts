@@ -86,12 +86,16 @@ export function wsrvImageUrl(
 
 export function localImageProxyUrl(
   source: string,
-  options: { strict?: boolean } = {},
+  options: { strict?: boolean; fallback?: string | null } = {},
 ): string | null {
   const upstream = unwrapImageUrl(source);
   if (!upstream || !/^https?:\/\//i.test(upstream)) return null;
   const params = new URLSearchParams({ url: upstream });
   if (options.strict) params.set("strict", "1");
+  const fallback = unwrapImageUrl(options.fallback);
+  if (fallback && /^https?:\/\//i.test(fallback) && fallback !== upstream) {
+    params.set("fallback", fallback);
+  }
   return `${LOCAL_IMAGE_PROXY_PATH}?${params.toString()}`;
 }
 

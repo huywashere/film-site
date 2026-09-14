@@ -148,6 +148,8 @@ test('title lookups never replace provider artwork while it is painting', () => 
 
   assert.match(source, /unwrapImageUrl\(rawProviderPrimary\)/);
   assert.match(source, /!isTmdbImageUrl\(providerPrimary\)\) add\(providerProxy\)/);
+  assert.match(source, /if \(autoRecovery\) addTmdbCandidates\(\)/);
+  assert.doesNotMatch(source, /\[film\.slug, kind, tmdbUrl\]/);
   assert.doesNotMatch(source, /if \(allowTitleLookup\) addTmdbCandidates\(\)/);
   assert.match(source, /providerCandidates\?\.forEach[\s\S]*addTmdbCandidates\(\)/);
 });
