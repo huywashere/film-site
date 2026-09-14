@@ -47,54 +47,6 @@ interface HubCard {
 
 const HUBS: HubCard[] = [
   {
-    slug: "marvel",
-    title: "Vũ Trụ Marvel",
-    tagline: "MCU • Multiverse • Avengers",
-    category: "Marvel Studios",
-    highlight:
-      "Kỷ nguyên siêu anh hùng, biệt đội Avengers, Spider-Man và đa vũ trụ.",
-    href: "/universe/marvel",
-    image: "https://image.tmdb.org/t/p/w1280/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg",
-    countBadge: "175+ Bom Tấn",
-    icon: Flame,
-  },
-  {
-    slug: "dc",
-    title: "Vũ Trụ DC",
-    tagline: "Batman • Superman • Justice League",
-    category: "DC Universe",
-    highlight:
-      "Hiệp sĩ bóng đêm Batman, Superman, Justice League và thế giới siêu anh hùng DC.",
-    href: "/universe/dc",
-    image: "https://image.tmdb.org/t/p/w1280/dqK9Hag1054tghRQSqLSfrkvQnA.jpg",
-    countBadge: "180+ Kiệt Tác",
-    icon: Shield,
-  },
-  {
-    slug: "doraemon",
-    title: "Vũ Trụ Doraemon",
-    tagline: "Bảo Bối Thần Kỳ • Movie Chiếu Rạp • Stand by Me",
-    category: "Doraemon",
-    highlight:
-      "Trọn bộ 48 movie chiếu rạp, Stand by Me 3D và những chuyến phiêu lưu kỳ thú của Doraemon và Nobita.",
-    href: "/universe/doraemon",
-    image: "https://phimimg.com/upload/vod/20250521-1/0514f6f2eef84b1340afd31c42574a2d.jpg",
-    countBadge: "48 Movie",
-    icon: Sparkles,
-  },
-  {
-    slug: "conan",
-    title: "Thám Tử Lừng Danh Conan",
-    tagline: "Thám Tử Nhí • 28 Movie Chiếu Rạp • Án Mạng Bí Ẩn",
-    category: "Detective Conan",
-    highlight:
-      "Trọn bộ 28 Movie chiếu rạp bom tấn, TV series phá án ly kỳ và cuộc đối đầu Kaito Kid, Tổ Chức Áo Đen.",
-    href: "/universe/conan",
-    image: "https://phimimg.com/upload/vod/20241229-1/309e1f1623755fa993140a83167f577b.jpg",
-    countBadge: "34+ Movie & Series",
-    icon: Shield,
-  },
-  {
     slug: "phim-han-quoc",
     title: "Phim Hàn Quốc",
     tagline: "K-Drama • Tình Cảm • Hồi Hộp",
@@ -128,6 +80,30 @@ const HUBS: HubCard[] = [
     icon: Sparkles,
   },
   {
+    slug: "doraemon",
+    title: "Vũ Trụ Doraemon",
+    tagline: "Bảo Bối Thần Kỳ • Movie Chiếu Rạp • Stand by Me",
+    category: "Doraemon",
+    highlight:
+      "Trọn bộ 48 movie chiếu rạp, Stand by Me 3D và những chuyến phiêu lưu kỳ thú của Doraemon và Nobita.",
+    href: "/universe/doraemon",
+    image: "https://phimimg.com/upload/vod/20250521-1/0514f6f2eef84b1340afd31c42574a2d.jpg",
+    countBadge: "48 Movie",
+    icon: Sparkles,
+  },
+  {
+    slug: "conan",
+    title: "Thám Tử Lừng Danh Conan",
+    tagline: "Thám Tử Nhí • 28 Movie Chiếu Rạp • Án Mạng Bí Ẩn",
+    category: "Detective Conan",
+    highlight:
+      "Trọn bộ 28 Movie chiếu rạp bom tấn, TV series phá án ly kỳ và cuộc đối đầu Kaito Kid, Tổ Chức Áo Đen.",
+    href: "/universe/conan",
+    image: "https://phimimg.com/upload/vod/20241229-1/309e1f1623755fa993140a83167f577b.jpg",
+    countBadge: "34+ Movie & Series",
+    icon: Shield,
+  },
+  {
     slug: "khoa-hoc-vien-tuong",
     title: "Khoa Học Viễn Tưởng",
     tagline: "Vũ Trụ • Đa Chiều • Tương Lai",
@@ -159,6 +135,30 @@ const HUBS: HubCard[] = [
     image: "https://image.tmdb.org/t/p/w1280/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg",
     countBadge: "Giọng đọc & phụ đề",
     icon: Languages,
+  },
+  {
+    slug: "marvel",
+    title: "Vũ Trụ Marvel",
+    tagline: "MCU • Multiverse • Avengers",
+    category: "Marvel Studios",
+    highlight:
+      "Kỷ nguyên siêu anh hùng, biệt đội Avengers, Spider-Man và đa vũ trụ.",
+    href: "/universe/marvel",
+    image: "https://image.tmdb.org/t/p/w1280/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg",
+    countBadge: "175+ Bom Tấn",
+    icon: Flame,
+  },
+  {
+    slug: "dc",
+    title: "Vũ Trụ DC",
+    tagline: "Batman • Superman • Justice League",
+    category: "DC Universe",
+    highlight:
+      "Hiệp sĩ bóng đêm Batman, Superman, Justice League và thế giới siêu anh hùng DC.",
+    href: "/universe/dc",
+    image: "https://image.tmdb.org/t/p/w1280/dqK9Hag1054tghRQSqLSfrkvQnA.jpg",
+    countBadge: "180+ Kiệt Tác",
+    icon: Shield,
   },
 ];
 
@@ -503,10 +503,9 @@ export default function GenresPage() {
             </div>
           </div>
 
-          {/* Image-first cinematic grid */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+          {/* Image-first cinematic grid: 2 columns on mobile, 2 on tablet, 4 on desktop */}
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
             {HUBS.map((hub, idx) => {
-              const Icon = hub.icon;
               return (
                 <Link
                   key={hub.slug}
@@ -514,9 +513,9 @@ export default function GenresPage() {
                   prefetch={true}
                   onMouseEnter={() => handlePrefetchHub(hub)}
                   onFocus={() => handlePrefetchHub(hub)}
-                  className="group relative isolate aspect-[16/10] min-h-[210px] cursor-pointer select-none overflow-hidden rounded-2xl border border-white/[0.10] bg-[#0e1017] shadow-[0_16px_42px_rgba(0,0,0,0.20)] transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:shadow-[0_20px_52px_rgba(0,0,0,0.34)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#08090d]"
+                  className="group relative isolate aspect-[4/3] sm:aspect-[16/10] min-h-[170px] sm:min-h-[210px] cursor-pointer select-none overflow-hidden rounded-xl sm:rounded-2xl border border-white/[0.10] bg-[#0e1017] shadow-[0_16px_42px_rgba(0,0,0,0.20)] transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:shadow-[0_20px_52px_rgba(0,0,0,0.34)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#08090d]"
                 >
-                  {/* Artwork remains unobscured; contrast is added only behind copy. */}
+                  {/* Artwork with rich contrast protection */}
                   <div
                     className="pointer-events-none absolute inset-0 overflow-hidden"
                     aria-hidden="true"
@@ -525,42 +524,34 @@ export default function GenresPage() {
                       src={hub.image}
                       isPriority={idx < 4}
                     />
-                    <div className="absolute inset-x-0 bottom-0 h-[64%] bg-gradient-to-t from-[#08090f] via-[#08090f]/78 to-transparent" />
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-transparent" />
-                  </div>
-
-                  {/* Top Category Badge Row */}
-                  <div className="absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-2 p-3.5">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/55 px-2.5 py-1 text-[10px] font-semibold text-white/90 shadow-sm backdrop-blur-md">
-                      <Icon size={12} className="text-white/80" />
-                      <span>{hub.category}</span>
-                    </span>
-
-                    <span className="max-w-[48%] truncate rounded-full border border-white/15 bg-black/55 px-2.5 py-1 text-[10px] font-medium text-white/75 shadow-sm backdrop-blur-md">
-                      {hub.countBadge}
-                    </span>
+                    {/* Overall dark tint so bright artwork doesn't overpower text */}
+                    <div className="absolute inset-0 bg-black/35 transition-opacity duration-300 group-hover:bg-black/25" />
+                    {/* Deep bottom-to-top gradient ensuring text is 100% legible */}
+                    <div className="absolute inset-x-0 bottom-0 h-[88%] bg-gradient-to-t from-[#07080d] via-[#07080d]/95 via-50% to-transparent" />
                   </div>
 
                   {/* Bottom Info Lockup */}
-                  <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-[18px]">
-                    <p className="mb-1.5 line-clamp-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/55">
+                  <div className="absolute inset-x-0 bottom-0 z-10 p-2.5 sm:p-4 sm:p-[18px]">
+                    <p className="mb-1 sm:mb-1.5 line-clamp-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.08em] sm:tracking-[0.12em] text-violet-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
                       {hub.tagline}
                     </p>
 
-                    <h3 className="line-clamp-1 text-base font-extrabold leading-tight tracking-[-0.02em] text-white lg:text-[17px]">
+                    <h3 className="line-clamp-1 text-xs sm:text-base lg:text-[17px] font-black leading-tight tracking-[-0.02em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
                       {hub.title}
                     </h3>
 
-                    <p className="mt-1 line-clamp-2 max-w-[92%] text-[11px] font-medium leading-[1.4] text-white/65">
+                    <p className="mt-0.5 sm:mt-1 line-clamp-2 max-w-full text-[10px] sm:text-[11px] font-medium leading-[1.35] sm:leading-[1.4] text-neutral-200 drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
                       {hub.highlight}
                     </p>
 
-                    <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-2.5">
-                      <span className="text-[11px] font-semibold text-white/80 transition-colors group-hover:text-white">
-                        Khám phá chủ đề
+                    <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-1.5 sm:mt-3 sm:pt-2.5">
+                      <span className="text-[10px] sm:text-[11px] font-semibold text-white/85 transition-colors group-hover:text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                        <span className="hidden sm:inline">Khám phá chủ đề</span>
+                        <span className="inline sm:hidden">Khám phá</span>
                       </span>
-                      <span className="grid size-7 place-items-center rounded-full border border-white/15 bg-white/10 text-white transition-[background-color,transform] group-hover:translate-x-0.5 group-hover:bg-white group-hover:text-black">
-                        <ChevronRight size={14} strokeWidth={2.2} />
+                      <span className="grid size-5 sm:size-7 place-items-center rounded-full border border-white/15 bg-white/10 text-white transition-[background-color,transform] group-hover:translate-x-0.5 group-hover:bg-white group-hover:text-black shadow-sm">
+                        <ChevronRight size={12} strokeWidth={2.4} className="sm:hidden" />
+                        <ChevronRight size={14} strokeWidth={2.2} className="hidden sm:block" />
                       </span>
                     </div>
                   </div>
