@@ -194,7 +194,6 @@ export function LandscapeSpotlightRow({
                 <TmdbArtwork
                   film={film}
                   kind="backdrop"
-                  priority={index < 2}
                   allowTitleLookup
                   className="h-full w-full transition-transform duration-500 group-hover:scale-[1.025] motion-reduce:transform-none"
                   alt={film.name}

@@ -212,7 +212,6 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
             kind="poster"
             alt={filmTitle}
             enabled={resolveHighQualityArtwork}
-            priority={rank <= 5}
             allowTitleLookup
             className="absolute inset-0 h-full w-full transition-transform duration-500 group-hover/item:scale-105"
           />

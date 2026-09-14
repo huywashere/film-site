@@ -146,7 +146,6 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
                 film={activeFilm}
                 kind="backdrop"
                 alt={activeFilm.name}
-                priority
                 allowTitleLookup
                 sizes="100vw"
                 imageClassName="object-[center_20%] sm:object-[center_25%]"

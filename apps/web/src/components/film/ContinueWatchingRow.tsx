@@ -411,7 +411,6 @@ export function ContinueWatchingRow({ fallbackFilms = [] }: ContinueWatchingRowP
                           item={item}
                           catalogFilm={catalogFilm}
                           landscape
-                          priority={idx < 5}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
                         />
 

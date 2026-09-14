@@ -568,7 +568,6 @@ function FilmSection({
                   >
                     <FilmCard
                       film={film}
-                      priority={idx < 4}
                       preferHighQuality={
                         title === "Phim Mới Cập Nhật" && idx < 4
                       }
@@ -606,11 +605,18 @@ function FilmSection({
 }
 
 // Component Wrapper for Intersection Observer Lazy Load (No min-height gaps, GPU Accelerated)
-function LazySection({ children }: { children: React.ReactNode }) {
-  const [isVisible, setIsVisible] = useState(false);
+function LazySection({
+  children,
+  initiallyVisible = false,
+}: {
+  children: React.ReactNode;
+  initiallyVisible?: boolean;
+}) {
+  const [isVisible, setIsVisible] = useState(initiallyVisible);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (isVisible) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -626,7 +632,7 @@ function LazySection({ children }: { children: React.ReactNode }) {
     }
 
     return () => observer.disconnect();
-  }, []);
+  }, [isVisible]);
 
   return (
     <div
@@ -1364,19 +1370,19 @@ export default function HomePageClient({
   const hiddenHomeSections = new Set(publicConfig?.homeHiddenSections || []);
   const primarySections: Record<string, React.ReactNode> = {
     top10: (
-      <LazySection>
+      <LazySection initiallyVisible>
         <div className="hidden md:block">
           <Top10RankedRow films={configuredTop10List} />
         </div>
       </LazySection>
     ),
     continue: (
-      <LazySection>
+      <LazySection initiallyVisible>
         <ContinueWatchingRow fallbackFilms={homeFeedPool} />
       </LazySection>
     ),
     latest: (
-      <LazySection>
+      <LazySection initiallyVisible>
         <div className="hidden md:block">
           <LandscapeSpotlightRow
             title={t("sections.latest", "Phim Mới Cập Nhật")}
@@ -1396,7 +1402,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     vfx: (
-      <LazySection>
+      <LazySection initiallyVisible>
         <FilmSection
           title={t("sections.vfx", "Phim Thần Thoại & Kỹ Xảo")}
           films={vfxRowList}
@@ -1406,7 +1412,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     "usuk-series": (
-      <LazySection>
+      <LazySection initiallyVisible>
         <div className="hidden md:block">
           <HeroShowcaseSection
             title={t("sections.usUkSeries", "Series Âu-Mỹ Đỉnh Cao")}
@@ -1426,7 +1432,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     action: (
-      <LazySection>
+      <LazySection initiallyVisible>
         <FilmSection
           title={t("sections.action", "Phim Hành Động Kịch Tính")}
           films={actionRowList}
@@ -1436,7 +1442,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     scifi: (
-      <LazySection>
+      <LazySection initiallyVisible>
         <div className="hidden md:block">
           <CuratedSpotlightSection
             title={t("sections.scifi", "Tuyệt Tác Khoa Học Viễn Tưởng")}

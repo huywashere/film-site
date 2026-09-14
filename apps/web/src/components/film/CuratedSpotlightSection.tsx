@@ -149,7 +149,6 @@ export function CuratedSpotlightSection({
                 film={activeFilm}
                 kind="backdrop"
                 alt={activeFilm.name}
-                priority
                 allowTitleLookup
                 sizes="(max-width: 1024px) 100vw, 75vw"
                 imageClassName="object-[center_25%]"

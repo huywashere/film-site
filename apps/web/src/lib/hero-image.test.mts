@@ -140,3 +140,23 @@ test('large homepage showcases change slides only after user interaction', () =>
   assert.doesNotMatch(series, /setInterval/);
   assert.doesNotMatch(curated, /setInterval/);
 });
+
+test('title lookups never replace provider artwork while it is painting', () => {
+  const source = readFileSync('src/components/film/TmdbArtwork.tsx', 'utf8');
+
+  assert.doesNotMatch(source, /if \(allowTitleLookup\) addTmdbCandidates\(\)/);
+  assert.match(source, /providerCandidates\?\.forEach[\s\S]*addTmdbCandidates\(\)/);
+});
+
+test('homepage shelves rely on viewport loading instead of eager image bursts', () => {
+  const homepage = readFileSync('src/app/HomePageClient.tsx', 'utf8');
+  const history = readFileSync('src/components/film/ContinueWatchingRow.tsx', 'utf8');
+  const landscape = readFileSync('src/components/film/LandscapeSpotlightRow.tsx', 'utf8');
+  const top10 = readFileSync('src/components/film/Top10RankedRow.tsx', 'utf8');
+
+  assert.doesNotMatch(homepage, /priority=\{idx < 4\}/);
+  assert.doesNotMatch(history, /priority=\{idx < 5\}/);
+  assert.doesNotMatch(landscape, /priority=\{index < 2\}/);
+  assert.doesNotMatch(top10, /priority=\{rank <= 5\}/);
+  assert.ok((homepage.match(/<LazySection initiallyVisible>/g) || []).length >= 7);
+});

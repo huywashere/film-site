@@ -156,10 +156,6 @@ export function TmdbArtwork({
       add(`/api/image-proxy?url=${encodeURIComponent(tmdbUrl)}`);
     };
 
-    // Curated/high-priority cards use a confident TMDB match first. Other
-    // cards keep the provider first so title lookup never floods a full shelf.
-    if (allowTitleLookup) addTmdbCandidates();
-
     // Direct provider artwork. Go keeps alternatives from every merged
     // provider, so a dead CDN can fail over without another metadata request.
     if (providerPrimary) add(providerPrimary);
@@ -172,7 +168,10 @@ export function TmdbArtwork({
       add(alternateMovieArtworkUrl(resolved));
     });
 
-    if (!allowTitleLookup) addTmdbCandidates();
+    // Never replace artwork that is already loading or painted just because a
+    // title lookup finishes. TMDB is a recovery source, not a mid-paint
+    // upgrade, so provider artwork remains stable and the card cannot flash.
+    addTmdbCandidates();
 
     // 3. Provider local proxy (server reliably fetches phimimg). wsrv blocks
     // these provider domains, so retrying it only delays the real fallback.
@@ -207,7 +206,6 @@ export function TmdbArtwork({
     film.thumb_url,
     film._posterCandidates,
     film._thumbCandidates,
-    allowTitleLookup,
     artworkQuery.backdropW1280,
     artworkQuery.posterW500,
     preferOriginal,
@@ -275,7 +273,7 @@ export function TmdbArtwork({
         }
         return next;
       });
-    }, priority ? 5_000 : 7_500);
+    }, priority ? 3_500 : nearViewport ? 4_500 : 7_500);
     return () => window.clearTimeout(timer);
   }, [autoRecovery, candidates.length, loaded, nearViewport, priority, src]);
 
@@ -283,15 +281,8 @@ export function TmdbArtwork({
     <div ref={containerRef} className={cn('relative overflow-hidden bg-[#101218]', className)}>
       <div
         aria-hidden="true"
-        className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-[#171a22] via-[#11141b] to-[#0c0e13] p-3 text-center"
-      >
-        <Clapperboard className="mb-1.5 h-5 w-5 text-white/20" />
-        {alt !== '' && (
-          <span className="line-clamp-2 max-w-[18rem] text-[10px] font-semibold text-white/35">
-            {film.name || film.title}
-          </span>
-        )}
-      </div>
+        className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,#101218_25%,#181b23_45%,#101218_65%)] bg-[length:220%_100%] [animation-iteration-count:3] motion-reduce:animate-none"
+      />
       {src && deliveredImageProps ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
