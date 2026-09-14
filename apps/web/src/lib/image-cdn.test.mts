@@ -34,6 +34,7 @@ test("unwraps wsrv and local proxy URLs to prevent double proxying", () => {
     new URL(wsrvImageUrl(local, "card")!).searchParams.get("url"),
     provider,
   );
+  assert.equal(isPreOptimizedImageUrl(local), true);
 });
 
 test("keeps TMDB direct and skips the wsrv hop", () => {

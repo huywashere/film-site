@@ -180,6 +180,7 @@ export function buildArtworkCandidates(
 export function isPreOptimizedImageUrl(value?: string | null): boolean {
   if (!value) return false;
   return (
+    value.startsWith(`${LOCAL_IMAGE_PROXY_PATH}?`) ||
     isWsrvImageUrl(value) ||
     isTmdbImageUrl(value) ||
     /^(https?:)?\/\/(img\.phimapi\.com|phimimg\.com|img\.ophim\.live|ophim1\.com|images\.nguonc\.com|phim\.nguonc\.com|image\.tmdb\.org|tmdb\.org)\//i.test(

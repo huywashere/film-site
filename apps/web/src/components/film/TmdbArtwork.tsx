@@ -11,6 +11,8 @@ import { Clapperboard } from 'lucide-react';
 import {
   buildArtworkCandidates,
   isPreOptimizedImageUrl,
+  isTmdbImageUrl,
+  localImageProxyUrl,
   unwrapImageUrl,
   wsrvImageUrl,
 } from '@/lib/image-cdn';
@@ -124,6 +126,7 @@ export function TmdbArtwork({
     : null;
 
   const providerAlternate = providerPrimary ? alternateMovieArtworkUrl(providerPrimary) : null;
+  const providerProxy = providerPrimary ? localImageProxyUrl(providerPrimary) : null;
 
   const needsTmdbArtwork =
     enabled &&
@@ -166,6 +169,10 @@ export function TmdbArtwork({
 
     // Direct provider artwork. Go keeps alternatives from every merged
     // provider, so a dead CDN can fail over without another metadata request.
+    // Movie-provider CDNs are unreliable on some client networks. Start with
+    // our cached same-origin relay so a blocked CDN cannot leave an entire
+    // shelf pending. TMDB remains direct because its regional CDN is stable.
+    if (providerPrimary && !isTmdbImageUrl(providerPrimary)) add(providerProxy);
     if (providerPrimary) add(providerPrimary);
     if (providerAlternate) add(providerAlternate);
     const providerCandidates =
@@ -208,6 +215,7 @@ export function TmdbArtwork({
   }, [
     providerPrimary,
     providerAlternate,
+    providerProxy,
     tmdbUrl,
     kind,
     film.poster_url,

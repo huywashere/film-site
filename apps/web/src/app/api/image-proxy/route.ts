@@ -21,6 +21,9 @@ const RELIABLE_DIRECT_IMAGE_HOSTS = new Set([
   "img.ophim.live",
   "ophim1.com",
   "images.nguonc.com",
+  "phim.nguonc.com",
+  "vsmov.com",
+  "storage.vsmov.com",
 ]);
 
 function prioritizeCandidateUrls(urls: string[]): string[] {

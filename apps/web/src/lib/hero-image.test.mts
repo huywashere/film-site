@@ -147,6 +147,7 @@ test('title lookups never replace provider artwork while it is painting', () => 
   const source = readFileSync('src/components/film/TmdbArtwork.tsx', 'utf8');
 
   assert.match(source, /unwrapImageUrl\(rawProviderPrimary\)/);
+  assert.match(source, /!isTmdbImageUrl\(providerPrimary\)\) add\(providerProxy\)/);
   assert.doesNotMatch(source, /if \(allowTitleLookup\) addTmdbCandidates\(\)/);
   assert.match(source, /providerCandidates\?\.forEach[\s\S]*addTmdbCandidates\(\)/);
 });
