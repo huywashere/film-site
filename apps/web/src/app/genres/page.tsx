@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ChevronRight,
   Tv,
   Flame,
   Sparkles,
@@ -527,11 +526,11 @@ export default function GenresPage() {
                     {/* Overall dark tint so bright artwork doesn't overpower text */}
                     <div className="absolute inset-0 bg-black/35 transition-opacity duration-300 group-hover:bg-black/25" />
                     {/* Deep bottom-to-top gradient ensuring text is 100% legible */}
-                    <div className="absolute inset-x-0 bottom-0 h-[88%] bg-gradient-to-t from-[#07080d] via-[#07080d]/95 via-50% to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 h-[80%] bg-gradient-to-t from-[#07080d] via-[#07080d]/95 via-50% to-transparent" />
                   </div>
 
                   {/* Bottom Info Lockup */}
-                  <div className="absolute inset-x-0 bottom-0 z-10 p-2.5 sm:p-4 sm:p-[18px]">
+                  <div className="absolute inset-x-0 bottom-0 z-10 p-3 sm:p-4 sm:p-[18px]">
                     <p className="mb-1 sm:mb-1.5 line-clamp-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.08em] sm:tracking-[0.12em] text-violet-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
                       {hub.tagline}
                     </p>
@@ -543,17 +542,6 @@ export default function GenresPage() {
                     <p className="mt-0.5 sm:mt-1 line-clamp-2 max-w-full text-[10px] sm:text-[11px] font-medium leading-[1.35] sm:leading-[1.4] text-neutral-200 drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
                       {hub.highlight}
                     </p>
-
-                    <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-1.5 sm:mt-3 sm:pt-2.5">
-                      <span className="text-[10px] sm:text-[11px] font-semibold text-white/85 transition-colors group-hover:text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-                        <span className="hidden sm:inline">Khám phá chủ đề</span>
-                        <span className="inline sm:hidden">Khám phá</span>
-                      </span>
-                      <span className="grid size-5 sm:size-7 place-items-center rounded-full border border-white/15 bg-white/10 text-white transition-[background-color,transform] group-hover:translate-x-0.5 group-hover:bg-white group-hover:text-black shadow-sm">
-                        <ChevronRight size={12} strokeWidth={2.4} className="sm:hidden" />
-                        <ChevronRight size={14} strokeWidth={2.2} className="hidden sm:block" />
-                      </span>
-                    </div>
                   </div>
                 </Link>
               );
