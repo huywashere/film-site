@@ -1331,11 +1331,16 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       let logoUrl = target.titleLogo || getMovieLogo(target.slug);
 
       if (!logoUrl && !target.titleLogoResolved) {
-        const [enriched] = await enrichHeroTitleLogos([target]);
-        if (enriched) {
-          prepared = enriched;
-          logoUrl = enriched.titleLogo || getMovieLogo(enriched.slug);
-        }
+        void enrichHeroTitleLogos([target]).then(([enriched]) => {
+          if (!enriched) return;
+          const resolvedLogo = enriched.titleLogo || getMovieLogo(enriched.slug);
+          if (resolvedLogo) void preloadMovieLogo(resolvedLogo);
+          setFeatured((playlist) =>
+            playlist.map((item, index) =>
+              index === nextIndex ? enriched : item,
+            ),
+          );
+        });
       }
 
       if (logoUrl) await preloadMovieLogo(logoUrl);
@@ -1392,43 +1397,45 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
   // Touch Swipe Gesture support for mobile devices
   const touchStartXRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
-  const isHorizontalSwipe = useRef(false);
 
   const handleTouchStart = useCallback((e: React.TouchEvent<HTMLElement>) => {
     if (e.touches.length !== 1) return;
     touchStartXRef.current = e.touches[0].clientX;
     touchStartYRef.current = e.touches[0].clientY;
-    isHorizontalSwipe.current = false;
   }, []);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLElement>) => {
-    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
-    const diffX = e.touches[0].clientX - touchStartXRef.current;
-    const diffY = e.touches[0].clientY - touchStartYRef.current;
-    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
-      isHorizontalSwipe.current = true;
-    }
+  const handleTouchMove = useCallback((_e: React.TouchEvent<HTMLElement>) => {
+    // Keep touch move passive so natural vertical scroll is never blocked
   }, []);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent<HTMLElement>) => {
-    if (!isHorizontalSwipe.current || touchStartXRef.current === null) {
+    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
+    const touch = e.changedTouches[0];
+    if (!touch) {
       touchStartXRef.current = null;
       touchStartYRef.current = null;
-      isHorizontalSwipe.current = false;
       return;
     }
-    const touchEndX = e.changedTouches[0].clientX;
-    const diffX = touchEndX - touchStartXRef.current;
-    const SWIPE_THRESHOLD = 40;
-    if (diffX < -SWIPE_THRESHOLD) {
-      nextSlide();
-    } else if (diffX > SWIPE_THRESHOLD) {
-      prevSlide();
-    }
+    const diffX = touch.clientX - touchStartXRef.current;
+    const diffY = touch.clientY - touchStartYRef.current;
     touchStartXRef.current = null;
     touchStartYRef.current = null;
-    isHorizontalSwipe.current = false;
+
+    // Minimum swipe distance of 35px, predominantly horizontal (|diffX| > |diffY| * 0.8)
+    const SWIPE_THRESHOLD = 35;
+    if (Math.abs(diffX) >= SWIPE_THRESHOLD && Math.abs(diffX) > Math.abs(diffY) * 0.8) {
+      if (diffX < 0) {
+        nextSlide();
+      } else {
+        prevSlide();
+      }
+    }
   }, [nextSlide, prevSlide]);
+
+  const handleTouchCancel = useCallback(() => {
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+  }, []);
 
   // The 3 cascading fan cards represent the UPCOMING films in the queue:
   // (current + 1), (current + 2), (current + 3).
@@ -1679,7 +1686,8 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="font-cinema relative mt-0 h-[100dvh] min-h-[580px] max-h-[860px] sm:min-h-[680px] sm:max-h-[940px] md:h-[94vh] md:min-h-[720px] lg:h-[96vh] lg:min-h-[760px] lg:max-h-[1050px] xl:h-[100dvh] w-full overflow-hidden bg-[#0c0d14] transform-gpu contain-paint select-none"
+      onTouchCancel={handleTouchCancel}
+      className="font-cinema relative mt-0 h-[100dvh] min-h-[580px] max-h-[860px] sm:min-h-[680px] sm:max-h-[940px] md:h-[94vh] md:min-h-[720px] lg:h-[96vh] lg:min-h-[760px] lg:max-h-[1050px] xl:h-[100dvh] w-full overflow-hidden bg-[#0c0d14] transform-gpu contain-paint select-none touch-pan-y"
     >
       <TrailerModal
         film={trailerModalFilm}
@@ -1823,22 +1831,28 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       </div>
 
       {/* Main Content Area (Fluid Responsive Spacing with Safe Area Bottom Clearance) */}
-      <div className="absolute inset-0 z-20 flex flex-col items-center justify-end px-4 sm:px-6 md:px-8 pt-18 sm:pt-24 md:pt-28 pb-22 sm:pb-16 md:pb-20 lg:pb-22 text-center pointer-events-none">
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-end px-4 sm:px-6 md:px-8 pt-18 sm:pt-24 md:pt-28 pb-20 sm:pb-16 md:pb-20 lg:pb-22 text-center pointer-events-none">
         <div
           ref={contentRef}
           key={film.slug}
-          className={`${heroSerifFont.className} max-w-2xl mx-auto w-full flex flex-col items-center space-y-2 sm:space-y-3 pointer-events-auto`}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchCancel}
+          className={`${heroSerifFont.className} max-w-2xl mx-auto w-full flex flex-col items-center pointer-events-auto touch-pan-y`}
         >
               {/* Official TMDB title artwork with an accessible text fallback. */}
-              <HeroMovieTitle
-                key={`${film.slug}:${film.titleLogo || (film.titleLogoResolved ? "text" : "pending")}`}
-                film={film}
-                onReady={() => markVisualReady(film.slug, "title")}
-              />
+              <div className="w-full flex justify-center mb-1.5 sm:mb-2.5">
+                <HeroMovieTitle
+                  key={`${film.slug}:${film.titleLogo || (film.titleLogoResolved ? "text" : "pending")}`}
+                  film={film}
+                  onReady={() => markVisualReady(film.slug, "title")}
+                />
+              </div>
 
               {/* Badges Pill Row (⭐ Rating, Year, 4K, Vietsub/Lồng tiếng) */}
-              <div className="flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap">
-                <span className="bg-black/60 backdrop-blur-md border border-white/15 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-extrabold text-amber-400 flex items-center gap-1 shadow-lg">
+              <div className="flex items-center justify-center gap-2 sm:gap-2.5 flex-wrap my-1 sm:my-1.5">
+                <span className="bg-black/60 backdrop-blur-md border border-white/15 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-extrabold text-amber-400 flex items-center gap-1 shadow-lg">
                   <Star size={12} className="fill-amber-400 text-amber-400" />
                   <span>
                     {typeof ratingVal === "number"
@@ -1848,18 +1862,18 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                 </span>
 
                 {film.year && (
-                  <span className="bg-black/60 backdrop-blur-md border border-white/15 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold text-neutral-200 shadow-lg">
+                  <span className="bg-black/60 backdrop-blur-md border border-white/15 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold text-neutral-200 shadow-lg">
                     {film.year}
                   </span>
                 )}
 
-                <span className="bg-black/60 backdrop-blur-md border border-white/15 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold text-purple-300 shadow-lg">
+                <span className="bg-black/60 backdrop-blur-md border border-white/15 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold text-purple-300 shadow-lg">
                   {langBadge}
                 </span>
               </div>
 
               {/* Movie Detail Sub-Info Line (Duration • Genres • Age Rating) */}
-              <div className="flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-neutral-300/90 tracking-wide flex-wrap px-2">
+              <div className="flex items-center justify-center gap-2 sm:gap-2.5 text-xs sm:text-sm font-semibold text-neutral-300/90 tracking-wide flex-wrap px-2 my-1 sm:my-1.5">
                 <span>{durationStr}</span>
                 <span className="text-neutral-500 font-bold">•</span>
                 <span>{genresStr}</span>
@@ -1870,7 +1884,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
               </div>
 
               {/* Centered Overview Text */}
-              <p className="text-[11px] sm:text-sm text-neutral-300/90 max-w-xl mx-auto leading-relaxed line-clamp-2 font-normal drop-shadow-md px-2">
+              <p className="text-xs sm:text-sm text-neutral-300/90 max-w-lg sm:max-w-xl mx-auto leading-relaxed line-clamp-2 font-normal drop-shadow-md px-3 sm:px-4 my-2 sm:my-2.5">
                 {film.content
                   ? cleanMovieDescription(film.content)
                   : film.origin_name
@@ -1880,13 +1894,13 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
 
               {/* Action Buttons (Watch Now / Resume Watch + Trailer + Bookmark with Tooltip) */}
               <div
-                className={`${cardFont.className} flex items-center justify-center gap-2 sm:gap-3 pt-1`}
+                className={`${cardFont.className} flex items-center justify-center gap-3 sm:gap-3.5 pt-2 sm:pt-3 pb-1`}
               >
                 {hasWatched ? (
                   <Link
                     href={getWatchHref(film)}
                     prefetch={false}
-                    className={`${cardFont.className} flex flex-col items-center justify-center bg-white hover:bg-neutral-200 text-black px-6 py-2 sm:px-7 sm:py-2.5 rounded-full transition-all duration-200 shadow-2xl hover:scale-105 active:scale-95 group min-w-[145px]`}
+                    className={`${cardFont.className} flex flex-col items-center justify-center bg-white hover:bg-neutral-200 text-black px-6 py-2.5 sm:px-7 sm:py-3 rounded-full transition-all duration-200 shadow-2xl hover:scale-105 active:scale-95 group min-w-[145px]`}
                   >
                     <div className="flex items-center gap-1.5 text-xs font-black tracking-wide uppercase">
                       <Play size={14} className="fill-black" />
@@ -1908,7 +1922,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                   <Link
                     href={getWatchHref(film)}
                     prefetch={false}
-                    className={`${cardFont.className} flex items-center gap-1.5 sm:gap-2 bg-white hover:bg-neutral-200 text-black px-5 py-2.5 sm:px-7 sm:py-3 rounded-full text-xs font-black tracking-wide uppercase transition-all duration-200 shadow-2xl hover:scale-105 active:scale-95`}
+                    className={`${cardFont.className} flex items-center gap-1.5 sm:gap-2 bg-white hover:bg-neutral-200 text-black px-6 py-2.5 sm:px-7 sm:py-3 rounded-full text-xs font-black tracking-wide uppercase transition-all duration-200 shadow-2xl hover:scale-105 active:scale-95`}
                   >
                     <Play size={14} className="fill-black" />
                     <span>{t("home.watchNow", "Xem ngay")}</span>
@@ -1978,17 +1992,17 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
 
           {/* Mobile previous / pagination / next controls - Perfectly positioned above mobile bottom bar */}
           {featured.length > 1 && (
-            <div className="mt-2 flex items-center justify-center gap-2 pt-1 sm:hidden select-none z-30">
+            <div className="mt-3.5 sm:mt-4 flex items-center justify-center gap-3 pt-1 sm:hidden select-none z-30 pointer-events-auto">
               <button
                 type="button"
                 onClick={prevSlide}
                 aria-label="Banner trước"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-90 cursor-pointer shadow-md"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-90 cursor-pointer shadow-lg"
               >
-                <ChevronLeft size={17} aria-hidden="true" />
+                <ChevronLeft size={18} aria-hidden="true" />
               </button>
 
-              <div className="flex min-h-8 items-center justify-center gap-1.5 rounded-full border border-white/15 bg-black/45 px-3 backdrop-blur-md shadow-md">
+              <div className="flex min-h-9 items-center justify-center gap-2 rounded-full border border-white/20 bg-black/60 px-3.5 backdrop-blur-md shadow-lg">
                 {featured.length <= 6 ? (
                   featured.map((_, i) => (
                     <button
@@ -2018,9 +2032,9 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                 type="button"
                 onClick={nextSlide}
                 aria-label="Banner tiếp theo"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-90 cursor-pointer shadow-md"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-90 cursor-pointer shadow-lg"
               >
-                <ChevronRight size={17} aria-hidden="true" />
+                <ChevronRight size={18} aria-hidden="true" />
               </button>
             </div>
           )}
