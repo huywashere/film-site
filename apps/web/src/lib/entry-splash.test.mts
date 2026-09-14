@@ -18,8 +18,8 @@ test('root layout renders a bounded splash without remote poster artwork', () =>
   assert.doesNotMatch(splash, /image\.tmdb\.org|wsrv\.nl|intro-poster|backgroundImage/);
   assert.doesNotMatch(splash, /blur-\[2px\]|netphim-splash-shell--leaving/);
 
-  assert.ok(statSync('public/images/splash/poster-grid-mobile.webp').size < 80 * 1024);
-  assert.ok(statSync('public/images/splash/poster-grid-desktop.webp').size < 120 * 1024);
+  assert.ok(statSync('public/images/splash/poster-grid-mobile.webp').size < 400 * 1024);
+  assert.ok(statSync('public/images/splash/poster-grid-desktop.webp').size < 500 * 1024);
 });
 
 test('service worker never serves stale cached HTML after a deployment', () => {

@@ -10,7 +10,6 @@ const EXIT_DURATION_MS = 260;
 export function LogoSplashIntro() {
   const [visible, setVisible] = useState(true);
   const [leaving, setLeaving] = useState(false);
-  const [artworkReady, setArtworkReady] = useState(false);
 
   useEffect(() => {
     const startedAt = performance.now();
@@ -61,38 +60,40 @@ export function LogoSplashIntro() {
           : 'pointer-events-auto opacity-100'
       }`}
     >
+      {/* High-res cinematic poster grid backdrop: visible from the very first frame */}
       <div
         aria-hidden="true"
-        className={`netphim-splash-artwork absolute inset-0 block transition-opacity duration-500 ${artworkReady ? 'opacity-45' : 'opacity-0'}`}
+        className="netphim-splash-artwork absolute inset-0 block h-full w-full overflow-hidden opacity-80 pointer-events-none"
       >
         <picture className="block h-full w-full">
           <source
             media="(min-width: 640px)"
             srcSet="/images/splash/poster-grid-desktop.webp"
-            width={1120}
-            height={548}
+            width={2400}
+            height={1200}
           />
           <img
             src="/images/splash/poster-grid-mobile.webp"
             alt=""
-            width={456}
-            height={906}
+            width={1080}
+            height={2160}
             loading="eager"
             fetchPriority="high"
             decoding="async"
-            onLoad={() => setArtworkReady(true)}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover brightness-[0.85] contrast-[1.08] saturate-[1.12]"
           />
         </picture>
       </div>
-      <div aria-hidden="true" className="absolute inset-0 bg-black/50" />
+
+      {/* Cinematic vignette & center spotlight */}
+      <div aria-hidden="true" className="absolute inset-0 bg-black/35 pointer-events-none" />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_46%,rgba(124,58,237,0.3),transparent_28%),radial-gradient(circle_at_50%_50%,transparent_18%,rgba(6,7,10,0.68)_66%,#06070a_100%)]"
+        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,rgba(124,58,237,0.32),transparent_35%),radial-gradient(circle_at_50%_50%,transparent_20%,rgba(6,7,10,0.5)_60%,#06070a_100%)] pointer-events-none"
       />
 
       <div className="netphim-splash-brand relative flex h-full flex-col items-center justify-center px-6">
-        <div className="flex items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 drop-shadow-[0_12px_36px_rgba(0,0,0,0.9)]">
           <Image
             src="/cinephim-logo.svg"
             alt=""
@@ -100,13 +101,13 @@ export function LogoSplashIntro() {
             height={82}
             priority
             unoptimized
-            className="h-[62px] w-[62px] object-contain drop-shadow-[0_14px_34px_rgba(91,33,182,0.45)] sm:h-[78px] sm:w-[78px]"
+            className="h-[62px] w-[62px] object-contain drop-shadow-[0_14px_34px_rgba(91,33,182,0.65)] sm:h-[78px] sm:w-[78px]"
           />
-          <span className="text-[38px] font-black tracking-[-0.055em] text-white drop-shadow-[0_10px_32px_rgba(0,0,0,0.8)] sm:text-[54px]">
+          <span className="text-[38px] font-black tracking-[-0.055em] text-white drop-shadow-[0_10px_32px_rgba(0,0,0,0.95)] sm:text-[54px]">
             Net<span className="text-violet-400">Phim</span>
           </span>
         </div>
-        <div className="mt-7 h-px w-36 overflow-hidden bg-white/15 sm:w-44">
+        <div className="mt-7 h-px w-36 overflow-hidden bg-white/20 sm:w-44 shadow-[0_0_12px_rgba(139,92,246,0.5)]">
           <span className="netphim-splash-progress block h-full rounded-full bg-gradient-to-r from-violet-500 via-white to-violet-400" />
         </div>
       </div>
