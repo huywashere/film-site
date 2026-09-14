@@ -66,7 +66,12 @@ export function LogoSplashIntro() {
         className={`netphim-splash-artwork absolute inset-0 block transition-opacity duration-500 ${artworkReady ? 'opacity-45' : 'opacity-0'}`}
       >
         <picture className="block h-full w-full">
-          <source media="(min-width: 640px)" srcSet="/images/auth/login/login-2.webp" />
+          <source
+            media="(min-width: 640px)"
+            srcSet="/images/splash/poster-grid-desktop.webp"
+            width={1120}
+            height={548}
+          />
           <img
             src="/images/splash/poster-grid-mobile.webp"
             alt=""

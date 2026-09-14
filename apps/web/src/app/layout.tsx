@@ -130,7 +130,7 @@ export default function RootLayout({
         <link
           rel="preload"
           as="image"
-          href="/images/auth/login/login-2.webp"
+          href="/images/splash/poster-grid-desktop.webp"
           type="image/webp"
           media="(min-width: 640px)"
           fetchPriority="high"
