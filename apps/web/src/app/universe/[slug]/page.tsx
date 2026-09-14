@@ -36,5 +36,5 @@ export default async function UniversePage({ params }: UniversePageProps) {
   }
 
   const universe = slug as "marvel" | "dc";
-  return <UniversePageClient universe={universe} />;
+  return <UniversePageClient key={universe} universe={universe} />;
 }

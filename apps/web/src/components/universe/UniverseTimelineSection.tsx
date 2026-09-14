@@ -1,350 +1,356 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import {
+  ChevronDown,
+  Clock,
+  Film,
+  Info,
+  Play,
+  Search,
+  Star,
+  X,
+} from "lucide-react";
 import { TmdbArtwork } from "@/components/film/TmdbArtwork";
 import type { FilmItem } from "@/components/film/FilmCard";
-import {
-  Play,
-  Clock,
-  Calendar,
-  Sparkles,
-  ChevronRight,
-  Search,
-  SlidersHorizontal,
-  CheckCircle2,
-  Film,
-  Star,
-  Info,
-} from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  TimelineFilmItem,
+  DC_TIMELINE_PHASES,
   getUniverseTimeline,
   MARVEL_TIMELINE_PHASES,
-  DC_TIMELINE_PHASES,
 } from "@/lib/universe-timeline-data";
 
 interface UniverseTimelineSectionProps {
   universe: "marvel" | "dc";
 }
 
+const INITIAL_VISIBLE_FILMS = 10;
+const LOAD_MORE_FILMS = 10;
+
 export function UniverseTimelineSection({ universe }: UniverseTimelineSectionProps) {
   const isMarvel = universe === "marvel";
-
-  // Mode: "chronological" (thứ tự sự kiện cốt truyện) | "release" (thứ tự ra rạp)
   const [mode, setMode] = useState<"chronological" | "release">("chronological");
   const [selectedPhase, setSelectedPhase] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_FILMS);
   const phases = isMarvel ? MARVEL_TIMELINE_PHASES : DC_TIMELINE_PHASES;
 
-  // Filtered and sorted films
-  const timelineFilms = useMemo(() => {
-    return getUniverseTimeline(universe, {
-      mode,
-      phase: selectedPhase,
-      search: searchQuery,
-    });
-  }, [universe, mode, selectedPhase, searchQuery]);
+  const timelineFilms = useMemo(
+    () =>
+      getUniverseTimeline(universe, {
+        mode,
+        phase: selectedPhase,
+        search: searchQuery,
+      }),
+    [universe, mode, selectedPhase, searchQuery],
+  );
+  const visibleFilms = timelineFilms.slice(0, visibleCount);
+  const remainingFilms = Math.max(0, timelineFilms.length - visibleFilms.length);
+
+  const resetVisibleResults = () => setVisibleCount(INITIAL_VISIBLE_FILMS);
 
   return (
-    <section id="universe-timeline" className="relative pt-10 sm:pt-14 pb-12 sm:pb-16 select-none scroll-mt-20">
-      {/* Background Ambient Glow */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden z-0">
-        <div
-          className={cn(
-            "absolute -top-32 left-1/4 w-[600px] h-[350px] blur-[150px] rounded-full transition-colors duration-700",
-            isMarvel ? "bg-red-600/[0.06]" : "bg-sky-600/[0.06]"
-          )}
-        />
-      </div>
-
-      <div className="relative z-10 max-w-[1760px] mx-auto px-4 sm:px-8 lg:px-14 space-y-6 sm:space-y-8">
-        {/* ── 1. SECTION HEADER ────────────────────────────────────────── */}
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 sm:gap-6 border-b border-white/[0.08] pb-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.05] border border-white/10 text-xs font-semibold text-neutral-300">
-              <Clock
-                size={13}
-                className={cn(isMarvel ? "text-red-400" : "text-sky-400")}
-              />
-              <span>Niên Đại Vũ Trụ Điện Ảnh</span>
-              <span className="text-white/30">•</span>
-              <span className={cn("font-bold", isMarvel ? "text-red-400" : "text-sky-400")}>
-                {timelineFilms.length} tác phẩm
-              </span>
+    <section
+      id="universe-timeline"
+      className="relative scroll-mt-20 border-t border-white/[0.08] py-10 sm:py-14"
+      aria-labelledby="universe-timeline-heading"
+    >
+      <div className="space-y-5 sm:space-y-7">
+        <header className="space-y-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl space-y-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-neutral-400">
+                <Clock
+                  aria-hidden="true"
+                  size={14}
+                  className={isMarvel ? "text-red-400" : "text-sky-400"}
+                />
+                <span>{timelineFilms.length} tác phẩm</span>
+              </div>
+              <h2
+                id="universe-timeline-heading"
+                className="text-2xl font-black tracking-tight text-white sm:text-3xl"
+              >
+                {isMarvel ? "Dòng thời gian Marvel" : "Dòng thời gian DC"}
+              </h2>
+              <p className="max-w-xl text-sm leading-relaxed text-neutral-400">
+                Chọn thứ tự cốt truyện hoặc công chiếu để theo dõi đúng mạch phim.
+              </p>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white flex items-center gap-3">
-              <span>{isMarvel ? "Dòng Thời Gian Marvel MCU" : "Dòng Thời Gian DC Universe"}</span>
-            </h2>
-
-            <p className="text-xs sm:text-sm text-neutral-400 max-w-2xl leading-relaxed">
-              {mode === "chronological"
-                ? `Khám phá vũ trụ ${
-                    isMarvel ? "Marvel" : "DC"
-                  } theo đúng trật tự dòng thời gian diễn ra sự kiện cốt truyện — từ quá khứ lịch sử đến kỷ nguyên hiện đại.`
-                : `Thưởng thức các siêu phẩm theo đúng thứ tự công chiếu ngoài rạp, cảm nhận trọn vẹn sự phát triển kỹ xảo và quy mô điện ảnh.`}
-            </p>
-          </div>
-
-          {/* Mode Switcher: Chronological vs Release Order */}
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#11131a] border border-white/10 shadow-lg self-start lg:self-auto">
-            <button
-              type="button"
-              onClick={() => setMode("chronological")}
-              className={cn(
-                "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer",
-                mode === "chronological"
-                  ? isMarvel
-                    ? "bg-red-600 text-white shadow-lg shadow-red-600/30"
-                    : "bg-sky-600 text-white shadow-lg shadow-sky-600/30"
-                  : "text-neutral-400 hover:text-white hover:bg-white/[0.06]"
-              )}
+            <div
+              className="grid w-full grid-cols-2 gap-1 rounded-2xl border border-white/10 bg-[#0d0f15] p-1 sm:w-auto"
+              aria-label="Chọn thứ tự dòng thời gian"
             >
-              <Clock size={14} />
-              <span>Theo Cốt Truyện</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMode("release")}
-              className={cn(
-                "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer",
-                mode === "release"
-                  ? isMarvel
-                    ? "bg-red-600 text-white shadow-lg shadow-red-600/30"
-                    : "bg-sky-600 text-white shadow-lg shadow-sky-600/30"
-                  : "text-neutral-400 hover:text-white hover:bg-white/[0.06]"
-              )}
-            >
-              <Film size={14} />
-              <span>Theo Năm Ra Rạp</span>
-            </button>
-          </div>
-        </div>
-
-        {/* ── 2. FILTER TOOLBAR (PHASE PILLS & SEARCH) ─────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-          {/* Phase Filter Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-            {phases.map((phase) => {
-              const isActive = selectedPhase === phase.id;
-              return (
-                <button
-                  key={phase.id}
-                  type="button"
-                  onClick={() => setSelectedPhase(phase.id)}
-                  className={cn(
-                    "px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer shrink-0 select-none",
-                    isActive
-                      ? isMarvel
-                        ? "bg-red-500/20 text-red-300 border border-red-500/40 shadow-sm"
-                        : "bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm"
-                      : "bg-[#12141d] text-neutral-400 hover:text-white hover:bg-[#1a1d29] border border-white/10"
-                  )}
-                >
-                  {phase.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Quick Search */}
-          <div className="relative w-full sm:w-64 md:w-72 shrink-0">
-            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm phim trong timeline..."
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-[#12141d] border border-white/10 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white/30 transition-colors"
-            />
-            {searchQuery && (
               <button
                 type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400 hover:text-white cursor-pointer"
+                aria-pressed={mode === "chronological"}
+                onClick={() => {
+                  setMode("chronological");
+                  resetVisibleResults();
+                }}
+                className={cn(
+                  "inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3 text-xs font-bold transition-colors active:translate-y-px sm:px-4",
+                  mode === "chronological"
+                    ? isMarvel
+                      ? "bg-red-600 text-white"
+                      : "bg-sky-600 text-white"
+                    : "text-neutral-400 hover:bg-white/[0.06] hover:text-white",
+                )}
               >
-                ✕
+                <Clock aria-hidden="true" size={14} />
+                <span>Cốt truyện</span>
               </button>
-            )}
+              <button
+                type="button"
+                aria-pressed={mode === "release"}
+                onClick={() => {
+                  setMode("release");
+                  resetVisibleResults();
+                }}
+                className={cn(
+                  "inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3 text-xs font-bold transition-colors active:translate-y-px sm:px-4",
+                  mode === "release"
+                    ? isMarvel
+                      ? "bg-red-600 text-white"
+                      : "bg-sky-600 text-white"
+                    : "text-neutral-400 hover:bg-white/[0.06] hover:text-white",
+                )}
+              >
+                <Film aria-hidden="true" size={14} />
+                <span>Công chiếu</span>
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* ── 3. TIMELINE ROADMAP TRACK ─────────────────────────────────── */}
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-center">
+            <div
+              className="flex min-w-0 snap-x snap-mandatory gap-2 overflow-x-auto py-1 no-scrollbar overscroll-x-contain"
+              aria-label="Lọc theo giai đoạn"
+            >
+              {phases.map((phase) => {
+                const isActive = selectedPhase === phase.id;
+                return (
+                  <button
+                    key={phase.id}
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() => {
+                      setSelectedPhase(phase.id);
+                      resetVisibleResults();
+                    }}
+                    className={cn(
+                      "min-h-9 shrink-0 snap-start whitespace-nowrap rounded-xl border px-3 text-xs font-semibold transition-colors active:translate-y-px",
+                      isActive
+                        ? isMarvel
+                          ? "border-red-500/50 bg-red-500/15 text-red-200"
+                          : "border-sky-500/50 bg-sky-500/15 text-sky-200"
+                        : "border-white/10 bg-[#11131a] text-neutral-400 hover:border-white/20 hover:text-white",
+                    )}
+                  >
+                    {phase.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <label className="relative block">
+              <span className="sr-only">Tìm phim trong dòng thời gian</span>
+              <Search
+                aria-hidden="true"
+                size={15}
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500"
+              />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => {
+                  setSearchQuery(event.target.value);
+                  resetVisibleResults();
+                }}
+                placeholder="Tìm trong dòng thời gian"
+                className="min-h-11 w-full rounded-xl border border-white/10 bg-[#11131a] py-2 pl-10 pr-10 text-sm text-white outline-none placeholder:text-neutral-500 focus:border-white/30"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  aria-label="Xóa nội dung tìm kiếm"
+                  onClick={() => {
+                    setSearchQuery("");
+                    resetVisibleResults();
+                  }}
+                  className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-neutral-400 hover:bg-white/[0.06] hover:text-white"
+                >
+                  <X aria-hidden="true" size={15} />
+                </button>
+              )}
+            </label>
+          </div>
+        </header>
+
         {timelineFilms.length === 0 ? (
-          <div className="py-16 text-center text-neutral-400 space-y-2 bg-[#0d0f17] rounded-2xl border border-white/10">
-            <Clock size={32} className="mx-auto text-neutral-600" />
-            <p className="text-sm font-semibold text-neutral-300">Không tìm thấy phim phù hợp với từ khóa</p>
+          <div className="rounded-2xl border border-white/10 bg-[#0d0f15] px-5 py-12 text-center">
+            <Clock aria-hidden="true" size={28} className="mx-auto text-neutral-600" />
+            <p className="mt-3 text-sm font-semibold text-neutral-200">Không tìm thấy phim phù hợp</p>
             <button
               type="button"
               onClick={() => {
                 setSelectedPhase("all");
                 setSearchQuery("");
+                resetVisibleResults();
               }}
-              className="text-xs text-sky-400 hover:underline cursor-pointer font-medium"
+              className={cn(
+                "mt-4 rounded-xl border px-4 py-2 text-xs font-bold active:translate-y-px",
+                isMarvel
+                  ? "border-red-500/40 text-red-300 hover:bg-red-500/10"
+                  : "border-sky-500/40 text-sky-300 hover:bg-sky-500/10",
+              )}
             >
               Đặt lại bộ lọc
             </button>
           </div>
         ) : (
-          <div className="relative pl-6 sm:pl-10 md:pl-12 space-y-4 sm:space-y-6">
-            {/* Glowing Vertical Timeline Track Connector */}
+          <div className="relative">
             <div
+              aria-hidden="true"
               className={cn(
-                "absolute top-6 bottom-6 left-2.5 sm:left-4 md:left-5 w-[2px] rounded-full",
-                isMarvel
-                  ? "bg-gradient-to-b from-red-600 via-red-500/70 to-red-900/30 shadow-[0_0_10px_rgba(239,68,68,0.5)]"
-                  : "bg-gradient-to-b from-sky-500 via-sky-400/70 to-sky-900/30 shadow-[0_0_10px_rgba(14,165,233,0.5)]"
+                "absolute bottom-6 left-[15px] top-6 w-px sm:left-[19px]",
+                isMarvel ? "bg-red-500/30" : "bg-sky-500/30",
               )}
             />
 
-            {timelineFilms.map((film, index) => {
-              const orderNum = mode === "chronological" ? film.chronoOrder : film.releaseOrder;
-              const formattedOrder = String(orderNum).padStart(2, "0");
+            <ol className="space-y-3 sm:space-y-4">
+              {visibleFilms.map((film) => {
+                const order = mode === "chronological" ? film.chronoOrder : film.releaseOrder;
+                return (
+                  <li key={film.id} className="relative grid grid-cols-[32px_minmax(0,1fr)] gap-3 sm:grid-cols-[40px_minmax(0,1fr)] sm:gap-4">
+                    <div
+                      className={cn(
+                        "relative z-[1] mt-4 flex h-8 w-8 items-center justify-center rounded-xl border bg-[#090b10] text-[10px] font-black tabular-nums sm:h-10 sm:w-10 sm:text-xs",
+                        isMarvel
+                          ? "border-red-500/55 text-red-300"
+                          : "border-sky-500/55 text-sky-300",
+                      )}
+                      aria-label={`Vị trí ${order}`}
+                    >
+                      {String(order).padStart(2, "0")}
+                    </div>
 
-              return (
-                <div key={film.id} className="relative group">
-                  {/* Milestone Node on the Track */}
-                  <div
-                    className={cn(
-                      "absolute -left-6 sm:-left-10 md:-left-12 top-4 -translate-x-1/2 flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#0d0f17] border-2 transition-transform duration-300 group-hover:scale-110 shadow-lg z-10",
-                      isMarvel
-                        ? "border-red-500 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.4)]"
-                        : "border-sky-400 text-sky-300 shadow-[0_0_10px_rgba(14,165,233,0.4)]"
-                    )}
-                  >
-                    <span className="text-[10px] sm:text-xs font-black tracking-tighter">
-                      {formattedOrder}
-                    </span>
-                  </div>
+                    <article className="min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-[#101219] p-3 sm:p-4">
+                      <div className="grid gap-3 md:grid-cols-[112px_minmax(0,1fr)_7.5rem] md:items-center md:gap-5">
+                        <Link
+                          href={`/watch/${film.slug}`}
+                          aria-label={`Xem ${film.name}`}
+                          className="relative hidden aspect-[2/3] overflow-hidden rounded-xl border border-white/10 bg-[#0a0c11] md:block"
+                        >
+                          <TmdbArtwork
+                            film={film as unknown as FilmItem}
+                            kind="poster"
+                            alt={film.name}
+                            allowTitleLookup
+                            className="absolute inset-0 h-full w-full"
+                            imageClassName="object-cover"
+                          />
+                        </Link>
 
-                  {/* Timeline Film Card */}
-                  <div className="relative overflow-hidden rounded-2xl bg-[#11141d] border border-white/10 hover:border-white/20 transition-all duration-300 hover:shadow-[0_10px_30px_rgba(0,0,0,0.6)] group-hover:translate-x-1">
-                    <div className="flex flex-col md:flex-row md:items-center gap-4 sm:gap-5 p-3.5 sm:p-4 lg:p-5">
-                      {/* Left: Thumbnail with Play Hover Overlay */}
-                      <Link
-                        href={`/watch/${film.slug}`}
-                        className="relative w-full md:w-48 lg:w-56 aspect-[16/9] md:aspect-[16/10] rounded-xl overflow-hidden shrink-0 border border-white/10 group/thumb block bg-neutral-950"
-                      >
-                        <TmdbArtwork
-                          film={film as unknown as FilmItem}
-                          kind="backdrop"
-                          alt={film.name}
-                          allowTitleLookup={true}
-                          className="absolute inset-0 h-full w-full"
-                          imageClassName="object-cover transition-transform duration-500 group-hover/thumb:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 group-hover/thumb:opacity-40 transition-opacity pointer-events-none" />
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+                            <span
+                              className={cn(
+                                "inline-flex items-center gap-1.5",
+                                isMarvel ? "text-red-300" : "text-sky-300",
+                              )}
+                            >
+                              <Clock aria-hidden="true" size={12} />
+                              {mode === "chronological" ? film.timelineYear : film.releaseYear}
+                            </span>
+                            <span className="text-neutral-600">/</span>
+                            <span className="text-neutral-400">{film.phaseLabel}</span>
+                            <span className="ml-auto inline-flex items-center gap-1 text-amber-300">
+                              <Star aria-hidden="true" size={11} className="fill-amber-300" />
+                              {film.vote_average.toFixed(1)}
+                            </span>
+                          </div>
 
-                        {/* Center Play Button Overlay */}
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <div
-                            className={cn(
-                              "w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md shadow-xl transition-all duration-300 transform group-hover/thumb:scale-110",
-                              isMarvel
-                                ? "bg-red-600/90 text-white shadow-red-600/40"
-                                : "bg-sky-600/90 text-white shadow-sky-600/40"
-                            )}
-                          >
-                            <Play size={16} fill="currentColor" className="ml-0.5" />
+                          <div className="mt-2 flex gap-3 md:block">
+                            <Link
+                              href={`/watch/${film.slug}`}
+                              aria-label={`Xem ${film.name}`}
+                              className="relative h-[112px] w-[76px] shrink-0 overflow-hidden rounded-xl border border-white/10 bg-[#0a0c11] md:hidden"
+                            >
+                              <TmdbArtwork
+                                film={film as unknown as FilmItem}
+                                kind="poster"
+                                alt={film.name}
+                                allowTitleLookup
+                                className="absolute inset-0 h-full w-full"
+                                imageClassName="object-cover"
+                              />
+                            </Link>
+
+                            <div className="min-w-0 flex-1">
+                              <Link
+                                href={`/watch/${film.slug}`}
+                                className="line-clamp-2 text-sm font-extrabold leading-snug text-white hover:text-neutral-200 sm:text-base"
+                              >
+                                {film.name}
+                              </Link>
+                              <p className="mt-1 line-clamp-1 text-xs text-neutral-500">
+                                {film.origin_name} ({film.releaseYear})
+                              </p>
+                              <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-neutral-300 sm:line-clamp-2">
+                                {film.contextNote}
+                              </p>
+                            </div>
                           </div>
                         </div>
 
-                        {/* Top Badge: Quality & Year */}
-                        <div className="absolute top-2 left-2 flex items-center gap-1.5 pointer-events-none z-10">
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-black/75 text-amber-300 border border-amber-400/30">
-                            {film.quality}
-                          </span>
-                        </div>
-                      </Link>
-
-                      {/* Middle: Movie Info & Context */}
-                      <div className="flex-1 min-w-0 space-y-2 sm:space-y-2.5">
-                        {/* Timeline Era & Phase Pills */}
-                        <div className="flex flex-wrap items-center gap-2 text-xs">
-                          {/* Timeline Era Badge */}
-                          <span
-                            className={cn(
-                              "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md font-bold text-[11px] sm:text-xs",
-                              isMarvel
-                                ? "bg-red-500/15 border border-red-500/30 text-red-300"
-                                : "bg-sky-500/15 border border-sky-500/30 text-sky-300"
-                            )}
-                          >
-                            <Clock size={12} />
-                            <span>
-                              {mode === "chronological"
-                                ? `Thời điểm: ${film.timelineYear}`
-                                : `Năm công chiếu: ${film.releaseYear}`}
-                            </span>
-                          </span>
-
-                          {/* Phase Badge */}
-                          <span className="px-2.5 py-0.5 rounded-md bg-[#181b24] border border-white/10 text-neutral-300 font-semibold text-[11px]">
-                            {film.phaseLabel}
-                          </span>
-
-                          {/* TMDB Rating */}
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold text-[11px]">
-                            <Star size={11} className="fill-amber-400 text-amber-400" />
-                            <span>{film.vote_average.toFixed(1)}</span>
-                          </span>
-                        </div>
-
-                        {/* Movie Titles */}
-                        <div>
+                        <div className="grid grid-cols-2 gap-2 border-t border-white/[0.07] pt-3 md:grid-cols-1 md:border-l md:border-t-0 md:pl-4 md:pt-0">
                           <Link
                             href={`/watch/${film.slug}`}
-                            className="text-base sm:text-lg lg:text-xl font-bold text-white hover:text-neutral-200 transition-colors line-clamp-1 group-hover:underline"
+                            className={cn(
+                              "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-3 text-xs font-bold text-white active:translate-y-px",
+                              isMarvel
+                                ? "bg-red-600 hover:bg-red-500"
+                                : "bg-sky-600 hover:bg-sky-500",
+                            )}
                           >
-                            {film.name}
+                            <Play aria-hidden="true" size={13} className="fill-current" />
+                            <span>Xem phim</span>
                           </Link>
-                          <p className="text-xs sm:text-sm text-neutral-400 font-medium">
-                            {film.origin_name} • {film.releaseYear}
-                          </p>
-                        </div>
-
-                        {/* Universe Timeline Context Callout */}
-                        <div className="p-2.5 sm:p-3 rounded-xl bg-[#0c0e15] border border-white/[0.08] text-xs text-neutral-300/95 leading-relaxed">
-                          <span className={cn("font-bold mr-1.5", isMarvel ? "text-red-400" : "text-sky-400")}>
-                            ✦ Ngữ cảnh cốt truyện:
-                          </span>
-                          <span>{film.contextNote}</span>
+                          <Link
+                            href={`/film/${film.slug}`}
+                            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-neutral-300 hover:bg-white/[0.08] hover:text-white active:translate-y-px"
+                          >
+                            <Info aria-hidden="true" size={13} />
+                            <span>Chi tiết</span>
+                          </Link>
                         </div>
                       </div>
+                    </article>
+                  </li>
+                );
+              })}
+            </ol>
 
-                      {/* Right: Quick Action Buttons */}
-                      <div className="flex md:flex-col items-center justify-end gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-white/[0.06]">
-                        <Link
-                          href={`/watch/${film.slug}`}
-                          className={cn(
-                            "flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white transition-all shadow-md active:scale-95 cursor-pointer",
-                            isMarvel
-                              ? "bg-red-600 hover:bg-red-700 shadow-red-600/30"
-                              : "bg-sky-600 hover:bg-sky-700 shadow-sky-600/30"
-                          )}
-                        >
-                          <Play size={14} fill="currentColor" />
-                          <span>Xem Phim</span>
-                        </Link>
-
-                        <Link
-                          href={`/film/${film.slug}`}
-                          className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 sm:py-2.5 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white bg-[#181b24] hover:bg-[#232836] border border-white/10 transition-colors active:scale-95 cursor-pointer"
-                        >
-                          <Info size={13} />
-                          <span>Chi Tiết</span>
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {remainingFilms > 0 && (
+              <div className="pl-11 pt-5 sm:pl-14">
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((count) => count + LOAD_MORE_FILMS)}
+                  className={cn(
+                    "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border bg-[#101219] px-4 text-sm font-bold transition-colors active:translate-y-px sm:w-auto",
+                    isMarvel
+                      ? "border-red-500/35 text-red-200 hover:bg-red-500/10"
+                      : "border-sky-500/35 text-sky-200 hover:bg-sky-500/10",
+                  )}
+                >
+                  <span>Xem thêm {Math.min(LOAD_MORE_FILMS, remainingFilms)} mốc</span>
+                  <ChevronDown aria-hidden="true" size={15} />
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

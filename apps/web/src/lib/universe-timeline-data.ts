@@ -6,7 +6,7 @@ export interface TimelineFilmItem {
   name: string;
   origin_name: string;
   releaseYear: number;
-  timelineYear: string;   // E.g. "1942–1945", "1995", "2008", "2010"...
+  timelineYear: string;   // E.g. "1942-1945", "1995", "2008", "2010"...
   chronoOrder: number;    // Thứ tự dòng thời gian cốt truyện (1, 2, 3...)
   releaseOrder: number;   // Thứ tự phát hành rạp (1, 2, 3...)
   phase: string;          // "phase1", "phase2", "phase3", "phase4", "phase5", "dceu", "dark-knight", "batman-saga", "joker"
@@ -29,16 +29,16 @@ export interface TimelinePhaseOption {
 
 export const MARVEL_TIMELINE_PHASES: TimelinePhaseOption[] = [
   { id: "all", label: "Toàn Bộ Dòng Thời Gian" },
-  { id: "phase1", label: "Phase 1: Khởi Đầu (2008–2012)" },
-  { id: "phase2", label: "Phase 2: Mở Rộng (2013–2015)" },
-  { id: "phase3", label: "Phase 3: Infinity Saga (2016–2019)" },
-  { id: "phase4", label: "Phase 4: Khởi Đầu Đa Vũ Trụ (2021–2022)" },
-  { id: "phase5", label: "Phase 5: Đa Vũ Trụ Hỗn Loạn (2023–2025)" },
+  { id: "phase1", label: "Phase 1: Khởi Đầu (2008-2012)" },
+  { id: "phase2", label: "Phase 2: Mở Rộng (2013-2015)" },
+  { id: "phase3", label: "Phase 3: Infinity Saga (2016-2019)" },
+  { id: "phase4", label: "Phase 4: Khởi Đầu Đa Vũ Trụ (2021-2022)" },
+  { id: "phase5", label: "Phase 5: Đa Vũ Trụ Hỗn Loạn (2023-2025)" },
 ];
 
 export const DC_TIMELINE_PHASES: TimelinePhaseOption[] = [
   { id: "all", label: "Toàn Bộ Vũ Trụ DC" },
-  { id: "dceu", label: "DCEU Canon Timeline (2013–2023)" },
+  { id: "dceu", label: "DCEU Canon Timeline (2013-2023)" },
   { id: "dark-knight", label: "The Dark Knight Trilogy (Nolan)" },
   { id: "batman-saga", label: "The Batman Saga (Matt Reeves)" },
   { id: "joker", label: "Vũ Trụ Joker (Todd Phillips)" },
@@ -51,7 +51,7 @@ export const MARVEL_TIMELINE_FILMS: TimelineFilmItem[] = [
     name: "Captain America: Kẻ Báo Thù Đầu Tiên",
     origin_name: "Captain America: The First Avenger",
     releaseYear: 2011,
-    timelineYear: "1942–1945",
+    timelineYear: "1942-1945",
     chronoOrder: 1,
     releaseOrder: 5,
     phase: "phase1",
@@ -411,7 +411,7 @@ export const MARVEL_TIMELINE_FILMS: TimelineFilmItem[] = [
     name: "Phù Thuỷ Tối Thượng",
     origin_name: "Doctor Strange",
     releaseYear: 2016,
-    timelineYear: "2016–2017",
+    timelineYear: "2016-2017",
     chronoOrder: 19,
     releaseOrder: 14,
     phase: "phase3",
@@ -491,7 +491,7 @@ export const MARVEL_TIMELINE_FILMS: TimelineFilmItem[] = [
     name: "Biệt Đội Siêu Anh Hùng 4: Hồi Kết",
     origin_name: "Avengers: Endgame",
     releaseYear: 2019,
-    timelineYear: "2018–2023",
+    timelineYear: "2018-2023",
     chronoOrder: 23,
     releaseOrder: 22,
     phase: "phase3",
@@ -975,7 +975,7 @@ export const DC_TIMELINE_FILMS: TimelineFilmItem[] = [
     name: "Người Hòa Giải (Phần 1)",
     origin_name: "Peacemaker (Season 1)",
     releaseYear: 2022,
-    timelineYear: "2021–2022",
+    timelineYear: "2021-2022",
     chronoOrder: 10,
     releaseOrder: 10,
     phase: "dceu",

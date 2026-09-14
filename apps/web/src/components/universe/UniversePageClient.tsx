@@ -1,23 +1,22 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
   Play,
-  Film,
   Star,
   ChevronRight,
   ChevronLeft,
-  Sparkles,
   Clapperboard,
-  Tv,
   Clock,
+  ChevronDown,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { FilmCard, FilmItem } from "@/components/film/FilmCard";
 import { Pagination } from "@/components/film/Pagination";
 import { LandscapeSpotlightRow } from "@/components/film/LandscapeSpotlightRow";
+import { UniverseTimelineSection } from "@/components/universe/UniverseTimelineSection";
 import {
   getUniverseFilms,
   getUniverseSpotlights,
@@ -32,21 +31,6 @@ import { resolveImageUrl } from "@/lib/movie-image-url";
 const TrailerModal = dynamic(
   () => import("@/components/film/TrailerModal").then((m) => m.TrailerModal),
   { ssr: false },
-);
-
-const UniverseTimelineSection = dynamic(
-  () =>
-    import("@/components/universe/UniverseTimelineSection").then(
-      (m) => m.UniverseTimelineSection,
-    ),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="max-w-[1760px] mx-auto px-4 sm:px-8 lg:px-14 py-12">
-        <div className="h-48 rounded-2xl bg-neutral-900/40 border border-white/5 animate-pulse" />
-      </div>
-    ),
-  },
 );
 
 function UniverseSpotlightBackdrop({
@@ -92,7 +76,7 @@ function UniverseSpotlightBackdrop({
       {/* Ambient atmospheric backdrop glow so hero is never pitch black */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_35%,rgba(35,173,229,0.14),transparent_50%),linear-gradient(135deg,#07080c_0%,#111620_52%,#07080c_100%)]" />
 
-      {src && (
+      {src && (isActive || isPriority) && (
         <Image
           key={src}
           src={src}
@@ -257,57 +241,61 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
   }, [spotlights, currentIdx]);
 
   const thumbnailScrollRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLElement>(null);
+  const [isHeroVisible, setIsHeroVisible] = useState(true);
 
-  // Auto-scroll active thumbnail into view smoothly
   useEffect(() => {
-    if (!thumbnailScrollRef.current) return;
-    const activeBtn = thumbnailScrollRef.current.children[currentIdx] as HTMLElement | undefined;
-    if (activeBtn && typeof activeBtn.scrollIntoView === "function") {
-      activeBtn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-    }
+    const hero = heroRef.current;
+    if (!hero || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsHeroVisible(entry.isIntersecting),
+      { threshold: 0.05 },
+    );
+    observer.observe(hero);
+    return () => observer.disconnect();
+  }, []);
+
+  // Center only the horizontal thumbnail rail. scrollIntoView also moved the
+  // page vertically and pulled mobile users back to the hero every 8 seconds.
+  useEffect(() => {
+    const rail = thumbnailScrollRef.current;
+    if (!rail) return;
+    const activeButton = rail.children[currentIdx] as HTMLElement | undefined;
+    if (!activeButton) return;
+    const centeredLeft =
+      activeButton.offsetLeft - (rail.clientWidth - activeButton.offsetWidth) / 2;
+    rail.scrollTo({ left: Math.max(0, centeredLeft), behavior: "smooth" });
   }, [currentIdx]);
 
   // Auto-rotate spotlight every 8 seconds
   useEffect(() => {
-    if (isPaused || spotlights.length <= 1) return;
+    if (isPaused || !isHeroVisible || spotlights.length <= 1) return;
     const timer = setInterval(() => {
       setCurrentIdx((prev) => (prev + 1) % spotlights.length);
     }, 8000);
     return () => clearInterval(timer);
-  }, [isPaused, spotlights.length]);
+  }, [isHeroVisible, isPaused, spotlights.length]);
 
-  // Idle-preload remaining spotlight backdrops and logos into browser memory for 0ms transitions
+  // Warm only the next slide while the hero is visible. Loading the entire
+  // spotlight pool competed with timeline posters on mobile.
   useEffect(() => {
-    if (typeof window === "undefined" || !spotlights.length) return;
-
-    const idleCallback =
-      typeof window.requestIdleCallback === "function"
-        ? window.requestIdleCallback
-        : (cb: () => void) => window.setTimeout(cb, 150);
-
-    const handle = idleCallback(() => {
-      spotlights.slice(1).forEach((item) => {
-        if (item.heroBackdrop) {
-          const wsrv = wsrvImageUrl(item.heroBackdrop, "backdrop");
-          const img = new window.Image();
-          img.decoding = "async";
-          img.src = wsrv || item.heroBackdrop;
-        }
-        if (item.titleLogo) {
-          const wsrv = wsrvImageUrl(item.titleLogo, "titleLogo");
-          const img = new window.Image();
-          img.decoding = "async";
-          img.src = wsrv || item.titleLogo;
-        }
-      });
-    });
-
-    return () => {
-      if (typeof window.cancelIdleCallback === "function" && typeof handle === "number") {
-        window.cancelIdleCallback(handle);
+    if (!isHeroVisible || spotlights.length <= 1) return;
+    const handle = window.setTimeout(() => {
+      const item = spotlights[(currentIdx + 1) % spotlights.length];
+      for (const source of [
+        wsrvImageUrl(item.heroBackdrop, "backdrop") || item.heroBackdrop,
+        item.titleLogo
+          ? wsrvImageUrl(item.titleLogo, "titleLogo") || item.titleLogo
+          : null,
+      ]) {
+        if (!source) continue;
+        const image = new window.Image();
+        image.decoding = "async";
+        image.src = source;
       }
-    };
-  }, [spotlights]);
+    }, 300);
+    return () => window.clearTimeout(handle);
+  }, [currentIdx, isHeroVisible, spotlights]);
 
   // Convert spotlight to FilmItem for trailer modal
   const activeFilmItem: FilmItem & { trailer_url?: string } = useMemo(() => {
@@ -370,9 +358,10 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
   }, [catalogFilms, page]);
 
   return (
-    <div className="relative min-h-screen bg-[#07080c] text-white selection:bg-cyan-500/30">
+    <div className="relative min-h-[100dvh] bg-[#07080c] text-white selection:bg-cyan-500/30">
       {/* ── 1. FULL-BLEED HERO BANNER ──────────────────────────────────────── */}
       <section
+        ref={heroRef}
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         className="relative w-full min-h-[640px] sm:min-h-[700px] lg:min-h-[740px] lg:h-[90vh] max-h-[1020px] overflow-hidden select-none"
@@ -465,10 +454,10 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
               </p>
 
               {/* Actions Buttons */}
-              <div className="flex flex-wrap items-center gap-3 pt-2">
+              <div className="grid w-full grid-cols-2 gap-2 pt-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
                 <Link
                   href={`/watch/${activeSpotlight.slug}`}
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-black font-extrabold text-xs sm:text-sm hover:bg-neutral-100 transition-all shadow-lg shadow-black/40 active:scale-95"
+                  className="col-span-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-xs font-extrabold text-black shadow-lg shadow-black/40 transition-colors hover:bg-neutral-100 active:translate-y-px sm:col-auto sm:w-auto sm:text-sm"
                 >
                   <Play size={16} className="fill-black" />
                   <span>Xem Phim Ngay</span>
@@ -478,7 +467,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                   <button
                     type="button"
                     onClick={() => setTrailerFilm(activeFilmItem)}
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#181b24] hover:bg-[#232836] text-white font-bold text-xs sm:text-sm border border-white/10 transition-all shadow-md active:scale-95 cursor-pointer"
+                    className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#181b24] px-4 py-3 text-xs font-bold text-white transition-colors hover:bg-[#232836] active:translate-y-px sm:w-auto sm:px-5 sm:text-sm"
                   >
                     <Clapperboard size={16} />
                     <span>Xem Trailer</span>
@@ -487,7 +476,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
 
                 <Link
                   href={`/film/${activeSpotlight.slug}`}
-                  className="inline-flex items-center gap-1.5 px-4 py-3 rounded-xl text-neutral-300 hover:text-white font-semibold text-xs sm:text-sm transition-colors hover:bg-white/5"
+                  className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-xs font-semibold text-neutral-300 transition-colors hover:bg-white/[0.08] hover:text-white sm:w-auto sm:border-transparent sm:bg-transparent sm:text-sm"
                 >
                   <span>Chi tiết</span>
                   <ChevronRight size={14} />
@@ -495,10 +484,16 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
 
                 <a
                   href="#universe-timeline"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-3 rounded-xl text-neutral-300 hover:text-white font-semibold text-xs sm:text-sm transition-colors bg-[#181b24]/80 hover:bg-[#232836] border border-white/10"
+                  className={cn(
+                    "group inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-xs font-bold transition-colors active:translate-y-px sm:w-auto sm:text-sm",
+                    isMarvel
+                      ? "border-red-500/35 bg-red-500/10 text-red-200 hover:bg-red-500/15"
+                      : "border-sky-500/35 bg-sky-500/10 text-sky-200 hover:bg-sky-500/15",
+                  )}
                 >
-                  <Clock size={14} className={isMarvel ? "text-red-400" : "text-sky-400"} />
-                  <span>Dòng Thời Gian</span>
+                  <Clock aria-hidden="true" size={14} />
+                  <span>Dòng thời gian</span>
+                  <ChevronDown aria-hidden="true" size={14} className="transition-transform group-hover:translate-y-0.5" />
                 </a>
               </div>
             </div>
@@ -520,7 +515,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
               </div>
 
               {/* Prev / Next Arrows */}
-              <div className="flex items-center gap-1 pl-1 shrink-0">
+              <div className="hidden items-center gap-1 pl-1 shrink-0 sm:flex">
                 <button
                   type="button"
                   onClick={() =>
