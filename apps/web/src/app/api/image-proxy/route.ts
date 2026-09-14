@@ -100,11 +100,16 @@ async function assertPublicDns(url: string): Promise<void> {
   await validation;
 }
 
-function failedImageResponse(status = 404) {
+function failedImageResponse(status = 404, cacheFailure = false) {
+  const cacheControl = cacheFailure
+    ? "public, max-age=30, s-maxage=300, stale-while-revalidate=60"
+    : "no-store, max-age=0";
   return new NextResponse(null, {
     status,
     headers: {
-      "Cache-Control": "no-store, max-age=0",
+      "Cache-Control": cacheControl,
+      "CDN-Cache-Control": cacheControl,
+      "Vercel-CDN-Cache-Control": cacheControl,
       "X-Content-Type-Options": "nosniff",
     },
   });
@@ -333,6 +338,8 @@ export async function GET(request: NextRequest) {
         headers: {
           "Content-Type": winner.contentType,
           "Cache-Control": "public, max-age=31536000, immutable",
+          "CDN-Cache-Control": "public, max-age=31536000, immutable",
+          "Vercel-CDN-Cache-Control": "public, max-age=31536000, immutable",
           "X-Content-Type-Options": "nosniff",
           "Content-Security-Policy":
             "default-src 'none'; style-src 'unsafe-inline'",
@@ -346,5 +353,5 @@ export async function GET(request: NextRequest) {
   }
 
   // Return 404 if all candidates fail
-  return failedImageResponse(404);
+  return failedImageResponse(404, true);
 }
