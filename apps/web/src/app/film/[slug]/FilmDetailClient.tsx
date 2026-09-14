@@ -6,6 +6,13 @@ import NextImage, { getImageProps } from 'next/image';
 import dynamic from 'next/dynamic';
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MorphIcon } from 'morphicons/react';
+import {
+  Plus as LucidePlus,
+  Check as LucideCheck,
+  Share2 as LucideShare2,
+  Star as LucideStar,
+} from 'lucide';
 import {
   Play,
   Bookmark,
@@ -1237,6 +1244,7 @@ export default function FilmDetailPage({
   const [inWatchlist, setInWatchlist] = useState(false);
   const [watchlistPending, setWatchlistPending] = useState(false);
   const [myRating, setMyRating] = useState(0);
+  const [shareCopied, setShareCopied] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -2000,11 +2008,13 @@ export default function FilmDetailPage({
                         : 'text-neutral-200 hover:text-white',
                     )}
                   >
-                    {inWatchlist ? (
-                      <Check size={16} className="stroke-[3] text-sky-400" />
-                    ) : (
-                      <Plus size={16} className="text-neutral-200 group-hover:text-white" />
-                    )}
+                    <MorphIcon
+                      icon={inWatchlist ? LucideCheck : LucidePlus}
+                      size={16}
+                      spring="snappy"
+                      strokeWidth={inWatchlist ? 3 : 2}
+                      className={inWatchlist ? 'text-sky-400' : 'text-neutral-200 group-hover:text-white'}
+                    />
                   </button>
                   <span className="text-[10px] font-semibold text-neutral-300 uppercase tracking-wider group-hover:text-white transition-colors">
                     {t('nav.watchlist', 'Tủ phim')}
@@ -2043,9 +2053,11 @@ export default function FilmDetailPage({
                     onClick={() => handleRate(5)}
                     className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center bg-[#181b22] hover:bg-[#222731] hover:border-white/20 transition-all text-neutral-200 hover:text-white cursor-pointer active:scale-95 shadow-sm"
                   >
-                    <Star
+                    <MorphIcon
+                      icon={LucideStar}
                       size={16}
-                      fill={myRating ? 'currentColor' : 'none'}
+                      spring="snappy"
+                      color={myRating ? '#fbbf24' : undefined}
                       className={cn(
                         myRating ? 'text-amber-400' : 'text-neutral-200 group-hover:text-white',
                       )}
@@ -2060,14 +2072,24 @@ export default function FilmDetailPage({
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(window.location.href);
+                      setShareCopied(true);
                       toast(
                         t('film.copiedLink', 'Đã sao chép liên kết phim vào bộ nhớ tạm!'),
                         'success',
                       );
+                      setTimeout(() => setShareCopied(false), 2000);
                     }}
-                    className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center bg-[#181b22] hover:bg-[#222731] hover:border-white/20 transition-all text-neutral-200 hover:text-white cursor-pointer active:scale-95 shadow-sm"
+                    className={cn(
+                      'w-10 h-10 rounded-full border border-white/10 flex items-center justify-center bg-[#181b22] hover:bg-[#222731] hover:border-white/20 transition-all text-neutral-200 hover:text-white cursor-pointer active:scale-95 shadow-sm',
+                      shareCopied && 'border-emerald-400/40 bg-emerald-500/15 text-emerald-400',
+                    )}
                   >
-                    <Share2 size={16} className="text-neutral-200 group-hover:text-white" />
+                    <MorphIcon
+                      icon={shareCopied ? LucideCheck : LucideShare2}
+                      size={16}
+                      spring="snappy"
+                      className={shareCopied ? 'text-emerald-400' : 'text-neutral-200 group-hover:text-white'}
+                    />
                   </button>
                   <span className="text-[10px] font-semibold text-neutral-300 uppercase tracking-wider group-hover:text-white transition-colors">
                     {t('film.share', 'Chia sẻ')}
