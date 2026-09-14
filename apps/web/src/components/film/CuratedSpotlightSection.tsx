@@ -43,6 +43,9 @@ export function CuratedSpotlightSection({
   const reduceMotion = useReducedMotion();
   const spotlightList = useMemo(() => deduplicateSectionRow(films).slice(0, 7), [films]);
   const activeFilm = spotlightList[activeIndex % Math.max(spotlightList.length, 1)];
+  const nextFilm = spotlightList.length > 1
+    ? spotlightList[(activeIndex + 1) % spotlightList.length]
+    : undefined;
 
   useEffect(() => {
     setActiveIndex((index) => (spotlightList.length > 0 ? index % spotlightList.length : 0));
@@ -150,6 +153,7 @@ export function CuratedSpotlightSection({
                 kind="backdrop"
                 alt={activeFilm.name}
                 allowTitleLookup
+                preferOriginal
                 sizes="(max-width: 1024px) 100vw, 75vw"
                 imageClassName="object-[center_25%]"
                 className="h-full w-full"
@@ -228,6 +232,7 @@ export function CuratedSpotlightSection({
                 {/* Title Logo / Banner */}
                 <ShowcaseTitleLogo
                   film={activeFilm}
+                  prefetchFilm={nextFilm}
                   fallbackTextClassName={`${cardFont.className} text-lg font-extrabold tracking-tight text-white line-clamp-2 sm:text-2xl lg:text-3xl`}
                   imageClassName="max-h-12 sm:max-h-16 md:max-h-20 lg:max-h-22"
                   showSubtitle

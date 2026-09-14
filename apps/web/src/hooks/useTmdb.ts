@@ -23,6 +23,7 @@ interface UseTmdbOptions {
   seasonNumber?: number;
   enabled?: boolean;
   fetchImages?: boolean;
+  fetchDetails?: boolean;
   fetchCredits?: boolean;
   fetchVideos?: boolean;
   fetchSeason?: boolean;
@@ -95,6 +96,7 @@ export function useTmdb({
   seasonNumber = 1,
   enabled = true,
   fetchImages = true,
+  fetchDetails = true,
   fetchCredits = true,
   fetchVideos = true,
   fetchSeason = true,
@@ -209,7 +211,7 @@ export function useTmdb({
       resolvedType === "tv"
         ? tmdbApi.getTvDetail(resolvedId!)
         : tmdbApi.getMovieDetail(resolvedId!),
-    enabled: isEnabled && !!resolvedId,
+    enabled: isEnabled && fetchDetails && !!resolvedId,
     staleTime: 1000 * 60 * 60 * 24,
   });
 

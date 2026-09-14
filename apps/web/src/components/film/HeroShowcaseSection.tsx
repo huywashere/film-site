@@ -39,6 +39,9 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
   const reduceMotion = useReducedMotion();
   const shortlist = useMemo(() => deduplicateSectionRow(films).slice(0, 24), [films]);
   const activeFilm = shortlist[activeIndex % Math.max(shortlist.length, 1)];
+  const nextFilm = shortlist.length > 1
+    ? shortlist[(activeIndex + 1) % shortlist.length]
+    : undefined;
 
   useEffect(() => {
     setActiveIndex((index) => (shortlist.length > 0 ? index % shortlist.length : 0));
@@ -147,6 +150,7 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
                 kind="backdrop"
                 alt={activeFilm.name}
                 allowTitleLookup
+                preferOriginal
                 sizes="100vw"
                 imageClassName="object-[center_20%] sm:object-[center_25%]"
                 className="h-full w-full"
@@ -222,6 +226,7 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
                 {/* Title Logo / Banner */}
                 <ShowcaseTitleLogo
                   film={activeFilm}
+                  prefetchFilm={nextFilm}
                   fallbackTextClassName={`${cardFont.className} text-base font-extrabold tracking-tight text-white line-clamp-2 sm:text-2xl lg:text-3xl`}
                   imageClassName="max-h-12 sm:max-h-16 md:max-h-20 lg:max-h-22"
                   showSubtitle

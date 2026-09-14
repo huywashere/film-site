@@ -121,8 +121,21 @@ test('showcase logos keep the current film fallback stable while artwork loads',
   assert.match(source, /resolvedLogo\?\.slug === film\.slug/);
   assert.match(source, /\}, \[film\.slug, activeLogo\]\);/);
   assert.doesNotMatch(source, /\[film\.slug, activeLogo, currentSrc\]/);
-  assert.match(source, /isLoaded[\s\S]*\? 'sr-only'/);
+  assert.match(source, /isLoaded && hasLogoCandidate[\s\S]*opacity-0/);
+  assert.match(source, /prefetchFilm/);
+  assert.match(source, /fetchDetails: false/);
   assert.match(source, /alt=""/);
+});
+
+test('large homepage showcases request original TMDB backdrops', () => {
+  const series = readFileSync('src/components/film/HeroShowcaseSection.tsx', 'utf8');
+  const curated = readFileSync('src/components/film/CuratedSpotlightSection.tsx', 'utf8');
+  const artwork = readFileSync('src/components/film/TmdbArtwork.tsx', 'utf8');
+
+  assert.match(series, /allowTitleLookup[\s\S]*preferOriginal/);
+  assert.match(curated, /allowTitleLookup[\s\S]*preferOriginal/);
+  assert.match(artwork, /tmdbImageVariant\(providerPrimary, 'original'\)/);
+  assert.match(artwork, /add\(artworkQuery\.backdropOriginal\)/);
 });
 
 test('shared artwork never hides a successfully decoded native image', () => {

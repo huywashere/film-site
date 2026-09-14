@@ -10,6 +10,7 @@ import { cardFont } from '@/lib/fonts';
 
 interface ShowcaseTitleLogoProps {
   film: FilmItem;
+  prefetchFilm?: FilmItem;
   className?: string;
   imageClassName?: string;
   fallbackTextClassName?: string;
@@ -40,6 +41,7 @@ function buildCandidates(url: string): string[] {
 
 export function ShowcaseTitleLogo({
   film,
+  prefetchFilm,
   className,
   imageClassName,
   fallbackTextClassName,
@@ -63,6 +65,26 @@ export function ShowcaseTitleLogo({
     film: shouldQueryTmdb ? film : null,
     enabled: shouldQueryTmdb,
     fetchImages: true,
+    fetchDetails: false,
+    fetchSeason: false,
+    fetchCredits: false,
+    fetchVideos: false,
+  });
+
+  const prefetchedDirectLogo = useMemo(
+    () => normalizeLogoUrl(prefetchFilm?.titleLogo || getMovieLogo(prefetchFilm?.slug)),
+    [prefetchFilm?.slug, prefetchFilm?.titleLogo],
+  );
+  const shouldQueryPrefetch = Boolean(
+    prefetchFilm?.slug &&
+      prefetchFilm.slug !== film.slug &&
+      !prefetchedDirectLogo,
+  );
+  const { bestLogo: prefetchedBestLogo } = useTmdb({
+    film: shouldQueryPrefetch ? prefetchFilm : null,
+    enabled: shouldQueryPrefetch,
+    fetchImages: true,
+    fetchDetails: false,
     fetchSeason: false,
     fetchCredits: false,
     fetchVideos: false,
@@ -90,6 +112,15 @@ export function ShowcaseTitleLogo({
       }
     }
   }, [bestLogo, film.slug, initialLogo]);
+
+  useEffect(() => {
+    if (!prefetchFilm?.slug || prefetchFilm.slug === film.slug) return;
+    const resolved =
+      prefetchedDirectLogo || normalizeLogoUrl(prefetchedBestLogo?.file_path);
+    if (!resolved) return;
+    setMovieLogo(prefetchFilm.slug, resolved);
+    preloadMovieLogo(resolved);
+  }, [prefetchFilm?.slug, film.slug, prefetchedBestLogo?.file_path, prefetchedDirectLogo]);
 
   // 3. Fallback candidates & error handling
   const activeLogo =
@@ -139,84 +170,60 @@ export function ShowcaseTitleLogo({
 
   return (
     <div className={cn('relative select-none', className)}>
-      {hasLogoCandidate ? (
-        <div className="relative flex flex-col items-start justify-center">
-          <h3
-            className={cn(
-              cardFont.className,
-              isLoaded
-                ? 'sr-only'
-                : 'absolute inset-x-0 top-1/2 z-10 -translate-y-1/2 line-clamp-2 text-base font-extrabold tracking-tight text-white sm:text-2xl lg:text-3xl',
-              fallbackTextClassName,
-            )}
-          >
-            {film.name}
-          </h3>
-
-          {/* Stylized transparent title logo */}
-          <div className="relative flex items-center min-h-[36px] sm:min-h-[44px] md:min-h-[52px] lg:min-h-[58px]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              ref={imgRef}
-              key={`${film.slug}-${currentSrc}-${candidateIdx}`}
-              src={currentSrc}
-              alt=""
-              aria-hidden="true"
-              decoding="async"
-              loading={priority ? 'eager' : 'lazy'}
-              fetchPriority={priority ? 'high' : 'auto'}
-              referrerPolicy="no-referrer"
-              onLoad={() => {
-                if (currentSrc) markMovieLogoPreloaded(currentSrc);
-                setIsLoaded(true);
-              }}
-              onError={() => {
-                setIsLoaded(false);
-                if (candidateIdx < candidates.length - 1) {
-                  setCandidateIdx((prev) => prev + 1);
-                } else {
-                  setHasError(true);
-                  setIsLoaded(false);
-                }
-              }}
-              className={cn(
-                'h-auto w-auto max-w-[240px] sm:max-w-[320px] md:max-w-[380px] lg:max-w-[420px] object-contain object-left filter drop-shadow-[0_8px_24px_rgba(0,0,0,0.85)] transition-opacity duration-300',
-                isLoaded ? 'opacity-100' : 'opacity-0',
-                imageClassName || 'max-h-10 sm:max-h-13 md:max-h-16 lg:max-h-18',
-              )}
-            />
-          </div>
-
-          {/* Subtitle: Display Vietnamese translation title if different from original name */}
-          {showSubtitle && film.name && film.origin_name && film.name.toLowerCase() !== film.origin_name.toLowerCase() && (
-            <p
-              className={cn(
-                'mt-1 text-xs text-neutral-300/90 font-medium sm:text-sm drop-shadow-sm line-clamp-1',
-                subtitleClassName,
-              )}
-            >
-              {isLoaded ? film.name : film.origin_name}
-            </p>
+      <div className="grid min-h-[36px] items-center justify-items-start sm:min-h-[44px] md:min-h-[52px] lg:min-h-[58px]">
+        <h3
+          className={cn(
+            cardFont.className,
+            'col-start-1 row-start-1 z-10 line-clamp-2 text-base font-extrabold tracking-tight text-white transition-opacity duration-150 sm:text-2xl lg:text-3xl',
+            isLoaded && hasLogoCandidate ? 'pointer-events-none opacity-0' : 'opacity-100',
+            fallbackTextClassName,
           )}
-        </div>
-      ) : (
-        /* Fallback text heading when no logo is available */
-        <div>
-          <h3
+        >
+          {film.name}
+        </h3>
+
+        {hasLogoCandidate && currentSrc && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            ref={imgRef}
+            key={`${film.slug}-${currentSrc}-${candidateIdx}`}
+            src={currentSrc}
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+            loading={priority ? 'eager' : 'lazy'}
+            fetchPriority={priority ? 'high' : 'auto'}
+            referrerPolicy="no-referrer"
+            onLoad={() => {
+              markMovieLogoPreloaded(currentSrc);
+              setIsLoaded(true);
+            }}
+            onError={() => {
+              setIsLoaded(false);
+              if (candidateIdx < candidates.length - 1) {
+                setCandidateIdx((prev) => prev + 1);
+              } else {
+                setHasError(true);
+              }
+            }}
             className={cn(
-              cardFont.className,
-              'text-base font-extrabold tracking-tight text-white line-clamp-2 sm:text-2xl lg:text-3xl',
-              fallbackTextClassName,
+              'col-start-1 row-start-1 h-auto w-auto max-w-[240px] object-contain object-left filter drop-shadow-[0_8px_24px_rgba(0,0,0,0.85)] transition-opacity duration-150 sm:max-w-[320px] md:max-w-[380px] lg:max-w-[420px]',
+              isLoaded ? 'opacity-100' : 'opacity-0',
+              imageClassName || 'max-h-10 sm:max-h-13 md:max-h-16 lg:max-h-18',
             )}
-          >
-            {film.name}
-          </h3>
-          {showSubtitle && film.origin_name && (
-            <p className={cn('mt-0.5 text-xs text-neutral-400 sm:text-sm', subtitleClassName)}>
-              {film.origin_name}
-            </p>
+          />
+        )}
+      </div>
+
+      {showSubtitle && film.name && film.origin_name && film.name.toLowerCase() !== film.origin_name.toLowerCase() && (
+        <p
+          className={cn(
+            'mt-1 line-clamp-1 text-xs font-medium text-neutral-300/90 drop-shadow-sm sm:text-sm',
+            subtitleClassName,
           )}
-        </div>
+        >
+          {isLoaded ? film.name : film.origin_name}
+        </p>
       )}
     </div>
   );

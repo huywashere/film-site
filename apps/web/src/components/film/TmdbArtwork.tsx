@@ -12,6 +12,7 @@ import {
   isPreOptimizedImageUrl,
   isTmdbImageUrl,
   localImageProxyUrl,
+  tmdbImageVariant,
   unwrapImageUrl,
   wsrvImageUrl,
 } from '@/lib/image-cdn';
@@ -85,16 +86,6 @@ export function TmdbArtwork({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [nearViewport, setNearViewport] = useState(priority);
   const [autoRecovery, setAutoRecovery] = useState(false);
-  const providerIsTmdb = Boolean(
-    /image\.tmdb\.org\/t\/p\//i.test(
-      String(
-        kind === 'backdrop'
-          ? film.thumb_url || film.poster_url || ''
-          : film.poster_url || film.thumb_url || '',
-      ),
-    ),
-  );
-
   useEffect(() => {
     if (!enabled) {
       setNearViewport(false);
@@ -132,6 +123,11 @@ export function TmdbArtwork({
   const providerPrimary = rawProviderPrimary
     ? unwrapImageUrl(rawProviderPrimary) || rawProviderPrimary
     : null;
+  const providerIsTmdb = isTmdbImageUrl(providerPrimary);
+  const preferredProviderTmdb =
+    preferOriginal && kind === 'backdrop' && providerPrimary && providerIsTmdb
+      ? tmdbImageVariant(providerPrimary, 'original')
+      : null;
 
   const providerCandidates =
     kind === 'backdrop' ? film._thumbCandidates : film._posterCandidates;
@@ -156,8 +152,9 @@ export function TmdbArtwork({
   const needsTmdbArtwork =
     enabled &&
     nearViewport &&
-    (!providerIsTmdb || autoRecovery) &&
-    (!providerPrimary || allowTitleLookup || autoRecovery);
+    ((preferOriginal && kind === 'backdrop' && (!providerIsTmdb || !film.thumb_url)) ||
+      ((!providerIsTmdb || autoRecovery) &&
+        (!providerPrimary || allowTitleLookup || autoRecovery)));
 
   const artworkQuery = useTmdbArtwork(
     film,
@@ -180,6 +177,7 @@ export function TmdbArtwork({
       if (!tmdbUrl) return;
       // Use a viewport-sized CDN image first. Loading TMDB "original" for
       // every shelf banner delayed paint and left large black cards onscreen.
+      if (kind === 'backdrop' && preferOriginal) add(artworkQuery.backdropOriginal);
       if (kind === 'backdrop' && !preferOriginal) add(artworkQuery.backdropW1280);
       if (kind === 'poster') add(artworkQuery.posterW500);
       add(tmdbUrl);
@@ -191,6 +189,14 @@ export function TmdbArtwork({
       // 3. Local proxy fallback
       add(`/api/image-proxy?url=${encodeURIComponent(tmdbUrl)}`);
     };
+
+    // Full-width showcases opt into the largest matching TMDB asset. Keep the
+    // provider image behind it so the existing frame stays painted while the
+    // quality upgrade downloads.
+    if (preferOriginal && kind === 'backdrop') {
+      add(preferredProviderTmdb);
+      addTmdbCandidates();
+    }
 
     // Direct provider artwork. Go keeps alternatives from every merged
     // provider, so a dead CDN can fail over without another metadata request.
@@ -224,7 +230,7 @@ export function TmdbArtwork({
     // Never replace artwork that is already loading or painted just because a
     // title lookup finishes. TMDB is a recovery source, not a mid-paint
     // upgrade, so provider artwork remains stable and the card cannot flash.
-    if (!autoRecovery) addTmdbCandidates();
+    if (!autoRecovery && !preferOriginal) addTmdbCandidates();
 
     // Cross-fallback: if backdrop is needed and only poster was passed (or vice versa).
     const rawSecondaryUrl =
@@ -258,7 +264,9 @@ export function TmdbArtwork({
     film.thumb_url,
     providerCandidates,
     artworkQuery.backdropW1280,
+    artworkQuery.backdropOriginal,
     artworkQuery.posterW500,
+    preferredProviderTmdb,
     preferOriginal,
     autoRecovery,
   ]);

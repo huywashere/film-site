@@ -41,6 +41,23 @@ export function isTmdbImageUrl(value?: string | null): boolean {
 }
 
 /**
+ * Reuse the same TMDB asset at a larger CDN size without another metadata
+ * request. Provider payloads often contain w500/w780 URLs even when the image
+ * is rendered as a full-width showcase.
+ */
+export function tmdbImageVariant(
+  value: string,
+  size: "w500" | "w780" | "w1280" | "original",
+): string | null {
+  const upstream = unwrapImageUrl(value);
+  if (!upstream || !isTmdbImageUrl(upstream)) return null;
+  const parsed = parseUrl(upstream);
+  if (!parsed || !/^\/t\/p\/[^/]+\//.test(parsed.pathname)) return upstream;
+  parsed.pathname = parsed.pathname.replace(/^\/t\/p\/[^/]+\//, `/t/p/${size}/`);
+  return parsed.toString();
+}
+
+/**
  * Return the real upstream image from our supported relay URLs. This is kept
  * deliberately shallow and bounded so a malformed URL cannot create a loop.
  */

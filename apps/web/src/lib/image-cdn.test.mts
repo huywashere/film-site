@@ -4,6 +4,7 @@ import {
   buildArtworkCandidates,
   isPreOptimizedImageUrl,
   localImageProxyUrl,
+  tmdbImageVariant,
   unwrapImageUrl,
   wsrvImageUrl,
 } from "./image-cdn.ts";
@@ -55,6 +56,17 @@ test("keeps TMDB direct and skips the wsrv hop", () => {
     false,
   );
   assert.equal(isPreOptimizedImageUrl(tmdb), true);
+});
+
+test("upgrades an undersized TMDB URL for full-width showcases", () => {
+  assert.equal(
+    tmdbImageVariant(
+      "https://image.tmdb.org/t/p/w500/backdrop.jpg",
+      "original",
+    ),
+    "https://image.tmdb.org/t/p/original/backdrop.jpg",
+  );
+  assert.equal(tmdbImageVariant(provider, "original"), null);
 });
 
 test("serves NguonC artwork directly instead of double optimizing it", () => {
