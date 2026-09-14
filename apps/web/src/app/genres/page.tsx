@@ -71,6 +71,30 @@ const HUBS: HubCard[] = [
     icon: Shield,
   },
   {
+    slug: "doraemon",
+    title: "Vũ Trụ Doraemon",
+    tagline: "Bảo Bối Thần Kỳ • Movie Chiếu Rạp • Stand by Me",
+    category: "Doraemon",
+    highlight:
+      "Trọn bộ 48 movie chiếu rạp, Stand by Me 3D và những chuyến phiêu lưu kỳ thú của Doraemon và Nobita.",
+    href: "/universe/doraemon",
+    image: "https://phimimg.com/upload/vod/20250521-1/0514f6f2eef84b1340afd31c42574a2d.jpg",
+    countBadge: "48 Movie",
+    icon: Sparkles,
+  },
+  {
+    slug: "conan",
+    title: "Thám Tử Lừng Danh Conan",
+    tagline: "Thám Tử Nhí • 28 Movie Chiếu Rạp • Án Mạng Bí Ẩn",
+    category: "Detective Conan",
+    highlight:
+      "Trọn bộ 28 Movie chiếu rạp bom tấn, TV series phá án ly kỳ và cuộc đối đầu Kaito Kid, Tổ Chức Áo Đen.",
+    href: "/universe/conan",
+    image: "https://phimimg.com/upload/vod/20241229-1/309e1f1623755fa993140a83167f577b.jpg",
+    countBadge: "34+ Movie & Series",
+    icon: Shield,
+  },
+  {
     slug: "phim-han-quoc",
     title: "Phim Hàn Quốc",
     tagline: "K-Drama • Tình Cảm • Hồi Hộp",
@@ -348,6 +372,24 @@ export default function GenresPage() {
           },
           staleTime: 30 * 60 * 1000,
         });
+      } else if (hub.slug === "doraemon") {
+        void queryClient.prefetchQuery({
+          queryKey: ["films-universe", "doraemon", 1],
+          queryFn: async () => {
+            const { getUniverseFilms } = await import("@/lib/universe-catalog");
+            return getUniverseFilms("doraemon");
+          },
+          staleTime: 30 * 60 * 1000,
+        });
+      } else if (hub.slug === "conan") {
+        void queryClient.prefetchQuery({
+          queryKey: ["films-universe", "conan", 1],
+          queryFn: async () => {
+            const { getUniverseFilms } = await import("@/lib/universe-catalog");
+            return getUniverseFilms("conan");
+          },
+          staleTime: 30 * 60 * 1000,
+        });
       } else if (hub.slug === "khoa-hoc-vien-tuong") {
         void queryClient.prefetchQuery({
           queryKey: ["genre", "vien-tuong", 1],
@@ -456,7 +498,7 @@ export default function GenresPage() {
                 Chủ Đề
               </h2>
               <span className="text-[10px] sm:text-[11px] font-semibold text-neutral-400 bg-white/[0.04] border border-white/[0.08] px-2.5 py-0.5 rounded-full">
-                8 Chủ Đề
+                {HUBS.length} Chủ Đề
               </span>
             </div>
           </div>

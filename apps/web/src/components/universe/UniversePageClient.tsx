@@ -22,7 +22,10 @@ import {
   getUniverseSpotlights,
   MARVEL_SUB_FRANCHISES,
   DC_SUB_FRANCHISES,
+  DORAEMON_SUB_FRANCHISES,
+  CONAN_SUB_FRANCHISES,
   UniverseSpotlightItem,
+  UniverseType,
 } from "@/lib/universe-catalog";
 import { cn } from "@/lib/utils";
 import { wsrvImageUrl, isWsrvImageUrl } from "@/lib/image-cdn";
@@ -215,11 +218,14 @@ function UniverseThumbnailButton({
 }
 
 interface UniversePageClientProps {
-  universe: "marvel" | "dc";
+  universe: UniverseType;
 }
 
 export function UniversePageClient({ universe }: UniversePageClientProps) {
   const isMarvel = universe === "marvel";
+  const isDC = universe === "dc";
+  const isDoraemon = universe === "doraemon";
+  const isConan = universe === "conan";
 
   // Data & Spotlights
   const spotlights = useMemo(() => getUniverseSpotlights(universe), [universe]);
@@ -230,7 +236,13 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
   >(null);
 
   // Sub-franchise filter for full catalog
-  const subFranchises = isMarvel ? MARVEL_SUB_FRANCHISES : DC_SUB_FRANCHISES;
+  const subFranchises = isMarvel
+    ? MARVEL_SUB_FRANCHISES
+    : isDC
+      ? DC_SUB_FRANCHISES
+      : isDoraemon
+        ? DORAEMON_SUB_FRANCHISES
+        : CONAN_SUB_FRANCHISES;
   const [selectedSub, setSelectedSub] = useState("all");
   const [page, setPage] = useState(1);
   const pageSize = 28;
@@ -316,34 +328,41 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
   }, [activeSpotlight]);
 
   // Rails categorized by franchise
-  const isDc = !isMarvel;
   const rail1 = useMemo(() => {
-    const raw = getUniverseFilms(universe, {
-      subFranchise: isMarvel ? "avengers" : "batman",
-    });
+    let sub = "avengers";
+    if (isDC) sub = "batman";
+    else if (isDoraemon) sub = "movies";
+    else if (isConan) sub = "movies";
+    const raw = getUniverseFilms(universe, { subFranchise: sub });
     return mapRawToFilmItems(raw);
-  }, [universe, isMarvel]);
+  }, [universe, isDC, isDoraemon, isConan]);
 
   const rail2 = useMemo(() => {
-    const raw = getUniverseFilms(universe, {
-      subFranchise: isMarvel ? "spiderman" : "justice-league",
-    });
+    let sub = "spiderman";
+    if (isDC) sub = "justice-league";
+    else if (isDoraemon) sub = "3d";
+    else if (isConan) sub = "black-org";
+    const raw = getUniverseFilms(universe, { subFranchise: sub });
     return mapRawToFilmItems(raw);
-  }, [universe, isMarvel]);
+  }, [universe, isDC, isDoraemon, isConan]);
 
   const rail3 = useMemo(() => {
-    const raw = getUniverseFilms(universe, {
-      subFranchise: isMarvel ? "xmen" : "superman",
-    });
+    let sub = "xmen";
+    if (isDC) sub = "superman";
+    else if (isDoraemon) sub = "adventure";
+    else if (isConan) sub = "kaito-kid";
+    const raw = getUniverseFilms(universe, { subFranchise: sub });
     return mapRawToFilmItems(raw);
-  }, [universe, isMarvel]);
+  }, [universe, isDC, isDoraemon, isConan]);
 
   const rail4 = useMemo(() => {
-    const raw = getUniverseFilms(universe, {
-      subFranchise: isMarvel ? "disneyplus" : "series",
-    });
+    let sub = "disneyplus";
+    if (isDC) sub = "series";
+    else if (isDoraemon) sub = "classic";
+    else if (isConan) sub = "series";
+    const raw = getUniverseFilms(universe, { subFranchise: sub });
     return mapRawToFilmItems(raw);
-  }, [universe, isMarvel]);
+  }, [universe, isDC, isDoraemon, isConan]);
 
   // Catalog filtered items
   const catalogFilms = useMemo(() => {
@@ -391,7 +410,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
             <div className="max-w-xl xl:max-w-2xl 2xl:max-w-3xl space-y-3.5 sm:space-y-4">
               {/* Universe Official Brand Logo (Original Logo, no custom container wrapper) */}
               <div className="flex items-center select-none ml-0.5 sm:ml-1">
-                {isMarvel ? (
+                {isMarvel && (
                   // Official Marvel Brand Logo
                   <div className="relative h-7 sm:h-9 md:h-10 w-20 sm:w-24 md:w-28 shrink-0">
                     <Image
@@ -403,7 +422,8 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                       className="object-contain object-left"
                     />
                   </div>
-                ) : (
+                )}
+                {isDC && (
                   // Official DC Comics Vector Logo
                   <div className="relative h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 shrink-0">
                     <Image
@@ -413,6 +433,32 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                       priority
                       sizes="(max-width: 640px) 48px, 56px"
                       className="object-contain object-left"
+                    />
+                  </div>
+                )}
+                {isDoraemon && (
+                  // Official Doraemon Logo
+                  <div className="relative h-8 sm:h-10 md:h-12 w-32 sm:w-40 md:w-48 shrink-0">
+                    <Image
+                      src="/images/logos/doraemon-logo.svg"
+                      alt="Doraemon"
+                      fill
+                      priority
+                      sizes="(max-width: 640px) 128px, 192px"
+                      className="object-contain object-left"
+                    />
+                  </div>
+                )}
+                {isConan && (
+                  // Official Detective Conan Logo
+                  <div className="relative h-9 sm:h-11 md:h-13 w-28 sm:w-36 md:w-44 shrink-0">
+                    <Image
+                      src="/images/logos/conan-logo.svg"
+                      alt="Detective Conan"
+                      fill
+                      priority
+                      sizes="(max-width: 640px) 112px, 176px"
+                      className="object-contain object-left brightness-125 contrast-125"
                     />
                   </div>
                 )}
@@ -483,16 +529,29 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                 </Link>
 
                 <a
-                  href="#universe-timeline"
+                  href={isMarvel || isDC ? "#universe-timeline" : "#full-catalog"}
                   className={cn(
                     "group inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-xs font-bold transition-colors active:translate-y-px sm:w-auto sm:text-sm",
                     isMarvel
                       ? "border-red-500/35 bg-red-500/10 text-red-200 hover:bg-red-500/15"
-                      : "border-sky-500/35 bg-sky-500/10 text-sky-200 hover:bg-sky-500/15",
+                      : isDC
+                        ? "border-sky-500/35 bg-sky-500/10 text-sky-200 hover:bg-sky-500/15"
+                        : isDoraemon
+                          ? "border-cyan-500/35 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/15"
+                          : "border-rose-500/35 bg-rose-500/10 text-rose-200 hover:bg-rose-500/15",
                   )}
                 >
-                  <Clock aria-hidden="true" size={14} />
-                  <span>Dòng thời gian</span>
+                  {isMarvel || isDC ? (
+                    <>
+                      <Clock aria-hidden="true" size={14} />
+                      <span>Dòng thời gian</span>
+                    </>
+                  ) : (
+                    <>
+                      <Clapperboard aria-hidden="true" size={14} />
+                      <span>Khám phá trọn bộ</span>
+                    </>
+                  )}
                   <ChevronDown aria-hidden="true" size={14} className="transition-transform group-hover:translate-y-0.5" />
                 </a>
               </div>
@@ -551,7 +610,11 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
           title={
             isMarvel
               ? "Biệt Đội Avengers & Sự Kiện Đa Vũ Trụ"
-              : "Kỵ Sĩ Bóng Đêm & Huyền Thoại Gotham"
+              : isDC
+                ? "Kỵ Sĩ Bóng Đêm & Huyền Thoại Gotham"
+                : isDoraemon
+                  ? "Movie Chiếu Rạp Mới Nhất (Thế Hệ Mới)"
+                  : "Movie Chiếu Rạp Bom Tấn (Movie 1 - 28)"
           }
           films={rail1}
         />
@@ -561,7 +624,11 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
           title={
             isMarvel
               ? "Người Nhện & Vũ Trụ Spider-Verse"
-              : "Liên Minh Công Lý & Siêu Anh Hùng DC"
+              : isDC
+                ? "Liên Minh Công Lý & Siêu Anh Hùng DC"
+                : isDoraemon
+                  ? "Stand by Me & Kỷ Niệm Tuổi Thơ (3D)"
+                  : "Cuộc Chiến Tổ Chức Áo Đen & FBI"
           }
           films={rail2}
         />
@@ -571,7 +638,11 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
           title={
             isMarvel
               ? "Dị Nhân X-Men & Đột Biến"
-              : "Thế Giới Phản Diện & Joker"
+              : isDC
+                ? "Thế Giới Phản Diện & Joker"
+                : isDoraemon
+                  ? "Phiêu Lưu Vũ Trụ & Thế Giới Diệu Kỳ"
+                  : "Màn Đối Đầu Siêu Đạo Tặc Kaito Kid"
           }
           films={rail3}
         />
@@ -581,13 +652,19 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
           title={
             isMarvel
               ? "Marvel Series Độc Quyền (Disney+)"
-              : "DC Series & Hoạt Hình Huyền Thoại"
+              : isDC
+                ? "DC Series & Hoạt Hình Huyền Thoại"
+                : isDoraemon
+                  ? "Movie Chiếu Rạp Kinh Điển (2D Tuyển Chọn)"
+                  : "Conan TV Series & Ngoại Truyện Đặc Biệt"
           }
           films={rail4}
         />
 
         {/* ── 3. CHRONOLOGICAL TIMELINE ROADMAP ─────────────────────────────── */}
-        <UniverseTimelineSection universe={universe} />
+        {(isMarvel || isDC) && (
+          <UniverseTimelineSection universe={universe as "marvel" | "dc"} />
+        )}
 
         {/* ── 4. FULL UNIVERSE CATALOG (LƯỚI PHIM TOÀN BỘ 7 CỘT) ─────────────── */}
         <section id="full-catalog" className="pt-8 sm:pt-12 pb-16 border-t border-white/[0.08]">
@@ -598,11 +675,21 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                   "w-1.5 h-6 rounded-full",
                   isMarvel
                     ? "bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.7)]"
-                    : "bg-sky-500 shadow-[0_0_12px_rgba(14,165,233,0.7)]",
+                    : isDC
+                      ? "bg-sky-500 shadow-[0_0_12px_rgba(14,165,233,0.7)]"
+                      : isDoraemon
+                        ? "bg-cyan-500 shadow-[0_0_12px_rgba(6,182,212,0.7)]"
+                        : "bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.7)]",
                 )}
               />
               <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                {isMarvel ? "Kho Bom Tấn Marvel Toàn Diện" : "Kho Kiệt Tác DC Toàn Diện"}
+                {isMarvel
+                  ? "Kho Bom Tấn Marvel Toàn Diện"
+                  : isDC
+                    ? "Kho Kiệt Tác DC Toàn Diện"
+                    : isDoraemon
+                      ? "Trọn Bộ 48 Movie Doraemon Chiếu Rạp"
+                      : "Trọn Bộ Thám Tử Lừng Danh Conan"}
               </h2>
               <span className="text-xs font-semibold text-neutral-400">
                 ({catalogFilms.length} phim)
@@ -626,7 +713,11 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                       isActive
                         ? isMarvel
                           ? "bg-red-600 text-white shadow-lg shadow-red-600/30"
-                          : "bg-sky-600 text-white shadow-lg shadow-sky-600/30"
+                          : isDC
+                            ? "bg-sky-600 text-white shadow-lg shadow-sky-600/30"
+                            : isDoraemon
+                              ? "bg-cyan-600 text-white shadow-lg shadow-cyan-600/30"
+                              : "bg-rose-600 text-white shadow-lg shadow-rose-600/30"
                         : "bg-white/[0.06] text-neutral-400 hover:text-white hover:bg-white/10 border border-white/10",
                     )}
                   >

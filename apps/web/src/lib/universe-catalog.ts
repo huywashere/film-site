@@ -15186,14 +15186,42 @@ export const DC_SUB_FRANCHISES = [
   { id: "standalone", label: "Anh Hùng Khác" },
 ];
 
-export function getUniverseSpotlights(universe: "marvel" | "dc"): UniverseSpotlightItem[] {
-  return universe === "marvel" ? MARVEL_SPOTLIGHTS : DC_SPOTLIGHTS;
+export type UniverseType = "marvel" | "dc" | "doraemon" | "conan";
+
+export {
+  DORAEMON_SPOTLIGHTS,
+  DORAEMON_SUB_FRANCHISES,
+  DORAEMON_UNIVERSE_FILMS,
+} from "./doraemon-catalog";
+
+export {
+  CONAN_SPOTLIGHTS,
+  CONAN_SUB_FRANCHISES,
+  CONAN_UNIVERSE_FILMS,
+} from "./conan-catalog";
+
+import {
+  DORAEMON_SPOTLIGHTS,
+  DORAEMON_UNIVERSE_FILMS,
+} from "./doraemon-catalog";
+
+import {
+  CONAN_SPOTLIGHTS,
+  CONAN_UNIVERSE_FILMS,
+} from "./conan-catalog";
+
+export function getUniverseSpotlights(universe: UniverseType): UniverseSpotlightItem[] {
+  if (universe === "marvel") return MARVEL_SPOTLIGHTS;
+  if (universe === "dc") return DC_SPOTLIGHTS;
+  if (universe === "doraemon") return DORAEMON_SPOTLIGHTS;
+  if (universe === "conan") return CONAN_SPOTLIGHTS;
+  return [];
 }
 
 export const getUniverseCatalog = getUniverseFilms;
 
 export function getUniverseFilms(
-  universe: "marvel" | "dc",
+  universe: UniverseType,
   options?: {
     subFranchise?: string;
     year?: string;
@@ -15203,7 +15231,11 @@ export function getUniverseFilms(
     sort?: string;
   }
 ): UniverseFilmItem[] {
-  const baseList = universe === "marvel" ? MARVEL_UNIVERSE_FILMS : DC_UNIVERSE_FILMS;
+  let baseList: UniverseFilmItem[] = [];
+  if (universe === "marvel") baseList = MARVEL_UNIVERSE_FILMS;
+  else if (universe === "dc") baseList = DC_UNIVERSE_FILMS;
+  else if (universe === "doraemon") baseList = DORAEMON_UNIVERSE_FILMS;
+  else if (universe === "conan") baseList = CONAN_UNIVERSE_FILMS;
   let list = [...baseList];
 
   if (options?.subFranchise && options.subFranchise !== "all") {
