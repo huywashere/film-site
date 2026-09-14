@@ -11,6 +11,7 @@ import { Clapperboard } from 'lucide-react';
 import {
   buildArtworkCandidates,
   isPreOptimizedImageUrl,
+  unwrapImageUrl,
   wsrvImageUrl,
 } from '@/lib/image-cdn';
 
@@ -110,10 +111,13 @@ export function TmdbArtwork({
   // Shelf pages can render dozens of cards. Only query TMDB if the film lacks
   // provider artwork or if title lookup is explicitly requested or auto-recovering.
   // This avoids choking the browser's HTTP network queue with 100+ concurrent TMDB requests.
-  const providerPrimary =
+  const rawProviderPrimary =
     kind === 'backdrop'
       ? resolveImageUrl(film.thumb_url, film.poster_url)
       : resolveImageUrl(film.poster_url, film.thumb_url);
+  const providerPrimary = rawProviderPrimary
+    ? unwrapImageUrl(rawProviderPrimary) || rawProviderPrimary
+    : null;
 
   const providerAlternate = providerPrimary ? alternateMovieArtworkUrl(providerPrimary) : null;
 
