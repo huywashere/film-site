@@ -30,6 +30,7 @@ import {
   tmdbProfile,
 } from "@/lib/tmdb";
 import { cardFont } from "@/lib/fonts";
+import { preloadMovieLogo } from "@/lib/movie-logo-cache";
 import { DeferredSection } from "@/components/layout/DeferredSection";
 import { useTranslation } from "@/store/langStore";
 import { useDeferredContent } from "@/hooks/useDeferredContent";
@@ -432,6 +433,7 @@ function ResilientAsianHeroLogo({
   if (!currentLogoSrc || hasFailedAll) {
     return (
       <h1
+        data-curated-hero-text={item.slug}
         className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-wide leading-tight drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)]"
         style={{
           fontFamily: "'Playfair Display', 'Dancing Script', Georgia, serif",
@@ -447,6 +449,7 @@ function ResilientAsianHeroLogo({
     <div className="relative flex h-12 w-36 items-center sm:h-24 sm:w-72 md:h-28 md:w-80 lg:w-[440px]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
+        data-curated-hero-logo={item.slug}
         key={`${item.slug}-logo-${candidateIdx}`}
         src={currentLogoSrc}
         alt={item.name}
@@ -482,13 +485,11 @@ function AsianCuratedHeroBanner({
   useEffect(() => {
     if (typeof window !== "undefined" && pool?.length) {
       const nextIndex = (currentIndex + 1) % pool.length;
-      [pool[currentIndex], pool[nextIndex]].filter(Boolean).forEach((item) => {
+      pool.forEach((item) => {
         const logoCand = buildAsianHeroImageCandidates(item.logoUrl)[0];
-        if (logoCand) {
-          const img = new Image();
-          img.referrerPolicy = "strict-origin-when-cross-origin";
-          img.src = logoCand;
-        }
+        if (logoCand) void preloadMovieLogo(logoCand);
+      });
+      [pool[currentIndex], pool[nextIndex]].filter(Boolean).forEach((item) => {
         const thumbCand = buildAsianHeroImageCandidates(item.thumb_url)[0];
         if (thumbCand) {
           const img = new Image();
@@ -608,7 +609,7 @@ function AsianCuratedHeroBanner({
             className="max-w-2xl space-y-2.5 sm:space-y-4 lg:space-y-5 pt-0 sm:pt-8"
           >
             {/* Official Title Logo PNG with Multi-CDN Resilient Fallback */}
-            <ResilientAsianHeroLogo item={currentItem} />
+            <ResilientAsianHeroLogo key={currentItem.slug} item={currentItem} />
 
             {/* Subtitle / Vietnamese or English name */}
             <p className="text-[11px] sm:text-sm text-neutral-300 font-semibold italic -mt-0.5 sm:-mt-2 drop-shadow">

@@ -74,10 +74,10 @@ test('deduplicates equivalent hero sources', () => {
   assert.equal(candidates.filter((candidate) => candidate === image).length, 1);
 });
 
-test('keeps a clean text title visible until remote hero logo artwork is decoded', () => {
+test('does not flash a text title while hero logo artwork is loading', () => {
   const source = readFileSync('src/app/components/HeroBanner.tsx', 'utf8');
 
-  assert.match(source, /logoLoaded && hasLogoCandidate \? "opacity-0"/);
+  assert.match(source, /logoLookupPending \|\| hasLogoCandidate \? "opacity-0"/);
   assert.match(source, /decoding="async"/);
   assert.match(source, /failedHeroLogos/);
   assert.match(source, /preloadMovieLogo/);
@@ -117,14 +117,34 @@ test('homepage loading placeholders stop animating after a short warm-up', () =>
 
 test('showcase logos keep the current film fallback stable while artwork loads', () => {
   const source = readFileSync('src/components/film/ShowcaseTitleLogo.tsx', 'utf8');
+  const series = readFileSync('src/components/film/HeroShowcaseSection.tsx', 'utf8');
+  const curated = readFileSync('src/components/film/CuratedSpotlightSection.tsx', 'utf8');
 
-  assert.match(source, /resolvedLogo\?\.slug === film\.slug/);
-  assert.match(source, /\}, \[film\.slug, activeLogo\]\);/);
-  assert.doesNotMatch(source, /\[film\.slug, activeLogo, currentSrc\]/);
-  assert.match(source, /isLoaded && hasLogoCandidate[\s\S]*opacity-0/);
+  assert.match(source, /const \[displayLogo\] = useState/);
+  assert.match(source, /const \[displayLogo\] = useState\(\(\) => initialLogo\)/);
+  assert.doesNotMatch(source, /setResolvedLogo/);
+  assert.match(source, /hasLogoCandidate \? 'pointer-events-none opacity-0'/);
   assert.match(source, /prefetchFilm/);
+  assert.match(source, /preloadMovieLogo\(resolved\)\.then/);
   assert.match(source, /fetchDetails: false/);
   assert.match(source, /alt=""/);
+  assert.match(series, /<ShowcaseTitleLogo[\s\S]*key=\{activeFilm\.slug\}/);
+  assert.match(curated, /<ShowcaseTitleLogo[\s\S]*key=\{activeFilm\.slug\}/);
+});
+
+test('hero banner waits for decoded title logos before revealing a slide', () => {
+  const source = readFileSync('src/app/components/HeroBanner.tsx', 'utf8');
+  const cache = readFileSync('src/lib/movie-logo-cache.ts', 'utf8');
+
+  assert.match(source, /await Promise\.all\(initialLogoUrls\.map\(\(url\) => preloadMovieLogo\(url\)\)\)/);
+  assert.match(source, /const \[displayLogo\] = useState/);
+  assert.match(source, /logoLookupPending \|\| hasLogoCandidate/);
+  assert.match(source, /const activateSlide = useCallback/);
+  assert.match(source, /if \(logoUrl\) await preloadMovieLogo\(logoUrl\)/);
+  assert.doesNotMatch(source, /Text is a complete visual fallback[\s\S]*onReady\(\)/);
+  assert.match(cache, /await img\.decode\(\)/);
+  assert.match(cache, /preloadPromises/);
+  assert.match(cache, /setTimeout\(\(\) => settle\(false\), 1_800\)/);
 });
 
 test('large homepage showcases request original TMDB backdrops', () => {

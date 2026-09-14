@@ -25,6 +25,7 @@ import {
 } from "@/lib/curated-asian-hero";
 import { vicdnApi } from "@/lib/api";
 import { useTranslation } from "@/store/langStore";
+import { preloadMovieLogo } from "@/lib/movie-logo-cache";
 import {
   Play,
   Info,
@@ -253,7 +254,10 @@ function ResilientAnimeHeroLogo({
 
   if (!currentLogoSrc || hasFailedAll) {
     return (
-      <h1 className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-wide leading-tight drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)]">
+      <h1
+        data-curated-hero-text={item.slug}
+        className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-wide leading-tight drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)]"
+      >
         {item.calligraphyTitle || item.name}
       </h1>
     );
@@ -263,6 +267,7 @@ function ResilientAnimeHeroLogo({
     <div className="relative flex h-14 w-40 items-center sm:h-24 sm:w-72 md:h-32 md:w-80 lg:h-36 lg:w-[460px]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
+        data-curated-hero-logo={item.slug}
         key={`${item.slug}-logo-${candidateIdx}`}
         src={currentLogoSrc}
         alt={item.name}
@@ -298,15 +303,11 @@ function AnimeCuratedHeroBanner({
   useEffect(() => {
     if (typeof window !== "undefined" && pool?.length) {
       const nextIndex = (currentIndex + 1) % pool.length;
+      pool.forEach((item) => {
+        const logoCand = buildAsianHeroImageCandidates(item.logoUrl)[0];
+        if (logoCand) void preloadMovieLogo(logoCand);
+      });
       [pool[currentIndex], pool[nextIndex]].filter(Boolean).forEach((item) => {
-        if (item.logoUrl) {
-          const cands = buildAsianHeroImageCandidates(item.logoUrl);
-          if (cands[0]) {
-            const img = new Image();
-            img.referrerPolicy = "no-referrer";
-            img.src = cands[0];
-          }
-        }
         if (item.thumb_url) {
           const cands = buildAsianHeroImageCandidates(item.thumb_url);
           if (cands[0]) {
@@ -432,7 +433,7 @@ function AnimeCuratedHeroBanner({
             className="max-w-2xl space-y-2.5 sm:space-y-4 lg:space-y-5 pt-0 sm:pt-8"
           >
             {/* Official Studio Title Logo PNG with Multi-CDN Resilient Fallback */}
-            <ResilientAnimeHeroLogo item={currentItem} />
+            <ResilientAnimeHeroLogo key={currentItem.slug} item={currentItem} />
 
             {/* Subtitle */}
             <p className="text-[11px] sm:text-sm text-neutral-300 font-semibold italic -mt-0.5 sm:-mt-2 drop-shadow">

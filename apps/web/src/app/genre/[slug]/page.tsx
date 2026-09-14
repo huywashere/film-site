@@ -39,6 +39,7 @@ import {
 } from "@/lib/curated-genre-pools";
 import { CuratedHeroMovie } from "@/lib/curated-hero-pool";
 import { buildAsianHeroImageCandidates } from "@/lib/curated-asian-hero";
+import { preloadMovieLogo } from "@/lib/movie-logo-cache";
 
 const GENRE_NAMES: Record<string, string> = {
   "vien-tuong": "Khoa Học Viễn Tưởng",
@@ -299,7 +300,10 @@ function ResilientGenreHeroLogo({
 
   if (!currentLogoSrc || hasFailedAll) {
     return (
-      <h1 className="text-2xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-none drop-shadow-[0_12px_28px_rgba(0,0,0,0.95)]">
+      <h1
+        data-curated-hero-text={item.slug}
+        className="text-2xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-none drop-shadow-[0_12px_28px_rgba(0,0,0,0.95)]"
+      >
         {item.name}
       </h1>
     );
@@ -309,6 +313,7 @@ function ResilientGenreHeroLogo({
     <div className="relative flex h-14 w-44 items-center sm:h-28 sm:w-80 md:h-40 md:w-[460px] lg:h-48 lg:w-[540px]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
+        data-curated-hero-logo={item.slug}
         key={`${item.slug}-logo-${candidateIdx}`}
         src={currentLogoSrc}
         alt={item.name}
@@ -354,20 +359,16 @@ function GenreCuratedHeroBanner({
     if (typeof window !== "undefined" && pool?.length > 1) {
       const nextIndex = (currentIndex + 1) % pool.length;
       const nextItem = pool[nextIndex];
+      pool.forEach((item) => {
+        const logoSrc = buildAsianHeroImageCandidates(item.titleLogo)[0];
+        if (logoSrc) void preloadMovieLogo(logoSrc);
+      });
       if (nextItem?.heroBackdrop) {
         const cands = buildAsianHeroImageCandidates(nextItem.heroBackdrop);
         if (cands[0]) {
           const img = new Image();
           img.referrerPolicy = "no-referrer";
           img.src = cands[0];
-        }
-      }
-      if (nextItem?.titleLogo) {
-        const logoCands = buildAsianHeroImageCandidates(nextItem.titleLogo);
-        if (logoCands[0]) {
-          const logo = new Image();
-          logo.referrerPolicy = "no-referrer";
-          logo.src = logoCands[0];
         }
       }
     }
@@ -467,7 +468,7 @@ function GenreCuratedHeroBanner({
             className="max-w-3xl space-y-2.5 sm:space-y-4.5 lg:space-y-5 pointer-events-auto"
           >
             {/* Large Netflix-Scale Title Logo PNG or Bold Typography */}
-            <ResilientGenreHeroLogo item={currentItem} />
+            <ResilientGenreHeroLogo key={currentItem.slug} item={currentItem} />
 
             {/* Tagline / Subtitle */}
             <p className="text-xs sm:text-base md:text-lg font-bold text-cyan-300 drop-shadow-md">

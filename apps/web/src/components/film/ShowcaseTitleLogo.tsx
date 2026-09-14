@@ -54,10 +54,9 @@ export function ShowcaseTitleLogo({
     return normalizeLogoUrl(film.titleLogo || getMovieLogo(film.slug));
   }, [film.slug, film.titleLogo]);
 
-  const [resolvedLogo, setResolvedLogo] = useState<{
-    slug: string;
-    url: string;
-  } | null>(initialLogo ? { slug: film.slug, url: initialLogo } : null);
+  // The visual mode is locked for this keyed slide. A late TMDB response is
+  // cached for the next visit instead of replacing visible text mid-slide.
+  const [displayLogo] = useState(() => initialLogo);
 
   // 2. Dynamic TMDB logo resolution if not pre-seeded
   const shouldQueryTmdb = !initialLogo && Boolean(film?.slug);
@@ -91,24 +90,20 @@ export function ShowcaseTitleLogo({
   });
 
   useEffect(() => {
-    const current = normalizeLogoUrl(film.titleLogo || getMovieLogo(film.slug));
-    if (current) {
-      setResolvedLogo({ slug: film.slug, url: current });
-      return;
-    }
-    setResolvedLogo(null);
-  }, [film.slug, film.titleLogo]);
+    if (!initialLogo) return;
+    void preloadMovieLogo(initialLogo).then((ready) => {
+      if (ready && film.slug) setMovieLogo(film.slug, initialLogo);
+    });
+  }, [film.slug, initialLogo]);
 
   useEffect(() => {
     if (initialLogo) return;
     if (bestLogo?.file_path) {
       const url = normalizeLogoUrl(bestLogo.file_path);
       if (url) {
-        setResolvedLogo({ slug: film.slug, url });
-        if (film.slug) {
-          setMovieLogo(film.slug, url);
-          preloadMovieLogo(url);
-        }
+        void preloadMovieLogo(url).then((ready) => {
+          if (ready && film.slug) setMovieLogo(film.slug, url);
+        });
       }
     }
   }, [bestLogo, film.slug, initialLogo]);
@@ -118,17 +113,16 @@ export function ShowcaseTitleLogo({
     const resolved =
       prefetchedDirectLogo || normalizeLogoUrl(prefetchedBestLogo?.file_path);
     if (!resolved) return;
-    setMovieLogo(prefetchFilm.slug, resolved);
-    preloadMovieLogo(resolved);
+    void preloadMovieLogo(resolved).then((ready) => {
+      if (ready) setMovieLogo(prefetchFilm.slug, resolved);
+    });
   }, [prefetchFilm?.slug, film.slug, prefetchedBestLogo?.file_path, prefetchedDirectLogo]);
 
   // 3. Fallback candidates & error handling
-  const activeLogo =
-    initialLogo || (resolvedLogo?.slug === film.slug ? resolvedLogo.url : null);
   const candidates = useMemo(() => {
-    if (!activeLogo) return [];
-    return buildCandidates(activeLogo);
-  }, [activeLogo]);
+    if (!displayLogo) return [];
+    return buildCandidates(displayLogo);
+  }, [displayLogo]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
   const [hasError, setHasError] = useState(false);
@@ -140,7 +134,7 @@ export function ShowcaseTitleLogo({
   useEffect(() => {
     setCandidateIdx(0);
     setHasError(false);
-  }, [film.slug, activeLogo]);
+  }, [film.slug, displayLogo]);
 
   useEffect(() => {
     setIsLoaded(Boolean(currentSrc && isMovieLogoPreloaded(currentSrc)));
@@ -172,10 +166,11 @@ export function ShowcaseTitleLogo({
     <div className={cn('relative select-none', className)}>
       <div className="grid min-h-[36px] items-center justify-items-start sm:min-h-[44px] md:min-h-[52px] lg:min-h-[58px]">
         <h3
+          data-showcase-title-text={film.slug}
           className={cn(
             cardFont.className,
             'col-start-1 row-start-1 z-10 line-clamp-2 text-base font-extrabold tracking-tight text-white transition-opacity duration-150 sm:text-2xl lg:text-3xl',
-            isLoaded && hasLogoCandidate ? 'pointer-events-none opacity-0' : 'opacity-100',
+            hasLogoCandidate ? 'pointer-events-none opacity-0' : 'opacity-100',
             fallbackTextClassName,
           )}
         >
@@ -185,6 +180,7 @@ export function ShowcaseTitleLogo({
         {hasLogoCandidate && currentSrc && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
+            data-showcase-title-logo={film.slug}
             ref={imgRef}
             key={`${film.slug}-${currentSrc}-${candidateIdx}`}
             src={currentSrc}
