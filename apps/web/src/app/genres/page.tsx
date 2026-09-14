@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useCallback, useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Play,
   ChevronRight,
   Tv,
   Flame,
@@ -51,9 +51,10 @@ const HUBS: HubCard[] = [
     title: "Vũ Trụ Marvel",
     tagline: "MCU • Multiverse • Avengers",
     category: "Marvel Studios",
-    highlight: "Kỷ nguyên siêu anh hùng, biệt đội Avengers, Spider-Man và đa vũ trụ.",
+    highlight:
+      "Kỷ nguyên siêu anh hùng, biệt đội Avengers, Spider-Man và đa vũ trụ.",
     href: "/universe/marvel",
-    image: "https://image.tmdb.org/t/p/w780/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg",
+    image: "https://image.tmdb.org/t/p/w1280/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg",
     countBadge: "175+ Bom Tấn",
     icon: Flame,
   },
@@ -62,9 +63,10 @@ const HUBS: HubCard[] = [
     title: "Vũ Trụ DC",
     tagline: "Batman • Superman • Justice League",
     category: "DC Universe",
-    highlight: "Hiệp sĩ bóng đêm Batman, Superman, Justice League và thế giới siêu anh hùng DC.",
+    highlight:
+      "Hiệp sĩ bóng đêm Batman, Superman, Justice League và thế giới siêu anh hùng DC.",
     href: "/universe/dc",
-    image: "https://image.tmdb.org/t/p/w780/dqK9Hag1054tghRQSqLSfrkvQnA.jpg",
+    image: "https://image.tmdb.org/t/p/w1280/dqK9Hag1054tghRQSqLSfrkvQnA.jpg",
     countBadge: "180+ Kiệt Tác",
     icon: Shield,
   },
@@ -75,7 +77,7 @@ const HUBS: HubCard[] = [
     category: "Hàn Quốc",
     highlight: "Tình cảm, gia đình, hình sự và các series Hàn nổi bật.",
     href: "/country/han-quoc",
-    image: "https://image.tmdb.org/t/p/w780/8Dc24s2heFSqcpIsqDFlnjYICP.jpg",
+    image: "https://image.tmdb.org/t/p/w1280/8Dc24s2heFSqcpIsqDFlnjYICP.jpg",
     countBadge: "K-Drama tuyển chọn",
     icon: Tv,
   },
@@ -86,7 +88,7 @@ const HUBS: HubCard[] = [
     category: "Trung Quốc",
     highlight: "Cổ trang, tiên hiệp, ngôn tình và phim hiện đại Trung Quốc.",
     href: "/country/trung-quoc",
-    image: "https://image.tmdb.org/t/p/w780/4J8znHxVaZY3vKb05IWqWfzczXR.jpg",
+    image: "https://image.tmdb.org/t/p/w1280/4J8znHxVaZY3vKb05IWqWfzczXR.jpg",
     countBadge: "Cổ trang & hiện đại",
     icon: Flame,
   },
@@ -97,7 +99,7 @@ const HUBS: HubCard[] = [
     category: "Anime",
     highlight: "Anime dài tập, điện ảnh Nhật Bản và hoạt hình nổi bật.",
     href: "/films/anime",
-    image: "https://image.tmdb.org/t/p/w780/3GQKYh6Trm8pxd2AypovoYQf4Ay.jpg",
+    image: "https://image.tmdb.org/t/p/w1280/3GQKYh6Trm8pxd2AypovoYQf4Ay.jpg",
     countBadge: "Anime & điện ảnh",
     icon: Sparkles,
   },
@@ -108,7 +110,7 @@ const HUBS: HubCard[] = [
     category: "Viễn Tưởng",
     highlight: "Du hành vũ trụ, đa chiều, AI và những thế giới tương lai.",
     href: "/genre/vien-tuong",
-    image: "https://image.tmdb.org/t/p/w780/eZ239CUp1d6OryZEBPnO2n87gMG.jpg",
+    image: "https://image.tmdb.org/t/p/w1280/eZ239CUp1d6OryZEBPnO2n87gMG.jpg",
     countBadge: "Không gian & tương lai",
     icon: Rocket,
   },
@@ -119,7 +121,7 @@ const HUBS: HubCard[] = [
     category: "Chiến Tranh",
     highlight: "Chiến trường, tiểu sử và những dấu mốc lịch sử trên màn ảnh.",
     href: "/genre/chien-tranh",
-    image: "https://image.tmdb.org/t/p/w780/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg",
+    image: "https://image.tmdb.org/t/p/w1280/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg",
     countBadge: "Chiến trường & lịch sử",
     icon: Shield,
   },
@@ -130,7 +132,7 @@ const HUBS: HubCard[] = [
     category: "Thuyết Minh AI",
     highlight: "Kho phim có lựa chọn giọng đọc và phụ đề song ngữ.",
     href: "/films/thuyet-minh-ai",
-    image: "https://image.tmdb.org/t/p/w780/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg",
+    image: "https://image.tmdb.org/t/p/w1280/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg",
     countBadge: "Giọng đọc & phụ đề",
     icon: Languages,
   },
@@ -289,11 +291,14 @@ function ResilientHubCardImage({
   const currentSrc = candidates[candidateIdx] || src;
 
   return (
-    <img
+    <Image
       key={currentSrc}
       src={currentSrc}
       alt=""
       aria-hidden="true"
+      fill
+      unoptimized
+      sizes="(max-width: 639px) calc(100vw - 28px), (max-width: 1279px) 50vw, 25vw"
       loading={isPriority ? "eager" : "lazy"}
       decoding="async"
       fetchPriority={isPriority ? "high" : "auto"}
@@ -303,7 +308,7 @@ function ResilientHubCardImage({
           setCandidateIdx((prev: number) => prev + 1);
         }
       }}
-      className="w-full h-full object-cover object-center brightness-[0.45] contrast-[1.08] transition-transform duration-500 ease-out group-hover:scale-105 group-hover:brightness-[0.58]"
+      className="object-cover object-center brightness-[0.92] saturate-[1.04] transition-[transform,filter] duration-500 ease-out group-hover:scale-[1.025] group-hover:brightness-100"
     />
   );
 }
@@ -440,10 +445,7 @@ export default function GenresPage() {
         </section>
 
         {/* ── 8 Chủ Đề Chuẩn Dark Cinematic ── */}
-        <section
-          aria-label="Danh sách chủ đề điện ảnh"
-          className="space-y-4"
-        >
+        <section aria-label="Danh sách chủ đề điện ảnh" className="space-y-4">
           {/* Section Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -459,8 +461,8 @@ export default function GenresPage() {
             </div>
           </div>
 
-          {/* Clean 8-Card Cinematic Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
+          {/* Image-first cinematic grid */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
             {HUBS.map((hub, idx) => {
               const Icon = hub.icon;
               return (
@@ -470,9 +472,9 @@ export default function GenresPage() {
                   prefetch={true}
                   onMouseEnter={() => handlePrefetchHub(hub)}
                   onFocus={() => handlePrefetchHub(hub)}
-                  className="group relative flex flex-col justify-between h-[132px] sm:h-[150px] lg:h-[162px] overflow-hidden rounded-xl sm:rounded-2xl border border-white/[0.06] hover:border-white/15 bg-[#0e1017] p-3 sm:p-3.5 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer select-none"
+                  className="group relative isolate aspect-[16/10] min-h-[210px] cursor-pointer select-none overflow-hidden rounded-2xl border border-white/[0.10] bg-[#0e1017] shadow-[0_16px_42px_rgba(0,0,0,0.20)] transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:shadow-[0_20px_52px_rgba(0,0,0,0.34)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#08090d]"
                 >
-                  {/* Backdrop Image with Deep Cinematic Vignette */}
+                  {/* Artwork remains unobscured; contrast is added only behind copy. */}
                   <div
                     className="pointer-events-none absolute inset-0 overflow-hidden"
                     aria-hidden="true"
@@ -481,42 +483,42 @@ export default function GenresPage() {
                       src={hub.image}
                       isPriority={idx < 4}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b10] via-[#0a0b10]/85 to-transparent" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#0a0b10]/90 via-[#0a0b10]/40 to-black/40" />
+                    <div className="absolute inset-x-0 bottom-0 h-[64%] bg-gradient-to-t from-[#08090f] via-[#08090f]/78 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-transparent" />
                   </div>
 
                   {/* Top Category Badge Row */}
-                  <div className="relative z-10 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black/70 border border-white/[0.05] text-[9px] sm:text-[10px] font-medium text-neutral-300">
-                      <Icon size={11} className="text-white/70" />
+                  <div className="absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-2 p-3.5">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/55 px-2.5 py-1 text-[10px] font-semibold text-white/90 shadow-sm backdrop-blur-md">
+                      <Icon size={12} className="text-white/80" />
                       <span>{hub.category}</span>
                     </span>
 
-                    <span className="text-[8.5px] sm:text-[9.5px] font-medium text-neutral-400 bg-black/60 border border-white/[0.05] px-2 py-0.5 rounded-md">
+                    <span className="max-w-[48%] truncate rounded-full border border-white/15 bg-black/55 px-2.5 py-1 text-[10px] font-medium text-white/75 shadow-sm backdrop-blur-md">
                       {hub.countBadge}
                     </span>
                   </div>
 
                   {/* Bottom Info Lockup */}
-                  <div className="relative z-10 space-y-1">
-                    <h3 className="text-xs sm:text-sm lg:text-[15px] font-extrabold text-white tracking-tight leading-snug group-hover:text-white transition-colors line-clamp-1">
+                  <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-[18px]">
+                    <p className="mb-1.5 line-clamp-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/55">
+                      {hub.tagline}
+                    </p>
+
+                    <h3 className="line-clamp-1 text-base font-extrabold leading-tight tracking-[-0.02em] text-white lg:text-[17px]">
                       {hub.title}
                     </h3>
 
-                    <p className="text-[9px] sm:text-[10px] text-neutral-400 font-normal line-clamp-1 leading-tight opacity-85 hidden sm:block">
+                    <p className="mt-1 line-clamp-2 max-w-[92%] text-[11px] font-medium leading-[1.4] text-white/65">
                       {hub.highlight}
                     </p>
 
-                    {/* Clean Dark Action Bar */}
-                    <div className="pt-1.5 flex items-center justify-between border-t border-white/[0.05]">
-                      <span className="inline-flex items-center gap-1.5 text-[9.5px] sm:text-[10.5px] font-medium text-neutral-400 group-hover:text-neutral-200 transition-colors">
-                        <Play size={9} fill="currentColor" className="text-neutral-500 group-hover:text-neutral-300" />
-                        <span>Khám phá</span>
+                    <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-2.5">
+                      <span className="text-[11px] font-semibold text-white/80 transition-colors group-hover:text-white">
+                        Khám phá chủ đề
                       </span>
-
-                      <span className="text-[9.5px] sm:text-[10.5px] font-medium text-neutral-500 group-hover:text-neutral-300 transition-colors flex items-center gap-0.5">
-                        <span>Xem phim</span>
-                        <ChevronRight size={11} className="group-hover:translate-x-0.5 transition-transform text-neutral-500 group-hover:text-neutral-300" />
+                      <span className="grid size-7 place-items-center rounded-full border border-white/15 bg-white/10 text-white transition-[background-color,transform] group-hover:translate-x-0.5 group-hover:bg-white group-hover:text-black">
+                        <ChevronRight size={14} strokeWidth={2.2} />
                       </span>
                     </div>
                   </div>
