@@ -47,6 +47,15 @@ test("keeps TMDB direct and skips the wsrv hop", () => {
   assert.equal(isPreOptimizedImageUrl(tmdb), true);
 });
 
+test("serves NguonC artwork directly instead of double optimizing it", () => {
+  assert.equal(
+    isPreOptimizedImageUrl(
+      "https://phim.nguonc.com/public/images/Film/example.jpg",
+    ),
+    true,
+  );
+});
+
 test("deduplicates proxied and direct copies of the same source", () => {
   const candidates = buildArtworkCandidates(
     [provider, wsrvImageUrl(provider, "poster"), localImageProxyUrl(provider)],
