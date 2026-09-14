@@ -142,14 +142,13 @@ export function TmdbArtwork({
 
     const addTmdbCandidates = () => {
       if (!tmdbUrl) return;
-      // 1. Direct TMDB Cloudflare edge CDN (độ sắc nét gốc cao nhất, không nén trung gian)
+      // Use a viewport-sized CDN image first. Loading TMDB "original" for
+      // every shelf banner delayed paint and left large black cards onscreen.
+      if (kind === 'backdrop' && !preferOriginal) add(artworkQuery.backdropW1280);
+      if (kind === 'poster') add(artworkQuery.posterW500);
       add(tmdbUrl);
-      if (artworkQuery.backdropW1280 && artworkQuery.backdropW1280 !== tmdbUrl) {
-        add(artworkQuery.backdropW1280);
-      }
-      if (artworkQuery.posterW500 && artworkQuery.posterW500 !== tmdbUrl) {
-        add(artworkQuery.posterW500);
-      }
+      if (kind === 'backdrop') add(artworkQuery.backdropW1280);
+      if (kind === 'poster') add(artworkQuery.posterW500);
       // 2. wsrv edge proxy fallback
       const wsrv = wsrvImageUrl(tmdbUrl, preset);
       if (wsrv) add(wsrv);
@@ -211,13 +210,15 @@ export function TmdbArtwork({
     allowTitleLookup,
     artworkQuery.backdropW1280,
     artworkQuery.posterW500,
+    preferOriginal,
   ]);
 
   const [candidateIndex, setCandidateIndex] = useState(0);
-  const [loaded, setLoaded] = useState(false);
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
   const src = candidates[candidateIndex];
+  const loaded = Boolean(src && loadedSrc === src);
 
   const responsiveSizes =
     sizes ||
@@ -237,48 +238,70 @@ export function TmdbArtwork({
       sizes: responsiveSizes,
       quality: kind === 'backdrop' ? 90 : 85,
       loading: priority ? 'eager' : 'lazy',
-      fetchPriority: priority ? 'high' : 'low',
+      fetchPriority: priority ? 'high' : nearViewport ? 'auto' : 'low',
       unoptimized: alreadySized,
     }).props;
-  }, [alt, film.name, kind, priority, responsiveSizes, src, preferOriginal]);
+  }, [alt, film.name, kind, nearViewport, priority, responsiveSizes, src, preferOriginal]);
 
   // Reset candidate index and loaded state when movie identity, kind, or tmdbUrl updates
   useEffect(() => {
     setCandidateIndex(0);
-    setLoaded(false);
+    setLoadedSrc(null);
   }, [film.slug, kind, tmdbUrl]);
 
   // Sync loaded state when src changes or when image is already cached/decoded in DOM
   useEffect(() => {
     if (!src) {
-      setLoaded(false);
       return;
     }
     const img = imgRef.current;
-    if (img && (img.naturalWidth > 0 || img.complete)) {
-      setLoaded(true);
-    } else {
-      setLoaded(false);
+    if (img?.complete && img.naturalWidth > 0) {
+      setLoadedSrc(src);
     }
   }, [src]);
 
+  useEffect(() => {
+    if (!src || loaded || (!nearViewport && !priority)) return;
+    const timer = window.setTimeout(() => {
+      const image = imgRef.current;
+      if (image?.complete && image.naturalWidth > 0) {
+        setLoadedSrc(src);
+        return;
+      }
+      setCandidateIndex((index) => {
+        const next = index + 1;
+        if (next >= candidates.length && !autoRecovery) {
+          setAutoRecovery(true);
+        }
+        return next;
+      });
+    }, priority ? 5_000 : 7_500);
+    return () => window.clearTimeout(timer);
+  }, [autoRecovery, candidates.length, loaded, nearViewport, priority, src]);
+
   return (
     <div ref={containerRef} className={cn('relative overflow-hidden bg-[#101218]', className)}>
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-[#171a22] via-[#11141b] to-[#0c0e13] p-3 text-center"
+      >
+        <Clapperboard className="mb-1.5 h-5 w-5 text-white/20" />
+        {alt !== '' && (
+          <span className="line-clamp-2 max-w-[18rem] text-[10px] font-semibold text-white/35">
+            {film.name || film.title}
+          </span>
+        )}
+      </div>
       {src && deliveredImageProps ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          ref={(node) => {
-            imgRef.current = node;
-            if (node && (node.naturalWidth > 0 || node.complete) && !loaded) {
-              setLoaded(true);
-            }
-          }}
+          ref={imgRef}
           {...deliveredImageProps}
           alt={alt || film.name}
           referrerPolicy="no-referrer"
           draggable={false}
           style={objectPosition ? { objectPosition } : undefined}
-          onLoad={() => setLoaded(true)}
+          onLoad={() => setLoadedSrc(src)}
           onError={() => {
             setCandidateIndex((index) => {
               const next = index + 1;
@@ -289,9 +312,8 @@ export function TmdbArtwork({
             });
           }}
           className={cn(
-            'h-full w-full object-cover transition-opacity duration-200 motion-reduce:transition-none',
+            'relative z-[1] h-full w-full object-cover',
             imageClassName,
-            loaded || priority ? 'opacity-100' : 'opacity-0',
           )}
           data-artwork-source={
             src === tmdbUrl || /image\.tmdb\.org\/t\/p\//i.test(src) ? 'tmdb' : 'fallback'
@@ -306,12 +328,6 @@ export function TmdbArtwork({
         </div>
       ) : (
         <div className="absolute inset-0 animate-pulse [animation-iteration-count:3] bg-[linear-gradient(110deg,#101218_25%,#181b23_45%,#101218_65%)] bg-[length:220%_100%] motion-reduce:animate-none" />
-      )}
-      {!loaded && !priority && src && (
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 animate-pulse [animation-iteration-count:3] bg-[linear-gradient(110deg,#101218_25%,#181b23_45%,#101218_65%)] bg-[length:220%_100%] motion-reduce:animate-none"
-        />
       )}
     </div>
   );

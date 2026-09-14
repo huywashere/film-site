@@ -90,14 +90,6 @@ export function CuratedSpotlightSection({
     }, 90);
   };
 
-  useEffect(() => {
-    if (reduceMotion || spotlightList.length < 2) return;
-    const timer = window.setInterval(() => {
-      setActiveIndex((index) => (index + 1) % spotlightList.length);
-    }, 12000);
-    return () => window.clearInterval(timer);
-  }, [reduceMotion, spotlightList.length]);
-
   if (isLoading) {
     return (
       <div className="mb-5 h-[560px] w-full animate-pulse rounded-[28px] border border-white/10 bg-white/[0.03] sm:mb-10 lg:mb-14" />
@@ -159,7 +151,6 @@ export function CuratedSpotlightSection({
                 alt={activeFilm.name}
                 priority
                 allowTitleLookup
-                preferOriginal
                 sizes="(max-width: 1024px) 100vw, 75vw"
                 imageClassName="object-[center_25%]"
                 className="h-full w-full"

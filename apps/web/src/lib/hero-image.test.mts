@@ -114,3 +114,29 @@ test('homepage loading placeholders stop animating after a short warm-up', () =>
   assert.match(homepage, /animation-iteration-count:3/);
   assert.match(artwork, /animation-iteration-count:3/);
 });
+
+test('showcase logos keep the current film fallback stable while artwork loads', () => {
+  const source = readFileSync('src/components/film/ShowcaseTitleLogo.tsx', 'utf8');
+
+  assert.match(source, /resolvedLogo\?\.slug === film\.slug/);
+  assert.match(source, /\}, \[film\.slug, activeLogo\]\);/);
+  assert.doesNotMatch(source, /\[film\.slug, activeLogo, currentSrc\]/);
+  assert.match(source, /isLoaded[\s\S]*\? 'sr-only'/);
+  assert.match(source, /alt=""/);
+});
+
+test('shared artwork never hides a successfully decoded native image', () => {
+  const source = readFileSync('src/components/film/TmdbArtwork.tsx', 'utf8');
+
+  assert.match(source, /image\?\.complete && image\.naturalWidth > 0/);
+  assert.match(source, /backdropW1280/);
+  assert.doesNotMatch(source, /loaded \? 'opacity-100'/);
+});
+
+test('large homepage showcases change slides only after user interaction', () => {
+  const series = readFileSync('src/components/film/HeroShowcaseSection.tsx', 'utf8');
+  const curated = readFileSync('src/components/film/CuratedSpotlightSection.tsx', 'utf8');
+
+  assert.doesNotMatch(series, /setInterval/);
+  assert.doesNotMatch(curated, /setInterval/);
+});

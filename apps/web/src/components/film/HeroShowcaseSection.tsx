@@ -87,14 +87,6 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
     }, 90);
   };
 
-  useEffect(() => {
-    if (reduceMotion || shortlist.length < 2) return;
-    const timer = window.setInterval(() => {
-      setActiveIndex((index) => (index + 1) % shortlist.length);
-    }, 12000);
-    return () => window.clearInterval(timer);
-  }, [reduceMotion, shortlist.length]);
-
   if (isLoading) {
     return (
       <div className="mb-14 h-[520px] w-full animate-pulse rounded-[28px] border border-white/10 bg-white/[0.03]" />
@@ -156,7 +148,6 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
                 alt={activeFilm.name}
                 priority
                 allowTitleLookup
-                preferOriginal
                 sizes="100vw"
                 imageClassName="object-[center_20%] sm:object-[center_25%]"
                 className="h-full w-full"
