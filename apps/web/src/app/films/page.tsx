@@ -28,8 +28,6 @@ const YEARS = Array.from({ length: 27 }, (_, i) => 2026 - i);
 
 const QUICK_TYPES = [
   { label: "Tất cả", value: "all" },
-  { label: "Marvel Studios", value: "marvel", isUniverse: true, theme: "marvel" },
-  { label: "DC Universe", value: "dc", isUniverse: true, theme: "dc" },
   { label: "Phim Bộ", value: "series" },
   { label: "Phim Lẻ", value: "single" },
   { label: "Anime", value: "anime" },
@@ -417,10 +415,6 @@ function BrowseFilmsContent() {
                   key={type.value}
                   type="button"
                   onClick={() => {
-                    if (type.value === "marvel" || type.value === "dc") {
-                      router.push(`/universe/${type.value}`);
-                      return;
-                    }
                     setSelectedType(type.value);
                     setSelectedSubFranchise("all");
                     setPage(1);

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { catalogQualityScore, curateCatalogFilms } from "./catalog-curation.ts";
 
@@ -78,4 +79,12 @@ test("different seasons of one franchise do not fill the first positions", () =>
     curated[1].slug.startsWith("galaxy"),
   );
   assert.equal(curated.length, input.length);
+});
+
+test("browse quick filters do not duplicate Marvel and DC universe entries", () => {
+  const source = readFileSync("src/app/films/page.tsx", "utf8");
+  const quickTypes = source.match(/const QUICK_TYPES = \[[\s\S]*?\n\];/)?.[0];
+
+  assert.ok(quickTypes);
+  assert.doesNotMatch(quickTypes, /Marvel Studios|DC Universe/);
 });
