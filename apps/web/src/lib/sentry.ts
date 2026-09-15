@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * NetPhim Sentry Error Tracking & Observability Module
+ * FlexPhim Sentry Error Tracking & Observability Module
  * Safely captures client & server exceptions without breaking runtime navigation.
  */
 

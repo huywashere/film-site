@@ -2023,7 +2023,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       if (slug) seenSlugs.add(slug);
 
       // Render provider-native recommendations first. These already have a
-      // valid NetPhim slug and only need one cached catalogue request.
+      // valid FlexPhim slug and only need one cached catalogue request.
       try {
         const { searchLocalFilms } = await import('@/lib/smart-search');
         const titleKeywords = (film?.name || film?.origin_name || slug || '').split(' ')[0] || '';
@@ -2687,7 +2687,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     embedUrl ||
     (m3u8Url ? `https://player.phimapi.com/player/?url=${encodeURIComponent(m3u8Url)}` : '');
   // Third-party players may execute scripts and use their own storage, but
-  // must not navigate the NetPhim tab, spawn popunders or trigger downloads.
+  // must not navigate the FlexPhim tab, spawn popunders or trigger downloads.
   // Verified native players (NguonC StreamC, VidSrc, ViCDN) require unsandboxed iframes to run their media engines.
   const iframeSandbox = canUseUnsandboxedEmbed(server?._source, iframeUrl)
     ? undefined
@@ -3377,7 +3377,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
   useEffect(() => {
     if (typeof document !== 'undefined' && film?.name) {
-      document.title = `Xem Phim ${film.name} ${currentEpData?.name ? `- Tập ${currentEpData.name}` : ''} Vietsub HD | NetPhim`;
+      document.title = `Xem Phim ${film.name} ${currentEpData?.name ? `- Tập ${currentEpData.name}` : ''} Vietsub HD | FlexPhim`;
     }
   }, [film?.name, currentEpData?.name]);
 
@@ -3462,7 +3462,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     (ep: any) => !episodeSearch || ep.name.toLowerCase().includes(episodeSearch.toLowerCase()),
   );
 
-  const watchSeoTitle = `Xem Phim ${film?.name || ''} ${currentEpData?.name ? `- Tập ${currentEpData.name}` : ''} Vietsub HD | NetPhim`;
+  const watchSeoTitle = `Xem Phim ${film?.name || ''} ${currentEpData?.name ? `- Tập ${currentEpData.name}` : ''} Vietsub HD | FlexPhim`;
   const watchSeoDescription = `Xem phim ${film?.name || ''} ${currentEpData?.name ? `Tập ${currentEpData.name}` : ''} Vietsub Thuyết minh HD online mượt mà không quảng cáo độc hại.`;
 
   const watchJsonLd = [
@@ -3643,8 +3643,8 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     if (typeof navigator !== 'undefined' && navigator.share) {
                       navigator
                         .share({
-                          title: film?.name || 'NetPhim',
-                          text: `Xem phim ${film?.name || ''} miễn phí trên NetPhim!`,
+                          title: film?.name || 'FlexPhim',
+                          text: `Xem phim ${film?.name || ''} miễn phí trên FlexPhim!`,
                           url: window.location.href,
                         })
                         .catch(() => setShowShareModal((p) => !p));
@@ -3716,7 +3716,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
                       {/* Twitter / X */}
                       <a
-                        href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&text=${encodeURIComponent(`Xem phim ${film?.name || ''} trên NetPhim!`)}`}
+                        href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&text=${encodeURIComponent(`Xem phim ${film?.name || ''} trên FlexPhim!`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 p-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white border border-white/10 transition-all active:scale-95"
@@ -4920,7 +4920,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       <div className="aspect-video overflow-hidden rounded-xl border border-white/[0.1] bg-black">
                         <iframe
                           src={`https://www.youtube.com/embed/${encodeURIComponent(trailerKey)}?autoplay=1&rel=0&playsinline=1&enablejsapi=1`}
-                          title={`${film?.name || 'NetPhim'} trailer`}
+                          title={`${film?.name || 'FlexPhim'} trailer`}
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                           allowFullScreen
                           loading="lazy"
@@ -4963,7 +4963,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={imageUrl}
-                              alt={`${film?.name || 'NetPhim'} ${index + 1}`}
+                              alt={`${film?.name || 'FlexPhim'} ${index + 1}`}
                               loading="lazy"
                               decoding="async"
                               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"

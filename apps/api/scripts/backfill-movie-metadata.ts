@@ -77,7 +77,7 @@ async function fetchJson(url: string) {
     try {
       await waitForRequestSlot();
       const response = await fetch(url, {
-        headers: { Accept: 'application/json', 'User-Agent': 'NetPhim-Metadata-Backfill/1.0' },
+        headers: { Accept: 'application/json', 'User-Agent': 'FlexPhim-Metadata-Backfill/1.0' },
         signal: AbortSignal.timeout(15_000),
       });
       if (response.status === 404) return null;

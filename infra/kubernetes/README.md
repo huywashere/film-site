@@ -4,7 +4,7 @@
 > Docker Compose với OpenResty. Thư mục này chỉ được giữ để chuẩn bị mở rộng
 > sang cluster sau này và không được gọi từ CI/CD mặc định.
 
-Hệ thống kiến trúc Kubernetes dành cho ứng dụng **NetPhim** được thiết kế đáp ứng các tiêu chuẩn sản xuất (Production-Grade):
+Hệ thống kiến trúc Kubernetes dành cho ứng dụng **FlexPhim** được thiết kế đáp ứng các tiêu chuẩn sản xuất (Production-Grade):
 
 ## 📂 Danh mục manifests trong `infra/kubernetes/`
 

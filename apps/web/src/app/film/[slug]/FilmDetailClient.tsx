@@ -1743,10 +1743,10 @@ export default function FilmDetailPage({
 
   const jsonLdPayload = [jsonLd, breadcrumbJsonLd];
 
-  const seoTitle = `${filmName} ${originName ? `(${originName})` : ''} ${film?.year ? `- ${film.year}` : ''} Vietsub HD | NetPhim`;
+  const seoTitle = `${filmName} ${originName ? `(${originName})` : ''} ${film?.year ? `- ${film.year}` : ''} Vietsub HD | FlexPhim`;
   const seoDescription = cleanContent
     ? cleanContent.slice(0, 160)
-    : `Xem phim ${filmName} (${originName}) chất lượng cao Vietsub Thuyết minh HD miễn phí trên NetPhim.`;
+    : `Xem phim ${filmName} (${originName}) chất lượng cao Vietsub Thuyết minh HD miễn phí trên FlexPhim.`;
 
   return (
     <div

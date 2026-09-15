@@ -1,6 +1,26 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('critical visitor flows', () => {
+  test('the public shell and install metadata use the FlexPhim brand', async ({
+    page,
+    request,
+  }) => {
+    await page.goto('/offline', { waitUntil: 'domcontentloaded' });
+
+    await expect(page).toHaveTitle(/FlexPhim/);
+    await expect(page.locator('img[alt="FlexPhim Logo"]').first()).toBeAttached();
+    await expect(page.locator('body')).not.toContainText('NetPhim');
+
+    const manifestResponse = await request.get('/manifest.json');
+    expect(manifestResponse.ok()).toBeTruthy();
+    const manifest = await manifestResponse.json();
+    expect(manifest.name).toBe('FlexPhim — Xem Phim Online');
+    expect(manifest.short_name).toBe('FlexPhim');
+
+    const logoResponse = await request.get('/flexphim-logo.svg');
+    expect(logoResponse.ok()).toBeTruthy();
+  });
+
   test('a successful email login creates a cookie-backed session and opens home', async ({
     page,
   }) => {
@@ -10,7 +30,7 @@ test.describe('critical visitor flows', () => {
       id: 'e2e-user-id',
       email: 'member@netphim.test',
       username: 'netphim_member',
-      displayName: 'NetPhim Member',
+      displayName: 'FlexPhim Member',
       role: 'USER',
     };
 

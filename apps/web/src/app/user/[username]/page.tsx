@@ -1108,7 +1108,7 @@ export default function UserDashboardPage() {
                     Thông tin cá nhân
                   </h2>
                   <p className="mt-1 text-xs text-neutral-400">
-                    Cập nhật thông tin hiển thị công khai trên NetPhim.
+                    Cập nhật thông tin hiển thị công khai trên FlexPhim.
                   </p>
                 </div>
 
@@ -1213,7 +1213,7 @@ export default function UserDashboardPage() {
                 <div className="border-b border-white/[0.07] pb-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h2 className="text-lg font-bold text-white">Thống kê xem phim</h2>
-                    <p className="mt-1 text-sm text-neutral-500">Tổng quan hành trình điện ảnh thực tế của bạn trên NetPhim.</p>
+                    <p className="mt-1 text-sm text-neutral-500">Tổng quan hành trình điện ảnh thực tế của bạn trên FlexPhim.</p>
                   </div>
                   <div className="flex items-center gap-2 text-xs font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3.5 py-1.5 rounded-xl shadow-sm">
                     <span className="text-sm">{userStats?.rankBadge || (historyItems.length >= 20 ? "👑" : "🌱")}</span>
@@ -1303,7 +1303,7 @@ export default function UserDashboardPage() {
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
-                        <span>🏆 Bảng Xếp Hạng Mọt Phim NetPhim</span>
+                        <span>🏆 Bảng Xếp Hạng Mọt Phim FlexPhim</span>
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-extrabold uppercase">
                           Cộng đồng
                         </span>
@@ -1336,7 +1336,7 @@ export default function UserDashboardPage() {
                       Bảng Vinh Danh Khán Giả
                     </div>
                     <h2 className="text-xl font-black text-white">
-                      Bảng Xếp Hạng Mọt Phim NetPhim
+                      Bảng Xếp Hạng Mọt Phim FlexPhim
                     </h2>
                     <p className="mt-1 text-xs text-neutral-400">
                       Vinh danh các thành viên có thời gian xem phim nhiều nhất và hoạt động tích cực nhất trên toàn hệ thống.
@@ -2031,7 +2031,7 @@ export default function UserDashboardPage() {
                 <h3 className="text-base font-bold text-white">Đăng xuất?</h3>
                 <p className="text-xs text-neutral-400 mt-1.5">
                   Bạn có chắc muốn đăng xuất khỏi phiên làm việc hiện tại trên
-                  NetPhim?
+                  FlexPhim?
                 </p>
               </div>
               <div className="flex gap-3 pt-2">

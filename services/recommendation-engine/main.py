@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI):
     print("[SHUTDOWN] Recommendation Engine stopped.")
 
 app = FastAPI(
-    title="NetPhim AI Recommendation Engine",
+    title="FlexPhim AI Recommendation Engine",
     version="1.0.0",
     lifespan=lifespan,
 )

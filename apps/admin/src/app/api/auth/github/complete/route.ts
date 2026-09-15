@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       cache: "no-store",
       headers: {
         "Content-Type": "application/json",
-        "User-Agent": request.headers.get("user-agent") || "NetPhim-Admin-GitHub-2FA",
+        "User-Agent": request.headers.get("user-agent") || "FlexPhim-Admin-GitHub-2FA",
         "X-Forwarded-For": request.headers.get("x-forwarded-for") || "",
       },
       body: JSON.stringify({ challenge, code: body.code }),

@@ -1,4 +1,4 @@
-// Catalog dữ liệu phim Doraemon chuẩn hóa cho NetPhim
+// Catalog dữ liệu phim Doraemon chuẩn hóa cho FlexPhim
 import type { UniverseFilmItem, UniverseSpotlightItem } from "./universe-catalog";
 
 export const DORAEMON_SPOTLIGHTS: UniverseSpotlightItem[] = [

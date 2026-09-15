@@ -53,7 +53,7 @@ export function LogoSplashIntro() {
       id="netphim-entry-splash"
       role="status"
       aria-live="polite"
-      aria-label="Đang mở NetPhim"
+      aria-label="Đang mở FlexPhim"
       className={`fixed inset-0 z-[10000] overflow-hidden bg-[#06070a] transition-opacity duration-300 ease-out ${
         leaving
           ? 'pointer-events-none opacity-0'
@@ -95,7 +95,7 @@ export function LogoSplashIntro() {
       <div className="netphim-splash-brand relative flex h-full flex-col items-center justify-center px-6">
         <div className="flex items-center gap-3 sm:gap-4 drop-shadow-[0_12px_36px_rgba(0,0,0,0.9)]">
           <Image
-            src="/cinephim-logo.svg"
+            src="/flexphim-logo.svg"
             alt=""
             width={82}
             height={82}
@@ -104,7 +104,7 @@ export function LogoSplashIntro() {
             className="h-[62px] w-[62px] object-contain drop-shadow-[0_14px_34px_rgba(91,33,182,0.65)] sm:h-[78px] sm:w-[78px]"
           />
           <span className="text-[38px] font-black tracking-[-0.055em] text-white drop-shadow-[0_10px_32px_rgba(0,0,0,0.95)] sm:text-[54px]">
-            Net<span className="text-violet-400">Phim</span>
+            Flex<span className="text-violet-400">Phim</span>
           </span>
         </div>
         <div className="mt-7 h-px w-36 overflow-hidden bg-white/20 sm:w-44 shadow-[0_0_12px_rgba(139,92,246,0.5)]">

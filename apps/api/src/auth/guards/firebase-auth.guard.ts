@@ -37,7 +37,7 @@ export class FirebaseAuthGuard implements CanActivate {
       request.user = {
         uid: "admin-dashboard-service",
         email: process.env.ADMIN_DASHBOARD_EMAIL || "admin@netphim.local",
-        name: "Quản trị NetPhim",
+        name: "Quản trị FlexPhim",
         role: "ADMIN",
         internalDashboard: true,
         ipAddress: forwardedFor || request.ip || request.socket?.remoteAddress,

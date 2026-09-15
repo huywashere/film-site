@@ -1,4 +1,4 @@
-# NetPhim API image for Railway.
+# FlexPhim API image for Railway.
 # The Railway service must keep its Root Directory at the repository root so
 # pnpm can use the monorepo lockfile deterministically.
 

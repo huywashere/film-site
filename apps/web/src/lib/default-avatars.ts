@@ -44,7 +44,7 @@ const NFT_FACE_02 = "https://api.dicebear.com/9.x/lorelei/svg?seed=lorelei_nft_f
 const NFT_PEEP_01 = "https://api.dicebear.com/9.x/open-peeps/svg?seed=openpeep_nft_style_01&backgroundColor=0a0a0a&backgroundType=solid&radius=50&size=200";
 const NFT_PEEP_02 = "https://api.dicebear.com/9.x/open-peeps/svg?seed=openpeep_nft_style_02&backgroundColor=190005&backgroundType=solid&radius=50&size=200";
 
-// Original NetPhim collectible avatars. These are local assets so the picker
+// Original FlexPhim collectible avatars. These are local assets so the picker
 // keeps working even when a third-party avatar service is unavailable.
 const COLLECTIBLE_ROBOT = "/avatars/collectibles/orbit-robot.webp";
 const COLLECTIBLE_CAT = "/avatars/collectibles/neon-cat.webp";

@@ -30,8 +30,8 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL || "https://netphim.app",
   ),
   title: {
-    default: "NetPhim — Xem Phim Online",
-    template: "%s | NetPhim",
+    default: "FlexPhim — Xem Phim Online",
+    template: "%s | FlexPhim",
   },
   description:
     "Nền tảng xem phim online chất lượng cao. Phim bộ, phim lẻ, anime, TV Shows với phụ đề tiếng Việt và thuyết minh cập nhật liên tục.",
@@ -43,46 +43,46 @@ export const metadata: Metadata = {
     "hoạt hình",
     "anime vietsub",
     "phim thuyết minh",
-    "NetPhim",
+    "FlexPhim",
   ],
   icons: {
     icon: [
-      { url: "/cinephim-logo.svg", type: "image/svg+xml" },
-      { url: "/cinephim-logo.png", type: "image/png" },
+      { url: "/flexphim-logo.svg", type: "image/svg+xml" },
+      { url: "/flexphim-logo.png", type: "image/png" },
     ],
-    shortcut: "/cinephim-logo.svg",
-    apple: "/cinephim-logo.png",
+    shortcut: "/flexphim-logo.svg",
+    apple: "/flexphim-logo.png",
   },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: "NetPhim — Xem Phim Online",
+    title: "FlexPhim — Xem Phim Online",
     statusBarStyle: "black-translucent",
   },
   formatDetection: { telephone: false },
   openGraph: {
-    title: "NetPhim — Xem Phim Online",
+    title: "FlexPhim — Xem Phim Online",
     description:
       "Nền tảng xem phim online chất lượng cao. Phim bộ, phim lẻ, anime với phụ đề tiếng Việt và thuyết minh.",
     url: process.env.NEXT_PUBLIC_SITE_URL || "https://netphim.app",
-    siteName: "NetPhim",
+    siteName: "FlexPhim",
     locale: "vi_VN",
     type: "website",
     images: [
       {
-        url: "/cinephim-logo.png",
+        url: "/flexphim-logo.png",
         width: 1200,
         height: 630,
-        alt: "NetPhim — Xem Phim Online",
+        alt: "FlexPhim — Xem Phim Online",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "NetPhim — Xem Phim Online",
+    title: "FlexPhim — Xem Phim Online",
     description:
       "Nền tảng xem phim online chất lượng cao với hàng ngàn bộ phim bom tấn mới nhất.",
-    images: ["/cinephim-logo.png"],
+    images: ["/flexphim-logo.png"],
   },
 };
 
@@ -94,8 +94,8 @@ export default function RootLayout({
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "NetPhim",
-    alternateName: "NetPhim Xem Phim Online",
+    name: "FlexPhim",
+    alternateName: "FlexPhim Xem Phim Online",
     url: "https://netphim.app",
     potentialAction: {
       "@type": "SearchAction",
@@ -108,9 +108,9 @@ export default function RootLayout({
     <html lang="vi" suppressHydrationWarning>
       <head>
         <meta name="referrer" content="strict-origin-when-cross-origin" />
-        <link rel="icon" href="/cinephim-logo.svg" type="image/svg+xml" />
-        <link rel="alternate icon" href="/cinephim-logo.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/cinephim-logo.png" />
+        <link rel="icon" href="/flexphim-logo.svg" type="image/svg+xml" />
+        <link rel="alternate icon" href="/flexphim-logo.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/flexphim-logo.png" />
         <link rel="dns-prefetch" href="https://wsrv.nl" />
         <link rel="dns-prefetch" href="https://img.phimapi.com" />
         <link rel="preconnect" href="https://phimimg.com" />

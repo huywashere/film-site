@@ -1,4 +1,4 @@
-// Catalog dữ liệu phim Thám Tử Lừng Danh Conan chuẩn hóa cho NetPhim
+// Catalog dữ liệu phim Thám Tử Lừng Danh Conan chuẩn hóa cho FlexPhim
 import type { UniverseFilmItem, UniverseSpotlightItem } from "./universe-catalog";
 
 export const CONAN_SPOTLIGHTS: UniverseSpotlightItem[] = [

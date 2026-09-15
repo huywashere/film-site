@@ -324,7 +324,7 @@ export class WatchPartyService implements OnModuleDestroy {
     isHost: boolean,
     joinedAt: string,
   ): InternalParticipant {
-    const name = this.clean(identity?.name, 50) || "Khách NetPhim";
+    const name = this.clean(identity?.name, 50) || "Khách FlexPhim";
     return {
       id: socketId,
       userId: this.clean(identity?.userId, 100) || undefined,
@@ -342,7 +342,7 @@ export class WatchPartyService implements OnModuleDestroy {
     return {
       id: randomUUID(),
       senderId: "system",
-      senderName: "NetPhim",
+      senderName: "FlexPhim",
       senderAvatar: "",
       text,
       timestamp,

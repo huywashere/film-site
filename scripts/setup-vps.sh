@@ -1,6 +1,6 @@
 #!/bin/bash
 # ══════════════════════════════════════════════════════════════════
-# NetPhim VPS Setup Script
+# FlexPhim VPS Setup Script
 # Hỗ trợ: Ubuntu 22.04 / 24.04 LTS
 # Chạy với: sudo bash setup-vps.sh
 # ══════════════════════════════════════════════════════════════════
@@ -26,7 +26,7 @@ if [[ $EUID -ne 0 ]]; then
    error "Script này phải chạy với sudo: sudo bash setup-vps.sh"
 fi
 
-header "NetPhim VPS Setup"
+header "FlexPhim VPS Setup"
 info "Bắt đầu cài đặt môi trường VPS..."
 
 # ── Config (sửa nếu cần) ───────────────────────────────────────
@@ -183,7 +183,7 @@ sudo -u $DEPLOY_USER docker compose --project-directory "$APP_DIR" -f "$APP_DIR/
 
 echo ""
 echo -e "${GREEN}══════════════════════════════════════${NC}"
-echo -e "${GREEN}  ✓ NetPhim đã được deploy thành công!${NC}"
+echo -e "${GREEN}  ✓ FlexPhim đã được deploy thành công!${NC}"
 echo -e "${GREEN}══════════════════════════════════════${NC}"
 echo ""
 echo -e "📁 App directory: ${CYAN}$APP_DIR${NC}"

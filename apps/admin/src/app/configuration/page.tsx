@@ -216,7 +216,7 @@ export default function ConfigurationPage() {
                 label="Tiêu đề"
                 value={config.homePopupTitle || ""}
                 onChange={(value) => update("homePopupTitle", value)}
-                placeholder="Thông báo từ NetPhim"
+                placeholder="Thông báo từ FlexPhim"
                 maxLength={180}
               />
             </div>
@@ -395,7 +395,7 @@ export default function ConfigurationPage() {
             onChange={(value) => update("homeFeaturedRows", value)}
           />
           <p className="self-end text-[11px] leading-5 text-slate-400">
-            Mẫu: {`{"de-cu":{"title":"NetPhim đề cử","slugs":["slug-phim-1"],"href":"/films"}}`}. Hàng này có ID <code>featured:de-cu</code> để sắp xếp hoặc ẩn.
+            Mẫu: {`{"de-cu":{"title":"FlexPhim đề cử","slugs":["slug-phim-1"],"href":"/films"}}`}. Hàng này có ID <code>featured:de-cu</code> để sắp xếp hoặc ẩn.
           </p>
           <Field label="SEO title trang chủ" value={config.seoTitle || ""} onChange={(value) => update("seoTitle", value)} maxLength={180} />
           <Field label="SEO description" value={config.seoDescription || ""} onChange={(value) => update("seoDescription", value)} multiline maxLength={500} />
@@ -602,7 +602,7 @@ function AnnouncementPreview({ config }: { config: Configuration }) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={`${webAssetBase}/images/cat${catNumber}.gif`}
-                alt="Mèo đưa tin NetPhim"
+                alt="Mèo đưa tin FlexPhim"
                 className="absolute inset-1 h-[calc(100%-8px)] w-[calc(100%-8px)] rounded-[14px] object-cover"
               />
               <span className="absolute bottom-2 left-2 rounded-full bg-black/70 px-1.5 py-0.5 text-[6px] font-black uppercase tracking-wider text-amber-200">
@@ -611,7 +611,7 @@ function AnnouncementPreview({ config }: { config: Configuration }) {
             </span>
             <div className="min-w-0 pt-1">
               <span className="block text-[8px] font-black uppercase tracking-[.2em] text-violet-300">
-                NetPhim nhắn bạn
+                FlexPhim nhắn bạn
               </span>
               <h3 className="mt-2 text-[17px] font-extrabold leading-snug tracking-[-.025em] text-white">
                 {config.homePopupTitle || "Có một thông báo mới"}

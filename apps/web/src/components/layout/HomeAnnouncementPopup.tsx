@@ -145,7 +145,7 @@ export function HomeAnnouncementPopup() {
             <div className="relative h-[82px] w-[96px] shrink-0 rotate-[-2deg] overflow-hidden rounded-[20px] border border-violet-300/25 bg-[#09090d] p-1 shadow-[0_14px_35px_rgba(0,0,0,.38)] sm:h-[104px] sm:w-[126px]">
               <Image
                 src={catGif}
-                alt="Mèo đưa tin NetPhim"
+                alt="Mèo đưa tin FlexPhim"
                 fill
                 unoptimized
                 sizes="126px"
@@ -163,7 +163,7 @@ export function HomeAnnouncementPopup() {
             </div>
             <div className="min-w-0 pt-1 sm:pt-2">
               <p className="text-[9px] font-black uppercase tracking-[.22em] text-violet-300 sm:text-[10px]">
-                NetPhim nhắn bạn
+                FlexPhim nhắn bạn
               </p>
               <h2
                 id="home-announcement-title"

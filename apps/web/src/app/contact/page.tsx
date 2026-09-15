@@ -4,8 +4,8 @@ import { SupportHub } from "@/components/legal/SupportHub";
 import { Loader2 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Liên Hệ Ban Quản Trị & Hỗ Trợ Khách Hàng | NetPhim",
-  description: "Gửi tin nhắn hoặc liên hệ với ban quản trị NetPhim.",
+  title: "Liên Hệ Ban Quản Trị & Hỗ Trợ Khách Hàng | FlexPhim",
+  description: "Gửi tin nhắn hoặc liên hệ với ban quản trị FlexPhim.",
 };
 
 export default function ContactPage() {

@@ -71,7 +71,7 @@ export function ContactClient() {
       });
       setIsSubmitting(false);
       setSubmitted(true);
-      toast('Tin nhắn của bạn đã được gửi thành công đến ban quản trị NetPhim!', 'success');
+      toast('Tin nhắn của bạn đã được gửi thành công đến ban quản trị FlexPhim!', 'success');
     } catch {
       setIsSubmitting(false);
       toast('Không thể gửi tin nhắn lúc này. Vui lòng thử lại sau.', 'error');
@@ -83,7 +83,7 @@ export function ContactClient() {
       badge="Kết Nối & Hỗ Trợ"
       badgeIcon={<MessageSquare size={14} className="text-violet-400" />}
       title="Liên Hệ Ban Quản Trị & Hỗ Trợ"
-      description="Chúng tôi luôn sẵn sàng lắng nghe mọi ý kiến đóng góp, hỗ trợ giải đáp thắc mắc và kết nối hợp tác từ các đối tác và người dùng NetPhim."
+      description="Chúng tôi luôn sẵn sàng lắng nghe mọi ý kiến đóng góp, hỗ trợ giải đáp thắc mắc và kết nối hợp tác từ các đối tác và người dùng FlexPhim."
       lastUpdated="19/08/2026"
       readTime="3 phút đọc & gửi tin"
       toc={TOC}
@@ -164,7 +164,7 @@ export function ContactClient() {
             <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
             <h3 className="text-lg font-bold text-white">Đã gửi tin nhắn thành công!</h3>
             <p className="text-xs sm:text-sm text-neutral-300 max-w-md mx-auto leading-relaxed">
-              Cảm ơn bạn đã liên hệ với NetPhim. Đội ngũ phụ trách sẽ xem xét và phản hồi đến email{' '}
+              Cảm ơn bạn đã liên hệ với FlexPhim. Đội ngũ phụ trách sẽ xem xét và phản hồi đến email{' '}
               <strong>{email}</strong> sớm nhất có thể.
             </p>
             <button
@@ -343,10 +343,10 @@ export function ContactClient() {
         <div className="space-y-3">
           <div className="rounded-xl border border-neutral-800 bg-[#161a26] p-4">
             <h4 className="text-sm font-bold text-white mb-1">
-              NetPhim có thu phí người dùng khi xem phim không?
+              FlexPhim có thu phí người dùng khi xem phim không?
             </h4>
             <p className="text-xs text-neutral-400">
-              Không. NetPhim cung cấp dịch vụ xem phim hoàn toàn miễn phí cho tất cả mọi người với
+              Không. FlexPhim cung cấp dịch vụ xem phim hoàn toàn miễn phí cho tất cả mọi người với
               chất lượng lên tới 4K Ultra HD.
             </p>
           </div>

@@ -28,7 +28,7 @@ export async function GET() {
           }
         }
 
-        const description = `Xem phim ${title} chất lượng cao, thuyết minh, vietsub tại NetPhim.`;
+        const description = `Xem phim ${title} chất lượng cao, thuyết minh, vietsub tại FlexPhim.`;
 
         return `
     <item>
@@ -44,9 +44,9 @@ export async function GET() {
     const rssFeed = `<?xml version="1.0" encoding="UTF-8" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>NetPhim - Xem Phim Thuyết Minh, Vietsub Mới Nhất</title>
+    <title>FlexPhim - Xem Phim Thuyết Minh, Vietsub Mới Nhất</title>
     <link>${SITE_URL}</link>
-    <description>NetPhim cung cấp kho phim mới, phim bộ, phim lẻ, hoạt hình vietsub và thuyết minh chất lượng cao, cập nhật liên tục.</description>
+    <description>FlexPhim cung cấp kho phim mới, phim bộ, phim lẻ, hoạt hình vietsub và thuyết minh chất lượng cao, cập nhật liên tục.</description>
     <language>vi</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
     <atom:link href="${SITE_URL}/feed.xml" rel="self" type="application/rss+xml" />

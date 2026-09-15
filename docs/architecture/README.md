@@ -1,6 +1,6 @@
-# Kien Truc He Thong NetPhim / NetPhim System Architecture Specification
+# Kien Truc He Thong FlexPhim / FlexPhim System Architecture Specification
 
-Tai lieu quy chuan kien truc he thong phan tan NetPhim, phan dinh ranh gioi dich vu, luong du lieu, co che chiu loi va quy trinh van hanh monorepo.
+Tai lieu quy chuan kien truc he thong phan tan FlexPhim, phan dinh ranh gioi dich vu, luong du lieu, co che chiu loi va quy trinh van hanh monorepo.
 
 ---
 
@@ -31,7 +31,7 @@ Tai lieu quy chuan kien truc he thong phan tan NetPhim, phan dinh ranh gioi dich
 
 ## 1. Ranh Gioi Dich Vu & Trach Nhiem (Service Boundaries)
 
-NetPhim duoc to chuc theo mo hinh Polyglot Monorepo. Moi runtime dam nhan mot pham vi trach nhiem duy nhat va co ranh gioi phan dinh ro rang:
+FlexPhim duoc to chuc theo mo hinh Polyglot Monorepo. Moi runtime dam nhan mot pham vi trach nhiem duy nhat va co ranh gioi phan dinh ro rang:
 
 | Thanh Phan                     | Cong Nghe / Runtime                 | Pham Vi Trach Nhiem                                                              |
 | ------------------------------ | ----------------------------------- | -------------------------------------------------------------------------------- |
@@ -142,7 +142,7 @@ Dich vu `services/recommendation-engine` chay doc lap tren nen tang Python FastA
 
 ## 1. Service Boundaries & Runtime Ownership
 
-NetPhim is structured as a high-concurrency polyglot monorepo. Each runtime maintains an explicit boundary and strict single-responsibility contract:
+FlexPhim is structured as a high-concurrency polyglot monorepo. Each runtime maintains an explicit boundary and strict single-responsibility contract:
 
 | Component                      | Technology Stack                    | Core Responsibility                                                              |
 | ------------------------------ | ----------------------------------- | -------------------------------------------------------------------------------- |

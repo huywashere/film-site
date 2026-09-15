@@ -89,7 +89,7 @@ export function PwaInstallBanner() {
           <div className="flex-1 min-w-0 pr-6">
             <div className="flex items-center gap-2">
               <h4 className="font-bold text-sm text-white tracking-tight">
-                Cài đặt NetPhim App
+                Cài đặt FlexPhim App
               </h4>
               <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
                 PWA

@@ -92,7 +92,7 @@ test("matches every season of one show without mixing in spin-offs", () => {
   );
 });
 
-test("movie part selector uses the NetPhim accent without yellow states", () => {
+test("movie part selector uses the FlexPhim accent without yellow states", () => {
   const source = readFileSync(
     "src/components/film/MoviePartSelector.tsx",
     "utf8",

@@ -1,7 +1,7 @@
 @echo off
 cd /d "%~dp0.."
 echo ========================================
-echo   Starting NetPhim PostgreSQL 17.11
+echo   Starting FlexPhim PostgreSQL 17.11
 echo ========================================
 echo.
 

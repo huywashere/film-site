@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
       cache: "no-store",
       headers: {
         "Content-Type": "application/json",
-        "User-Agent": request.headers.get("user-agent") || "NetPhim-Admin-GitHub",
+        "User-Agent": request.headers.get("user-agent") || "FlexPhim-Admin-GitHub",
         "X-Forwarded-For": request.headers.get("x-forwarded-for") || "",
       },
       body: JSON.stringify({

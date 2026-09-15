@@ -40,7 +40,7 @@ export const it = {
     viewAll: "Vedi tutti",
     tvshows: "Programmi TV Popolari",
     heroDesc:
-      "Benvenuto su NetPhim. Guarda film e serie TV in alta qualità con streaming veloce.",
+      "Benvenuto su FlexPhim. Guarda film e serie TV in alta qualità con streaming veloce.",
   },
   common: {
     retry: "Riprova",

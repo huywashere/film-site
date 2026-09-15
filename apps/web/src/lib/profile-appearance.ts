@@ -7,7 +7,7 @@ export type ProfileColorOption = {
 export const PROFILE_COLOR_OPTIONS: ProfileColorOption[] = [
   { id: "snow", label: "Trắng tuyết", value: "#F5F5F5" },
   { id: "silver", label: "Bạc", value: "#CBD5E1" },
-  { id: "violet", label: "Tím NetPhim", value: "#A78BFA" },
+  { id: "violet", label: "Tím FlexPhim", value: "#A78BFA" },
   { id: "lavender", label: "Oải hương", value: "#C4B5FD" },
   { id: "pink", label: "Hồng neon", value: "#F472B6" },
   { id: "rose", label: "Đỏ hồng", value: "#FB7185" },

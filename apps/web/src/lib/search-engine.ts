@@ -1,5 +1,5 @@
 /**
- * NetPhim Smart Search Engine
+ * FlexPhim Smart Search Engine
  *
  * Pipeline:
  *   raw query

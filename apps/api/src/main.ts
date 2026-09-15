@@ -29,7 +29,7 @@ if (process.env.SENTRY_DSN) {
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    logger: new CleanLogger("NetPhim"),
+    logger: new CleanLogger("FlexPhim"),
   });
   // Explicit startup keeps maintenance tasks active even when Nest lazily
   // resolves the admin controller graph. The service guards against duplicates.
@@ -203,7 +203,7 @@ async function bootstrap() {
     serverInstance.headersTimeout = 66_000;
   }
 
-  console.log(`🎬 NetPhim API running on: http://0.0.0.0:${port}/api/v1 (Timeout: ${requestTimeoutMs}ms)`);
+  console.log(`🎬 FlexPhim API running on: http://0.0.0.0:${port}/api/v1 (Timeout: ${requestTimeoutMs}ms)`);
 }
 
 bootstrap();

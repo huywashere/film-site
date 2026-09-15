@@ -1,6 +1,6 @@
 #!/bin/bash
 # ══════════════════════════════════════════════════════════════════
-# NetPhim — GitLab CI/CD Deploy Script
+# FlexPhim — GitLab CI/CD Deploy Script
 # Chạy trên VPS, được gọi từ GitLab CI qua SSH
 #
 # Required env vars (inject từ GitLab CI):
@@ -41,7 +41,7 @@ compose() {
 
 cd "$APP_DIR" || error "Không tìm thấy $APP_DIR"
 
-header "NetPhim GitLab Deploy — $IMAGE_TAG"
+header "FlexPhim GitLab Deploy — $IMAGE_TAG"
 info "Registry: $REGISTRY_IMAGE"
 info "App dir:  $APP_DIR"
 

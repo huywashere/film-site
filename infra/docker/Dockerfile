@@ -1,5 +1,5 @@
 # ══════════════════════════════════════════════════════
-# NetPhim — Production Dockerfile (pnpm monorepo)
+# FlexPhim — Production Dockerfile (pnpm monorepo)
 # ══════════════════════════════════════════════════════
 
 ARG NODE_VERSION=20
@@ -55,7 +55,7 @@ COPY packages/shared-types ./packages/shared-types
 
 # Build args for Next.js (baked at build time — ONLY NEXT_PUBLIC_* vars)
 ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_APP_NAME=NetPhim
+ARG NEXT_PUBLIC_APP_NAME=FlexPhim
 ARG NEXT_PUBLIC_FIREBASE_API_KEY
 ARG NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
 ARG NEXT_PUBLIC_FIREBASE_PROJECT_ID

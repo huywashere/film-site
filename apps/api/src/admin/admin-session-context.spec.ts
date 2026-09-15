@@ -7,7 +7,7 @@ import {
 describe("admin session device binding", () => {
   const stored = {
     ipAddress: "::ffff:127.0.0.1",
-    userAgent: "NetPhim Admin Browser/1.0",
+    userAgent: "FlexPhim Admin Browser/1.0",
   };
 
   it("normalizes loopback and IPv4-mapped addresses", () => {
@@ -19,7 +19,7 @@ describe("admin session device binding", () => {
     expect(
       adminSessionContextMatches(stored, {
         ipAddress: "127.0.0.1",
-        userAgent: "NetPhim Admin Browser/1.0",
+        userAgent: "FlexPhim Admin Browser/1.0",
       }),
     ).toBe(true);
   });
@@ -39,7 +39,7 @@ describe("admin session device binding", () => {
         stored,
         {
           ipAddress: "10.0.0.9",
-          userAgent: "NetPhim Admin Browser/1.0",
+          userAgent: "FlexPhim Admin Browser/1.0",
         },
         true,
       ),
@@ -50,7 +50,7 @@ describe("admin session device binding", () => {
     expect(adminContextFingerprint(stored)).toBe(
       adminContextFingerprint({
         ipAddress: "127.0.0.1",
-        userAgent: "NetPhim Admin Browser/1.0",
+        userAgent: "FlexPhim Admin Browser/1.0",
       }),
     );
   });

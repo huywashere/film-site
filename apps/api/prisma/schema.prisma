@@ -401,7 +401,7 @@ model SiteConfiguration {
   homeSectionOrder      String[] @default(["top10", "continue", "schedule", "latest", "vfx", "usuk-series", "action", "scifi"])
   homeHiddenSections    String[] @default([])
   homeFeaturedRows      Json?
-  seoTitle              String?  @default("NetPhim - Xem phim trực tuyến")
+  seoTitle              String?  @default("FlexPhim - Xem phim trực tuyến")
   seoDescription        String?  @db.Text
   cacheVersion          Int      @default(1)
   updatedBy             String?

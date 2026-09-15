@@ -10,7 +10,7 @@ const PUBLIC_CACHE_KEY = 'system-notifications:public';
 
 const DEFAULT_SEEDS = [
   {
-    title: 'Chào mừng bạn đến với NetPhim',
+    title: 'Chào mừng bạn đến với FlexPhim',
     message:
       'Xem phim chuẩn 4K siêu nét, tự động lọc sạch quảng cáo nhà cái từ gốc M3U8.',
     tag: 'Hệ thống',

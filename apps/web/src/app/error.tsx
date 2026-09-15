@@ -8,7 +8,7 @@ import {
   retryCurrentDocument,
 } from "@/lib/chunk-load-recovery";
 
-const DEV_RECOVERY_KEY = "cinephim:dev-error-recovery";
+const DEV_RECOVERY_KEY = "flexphim:dev-error-recovery";
 
 export default function ErrorPage({
   error,

@@ -20,7 +20,7 @@ export interface TmdbCreditCandidate {
 
 /**
  * Xác minh xem một bộ phim từ TMDB credit của diễn viên có thực sự khớp
- * với một bộ phim đang có trong cơ sở dữ liệu hệ thống NetPhim hay không.
+ * với một bộ phim đang có trong cơ sở dữ liệu hệ thống FlexPhim hay không.
  */
 export function isFilmMatch(
   candidate: SystemFilmCandidate,

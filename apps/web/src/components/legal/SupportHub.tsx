@@ -190,7 +190,7 @@ export function SupportHub({ initialTab = 'report' }: SupportHubProps) {
       });
       setIsSubmittingContact(false);
       setContactSubmitted(true);
-      toast('Tin nhắn liên hệ đã được gửi thành công đến ban quản trị NetPhim!', 'success');
+      toast('Tin nhắn liên hệ đã được gửi thành công đến ban quản trị FlexPhim!', 'success');
     } catch {
       setIsSubmittingContact(false);
       toast('Không thể gửi tin nhắn lúc này. Vui lòng thử lại sau.', 'error');
@@ -229,7 +229,7 @@ export function SupportHub({ initialTab = 'report' }: SupportHubProps) {
           </h1>
           <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed max-w-2xl">
             Báo cáo sự cố phát video, tìm hiểu chính sách bảo mật dữ liệu, điều khoản bản quyền DMCA
-            hoặc gửi thư trực tiếp đến NetPhim.
+            hoặc gửi thư trực tiếp đến FlexPhim.
           </p>
         </div>
 
@@ -313,7 +313,7 @@ export function SupportHub({ initialTab = 'report' }: SupportHubProps) {
                     <CheckCircle2 className="w-12 h-12 text-white mx-auto" />
                     <h3 className="text-lg font-bold text-white">Đã tiếp nhận báo cáo sự cố!</h3>
                     <p className="text-xs sm:text-sm text-neutral-300 max-w-md mx-auto leading-relaxed">
-                      Cảm ơn bạn đã hỗ trợ xây dựng NetPhim! Kỹ thuật viên đang kiểm tra lại nguồn
+                      Cảm ơn bạn đã hỗ trợ xây dựng FlexPhim! Kỹ thuật viên đang kiểm tra lại nguồn
                       phát của tập phim.
                     </p>
                     <button
@@ -473,7 +473,7 @@ export function SupportHub({ initialTab = 'report' }: SupportHubProps) {
                 <ul className="space-y-1.5 list-disc list-inside text-neutral-400">
                   <li>
                     <strong className="text-neutral-200">Không thương mại hóa dữ liệu:</strong>{' '}
-                    NetPhim tuyệt đối không bán hay cho thuê thông tin cá nhân cho bên thứ ba.
+                    FlexPhim tuyệt đối không bán hay cho thuê thông tin cá nhân cho bên thứ ba.
                   </li>
                   <li>
                     <strong className="text-neutral-200">Mã hóa chuẩn cao:</strong> Mật khẩu được
@@ -520,7 +520,7 @@ export function SupportHub({ initialTab = 'report' }: SupportHubProps) {
                   <span className="text-neutral-400">2.</span> Bảo mật & Mã hóa đường truyền
                 </h3>
                 <p className="text-neutral-400">
-                  Mọi kết nối giữa thiết bị của bạn và hệ thống máy chủ NetPhim đều được mã hóa bằng
+                  Mọi kết nối giữa thiết bị của bạn và hệ thống máy chủ FlexPhim đều được mã hóa bằng
                   chuẩn <strong className="text-neutral-200">SSL/TLS 1.3</strong>. Mật khẩu không
                   bao giờ được lưu dưới dạng văn bản thô.
                 </p>
@@ -531,7 +531,7 @@ export function SupportHub({ initialTab = 'report' }: SupportHubProps) {
                   <span className="text-neutral-400">3.</span> Cookie & Bộ nhớ trình duyệt
                 </h3>
                 <p className="text-neutral-400">
-                  NetPhim sử dụng Cookie và LocalStorage để lưu phiên đăng nhập an toàn, âm lượng
+                  FlexPhim sử dụng Cookie và LocalStorage để lưu phiên đăng nhập an toàn, âm lượng
                   mặc định và tùy chọn phụ đề của bạn. Bạn có thể xóa dữ liệu này trong Cài đặt
                   trình duyệt bất cứ lúc nào.
                 </p>
@@ -562,7 +562,7 @@ export function SupportHub({ initialTab = 'report' }: SupportHubProps) {
                   <span>Tuyên bố miễn trừ trách nhiệm nội dung</span>
                 </div>
                 <p className="text-neutral-400">
-                  NetPhim là nền tảng chia sẻ và chỉ mục siêu liên kết từ các nguồn bên thứ ba công
+                  FlexPhim là nền tảng chia sẻ và chỉ mục siêu liên kết từ các nguồn bên thứ ba công
                   khai trên Internet. Chúng tôi không trực tiếp tải lên, lưu trữ hoặc sở hữu bản
                   quyền các video phát hành. Chúng tôi cam kết tôn trọng luật bản quyền DMCA.
                 </p>
@@ -573,7 +573,7 @@ export function SupportHub({ initialTab = 'report' }: SupportHubProps) {
                   <span className="text-neutral-400">1.</span> Chấp thuận điều khoản
                 </h3>
                 <p className="text-neutral-400">
-                  Bằng việc truy cập hoặc sử dụng NetPhim, bạn đồng ý tuân thủ toàn bộ các điều
+                  Bằng việc truy cập hoặc sử dụng FlexPhim, bạn đồng ý tuân thủ toàn bộ các điều
                   khoản và quy định tại đây. Nếu không đồng ý, vui lòng dừng sử dụng dịch vụ.
                 </p>
               </section>

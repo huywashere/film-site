@@ -246,7 +246,7 @@ export function LegalPageLayout({
                   Bạn có câu hỏi hoặc cần giải đáp thêm?
                 </h4>
                 <p className="text-xs sm:text-sm text-neutral-400">
-                  Đội ngũ chăm sóc và pháp lý của NetPhim luôn sẵn sàng hỗ trợ phản hồi trong vòng 24h.
+                  Đội ngũ chăm sóc và pháp lý của FlexPhim luôn sẵn sàng hỗ trợ phản hồi trong vòng 24h.
                 </p>
               </div>
               <Link

@@ -60,7 +60,7 @@ async fn main() -> Result<()> {
     }
     info!(
         concurrency = config.concurrency,
-        "NetPhim Rust HLS analyzer started"
+        "FlexPhim Rust HLS analyzer started"
     );
 
     // Wait for SIGINT or SIGTERM.

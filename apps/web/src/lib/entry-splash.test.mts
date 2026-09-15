@@ -12,7 +12,7 @@ test('root layout renders a bounded splash without remote poster artwork', () =>
 
   assert.match(layout, /LogoSplashIntro/);
   assert.match(splash, /MAX_VISIBLE_MS = 1500/);
-  assert.match(splash, /cinephim-logo\.svg/);
+  assert.match(splash, /flexphim-logo\.svg/);
   assert.match(splash, /poster-grid-mobile\.webp/);
   assert.match(splash, /poster-grid-desktop\.webp/);
   assert.doesNotMatch(splash, /image\.tmdb\.org|wsrv\.nl|intro-poster|backgroundImage/);
@@ -35,4 +35,32 @@ test('service worker never serves stale cached HTML after a deployment', () => {
     source('src/components/layout/RegisterSW.tsx'),
     /controllerchange/,
   );
+});
+
+test('FlexPhim branding is consistent while legacy client keys stay compatible', () => {
+  const layout = source('src/app/layout.tsx');
+  const navbar = source('src/components/layout/Navbar.tsx');
+  const footer = source('src/components/layout/Footer.tsx');
+  const splash = source('src/components/layout/LogoSplashIntro.tsx');
+  const auth = source('src/components/auth/AuthModal.tsx');
+  const manifest = JSON.parse(source('public/manifest.json'));
+
+  for (const brandedSource of [layout, navbar, footer, splash, auth]) {
+    assert.match(brandedSource, /FlexPhim/);
+    assert.doesNotMatch(brandedSource, /NetPhim/);
+    assert.doesNotMatch(brandedSource, /Net\s*<span[^>]*>Phim/);
+    assert.doesNotMatch(brandedSource, /cinephim-logo/);
+  }
+
+  assert.equal(manifest.name, 'FlexPhim — Xem Phim Online');
+  assert.equal(manifest.short_name, 'FlexPhim');
+  assert.ok(manifest.icons.some((icon: { src?: string }) => icon.src === '/flexphim-logo.png'));
+  assert.ok(statSync('public/flexphim-logo.svg').size > 0);
+  assert.ok(statSync('public/flexphim-logo.png').size > 0);
+
+  // These persisted names intentionally remain stable so an upgrade does not
+  // sign users out or discard their local preferences.
+  assert.match(source('src/store/authStore.ts'), /netphim-auth/);
+  assert.match(source('src/store/settingsStore.ts'), /netphim_user_settings/);
+  assert.match(source('src/app/api/hls-proxy/route.ts'), /X-NetPhim-Ad-Filtered/);
 });

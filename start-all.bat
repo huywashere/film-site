@@ -1,5 +1,5 @@
 @echo off
-title NetPhim - Full Stack Launcher
+title FlexPhim - Full Stack Launcher
 cd /d "%~dp0"
 
 echo =========================================================
@@ -33,7 +33,7 @@ if not errorlevel 1 (
     echo [OK] Python AI Engine da dang chay san tren cong 8000.
 ) else (
     echo [INFO] Dang khoi dong Python AI Recommender Engine...
-    start "NetPhim - Python AI Engine (8000)" cmd /k "cd /d services\recommendation-engine && start.bat"
+    start "FlexPhim - Python AI Engine (8000)" cmd /k "cd /d services\recommendation-engine && start.bat"
     ping -n 3 127.0.0.1 >nul
 )
 echo.
@@ -45,7 +45,7 @@ if not errorlevel 1 (
     echo [OK] Go Media Gateway da dang chay san tren cong 8081.
 ) else (
     echo [INFO] Dang khoi dong Go Media Gateway...
-    start "NetPhim - Go Media Gateway (8081)" cmd /k "cd /d services\media-gateway && start.bat"
+    start "FlexPhim - Go Media Gateway (8081)" cmd /k "cd /d services\media-gateway && start.bat"
     ping -n 3 127.0.0.1 >nul
 )
 echo.
@@ -60,7 +60,7 @@ if not errorlevel 1 (
     rem that stale process before launching a healthy API instance.
     for /f "tokens=5" %%P in ('netstat -ano ^| findstr ":3001 " ^| findstr "LISTENING"') do taskkill /PID %%P /T /F >nul 2>&1
     echo [INFO] Dang khoi dong NestJS API Core...
-    start "NetPhim - NestJS API (3001)" cmd /k "pnpm --filter api dev"
+    start "FlexPhim - NestJS API (3001)" cmd /k "pnpm --filter api dev"
     ping -n 4 127.0.0.1 >nul
 )
 echo.

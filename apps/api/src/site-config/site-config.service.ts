@@ -8,7 +8,7 @@ const DEFAULT_CONFIGURATION = {
   announcementText: "",
   announcementLink: "",
   homePopupEnabled: false,
-  homePopupTitle: "Thông báo từ NetPhim",
+  homePopupTitle: "Thông báo từ FlexPhim",
   homePopupBody: "",
   homePopupLink: "",
   homePopupLinkLabel: "Xem chi tiết",
@@ -22,7 +22,7 @@ const DEFAULT_CONFIGURATION = {
   homeSectionOrder: ["top10", "continue", "latest", "vfx", "usuk-series", "action", "scifi"],
   homeHiddenSections: [] as string[],
   homeFeaturedRows: {} as Prisma.InputJsonValue,
-  seoTitle: "NetPhim - Xem phim trực tuyến",
+  seoTitle: "FlexPhim - Xem phim trực tuyến",
   seoDescription: "Kho phim trực tuyến đa nguồn, cập nhật liên tục.",
   cacheVersion: 1,
 };
@@ -30,6 +30,28 @@ const DEFAULT_CONFIGURATION = {
 import { RedisCacheService } from "../redis/redis.service";
 
 const CONFIG_CACHE_KEY = "site-config:primary";
+
+const BRAND_TEXT_FIELDS = [
+  "maintenanceNotice",
+  "announcementText",
+  "homePopupTitle",
+  "homePopupBody",
+  "homePopupLinkLabel",
+  "homePopupDismissLabel",
+  "seoTitle",
+  "seoDescription",
+] as const;
+
+function normalizeLegacyBrand<T extends Record<string, unknown>>(config: T): T {
+  const normalized: Record<string, unknown> = { ...config };
+  for (const field of BRAND_TEXT_FIELDS) {
+    const value = normalized[field];
+    if (typeof value === "string" && value.includes("NetPhim")) {
+      normalized[field] = value.replace(/NetPhim/g, "FlexPhim");
+    }
+  }
+  return normalized as T;
+}
 
 @Injectable()
 export class SiteConfigService {
@@ -40,10 +62,10 @@ export class SiteConfigService {
 
   async getConfiguration() {
     const cached = await this.cache.getJson<any>(CONFIG_CACHE_KEY);
-    if (cached) return cached;
+    if (cached) return normalizeLegacyBrand(cached);
 
     const stored = await this.prisma.siteConfiguration.findUnique({ where: { id: "primary" } });
-    const result = stored || { id: "primary", ...DEFAULT_CONFIGURATION };
+    const result = normalizeLegacyBrand(stored || { id: "primary", ...DEFAULT_CONFIGURATION });
     await this.cache.setJson(CONFIG_CACHE_KEY, result, 3600);
     return result;
   }
@@ -61,7 +83,7 @@ export class SiteConfigService {
     const popupChanged = popupKeys.some(
       (key) => key in data && data[key] !== previous[key],
     );
-    const clean = {
+    const clean = normalizeLegacyBrand({
       ...data,
       ...(popupChanged
         ? { homePopupVersion: (previous.homePopupVersion || 0) + 1 }
@@ -76,7 +98,7 @@ export class SiteConfigService {
         ? { cacheVersion: (previous.cacheVersion || 0) + 1 }
         : {}),
       updatedBy,
-    };
+    });
     const updated = await this.prisma.siteConfiguration.upsert({
       where: { id: "primary" },
       create: { id: "primary", ...DEFAULT_CONFIGURATION, ...clean },

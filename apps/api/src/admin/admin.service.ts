@@ -232,8 +232,8 @@ export class AdminService implements OnModuleInit {
       username: localUser?.username || "admin",
       displayName:
         localUser?.displayName ||
-        (actor.internalDashboard ? "Quản trị NetPhim" : actor.name) ||
-        "Quản trị NetPhim",
+        (actor.internalDashboard ? "Quản trị FlexPhim" : actor.name) ||
+        "Quản trị FlexPhim",
       avatarUrl: localUser?.avatarUrl || actor.picture || null,
       role: localUser?.role || actor.role || "ADMIN",
       twoFactorEnabled: localUser?.twoFactorEnabled || false,
@@ -1326,7 +1326,7 @@ export class AdminService implements OnModuleInit {
         announcementText: String(snapshot.announcementText || ""),
         announcementLink: String(snapshot.announcementLink || ""),
         homePopupEnabled: Boolean(snapshot.homePopupEnabled),
-        homePopupTitle: String(snapshot.homePopupTitle || "Thông báo từ NetPhim"),
+        homePopupTitle: String(snapshot.homePopupTitle || "Thông báo từ FlexPhim"),
         homePopupBody: String(snapshot.homePopupBody || ""),
         homePopupLink: String(snapshot.homePopupLink || ""),
         homePopupLinkLabel: String(snapshot.homePopupLinkLabel || "Xem chi tiết"),
@@ -1343,7 +1343,7 @@ export class AdminService implements OnModuleInit {
         homeSectionOrder: Array.isArray(snapshot.homeSectionOrder) ? snapshot.homeSectionOrder.map(String) : DEFAULT_HOME_SECTION_ORDER,
         homeHiddenSections: Array.isArray(snapshot.homeHiddenSections) ? snapshot.homeHiddenSections.map(String) : [],
         homeFeaturedRows: snapshot.homeFeaturedRows && typeof snapshot.homeFeaturedRows === "object" ? snapshot.homeFeaturedRows as Prisma.InputJsonValue : undefined,
-        seoTitle: String(snapshot.seoTitle || "NetPhim - Xem phim trực tuyến"),
+        seoTitle: String(snapshot.seoTitle || "FlexPhim - Xem phim trực tuyến"),
         seoDescription: String(snapshot.seoDescription || ""),
       },
       adminUser.email || adminUser.uid,
@@ -1416,7 +1416,7 @@ export class AdminService implements OnModuleInit {
         const response = await fetch(`${webBase}${path}`, {
           headers: {
             Accept: "application/json",
-            "User-Agent": "NetPhim-Sync/2.0",
+            "User-Agent": "FlexPhim-Sync/2.0",
           },
           signal: AbortSignal.timeout(25_000),
         });

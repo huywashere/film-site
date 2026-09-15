@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ════════════════════════════════════════════════════════════════════════
-# NetPhim — Automated VPS Linux Hardening & Fail2Ban Setup Script
+# FlexPhim — Automated VPS Linux Hardening & Fail2Ban Setup Script
 # ════════════════════════════════════════════════════════════════════════
 
 set -e
@@ -76,5 +76,5 @@ ufw allow 443/tcp
 ufw allow 22/tcp
 ufw --force enable
 
-echo "✅ NetPhim Production VPS Hardening Completed Successfully!"
+echo "✅ FlexPhim Production VPS Hardening Completed Successfully!"
 echo "📌 Remember to disable password authentication in /etc/ssh/sshd_config (PasswordAuthentication no)."

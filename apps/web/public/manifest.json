@@ -1,6 +1,6 @@
 {
-  "name": "NetPhim — Xem Phim Online",
-  "short_name": "NetPhim",
+  "name": "FlexPhim — Xem Phim Online",
+  "short_name": "FlexPhim",
   "description": "Nền tảng xem phim online chất lượng cao. Phim bộ, phim lẻ, anime với phụ đề tiếng Việt.",
   "start_url": "/",
   "scope": "/",
@@ -25,7 +25,7 @@
       "purpose": "any maskable"
     },
     {
-      "src": "/cinephim-logo.png",
+      "src": "/flexphim-logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable any"

@@ -1,4 +1,4 @@
-// Engine phát hiện và đồng bộ các phần phim (Seasons / Multi-part series) cho NetPhim
+// Engine phát hiện và đồng bộ các phần phim (Seasons / Multi-part series) cho FlexPhim
 import { kkphimApi, movieApi } from "@/lib/api";
 import { extractFilmItems } from "@/lib/movie-normalizer";
 

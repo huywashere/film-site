@@ -8,5 +8,5 @@ if not exist ".venv" (
 ) else (
     call .venv\Scripts\activate
 )
-echo [INFO] Starting NetPhim AI Recommendation Engine on http://localhost:8000
+echo [INFO] Starting FlexPhim AI Recommendation Engine on http://localhost:8000
 python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload

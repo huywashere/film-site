@@ -73,7 +73,7 @@ impl Analyzer {
                     attempt.error("redirect target is not allowed")
                 }
             }))
-            .user_agent("NetPhim-HLS-Analyzer/1.0")
+            .user_agent("FlexPhim-HLS-Analyzer/1.0")
             .build()?;
         Ok(Self { config, client })
     }

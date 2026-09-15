@@ -75,10 +75,10 @@ const SOCIAL_LINKS = [
 ];
 
 const CAT_MASCOTS = [
-  { localSrc: "/images/cat1-thumbnail.webp", alt: "Mèo NetPhim 1" },
-  { localSrc: "/images/cat2-thumbnail.webp", alt: "Mèo NetPhim 2" },
-  { localSrc: "/images/cat3-thumbnail.webp", alt: "Mèo NetPhim 3" },
-  { localSrc: "/images/cat4-thumbnail.webp", alt: "Mèo NetPhim 4" },
+  { localSrc: "/images/cat1-thumbnail.webp", alt: "Mèo FlexPhim 1" },
+  { localSrc: "/images/cat2-thumbnail.webp", alt: "Mèo FlexPhim 2" },
+  { localSrc: "/images/cat3-thumbnail.webp", alt: "Mèo FlexPhim 3" },
+  { localSrc: "/images/cat4-thumbnail.webp", alt: "Mèo FlexPhim 4" },
 ];
 
 export function Footer() {
@@ -169,15 +169,15 @@ export function Footer() {
             <Link href="/" className="inline-flex items-center gap-2.5 group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/cinephim-logo.svg"
-                alt="NetPhim Logo"
+                src="/flexphim-logo.svg"
+                alt="FlexPhim Logo"
                 className="h-9 w-auto sm:h-10 object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_0_12px_rgba(168,85,247,0.3)]"
                 onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "/cinephim-logo.png";
+                  (e.currentTarget as HTMLImageElement).src = "/flexphim-logo.png";
                 }}
               />
               <span className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                Net<span className="text-violet-400">Phim</span>
+                Flex<span className="text-violet-400">Phim</span>
               </span>
             </Link>
             <p className="mt-3 text-xs sm:text-[13px] leading-relaxed text-neutral-400">
@@ -246,13 +246,13 @@ export function Footer() {
           {/* Disclaimer text */}
           <p className="max-w-3xl text-[11px] sm:text-xs leading-relaxed text-neutral-400">
             {lang === "en"
-              ? "NetPhim is a movie catalog and streaming discovery platform serving the community. We do not host any media files on our own servers; all metadata and streams are indexed automatically from public third-party services on the internet."
-              : "NetPhim là nền tảng tổng hợp và giới thiệu thông tin phim ảnh phục vụ cộng đồng người xem tại Việt Nam. Chúng tôi không lưu trữ bất kỳ tệp video nào trên máy chủ riêng; toàn bộ dữ liệu và nội dung đều được dẫn nguồn, liên kết tự động từ các dịch vụ bên thứ ba công khai trên Internet."}
+              ? "FlexPhim is a movie catalog and streaming discovery platform serving the community. We do not host any media files on our own servers; all metadata and streams are indexed automatically from public third-party services on the internet."
+              : "FlexPhim là nền tảng tổng hợp và giới thiệu thông tin phim ảnh phục vụ cộng đồng người xem tại Việt Nam. Chúng tôi không lưu trữ bất kỳ tệp video nào trên máy chủ riêng; toàn bộ dữ liệu và nội dung đều được dẫn nguồn, liên kết tự động từ các dịch vụ bên thứ ba công khai trên Internet."}
           </p>
 
           {/* Copyright */}
           <p className="text-[11px] sm:text-xs text-neutral-400 font-medium">
-            © {year} NetPhim.{" "}
+            © {year} FlexPhim.{" "}
             {lang === "en"
               ? "Thank you for supporting our film enthusiast community."
               : "Cảm ơn bạn đã đồng hành và ủng hộ cộng đồng yêu phim."}

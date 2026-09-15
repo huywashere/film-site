@@ -1,4 +1,4 @@
-# NetPhim Media Gateway
+# FlexPhim Media Gateway
 
 Gin service dedicated to HLS manifests, segments and encryption keys. It keeps
 the existing `/api/hls-proxy` signature contract, so the web player does not

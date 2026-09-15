@@ -1,4 +1,4 @@
-# NetPhim infrastructure
+# FlexPhim infrastructure
 
 Terraform trong thư mục này chỉ quản lý:
 

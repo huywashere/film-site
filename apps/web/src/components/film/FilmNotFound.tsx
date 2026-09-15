@@ -51,7 +51,7 @@ export function FilmNotFound({
   const handleRequestMovie = () => {
     setRequestSent(true);
     toast(
-      "Đã gửi yêu cầu bổ sung phim! NetPhim sẽ cập nhật trong thời gian sớm nhất.",
+      "Đã gửi yêu cầu bổ sung phim! FlexPhim sẽ cập nhật trong thời gian sớm nhất.",
       "success",
     );
   };

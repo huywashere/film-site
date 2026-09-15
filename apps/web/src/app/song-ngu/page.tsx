@@ -236,7 +236,7 @@ export default function BilingualFilmsPage() {
                 <BookOpen size={14} />
                 Phương Pháp Hiệu Quả
               </span>
-              <h3 className="text-lg font-bold text-white">Cách học tiếng Anh qua phim trên NetPhim</h3>
+              <h3 className="text-lg font-bold text-white">Cách học tiếng Anh qua phim trên FlexPhim</h3>
               <p className="text-xs text-neutral-400 max-w-2xl leading-relaxed">
                 1. <strong>Lần 1:</strong> Xem với phụ đề song ngữ Anh - Việt để nắm trọn cốt truyện.<br />
                 2. <strong>Lần 2:</strong> Chuyển sang chỉ bật phụ đề tiếng Anh, bấm tua lại 5s các câu giao tiếp hay để nhại theo giọng điệu diễn viên (Shadowing).

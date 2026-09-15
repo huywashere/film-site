@@ -40,7 +40,7 @@ export const fr = {
     viewAll: "Voir tout",
     tvshows: "Émissions TV",
     heroDesc:
-      "Bienvenue sur NetPhim. Regardez des films et séries en haute qualité avec mise à jour continue.",
+      "Bienvenue sur FlexPhim. Regardez des films et séries en haute qualité avec mise à jour continue.",
   },
   common: {
     retry: "Réessayer",

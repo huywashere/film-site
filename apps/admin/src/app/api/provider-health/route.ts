@@ -171,7 +171,7 @@ async function probeProvider(provider: ProviderProbe, baseUrl: string): Promise<
       cache: 'no-store',
       headers: {
         Accept: 'application/json',
-        'User-Agent': 'NetPhim-Admin-Health/1.0',
+        'User-Agent': 'FlexPhim-Admin-Health/1.0',
       },
       signal: controller.signal,
     });

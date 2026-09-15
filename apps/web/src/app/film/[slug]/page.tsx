@@ -32,14 +32,14 @@ export async function generateMetadata({
 
   if (!movie) {
     return {
-      title: "Xem Phim Online | NetPhim",
+      title: "Xem Phim Online | FlexPhim",
       description:
         "Nền tảng xem phim online chất lượng cao 4K. Phim bộ, phim lẻ, hoạt hình với phụ đề tiếng Việt.",
       openGraph: {
-        title: "NetPhim — Xem Phim Online Chất Lượng Cao",
-        description: "Xem phim online miễn phí Full HD/4K tại NetPhim.",
+        title: "FlexPhim — Xem Phim Online Chất Lượng Cao",
+        description: "Xem phim online miễn phí Full HD/4K tại FlexPhim.",
         url: filmUrl,
-        siteName: "NetPhim",
+        siteName: "FlexPhim",
         type: "website",
       },
     };
@@ -48,7 +48,7 @@ export async function generateMetadata({
   const name = movie.name || movie.title || slug;
   const originName = movie.origin_name ? ` (${movie.origin_name})` : "";
   const year = movie.year ? ` - ${movie.year}` : "";
-  const metaTitle = `${name}${originName}${year} | NetPhim`;
+  const metaTitle = `${name}${originName}${year} | FlexPhim`;
 
   const rawDesc = movie.content || movie.description || "";
   const cleanDesc = rawDesc
@@ -57,7 +57,7 @@ export async function generateMetadata({
         .replace(/\s+/g, " ")
         .trim()
         .slice(0, 180) + "..."
-    : `Xem phim ${name} online Full HD Vietsub thuyết minh chất lượng cao miễn phí tại NetPhim.`;
+    : `Xem phim ${name} online Full HD Vietsub thuyết minh chất lượng cao miễn phí tại FlexPhim.`;
 
   const tmdbServer = await getMovieTmdbServer(movie);
   const rawImage = movie.poster_url || movie.thumb_url;
@@ -65,7 +65,7 @@ export async function generateMetadata({
     tmdbServer?.tmdbBackdropUrl ||
     tmdbServer?.tmdbPosterUrl ||
     normalizeMovieArtworkUrl(rawImage) ||
-    `${siteUrl}/cinephim-logo.png`;
+    `${siteUrl}/flexphim-logo.png`;
 
   const keywords = [
     name,
@@ -75,7 +75,7 @@ export async function generateMetadata({
     `${name} vietsub`,
     `${name} thuyết minh`,
     `${name} full hd`,
-    "NetPhim",
+    "FlexPhim",
     "xem phim online",
   ].filter(Boolean) as string[];
 
@@ -89,9 +89,9 @@ export async function generateMetadata({
     openGraph: {
       type: "video.movie",
       url: filmUrl,
-      title: `${name}${originName} - Full HD Vietsub | NetPhim`,
+      title: `${name}${originName} - Full HD Vietsub | FlexPhim`,
       description: cleanDesc,
-      siteName: "NetPhim",
+      siteName: "FlexPhim",
       locale: "vi_VN",
       images: [
         {
@@ -104,7 +104,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: `${name}${originName} - Full HD Vietsub | NetPhim`,
+      title: `${name}${originName} - Full HD Vietsub | FlexPhim`,
       description: cleanDesc,
       images: [imageUrl],
     },

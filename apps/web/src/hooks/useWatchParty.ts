@@ -74,13 +74,13 @@ export function useWatchParty(
   const roomIdRef = useRef<string | null>(null);
   const identityRef = useRef({
     userId: user?.id || getGuestId(),
-    name: user?.displayName || user?.username || "Khách NetPhim",
+    name: user?.displayName || user?.username || "Khách FlexPhim",
     avatar: user?.avatarUrl,
     reconnectToken: user ? undefined : getGuestReconnectToken(),
   });
   identityRef.current = {
     userId: user?.id || getGuestId(),
-    name: user?.displayName || user?.username || "Khách NetPhim",
+    name: user?.displayName || user?.username || "Khách FlexPhim",
     avatar: user?.avatarUrl,
     reconnectToken: user ? undefined : getGuestReconnectToken(),
   };

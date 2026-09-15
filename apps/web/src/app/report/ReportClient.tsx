@@ -108,7 +108,7 @@ export function ReportClient() {
       badge="Trung Tâm Hỗ Trợ Kỹ Thuật"
       badgeIcon={<HelpCircle size={14} className="text-violet-400" />}
       title="Báo Cáo Sự Cố & Khắc Phục Lỗi"
-      description="Gặp sự cố khi xem phim? Xem qua các bước xử lý nhanh hoặc gửi biểu mẫu báo lỗi chi tiết để đội ngũ kỹ thuật NetPhim kiểm tra và khắc phục kịp thời."
+      description="Gặp sự cố khi xem phim? Xem qua các bước xử lý nhanh hoặc gửi biểu mẫu báo lỗi chi tiết để đội ngũ kỹ thuật FlexPhim kiểm tra và khắc phục kịp thời."
       lastUpdated="19/08/2026"
       readTime="5 phút đọc & gửi form"
       toc={TOC}
@@ -215,7 +215,7 @@ export function ReportClient() {
             <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
             <h3 className="text-lg font-bold text-white">Đã tiếp nhận báo cáo sự cố</h3>
             <p className="text-xs sm:text-sm text-neutral-300 max-w-md mx-auto leading-relaxed">
-              Cảm ơn bạn đã đóng góp! Đội ngũ kỹ thuật NetPhim đã nhận được thông tin và sẽ kiểm tra
+              Cảm ơn bạn đã đóng góp! Đội ngũ kỹ thuật FlexPhim đã nhận được thông tin và sẽ kiểm tra
               link phát của bộ phim trong thời gian sớm nhất.
             </p>
             <button

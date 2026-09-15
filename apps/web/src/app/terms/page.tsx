@@ -4,8 +4,8 @@ import { SupportHub } from "@/components/legal/SupportHub";
 import { Loader2 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Điều Khoản Sử Dụng Dịch Vụ & Bản Quyền DMCA | NetPhim",
-  description: "Quy định sử dụng dịch vụ và chính sách bản quyền tác giả tại NetPhim.",
+  title: "Điều Khoản Sử Dụng Dịch Vụ & Bản Quyền DMCA | FlexPhim",
+  description: "Quy định sử dụng dịch vụ và chính sách bản quyền tác giả tại FlexPhim.",
 };
 
 export default function TermsPage() {

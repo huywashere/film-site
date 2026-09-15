@@ -1,4 +1,4 @@
-// Catalog dữ liệu phim Marvel Cinematic Universe và DC Universe chuẩn hóa cho NetPhim
+// Catalog dữ liệu phim Marvel Cinematic Universe và DC Universe chuẩn hóa cho FlexPhim
 import { FilmItem } from "@/components/film/FilmCard";
 
 export interface UniverseFilmItem extends Omit<FilmItem, "category" | "country"> {

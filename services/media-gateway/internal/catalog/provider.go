@@ -130,7 +130,7 @@ func (c *providerClient) fetch(ctx context.Context, provider Provider, path stri
 			continue
 		}
 		request.Header.Set("Accept", "application/json")
-		request.Header.Set("User-Agent", "NetPhim-Catalog-Gateway/1.0")
+		request.Header.Set("User-Agent", "FlexPhim-Catalog-Gateway/1.0")
 		for key, value := range provider.Headers {
 			request.Header.Set(key, value)
 		}

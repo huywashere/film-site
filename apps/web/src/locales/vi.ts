@@ -53,7 +53,7 @@ export const vi = {
     viewAll: "Xem tất cả",
     exploreTopics: "Bạn đang quan tâm gì?",
     heroDesc:
-      "Chào mừng bạn đến với NetPhim. Xem phim trực tuyến chất lượng cao 4K Ultra HD, cập nhật liên tục các nguồn phim nhanh nhất hiện nay.",
+      "Chào mừng bạn đến với FlexPhim. Xem phim trực tuyến chất lượng cao 4K Ultra HD, cập nhật liên tục các nguồn phim nhanh nhất hiện nay.",
     scrollDown: "Cuộn xuống",
   },
   sections: {
@@ -106,7 +106,7 @@ export const vi = {
     showLess: "Thu gọn",
     offlineTitle: "Mất Kết Nối Internet",
     offlineDesc:
-      "Ứng dụng NetPhim hiện không thể kết nối tới máy chủ. Vui lòng kiểm tra lại kết nối Wifi hoặc dữ liệu di động của bạn.",
+      "Ứng dụng FlexPhim hiện không thể kết nối tới máy chủ. Vui lòng kiểm tra lại kết nối Wifi hoặc dữ liệu di động của bạn.",
     noData: "Không có dữ liệu",
     copied: "Đã sao chép vào bộ nhớ tạm!",
     save: "Lưu",
@@ -285,7 +285,7 @@ export const vi = {
   },
   auth: {
     loginTitle: "Đăng Nhập",
-    loginSubtitle: "Chào mừng bạn quay trở lại với NetPhim",
+    loginSubtitle: "Chào mừng bạn quay trở lại với FlexPhim",
     registerTitle: "Tạo Tài Khoản",
     registerSubtitle: "Trải nghiệm thế giới điện ảnh đỉnh cao không giới hạn",
     email: "Địa chỉ Email",
@@ -325,7 +325,7 @@ export const vi = {
     languageSetting: "Ngôn ngữ hiển thị",
   },
   footer: {
-    description: "NetPhim - Nền tảng xem phim trực tuyến miễn phí chất lượng cao Full HD & 4K Ultra HD. Kho phim đa dạng, phong phú với tốc độ phát mượt mà.",
+    description: "FlexPhim - Nền tảng xem phim trực tuyến miễn phí chất lượng cao Full HD & 4K Ultra HD. Kho phim đa dạng, phong phú với tốc độ phát mượt mà.",
     quickLinks: "Liên Kết Nhanh",
     genres: "Thể Loại Phổ Biến",
     support: "Hỗ Trợ & Bản Quyền",

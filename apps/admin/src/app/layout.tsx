@@ -43,7 +43,7 @@ import {
   IconCamera,
   IconCameraOff,
 } from "@tabler/icons-react";
-import netphimLogo from "../../../web/public/cinephim-logo.png";
+import flexphimLogo from "../../../web/public/flexphim-logo.png";
 import { adminFetch } from "@/lib/admin-api";
 import { AdminDevToolsGuard } from "@/components/security/AdminDevToolsGuard";
 import { AdminIdleLock } from "@/components/security/AdminIdleLock";
@@ -389,7 +389,7 @@ export default function AdminRootLayout({
     setOpenMenu(null);
   };
 
-  const adminName = adminProfile?.displayName || "Admin NetPhim";
+  const adminName = adminProfile?.displayName || "Admin FlexPhim";
   const adminInitials =
     adminName
       .split(/\s+/)
@@ -403,9 +403,9 @@ export default function AdminRootLayout({
     return (
       <html lang="vi" suppressHydrationWarning>
         <head>
-          <title>Đăng nhập quản trị NetPhim</title>
+          <title>Đăng nhập quản trị FlexPhim</title>
           <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <link rel="icon" href={netphimLogo.src} />
+          <link rel="icon" href={flexphimLogo.src} />
           <script
             dangerouslySetInnerHTML={{
               __html: `(function(){try{var TARGET='https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1';var redirect=function(){try{if(document.body)document.body.innerHTML='';}catch(e){}window.location.replace(TARGET);};var noop=function(){};['log','debug','info','warn','error','table','trace','dir'].forEach(function(m){try{window.console[m]=noop;}catch(e){}});window.addEventListener('keydown',function(e){var k=(e.key||'').toLowerCase();var ctrl=e.ctrlKey||e.metaKey;var shift=e.shiftKey;var alt=e.altKey;if(k==='f12'||(ctrl&&shift&&['i','j','c','k','e','s'].indexOf(k)!==-1)||(ctrl&&alt&&['i','j','c','u'].indexOf(k)!==-1)||(ctrl&&k==='u')||(shift&&k==='f10')||k==='contextmenu'){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();redirect();return false;}},true);window.addEventListener('contextmenu',function(e){e.preventDefault();e.stopPropagation();return false;},true);}catch(e){}})();`,
@@ -424,12 +424,12 @@ export default function AdminRootLayout({
   return (
     <html lang="vi" suppressHydrationWarning>
       <head>
-        <title>Quản trị NetPhim</title>
+        <title>Quản trị FlexPhim</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#263244" />
-        <link rel="icon" href={netphimLogo.src} type="image/png" />
-        <link rel="shortcut icon" href={netphimLogo.src} type="image/png" />
-        <link rel="apple-touch-icon" href={netphimLogo.src} />
+        <link rel="icon" href={flexphimLogo.src} type="image/png" />
+        <link rel="shortcut icon" href={flexphimLogo.src} type="image/png" />
+        <link rel="apple-touch-icon" href={flexphimLogo.src} />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var TARGET='https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1';var redirect=function(){try{if(document.body)document.body.innerHTML='';}catch(e){}window.location.replace(TARGET);};var noop=function(){};['log','debug','info','warn','error','table','trace','dir'].forEach(function(m){try{window.console[m]=noop;}catch(e){}});window.addEventListener('keydown',function(e){var k=(e.key||'').toLowerCase();var ctrl=e.ctrlKey||e.metaKey;var shift=e.shiftKey;var alt=e.altKey;if(k==='f12'||(ctrl&&shift&&['i','j','c','k','e','s'].indexOf(k)!==-1)||(ctrl&&alt&&['i','j','c','u'].indexOf(k)!==-1)||(ctrl&&k==='u')||(shift&&k==='f10')||k==='contextmenu'){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();redirect();return false;}},true);window.addEventListener('contextmenu',function(e){e.preventDefault();e.stopPropagation();return false;},true);}catch(e){}})();(function(){try{var oldPrefix=['cine','verse'].join(''),newPrefix='netphim',keys=[];for(var i=0;i<localStorage.length;i++){var key=localStorage.key(i);if(key&&key.indexOf(oldPrefix)===0)keys.push(key)}keys.forEach(function(key){var next=newPrefix+key.slice(oldPrefix.length);if(localStorage.getItem(next)===null)localStorage.setItem(next,localStorage.getItem(key));localStorage.removeItem(key)});var saved=localStorage.getItem('netphim-admin-theme');var theme=saved||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.adminTheme=theme;document.documentElement.style.colorScheme=theme;var locale=localStorage.getItem('netphim-admin-locale')||'vi';document.documentElement.lang=locale;var accents={blue:['#2878ee','#236dc9'],violet:['#7b70ef','#695fcb'],teal:['#02a98d','#028a74'],rose:['#f7577e','#dc4168'],amber:['#eaa638','#c9871e']};var accent=accents[localStorage.getItem('netphim-admin-accent')]||accents.blue;document.documentElement.style.setProperty('--admin-brand',accent[0]);document.documentElement.style.setProperty('--admin-brand-strong',accent[1])}catch(e){}})();`,
@@ -452,15 +452,15 @@ export default function AdminRootLayout({
                 onClick={() => setMobileNavigationOpen(false)}
               >
                 <Image
-                  src={netphimLogo}
-                  alt="NetPhim"
+                  src={flexphimLogo}
+                  alt="FlexPhim"
                   width={34}
                   height={34}
                   priority
                   className="h-[34px] w-[34px] object-contain"
                 />
                 <span className="text-[20px] font-extrabold tracking-[-.035em] text-white">
-                  Net<span className="text-[#9b72ff]">Phim</span>
+                  Flex<span className="text-[#9b72ff]">Phim</span>
                 </span>
               </Link>
               <button
@@ -543,7 +543,7 @@ export default function AdminRootLayout({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[#8190a4] hover:text-white"
-                  title="Mở NetPhim"
+                  title="Mở FlexPhim"
                 >
                   <IconExternalLink size={16} />
                 </a>
@@ -967,7 +967,7 @@ export default function AdminRootLayout({
                             className="admin-profile-link"
                           >
                             <IconExternalLink size={17} />
-                            {locale === "vi" ? "Mở NetPhim" : "Open NetPhim"}
+                            {locale === "vi" ? "Mở FlexPhim" : "Open FlexPhim"}
                           </a>
                           <button
                             type="button"

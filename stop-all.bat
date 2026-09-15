@@ -1,5 +1,5 @@
 @echo off
-title NetPhim - Stop All Services
+title FlexPhim - Stop All Services
 cd /d "%~dp0"
 
 echo =========================================================

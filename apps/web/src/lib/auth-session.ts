@@ -7,11 +7,11 @@ import type { User } from "@/store/authStore";
 let firebaseExchangeInFlight: Promise<User> | null = null;
 
 /**
- * Creates the NetPhim API session for a verified Firebase identity.
+ * Creates the FlexPhim API session for a verified Firebase identity.
  *
  * Firebase is only an identity provider here. The API owns the access and
  * refresh cookies, so callers must wait for this function before treating a
- * social login as an authenticated NetPhim session.
+ * social login as an authenticated FlexPhim session.
  */
 export function establishFirebaseSession(firebaseUser: FirebaseUser) {
   if (!firebaseExchangeInFlight) {

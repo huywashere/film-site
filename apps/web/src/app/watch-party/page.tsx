@@ -230,7 +230,7 @@ export default function WatchPartyListPage() {
           <div className="absolute inset-0 -z-10 overflow-hidden">
             <Image
               src="/images/cinema-hall-with-red-seat-wide-white-screen.webp"
-              alt="Phòng Xem Chung NetPhim"
+              alt="Phòng Xem Chung FlexPhim"
               fill
               priority
               placeholder="blur"

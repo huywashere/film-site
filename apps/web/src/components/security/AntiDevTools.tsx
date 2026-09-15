@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 /**
- * NetPhim Media & Asset Protection Guard
+ * FlexPhim Media & Asset Protection Guard
  * 1. Print Self-XSS Console Warning (Facebook/Discord Style)
  * 2. Prevent dragging images to desktop / new tab
  * 3. Prevent right-click "Save image as" on media elements

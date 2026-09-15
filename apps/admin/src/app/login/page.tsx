@@ -7,7 +7,7 @@ import {
   IconFingerprint,
   IconShieldCheck,
 } from "@tabler/icons-react";
-import netphimLogo from "../../../../web/public/cinephim-logo.png";
+import flexphimLogo from "../../../../web/public/flexphim-logo.png";
 
 export default function AdminLoginPage() {
   const [code, setCode] = useState("");
@@ -62,14 +62,14 @@ export default function AdminLoginPage() {
       <section className="admin-login-card" aria-labelledby="admin-login-title">
         <div className="admin-login-brand">
           <Image
-            src={netphimLogo}
-            alt="NetPhim"
+            src={flexphimLogo}
+            alt="FlexPhim"
             width={46}
             height={46}
             priority
           />
           <div>
-            <strong>NetPhim</strong>
+            <strong>FlexPhim</strong>
             <span>Control Room</span>
           </div>
         </div>
@@ -79,7 +79,7 @@ export default function AdminLoginPage() {
             <h1 id="admin-login-title">Đăng nhập quản trị</h1>
             <p>
               {github2FA
-                ? "GitHub đã xác thực. Hoàn tất lớp bảo mật NetPhim."
+                ? "GitHub đã xác thực. Hoàn tất lớp bảo mật FlexPhim."
                 : "Phiên riêng, bắt buộc 2FA trên production."}
             </p>
           </div>

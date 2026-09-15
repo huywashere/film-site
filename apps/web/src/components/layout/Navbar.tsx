@@ -237,27 +237,27 @@ function AnimatedNavbarLogo() {
     <Link
       href="/"
       prefetch={false}
-      aria-label="NetPhim - Trang chủ"
+      aria-label="FlexPhim - Trang chủ"
       className="group flex select-none items-center space-x-2.5"
     >
       <div className="relative flex cursor-pointer items-center justify-center active:scale-95">
         <NextImage
-          src="/cinephim-logo.svg"
-          alt="NetPhim Logo"
+          src="/flexphim-logo.svg"
+          alt="FlexPhim Logo"
           width={36}
           height={36}
           priority
           unoptimized
           className="navbar-logo-reveal relative z-10 h-8 w-8 object-contain sm:h-9 sm:w-9"
           onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = "/cinephim-logo.png";
+            (e.currentTarget as HTMLImageElement).src = "/flexphim-logo.png";
           }}
         />
       </div>
 
       <div className="navbar-logo-reveal navbar-logo-reveal--wordmark relative overflow-hidden">
         <span className="block font-sans text-xl font-black tracking-tight text-white transition-opacity duration-200 group-hover:opacity-80 sm:text-2xl">
-          Net<span className="text-violet-400">Phim</span>
+          Flex<span className="text-violet-400">Phim</span>
         </span>
       </div>
     </Link>
@@ -388,7 +388,7 @@ export function Navbar() {
   >([
     {
       id: "sys-1",
-      title: "Chào mừng bạn đến với NetPhim",
+      title: "Chào mừng bạn đến với FlexPhim",
       message:
         "Xem phim chuẩn 4K siêu nét, tự động lọc sạch quảng cáo nhà cái từ gốc M3U8.",
       time: "Hôm nay",

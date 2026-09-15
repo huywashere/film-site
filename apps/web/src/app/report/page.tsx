@@ -4,8 +4,8 @@ import { SupportHub } from "@/components/legal/SupportHub";
 import { Loader2 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Báo Cáo Sự Cố & Hỗ Trợ Kỹ Thuật | NetPhim",
-  description: "Gặp sự cố khi xem phim? Báo cáo trực tiếp đến đội ngũ kỹ thuật NetPhim.",
+  title: "Báo Cáo Sự Cố & Hỗ Trợ Kỹ Thuật | FlexPhim",
+  description: "Gặp sự cố khi xem phim? Báo cáo trực tiếp đến đội ngũ kỹ thuật FlexPhim.",
 };
 
 export default function ReportPage() {

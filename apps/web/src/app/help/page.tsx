@@ -4,8 +4,8 @@ import { SupportHub } from "@/components/legal/SupportHub";
 import { Loader2 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Trung Tâm Hỗ Trợ & Pháp Lý | NetPhim",
-  description: "Trung tâm hỗ trợ, báo lỗi, điều khoản sử dụng và chính sách bảo mật tại NetPhim.",
+  title: "Trung Tâm Hỗ Trợ & Pháp Lý | FlexPhim",
+  description: "Trung tâm hỗ trợ, báo lỗi, điều khoản sử dụng và chính sách bảo mật tại FlexPhim.",
 };
 
 export default function HelpPage() {

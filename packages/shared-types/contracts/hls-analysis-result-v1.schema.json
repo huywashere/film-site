@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://netphim.local/contracts/hls-analysis-result-v1.schema.json",
-  "title": "NetPhim HLS analysis result v1",
+  "title": "FlexPhim HLS analysis result v1",
   "type": "object",
   "additionalProperties": false,
   "required": [

@@ -53,7 +53,7 @@ resource "digitalocean_droplet" "netphim_server" {
     swapon /swapfile
     echo '/swapfile none swap sw 0 0' >> /etc/fstab
 
-    echo "NetPhim server provisioning complete"
+    echo "FlexPhim server provisioning complete"
   EOF
 
   tags = ["netphim", "production", "movie-site"]

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ══════════════════════════════════════════════════════════════
-# NetPhim — Quick Deploy / Update Script
+# FlexPhim — Quick Deploy / Update Script
 # Chạy khi có code mới cần deploy lên VPS
 # Sử dụng: bash scripts/deploy.sh
 # ══════════════════════════════════════════════════════════════
@@ -20,7 +20,7 @@ compose() {
     docker compose --project-directory "$APP_DIR" -f "$COMPOSE_FILE" "$@"
 }
 
-echo -e "${CYAN}══ NetPhim Deploy ══${NC}"
+echo -e "${CYAN}══ FlexPhim Deploy ══${NC}"
 info "Working dir: $APP_DIR"
 
 # 1. Pull latest code

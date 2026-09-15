@@ -1,4 +1,4 @@
-# ⚡ NetPhim OpenResty Edge API Gateway
+# ⚡ FlexPhim OpenResty Edge API Gateway
 
 **OpenResty** là nền tảng Reverse Proxy & API Gateway siêu tốc dựa trên Nginx và ngôn ngữ LuaJIT.
 

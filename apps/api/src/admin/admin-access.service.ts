@@ -54,7 +54,7 @@ export class AdminAccessService {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "NetPhim-Admin",
+          "User-Agent": "FlexPhim-Admin",
         },
         body: new URLSearchParams({
           client_id: clientId,
@@ -76,7 +76,7 @@ export class AdminAccessService {
     const githubHeaders = {
       Accept: "application/vnd.github+json",
       Authorization: `Bearer ${tokenPayload.access_token}`,
-      "User-Agent": "NetPhim-Admin",
+      "User-Agent": "FlexPhim-Admin",
       "X-GitHub-Api-Version": "2022-11-28",
     };
     const [profileResponse, emailsResponse] = await Promise.all([
@@ -157,7 +157,7 @@ export class AdminAccessService {
       process.env.ADMIN_REQUIRE_2FA === "true";
     if (require2FA && !user.twoFactorEnabled) {
       throw new UnauthorizedException(
-        "Admin phải bật xác thực 2 lớp NetPhim trước khi đăng nhập bằng GitHub",
+        "Admin phải bật xác thực 2 lớp FlexPhim trước khi đăng nhập bằng GitHub",
       );
     }
     if (user.twoFactorEnabled) {

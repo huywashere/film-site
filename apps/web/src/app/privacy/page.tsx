@@ -4,8 +4,8 @@ import { SupportHub } from "@/components/legal/SupportHub";
 import { Loader2 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Chính Sách Bảo Mật Thông Tin & Quyền Riêng Tư | NetPhim",
-  description: "Tìm hiểu cách NetPhim thu thập và bảo vệ dữ liệu cá nhân của bạn.",
+  title: "Chính Sách Bảo Mật Thông Tin & Quyền Riêng Tư | FlexPhim",
+  description: "Tìm hiểu cách FlexPhim thu thập và bảo vệ dữ liệu cá nhân của bạn.",
 };
 
 export default function PrivacyPage() {

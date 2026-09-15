@@ -16,7 +16,7 @@ variable "cloudflare_zone_id" {
 }
 
 variable "domain_name" {
-  description = "Primary domain name for NetPhim"
+  description = "Primary domain name for FlexPhim"
   type        = string
 }
 

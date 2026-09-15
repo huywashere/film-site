@@ -1,8 +1,8 @@
-# NetPhim - Nền Tảng Xem Phim & Quản Trị Hệ Thống Phân Tán
+# FlexPhim - Nền Tảng Xem Phim & Quản Trị Hệ Thống Phân Tán
 
-# NetPhim - High Performance Distributed Streaming Platform
+# FlexPhim - High Performance Distributed Streaming Platform
 
-Repository monorepo đa ngôn ngữ (Polyglot Monorepo) cho nền tảng xem phim trực tuyến NetPhim, tích hợp streaming HLS tối ưu hóa mạng, hệ thống phân phối đa nguồn, lọc quảng cáo tự động, trí tuệ nhân tạo đề xuất phim và quản trị CMS tập trung.
+Repository monorepo đa ngôn ngữ (Polyglot Monorepo) cho nền tảng xem phim trực tuyến FlexPhim, tích hợp streaming HLS tối ưu hóa mạng, hệ thống phân phối đa nguồn, lọc quảng cáo tự động, trí tuệ nhân tạo đề xuất phim và quản trị CMS tập trung.
 
 ---
 
@@ -33,7 +33,7 @@ Repository monorepo đa ngôn ngữ (Polyglot Monorepo) cho nền tảng xem phi
 
 ## Tổng Quan Hệ Thống
 
-NetPhim được xây dựng theo mô hình hệ thống phân tán, xử lý đồng thời lưu lượng truy cập lớn của người dùng xem phim trực tuyến (High-Concurrency Streaming) cùng hệ sinh thái dịch vụ phụ trợ (Microservices & Background Workers).
+FlexPhim được xây dựng theo mô hình hệ thống phân tán, xử lý đồng thời lưu lượng truy cập lớn của người dùng xem phim trực tuyến (High-Concurrency Streaming) cùng hệ sinh thái dịch vụ phụ trợ (Microservices & Background Workers).
 
 Mục tiêu cốt lõi của hệ thống:
 
@@ -272,7 +272,7 @@ pnpm --filter api metadata:backfill
 
 ## System Overview
 
-NetPhim is a high-concurrency, polyglot monorepo streaming platform engineered for seamless video delivery, multi-provider catalog federation, automated HLS ad sanitization, machine-learning-based recommendations, and centralized CMS administration.
+FlexPhim is a high-concurrency, polyglot monorepo streaming platform engineered for seamless video delivery, multi-provider catalog federation, automated HLS ad sanitization, machine-learning-based recommendations, and centralized CMS administration.
 
 Key capabilities:
 

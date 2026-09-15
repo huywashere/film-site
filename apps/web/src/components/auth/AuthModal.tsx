@@ -440,19 +440,19 @@ export function AuthModal({
           className="inline-flex items-center gap-2 select-none group"
         >
           <NextImage
-            src="/cinephim-logo.svg"
-            alt="NetPhim Logo"
+            src="/flexphim-logo.svg"
+            alt="FlexPhim Logo"
             width={32}
             height={32}
             priority
             unoptimized
             className="h-8 w-8 object-contain transition-transform group-hover:scale-105"
             onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = "/cinephim-logo.png";
+              (e.currentTarget as HTMLImageElement).src = "/flexphim-logo.png";
             }}
           />
           <span className="text-xl sm:text-[22px] font-black tracking-tight text-white flex items-center font-sans">
-            Net<span className="text-violet-400">Phim</span>
+            Flex<span className="text-violet-400">Phim</span>
           </span>
         </Link>
       </div>
@@ -471,7 +471,7 @@ export function AuthModal({
             ? "Nhập email đăng ký để nhận liên kết khôi phục mật khẩu."
             : mode === "login"
               ? "Thế giới điện ảnh đỉnh cao đang chờ bạn khám phá."
-              : "Gia nhập NetPhim để xem phim chất lượng cao không giới hạn."}
+              : "Gia nhập FlexPhim để xem phim chất lượng cao không giới hạn."}
         </p>
       </div>
 

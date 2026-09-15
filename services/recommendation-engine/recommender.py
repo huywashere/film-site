@@ -191,7 +191,7 @@ class RecommendationEngine:
         return similar_movies
 
     def _format_film_item(self, row: pd.Series, rank: int | None = None, similarity: float | None = None) -> dict:
-        """Format DataFrame row into standard NetPhim FilmItem dictionary."""
+        """Format DataFrame row into standard FlexPhim FilmItem dictionary."""
         def safe_str(val, default=""):
             if val is None or pd.isna(val):
                 return default

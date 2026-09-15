@@ -22,7 +22,7 @@ export default function OfflinePage() {
         </h1>
 
         <p className="text-xs text-muted-foreground leading-relaxed mb-8 max-w-sm">
-          Ứng dụng NetPhim hiện không thể kết nối tới máy chủ. Vui lòng kiểm
+          Ứng dụng FlexPhim hiện không thể kết nối tới máy chủ. Vui lòng kiểm
           tra lại kết nối Wifi hoặc mạng dữ liệu di động của bạn để tiếp tục
           thưởng thức phim.
         </p>

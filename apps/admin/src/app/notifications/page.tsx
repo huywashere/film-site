@@ -487,7 +487,7 @@ export default function NotificationsManagementPage() {
                   required
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Ví dụ: Chào mừng bạn đến với NetPhim"
+                  placeholder="Ví dụ: Chào mừng bạn đến với FlexPhim"
                   className="w-full px-3.5 py-2 text-xs bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-white/[0.08] rounded-xl text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:border-blue-500 outline-none"
                 />
               </div>

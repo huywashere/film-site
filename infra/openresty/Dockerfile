@@ -1,4 +1,4 @@
-# OpenResty edge gateway for NetPhim.
+# OpenResty edge gateway for FlexPhim.
 FROM openresty/openresty:1.25.3.1-alpine
 
 RUN apk add --no-cache curl bash openssl

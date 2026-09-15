@@ -1,4 +1,4 @@
-# Vận hành NetPhim Admin
+# Vận hành FlexPhim Admin
 
 ## Chuẩn bị lần đầu
 
@@ -9,7 +9,7 @@
    docker compose run --rm api pnpm --filter api exec prisma migrate deploy
    ```
 
-3. Nâng tài khoản NetPhim có email đã xác minh trùng với GitHub chủ sở hữu thành quản trị viên gốc bằng Prisma Studio hoặc PostgreSQL:
+3. Nâng tài khoản FlexPhim có email đã xác minh trùng với GitHub chủ sở hữu thành quản trị viên gốc bằng Prisma Studio hoặc PostgreSQL:
 
    ```sql
    UPDATE users
@@ -41,7 +41,7 @@ Admin sử dụng session riêng 12 giờ, token chỉ nằm trong cookie `HttpO
 4. Cấu hình dashboard với cùng `GITHUB_ADMIN_CLIENT_ID` và `ADMIN_GITHUB_CALLBACK_URL`; client secret chỉ đặt ở API, không đặt trong dashboard. Production chỉ chấp nhận đúng một ID số trong `ADMIN_GITHUB_ALLOWED_IDS`.
 5. Email đã xác minh trên GitHub phải trùng email tài khoản Admin PostgreSQL. Lần đăng nhập đầu tiên sẽ liên kết `githubId`; hệ thống không tự tạo hoặc tự nâng quyền tài khoản.
 
-Luồng sử dụng `state` chống CSRF, PKCE `S256`, chỉ yêu cầu `read:user user:email`, ràng buộc challenge 2FA với thiết bị/IP và luôn yêu cầu OTP NetPhim trên production.
+Luồng sử dụng `state` chống CSRF, PKCE `S256`, chỉ yêu cầu `read:user user:email`, ràng buộc challenge 2FA với thiết bị/IP và luôn yêu cầu OTP FlexPhim trên production.
 
 ## Vai trò và quyền mặc định
 
@@ -90,7 +90,7 @@ Sự cố được lưu trong Admin, đồng thời tạo thông báo vận hàn
   ```json
   {
     "de-cu": {
-      "title": "NetPhim đề cử",
+      "title": "FlexPhim đề cử",
       "slugs": ["slug-phim-1", "slug-phim-2"],
       "href": "/films"
     }

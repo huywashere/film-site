@@ -1,4 +1,4 @@
-# NetPhim Rust HLS Analyzer
+# FlexPhim Rust HLS Analyzer
 
 Internal asynchronous worker for inspecting HLS playlists without adding work
 to the viewer request path. The Go media gateway publishes a job after a new

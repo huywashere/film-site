@@ -167,7 +167,7 @@ export class AuthController {
     );
   }
 
-  /** Exchange a verified Firebase ID token for the normal NetPhim cookie session. */
+  /** Exchange a verified Firebase ID token for the normal FlexPhim cookie session. */
   @Post("firebase")
   @UseGuards(FirebaseAuthGuard)
   async firebaseAuth(

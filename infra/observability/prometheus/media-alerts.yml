@@ -7,7 +7,7 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: NetPhim media gateway error rate is above 5%
+          summary: FlexPhim media gateway error rate is above 5%
 
       - alert: NetPhimMediaGatewaySlowP95
         expr: histogram_quantile(0.95, sum by (le) (rate(netphim_media_request_duration_seconds_bucket[5m]))) > 1.5
@@ -15,7 +15,7 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: NetPhim media gateway p95 latency is above 1.5 seconds
+          summary: FlexPhim media gateway p95 latency is above 1.5 seconds
 
       - alert: NetPhimHlsAnalyzerPendingJobs
         expr: netphim_hls_analyzer_pending_jobs > 0

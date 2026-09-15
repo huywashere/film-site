@@ -801,7 +801,7 @@ export class AuthService {
     const otpauth = generateURI({
       secret,
       label: user.email,
-      issuer: "NetPhim",
+      issuer: "FlexPhim",
     });
     const qrCode = await QRCode.toDataURL(otpauth);
 

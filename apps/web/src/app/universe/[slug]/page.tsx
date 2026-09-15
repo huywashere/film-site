@@ -12,34 +12,34 @@ export async function generateMetadata({
   const { slug } = await params;
   if (slug === "marvel") {
     return {
-      title: "Vũ Trụ Marvel Studios | NetPhim",
+      title: "Vũ Trụ Marvel Studios | FlexPhim",
       description:
         "Khám phá toàn bộ bom tấn Marvel Studios, Avengers, Spider-Man, X-Men và đa vũ trụ đỉnh cao chất lượng 4K Ultra HD.",
     };
   }
   if (slug === "dc") {
     return {
-      title: "Vũ Trụ DC Universe | NetPhim",
+      title: "Vũ Trụ DC Universe | FlexPhim",
       description:
         "Khám phá toàn bộ kiệt tác điện ảnh DC Universe, Batman, Superman, Justice League và thế giới siêu anh hùng DC chất lượng 4K Ultra HD.",
     };
   }
   if (slug === "doraemon") {
     return {
-      title: "Doraemon Movie | NetPhim",
+      title: "Doraemon Movie | FlexPhim",
       description:
         "Khám phá toàn bộ 48+ movie chiếu rạp Doraemon, Stand by Me và những chuyến phiêu lưu kỳ thú chất lượng cao.",
     };
   }
   if (slug === "conan") {
     return {
-      title: "Thám Tử Lừng Danh Conan | NetPhim",
+      title: "Thám Tử Lừng Danh Conan | FlexPhim",
       description:
         "Khám phá toàn bộ 34+ movie chiếu rạp Thám Tử Lừng Danh Conan, TV series phá án ly kỳ và cuộc đối đầu Kaito Kid, Tổ Chức Áo Đen.",
     };
   }
   return {
-    title: "Chủ Đề Điện Ảnh | NetPhim",
+    title: "Chủ Đề Điện Ảnh | FlexPhim",
   };
 }
 

@@ -348,7 +348,7 @@ export default function ActorDetailPage() {
               <p className="text-xs text-neutral-500 max-w-md">
                 {movieQuery.trim()
                   ? "Hãy thử tìm kiếm với tên phim khác hoặc đặt lại bộ lọc."
-                  : "Kho phim NetPhim liên tục được cập nhật các tác phẩm mới hàng ngày. Bạn có thể khám phá thêm kho phim thịnh hành."}
+                  : "Kho phim FlexPhim liên tục được cập nhật các tác phẩm mới hàng ngày. Bạn có thể khám phá thêm kho phim thịnh hành."}
               </p>
               <Link
                 href="/films"

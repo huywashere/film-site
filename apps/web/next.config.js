@@ -106,7 +106,7 @@ const nextConfig = {
       { pathname: "/brand/**" },
       { pathname: "/*.png" },
       { pathname: "/*.jpg" },
-      { pathname: "/cinephim-logo.png" },
+      { pathname: "/flexphim-logo.png" },
     ],
     formats: ["image/avif", "image/webp"],
     qualities: [75, 85],

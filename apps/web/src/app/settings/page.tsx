@@ -449,7 +449,7 @@ export default function SettingsPage() {
                       Trình phát phim
                     </h2>
                     <p className="text-xs text-neutral-400 mt-0.5">
-                      Tùy chỉnh các hành vi mặc định khi xem phim trên NetPhim.
+                      Tùy chỉnh các hành vi mặc định khi xem phim trên FlexPhim.
                     </p>
                   </div>
                 </div>

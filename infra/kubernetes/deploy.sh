@@ -6,10 +6,10 @@ if [[ "${ENABLE_K8S_DEPLOY:-false}" != "true" ]]; then
   exit 1
 fi
 
-# NetPhim One-Click Production Kubernetes Deployment Script
+# FlexPhim One-Click Production Kubernetes Deployment Script
 set -e
 
-echo "🚀 Deploying NetPhim Production Cluster to Kubernetes..."
+echo "🚀 Deploying FlexPhim Production Cluster to Kubernetes..."
 
 if [[ ! "${IMAGE_TAG:-}" =~ ^[a-f0-9]{7,64}$ ]]; then
   echo "IMAGE_TAG must be an immutable Git commit SHA." >&2
@@ -36,5 +36,5 @@ echo "⏳ Waiting for pods to enter Running state..."
 kubectl rollout status deployment/netphim-api -n netphim --timeout=120s
 kubectl rollout status deployment/netphim-web -n netphim --timeout=120s
 
-echo "✅ NetPhim Kubernetes Cluster Deployment Successful!"
+echo "✅ FlexPhim Kubernetes Cluster Deployment Successful!"
 kubectl get all -n netphim

@@ -1,6 +1,6 @@
-# jsDelivr for NetPhim decorative assets
+# jsDelivr for FlexPhim decorative assets
 
-NetPhim only delegates non-critical artwork to this CDN. Posters, hero artwork,
+FlexPhim only delegates non-critical artwork to this CDN. Posters, hero artwork,
 logos and playback resources remain on their existing delivery paths.
 
 ## Asset layout
@@ -24,5 +24,5 @@ https://cdn.jsdelivr.net/gh/OWNER/PUBLIC_ASSET_REPO@COMMIT/public/images/cat1-th
 
 The current `huywashere/film-site` repository is private, so jsDelivr returns
 404 for its GitHub URLs. Keep the variable empty until the selected asset
-repository/package is public. When empty or unreachable, NetPhim uses the local
+repository/package is public. When empty or unreachable, FlexPhim uses the local
 copy in `apps/web/public` automatically.

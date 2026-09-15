@@ -1,4 +1,4 @@
-# NetPhim media observability
+# FlexPhim media observability
 
 `prometheus/media-alerts.yml` contains production alert rules for the Gin media
 gateway and Rust HLS analyzer. Load it from the Prometheus instance used by the

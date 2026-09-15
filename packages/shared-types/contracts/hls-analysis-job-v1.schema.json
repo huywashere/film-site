@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://netphim.local/contracts/hls-analysis-job-v1.schema.json",
-  "title": "NetPhim HLS analysis job v1",
+  "title": "FlexPhim HLS analysis job v1",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "jobId", "url", "requestedAt"],

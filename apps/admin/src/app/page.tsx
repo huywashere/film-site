@@ -116,10 +116,10 @@ export default function AdminDashboardPage() {
     <div className="admin-fade-in space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-[17px] font-extrabold text-[#31334a]">
-          Trung tâm vận hành NetPhim
+          Trung tâm vận hành FlexPhim
         </h1>
         <div className="flex items-center gap-1 text-[11px] text-[#9ba6b7]">
-          <span className="text-[#4c4c5c]">NetPhim</span>
+          <span className="text-[#4c4c5c]">FlexPhim</span>
           <IconChevronRight size={14} />
           <span>Tổng quan</span>
           <IconChevronRight size={14} />
