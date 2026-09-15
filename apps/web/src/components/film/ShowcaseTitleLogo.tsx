@@ -7,6 +7,7 @@ import { useTmdb } from '@/hooks/useTmdb';
 import { tmdbLogo } from '@/lib/tmdb';
 import { cn } from '@/lib/utils';
 import { cardFont } from '@/lib/fonts';
+import { buildArtworkCandidates } from '@/lib/image-cdn';
 
 interface ShowcaseTitleLogoProps {
   film: FilmItem;
@@ -30,13 +31,10 @@ function normalizeLogoUrl(raw?: string | null): string | null {
 }
 
 function buildCandidates(url: string): string[] {
-  const list: string[] = [url];
-  if (url.includes('image.tmdb.org')) {
-    list.push(`/api/image-proxy?url=${encodeURIComponent(url)}&strict=1`);
-  } else if (!url.startsWith('/api/image-proxy') && !url.startsWith('/')) {
-    list.push(`/api/image-proxy?url=${encodeURIComponent(url)}&strict=1`);
-  }
-  return list;
+  return buildArtworkCandidates([url], 'titleLogo', {
+    preferEdge: url.includes('image.tmdb.org'),
+    strictProxy: true,
+  });
 }
 
 export function ShowcaseTitleLogo({
@@ -91,7 +89,8 @@ export function ShowcaseTitleLogo({
 
   useEffect(() => {
     if (!initialLogo) return;
-    void preloadMovieLogo(initialLogo).then((ready) => {
+    const primary = buildCandidates(initialLogo)[0] || initialLogo;
+    void preloadMovieLogo(primary).then((ready) => {
       if (ready && film.slug) setMovieLogo(film.slug, initialLogo);
     });
   }, [film.slug, initialLogo]);
@@ -101,7 +100,8 @@ export function ShowcaseTitleLogo({
     if (bestLogo?.file_path) {
       const url = normalizeLogoUrl(bestLogo.file_path);
       if (url) {
-        void preloadMovieLogo(url).then((ready) => {
+        const primary = buildCandidates(url)[0] || url;
+        void preloadMovieLogo(primary).then((ready) => {
           if (ready && film.slug) setMovieLogo(film.slug, url);
         });
       }
@@ -113,7 +113,8 @@ export function ShowcaseTitleLogo({
     const resolved =
       prefetchedDirectLogo || normalizeLogoUrl(prefetchedBestLogo?.file_path);
     if (!resolved) return;
-    void preloadMovieLogo(resolved).then((ready) => {
+    const primary = buildCandidates(resolved)[0] || resolved;
+    void preloadMovieLogo(primary).then((ready) => {
       if (ready) setMovieLogo(prefetchFilm.slug, resolved);
     });
   }, [prefetchFilm?.slug, film.slug, prefetchedBestLogo?.file_path, prefetchedDirectLogo]);

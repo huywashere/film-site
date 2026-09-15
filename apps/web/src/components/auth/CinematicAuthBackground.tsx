@@ -1,7 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect } from "react";
-import { getRandomAuthArtwork, LOGIN_COVER_ARTWORKS } from "@/lib/auth-artworks";
+import { getRandomAuthArtwork } from "@/lib/auth-artworks";
 
 export interface CinematicAuthBackgroundProps {
   artworkUrl?: string;
@@ -21,13 +22,16 @@ export function CinematicAuthBackground({ artworkUrl }: CinematicAuthBackgroundP
   return (
     <div className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0 bg-[#07090e]">
       {/* Fullscreen Random Movie Collage Backdrop - Optimized for instant visual render */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <Image
+        key={activeUrl}
         src={activeUrl}
-        alt="Cinema Universe Collage"
-        loading="eager"
+        alt=""
+        aria-hidden="true"
+        fill
+        priority
+        sizes="100vw"
+        quality={75}
         decoding="async"
-        // @ts-ignore
         fetchPriority="high"
         className="w-full h-full object-cover object-center scale-[1.02] filter brightness-[0.85] contrast-[1.03] select-none pointer-events-none animate-in fade-in duration-300"
         referrerPolicy="no-referrer"

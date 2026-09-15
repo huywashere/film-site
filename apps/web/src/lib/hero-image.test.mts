@@ -125,11 +125,23 @@ test('showcase logos keep the current film fallback stable while artwork loads',
   assert.doesNotMatch(source, /setResolvedLogo/);
   assert.match(source, /hasLogoCandidate \? 'pointer-events-none opacity-0'/);
   assert.match(source, /prefetchFilm/);
-  assert.match(source, /preloadMovieLogo\(resolved\)\.then/);
+  assert.match(source, /const primary = buildCandidates\(resolved\)\[0\] \|\| resolved/);
+  assert.match(source, /preloadMovieLogo\(primary\)\.then/);
   assert.match(source, /fetchDetails: false/);
   assert.match(source, /alt=""/);
   assert.match(series, /<ShowcaseTitleLogo[\s\S]*key=\{activeFilm\.slug\}/);
   assert.match(curated, /<ShowcaseTitleLogo[\s\S]*key=\{activeFilm\.slug\}/);
+});
+
+test('local login and topic artwork use responsive Next image optimization', () => {
+  const auth = readFileSync('src/components/auth/CinematicAuthBackground.tsx', 'utf8');
+  const topics = readFileSync('src/app/components/TopicBanners.tsx', 'utf8');
+
+  assert.match(auth, /import Image from "next\/image"/);
+  assert.match(auth, /<Image[\s\S]*fill[\s\S]*priority[\s\S]*sizes="100vw"/);
+  assert.doesNotMatch(auth, /<img/);
+  assert.match(topics, /<Image[\s\S]*sizes="\(max-width: 640px\) 50vw/);
+  assert.doesNotMatch(topics, /backgroundImage:/);
 });
 
 test('hero banner waits for decoded title logos before revealing a slide', () => {

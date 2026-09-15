@@ -2,12 +2,19 @@
 
 import { useState } from 'react';
 import { tmdbLogo } from '@/lib/tmdb';
+import { buildArtworkCandidates } from '@/lib/image-cdn';
 
 /** Mount keyed by artwork so errors and loading never carry across films. */
 export function FilmTitleLogo({ path, title }: { path?: string | null; title: string }) {
   const src = path ? tmdbLogo(path, 'w500') : '';
+  const candidates = src
+    ? buildArtworkCandidates([src], 'titleLogo', {
+        preferEdge: true,
+        strictProxy: true,
+      })
+    : [];
   const [candidate, setCandidate] = useState(0);
-  const showLogo = Boolean(src) && candidate <= 1;
+  const showLogo = Boolean(candidates[candidate]);
 
   return (
     <h1 className="flex min-h-8 w-full items-center justify-center pt-1 pb-1 sm:pt-1.5 sm:justify-start">
@@ -19,14 +26,15 @@ export function FilmTitleLogo({ path, title }: { path?: string | null; title: st
         <span className="sr-only">{title}</span>
       )}
 
-      {src && candidate <= 1 && (
+      {showLogo && (
         // The server preloads this URL. Keep it visible from the first paint so
         // the text fallback never flashes before a valid logo is decoded.
         // eslint-disable-next-line @next/next/no-img-element
         <img
           key={candidate}
-          src={candidate === 0 ? src : `/api/image-proxy?url=${encodeURIComponent(src)}&strict=1`}
-          alt={title}
+          src={candidates[candidate]}
+          alt=""
+          aria-hidden="true"
           decoding="sync"
           loading="eager"
           fetchPriority="high"
