@@ -140,7 +140,8 @@ test('hero banner waits for decoded title logos before revealing a slide', () =>
   assert.match(source, /const \[displayLogo\] = useState/);
   assert.match(source, /logoLookupPending \|\| hasLogoCandidate/);
   assert.match(source, /const activateSlide = useCallback/);
-  assert.match(source, /if \(logoUrl\) await preloadMovieLogo\(logoUrl\)/);
+  assert.match(source, /const preloadUrl = getPrimaryHeroLogoUrl\(logoUrl\)/);
+  assert.match(source, /if \(preloadUrl\) await preloadMovieLogo\(preloadUrl\)/);
   assert.doesNotMatch(source, /Text is a complete visual fallback[\s\S]*onReady\(\)/);
   assert.match(cache, /await img\.decode\(\)/);
   assert.match(cache, /preloadPromises/);

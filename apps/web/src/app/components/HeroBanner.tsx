@@ -518,7 +518,8 @@ async function enrichHeroTitleLogos(playlist: HeroFilm[]): Promise<HeroFilm[]> {
 
         if (film.slug && resolvedTitleLogo) {
           setMovieLogo(film.slug, resolvedTitleLogo);
-          void preloadMovieLogo(resolvedTitleLogo);
+          const preloadUrl = getPrimaryHeroLogoUrl(resolvedTitleLogo);
+          if (preloadUrl) void preloadMovieLogo(preloadUrl);
         }
 
         return {
@@ -545,17 +546,20 @@ function buildHeroLogoCandidates(url?: string | null): string[] {
   const clean = url.trim();
   if (!clean) return [];
 
-  const list: string[] = [];
-  if (clean.includes("image.tmdb.org")) {
-    list.push(clean);
-    list.push(`/api/image-proxy?url=${encodeURIComponent(clean)}&strict=1`);
-  } else {
-    list.push(clean);
-    if (!clean.startsWith("/api/image-proxy")) {
-      list.push(`/api/image-proxy?url=${encodeURIComponent(clean)}&strict=1`);
-    }
-  }
-  return list.filter((src) => !failedHeroLogos.has(src));
+  // Transparent TMDB title logos are often much heavier than poster/backdrop
+  // JPEGs. Let wsrv convert only this asset class to a bounded WebP first,
+  // while retaining direct TMDB and the same-origin relay as fallbacks. The
+  // measured saving is substantial for logos; applying this to every TMDB
+  // image would add a cache-cold CDN hop for very little payload reduction.
+  return buildArtworkCandidates([clean], "titleLogo", {
+    preferEdge: clean.includes("image.tmdb.org"),
+    strictProxy: true,
+  }).filter((src) => !failedHeroLogos.has(src));
+}
+
+function getPrimaryHeroLogoUrl(url?: string | null): string | null {
+  if (!url) return null;
+  return buildHeroLogoCandidates(url)[0] || url;
 }
 
 function HeroMovieTitle({
@@ -1212,6 +1216,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         initialPlaylist[nextIndex],
       ]
         .map((film) => film?.titleLogo || getMovieLogo(film?.slug))
+        .map((url) => getPrimaryHeroLogoUrl(url))
         .filter((url): url is string => Boolean(url));
       await Promise.all(initialLogoUrls.map((url) => preloadMovieLogo(url)));
       if (!active) return;
@@ -1246,6 +1251,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       await Promise.all(
         enrichedFilms
           .map((film) => film.titleLogo || getMovieLogo(film.slug))
+          .map((url) => getPrimaryHeroLogoUrl(url))
           .filter((url): url is string => Boolean(url))
           .map((url) => preloadMovieLogo(url)),
       );
@@ -1334,7 +1340,8 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         void enrichHeroTitleLogos([target]).then(([enriched]) => {
           if (!enriched) return;
           const resolvedLogo = enriched.titleLogo || getMovieLogo(enriched.slug);
-          if (resolvedLogo) void preloadMovieLogo(resolvedLogo);
+          const preloadUrl = getPrimaryHeroLogoUrl(resolvedLogo);
+          if (preloadUrl) void preloadMovieLogo(preloadUrl);
           setFeatured((playlist) =>
             playlist.map((item, index) =>
               index === nextIndex ? enriched : item,
@@ -1343,7 +1350,8 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         });
       }
 
-      if (logoUrl) await preloadMovieLogo(logoUrl);
+      const preloadUrl = getPrimaryHeroLogoUrl(logoUrl);
+      if (preloadUrl) await preloadMovieLogo(preloadUrl);
       if (requestId !== slideActivationRequest.current) return;
 
       if (prepared !== target) {

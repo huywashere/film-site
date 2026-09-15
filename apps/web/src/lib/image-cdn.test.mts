@@ -99,3 +99,20 @@ test("preferEdge prioritizes edge wsrv for fast delivery in restricted network r
   assert.equal(candidates[0].startsWith("https://wsrv.nl"), true);
   assert.equal(candidates.includes(tmdb), true);
 });
+
+test("uses a compact wsrv WebP first for transparent TMDB title logos", () => {
+  const tmdb = "https://image.tmdb.org/t/p/w500/title-logo.png";
+  const candidates = buildArtworkCandidates([tmdb], "titleLogo", {
+    preferEdge: true,
+    strictProxy: true,
+  });
+
+  const primary = new URL(candidates[0]);
+  assert.equal(primary.hostname, "wsrv.nl");
+  assert.equal(primary.searchParams.get("w"), "640");
+  assert.equal(primary.searchParams.get("h"), "260");
+  assert.equal(primary.searchParams.get("fit"), "contain");
+  assert.equal(primary.searchParams.get("output"), "webp");
+  assert.equal(candidates[1], tmdb);
+  assert.match(candidates[2], /^\/api\/image-proxy\?/);
+});
