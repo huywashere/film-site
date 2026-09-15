@@ -133,15 +133,15 @@ test('showcase logos keep the current film fallback stable while artwork loads',
   assert.match(curated, /<ShowcaseTitleLogo[\s\S]*key=\{activeFilm\.slug\}/);
 });
 
-test('local login and topic artwork use responsive Next image optimization', () => {
+test('local login and topic artwork use wsrv without Vercel image quota', () => {
   const auth = readFileSync('src/components/auth/CinematicAuthBackground.tsx', 'utf8');
   const topics = readFileSync('src/app/components/TopicBanners.tsx', 'utf8');
 
-  assert.match(auth, /import Image from "next\/image"/);
-  assert.match(auth, /<Image[\s\S]*fill[\s\S]*priority[\s\S]*sizes="100vw"/);
-  assert.doesNotMatch(auth, /<img/);
-  assert.match(topics, /<Image[\s\S]*sizes="\(max-width: 640px\) 50vw/);
-  assert.doesNotMatch(topics, /backgroundImage:/);
+  assert.match(auth, /wsrvPublicImageUrl/);
+  assert.match(auth, /srcSet=/);
+  assert.match(auth, /640w,[\s\S]*1280w,[\s\S]*1920w/);
+  assert.match(auth, /onError=\{\(\) => setUseLocalFallback\(true\)\}/);
+  assert.match(topics, /backgroundImage: `url\('\$\{wsrvPublicImageUrl/);
 });
 
 test('hero banner waits for decoded title logos before revealing a slide', () => {

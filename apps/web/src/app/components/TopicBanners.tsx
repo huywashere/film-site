@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useTranslation } from "@/store/langStore";
+import { wsrvPublicImageUrl } from "@/lib/image-cdn";
 
 export default function TopicBanners() {
   const { t, lang } = useTranslation();
@@ -76,20 +76,14 @@ export default function TopicBanners() {
             key={i}
             href={topic.href}
             className="relative overflow-hidden rounded-[24px] sm:rounded-[28px] p-3.5 sm:p-4 flex flex-col justify-between shadow-2xl transition-all duration-300 hover:-translate-y-1 group cursor-pointer min-h-[160px] sm:min-h-[220px] md:min-h-[260px] bg-slate-900"
+            style={{
+              backgroundImage: `url('${wsrvPublicImageUrl(topic.image, "backdrop", { width: 640, height: null, quality: 75 }) || topic.image}')`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
           >
             {topic.image && (
-              <>
-                <Image
-                  src={topic.image}
-                  alt=""
-                  aria-hidden="true"
-                  fill
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 17vw"
-                  quality={75}
-                  className="object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/35 to-transparent group-hover:from-slate-950/80 transition-colors duration-300" />
-              </>
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/35 to-transparent group-hover:from-slate-950/80 transition-colors duration-300" />
             )}
             <div className="relative z-10">
               <h4 className="text-base md:text-xl font-extrabold text-white leading-tight drop-shadow-2xl">

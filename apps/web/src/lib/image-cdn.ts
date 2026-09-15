@@ -11,6 +11,10 @@ interface ImagePresetConfig {
   fit: "cover" | "contain";
 }
 
+type ImagePresetOverrides = Partial<Omit<ImagePresetConfig, "height">> & {
+  height?: number | null;
+};
+
 const IMAGE_PRESETS: Record<ImagePreset, ImagePresetConfig> = {
   poster: { width: 400, height: 600, quality: 82, fit: "cover" },
   card: { width: 300, height: 450, quality: 80, fit: "cover" },
@@ -84,21 +88,41 @@ export function unwrapImageUrl(value?: string | null): string | null {
 export function wsrvImageUrl(
   source: string,
   preset: ImagePreset,
+  overrides: ImagePresetOverrides = {},
 ): string | null {
   const upstream = unwrapImageUrl(source);
   if (!upstream || !/^https?:\/\//i.test(upstream)) return null;
 
-  const config = IMAGE_PRESETS[preset];
+  const presetConfig = IMAGE_PRESETS[preset];
+  const config = { ...presetConfig, ...overrides };
   const params = new URLSearchParams({
     url: upstream.replace(/^http:\/\//i, "https://"),
     w: String(config.width),
-    h: String(config.height),
     fit: config.fit,
     output: "webp",
     q: String(config.quality),
     we: "1",
   });
+  if (config.height) params.set("h", String(config.height));
   return `${WSRV_ORIGIN}/?${params.toString()}`;
+}
+
+export function wsrvPublicImageUrl(
+  source: string,
+  preset: ImagePreset,
+  overrides: ImagePresetOverrides = {},
+): string | null {
+  if (/^https?:\/\//i.test(source)) {
+    return wsrvImageUrl(source, preset, overrides);
+  }
+  if (!source.startsWith("/")) return null;
+
+  const configuredOrigin = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  const publicOrigin =
+    configuredOrigin && /^https:\/\//i.test(configuredOrigin)
+      ? configuredOrigin
+      : "https://film-site-web.vercel.app";
+  return wsrvImageUrl(new URL(source, publicOrigin).toString(), preset, overrides);
 }
 
 export function localImageProxyUrl(

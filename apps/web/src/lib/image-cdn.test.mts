@@ -7,6 +7,7 @@ import {
   tmdbImageVariant,
   unwrapImageUrl,
   wsrvImageUrl,
+  wsrvPublicImageUrl,
 } from "./image-cdn.ts";
 
 const provider = "https://phimimg.com/uploads/movies/example.webp";
@@ -115,4 +116,18 @@ test("uses a compact wsrv WebP first for transparent TMDB title logos", () => {
   assert.equal(primary.searchParams.get("output"), "webp");
   assert.equal(candidates[1], tmdb);
   assert.match(candidates[2], /^\/api\/image-proxy\?/);
+});
+
+test("builds responsive wsrv URLs for first-party public artwork", () => {
+  const result = wsrvPublicImageUrl(
+    "/images/auth/login/login-1.webp",
+    "backdrop",
+    { width: 640, height: null, quality: 75 },
+  );
+  assert.ok(result);
+  const parsed = new URL(result);
+  assert.equal(parsed.searchParams.get("url"), "https://film-site-web.vercel.app/images/auth/login/login-1.webp");
+  assert.equal(parsed.searchParams.get("w"), "640");
+  assert.equal(parsed.searchParams.has("h"), false);
+  assert.equal(parsed.searchParams.get("q"), "75");
 });
