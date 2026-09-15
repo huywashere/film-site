@@ -454,7 +454,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
         ref={heroRef}
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        className="relative w-full min-h-[640px] sm:min-h-[700px] lg:min-h-[740px] lg:h-[90vh] max-h-[1020px] overflow-hidden select-none"
+        className="relative h-[100dvh] min-h-[640px] max-h-[1020px] w-full overflow-hidden select-none sm:min-h-[min(700px,100dvh)] lg:min-h-[min(740px,100dvh)]"
       >
         {/* Backdrop Crossfade (Preloaded & Seamless) */}
         {spotlights.map((item, idx) => (
@@ -475,8 +475,8 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
         <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#07080c]/80 to-transparent pointer-events-none z-[1]" />
 
         {/* Spotlight Content Overlay */}
-        <div className="relative z-10 h-full max-w-[1760px] mx-auto px-4 sm:px-8 lg:px-14 flex flex-col justify-end pb-8 sm:pb-10 lg:pb-12 pt-20">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 lg:gap-8">
+        <div className="relative z-10 mx-auto flex h-full max-w-[1760px] flex-col justify-end px-4 pb-20 pt-20 sm:px-8 sm:pb-10 lg:px-14 lg:pb-12">
+          <div className="flex flex-col gap-6 2xl:flex-row 2xl:items-end 2xl:justify-between 2xl:gap-8">
             {/* Left Column: Movie Info & Actions */}
             <div className="max-w-xl xl:max-w-2xl 2xl:max-w-3xl space-y-3.5 sm:space-y-4">
               {/* Universe Official Brand Logo (Original Logo, no custom container wrapper) */}
@@ -562,12 +562,25 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
               </p>
 
               {/* Actions Buttons */}
-              <div className="grid w-full grid-cols-2 gap-2 pt-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+              <div className="grid w-full grid-cols-2 gap-2 pt-2 sm:flex sm:flex-wrap sm:items-center sm:gap-2.5">
                 <Link
                   href={`/watch/${activeSpotlight.slug}`}
-                  className="col-span-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-xs font-extrabold text-black shadow-lg shadow-black/40 transition-colors hover:bg-neutral-100 active:translate-y-px sm:col-auto sm:w-auto sm:text-sm"
+                  data-universe-action="watch"
+                  className={cn(
+                    "col-span-2 inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap px-5 py-2.5 text-xs font-extrabold transition-[background-color,border-color,transform] active:translate-y-px sm:col-auto sm:w-auto sm:text-sm",
+                    isDoraemon
+                      ? "rounded-[10px] border-2 border-[#78d7f5] border-b-[#08739e] bg-[#21a7db] text-[#041923] hover:bg-[#48bbe5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#78d7f5]"
+                      : isConan
+                        ? "rounded-[10px] border-2 border-[#ef6464] border-b-[#7f1717] bg-[#d83232] text-white hover:bg-[#e34848] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ef6464]"
+                        : "rounded-xl bg-white text-black shadow-lg shadow-black/40 hover:bg-neutral-100",
+                  )}
                 >
-                  <Play size={16} className="fill-black" />
+                  <Play
+                    size={16}
+                    className={cn(
+                      isConan ? "fill-white" : "fill-current",
+                    )}
+                  />
                   <span>Xem Phim Ngay</span>
                 </Link>
 
@@ -575,7 +588,15 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                   <button
                     type="button"
                     onClick={() => setTrailerFilm(activeFilmItem)}
-                    className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#181b24] px-4 py-3 text-xs font-bold text-white transition-colors hover:bg-[#232836] active:translate-y-px sm:w-auto sm:px-5 sm:text-sm"
+                    data-universe-action="trailer"
+                    className={cn(
+                      "inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-xs font-bold transition-[background-color,border-color,transform] active:translate-y-px sm:w-auto sm:text-sm",
+                      isDoraemon
+                        ? "rounded-[10px] border-2 border-[#278fba] bg-[#101c27] text-[#dff7ff] hover:border-[#64c9ed] hover:bg-[#162a39] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]"
+                        : isConan
+                          ? "rounded-[10px] border-2 border-[#a73a3a] bg-[#211415] text-[#ffe8e8] hover:border-[#e45757] hover:bg-[#30191b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]"
+                          : "rounded-xl border border-white/10 bg-[#181b24] text-white hover:bg-[#232836]",
+                    )}
                   >
                     <Clapperboard size={16} />
                     <span>Xem Trailer</span>
@@ -584,7 +605,15 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
 
                 <Link
                   href={`/film/${activeSpotlight.slug}`}
-                  className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-xs font-semibold text-neutral-300 transition-colors hover:bg-white/[0.08] hover:text-white sm:w-auto sm:border-transparent sm:bg-transparent sm:text-sm"
+                  data-universe-action="detail"
+                  className={cn(
+                    "inline-flex min-h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-xs font-bold transition-[background-color,border-color,transform] active:translate-y-px sm:w-auto sm:text-sm",
+                    isDoraemon
+                      ? "rounded-[10px] border-2 border-[#344b5c] bg-[#17212b] text-white hover:border-[#5b7b91] hover:bg-[#202e3a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]"
+                      : isConan
+                        ? "rounded-[10px] border-2 border-[#4f3434] bg-[#211b1b] text-white hover:border-[#805050] hover:bg-[#2d2222] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]"
+                        : "rounded-xl border border-white/10 bg-white/[0.04] font-semibold text-neutral-300 hover:bg-white/[0.08] hover:text-white sm:border-transparent sm:bg-transparent",
+                  )}
                 >
                   <span>Chi tiết</span>
                   <ChevronRight size={14} />
@@ -592,15 +621,16 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
 
                 <a
                   href={isMarvel || isDC ? "#universe-timeline" : "#full-catalog"}
+                  data-universe-action="explore"
                   className={cn(
-                    "group inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-xs font-bold transition-colors active:translate-y-px sm:w-auto sm:text-sm",
+                    "group col-span-2 inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-xs font-bold transition-[background-color,border-color,transform] active:translate-y-px sm:col-auto sm:w-auto sm:text-sm",
                     isMarvel
-                      ? "border-red-500/35 bg-red-500/10 text-red-200 hover:bg-red-500/15"
+                      ? "rounded-xl border border-red-500/35 bg-red-500/10 text-red-200 hover:bg-red-500/15"
                       : isDC
-                        ? "border-sky-500/35 bg-sky-500/10 text-sky-200 hover:bg-sky-500/15"
+                        ? "rounded-xl border border-sky-500/35 bg-sky-500/10 text-sky-200 hover:bg-sky-500/15"
                         : isDoraemon
-                          ? "border-cyan-500/35 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/15"
-                          : "border-rose-500/35 bg-rose-500/10 text-rose-200 hover:bg-rose-500/15",
+                          ? "rounded-[10px] border-2 border-[#278fba] bg-[#0b2634] text-[#8de3ff] hover:border-[#64c9ed] hover:bg-[#10384a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]"
+                          : "rounded-[10px] border-2 border-[#a73a3a] bg-[#321718] text-[#ff9b9b] hover:border-[#e45757] hover:bg-[#481d20] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]",
                   )}
                 >
                   {isMarvel || isDC ? (
@@ -620,7 +650,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
             </div>
 
             {/* Right Column: Carousel Thumbnails */}
-            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 max-w-full lg:max-w-[580px] xl:max-w-[700px]">
+            <div className="flex w-full shrink-0 items-center gap-2 sm:gap-2.5 2xl:w-auto 2xl:max-w-[700px]">
               <div
                 ref={thumbnailScrollRef}
                 className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto no-scrollbar py-2.5 px-0.5 scroll-smooth overscroll-x-contain"
@@ -640,7 +670,14 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                 <button
                   type="button"
                   onClick={() => void activateSpotlight(currentIdx - 1)}
-                  className="p-2 sm:p-2.5 rounded-xl bg-black/75 hover:bg-white/20 text-white/90 hover:text-white border border-white/15 backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-lg"
+                  className={cn(
+                    "cursor-pointer rounded-[10px] border-2 bg-[#10131a] p-2 text-white transition-[background-color,border-color,transform] active:scale-95 sm:p-2.5",
+                    isDoraemon
+                      ? "border-[#278fba] hover:border-[#64c9ed] hover:bg-[#162a39] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]"
+                      : isConan
+                        ? "border-[#803333] hover:border-[#e45757] hover:bg-[#30191b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]"
+                        : "border-white/15 hover:border-white/30 hover:bg-[#20242e]",
+                  )}
                   aria-label="Previous"
                 >
                   <ChevronLeft size={16} />
@@ -648,7 +685,14 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                 <button
                   type="button"
                   onClick={() => void activateSpotlight(currentIdx + 1)}
-                  className="p-2 sm:p-2.5 rounded-xl bg-black/75 hover:bg-white/20 text-white/90 hover:text-white border border-white/15 backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-lg"
+                  className={cn(
+                    "cursor-pointer rounded-[10px] border-2 bg-[#10131a] p-2 text-white transition-[background-color,border-color,transform] active:scale-95 sm:p-2.5",
+                    isDoraemon
+                      ? "border-[#278fba] hover:border-[#64c9ed] hover:bg-[#162a39] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]"
+                      : isConan
+                        ? "border-[#803333] hover:border-[#e45757] hover:bg-[#30191b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]"
+                        : "border-white/15 hover:border-white/30 hover:bg-[#20242e]",
+                  )}
                   aria-label="Next"
                 >
                   <ChevronRight size={16} />

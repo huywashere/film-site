@@ -44,3 +44,19 @@ test("universe carousel decodes title logos before every slide activation", () =
   assert.match(source, /data-universe-logo-active=\{idx === currentIdx\}/);
   assert.doesNotMatch(source, /key=\{activeSpotlight\.slug\}/);
 });
+
+test("anime universe hero stays visible and uses solid franchise actions", () => {
+  const source = readFileSync(
+    "src/components/universe/UniversePageClient.tsx",
+    "utf8",
+  );
+
+  assert.match(source, /h-\[100dvh\]/);
+  assert.match(source, /2xl:flex-row/);
+  assert.doesNotMatch(source, /lg:flex-row/);
+  assert.match(source, /data-universe-action="watch"/);
+  assert.match(source, /data-universe-action="explore"/);
+  assert.match(source, /isDoraemon[\s\S]*bg-\[#21a7db\]/);
+  assert.match(source, /isConan[\s\S]*bg-\[#d83232\]/);
+  assert.doesNotMatch(source, /backdrop-blur/);
+});
