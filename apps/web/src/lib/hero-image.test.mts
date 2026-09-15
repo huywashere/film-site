@@ -147,6 +147,7 @@ test('local login and topic artwork use wsrv without Vercel image quota', () => 
 test('hero banner waits for decoded title logos before revealing a slide', () => {
   const source = readFileSync('src/app/components/HeroBanner.tsx', 'utf8');
   const cache = readFileSync('src/lib/movie-logo-cache.ts', 'utf8');
+  const preloader = readFileSync('src/lib/image-preload-cache.ts', 'utf8');
 
   assert.match(source, /await Promise\.all\(initialLogoUrls\.map\(\(url\) => preloadMovieLogo\(url\)\)\)/);
   assert.match(source, /const \[displayLogo\] = useState/);
@@ -155,9 +156,10 @@ test('hero banner waits for decoded title logos before revealing a slide', () =>
   assert.match(source, /const preloadUrl = getPrimaryHeroLogoUrl\(logoUrl\)/);
   assert.match(source, /if \(preloadUrl\) await preloadMovieLogo\(preloadUrl\)/);
   assert.doesNotMatch(source, /Text is a complete visual fallback[\s\S]*onReady\(\)/);
-  assert.match(cache, /await img\.decode\(\)/);
-  assert.match(cache, /preloadPromises/);
-  assert.match(cache, /setTimeout\(\(\) => settle\(false\), 1_800\)/);
+  assert.match(cache, /return preloadImage\(url\)/);
+  assert.match(preloader, /await img\.decode\(\)/);
+  assert.match(preloader, /preloadPromises/);
+  assert.match(preloader, /setTimeout\(\(\) => settle\(false\), 1_800\)/);
 });
 
 test('large homepage showcases request original TMDB backdrops', () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -33,11 +33,42 @@ import {
   isWsrvImageUrl,
 } from "@/lib/image-cdn";
 import { resolveImageUrl } from "@/lib/movie-image-url";
+import {
+  isImagePreloaded,
+  markImagePreloaded,
+  preloadImage,
+} from "@/lib/image-preload-cache";
 
 const TrailerModal = dynamic(
   () => import("@/components/film/TrailerModal").then((m) => m.TrailerModal),
   { ssr: false },
 );
+
+function getUniverseLogoCandidates(titleLogo?: string | null): string[] {
+  if (!titleLogo) return [];
+  return buildArtworkCandidates([titleLogo], "titleLogo", {
+    preferEdge: titleLogo.includes("image.tmdb.org"),
+    strictProxy: true,
+  });
+}
+
+async function preloadUniverseLogo(titleLogo?: string | null): Promise<void> {
+  const candidates = getUniverseLogoCandidates(titleLogo).slice(0, 2);
+  if (!candidates.length) return;
+  await new Promise<void>((resolve) => {
+    let pending = candidates.length;
+    let settled = false;
+    candidates.forEach((source) => {
+      void preloadImage(source).then((ready) => {
+        pending -= 1;
+        if (!settled && (ready || pending === 0)) {
+          settled = true;
+          resolve();
+        }
+      });
+    });
+  });
+}
 
 function UniverseSpotlightBackdrop({
   item,
@@ -102,27 +133,38 @@ function UniverseSpotlightBackdrop({
 function UniverseSpotlightLogo({
   titleLogo,
   name,
+  isPriority = false,
 }: {
   titleLogo?: string | null;
   name: string;
+  isPriority?: boolean;
 }) {
-  const candidates = useMemo(() => {
-    if (!titleLogo) return [];
-    return buildArtworkCandidates([titleLogo], "titleLogo", {
-      preferEdge: titleLogo.includes("image.tmdb.org"),
-      strictProxy: true,
-    });
-  }, [titleLogo]);
+  const candidates = useMemo(
+    () => getUniverseLogoCandidates(titleLogo),
+    [titleLogo],
+  );
 
   const [candidateIdx, setCandidateIdx] = useState(0);
   const [hasFailedAll, setHasFailedAll] = useState(false);
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    setCandidateIdx(0);
+    const cachedIdx = candidates.findIndex((source) =>
+      isImagePreloaded(source),
+    );
+    setCandidateIdx(cachedIdx >= 0 ? cachedIdx : 0);
     setHasFailedAll(!titleLogo);
-  }, [titleLogo]);
+    setLoadedSrc(cachedIdx >= 0 ? candidates[cachedIdx] : null);
+  }, [candidates, titleLogo]);
 
-  const src = candidates[candidateIdx];
+  const cachedIdx = candidates.findIndex((source) =>
+    isImagePreloaded(source),
+  );
+  const resolvedIdx = cachedIdx >= 0 ? cachedIdx : candidateIdx;
+  const src = candidates[resolvedIdx];
+  const isReady = Boolean(
+    src && (loadedSrc === src || isImagePreloaded(src)),
+  );
 
   if (!titleLogo || hasFailedAll || !src) {
     return (
@@ -140,19 +182,27 @@ function UniverseSpotlightLogo({
         alt=""
         aria-hidden="true"
         fill
-        priority
-        fetchPriority="high"
+        priority={isPriority}
+        fetchPriority={isPriority ? "high" : "low"}
         loading="eager"
         decoding="sync"
         unoptimized={isWsrvImageUrl(src) || src.startsWith("/api/")}
+        onLoad={() => {
+          markImagePreloaded(src);
+          setLoadedSrc(src);
+        }}
         onError={() => {
-          if (candidateIdx < candidates.length - 1) {
-            setCandidateIdx((prev) => prev + 1);
+          if (resolvedIdx < candidates.length - 1) {
+            setCandidateIdx(resolvedIdx + 1);
+            setLoadedSrc(null);
           } else {
             setHasFailedAll(true);
           }
         }}
-        className="object-contain object-left"
+        className={cn(
+          "object-contain object-left transition-opacity duration-200",
+          isReady ? "opacity-100" : "opacity-0",
+        )}
         sizes="(max-width: 768px) 320px, 520px"
       />
     </div>
@@ -226,6 +276,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
   // Data & Spotlights
   const spotlights = useMemo(() => getUniverseSpotlights(universe), [universe]);
   const [currentIdx, setCurrentIdx] = useState(0);
+  const slideActivationRequest = useRef(0);
   const [isPaused, setIsPaused] = useState(false);
   const [trailerFilm, setTrailerFilm] = useState<
     (FilmItem & { trailer_url?: string }) | null
@@ -275,14 +326,39 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
     rail.scrollTo({ left: Math.max(0, centeredLeft), behavior: "smooth" });
   }, [currentIdx]);
 
+  const activateSpotlight = useCallback(
+    async (requestedIndex: number) => {
+      if (!spotlights.length) return;
+      const nextIndex =
+        (requestedIndex + spotlights.length) % spotlights.length;
+      const requestId = ++slideActivationRequest.current;
+
+      // Do not replace the painted title with an undecoded image. This keeps
+      // carousel changes atomic and prevents the browser's broken-image frame.
+      await preloadUniverseLogo(spotlights[nextIndex]?.titleLogo);
+      if (requestId !== slideActivationRequest.current) return;
+      setCurrentIdx(nextIndex);
+    },
+    [spotlights],
+  );
+
   // Auto-rotate spotlight every 8 seconds
   useEffect(() => {
     if (isPaused || !isHeroVisible || spotlights.length <= 1) return;
-    const timer = setInterval(() => {
-      setCurrentIdx((prev) => (prev + 1) % spotlights.length);
+    const timer = window.setTimeout(() => {
+      void activateSpotlight(currentIdx + 1);
     }, 8000);
-    return () => clearInterval(timer);
-  }, [isHeroVisible, isPaused, spotlights.length]);
+    return () => window.clearTimeout(timer);
+  }, [activateSpotlight, currentIdx, isHeroVisible, isPaused, spotlights.length]);
+
+  // Title logos are tiny compared with hero backdrops. Decode them up front so
+  // both automatic rotation and non-adjacent thumbnail selection stay instant.
+  useEffect(() => {
+    if (!isHeroVisible) return;
+    spotlights.forEach((item) => {
+      void preloadUniverseLogo(item.titleLogo);
+    });
+  }, [isHeroVisible, spotlights]);
 
   // Warm only the next slide while the hero is visible. Loading the entire
   // spotlight pool competed with timeline posters on mobile.
@@ -294,15 +370,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
         [item.heroBackdrop],
         "backdrop",
       )[0];
-      const nextLogo = item.titleLogo
-        ? buildArtworkCandidates([item.titleLogo], "titleLogo", {
-            preferEdge: true,
-          })[0]
-        : null;
-      for (const source of [
-        nextBackdrop,
-        nextLogo,
-      ]) {
+      for (const source of [nextBackdrop]) {
         if (!source) continue;
         const image = new window.Image();
         image.decoding = "async";
@@ -441,12 +509,29 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                 )}
               </div>
 
-              {/* Movie Title or Logo */}
-              <div key={activeSpotlight.slug} className="space-y-2">
-                <UniverseSpotlightLogo
-                  titleLogo={activeSpotlight.titleLogo}
-                  name={activeSpotlight.name}
-                />
+              {/* Movie Title or Logo. Keep every small logo mounted so changing
+                  slides only crossfades already-painted DOM nodes. */}
+              <div className="space-y-2">
+                <div className="relative h-16 w-72 max-w-full sm:h-24 sm:w-96 md:h-28 md:w-[420px] lg:h-32 lg:w-[480px] xl:h-36 xl:w-[520px]">
+                  {spotlights.map((item, idx) => (
+                    <div
+                      key={item.id}
+                      data-universe-logo-active={idx === currentIdx}
+                      className={cn(
+                        "absolute inset-0 transition-opacity duration-200",
+                        idx === currentIdx
+                          ? "z-10 opacity-100"
+                          : "pointer-events-none opacity-0",
+                      )}
+                    >
+                      <UniverseSpotlightLogo
+                        titleLogo={item.titleLogo}
+                        name={item.name}
+                        isPriority={idx === 0}
+                      />
+                    </div>
+                  ))}
+                </div>
 
                 <div className="text-xs sm:text-sm font-medium text-neutral-300 drop-shadow">
                   <span>{activeSpotlight.origin_name}</span>
@@ -545,7 +630,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                     key={item.id}
                     item={item}
                     isActive={idx === currentIdx}
-                    onClick={() => setCurrentIdx(idx)}
+                    onClick={() => void activateSpotlight(idx)}
                   />
                 ))}
               </div>
@@ -554,11 +639,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
               <div className="hidden items-center gap-1 pl-1 shrink-0 sm:flex">
                 <button
                   type="button"
-                  onClick={() =>
-                    setCurrentIdx(
-                      (prev) => (prev - 1 + spotlights.length) % spotlights.length,
-                    )
-                  }
+                  onClick={() => void activateSpotlight(currentIdx - 1)}
                   className="p-2 sm:p-2.5 rounded-xl bg-black/75 hover:bg-white/20 text-white/90 hover:text-white border border-white/15 backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-lg"
                   aria-label="Previous"
                 >
@@ -566,9 +647,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
-                    setCurrentIdx((prev) => (prev + 1) % spotlights.length)
-                  }
+                  onClick={() => void activateSpotlight(currentIdx + 1)}
                   className="p-2 sm:p-2.5 rounded-xl bg-black/75 hover:bg-white/20 text-white/90 hover:text-white border border-white/15 backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-lg"
                   aria-label="Next"
                 >

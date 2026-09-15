@@ -25,3 +25,22 @@ test("universe spotlights optimize title logos through wsrv with safe fallbacks"
   assert.match(source, /alt=""[\s\S]*aria-hidden="true"/);
   assert.doesNotMatch(source, /\/images\/logos\/(?:doraemon|conan)-logo\.svg/);
 });
+
+test("universe carousel decodes title logos before every slide activation", () => {
+  const source = readFileSync(
+    "src/components/universe/UniversePageClient.tsx",
+    "utf8",
+  );
+
+  assert.match(source, /const activateSpotlight = useCallback/);
+  assert.match(
+    source,
+    /await preloadUniverseLogo\(spotlights\[nextIndex\]\?\.titleLogo\)/,
+  );
+  assert.match(source, /onClick=\{\(\) => void activateSpotlight\(idx\)\}/);
+  assert.match(source, /void activateSpotlight\(currentIdx \+ 1\)/);
+  assert.match(source, /isReady \? "opacity-100" : "opacity-0"/);
+  assert.match(source, /spotlights\.map\(\(item, idx\) => \(/);
+  assert.match(source, /data-universe-logo-active=\{idx === currentIdx\}/);
+  assert.doesNotMatch(source, /key=\{activeSpotlight\.slug\}/);
+});
