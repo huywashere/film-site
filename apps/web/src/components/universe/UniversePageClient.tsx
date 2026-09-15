@@ -28,7 +28,10 @@ import {
   UniverseType,
 } from "@/lib/universe-catalog";
 import { cn } from "@/lib/utils";
-import { wsrvImageUrl, isWsrvImageUrl } from "@/lib/image-cdn";
+import {
+  buildArtworkCandidates,
+  isWsrvImageUrl,
+} from "@/lib/image-cdn";
 import { resolveImageUrl } from "@/lib/movie-image-url";
 
 const TrailerModal = dynamic(
@@ -46,17 +49,10 @@ function UniverseSpotlightBackdrop({
   isPriority: boolean;
 }) {
   const candidates = useMemo(() => {
-    const list: string[] = [];
-    if (item.heroBackdrop) {
-      // 1. Primary TMDB image (processed through Next.js Image Optimization)
-      list.push(item.heroBackdrop);
-      // 2. Cloudflare edge proxy (wsrv.nl - globally unblocked in VN)
-      const wsrv = wsrvImageUrl(item.heroBackdrop, "backdrop");
-      if (wsrv) list.push(wsrv);
-      // 3. Same-origin local image proxy
-      list.push(`/api/image-proxy?url=${encodeURIComponent(item.heroBackdrop)}&strict=1`);
-    }
-    return list;
+    return buildArtworkCandidates([item.heroBackdrop], "backdrop", {
+      includeWsrvForTmdb: true,
+      strictProxy: true,
+    });
   }, [item.heroBackdrop]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
@@ -111,17 +107,11 @@ function UniverseSpotlightLogo({
   name: string;
 }) {
   const candidates = useMemo(() => {
-    const list: string[] = [];
-    if (titleLogo) {
-      // 1. Primary logo (processed through Next.js Image Optimization)
-      list.push(titleLogo);
-      // 2. Cloudflare edge proxy (wsrv.nl - globally unblocked in VN)
-      const wsrv = wsrvImageUrl(titleLogo, "titleLogo");
-      if (wsrv) list.push(wsrv);
-      // 3. Same-origin local image proxy
-      list.push(`/api/image-proxy?url=${encodeURIComponent(titleLogo)}&strict=1`);
-    }
-    return list;
+    if (!titleLogo) return [];
+    return buildArtworkCandidates([titleLogo], "titleLogo", {
+      preferEdge: titleLogo.includes("image.tmdb.org"),
+      strictProxy: true,
+    });
   }, [titleLogo]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
@@ -147,7 +137,8 @@ function UniverseSpotlightLogo({
       <Image
         key={src}
         src={src}
-        alt={name}
+        alt=""
+        aria-hidden="true"
         fill
         priority
         fetchPriority="high"
@@ -178,9 +169,14 @@ function UniverseThumbnailButton({
   onClick: () => void;
 }) {
   const [useFallback, setUseFallback] = useState(false);
-  const src = useFallback
-    ? wsrvImageUrl(item.heroBackdrop, "thumbnail") || item.heroBackdrop
-    : item.heroBackdrop;
+  const candidates = useMemo(
+    () =>
+      buildArtworkCandidates([item.heroBackdrop], "thumbnail", {
+        includeWsrvForTmdb: true,
+      }),
+    [item.heroBackdrop],
+  );
+  const src = useFallback ? candidates[1] || candidates[0] : candidates[0];
 
   return (
     <button
@@ -294,11 +290,18 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
     if (!isHeroVisible || spotlights.length <= 1) return;
     const handle = window.setTimeout(() => {
       const item = spotlights[(currentIdx + 1) % spotlights.length];
+      const nextBackdrop = buildArtworkCandidates(
+        [item.heroBackdrop],
+        "backdrop",
+      )[0];
+      const nextLogo = item.titleLogo
+        ? buildArtworkCandidates([item.titleLogo], "titleLogo", {
+            preferEdge: true,
+          })[0]
+        : null;
       for (const source of [
-        wsrvImageUrl(item.heroBackdrop, "backdrop") || item.heroBackdrop,
-        item.titleLogo
-          ? wsrvImageUrl(item.titleLogo, "titleLogo") || item.titleLogo
-          : null,
+        nextBackdrop,
+        nextLogo,
       ]) {
         if (!source) continue;
         const image = new window.Image();
@@ -433,32 +436,6 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                       priority
                       sizes="(max-width: 640px) 48px, 56px"
                       className="object-contain object-left"
-                    />
-                  </div>
-                )}
-                {isDoraemon && (
-                  // Official Doraemon Logo
-                  <div className="relative h-8 sm:h-10 md:h-12 w-32 sm:w-40 md:w-48 shrink-0">
-                    <Image
-                      src="/images/logos/doraemon-logo.svg"
-                      alt="Doraemon"
-                      fill
-                      priority
-                      sizes="(max-width: 640px) 128px, 192px"
-                      className="object-contain object-left"
-                    />
-                  </div>
-                )}
-                {isConan && (
-                  // Official Detective Conan Logo
-                  <div className="relative h-9 sm:h-11 md:h-13 w-28 sm:w-36 md:w-44 shrink-0">
-                    <Image
-                      src="/images/logos/conan-logo.svg"
-                      alt="Detective Conan"
-                      fill
-                      priority
-                      sizes="(max-width: 640px) 112px, 176px"
-                      className="object-contain object-left brightness-125 contrast-125"
                     />
                   </div>
                 )}

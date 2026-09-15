@@ -14,7 +14,7 @@ export const CONAN_SPOTLIGHTS: UniverseSpotlightItem[] = [
     "spotlightBadge": "💎 KỶ LỤC 15 TỶ YÊN DOANH THU",
     "content": "Tại Hakodate, Kaito Kid nhắm vào thanh kiếm Nhật cổ thời Mạc Phủ. Conan và Hattori Heiji cùng bước vào cuộc đấu trí nghẹt thở vén màn bí mật gia tộc.",
     "heroBackdrop": "https://phimimg.com/upload/vod/20241229-1/309e1f1623755fa993140a83167f577b.jpg",
-    "titleLogo": "",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/A6KValBqxmhgd7zeTeoNKZAX9ed.png",
     "trailer_url": "https://www.youtube.com/watch?v=C4pG3GbhQZw",
     "subFranchise": "kaito-kid"
   },
@@ -30,7 +30,7 @@ export const CONAN_SPOTLIGHTS: UniverseSpotlightItem[] = [
     "spotlightBadge": "🌊 ĐẠI CHIẾN TỔ CHỨC ÁO ĐEN & HAIBARA",
     "content": "Hệ thống phao biển toàn cầu Pacific Buoy trở thành mục tiêu của Tổ Chức Áo Đen. Thân phận của Haibara Ai đứng trước nguy cơ bại lộ dưới lòng đại dương.",
     "heroBackdrop": "https://phimimg.com/upload/vod/20231016-1/6a45585d457b3d77e91cbe7757f28c94.jpg",
-    "titleLogo": "",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/hritUA5IVLodCY0jYHPuis5kRLx.png",
     "trailer_url": "https://www.youtube.com/watch?v=NwnQI9izPFc",
     "subFranchise": "black-org"
   },
@@ -46,7 +46,7 @@ export const CONAN_SPOTLIGHTS: UniverseSpotlightItem[] = [
     "spotlightBadge": "🎃 KÝ ỨC HỌC VIỆN CẢNH SÁT SHIBUYA",
     "content": "Lễ cưới của thiếu úy Sato bị tấn công, kẻ khủng bố Plamya xuất hiện tại Shibuya. Furuya Rei (Amuro) cùng ký ức về nhóm bạn Học Viện Cảnh Sát trỗi dậy.",
     "heroBackdrop": "https://phimimg.com/upload/vod/20230925-1/66f6956fcbf6630c247fa65c165228d7.jpg",
-    "titleLogo": "",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/9lxK5QPtM3pZFXa3dJJdgqRvviY.png",
     "trailer_url": "https://www.youtube.com/watch?v=Gmkmmi7A8Ak",
     "subFranchise": "black-org"
   },
@@ -62,7 +62,7 @@ export const CONAN_SPOTLIGHTS: UniverseSpotlightItem[] = [
     "spotlightBadge": "🥊 ĐẤU TRÍ TẠI MARINA BAY SINGAPORE",
     "content": "Viên ngọc Sapphire Xanh lớn nhất thế giới tại Singapore chìm trong âm mưu giết người. Conan bị Kaito Kid kéo vào cuộc đối đầu cao thủ Karate Makoto Kyogoku.",
     "heroBackdrop": "https://phimimg.com/upload/vod/20231019-1/c8c7ddb80b838219a656bcaa239f079c.jpg",
-    "titleLogo": "",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/5rhDAMHfeF5SRnAc4A63sBNIvCx.png",
     "trailer_url": "https://www.youtube.com/watch?v=wI8cpTd0-r8",
     "subFranchise": "kaito-kid"
   },
@@ -78,7 +78,7 @@ export const CONAN_SPOTLIGHTS: UniverseSpotlightItem[] = [
     "spotlightBadge": "🏆 #1 MOVIE CONAN XUẤT SẮC MỌI THỜI ĐẠI",
     "content": "Conan và nhóm bạn bị mắc kẹt trong trò chơi thực tế ảo kén tằm thế kỷ 19 ở London, phải truy tìm Jack the Ripper cùng sự giúp sức của Sherlock Holmes.",
     "heroBackdrop": "https://phimimg.com/uploads/movies/20260729/tham-tu-lung-danh-conan-bong-ma-duong-baker-thumb.webp",
-    "titleLogo": "",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/p53tAO3Q4fnZ2Stq7J5Bj7clNOW.png",
     "trailer_url": "https://www.youtube.com/watch?v=kYjY71jN_G4",
     "subFranchise": "movies"
   },
@@ -94,7 +94,7 @@ export const CONAN_SPOTLIGHTS: UniverseSpotlightItem[] = [
     "spotlightBadge": "🔍 HUYỀN THOẠI TRUYỀN HÌNH 1200+ TẬP",
     "content": "Thám tử trung học Kudo Shinichi bị teo nhỏ thành Edogawa Conan sau khi trúng độc dược APTX 4869, bắt đầu hành trình phá giải hàng trăm vụ án hóc búa.",
     "heroBackdrop": "https://phimimg.com/upload/vod/20240310-1/2a39971cc29c2802259b918eb437a45b.jpg",
-    "titleLogo": "",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/cMCVeu17t6g38oikFs4RWp8VYMB.png",
     "trailer_url": "https://www.youtube.com/watch?v=m1w0r7f0o44",
     "subFranchise": "series"
   }

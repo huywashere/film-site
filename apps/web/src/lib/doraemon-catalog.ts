@@ -14,7 +14,7 @@ export const DORAEMON_SPOTLIGHTS: UniverseSpotlightItem[] = [
     "spotlightBadge": "🎵 MOVIE CHIẾU RẠP MỚI NHẤT",
     "content": "Nobita cùng Doraemon và nhóm bạn bước vào cuộc phiêu lưu kỳ diệu nhằm giải cứu Trái Đất thông qua sức mạnh diệu kỳ của âm nhạc và tình bạn.",
     "heroBackdrop": "https://phimimg.com/upload/vod/20250521-1/0514f6f2eef84b1340afd31c42574a2d.jpg",
-    "titleLogo": "",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/aDQrH2PynKkqPXdQvgfTFYT3cmD.png",
     "trailer_url": "https://www.youtube.com/watch?v=Yug8gbDd5EQ",
     "subFranchise": "movies"
   },
@@ -30,7 +30,7 @@ export const DORAEMON_SPOTLIGHTS: UniverseSpotlightItem[] = [
     "spotlightBadge": "☁️ PHIÊU LƯU VƯƠNG QUỐC BẦU TRỜI",
     "content": "Doraemon và Nobita tìm kiếm Paradapia - vương quốc hoàn hảo lơ lửng trên mây và khám phá bí mật đằng sau thế giới thiên đường tưởng chừng hoàn mỹ.",
     "heroBackdrop": "https://phimimg.com/upload/vod/20250521-1/e0d158cdb1b12f7cae32426dc3695ee0.jpg",
-    "titleLogo": "",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/j5MgTvQHjH1hQTHfghqpZ0sB1yG.png",
     "trailer_url": "https://www.youtube.com/watch?v=GbdEbIQeuMw",
     "subFranchise": "movies"
   },
@@ -46,7 +46,7 @@ export const DORAEMON_SPOTLIGHTS: UniverseSpotlightItem[] = [
     "spotlightBadge": "🏆 KIỆT TÁC 3D LẤY ĐI NƯỚC MẮT",
     "content": "Tác phẩm 3D đầu tiên tái hiện cuộc gặp gỡ định mệnh giữa chú mèo máy tương lai Doraemon và cậu bé hậu đậu Nobita cùng lời chia tay xúc động lòng người.",
     "heroBackdrop": "https://phimimg.com/upload/vod/20250521-1/2d2bdd9da9c7b54406d4f91352038bde.jpg",
-    "titleLogo": "",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/fecSkePkQvoNK64P67bsp3Vmhst.png",
     "trailer_url": "https://www.youtube.com/watch?v=hZK64hWDKdI",
     "subFranchise": "3d"
   },
@@ -62,7 +62,7 @@ export const DORAEMON_SPOTLIGHTS: UniverseSpotlightItem[] = [
     "spotlightBadge": "💍 ĐÁM CƯỚI NOBITA & SHIZUKA",
     "content": "Nobita du hành tới tương lai để hoàn thành tâm nguyện của người bà yêu quý: được nhìn thấy đám cưới của Nobita và Shizuka.",
     "heroBackdrop": "https://phimimg.com/upload/vod/20250521-1/f4fe192f89f6f84cba2de973dc65c9a7.jpg",
-    "titleLogo": "",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/lVgNiy1enHkHLtNa1dngSCHhJhJ.png",
     "trailer_url": "https://www.youtube.com/watch?v=AgmWfzlOvqw",
     "subFranchise": "3d"
   },
@@ -78,7 +78,7 @@ export const DORAEMON_SPOTLIGHTS: UniverseSpotlightItem[] = [
     "spotlightBadge": "🚀 ĐẠI CHIẾN NGÂN HÀ KỲ THÚ",
     "content": "Doraemon và các bạn kết bạn với Papi - tổng thống tí hon từ hành tinh Pirika xa xôi và cùng sát cánh chống lại tên độc tài tàn bạo.",
     "heroBackdrop": "https://phimimg.com/upload/vod/20250521-1/e2a936f1c37fecfae038085e9e6b29d9.jpg",
-    "titleLogo": "",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/lRcS0IVe3eEUv6w2R5gVUDfQGey.png",
     "trailer_url": "https://www.youtube.com/watch?v=gSgSNGXCJf4",
     "subFranchise": "adventure"
   },
@@ -94,7 +94,7 @@ export const DORAEMON_SPOTLIGHTS: UniverseSpotlightItem[] = [
     "spotlightBadge": "🏴‍☠️ KỶ LỤC DOANH THU MOVIE DORAEMON",
     "content": "Chuyến ra khơi tìm kiếm kho báu bí ẩn đưa Nobita và Doraemon vào cuộc chiến kịch tính với băng hải tặc không gian để giải cứu Trái Đất.",
     "heroBackdrop": "https://phimimg.com/upload/vod/20250521-1/4c6f46e4830f394ad1f5ffba5a5e2882.jpg",
-    "titleLogo": "",
+    "titleLogo": "https://image.tmdb.org/t/p/w500/x1LIsRRBHhNFQ78I1vZuiorGrcq.png",
     "trailer_url": "https://www.youtube.com/watch?v=Zk6id7Sqo58",
     "subFranchise": "movies"
   }
