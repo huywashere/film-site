@@ -26,7 +26,7 @@ export async function generateMetadata({
   }
   if (slug === "doraemon") {
     return {
-      title: "Vũ Trụ Doraemon | NetPhim",
+      title: "Doraemon Movie | NetPhim",
       description:
         "Khám phá toàn bộ 48+ movie chiếu rạp Doraemon, Stand by Me và những chuyến phiêu lưu kỳ thú chất lượng cao.",
     };
