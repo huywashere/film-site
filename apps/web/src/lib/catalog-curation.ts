@@ -132,6 +132,98 @@ export function catalogQualityScore(
   return score;
 }
 
+function hotFilmKeys(film: CatalogFilm): string[] {
+  const keys = new Set<string>();
+  const add = (value: unknown) => {
+    const normalized = textValue(value).toLowerCase();
+    if (normalized) keys.add(normalized);
+  };
+
+  add(film.slug);
+  add(film._canonicalKey);
+  const sourceSlugs = asRecord(film._sourceSlugs);
+  Object.values(sourceSlugs).forEach(add);
+  return [...keys];
+}
+
+/**
+ * Rank a single-theme homepage shelf using real seven-day site trends first,
+ * then trustworthy audience signals and release recency. The input remains
+ * intact so callers can still apply their normal row limit and deduplication.
+ */
+export function rankHotCatalogFilms<T extends object>(
+  films: T[],
+  trendingFilms: object[] = [],
+  options: { releaseFocused?: boolean } = {},
+): T[] {
+  const trendingRanks = new Map<string, number>();
+  trendingFilms.forEach((film, index) => {
+    for (const key of hotFilmKeys(film as CatalogFilm)) {
+      if (!trendingRanks.has(key)) trendingRanks.set(key, index);
+    }
+  });
+
+  return films
+    .map((film, index) => {
+      const record = film as CatalogFilm;
+      const type = textValue(record.type).toLowerCase();
+      const kind: CuratedCatalogKind = /series|phim-bo|tv/.test(type)
+        ? "series"
+        : "single";
+      const trendRank = hotFilmKeys(record).reduce<number | undefined>(
+        (best, key) => {
+          const rank = trendingRanks.get(key);
+          if (rank === undefined) return best;
+          return best === undefined ? rank : Math.min(best, rank);
+        },
+        undefined,
+      );
+      const year = numberValue(record.year);
+      const { rating, votes, views } = ratingSignals(record);
+      let freshness = 0;
+      if (year >= CURRENT_YEAR && year <= CURRENT_YEAR + 1) freshness = 28;
+      else if (year === CURRENT_YEAR - 1) freshness = 22;
+      else if (year === CURRENT_YEAR - 2) freshness = 16;
+      else if (year >= CURRENT_YEAR - 5) freshness = 8;
+
+      if (options.releaseFocused) {
+        if (year >= CURRENT_YEAR && year <= CURRENT_YEAR + 1) freshness += 180;
+        else if (year === CURRENT_YEAR - 1) freshness += 150;
+        else if (year === CURRENT_YEAR - 2) freshness += 110;
+        else if (year >= CURRENT_YEAR - 5) freshness += 60;
+      }
+
+      // A near-perfect score from one or two votes is not a reliable "hot"
+      // signal. Genuine local trending views can still override this penalty.
+      let confidencePenalty = 0;
+      if (rating > 0 && views === 0 && votes < 5) confidencePenalty = 38;
+      else if (rating > 0 && views === 0 && votes < 20)
+        confidencePenalty = 18;
+
+      const episode = textValue(record.episode_current).toLowerCase();
+      const currentlyActive = /đang chiếu|dang chieu|tập\s*\d+|episode\s*\d+/.test(
+        episode,
+      )
+        ? 7
+        : 0;
+      const trendBoost =
+        trendRank === undefined ? 0 : Math.max(75, 150 - trendRank * 5);
+
+      return {
+        film,
+        index,
+        score:
+          catalogQualityScore(record, kind) +
+          freshness +
+          currentlyActive +
+          trendBoost -
+          confidencePenalty,
+      };
+    })
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .map(({ film }) => film);
+}
+
 function diversityBucket(film: CatalogFilm, kind: CuratedCatalogKind): string {
   const genres = filmGenres(film);
   if (genres.some((genre) => /hoat-hinh|anime/.test(genre))) return "animation";

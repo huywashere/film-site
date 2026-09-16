@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { catalogQualityScore, curateCatalogFilms } from "./catalog-curation.ts";
+import {
+  catalogQualityScore,
+  curateCatalogFilms,
+  rankHotCatalogFilms,
+} from "./catalog-curation.ts";
 
 function film(
   slug: string,
@@ -79,6 +83,42 @@ test("different seasons of one franchise do not fill the first positions", () =>
     curated[1].slug.startsWith("galaxy"),
   );
   assert.equal(curated.length, input.length);
+});
+
+test("hot shelves prioritize real seven-day trends over catalogue order", () => {
+  const regular = film("regular", "kinh-di", 8.4, 1200);
+  const trending = film("trending", "kinh-di", 7.5, 450);
+  const ranked = rankHotCatalogFilms(
+    [regular, trending],
+    [{ slug: "trending", views: 240 }],
+  );
+
+  assert.equal(ranked[0].slug, "trending");
+});
+
+test("hot shelves favor fresh trusted titles over one-vote scores", () => {
+  const established = film("fresh-hit", "co-trang", 8.1, 2500);
+  established.year = new Date().getFullYear();
+  const suspicious = film("one-vote", "co-trang", 9.9, 1);
+  suspicious.year = new Date().getFullYear();
+
+  assert.equal(
+    rankHotCatalogFilms([suspicious, established])[0].slug,
+    "fresh-hit",
+  );
+});
+
+test("theatrical hot shelves keep current releases ahead of old hits", () => {
+  const classic = film("classic-hit", "hanh-dong", 8.7, 12000);
+  classic.year = 2010;
+  const current = film("current-release", "hanh-dong", 7.2, 180);
+  current.year = new Date().getFullYear();
+
+  assert.equal(
+    rankHotCatalogFilms([classic, current], [], { releaseFocused: true })[0]
+      .slug,
+    "current-release",
+  );
 });
 
 test("browse quick filters do not duplicate Marvel and DC universe entries", () => {

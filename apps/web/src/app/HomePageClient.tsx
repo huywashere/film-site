@@ -19,6 +19,7 @@ import { deduplicateSectionRow } from "@/lib/recommendation-engine";
 import { extractFilmItems } from "@/lib/movie-normalizer";
 import { watchProgressStorage } from "@/lib/watch-progress";
 import { useSettingsStore } from "@/store/settingsStore";
+import { rankHotCatalogFilms } from "@/lib/catalog-curation";
 const HomeAnnouncementPopup = dynamic(
   () =>
     import("@/components/layout/HomeAnnouncementPopup").then(
@@ -1082,6 +1083,10 @@ export default function HomePageClient({
     () => homeFeedData?.top10 || [],
     [homeFeedData?.top10],
   );
+  const trendingFilms = useMemo(
+    () => deduplicate(Array.isArray(trendingData) ? trendingData : []),
+    [trendingData],
+  );
 
   // ── Process arrays with STRICT Live-Action filtering for Hollywood rows ──
   const vfxFilms = useMemo(() => {
@@ -1185,18 +1190,24 @@ export default function HomePageClient({
 
   const horrorFilms = useMemo(() => {
     const list = horrorData?.data?.items || horrorData?.items || [];
-    return filterLiveActionOnly(deduplicate(list));
-  }, [horrorData]);
+    return deduplicate(
+      rankHotCatalogFilms(filterLiveActionOnly(list), trendingFilms),
+    );
+  }, [horrorData, trendingFilms]);
 
   const historicalFilms = useMemo(() => {
     const list = historicalData?.data?.items || historicalData?.items || [];
-    return filterLiveActionOnly(deduplicate(list));
-  }, [historicalData]);
+    return deduplicate(
+      rankHotCatalogFilms(filterLiveActionOnly(list), trendingFilms),
+    );
+  }, [historicalData, trendingFilms]);
 
   const theatricalFilms = useMemo(() => {
     const list = theatricalData?.data?.items || theatricalData?.items || [];
-    return deduplicate(list);
-  }, [theatricalData]);
+    return deduplicate(
+      rankHotCatalogFilms(list, trendingFilms, { releaseFocused: true }),
+    );
+  }, [theatricalData, trendingFilms]);
 
   const nextWatchFilms = useMemo(() => {
     const list =
@@ -1257,11 +1268,6 @@ export default function HomePageClient({
     () => deduplicate(latestData?.items || latestData?.data?.items || []),
     [latestData],
   );
-  const trendingFilms = useMemo(
-    () => deduplicate(Array.isArray(trendingData) ? trendingData : []),
-    [trendingData],
-  );
-
   // Deduplication registry & row limits
   const {
     top10List,
