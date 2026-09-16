@@ -61,7 +61,7 @@ interface FilmCardProps {
   film: FilmItem;
   width?: number;
   showActions?: boolean;
-  variant?: 'standard' | 'landscape';
+  variant?: 'standard' | 'landscape' | 'gallery';
   hideDetails?: boolean;
   priority?: boolean;
   preferHighQuality?: boolean;
@@ -80,6 +80,7 @@ function FilmCardComponent({
 }: FilmCardProps) {
   const globalCardLayout = useSettingsStore((s) => s.cardLayout);
   const effectiveVariant = variant || (globalCardLayout === 'horizontal' ? 'landscape' : 'standard');
+  const isGallery = effectiveVariant === 'gallery';
   const slug = film.slug;
   const title = film.name || film.title || 'Chưa có tên';
   const rawLang = (film.lang || '').toLowerCase();
@@ -225,15 +226,21 @@ function FilmCardComponent({
     <div
       style={width ? { width } : undefined}
       className={cn(
-        `${cardFont.className} group/card relative flex flex-col select-none [contain:paint_layout]`,
+        `${cardFont.className} group/card relative flex flex-col select-none`,
+        !isGallery && '[contain:paint_layout]',
         !width && 'w-full',
       )}
     >
-      <div className="relative transition-transform duration-300 ease-out motion-safe:group-hover/card:-translate-y-1.5">
+      <div className="relative transition-transform duration-300 ease-out motion-safe:group-hover/card:-translate-y-1.5 motion-reduce:transform-none">
         <Link
           href={`/film/${slug}`}
           prefetch={false}
-          className="relative block overflow-hidden rounded-[8px] border border-white/[0.08] bg-[#111216] shadow-[0_8px_22px_rgba(0,0,0,0.24)] transition-[border-color,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111214] group-hover/card:border-white/25 group-hover/card:shadow-[0_16px_36px_rgba(0,0,0,0.44)]"
+          className={cn(
+            'relative block overflow-hidden border border-white/[0.08] bg-[#111216] transition-[border-color,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111214] group-hover/card:border-white/25',
+            isGallery
+              ? 'rounded-[18px] shadow-[0_18px_50px_rgba(0,0,0,0.36)] group-hover/card:shadow-[0_24px_58px_rgba(0,0,0,0.5)]'
+              : 'rounded-[8px] shadow-[0_8px_22px_rgba(0,0,0,0.24)] group-hover/card:shadow-[0_16px_36px_rgba(0,0,0,0.44)]',
+          )}
         >
           {/* Poster Container Aspect Ratio */}
           <div
@@ -248,11 +255,21 @@ function FilmCardComponent({
               alt={title}
               priority={priority}
               allowTitleLookup={preferHighQuality}
-              className="absolute inset-0 h-full w-full transition-transform duration-700 ease-out motion-safe:group-hover/card:scale-[1.035]"
+              sizes={
+                isGallery
+                  ? '(max-width: 639px) 44vw, (max-width: 1023px) 26vw, 17vw'
+                  : undefined
+              }
+              className="absolute inset-0 h-full w-full transition-transform duration-700 ease-out motion-safe:group-hover/card:scale-[1.035] motion-reduce:transform-none"
             />
 
             <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-14 bg-gradient-to-b from-black/65 via-black/20 to-transparent" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
+            <div
+              className={cn(
+                'pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/95 via-black/55 to-transparent',
+                isGallery ? 'h-40' : 'h-20',
+              )}
+            />
             <div className="pointer-events-none absolute inset-0 z-[11] bg-black/0 transition-colors duration-300 group-hover/card:bg-black/15" />
 
             {/* ── Top-left: IMDb score OR flexibly shifted Subtitle/Voice badge (sát mép trên) ── */}
@@ -323,6 +340,17 @@ function FilmCardComponent({
               </div>
             )}
 
+            {isGallery && (
+              <div className="pointer-events-none absolute inset-x-3 bottom-9 z-20 text-left">
+                <p className="line-clamp-2 text-[11px] font-extrabold leading-[1.2] tracking-[-0.018em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] sm:text-[13px]">
+                  {title}
+                </p>
+                <p className="mt-1 truncate text-[9px] font-medium leading-none text-white/[0.58] sm:text-[10px]">
+                  {film.origin_name || `Năm ${film.year || 2026}`}
+                </p>
+              </div>
+            )}
+
             {/* Hover Overlay Play Icon */}
             <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover/card:opacity-100">
               <div className="flex h-10 w-10 scale-90 items-center justify-center rounded-full border border-white/50 bg-black/70 text-white shadow-[0_10px_28px_rgba(0,0,0,0.5)] backdrop-blur-md transition-transform duration-300 motion-safe:group-hover/card:scale-100">
@@ -334,7 +362,7 @@ function FilmCardComponent({
       </div>
 
       {/* Details Footer below Card */}
-      {!hideDetails && (
+      {!hideDetails && !isGallery && (
         <div className="mt-2 flex flex-col px-0.5">
           <Link
             href={`/film/${slug}`}
@@ -363,12 +391,13 @@ export function FilmCardSkeleton({
   width,
   hideDetails,
 }: {
-  variant?: 'standard' | 'landscape';
+  variant?: 'standard' | 'landscape' | 'gallery';
   width?: number;
   hideDetails?: boolean;
 }) {
   const globalCardLayout = useSettingsStore((s) => s.cardLayout);
   const effectiveVariant = variant || (globalCardLayout === 'horizontal' ? 'landscape' : 'standard');
+  const isGallery = effectiveVariant === 'gallery';
 
   return (
     <div
@@ -377,13 +406,20 @@ export function FilmCardSkeleton({
     >
       <div
         className={cn(
-          'relative overflow-hidden rounded-[8px] border border-white/5 bg-neutral-900',
+          'relative overflow-hidden border border-white/5 bg-neutral-900',
+          isGallery ? 'rounded-[18px]' : 'rounded-[8px]',
           effectiveVariant === 'landscape' ? 'aspect-video w-full' : 'aspect-[2/3] w-full',
         )}
       >
         <div className="absolute inset-0 bg-neutral-800/40" />
+        {isGallery && (
+          <div className="absolute inset-x-3 bottom-4 space-y-2">
+            <div className="h-3 w-[76%] rounded-sm bg-neutral-700/70" />
+            <div className="h-2.5 w-[48%] rounded-sm bg-neutral-700/45" />
+          </div>
+        )}
       </div>
-      {!hideDetails && (
+      {!hideDetails && !isGallery && (
         <div className="mt-2 px-0.5">
           <div className="h-3 w-[78%] rounded-sm bg-neutral-800/70" />
           <div className="mt-1 h-2.5 w-[52%] rounded-sm bg-neutral-800/45" />

@@ -472,28 +472,29 @@ function FilmSection({
   const cardLayout = useSettingsStore((s) => s.cardLayout);
   const isLandscape = cardLayout === "horizontal";
   const rowRef = useRef<HTMLDivElement>(null);
-  const [scrollStep, setScrollStep] = useState(0);
 
   const itemWidthClass = isLandscape
     ? "w-[72%] min-w-[220px] shrink-0 snap-start sm:w-[46%] md:w-[32%] lg:w-[calc((100%-4*1rem)/5)] xl:w-[calc((100%-4*1rem)/5)]"
-    : "w-[26%] min-w-[112px] shrink-0 snap-start sm:w-[22%] md:w-[18%] lg:w-[calc((100%-6*1rem)/7)] xl:w-[calc((100%-6*1rem)/7)]";
+    : "w-[43%] min-w-[148px] shrink-0 snap-start sm:w-[31%] md:w-[24%] lg:w-[calc((100%-5*1rem)/6)] xl:w-[calc((100%-5*1.25rem)/6)]";
 
-  const updateScrollStep = () => {
-    const row = rowRef.current;
-    if (!row) return;
-
-    const maxScroll = row.scrollWidth - row.clientWidth;
-    setScrollStep(
-      maxScroll > 0 ? Math.round((row.scrollLeft / maxScroll) * 3) : 0,
-    );
-  };
+  const galleryOffsets = [
+    "md:-rotate-[0.7deg] md:translate-y-1",
+    "md:rotate-[0.55deg]",
+    "md:-rotate-[0.35deg] md:translate-y-2",
+    "md:rotate-[0.75deg] md:translate-y-0.5",
+    "md:-rotate-[0.45deg] md:translate-y-1.5",
+    "md:rotate-[0.35deg]",
+  ];
 
   const scrollFilms = (direction: -1 | 1) => {
     const row = rowRef.current;
     if (!row) return;
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
     row.scrollBy({
       left: direction * row.clientWidth * 0.85,
-      behavior: "smooth",
+      behavior: reduceMotion ? "auto" : "smooth",
     });
   };
 
@@ -502,11 +503,9 @@ function FilmSection({
   return (
     <div
       data-film-section="true"
-      className={`${cardFont.className} mb-8 group/section`}
+      className={`${cardFont.className} group/section mb-10 sm:mb-12`}
     >
-      {/* Title Header matching user's requested layout (Inline pill button + right dash line pagination) */}
-      <div className="mb-3.5 flex items-start justify-between gap-2 px-1 sm:items-center">
-        {/* Left Side: Title + Inline "Xem tất cả >" Pill Button */}
+      <div className="mb-4 flex items-center justify-between gap-3 px-1 sm:mb-5">
         <div className="flex min-w-0 flex-1 items-start gap-2 sm:items-center">
           <div className="min-w-0 flex-1 sm:flex-none">
             <h2
@@ -520,7 +519,7 @@ function FilmSection({
             <Link
               href={href}
               data-film-section-action="true"
-              className="group/link inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap text-xs sm:text-sm font-semibold text-white/80 hover:text-white transition-colors select-none ml-1.5"
+              className="group/link ml-1.5 inline-flex shrink-0 select-none items-center gap-0.5 whitespace-nowrap text-xs font-semibold text-white/65 transition-colors hover:text-white sm:text-sm"
             >
               <span>{t("home.viewAll", "Xem tất cả")}</span>
               <ChevronRight size={14} className="stroke-[2.2] text-white/60 group-hover/link:text-white transition-transform group-hover/link:translate-x-0.5" />
@@ -528,80 +527,62 @@ function FilmSection({
           )}
         </div>
 
-        {/* Right Side: Dynamic Dash Line Pagination Indicators (— - - - -) */}
-        {isLoading ? (
-          <div className="h-2 w-24 rounded bg-white/[0.07] motion-safe:animate-pulse" />
-        ) : (
-          <div
-            className="hidden items-center gap-1.5 sm:flex"
-            aria-hidden="true"
-          >
-            {[0, 1, 2, 3].map((step) => (
-              <span
-                key={step}
-                className={`h-0.5 rounded-full transition-[width,background-color] duration-200 ${
-                  step === scrollStep ? "w-6 bg-white/85" : "w-3 bg-white/20"
-                }`}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Row Container with Right Minimalist Vertical Stack Navigation */}
-      <div className="flex items-stretch gap-3" aria-busy={isLoading}>
-        <div className="flex-1 min-w-0">
-          <div
-            ref={rowRef}
-            onScroll={updateScrollStep}
-            className="scrollbar-hide flex w-full snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain py-1 sm:gap-3 lg:gap-4"
-          >
-            {isLoading
-              ? Array.from({ length: 14 }, (_, index) => (
-                  <div
-                    key={`film-skeleton-${index}`}
-                    className={itemWidthClass}
-                  >
-                    <FilmCardSkeleton />
-                  </div>
-                ))
-              : films.map((film, idx) => (
-                  <div
-                    key={`slide-${title}-${film._id || film.slug || "film"}-${idx}`}
-                    className={itemWidthClass}
-                  >
-                    <FilmCard
-                      film={film}
-                      preferHighQuality={
-                        title === "Phim Mới Cập Nhật" && idx < 4
-                      }
-                    />
-                  </div>
-                ))}
-          </div>
-        </div>
-
-        {/* ── Minimalist Vertical Chevron Navigation (Pure icons without background box) ── */}
-        <div className="hidden sm:flex flex-col justify-center gap-3 shrink-0 my-auto px-1">
-          <button
-            onClick={() => scrollFilms(1)}
-            disabled={isLoading}
-            aria-label={`Chuyển sang phải cho ${title}`}
-            title={`Xem phim tiếp theo trong ${title}`}
-            className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
-          >
-            <ChevronRight size={22} strokeWidth={2.5} />
-          </button>
-
+        <div className="hidden shrink-0 items-center gap-2 sm:flex">
           <button
             onClick={() => scrollFilms(-1)}
             disabled={isLoading}
             aria-label={`Chuyển sang trái cho ${title}`}
             title={`Xem phim trước trong ${title}`}
-            className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-[#191a20] text-white/60 transition-[background-color,border-color,color,transform] hover:border-white/25 hover:bg-[#22242b] hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-20"
           >
-            <ChevronLeft size={22} strokeWidth={2.5} />
+            <ChevronLeft size={17} strokeWidth={2.25} />
           </button>
+          <button
+            onClick={() => scrollFilms(1)}
+            disabled={isLoading}
+            aria-label={`Chuyển sang phải cho ${title}`}
+            title={`Xem phim tiếp theo trong ${title}`}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-[#191a20] text-white/60 transition-[background-color,border-color,color,transform] hover:border-white/25 hover:bg-[#22242b] hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-20"
+          >
+            <ChevronRight size={17} strokeWidth={2.25} />
+          </button>
+        </div>
+      </div>
+
+      <div className="min-w-0" aria-busy={isLoading}>
+        <div
+          ref={rowRef}
+          data-film-gallery="true"
+          className="scrollbar-hide flex w-full snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 py-3 sm:gap-4 sm:px-2 sm:py-4 xl:gap-5"
+        >
+          {isLoading
+            ? Array.from({ length: 12 }, (_, index) => (
+                <div
+                  key={`film-skeleton-${index}`}
+                  className={itemWidthClass}
+                >
+                  <FilmCardSkeleton
+                    variant={isLandscape ? "landscape" : "gallery"}
+                  />
+                </div>
+              ))
+            : films.map((film, idx) => (
+                <div
+                  key={`slide-${title}-${film._id || film.slug || "film"}-${idx}`}
+                  data-gallery-card="true"
+                  className={`${itemWidthClass} ${
+                    isLandscape ? "" : galleryOffsets[idx % galleryOffsets.length]
+                  } transition-transform duration-300 ease-out motion-reduce:transform-none`}
+                >
+                  <FilmCard
+                    film={film}
+                    variant={isLandscape ? "landscape" : "gallery"}
+                    preferHighQuality={
+                      title === "Phim Mới Cập Nhật" && idx < 4
+                    }
+                  />
+                </div>
+              ))}
         </div>
       </div>
     </div>
