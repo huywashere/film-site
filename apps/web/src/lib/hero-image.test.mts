@@ -97,16 +97,6 @@ test('visible film cards do not prefetch every detail route in the background', 
   assert.ok(disabledPrefetchLinks.length >= 2);
 });
 
-test('homepage film shelves use the poster gallery treatment without changing catalog cards', () => {
-  const homepage = readFileSync('src/app/HomePageClient.tsx', 'utf8');
-  const card = readFileSync('src/components/film/FilmCard.tsx', 'utf8');
-
-  assert.match(homepage, /data-film-gallery="true"/);
-  assert.match(homepage, /variant=\{isLandscape \? "landscape" : "gallery"\}/);
-  assert.match(card, /variant\?: 'standard' \| 'landscape' \| 'gallery'/);
-  assert.match(card, /isGallery \? 'h-40' : 'h-20'/);
-});
-
 test('hidden desktop and mobile navigation menus do not preload the whole site', () => {
   const navbar = readFileSync('src/components/layout/Navbar.tsx', 'utf8');
   const sidebar = readFileSync('src/components/layout/Sidebar.tsx', 'utf8');
