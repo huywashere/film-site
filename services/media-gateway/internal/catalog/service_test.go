@@ -121,8 +121,13 @@ func TestHomeFeedBuildsOnceAndUsesSnapshotCache(t *testing.T) {
 		t.Fatalf("expected first home feed to miss, got %s", status)
 	}
 	sections, ok := payload["sections"].(map[string]any)
-	if !ok || len(sections) != 4 {
-		t.Fatalf("expected four homepage sections, got %#v", payload["sections"])
+	if !ok || len(sections) != 7 {
+		t.Fatalf("expected seven homepage sections, got %#v", payload["sections"])
+	}
+	for _, key := range []string{"latest", "series", "single", "anime", "horror", "historical", "theatrical"} {
+		if _, exists := sections[key]; !exists {
+			t.Fatalf("expected homepage section %q, got %#v", key, sections)
+		}
 	}
 
 	before := requests.Load()

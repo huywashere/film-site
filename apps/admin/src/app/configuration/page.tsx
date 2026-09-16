@@ -377,7 +377,7 @@ export default function ConfigurationPage() {
           />
           <ListField
             label="Thứ tự section"
-            detail="ID hỗ trợ: top10, continue, schedule, latest, vfx, usuk-series, action, scifi và featured:<mã hàng>."
+            detail="ID hỗ trợ: top10, continue, schedule, latest, vfx, usuk-series, action, scifi, horror, historical, theatrical và featured:<mã hàng>."
             value={config.homeSectionOrder}
             limit={30}
             onChange={(value) => update("homeSectionOrder", value)}

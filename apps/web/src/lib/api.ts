@@ -940,7 +940,11 @@ async function getCatalogFromGateway(kind: string, page: number, limit = 64, val
 type HomeFeedPayload = {
   status: boolean;
   generatedAt?: string;
-  sections: Record<'latest' | 'series' | 'single' | 'anime', any[]>;
+  sections: Record<'latest' | 'series' | 'single' | 'anime', any[]> & {
+    horror?: any[];
+    historical?: any[];
+    theatrical?: any[];
+  };
   top10: any[];
 };
 
@@ -952,11 +956,14 @@ async function getHomeFeed(limit = 24): Promise<HomeFeedPayload> {
     // Keep local/Vercel development functional when Gin is intentionally not
     // running. The fallback preserves the same response contract so homepage
     // components never need provider-specific branches.
-    const [latest, series, single, anime, top10] = await Promise.all([
+    const [latest, series, single, anime, horror, historical, theatrical, top10] = await Promise.all([
       getFastCatalogPage(1, catalogRequests('latest', 1)),
       getFastCatalogPage(1, catalogRequests('series', 1), 'series'),
       getFastCatalogPage(1, catalogRequests('single', 1), 'single'),
       getFastCatalogPage(1, catalogRequests('anime', 1), 'anime'),
+      getFastCatalogPage(1, catalogRequests('genre', 1, 'kinh-di')),
+      getFastCatalogPage(1, catalogRequests('genre', 1, 'co-trang')),
+      kkphimApi.getChieuRap(1, boundedLimit).catch(() => ({ data: { items: [] } })),
       fetchCatalogGateway(`/top10?limit=${Math.min(boundedLimit, 30)}`).catch(() => []),
     ]);
     const items = (payload: any) => payload?.data?.items || payload?.items || [];
@@ -968,6 +975,9 @@ async function getHomeFeed(limit = 24): Promise<HomeFeedPayload> {
         series: items(series),
         single: items(single),
         anime: items(anime),
+        horror: items(horror),
+        historical: items(historical),
+        theatrical: items(theatrical),
       },
       top10: Array.isArray(top10) ? top10 : [],
     };

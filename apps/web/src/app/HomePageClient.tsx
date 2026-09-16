@@ -433,6 +433,9 @@ const SECTION_TITLE_TONES: Record<string, string> = {
   "Phim Thần Thoại & Kỹ Xảo": "from-violet-400 via-fuchsia-400 to-rose-300",
   "Phim Hành Động": "from-orange-400 via-amber-400 to-yellow-300",
   "Phim Hành Động Kịch Tính": "from-orange-400 via-amber-400 to-yellow-300",
+  "Phim Kinh Dị": "from-red-400 via-rose-400 to-orange-300",
+  "Phim Cổ Trang": "from-amber-300 via-orange-400 to-red-400",
+  "Phim Chiếu Rạp": "from-fuchsia-400 via-violet-400 to-indigo-300",
   "Phim Âu-Mỹ Đáng Xem": "from-emerald-400 via-teal-400 to-cyan-300",
   "Series Quốc Tế": "from-blue-400 via-indigo-400 to-violet-300",
   "Anime & Hoạt Hình": "from-pink-400 via-rose-400 to-orange-300",
@@ -888,6 +891,77 @@ export default function HomePageClient({
   const scifiData = vfxGenreData;
   const scifiLoading = secondaryCatalogReady && homeFeedLoading;
 
+  // 5-7. Các hàng danh mục chính được trả chung trong home-feed để trình
+  // duyệt không phải tạo thêm request khi người dùng cuộn trang chủ.
+  const { data: horrorFallbackData, isLoading: horrorFallbackLoading } =
+    useQuery({
+      queryKey: ["home-section-horror-v1"],
+      queryFn: () => movieApi.getByGenre("kinh-di", 1).then((r) => r.data),
+      enabled:
+        secondaryCatalogReady &&
+        !homeFeedLoading &&
+        !homeFeedSections?.horror?.length,
+      staleTime: 10 * 60 * 1000,
+      gcTime: 60 * 60 * 1000,
+      retry: false,
+      refetchOnWindowFocus: false,
+    });
+  const { data: historicalFallbackData, isLoading: historicalFallbackLoading } =
+    useQuery({
+      queryKey: ["home-section-historical-v1"],
+      queryFn: () => movieApi.getByGenre("co-trang", 1).then((r) => r.data),
+      enabled:
+        secondaryCatalogReady &&
+        !homeFeedLoading &&
+        !homeFeedSections?.historical?.length,
+      staleTime: 10 * 60 * 1000,
+      gcTime: 60 * 60 * 1000,
+      retry: false,
+      refetchOnWindowFocus: false,
+    });
+  const {
+    data: theatricalFallbackData,
+    isLoading: theatricalFallbackLoading,
+  } = useQuery({
+    queryKey: ["home-section-theatrical-v1"],
+    queryFn: () => movieApi.getChieuRap(1).then((r) => r.data),
+    enabled:
+      secondaryCatalogReady &&
+      !homeFeedLoading &&
+      !homeFeedSections?.theatrical?.length,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  const horrorData = useMemo(
+    () =>
+      homeFeedSections?.horror?.length
+        ? asCatalogPayload(homeFeedSections.horror)
+        : horrorFallbackData,
+    [homeFeedSections?.horror, horrorFallbackData],
+  );
+  const historicalData = useMemo(
+    () =>
+      homeFeedSections?.historical?.length
+        ? asCatalogPayload(homeFeedSections.historical)
+        : historicalFallbackData,
+    [historicalFallbackData, homeFeedSections?.historical],
+  );
+  const theatricalData = useMemo(
+    () =>
+      homeFeedSections?.theatrical?.length
+        ? asCatalogPayload(homeFeedSections.theatrical)
+        : theatricalFallbackData,
+    [homeFeedSections?.theatrical, theatricalFallbackData],
+  );
+  const horrorLoading =
+    (catalogReady && homeFeedLoading) || horrorFallbackLoading;
+  const historicalLoading =
+    (catalogReady && homeFeedLoading) || historicalFallbackLoading;
+  const theatricalLoading =
+    (catalogReady && homeFeedLoading) || theatricalFallbackLoading;
+
   // ── Lazy Loaded 10 Sections Data (Loaded after clicking Xem Thêm) ──
 
   // 5. Xem gì tiếp theo (Hollywood Recommendations)
@@ -1109,6 +1183,21 @@ export default function HomePageClient({
     ]);
   }, [vfxUsUkData, scifiData]);
 
+  const horrorFilms = useMemo(() => {
+    const list = horrorData?.data?.items || horrorData?.items || [];
+    return filterLiveActionOnly(deduplicate(list));
+  }, [horrorData]);
+
+  const historicalFilms = useMemo(() => {
+    const list = historicalData?.data?.items || historicalData?.items || [];
+    return filterLiveActionOnly(deduplicate(list));
+  }, [historicalData]);
+
+  const theatricalFilms = useMemo(() => {
+    const list = theatricalData?.data?.items || theatricalData?.items || [];
+    return deduplicate(list);
+  }, [theatricalData]);
+
   const nextWatchFilms = useMemo(() => {
     const list =
       usUkBlockbustersData?.data?.items || usUkBlockbustersData?.items || [];
@@ -1181,6 +1270,9 @@ export default function HomePageClient({
     usUkSeriesRowList,
     actionRowList,
     scifiRowList,
+    horrorRowList,
+    historicalRowList,
+    theatricalRowList,
     nextWatchRowList,
     seriesRowList,
     animeRowList,
@@ -1202,6 +1294,9 @@ export default function HomePageClient({
     const usUkSeriesRowList = buildRow(usUkSeriesFilms, 21);
     const actionRowList = buildRow(actionFilms, 14);
     const scifiRowList = buildRow(scifiFilms, 14);
+    const horrorRowList = buildRow(horrorFilms, 14);
+    const historicalRowList = buildRow(historicalFilms, 14);
+    const theatricalRowList = buildRow(theatricalFilms, 14);
 
     // Lazy 10 Sections
     const nextWatchRowList = buildRow(nextWatchFilms, 14);
@@ -1222,6 +1317,9 @@ export default function HomePageClient({
         ...usUkSeriesRowList,
         ...actionRowList,
         ...scifiRowList,
+        ...horrorRowList,
+        ...historicalRowList,
+        ...theatricalRowList,
         ...nextWatchRowList,
         ...seriesRowList,
         ...animeRowList,
@@ -1244,6 +1342,9 @@ export default function HomePageClient({
       ...actionFilms,
       ...vfxFilms,
       ...scifiFilms,
+      ...horrorFilms,
+      ...historicalFilms,
+      ...theatricalFilms,
       ...REAL_TRENDING_TOP10_POOL,
     ]);
 
@@ -1268,6 +1369,9 @@ export default function HomePageClient({
       usUkSeriesRowList,
       actionRowList,
       scifiRowList,
+      horrorRowList,
+      historicalRowList,
+      theatricalRowList,
       nextWatchRowList,
       seriesRowList,
       animeRowList,
@@ -1287,6 +1391,9 @@ export default function HomePageClient({
     usUkSeriesFilms,
     actionFilms,
     scifiFilms,
+    horrorFilms,
+    historicalFilms,
+    theatricalFilms,
     nextWatchFilms,
     seriesFilms,
     animeFilms,
@@ -1320,6 +1427,9 @@ export default function HomePageClient({
       ...usUkSeriesFilms,
       ...actionFilms,
       ...scifiFilms,
+      ...horrorFilms,
+      ...historicalFilms,
+      ...theatricalFilms,
       ...seriesFilms,
       ...animeFilms,
       ...singleFilms,
@@ -1357,12 +1467,15 @@ export default function HomePageClient({
   }, [
     actionFilms,
     animeFilms,
+    historicalFilms,
+    horrorFilms,
     latestFilms,
     publicConfig?.homeFeaturedRows,
     scifiFilms,
     seriesFilms,
     singleFilms,
     trendingFilms,
+    theatricalFilms,
     usUkSeriesFilms,
     vfxFilms,
   ]);
@@ -1461,6 +1574,36 @@ export default function HomePageClient({
         </div>
       </LazySection>
     ),
+    horror: (
+      <LazySection initiallyVisible>
+        <FilmSection
+          title={t("sections.horror", "Phim Kinh Dị")}
+          films={horrorRowList}
+          isLoading={horrorLoading}
+          href="/genre/kinh-di"
+        />
+      </LazySection>
+    ),
+    historical: (
+      <LazySection initiallyVisible>
+        <FilmSection
+          title={t("sections.historical", "Phim Cổ Trang")}
+          films={historicalRowList}
+          isLoading={historicalLoading}
+          href="/genre/co-trang"
+        />
+      </LazySection>
+    ),
+    theatrical: (
+      <LazySection initiallyVisible>
+        <FilmSection
+          title={t("sections.theatrical", "Phim Chiếu Rạp")}
+          films={theatricalRowList}
+          isLoading={theatricalLoading}
+          href="/films/chieu-rap"
+        />
+      </LazySection>
+    ),
     ...customFeaturedSections,
   };
   const defaultSectionOrder = [
@@ -1471,10 +1614,19 @@ export default function HomePageClient({
     "usuk-series",
     "action",
     "scifi",
+    "horror",
+    "historical",
+    "theatrical",
   ];
-  const configuredSectionOrder = (publicConfig?.homeSectionOrder?.length
+  const savedSectionOrder = (publicConfig?.homeSectionOrder?.length
     ? publicConfig.homeSectionOrder
     : defaultSectionOrder).filter((sectionId) => sectionId !== "schedule");
+  const configuredSectionOrder = [
+    ...savedSectionOrder,
+    ...defaultSectionOrder.filter(
+      (sectionId) => !savedSectionOrder.includes(sectionId),
+    ),
+  ];
   const primarySectionOrder = [
     ...configuredSectionOrder,
     ...Object.keys(customFeaturedSections).filter(

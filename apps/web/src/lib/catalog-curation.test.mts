@@ -88,3 +88,23 @@ test("browse quick filters do not duplicate Marvel and DC universe entries", () 
   assert.ok(quickTypes);
   assert.doesNotMatch(quickTypes, /Marvel Studios|DC Universe/);
 });
+
+test("homepage exposes the three requested catalogue sections with exact labels", () => {
+  const source = readFileSync("src/app/HomePageClient.tsx", "utf8");
+
+  for (const [id, title, href] of [
+    ["horror", "Phim Kinh Dị", "/genre/kinh-di"],
+    ["historical", "Phim Cổ Trang", "/genre/co-trang"],
+    ["theatrical", "Phim Chiếu Rạp", "/films/chieu-rap"],
+  ]) {
+    assert.match(source, new RegExp(`${id}: \\(`));
+    assert.match(source, new RegExp(title));
+    assert.match(source, new RegExp(`href=\"${href}\"`));
+  }
+
+  assert.match(
+    source,
+    /defaultSectionOrder[\s\S]*?"horror"[\s\S]*?"historical"[\s\S]*?"theatrical"/,
+  );
+  assert.match(source, /defaultSectionOrder\.filter\([\s\S]*?!savedSectionOrder\.includes/);
+});

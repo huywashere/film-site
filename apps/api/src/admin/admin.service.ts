@@ -49,6 +49,9 @@ const DEFAULT_HOME_SECTION_ORDER = [
   "usuk-series",
   "action",
   "scifi",
+  "horror",
+  "historical",
+  "theatrical",
 ];
 
 import { RabbitMQService } from "../rabbitmq/rabbitmq.service";

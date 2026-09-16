@@ -398,7 +398,7 @@ model SiteConfiguration {
   autoSkipIntro         Boolean  @default(false)
   watchPartyEnabled     Boolean  @default(true)
   homeTop10Slugs        String[] @default([])
-  homeSectionOrder      String[] @default(["top10", "continue", "schedule", "latest", "vfx", "usuk-series", "action", "scifi"])
+  homeSectionOrder      String[] @default(["top10", "continue", "schedule", "latest", "vfx", "usuk-series", "action", "scifi", "horror", "historical", "theatrical"])
   homeHiddenSections    String[] @default([])
   homeFeaturedRows      Json?
   seoTitle              String?  @default("FlexPhim - Xem phim trực tuyến")

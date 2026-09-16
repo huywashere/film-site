@@ -429,19 +429,23 @@ func (s *Service) buildAndCacheHomeFeed(ctx context.Context, cacheKey string, li
 		err   error
 	}
 	requests := []struct {
-		key  string
-		kind string
+		key   string
+		kind  string
+		value string
 	}{
 		{key: "latest", kind: "latest"},
 		{key: "series", kind: "series"},
 		{key: "single", kind: "single"},
 		{key: "anime", kind: "anime"},
+		{key: "horror", kind: "genre", value: "kinh-di"},
+		{key: "historical", kind: "genre", value: "co-trang"},
+		{key: "theatrical", kind: "theatrical"},
 	}
 	results := make(chan sectionResult, len(requests))
 	for _, request := range requests {
 		request := request
 		go func() {
-			payload, _, err := s.Catalog(ctx, request.kind, "", 1, limit)
+			payload, _, err := s.Catalog(ctx, request.kind, request.value, 1, limit)
 			if err != nil {
 				results <- sectionResult{key: request.key, err: err}
 				return
@@ -913,6 +917,8 @@ func catalogPath(source, kind, value string, page, limit int) string {
 			return "v1/api/the-loai/" + escaped + "?" + query
 		case "country":
 			return "v1/api/quoc-gia/" + escaped + "?" + query
+		case "theatrical":
+			return "v1/api/danh-sach/phim-chieu-rap?" + query
 		case "filter":
 			values := filterValues(value, page, limit)
 			return "v1/api/danh-sach?" + values.Encode()
@@ -931,6 +937,8 @@ func catalogPath(source, kind, value string, page, limit int) string {
 			return "films/the-loai/" + escaped + "?page=" + strconv.Itoa(page)
 		case "country":
 			return "films/quoc-gia/" + escaped + "?page=" + strconv.Itoa(page)
+		case "theatrical":
+			return "films/danh-sach/phim-chieu-rap?page=" + strconv.Itoa(page)
 		case "filter":
 			filter := parseFilterValue(value)
 			if filter["category"] != "" {
@@ -954,6 +962,8 @@ func catalogPath(source, kind, value string, page, limit int) string {
 			return "the-loai/" + escaped + "?page=" + strconv.Itoa(page)
 		case "country":
 			return "quoc-gia/" + escaped + "?page=" + strconv.Itoa(page)
+		case "theatrical":
+			return "danh-sach/phim-chieu-rap?page=" + strconv.Itoa(page)
 		case "filter":
 			filter := parseFilterValue(value)
 			if filter["category"] != "" {
@@ -1246,7 +1256,7 @@ func boundedQueryInt(c *gin.Context, key string, fallback, minimum, maximum int)
 
 func validCatalogKind(kind string) bool {
 	switch kind {
-	case "latest", "series", "single", "anime", "tvshows", "genre", "country", "filter":
+	case "latest", "series", "single", "anime", "tvshows", "genre", "country", "filter", "theatrical":
 		return true
 	default:
 		return false
