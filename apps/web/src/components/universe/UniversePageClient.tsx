@@ -30,6 +30,7 @@ import {
 import { cn } from "@/lib/utils";
 import {
   buildArtworkCandidates,
+  isTmdbImageUrl,
   isWsrvImageUrl,
 } from "@/lib/image-cdn";
 import { resolveImageUrl } from "@/lib/movie-image-url";
@@ -47,7 +48,7 @@ const TrailerModal = dynamic(
 function getUniverseLogoCandidates(titleLogo?: string | null): string[] {
   if (!titleLogo) return [];
   return buildArtworkCandidates([titleLogo], "titleLogo", {
-    preferEdge: titleLogo.includes("image.tmdb.org"),
+    includeWsrvForTmdb: titleLogo.includes("image.tmdb.org"),
     strictProxy: true,
   });
 }
@@ -116,7 +117,9 @@ function UniverseSpotlightBackdrop({
           fetchPriority={isPriority ? "high" : "low"}
           loading={isPriority ? "eager" : "lazy"}
           decoding={isPriority ? "sync" : "async"}
-          unoptimized={isWsrvImageUrl(src) || src.startsWith("/api/")}
+          unoptimized={
+            isWsrvImageUrl(src) || isTmdbImageUrl(src) || src.startsWith("/api/")
+          }
           sizes="100vw"
           onError={() => {
             if (candidateIdx < candidates.length - 1) {
@@ -186,7 +189,9 @@ function UniverseSpotlightLogo({
         fetchPriority={isPriority ? "high" : "low"}
         loading="eager"
         decoding="sync"
-        unoptimized={isWsrvImageUrl(src) || src.startsWith("/api/")}
+        unoptimized={
+          isWsrvImageUrl(src) || isTmdbImageUrl(src) || src.startsWith("/api/")
+        }
         onLoad={() => {
           markImagePreloaded(src);
           setLoadedSrc(src);

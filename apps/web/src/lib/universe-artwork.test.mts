@@ -14,14 +14,18 @@ test("Doraemon and Conan spotlights ship movie-specific TMDB title logos", () =>
   }
 });
 
-test("universe spotlights optimize title logos through wsrv with safe fallbacks", () => {
+test("universe spotlights load TMDB logos directly with wsrv fallback", () => {
   const source = readFileSync(
     "src/components/universe/UniversePageClient.tsx",
     "utf8",
   );
 
   assert.match(source, /buildArtworkCandidates\(\[titleLogo\], "titleLogo"/);
-  assert.match(source, /preferEdge: titleLogo\.includes\("image\.tmdb\.org"\)/);
+  assert.match(
+    source,
+    /includeWsrvForTmdb: titleLogo\.includes\("image\.tmdb\.org"\)/,
+  );
+  assert.match(source, /isTmdbImageUrl\(src\)/);
   assert.match(source, /alt=""[\s\S]*aria-hidden="true"/);
   assert.doesNotMatch(source, /\/images\/logos\/(?:doraemon|conan)-logo\.svg/);
 });

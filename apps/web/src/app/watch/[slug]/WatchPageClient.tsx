@@ -495,7 +495,6 @@ function WatchCastAvatar({
     if (!tmdbUrl) return [];
     return buildArtworkCandidates([tmdbUrl], 'avatar', {
       includeWsrvForTmdb: true,
-      preferEdge: true,
     });
   }, [tmdbUrl]);
 

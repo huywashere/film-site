@@ -546,13 +546,11 @@ function buildHeroLogoCandidates(url?: string | null): string[] {
   const clean = url.trim();
   if (!clean) return [];
 
-  // Transparent TMDB title logos are often much heavier than poster/backdrop
-  // JPEGs. Let wsrv convert only this asset class to a bounded WebP first,
-  // while retaining direct TMDB and the same-origin relay as fallbacks. The
-  // measured saving is substantial for logos; applying this to every TMDB
-  // image would add a cache-cold CDN hop for very little payload reduction.
+  // Production measurements show direct TMDB title logos paint faster than a
+  // cache-cold wsrv transform. Keep wsrv as the compact WebP fallback instead
+  // of blocking the first logo paint on another CDN hop.
   return buildArtworkCandidates([clean], "titleLogo", {
-    preferEdge: clean.includes("image.tmdb.org"),
+    includeWsrvForTmdb: clean.includes("image.tmdb.org"),
     strictProxy: true,
   }).filter((src) => !failedHeroLogos.has(src));
 }

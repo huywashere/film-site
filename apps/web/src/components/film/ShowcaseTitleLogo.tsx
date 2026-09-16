@@ -32,7 +32,7 @@ function normalizeLogoUrl(raw?: string | null): string | null {
 
 function buildCandidates(url: string): string[] {
   return buildArtworkCandidates([url], 'titleLogo', {
-    preferEdge: url.includes('image.tmdb.org'),
+    includeWsrvForTmdb: url.includes('image.tmdb.org'),
     strictProxy: true,
   });
 }

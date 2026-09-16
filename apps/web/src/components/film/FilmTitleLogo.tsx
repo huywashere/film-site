@@ -9,7 +9,7 @@ export function FilmTitleLogo({ path, title }: { path?: string | null; title: st
   const src = path ? tmdbLogo(path, 'w500') : '';
   const candidates = src
     ? buildArtworkCandidates([src], 'titleLogo', {
-        preferEdge: true,
+        includeWsrvForTmdb: true,
         strictProxy: true,
       })
     : [];

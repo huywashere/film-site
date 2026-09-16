@@ -126,7 +126,7 @@ export default async function FilmPage({ params }: PageProps) {
     );
   const initialOptimizedLogoUrl = initialLogoUrl
     ? buildArtworkCandidates([initialLogoUrl], "titleLogo", {
-        preferEdge: true,
+        includeWsrvForTmdb: true,
         strictProxy: true,
       })[0] || initialLogoUrl
     : null;
