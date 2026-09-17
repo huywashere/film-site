@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Artplayer from 'artplayer';
 import vi from 'artplayer/i18n/vi';
 import Hls from 'hls.js';
@@ -15,10 +15,14 @@ import {
   ARTPLAYER_SEEK_FORWARD_10_SVG,
   ARTPLAYER_SCREENSHOT_SVG,
   ARTPLAYER_PIP_SVG,
+  ARTPLAYER_SERVER_ROUTER_SVG,
 } from './artplayer-editor-assets';
 import { attachNightModeAudio, isNightModeEnabled, setNightMode } from '@/lib/audio-effects';
 import { setupScrubberPreview } from './scrubber-preview';
 import { setupMobileCenterControls } from './mobile-center-controls';
+import PlayerServerHealthPanel, { type PlayerServerItem } from './PlayerServerHealthPanel';
+
+export type { PlayerServerItem } from './PlayerServerHealthPanel';
 
 // Reduced from 8s → 6s for desktop. Mobile timeout is extended in the watchdog
 // itself. Faster timeout = faster automatic fallback to an alternate server.
@@ -64,6 +68,9 @@ export interface ArtPlayerProps {
   minAdStartTime?: number;
   adRanges?: Array<{ start: number; end: number; title?: string }>;
   onStallSuggestServer?: () => void;
+  servers?: PlayerServerItem[];
+  currentServerIndex?: number;
+  onSwitchServer?: (index: number) => void;
 }
 
 export default function ArtPlayer({
@@ -92,9 +99,18 @@ export default function ArtPlayer({
   minAdStartTime = 360,
   adRanges,
   onStallSuggestServer,
+  servers,
+  currentServerIndex,
+  onSwitchServer,
 }: ArtPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Artplayer | null>(null);
+  const [isServerPanelOpen, setIsServerPanelOpen] = useState(false);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+  const toggleServerPanelRef = useRef<() => void>(() => {});
+  toggleServerPanelRef.current = () => {
+    setIsServerPanelOpen((prev) => !prev);
+  };
   const onStallSuggestServerRef = useRef(onStallSuggestServer);
   onStallSuggestServerRef.current = onStallSuggestServer;
   const stallIncidentTimesRef = useRef<number[]>([]);
@@ -764,6 +780,20 @@ export default function ArtPlayer({
               },
             ]
           : []),
+        ...(servers && servers.length > 0
+          ? [
+              {
+                name: 'server-health',
+                position: 'right',
+                index: 19,
+                html: `<span class="art-icon netphim-server-health-btn" style="display:inline-flex;align-items:center;justify-content:center;color:#fbbf24;cursor:pointer;">${ARTPLAYER_SERVER_ROUTER_SVG}</span>`,
+                tooltip: 'Máy chủ & Sức khỏe',
+                click: function () {
+                  toggleServerPanelRef.current();
+                },
+              },
+            ]
+          : []),
         {
           name: 'screenshot',
           position: 'right',
@@ -1239,6 +1269,7 @@ export default function ArtPlayer({
 
     // Keep business callbacks around ArtPlayer's native UI lifecycle.
     player.on('ready', () => {
+      setPortalContainer((player as any).template?.$player || containerRef.current);
       if (player.video) {
         attachNightModeAudio(player.video);
       }
@@ -1378,12 +1409,33 @@ export default function ArtPlayer({
       triggerSeekRippleRef.current = null;
       teardownScrubberPreview();
       teardownMobileCenterControls();
+      setPortalContainer(null);
     };
     // Recreate only when the primary/fallback transport or subtitles change. Other props use refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, fallbackUrl, type, serializedSubtitles]);
 
+  useEffect(() => {
+    if (isServerPanelOpen && playerRef.current) {
+      playerRef.current.controls.show = true;
+    }
+  }, [isServerPanelOpen]);
+
   return (
-    <div ref={containerRef} className="absolute inset-0 h-full min-h-0 w-full overflow-hidden" />
+    <div ref={containerRef} className="absolute inset-0 h-full min-h-0 w-full overflow-hidden">
+      {servers && servers.length > 0 && (
+        <PlayerServerHealthPanel
+          isOpen={isServerPanelOpen}
+          onClose={() => setIsServerPanelOpen(false)}
+          servers={servers}
+          currentServerIndex={currentServerIndex ?? 0}
+          onSwitchServer={(idx) => {
+            onSwitchServer?.(idx);
+            setIsServerPanelOpen(false);
+          }}
+          portalContainer={portalContainer || containerRef.current}
+        />
+      )}
+    </div>
   );
 }

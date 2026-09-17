@@ -1,7 +1,9 @@
 "use client";
 
 import { memo } from "react";
-import ArtPlayer, { type SubtitleTrack } from "@/components/video/ArtPlayer";
+import ArtPlayer, { type SubtitleTrack, type PlayerServerItem } from "@/components/video/ArtPlayer";
+
+export type { PlayerServerItem };
 
 export type HlsPlaybackError = {
   type: string;
@@ -33,6 +35,9 @@ type HlsVideoPlayerProps = {
   autoSkipAds?: boolean;
   minAdStartTime?: number;
   onStallSuggestServer?: () => void;
+  servers?: PlayerServerItem[];
+  currentServerIndex?: number;
+  onSwitchServer?: (index: number) => void;
 };
 
 /**
@@ -64,6 +69,9 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
   autoSkipAds = true,
   minAdStartTime = 360,
   onStallSuggestServer,
+  servers,
+  currentServerIndex,
+  onSwitchServer,
 }: HlsVideoPlayerProps) {
   return (
     <div className="w-full h-full relative">
@@ -84,6 +92,9 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
         autoSkipAds={autoSkipAds}
         minAdStartTime={minAdStartTime}
         onStallSuggestServer={onStallSuggestServer}
+        servers={servers}
+        currentServerIndex={currentServerIndex}
+        onSwitchServer={onSwitchServer}
         isTheaterMode={isTheaterMode}
         onTheaterModeToggle={onTheaterModeToggle}
         onReady={(player) => {

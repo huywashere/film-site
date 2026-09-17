@@ -3443,6 +3443,74 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     toast(`Đã chuyển sang ${serverName} (Ping ${ping}ms)`, 'success');
   }, [suggestedServerToast, episodes, toast]);
 
+  const handleSelectServer = useCallback(
+    (idx: number) => {
+      const targetEp = episodes[idx];
+      if (!targetEp) return;
+      setUserManuallySelectedServer(true);
+      setVidsrcManuallySelected(!isAutomaticPlaybackSource(targetEp._source));
+      preserveServerOnTypeChangeRef.current = true;
+      setCurrentServer(idx);
+      if (targetEp._type) {
+        setActiveServerType(targetEp._type as ServerType);
+      }
+      const matchedEpisode = findMatchingEpisode(
+        targetEp.server_data,
+        currentEpData?.slug || currentEpData?.name || currentEp,
+      );
+      const matchedEpisodeId = matchedEpisode?.slug || matchedEpisode?.name;
+      setPlayerEngine(matchedEpisode?.link_m3u8 ? 'hls' : 'iframe');
+      if (matchedEpisodeId) {
+        router.replace(watchUrlForEpisode(matchedEpisodeId, idx));
+      }
+      toast(`Đã chuyển sang ${targetEp.server_name || `Server ${idx + 1}`}`, 'success');
+    },
+    [episodes, currentEpData, currentEp, router, toast, watchUrlForEpisode],
+  );
+
+  const playerServers = useMemo(() => {
+    if (!episodes || episodes.length === 0) return [];
+    const providerCounts = new Map<string, number>();
+
+    return episodes.map((ep, idx) => {
+      const source = ep._source || 'kkphim';
+      const abbr = getSourceAbbr(source).replace('KP', 'KK');
+      const pCount = (providerCounts.get(abbr) || 0) + 1;
+      providerCounts.set(abbr, pCount);
+
+      let typeLabel = 'Vietsub';
+      if (ep._type === 'song-ngu') typeLabel = 'Song Ngữ (AI)';
+      else if (ep._type === 'thuyet-minh') typeLabel = 'Thuyết Minh';
+      else if (ep._type === 'engsub') typeLabel = 'Engsub';
+      else if (ep._type === 'raw') typeLabel = 'Bản Gốc';
+      else if (ep._type === 'vietsub') typeLabel = 'Vietsub';
+
+      const origName = String(ep.server_name || '');
+      const variantMatch = origName.match(/#\d+|\d+$/);
+      const variantSuffix = variantMatch ? ` ${variantMatch[0]}` : '';
+
+      const displayName = `Máy chủ ${pCount} (${abbr}) - ${typeLabel}${variantSuffix}`;
+
+      const matched =
+        findMatchingEpisode(
+          ep.server_data,
+          currentEpData?.slug || currentEpData?.name || currentEp,
+        ) || ep.server_data?.[0];
+
+      const streamUrl = matched?.link_m3u8 || matched?.link_embed || '';
+
+      return {
+        index: idx,
+        name: displayName,
+        source: ep._source,
+        type: ep._type,
+        episodesCount: Array.isArray(ep.server_data) ? ep.server_data.length : 0,
+        streamUrl,
+        isCurrent: idx === currentServer,
+      };
+    });
+  }, [episodes, currentServer, currentEpData, currentEp]);
+
   if (isLoading) return <WatchSkeleton />;
 
   if (!isLoading && !film) {
@@ -3813,6 +3881,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     autoPlay={autoPlayConfig}
                     autoSkipIntro={skipIntroConfig}
                     autoSkipAds={useSettingsStore.getState().autoSkipAds ?? true}
+                    servers={playerServers}
+                    currentServerIndex={currentServer}
+                    onSwitchServer={handleSelectServer}
                     onReady={(player) => {
                       setArtInstance(player);
                       setPlayerReadySlug(slug);
