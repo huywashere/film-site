@@ -3278,7 +3278,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       if (playerEngine === 'hls' && (embedUrl || iframeUrl)) {
         setPlayerEngine('iframe');
         setIsFallbacking(true);
-        setFallbackMessage('Đang chuyển sang Trình phát Dự phòng (Embed)...');
+        setFallbackMessage('Đang chuyển sang Trình phát Dự phòng...');
         setTimeout(() => {
           setIsFallbacking(false);
           setFallbackMessage('');
@@ -4491,7 +4491,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                               className={cn(
                                 'px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer select-none',
                                 playerEngine === 'hls'
-                                  ? 'bg-[#23ade5] text-black font-bold shadow-sm'
+                                  ? 'bg-purple-600 text-white font-bold shadow-sm shadow-purple-900/30'
                                   : 'text-neutral-400 hover:text-white',
                               )}
                               title="Trình phát mượt chuẩn ArtPlayer HLS"
@@ -4502,17 +4502,17 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                               type="button"
                               onClick={() => {
                                 setPlayerEngine('iframe');
-                                toast('Đã chuyển sang Trình phát Dự phòng (Embed)', 'info');
+                                toast('Đã chuyển sang Trình phát Dự phòng', 'info');
                               }}
                               className={cn(
                                 'px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer select-none',
                                 playerEngine === 'iframe'
-                                  ? 'bg-[#23ade5] text-black font-bold shadow-sm'
+                                  ? 'bg-purple-600 text-white font-bold shadow-sm shadow-purple-900/30'
                                   : 'text-neutral-400 hover:text-white',
                               )}
-                              title="Trình phát Embed dự phòng nếu luồng HLS bị lỗi hoặc giật lag"
+                              title="Trình phát dự phòng nếu luồng HLS bị lỗi hoặc giật lag"
                             >
-                              Dự phòng (Embed)
+                              Dự phòng
                             </button>
                           </div>
                         </div>
@@ -4766,7 +4766,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                         <div
                                           className={cn(
                                             'h-full transition-all duration-300',
-                                            effectiveProgress >= 90 ? 'bg-emerald-500' : 'bg-[#23ade5]',
+                                            effectiveProgress >= 90 ? 'bg-purple-400' : 'bg-purple-500',
                                           )}
                                           style={{ width: `${effectiveProgress}%` }}
                                         />
@@ -4861,7 +4861,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                         <div
                                           className={cn(
                                             'h-full transition-all duration-300',
-                                            effectiveProgress >= 90 ? 'bg-emerald-500' : 'bg-[#23ade5]',
+                                            effectiveProgress >= 90 ? 'bg-purple-400' : 'bg-purple-500',
                                           )}
                                           style={{ width: `${effectiveProgress}%` }}
                                         />
