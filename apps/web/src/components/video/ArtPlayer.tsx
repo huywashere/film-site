@@ -786,7 +786,7 @@ export default function ArtPlayer({
                 name: 'server-health',
                 position: 'right',
                 index: 19,
-                html: `<span class="art-icon netphim-server-health-btn" style="display:inline-flex;align-items:center;justify-content:center;color:#fbbf24;cursor:pointer;">${ARTPLAYER_SERVER_ROUTER_SVG}</span>`,
+                html: `<span class="art-icon netphim-server-health-btn" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">${ARTPLAYER_SERVER_ROUTER_SVG}</span>`,
                 tooltip: 'Máy chủ & Sức khỏe',
                 click: function () {
                   toggleServerPanelRef.current();
