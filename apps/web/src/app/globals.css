@@ -550,26 +550,17 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   border-radius: 0 !important;
 }
 
-/* ── Mobile Player Controls: Lower seek bar & ensure full controls row fits cleanly ── */
+/* ── Mobile Player Controls: Lower seek bar & spacing ── */
 @media (max-width: 768px) {
   .art-video-player.art-mobile,
   .art-video-player {
     --art-bottom-gap: 2px !important;
     --art-progress-top-gap: 4px !important;
-    --art-padding: 8px !important;
   }
   .art-video-player .art-bottom .art-progress {
     padding-top: 4px !important;
     padding-bottom: 2px !important;
     margin-bottom: -2px !important;
-  }
-  .art-video-player.art-mobile .art-controls .art-control {
-    min-width: 30px !important;
-    padding: 0 4px !important;
-  }
-  .art-video-player.art-mobile .art-control-time {
-    padding: 0 4px !important;
-    font-size: 11px !important;
   }
 }
 
@@ -727,12 +718,42 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   fill: none !important;
 }
 
-/* Only compact the native control row on narrow phones. */
-@media (max-width: 640px) {
+/* Universal display rule: Ensure ALL controls remain visible on all screen sizes & mobile */
+.art-video-player .art-control-screenshot,
+.art-video-player .art-control-pip,
+.art-video-player .art-control-fullscreenWeb,
+.art-video-player .art-control-airplay,
+.art-video-player .art-control-server-health,
+.art-video-player .art-control-setting,
+.art-video-player .art-control-fullscreen,
+.art-video-player .art-control-playAndPause,
+.art-video-player .art-control-backward-10,
+.art-video-player .art-control-forward-10,
+.art-video-player .art-control-volume,
+.art-video-player .art-control-time,
+.art-video-player .art-control-subtitle-toggle,
+.art-video-player.art-mobile .art-control-screenshot,
+.art-video-player.art-mobile .art-control-pip,
+.art-video-player.art-mobile .art-control-fullscreenWeb,
+.art-video-player.art-mobile .art-control-airplay,
+.art-video-player.art-mobile .art-control-server-health,
+.art-video-player.art-mobile .art-control-setting,
+.art-video-player.art-mobile .art-control-fullscreen,
+.art-video-player.art-mobile .art-control-playAndPause,
+.art-video-player.art-mobile .art-control-backward-10,
+.art-video-player.art-mobile .art-control-forward-10,
+.art-video-player.art-mobile .art-control-volume,
+.art-video-player.art-mobile .art-control-time,
+.art-video-player.art-mobile .art-control-subtitle-toggle {
+  display: inline-flex !important;
+}
+
+/* Mobile & Touch Controls Layout: Proportional, all controls visible, smooth scroll fallback */
+@media (max-width: 768px) {
   .art-video-player {
     --art-padding: 4px !important;
-    --art-control-height: 40px !important;
-    --art-control-icon-scale: 0.95 !important;
+    --art-control-height: 38px !important;
+    --art-control-icon-scale: 0.9 !important;
   }
 
   .art-video-player .art-bottom {
@@ -751,29 +772,91 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
     bottom: calc(100% + 8px);
   }
 
-  .art-video-player .art-controls .art-control:not(.art-control-progress) {
-    min-width: 28px !important;
-    padding: 0 2px !important;
+  .art-video-player .art-bottom .art-controls {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    padding: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 
-  .art-video-player .art-control-playAndPause,
-  .art-video-player .art-control-setting,
-  .art-video-player .art-control-fullscreen {
-    width: 34px !important;
-    min-width: 34px !important;
-    flex: 0 0 34px !important;
+  .art-video-player .art-bottom .art-controls::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .art-video-player .art-controls-left,
+  .art-video-player .art-controls-right {
+    display: flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+  }
+
+  .art-video-player .art-controls .art-control:not(.art-control-progress):not(.art-control-thumbnails):not(.art-control-time) {
+    width: 28px !important;
+    min-width: 28px !important;
+    max-width: 28px !important;
+    flex: 0 0 28px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+
+  .art-video-player .art-controls .art-control svg {
+    width: 18px !important;
+    height: 18px !important;
   }
 
   .art-video-player .art-control-time {
-    font-size: 11px !important;
+    font-size: 10px !important;
     padding: 0 2px !important;
     letter-spacing: -0.3px !important;
     white-space: nowrap !important;
+    font-variant-numeric: tabular-nums !important;
+    flex-shrink: 0 !important;
   }
 
-  .art-video-player.art-mobile .art-control-screenshot,
-  .art-video-player .art-control-screenshot {
+  /* On mobile touch devices, mute is handled by tap; hide hover slider panel */
+  .art-video-player .art-control-volume .art-volume-panel {
     display: none !important;
+  }
+
+  /* Suppress hover tooltips on mobile so they do not stick or cause width overflow */
+  .art-video-player [class*="hint--"]::before,
+  .art-video-player [class*="hint--"]::after {
+    display: none !important;
+  }
+
+  /* Settings panel mobile optimization */
+  .art-video-player .art-settings {
+    max-width: calc(100% - 20px) !important;
+    width: 270px !important;
+  }
+
+  .art-video-player .art-setting-item {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    padding: 0 12px !important;
+  }
+
+  .art-video-player .art-setting-item-left {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: 13px !important;
+  }
+
+  .art-video-player .art-setting-item-right {
+    flex-shrink: 0 !important;
+    font-size: 12px !important;
   }
 
   .art-video-player .netphim-skip-ad {
@@ -789,25 +872,24 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   }
 }
 
-@media (max-width: 420px) {
-  .art-video-player .art-control-pip,
-  .art-video-player .art-control-airplay,
-  .art-video-player .art-control-fullscreenWeb {
-    display: none !important;
+/* Extra compact sizing for narrow phones (<= 380px) */
+@media (max-width: 380px) {
+  .art-video-player .art-controls .art-control:not(.art-control-progress):not(.art-control-thumbnails):not(.art-control-time) {
+    width: 25px !important;
+    min-width: 25px !important;
+    max-width: 25px !important;
+    flex: 0 0 25px !important;
+  }
+
+  .art-video-player .art-controls .art-control svg {
+    width: 16px !important;
+    height: 16px !important;
   }
 
   .art-video-player .art-control-time {
-    font-size: 10px !important;
-  }
-}
-
-@media (max-width: 350px) {
-  .art-video-player .art-control-playAndPause,
-  .art-video-player .art-control-setting,
-  .art-video-player .art-control-fullscreen {
-    width: 31px !important;
-    min-width: 31px !important;
-    flex-basis: 31px !important;
+    font-size: 9px !important;
+    padding: 0 1px !important;
+    letter-spacing: -0.4px !important;
   }
 }
 
