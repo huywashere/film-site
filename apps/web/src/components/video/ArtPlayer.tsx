@@ -111,6 +111,8 @@ export default function ArtPlayer({
   toggleServerPanelRef.current = () => {
     setIsServerPanelOpen((prev) => !prev);
   };
+  const onSwitchServerRef = useRef(onSwitchServer);
+  onSwitchServerRef.current = onSwitchServer;
   const onStallSuggestServerRef = useRef(onStallSuggestServer);
   onStallSuggestServerRef.current = onStallSuggestServer;
   const stallIncidentTimesRef = useRef<number[]>([]);
@@ -868,6 +870,26 @@ export default function ArtPlayer({
                   art.subtitle.show = true;
                   void art.subtitle.switch(item.url, { name: item.html });
                   art.notice.show = `Phụ đề: ${item.html}`;
+                  return item.html;
+                },
+              },
+            ]
+          : []),
+        ...(servers && servers.length > 0
+          ? [
+              {
+                html: 'Máy chủ',
+                tooltip:
+                  servers.find((s) => s.index === currentServerIndex)?.name ||
+                  servers[0]?.name ||
+                  'Mặc định',
+                selector: servers.map((srv) => ({
+                  html: `${srv.name} (${srv.episodesCount} tập)`,
+                  index: srv.index,
+                  default: srv.index === currentServerIndex,
+                })),
+                onSelect: function (item: any) {
+                  onSwitchServerRef.current?.(item.index);
                   return item.html;
                 },
               },

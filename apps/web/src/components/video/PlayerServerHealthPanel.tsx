@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { RefreshCw, Check } from 'lucide-react';
+import { RefreshCw, Check, ChevronRight, Server } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface PlayerServerItem {
@@ -35,7 +35,6 @@ async function testStreamLatency(url?: string): Promise<number> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3500);
 
-    // HEAD request in no-cors mode to capture true edge CDN round-trip time
     await fetch(url, {
       method: 'HEAD',
       mode: 'no-cors',
@@ -55,132 +54,6 @@ async function testStreamLatency(url?: string): Promise<number> {
     }
     return Math.min(1500, elapsed);
   }
-}
-
-/**
- * 3-bar signal strength icon matching ChoPhim
- * Green: Mượt (<350ms)
- * Lime: Ổn (350-600ms)
- * Amber: Chậm (600-900ms)
- * Red: Lag (>=900ms)
- */
-export function SignalStrengthBadge({
-  latency,
-  isTesting,
-}: {
-  latency?: number;
-  isTesting?: boolean;
-}) {
-  let level = 2;
-  let barColor = '#10b981';
-
-  if (latency !== undefined && latency > 0) {
-    if (latency < 350) {
-      level = 3;
-      barColor = '#10b981';
-    } else if (latency < 600) {
-      level = 2;
-      barColor = '#84cc16';
-    } else if (latency < 900) {
-      level = 1;
-      barColor = '#fbbf24';
-    } else {
-      level = 1;
-      barColor = '#ef4444';
-    }
-  } else if (!isTesting) {
-    level = 2;
-    barColor = '#10b981';
-  }
-
-  return (
-    <div className="w-9 h-9 rounded-xl bg-white/[0.06] border border-white/[0.08] flex items-center justify-center shrink-0">
-      <svg
-        width="18"
-        height="18"
-        viewBox="0 0 18 18"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="overflow-visible"
-      >
-        {/* Bar 1 */}
-        <rect
-          x="2"
-          y="11"
-          width="3"
-          height="5"
-          rx="1"
-          fill={level >= 1 ? barColor : 'rgba(255,255,255,0.15)'}
-          className={isTesting ? 'animate-pulse' : ''}
-        />
-        {/* Bar 2 */}
-        <rect
-          x="7.5"
-          y="7"
-          width="3"
-          height="9"
-          rx="1"
-          fill={level >= 2 ? barColor : 'rgba(255,255,255,0.15)'}
-          className={isTesting ? 'animate-pulse' : ''}
-          style={isTesting ? { animationDelay: '150ms' } : undefined}
-        />
-        {/* Bar 3 */}
-        <rect
-          x="13"
-          y="3"
-          width="3"
-          height="13"
-          rx="1"
-          fill={level >= 3 ? barColor : 'rgba(255,255,255,0.15)'}
-          className={isTesting ? 'animate-pulse' : ''}
-          style={isTesting ? { animationDelay: '300ms' } : undefined}
-        />
-      </svg>
-    </div>
-  );
-}
-
-export function getHealthDetails(latency?: number, isTesting?: boolean) {
-  if (isTesting && latency === undefined) {
-    return {
-      label: 'Đang đo...',
-      labelClass: 'text-neutral-400',
-      pingClass: 'text-neutral-400',
-    };
-  }
-  if (latency === undefined || latency <= 0) {
-    return {
-      label: 'Chưa đo',
-      labelClass: 'text-neutral-400',
-      pingClass: 'text-neutral-400',
-    };
-  }
-  if (latency < 350) {
-    return {
-      label: 'Mượt',
-      labelClass: 'text-emerald-400',
-      pingClass: 'text-emerald-400',
-    };
-  }
-  if (latency < 600) {
-    return {
-      label: 'Ổn',
-      labelClass: 'text-lime-400',
-      pingClass: 'text-lime-400',
-    };
-  }
-  if (latency < 900) {
-    return {
-      label: 'Chậm',
-      labelClass: 'text-amber-400',
-      pingClass: 'text-amber-400',
-    };
-  }
-  return {
-    label: 'Lag',
-    labelClass: 'text-red-400',
-    pingClass: 'text-red-400',
-  };
 }
 
 export default function PlayerServerHealthPanel({
@@ -205,7 +78,6 @@ export default function PlayerServerHealthPanel({
     const promises = servers.map(async (srv) => {
       const ping = await testStreamLatency(srv.streamUrl);
       results[srv.index] = ping;
-      // Progressive update so users see numbers fill in in real time
       setLatencies((prev) => ({ ...prev, [srv.index]: ping }));
     });
 
@@ -213,7 +85,6 @@ export default function PlayerServerHealthPanel({
     setIsTesting(false);
   }, [servers, isTesting]);
 
-  // Trigger test on open if never tested or if > 45 seconds old
   useEffect(() => {
     if (isOpen) {
       const now = Date.now();
@@ -223,7 +94,6 @@ export default function PlayerServerHealthPanel({
     }
   }, [isOpen, measureAllLatencies, latencies]);
 
-  // Click outside and Escape key handling
   useEffect(() => {
     if (!isOpen) return;
 
@@ -236,7 +106,6 @@ export default function PlayerServerHealthPanel({
     const handlePointerDown = (e: PointerEvent) => {
       const target = e.target as HTMLElement | null;
       if (!target) return;
-      // If clicking inside panel or on the toggle button, don't close
       if (panelRef.current?.contains(target)) return;
       if (target.closest('.netphim-server-health-btn') || target.closest('[data-name="server-health"]')) {
         return;
@@ -258,24 +127,27 @@ export default function PlayerServerHealthPanel({
     <div
       ref={panelRef}
       role="dialog"
-      aria-label="Danh sách máy chủ và tốc độ"
+      aria-label="Cài đặt máy chủ"
       onClick={(e) => e.stopPropagation()}
       onDoubleClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
       className={cn(
-        'absolute bottom-16 right-3 sm:right-14 z-[9999] pointer-events-auto',
-        'w-[320px] sm:w-[350px] max-w-[calc(100vw-24px)]',
-        'rounded-2xl bg-[#141518]/95 backdrop-blur-xl',
-        'border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.85)]',
-        'overflow-hidden select-none transition-all duration-200',
-        'animate-in fade-in zoom-in-95',
+        'absolute bottom-[52px] right-2 sm:right-10 z-[9999] pointer-events-auto',
+        'w-[270px] sm:w-[290px] max-w-[calc(100vw-20px)]',
+        'rounded-[4px] bg-[#151c24]/95 backdrop-blur-md',
+        'border border-white/10 shadow-[0_4px_24px_rgba(0,0,0,0.6)]',
+        'overflow-hidden select-none py-1',
+        'animate-in fade-in zoom-in-95 duration-150',
       )}
       style={{ fontFamily: 'inherit' }}
     >
-      {/* Header */}
-      <div className="px-4 py-3 flex items-center justify-between border-b border-white/[0.08]">
-        <h3 className="text-white font-bold text-[15px] tracking-wide">Máy chủ</h3>
+      {/* Header matching ArtPlayer sub-panel */}
+      <div className="h-[36px] px-3.5 flex items-center justify-between border-b border-white/[0.08] text-white select-none">
+        <div className="flex items-center gap-2 text-[13px] font-medium tracking-wide">
+          <Server size={15} className="text-white/80" />
+          <span>Máy chủ phát</span>
+        </div>
         <button
           type="button"
           onClick={(e) => {
@@ -285,21 +157,20 @@ export default function PlayerServerHealthPanel({
           title="Đo lại tốc độ ping"
           aria-label="Đo lại tốc độ"
           className={cn(
-            'w-8 h-8 rounded-full flex items-center justify-center transition-all',
-            'bg-white/[0.06] hover:bg-white/[0.12] text-neutral-300 hover:text-white cursor-pointer',
-            isTesting && 'text-[#fbbf24]',
+            'w-6 h-6 rounded flex items-center justify-center transition-colors cursor-pointer',
+            'text-white/60 hover:text-white hover:bg-white/10',
+            isTesting && 'text-[#23ade5]',
           )}
         >
-          <RefreshCw size={14} className={isTesting ? 'animate-spin' : ''} />
+          <RefreshCw size={13} className={isTesting ? 'animate-spin' : ''} />
         </button>
       </div>
 
-      {/* Server List */}
-      <div className="p-2 max-h-[310px] overflow-y-auto space-y-1 custom-scrollbar">
+      {/* Server list items matching ArtPlayer native setting items */}
+      <div className="py-1 max-h-[280px] overflow-y-auto custom-scrollbar">
         {servers.map((server) => {
           const isActive = server.index === currentServerIndex;
           const ping = latencies[server.index];
-          const health = getHealthDetails(ping, isTesting);
 
           return (
             <div
@@ -318,50 +189,44 @@ export default function PlayerServerHealthPanel({
                 }
               }}
               className={cn(
-                'group flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer border',
-                isActive
-                  ? 'bg-white/[0.08] border-white/[0.12] shadow-sm'
-                  : 'bg-transparent hover:bg-white/[0.04] border-transparent',
+                'h-[36px] px-3.5 flex items-center justify-between transition-colors cursor-pointer select-none text-[13px]',
+                'hover:bg-white/10',
+                isActive ? 'text-[#23ade5] font-medium' : 'text-white font-normal',
               )}
             >
-              {/* Left: Signal Strength Badge */}
-              <SignalStrengthBadge latency={ping} isTesting={isTesting && ping === undefined} />
-
-              {/* Middle: Name, Episode Count & Health Status */}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className={cn(
-                      'text-[13px] truncate',
-                      isActive
-                        ? 'text-[#fbbf24] font-semibold'
-                        : 'text-neutral-200 font-medium group-hover:text-white',
-                    )}
-                  >
-                    {server.name}
-                  </span>
-                  {isActive && (
-                    <Check size={14} className="text-[#fbbf24] shrink-0 stroke-[2.5]" />
-                  )}
-                </div>
-
-                <div className="text-[11.5px] text-neutral-400 flex items-center gap-1.5 mt-0.5">
-                  <span>{server.episodesCount} tập</span>
-                  <span className="text-white/20">•</span>
-                  <span className={cn('font-medium', health.labelClass)}>
-                    {health.label}
-                  </span>
-                </div>
+              {/* Left: Server Name */}
+              <div className="flex items-center gap-1.5 min-w-0 flex-1 pr-2">
+                <span className="truncate">{server.name}</span>
+                <span className="text-[11px] text-[#8c979e] shrink-0 font-normal">
+                  ({server.episodesCount} tập)
+                </span>
               </div>
 
-              {/* Right: Latency in ms */}
-              <div className="shrink-0 text-right pl-2">
+              {/* Right: Latency & State Icon */}
+              <div className="flex items-center gap-2 shrink-0">
                 {isTesting && ping === undefined ? (
-                  <span className="inline-block w-3.5 h-3.5 border-2 border-[#fbbf24] border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <span className={cn('text-[13px] font-bold tracking-tight', health.pingClass)}>
-                    {ping !== undefined ? `${ping} ms` : '-- ms'}
+                  <span className="inline-block w-3 h-3 border-2 border-[#23ade5] border-t-transparent rounded-full animate-spin" />
+                ) : ping !== undefined ? (
+                  <span
+                    className={cn(
+                      'text-[12px] font-medium tracking-tight',
+                      isActive
+                        ? 'text-[#23ade5]'
+                        : ping < 400
+                          ? 'text-[#23ade5]'
+                          : ping < 700
+                            ? 'text-[#8c979e]'
+                            : 'text-amber-400',
+                    )}
+                  >
+                    {ping}ms
                   </span>
+                ) : null}
+
+                {isActive ? (
+                  <Check size={14} className="text-[#23ade5] stroke-[2.5]" />
+                ) : (
+                  <ChevronRight size={14} className="text-[#8c979e]/60" />
                 )}
               </div>
             </div>
