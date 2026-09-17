@@ -262,7 +262,7 @@ export function Sidebar() {
             onClick={toggle}
             aria-label="Thu gọn thanh điều hướng"
             title="Thu gọn menu"
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all cursor-pointer mb-0.5"
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-white/50 hover:text-violet-300 hover:bg-violet-500/15 transition-all cursor-pointer mb-0.5"
           >
             <ChevronLeft size={20} strokeWidth={2.2} />
           </button>
@@ -286,7 +286,7 @@ export function Sidebar() {
                       "absolute -left-1.5 top-1/2 -translate-y-1/2 rounded-r-full z-20",
                       isBilingual
                         ? "bg-gradient-to-b from-cyan-400 to-violet-500 shadow-[0_0_10px_rgba(6,182,212,0.8)]"
-                        : "bg-white",
+                        : "bg-[#8b5cf6]",
                     )}
                     style={{ width: 3, height: 20 }}
                   />
@@ -303,9 +303,9 @@ export function Sidebar() {
                     )}
                   />
                 ) : isActive ? (
-                  <span className="absolute inset-0 rounded-xl bg-white/10 z-0" />
+                  <span className="absolute inset-0 rounded-xl bg-[#8b5cf6]/20 border border-[#8b5cf6]/40 z-0" />
                 ) : (
-                  <span className="absolute inset-0 rounded-xl bg-transparent group-hover:bg-white/[0.06] transition-colors z-0" />
+                  <span className="absolute inset-0 rounded-xl bg-transparent group-hover:bg-[#8b5cf6]/10 transition-colors z-0" />
                 )}
 
                 {/* Icon */}
@@ -315,9 +315,11 @@ export function Sidebar() {
                     "relative z-10 transition-transform group-hover:scale-110",
                     isBilingual
                       ? "text-cyan-300 group-hover:text-cyan-100 drop-shadow-[0_0_8px_rgba(6,182,212,0.7)]"
-                      : item.isSpecial && !isActive
-                        ? "text-[#229ED9] group-hover:text-[#38bdf8]"
-                        : "",
+                      : isActive
+                        ? "text-[#a78bfa]"
+                        : item.isSpecial && !isActive
+                          ? "text-[#229ED9] group-hover:text-[#38bdf8]"
+                          : "group-hover:text-violet-200",
                   )}
                 />
 
@@ -403,7 +405,7 @@ export function Sidebar() {
           onClick={toggle}
           aria-label="Mở thanh điều hướng"
           title="Mở rộng menu"
-          className="hidden lg:flex fixed left-0 top-1/2 -translate-y-1/2 z-40 p-2.5 bg-transparent text-white/60 hover:text-white transition-all duration-200 cursor-pointer hover:scale-110"
+          className="hidden lg:flex fixed left-0 top-1/2 -translate-y-1/2 z-40 p-2.5 bg-transparent text-white/60 hover:text-violet-300 hover:bg-violet-500/15 rounded-r-xl transition-all duration-200 cursor-pointer hover:scale-110"
         >
           <ChevronRight size={20} strokeWidth={2.2} />
         </button>

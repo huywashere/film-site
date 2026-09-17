@@ -242,9 +242,160 @@ export class MoviesService {
 
   // ── Chi tiết phim ───────────────────────────────────────────────
 
+  private formatCustomServers(playbackSources: any[]): any[] {
+    if (!playbackSources || !playbackSources.length) return [];
+
+    const serverMap = new Map<string, any[]>();
+    for (const source of playbackSources) {
+      const serverKey = source.serverName || 'FlexPhim VIP';
+      if (!serverMap.has(serverKey)) {
+        serverMap.set(serverKey, []);
+      }
+      serverMap.get(serverKey)!.push({
+        name: source.episodeName || (source.episodeKey === 'full' ? 'Full' : `Tập ${source.episodeKey}`),
+        slug: source.episodeKey,
+        filename: source.episodeName || source.episodeKey,
+        link_embed: '',
+        link_m3u8: source.streamUrl || '',
+        subtitles: (() => {
+          if (!source.subtitleUrls) return [];
+          let raw = source.subtitleUrls;
+          if (typeof raw === 'string') {
+            try {
+              raw = JSON.parse(raw);
+            } catch {
+              return [];
+            }
+          }
+          if (Array.isArray(raw)) {
+            return raw
+              .map((item: any) => ({
+                label: item.label || item.name || item.lang || 'Phụ đề',
+                url: item.url || item.link || '',
+                language: item.language || item.lang || 'vi',
+                default: Boolean(item.default),
+              }))
+              .filter((item: any) => Boolean(item.url));
+          }
+          if (typeof raw === 'object' && raw !== null) {
+            return Object.entries(raw)
+              .map(([lang, url], idx) => ({
+                label: lang.toUpperCase(),
+                url: String(url),
+                language: lang.toLowerCase(),
+                default: idx === 0,
+              }))
+              .filter((item: any) => Boolean(item.url));
+          }
+          return [];
+        })(),
+        intro:
+          source.introStart != null || source.introEnd != null
+            ? { start: source.introStart || 0, end: source.introEnd || 0 }
+            : undefined,
+        outro: source.outroStart != null ? { start: source.outroStart } : undefined,
+      });
+    }
+
+    return Array.from(serverMap.entries()).map(([serverName, serverData]) => ({
+      server_name: serverName,
+      server_data: serverData.sort((a, b) => {
+        const numA = parseInt(a.slug, 10);
+        const numB = parseInt(b.slug, 10);
+        if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+        return a.slug.localeCompare(b.slug);
+      }),
+    }));
+  }
+
   // GET /phim/:slug
   async getDetail(slug: string) {
-    return this.cachedGet(`detail:${slug}`, `/phim/${slug}`, 600);
+    const dbMovie = await this.prisma.movie
+      .findUnique({
+        where: { id: slug },
+        include: {
+          playbackSources: {
+            orderBy: [{ priority: 'asc' }, { episodeKey: 'asc' }],
+          },
+        },
+      })
+      .catch(() => null);
+
+    const customServers = dbMovie?.playbackSources?.length
+      ? this.formatCustomServers(dbMovie.playbackSources)
+      : [];
+
+    if (dbMovie && (dbMovie.sources?.includes('manual') || !dbMovie.sources?.length)) {
+      return {
+        status: true,
+        msg: '',
+        movie: {
+          _id: dbMovie.id,
+          id: dbMovie.id,
+          name: dbMovie.title,
+          slug: dbMovie.id,
+          origin_name: dbMovie.originName || dbMovie.titleEn || '',
+          content: dbMovie.description || '',
+          type: dbMovie.type || 'single',
+          status: dbMovie.status || 'completed',
+          thumb_url: dbMovie.thumbUrl || dbMovie.posterUrl || '',
+          poster_url: dbMovie.posterUrl || dbMovie.thumbUrl || '',
+          year: dbMovie.year || new Date().getFullYear(),
+          quality: dbMovie.quality || 'FHD',
+          lang: dbMovie.language || 'Vietsub',
+          time: dbMovie.runtime ? `${dbMovie.runtime} phút` : '',
+          trailer_url: dbMovie.trailerUrl || '',
+          category: (dbMovie.genres || []).map((g) => ({ id: g, name: g, slug: g })),
+          country: (dbMovie.countries || []).map((c) => ({ id: c, name: c, slug: c })),
+          actor: dbMovie.actors || [],
+          director: dbMovie.directors || [],
+          _source: 'manual',
+        },
+        episodes: customServers,
+      };
+    }
+
+    try {
+      const upstream = await this.cachedGet<any>(`detail:${slug}`, `/phim/${slug}`, 600);
+      if (customServers.length && upstream && upstream.episodes) {
+        return {
+          ...upstream,
+          episodes: [...customServers, ...upstream.episodes],
+        };
+      }
+      return upstream;
+    } catch (err) {
+      if (dbMovie) {
+        return {
+          status: true,
+          msg: '',
+          movie: {
+            _id: dbMovie.id,
+            id: dbMovie.id,
+            name: dbMovie.title,
+            slug: dbMovie.id,
+            origin_name: dbMovie.originName || dbMovie.titleEn || '',
+            content: dbMovie.description || '',
+            type: dbMovie.type || 'single',
+            status: dbMovie.status || 'completed',
+            thumb_url: dbMovie.thumbUrl || dbMovie.posterUrl || '',
+            poster_url: dbMovie.posterUrl || dbMovie.thumbUrl || '',
+            year: dbMovie.year || new Date().getFullYear(),
+            quality: dbMovie.quality || 'FHD',
+            lang: dbMovie.language || 'Vietsub',
+            time: dbMovie.runtime ? `${dbMovie.runtime} phút` : '',
+            trailer_url: dbMovie.trailerUrl || '',
+            category: (dbMovie.genres || []).map((g) => ({ id: g, name: g, slug: g })),
+            country: (dbMovie.countries || []).map((c) => ({ id: c, name: c, slug: c })),
+            actor: dbMovie.actors || [],
+            director: dbMovie.directors || [],
+            _source: 'manual',
+          },
+          episodes: customServers,
+        };
+      }
+      throw err;
+    }
   }
 
   // GET /v1/api/phim/:slug

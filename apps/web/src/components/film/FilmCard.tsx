@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { MovieSource } from '@/lib/movie-normalizer';
@@ -61,7 +61,7 @@ interface FilmCardProps {
   film: FilmItem;
   width?: number;
   showActions?: boolean;
-  variant?: 'standard' | 'landscape';
+  variant?: 'standard' | 'landscape' | 'poster-pill';
   hideDetails?: boolean;
   priority?: boolean;
   preferHighQuality?: boolean;
@@ -80,12 +80,14 @@ function FilmCardComponent({
 }: FilmCardProps) {
   const globalCardLayout = useSettingsStore((s) => s.cardLayout);
   const effectiveVariant = variant || (globalCardLayout === 'horizontal' ? 'landscape' : 'standard');
+  const isPosterPill = effectiveVariant === 'poster-pill';
   const slug = film.slug;
   const title = film.name || film.title || 'Chưa có tên';
   const rawLang = (film.lang || '').toLowerCase();
   const hasVoiceOver = /thuyết minh|thuyet minh|t\.minh|\btm\b/.test(rawLang);
   const hasDub = /lồng tiếng|long tieng|l\.tiếng|\blt\b/.test(rawLang);
   const hasExplicitVietsub = /vietsub|phụ đề|phu de|\bpd\b/.test(rawLang);
+  const hasBilingual = /song ngữ|song ngu|\bsn\b/.test(rawLang);
   // Default to Vietsub if neither voiceover nor dub is exclusive, or if explicitly noted
   const hasVietsub = hasExplicitVietsub || (!hasVoiceOver && !hasDub);
 
@@ -221,6 +223,57 @@ function FilmCardComponent({
     return null;
   })();
 
+  // ── Pill Badges for 'poster-pill' variant (e.g. historical / period dramas) ──
+  const pillEpisodeText = (() => {
+    const raw = (film.episode_current || '').trim();
+    if (/hoàn tất|hoan tat|full/i.test(raw) || film.type === 'single') {
+      return 'Full';
+    }
+    const fraction = raw.match(/(?:\(|\b)(\d+)\s*\/\s*\d+/);
+    if (fraction?.[1]) return fraction[1];
+    const explicit = raw.match(/(?:tập|tap|episode|ep)\s*[-.:]?\s*(\d+)/i);
+    if (explicit?.[1]) return explicit[1];
+    const digits = raw.match(/^\d+$/);
+    if (digits) return digits[0];
+    if (raw) return raw.replace(/tập\s*/i, '').trim();
+    return 'Full';
+  })();
+
+  const isSeriesWithEpisodes = film.type === 'series' && pillEpisodeText !== 'Full';
+
+  // ── Badges for 'poster-pill' variant (clean monochrome white styling) ──
+  const posterPillBadges = useMemo(() => {
+    if (!isPosterPill) return [];
+    const list: Array<{ text: string }> = [];
+
+    // 1. Subtitle info
+    if (hasVietsub) {
+      list.push({ text: 'Vietsub' });
+    }
+
+    // 2. Audio (Song ngữ / Lồng tiếng / Thuyết minh)
+    if (hasBilingual) {
+      list.push({ text: 'Song Ngữ' });
+    } else if (hasDub) {
+      list.push({ text: 'Lồng Tiếng' });
+    } else if (hasVoiceOver) {
+      list.push({ text: 'Thuyết Minh' });
+    }
+
+    // 3. Episode / Format info
+    if (film.type === 'series') {
+      if (pillEpisodeText && pillEpisodeText !== 'Full') {
+        list.push({ text: `Tập ${pillEpisodeText}` });
+      } else {
+        list.push({ text: 'Trọn Bộ' });
+      }
+    } else if (qualityBadge) {
+      list.push({ text: qualityBadge });
+    }
+
+    return list;
+  }, [hasBilingual, hasDub, hasVietsub, hasVoiceOver, isPosterPill, pillEpisodeText, film.type, qualityBadge]);
+
   return (
     <div
       style={width ? { width } : undefined}
@@ -233,7 +286,14 @@ function FilmCardComponent({
         <Link
           href={`/film/${slug}`}
           prefetch={false}
-          className="relative block overflow-hidden rounded-[8px] border border-white/[0.08] bg-[#111216] shadow-[0_8px_22px_rgba(0,0,0,0.24)] transition-[border-color,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111214] group-hover/card:border-white/25 group-hover/card:shadow-[0_16px_36px_rgba(0,0,0,0.44)]"
+          title={title}
+          aria-label={title}
+          className={cn(
+            'relative block overflow-hidden bg-[#111216] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111214]',
+            isPosterPill
+              ? 'rounded-[22px] sm:rounded-[26px] border border-white/[0.18] group-hover/card:border-white/60 shadow-[0_14px_36px_-6px_rgba(0,0,0,0.75),0_4px_12px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.08)] group-hover/card:shadow-[0_20px_45px_rgba(0,0,0,0.85),0_0_25px_rgba(255,255,255,0.18)] ring-1 ring-white/10 group-hover/card:ring-white/35'
+              : 'rounded-[8px] border border-white/[0.08] group-hover/card:border-white/25 shadow-[0_8px_22px_rgba(0,0,0,0.24)] group-hover/card:shadow-[0_16px_36px_rgba(0,0,0,0.44)]',
+          )}
         >
           {/* Poster Container Aspect Ratio */}
           <div
@@ -254,9 +314,12 @@ function FilmCardComponent({
             <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-14 bg-gradient-to-b from-black/65 via-black/20 to-transparent" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
             <div className="pointer-events-none absolute inset-0 z-[11] bg-black/0 transition-colors duration-300 group-hover/card:bg-black/15" />
+            {isPosterPill && (
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-28 bg-gradient-to-b from-white/[0.14] via-white/[0.03] to-transparent rounded-t-[22px] sm:rounded-t-[26px]" />
+            )}
 
             {/* ── Top-left: IMDb score OR flexibly shifted Subtitle/Voice badge (sát mép trên) ── */}
-            {topLeftBadge && (
+            {!isPosterPill && topLeftBadge && (
               <div className="pointer-events-none absolute left-0 top-0 z-20">
                 {topLeftBadge.type === 'imdb' ? (
                   <span className="inline-flex items-center gap-1 rounded-br-[4px] bg-[#f5c518] px-1.5 py-[2.5px] text-[8px] font-black leading-none text-black shadow-md sm:px-2 sm:py-[3px] sm:text-[9.5px]">
@@ -281,7 +344,7 @@ function FilmCardComponent({
             )}
 
             {/* ── Top-right: Quality (FHD / HD / 4K - sát mép trên) ── */}
-            {qualityBadge && (
+            {!isPosterPill && qualityBadge && (
               <div className="pointer-events-none absolute right-0 top-0 z-20">
                 <span className="inline-flex items-center rounded-bl-[4px] border-b border-l border-white/15 bg-black/80 px-1.5 py-[2.5px] text-[8px] font-extrabold uppercase leading-none tracking-wider text-white shadow-md backdrop-blur-md sm:px-2 sm:py-[3px] sm:text-[9px]">
                   {qualityBadge}
@@ -289,44 +352,81 @@ function FilmCardComponent({
               </div>
             )}
 
-            {/* ── Bottom-left: Subtitle or Audio badge if not already at top ── */}
-            {bottomLeftBadge && (
-              <div className="pointer-events-none absolute bottom-1.5 left-1.5 z-20 sm:bottom-2 sm:left-2">
-                <span
-                  className={cn(
-                    'inline-flex items-center rounded-[4px] border px-1.5 py-[2px] text-[8px] font-black leading-none text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] backdrop-blur-md sm:px-2 sm:py-[2.5px] sm:text-[9px]',
-                    bottomLeftBadge.type === 'sub'
-                      ? 'border-blue-400/30 bg-[#2563eb]/90'
-                      : bottomLeftBadge.voiceType === 'dub'
-                        ? 'border-purple-400/30 bg-[#9333ea]/90'
-                        : 'border-emerald-400/30 bg-[#16a34a]/90',
-                  )}
+            {/* ── Inside Card Content: Poster Pill Bottom Title & White Monochrome Badges ── */}
+            {isPosterPill ? (
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center justify-end px-2 pb-3 pt-16 sm:px-2.5 sm:pb-3.5 sm:pt-20 bg-gradient-to-t from-black/95 via-black/80 to-transparent">
+                {/* Title inside card */}
+                <h3
+                  className="line-clamp-2 w-full text-center text-[11.5px] sm:text-[13px] font-extrabold leading-[1.3] text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]"
+                  title={title}
                 >
-                  {bottomLeftBadge.text}
-                </span>
-              </div>
-            )}
+                  {title}
+                </h3>
 
-            {/* ── Bottom-right: Dub / Voiceover badge if has both Subtitle and Voiceover with IMDb at top ── */}
-            {bottomRightBadge && (
-              <div className="pointer-events-none absolute bottom-1.5 right-1.5 z-20 sm:bottom-2 sm:right-2">
-                <span
-                  className={cn(
-                    'inline-flex items-center rounded-[4px] border px-1.5 py-[2px] text-[8px] font-black leading-none text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] backdrop-blur-md sm:px-2 sm:py-[2.5px] sm:text-[9px]',
-                    bottomRightBadge.voiceType === 'dub'
-                      ? 'border-purple-400/30 bg-[#9333ea]/90'
-                      : 'border-emerald-400/30 bg-[#16a34a]/90',
-                  )}
-                >
-                  {bottomRightBadge.text}
-                </span>
+                {/* White Monochrome Badges (Vietsub, Lồng tiếng / Thuyết minh, Tập / Chất lượng) */}
+                {posterPillBadges.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1 sm:gap-1.5">
+                    {posterPillBadges.map((badge, bIdx) => (
+                      <span
+                        key={`${badge.text}-${bIdx}`}
+                        className="inline-flex items-center rounded-full border border-white/25 bg-black/60 px-2 py-0.5 text-[8px] sm:text-[9px] font-bold leading-none tracking-wide text-white/95 backdrop-blur-md shadow-sm"
+                      >
+                        {badge.text}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
+            ) : (
+              <>
+                {/* ── Bottom-left: Subtitle or Audio badge if not already at top ── */}
+                {bottomLeftBadge && (
+                  <div className="pointer-events-none absolute bottom-1.5 left-1.5 z-20 sm:bottom-2 sm:left-2">
+                    <span
+                      className={cn(
+                        'inline-flex items-center rounded-[4px] border px-1.5 py-[2px] text-[8px] font-black leading-none text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] backdrop-blur-md sm:px-2 sm:py-[2.5px] sm:text-[9px]',
+                        bottomLeftBadge.type === 'sub'
+                          ? 'border-blue-400/30 bg-[#2563eb]/90'
+                          : bottomLeftBadge.voiceType === 'dub'
+                            ? 'border-purple-400/30 bg-[#9333ea]/90'
+                            : 'border-emerald-400/30 bg-[#16a34a]/90',
+                      )}
+                    >
+                      {bottomLeftBadge.text}
+                    </span>
+                  </div>
+                )}
+
+                {/* ── Bottom-right: Dub / Voiceover badge if has both Subtitle and Voiceover with IMDb at top ── */}
+                {bottomRightBadge && (
+                  <div className="pointer-events-none absolute bottom-1.5 right-1.5 z-20 sm:bottom-2 sm:right-2">
+                    <span
+                      className={cn(
+                        'inline-flex items-center rounded-[4px] border px-1.5 py-[2px] text-[8px] font-black leading-none text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] backdrop-blur-md sm:px-2 sm:py-[2.5px] sm:text-[9px]',
+                        bottomRightBadge.voiceType === 'dub'
+                          ? 'border-purple-400/30 bg-[#9333ea]/90'
+                          : 'border-emerald-400/30 bg-[#16a34a]/90',
+                      )}
+                    >
+                      {bottomRightBadge.text}
+                    </span>
+                  </div>
+                )}
+              </>
             )}
 
             {/* Hover Overlay Play Icon */}
-            <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover/card:opacity-100">
-              <div className="flex h-10 w-10 scale-90 items-center justify-center rounded-full border border-white/50 bg-black/70 text-white shadow-[0_10px_28px_rgba(0,0,0,0.5)] backdrop-blur-md transition-transform duration-300 motion-safe:group-hover/card:scale-100">
-                <Play size={16} fill="currentColor" className="ml-0.5" />
+            <div className={cn(
+              "pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 group-hover/card:opacity-100 bg-black/40 backdrop-blur-[2px] p-2.5 text-center",
+              isPosterPill ? "rounded-[22px] sm:rounded-[26px]" : "rounded-[8px]"
+            )}>
+              <div className={cn(
+                "flex scale-90 items-center justify-center rounded-full shadow-[0_10px_28px_rgba(0,0,0,0.6)] backdrop-blur-md transition-transform duration-300 motion-safe:group-hover/card:scale-100",
+                isPosterPill
+                  ? "h-12 w-12 border border-white/70 bg-black/80 text-white"
+                  : "h-10 w-10 border border-white/50 bg-black/70 text-white"
+              )}>
+                <Play size={isPosterPill ? 18 : 16} fill="currentColor" className="ml-0.5" />
               </div>
             </div>
           </div>
@@ -334,7 +434,7 @@ function FilmCardComponent({
       </div>
 
       {/* Details Footer below Card */}
-      {!hideDetails && (
+      {!hideDetails && !isPosterPill && (
         <div className="mt-2 flex flex-col px-0.5">
           <Link
             href={`/film/${slug}`}
@@ -363,12 +463,13 @@ export function FilmCardSkeleton({
   width,
   hideDetails,
 }: {
-  variant?: 'standard' | 'landscape';
+  variant?: 'standard' | 'landscape' | 'poster-pill';
   width?: number;
   hideDetails?: boolean;
 }) {
   const globalCardLayout = useSettingsStore((s) => s.cardLayout);
   const effectiveVariant = variant || (globalCardLayout === 'horizontal' ? 'landscape' : 'standard');
+  const isPosterPill = effectiveVariant === 'poster-pill';
 
   return (
     <div
@@ -377,13 +478,23 @@ export function FilmCardSkeleton({
     >
       <div
         className={cn(
-          'relative overflow-hidden rounded-[8px] border border-white/5 bg-neutral-900',
+          'relative overflow-hidden border border-white/5 bg-neutral-900',
+          isPosterPill ? 'rounded-[22px] sm:rounded-[26px]' : 'rounded-[8px]',
           effectiveVariant === 'landscape' ? 'aspect-video w-full' : 'aspect-[2/3] w-full',
         )}
       >
         <div className="absolute inset-0 bg-neutral-800/40" />
+        {isPosterPill && (
+          <div className="absolute inset-x-0 bottom-2.5 flex flex-col items-center gap-1.5 px-3 sm:bottom-3">
+            <div className="h-3 w-4/5 rounded bg-neutral-700/70" />
+            <div className="flex items-center justify-center gap-1.5">
+              <div className="h-3 w-10 rounded-full bg-neutral-700/50" />
+              <div className="h-3 w-10 rounded-full bg-neutral-700/50" />
+            </div>
+          </div>
+        )}
       </div>
-      {!hideDetails && (
+      {!hideDetails && !isPosterPill && (
         <div className="mt-2 px-0.5">
           <div className="h-3 w-[78%] rounded-sm bg-neutral-800/70" />
           <div className="mt-1 h-2.5 w-[52%] rounded-sm bg-neutral-800/45" />

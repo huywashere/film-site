@@ -248,7 +248,8 @@ function SidebarFilmCard({ film, slug }: { film: any; slug: string }) {
           <TmdbArtwork
             film={film}
             kind="poster"
-            enabled={false}
+            priority={true}
+            allowTitleLookup={true}
             className="w-full h-full object-cover"
             alt={film?.name}
           />
@@ -3804,6 +3805,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     poster={optimizedPlayerPoster || posterUrl}
                     title={film?.name || film?.title || ''}
                     subtitle={currentEpData?.name ? `Tập ${currentEpData.name}` : ''}
+                    subtitles={Array.isArray(currentEpData?.subtitles) ? currentEpData.subtitles : undefined}
+                    skipIntroStart={currentEpData?.intro?.start}
+                    skipIntroEnd={currentEpData?.intro?.end}
+                    skipOutroStart={currentEpData?.outro?.start}
                     initialTime={lastKnownPlaybackTimeRef.current || resumeAt}
                     autoPlay={autoPlayConfig}
                     autoSkipIntro={skipIntroConfig}

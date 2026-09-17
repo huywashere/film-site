@@ -16,6 +16,41 @@ import {
 } from "@tabler/icons-react";
 import { adminFetch, queryString } from "@/lib/admin-api";
 
+export type SubtitleItem = {
+  label: string;
+  url: string;
+  language: string;
+  default?: boolean;
+};
+
+export const normalizeSubtitles = (raw: any): SubtitleItem[] => {
+  if (!raw) return [];
+  if (typeof raw === "string") {
+    try {
+      raw = JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+  if (Array.isArray(raw)) {
+    return raw.map((item) => ({
+      label: item.label || item.name || "Phụ đề",
+      url: item.url || item.link || "",
+      language: item.language || item.lang || "vi",
+      default: Boolean(item.default),
+    }));
+  }
+  if (typeof raw === "object" && raw !== null) {
+    return Object.entries(raw).map(([key, val], idx) => ({
+      label: key.toUpperCase(),
+      url: String(val),
+      language: key.toLowerCase(),
+      default: idx === 0,
+    }));
+  }
+  return [];
+};
+
 type PlaybackSource = {
   id?: string;
   provider: string;
@@ -24,7 +59,7 @@ type PlaybackSource = {
   episodeName?: string;
   serverName: string;
   streamUrl?: string;
-  subtitleUrls?: Record<string, string>;
+  subtitleUrls?: any;
   introStart?: number;
   introEnd?: number;
   outroStart?: number;
@@ -96,6 +131,101 @@ export default function MovieManagementPage() {
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
 
+  const initialNewMovieState = {
+    title: "",
+    originName: "",
+    slug: "",
+    type: "single",
+    year: new Date().getFullYear(),
+    quality: "FHD",
+    language: "Vietsub",
+    posterUrl: "",
+    trailerUrl: "",
+    genres: "Hành Động, Viễn Tưởng",
+    countries: "Hàn Quốc",
+    description: "",
+    serverName: "FlexPhim VIP",
+    episodeKey: "full",
+    episodeName: "Tập Full",
+    streamUrl: "",
+    subtitles: [] as SubtitleItem[],
+  };
+
+  const [isCreating, setIsCreating] = useState(false);
+  const [newMovie, setNewMovie] = useState(initialNewMovieState);
+
+  const openCreateModal = () => {
+    setNewMovie({
+      ...initialNewMovieState,
+      year: new Date().getFullYear(),
+    });
+    setIsCreating(true);
+  };
+
+  const handleCreateMovie = async () => {
+    if (!newMovie.title.trim()) {
+      setError("Vui lòng nhập tên phim");
+      return;
+    }
+    await mutate(
+      "create-movie",
+      async () => {
+        const created = await adminFetch<{ id: string }>("movies", {
+          method: "POST",
+          body: JSON.stringify({
+            title: newMovie.title.trim(),
+            originName: newMovie.originName.trim() || undefined,
+            id: newMovie.slug.trim() || undefined,
+            type: newMovie.type,
+            year: Number(newMovie.year) || new Date().getFullYear(),
+            quality: newMovie.quality.trim() || "FHD",
+            language: newMovie.language.trim() || "Vietsub",
+            posterUrl: newMovie.posterUrl.trim() || undefined,
+            trailerUrl: newMovie.trailerUrl.trim() || undefined,
+            genres: newMovie.genres.split(",").map((s) => s.trim()).filter(Boolean),
+            countries: newMovie.countries.split(",").map((s) => s.trim()).filter(Boolean),
+            description: newMovie.description.trim() || undefined,
+            sources: ["manual"],
+          }),
+        });
+
+        if (newMovie.streamUrl.trim()) {
+          const activeSubtitles = newMovie.subtitles
+            .map((sub) => ({
+              label: sub.label.trim() || "Phụ đề",
+              url: sub.url.trim(),
+              language: sub.language.trim() || "vi",
+              default: Boolean(sub.default),
+            }))
+            .filter((sub) => Boolean(sub.url));
+
+          await adminFetch(`movies/${created.id}/playback-sources`, {
+            method: "PATCH",
+            body: JSON.stringify({
+              items: [
+                {
+                  provider: "custom",
+                  providerSlug: created.id,
+                  episodeKey: newMovie.episodeKey.trim() || "full",
+                  episodeName:
+                    newMovie.episodeName.trim() ||
+                    (newMovie.type === "single" ? "Tập Full" : "Tập 01"),
+                  serverName: newMovie.serverName.trim() || "FlexPhim VIP",
+                  streamUrl: newMovie.streamUrl.trim(),
+                  subtitleUrls: activeSubtitles.length ? activeSubtitles : undefined,
+                  adCuePoints: [],
+                  priority: 0,
+                },
+              ],
+            }),
+          });
+        }
+        setIsCreating(false);
+      },
+      `Đã tạo phim "${newMovie.title}" thành công.`,
+    );
+  };
+
   const load = useCallback(async () => {
     setError("");
     try {
@@ -145,7 +275,10 @@ export default function MovieManagementPage() {
       );
       setPlaybackSources(
         structured.length
-          ? structured
+          ? structured.map((s) => ({
+              ...s,
+              subtitleUrls: normalizeSubtitles(s.subtitleUrls),
+            }))
           : movie.sources.map((provider, index) => ({
               provider,
               providerSlug: movie.id,
@@ -154,6 +287,7 @@ export default function MovieManagementPage() {
               serverName: provider.toUpperCase(),
               adCuePoints: [],
               priority: index,
+              subtitleUrls: [],
             })),
       );
       setScheduleJson(
@@ -214,7 +348,7 @@ export default function MovieManagementPage() {
                 episodeName: item.episodeName || undefined,
                 serverName: item.serverName,
                 streamUrl: item.streamUrl || undefined,
-                subtitleUrls: item.subtitleUrls,
+                subtitleUrls: normalizeSubtitles(item.subtitleUrls).filter((s) => Boolean(s.url)),
                 introStart: item.introStart,
                 introEnd: item.introEnd,
                 outroStart: item.outroStart,
@@ -263,7 +397,14 @@ export default function MovieManagementPage() {
             Metadata, nguồn phát và trạng thái xuất bản trong PostgreSQL.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={openCreateModal}
+            className="inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-600 px-3.5 text-[12px] font-semibold text-white hover:bg-emerald-700 shadow-sm transition"
+          >
+            <Plus size={15} /> Tạo phim mới
+          </button>
           <select
             value={source}
             onChange={(event) => setSource(event.target.value)}
@@ -1000,6 +1141,130 @@ export default function MovieManagementPage() {
                           }
                           className="admin-control px-2 text-[11px]"
                         />
+                        <div className="sm:col-span-4 mt-2 rounded-lg border border-slate-200 bg-white p-2.5">
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <span className="text-[11px] font-bold text-slate-700">Phụ đề VTT (Tùy chọn)</span>
+                              <p className="text-[10px] text-slate-400">Nạp link file phụ đề .vtt rời cho tập phim này</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPlaybackSources((items) =>
+                                  items.map((sourceItem, itemIndex) => {
+                                    if (itemIndex !== index) return sourceItem;
+                                    const subs = normalizeSubtitles(sourceItem.subtitleUrls);
+                                    return {
+                                      ...sourceItem,
+                                      subtitleUrls: [
+                                        ...subs,
+                                        { label: "Vietsub", url: "", language: "vi", default: subs.length === 0 },
+                                      ],
+                                    };
+                                  }),
+                                );
+                              }}
+                              className="admin-control inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold text-blue-600"
+                            >
+                              <Plus size={12} /> Thêm phụ đề
+                            </button>
+                          </div>
+                          {normalizeSubtitles(item.subtitleUrls).length === 0 ? (
+                            <p className="text-[10px] italic text-slate-400">Chưa có phụ đề rời (mặc định hiển thị sub cứng của video nếu có).</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {normalizeSubtitles(item.subtitleUrls).map((sub, subIdx) => (
+                                <div key={subIdx} className="flex flex-wrap items-center gap-2 rounded border border-slate-100 bg-slate-50/70 p-2 text-[11px]">
+                                  <input
+                                    value={sub.label}
+                                    placeholder="Tên nhãn (Vietsub / English...)"
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setPlaybackSources((items) =>
+                                        items.map((sourceItem, itemIndex) => {
+                                          if (itemIndex !== index) return sourceItem;
+                                          const subs = [...normalizeSubtitles(sourceItem.subtitleUrls)];
+                                          subs[subIdx] = { ...subs[subIdx], label: val };
+                                          return { ...sourceItem, subtitleUrls: subs };
+                                        }),
+                                      );
+                                    }}
+                                    className="admin-control w-32 px-2 text-[11px]"
+                                  />
+                                  <input
+                                    value={sub.url}
+                                    placeholder="HTTPS link file .vtt"
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setPlaybackSources((items) =>
+                                        items.map((sourceItem, itemIndex) => {
+                                          if (itemIndex !== index) return sourceItem;
+                                          const subs = [...normalizeSubtitles(sourceItem.subtitleUrls)];
+                                          subs[subIdx] = { ...subs[subIdx], url: val };
+                                          return { ...sourceItem, subtitleUrls: subs };
+                                        }),
+                                      );
+                                    }}
+                                    className="admin-control min-w-[200px] flex-1 px-2 text-[11px]"
+                                  />
+                                  <input
+                                    value={sub.language}
+                                    placeholder="vi / en"
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setPlaybackSources((items) =>
+                                        items.map((sourceItem, itemIndex) => {
+                                          if (itemIndex !== index) return sourceItem;
+                                          const subs = [...normalizeSubtitles(sourceItem.subtitleUrls)];
+                                          subs[subIdx] = { ...subs[subIdx], language: val };
+                                          return { ...sourceItem, subtitleUrls: subs };
+                                        }),
+                                      );
+                                    }}
+                                    className="admin-control w-16 px-2 text-center text-[11px]"
+                                  />
+                                  <label className="flex items-center gap-1 text-[10px] font-medium text-slate-600 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={Boolean(sub.default)}
+                                      onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        setPlaybackSources((items) =>
+                                          items.map((sourceItem, itemIndex) => {
+                                            if (itemIndex !== index) return sourceItem;
+                                            const subs = normalizeSubtitles(sourceItem.subtitleUrls).map((s, sIdx) => ({
+                                              ...s,
+                                              default: sIdx === subIdx ? checked : false,
+                                            }));
+                                            return { ...sourceItem, subtitleUrls: subs };
+                                          }),
+                                        );
+                                      }}
+                                      className="rounded text-blue-600"
+                                    />
+                                    Mặc định
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPlaybackSources((items) =>
+                                        items.map((sourceItem, itemIndex) => {
+                                          if (itemIndex !== index) return sourceItem;
+                                          const subs = normalizeSubtitles(sourceItem.subtitleUrls).filter((_, sIdx) => sIdx !== subIdx);
+                                          return { ...sourceItem, subtitleUrls: subs };
+                                        }),
+                                      );
+                                    }}
+                                    className="text-rose-500 hover:text-rose-700 p-1"
+                                    title="Xóa phụ đề"
+                                  >
+                                    <Trash size={13} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))
@@ -1019,6 +1284,353 @@ export default function MovieManagementPage() {
                 className="h-9 rounded-lg bg-[var(--admin-brand)] px-4 text-[12px] font-semibold text-white disabled:opacity-60"
               >
                 Lưu thay đổi
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
+
+      {isCreating && (
+        <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/40 p-4">
+          <div className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl">
+            <header className="flex items-center justify-between border-b border-[var(--admin-line)] px-5 py-4">
+              <div>
+                <h2 className="text-[16px] font-bold text-slate-800">
+                  Tạo phim mới / Phim tải lên riêng
+                </h2>
+                <p className="mt-0.5 text-[11px] text-slate-500">
+                  Thêm phim thủ công, thiết lập máy chủ phát riêng và phụ đề VTT rời
+                </p>
+              </div>
+              <button
+                onClick={() => setIsCreating(false)}
+                className="admin-icon-button"
+              >
+                <X size={17} />
+              </button>
+            </header>
+            <div className="grid max-h-[72vh] gap-4 overflow-y-auto p-5 sm:grid-cols-2">
+              <label className="block text-[11px] font-semibold text-slate-600 sm:col-span-2">
+                Tên phim <span className="text-rose-500">*</span>
+                <input
+                  value={newMovie.title}
+                  placeholder="Ví dụ: Vực Thẳm Vô Tận (Bản Chiếu Rạp)"
+                  onChange={(event) =>
+                    setNewMovie({ ...newMovie, title: event.target.value })
+                  }
+                  className="admin-control mt-1.5 w-full px-3"
+                />
+              </label>
+              <label className="block text-[11px] font-semibold text-slate-600">
+                Mã định danh URL / Slug (tự động tạo nếu để trống)
+                <input
+                  value={newMovie.slug}
+                  placeholder="vuc-tham-vo-tan"
+                  onChange={(event) =>
+                    setNewMovie({ ...newMovie, slug: event.target.value })
+                  }
+                  className="admin-control mt-1.5 w-full px-3"
+                />
+              </label>
+              <label className="block text-[11px] font-semibold text-slate-600">
+                Tên gốc / Tên tiếng Anh
+                <input
+                  value={newMovie.originName}
+                  placeholder="The Endless Abyss"
+                  onChange={(event) =>
+                    setNewMovie({ ...newMovie, originName: event.target.value })
+                  }
+                  className="admin-control mt-1.5 w-full px-3"
+                />
+              </label>
+              <label className="block text-[11px] font-semibold text-slate-600">
+                Định dạng phim
+                <select
+                  value={newMovie.type}
+                  onChange={(event) => {
+                    const nextType = event.target.value;
+                    setNewMovie({
+                      ...newMovie,
+                      type: nextType,
+                      episodeKey: nextType === "single" ? "full" : "01",
+                      episodeName: nextType === "single" ? "Tập Full" : "Tập 01",
+                    });
+                  }}
+                  className="admin-control mt-1.5 w-full px-3"
+                >
+                  <option value="single">Phim lẻ</option>
+                  <option value="series">Phim bộ</option>
+                  <option value="hoathinh">Hoạt hình</option>
+                  <option value="tvshows">TV Show</option>
+                </select>
+              </label>
+              <label className="block text-[11px] font-semibold text-slate-600">
+                Năm phát hành
+                <input
+                  type="number"
+                  value={newMovie.year}
+                  onChange={(event) =>
+                    setNewMovie({
+                      ...newMovie,
+                      year: Number(event.target.value) || new Date().getFullYear(),
+                    })
+                  }
+                  className="admin-control mt-1.5 w-full px-3"
+                />
+              </label>
+              <label className="block text-[11px] font-semibold text-slate-600">
+                Chất lượng
+                <input
+                  value={newMovie.quality}
+                  placeholder="FHD, 4K, HD"
+                  onChange={(event) =>
+                    setNewMovie({ ...newMovie, quality: event.target.value })
+                  }
+                  className="admin-control mt-1.5 w-full px-3"
+                />
+              </label>
+              <label className="block text-[11px] font-semibold text-slate-600">
+                Ngôn ngữ / Bản dịch
+                <input
+                  value={newMovie.language}
+                  placeholder="Vietsub, Thuyết minh, Lồng tiếng"
+                  onChange={(event) =>
+                    setNewMovie({ ...newMovie, language: event.target.value })
+                  }
+                  className="admin-control mt-1.5 w-full px-3"
+                />
+              </label>
+              <label className="block text-[11px] font-semibold text-slate-600 sm:col-span-2">
+                Poster ảnh đại diện (HTTPS URL)
+                <input
+                  value={newMovie.posterUrl}
+                  placeholder="https://images.unsplash.com/... hoặc link ảnh"
+                  onChange={(event) =>
+                    setNewMovie({ ...newMovie, posterUrl: event.target.value })
+                  }
+                  className="admin-control mt-1.5 w-full px-3"
+                />
+              </label>
+              <label className="block text-[11px] font-semibold text-slate-600 sm:col-span-2">
+                Trailer YouTube (HTTPS URL)
+                <input
+                  value={newMovie.trailerUrl}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  onChange={(event) =>
+                    setNewMovie({ ...newMovie, trailerUrl: event.target.value })
+                  }
+                  className="admin-control mt-1.5 w-full px-3"
+                />
+              </label>
+              <label className="block text-[11px] font-semibold text-slate-600">
+                Thể loại (phân cách bằng dấu phẩy)
+                <input
+                  value={newMovie.genres}
+                  placeholder="Hành Động, Khoa Học Viễn Tưởng"
+                  onChange={(event) =>
+                    setNewMovie({ ...newMovie, genres: event.target.value })
+                  }
+                  className="admin-control mt-1.5 w-full px-3"
+                />
+              </label>
+              <label className="block text-[11px] font-semibold text-slate-600">
+                Quốc gia (phân cách bằng dấu phẩy)
+                <input
+                  value={newMovie.countries}
+                  placeholder="Hàn Quốc, Trung Quốc, Âu Mỹ"
+                  onChange={(event) =>
+                    setNewMovie({ ...newMovie, countries: event.target.value })
+                  }
+                  className="admin-control mt-1.5 w-full px-3"
+                />
+              </label>
+              <label className="block text-[11px] font-semibold text-slate-600 sm:col-span-2">
+                Mô tả / Tóm tắt nội dung
+                <textarea
+                  value={newMovie.description}
+                  placeholder="Tóm tắt cốt truyện phim..."
+                  onChange={(event) =>
+                    setNewMovie({ ...newMovie, description: event.target.value })
+                  }
+                  className="mt-1.5 min-h-24 w-full rounded-lg border border-[var(--admin-line)] p-3 text-[12px]"
+                />
+              </label>
+
+              {/* Initial Playback Source */}
+              <section className="sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-[13px] font-bold text-slate-800">
+                      Cấu hình máy chủ phát ban đầu (HLS Stream)
+                    </h3>
+                    <p className="mt-0.5 text-[11px] text-slate-500">
+                      Điền link m3u8 và phụ đề để phim có thể phát ngay lập tức
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <label className="block text-[11px] font-semibold text-slate-600">
+                    Tên server phát
+                    <input
+                      value={newMovie.serverName}
+                      placeholder="FlexPhim VIP"
+                      onChange={(e) =>
+                        setNewMovie({ ...newMovie, serverName: e.target.value })
+                      }
+                      className="admin-control mt-1 w-full px-2.5 text-[11px]"
+                    />
+                  </label>
+                  <label className="block text-[11px] font-semibold text-slate-600">
+                    Mã tập
+                    <input
+                      value={newMovie.episodeKey}
+                      placeholder="full hoặc 01"
+                      onChange={(e) =>
+                        setNewMovie({ ...newMovie, episodeKey: e.target.value })
+                      }
+                      className="admin-control mt-1 w-full px-2.5 text-[11px]"
+                    />
+                  </label>
+                  <label className="block text-[11px] font-semibold text-slate-600">
+                    Tên hiển thị tập
+                    <input
+                      value={newMovie.episodeName}
+                      placeholder="Tập Full hoặc Tập 01"
+                      onChange={(e) =>
+                        setNewMovie({ ...newMovie, episodeName: e.target.value })
+                      }
+                      className="admin-control mt-1 w-full px-2.5 text-[11px]"
+                    />
+                  </label>
+                  <label className="block text-[11px] font-semibold text-slate-600 sm:col-span-3">
+                    Link phát HLS HTTPS (stream URL .m3u8)
+                    <input
+                      value={newMovie.streamUrl}
+                      placeholder="https://your-domain.com/hls/master.m3u8"
+                      onChange={(e) =>
+                        setNewMovie({ ...newMovie, streamUrl: e.target.value })
+                      }
+                      className="admin-control mt-1 w-full px-2.5 text-[11px]"
+                    />
+                  </label>
+                </div>
+
+                {/* Subtitle track list for new movie */}
+                <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <span className="text-[11px] font-bold text-slate-700">Phụ đề VTT rời</span>
+                      <p className="text-[10px] text-slate-400">File phụ đề rời định dạng WebVTT (.vtt)</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setNewMovie({
+                          ...newMovie,
+                          subtitles: [
+                            ...newMovie.subtitles,
+                            { label: "Vietsub", url: "", language: "vi", default: newMovie.subtitles.length === 0 },
+                          ],
+                        })
+                      }
+                      className="admin-control inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold text-blue-600"
+                    >
+                      <Plus size={12} /> Thêm phụ đề
+                    </button>
+                  </div>
+
+                  {newMovie.subtitles.length === 0 ? (
+                    <p className="text-[10px] italic text-slate-400">Chưa thêm phụ đề rời.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {newMovie.subtitles.map((sub, sIdx) => (
+                        <div key={sIdx} className="flex flex-wrap items-center gap-2 rounded border border-slate-100 bg-slate-50/70 p-2 text-[11px]">
+                          <input
+                            value={sub.label}
+                            placeholder="Tên nhãn (Vietsub / Engsub...)"
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const subs = [...newMovie.subtitles];
+                              subs[sIdx] = { ...subs[sIdx], label: val };
+                              setNewMovie({ ...newMovie, subtitles: subs });
+                            }}
+                            className="admin-control w-32 px-2 text-[11px]"
+                          />
+                          <input
+                            value={sub.url}
+                            placeholder="HTTPS link file .vtt"
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const subs = [...newMovie.subtitles];
+                              subs[sIdx] = { ...subs[sIdx], url: val };
+                              setNewMovie({ ...newMovie, subtitles: subs });
+                            }}
+                            className="admin-control min-w-[200px] flex-1 px-2 text-[11px]"
+                          />
+                          <input
+                            value={sub.language}
+                            placeholder="vi / en"
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const subs = [...newMovie.subtitles];
+                              subs[sIdx] = { ...subs[sIdx], language: val };
+                              setNewMovie({ ...newMovie, subtitles: subs });
+                            }}
+                            className="admin-control w-16 px-2 text-center text-[11px]"
+                          />
+                          <label className="flex items-center gap-1 text-[10px] font-medium text-slate-600 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(sub.default)}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                const subs = newMovie.subtitles.map((s, idx) => ({
+                                  ...s,
+                                  default: idx === sIdx ? checked : false,
+                                }));
+                                setNewMovie({ ...newMovie, subtitles: subs });
+                              }}
+                              className="rounded text-blue-600"
+                            />
+                            Mặc định
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const subs = newMovie.subtitles.filter((_, idx) => idx !== sIdx);
+                              setNewMovie({ ...newMovie, subtitles: subs });
+                            }}
+                            className="text-rose-500 hover:text-rose-700 p-1"
+                            title="Xóa phụ đề"
+                          >
+                            <Trash size={13} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </section>
+            </div>
+            <footer className="flex justify-end gap-2 border-t border-[var(--admin-line)] px-5 py-4">
+              <button
+                onClick={() => setIsCreating(false)}
+                className="admin-control px-4"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => void handleCreateMovie()}
+                disabled={busy === "create-movie"}
+                className="inline-flex items-center gap-2 h-9 rounded-lg bg-emerald-600 px-5 text-[12px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 transition shadow-sm"
+              >
+                {busy === "create-movie" ? (
+                  <RefreshCw size={14} className="animate-spin" />
+                ) : (
+                  <Check size={14} />
+                )}
+                Tạo phim
               </button>
             </footer>
           </div>

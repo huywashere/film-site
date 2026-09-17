@@ -173,18 +173,37 @@ export class AdminOperationsService
   }
 
   async createMovie(data: Record<string, unknown>, actor: Actor) {
-    const id = String(data.id);
+    const rawTitle = String(data.title || "").trim();
+    if (!rawTitle) {
+      throw new BadRequestException("Tên phim không được để trống");
+    }
+
+    let id = String(data.id || "").trim().toLowerCase();
+    if (!id) {
+      id = rawTitle
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[đĐ]/g, "d")
+        .replace(/[^a-z0-9\s-]/g, "")
+        .trim()
+        .replace(/\s+/g, "-");
+    }
+    if (!id) {
+      id = `movie-${Date.now()}`;
+    }
+
     const movie = await this.prisma.movie.create({
       data: {
         id,
-        title: String(data.title),
-        type: String(data.type),
+        title: rawTitle,
+        type: String(data.type || "single"),
         posterUrl: data.posterUrl ? String(data.posterUrl) : undefined,
+        thumbUrl: data.thumbUrl ? String(data.thumbUrl) : (data.posterUrl ? String(data.posterUrl) : undefined),
         description: data.description ? String(data.description) : undefined,
         originName: data.originName ? String(data.originName) : undefined,
-        year: typeof data.year === "number" ? data.year : undefined,
-        quality: data.quality ? String(data.quality) : undefined,
-        language: data.language ? String(data.language) : undefined,
+        year: typeof data.year === "number" ? data.year : (Number(data.year) || undefined),
+        quality: data.quality ? String(data.quality) : "FHD",
+        language: data.language ? String(data.language) : "Vietsub",
         trailerUrl: data.trailerUrl ? String(data.trailerUrl) : undefined,
         genres: Array.isArray(data.genres) ? data.genres.map(String) : [],
         countries: Array.isArray(data.countries) ? data.countries.map(String) : [],
@@ -193,6 +212,8 @@ export class AdminOperationsService
         sources: ["manual"],
       },
     });
+
+    await this.cache.del(`movies:detail:${id}`).catch(() => false);
     await this.log(actor, "CREATE_MOVIE", id, `Tạo phim thủ công: ${movie.title}`);
     return movie;
   }

@@ -17,10 +17,19 @@ import {
   ARTPLAYER_PIP_SVG,
 } from './artplayer-editor-assets';
 import { attachNightModeAudio, isNightModeEnabled, setNightMode } from '@/lib/audio-effects';
+import { setupScrubberPreview } from './scrubber-preview';
+import { setupMobileCenterControls } from './mobile-center-controls';
 
 // Reduced from 8s → 6s for desktop. Mobile timeout is extended in the watchdog
 // itself. Faster timeout = faster automatic fallback to an alternate server.
 const HLS_STARTUP_TIMEOUT_MS = 5_000;
+
+export interface SubtitleTrack {
+  label: string;
+  url: string;
+  language?: string;
+  default?: boolean;
+}
 
 export interface ArtPlayerProps {
   url: string;
@@ -29,6 +38,7 @@ export interface ArtPlayerProps {
   poster?: string;
   title?: string;
   subtitle?: string;
+  subtitles?: SubtitleTrack[];
   autoplay?: boolean;
   progressKey?: string;
   dbProgress?: number;
@@ -63,6 +73,7 @@ export default function ArtPlayer({
   poster,
   title,
   subtitle,
+  subtitles,
   autoplay = false,
   progressKey,
   dbProgress,
@@ -130,6 +141,7 @@ export default function ArtPlayer({
   onPlaybackStateChangeRef.current = onPlaybackStateChange;
 
   const triggerSeekRippleRef = useRef<((isLeft: boolean) => void) | null>(null);
+  const serializedSubtitles = JSON.stringify(subtitles || []);
 
   useEffect(() => {
     if (!containerRef.current || !url) return;
@@ -655,6 +667,17 @@ export default function ArtPlayer({
       }
     };
 
+    const effectiveSubtitles: SubtitleTrack[] = (
+      Array.isArray(subtitles) && subtitles.length > 0
+        ? subtitles
+        : typeof subtitle === 'string' &&
+            (subtitle.startsWith('http') || subtitle.endsWith('.vtt') || subtitle.endsWith('.srt'))
+          ? [{ label: 'Vietsub', url: subtitle, default: true }]
+          : []
+    ).filter((track) => Boolean(track.url));
+
+    const defaultSubtitle = effectiveSubtitles.find((t) => t.default) || effectiveSubtitles[0];
+
     const player = new Artplayer({
       container: containerRef.current,
       url: isHls ? hlsTransport.primary : url,
@@ -718,6 +741,29 @@ export default function ArtPlayer({
             }
           },
         },
+        ...(effectiveSubtitles.length > 0
+          ? [
+              {
+                name: 'subtitle-toggle',
+                position: 'right',
+                index: 18,
+                html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3" ry="3"/><path d="M10 10.5a1.5 1.5 0 0 0-3 0v3a1.5 1.5 0 0 0 3 0"/><path d="M17 10.5a1.5 1.5 0 0 0-3 0v3a1.5 1.5 0 0 0 3 0"/></svg></span>`,
+                tooltip: 'Bật/Tắt phụ đề',
+                click: function () {
+                  const art = playerRef.current;
+                  if (!art) return;
+                  if (!art.subtitle.url && defaultSubtitle) {
+                    void art.subtitle.switch(defaultSubtitle.url, { name: defaultSubtitle.label });
+                    art.subtitle.show = true;
+                    art.notice.show = `Phụ đề: ${defaultSubtitle.label}`;
+                  } else {
+                    art.subtitle.show = !art.subtitle.show;
+                    art.notice.show = art.subtitle.show ? 'Đã bật phụ đề' : 'Đã tắt phụ đề';
+                  }
+                },
+              },
+            ]
+          : []),
         {
           name: 'screenshot',
           position: 'right',
@@ -768,6 +814,35 @@ export default function ArtPlayer({
       autoPlayback: true,
       airplay: true,
       settings: [
+        ...(effectiveSubtitles.length > 0
+          ? [
+              {
+                html: 'Phụ đề',
+                tooltip: defaultSubtitle ? defaultSubtitle.label : 'Tắt',
+                selector: [
+                  { html: 'Tắt', url: '', default: !defaultSubtitle },
+                  ...effectiveSubtitles.map((track) => ({
+                    html: track.label,
+                    url: track.url,
+                    default: defaultSubtitle?.url === track.url,
+                  })),
+                ],
+                onSelect: function (item: any) {
+                  const art = playerRef.current;
+                  if (!art) return item.html;
+                  if (!item.url) {
+                    art.subtitle.show = false;
+                    art.notice.show = 'Đã tắt phụ đề';
+                    return 'Tắt';
+                  }
+                  art.subtitle.show = true;
+                  void art.subtitle.switch(item.url, { name: item.html });
+                  art.notice.show = `Phụ đề: ${item.html}`;
+                  return item.html;
+                },
+              },
+            ]
+          : []),
         {
           html: 'Tự động bỏ qua quảng cáo',
           tooltip: autoSkipAds ? 'Bật' : 'Tắt',
@@ -808,8 +883,8 @@ export default function ArtPlayer({
           },
         },
       ],
-      // Use the default ArtPlayer Editor theme as specified in project rules.
-      theme: '#23ade5',
+      // Player seek & theme color set to purple per user customization request.
+      theme: '#8b5cf6',
       lang: 'vi',
       i18n: { vi },
       icons: {
@@ -829,12 +904,19 @@ export default function ArtPlayer({
       // Use ArtPlayer's native focus-scoped keyboard controls.
       hotkey: true,
 
-      // Keep the movie subtitle source, but let ArtPlayer render and position it.
-      ...(subtitle
+      ...(defaultSubtitle
         ? {
             subtitle: {
-              url: subtitle,
-              type: 'vtt',
+              url: defaultSubtitle.url,
+              type: defaultSubtitle.url.endsWith('.srt') ? 'srt' : 'vtt',
+              style: {
+                color: '#ffffff',
+                fontSize: '20px',
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.9), 0 0 4px rgba(0, 0, 0, 0.7)',
+                fontWeight: '500',
+              },
+              encoding: 'utf-8',
+              escape: true,
             },
           }
         : {}),
@@ -983,6 +1065,18 @@ export default function ArtPlayer({
 
     triggerSeekRippleRef.current = triggerSeekRipple;
 
+    const teardownScrubberPreview = setupScrubberPreview({
+      player,
+      streamUrl: isHls ? hlsTransport.primary : url,
+      isHls,
+      subtitleUrl: subtitle,
+    });
+
+    const teardownMobileCenterControls = setupMobileCenterControls({
+      player,
+      triggerSeekRipple,
+    });
+
     try {
       (player as any).hotkey?.add(37, (event: Event) => {
         event.preventDefault();
@@ -1007,7 +1101,7 @@ export default function ArtPlayer({
       if (!(target instanceof HTMLElement)) return false;
       return Boolean(
         target.closest(
-          '.art-bottom, .art-controls, .art-control, .art-state, .art-settings, .art-contextmenu, .art-layer-auto-playback, .art-notice, .art-loading, .netphim-skip-ad, .netphim-skip-intro, .art-layer-lock'
+          '.art-bottom, .art-controls, .art-control, .art-state, .art-settings, .art-contextmenu, .art-layer-auto-playback, .art-notice, .art-loading, .netphim-skip-ad, .netphim-skip-intro, .art-layer-lock, .netphim-mobile-center-controls, .netphim-mobile-center-btn'
         )
       );
     };
@@ -1282,10 +1376,12 @@ export default function ArtPlayer({
       seekOverlay.remove();
       clearTimeout(seekTimer);
       triggerSeekRippleRef.current = null;
+      teardownScrubberPreview();
+      teardownMobileCenterControls();
     };
-    // Recreate only when the primary/fallback transport changes. Other props use refs.
+    // Recreate only when the primary/fallback transport or subtitles change. Other props use refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url, fallbackUrl, type]);
+  }, [url, fallbackUrl, type, serializedSubtitles]);
 
   return (
     <div ref={containerRef} className="absolute inset-0 h-full min-h-0 w-full overflow-hidden" />

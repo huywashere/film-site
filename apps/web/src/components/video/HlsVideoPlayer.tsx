@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import ArtPlayer from "@/components/video/ArtPlayer";
+import ArtPlayer, { type SubtitleTrack } from "@/components/video/ArtPlayer";
 
 export type HlsPlaybackError = {
   type: string;
@@ -15,6 +15,7 @@ type HlsVideoPlayerProps = {
   poster?: string;
   title?: string;
   subtitle?: string;
+  subtitles?: SubtitleTrack[];
   initialTime?: number;
   autoPlay?: boolean;
   onReady?: (player: any) => void;
@@ -25,6 +26,9 @@ type HlsVideoPlayerProps = {
   onError: (error: HlsPlaybackError) => void;
   isTheaterMode?: boolean;
   onTheaterModeToggle?: (active: boolean) => void;
+  skipIntroStart?: number;
+  skipIntroEnd?: number;
+  skipOutroStart?: number;
   autoSkipIntro?: boolean;
   autoSkipAds?: boolean;
   minAdStartTime?: number;
@@ -42,6 +46,7 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
   poster,
   title,
   subtitle,
+  subtitles,
   initialTime = 0,
   autoPlay = false,
   onReady,
@@ -52,6 +57,9 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
   onError,
   isTheaterMode = false,
   onTheaterModeToggle,
+  skipIntroStart,
+  skipIntroEnd,
+  skipOutroStart,
   autoSkipIntro = true,
   autoSkipAds = true,
   minAdStartTime = 360,
@@ -66,8 +74,12 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
         poster={poster}
         title={title}
         subtitle={subtitle}
+        subtitles={subtitles}
         initialTime={initialTime}
         autoplay={autoPlay}
+        skipIntroStart={skipIntroStart}
+        skipIntroEnd={skipIntroEnd}
+        skipOutroStart={skipOutroStart}
         autoSkipIntro={autoSkipIntro}
         autoSkipAds={autoSkipAds}
         minAdStartTime={minAdStartTime}

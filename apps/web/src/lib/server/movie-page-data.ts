@@ -56,6 +56,34 @@ async function fetchProviderPayload(
   };
 }
 
+async function fetchInternalApiMovie(slug: string): Promise<MoviePagePayload | null> {
+  const apiBase =
+    process.env.INTERNAL_API_URL?.trim() ||
+    process.env.NEXT_PUBLIC_API_URL?.trim() ||
+    "http://127.0.0.1:3001/api/v1";
+  try {
+    const response = await fetch(
+      `${apiBase.replace(/\/$/, "")}/movies/${encodeURIComponent(slug)}`,
+      {
+        signal: AbortSignal.timeout(PAGE_DATA_TIMEOUT_MS),
+        next: { revalidate: 60 },
+      },
+    );
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (data?.status && data?.movie) {
+      return {
+        ...data,
+        movie: { ...data.movie, _source: data.movie._source || "flexphim" },
+        episodes: data.episodes || [],
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Fast, request-deduplicated page bootstrap. Metadata and page rendering share
  * this result, while Next's Data Cache keeps repeat visits off upstream APIs.
@@ -65,10 +93,11 @@ export const getMoviePageData = cache(async (slug: string) => {
   const cleanSlug = encodeURIComponent(rawSlug);
   if (!cleanSlug) return null;
 
-  // Start the gateway and the fastest direct provider together. Previously a
-  // slow or unavailable gateway held every film/watch request for up to 1.8s
-  // before the direct origins were even contacted. Promise.any lets a warm
-  // gateway cache still win while keeping it out of the critical path.
+  const internal = fetchInternalApiMovie(rawSlug).then((payload) => {
+    if (!payload) throw new Error("internal:empty");
+    return payload;
+  });
+
   const gateway = fetchGatewayBootstrap(rawSlug).then((payload) => {
     if (!payload) throw new Error("gateway:empty");
     return payload;
@@ -100,7 +129,7 @@ export const getMoviePageData = cache(async (slug: string) => {
   });
 
   try {
-    return await Promise.any([gateway, primary, fallback]);
+    return await Promise.any([internal, gateway, primary, fallback]);
   } catch {
     return null;
   } finally {

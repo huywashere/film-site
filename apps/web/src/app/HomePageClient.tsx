@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { ChevronRight, ChevronLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   movieApi,
   siteConfigApi,
@@ -462,21 +463,39 @@ function FilmSection({
   films,
   isLoading,
   href,
+  cardVariant,
 }: {
   title: string;
   films: FilmItem[];
   isLoading: boolean;
   href?: string;
+  cardVariant?: 'standard' | 'landscape' | 'poster-pill';
 }) {
   const { t } = useTranslation();
   const cardLayout = useSettingsStore((s) => s.cardLayout);
   const isLandscape = cardLayout === "horizontal";
   const rowRef = useRef<HTMLDivElement>(null);
   const [scrollStep, setScrollStep] = useState(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const effectiveCardVariant = cardVariant || (isLandscape ? "landscape" : "standard");
+  const isPosterPill = effectiveCardVariant === "poster-pill";
+
+  const GALLERY_TILTS = [
+    "-rotate-[3.2deg] translate-y-2",
+    "rotate-[3.0deg] -translate-y-2",
+    "-rotate-[2.6deg] translate-y-1",
+    "rotate-[3.6deg] -translate-y-2.5",
+    "-rotate-[3.0deg] translate-y-2",
+    "rotate-[2.8deg] -translate-y-1",
+  ];
 
   const itemWidthClass = isLandscape
     ? "w-[72%] min-w-[220px] shrink-0 snap-start sm:w-[46%] md:w-[32%] lg:w-[calc((100%-4*1rem)/5)] xl:w-[calc((100%-4*1rem)/5)]"
-    : "w-[26%] min-w-[112px] shrink-0 snap-start sm:w-[22%] md:w-[18%] lg:w-[calc((100%-6*1rem)/7)] xl:w-[calc((100%-6*1rem)/7)]";
+    : isPosterPill
+      ? "w-[34%] min-w-[130px] shrink-0 snap-start sm:w-[26%] md:w-[20%] lg:w-[calc((100%-5*1rem)/6)] xl:w-[calc((100%-5*1rem)/6)] 2xl:w-[calc((100%-5*1rem)/6)]"
+      : "w-[26%] min-w-[112px] shrink-0 snap-start sm:w-[22%] md:w-[18%] lg:w-[calc((100%-6*1rem)/7)] xl:w-[calc((100%-6*1rem)/7)]";
 
   const updateScrollStep = () => {
     const row = rowRef.current;
@@ -486,7 +505,20 @@ function FilmSection({
     setScrollStep(
       maxScroll > 0 ? Math.round((row.scrollLeft / maxScroll) * 3) : 0,
     );
+    setCanScrollLeft(row.scrollLeft > 10);
+    setCanScrollRight(maxScroll > 0 && row.scrollLeft < maxScroll - 10);
   };
+
+  useEffect(() => {
+    updateScrollStep();
+    const timer = setTimeout(updateScrollStep, 100);
+    const handleResize = () => updateScrollStep();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [films]);
 
   const scrollFilms = (direction: -1 | 1) => {
     const row = rowRef.current;
@@ -548,13 +580,16 @@ function FilmSection({
         )}
       </div>
 
-      {/* Row Container with Right Minimalist Vertical Stack Navigation */}
-      <div className="flex items-stretch gap-3" aria-busy={isLoading}>
+      {/* Row Container with Navigation */}
+      <div className={cn("flex items-stretch gap-3", isPosterPill && "relative")} aria-busy={isLoading}>
         <div className="flex-1 min-w-0">
           <div
             ref={rowRef}
             onScroll={updateScrollStep}
-            className="scrollbar-hide flex w-full snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain py-1 sm:gap-3 lg:gap-4"
+            className={cn(
+              "scrollbar-hide flex w-full snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain py-1 sm:gap-3 lg:gap-4",
+              isPosterPill && "py-6 px-2.5"
+            )}
           >
             {isLoading
               ? Array.from({ length: 14 }, (_, index) => (
@@ -562,47 +597,87 @@ function FilmSection({
                     key={`film-skeleton-${index}`}
                     className={itemWidthClass}
                   >
-                    <FilmCardSkeleton />
+                    <FilmCardSkeleton variant={effectiveCardVariant} />
                   </div>
                 ))
-              : films.map((film, idx) => (
-                  <div
-                    key={`slide-${title}-${film._id || film.slug || "film"}-${idx}`}
-                    className={itemWidthClass}
-                  >
-                    <FilmCard
-                      film={film}
-                      preferHighQuality={
-                        title === "Phim Mới Cập Nhật" && idx < 4
-                      }
-                    />
-                  </div>
-                ))}
+              : films.map((film, idx) => {
+                  const tiltClass = isPosterPill
+                    ? `${GALLERY_TILTS[idx % GALLERY_TILTS.length]} transition-all duration-300 ease-out hover:rotate-0 hover:translate-y-0 hover:scale-[1.06] hover:z-30`
+                    : "";
+                  return (
+                    <div
+                      key={`slide-${title}-${film._id || film.slug || "film"}-${idx}`}
+                      className={cn(itemWidthClass, isPosterPill && "py-2.5")}
+                    >
+                      <div className={tiltClass}>
+                        <FilmCard
+                          film={film}
+                          variant={effectiveCardVariant}
+                          preferHighQuality={
+                            title === "Phim Mới Cập Nhật" && idx < 4
+                          }
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
           </div>
         </div>
 
-        {/* ── Minimalist Vertical Chevron Navigation (Pure icons without background box) ── */}
-        <div className="hidden sm:flex flex-col justify-center gap-3 shrink-0 my-auto px-1">
-          <button
-            onClick={() => scrollFilms(1)}
-            disabled={isLoading}
-            aria-label={`Chuyển sang phải cho ${title}`}
-            title={`Xem phim tiếp theo trong ${title}`}
-            className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
-          >
-            <ChevronRight size={22} strokeWidth={2.5} />
-          </button>
+        {/* ── Navigation: Floating Chevrons for Poster Pill OR Minimalist Vertical Stack ── */}
+        {isPosterPill ? (
+          <>
+            {/* Rewind (Left) Button */}
+            <button
+              onClick={() => scrollFilms(-1)}
+              disabled={isLoading || !canScrollLeft}
+              aria-label={`Chuyển sang trái cho ${title}`}
+              title={`Xem phim trước trong ${title}`}
+              className={cn(
+                "hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 z-30 h-16 w-9 items-center justify-center rounded-r-2xl bg-black/75 border-y border-r border-white/15 text-white/80 backdrop-blur-md transition-all hover:bg-black/95 hover:border-white/50 hover:text-white hover:w-10 active:scale-95 cursor-pointer shadow-2xl",
+                (!canScrollLeft || isLoading) ? "opacity-0 pointer-events-none" : "opacity-100"
+              )}
+            >
+              <ChevronLeft size={22} strokeWidth={2.5} />
+            </button>
 
-          <button
-            onClick={() => scrollFilms(-1)}
-            disabled={isLoading}
-            aria-label={`Chuyển sang trái cho ${title}`}
-            title={`Xem phim trước trong ${title}`}
-            className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
-          >
-            <ChevronLeft size={22} strokeWidth={2.5} />
-          </button>
-        </div>
+            {/* Forward (Right) Button */}
+            <button
+              onClick={() => scrollFilms(1)}
+              disabled={isLoading || !canScrollRight}
+              aria-label={`Chuyển sang phải cho ${title}`}
+              title={`Xem phim tiếp theo trong ${title}`}
+              className={cn(
+                "hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 z-30 h-16 w-9 items-center justify-center rounded-l-2xl bg-black/75 border-y border-l border-white/15 text-white/80 backdrop-blur-md transition-all hover:bg-black/95 hover:border-white/50 hover:text-white hover:w-10 active:scale-95 cursor-pointer shadow-2xl",
+                (!canScrollRight || isLoading) ? "opacity-0 pointer-events-none" : "opacity-100"
+              )}
+            >
+              <ChevronRight size={22} strokeWidth={2.5} />
+            </button>
+          </>
+        ) : (
+          <div className="hidden sm:flex flex-col justify-center gap-3 shrink-0 my-auto px-1">
+            <button
+              onClick={() => scrollFilms(1)}
+              disabled={isLoading}
+              aria-label={`Chuyển sang phải cho ${title}`}
+              title={`Xem phim tiếp theo trong ${title}`}
+              className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
+            >
+              <ChevronRight size={22} strokeWidth={2.5} />
+            </button>
+
+            <button
+              onClick={() => scrollFilms(-1)}
+              disabled={isLoading}
+              aria-label={`Chuyển sang trái cho ${title}`}
+              title={`Xem phim trước trong ${title}`}
+              className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
+            >
+              <ChevronLeft size={22} strokeWidth={2.5} />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1597,6 +1672,7 @@ export default function HomePageClient({
           films={historicalRowList}
           isLoading={historicalLoading}
           href="/genre/co-trang"
+          cardVariant="poster-pill"
         />
       </LazySection>
     ),

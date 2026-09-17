@@ -103,10 +103,11 @@ export class UpdateMovieMetadataDto {
 }
 
 export class CreateMovieDto extends UpdateMovieMetadataDto {
+  @IsOptional()
   @IsString()
   @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
   @MaxLength(180)
-  id!: string;
+  id?: string;
 
   @IsString()
   @MaxLength(300)
@@ -223,8 +224,7 @@ export class PlaybackSourceDto {
   streamUrl?: string;
 
   @IsOptional()
-  @IsObject()
-  subtitleUrls?: Record<string, string>;
+  subtitleUrls?: any;
 
   @IsOptional()
   @IsInt()

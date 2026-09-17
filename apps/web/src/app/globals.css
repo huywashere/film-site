@@ -306,13 +306,14 @@ pre,
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #2e2e2e;
+    background: #2a2636;
     border-radius: 9999px;
     border: 2px solid #141414;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #3b4458;
+    background: #8b5cf6;
   }
 }
 
@@ -1207,13 +1208,13 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   transition: opacity 0.18s ease-out;
 }
 
-/* Subtle darkened radial gradient behind seek area for crisp contrast without borders */
+/* Subtle darkened radial gradient behind seek area with purple ambient hue */
 .netphim-mobile-seek-side.is-left {
-  background: radial-gradient(circle at 45% 50%, rgba(0, 0, 0, 0.42) 0%, transparent 68%);
+  background: radial-gradient(circle at 45% 50%, rgba(139, 92, 246, 0.28) 0%, rgba(0, 0, 0, 0.4) 45%, transparent 70%);
 }
 
 .netphim-mobile-seek-side.is-right {
-  background: radial-gradient(circle at 55% 50%, rgba(0, 0, 0, 0.42) 0%, transparent 68%);
+  background: radial-gradient(circle at 55% 50%, rgba(139, 92, 246, 0.28) 0%, rgba(0, 0, 0, 0.4) 45%, transparent 70%);
 }
 
 .netphim-mobile-seek-side.is-active {
@@ -1242,7 +1243,7 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 2px rgba(0, 0, 0, 0.8));
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.95));
   user-select: none;
   -webkit-user-select: none;
 }
@@ -1274,15 +1275,15 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  color: #ffffff;
+  color: #a855f7;
 }
 
 .netphim-mobile-seek-triangles .seek-tri {
   width: 15px;
   height: 15px;
-  color: #ffffff;
+  color: #a855f7;
   display: inline-block;
-  opacity: 0.35;
+  opacity: 0.5;
   transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
@@ -1293,7 +1294,7 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   letter-spacing: -0.01em;
   color: #ffffff;
   white-space: nowrap;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95), 0 0 4px rgba(0, 0, 0, 0.8);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
 }
 
 /* Sequential wave animation across the 3 triangles */
@@ -1330,6 +1331,159 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   animation: netphim-tri-wave 0.52s infinite 0.24s;
 }
 
+/* ── Player 10s Seek Controls (Native Standard White - No Special Effects) ── */
+.art-video-player .art-control-backward-10,
+.art-video-player .art-control-forward-10 {
+  color: #ffffff !important;
+}
+
+
+.art-video-player .art-progress-played {
+  background: #8b5cf6 !important;
+  box-shadow: none !important;
+}
+
+.art-video-player .art-progress-indicator {
+  background: #8b5cf6 !important;
+  box-shadow: none !important;
+}
+
+.art-video-player .art-control-progress:hover .art-progress-indicator {
+  transform: scale(1.15) !important;
+}
+
+.art-video-player .art-progress-tip {
+  display: none !important;
+}
+
+/* ==========================================================================
+   YouTube-Style Video Scrubber Frame Preview ("Kéo lên để tua chính xác")
+   ========================================================================== */
+.netphim-scrubber-preview {
+  position: absolute;
+  bottom: calc(var(--art-control-height, 40px) + 14px);
+  left: 0;
+  transform: translateX(-50%) translateY(8px) scale(0.95);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: opacity 0.16s cubic-bezier(0.16, 1, 0.3, 1), transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.netphim-scrubber-preview.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.netphim-scrubber-box {
+  width: 176px;
+  height: 99px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  background: #090a0f;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85), 0 2px 8px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.netphim-scrubber-canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.netphim-scrubber-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+
+.netphim-scrubber-placeholder {
+  position: absolute;
+  inset: 0;
+  background: #11131a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.netphim-scrubber-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 50%, transparent 100%);
+  animation: netphim-scrub-shimmer 1.4s infinite;
+  transform: translateX(-100%);
+}
+
+@keyframes netphim-scrub-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.netphim-scrubber-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.netphim-scrubber-time {
+  background: rgba(0, 0, 0, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  padding: 2.5px 8px;
+  border-radius: 9999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.netphim-scrubber-sub {
+  background: rgba(0, 0, 0, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2.5px 7px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.netphim-scrubber-notch {
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid rgba(0, 0, 0, 0.88);
+}
+
 /* Bell swing/shake animation for episode notification banners */
 @keyframes netphim-bell-ring {
   0%, 100% {
@@ -1357,3 +1511,101 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   animation: netphim-bell-ring 2.6s ease-in-out infinite;
   display: inline-block;
 }
+
+/* ==========================================================================
+   Mobile Center Quick Controls ([ ▶ / ⏸ ])
+   Displays when hovering or tapping on player on mobile / touch screens
+   ========================================================================== */
+.netphim-mobile-center-controls {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.92);
+  z-index: 25;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+  .netphim-mobile-center-controls {
+    display: flex;
+  }
+
+  /* Hide native TV state icon on mobile to avoid double center icons */
+  .art-video-player .art-state {
+    display: none !important;
+  }
+
+  .netphim-mobile-center-controls.is-visible,
+  .art-video-player.art-hover .netphim-mobile-center-controls,
+  .art-video-player.art-control-show .netphim-mobile-center-controls {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.netphim-mobile-center-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  color: #ffffff;
+  cursor: pointer;
+  outline: none;
+  border: none;
+  padding: 0;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease, border-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.netphim-mobile-center-btn:active {
+  transform: scale(0.88);
+}
+
+/* Center Play / Pause Button */
+.netphim-mobile-center-btn.is-play-pause {
+  width: 62px;
+  height: 62px;
+  background: rgba(15, 17, 23, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+}
+
+.netphim-mobile-center-btn.is-play-pause .netphim-center-icon.is-play {
+  margin-left: 3px; /* Optical center adjustment for play triangle */
+}
+
+.netphim-mobile-center-btn.is-play-pause:hover {
+  background: rgba(26, 29, 39, 0.92);
+  border-color: #ffffff;
+}
+
+.netphim-mobile-center-btn.is-play-pause:active {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #ffffff;
+}
+
+.netphim-mobile-center-btn .netphim-center-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+@media (max-width: 480px) {
+  .netphim-mobile-center-btn.is-play-pause {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+

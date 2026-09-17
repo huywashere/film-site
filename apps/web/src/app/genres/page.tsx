@@ -80,7 +80,7 @@ const HUBS: HubCard[] = [
   },
   {
     slug: "doraemon",
-    title: "Vũ Trụ Doraemon",
+    title: "Doraemon Movie",
     tagline: "Bảo Bối Thần Kỳ • Movie Chiếu Rạp • Stand by Me",
     category: "Doraemon",
     highlight:

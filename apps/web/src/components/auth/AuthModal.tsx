@@ -22,7 +22,7 @@ import {
 import Link from "next/link";
 import NextImage from "next/image";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   getFirebaseAuth,
   getGoogleProvider,
@@ -37,6 +37,7 @@ import {
   updateProfile,
 } from "@/lib/firebase";
 import { establishFirebaseSession } from "@/lib/auth-session";
+import { mapFirebaseErrorToVietnamese } from "@/lib/firebaseErrorMap";
 import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
 import { CinematicAuthBackground } from "@/components/auth/CinematicAuthBackground";
 import { useGoogleOneTap } from "@/hooks/useGoogleOneTap";
@@ -72,6 +73,7 @@ export function AuthModal({
   const closeAuthModal = modalStore.closeModal;
   const { setUser, login, register } = useAuthStore();
   const { toast } = useToast();
+  const reduceMotion = useReducedMotion();
 
   const [internalMode, setInternalMode] = useState<"login" | "register">(
     initialMode === "forgot" ? "login" : initialMode,
@@ -129,15 +131,7 @@ export function AuthModal({
 
   const isOpen = isPage ? true : modalStore.isOpen;
 
-  const [currentArtwork, setCurrentArtwork] = useState<AuthArtwork>(
-    LOGIN_COVER_ARTWORKS[0],
-  );
-
-  useEffect(() => {
-    if (isOpen) {
-      setCurrentArtwork(getRandomAuthArtwork());
-    }
-  }, [isOpen]);
+  const [currentArtwork] = useState<AuthArtwork>(() => getRandomAuthArtwork());
 
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
@@ -212,16 +206,21 @@ export function AuthModal({
       const res = await signInWithPopup(getFirebaseAuth(), getGoogleProvider());
       await handleFirebaseUserSuccess(res.user);
     } catch (err: any) {
+      console.error("Google login error:", err);
       const serverMsg = err?.response?.data?.message;
       const finalMsg = Array.isArray(serverMsg)
         ? serverMsg.join(", ")
         : typeof serverMsg === "string"
           ? serverMsg
-          : err.code === "auth/popup-blocked"
+          : err?.code === "auth/popup-blocked"
             ? "Trình duyệt đã chặn cửa sổ Google. Hãy cho phép popup rồi thử lại."
-            : err.code === "auth/popup-closed-by-user"
+            : err?.code === "auth/popup-closed-by-user"
               ? "Bạn đã đóng cửa sổ đăng nhập Google."
-              : "Không thể xác thực tài khoản Google. Vui lòng thử lại sau.";
+              : err?.code === "auth/unauthorized-domain"
+                ? "Tên miền hiện tại (localhost) chưa được thêm vào Authorized Domains trong Firebase Console."
+                : err?.code
+                  ? mapFirebaseErrorToVietnamese(err.code, err.message)
+                  : err?.message || "Không thể xác thực tài khoản Google. Vui lòng thử lại sau.";
       setErrorMsg(finalMsg);
     } finally {
       setLoading(false);
@@ -238,12 +237,15 @@ export function AuthModal({
       );
       await handleFirebaseUserSuccess(res.user);
     } catch (err: any) {
+      console.error("Facebook login error:", err);
       setErrorMsg(
-        err.code === "auth/popup-blocked"
+        err?.code === "auth/popup-blocked"
           ? "Trình duyệt đã chặn cửa sổ Facebook. Hãy cho phép popup rồi thử lại."
-          : err.code === "auth/popup-closed-by-user"
+          : err?.code === "auth/popup-closed-by-user"
             ? "Bạn đã đóng cửa sổ đăng nhập Facebook."
-            : err.message || "Đăng nhập Facebook thất bại.",
+            : err?.code
+              ? mapFirebaseErrorToVietnamese(err.code, err.message)
+              : err?.message || "Đăng nhập Facebook thất bại.",
       );
     } finally {
       setLoading(false);
@@ -409,19 +411,31 @@ export function AuthModal({
 
   /* ── Sleek Centered Glass Card Content (Anti-Slop Cinematic Standard) ── */
   const cardContent = (
-    <div
+    <motion.div
+      layout
+      initial={reduceMotion ? false : { opacity: 0, scale: 0.95, y: 16 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={reduceMotion ? undefined : { opacity: 0, scale: 0.95, y: 16 }}
+      transition={{
+        layout: { duration: reduceMotion ? 0 : 0.32, ease: [0.16, 1, 0.3, 1] },
+        duration: 0.28,
+        ease: [0.16, 1, 0.3, 1],
+      }}
       className={cn(
-        "relative w-full max-w-[390px] overflow-hidden bg-gradient-to-b from-[#181a2e]/80 via-[#101222]/75 to-[#0b0d18]/85 backdrop-blur-2xl border border-white/[0.14] rounded-2xl sm:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.85),0_0_50px_-10px_rgba(139,92,246,0.22),inset_0_1px_0_0_rgba(255,255,255,0.18)] p-5 sm:p-6 sm:px-7 text-white z-10 font-primary transition-all duration-300",
+        "relative w-full max-w-[390px] overflow-hidden bg-gradient-to-b from-[#181a2e]/85 via-[#101222]/80 to-[#0b0d18]/90 backdrop-blur-2xl border border-white/[0.14] rounded-2xl sm:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.85),0_0_50px_-10px_rgba(139,92,246,0.22),inset_0_1px_0_0_rgba(255,255,255,0.18)] p-5 sm:p-6 sm:px-7 text-white z-10 font-primary",
       )}
     >
       {/* Decorative Ambient Glass Tint on Card Top */}
       <div className="absolute -top-14 left-1/2 -translate-x-1/2 w-52 h-28 bg-violet-500/20 blur-3xl pointer-events-none rounded-full" />
 
-      {/* Integrated Minimalist Back Button (Matching Reference Image) */}
-      <button
+      {/* Integrated Minimalist Back Button */}
+      <motion.button
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.92 }}
+        transition={{ duration: 0.15 }}
         type="button"
         onClick={closeModal}
-        className="absolute top-4 left-4 sm:top-5 sm:left-5 w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-white/30 text-neutral-300 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer backdrop-blur-md active:scale-95 group z-20"
+        className="absolute top-4 left-4 sm:top-5 sm:left-5 w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-white/30 text-neutral-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer backdrop-blur-md active:scale-95 group z-20"
         aria-label="Quay lại"
         title="Quay lại"
       >
@@ -430,10 +444,9 @@ export function AuthModal({
           strokeWidth={2.2}
           className="transition-transform duration-200 group-hover:-translate-x-0.5 text-neutral-300 group-hover:text-white"
         />
-      </button>
+      </motion.button>
 
-
-      {/* Brand Logo integrated directly on the form header - Clean without glow */}
+      {/* Brand Logo integrated directly on the form header */}
       <div className="flex justify-center mb-2.5">
         <Link
           href="/"
@@ -446,7 +459,7 @@ export function AuthModal({
             height={32}
             priority
             unoptimized
-            className="h-8 w-8 object-contain transition-transform group-hover:scale-105"
+            className="h-8 w-8 object-contain transition-transform duration-200 group-hover:scale-105"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src = "/flexphim-logo.png";
             }}
@@ -457,72 +470,162 @@ export function AuthModal({
         </Link>
       </div>
 
-      {/* Title Header */}
-      <div className="text-center mb-4">
-        <h1 className="text-xl sm:text-[22px] font-extrabold text-white tracking-tight">
-          {isForgotMode
-            ? "Khôi phục mật khẩu"
-            : mode === "login"
-              ? "Đăng nhập tài khoản"
-              : "Tạo tài khoản mới"}
-        </h1>
-        <p className="text-xs text-neutral-400 mt-1.5 leading-relaxed">
-          {isForgotMode
-            ? "Nhập email đăng ký để nhận liên kết khôi phục mật khẩu."
-            : mode === "login"
-              ? "Thế giới điện ảnh đỉnh cao đang chờ bạn khám phá."
-              : "Gia nhập FlexPhim để xem phim chất lượng cao không giới hạn."}
-        </p>
+      {/* Title Header with smooth crossfade */}
+      <div className="text-center mb-3">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={isForgotMode ? "forgot" : mode}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+          >
+            <h1 className="text-xl sm:text-[22px] font-extrabold text-white tracking-tight">
+              {isForgotMode
+                ? "Khôi phục mật khẩu"
+                : mode === "login"
+                  ? "Đăng nhập tài khoản"
+                  : "Tạo tài khoản mới"}
+            </h1>
+            <p className="text-xs text-neutral-400 mt-1.5 leading-relaxed">
+              {isForgotMode
+                ? "Nhập email đăng ký để nhận liên kết khôi phục mật khẩu."
+                : mode === "login"
+                  ? "Thế giới điện ảnh đỉnh cao đang chờ bạn khám phá."
+                  : "Gia nhập FlexPhim để xem phim chất lượng cao không giới hạn."}
+            </p>
+          </motion.div>
+        </AnimatePresence>
       </div>
 
-      {/* Error Message */}
-      {errorMsg && (
-        <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-medium leading-relaxed text-red-300">
-          <span className="mt-0.5 shrink-0 text-red-400">⚠</span>
-          <span>{errorMsg}</span>
-        </div>
+      {/* Tab Segmented Control (Smooth Sliding Pill Indicator) */}
+      {!isForgotMode && (
+        <motion.div
+          layout
+          className="relative flex items-center p-1 bg-white/[0.05] rounded-xl border border-white/[0.08] mb-4 shadow-inner"
+        >
+          <button
+            type="button"
+            onClick={() => {
+              if (mode !== "login") {
+                setErrorMsg("");
+                setMode("login");
+              }
+            }}
+            className={cn(
+              "relative flex-1 py-2 text-xs font-bold text-center transition-colors duration-200 z-10 cursor-pointer select-none rounded-lg",
+              mode === "login" ? "text-white" : "text-neutral-400 hover:text-neutral-200",
+            )}
+          >
+            {mode === "login" && (
+              <motion.div
+                layoutId="authTabPill"
+                className="absolute inset-0 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 rounded-lg shadow-md shadow-violet-600/35 border border-violet-400/30"
+                transition={{
+                  type: "spring",
+                  stiffness: 420,
+                  damping: 32,
+                }}
+              />
+            )}
+            <span className="relative z-10 flex items-center justify-center gap-1.5">
+              <LogIn size={13} strokeWidth={2.2} />
+              Đăng nhập
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (mode !== "register") {
+                setErrorMsg("");
+                setMode("register");
+              }
+            }}
+            className={cn(
+              "relative flex-1 py-2 text-xs font-bold text-center transition-colors duration-200 z-10 cursor-pointer select-none rounded-lg",
+              mode === "register" ? "text-white" : "text-neutral-400 hover:text-neutral-200",
+            )}
+          >
+            {mode === "register" && (
+              <motion.div
+                layoutId="authTabPill"
+                className="absolute inset-0 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 rounded-lg shadow-md shadow-violet-600/35 border border-violet-400/30"
+                transition={{
+                  type: "spring",
+                  stiffness: 420,
+                  damping: 32,
+                }}
+              />
+            )}
+            <span className="relative z-10 flex items-center justify-center gap-1.5">
+              <UserPlus size={13} strokeWidth={2.2} />
+              Đăng ký
+            </span>
+          </button>
+        </motion.div>
       )}
+
+      {/* Error Message with tactile shake feedback */}
+      <AnimatePresence>
+        {errorMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              x: reduceMotion ? 0 : [0, -8, 8, -5, 5, -2, 2, 0],
+            }}
+            exit={{ opacity: 0, y: -6, scale: 0.97 }}
+            transition={{
+              duration: 0.35,
+              x: { duration: 0.35, ease: "easeOut" },
+            }}
+            className="mb-4 flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-medium leading-relaxed text-red-300"
+          >
+            <span className="mt-0.5 shrink-0 text-red-400">⚠</span>
+            <span>{errorMsg}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Form Body View */}
       <div className="overflow-hidden relative">
         <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={isForgotMode ? "forgot" : mode}
-            initial={{
-              opacity: 0,
-              y: 8,
-            }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{
-              opacity: 0,
-              y: -8,
-            }}
-            transition={{ duration: 0.18, ease: "easeInOut" }}
-          >
-            {isForgotMode ? (
-              /* Forgot Password Form */
+          {isForgotMode ? (
+            /* Forgot Password Form */
+            <motion.div
+              key="forgot-form"
+              initial={reduceMotion ? false : { opacity: 0, x: 16, filter: "blur(4px)" }}
+              animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+              exit={reduceMotion ? undefined : { opacity: 0, x: -16, filter: "blur(4px)" }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            >
               <form
                 onSubmit={handleForgotPasswordSubmit}
                 className="space-y-4"
               >
                 <div>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                  <div className="relative group">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none transition-colors group-focus-within:text-violet-400" />
                     <input
                       type="email"
                       required
                       value={emailOrUsername}
                       onChange={(e) => setEmailOrUsername(e.target.value)}
                       placeholder="Email đã đăng ký"
-                      className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-400/50 focus:bg-white/[0.08] focus:ring-1 focus:ring-violet-400/25"
+                      className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all duration-200 hover:border-white/20 focus:border-violet-400/60 focus:bg-white/[0.08] focus:ring-2 focus:ring-violet-400/20"
                     />
                   </div>
                 </div>
 
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.012 }}
+                  whileTap={{ scale: 0.985 }}
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:via-purple-500 hover:to-indigo-500 text-white text-sm font-bold tracking-wide transition-all duration-200 shadow-lg shadow-violet-600/30 hover:shadow-violet-600/40 active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:via-purple-500 hover:to-indigo-500 text-white text-sm font-bold tracking-wide transition-all duration-200 shadow-lg shadow-violet-600/30 hover:shadow-violet-600/40 active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2 select-none"
                 >
                   {loading ? (
                     <>
@@ -535,60 +638,85 @@ export function AuthModal({
                       <span>Gửi email khôi phục</span>
                     </>
                   )}
-                </button>
+                </motion.button>
 
                 <div className="text-center pt-2">
                   <button
                     type="button"
-                    onClick={() => setIsForgotMode(false)}
-                    className="text-xs text-neutral-400 hover:text-white font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                    onClick={() => {
+                      setErrorMsg("");
+                      setIsForgotMode(false);
+                    }}
+                    className="text-xs text-neutral-400 hover:text-white font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer group"
                   >
-                    <ArrowLeft size={13} />
+                    <ArrowLeft size={13} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
                     <span>Quay lại đăng nhập</span>
                   </button>
                 </div>
               </form>
-            ) : (
-              /* Login / Register Main Form */
+            </motion.div>
+          ) : (
+            /* Login / Register Unified Form with Expanding Fields */
+            <motion.div
+              key="main-auth-form"
+              initial={reduceMotion ? false : { opacity: 0, x: -16, filter: "blur(4px)" }}
+              animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+              exit={reduceMotion ? undefined : { opacity: 0, x: 16, filter: "blur(4px)" }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            >
               <form onSubmit={handleSubmit} className="space-y-3.5">
-                {mode === "register" && (
-                  <>
-                    {/* Full Name */}
-                    <div>
-                      <div className="relative">
-                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
-                        <input
-                          type="text"
-                          required
-                          value={displayName}
-                          onChange={(e) => setDisplayName(e.target.value)}
-                          placeholder="Họ và tên"
-                          className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-400/50 focus:bg-white/[0.08] focus:ring-1 focus:ring-violet-400/25"
-                        />
+                {/* Extra Register Fields: Full Name & Username */}
+                <AnimatePresence initial={false}>
+                  {mode === "register" && (
+                    <motion.div
+                      key="register-top-fields"
+                      initial={{ opacity: 0, height: 0, y: -8 }}
+                      animate={{ opacity: 1, height: "auto", y: 0 }}
+                      exit={{ opacity: 0, height: 0, y: -8 }}
+                      transition={{
+                        duration: reduceMotion ? 0 : 0.28,
+                        ease: [0.16, 1, 0.3, 1],
+                        opacity: { duration: 0.2 },
+                      }}
+                      className="space-y-3.5 overflow-hidden"
+                    >
+                      {/* Full Name */}
+                      <div>
+                        <div className="relative group">
+                          <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none transition-colors group-focus-within:text-violet-400" />
+                          <input
+                            type="text"
+                            required={mode === "register"}
+                            value={displayName}
+                            onChange={(e) => setDisplayName(e.target.value)}
+                            placeholder="Họ và tên"
+                            className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all duration-200 hover:border-white/20 focus:border-violet-400/60 focus:bg-white/[0.08] focus:ring-2 focus:ring-violet-400/20"
+                          />
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Username */}
-                    <div>
-                      <div className="relative">
-                        <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
-                        <input
-                          type="text"
-                          required
-                          value={username}
-                          onChange={(e) => setUsername(e.target.value)}
-                          placeholder="Tên tài khoản (username)"
-                          className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-400/50 focus:bg-white/[0.08] focus:ring-1 focus:ring-violet-400/25"
-                        />
+                      {/* Username */}
+                      <div>
+                        <div className="relative group">
+                          <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none transition-colors group-focus-within:text-violet-400" />
+                          <input
+                            type="text"
+                            required={mode === "register"}
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder="Tên tài khoản (username)"
+                            className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all duration-200 hover:border-white/20 focus:border-violet-400/60 focus:bg-white/[0.08] focus:ring-2 focus:ring-violet-400/20"
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </>
-                )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-                {/* Email / Username Field */}
-                <div>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                {/* Email / Username Field (Shared) */}
+                <motion.div layout>
+                  <div className="relative group">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none transition-colors group-focus-within:text-violet-400" />
                     <input
                       type={mode === "login" ? "text" : "email"}
                       autoComplete="email"
@@ -600,147 +728,195 @@ export function AuthModal({
                           ? "Email hoặc Tên đăng nhập"
                           : "Địa chỉ Email"
                       }
-                      className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-400/50 focus:bg-white/[0.08] focus:ring-1 focus:ring-violet-400/25"
+                      className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all duration-200 hover:border-white/20 focus:border-violet-400/60 focus:bg-white/[0.08] focus:ring-2 focus:ring-violet-400/20"
                     />
                   </div>
-                </div>
+                </motion.div>
 
-                {/* Password Fields */}
-                {mode === "login" ? (
-                  <div>
-                    <div className="relative">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        autoComplete="current-password"
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Mật khẩu"
-                        className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-10 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-400/50 focus:bg-white/[0.08] focus:ring-1 focus:ring-violet-400/25"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1 transition-colors cursor-pointer"
-                        aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                {/* Password Field (Shared) */}
+                <motion.div layout>
+                  <div className="relative group">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none transition-colors group-focus-within:text-violet-400" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      autoComplete={mode === "login" ? "current-password" : "new-password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder={mode === "login" ? "Mật khẩu" : "Mật khẩu (tối thiểu 6 ký tự)"}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-10 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all duration-200 hover:border-white/20 focus:border-violet-400/60 focus:bg-white/[0.08] focus:ring-2 focus:ring-violet-400/20"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1 transition-colors cursor-pointer rounded-lg hover:bg-white/10 active:scale-95"
+                      aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                    >
+                      <motion.div
+                        key={showPassword ? "hide" : "show"}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.15 }}
                       >
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-
-                    <div className="flex justify-end mt-2">
-                      <button
-                        type="button"
-                        onClick={() => setIsForgotMode(true)}
-                        className="text-xs text-neutral-400 hover:text-white font-medium transition-colors cursor-pointer"
-                      >
-                        Quên mật khẩu?
-                      </button>
-                    </div>
+                      </motion.div>
+                    </button>
                   </div>
-                ) : (
-                  /* Register Password Fields */
-                  <div className="space-y-3">
-                    <div className="relative">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        autoComplete="new-password"
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Mật khẩu (tối thiểu 6 ký tự)"
-                        className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-10 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-400/50 focus:bg-white/[0.08] focus:ring-1 focus:ring-violet-400/25"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1 transition-colors cursor-pointer"
-                      >
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
 
-                    <div className="relative">
-                      <ShieldCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
-                      <input
-                        type={showConfirmPassword ? "text" : "password"}
-                        autoComplete="new-password"
-                        required
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Xác nhận mật khẩu"
-                        className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-10 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all focus:border-violet-400/50 focus:bg-white/[0.08] focus:ring-1 focus:ring-violet-400/25"
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowConfirmPassword(!showConfirmPassword)
-                        }
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1 transition-colors cursor-pointer"
+                  {/* Forgot password link (Login mode only) */}
+                  <AnimatePresence initial={false}>
+                    {mode === "login" && (
+                      <motion.div
+                        key="forgot-password-link"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex justify-end mt-2 overflow-hidden"
                       >
-                        {showConfirmPassword ? (
-                          <EyeOff size={16} />
-                        ) : (
-                          <Eye size={16} />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setErrorMsg("");
+                            setIsForgotMode(true);
+                          }}
+                          className="text-xs text-neutral-400 hover:text-white font-medium transition-colors cursor-pointer"
+                        >
+                          Quên mật khẩu?
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+
+                {/* Extra Register Field: Confirm Password */}
+                <AnimatePresence initial={false}>
+                  {mode === "register" && (
+                    <motion.div
+                      key="register-confirm-password-field"
+                      initial={{ opacity: 0, height: 0, y: -8 }}
+                      animate={{ opacity: 1, height: "auto", y: 0 }}
+                      exit={{ opacity: 0, height: 0, y: -8 }}
+                      transition={{
+                        duration: reduceMotion ? 0 : 0.28,
+                        ease: [0.16, 1, 0.3, 1],
+                        opacity: { duration: 0.2 },
+                      }}
+                      className="overflow-hidden"
+                    >
+                      <div className="relative group">
+                        <ShieldCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none transition-colors group-focus-within:text-violet-400" />
+                        <input
+                          type={showConfirmPassword ? "text" : "password"}
+                          autoComplete="new-password"
+                          required={mode === "register"}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Xác nhận mật khẩu"
+                          className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-10 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-all duration-200 hover:border-white/20 focus:border-violet-400/60 focus:bg-white/[0.08] focus:ring-2 focus:ring-violet-400/20"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1 transition-colors cursor-pointer rounded-lg hover:bg-white/10 active:scale-95"
+                          aria-label={showConfirmPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                        >
+                          <motion.div
+                            key={showConfirmPassword ? "hide-confirm" : "show-confirm"}
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </motion.div>
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Turnstile Bot Protection */}
                 {turnstileEnabled && (
-                  <div className="py-1 flex justify-center">
+                  <motion.div layout className="py-1 flex justify-center">
                     <TurnstileWidget
                       action={mode}
                       onTokenChange={handleTurnstileChange}
                     />
-                  </div>
+                  </motion.div>
                 )}
 
-                {/* Submit Action Button (Soft Violet Accent) */}
-                <button
+                {/* Submit Action Button */}
+                <motion.button
+                  layout
+                  whileHover={{ scale: 1.012 }}
+                  whileTap={{ scale: 0.985 }}
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:via-purple-500 hover:to-indigo-500 text-white text-sm font-bold tracking-wide transition-all duration-200 shadow-lg shadow-violet-600/30 hover:shadow-violet-600/40 active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:via-purple-500 hover:to-indigo-500 text-white text-sm font-bold tracking-wide transition-all duration-200 shadow-lg shadow-violet-600/30 hover:shadow-violet-600/40 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2 select-none"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      <span>Đang xử lý...</span>
-                    </>
-                  ) : mode === "login" ? (
-                    <span>Đăng nhập</span>
-                  ) : (
-                    <span>Đăng ký tài khoản</span>
-                  )}
-                </button>
+                  <AnimatePresence mode="wait" initial={false}>
+                    {loading ? (
+                      <motion.span
+                        key="loading"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.15 }}
+                        className="flex items-center justify-center gap-2"
+                      >
+                        <Loader2 size={16} className="animate-spin" />
+                        <span>Đang xử lý...</span>
+                      </motion.span>
+                    ) : mode === "login" ? (
+                      <motion.span
+                        key="login-btn"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        Đăng nhập
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        key="register-btn"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        Đăng ký tài khoản
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
               </form>
-            )}
-          </motion.div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
 
       {/* Divider */}
-      <div className="relative flex items-center justify-center my-4">
+      <motion.div layout className="relative flex items-center justify-center my-4">
         <div className="flex-grow border-t border-white/10" />
         <span className="px-3 text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
           HOẶC
         </span>
         <div className="flex-grow border-t border-white/10" />
-      </div>
+      </motion.div>
 
-      {/* Social Login: Google Pill Button (Matching reference design) */}
-      <div>
-        <button
+      {/* Social Login: Google Pill Button */}
+      <motion.div layout>
+        <motion.button
+          whileHover={{ scale: 1.012, backgroundColor: "#252b38" }}
+          whileTap={{ scale: 0.985 }}
+          transition={{ duration: 0.15 }}
           type="button"
           onClick={handleGoogleLogin}
           disabled={loading}
-          className="relative flex items-center w-full h-[46px] rounded-full bg-[#1c202a] hover:bg-[#252b38] border border-white/10 p-1.5 transition-all cursor-pointer shadow-md active:scale-[0.98] disabled:opacity-50 group"
+          className="relative flex items-center w-full h-[46px] rounded-full bg-[#1c202a] border border-white/10 p-1.5 transition-colors cursor-pointer shadow-md disabled:opacity-50 group"
         >
-          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm">
+          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm transition-transform duration-200 group-hover:scale-105">
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
@@ -763,17 +939,18 @@ export function AuthModal({
           <span className="flex-1 text-center font-medium text-white text-[13.5px] pr-8">
             Đăng nhập bằng Google
           </span>
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
       {/* Switch Mode Footer Link */}
-      <div className="text-center mt-4 text-xs text-neutral-400">
+      <motion.div layout className="text-center mt-4 text-xs text-neutral-400">
         {mode === "login" ? (
           <>
             Chưa có tài khoản?{" "}
             <button
               type="button"
               onClick={() => {
+                setErrorMsg("");
                 setIsForgotMode(false);
                 setMode("register");
               }}
@@ -788,6 +965,7 @@ export function AuthModal({
             <button
               type="button"
               onClick={() => {
+                setErrorMsg("");
                 setIsForgotMode(false);
                 setMode("login");
               }}
@@ -797,8 +975,8 @@ export function AuthModal({
             </button>
           </>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 
   /* ── Page Layout View (/login & /register) ── */

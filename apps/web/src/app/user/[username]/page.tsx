@@ -49,6 +49,7 @@ import {
   CircleUserRound,
   Menu,
   ChevronDown,
+  Download,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
@@ -272,6 +273,196 @@ function SettingRow({
   );
 }
 
+// ── PWA Installation Modal ──────────────────────────────────────────
+function PwaInstallModal({
+  isOpen,
+  onClose,
+  deferredPrompt,
+  isStandalone,
+  isIos,
+  onInstallAccepted,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  deferredPrompt: any;
+  isStandalone: boolean;
+  isIos: boolean;
+  onInstallAccepted: () => void;
+}) {
+  const [installing, setInstalling] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      setInstalling(true);
+      try {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === "accepted") {
+          onInstallAccepted();
+          onClose();
+        }
+      } catch (err) {
+        console.error("PWA install error", err);
+      } finally {
+        setInstalling(false);
+      }
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0, y: 10 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0, y: 10 }}
+        transition={{ duration: 0.2 }}
+        className="w-full max-w-md bg-[#161618] border border-white/15 rounded-3xl p-6 text-white shadow-2xl space-y-5"
+      >
+        {/* Header with App Logo */}
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3.5">
+            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 p-0.5 shrink-0 flex items-center justify-center shadow-lg shadow-violet-500/20">
+              <div className="w-full h-full bg-[#161618] rounded-[14px] flex items-center justify-center overflow-hidden">
+                <Smartphone size={22} className="text-violet-400" />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-white">FlexPhim App</h3>
+                <span className="rounded-full bg-white/10 border border-white/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+                  PWA Web App
+                </span>
+              </div>
+              <p className="text-xs text-neutral-400 mt-0.5">Trải nghiệm xem phim toàn màn hình đỉnh cao</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-xl text-neutral-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Current State / Instructions */}
+        {isStandalone ? (
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 flex items-center gap-3 text-emerald-300">
+            <CheckCircle2 size={24} className="shrink-0 text-emerald-400" />
+            <div className="text-xs leading-relaxed">
+              <p className="font-bold text-white">Ứng dụng đã được cài đặt!</p>
+              <p className="text-emerald-300/90 mt-0.5">
+                Bạn đang xem FlexPhim trên ứng dụng PWA độc lập với hiệu năng tối đa.
+              </p>
+            </div>
+          </div>
+        ) : isIos ? (
+          <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs">
+            <p className="font-bold text-white flex items-center gap-2">
+              <Smartphone size={16} className="text-white" />
+              Hướng dẫn cài đặt trên iPhone / iPad (Safari):
+            </p>
+            <div className="space-y-2.5 text-neutral-300 pt-1">
+              <div className="flex items-start gap-2.5">
+                <span className="h-5 w-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[10px] font-bold text-white shrink-0 mt-0.5">
+                  1
+                </span>
+                <p>
+                  Bấm vào biểu tượng <strong>Chia sẻ (Share)</strong> hình vuông có mũi tên trỏ lên ở thanh công cụ dưới cùng của trình duyệt Safari.
+                </p>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="h-5 w-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[10px] font-bold text-white shrink-0 mt-0.5">
+                  2
+                </span>
+                <p>
+                  Cuộn xuống danh sách tùy chọn và chọn <strong>"Thêm vào MH chính" (Add to Home Screen)</strong>.
+                </p>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="h-5 w-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[10px] font-bold text-white shrink-0 mt-0.5">
+                  3
+                </span>
+                <p>
+                  Nhấn <strong>"Thêm" (Add)</strong> ở góc trên bên phải để tạo icon FlexPhim ra màn hình chính.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs">
+            <p className="font-bold text-white flex items-center gap-2">
+              <Monitor size={16} className="text-white" />
+              Hướng dẫn cài đặt trên Android, Chrome & Windows / Mac:
+            </p>
+            <div className="space-y-2 text-neutral-300">
+              {deferredPrompt ? (
+                <p className="leading-relaxed">
+                  Trình duyệt đã sẵn sàng! Bạn có thể nhấn nút <strong>"Cài đặt ngay"</strong> bên dưới để thêm FlexPhim vào máy tính hoặc điện thoại chỉ với 1 chạm.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  <p className="leading-relaxed">
+                    1. Nhấn vào biểu tượng <strong>Cài đặt ứng dụng</strong> (hình máy tính hoặc dấu cộng) trên thanh địa chỉ URL của trình duyệt.
+                  </p>
+                  <p className="leading-relaxed">
+                    2. Hoặc mở <strong>Menu trình duyệt (⋮)</strong> &gt; chọn <strong>"Cài đặt FlexPhim..."</strong> hoặc <strong>"Thêm vào màn hình chính"</strong>.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Benefits Grid */}
+        <div className="grid grid-cols-2 gap-2 text-[11px]">
+          <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
+            <p className="font-bold text-white">Toàn màn hình không viền</p>
+            <p className="text-neutral-400 mt-1 leading-snug">Xem phim điện ảnh không bị che bởi tab hay URL.</p>
+          </div>
+          <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
+            <p className="font-bold text-white">Khởi chạy tức thì</p>
+            <p className="text-neutral-400 mt-1 leading-snug">Mở trực tiếp từ Desktop / Homescreen như App gốc.</p>
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-3 pt-1">
+          {deferredPrompt && !isStandalone ? (
+            <>
+              <button
+                type="button"
+                onClick={handleInstall}
+                disabled={installing}
+                className="flex-1 py-2.5 rounded-xl bg-white hover:bg-neutral-200 text-black text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-lg active:scale-95"
+              >
+                {installing ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                <span>Cài đặt ngay</span>
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="py-2.5 px-4 rounded-xl border border-white/10 bg-white/[0.04] text-xs font-semibold text-neutral-300 hover:bg-white/[0.08] hover:text-white transition-colors cursor-pointer"
+              >
+                Đóng
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full py-2.5 rounded-xl bg-white hover:bg-neutral-200 text-black text-xs font-bold transition-colors cursor-pointer"
+            >
+              {isStandalone ? "Đóng" : "Đã hiểu"}
+            </button>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function UserDashboardPage() {
   const params = useParams();
   const router = useRouter();
@@ -349,6 +540,41 @@ export default function UserDashboardPage() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [favoriteItems, setFavoriteItems] = useState<GuestWatchlistItem[]>([]);
+
+  // ── PWA Installation Support ──
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [isIos, setIsIos] = useState(false);
+  const [showPwaModal, setShowPwaModal] = useState(false);
+
+  useEffect(() => {
+    // Check if running in standalone mode (already installed)
+    const standaloneMode =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      Boolean((window.navigator as any).standalone);
+    setIsStandalone(standaloneMode);
+
+    // Detect iOS
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const iosDevice = /iphone|ipad|ipod/.test(userAgent);
+    setIsIos(iosDevice);
+
+    // Listen for beforeinstallprompt event on Android / Chrome / Edge / Desktop
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleOpenPwaInstall = () => {
+    setShowPwaModal(true);
+  };
 
   useEffect(() => {
     if (!isOwnProfile) {
@@ -923,7 +1149,31 @@ export default function UserDashboardPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+              <button
+                type="button"
+                onClick={handleOpenPwaInstall}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-all cursor-pointer active:scale-95 shadow-sm",
+                  isStandalone
+                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/15"
+                    : "border-white/15 bg-white/10 text-white hover:bg-white/20 hover:border-white/30"
+                )}
+                title={isStandalone ? "Ứng dụng FlexPhim PWA đã được cài đặt" : "Cài đặt ứng dụng FlexPhim PWA"}
+              >
+                {isStandalone ? (
+                  <>
+                    <CheckCircle2 size={13} className="text-emerald-400" />
+                    <span>Đã cài App</span>
+                  </>
+                ) : (
+                  <>
+                    <Download size={13} className="text-white" />
+                    <span>Tải App PWA</span>
+                  </>
+                )}
+              </button>
+
               <button
                 type="button"
                 onClick={() => {
@@ -1012,6 +1262,24 @@ export default function UserDashboardPage() {
                         </button>
                       );
                     })}
+
+                    {/* PWA Mobile Shortcut */}
+                    <div className="col-span-2 pt-1.5 mt-1 border-t border-white/[0.08]">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleOpenPwaInstall();
+                          setProfileMenuOpen(false);
+                        }}
+                        className="flex w-full items-center justify-between gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-3 py-2.5 text-left text-[11px] font-bold text-white hover:bg-white/10 cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Smartphone size={14} className="text-white" />
+                          <span>{isStandalone ? "Ứng dụng FlexPhim (Đã cài)" : "Tải App FlexPhim PWA"}</span>
+                        </div>
+                        <Download size={13} className="text-neutral-400" />
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               )}
@@ -1091,6 +1359,30 @@ export default function UserDashboardPage() {
                     );
                   })}
                 </div>
+              </div>
+
+              {/* PWA App Download Card */}
+              <div className="pt-2 border-t border-white/[0.08]">
+                <button
+                  type="button"
+                  onClick={handleOpenPwaInstall}
+                  className="group flex w-full cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-white/10 bg-white/[0.03] p-2.5 text-left transition-all hover:border-white/25 hover:bg-white/[0.07]"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/10 text-white transition-transform group-hover:scale-105">
+                      <Smartphone size={15} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-bold text-white">
+                        {isStandalone ? "Ứng dụng FlexPhim" : "Tải App PWA"}
+                      </p>
+                      <p className="truncate text-[10px] text-neutral-400">
+                        {isStandalone ? "Đang chạy bản App" : "Xem phim toàn màn hình"}
+                      </p>
+                    </div>
+                  </div>
+                  <Download size={13} className="shrink-0 text-neutral-400 transition-colors group-hover:text-white" />
+                </button>
               </div>
             </div>
           </aside>
@@ -2007,11 +2299,75 @@ export default function UserDashboardPage() {
                     />
                   </div>
                 </div>
+
+                {/* PWA App Section */}
+                <div className="pt-4 border-t border-white/[0.08] space-y-3">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center text-white shrink-0">
+                        <Smartphone size={18} />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                          <span>Ứng dụng FlexPhim (PWA App)</span>
+                          <span className="rounded bg-white/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+                            PWA
+                          </span>
+                        </h3>
+                        <p className="text-xs text-neutral-400 mt-0.5 leading-relaxed">
+                          Cài đặt FlexPhim như một ứng dụng độc lập trên điện thoại hoặc máy tính để trải nghiệm không gian xem phim không viền.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+                    <div className="flex items-center gap-2 text-xs text-neutral-400">
+                      <Smartphone size={15} className="text-white/70 shrink-0" />
+                      <span>{isStandalone ? "Trạng thái: Đang chạy phiên bản PWA App" : "Tương thích iOS Safari, Android Chrome, Windows & Mac"}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleOpenPwaInstall}
+                      className={cn(
+                        "flex items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-95",
+                        isStandalone
+                          ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/15"
+                          : "bg-white text-black hover:bg-neutral-200"
+                      )}
+                    >
+                      {isStandalone ? (
+                        <>
+                          <CheckCircle2 size={13} />
+                          <span>Đã cài đặt</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download size={13} />
+                          <span>Cài đặt ứng dụng</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* ── MODAL: PWA INSTALLATION ── */}
+      <PwaInstallModal
+        isOpen={showPwaModal}
+        onClose={() => setShowPwaModal(false)}
+        deferredPrompt={deferredPrompt}
+        isStandalone={isStandalone}
+        isIos={isIos}
+        onInstallAccepted={() => {
+          setIsStandalone(true);
+          toast("Cài đặt FlexPhim thành công!", "success");
+        }}
+      />
 
       {/* ── MODAL: CONFIRM LOGOUT ── */}
       <AnimatePresence>
