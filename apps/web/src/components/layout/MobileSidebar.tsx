@@ -473,7 +473,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                     className={cn(
                       "flex min-h-11 items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all",
                       isActive
-                        ? "bg-violet-600/20 border border-violet-500/30 text-violet-300 font-bold shadow-sm"
+                        ? "bg-violet-600 text-white font-bold shadow-sm"
                         : "text-neutral-300 hover:bg-white/5 hover:text-white",
                     )}
                     onClick={onClose}
@@ -481,7 +481,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                     <item.icon
                       size={17}
                       className={cn(
-                        isActive ? "text-violet-400" : "text-neutral-400",
+                        isActive ? "text-white" : "text-neutral-400",
                       )}
                       strokeWidth={2}
                     />

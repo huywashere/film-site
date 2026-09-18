@@ -65,7 +65,7 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
   skipIntroStart,
   skipIntroEnd,
   skipOutroStart,
-  autoSkipIntro = true,
+  autoSkipIntro = false,
   autoSkipAds = true,
   minAdStartTime = 360,
   onStallSuggestServer,

@@ -627,32 +627,39 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 }
 
 /* ── Floating Skip Ad Button ── */
+/* ── Floating Skip Ad Button (Netflix Standard) ── */
 .art-video-player .netphim-skip-ad {
   position: absolute;
-  z-index: 36;
-  right: 16px;
-  bottom: 68px;
+  z-index: 60;
+  right: 28px;
+  bottom: 84px;
   display: inline-flex;
-  min-height: 38px;
+  min-height: 40px;
   align-items: center;
-  gap: 9px;
-  padding: 0 8px 0 14px;
-  border: 1px solid rgba(253, 186, 116, 0.75);
-  border-radius: 10px;
-  background: rgba(12, 12, 16, 0.92);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 12px 30px rgba(0, 0, 0, 0.5),
-    0 0 15px rgba(249, 115, 22, 0.35);
-  color: #fff;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.72);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+  color: #ffffff;
   font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
   cursor: pointer;
+  user-select: none;
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   animation: netphim-skip-enter 180ms ease-out both;
   transition:
-    transform 160ms ease,
-    background-color 160ms ease,
-    border-color 160ms ease;
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .art-video-player .netphim-skip-ad[hidden] {
@@ -660,56 +667,178 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 }
 
 .art-video-player .netphim-skip-ad:hover {
-  border-color: #fb923c;
-  background: rgba(34, 20, 12, 0.96);
+  background: #ffffff !important;
+  color: #000000 !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
   transform: translateY(-2px) scale(1.02);
 }
 
+.art-video-player .netphim-skip-ad:hover * {
+  color: #000000 !important;
+  fill: #000000 !important;
+}
+
+.art-video-player .netphim-skip-ad:active {
+  background: rgba(230, 230, 230, 0.95) !important;
+  transform: translateY(0) scale(0.98);
+}
+
 .art-video-player .netphim-skip-ad:focus-visible {
-  outline: 2px solid #fb923c;
+  outline: 2px solid #ffffff;
   outline-offset: 3px;
 }
 
+.art-video-player .netphim-skip-ad-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: inherit;
+  fill: currentColor;
+}
+
+.art-video-player .netphim-skip-ad-icon svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+  fill: currentColor !important;
+  color: inherit !important;
+}
+
+.art-video-player .netphim-skip-ad-icon svg path {
+  fill: currentColor !important;
+}
+
 .art-video-player .netphim-skip-ad-label {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.01em;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
 }
 
 .art-video-player .netphim-skip-ad-countdown {
-  min-width: 29px;
-  padding: 3px 5px;
-  border-radius: 6px;
-  background: rgba(249, 115, 22, 0.2);
-  color: #fdba74;
-  font-size: 10px;
+  min-width: 26px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fbbf24;
+  font-size: 11px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   text-align: center;
+  line-height: 1.3;
+  transition: background-color 180ms ease, color 180ms ease;
 }
 
-.art-video-player .netphim-skip-ad-arrow {
-  display: grid;
-  width: 24px;
-  height: 24px;
-  place-items: center;
-  border-radius: 7px;
-  background: #f97316;
-  color: #111;
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1;
+.art-video-player .netphim-skip-ad:hover .netphim-skip-ad-countdown {
+  background: rgba(0, 0, 0, 0.12) !important;
+  color: #000000 !important;
 }
 
 @keyframes netphim-skip-enter {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ── Floating Skip Intro Button (Netflix Standard) ── */
+.art-video-player .netphim-skip-intro {
+  position: absolute;
+  z-index: 60;
+  right: 28px;
+  bottom: 84px;
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.72);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+  color: #ffffff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: netphim-skip-enter 180ms ease-out both;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.art-video-player .netphim-skip-intro[hidden] {
+  display: none !important;
+}
+
+.art-video-player .netphim-skip-intro:hover {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.art-video-player .netphim-skip-intro:hover * {
+  color: #000000 !important;
+  fill: #000000 !important;
+}
+
+.art-video-player .netphim-skip-intro:active {
+  background: rgba(230, 230, 230, 0.95) !important;
+  transform: translateY(0) scale(0.98);
+}
+
+.art-video-player .netphim-skip-intro:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.art-video-player .netphim-skip-intro-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: inherit;
+  fill: currentColor;
+}
+
+.art-video-player .netphim-skip-intro-icon svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+  fill: currentColor !important;
+  color: inherit !important;
+}
+
+.art-video-player .netphim-skip-intro-icon svg path {
+  fill: currentColor !important;
+}
+
+.art-video-player .netphim-skip-intro-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
 }
 
 /* Ensure stroke-based player control SVGs preserve fill:none */
@@ -859,15 +988,19 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
     font-size: 12px !important;
   }
 
-  .art-video-player .netphim-skip-ad {
-    right: 8px;
-    bottom: 50px;
+  .art-video-player .netphim-skip-ad,
+  .art-video-player .netphim-skip-intro {
+    right: 14px;
+    bottom: 64px;
     min-height: 34px;
-    gap: 7px;
-    padding-left: 11px;
+    gap: 6px;
+    padding: 6px 14px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
   }
 
-  .art-video-player .netphim-skip-ad-label {
+  .art-video-player .netphim-skip-ad-label,
+  .art-video-player .netphim-skip-intro-label {
     font-size: 11px;
   }
 }
@@ -894,7 +1027,8 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .art-video-player .netphim-skip-ad {
+  .art-video-player .netphim-skip-ad,
+  .art-video-player .netphim-skip-intro {
     animation: none;
   }
 }

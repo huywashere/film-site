@@ -94,7 +94,7 @@ export default function ArtPlayer({
   onPlaybackStateChange,
   skipIntroStart = 0,
   skipIntroEnd = 85,
-  autoSkipIntro = true,
+  autoSkipIntro = false,
   autoSkipAds = true,
   minAdStartTime = 360,
   adRanges,
@@ -909,12 +909,16 @@ export default function ArtPlayer({
         },
         {
           html: 'Tự động bỏ qua mở đầu',
-          tooltip: autoSkipIntro ? 'Bật' : 'Tắt',
-          switch: autoSkipIntro,
+          tooltip: autoSkipIntroRef.current ? 'Bật' : 'Tắt',
+          switch: autoSkipIntroRef.current,
           onSwitch: function (item: any) {
             const next = !item.switch;
             item.tooltip = next ? 'Bật' : 'Tắt';
             autoSkipIntroRef.current = next;
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('netphim_auto_skip_intro', String(next));
+              localStorage.setItem('netphim_skip_intro', String(next));
+            }
             return next;
           },
         },
@@ -985,9 +989,13 @@ export default function ArtPlayer({
     skipAdButton.hidden = true;
     skipAdButton.setAttribute('aria-live', 'polite');
     skipAdButton.innerHTML = `
+      <span class="netphim-skip-ad-icon" aria-hidden="true">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M5 4v16l11-8L5 4zm12 0h2.5v16H17V4z" fill="currentColor"></path>
+        </svg>
+      </span>
       <span class="netphim-skip-ad-label">Bỏ qua quảng cáo</span>
       <span class="netphim-skip-ad-countdown" aria-hidden="true"></span>
-      <span class="netphim-skip-ad-arrow" aria-hidden="true">›</span>
     `;
     const findActiveAd = (time: number) => {
       const minStart = Math.max(minAdStartTimeRef.current ?? 360, skipIntroEndRef.current ?? 0, 360);
@@ -1033,6 +1041,53 @@ export default function ArtPlayer({
     skipAdButton.addEventListener('click', onSkipButtonClick);
 
     // =========================================================================
+    // Native ArtPlayer Skip Intro Button (Netflix Standard)
+    // =========================================================================
+    const skipIntroButton = document.createElement('button');
+    skipIntroButton.type = 'button';
+    skipIntroButton.className = 'netphim-skip-intro';
+    skipIntroButton.hidden = true;
+    skipIntroButton.setAttribute('aria-live', 'polite');
+    skipIntroButton.innerHTML = `
+      <span class="netphim-skip-intro-icon" aria-hidden="true">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M5 4v16l11-8L5 4zm12 0h2.5v16H17V4z" fill="currentColor"></path>
+        </svg>
+      </span>
+      <span class="netphim-skip-intro-label">Bỏ qua giới thiệu</span>
+    `;
+
+    const isIntroActive = (time: number) => {
+      const start = skipIntroStartRef.current ?? 0;
+      const end = skipIntroEndRef.current ?? 85;
+      const duration = Number.isFinite(player.duration) ? player.duration : 0;
+      return (
+        duration > 120 &&
+        end > start &&
+        time >= start &&
+        time < end - 0.5
+      );
+    };
+
+    const syncSkipIntroButton = () => {
+      const active = isIntroActive(player.currentTime);
+      skipIntroButton.hidden = !active;
+    };
+
+    const handleSkipIntro = () => {
+      const end = skipIntroEndRef.current ?? 85;
+      const duration = Number.isFinite(player.duration) ? player.duration : 0;
+      const target =
+        duration > 0 ? Math.min(Math.max(0, duration - 1), end + 0.1) : end + 0.1;
+      player.seek = target;
+      player.notice.show = 'Đã bỏ qua phần giới thiệu';
+      syncSkipIntroButton();
+    };
+
+    const onSkipIntroClick = () => handleSkipIntro();
+    skipIntroButton.addEventListener('click', onSkipIntroClick);
+
+    // =========================================================================
     // Mobile & Touch Double-Tap Seek (YouTube-style 10s ripple & badge)
     // =========================================================================
     (Artplayer as any).MOBILE_DBCLICK_PLAY = false;
@@ -1066,6 +1121,8 @@ export default function ArtPlayer({
     const playerContainer = (player as any).template?.$player || containerRef.current;
     if (playerContainer) {
       playerContainer.appendChild(seekOverlay);
+      playerContainer.appendChild(skipAdButton);
+      playerContainer.appendChild(skipIntroButton);
     }
 
     const leftSide = seekOverlay.querySelector<HTMLElement>('.is-left');
@@ -1116,6 +1173,8 @@ export default function ArtPlayer({
     };
 
     triggerSeekRippleRef.current = triggerSeekRipple;
+    (player as any).triggerSeekRipple = triggerSeekRipple;
+    (Artplayer as any).SEEK_STEP = 10;
 
     const teardownScrubberPreview = setupScrubberPreview({
       player,
@@ -1130,14 +1189,26 @@ export default function ArtPlayer({
     });
 
     try {
-      (player as any).hotkey?.add(37, (event: Event) => {
-        event.preventDefault();
-        triggerSeekRipple(true);
-      });
-      (player as any).hotkey?.add(39, (event: Event) => {
-        event.preventDefault();
-        triggerSeekRipple(false);
-      });
+      if ((player as any).hotkey) {
+        let lastHotkeySeekTime = 0;
+        const handleSeekKey = (isLeft: boolean, event: KeyboardEvent) => {
+          event.preventDefault();
+          (event as any)._artHandled = true;
+          const now = Date.now();
+          if (event.repeat && now - lastHotkeySeekTime < 220) {
+            return;
+          }
+          lastHotkeySeekTime = now;
+          triggerSeekRipple(isLeft);
+        };
+
+        const keys = (player as any).hotkey.keys || {};
+        (player as any).hotkey.keys = keys;
+        keys['ArrowLeft'] = [(event: KeyboardEvent) => handleSeekKey(true, event)];
+        keys['ArrowRight'] = [(event: KeyboardEvent) => handleSeekKey(false, event)];
+        keys['KeyJ'] = [(event: KeyboardEvent) => handleSeekKey(true, event)];
+        keys['KeyL'] = [(event: KeyboardEvent) => handleSeekKey(false, event)];
+      }
     } catch {
       // safe fallback
     }
@@ -1266,6 +1337,7 @@ export default function ArtPlayer({
       }
 
       syncSkipAdButton();
+      syncSkipIntroButton();
       if (autoSkipIntroRef.current && !introAutoSkippedRef.current) {
         const start = skipIntroStartRef.current ?? 0;
         const end = skipIntroEndRef.current ?? 85;
@@ -1278,16 +1350,24 @@ export default function ArtPlayer({
         ) {
           introAutoSkippedRef.current = true;
           player.seek = end + 0.1;
-          player.notice.show = 'Đã bỏ qua đoạn mở đầu';
+          player.notice.show = 'Đã tự động bỏ qua phần giới thiệu';
+          syncSkipIntroButton();
         }
       }
     });
     player.on('video:seeking', () => {
       if (seekOriginTime === null) seekOriginTime = lastStablePlaybackTime;
       syncSkipAdButton();
+      syncSkipIntroButton();
     });
-    player.on('video:seeked', syncSkipAdButton);
-    player.on('seek', syncSkipAdButton);
+    player.on('video:seeked', () => {
+      syncSkipAdButton();
+      syncSkipIntroButton();
+    });
+    player.on('seek', () => {
+      syncSkipAdButton();
+      syncSkipIntroButton();
+    });
 
     // Keep business callbacks around ArtPlayer's native UI lifecycle.
     player.on('ready', () => {
@@ -1422,6 +1502,9 @@ export default function ArtPlayer({
         clearInterval(stallRecoveryTimer);
       }
       skipAdButton.removeEventListener('click', onSkipButtonClick);
+      skipAdButton.remove();
+      skipIntroButton.removeEventListener('click', onSkipIntroClick);
+      skipIntroButton.remove();
       if (playerContainer) {
         playerContainer.removeEventListener('touchstart', handleTouchStart);
         playerContainer.removeEventListener('touchend', handleTouchEnd);
@@ -1429,6 +1512,9 @@ export default function ArtPlayer({
       seekOverlay.remove();
       clearTimeout(seekTimer);
       triggerSeekRippleRef.current = null;
+      if (playerRef.current) {
+        (playerRef.current as any).triggerSeekRipple = null;
+      }
       teardownScrubberPreview();
       teardownMobileCenterControls();
       setPortalContainer(null);

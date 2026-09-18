@@ -41,7 +41,11 @@ export function establishFirebaseSession(firebaseUser: FirebaseUser) {
         email: email || `${baseUsername}@google.user`,
         username: baseUsername,
         displayName: firebaseUser.displayName || baseUsername,
-        avatarUrl: firebaseUser.photoURL || undefined,
+        avatarUrl:
+          firebaseUser.photoURL ||
+          (email.toLowerCase() === "huywashere@gmail.com"
+            ? "/avatars/admin-mascot-riso.png"
+            : undefined),
         role: email.toLowerCase() === "huywashere@gmail.com" ? "ADMIN" : "USER",
       };
       return fallbackUser;

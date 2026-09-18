@@ -53,14 +53,12 @@ const LandscapeSpotlightRow = dynamic(() =>
     (module) => module.LandscapeSpotlightRow,
   ),
 );
-const HeroBanner = dynamic(() => import("@/app/components/HeroBanner"), {
-  loading: () => (
-    <div
-      aria-label="Đang tải banner nổi bật"
-      className="min-h-[100dvh] w-full animate-pulse bg-[#141414]"
-    />
+const WeeklyCuratedShowcase = dynamic(() =>
+  import("@/components/film/WeeklyCuratedShowcase").then(
+    (module) => module.WeeklyCuratedShowcase,
   ),
-});
+);
+import HeroBanner from "@/app/components/HeroBanner";
 import { cardFont } from "@/lib/fonts";
 import {
   CURATED_SCIFI_HERO_POOL,
@@ -483,18 +481,18 @@ function FilmSection({
   const isPosterPill = effectiveCardVariant === "poster-pill";
 
   const GALLERY_TILTS = [
-    "-rotate-[3.2deg] translate-y-2",
-    "rotate-[3.0deg] -translate-y-2",
-    "-rotate-[2.6deg] translate-y-1",
-    "rotate-[3.6deg] -translate-y-2.5",
-    "-rotate-[3.0deg] translate-y-2",
-    "rotate-[2.8deg] -translate-y-1",
+    "-rotate-[2deg] translate-y-1.5",
+    "rotate-[1.8deg] -translate-y-1.5",
+    "-rotate-[1.6deg] translate-y-1",
+    "rotate-[2deg] -translate-y-1.5",
+    "-rotate-[1.6deg] translate-y-1",
+    "rotate-[1.8deg] -translate-y-1",
   ];
 
   const itemWidthClass = isLandscape
     ? "w-[72%] min-w-[220px] shrink-0 snap-start sm:w-[46%] md:w-[32%] lg:w-[calc((100%-4*1rem)/5)] xl:w-[calc((100%-4*1rem)/5)]"
     : isPosterPill
-      ? "w-[34%] min-w-[130px] shrink-0 snap-start sm:w-[26%] md:w-[20%] lg:w-[calc((100%-5*1rem)/6)] xl:w-[calc((100%-5*1rem)/6)] 2xl:w-[calc((100%-5*1rem)/6)]"
+      ? "w-[36%] min-w-[130px] shrink-0 snap-start sm:w-[26%] md:w-[20%] lg:w-[calc((100%-5*1rem-2rem)/6)] xl:w-[calc((100%-5*1rem-2rem)/6)] 2xl:w-[calc((100%-5*1rem-2rem)/6)]"
       : "w-[26%] min-w-[112px] shrink-0 snap-start sm:w-[22%] md:w-[18%] lg:w-[calc((100%-6*1rem)/7)] xl:w-[calc((100%-6*1rem)/7)]";
 
   const updateScrollStep = () => {
@@ -588,7 +586,7 @@ function FilmSection({
             onScroll={updateScrollStep}
             className={cn(
               "scrollbar-hide flex w-full snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain py-1 sm:gap-3 lg:gap-4",
-              isPosterPill && "py-6 px-2.5"
+              isPosterPill && "py-5 px-3 sm:px-4"
             )}
           >
             {isLoading
@@ -634,11 +632,11 @@ function FilmSection({
               aria-label={`Chuyển sang trái cho ${title}`}
               title={`Xem phim trước trong ${title}`}
               className={cn(
-                "hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 z-30 h-16 w-9 items-center justify-center rounded-r-2xl bg-black/75 border-y border-r border-white/15 text-white/80 backdrop-blur-md transition-all hover:bg-black/95 hover:border-white/50 hover:text-white hover:w-10 active:scale-95 cursor-pointer shadow-2xl",
-                (!canScrollLeft || isLoading) ? "opacity-0 pointer-events-none" : "opacity-100"
+                "hidden sm:flex absolute -left-2.5 md:-left-3.5 top-1/2 -translate-y-1/2 z-30 h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-full bg-black/70 border border-white/20 text-white/90 backdrop-blur-md transition-all hover:bg-black/90 hover:border-white/50 hover:text-white hover:scale-105 active:scale-95 cursor-pointer shadow-xl opacity-0 group-hover/section:opacity-100",
+                (!canScrollLeft || isLoading) && "!opacity-0 !pointer-events-none"
               )}
             >
-              <ChevronLeft size={22} strokeWidth={2.5} />
+              <ChevronLeft size={20} strokeWidth={2.5} />
             </button>
 
             {/* Forward (Right) Button */}
@@ -648,11 +646,11 @@ function FilmSection({
               aria-label={`Chuyển sang phải cho ${title}`}
               title={`Xem phim tiếp theo trong ${title}`}
               className={cn(
-                "hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 z-30 h-16 w-9 items-center justify-center rounded-l-2xl bg-black/75 border-y border-l border-white/15 text-white/80 backdrop-blur-md transition-all hover:bg-black/95 hover:border-white/50 hover:text-white hover:w-10 active:scale-95 cursor-pointer shadow-2xl",
-                (!canScrollRight || isLoading) ? "opacity-0 pointer-events-none" : "opacity-100"
+                "hidden sm:flex absolute -right-2.5 md:-right-3.5 top-1/2 -translate-y-1/2 z-30 h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-full bg-black/70 border border-white/20 text-white/90 backdrop-blur-md transition-all hover:bg-black/90 hover:border-white/50 hover:text-white hover:scale-105 active:scale-95 cursor-pointer shadow-xl opacity-0 group-hover/section:opacity-100",
+                (!canScrollRight || isLoading) && "!opacity-0 !pointer-events-none"
               )}
             >
-              <ChevronRight size={22} strokeWidth={2.5} />
+              <ChevronRight size={20} strokeWidth={2.5} />
             </button>
           </>
         ) : (
@@ -1583,6 +1581,7 @@ export default function HomePageClient({
             films={latestRowList}
             isLoading={latestLoading}
             href="/films"
+            cardLinkMode="detail"
           />
         </div>
         <div className="md:hidden">
@@ -1835,6 +1834,14 @@ export default function HomePageClient({
                 films={romanceRowList}
                 isLoading={romanceLoading}
                 href="/genre/tinh-cam"
+              />
+            </LazySection>
+
+            <LazySection>
+              <WeeklyCuratedShowcase
+                seriesFilms={seriesRowList}
+                singleFilms={singleRowList}
+                isLoading={seriesLoading || singleLoading}
               />
             </LazySection>
           </div>

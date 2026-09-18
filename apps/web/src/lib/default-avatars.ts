@@ -53,7 +53,16 @@ const COLLECTIBLE_WANDERER = "/avatars/collectibles/noir-wanderer.webp";
 const COLLECTIBLE_ECLIPSE = "/avatars/collectibles/eclipse-orb.webp";
 const COLLECTIBLE_APE = "/avatars/collectibles/cinema-ape.webp";
 
+export const ADMIN_RISO_FOX_AVATAR: PresetAvatar = {
+  id: "admin_riso_fox",
+  name: "Mascot Riso Cáo (Admin)",
+  category: "system",
+  url: "/avatars/admin-mascot-riso.png",
+  previewUrl: decorativeAssetUrl("/avatars/admin-mascot-riso.png"),
+};
+
 export const PRESET_AVATARS: PresetAvatar[] = [
+  ADMIN_RISO_FOX_AVATAR,
   ...LEGACY_PRESET_AVATARS,
   { id: "nft_punk_01", name: "Punk Xanh #01", category: "character", url: NFT_PUNK_01 },
   { id: "nft_punk_02", name: "Punk Vàng #02", category: "character", url: NFT_PUNK_02 },

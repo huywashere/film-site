@@ -48,6 +48,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { InteractiveAdminMascot } from "@/components/mascot/InteractiveAdminMascot";
 
 const MobileSidebar = dynamic(
   () => import("./MobileSidebar").then((mod) => mod.MobileSidebar),
@@ -985,7 +986,12 @@ export function Navbar() {
                 <div className="hidden lg:block">
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger className="flex items-center space-x-1 focus:outline-none cursor-pointer group">
-                      {user.avatarUrl ? (
+                      {user.avatarUrl === "/avatars/admin-mascot-riso.png" ||
+                      user.email?.toLowerCase() === "huywashere@gmail.com" ? (
+                        <div className="w-8 h-8 rounded-full overflow-hidden border border-white/20 group-hover:border-violet-400 transition-all shadow-md bg-[#faf9f7] shrink-0">
+                          <InteractiveAdminMascot size={32} className="w-full h-full" />
+                        </div>
+                      ) : user.avatarUrl ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={user.avatarUrl}
@@ -1020,19 +1026,26 @@ export function Navbar() {
                       )}
                     >
                       <div className="p-2 flex items-center space-x-2.5 pb-2">
-                        <img
-                          src={
-                            user.avatarUrl ||
-                            `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=80`
-                          }
-                          alt={user.displayName || user.username}
-                          referrerPolicy="no-referrer"
-                          className="h-8 w-8 rounded-full object-cover border border-white/20 shadow-md shrink-0"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src =
-                              `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=80`;
-                          }}
-                        />
+                        {user.avatarUrl === "/avatars/admin-mascot-riso.png" ||
+                        user.email?.toLowerCase() === "huywashere@gmail.com" ? (
+                          <div className="h-8 w-8 rounded-full overflow-hidden border border-white/20 shadow-md shrink-0 bg-[#faf9f7]">
+                            <InteractiveAdminMascot size={32} className="w-full h-full" />
+                          </div>
+                        ) : (
+                          <img
+                            src={
+                              user.avatarUrl ||
+                              `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=80`
+                            }
+                            alt={user.displayName || user.username}
+                            referrerPolicy="no-referrer"
+                            className="h-8 w-8 rounded-full object-cover border border-white/20 shadow-md shrink-0"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src =
+                                `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=80`;
+                            }}
+                          />
+                        )}
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-xs text-white truncate">
                             {user.displayName || user.username}

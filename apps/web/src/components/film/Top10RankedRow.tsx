@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Montserrat } from "next/font/google";
 import { useRef, useState, useEffect } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -187,11 +188,22 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
     return "8.0";
   })();
 
+  const router = useRouter();
+  const handlePrefetch = () => {
+    if (!film.slug) return;
+    try {
+      router.prefetch(`/film/${film.slug}`);
+    } catch {}
+  };
+
   return (
     <Link
       ref={itemRef}
       href={`/film/${film.slug}`}
       prefetch={false}
+      onMouseEnter={handlePrefetch}
+      onTouchStart={handlePrefetch}
+      onPointerDown={handlePrefetch}
       className="flex w-full flex-col group/item relative select-none cursor-pointer pt-4 pb-2 pr-1 sm:w-auto sm:pr-2"
     >
       {/* Bold Rank Number Peeking Behind the Top-Left of Poster Card */}

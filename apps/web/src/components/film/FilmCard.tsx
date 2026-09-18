@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { MovieSource } from '@/lib/movie-normalizer';
@@ -274,6 +275,14 @@ function FilmCardComponent({
     return list;
   }, [hasBilingual, hasDub, hasVietsub, hasVoiceOver, isPosterPill, pillEpisodeText, film.type, qualityBadge]);
 
+  const router = useRouter();
+  const handlePrefetch = useCallback(() => {
+    if (!slug) return;
+    try {
+      router.prefetch(`/film/${slug}`);
+    } catch {}
+  }, [router, slug]);
+
   return (
     <div
       style={width ? { width } : undefined}
@@ -288,10 +297,13 @@ function FilmCardComponent({
           prefetch={false}
           title={title}
           aria-label={title}
+          onMouseEnter={handlePrefetch}
+          onTouchStart={handlePrefetch}
+          onPointerDown={handlePrefetch}
           className={cn(
             'relative block overflow-hidden bg-[#111216] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111214]',
             isPosterPill
-              ? 'rounded-[22px] sm:rounded-[26px] border border-white/[0.18] group-hover/card:border-white/60 shadow-[0_14px_36px_-6px_rgba(0,0,0,0.75),0_4px_12px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.08)] group-hover/card:shadow-[0_20px_45px_rgba(0,0,0,0.85),0_0_25px_rgba(255,255,255,0.18)] ring-1 ring-white/10 group-hover/card:ring-white/35'
+              ? 'rounded-[20px] sm:rounded-[24px] border border-white/[0.18] group-hover/card:border-white/50 shadow-[0_10px_28px_-6px_rgba(0,0,0,0.5),0_2px_8px_rgba(0,0,0,0.25)] group-hover/card:shadow-[0_16px_36px_rgba(0,0,0,0.7),0_0_20px_rgba(255,255,255,0.15)] ring-1 ring-white/10 group-hover/card:ring-white/30'
               : 'rounded-[8px] border border-white/[0.08] group-hover/card:border-white/25 shadow-[0_8px_22px_rgba(0,0,0,0.24)] group-hover/card:shadow-[0_16px_36px_rgba(0,0,0,0.44)]',
           )}
         >
@@ -311,11 +323,15 @@ function FilmCardComponent({
               className="absolute inset-0 h-full w-full transition-transform duration-700 ease-out motion-safe:group-hover/card:scale-[1.035]"
             />
 
-            <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-14 bg-gradient-to-b from-black/65 via-black/20 to-transparent" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
+            {!isPosterPill && (
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-14 bg-gradient-to-b from-black/65 via-black/20 to-transparent" />
+            )}
+            {!isPosterPill && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
+            )}
             <div className="pointer-events-none absolute inset-0 z-[11] bg-black/0 transition-colors duration-300 group-hover/card:bg-black/15" />
             {isPosterPill && (
-              <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-28 bg-gradient-to-b from-white/[0.14] via-white/[0.03] to-transparent rounded-t-[22px] sm:rounded-t-[26px]" />
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-20 bg-gradient-to-b from-white/[0.12] via-transparent to-transparent rounded-t-[20px] sm:rounded-t-[24px]" />
             )}
 
             {/* ── Top-left: IMDb score OR flexibly shifted Subtitle/Voice badge (sát mép trên) ── */}
@@ -354,10 +370,10 @@ function FilmCardComponent({
 
             {/* ── Inside Card Content: Poster Pill Bottom Title & White Monochrome Badges ── */}
             {isPosterPill ? (
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center justify-end px-2 pb-3 pt-16 sm:px-2.5 sm:pb-3.5 sm:pt-20 bg-gradient-to-t from-black/95 via-black/80 to-transparent">
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center justify-end px-2.5 pb-2.5 pt-12 sm:px-3 sm:pb-3 sm:pt-14 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
                 {/* Title inside card */}
                 <h3
-                  className="line-clamp-2 w-full text-center text-[11.5px] sm:text-[13px] font-extrabold leading-[1.3] text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]"
+                  className="line-clamp-2 w-full text-center text-[11px] sm:text-[12.5px] font-extrabold leading-[1.25] text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] max-w-[94%]"
                   title={title}
                 >
                   {title}
@@ -365,11 +381,11 @@ function FilmCardComponent({
 
                 {/* White Monochrome Badges (Vietsub, Lồng tiếng / Thuyết minh, Tập / Chất lượng) */}
                 {posterPillBadges.length > 0 && (
-                  <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1 sm:gap-1.5">
-                    {posterPillBadges.map((badge, bIdx) => (
+                  <div className="mt-1 flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 max-w-[92%]">
+                    {posterPillBadges.slice(0, 3).map((badge, bIdx) => (
                       <span
                         key={`${badge.text}-${bIdx}`}
-                        className="inline-flex items-center rounded-full border border-white/25 bg-black/60 px-2 py-0.5 text-[8px] sm:text-[9px] font-bold leading-none tracking-wide text-white/95 backdrop-blur-md shadow-sm"
+                        className="inline-flex items-center rounded-full border border-white/20 bg-black/65 px-1.5 py-[2px] text-[7.5px] sm:text-[8.5px] font-bold leading-none tracking-wide text-white/95 backdrop-blur-md shadow-sm"
                       >
                         {badge.text}
                       </span>
@@ -439,8 +455,12 @@ function FilmCardComponent({
           <Link
             href={`/film/${slug}`}
             prefetch={false}
-            className="block truncate whitespace-nowrap text-[11px] font-extrabold leading-[1.3] tracking-[-0.015em] text-[#f2f2f3] transition-colors hover:text-white sm:text-[13px]"
             title={title}
+            aria-label={title}
+            onMouseEnter={handlePrefetch}
+            onTouchStart={handlePrefetch}
+            onPointerDown={handlePrefetch}
+            className="block truncate whitespace-nowrap text-[11px] font-extrabold leading-[1.3] tracking-[-0.015em] text-[#f2f2f3] transition-colors hover:text-white sm:text-[13px]"
           >
             {title}
           </Link>

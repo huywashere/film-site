@@ -214,3 +214,19 @@ test('homepage shelves rely on viewport loading instead of eager image bursts', 
   assert.doesNotMatch(top10, /priority=\{rank <= 5\}/);
   assert.ok((homepage.match(/<LazySection initiallyVisible>/g) || []).length >= 7);
 });
+
+test('video player keyboard seek step strictly locks to 10 seconds without double triggering', () => {
+  const artPlayer = readFileSync('src/components/video/ArtPlayer.tsx', 'utf8');
+  const watchPage = readFileSync('src/app/watch/[slug]/WatchPageClient.tsx', 'utf8');
+
+  // ArtPlayer sets SEEK_STEP = 10 and assigns triggerSeekRipple
+  assert.match(artPlayer, /SEEK_STEP\s*=\s*10/);
+  assert.match(artPlayer, /triggerSeekRipple/);
+
+  // WatchPage has single global keydown listener and seeks exactly 10s
+  assert.doesNotMatch(watchPage, /currentTime\s*-\s*5/);
+  assert.doesNotMatch(watchPage, /currentTime\s*\+\s*5/);
+  assert.match(watchPage, /triggerSeekRipple/);
+  assert.match(watchPage, /e\.defaultPrevented\s*\|\|\s*\(e as any\)\._artHandled/);
+});
+

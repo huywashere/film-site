@@ -62,6 +62,7 @@ import { AccountPageTabs } from "@/components/account/AccountPageTabs";
 import { cardFont } from "@/lib/fonts";
 import { PRESET_AVATARS, type PresetAvatar } from "@/lib/default-avatars";
 import { applyLocalDecorativeAssetFallback } from "@/lib/decorative-asset-cdn";
+import { InteractiveAdminMascot } from "@/components/mascot/InteractiveAdminMascot";
 import {
   DEFAULT_AVATAR_FRAME_COLOR,
   DEFAULT_NAME_COLOR,
@@ -733,14 +734,23 @@ export default function UserDashboardPage() {
     }
   };
 
+  const isAdminUser = Boolean(
+    user?.email?.toLowerCase() === "huywashere@gmail.com" ||
+    user?.username?.toLowerCase() === "huywashere" ||
+    username?.toLowerCase() === "huywashere",
+  );
+
   useEffect(() => {
     if (user) {
       setDisplayName(user.displayName || user.username || "");
       setEmail(user.email || "");
       setBio(user.bio || "");
-      setSelectedAvatar(user.avatarUrl || "");
+      setSelectedAvatar(
+        user.avatarUrl ||
+          (isAdminUser ? "/avatars/admin-mascot-riso.png" : ""),
+      );
     }
-  }, [user]);
+  }, [user, isAdminUser]);
 
   const { data: apiProfile } = useQuery({
     queryKey: ["user-profile", username],
@@ -762,7 +772,10 @@ export default function UserDashboardPage() {
           id: user.id,
           username: user.username,
           displayName: user.displayName || user.username,
-          avatarUrl: user.avatarUrl || apiProfile?.avatarUrl,
+          avatarUrl:
+            user.avatarUrl ||
+            apiProfile?.avatarUrl ||
+            (isAdminUser ? "/avatars/admin-mascot-riso.png" : undefined),
           nameColor:
             user.nameColor || apiProfile?.nameColor || DEFAULT_NAME_COLOR,
           avatarFrameColor:
@@ -779,7 +792,9 @@ export default function UserDashboardPage() {
               id: user.id,
               username: user.username,
               displayName: user.displayName || user.username,
-              avatarUrl: user.avatarUrl,
+              avatarUrl:
+                user.avatarUrl ||
+                (isAdminUser ? "/avatars/admin-mascot-riso.png" : undefined),
               nameColor: user.nameColor,
               avatarFrameColor: user.avatarFrameColor,
               bio: user.bio || "",
@@ -788,7 +803,10 @@ export default function UserDashboardPage() {
           : {
               username: username || "Guest",
               displayName: username || "Khách",
-              avatarUrl: null,
+              avatarUrl:
+                username?.toLowerCase() === "huywashere"
+                  ? "/avatars/admin-mascot-riso.png"
+                  : null,
               nameColor: DEFAULT_NAME_COLOR,
               avatarFrameColor: DEFAULT_AVATAR_FRAME_COLOR,
               bio: "",
@@ -1004,7 +1022,11 @@ export default function UserDashboardPage() {
       : profile.avatarFrameColor) || DEFAULT_AVATAR_FRAME_COLOR;
 
   const openAppearancePicker = () => {
-    setSelectedAvatar(user?.avatarUrl || profile.avatarUrl || "");
+    setSelectedAvatar(
+      user?.avatarUrl ||
+        profile.avatarUrl ||
+        (isAdmin ? "/avatars/admin-mascot-riso.png" : ""),
+    );
     setSelectedNameColor(
       user?.nameColor || profile.nameColor || DEFAULT_NAME_COLOR,
     );
@@ -1019,7 +1041,11 @@ export default function UserDashboardPage() {
   };
 
   const closeAppearancePicker = () => {
-    setSelectedAvatar(user?.avatarUrl || profile.avatarUrl || "");
+    setSelectedAvatar(
+      user?.avatarUrl ||
+        profile.avatarUrl ||
+        (isAdmin ? "/avatars/admin-mascot-riso.png" : ""),
+    );
     setSelectedNameColor(
       user?.nameColor || profile.nameColor || DEFAULT_NAME_COLOR,
     );
@@ -1081,24 +1107,34 @@ export default function UserDashboardPage() {
                 boxShadow: `0 0 0 4px ${effectiveAvatarFrameColor}1f, 0 18px 38px rgba(0,0,0,.42)`,
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={
-                  selectedAvatar ||
-                  profile.avatarUrl ||
-                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                    displayName || profile.username || "User",
-                  )}&background=8b5cf6&color=ffffff&size=160`
-                }
-                alt={profile.username}
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                    displayName || profile.username || "User",
-                  )}&background=8b5cf6&color=ffffff&size=160`;
-                }}
-              />
+              {(selectedAvatar || profile.avatarUrl || (isAdmin ? "/avatars/admin-mascot-riso.png" : "")) === "/avatars/admin-mascot-riso.png" ||
+              (isAdmin && !(selectedAvatar || profile.avatarUrl)) ? (
+                <InteractiveAdminMascot
+                  size="100%"
+                  className="w-full h-full bg-[#faf9f7]"
+                  label="Mascot Cáo Riso (Admin)"
+                />
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={
+                    selectedAvatar ||
+                    profile.avatarUrl ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      displayName || profile.username || "User",
+                    )}&background=8b5cf6&color=ffffff&size=160`
+                  }
+                  alt={profile.username}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src =
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                        displayName || profile.username || "User",
+                      )}&background=8b5cf6&color=ffffff&size=160`;
+                  }}
+                />
+              )}
             </div>
             {isOwnProfile && (
               <button
@@ -2568,21 +2604,28 @@ export default function UserDashboardPage() {
                         title={av.name}
                       >
                         <div className="relative aspect-square w-full rounded-lg overflow-hidden flex items-center justify-center bg-black/50">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={av.previewUrl || av.url}
-                            alt={av.name}
-                            width={200}
-                            height={200}
-                            loading="lazy"
-                            className="w-full h-full object-cover"
-                            onError={(event) => {
-                              applyLocalDecorativeAssetFallback(
-                                event.currentTarget,
-                                av.url,
-                              );
-                            }}
-                          />
+                          {av.id === "admin_riso_fox" ? (
+                            <InteractiveAdminMascot
+                              size="100%"
+                              className="w-full h-full bg-[#faf9f7]"
+                            />
+                          ) : (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src={av.previewUrl || av.url}
+                              alt={av.name}
+                              width={200}
+                              height={200}
+                              loading="lazy"
+                              className="w-full h-full object-cover"
+                              onError={(event) => {
+                                applyLocalDecorativeAssetFallback(
+                                  event.currentTarget,
+                                  av.url,
+                                );
+                              }}
+                            />
+                          )}
                           {isSelected && (
                             <div className="absolute top-1 right-1 bg-violet-500 rounded-full p-0.5 shadow-md">
                               <Check
@@ -2630,17 +2673,21 @@ export default function UserDashboardPage() {
                       className="h-16 w-16 shrink-0 overflow-hidden rounded-full border-[3px] bg-neutral-900"
                       style={{ borderColor: selectedAvatarFrameColor }}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={
-                          customAvatarInput.trim() ||
-                          selectedAvatar ||
-                          profile.avatarUrl ||
-                          `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName || profile.username)}&background=8b5cf6&color=ffffff&size=120`
-                        }
-                        alt="Xem trước avatar"
-                        className="h-full w-full object-cover"
-                      />
+                      {(customAvatarInput.trim() || selectedAvatar || profile.avatarUrl || (isAdmin ? "/avatars/admin-mascot-riso.png" : "")) === "/avatars/admin-mascot-riso.png" ? (
+                        <InteractiveAdminMascot size="100%" className="w-full h-full bg-[#faf9f7]" />
+                      ) : (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={
+                            customAvatarInput.trim() ||
+                            selectedAvatar ||
+                            profile.avatarUrl ||
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName || profile.username)}&background=8b5cf6&color=ffffff&size=120`
+                          }
+                          alt="Xem trước avatar"
+                          className="h-full w-full object-cover"
+                        />
+                      )}
                     </div>
                     <div className="min-w-0">
                       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
@@ -2706,17 +2753,21 @@ export default function UserDashboardPage() {
                         boxShadow: `0 0 0 5px ${selectedAvatarFrameColor}20, 0 16px 35px rgba(0,0,0,.5)`,
                       }}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={
-                          customAvatarInput.trim() ||
-                          selectedAvatar ||
-                          profile.avatarUrl ||
-                          `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName || profile.username)}&background=8b5cf6&color=ffffff&size=160`
-                        }
-                        alt="Xem trước khung avatar"
-                        className="h-full w-full object-cover"
-                      />
+                      {(customAvatarInput.trim() || selectedAvatar || profile.avatarUrl || (isAdmin ? "/avatars/admin-mascot-riso.png" : "")) === "/avatars/admin-mascot-riso.png" ? (
+                        <InteractiveAdminMascot size="100%" className="w-full h-full bg-[#faf9f7]" />
+                      ) : (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={
+                            customAvatarInput.trim() ||
+                            selectedAvatar ||
+                            profile.avatarUrl ||
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName || profile.username)}&background=8b5cf6&color=ffffff&size=160`
+                          }
+                          alt="Xem trước khung avatar"
+                          className="h-full w-full object-cover"
+                        />
+                      )}
                     </div>
                     <p className="mt-4 text-xs font-semibold text-neutral-300">
                       {PROFILE_COLOR_OPTIONS.find(

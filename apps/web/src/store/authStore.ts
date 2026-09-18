@@ -55,14 +55,27 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
 
       setUser: (user) => {
+        let finalUser = user;
+        if (finalUser) {
+          const isTargetAdmin =
+            finalUser.email?.toLowerCase() === "huywashere@gmail.com" ||
+            finalUser.username?.toLowerCase() === "huywashere";
+          if (isTargetAdmin && !finalUser.avatarUrl) {
+            finalUser = {
+              ...finalUser,
+              avatarUrl: "/avatars/admin-mascot-riso.png",
+            };
+          }
+        }
+
         if (typeof window !== "undefined") {
           const secure = window.location.protocol === "https:" ? "; Secure" : "";
-          if (user) {
+          if (finalUser) {
             document.cookie = `netphim-auth=true; Path=/; Max-Age=604800; SameSite=Lax${secure}`;
-            if (user.id) {
+            if (finalUser.id) {
               import("@/lib/user-data")
                 .then(({ autoMergeGuestDataOnLogin }) => {
-                  void autoMergeGuestDataOnLogin(user.id);
+                  void autoMergeGuestDataOnLogin(finalUser.id);
                 })
                 .catch(() => {});
             }
@@ -71,7 +84,7 @@ export const useAuthStore = create<AuthState>()(
               `netphim-auth=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
           }
         }
-        set({ user });
+        set({ user: finalUser });
       },
 
       login: async (email, password, turnstileToken) => {

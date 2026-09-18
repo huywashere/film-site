@@ -10,6 +10,7 @@ import {
   Maximize2,
 } from "lucide-react";
 import { useTmdb } from "@/hooks/useTmdb";
+import { filterAccurateTrailers } from "@/lib/tmdb";
 import { FilmItem } from "@/components/film/FilmCard";
 import { cardFont } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
@@ -164,17 +165,28 @@ export function TrailerModal({
     if (trailer?.key && !list.some((v) => v.key === trailer.key)) {
       list.push({
         key: trailer.key,
-        name: trailer.name || "Official Trailer",
+        name: trailer.name || "Trailer Chính Thức",
         type: trailer.type || "Trailer",
       });
     }
 
-    // 3. Other TMDB videos (Teasers, Clips, Alternate trailers)
-    videos.forEach((v) => {
-      if (v.site === "YouTube" && v.key && !list.some((item) => item.key === v.key)) {
+    // 3. Other TMDB videos filtered strictly for genuine trailers & teasers
+    const accurateVideos = filterAccurateTrailers(videos);
+    accurateVideos.forEach((v, idx) => {
+      if (!list.some((item) => item.key === v.key)) {
+        const isOfficial = v.official || /official/i.test(v.name);
+        const isTeaser = v.type === "Teaser" || /teaser/i.test(v.name);
+        const label =
+          v.name && v.name.length <= 30
+            ? v.name
+            : isTeaser
+              ? "Teaser Trailer"
+              : isOfficial
+                ? `Trailer Chính Thức ${idx > 0 ? idx + 1 : ""}`.trim()
+                : `Trailer ${idx + 1}`;
         list.push({
           key: v.key,
-          name: v.name || `${v.type} HD`,
+          name: label,
           type: v.type || "Trailer",
         });
       }

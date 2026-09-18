@@ -497,55 +497,112 @@ export async function resolveTmdbHeroAssets(
   return tmdbApi.getHeroAssets(tmdbId, type);
 }
 
-// ── Helper: lấy trailer HD chính thức chất lượng cao từ TMDB ──────────────
+// ── Helper: Bộ lọc Trailer chính xác cao và lấy trailer chính thức từ TMDB ──
 
-export function getYoutubeTrailer(videos: TmdbVideo[]): TmdbVideo | null {
-  if (!videos?.length) return null;
-  const validVideos = videos.filter(
-    (v) => (v.site === "YouTube" || v.site === "Vimeo") && Boolean(v.key),
+// Danh sách từ khóa rác / không phải trailer chính thức (Fan-made, Review, Reaction, v.v.)
+const TRAILER_NEGATIVE_REGEX =
+  /\b(review|reaction|fan\s*made|fan-made|concept|parody|spoof|unboxing|interview|behind\s+the\s+scenes|bloopers|gag\s*reel|ending\s+explained|breakdown|recap|t\u00f3m\s*t\u1eaft|ph\u00e2n\s*t\u00edch|ost|soundtrack|music\s*video|mv|edit|tiktok|leak|gameplay|walkthrough|audiobook|scene\s*pack|shorts?)\b/i;
+
+const VALID_TRAILER_TYPES = new Set(["Trailer", "Teaser"]);
+
+/**
+ * Lọc danh sách trailer chính xác nhất từ TMDB:
+ * - Loại bỏ toàn bộ video fan-made, concept, review, reaction, clip hậu trường, bloopers.
+ * - Ưu tiên Trailer chính thức của hãng sản xuất (Official Studio Release).
+ * - Chấm điểm chất lượng (4K 2160p / 1080p Full HD), ngôn ngữ (Việt hóa / Quốc tế).
+ * - Loại bỏ các key trùng lặp.
+ */
+export function filterAccurateTrailers(videos: TmdbVideo[] = []): TmdbVideo[] {
+  if (!videos?.length) return [];
+
+  // Lọc tính hợp lệ cơ bản
+  const valid = videos.filter(
+    (v) =>
+      (v.site === "YouTube" || v.site === "Vimeo") &&
+      Boolean(v.key) &&
+      VALID_TRAILER_TYPES.has(v.type) &&
+      !TRAILER_NEGATIVE_REGEX.test(v.name),
   );
-  if (!validVideos.length) return null;
 
-  // Thuật toán ưu tiên Trailer Chính Thức (Official Studio 4K / 1080p HD)
-  const sorted = [...validVideos].sort((a, b) => {
-    let scoreA = 0;
-    let scoreB = 0;
+  // Nếu bộ lọc nghiêm ngặt không có kết quả, thử chấp nhận các video không phải rác
+  const candidatePool =
+    valid.length > 0
+      ? valid
+      : videos.filter(
+          (v) =>
+            (v.site === "YouTube" || v.site === "Vimeo") &&
+            Boolean(v.key) &&
+            v.type !== "Behind the Scenes" &&
+            v.type !== "Bloopers" &&
+            !TRAILER_NEGATIVE_REGEX.test(v.name),
+        );
 
-    // 1. Phim từ Hãng sản xuất chính thức (Official Studio Release)
-    if (a.official) scoreA += 100;
-    if (b.official) scoreB += 100;
+  if (!candidatePool.length) return [];
 
-    // 2. Phân loại nội dung: Trailer > Teaser > Clip
-    if (a.type === "Trailer") scoreA += 80;
-    else if (a.type === "Teaser") scoreA += 40;
-    else if (a.type === "Clip") scoreA += 10;
+  const scored = candidatePool.map((v) => {
+    let score = 0;
 
-    if (b.type === "Trailer") scoreB += 80;
-    else if (b.type === "Teaser") scoreB += 40;
-    else if (b.type === "Clip") scoreB += 10;
+    // 1. Trailer chính thức từ hãng (Official Studio Release)
+    if (v.official) score += 150;
 
-    // 3. Tên trailer chứa Official / Main Trailer
-    if (/official\s+trailer/i.test(a.name)) scoreA += 50;
-    else if (/main\s+trailer/i.test(a.name)) scoreA += 45;
-    else if (/trailer/i.test(a.name)) scoreA += 30;
+    // 2. Định dạng nội dung: Trailer > Teaser
+    if (v.type === "Trailer") score += 100;
+    else if (v.type === "Teaser") score += 45;
 
-    if (/official\s+trailer/i.test(b.name)) scoreB += 50;
-    else if (/main\s+trailer/i.test(b.name)) scoreB += 45;
-    else if (/trailer/i.test(b.name)) scoreB += 30;
+    const lowerName = (v.name || "").toLowerCase();
 
-    // 4. Độ phân giải cao (2160p 4K / 1080p Full HD)
-    scoreA += Math.min(Number(a.size || 720) / 20, 110);
-    scoreB += Math.min(Number(b.size || 720) / 20, 110);
+    // 3. Tiêu đề trailer chuẩn
+    if (/official\s+trailer|trailer\s+ch\u00ednh\s+th\u1ee9c/i.test(lowerName)) {
+      score += 65;
+    } else if (/main\s+trailer|final\s+trailer/i.test(lowerName)) {
+      score += 55;
+    } else if (/teaser\s+trailer/i.test(lowerName)) {
+      score += 40;
+    } else if (lowerName.includes("trailer")) {
+      score += 30;
+    }
 
-    // 5. Ưu tiên ngôn ngữ: Vietsub (vi) -> Quốc tế / Tiếng Anh (en)
-    if (a.iso_639_1 === "vi") scoreA += 25;
-    else if (a.iso_639_1 === "en") scoreA += 15;
+    // 4. Ưu tiên ngôn ngữ (Vietsub / Thuyết minh tiếng Việt -> Tiếng Anh)
+    if (v.iso_639_1 === "vi" || /vietsub|thuy\u1ebft\s*minh|l\u1ed3ng\s*ti\u1ebfng/i.test(lowerName)) {
+      score += 50;
+    } else if (v.iso_639_1 === "en") {
+      score += 20;
+    }
 
-    if (b.iso_639_1 === "vi") scoreB += 25;
-    else if (b.iso_639_1 === "en") scoreB += 15;
+    // 5. Độ phân giải cao (4K 2160p / 1080p Full HD)
+    const size = Number(v.size || 720);
+    if (size >= 2160) score += 45;
+    else if (size >= 1080) score += 35;
+    else if (size >= 720) score += 15;
 
-    return scoreB - scoreA;
+    // 6. Tính thời sự / ngày xuất bản (ưu tiên trailer bản cập nhật mới nhất)
+    if (v.published_at) {
+      const pubTime = new Date(v.published_at).getTime();
+      if (!Number.isNaN(pubTime)) {
+        score += Math.min(20, Math.max(0, (pubTime - 1262304000000) / (1000 * 60 * 60 * 24 * 365)));
+      }
+    }
+
+    return { video: v, score };
   });
 
-  return sorted[0] || null;
+  scored.sort((a, b) => b.score - a.score);
+
+  // Khử trùng lặp theo key
+  const seenKeys = new Set<string>();
+  const results: TmdbVideo[] = [];
+  for (const item of scored) {
+    if (!seenKeys.has(item.video.key)) {
+      seenKeys.add(item.video.key);
+      results.push(item.video);
+    }
+  }
+
+  return results;
 }
+
+export function getYoutubeTrailer(videos: TmdbVideo[]): TmdbVideo | null {
+  const accurateList = filterAccurateTrailers(videos);
+  return accurateList[0] || null;
+}
+

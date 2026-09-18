@@ -56,6 +56,7 @@ import {
   Activity,
   Gauge,
   CheckCircle2,
+  Loader2,
 } from 'lucide-react';
 import { kkphimApi, movieApi, recommendationApi, siteConfigApi, vicdnApi, viewApi, watchHistoryApi } from '@/lib/api';
 import { canUseUnsandboxedEmbed } from '@/lib/player-source-routing';
@@ -178,7 +179,7 @@ const TYPE_CFG: Record<ServerType, { label: string; Icon: any; active: string; i
     },
   };
 
-// ── Auto-next countdown overlay ────────────────────────────────
+// ── Auto-next countdown overlay (Netflix Standard) ─────────────
 function AutoNextOverlay({
   seconds,
   onSkip,
@@ -189,22 +190,22 @@ function AutoNextOverlay({
   onCancel: () => void;
 }) {
   return (
-    <div className="absolute bottom-14 right-5 z-50">
-      <div className="bg-black/85 border border-white/10 rounded-xl px-4 py-3 flex items-center gap-4 backdrop-blur-md shadow-xl">
+    <div className="absolute bottom-16 right-6 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+      <div className="bg-black/80 border border-white/20 rounded-[4px] px-5 py-3.5 flex items-center gap-4 backdrop-blur-md shadow-2xl">
         <div>
-          <p className="text-[10px] text-white/40 mb-0.5">Tập tiếp theo trong</p>
-          <p className="text-white font-bold text-2xl tabular-nums leading-none">{seconds}s</p>
+          <p className="text-[10px] uppercase tracking-wider text-white/50 font-semibold mb-0.5">Tập tiếp theo trong</p>
+          <p className="text-white font-extrabold text-2xl tabular-nums leading-none">{seconds}s</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={onSkip}
-            className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-white px-3 py-1.5 text-xs font-bold rounded-lg transition-colors"
+            className="flex items-center gap-1.5 bg-white hover:bg-white/90 text-black px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-[3px] shadow transition-all active:scale-95"
           >
-            <Play size={11} fill="currentColor" /> Xem ngay
+            <Play size={11} fill="currentColor" /> Phát ngay
           </button>
           <button
             onClick={onCancel}
-            className="px-3 py-1.5 text-xs text-white/40 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+            className="px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-white/60 hover:text-white hover:bg-white/10 rounded-[3px] border border-white/15 transition-all"
           >
             Hủy
           </button>
@@ -1129,6 +1130,120 @@ function RecMovieItem({ item, index = 0 }: { item: any; index?: number }) {
   );
 }
 
+// ── Watch Trailer Component with Auto-Resolver Fallback ────────
+function WatchTrailerView({
+  film,
+  tmdbTrailerKey,
+  videosLoading,
+  lang,
+}: {
+  film: any;
+  tmdbTrailerKey?: string | null;
+  videosLoading: boolean;
+  lang: string;
+}) {
+  const [resolvedKey, setResolvedKey] = useState<string | null>(null);
+  const [isResolving, setIsResolving] = useState(false);
+
+  const rawTrailerUrl = String(film?.trailer_url || '');
+  const urlMatch = rawTrailerUrl.match(
+    /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{6,})/i,
+  );
+  const effectiveKey = tmdbTrailerKey || urlMatch?.[1] || resolvedKey;
+
+  useEffect(() => {
+    if (tmdbTrailerKey || urlMatch?.[1]) return;
+    const title = film?.name || film?.title || '';
+    const originName = film?.origin_name || '';
+    const year = film?.year ? String(film.year) : '';
+    if (!title && !originName) return;
+
+    let active = true;
+    setIsResolving(true);
+    const params = new URLSearchParams();
+    if (title) params.set('title', title);
+    if (originName) params.set('originName', originName);
+    if (year) params.set('year', year);
+    if (rawTrailerUrl) params.set('trailerUrl', rawTrailerUrl);
+
+    fetch(`/api/trailer/resolve?${params.toString()}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (active && data.success && data.key) {
+          setResolvedKey(data.key);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setIsResolving(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [tmdbTrailerKey, urlMatch, film?.name, film?.title, film?.origin_name, film?.year, rawTrailerUrl]);
+
+  if (videosLoading || isResolving) {
+    return (
+      <div className="aspect-video animate-pulse rounded-xl bg-white/[0.035] flex flex-col items-center justify-center gap-2 text-neutral-400">
+        <Loader2 size={24} className="animate-spin text-[#23ade5]" />
+        <p className="text-xs font-medium">Đang tìm trailer chính thức...</p>
+      </div>
+    );
+  }
+
+  if (!effectiveKey) {
+    const youtubeSearchHref = `https://www.youtube.com/results?search_query=${encodeURIComponent(
+      `${film?.name || film?.title || ''} official trailer`,
+    )}`;
+    return (
+      <div className="flex min-h-44 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-white/[0.09] text-center text-neutral-400 py-6">
+        <CirclePlay size={26} className="text-neutral-500" />
+        <p className="text-xs font-semibold">
+          {lang === 'en' ? 'No official trailer was found.' : 'Chưa tìm thấy trailer chính thức.'}
+        </p>
+        <a
+          href={youtubeSearchHref}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/20 px-3.5 py-1.5 text-xs font-semibold text-white transition-all cursor-pointer"
+        >
+          {lang === 'en' ? 'Search trailer on YouTube' : 'Tìm trailer trên YouTube'}
+          <ExternalLink size={12} />
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-5xl space-y-2.5">
+      <div className="aspect-video overflow-hidden rounded-xl border border-white/[0.1] bg-black">
+        <iframe
+          src={`https://www.youtube.com/embed/${encodeURIComponent(effectiveKey)}?autoplay=1&rel=0&playsinline=1&enablejsapi=1`}
+          title={`${film?.name || 'FlexPhim'} trailer`}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="strict-origin-when-cross-origin"
+          className="h-full w-full"
+        />
+      </div>
+      <div className="flex justify-end">
+        <a
+          href={`https://www.youtube.com/watch?v=${encodeURIComponent(effectiveKey)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          referrerPolicy="strict-origin-when-cross-origin"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.09] bg-white/[0.035] px-3 py-2 text-[11px] font-bold text-neutral-300 transition-colors hover:border-[#23ade5]/50 hover:text-white"
+        >
+          <ExternalLink size={12} />
+          {lang === 'en' ? 'Open on YouTube' : 'Mở trên YouTube'}
+        </a>
+      </div>
+    </div>
+  );
+}
+
 // ── Skeleton ──────────────────────────────────────────────────
 function WatchSkeleton() {
   return <WatchPageSkeleton />;
@@ -1193,9 +1308,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   });
   const [skipIntroConfig, setSkipIntroConfig] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('netphim_skip_intro') !== 'false';
+      return localStorage.getItem('netphim_skip_intro') === 'true';
     }
-    return true;
+    return false;
   });
   const [autoPlayConfig, setAutoPlayConfig] = useState(true);
   const [providerPriority, setProviderPriority] = useState(['kkphim', 'nguonc', 'vsmov', 'ophim']);
@@ -1336,7 +1451,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   }, [theaterMode]);
 
   const [subDelayOffset, setSubDelayOffset] = useState<number>(0);
-  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showEpThumbnails, setShowEpThumbnails] = useState(false);
@@ -1548,119 +1662,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     wp.remotePlayerState,
     wp.roomId,
   ]);
-
-  // Keyboard Shortcuts (Space/K: Play/Pause, F: Fullscreen, T: Theater, M: Mute, Arrows: Seek/Volume, N: Next, P: Prev, B: Skip Intro, ?: Shortcuts)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (
-        target &&
-        (target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.tagName === 'SELECT' ||
-          target.isContentEditable)
-      ) {
-        return;
-      }
-
-      // Theater Mode - works without artInstance
-      if (e.code === 'KeyT') {
-        e.preventDefault();
-        setTheaterMode((prev) => !prev);
-        return;
-      }
-
-      // Show shortcuts modal
-      if (e.key === '?') {
-        e.preventDefault();
-        setShowShortcutsModal((prev) => !prev);
-        return;
-      }
-
-      // Next / Previous episode - work without artInstance
-      if (e.code === 'KeyN') {
-        e.preventDefault();
-        const videoEl = playerContainerRef.current?.querySelector('video');
-        if (videoEl) videoEl.currentTime = videoEl.duration || videoEl.currentTime;
-        return;
-      }
-
-      if (e.code === 'KeyP') {
-        e.preventDefault();
-        return;
-      }
-
-      // artInstance-dependent shortcuts
-      if (e.code === 'Space' || e.code === 'KeyK') {
-        e.preventDefault();
-        if (artInstance) {
-          artInstance.toggle();
-        } else {
-          const videoEl = playerContainerRef.current?.querySelector('video');
-          if (videoEl) videoEl.paused ? videoEl.play() : videoEl.pause();
-        }
-      } else if (e.code === 'KeyF') {
-        e.preventDefault();
-        if (artInstance) {
-          artInstance.fullscreen = !artInstance.fullscreen;
-        } else {
-          const videoEl = playerContainerRef.current?.querySelector('video');
-          if (videoEl) videoEl.requestFullscreen?.();
-        }
-      } else if (e.code === 'KeyM') {
-        e.preventDefault();
-        if (artInstance) {
-          artInstance.volume = artInstance.volume === 0 ? 0.8 : 0;
-        } else {
-          const videoEl = playerContainerRef.current?.querySelector('video');
-          if (videoEl) videoEl.muted = !videoEl.muted;
-        }
-      } else if (e.code === 'ArrowLeft') {
-        e.preventDefault();
-        if (artInstance) {
-          artInstance.seek = Math.max(0, artInstance.currentTime - 5);
-        } else {
-          const videoEl = playerContainerRef.current?.querySelector('video');
-          if (videoEl) videoEl.currentTime = Math.max(0, videoEl.currentTime - 5);
-        }
-      } else if (e.code === 'ArrowRight') {
-        e.preventDefault();
-        if (artInstance) {
-          artInstance.seek = Math.min(artInstance.duration || 9999, artInstance.currentTime + 5);
-        } else {
-          const videoEl = playerContainerRef.current?.querySelector('video');
-          if (videoEl)
-            videoEl.currentTime = Math.min(videoEl.duration || 9999, videoEl.currentTime + 5);
-        }
-      } else if (e.code === 'ArrowUp') {
-        e.preventDefault();
-        if (artInstance) {
-          artInstance.volume = Math.min(1, (artInstance.volume || 0) + 0.1);
-        }
-      } else if (e.code === 'ArrowDown') {
-        e.preventDefault();
-        if (artInstance) {
-          artInstance.volume = Math.max(0, (artInstance.volume || 0) - 0.1);
-        }
-      } else if (e.code === 'KeyB') {
-        // Skip intro +85s
-        e.preventDefault();
-        if (artInstance) {
-          artInstance.seek = artInstance.currentTime + 85;
-          toast('Đã bỏ qua Intro (+85s)', 'info');
-        } else {
-          const videoEl = playerContainerRef.current?.querySelector('video');
-          if (videoEl) {
-            videoEl.currentTime = Math.min(videoEl.duration || 9999, videoEl.currentTime + 85);
-            toast('Đã bỏ qua Intro (+85s)', 'info');
-          }
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [artInstance, toast, setTheaterMode, setShowShortcutsModal]);
 
   // Data
   const { data, isLoading } = useQuery({
@@ -3051,8 +3052,15 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   }, [autoNextCountdown, goNextEpisode]);
 
   // ── Global Keyboard Shortcuts Listener ──
+  const lastKeySeekTimeRef = useRef(0);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // If event was already handled (e.g. by ArtPlayer internal hotkeys) or default prevented, ignore
+      if (e.defaultPrevented || (e as any)._artHandled) {
+        return;
+      }
+
       const target = e.target as HTMLElement;
       if (
         target &&
@@ -3072,11 +3080,17 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
           } else {
             artInstance.play();
           }
+        } else {
+          const videoEl = playerContainerRef.current?.querySelector('video');
+          if (videoEl) videoEl.paused ? videoEl.play() : videoEl.pause();
         }
       } else if (e.key === 'f' || e.key === 'F') {
         e.preventDefault();
         if (artInstance) {
           artInstance.fullscreen = !artInstance.fullscreen;
+        } else {
+          const videoEl = playerContainerRef.current?.querySelector('video');
+          if (videoEl) videoEl.requestFullscreen?.();
         }
       } else if (e.key === 't' || e.key === 'T') {
         e.preventDefault();
@@ -3089,16 +3103,50 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         e.preventDefault();
         if (artInstance) {
           artInstance.muted = !artInstance.muted;
+        } else {
+          const videoEl = playerContainerRef.current?.querySelector('video');
+          if (videoEl) videoEl.muted = !videoEl.muted;
         }
       } else if (e.key === 'ArrowLeft' || e.key === 'j' || e.key === 'J') {
         e.preventDefault();
+        const now = Date.now();
+        if (e.repeat && now - lastKeySeekTimeRef.current < 220) {
+          return;
+        }
+        lastKeySeekTimeRef.current = now;
+
         if (artInstance) {
-          artInstance.currentTime = Math.max(0, (artInstance.currentTime || 0) - 10);
+          if (typeof artInstance.triggerSeekRipple === 'function') {
+            artInstance.triggerSeekRipple(true);
+          } else {
+            artInstance.seek = Math.max(0, (artInstance.currentTime || 0) - 10);
+          }
+        } else {
+          const videoEl = playerContainerRef.current?.querySelector('video');
+          if (videoEl) videoEl.currentTime = Math.max(0, videoEl.currentTime - 10);
         }
       } else if (e.key === 'ArrowRight' || e.key === 'l' || e.key === 'L') {
         e.preventDefault();
+        const now = Date.now();
+        if (e.repeat && now - lastKeySeekTimeRef.current < 220) {
+          return;
+        }
+        lastKeySeekTimeRef.current = now;
+
         if (artInstance) {
-          artInstance.currentTime = (artInstance.currentTime || 0) + 10;
+          if (typeof artInstance.triggerSeekRipple === 'function') {
+            artInstance.triggerSeekRipple(false);
+          } else {
+            artInstance.seek = Math.min(
+              artInstance.duration || Infinity,
+              (artInstance.currentTime || 0) + 10,
+            );
+          }
+        } else {
+          const videoEl = playerContainerRef.current?.querySelector('video');
+          if (videoEl) {
+            videoEl.currentTime = Math.min(videoEl.duration || Infinity, videoEl.currentTime + 10);
+          }
         }
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
@@ -3113,11 +3161,17 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       } else if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
         goNextEpisode();
-      } else if (e.key === 'i' || e.key === 'I') {
+      } else if (e.key === 'i' || e.key === 'I' || e.key === 'b' || e.key === 'B') {
         e.preventDefault();
         if (artInstance) {
           artInstance.currentTime = 85;
           toast('Đã bỏ qua đoạn mở đầu (Intro)', 'info');
+        } else {
+          const videoEl = playerContainerRef.current?.querySelector('video');
+          if (videoEl) {
+            videoEl.currentTime = Math.min(videoEl.duration || Infinity, 85);
+            toast('Đã bỏ qua đoạn mở đầu (Intro)', 'info');
+          }
         }
       } else if (e.key === '?') {
         e.preventDefault();
@@ -3127,7 +3181,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [artInstance, goNextEpisode, toast]);
+  }, [artInstance, goNextEpisode, setTheaterMode, setShowShortcutsGuide, toast]);
 
   // ── Smart Fallback Engine ─────────────────────────────────────
   const tryNextServer = useCallback(
@@ -4964,60 +5018,12 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             {/* ── 4. TRAILER (Mounts only when active to prevent background YouTube audio) ── */}
             {watchContentTab === 'trailer' && (
               <section className="min-h-52 py-5">
-                {(() => {
-                  const rawTrailerUrl = String(film?.trailer_url || '');
-                  const urlMatch = rawTrailerUrl.match(
-                    /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{6,})/i,
-                  );
-                  const trailerKey = tmdbTrailer?.key || urlMatch?.[1];
-
-                  if (videosLoading) {
-                    return (
-                      <div className="aspect-video animate-pulse rounded-xl bg-white/[0.035]" />
-                    );
-                  }
-
-                  if (!trailerKey) {
-                    return (
-                      <div className="flex min-h-44 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/[0.09] text-center text-neutral-500">
-                        <CirclePlay size={24} />
-                        <p className="text-xs font-semibold">
-                          {lang === 'en'
-                            ? 'No official trailer was found.'
-                            : 'Chưa tìm thấy trailer chính thức.'}
-                        </p>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div className="mx-auto w-full max-w-5xl space-y-2.5">
-                      <div className="aspect-video overflow-hidden rounded-xl border border-white/[0.1] bg-black">
-                        <iframe
-                          src={`https://www.youtube.com/embed/${encodeURIComponent(trailerKey)}?autoplay=1&rel=0&playsinline=1&enablejsapi=1`}
-                          title={`${film?.name || 'FlexPhim'} trailer`}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                          allowFullScreen
-                          loading="lazy"
-                          referrerPolicy="strict-origin-when-cross-origin"
-                          className="h-full w-full"
-                        />
-                      </div>
-                      <div className="flex justify-end">
-                        <a
-                          href={`https://www.youtube.com/watch?v=${encodeURIComponent(trailerKey)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          referrerPolicy="strict-origin-when-cross-origin"
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.09] bg-white/[0.035] px-3 py-2 text-[11px] font-bold text-neutral-300 transition-colors hover:border-fuchsia-400/40 hover:text-fuchsia-200"
-                        >
-                          <ExternalLink size={12} />
-                          {lang === 'en' ? 'Open on YouTube' : 'Mở trên YouTube'}
-                        </a>
-                      </div>
-                    </div>
-                  );
-                })()}
+                <WatchTrailerView
+                  film={film}
+                  tmdbTrailerKey={tmdbTrailer?.key}
+                  videosLoading={videosLoading}
+                  lang={lang}
+                />
               </section>
             )}
 

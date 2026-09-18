@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { FilmItem } from '@/components/film/FilmCard';
 import { TmdbArtwork } from '@/components/film/TmdbArtwork';
@@ -14,6 +15,7 @@ interface LandscapeSpotlightRowProps {
   films: FilmItem[];
   isLoading?: boolean;
   href?: string;
+  cardLinkMode?: 'watch' | 'detail';
 }
 
 function filmHref(film: FilmItem, mode: 'watch' | 'detail') {
@@ -31,8 +33,10 @@ export function LandscapeSpotlightRow({
   films,
   isLoading,
   href,
+  cardLinkMode = 'detail',
 }: LandscapeSpotlightRowProps) {
   const { t } = useTranslation();
+  const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -182,13 +186,23 @@ export function LandscapeSpotlightRow({
               ? 'Vietsub Full'
               : 'Vietsub';
 
+          const targetHref = filmHref(film, cardLinkMode);
+          const handlePrefetch = () => {
+            try {
+              router.prefetch(targetHref);
+            } catch {}
+          };
+
           return (
             <article
               key={film.slug || index}
               className="group relative w-[48vw] min-w-[160px] shrink-0 snap-start select-none sm:w-[48vw] lg:w-[calc((100%-3rem)/4)]"
             >
               <Link
-                href={filmHref(film, 'watch')}
+                href={targetHref}
+                onMouseEnter={handlePrefetch}
+                onTouchStart={handlePrefetch}
+                onPointerDown={handlePrefetch}
                 className="relative block aspect-[16/9] w-full overflow-hidden rounded-xl border border-white/[0.09] bg-[#101218] shadow-[0_12px_28px_rgba(0,0,0,0.24)] transition-[border-color,transform,box-shadow] duration-300 group-hover:-translate-y-0.5 group-hover:border-white/25 group-hover:shadow-[0_18px_38px_rgba(0,0,0,0.42)] motion-reduce:transform-none"
               >
                 <TmdbArtwork
@@ -224,8 +238,11 @@ export function LandscapeSpotlightRow({
 
               <div className="relative -mt-7 sm:-mt-9 grid min-h-[80px] sm:min-h-[94px] grid-cols-[52px_minmax(0,1fr)] sm:grid-cols-[76px_minmax(0,1fr)] items-end gap-2 sm:gap-3 px-1.5 sm:px-2">
                 <Link
-                  href={filmHref(film, 'watch')}
-                  aria-label={`${t('common.watch', 'Xem')} ${film.name}`}
+                  href={targetHref}
+                  aria-label={film.name}
+                  onMouseEnter={handlePrefetch}
+                  onTouchStart={handlePrefetch}
+                  onPointerDown={handlePrefetch}
                   className="relative z-10 aspect-[2/3] w-[52px] sm:w-[76px] overflow-hidden rounded-md border border-white/25 bg-[#111318] shadow-[0_10px_24px_rgba(0,0,0,0.62)] transition-transform duration-300 group-hover:-translate-y-0.5 motion-reduce:transform-none"
                 >
                   <TmdbArtwork film={film} kind="poster" allowTitleLookup className="h-full w-full" alt="" />
@@ -233,7 +250,10 @@ export function LandscapeSpotlightRow({
 
                 <div className="min-w-0 pb-1">
                   <Link
-                    href={filmHref(film, 'watch')}
+                    href={targetHref}
+                    onMouseEnter={handlePrefetch}
+                    onTouchStart={handlePrefetch}
+                    onPointerDown={handlePrefetch}
                     className="block line-clamp-2 text-[11px] sm:text-[13px] font-extrabold leading-[1.3] sm:leading-5 text-white transition-colors group-hover:text-violet-200"
                     title={film.name}
                   >

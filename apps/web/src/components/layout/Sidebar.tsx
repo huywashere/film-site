@@ -286,7 +286,7 @@ export function Sidebar() {
                       "absolute -left-1.5 top-1/2 -translate-y-1/2 rounded-r-full z-20",
                       isBilingual
                         ? "bg-gradient-to-b from-cyan-400 to-violet-500 shadow-[0_0_10px_rgba(6,182,212,0.8)]"
-                        : "bg-[#8b5cf6]",
+                        : "bg-violet-400",
                     )}
                     style={{ width: 3, height: 20 }}
                   />
@@ -298,25 +298,26 @@ export function Sidebar() {
                     className={cn(
                       "absolute inset-0 rounded-xl transition-all duration-300 z-0",
                       isActive
-                        ? "bg-gradient-to-br from-cyan-500/35 via-violet-600/30 to-blue-500/30 border border-cyan-400/70 shadow-[0_0_20px_rgba(6,182,212,0.5)]"
-                        : "bg-gradient-to-br from-cyan-500/20 via-violet-600/15 to-blue-500/15 border border-cyan-400/30 group-hover:border-cyan-400/80 group-hover:shadow-[0_0_16px_rgba(6,182,212,0.4)]",
+                        ? "bg-gradient-to-br from-cyan-500 via-violet-600 to-blue-500"
+                        : "bg-gradient-to-br from-cyan-500/20 via-violet-600/15 to-blue-500/15 border border-cyan-400/30 group-hover:border-cyan-400/80",
                     )}
                   />
                 ) : isActive ? (
-                  <span className="absolute inset-0 rounded-xl bg-[#8b5cf6]/20 border border-[#8b5cf6]/40 z-0" />
+                  <span className="absolute inset-0 rounded-xl bg-violet-600 z-0 shadow-sm" />
                 ) : (
-                  <span className="absolute inset-0 rounded-xl bg-transparent group-hover:bg-[#8b5cf6]/10 transition-colors z-0" />
+                  <span className="absolute inset-0 rounded-xl bg-transparent group-hover:bg-violet-500/15 transition-colors z-0" />
                 )}
 
                 {/* Icon */}
                 <Icon
                   size={20}
+                  strokeWidth={isActive ? 2.2 : 2}
                   className={cn(
                     "relative z-10 transition-transform group-hover:scale-110",
                     isBilingual
-                      ? "text-cyan-300 group-hover:text-cyan-100 drop-shadow-[0_0_8px_rgba(6,182,212,0.7)]"
+                      ? "text-white group-hover:text-cyan-100"
                       : isActive
-                        ? "text-[#a78bfa]"
+                        ? "text-white"
                         : item.isSpecial && !isActive
                           ? "text-[#229ED9] group-hover:text-[#38bdf8]"
                           : "group-hover:text-violet-200",
