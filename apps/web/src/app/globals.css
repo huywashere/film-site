@@ -1424,13 +1424,10 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   transition: opacity 0.18s ease-out;
 }
 
-/* Subtle darkened radial gradient behind seek area with clean neutral ambient */
-.netphim-mobile-seek-side.is-left {
-  background: radial-gradient(circle at 45% 50%, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0.45) 45%, transparent 70%);
-}
-
+/* Clean transparent background behind seek area with zero color cast */
+.netphim-mobile-seek-side.is-left,
 .netphim-mobile-seek-side.is-right {
-  background: radial-gradient(circle at 55% 50%, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0.45) 45%, transparent 70%);
+  background: transparent;
 }
 
 .netphim-mobile-seek-side.is-active {

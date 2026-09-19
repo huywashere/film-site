@@ -2304,7 +2304,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
           mediaType: 'movie',
           autoplay: autoPlayConfig,
           subtitle: 'en',
-          color: '8b5cf6',
+          color: '23ade5',
         });
         if (vidsrcEmbedUrl) {
           vidsrcEps = [
@@ -2422,7 +2422,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             episode: episodeNumber,
             autoplay: autoPlayConfig,
             subtitle: 'en',
-            color: '8b5cf6',
+            color: '23ade5',
           });
           return embedUrl
             ? [
