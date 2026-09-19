@@ -96,7 +96,7 @@ export function MobileBottomNav() {
       {/* ── Outer Floating Dock Wrapper ── */}
       <div className="relative pointer-events-auto flex items-center gap-1.5 sm:gap-2 transform-gpu [-webkit-tap-highlight-color:transparent]">
         {/* ── Main Glassmorphism Pill Bar (Apple iOS Frosted Glass) ── */}
-        <div className="relative flex items-center gap-0.5 sm:gap-1 rounded-full border border-white/20 bg-neutral-900/60 p-1 sm:p-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.25)] backdrop-blur-2xl">
+        <div className="relative flex items-center gap-1 sm:gap-1.5 rounded-full border border-white/20 bg-neutral-900/65 p-1.5 sm:p-2 shadow-[0_12px_36px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.25)] backdrop-blur-2xl">
           {/* Specular top hairline reflection */}
           <div
             aria-hidden="true"
@@ -142,11 +142,11 @@ export function MobileBottomNav() {
                   className={cn(
                     "relative z-10 flex items-center gap-1.5 transition-colors duration-200 select-none",
                     item.isActive
-                      ? "text-black font-black px-2.5 sm:px-3 py-1.5"
-                      : "text-neutral-400 hover:text-white p-1.5 sm:p-2",
+                      ? "text-black font-black px-3 sm:px-3.5 py-2"
+                      : "text-neutral-400 hover:text-white p-2 sm:p-2.5",
                   )}
                 >
-                  <Icon size={18} strokeWidth={item.isActive ? 2.5 : 1.8} />
+                  <Icon size={20} strokeWidth={item.isActive ? 2.5 : 1.8} />
                   <AnimatePresence initial={false}>
                     {item.isActive && (
                       <motion.span
@@ -154,7 +154,7 @@ export function MobileBottomNav() {
                         animate={{ opacity: 1, width: "auto" }}
                         exit={{ opacity: 0, width: 0 }}
                         transition={{ duration: 0.16, ease: "easeOut" }}
-                        className="text-[11.5px] font-black tracking-tight whitespace-nowrap overflow-hidden pr-0.5"
+                        className="text-xs sm:text-[13px] font-black tracking-tight whitespace-nowrap overflow-hidden pr-0.5"
                       >
                         {item.label}
                       </motion.span>
@@ -177,7 +177,7 @@ export function MobileBottomNav() {
             title={user.displayName || user.username}
             aria-label={`Trang cá nhân ${user.displayName || user.username}`}
             className={cn(
-              "relative flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-purple-400/90 shadow-[0_8px_25px_rgba(147,51,234,0.5),inset_0_1px_1px_rgba(255,255,255,0.35)] bg-gradient-to-tr from-purple-700 via-purple-600 to-indigo-500 overflow-hidden active:scale-90 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 touch-manipulation select-none",
+              "relative flex h-12 w-12 sm:h-[50px] sm:w-[50px] shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-purple-400/90 shadow-[0_8px_25px_rgba(147,51,234,0.5),inset_0_1px_1px_rgba(255,255,255,0.35)] bg-gradient-to-tr from-purple-700 via-purple-600 to-indigo-500 overflow-hidden active:scale-90 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 touch-manipulation select-none",
               isProfileRoute && "ring-2 ring-white ring-offset-2 ring-offset-black",
             )}
           >
@@ -207,9 +207,9 @@ export function MobileBottomNav() {
             onClick={() => useAuthModalStore.getState().openModal("login")}
             title="Đăng nhập"
             aria-label="Đăng nhập"
-            className="relative flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 cursor-pointer items-center justify-center rounded-full border border-purple-400/40 text-white shadow-[0_8px_25px_rgba(147,51,234,0.5),inset_0_1px_1px_rgba(255,255,255,0.35)] bg-gradient-to-tr from-purple-700 via-purple-600 to-indigo-500 hover:from-purple-600 hover:to-indigo-400 active:scale-90 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 touch-manipulation select-none"
+            className="relative flex h-12 w-12 sm:h-[50px] sm:w-[50px] shrink-0 cursor-pointer items-center justify-center rounded-full border border-purple-400/40 text-white shadow-[0_8px_25px_rgba(147,51,234,0.5),inset_0_1px_1px_rgba(255,255,255,0.35)] bg-gradient-to-tr from-purple-700 via-purple-600 to-indigo-500 hover:from-purple-600 hover:to-indigo-400 active:scale-90 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 touch-manipulation select-none"
           >
-            <User size={20} strokeWidth={2.2} className="text-white" />
+            <User size={22} strokeWidth={2.2} className="text-white" />
           </button>
         )}
       </div>

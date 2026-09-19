@@ -287,7 +287,7 @@ function FilmCardComponent({
     <div
       style={width ? { width } : undefined}
       className={cn(
-        `${cardFont.className} group/card relative flex flex-col select-none [contain:paint_layout]`,
+        `${cardFont.className} group/card relative flex flex-col select-none [contain:layout]`,
         !width && 'w-full',
       )}
     >

@@ -480,15 +480,6 @@ function FilmSection({
   const effectiveCardVariant = cardVariant || (isLandscape ? "landscape" : "standard");
   const isPosterPill = effectiveCardVariant === "poster-pill";
 
-  const GALLERY_TILTS = [
-    "-rotate-[2deg] translate-y-1.5",
-    "rotate-[1.8deg] -translate-y-1.5",
-    "-rotate-[1.6deg] translate-y-1",
-    "rotate-[2deg] -translate-y-1.5",
-    "-rotate-[1.6deg] translate-y-1",
-    "rotate-[1.8deg] -translate-y-1",
-  ];
-
   const itemWidthClass = isLandscape
     ? "w-[72%] min-w-[220px] shrink-0 snap-start sm:w-[46%] md:w-[32%] lg:w-[calc((100%-4*1rem)/5)] xl:w-[calc((100%-4*1rem)/5)]"
     : isPosterPill
@@ -535,8 +526,8 @@ function FilmSection({
       className={`${cardFont.className} mb-8 group/section`}
     >
       {/* Title Header matching user's requested layout (Inline pill button + right dash line pagination) */}
-      <div className="mb-3.5 flex items-start justify-between gap-2 px-1 sm:items-center">
-        {/* Left Side: Title + Inline "Xem tất cả >" Pill Button */}
+      <div className="mb-3 flex items-start justify-between gap-2 px-1 sm:items-center">
+        {/* Left Side: Title + Inline "Xem tất cả >" Pill Button + Header Chevrons */}
         <div className="flex min-w-0 flex-1 items-start gap-2 sm:items-center">
           <div className="min-w-0 flex-1 sm:flex-none">
             <h2
@@ -556,6 +547,28 @@ function FilmSection({
               <ChevronRight size={14} className="stroke-[2.2] text-white/60 group-hover/link:text-white transition-transform group-hover/link:translate-x-0.5" />
             </Link>
           )}
+
+          {/* Quick Header Mini Nav Buttons */}
+          <div className="hidden sm:flex items-center gap-1 ml-2">
+            <button
+              type="button"
+              onClick={() => scrollFilms(-1)}
+              disabled={!canScrollLeft || isLoading}
+              aria-label={`Cuộn về trước cho ${title}`}
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-neutral-300 transition-all hover:border-white/30 hover:bg-white/15 hover:text-white disabled:opacity-20 disabled:pointer-events-none cursor-pointer active:scale-95"
+            >
+              <ChevronLeft size={15} strokeWidth={2.4} />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollFilms(1)}
+              disabled={!canScrollRight || isLoading}
+              aria-label={`Cuộn tiếp theo cho ${title}`}
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-neutral-300 transition-all hover:border-white/30 hover:bg-white/15 hover:text-white disabled:opacity-20 disabled:pointer-events-none cursor-pointer active:scale-95"
+            >
+              <ChevronRight size={15} strokeWidth={2.4} />
+            </button>
+          </div>
         </div>
 
         {/* Right Side: Dynamic Dash Line Pagination Indicators (— - - - -) */}
@@ -579,14 +592,14 @@ function FilmSection({
       </div>
 
       {/* Row Container with Navigation */}
-      <div className={cn("flex items-stretch gap-3", isPosterPill && "relative")} aria-busy={isLoading}>
-        <div className="flex-1 min-w-0">
+      <div className="relative group/row" aria-busy={isLoading}>
+        <div className="w-full min-w-0">
           <div
             ref={rowRef}
             onScroll={updateScrollStep}
             className={cn(
-              "scrollbar-hide flex w-full snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain py-1 sm:gap-3 lg:gap-4",
-              isPosterPill && "py-5 px-3 sm:px-4"
+              "scrollbar-hide flex w-full snap-x snap-mandatory gap-2.5 overflow-x-auto overscroll-x-contain py-2.5 sm:gap-3.5 lg:gap-4",
+              isPosterPill && "py-3 sm:py-4 px-1 sm:px-2"
             )}
           >
             {isLoading
@@ -598,83 +611,48 @@ function FilmSection({
                     <FilmCardSkeleton variant={effectiveCardVariant} />
                   </div>
                 ))
-              : films.map((film, idx) => {
-                  const tiltClass = isPosterPill
-                    ? `${GALLERY_TILTS[idx % GALLERY_TILTS.length]} transition-all duration-300 ease-out hover:rotate-0 hover:translate-y-0 hover:scale-[1.06] hover:z-30`
-                    : "";
-                  return (
-                    <div
-                      key={`slide-${title}-${film._id || film.slug || "film"}-${idx}`}
-                      className={cn(itemWidthClass, isPosterPill && "py-2.5")}
-                    >
-                      <div className={tiltClass}>
-                        <FilmCard
-                          film={film}
-                          variant={effectiveCardVariant}
-                          preferHighQuality={
-                            title === "Phim Mới Cập Nhật" && idx < 4
-                          }
-                        />
-                      </div>
+              : films.map((film, idx) => (
+                  <div
+                    key={`slide-${title}-${film._id || film.slug || "film"}-${idx}`}
+                    className={cn(itemWidthClass, isPosterPill && "py-1")}
+                  >
+                    <div className="transition-transform duration-300 ease-out hover:scale-[1.03] hover:z-30">
+                      <FilmCard
+                        film={film}
+                        variant={effectiveCardVariant}
+                        preferHighQuality={
+                          title === "Phim Mới Cập Nhật" && idx < 4
+                        }
+                      />
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
           </div>
         </div>
 
-        {/* ── Navigation: Floating Chevrons for Poster Pill OR Minimalist Vertical Stack ── */}
-        {isPosterPill ? (
-          <>
-            {/* Rewind (Left) Button */}
-            <button
-              onClick={() => scrollFilms(-1)}
-              disabled={isLoading || !canScrollLeft}
-              aria-label={`Chuyển sang trái cho ${title}`}
-              title={`Xem phim trước trong ${title}`}
-              className={cn(
-                "hidden sm:flex absolute -left-2.5 md:-left-3.5 top-1/2 -translate-y-1/2 z-30 h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-full bg-black/70 border border-white/20 text-white/90 backdrop-blur-md transition-all hover:bg-black/90 hover:border-white/50 hover:text-white hover:scale-105 active:scale-95 cursor-pointer shadow-xl opacity-0 group-hover/section:opacity-100",
-                (!canScrollLeft || isLoading) && "!opacity-0 !pointer-events-none"
-              )}
-            >
-              <ChevronLeft size={20} strokeWidth={2.5} />
-            </button>
+        {/* ── Floating In-Row Chevrons: Positioned safely INSIDE container bounds (never cut off!) ── */}
+        {canScrollLeft && !isLoading && (
+          <button
+            type="button"
+            onClick={() => scrollFilms(-1)}
+            aria-label={`Chuyển sang trái cho ${title}`}
+            title={`Xem phim trước trong ${title}`}
+            className="hidden sm:flex absolute left-2 md:left-3 top-1/2 -translate-y-1/2 z-30 h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-full bg-[#0a0c10]/85 border border-white/25 text-white/95 backdrop-blur-xl transition-all hover:bg-black hover:border-white/60 hover:scale-110 active:scale-95 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.85)] select-none opacity-85 hover:opacity-100 group-hover/section:opacity-100"
+          >
+            <ChevronLeft size={22} strokeWidth={2.5} />
+          </button>
+        )}
 
-            {/* Forward (Right) Button */}
-            <button
-              onClick={() => scrollFilms(1)}
-              disabled={isLoading || !canScrollRight}
-              aria-label={`Chuyển sang phải cho ${title}`}
-              title={`Xem phim tiếp theo trong ${title}`}
-              className={cn(
-                "hidden sm:flex absolute -right-2.5 md:-right-3.5 top-1/2 -translate-y-1/2 z-30 h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-full bg-black/70 border border-white/20 text-white/90 backdrop-blur-md transition-all hover:bg-black/90 hover:border-white/50 hover:text-white hover:scale-105 active:scale-95 cursor-pointer shadow-xl opacity-0 group-hover/section:opacity-100",
-                (!canScrollRight || isLoading) && "!opacity-0 !pointer-events-none"
-              )}
-            >
-              <ChevronRight size={20} strokeWidth={2.5} />
-            </button>
-          </>
-        ) : (
-          <div className="hidden sm:flex flex-col justify-center gap-3 shrink-0 my-auto px-1">
-            <button
-              onClick={() => scrollFilms(1)}
-              disabled={isLoading}
-              aria-label={`Chuyển sang phải cho ${title}`}
-              title={`Xem phim tiếp theo trong ${title}`}
-              className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
-            >
-              <ChevronRight size={22} strokeWidth={2.5} />
-            </button>
-
-            <button
-              onClick={() => scrollFilms(-1)}
-              disabled={isLoading}
-              aria-label={`Chuyển sang trái cho ${title}`}
-              title={`Xem phim trước trong ${title}`}
-              className="p-1.5 text-white/40 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-90 disabled:opacity-15 disabled:pointer-events-none"
-            >
-              <ChevronLeft size={22} strokeWidth={2.5} />
-            </button>
-          </div>
+        {canScrollRight && !isLoading && (
+          <button
+            type="button"
+            onClick={() => scrollFilms(1)}
+            aria-label={`Chuyển sang phải cho ${title}`}
+            title={`Xem phim tiếp theo trong ${title}`}
+            className="hidden sm:flex absolute right-2 md:right-3 top-1/2 -translate-y-1/2 z-30 h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-full bg-[#0a0c10]/85 border border-white/25 text-white/95 backdrop-blur-xl transition-all hover:bg-black hover:border-white/60 hover:scale-110 active:scale-95 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.85)] select-none opacity-85 hover:opacity-100 group-hover/section:opacity-100"
+          >
+            <ChevronRight size={22} strokeWidth={2.5} />
+          </button>
         )}
       </div>
     </div>

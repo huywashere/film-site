@@ -245,11 +245,11 @@ function AnimatedNavbarLogo() {
         <NextImage
           src="/flexphim-logo.svg"
           alt="FlexPhim Logo"
-          width={36}
-          height={36}
+          width={38}
+          height={38}
           priority
           unoptimized
-          className="navbar-logo-reveal relative z-10 h-8 w-8 object-contain sm:h-9 sm:w-9"
+          className="navbar-logo-reveal relative z-10 h-9 w-9 object-contain sm:h-9 sm:w-9"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).src = "/flexphim-logo.png";
           }}
@@ -257,7 +257,7 @@ function AnimatedNavbarLogo() {
       </div>
 
       <div className="navbar-logo-reveal navbar-logo-reveal--wordmark relative overflow-hidden">
-        <span className="block font-sans text-xl font-black tracking-tight text-white transition-opacity duration-200 group-hover:opacity-80 sm:text-2xl">
+        <span className="block font-sans text-[22px] font-black tracking-tight text-white transition-opacity duration-200 group-hover:opacity-80 sm:text-2xl">
           Flex<span className="text-violet-400">Phim</span>
         </span>
       </div>
@@ -633,7 +633,7 @@ export function Navbar() {
       <header
         data-site-header="true"
         data-scrolled={scrolled ? "true" : "false"}
-        className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center [font-family:var(--font-manrope)] transform-gpu pt-[env(safe-area-inset-top,0px)]"
+        className="fixed top-0 left-0 right-0 z-50 h-[68px] sm:h-[72px] md:h-16 flex items-center [font-family:var(--font-manrope)] transform-gpu pt-[env(safe-area-inset-top,0px)]"
       >
         {/* Hardware-accelerated frosted glass background plate */}
         <div
@@ -648,11 +648,11 @@ export function Navbar() {
         <div className="w-full px-4 md:px-8 flex items-center justify-between gap-3 md:gap-6 relative">
           <div className="flex shrink-0 items-center gap-1.5">
             <button
-              className="-ml-1 flex h-10 w-10 items-center justify-center rounded-xl text-neutral-300 transition-colors hover:bg-white/[0.06] hover:text-white active:scale-90 touch-manipulation cursor-pointer select-none xl:hidden"
+              className="-ml-1 flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-xl text-neutral-300 transition-colors hover:bg-white/[0.06] hover:text-white active:scale-90 touch-manipulation cursor-pointer select-none xl:hidden"
               onClick={() => setMobileSidebarOpen(true)}
               aria-label="Mở menu"
             >
-              <Menu size={22} className="stroke-[2.2]" />
+              <Menu size={23} className="stroke-[2.2]" />
             </button>
             <AnimatedNavbarLogo />
           </div>
@@ -811,18 +811,18 @@ export function Navbar() {
             <button
               onClick={() => setIsSpotlightOpen(true)}
               aria-label={t("nav.searchBtn")}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-neutral-400 hover:bg-white/[0.06] hover:text-white transition-colors active:scale-90 touch-manipulation cursor-pointer select-none sm:hidden"
+              className="flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-xl text-neutral-400 hover:bg-white/[0.06] hover:text-white transition-colors active:scale-90 touch-manipulation cursor-pointer select-none sm:hidden"
             >
-              <Search size={20} />
+              <Search size={21} />
             </button>
 
             <div className="flex items-center space-x-1 sm:space-x-2">
               <DropdownMenu modal={false} onOpenChange={setNotificationsOpen}>
                 <DropdownMenuTrigger
                   aria-label={lang === "en" ? "Notifications" : "Thông báo"}
-                  className="relative flex h-10 w-10 items-center justify-center rounded-xl text-neutral-300 hover:bg-white/[0.06] hover:text-white transition-colors focus:outline-none active:scale-90 touch-manipulation cursor-pointer select-none"
+                  className="relative flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-xl text-neutral-300 hover:bg-white/[0.06] hover:text-white transition-colors focus:outline-none active:scale-90 touch-manipulation cursor-pointer select-none"
                 >
-                  <Bell size={20} className="stroke-[2.2]" />
+                  <Bell size={21} className="stroke-[2.2]" />
                   {unreadCount > 0 && (
                     <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 shadow-sm" />
                   )}
