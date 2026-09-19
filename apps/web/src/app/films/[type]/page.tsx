@@ -1464,9 +1464,15 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
             <p className="text-xs sm:text-sm text-neutral-400 font-medium">
               Khám phá kho phim chọn lọc cập nhật liên tục hàng ngày
             </p>
-            <div className="mt-1 text-xs font-mono font-bold text-neutral-300 bg-white/5 px-4 py-1.5 rounded-full border border-white/10">
-              Trang <span className="text-white font-extrabold">{page}</span> /{" "}
-              {totalPages}
+            <div className="mt-1 text-xs font-mono font-bold text-neutral-300 bg-white/5 px-4 py-1.5 rounded-full border border-white/10 flex items-center justify-center gap-1">
+              <span>Trang</span>
+              <span className="text-white font-extrabold">{page}</span>
+              <span>/</span>
+              {isLoading && !data ? (
+                <span className="inline-block w-7 h-3.5 rounded bg-white/10 animate-pulse" />
+              ) : (
+                <span>{totalPages}</span>
+              )}
             </div>
           </div>
 
@@ -1494,13 +1500,28 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
           )}
 
           {/* Pagination Controls */}
-          <Pagination
-            currentPage={page}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            onPageChange={handlePageChange}
-            onPrefetchPage={prefetchPage}
-          />
+          {isLoading && !data ? (
+            <div className="mt-12 flex items-center justify-center gap-2 animate-pulse">
+              <div className="h-9 w-20 rounded-lg bg-white/5 border border-white/10" />
+              <div className="flex gap-1.5">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    className="h-9 w-9 rounded-lg bg-white/5 border border-white/10"
+                  />
+                ))}
+              </div>
+              <div className="h-9 w-20 rounded-lg bg-white/5 border border-white/10" />
+            </div>
+          ) : (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={handlePageChange}
+              onPrefetchPage={prefetchPage}
+            />
+          )}
         </div>
       )}
     </div>

@@ -10,7 +10,7 @@ import {
   LayoutDashboard,
   User,
 } from "lucide-react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/store/authStore";
 import { useAuthModalStore } from "@/store/authModalStore";
 import { cn } from "@/lib/utils";
@@ -94,7 +94,7 @@ export function MobileBottomNav() {
       )}
     >
       {/* ── Outer Floating Dock Wrapper ── */}
-      <div className="relative pointer-events-auto flex items-center gap-1.5 sm:gap-2">
+      <div className="relative pointer-events-auto flex items-center gap-1.5 sm:gap-2 transform-gpu [-webkit-tap-highlight-color:transparent]">
         {/* ── Main Glassmorphism Pill Bar (Apple iOS Frosted Glass) ── */}
         <div className="relative flex items-center gap-0.5 sm:gap-1 rounded-full border border-white/20 bg-neutral-900/60 p-1 sm:p-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.25)] backdrop-blur-2xl">
           {/* Specular top hairline reflection */}
@@ -121,7 +121,7 @@ export function MobileBottomNav() {
                 onPointerDown={warmRoute}
                 aria-current={item.isActive ? "page" : undefined}
                 onClick={() => router.push(item.href)}
-                className="group relative flex items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white/70 active:scale-95 transition-transform"
+                className="group relative flex items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white/70 active:scale-95 transition-transform touch-manipulation select-none"
               >
                 {/* Active Pill Capsule Gliding Highlight */}
                 {item.isActive && (
@@ -147,17 +147,19 @@ export function MobileBottomNav() {
                   )}
                 >
                   <Icon size={18} strokeWidth={item.isActive ? 2.5 : 1.8} />
-                  {item.isActive && (
-                    <motion.span
-                      initial={{ opacity: 0, width: 0 }}
-                      animate={{ opacity: 1, width: "auto" }}
-                      exit={{ opacity: 0, width: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="text-[11.5px] font-black tracking-tight whitespace-nowrap overflow-hidden pr-0.5"
-                    >
-                      {item.label}
-                    </motion.span>
-                  )}
+                  <AnimatePresence initial={false}>
+                    {item.isActive && (
+                      <motion.span
+                        initial={{ opacity: 0, width: 0 }}
+                        animate={{ opacity: 1, width: "auto" }}
+                        exit={{ opacity: 0, width: 0 }}
+                        transition={{ duration: 0.16, ease: "easeOut" }}
+                        className="text-[11.5px] font-black tracking-tight whitespace-nowrap overflow-hidden pr-0.5"
+                      >
+                        {item.label}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               </Link>
             );
@@ -175,7 +177,7 @@ export function MobileBottomNav() {
             title={user.displayName || user.username}
             aria-label={`Trang cá nhân ${user.displayName || user.username}`}
             className={cn(
-              "relative flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-purple-400/90 shadow-[0_8px_25px_rgba(147,51,234,0.5),inset_0_1px_1px_rgba(255,255,255,0.35)] bg-gradient-to-tr from-purple-700 via-purple-600 to-indigo-500 overflow-hidden active:scale-90 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400",
+              "relative flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-purple-400/90 shadow-[0_8px_25px_rgba(147,51,234,0.5),inset_0_1px_1px_rgba(255,255,255,0.35)] bg-gradient-to-tr from-purple-700 via-purple-600 to-indigo-500 overflow-hidden active:scale-90 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 touch-manipulation select-none",
               isProfileRoute && "ring-2 ring-white ring-offset-2 ring-offset-black",
             )}
           >
@@ -205,7 +207,7 @@ export function MobileBottomNav() {
             onClick={() => useAuthModalStore.getState().openModal("login")}
             title="Đăng nhập"
             aria-label="Đăng nhập"
-            className="relative flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 cursor-pointer items-center justify-center rounded-full border border-purple-400/40 text-white shadow-[0_8px_25px_rgba(147,51,234,0.5),inset_0_1px_1px_rgba(255,255,255,0.35)] bg-gradient-to-tr from-purple-700 via-purple-600 to-indigo-500 hover:from-purple-600 hover:to-indigo-400 active:scale-90 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
+            className="relative flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 cursor-pointer items-center justify-center rounded-full border border-purple-400/40 text-white shadow-[0_8px_25px_rgba(147,51,234,0.5),inset_0_1px_1px_rgba(255,255,255,0.35)] bg-gradient-to-tr from-purple-700 via-purple-600 to-indigo-500 hover:from-purple-600 hover:to-indigo-400 active:scale-90 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 touch-manipulation select-none"
           >
             <User size={20} strokeWidth={2.2} className="text-white" />
           </button>

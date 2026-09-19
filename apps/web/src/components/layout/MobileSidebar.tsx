@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Home,
   Tv,
@@ -71,28 +72,38 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 xl:hidden"
-        onClick={onClose}
-      />
-
-      {/* Minimalist Black & White Sheet Drawer */}
-      <aside className={`${cardFont.className} fixed bottom-0 left-0 top-0 z-[65] h-[100dvh] w-[84vw] max-w-[304px] overflow-y-auto overscroll-contain border-r border-white/10 bg-[#0a0c10] shadow-[0_0_40px_rgba(0,0,0,0.9)] touch-pan-y scrollbar-none animate-in slide-in-from-left duration-250 xl:hidden`}>
-        {/* Sticky Header */}
-        <div className="sticky top-0 z-20 flex items-center gap-1.5 border-b border-white/10 bg-[#0a0c10]/95 px-4 py-3.5 backdrop-blur-xl">
-          <button
-            type="button"
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm xl:hidden touch-none"
             onClick={onClose}
-            aria-label={t("nav.closeSearch", "Đóng")}
-            className="-ml-1 flex h-9 w-9 items-center justify-center rounded-xl text-neutral-300 transition-colors hover:bg-white/10 hover:text-white active:scale-95"
+          />
+
+          {/* Minimalist Black & White Sheet Drawer */}
+          <motion.aside
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 320, mass: 0.8 }}
+            className={`${cardFont.className} fixed bottom-0 left-0 top-0 z-[65] h-[100dvh] w-[84vw] max-w-[304px] overflow-y-auto overscroll-contain border-r border-white/10 bg-[#0a0c10] shadow-[0_0_40px_rgba(0,0,0,0.9)] touch-pan-y [-webkit-overflow-scrolling:touch] scrollbar-none xl:hidden`}
           >
-            <Menu size={21} strokeWidth={2.2} />
-          </button>
+            {/* Sticky Header */}
+            <div className="sticky top-0 z-20 flex items-center gap-1.5 border-b border-white/10 bg-[#0a0c10]/95 px-4 py-3.5 backdrop-blur-xl">
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label={t("nav.closeSearch", "Đóng")}
+                className="-ml-1 flex h-10 w-10 items-center justify-center rounded-xl text-neutral-300 transition-colors hover:bg-white/10 hover:text-white active:scale-90 touch-manipulation"
+              >
+                <Menu size={22} strokeWidth={2.2} />
+              </button>
           <Link
             href="/"
             className="flex items-center space-x-2"
@@ -492,7 +503,9 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             </div>
           </div>
         </nav>
-      </aside>
+      </motion.aside>
     </>
+  )}
+</AnimatePresence>
   );
 }
