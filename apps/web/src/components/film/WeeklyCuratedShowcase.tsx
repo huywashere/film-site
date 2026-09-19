@@ -44,37 +44,46 @@ export function WeeklyCuratedShowcase({
     [singleFilms],
   );
 
-  // Determine active spotlight cards based on tab
-  const { spotlightSeries, spotlightSingle } = useMemo(() => {
+  // Determine 4 active spotlight cards based on tab
+  const spotlightFilms = useMemo(() => {
     if (activeTab === 'series') {
-      return {
-        spotlightSeries: cleanSeries[0] || null,
-        spotlightSingle: cleanSeries[1] || cleanSeries[0] || null,
-      };
+      return cleanSeries.slice(0, 4);
     }
     if (activeTab === 'single') {
-      return {
-        spotlightSeries: cleanSingles[0] || null,
-        spotlightSingle: cleanSingles[1] || cleanSingles[0] || null,
-      };
+      return cleanSingles.slice(0, 4);
     }
-    // Default 'all': Left is top series, Right is top single movie
-    return {
-      spotlightSeries: cleanSeries[0] || null,
-      spotlightSingle: cleanSingles[0] || null,
-    };
+    // Default 'all': 2 top series + 2 top single movies interleaved
+    const items: FilmItem[] = [];
+    if (cleanSeries[0]) items.push(cleanSeries[0]);
+    if (cleanSingles[0]) items.push(cleanSingles[0]);
+    if (cleanSeries[1]) items.push(cleanSeries[1]);
+    if (cleanSingles[1]) items.push(cleanSingles[1]);
+
+    // Fallback if series or singles has less than 2
+    if (items.length < 4) {
+      const remainder = [...cleanSeries.slice(2), ...cleanSingles.slice(2)];
+      for (const film of remainder) {
+        if (items.length >= 4) break;
+        if (!items.some((f) => f.slug === film.slug)) {
+          items.push(film);
+        }
+      }
+    }
+    return items;
   }, [activeTab, cleanSeries, cleanSingles]);
 
-  // Distribute remaining films across 5 optimized vertical columns
+  // Distribute remaining films across 5 optimized vertical columns for the background marquee
   const columnsData = useMemo(() => {
+    const spotlightSlugs = new Set(spotlightFilms.map((f) => f.slug));
     let pool: FilmItem[] = [];
+
     if (activeTab === 'series') {
-      pool = cleanSeries.slice(2);
+      pool = cleanSeries.filter((f) => !spotlightSlugs.has(f.slug));
     } else if (activeTab === 'single') {
-      pool = cleanSingles.slice(2);
+      pool = cleanSingles.filter((f) => !spotlightSlugs.has(f.slug));
     } else {
-      const restSeries = cleanSeries.slice(1);
-      const restSingles = cleanSingles.slice(1);
+      const restSeries = cleanSeries.filter((f) => !spotlightSlugs.has(f.slug));
+      const restSingles = cleanSingles.filter((f) => !spotlightSlugs.has(f.slug));
       const maxLen = Math.max(restSeries.length, restSingles.length);
       for (let i = 0; i < maxLen; i++) {
         if (restSeries[i]) pool.push(restSeries[i]);
@@ -97,7 +106,7 @@ export function WeeklyCuratedShowcase({
       }
       return filled.length > 0 ? filled : pool.slice(0, 3);
     });
-  }, [activeTab, cleanSeries, cleanSingles]);
+  }, [activeTab, cleanSeries, cleanSingles, spotlightFilms]);
 
   const handlePrefetch = useCallback(
     (slug?: string) => {
@@ -115,19 +124,35 @@ export function WeeklyCuratedShowcase({
         className={`${cardFont.className} my-8 md:my-14 w-full select-none`}
         aria-hidden="true"
       >
-        <div className="relative overflow-hidden rounded-3xl sm:rounded-[36px] border border-white/[0.08] bg-[#141414] p-6 sm:p-10 min-h-[500px] animate-pulse">
-          <div className="h-10 w-72 sm:w-96 rounded-lg bg-white/10 mb-3" />
-          <div className="h-4 w-60 sm:w-80 rounded bg-white/5 mb-8" />
-          <div className="flex gap-4">
-            <div className="h-10 w-36 rounded-full bg-white/10" />
-            <div className="h-10 w-24 rounded-full bg-white/5" />
+        <div className="relative overflow-hidden rounded-3xl sm:rounded-[36px] border border-white/[0.08] bg-[#141414] p-6 sm:p-10 min-h-[480px] md:min-h-[520px] animate-pulse">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center h-full">
+            <div className="lg:col-span-5 space-y-4">
+              <div className="h-10 w-72 sm:w-80 rounded-xl bg-white/10" />
+              <div className="h-4 w-60 sm:w-72 rounded bg-white/5" />
+              <div className="flex gap-2 pt-2">
+                <div className="h-9 w-24 rounded-full bg-white/10" />
+                <div className="h-9 w-24 rounded-full bg-white/5" />
+                <div className="h-9 w-24 rounded-full bg-white/5" />
+              </div>
+              <div className="h-10 w-36 rounded-full bg-white/10 mt-2" />
+            </div>
+            <div className="lg:col-span-7 flex justify-end">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-[700px]">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="aspect-[2/3] w-full rounded-2xl bg-white/[0.06] border border-white/10"
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
     );
   }
 
-  if (!spotlightSeries && !spotlightSingle && columnsData.every((c) => c.length === 0)) {
+  if (spotlightFilms.length === 0 && columnsData.every((c) => c.length === 0)) {
     return null;
   }
 
@@ -269,15 +294,15 @@ export function WeeklyCuratedShowcase({
               </p>
             </div>
 
-            {/* Tab Filter Switcher */}
+            {/* Tab Filter Switcher (Clean, dark minimalist aesthetic) */}
             <div className="inline-flex items-center p-1 rounded-full bg-white/[0.06] border border-white/10 backdrop-blur-md self-start gap-1">
               <button
                 type="button"
                 onClick={() => setActiveTab('all')}
                 className={cn(
-                  'px-3.5 py-1 rounded-full text-xs font-bold transition-all',
+                  'px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer',
                   activeTab === 'all'
-                    ? 'bg-white text-black shadow'
+                    ? 'bg-white text-black shadow font-extrabold'
                     : 'text-neutral-400 hover:text-white',
                 )}
               >
@@ -287,26 +312,26 @@ export function WeeklyCuratedShowcase({
                 type="button"
                 onClick={() => setActiveTab('series')}
                 className={cn(
-                  'px-3.5 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5',
+                  'px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer',
                   activeTab === 'series'
-                    ? 'bg-[#23ade5] text-black shadow'
-                    : 'text-neutral-400 hover:text-[#23ade5]',
+                    ? 'bg-white text-black shadow font-extrabold'
+                    : 'text-neutral-400 hover:text-white',
                 )}
               >
-                <Tv size={12} className="stroke-[2.5]" />
+                <Tv size={12} className="stroke-[2.2]" />
                 Phim Bộ
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('single')}
                 className={cn(
-                  'px-3.5 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5',
+                  'px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer',
                   activeTab === 'single'
-                    ? 'bg-amber-400 text-black shadow'
-                    : 'text-neutral-400 hover:text-amber-400',
+                    ? 'bg-white text-black shadow font-extrabold'
+                    : 'text-neutral-400 hover:text-white',
                 )}
               >
-                <Clapperboard size={12} className="stroke-[2.5]" />
+                <Clapperboard size={12} className="stroke-[2.2]" />
                 Phim Lẻ
               </button>
             </div>
@@ -327,133 +352,145 @@ export function WeeklyCuratedShowcase({
                 onClick={() => setShowInfoModal((prev) => !prev)}
                 aria-label="Thông tin tuyển tập tuần"
                 title="Thông tin tuyển tập"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-neutral-300 backdrop-blur-md transition-all hover:border-white/30 hover:bg-white/15 hover:text-white active:scale-95"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-neutral-300 backdrop-blur-md transition-all hover:border-white/30 hover:bg-white/15 hover:text-white active:scale-95 cursor-pointer"
               >
                 <Info size={16} />
               </button>
             </div>
           </div>
 
-          {/* Right Column: The 2 Centerpiece Elevated Spotlight Cards */}
-          <div className="lg:col-span-7 flex items-center justify-center lg:justify-end gap-3 sm:gap-5 md:gap-6 py-2">
-            {/* Spotlight Card 1 (Series Spotlight) */}
-            {spotlightSeries && (
-              <Link
-                href={`/film/${spotlightSeries.slug}`}
-                prefetch={false}
-                onMouseEnter={() => handlePrefetch(spotlightSeries.slug)}
-                onTouchStart={() => handlePrefetch(spotlightSeries.slug)}
-                onPointerDown={() => handlePrefetch(spotlightSeries.slug)}
-                onClick={() => router.push(`/film/${spotlightSeries.slug}`)}
-                className="group/spotlight relative aspect-[2/3] w-[145px] sm:w-[185px] md:w-[210px] lg:w-[230px] shrink-0 rounded-2xl md:rounded-[24px] overflow-hidden bg-[#18181b] border-2 border-[#23ade5] ring-1 ring-[#23ade5]/30 shadow-[0_12px_36px_rgba(35,173,229,0.25)] transition-all duration-300 -rotate-1 sm:-rotate-2 hover:rotate-0 hover:scale-105 hover:z-30 hover:border-[#23ade5] hover:ring-[#23ade5]"
-                aria-label={spotlightSeries.name}
-              >
-                <TmdbArtwork
-                  film={spotlightSeries}
-                  kind="poster"
-                  allowTitleLookup
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover/spotlight:scale-105"
-                  alt={spotlightSeries.name}
-                />
+          {/* Right Column: 4 Curated Compact Spotlight Cards */}
+          <div className="lg:col-span-7 w-full flex items-center justify-center lg:justify-end py-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5 w-full max-w-[720px]">
+              {spotlightFilms.map((film, idx) => {
+                const isSeries =
+                  cleanSeries.some((s) => s.slug === film.slug) ||
+                  film.type === 'series' ||
+                  Boolean(
+                    film.episode_current &&
+                      !/full|1\/1|hoàn tất\s*\(1\/1\)/i.test(film.episode_current),
+                  );
 
-                {/* Top Badge: Category Stamp */}
-                <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between z-10 pointer-events-none">
-                  <span className="inline-flex items-center gap-1 rounded-md bg-[#23ade5] text-black px-2 py-0.5 text-[9px] sm:text-[10px] font-black uppercase">
-                    <Tv size={11} className="stroke-[2.5]" />
-                    {activeTab === 'single' ? 'Điện Ảnh' : 'Phim Bộ'}
-                  </span>
-                  <span className="rounded-md border border-white/20 bg-black/75 backdrop-blur-md px-1.5 py-0.5 text-[8.5px] sm:text-[9.5px] font-black text-white">
-                    {spotlightSeries.quality || 'FHD'}
-                  </span>
-                </div>
+                const quality = (film.quality || 'FHD').toUpperCase();
+                const qualityBadge = quality.includes('4K')
+                  ? '4K'
+                  : quality.includes('HD') && !quality.includes('FHD')
+                    ? 'HD'
+                    : 'FHD';
 
-                {/* Hover Play Button */}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover/spotlight:opacity-100 transition-opacity duration-300">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-black transition-transform group-hover/spotlight:scale-110 shadow-lg">
-                    <Play size={20} fill="currentColor" className="ml-0.5" />
-                  </div>
-                </div>
+                const imdbRaw =
+                  film.imdb?.vote_average ??
+                  film.imdb?.rating ??
+                  film.imdb_rating ??
+                  film.tmdb?.vote_average ??
+                  film.vote_average ??
+                  film.rating;
+                const imdbNum =
+                  typeof imdbRaw === 'number'
+                    ? imdbRaw
+                    : parseFloat(String(imdbRaw || ''));
+                const imdbScore =
+                  !isNaN(imdbNum) && imdbNum > 0 ? imdbNum.toFixed(1) : null;
 
-                {/* Bottom Movie Title and Info */}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/85 to-transparent p-3 pt-8 flex flex-col justify-end">
-                  <h3 className="text-xs sm:text-sm font-black text-white line-clamp-2 leading-snug group-hover/spotlight:text-cyan-300 transition-colors">
-                    {spotlightSeries.name}
-                  </h3>
-                  <div className="flex items-center justify-between gap-1 mt-1 text-[10px] text-neutral-300">
-                    <span className="font-semibold text-neutral-400">
-                      {spotlightSeries.year || 2026}
-                    </span>
-                    {spotlightSeries.episode_current && (
-                      <span className="text-[#23ade5] font-extrabold truncate max-w-[100px]">
-                        {spotlightSeries.episode_current}
+                return (
+                  <Link
+                    key={`spotlight-${film.slug || idx}-${idx}`}
+                    href={`/film/${film.slug}`}
+                    prefetch={false}
+                    onMouseEnter={() => handlePrefetch(film.slug)}
+                    onTouchStart={() => handlePrefetch(film.slug)}
+                    onPointerDown={() => handlePrefetch(film.slug)}
+                    onClick={() => router.push(`/film/${film.slug}`)}
+                    className="group/spotlight relative aspect-[2/3] w-full rounded-2xl overflow-hidden bg-[#16171d] border border-white/10 hover:border-white/35 shadow-[0_8px_24px_rgba(0,0,0,0.5)] hover:shadow-[0_16px_36px_rgba(0,0,0,0.7)] transition-all duration-300 hover:scale-[1.03] hover:-translate-y-1 hover:z-30 cursor-pointer flex flex-col justify-end"
+                    aria-label={film.name}
+                  >
+                    {/* Poster Artwork */}
+                    <TmdbArtwork
+                      film={film}
+                      kind="poster"
+                      allowTitleLookup
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover/spotlight:scale-105"
+                      alt={film.name}
+                    />
+
+                    {/* Ambient Gradient Overlay for Readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 via-50% to-black/20 pointer-events-none" />
+
+                    {/* Top Badges Bar: Clean, Minimalist Frosted Glass (No garish neon borders) */}
+                    <div className="absolute top-2 inset-x-2 flex items-center justify-between gap-1 z-10 pointer-events-none">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-black/75 backdrop-blur-md border border-white/15 px-1.5 py-0.5 text-[9px] sm:text-[9.5px] font-bold text-neutral-200 shadow-sm">
+                        {isSeries ? (
+                          <>
+                            <Tv size={10} className="stroke-[2.2] text-sky-400" />
+                            <span>Phim Bộ</span>
+                          </>
+                        ) : (
+                          <>
+                            <Clapperboard size={10} className="stroke-[2.2] text-amber-400" />
+                            <span>Phim Lẻ</span>
+                          </>
+                        )}
                       </span>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            )}
 
-            {/* Spotlight Card 2 (Single Movie Spotlight) */}
-            {spotlightSingle && (
-              <Link
-                href={`/film/${spotlightSingle.slug}`}
-                prefetch={false}
-                onMouseEnter={() => handlePrefetch(spotlightSingle.slug)}
-                onTouchStart={() => handlePrefetch(spotlightSingle.slug)}
-                onPointerDown={() => handlePrefetch(spotlightSingle.slug)}
-                onClick={() => router.push(`/film/${spotlightSingle.slug}`)}
-                className="group/spotlight relative aspect-[2/3] w-[145px] sm:w-[185px] md:w-[210px] lg:w-[230px] shrink-0 rounded-2xl md:rounded-[24px] overflow-hidden bg-[#18181b] border-2 border-amber-400 ring-1 ring-amber-400/30 shadow-[0_12px_36px_rgba(251,191,36,0.25)] transition-all duration-300 rotate-1 sm:rotate-2 hover:rotate-0 hover:scale-105 hover:z-30 hover:border-amber-400 hover:ring-amber-400"
-                aria-label={spotlightSingle.name}
-              >
-                <TmdbArtwork
-                  film={spotlightSingle}
-                  kind="poster"
-                  allowTitleLookup
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover/spotlight:scale-105"
-                  alt={spotlightSingle.name}
-                />
-
-                {/* Top Badge: Category Stamp */}
-                <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between z-10 pointer-events-none">
-                  <span className="inline-flex items-center gap-1 rounded-md bg-amber-400 text-black px-2 py-0.5 text-[9px] sm:text-[10px] font-black uppercase">
-                    <Clapperboard size={11} className="stroke-[2.5]" />
-                    {activeTab === 'series' ? 'Phim Bộ' : 'Phim Lẻ'}
-                  </span>
-                  <span className="rounded-md border border-white/20 bg-black/75 backdrop-blur-md px-1.5 py-0.5 text-[8.5px] sm:text-[9.5px] font-black text-white">
-                    {spotlightSingle.quality || 'FHD'}
-                  </span>
-                </div>
-
-                {/* Hover Play Button */}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover/spotlight:opacity-100 transition-opacity duration-300">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-black transition-transform group-hover/spotlight:scale-110 shadow-lg">
-                    <Play size={20} fill="currentColor" className="ml-0.5" />
-                  </div>
-                </div>
-
-                {/* Bottom Movie Title and Info */}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/85 to-transparent p-3 pt-8 flex flex-col justify-end">
-                  <h3 className="text-xs sm:text-sm font-black text-white line-clamp-2 leading-snug group-hover/spotlight:text-amber-300 transition-colors">
-                    {spotlightSingle.name}
-                  </h3>
-                  <div className="flex items-center justify-between gap-1 mt-1 text-[10px] text-neutral-300">
-                    <span className="font-semibold text-neutral-400">
-                      {spotlightSingle.year || 2026}
-                    </span>
-                    {spotlightSingle.imdb?.vote_average ? (
-                      <span className="text-amber-400 font-extrabold flex items-center gap-0.5">
-                        <Star size={10} fill="currentColor" />
-                        {Number(spotlightSingle.imdb.vote_average).toFixed(1)}
+                      <span className="inline-flex items-center rounded-md bg-black/75 backdrop-blur-md border border-white/15 px-1.5 py-0.5 text-[8.5px] sm:text-[9px] font-black text-white/90 shadow-sm">
+                        {qualityBadge}
                       </span>
-                    ) : (
-                      <span className="text-neutral-400 font-semibold">
-                        {spotlightSingle.origin_name ? 'Chiếu rạp' : 'Phim lẻ'}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            )}
+                    </div>
+
+                    {/* Hover Play Button */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 group-hover/spotlight:opacity-100 transition-opacity duration-250 pointer-events-none">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-black shadow-xl transition-transform group-hover/spotlight:scale-110">
+                        <Play size={18} fill="currentColor" className="ml-0.5" />
+                      </div>
+                    </div>
+
+                    {/* Bottom Metadata & Title Panel */}
+                    <div className="relative z-10 p-2.5 sm:p-3 flex flex-col justify-end bg-gradient-to-t from-black via-black/95 via-70% to-transparent pt-8">
+                      {/* Row 1: IMDb Rating & Episode / Duration */}
+                      <div className="flex items-center justify-between gap-1 mb-1 text-[9.5px] sm:text-[10px]">
+                        {imdbScore ? (
+                          <span className="inline-flex items-center gap-1 font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 rounded text-[9px]">
+                            <Star size={9} fill="currentColor" />
+                            <span className="font-black text-[8px] tracking-tight">IMDb</span>
+                            <span>{imdbScore}</span>
+                          </span>
+                        ) : (
+                          <span className="text-neutral-400 font-semibold text-[9px]">
+                            {film.year || 2026}
+                          </span>
+                        )}
+
+                        <span className="text-neutral-300 font-medium truncate max-w-[85px] bg-white/[0.08] px-1.5 py-0.5 rounded text-[8.5px] sm:text-[9px]">
+                          {isSeries
+                            ? film.episode_current || 'Đang cập nhật'
+                            : film.time || (film.year ? `${film.year}` : 'Bản Đẹp')}
+                        </span>
+                      </div>
+
+                      {/* Row 2: Film Title */}
+                      <h3
+                        className="text-xs sm:text-[13px] font-bold text-white line-clamp-1 leading-snug group-hover/spotlight:text-cyan-300 transition-colors"
+                        title={film.name}
+                      >
+                        {film.name}
+                      </h3>
+
+                      {/* Row 3: Sub-title / Origin Name / Year */}
+                      <div className="flex items-center justify-between gap-1 mt-0.5 text-[9.5px] sm:text-[10px] text-neutral-400">
+                        <span className="line-clamp-1 font-medium truncate">
+                          {film.origin_name || film.name}
+                        </span>
+                        {film.year && (
+                          <span className="shrink-0 text-neutral-500 font-semibold">
+                            {film.year}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -476,7 +513,7 @@ export function WeeklyCuratedShowcase({
               <button
                 type="button"
                 onClick={() => setShowInfoModal(false)}
-                className="text-neutral-400 hover:text-white p-1 rounded-lg"
+                className="text-neutral-400 hover:text-white p-1 rounded-lg cursor-pointer"
                 aria-label="Đóng"
               >
                 <X size={16} />
