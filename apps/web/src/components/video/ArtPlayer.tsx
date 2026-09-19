@@ -939,8 +939,8 @@ export default function ArtPlayer({
           },
         },
       ],
-      // Player seek & theme color set to purple per user customization request.
-      theme: '#8b5cf6',
+      // Native ArtPlayer theme (#23ade5)
+      theme: '#23ade5',
       lang: 'vi',
       i18n: { vi },
       icons: {

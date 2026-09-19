@@ -175,17 +175,16 @@ export function TmdbArtwork({
 
     const addTmdbCandidates = () => {
       if (!tmdbUrl) return;
-      // Use a viewport-sized CDN image first. Loading TMDB "original" for
-      // every shelf banner delayed paint and left large black cards onscreen.
+      // 1. wsrv edge proxy (Cloudflare Edge WebP - Blazing fast in VN, 20-50ms)
+      const wsrv = wsrvImageUrl(tmdbUrl, preset);
+      if (wsrv) add(wsrv);
+
+      // 2. Direct TMDB CDN fallback
       if (kind === 'backdrop' && preferOriginal) add(artworkQuery.backdropOriginal);
       if (kind === 'backdrop' && !preferOriginal) add(artworkQuery.backdropW1280);
       if (kind === 'poster') add(artworkQuery.posterW500);
       add(tmdbUrl);
-      if (kind === 'backdrop') add(artworkQuery.backdropW1280);
-      if (kind === 'poster') add(artworkQuery.posterW500);
-      // 2. wsrv edge proxy fallback
-      const wsrv = wsrvImageUrl(tmdbUrl, preset);
-      if (wsrv) add(wsrv);
+
       // 3. Local proxy fallback
       add(`/api/image-proxy?url=${encodeURIComponent(tmdbUrl)}`);
     };
@@ -204,7 +203,11 @@ export function TmdbArtwork({
     // our cached same-origin relay so a blocked CDN cannot leave an entire
     // shelf pending. TMDB remains direct because its regional CDN is stable.
     if (providerPrimary && !isTmdbImageUrl(providerPrimary)) add(providerProxy);
-    if (providerPrimary && isTmdbImageUrl(providerPrimary)) add(providerPrimary);
+    if (providerPrimary && isTmdbImageUrl(providerPrimary)) {
+      const wsrv = wsrvImageUrl(providerPrimary, preset);
+      if (wsrv) add(wsrv);
+      add(providerPrimary);
+    }
     // Once the relay reports a real upstream failure, put the asynchronously
     // resolved TMDB image directly behind it. Otherwise a dead provider URL
     // and its generated variants can keep a card blank for close to a minute.

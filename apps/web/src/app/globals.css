@@ -1424,13 +1424,13 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   transition: opacity 0.18s ease-out;
 }
 
-/* Subtle darkened radial gradient behind seek area with purple ambient hue */
+/* Subtle darkened radial gradient behind seek area with clean neutral ambient */
 .netphim-mobile-seek-side.is-left {
-  background: radial-gradient(circle at 45% 50%, rgba(139, 92, 246, 0.28) 0%, rgba(0, 0, 0, 0.4) 45%, transparent 70%);
+  background: radial-gradient(circle at 45% 50%, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0.45) 45%, transparent 70%);
 }
 
 .netphim-mobile-seek-side.is-right {
-  background: radial-gradient(circle at 55% 50%, rgba(139, 92, 246, 0.28) 0%, rgba(0, 0, 0, 0.4) 45%, transparent 70%);
+  background: radial-gradient(circle at 55% 50%, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0.45) 45%, transparent 70%);
 }
 
 .netphim-mobile-seek-side.is-active {
@@ -1491,15 +1491,15 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  color: #a855f7;
+  color: #ffffff;
 }
 
 .netphim-mobile-seek-triangles .seek-tri {
   width: 15px;
   height: 15px;
-  color: #a855f7;
+  color: #ffffff;
   display: inline-block;
-  opacity: 0.5;
+  opacity: 0.6;
   transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
@@ -1553,14 +1553,13 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   color: #ffffff !important;
 }
 
-
 .art-video-player .art-progress-played {
-  background: #8b5cf6 !important;
+  background: var(--art-theme, #23ade5) !important;
   box-shadow: none !important;
 }
 
 .art-video-player .art-progress-indicator {
-  background: #8b5cf6 !important;
+  background: var(--art-theme, #23ade5) !important;
   box-shadow: none !important;
 }
 

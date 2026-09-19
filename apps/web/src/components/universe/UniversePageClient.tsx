@@ -49,6 +49,7 @@ function getUniverseLogoCandidates(titleLogo?: string | null): string[] {
   if (!titleLogo) return [];
   return buildArtworkCandidates([titleLogo], "titleLogo", {
     includeWsrvForTmdb: titleLogo.includes("image.tmdb.org"),
+    preferEdge: true,
     strictProxy: true,
   });
 }
@@ -83,6 +84,7 @@ function UniverseSpotlightBackdrop({
   const candidates = useMemo(() => {
     return buildArtworkCandidates([item.heroBackdrop], "backdrop", {
       includeWsrvForTmdb: true,
+      preferEdge: true,
       strictProxy: true,
     });
   }, [item.heroBackdrop]);

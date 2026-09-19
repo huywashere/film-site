@@ -302,6 +302,13 @@ function ResilientHubCardImage({
   isPriority?: boolean;
 }) {
   const candidates = useMemo(() => {
+    if (src.includes("image.tmdb.org")) {
+      return [
+        `https://wsrv.nl/?url=${encodeURIComponent(src)}&w=640&q=80&output=webp&we=1`,
+        src,
+        `/api/image-proxy?url=${encodeURIComponent(src)}&strict=1`,
+      ];
+    }
     return buildAsianHeroImageCandidates(src);
   }, [src]);
 
@@ -412,22 +419,49 @@ export default function GenresPage() {
         });
       } else if (hub.slug === "phim-han-quoc") {
         void queryClient.prefetchQuery({
-          queryKey: ["country", "han-quoc", 1],
+          queryKey: ["country-fast", "han-quoc", 1, ""],
           queryFn: () =>
-            movieApi.getByCountry("han-quoc", 1).then((r) => r.data),
+            movieApi.getByCountryFast("han-quoc", 1).then((r) => r.data),
           staleTime: 30 * 60 * 1000,
         });
       } else if (hub.slug === "phim-trung-quoc") {
         void queryClient.prefetchQuery({
-          queryKey: ["country", "trung-quoc", 1],
+          queryKey: ["country-fast", "trung-quoc", 1, ""],
           queryFn: () =>
-            movieApi.getByCountry("trung-quoc", 1).then((r) => r.data),
+            movieApi.getByCountryFast("trung-quoc", 1).then((r) => r.data),
+          staleTime: 30 * 60 * 1000,
+        });
+      } else if (hub.slug === "thuyet-minh-song-ngu-ai") {
+        void queryClient.prefetchQuery({
+          queryKey: ["films-type", "thuyet-minh-ai", 1],
+          queryFn: () =>
+            movieApi.getThuyetMinh(1).then((r) => r.data),
           staleTime: 30 * 60 * 1000,
         });
       }
     },
     [queryClient, router],
   );
+
+  // Background idle prefetch for top hubs
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const timer = setTimeout(() => {
+      void queryClient.prefetchQuery({
+        queryKey: ["country-fast", "han-quoc", 1, ""],
+        queryFn: () =>
+          movieApi.getByCountryFast("han-quoc", 1).then((r) => r.data),
+        staleTime: 30 * 60 * 1000,
+      });
+      void queryClient.prefetchQuery({
+        queryKey: ["country-fast", "trung-quoc", 1, ""],
+        queryFn: () =>
+          movieApi.getByCountryFast("trung-quoc", 1).then((r) => r.data),
+        staleTime: 30 * 60 * 1000,
+      });
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [queryClient]);
 
   const top10Films = useMemo(() => {
     const aiList: FilmItem[] = (aiTop10Data?.items as FilmItem[]) || [];
@@ -512,6 +546,8 @@ export default function GenresPage() {
                   prefetch={true}
                   onMouseEnter={() => handlePrefetchHub(hub)}
                   onFocus={() => handlePrefetchHub(hub)}
+                  onTouchStart={() => handlePrefetchHub(hub)}
+                  onPointerDown={() => handlePrefetchHub(hub)}
                   className="group relative isolate aspect-[4/3] sm:aspect-[16/10] min-h-[170px] sm:min-h-[210px] cursor-pointer select-none overflow-hidden rounded-xl sm:rounded-2xl border border-white/[0.10] bg-[#0e1017] shadow-[0_16px_42px_rgba(0,0,0,0.20)] transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:shadow-[0_20px_52px_rgba(0,0,0,0.34)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#08090d]"
                 >
                   {/* Artwork with rich contrast protection */}

@@ -992,78 +992,46 @@ function filmMatchesKeywords(f: FilmItem, keywords: string[]): boolean {
   const activeGenreLabel =
     GENRE_OPTIONS.find((g) => g.slug === selectedGenre)?.label || "Thể loại";
 
-  // Build completely full, non-truncated rows with 16 unique items each (Strictly deduplicated across all 8 rows)
-  const {
-    row1Films,
-    row2Films,
-    row3Films,
-    row4Films,
-    row5Films,
-    row6Films,
-    row7Films,
-    row8Films,
-  } = useMemo(() => {
-    const globalSeen = new Set<string>();
+  // Independent row memoization prevents full-page Swiper thrashing on incremental query arrivals
+  const row1Films = useMemo(
+    () => dedupeFilmsList([...films, ...page2Films]).slice(0, 16),
+    [films, page2Films],
+  );
 
-    const buildRow = (
-      primary: FilmItem[],
-      fallback: FilmItem[],
-      seedOffset: number,
-      targetCount = 16,
-    ) => {
-      const list: FilmItem[] = [];
+  const row2Films = useMemo(
+    () => dedupeFilmsList(romanceFilms).slice(0, 16),
+    [romanceFilms],
+  );
 
-      const add = (f: FilmItem) => {
-        if (!f) return;
-        const key = (f.slug || f._id || (f as any).id || "").toLowerCase();
-        const base = getBaseTitle(f.name || f.title || "");
-        if (key && !globalSeen.has(key) && (!base || !globalSeen.has(base))) {
-          globalSeen.add(key);
-          if (base) globalSeen.add(base);
-          list.push(f);
-        }
-      };
+  const row3Films = useMemo(
+    () => dedupeFilmsList(coTrangFilms).slice(0, 16),
+    [coTrangFilms],
+  );
 
-      (primary || []).forEach(add);
+  const row4Films = useMemo(
+    () => dedupeFilmsList(actionFilms).slice(0, 16),
+    [actionFilms],
+  );
 
-      if (list.length < targetCount && fallback?.length) {
-        shuffleArray(fallback, heroSeed + seedOffset).forEach(add);
-      }
+  const row5Films = useMemo(
+    () => dedupeFilmsList(crimeFilms).slice(0, 16),
+    [crimeFilms],
+  );
 
-      return list.slice(0, targetCount);
-    };
+  const row6Films = useMemo(
+    () => dedupeFilmsList(comedyFilms).slice(0, 16),
+    [comedyFilms],
+  );
 
-    const r1 = buildRow(films, page2Films, 1);
-    const r2 = buildRow(romanceFilms, [], 2);
-    const r3 = buildRow(coTrangFilms, [], 3);
-    const r4 = buildRow(actionFilms, [], 4);
-    const r5 = buildRow(crimeFilms, [], 5);
-    const r6 = buildRow(comedyFilms, [], 6);
-    const r7 = buildRow(dramaFilms, [], 7);
-    const r8 = buildRow(page2Films, combinedPool, 8);
+  const row7Films = useMemo(
+    () => dedupeFilmsList(dramaFilms).slice(0, 16),
+    [dramaFilms],
+  );
 
-    return {
-      row1Films: r1,
-      row2Films: r2,
-      row3Films: r3,
-      row4Films: r4,
-      row5Films: r5,
-      row6Films: r6,
-      row7Films: r7,
-      row8Films: r8,
-    };
-  }, [
-    films,
-    page2Films,
-    romanceFilms,
-    coTrangFilms,
-    actionFilms,
-    crimeFilms,
-    comedyFilms,
-    dramaFilms,
-    combinedPool,
-    heroSeed,
-  ]);
+  const row8Films = useMemo(
+    () => dedupeFilmsList([...page2Films, ...combinedPool]).slice(0, 16),
+    [page2Films, combinedPool],
+  );
 
   return (
     <div
