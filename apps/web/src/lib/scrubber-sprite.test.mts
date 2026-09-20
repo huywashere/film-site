@@ -6,6 +6,7 @@ import {
   configuredScrubberVttUrl,
   findScrubberSpriteCue,
   parseScrubberVtt,
+  stableScrubberSource,
 } from '../components/video/scrubber-sprite.ts';
 
 test('builds a stable CDN key without rotating source query parameters', async () => {
@@ -18,6 +19,15 @@ test('builds a stable CDN key without rotating source query parameters', async (
     `https://preview.flexphim.test/${key}/index.vtt`,
   );
   delete process.env.NEXT_PUBLIC_SCRUBBER_PREVIEW_BASE_URL;
+});
+
+test('derives preview identity from the upstream URL inside the HLS relay', () => {
+  assert.equal(
+    stableScrubberSource(
+      '/api/hls-proxy?url=https%3A%2F%2Fmedia.flexphim.test%2Fmovie-a%2Fmaster.m3u8%3Ftoken%3Drotating',
+    ),
+    'https://media.flexphim.test/movie-a/master.m3u8',
+  );
 });
 
 test('parses relative WebVTT sprite cues and xywh fragments', () => {

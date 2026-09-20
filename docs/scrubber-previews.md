@@ -37,6 +37,8 @@ variables are compiled into the browser bundle.
   signatures reuse the same preview. If the provider rotates the URL path, the
   ingestion pipeline should supply an explicit `thumbnailVttUrl` or
   `thumbnail_vtt` field instead of relying on the derived key.
+- Same-origin HLS relay URLs are unwrapped before hashing, so different movies
+  never collide on the shared `/api/hls-proxy` path.
 
 If a valid sprite manifest is unavailable, the player retains the existing
 low-resolution HLS seeker as a compatibility fallback.

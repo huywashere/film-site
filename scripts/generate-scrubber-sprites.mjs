@@ -48,15 +48,19 @@ const height = 99;
 const columns = 10;
 const rows = 10;
 const framesPerSprite = columns * rows;
-let stableInput = input;
-try {
-  const parsed = new URL(input);
-  parsed.search = '';
-  parsed.hash = '';
-  stableInput = parsed.toString();
-} catch {
-  // Local file path or non-URL input; hash it exactly as provided.
+function stableSource(value) {
+  try {
+    const parsed = new URL(value);
+    const nestedSource = parsed.searchParams.get('url') || parsed.searchParams.get('source');
+    if (nestedSource && /^https?:\/\//i.test(nestedSource)) return stableSource(nestedSource);
+    parsed.search = '';
+    parsed.hash = '';
+    return parsed.toString();
+  } catch {
+    return value;
+  }
 }
+const stableInput = stableSource(input);
 const key = argument('key') || createHash('sha256').update(stableInput).digest('hex');
 const outputRoot = resolve(argument('output', 'apps/web/public/scrubber-previews'));
 const outputDir = resolve(outputRoot, key);

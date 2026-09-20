@@ -77,23 +77,28 @@ export function findScrubberSpriteCue(
   return null;
 }
 
+export function stableScrubberSource(streamUrl: string): string {
+  try {
+    const parsed = new URL(streamUrl, globalThis.location?.origin || 'http://localhost');
+    const nestedSource = parsed.searchParams.get('url') || parsed.searchParams.get('source');
+    if (nestedSource && /^https?:\/\//i.test(nestedSource)) {
+      return stableScrubberSource(nestedSource);
+    }
+    parsed.search = '';
+    parsed.hash = '';
+    return parsed.toString();
+  } catch {
+    return streamUrl;
+  }
+}
+
 export async function configuredScrubberVttUrl(streamUrl: string): Promise<string | null> {
   const baseUrl = process.env.NEXT_PUBLIC_SCRUBBER_PREVIEW_BASE_URL?.trim();
   if (!baseUrl || !streamUrl || !globalThis.crypto?.subtle) return null;
 
-  let stableStreamUrl = streamUrl;
-  try {
-    const parsed = new URL(streamUrl);
-    parsed.search = '';
-    parsed.hash = '';
-    stableStreamUrl = parsed.toString();
-  } catch {
-    // Hash the raw provider value when it is not an absolute URL.
-  }
-
   const digest = await globalThis.crypto.subtle.digest(
     'SHA-256',
-    new TextEncoder().encode(stableStreamUrl),
+    new TextEncoder().encode(stableScrubberSource(streamUrl)),
   );
   const key = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
   return `${baseUrl.replace(/\/$/, '')}/${key}/index.vtt`;
