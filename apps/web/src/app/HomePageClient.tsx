@@ -694,6 +694,44 @@ export default function HomePageClient({
   const [userHistoryFilms, setUserHistoryFilms] = useState<FilmItem[]>([]);
   const infiniteSentinelRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const revealSectionsForRestore = (event?: Event) => {
+      let pending: { routeKey?: string; y?: number } | null = null;
+      if (event instanceof CustomEvent) {
+        pending = event.detail as { routeKey?: string; y?: number };
+      } else {
+        try {
+          const raw = window.sessionStorage.getItem(
+            "flexphim:pending-scroll-restore",
+          );
+          pending = raw ? JSON.parse(raw) : null;
+        } catch {
+          pending = null;
+        }
+      }
+
+      const routeKey = `${window.location.pathname}${window.location.search}`;
+      if (
+        pending?.routeKey === routeKey &&
+        typeof pending.y === "number" &&
+        pending.y > window.innerHeight
+      ) {
+        setShowMoreSections(true);
+      }
+    };
+
+    revealSectionsForRestore();
+    window.addEventListener(
+      "flexphim:restore-scroll",
+      revealSectionsForRestore,
+    );
+    return () =>
+      window.removeEventListener(
+        "flexphim:restore-scroll",
+        revealSectionsForRestore,
+      );
+  }, []);
+
   // Đọc danh sách phim người dùng thực tế đang xem / yêu thích trên hệ thống
   useEffect(() => {
     try {
