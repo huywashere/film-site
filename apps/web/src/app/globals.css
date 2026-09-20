@@ -306,7 +306,7 @@ pre,
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #2a2636;
+    background: #7c3aed;
     border-radius: 9999px;
     border: 2px solid #141414;
     transition: background 0.2s ease, box-shadow 0.2s ease;
@@ -339,6 +339,8 @@ pre,
 html {
   scroll-behavior: auto;
   background: var(--background);
+  scrollbar-color: #7c3aed #141414;
+  scrollbar-width: thin;
 }
 
 body {
@@ -1551,12 +1553,12 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 }
 
 .art-video-player .art-progress-played {
-  background: var(--art-theme, #23ade5) !important;
+  background: var(--art-theme, #8b5cf6) !important;
   box-shadow: none !important;
 }
 
 .art-video-player .art-progress-indicator {
-  background: var(--art-theme, #23ade5) !important;
+  background: var(--art-theme, #8b5cf6) !important;
   box-shadow: none !important;
 }
 
@@ -1725,7 +1727,7 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 }
 
 /* ==========================================================================
-   Mobile Center Quick Controls ([ ▶ / ⏸ ])
+   Mobile Center Quick Controls (rewind / play-pause / forward)
    Displays when hovering or tapping on player on mobile / touch screens
    ========================================================================== */
 .netphim-mobile-center-controls {
@@ -1737,6 +1739,7 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   z-index: 25;
   align-items: center;
   justify-content: center;
+  gap: clamp(22px, 8vw, 44px);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1751,6 +1754,11 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 
   /* Hide native TV state icon on mobile to avoid double center icons */
   .art-video-player .art-state {
+    display: none !important;
+  }
+
+  .art-video-player .art-control-backward-10,
+  .art-video-player .art-control-forward-10 {
     display: none !important;
   }
 
@@ -1773,9 +1781,26 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   outline: none;
   border: none;
   padding: 0;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
+  background: #14151b;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.58);
   transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease, border-color 0.15s ease;
   -webkit-tap-highlight-color: transparent;
+}
+
+.netphim-mobile-center-btn:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 3px;
+}
+
+.netphim-mobile-center-btn.is-seek {
+  width: 50px;
+  height: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+}
+
+.netphim-mobile-center-btn.is-seek svg {
+  width: 27px;
+  height: 27px;
 }
 
 .netphim-mobile-center-btn:active {
@@ -1786,23 +1811,39 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 .netphim-mobile-center-btn.is-play-pause {
   width: 62px;
   height: 62px;
-  background: rgba(15, 17, 23, 0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: #f5f5f5;
+  color: #111217;
   border: 2px solid rgba(255, 255, 255, 0.85);
 }
 
 .netphim-mobile-center-btn.is-play-pause .netphim-center-icon.is-play {
-  margin-left: 3px; /* Optical center adjustment for play triangle */
+  width: 0;
+  height: 0;
+  margin-left: 4px;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+  border-left: 15px solid currentColor;
+}
+
+.netphim-mobile-center-btn.is-play-pause .netphim-center-icon.is-pause {
+  gap: 5px;
+}
+
+.netphim-mobile-center-btn.is-play-pause .netphim-center-icon.is-pause i {
+  display: block;
+  width: 5px;
+  height: 20px;
+  border-radius: 1px;
+  background: currentColor;
 }
 
 .netphim-mobile-center-btn.is-play-pause:hover {
-  background: rgba(26, 29, 39, 0.92);
+  background: #ffffff;
   border-color: #ffffff;
 }
 
 .netphim-mobile-center-btn.is-play-pause:active {
-  background: rgba(255, 255, 255, 0.2);
+  background: #dedede;
   border-color: #ffffff;
 }
 
@@ -1814,9 +1855,41 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 }
 
 @media (max-width: 480px) {
+  .netphim-mobile-center-controls {
+    gap: clamp(18px, 7vw, 30px);
+  }
+
+  .netphim-mobile-center-btn.is-seek {
+    width: 48px;
+    height: 48px;
+  }
+
   .netphim-mobile-center-btn.is-play-pause {
     width: 56px;
     height: 56px;
+  }
+}
+
+@media (max-height: 430px) and (orientation: landscape) {
+  .netphim-mobile-center-controls {
+    gap: 24px;
+  }
+
+  .netphim-mobile-center-btn.is-seek {
+    width: 46px;
+    height: 46px;
+  }
+
+  .netphim-mobile-center-btn.is-play-pause {
+    width: 54px;
+    height: 54px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .netphim-mobile-center-controls,
+  .netphim-mobile-center-btn {
+    transition: none;
   }
 }
 

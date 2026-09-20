@@ -797,6 +797,7 @@ function HeroThumbnailImage({
 }
 
 const preloadedHeroBackdrops = new Set<string>();
+const preferredHeroBackdrops = new Map<string, string>();
 
 function getMobileHeroBackdrop(src: string) {
   return src.includes("image.tmdb.org/t/p/")
@@ -807,88 +808,168 @@ function getMobileHeroBackdrop(src: string) {
     : src;
 }
 
+async function preloadHeroBackdropCandidates(
+  candidates: string[],
+  timeoutMs = 2_400,
+): Promise<string | null> {
+  if (typeof window === "undefined" || candidates.length === 0) return null;
+  const deadline = Date.now() + timeoutMs;
+
+  for (const candidate of candidates) {
+    if (preloadedHeroBackdrops.has(candidate)) return candidate;
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) return null;
+
+    const loaded = await new Promise<boolean>((resolve) => {
+      const image = new window.Image();
+      let settled = false;
+      const finish = (ready: boolean) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        image.onload = null;
+        image.onerror = null;
+        resolve(ready);
+      };
+      const timer = window.setTimeout(
+        () => finish(false),
+        Math.min(1_200, remaining),
+      );
+      image.onload = () => {
+        const decode = image.decode?.();
+        if (decode) {
+          void decode.then(() => finish(true)).catch(() => finish(true));
+        } else {
+          finish(true);
+        }
+      };
+      image.onerror = () => finish(false);
+      image.src = candidate;
+    });
+
+    if (loaded) {
+      preloadedHeroBackdrops.add(candidate);
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
 
 function HeroBackdropImage({
   film,
   isActive,
   revealed,
+  preferredSrc,
   onReady,
 }: {
   film: HeroFilm;
   isActive: boolean;
   revealed: boolean;
+  preferredSrc?: string;
   onReady: () => void;
 }) {
-  const candidates = useMemo(
-    () =>
-      buildHeroImageCandidates({
+  const candidates = useMemo(() => {
+    const built = buildHeroImageCandidates({
         heroBackdrop: film.heroBackdrop,
         thumbUrl: film.thumb_url,
         posterUrl: film.poster_url,
-      }),
-    [film.heroBackdrop, film.poster_url, film.thumb_url],
-  );
-  const mobileCandidates = useMemo(
-    () =>
-      buildHeroCardImageCandidates(
+      });
+    return preferredSrc
+      ? [preferredSrc, ...built.filter((candidate) => candidate !== preferredSrc)]
+      : built;
+  }, [film.heroBackdrop, film.poster_url, film.thumb_url, preferredSrc]);
+  const mobileCandidates = useMemo(() => {
+    const built = buildHeroCardImageCandidates(
         {
           heroBackdrop: film.heroBackdrop,
           thumbUrl: film.thumb_url,
           posterUrl: film.poster_url,
         },
         "poster",
-      ).map(getMobileHeroBackdrop),
-    [film.heroBackdrop, film.poster_url, film.thumb_url],
-  );
+      ).map(getMobileHeroBackdrop);
+    return preferredSrc
+      ? [preferredSrc, ...built.filter((candidate) => candidate !== preferredSrc)]
+      : built;
+  }, [film.heroBackdrop, film.poster_url, film.thumb_url, preferredSrc]);
   const [candidateIndex, setCandidateIndex] = useState(0);
   const [mobileCandidateIndex, setMobileCandidateIndex] = useState(0);
+  const [exhausted, setExhausted] = useState(false);
   const imageRef = useRef<HTMLImageElement>(null);
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
 
   const src = candidates[candidateIndex] || candidates[0];
   const mobileSrc =
-    mobileCandidates[mobileCandidateIndex] || getMobileHeroBackdrop(src);
+    mobileCandidates[mobileCandidateIndex] ||
+    (src ? getMobileHeroBackdrop(src) : "");
 
   useEffect(() => {
-    onReady();
-  }, [onReady]);
+    setCandidateIndex(0);
+    setMobileCandidateIndex(0);
+    setExhausted(false);
+  }, [film.slug, candidates, mobileCandidates]);
+
+  useEffect(() => {
+    const image = imageRef.current;
+    if (!image?.complete || image.naturalWidth <= 0) return;
+    preloadedHeroBackdrops.add(image.currentSrc || src);
+    onReadyRef.current();
+  }, [mobileSrc, src]);
 
   const tryNextCandidate = () => {
-    if (
+    const isMobile =
       typeof window !== "undefined" &&
-      window.matchMedia("(max-width: 767px)").matches &&
-      mobileCandidateIndex < mobileCandidates.length - 1
-    ) {
-      setMobileCandidateIndex((index) => index + 1);
+      window.matchMedia("(max-width: 767px)").matches;
+    if (isMobile) {
+      if (mobileCandidateIndex < mobileCandidates.length - 1) {
+        setMobileCandidateIndex((index) => index + 1);
+      } else {
+        setExhausted(true);
+      }
       return;
     }
     if (candidateIndex < candidates.length - 1) {
       setCandidateIndex((index) => index + 1);
+    } else {
+      setExhausted(true);
     }
   };
 
   return (
     <>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_35%,rgba(50,58,72,0.3),transparent_44%),linear-gradient(135deg,#0b0e13_0%,#151a22_52%,#0b0d12_100%)]" />
-      {src && (
+      {src && !exhausted && (
         <picture className="block h-full w-full">
           {/* Mobile: poster w500 (~90KB) tải nhanh hơn 2-3x so với backdrop w1280 trên 4G */}
           <source media="(max-width: 767px)" srcSet={mobileSrc} width={500} height={750} />
 
           <img
             ref={imageRef}
+            key={`${film.slug}-${candidateIndex}-${mobileCandidateIndex}`}
             src={src}
-            alt={film.name}
+            alt=""
+            aria-hidden="true"
             referrerPolicy="strict-origin-when-cross-origin"
             loading={isActive ? "eager" : "lazy"}
             decoding={isActive ? "sync" : "async"}
 
             fetchPriority={isActive ? "high" : "low"}
             onLoad={() => {
-              preloadedHeroBackdrops.add(src);
+              const loadedSrc =
+                typeof window !== "undefined" &&
+                window.matchMedia("(max-width: 767px)").matches
+                  ? mobileSrc
+                  : src;
+              preloadedHeroBackdrops.add(loadedSrc);
               onReady();
             }}
             onError={tryNextCandidate}
-            className="h-full w-full object-cover object-[center_22%] brightness-[0.72] transition-transform duration-1000 ease-out md:object-center"
+            className={cn(
+              "h-full w-full object-cover object-[center_22%] brightness-[0.72] transition-opacity duration-300 ease-out md:object-center",
+              revealed ? "opacity-100" : "opacity-0",
+            )}
           />
         </picture>
       )}
@@ -1352,6 +1433,29 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       if (preloadUrl) await preloadMovieLogo(preloadUrl);
       if (requestId !== slideActivationRequest.current) return;
 
+      const isMobile = window.matchMedia("(max-width: 767px)").matches;
+      const backdropCandidates = isMobile
+        ? buildHeroCardImageCandidates(
+            {
+              heroBackdrop: target.heroBackdrop,
+              thumbUrl: target.thumb_url,
+              posterUrl: target.poster_url,
+            },
+            "poster",
+          ).map(getMobileHeroBackdrop)
+        : buildHeroImageCandidates({
+            heroBackdrop: target.heroBackdrop,
+            thumbUrl: target.thumb_url,
+            posterUrl: target.poster_url,
+          });
+      const readyBackdrop = await preloadHeroBackdropCandidates(
+        backdropCandidates,
+      );
+      if (requestId !== slideActivationRequest.current) return;
+      if (!readyBackdrop) return;
+      preferredHeroBackdrops.set(target.slug, readyBackdrop);
+      markVisualReady(target.slug, "backdrop");
+
       if (prepared !== target) {
         setFeatured((playlist) =>
           playlist.map((item, index) =>
@@ -1361,7 +1465,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       }
       setCurrent(nextIndex);
     },
-    [featured],
+    [featured, markVisualReady],
   );
 
   useEffect(() => {
@@ -1724,6 +1828,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                   film={item as HeroFilm}
                   isActive={isActive}
                   revealed={visualReady}
+                  preferredSrc={preferredHeroBackdrops.get(item.slug)}
                   onReady={() => markVisualReady(item.slug, "backdrop")}
                 />
               )}

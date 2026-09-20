@@ -455,7 +455,7 @@ function sectionTitleTone(title: string) {
   );
 }
 
-// Standard Film Carousel Section Component (With Sleek Right Vertical Pills Navigation)
+// Standard Film Carousel Section Component
 function FilmSection({
   title,
   films,
@@ -527,7 +527,7 @@ function FilmSection({
     >
       {/* Title Header matching user's requested layout (Inline pill button + right dash line pagination) */}
       <div className="mb-3 flex items-start justify-between gap-2 px-1 sm:items-center">
-        {/* Left Side: Title + Inline "Xem tất cả >" Pill Button + Header Chevrons */}
+        {/* Left Side: Title + Inline "Xem tất cả >" link */}
         <div className="flex min-w-0 flex-1 items-start gap-2 sm:items-center">
           <div className="min-w-0 flex-1 sm:flex-none">
             <h2
@@ -547,28 +547,6 @@ function FilmSection({
               <ChevronRight size={14} className="stroke-[2.2] text-white/60 group-hover/link:text-white transition-transform group-hover/link:translate-x-0.5" />
             </Link>
           )}
-
-          {/* Quick Header Mini Nav Buttons */}
-          <div className="hidden sm:flex items-center gap-1 ml-2">
-            <button
-              type="button"
-              onClick={() => scrollFilms(-1)}
-              disabled={!canScrollLeft || isLoading}
-              aria-label={`Cuộn về trước cho ${title}`}
-              className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-neutral-300 transition-all hover:border-white/30 hover:bg-white/15 hover:text-white disabled:opacity-20 disabled:pointer-events-none cursor-pointer active:scale-95"
-            >
-              <ChevronLeft size={15} strokeWidth={2.4} />
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollFilms(1)}
-              disabled={!canScrollRight || isLoading}
-              aria-label={`Cuộn tiếp theo cho ${title}`}
-              className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-neutral-300 transition-all hover:border-white/30 hover:bg-white/15 hover:text-white disabled:opacity-20 disabled:pointer-events-none cursor-pointer active:scale-95"
-            >
-              <ChevronRight size={15} strokeWidth={2.4} />
-            </button>
-          </div>
         </div>
 
         {/* Right Side: Dynamic Dash Line Pagination Indicators (— - - - -) */}
@@ -592,8 +570,8 @@ function FilmSection({
       </div>
 
       {/* Row Container with Navigation */}
-      <div className="relative group/row" aria-busy={isLoading}>
-        <div className="w-full min-w-0">
+      <div className="flex items-stretch gap-3" aria-busy={isLoading}>
+        <div className="min-w-0 flex-1">
           <div
             ref={rowRef}
             onScroll={updateScrollStep}
@@ -630,29 +608,29 @@ function FilmSection({
           </div>
         </div>
 
-        {/* ── Floating In-Row Chevrons: Positioned safely INSIDE container bounds (never cut off!) ── */}
-        {canScrollLeft && !isLoading && (
-          <button
-            type="button"
-            onClick={() => scrollFilms(-1)}
-            aria-label={`Chuyển sang trái cho ${title}`}
-            title={`Xem phim trước trong ${title}`}
-            className="hidden sm:flex absolute left-2 md:left-3 top-1/2 -translate-y-1/2 z-30 h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-full bg-[#0a0c10]/85 border border-white/25 text-white/95 backdrop-blur-xl transition-all hover:bg-black hover:border-white/60 hover:scale-110 active:scale-95 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.85)] select-none opacity-85 hover:opacity-100 group-hover/section:opacity-100"
-          >
-            <ChevronLeft size={22} strokeWidth={2.5} />
-          </button>
-        )}
-
-        {canScrollRight && !isLoading && (
-          <button
-            type="button"
-            onClick={() => scrollFilms(1)}
-            aria-label={`Chuyển sang phải cho ${title}`}
-            title={`Xem phim tiếp theo trong ${title}`}
-            className="hidden sm:flex absolute right-2 md:right-3 top-1/2 -translate-y-1/2 z-30 h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-full bg-[#0a0c10]/85 border border-white/25 text-white/95 backdrop-blur-xl transition-all hover:bg-black hover:border-white/60 hover:scale-110 active:scale-95 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.85)] select-none opacity-85 hover:opacity-100 group-hover/section:opacity-100"
-          >
-            <ChevronRight size={22} strokeWidth={2.5} />
-          </button>
+        {!isLoading && (
+          <div className="my-auto hidden shrink-0 flex-col justify-center gap-3 px-1 sm:flex">
+            <button
+              type="button"
+              onClick={() => scrollFilms(1)}
+              disabled={!canScrollRight}
+              aria-label={`Xem phim tiếp theo trong ${title}`}
+              title={`Xem phim tiếp theo trong ${title}`}
+              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-white/45 transition-[color,transform,opacity] hover:scale-125 hover:text-white active:scale-90 disabled:pointer-events-none disabled:opacity-20"
+            >
+              <ChevronRight size={23} strokeWidth={2.4} />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollFilms(-1)}
+              disabled={!canScrollLeft}
+              aria-label={`Xem phim trước trong ${title}`}
+              title={`Xem phim trước trong ${title}`}
+              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-white/45 transition-[color,transform,opacity] hover:scale-125 hover:text-white active:scale-90 disabled:pointer-events-none disabled:opacity-20"
+            >
+              <ChevronLeft size={23} strokeWidth={2.4} />
+            </button>
+          </div>
         )}
       </div>
     </div>

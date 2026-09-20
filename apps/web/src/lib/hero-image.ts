@@ -1,4 +1,4 @@
-import { buildArtworkCandidates } from "@/lib/image-cdn";
+import { buildArtworkCandidates, wsrvImageUrl } from "@/lib/image-cdn";
 
 const IMAGE_PROXY_PATH = "/api/image-proxy";
 
@@ -90,6 +90,8 @@ export function buildHeroImageCandidates(input: {
     if (proxiedRaw && isTmdbImage(proxiedRaw)) {
       const sized = preferTmdbBackdropSize(proxiedRaw);
       add(sized);
+      const wsrv = wsrvImageUrl(sized, "backdrop");
+      if (wsrv) add(wsrv);
       add(proxiedRaw);
       add(`${IMAGE_PROXY_PATH}?url=${encodeURIComponent(sized)}&strict=1`);
       add(strictProxyUrl(normalized));
@@ -99,6 +101,8 @@ export function buildHeroImageCandidates(input: {
     if (isTmdbImage(normalized)) {
       const sized = preferTmdbBackdropSize(normalized);
       add(sized);
+      const wsrv = wsrvImageUrl(sized, "backdrop");
+      if (wsrv) add(wsrv);
       add(normalized);
       // Some mobile networks intermittently fail to reach TMDB's image CDN.
       // Relay the exact same film artwork before trying another film-owned

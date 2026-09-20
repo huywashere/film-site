@@ -939,8 +939,8 @@ export default function ArtPlayer({
           },
         },
       ],
-      // Native ArtPlayer theme (#23ade5)
-      theme: '#23ade5',
+      // FlexPhim purple is shared by the timeline, scrubber and active controls.
+      theme: '#8b5cf6',
       lang: 'vi',
       i18n: { vi },
       icons: {
