@@ -43,6 +43,7 @@ export interface ArtPlayerProps {
   title?: string;
   subtitle?: string;
   subtitles?: SubtitleTrack[];
+  thumbnailVttUrl?: string;
   autoplay?: boolean;
   progressKey?: string;
   dbProgress?: number;
@@ -81,6 +82,7 @@ export default function ArtPlayer({
   title,
   subtitle,
   subtitles,
+  thumbnailVttUrl,
   autoplay = false,
   progressKey,
   dbProgress,
@@ -1181,6 +1183,7 @@ export default function ArtPlayer({
       streamUrl: isHls ? hlsTransport.primary : url,
       isHls,
       subtitleUrl: subtitle,
+      thumbnailVttUrl,
     });
 
     const teardownMobileCenterControls = setupMobileCenterControls({
@@ -1521,7 +1524,7 @@ export default function ArtPlayer({
     };
     // Recreate only when the primary/fallback transport or subtitles change. Other props use refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url, fallbackUrl, type, serializedSubtitles]);
+  }, [url, fallbackUrl, type, serializedSubtitles, thumbnailVttUrl]);
 
   useEffect(() => {
     if (isServerPanelOpen && playerRef.current) {

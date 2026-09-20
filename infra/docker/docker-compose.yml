@@ -171,6 +171,7 @@ services:
         NEXT_PUBLIC_FIREBASE_APP_ID: ${NEXT_PUBLIC_FIREBASE_APP_ID}
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
         NEXT_PUBLIC_DECORATIVE_ASSET_CDN_BASE_URL: ${NEXT_PUBLIC_DECORATIVE_ASSET_CDN_BASE_URL:-}
+        NEXT_PUBLIC_SCRUBBER_PREVIEW_BASE_URL: ${NEXT_PUBLIC_SCRUBBER_PREVIEW_BASE_URL:-}
         # FIX #8: TMDB_API_KEY và TMDB_ACCESS_TOKEN KHÔNG được bake vào image
         # (chúng là server-side secrets, truyền qua runtime environment bên dưới)
         KKPHIM_API_BASE: ${KKPHIM_API_BASE:-https://phimapi.com}
@@ -186,6 +187,7 @@ services:
       HOSTNAME: 0.0.0.0
       # Server-side env vars (runtime, không cần bake)
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_SCRUBBER_PREVIEW_BASE_URL: ${NEXT_PUBLIC_SCRUBBER_PREVIEW_BASE_URL:-}
       MEDIA_GATEWAY_INTERNAL_URL: http://media-gateway:8081
       KKPHIM_API_BASE: ${KKPHIM_API_BASE:-https://phimapi.com}
       OPHIM_API_BASE: ${OPHIM_API_BASE:-https://ophim1.com}

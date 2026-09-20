@@ -18,6 +18,7 @@ type HlsVideoPlayerProps = {
   title?: string;
   subtitle?: string;
   subtitles?: SubtitleTrack[];
+  thumbnailVttUrl?: string;
   initialTime?: number;
   autoPlay?: boolean;
   onReady?: (player: any) => void;
@@ -52,6 +53,7 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
   title,
   subtitle,
   subtitles,
+  thumbnailVttUrl,
   initialTime = 0,
   autoPlay = false,
   onReady,
@@ -83,6 +85,7 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
         title={title}
         subtitle={subtitle}
         subtitles={subtitles}
+        thumbnailVttUrl={thumbnailVttUrl}
         initialTime={initialTime}
         autoplay={autoPlay}
         skipIntroStart={skipIntroStart}

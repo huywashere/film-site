@@ -3928,6 +3928,12 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     title={film?.name || film?.title || ''}
                     subtitle={currentEpData?.name ? `Tập ${currentEpData.name}` : ''}
                     subtitles={Array.isArray(currentEpData?.subtitles) ? currentEpData.subtitles : undefined}
+                    thumbnailVttUrl={[
+                      currentEpData?.thumbnailVttUrl,
+                      currentEpData?.thumbnail_vtt,
+                      currentEpData?.preview_vtt,
+                      currentEpData?.storyboard,
+                    ].find((value) => typeof value === 'string' && value.trim().length > 0)}
                     skipIntroStart={currentEpData?.intro?.start}
                     skipIntroEnd={currentEpData?.intro?.end}
                     skipOutroStart={currentEpData?.outro?.start}

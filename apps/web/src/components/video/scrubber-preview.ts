@@ -8,18 +8,57 @@
  */
 import type Artplayer from 'artplayer';
 import Hls from 'hls.js';
+import {
+  configuredScrubberVttUrl,
+  findScrubberSpriteCue,
+  parseScrubberVtt,
+  type ScrubberSpriteCue,
+} from './scrubber-sprite';
 
 export interface ScrubberPreviewOptions {
   player: Artplayer;
   streamUrl: string;
   isHls: boolean;
   subtitleUrl?: string;
+  thumbnailVttUrl?: string;
 }
 
 interface SubtitleCue {
   start: number;
   end: number;
   text: string;
+}
+
+const spriteImageCache = new Map<string, Promise<HTMLImageElement>>();
+const MAX_SPRITE_IMAGES = 24;
+
+function loadSpriteImage(url: string): Promise<HTMLImageElement> {
+  const cached = spriteImageCache.get(url);
+  if (cached) {
+    spriteImageCache.delete(url);
+    spriteImageCache.set(url, cached);
+    return cached;
+  }
+
+  const request = new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.decoding = 'async';
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('Scrubber sprite failed to load'));
+    image.src = url;
+  }).catch((error) => {
+    spriteImageCache.delete(url);
+    throw error;
+  });
+
+  spriteImageCache.set(url, request);
+  while (spriteImageCache.size > MAX_SPRITE_IMAGES) {
+    const oldest = spriteImageCache.keys().next().value;
+    if (!oldest) break;
+    spriteImageCache.delete(oldest);
+  }
+  return request;
 }
 
 function formatTime(seconds: number): string {
@@ -41,6 +80,7 @@ export function setupScrubberPreview({
   streamUrl,
   isHls,
   subtitleUrl,
+  thumbnailVttUrl,
 }: ScrubberPreviewOptions): () => void {
   const container = (player as any).template?.$player || (player as any).container;
   const progressEl = (player as any).template?.$progress;
@@ -73,6 +113,10 @@ export function setupScrubberPreview({
   const timeBadge = previewCard.querySelector<HTMLElement>('.netphim-scrubber-time')!;
   const subBadge = previewCard.querySelector<HTMLElement>('.netphim-scrubber-sub')!;
   const ctx = canvas.getContext('2d', { willReadFrequently: false });
+  let destroyed = false;
+  let spriteCues: ScrubberSpriteCue[] = [];
+  let spriteRenderId = 0;
+  const failedSpriteImages = new Set<string>();
 
   // ── Multi-Tier In-Memory Frame Cache ──
   const frameCache = new Map<number, ImageBitmap | string>();
@@ -133,9 +177,11 @@ export function setupScrubberPreview({
   // ── Offscreen Seeker Video for Unbuffered Timestamps ──
   let seekerHls: Hls | null = null;
   let canUseCanvas = true;
+  let seekerInitialized = false;
 
-  const setupSeeker = () => {
-    if (!streamUrl) return;
+  const setupSeeker = (force = false) => {
+    if (!streamUrl || seekerInitialized || (!force && spriteCues.length > 0)) return;
+    seekerInitialized = true;
     seekerVideo.crossOrigin = 'anonymous';
     seekerVideo.preload = 'auto';
 
@@ -162,7 +208,11 @@ export function setupScrubberPreview({
       seekerVideo.src = streamUrl;
     }
   };
-  setupSeeker();
+
+  const configuredSpriteSource = Boolean(
+    thumbnailVttUrl || process.env.NEXT_PUBLIC_SCRUBBER_PREVIEW_BASE_URL,
+  );
+  if (!configuredSpriteSource) setupSeeker();
 
   const renderFrameOnCanvas = (source: CanvasImageSource) => {
     if (!ctx) return;
@@ -179,6 +229,82 @@ export function setupScrubberPreview({
       placeholder.style.display = 'none';
     }
   };
+
+  const renderSpriteFrame = (targetTime: number): boolean => {
+    const cue = findScrubberSpriteCue(spriteCues, targetTime);
+    if (!cue || !ctx || failedSpriteImages.has(cue.imageUrl)) return false;
+
+    const requestId = ++spriteRenderId;
+    void loadSpriteImage(cue.imageUrl)
+      .then((image) => {
+        if (destroyed || requestId !== spriteRenderId) return;
+        ctx.drawImage(
+          image,
+          cue.x,
+          cue.y,
+          cue.width,
+          cue.height,
+          0,
+          0,
+          canvas.width,
+          canvas.height,
+        );
+        canvas.style.display = 'block';
+        seekerVideo.style.display = 'none';
+        placeholder.style.display = 'none';
+      })
+      .catch(() => {
+        failedSpriteImages.add(cue.imageUrl);
+        if (!destroyed) setupSeeker(true);
+      });
+    return true;
+  };
+
+  void (async () => {
+    const manifestUrl = thumbnailVttUrl || (await configuredScrubberVttUrl(streamUrl));
+    if (!manifestUrl || destroyed) {
+      if (configuredSpriteSource) setupSeeker();
+      return;
+    }
+
+    try {
+      const response = await fetch(manifestUrl, {
+        cache: 'force-cache',
+        credentials: 'omit',
+      });
+      if (!response.ok) throw new Error(`Scrubber VTT returned ${response.status}`);
+      spriteCues = parseScrubberVtt(await response.text(), response.url || manifestUrl);
+      if (spriteCues.length === 0) throw new Error('Scrubber VTT has no valid cues');
+
+      const uniqueImages = [...new Set(spriteCues.map((cue) => cue.imageUrl))];
+      const currentCue = findScrubberSpriteCue(spriteCues, player.currentTime || 0);
+      if (currentCue) void loadSpriteImage(currentCue.imageUrl).catch(() => {});
+
+      const connection = (navigator as Navigator & {
+        connection?: { saveData?: boolean; effectiveType?: string };
+      }).connection;
+      const canWarmAll =
+        !connection?.saveData &&
+        connection?.effectiveType !== 'slow-2g' &&
+        connection?.effectiveType !== '2g';
+      if (canWarmAll) {
+        const warm = () => {
+          for (const imageUrl of uniqueImages.slice(0, MAX_SPRITE_IMAGES)) {
+            void loadSpriteImage(imageUrl).catch(() => {});
+          }
+        };
+        const idleCallback = window.requestIdleCallback;
+        if (typeof idleCallback === 'function') {
+          idleCallback(warm, { timeout: 2_500 });
+        } else {
+          globalThis.setTimeout(warm, 1_000);
+        }
+      }
+    } catch {
+      spriteCues = [];
+      setupSeeker();
+    }
+  })();
 
   const performSeek = (targetTime: number) => {
     if (typeof (seekerVideo as any).fastSeek === 'function') {
@@ -198,6 +324,7 @@ export function setupScrubberPreview({
   let seekWatchdogTimer: any = null;
 
   const requestSeekerFrame = (targetTime: number) => {
+    if (!seekerInitialized) return;
     pendingSeekTime = targetTime;
     if (seekDebounceTimer) clearTimeout(seekDebounceTimer);
 
@@ -350,8 +477,12 @@ export function setupScrubberPreview({
       subBadge.style.display = 'none';
     }
 
+    // Tier 0: pre-generated WebVTT sprite. It does not seek or decode the HLS
+    // stream, so cached frames paint within the same interaction frame.
+    const renderedFromSprite = renderSpriteFrame(targetTime);
+
     // Tier 1: Check instant in-memory frame cache
-    const cached = getClosestFrame(targetTime);
+    const cached = renderedFromSprite ? null : getClosestFrame(targetTime);
     if (cached) {
       lastRenderedFrame = cached;
       if (typeof cached === 'string') {
@@ -381,7 +512,7 @@ export function setupScrubberPreview({
     }
 
     // Request offscreen seeker frame
-    requestSeekerFrame(targetTime);
+    if (!renderedFromSprite) requestSeekerFrame(targetTime);
   };
 
   // ── Event Handlers ──
@@ -466,6 +597,8 @@ export function setupScrubberPreview({
 
   // ── Teardown / Cleanup ──
   return () => {
+    destroyed = true;
+    spriteRenderId += 1;
     player.off('video:timeupdate', onMainTimeUpdate);
     if (seekDebounceTimer) clearTimeout(seekDebounceTimer);
     if (seekWatchdogTimer) clearTimeout(seekWatchdogTimer);
