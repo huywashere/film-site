@@ -21,6 +21,20 @@ export interface FilmItem {
   poster_url?: string;
   heroBackdrop?: string;
   titleLogo?: string;
+  tmdbId?: string | number;
+  poster_path?: string;
+  backdrop_path?: string;
+  logo_path?: string;
+  artwork?: {
+    tmdbId?: string | number;
+    type?: 'movie' | 'tv' | string;
+    poster_path?: string;
+    backdrop_path?: string;
+    logo_path?: string;
+    poster?: { w185?: string; w342?: string; w500?: string };
+    backdrop?: { w780?: string; w1280?: string; original?: string };
+    logo?: { w300?: string; w500?: string };
+  };
   _thumbCandidates?: string[];
   _posterCandidates?: string[];
   year?: number;
@@ -39,11 +53,14 @@ export interface FilmItem {
   };
   tmdb?: {
     type?: string;
-    id?: string;
+    id?: string | number;
     season?: number | null;
     vote_average?: number;
     vote_count?: number;
     rating?: number;
+    poster_path?: string;
+    backdrop_path?: string;
+    logo_path?: string;
   };
   _source?: MovieSource;
   _sources?: MovieSource[];

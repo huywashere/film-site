@@ -95,5 +95,5 @@ func (c *RedisCache) Close() error { return c.client.Close() }
 
 func catalogCacheKey(key string) string {
 	sum := sha256.Sum256([]byte(key))
-	return "catalog:v1:" + hex.EncodeToString(sum[:])
+	return "catalog:v2:" + hex.EncodeToString(sum[:])
 }

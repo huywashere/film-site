@@ -152,7 +152,6 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
                 allowTitleLookup
                 preferOriginal
                 preferTmdb
-                loadImmediately
                 sizes="100vw"
                 imageClassName="object-[center_20%] sm:object-[center_25%]"
                 className="h-full w-full"
@@ -296,7 +295,6 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
                       alt={film.name}
                       allowTitleLookup
                       preferTmdb
-                      loadImmediately={isActive}
                       sizes="(max-width: 640px) 58px, 70px"
                       className="aspect-[2/3] w-full transition-transform duration-300 group-hover:scale-105"
                     />

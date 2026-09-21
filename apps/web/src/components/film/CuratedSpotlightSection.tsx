@@ -154,7 +154,6 @@ export function CuratedSpotlightSection({
                 alt={activeFilm.name}
                 allowTitleLookup
                 preferOriginal
-                loadImmediately
                 sizes="(max-width: 1024px) 100vw, 75vw"
                 imageClassName="object-[center_25%]"
                 className="h-full w-full"

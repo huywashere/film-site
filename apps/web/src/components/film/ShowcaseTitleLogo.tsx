@@ -45,19 +45,46 @@ export function ShowcaseTitleLogo({
   fallbackTextClassName,
   showSubtitle = true,
   subtitleClassName,
-  priority = true,
+  priority = false,
 }: ShowcaseTitleLogoProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [nearViewport, setNearViewport] = useState(priority);
+  useEffect(() => {
+    if (priority) {
+      setNearViewport(true);
+      return;
+    }
+    const element = containerRef.current;
+    if (!element || typeof IntersectionObserver === 'undefined') {
+      setNearViewport(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setNearViewport(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px 0px', threshold: 0.01 },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [film.slug, priority]);
+
   // 1. Initial cached or direct logo lookup
   const initialLogo = useMemo(() => {
-    return normalizeLogoUrl(film.titleLogo || getMovieLogo(film.slug));
-  }, [film.slug, film.titleLogo]);
+    return normalizeLogoUrl(
+      film.artwork?.logo?.w500 || film.titleLogo || film.logo_path || film.tmdb?.logo_path || getMovieLogo(film.slug),
+    );
+  }, [film]);
 
   // The visual mode is locked for this keyed slide. A late TMDB response is
   // cached for the next visit instead of replacing visible text mid-slide.
   const [displayLogo] = useState(() => initialLogo);
 
   // 2. Dynamic TMDB logo resolution if not pre-seeded
-  const shouldQueryTmdb = !initialLogo && Boolean(film?.slug);
+  const shouldQueryTmdb = nearViewport && !initialLogo && Boolean(film?.slug);
   const { bestLogo } = useTmdb({
     film: shouldQueryTmdb ? film : null,
     enabled: shouldQueryTmdb,
@@ -69,11 +96,14 @@ export function ShowcaseTitleLogo({
   });
 
   const prefetchedDirectLogo = useMemo(
-    () => normalizeLogoUrl(prefetchFilm?.titleLogo || getMovieLogo(prefetchFilm?.slug)),
-    [prefetchFilm?.slug, prefetchFilm?.titleLogo],
+    () => normalizeLogoUrl(
+      prefetchFilm?.artwork?.logo?.w500 || prefetchFilm?.titleLogo || prefetchFilm?.logo_path || prefetchFilm?.tmdb?.logo_path || getMovieLogo(prefetchFilm?.slug),
+    ),
+    [prefetchFilm],
   );
   const shouldQueryPrefetch = Boolean(
-    prefetchFilm?.slug &&
+    nearViewport &&
+      prefetchFilm?.slug &&
       prefetchFilm.slug !== film.slug &&
       !prefetchedDirectLogo,
   );
@@ -127,7 +157,7 @@ export function ShowcaseTitleLogo({
 
   const [candidateIdx, setCandidateIdx] = useState(0);
   const [hasError, setHasError] = useState(false);
-  const currentSrc = candidates[candidateIdx];
+  const currentSrc = nearViewport ? candidates[candidateIdx] : undefined;
   const isPreloaded = Boolean(currentSrc && (isMovieLogoPreloaded(currentSrc)));
   const [isLoaded, setIsLoaded] = useState(isPreloaded);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -164,7 +194,7 @@ export function ShowcaseTitleLogo({
   const hasLogoCandidate = Boolean(currentSrc) && !hasError;
 
   return (
-    <div className={cn('relative select-none', className)}>
+    <div ref={containerRef} className={cn('relative select-none', className)}>
       <div className="grid min-h-[36px] items-center justify-items-start sm:min-h-[44px] md:min-h-[52px] lg:min-h-[58px]">
         <h3
           data-showcase-title-text={film.slug}

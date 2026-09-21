@@ -1315,7 +1315,8 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
   // Resolve featured title artwork in the background.
   useEffect(() => {
     if (!featured.length) return;
-    const targets = featured.filter(
+    const nextIndex = featured.length > 1 ? (current + 1) % featured.length : current;
+    const targets = [featured[current], featured[nextIndex]].filter(
       (film) =>
         Boolean(film) &&
         !film.titleLogo &&
@@ -1349,13 +1350,14 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
     return () => {
       active = false;
     };
-  }, [featured]);
+  }, [current, featured]);
 
-  // Eagerly preload ALL title logos for all 6 slides in the hero banner.
-  // Small transparent PNGs/SVGs (~15-30KB) ensure 0ms slide transitions without text flashing.
+  // Keep only the visible and next title logo warm. Loading the whole playlist
+  // competes with the current LCP image on a cold/mobile connection.
   useEffect(() => {
     if (typeof window === "undefined" || !featured.length) return;
-    featured.forEach((item) => {
+    const nextIndex = featured.length > 1 ? (current + 1) % featured.length : current;
+    [featured[current], featured[nextIndex]].filter(Boolean).forEach((item) => {
       const logoUrl = item.titleLogo || getMovieLogo(item.slug);
       if (logoUrl) {
         if (item.slug) setMovieLogo(item.slug, logoUrl);
@@ -1368,7 +1370,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         }
       }
     });
-  }, [featured]);
+  }, [current, featured]);
 
   // Warm only the visible and next backdrop. Preloading every w1280 backdrop at
   // once starved the small, above-the-fold card artwork on cold production loads.

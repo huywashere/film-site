@@ -322,18 +322,48 @@ export function TmdbArtwork({
   const deliveredImageProps = useMemo(() => {
     if (!src) return null;
     const alreadySized = isPreOptimizedImageUrl(src);
-    return getImageProps({
+    const nextImageProps = getImageProps({
       src,
       alt: alt || film.name,
-      width: kind === 'backdrop' ? (preferOriginal ? 1920 : 1280) : 780,
-      height: kind === 'backdrop' ? (preferOriginal ? 1080 : 720) : 1170,
+      width: kind === 'backdrop' ? (preferOriginal ? 1920 : 1280) : 500,
+      height: kind === 'backdrop' ? (preferOriginal ? 1080 : 720) : 750,
       sizes: responsiveSizes,
       quality: kind === 'backdrop' ? 90 : 85,
       loading: priority ? 'eager' : 'lazy',
       fetchPriority: priority ? 'high' : nearViewport ? 'auto' : 'low',
       unoptimized: alreadySized,
     }).props;
-  }, [alt, film.name, kind, nearViewport, priority, responsiveSizes, src, preferOriginal]);
+    const responsiveSources = kind === 'backdrop'
+      ? [
+          artworkQuery.backdropW780 && `${artworkQuery.backdropW780} 780w`,
+          artworkQuery.backdropW1280 && `${artworkQuery.backdropW1280} 1280w`,
+        ]
+      : [
+          artworkQuery.posterW185 && `${artworkQuery.posterW185} 185w`,
+          artworkQuery.posterW342 && `${artworkQuery.posterW342} 342w`,
+          artworkQuery.posterW500 && `${artworkQuery.posterW500} 500w`,
+        ];
+    const embeddedSrcSet = isTmdbImageUrl(src)
+      ? responsiveSources.filter(Boolean).join(', ')
+      : '';
+    return embeddedSrcSet
+      ? { ...nextImageProps, srcSet: embeddedSrcSet }
+      : nextImageProps;
+  }, [
+    alt,
+    artworkQuery.backdropW780,
+    artworkQuery.backdropW1280,
+    artworkQuery.posterW185,
+    artworkQuery.posterW342,
+    artworkQuery.posterW500,
+    film.name,
+    kind,
+    nearViewport,
+    priority,
+    responsiveSizes,
+    src,
+    preferOriginal,
+  ]);
 
   // Reset only when the card identity changes. Resetting when recovery finds a
   // TMDB URL would retry the already-failed provider relay before using it.

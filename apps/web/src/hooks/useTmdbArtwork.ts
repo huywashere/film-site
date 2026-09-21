@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import type { FilmItem } from '@/components/film/FilmCard';
 import { extractTmdbInfo, tmdbApi, tmdbBackdrop, tmdbPoster, type TmdbMovie } from '@/lib/tmdb';
 
@@ -205,6 +206,21 @@ async function resolveArtwork(film: FilmItem): Promise<TmdbMovie | null> {
 
 export function useTmdbArtwork(film: FilmItem, enabled = true) {
   const extracted = extractTmdbInfo(film);
+  const embeddedMovie = useMemo<TmdbMovie | null>(() => {
+    const posterPath = film.artwork?.poster_path || film.poster_path || film.tmdb?.poster_path;
+    const backdropPath = film.artwork?.backdrop_path || film.backdrop_path || film.tmdb?.backdrop_path;
+    const rawId = film.artwork?.tmdbId || film.tmdbId || film.tmdb?.id;
+    const id = Number(rawId);
+    if (!posterPath && !backdropPath) return null;
+    return {
+      id: Number.isFinite(id) ? id : 0,
+      title: film.name || film.title,
+      original_title: film.origin_name,
+      poster_path: posterPath || null,
+      backdrop_path: backdropPath || null,
+      media_type: (film.artwork?.type || extracted.type) === 'tv' ? 'tv' : 'movie',
+    };
+  }, [extracted.type, film]);
   const title = film.origin_name || film.name || film.title || '';
   const identity = [
     extracted.type,
@@ -221,7 +237,7 @@ export function useTmdbArtwork(film: FilmItem, enabled = true) {
       writeArtworkCache(identity, movie);
       return movie;
     },
-    enabled: enabled && Boolean(extracted.tmdbId || extracted.imdbId || title),
+    enabled: enabled && !embeddedMovie && Boolean(extracted.tmdbId || extracted.imdbId || title),
     staleTime: 1000 * 60 * 60 * 24 * 7,
     // Browser timers top out at roughly 24.8 days. A 30-day timeout overflows
     // to 1ms in Node/browser runtimes and defeats the artwork cache entirely.
@@ -230,18 +246,25 @@ export function useTmdbArtwork(film: FilmItem, enabled = true) {
     refetchOnWindowFocus: false,
   });
 
+  const movie = embeddedMovie || query.data || null;
+  const embeddedPoster = film.artwork?.poster;
+  const embeddedBackdrop = film.artwork?.backdrop;
+
   return {
     ...query,
-    movie: query.data || null,
+    movie,
     backdropUrl:
-      tmdbBackdrop(query.data?.backdrop_path, 'original') ||
-      tmdbBackdrop(query.data?.backdrop_path, 'w1280'),
-    backdropW1280: tmdbBackdrop(query.data?.backdrop_path, 'w1280'),
-    backdropOriginal: tmdbBackdrop(query.data?.backdrop_path, 'original'),
+      embeddedBackdrop?.w1280 ||
+      tmdbBackdrop(movie?.backdrop_path, 'w1280') ||
+      embeddedBackdrop?.original,
+    backdropW780: embeddedBackdrop?.w780 || tmdbBackdrop(movie?.backdrop_path, 'w780'),
+    backdropW1280: embeddedBackdrop?.w1280 || tmdbBackdrop(movie?.backdrop_path, 'w1280'),
+    backdropOriginal: embeddedBackdrop?.original || tmdbBackdrop(movie?.backdrop_path, 'original'),
     posterUrl:
-      tmdbPoster(query.data?.poster_path, 'w780') ||
-      tmdbPoster(query.data?.poster_path, 'w500'),
-    posterW500: tmdbPoster(query.data?.poster_path, 'w500'),
-    posterW780: tmdbPoster(query.data?.poster_path, 'w780'),
+      embeddedPoster?.w500 || tmdbPoster(movie?.poster_path, 'w500'),
+    posterW185: embeddedPoster?.w185 || tmdbPoster(movie?.poster_path, 'w185'),
+    posterW342: embeddedPoster?.w342 || tmdbPoster(movie?.poster_path, 'w342'),
+    posterW500: embeddedPoster?.w500 || tmdbPoster(movie?.poster_path, 'w500'),
+    posterW780: tmdbPoster(movie?.poster_path, 'w780'),
   };
 }

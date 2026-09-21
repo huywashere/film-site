@@ -162,14 +162,15 @@ test('hero banner waits for decoded title logos before revealing a slide', () =>
   assert.match(preloader, /setTimeout\(\(\) => settle\(false\), 1_800\)/);
 });
 
-test('large homepage showcases request original TMDB backdrops', () => {
+test('large homepage showcases request original TMDB backdrops only near the viewport', () => {
   const series = readFileSync('src/components/film/HeroShowcaseSection.tsx', 'utf8');
   const curated = readFileSync('src/components/film/CuratedSpotlightSection.tsx', 'utf8');
   const artwork = readFileSync('src/components/film/TmdbArtwork.tsx', 'utf8');
 
   assert.match(series, /allowTitleLookup[\s\S]*preferOriginal/);
   assert.match(curated, /allowTitleLookup[\s\S]*preferOriginal/);
-  assert.match(curated, /preferOriginal[\s\S]*loadImmediately/);
+  assert.doesNotMatch(curated, /preferOriginal[\s\S]*loadImmediately/);
+  assert.doesNotMatch(series, /preferOriginal[\s\S]*loadImmediately/);
   assert.match(artwork, /priority \|\| loadImmediately/);
   assert.match(artwork, /tmdbImageVariant\(providerPrimary, 'original'\)/);
   assert.match(artwork, /add\(artworkQuery\.backdropOriginal\)/);
@@ -213,6 +214,18 @@ test('title lookups keep provider artwork stable unless a showcase explicitly pr
   assert.match(source, /providerCandidates\?\.forEach[\s\S]*addTmdbCandidates\(\)/);
   assert.ok((series.match(/preferTmdb/g) || []).length >= 2);
   assert.match(series, /slice\(0, 30\)/);
+});
+
+test('shared artwork consumes backend TMDB metadata and emits responsive image candidates', () => {
+  const artwork = readFileSync('src/components/film/TmdbArtwork.tsx', 'utf8');
+  const hook = readFileSync('src/hooks/useTmdbArtwork.ts', 'utf8');
+
+  assert.match(hook, /film\.artwork\?\.poster_path/);
+  assert.match(hook, /enabled: enabled && !embeddedMovie/);
+  assert.match(artwork, /posterW185[\s\S]*185w/);
+  assert.match(artwork, /posterW342[\s\S]*342w/);
+  assert.match(artwork, /posterW500[\s\S]*500w/);
+  assert.match(artwork, /backdropW1280[\s\S]*1280w/);
 });
 
 test('homepage shelves rely on viewport loading instead of eager image bursts', () => {

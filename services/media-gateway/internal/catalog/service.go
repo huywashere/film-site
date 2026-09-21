@@ -23,16 +23,18 @@ import (
 )
 
 type Service struct {
-	cfg       config.Config
-	providers []Provider
-	client    *providerClient
-	cache     Cache
-	flights   jsonFlightGroup
-	signer    *security.Signer
-	search    *meiliSearchIndex
-	searchCtx context.Context
-	searchEnd context.CancelFunc
-	searchWG  sync.WaitGroup
+	cfg        config.Config
+	providers  []Provider
+	client     *providerClient
+	cache      Cache
+	flights    jsonFlightGroup
+	signer     *security.Signer
+	search     *meiliSearchIndex
+	searchCtx  context.Context
+	searchEnd  context.CancelFunc
+	searchWG   sync.WaitGroup
+	tmdbClient *http.Client
+	tmdbSlots  chan struct{}
 }
 
 type jsonFlight struct {
@@ -95,6 +97,10 @@ func (filters SearchFilters) active() bool {
 }
 
 func New(cfg config.Config) *Service {
+	tmdbConcurrency := cfg.TMDBArtworkConcurrency
+	if tmdbConcurrency < 1 {
+		tmdbConcurrency = 8
+	}
 	providers := []Provider{
 		{Source: "kkphim", Origins: cfg.KKPhimOrigins},
 		{Source: "ophim", Origins: cfg.OPhimOrigins},
@@ -112,7 +118,9 @@ func New(cfg config.Config) *Service {
 		cfg: cfg, providers: providers,
 		client: newProviderClient(cfg.CatalogTimeout, cfg.CatalogMaxBytes, providers),
 		cache:  cache, signer: security.NewSigner(cfg.SigningSecret),
-		search: newMeiliSearchIndex(cfg),
+		search:     newMeiliSearchIndex(cfg),
+		tmdbClient: &http.Client{Timeout: cfg.TMDBArtworkTimeout},
+		tmdbSlots:  make(chan struct{}, tmdbConcurrency),
 	}
 	if service.search != nil {
 		service.searchCtx, service.searchEnd = context.WithCancel(context.Background())
@@ -305,6 +313,7 @@ func (s *Service) Bootstrap(ctx context.Context, slug string) (map[string]any, s
 		movie["_sources"] = orderedSources
 		movie["_sourceSlugs"] = sourceSlugs
 		movie["_duplicateCount"] = len(orderedSources)
+		s.enrichMovies(ctx, []map[string]any{movie})
 		// Recommendations are below the player and are loaded separately by the
 		// web client. Keeping this bootstrap focused on movie metadata and source
 		// alternatives prevents a slow Core API request from delaying playback.
@@ -375,10 +384,12 @@ func (s *Service) Catalog(ctx context.Context, kind, value string, page, limit i
 		if len(items) == 0 && kind != "filter" {
 			return nil, errors.New("catalog is empty")
 		}
-		s.enqueueSearchItems(items)
+		searchItems := items
 		if len(items) > limit {
 			items = items[:limit]
 		}
+		s.enrichMovies(ctx, items)
+		s.enqueueSearchItems(searchItems)
 		pagination := map[string]any{"currentPage": page, "totalItems": len(items), "totalItemsPerPage": limit, "totalPages": maxInt(page+1, 2)}
 		result := map[string]any{
 			"status": true, "items": items, "params": map[string]any{"pagination": pagination},
@@ -442,6 +453,15 @@ func (s *Service) buildAndCacheHomeFeed(ctx context.Context, cacheKey string, li
 		{key: "theatrical", kind: "theatrical"},
 	}
 	results := make(chan sectionResult, len(requests))
+	type top10Result struct {
+		items []any
+		err   error
+	}
+	top10Results := make(chan top10Result, 1)
+	go func() {
+		items, _, err := s.Top10(ctx, minInt(limit, 30))
+		top10Results <- top10Result{items: items, err: err}
+	}()
 	for _, request := range requests {
 		request := request
 		go func() {
@@ -466,7 +486,8 @@ func (s *Service) buildAndCacheHomeFeed(ctx context.Context, cacheKey string, li
 		succeeded++
 	}
 
-	top10, _, top10Err := s.Top10(ctx, minInt(limit, 30))
+	top10ResultValue := <-top10Results
+	top10, top10Err := top10ResultValue.items, top10ResultValue.err
 	if top10Err != nil {
 		top10 = []any{}
 	} else if len(top10) > 0 {
@@ -544,11 +565,13 @@ func (s *Service) SearchFiltered(ctx context.Context, query string, page, limit 
 		items := dedupeGroups(groups, 0)
 		items = filterMovies(items, filters)
 		items = rankSearch(items, query)
-		s.enqueueSearchItems(items)
+		searchItems := items
 		mergedTotal := len(items)
 		if len(items) > limit {
 			items = items[:limit]
 		}
+		s.enrichMovies(ctx, items)
+		s.enqueueSearchItems(searchItems)
 		minimumTotal := (page-1)*limit + len(items)
 		if totalItems < minimumTotal {
 			totalItems = minimumTotal
@@ -596,6 +619,7 @@ func (s *Service) searchIndexed(ctx context.Context, cacheKey, query string, pag
 	if len(items) > limit {
 		items = items[:limit]
 	}
+	s.enrichMovies(ctx, items)
 	total := response.EstimatedTotalHits
 	if total < (page-1)*limit+len(items) {
 		total = (page-1)*limit + len(items)
@@ -739,6 +763,13 @@ func (s *Service) Top10(ctx context.Context, limit int) ([]any, string, error) {
 	if s.cfg.CoreAPIURL != "" {
 		target := fmt.Sprintf("%s/movies/trending?limit=%d", s.cfg.CoreAPIURL, limit)
 		if payload, err := s.fetchJSONArray(ctx, target); err == nil && len(payload) > 0 {
+			movies := make([]map[string]any, 0, len(payload))
+			for _, item := range payload {
+				if movie, ok := item.(map[string]any); ok {
+					movies = append(movies, movie)
+				}
+			}
+			s.enrichMovies(ctx, movies)
 			encoded, _ := json.Marshal(payload)
 			s.cache.Set(context.Background(), cacheKey, encoded, time.Minute)
 			return payload, "MISS-ANALYTICS", nil

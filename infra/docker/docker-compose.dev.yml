@@ -47,6 +47,12 @@ services:
     container_name: netphim_media_gateway_dev
     restart: unless-stopped
     environment:
+      TMDB_API_KEY: ${TMDB_API_KEY:-}
+      TMDB_ACCESS_TOKEN: ${TMDB_ACCESS_TOKEN:-}
+      TMDB_ARTWORK_TTL: ${TMDB_ARTWORK_TTL:-720h}
+      TMDB_ARTWORK_MISS_TTL: ${TMDB_ARTWORK_MISS_TTL:-168h}
+      TMDB_ARTWORK_TIMEOUT: ${TMDB_ARTWORK_TIMEOUT:-2500ms}
+      TMDB_ARTWORK_CONCURRENCY: ${TMDB_ARTWORK_CONCURRENCY:-8}
       GIN_MODE: debug
       PORT: 8081
       REDIS_URL: redis://redis:6379

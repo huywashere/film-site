@@ -33,66 +33,73 @@ var defaultTrustedProxies = []string{
 }
 
 type Config struct {
-	Port              string
-	Environment       string
-	SigningSecret     string
-	InternalToken     string
-	AllowedHosts      []string
-	RedisURL          string
-	RequestTimeout    time.Duration
-	ManifestCacheTTL  time.Duration
-	RatePerSecond     int
-	RateBurst         int
+	Port             string
+	Environment      string
+	SigningSecret    string
+	InternalToken    string
+	AllowedHosts     []string
+	RedisURL         string
+	RequestTimeout   time.Duration
+	ManifestCacheTTL time.Duration
+	RatePerSecond    int
+	RateBurst        int
 	// Per-route rate limits for catalog/search (separate bucket from HLS proxy).
 	SearchRatePerSecond int
 	SearchRateBurst     int
-	MaxManifestBytes  int64
-	MaxResolveBytes   int64
-	MaxRedirects      int
-	RetryAttempts     int
-	RetryBackoff      time.Duration
-	ReadHeaderTimeout time.Duration
-	ReadTimeout       time.Duration
-	WriteTimeout      time.Duration
-	IdleTimeout       time.Duration
-	ShutdownTimeout   time.Duration
-	MaxHeaderBytes    int
-	TrustedProxies    []string
+	MaxManifestBytes    int64
+	MaxResolveBytes     int64
+	MaxRedirects        int
+	RetryAttempts       int
+	RetryBackoff        time.Duration
+	ReadHeaderTimeout   time.Duration
+	ReadTimeout         time.Duration
+	WriteTimeout        time.Duration
+	IdleTimeout         time.Duration
+	ShutdownTimeout     time.Duration
+	MaxHeaderBytes      int
+	TrustedProxies      []string
 	// CORSOrigins is a comma-separated list of allowed request origins for CORS.
 	// Leave empty to disable CORS headers (safe default for behind-nginx deploys).
-	CORSOrigins       []string
-	CatalogEnabled    bool
-	CatalogTimeout    time.Duration
-	CatalogCacheTTL   time.Duration
-	CatalogSearchTTL  time.Duration
-	CatalogListTTL    time.Duration
-	CatalogHomeTTL    time.Duration
-	CatalogHomeStale  time.Duration
-	CatalogMaxBytes   int64
+	CORSOrigins            []string
+	CatalogEnabled         bool
+	CatalogTimeout         time.Duration
+	CatalogCacheTTL        time.Duration
+	CatalogSearchTTL       time.Duration
+	CatalogListTTL         time.Duration
+	CatalogHomeTTL         time.Duration
+	CatalogHomeStale       time.Duration
+	CatalogMaxBytes        int64
+	TMDBAPIKey             string
+	TMDBAccessToken        string
+	TMDBBaseURL            string
+	TMDBArtworkTTL         time.Duration
+	TMDBArtworkMissTTL     time.Duration
+	TMDBArtworkTimeout     time.Duration
+	TMDBArtworkConcurrency int
 	// CatalogEnrichmentWindow is how long collectProviders waits for slower
 	// providers after the first usable result arrives.
 	CatalogEnrichmentWindow time.Duration
-	MeiliURL          string
-	MeiliAPIKey       string
-	MeiliIndex        string
-	MeiliTimeout      time.Duration
-	MeiliSyncInterval time.Duration
-	MeiliWarmPages    int
-	MeiliSyncPages    int
-	MeiliSyncPause    time.Duration
-	MeiliBatchSize    int
-	AnalysisEnabled      bool
-	AnalysisJobStream    string
-	AnalysisResultStream string
-	AnalysisResultPrefix string
-	AnalysisQueueTTL     time.Duration
-	AnalysisTimeout      time.Duration
-	CoreAPIURL        string
-	KKPhimOrigins     []string
-	OPhimOrigins      []string
-	NguonCOrigins     []string
-	VSMovOrigins      []string
-	ViCDNOrigins      []string
+	MeiliURL                string
+	MeiliAPIKey             string
+	MeiliIndex              string
+	MeiliTimeout            time.Duration
+	MeiliSyncInterval       time.Duration
+	MeiliWarmPages          int
+	MeiliSyncPages          int
+	MeiliSyncPause          time.Duration
+	MeiliBatchSize          int
+	AnalysisEnabled         bool
+	AnalysisJobStream       string
+	AnalysisResultStream    string
+	AnalysisResultPrefix    string
+	AnalysisQueueTTL        time.Duration
+	AnalysisTimeout         time.Duration
+	CoreAPIURL              string
+	KKPhimOrigins           []string
+	OPhimOrigins            []string
+	NguonCOrigins           []string
+	VSMovOrigins            []string
+	ViCDNOrigins            []string
 }
 
 func Load() (Config, error) {
@@ -104,54 +111,61 @@ func Load() (Config, error) {
 		coreAPIURL = "http://api:4000/api/v1"
 	}
 	cfg := Config{
-		Port:                 env("PORT", "8081"),
-		Environment:          env("GIN_MODE", "release"),
-		SigningSecret:        strings.TrimSpace(os.Getenv("HLS_PROXY_SECRET")),
-		InternalToken:        strings.TrimSpace(os.Getenv("MEDIA_INTERNAL_TOKEN")),
-		RedisURL:             strings.TrimSpace(os.Getenv("REDIS_URL")),
-		RequestTimeout:       durationEnv("MEDIA_UPSTREAM_TIMEOUT", 15*time.Second),
-		ManifestCacheTTL:     durationEnv("MEDIA_MANIFEST_CACHE_TTL", 20*time.Second),
-		RatePerSecond:        intEnv("MEDIA_RATE_PER_SECOND", 40),
-		RateBurst:            intEnv("MEDIA_RATE_BURST", 80),
-		SearchRatePerSecond:  intEnv("MEDIA_SEARCH_RATE_PER_SECOND", 10),
-		SearchRateBurst:      intEnv("MEDIA_SEARCH_RATE_BURST", 20),
-		MaxManifestBytes:     int64(intEnv("MEDIA_MAX_MANIFEST_BYTES", 4*1024*1024)),
-		MaxResolveBytes:      int64(intEnv("MEDIA_MAX_RESOLVE_BYTES", 16*1024)),
-		MaxRedirects:         intEnv("MEDIA_MAX_REDIRECTS", 3),
-		RetryAttempts:        boundedIntEnv("MEDIA_RETRY_ATTEMPTS", 2, 1, 3),
-		RetryBackoff:         durationEnv("MEDIA_RETRY_BACKOFF", 150*time.Millisecond),
-		ReadHeaderTimeout:    durationEnv("MEDIA_SERVER_READ_HEADER_TIMEOUT", 5*time.Second),
-		ReadTimeout:          durationEnv("MEDIA_SERVER_READ_TIMEOUT", 15*time.Second),
-		WriteTimeout:         durationEnv("MEDIA_SERVER_WRITE_TIMEOUT", 5*time.Minute),
-		IdleTimeout:          durationEnv("MEDIA_SERVER_IDLE_TIMEOUT", 90*time.Second),
-		ShutdownTimeout:      durationEnv("MEDIA_SHUTDOWN_TIMEOUT", 25*time.Second),
-		MaxHeaderBytes:       intEnv("MEDIA_SERVER_MAX_HEADER_BYTES", 32*1024),
-		CatalogEnabled:       boolEnv("MEDIA_CATALOG_ENABLED", true),
-		CatalogTimeout:       durationEnv("MEDIA_CATALOG_TIMEOUT", 3*time.Second),
-		CatalogCacheTTL:      durationEnv("MEDIA_CATALOG_DETAIL_TTL", 10*time.Minute),
-		CatalogSearchTTL:     durationEnv("MEDIA_CATALOG_SEARCH_TTL", 5*time.Minute),
-		CatalogListTTL:       durationEnv("MEDIA_CATALOG_LIST_TTL", 2*time.Minute),
-		CatalogHomeTTL:       durationEnv("MEDIA_CATALOG_HOME_TTL", 5*time.Minute),
-		CatalogHomeStale:     durationEnv("MEDIA_CATALOG_HOME_STALE_TTL", 30*time.Minute),
-		CatalogMaxBytes:      int64(intEnv("MEDIA_CATALOG_MAX_BYTES", 8*1024*1024)),
+		Port:                    env("PORT", "8081"),
+		Environment:             env("GIN_MODE", "release"),
+		SigningSecret:           strings.TrimSpace(os.Getenv("HLS_PROXY_SECRET")),
+		InternalToken:           strings.TrimSpace(os.Getenv("MEDIA_INTERNAL_TOKEN")),
+		RedisURL:                strings.TrimSpace(os.Getenv("REDIS_URL")),
+		RequestTimeout:          durationEnv("MEDIA_UPSTREAM_TIMEOUT", 15*time.Second),
+		ManifestCacheTTL:        durationEnv("MEDIA_MANIFEST_CACHE_TTL", 20*time.Second),
+		RatePerSecond:           intEnv("MEDIA_RATE_PER_SECOND", 40),
+		RateBurst:               intEnv("MEDIA_RATE_BURST", 80),
+		SearchRatePerSecond:     intEnv("MEDIA_SEARCH_RATE_PER_SECOND", 10),
+		SearchRateBurst:         intEnv("MEDIA_SEARCH_RATE_BURST", 20),
+		MaxManifestBytes:        int64(intEnv("MEDIA_MAX_MANIFEST_BYTES", 4*1024*1024)),
+		MaxResolveBytes:         int64(intEnv("MEDIA_MAX_RESOLVE_BYTES", 16*1024)),
+		MaxRedirects:            intEnv("MEDIA_MAX_REDIRECTS", 3),
+		RetryAttempts:           boundedIntEnv("MEDIA_RETRY_ATTEMPTS", 2, 1, 3),
+		RetryBackoff:            durationEnv("MEDIA_RETRY_BACKOFF", 150*time.Millisecond),
+		ReadHeaderTimeout:       durationEnv("MEDIA_SERVER_READ_HEADER_TIMEOUT", 5*time.Second),
+		ReadTimeout:             durationEnv("MEDIA_SERVER_READ_TIMEOUT", 15*time.Second),
+		WriteTimeout:            durationEnv("MEDIA_SERVER_WRITE_TIMEOUT", 5*time.Minute),
+		IdleTimeout:             durationEnv("MEDIA_SERVER_IDLE_TIMEOUT", 90*time.Second),
+		ShutdownTimeout:         durationEnv("MEDIA_SHUTDOWN_TIMEOUT", 25*time.Second),
+		MaxHeaderBytes:          intEnv("MEDIA_SERVER_MAX_HEADER_BYTES", 32*1024),
+		CatalogEnabled:          boolEnv("MEDIA_CATALOG_ENABLED", true),
+		CatalogTimeout:          durationEnv("MEDIA_CATALOG_TIMEOUT", 3*time.Second),
+		CatalogCacheTTL:         durationEnv("MEDIA_CATALOG_DETAIL_TTL", 10*time.Minute),
+		CatalogSearchTTL:        durationEnv("MEDIA_CATALOG_SEARCH_TTL", 5*time.Minute),
+		CatalogListTTL:          durationEnv("MEDIA_CATALOG_LIST_TTL", 2*time.Minute),
+		CatalogHomeTTL:          durationEnv("MEDIA_CATALOG_HOME_TTL", 5*time.Minute),
+		CatalogHomeStale:        durationEnv("MEDIA_CATALOG_HOME_STALE_TTL", 30*time.Minute),
+		CatalogMaxBytes:         int64(intEnv("MEDIA_CATALOG_MAX_BYTES", 8*1024*1024)),
+		TMDBAPIKey:              strings.TrimSpace(os.Getenv("TMDB_API_KEY")),
+		TMDBAccessToken:         strings.TrimSpace(os.Getenv("TMDB_ACCESS_TOKEN")),
+		TMDBBaseURL:             strings.TrimRight(env("TMDB_API_BASE_URL", "https://api.themoviedb.org/3"), "/"),
+		TMDBArtworkTTL:          durationEnv("TMDB_ARTWORK_TTL", 30*24*time.Hour),
+		TMDBArtworkMissTTL:      durationEnv("TMDB_ARTWORK_MISS_TTL", 7*24*time.Hour),
+		TMDBArtworkTimeout:      durationEnv("TMDB_ARTWORK_TIMEOUT", 2500*time.Millisecond),
+		TMDBArtworkConcurrency:  boundedIntEnv("TMDB_ARTWORK_CONCURRENCY", 8, 1, 24),
 		CatalogEnrichmentWindow: durationEnv("MEDIA_CATALOG_ENRICHMENT_WINDOW_MS", 650*time.Millisecond),
-		MeiliURL:             strings.TrimRight(strings.TrimSpace(os.Getenv("MEILI_URL")), "/"),
-		MeiliAPIKey:          strings.TrimSpace(os.Getenv("MEILI_MASTER_KEY")),
-		MeiliIndex:           env("MEILI_MOVIES_INDEX", "movies"),
-		MeiliTimeout:         durationEnv("MEILI_TIMEOUT", 1200*time.Millisecond),
-		MeiliSyncInterval:    durationEnv("MEILI_SYNC_INTERVAL", 6*time.Hour),
-		MeiliWarmPages:       boundedIntEnv("MEILI_WARM_PAGES", 3, 1, 20),
-		MeiliSyncPages:       boundedIntEnv("MEILI_SYNC_PAGES", 30, 3, 100),
-		MeiliSyncPause:       durationEnv("MEILI_SYNC_PAUSE", 350*time.Millisecond),
-		MeiliBatchSize:       boundedIntEnv("MEILI_BATCH_SIZE", 200, 10, 1000),
-		AnalysisEnabled:      boolEnv("HLS_ANALYZER_ENABLED", true),
-		AnalysisJobStream:    env("HLS_ANALYZER_JOB_STREAM", "netphim:hls:analysis:jobs"),
-		AnalysisResultStream: env("HLS_ANALYZER_RESULT_STREAM", "netphim:hls:analysis:results"),
-		AnalysisResultPrefix: env("HLS_ANALYZER_RESULT_PREFIX", "netphim:hls:analysis:v1:"),
-		AnalysisQueueTTL:     durationEnv("HLS_ANALYZER_DEDUP_TTL", 30*time.Minute),
-		AnalysisTimeout:      durationEnv("HLS_ANALYZER_ENQUEUE_TIMEOUT", 500*time.Millisecond),
-		CoreAPIURL:           coreAPIURL,
-		CORSOrigins:          splitCSV(os.Getenv("MEDIA_CORS_ORIGINS")),
+		MeiliURL:                strings.TrimRight(strings.TrimSpace(os.Getenv("MEILI_URL")), "/"),
+		MeiliAPIKey:             strings.TrimSpace(os.Getenv("MEILI_MASTER_KEY")),
+		MeiliIndex:              env("MEILI_MOVIES_INDEX", "movies"),
+		MeiliTimeout:            durationEnv("MEILI_TIMEOUT", 1200*time.Millisecond),
+		MeiliSyncInterval:       durationEnv("MEILI_SYNC_INTERVAL", 6*time.Hour),
+		MeiliWarmPages:          boundedIntEnv("MEILI_WARM_PAGES", 3, 1, 20),
+		MeiliSyncPages:          boundedIntEnv("MEILI_SYNC_PAGES", 30, 3, 100),
+		MeiliSyncPause:          durationEnv("MEILI_SYNC_PAUSE", 350*time.Millisecond),
+		MeiliBatchSize:          boundedIntEnv("MEILI_BATCH_SIZE", 200, 10, 1000),
+		AnalysisEnabled:         boolEnv("HLS_ANALYZER_ENABLED", true),
+		AnalysisJobStream:       env("HLS_ANALYZER_JOB_STREAM", "netphim:hls:analysis:jobs"),
+		AnalysisResultStream:    env("HLS_ANALYZER_RESULT_STREAM", "netphim:hls:analysis:results"),
+		AnalysisResultPrefix:    env("HLS_ANALYZER_RESULT_PREFIX", "netphim:hls:analysis:v1:"),
+		AnalysisQueueTTL:        durationEnv("HLS_ANALYZER_DEDUP_TTL", 30*time.Minute),
+		AnalysisTimeout:         durationEnv("HLS_ANALYZER_ENQUEUE_TIMEOUT", 500*time.Millisecond),
+		CoreAPIURL:              coreAPIURL,
+		CORSOrigins:             splitCSV(os.Getenv("MEDIA_CORS_ORIGINS")),
 	}
 
 	if len(cfg.SigningSecret) < 32 {
