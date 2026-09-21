@@ -20,8 +20,8 @@ export interface AsianHeroItem extends FilmItem {
 
 /**
  * Builds a robust fallback chain for curated Asian hero assets:
- * 1. Cloudflare Edge CDN (wsrv.nl - globally unblocked & ultra-fast in VN with WebP)
- * 2. Direct CDN (upstream fallback)
+ * 1. Direct correctly-sized CDN asset
+ * 2. Cloudflare Edge resize fallback (wsrv.nl)
  * 3. Self-hosted Next.js Server Image Proxy (/api/image-proxy)
  */
 export function buildAsianHeroImageCandidates(url?: string | null): string[] {
@@ -31,7 +31,8 @@ export function buildAsianHeroImageCandidates(url?: string | null): string[] {
   if (!clean) return [];
 
   if (clean.includes("image.tmdb.org")) {
-    // 1. Cloudflare Edge CDN (wsrv.nl): provides 20-50ms TTFB in VN with WebP compression
+    // TMDB already has a global image CDN, so avoid an unnecessary proxy hop.
+    list.push(clean);
     const isLogo = clean.includes(".png") || clean.includes("logo");
     const widthParam = isLogo
       ? "&w=640"
@@ -43,9 +44,7 @@ export function buildAsianHeroImageCandidates(url?: string | null): string[] {
     list.push(
       `https://wsrv.nl/?url=${encodeURIComponent(clean)}${widthParam}&output=webp&q=82&we=1`,
     );
-    // 2. Direct upstream TMDB CDN
-    list.push(clean);
-    // 3. Local Next.js server image proxy: runs on app origin
+    // Local Next.js server image proxy is the final fallback.
     list.push(`/api/image-proxy?url=${encodeURIComponent(clean)}&strict=1`);
   } else {
     // Direct provider CDN first (phimimg, ophim, nguonc - zero hop)

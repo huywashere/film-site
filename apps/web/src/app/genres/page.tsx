@@ -304,8 +304,8 @@ function ResilientHubCardImage({
   const candidates = useMemo(() => {
     if (src.includes("image.tmdb.org")) {
       return [
-        `https://wsrv.nl/?url=${encodeURIComponent(src)}&w=640&q=80&output=webp&we=1`,
         src,
+        `https://wsrv.nl/?url=${encodeURIComponent(src)}&w=640&q=80&output=webp&we=1`,
         `/api/image-proxy?url=${encodeURIComponent(src)}&strict=1`,
       ];
     }

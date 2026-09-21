@@ -106,7 +106,12 @@ import {
   type ServerType,
   type SourceServer,
 } from '@/lib/player-source-routing';
-import { buildArtworkCandidates, wsrvImageUrl, isTmdbImageUrl } from '@/lib/image-cdn';
+import {
+  buildArtworkCandidates,
+  wsrvImageUrl,
+  isTmdbImageUrl,
+  tmdbImageVariant,
+} from '@/lib/image-cdn';
 import { preloadNextEpisodeStream } from '@/lib/stream-preloader';
 
 const DISABLE_ARTPLAYER = false;
@@ -333,9 +338,9 @@ function EpisodeThumbnail({
     const add = (url?: unknown) => {
       const resolved = resolveImageUrl(url);
       if (!resolved) return;
+      if (!list.includes(resolved)) list.push(resolved);
       const edge = wsrvImageUrl(resolved, 'card');
       if (edge && !list.includes(edge)) list.push(edge);
-      if (!list.includes(resolved)) list.push(resolved);
     };
 
     // 1. Direct Episode Still from TMDB Season query (most accurate & unique per episode)
@@ -2724,7 +2729,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   const optimizedPlayerPoster = useMemo(() => {
     if (!posterUrl) return undefined;
     if (isTmdbImageUrl(posterUrl)) {
-      return wsrvImageUrl(posterUrl, 'backdrop') || posterUrl;
+      return tmdbImageVariant(posterUrl, 'w1280') || posterUrl;
     }
     return posterUrl;
   }, [posterUrl]);
@@ -5041,7 +5046,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                       {diverseTmdbBackdrops.map((image, index) => {
                         const rawUrl = tmdbBackdrop(image.file_path, 'w780');
-                        const imageUrl = rawUrl ? wsrvImageUrl(rawUrl, 'thumbnail') || rawUrl : null;
+                        const imageUrl = rawUrl;
                         return imageUrl ? (
                           <div
                             key={`${image.file_path}-${index}`}

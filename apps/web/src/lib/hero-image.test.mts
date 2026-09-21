@@ -169,6 +169,8 @@ test('large homepage showcases request original TMDB backdrops', () => {
 
   assert.match(series, /allowTitleLookup[\s\S]*preferOriginal/);
   assert.match(curated, /allowTitleLookup[\s\S]*preferOriginal/);
+  assert.match(curated, /preferOriginal[\s\S]*loadImmediately/);
+  assert.match(artwork, /priority \|\| loadImmediately/);
   assert.match(artwork, /tmdbImageVariant\(providerPrimary, 'original'\)/);
   assert.match(artwork, /add\(artworkQuery\.backdropOriginal\)/);
 });
@@ -195,7 +197,14 @@ test('title lookups never replace provider artwork while it is painting', () => 
   const source = readFileSync('src/components/film/TmdbArtwork.tsx', 'utf8');
 
   assert.match(source, /unwrapImageUrl\(rawProviderPrimary\)/);
-  assert.match(source, /!isTmdbImageUrl\(providerPrimary\)\) add\(providerProxy\)/);
+  assert.match(
+    source,
+    /!isTmdbImageUrl\(providerPrimary\)\) \{[\s\S]*add\(providerPrimary\);[\s\S]*add\(providerProxy\);/,
+  );
+  assert.match(
+    source,
+    /artworkQuery\.backdropW1280 \|\| tmdbUrl[\s\S]*localImageProxyUrl\(sizedTmdbUrl\)[\s\S]*wsrvImageUrl\(sizedTmdbUrl, preset\)/,
+  );
   assert.match(source, /if \(autoRecovery\) addTmdbCandidates\(\)/);
   assert.doesNotMatch(source, /\[film\.slug, kind, tmdbUrl\]/);
   assert.doesNotMatch(source, /if \(allowTitleLookup\) addTmdbCandidates\(\)/);

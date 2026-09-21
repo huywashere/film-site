@@ -11,6 +11,7 @@ import {
   buildArtworkCandidates,
   isPreOptimizedImageUrl,
   isTmdbImageUrl,
+  isWsrvImageUrl,
   localImageProxyUrl,
   tmdbImageVariant,
   unwrapImageUrl,
@@ -26,6 +27,7 @@ interface TmdbArtworkProps {
   sizes?: string;
   alt?: string;
   priority?: boolean;
+  loadImmediately?: boolean;
   enabled?: boolean;
   allowTitleLookup?: boolean;
   preferOriginal?: boolean;
@@ -79,19 +81,20 @@ export function TmdbArtwork({
   sizes,
   alt,
   priority = false,
+  loadImmediately = false,
   enabled = true,
   allowTitleLookup = false,
   preferOriginal = false,
 }: TmdbArtworkProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [nearViewport, setNearViewport] = useState(priority);
+  const [nearViewport, setNearViewport] = useState(priority || loadImmediately);
   const [autoRecovery, setAutoRecovery] = useState(false);
   useEffect(() => {
     if (!enabled) {
       setNearViewport(false);
       return;
     }
-    if (priority) {
+    if (priority || loadImmediately) {
       setNearViewport(true);
       return;
     }
@@ -111,7 +114,7 @@ export function TmdbArtwork({
       artworkObserverCallbacks.delete(element);
       observer.unobserve(element);
     };
-  }, [enabled, priority, film.slug]);
+  }, [enabled, priority, loadImmediately, film.slug]);
 
   // Shelf pages can render dozens of cards. Only query TMDB if the film lacks
   // provider artwork or if title lookup is explicitly requested or auto-recovering.
@@ -124,7 +127,11 @@ export function TmdbArtwork({
     ? unwrapImageUrl(rawProviderPrimary) || rawProviderPrimary
     : null;
   const providerIsTmdb = isTmdbImageUrl(providerPrimary);
-  const preferredProviderTmdb =
+  const preferredProviderTmdbW1280 =
+    preferOriginal && kind === 'backdrop' && providerPrimary && providerIsTmdb
+      ? tmdbImageVariant(providerPrimary, 'w1280')
+      : null;
+  const preferredProviderTmdbOriginal =
     preferOriginal && kind === 'backdrop' && providerPrimary && providerIsTmdb
       ? tmdbImageVariant(providerPrimary, 'original')
       : null;
@@ -175,36 +182,39 @@ export function TmdbArtwork({
 
     const addTmdbCandidates = () => {
       if (!tmdbUrl) return;
-      // 1. wsrv edge proxy (Cloudflare Edge WebP - Blazing fast in VN, 20-50ms)
-      const wsrv = wsrvImageUrl(tmdbUrl, preset);
+      // TMDB already exposes correctly-sized edge assets. Fetch it directly
+      // first; a third-party resize hop can hang even while TMDB is healthy.
+      const sizedTmdbUrl =
+        kind === 'backdrop'
+          ? artworkQuery.backdropW1280 || tmdbUrl
+          : artworkQuery.posterW500 || tmdbUrl;
+      add(sizedTmdbUrl);
+
+      // The same-origin relay is more predictable than waiting on a second
+      // remote CDN when a user's network cannot reach TMDB directly.
+      add(localImageProxyUrl(sizedTmdbUrl));
+
+      const wsrv = wsrvImageUrl(sizedTmdbUrl, preset);
       if (wsrv) add(wsrv);
-
-      // 2. Direct TMDB CDN fallback
       if (kind === 'backdrop' && preferOriginal) add(artworkQuery.backdropOriginal);
-      if (kind === 'backdrop' && !preferOriginal) add(artworkQuery.backdropW1280);
-      if (kind === 'poster') add(artworkQuery.posterW500);
       add(tmdbUrl);
-
-      // 3. Local proxy fallback
-      add(`/api/image-proxy?url=${encodeURIComponent(tmdbUrl)}`);
     };
-
-    // Full-width showcases opt into the largest matching TMDB asset. Keep the
-    // provider image behind it so the existing frame stays painted while the
-    // quality upgrade downloads.
-    if (preferOriginal && kind === 'backdrop') {
-      add(preferredProviderTmdb);
-      addTmdbCandidates();
-    }
 
     // Direct provider artwork. Go keeps alternatives from every merged
     // provider, so a dead CDN can fail over without another metadata request.
-    // Movie-provider CDNs are unreliable on some client networks. Start with
-    // our cached same-origin relay so a blocked CDN cannot leave an entire
-    // shelf pending. TMDB remains direct because its regional CDN is stable.
-    if (providerPrimary && !isTmdbImageUrl(providerPrimary)) add(providerProxy);
+    // Movie-provider CDNs are fastest when reachable. Keep the same-origin
+    // relay immediately behind them so a blocked CDN cannot leave a shelf blank.
+    if (providerPrimary && !isTmdbImageUrl(providerPrimary)) {
+      add(providerPrimary);
+      add(providerProxy);
+    }
     if (providerPrimary && isTmdbImageUrl(providerPrimary)) {
-      const wsrv = wsrvImageUrl(providerPrimary, preset);
+      const sizedProvider =
+        tmdbImageVariant(providerPrimary, kind === 'backdrop' ? 'w1280' : 'w500') ||
+        providerPrimary;
+      add(sizedProvider);
+      add(localImageProxyUrl(sizedProvider));
+      const wsrv = wsrvImageUrl(sizedProvider, preset);
       if (wsrv) add(wsrv);
       add(providerPrimary);
     }
@@ -230,10 +240,13 @@ export function TmdbArtwork({
       providerRecoveryCount += 1;
     });
 
-    // Never replace artwork that is already loading or painted just because a
-    // title lookup finishes. TMDB is a recovery source, not a mid-paint
-    // upgrade, so provider artwork remains stable and the card cannot flash.
-    if (!autoRecovery && !preferOriginal) addTmdbCandidates();
+    // Keep provider artwork first even after title lookup resolves. Appending
+    // TMDB prevents the active candidate from being reordered mid-download.
+    if (preferOriginal && kind === 'backdrop') {
+      add(preferredProviderTmdbW1280);
+      add(preferredProviderTmdbOriginal);
+    }
+    addTmdbCandidates();
 
     // Cross-fallback: if backdrop is needed and only poster was passed (or vice versa).
     const rawSecondaryUrl =
@@ -269,7 +282,8 @@ export function TmdbArtwork({
     artworkQuery.backdropW1280,
     artworkQuery.backdropOriginal,
     artworkQuery.posterW500,
-    preferredProviderTmdb,
+    preferredProviderTmdbW1280,
+    preferredProviderTmdbOriginal,
     preferOriginal,
     autoRecovery,
   ]);
@@ -350,9 +364,26 @@ export function TmdbArtwork({
         }
         return next;
       });
-    }, src.startsWith('/api/image-proxy?') ? 6_000 : priority ? 3_500 : nearViewport ? 4_500 : 7_500);
+    }, src.startsWith('/api/image-proxy?')
+      ? 4_000
+      : isWsrvImageUrl(src)
+        ? 1_800
+        : loadImmediately || priority
+          ? 1_500
+          : nearViewport
+            ? 2_200
+            : 5_000);
     return () => window.clearTimeout(timer);
-  }, [autoRecovery, candidates.length, loaded, nearViewport, priority, providerPrimary, src]);
+  }, [
+    autoRecovery,
+    candidates.length,
+    loadImmediately,
+    loaded,
+    nearViewport,
+    priority,
+    providerPrimary,
+    src,
+  ]);
 
   return (
     <div ref={containerRef} className={cn('relative overflow-hidden bg-[#101218]', className)}>

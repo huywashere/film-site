@@ -212,12 +212,12 @@ function DetailPosterCard({
       if (clean && !list.includes(clean)) list.push(clean);
     };
 
-    // 1. TMDB Poster: edge proxy first to bypass VN ISP blocking, then local proxy, then direct
+    // 1. TMDB Poster: its sized CDN is fastest; relays are fallbacks only.
     if (src && /image\.tmdb\.org/i.test(src)) {
+      add(src);
       const wsrv = wsrvImageUrl(src, 'poster');
       if (wsrv) add(wsrv);
       add(`/api/image-proxy?url=${encodeURIComponent(src)}`);
-      add(src);
     } else if (src) {
       add(src);
     }

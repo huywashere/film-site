@@ -306,14 +306,14 @@ pre,
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #7c3aed;
+    background: #8b5cf6;
     border-radius: 9999px;
     border: 2px solid #141414;
     transition: background 0.2s ease, box-shadow 0.2s ease;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #8b5cf6;
+    background: #a78bfa;
   }
 }
 
@@ -339,7 +339,7 @@ pre,
 html {
   scroll-behavior: auto;
   background: var(--background);
-  scrollbar-color: #7c3aed #141414;
+  scrollbar-color: #8b5cf6 #141414;
   scrollbar-width: thin;
 }
 
