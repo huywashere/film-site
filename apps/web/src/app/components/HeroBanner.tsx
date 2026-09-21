@@ -163,8 +163,12 @@ interface HeroFilm extends FilmItem {
   tmdbOnly?: boolean;
 }
 
-const HERO_SESSION_KEY = "netphim.tmdb-hero.v7";
-const HERO_INDEX_SESSION_KEY = "netphim.tmdb-hero-index.v2";
+const HERO_SESSION_KEY = "netphim.tmdb-hero.v8";
+const HERO_INDEX_SESSION_KEY = "netphim.tmdb-hero-index.v3";
+const LEGACY_HERO_SESSION_KEYS = [
+  "netphim.tmdb-hero.v7",
+  "netphim.tmdb-hero-index.v2",
+] as const;
 
 const HERO_MARKETS = [
   { code: "US", region: "US", language: "en" },
@@ -1117,6 +1121,11 @@ function readStoredHeroPlaylist(): HeroFilm[] | null {
   if (typeof window === "undefined") return null;
 
   try {
+    // Hard reloads preserve sessionStorage. Remove the previous artwork schema
+    // so a tab cannot keep replaying stale or empty backdrop URLs after deploy.
+    LEGACY_HERO_SESSION_KEYS.forEach((key) =>
+      window.sessionStorage.removeItem(key),
+    );
     const parsed: unknown = JSON.parse(
       window.sessionStorage.getItem(HERO_SESSION_KEY) || "null",
     );

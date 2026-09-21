@@ -1,4 +1,4 @@
-const CACHE_NAME = "netphim-cache-v7";
+const CACHE_NAME = "netphim-cache-v8";
 const OFFLINE_URL = "/offline";
 
 // Never precache the homepage document. Serving cached HTML after a deploy can

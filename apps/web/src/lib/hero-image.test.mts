@@ -260,6 +260,8 @@ test('hero uses poster art on portrait phones and tablets, backdrop art elsewher
   assert.match(source, /wsrvImageUrl\(directTmdb, "poster"\)/);
   assert.match(source, /object-\[center_18%\] opacity-100/);
   assert.doesNotMatch(source, /revealed \|\| decoded/);
+  assert.match(source, /netphim\.tmdb-hero\.v8/);
+  assert.match(source, /LEGACY_HERO_SESSION_KEYS[\s\S]*sessionStorage\.removeItem/);
 });
 
 test('shared artwork consumes backend TMDB metadata and emits responsive image candidates', () => {
