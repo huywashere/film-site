@@ -90,6 +90,15 @@ export function Sidebar() {
   const isGenrePage = pathname.startsWith('/genre/') || isGenresPage;
   const isCountryPage = pathname.startsWith('/country/');
   const isFilmsPage = pathname === '/films' || pathname.startsWith('/films/');
+  const isUserActivityPage =
+    pathname === '/watch-party' ||
+    pathname.startsWith('/watch-party/') ||
+    pathname === '/history' ||
+    pathname.startsWith('/history/') ||
+    pathname === '/watchlist' ||
+    pathname.startsWith('/watchlist/') ||
+    pathname === '/library' ||
+    pathname.startsWith('/library/');
   const isBrowsePage = isHomePage || isGenrePage || isCountryPage || isFilmsPage || isUniversePage;
 
   // Topic and catalogue pages expose quick navigation immediately. Home keeps
@@ -100,7 +109,8 @@ export function Sidebar() {
     isGenrePage ||
     isCountryPage ||
     isFilmsPage ||
-    isUniversePage;
+    isUniversePage ||
+    isUserActivityPage;
   const shouldShowSidebar = isPinnedPage || isBrowsePage;
 
   useEffect(() => {

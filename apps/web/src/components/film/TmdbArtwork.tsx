@@ -31,6 +31,7 @@ interface TmdbArtworkProps {
   enabled?: boolean;
   allowTitleLookup?: boolean;
   preferOriginal?: boolean;
+  preferTmdb?: boolean;
 }
 
 // Shared IntersectionObserver Singleton: allows 100+ cards to share a single browser observer
@@ -85,6 +86,7 @@ export function TmdbArtwork({
   enabled = true,
   allowTitleLookup = false,
   preferOriginal = false,
+  preferTmdb = false,
 }: TmdbArtworkProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [nearViewport, setNearViewport] = useState(priority || loadImmediately);
@@ -159,7 +161,8 @@ export function TmdbArtwork({
   const needsTmdbArtwork =
     enabled &&
     nearViewport &&
-    ((preferOriginal && kind === 'backdrop' && (!providerIsTmdb || !film.thumb_url)) ||
+    ((preferTmdb && !providerIsTmdb) ||
+      (preferOriginal && kind === 'backdrop' && (!providerIsTmdb || !film.thumb_url)) ||
       ((!providerIsTmdb || autoRecovery) &&
         (!providerPrimary || allowTitleLookup || autoRecovery)));
 
@@ -200,6 +203,10 @@ export function TmdbArtwork({
       add(tmdbUrl);
     };
 
+    // High-visibility showcases can explicitly request TMDB first. Keep this
+    // opt-in so ordinary shelves retain the faster provider-first path.
+    if (preferTmdb) addTmdbCandidates();
+
     // Direct provider artwork. Go keeps alternatives from every merged
     // provider, so a dead CDN can fail over without another metadata request.
     // Movie-provider CDNs are fastest when reachable. Keep the same-origin
@@ -221,7 +228,7 @@ export function TmdbArtwork({
     // Once the relay reports a real upstream failure, put the asynchronously
     // resolved TMDB image directly behind it. Otherwise a dead provider URL
     // and its generated variants can keep a card blank for close to a minute.
-    if (autoRecovery) addTmdbCandidates();
+    if (autoRecovery && !preferTmdb) addTmdbCandidates();
     let providerRecoveryCount = 0;
     const recoveryHosts = new Set([imageHostname(providerPrimary)]);
     providerCandidates?.forEach((candidate) => {
@@ -246,7 +253,7 @@ export function TmdbArtwork({
       add(preferredProviderTmdbW1280);
       add(preferredProviderTmdbOriginal);
     }
-    addTmdbCandidates();
+    if (!preferTmdb) addTmdbCandidates();
 
     // Cross-fallback: if backdrop is needed and only poster was passed (or vice versa).
     const rawSecondaryUrl =
@@ -285,6 +292,7 @@ export function TmdbArtwork({
     preferredProviderTmdbW1280,
     preferredProviderTmdbOriginal,
     preferOriginal,
+    preferTmdb,
     autoRecovery,
   ]);
 

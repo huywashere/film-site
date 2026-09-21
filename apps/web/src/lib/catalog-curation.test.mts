@@ -124,6 +124,16 @@ test('topic pages keep quick navigation visible and omit the Top 10 feed', () =>
   assert.match(mobileNav, /pathname\.startsWith\(["']\/universe\/["']\)/);
 });
 
+test('desktop quick navigation stays visible on watch party, history, and saved pages', () => {
+  const sidebar = readFileSync('src/components/layout/Sidebar.tsx', 'utf8');
+
+  assert.match(sidebar, /const isUserActivityPage =/);
+  for (const route of ['/watch-party', '/history', '/watchlist', '/library']) {
+    assert.ok(sidebar.includes(`pathname === '${route}'`));
+  }
+  assert.match(sidebar, /isPinnedPage[\s\S]*isUserActivityPage/);
+});
+
 test('Marvel and DC expose the timeline as a dedicated content tab', () => {
   const universe = readFileSync('src/components/universe/UniversePageClient.tsx', 'utf8');
 

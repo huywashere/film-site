@@ -193,8 +193,9 @@ test('large homepage showcases change slides only after user interaction', () =>
   assert.doesNotMatch(curated, /setInterval/);
 });
 
-test('title lookups never replace provider artwork while it is painting', () => {
+test('title lookups keep provider artwork stable unless a showcase explicitly prefers TMDB', () => {
   const source = readFileSync('src/components/film/TmdbArtwork.tsx', 'utf8');
+  const series = readFileSync('src/components/film/HeroShowcaseSection.tsx', 'utf8');
 
   assert.match(source, /unwrapImageUrl\(rawProviderPrimary\)/);
   assert.match(
@@ -205,10 +206,13 @@ test('title lookups never replace provider artwork while it is painting', () => 
     source,
     /artworkQuery\.backdropW1280 \|\| tmdbUrl[\s\S]*localImageProxyUrl\(sizedTmdbUrl\)[\s\S]*wsrvImageUrl\(sizedTmdbUrl, preset\)/,
   );
-  assert.match(source, /if \(autoRecovery\) addTmdbCandidates\(\)/);
+  assert.match(source, /if \(preferTmdb\) addTmdbCandidates\(\)/);
+  assert.match(source, /if \(autoRecovery && !preferTmdb\) addTmdbCandidates\(\)/);
   assert.doesNotMatch(source, /\[film\.slug, kind, tmdbUrl\]/);
   assert.doesNotMatch(source, /if \(allowTitleLookup\) addTmdbCandidates\(\)/);
   assert.match(source, /providerCandidates\?\.forEach[\s\S]*addTmdbCandidates\(\)/);
+  assert.ok((series.match(/preferTmdb/g) || []).length >= 2);
+  assert.match(series, /slice\(0, 30\)/);
 });
 
 test('homepage shelves rely on viewport loading instead of eager image bursts', () => {

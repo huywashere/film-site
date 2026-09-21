@@ -888,16 +888,18 @@ export default function HomePageClient({
 
   // 2. Series Âu-Mỹ (Hollywood TV Series) - Multi-Page Fetch for Rich Curated Hero Showcase
   const { data: remoteUsUkSeries } = useQuery({
-    queryKey: ["home-us-uk-series-list-v2"],
+    queryKey: ["home-us-uk-series-list-v3"],
     queryFn: async () => {
       try {
-        const [res1, res2] = await Promise.all([
+        const [res1, res2, res3] = await Promise.all([
           movieApi.getByCountry("au-my", 1),
           movieApi.getByCountry("au-my", 2),
+          movieApi.getByCountry("au-my", 3),
         ]);
         const list1 = extractFilmItems(res1.data);
         const list2 = extractFilmItems(res2.data);
-        return [...list1, ...list2];
+        const list3 = extractFilmItems(res3.data);
+        return [...list1, ...list2, ...list3];
       } catch {
         return [];
       }
@@ -1364,7 +1366,7 @@ export default function HomePageClient({
     // Initial Sections
     const latestRowList = buildRow(latestFilms, 21);
     const vfxRowList = buildRow(vfxFilms, 14);
-    const usUkSeriesRowList = buildRow(usUkSeriesFilms, 21);
+    const usUkSeriesRowList = buildRow(usUkSeriesFilms, 30);
     const actionRowList = buildRow(actionFilms, 14);
     const scifiRowList = buildRow(scifiFilms, 14);
     const horrorRowList = buildRow(horrorFilms, 14);

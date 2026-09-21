@@ -37,7 +37,7 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
   const thumbnailRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const scrollEndTimerRef = useRef<number | null>(null);
   const reduceMotion = useReducedMotion();
-  const shortlist = useMemo(() => deduplicateSectionRow(films).slice(0, 24), [films]);
+  const shortlist = useMemo(() => deduplicateSectionRow(films).slice(0, 30), [films]);
   const activeFilm = shortlist[activeIndex % Math.max(shortlist.length, 1)];
   const nextFilm = shortlist.length > 1
     ? shortlist[(activeIndex + 1) % shortlist.length]
@@ -151,6 +151,8 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
                 alt={activeFilm.name}
                 allowTitleLookup
                 preferOriginal
+                preferTmdb
+                loadImmediately
                 sizes="100vw"
                 imageClassName="object-[center_20%] sm:object-[center_25%]"
                 className="h-full w-full"
@@ -293,6 +295,9 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
                       kind="poster"
                       alt={film.name}
                       allowTitleLookup
+                      preferTmdb
+                      loadImmediately={isActive}
+                      sizes="(max-width: 640px) 58px, 70px"
                       className="aspect-[2/3] w-full transition-transform duration-300 group-hover:scale-105"
                     />
                     {/* Active indicator */}
