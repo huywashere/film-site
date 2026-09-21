@@ -57,7 +57,7 @@ import {
 import {
   CURATED_HERO_FRANCHISE_POOL,
 } from "@/lib/curated-hero-pool";
-import { buildArtworkCandidates } from "@/lib/image-cdn";
+import { buildArtworkCandidates, wsrvImageUrl } from "@/lib/image-cdn";
 
 const TrailerModal = dynamic(
   () => import("@/components/film/TrailerModal").then((m) => m.TrailerModal),
@@ -815,11 +815,25 @@ function preferHeroEdgeCandidate(candidates: string[]): string[] {
   const edgeIndex = candidates.findIndex((candidate) =>
     candidate.startsWith("https://wsrv.nl/"),
   );
-  if (edgeIndex <= 0) return candidates;
-  return [
-    candidates[edgeIndex],
-    ...candidates.filter((_, index) => index !== edgeIndex),
-  ];
+  if (edgeIndex === 0) return candidates;
+  if (edgeIndex > 0) {
+    return [
+      candidates[edgeIndex],
+      ...candidates.filter((_, index) => index !== edgeIndex),
+    ];
+  }
+
+  const directTmdb = candidates.find((candidate) => {
+    try {
+      return new URL(candidate).hostname === "image.tmdb.org";
+    } catch {
+      return false;
+    }
+  });
+  const edgeCandidate = directTmdb
+    ? wsrvImageUrl(directTmdb, "poster")
+    : null;
+  return edgeCandidate ? [edgeCandidate, ...candidates] : candidates;
 }
 
 async function preloadHeroBackdropCandidates(
