@@ -19,6 +19,7 @@ interface HubCard {
   highlight: string;
   href: string;
   image: string;
+  showFullBanner?: boolean;
   countBadge?: string;
   icon: typeof Tv;
 }
@@ -31,7 +32,8 @@ const HUBS: HubCard[] = [
     category: 'Hàn Quốc',
     highlight: 'Tình cảm, gia đình, hình sự và các series Hàn nổi bật.',
     href: '/country/han-quoc',
-    image: 'https://image.tmdb.org/t/p/w1280/8Dc24s2heFSqcpIsqDFlnjYICP.jpg',
+    image: 'https://image.tmdb.org/t/p/w1280/wcP3FsRLog4GNEs9PFrDKKQdcof.jpg',
+    showFullBanner: true,
     countBadge: 'K-Drama tuyển chọn',
     icon: Tv,
   },
@@ -42,7 +44,8 @@ const HUBS: HubCard[] = [
     category: 'Trung Quốc',
     highlight: 'Cổ trang, tiên hiệp, ngôn tình và phim hiện đại Trung Quốc.',
     href: '/country/trung-quoc',
-    image: 'https://image.tmdb.org/t/p/w1280/4J8znHxVaZY3vKb05IWqWfzczXR.jpg',
+    image: 'https://image.tmdb.org/t/p/w1280/5fhS6Bh4VnF0SOZyZnhNpc0XHDb.jpg',
+    showFullBanner: true,
     countBadge: 'Cổ trang & hiện đại',
     icon: Flame,
   },
@@ -65,7 +68,7 @@ const HUBS: HubCard[] = [
     highlight:
       'Trọn bộ 48 movie chiếu rạp, Stand by Me 3D và những chuyến phiêu lưu kỳ thú của Doraemon và Nobita.',
     href: '/universe/doraemon',
-    image: 'https://phimimg.com/upload/vod/20250521-1/0514f6f2eef84b1340afd31c42574a2d.jpg',
+    image: 'https://image.tmdb.org/t/p/w1280/Z3mSxuPRNiFYxf1LBoGz3YrJzC.jpg',
     countBadge: '48 Movie',
     icon: Sparkles,
   },
@@ -77,7 +80,7 @@ const HUBS: HubCard[] = [
     highlight:
       'Trọn bộ 28 Movie chiếu rạp bom tấn, TV series phá án ly kỳ và cuộc đối đầu Kaito Kid, Tổ Chức Áo Đen.',
     href: '/universe/conan',
-    image: 'https://phimimg.com/upload/vod/20241229-1/309e1f1623755fa993140a83167f577b.jpg',
+    image: 'https://image.tmdb.org/t/p/w1280/4TMkOnI6rCYxqD059aeeQSBv5mc.jpg',
     countBadge: '34+ Movie & Series',
     icon: Shield,
   },
@@ -138,7 +141,15 @@ const HUBS: HubCard[] = [
   },
 ];
 
-function ResilientHubCardImage({ src, isPriority }: { src: string; isPriority?: boolean }) {
+function ResilientHubCardImage({
+  src,
+  isPriority,
+  showFullBanner = false,
+}: {
+  src: string;
+  isPriority?: boolean;
+  showFullBanner?: boolean;
+}) {
   const candidates = useMemo(() => {
     if (src.includes('image.tmdb.org')) {
       return [
@@ -176,7 +187,12 @@ function ResilientHubCardImage({ src, isPriority }: { src: string; isPriority?: 
           setCandidateIdx((prev: number) => prev + 1);
         }
       }}
-      className="object-cover object-center brightness-[0.92] saturate-[1.04] transition-[transform,filter] duration-500 ease-out group-hover:scale-[1.025] group-hover:brightness-100"
+      className={cn(
+        'brightness-[0.92] saturate-[1.04] transition-[transform,filter] duration-500 ease-out group-hover:brightness-100',
+        showFullBanner
+          ? 'object-contain object-top group-hover:scale-[1.012]'
+          : 'object-cover object-center group-hover:scale-[1.025]',
+      )}
     />
   );
 }
@@ -339,11 +355,27 @@ export default function GenresPage() {
                     className="pointer-events-none absolute inset-0 overflow-hidden"
                     aria-hidden="true"
                   >
-                    <ResilientHubCardImage src={hub.image} isPriority={idx < 4} />
+                    <ResilientHubCardImage
+                      src={hub.image}
+                      isPriority={idx < 4}
+                      showFullBanner={hub.showFullBanner}
+                    />
                     {/* Overall dark tint so bright artwork doesn't overpower text */}
-                    <div className="absolute inset-0 bg-black/35 transition-opacity duration-300 group-hover:bg-black/25" />
+                    <div
+                      className={cn(
+                        'absolute inset-0 transition-opacity duration-300',
+                        hub.showFullBanner
+                          ? 'bg-black/15 group-hover:bg-black/10'
+                          : 'bg-black/35 group-hover:bg-black/25',
+                      )}
+                    />
                     {/* Deep bottom-to-top gradient ensuring text is 100% legible */}
-                    <div className="absolute inset-x-0 bottom-0 h-[80%] bg-gradient-to-t from-[#07080d] via-[#07080d]/95 via-50% to-transparent" />
+                    <div
+                      className={cn(
+                        'absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#07080d] via-[#07080d]/95 via-50% to-transparent',
+                        hub.showFullBanner ? 'h-[64%]' : 'h-[80%]',
+                      )}
+                    />
                   </div>
 
                   {/* Bottom Info Lockup */}

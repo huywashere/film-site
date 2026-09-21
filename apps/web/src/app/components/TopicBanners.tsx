@@ -11,8 +11,7 @@ export default function TopicBanners() {
     {
       title: "DC Universe",
       href: "/search?q=dc",
-      image:
-        "/images/zack-snyders-justice-league-dc-superheroes-dc-comics-2021-3840x2160-4980.jpg",
+      image: "https://image.tmdb.org/t/p/w1280/dqK9Hag1054tghRQSqLSfrkvQnA.jpg",
       description:
         lang === "en"
           ? "Explore legendary superheroes from the DC Comics universe."
@@ -21,7 +20,7 @@ export default function TopicBanners() {
     {
       title: "Marvel Cinematic",
       href: "/search?q=marvel",
-      image: "/images/wp3533664-avengers-infinity-war-4k-wallpapers.jpg",
+      image: "https://image.tmdb.org/t/p/w1280/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg",
       description:
         lang === "en"
           ? "The complete Marvel Cinematic Universe blockbusters."
@@ -30,7 +29,7 @@ export default function TopicBanners() {
     {
       title: "One Piece",
       href: "/films/anime",
-      image: "/images/one-piece-season-15-3840x2160-22064.jpg",
+      image: "https://image.tmdb.org/t/p/w1280/qD211Hb5XwFxrszzBBe5EUYJerh.jpg",
       description:
         lang === "en"
           ? "Join Luffy on his epic pirate journey across the seas."
@@ -39,7 +38,7 @@ export default function TopicBanners() {
     {
       title: lang === "en" ? "Trending Hot" : "Phim đang hot",
       href: "/search?q=hot",
-      image: "/images/MV5BN2MyYjk2MWMtODMyZS00MDUyLW-8113-3732-1766460989.webp",
+      image: "https://image.tmdb.org/t/p/w1280/by8z9Fe8y7p4jo2YlW2SZDnptyT.jpg",
       description:
         lang === "en"
           ? "Top trending titles buzzing across cinema right now."
@@ -48,7 +47,7 @@ export default function TopicBanners() {
     {
       title: t("genres_list.co-trang", "Cổ Trang"),
       href: "/genre/co-trang",
-      image: "/images/phim_co_trang_trung_quoc_50_573c11fea1.jpg",
+      image: "https://image.tmdb.org/t/p/w1280/5fhS6Bh4VnF0SOZyZnhNpc0XHDb.jpg",
       description:
         lang === "en"
           ? "Breathtaking period costume dramas and mythical legends."
@@ -57,7 +56,7 @@ export default function TopicBanners() {
     {
       title: lang === "en" ? "Weekend Binge" : "Cày Phim Cuối Tuần",
       href: "/search?q=weekend",
-      image: "/images/zack-snyders-justice-league-dc-superheroes-dc-comics-2021-3840x2160-4980.jpg",
+      image: "https://image.tmdb.org/t/p/w1280/eZ239CUp1d6OryZEBPnO2n87gMG.jpg",
       description:
         lang === "en"
           ? "Plan your movie marathon with handpicked blockbusters."

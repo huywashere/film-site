@@ -149,6 +149,25 @@ test('local login and topic artwork use wsrv without Vercel image quota', () => 
   assert.match(topics, /backgroundImage: `url\('\$\{wsrvPublicImageUrl/);
 });
 
+test('every topic banner is backed by TMDB artwork and Asian hubs preserve the full frame', () => {
+  const genres = readFileSync('src/app/genres/page.tsx', 'utf8');
+  const topics = readFileSync('src/app/components/TopicBanners.tsx', 'utf8');
+
+  assert.equal(
+    (genres.match(/image: 'https:\/\/image\.tmdb\.org\/t\/p\/w1280\//g) || []).length,
+    10,
+  );
+  assert.equal(
+    (topics.match(/image: "https:\/\/image\.tmdb\.org\/t\/p\/w1280\//g) || []).length,
+    6,
+  );
+  assert.doesNotMatch(genres, /image: 'https:\/\/phimimg\.com/);
+  assert.doesNotMatch(topics, /image: "\/images\//);
+  assert.equal((genres.match(/showFullBanner: true/g) || []).length, 2);
+  assert.match(genres, /object-contain object-top/);
+  assert.match(genres, /hub\.showFullBanner \? 'h-\[64%\]' : 'h-\[80%\]'/);
+});
+
 test('hero banner waits for decoded title logos before revealing a slide', () => {
   const source = readFileSync('src/app/components/HeroBanner.tsx', 'utf8');
   const cache = readFileSync('src/lib/movie-logo-cache.ts', 'utf8');
