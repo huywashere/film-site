@@ -7,12 +7,13 @@ import {
   buildHeroResponsiveSrcSet,
 } from './hero-image.ts';
 
-test('prefers a direct w1280 TMDB backdrop over the original proxy URL', () => {
+test('prefers a resized wsrv WebP hero while retaining direct TMDB fallback', () => {
   const raw = 'https://image.tmdb.org/t/p/original/backdrop.jpg';
   const proxy = `/api/image-proxy?url=${encodeURIComponent(raw)}`;
   const candidates = buildHeroImageCandidates({ heroBackdrop: proxy });
 
-  assert.equal(candidates[0], 'https://image.tmdb.org/t/p/w1280/backdrop.jpg');
+  assert.match(candidates[0], /^https:\/\/wsrv\.nl\/\?/);
+  assert.equal(candidates[1], 'https://image.tmdb.org/t/p/w1280/backdrop.jpg');
   assert.match(candidates.at(-1) || '', /^\/api\/image-proxy\?/);
 });
 
@@ -255,7 +256,9 @@ test('hero uses poster art on portrait phones and tablets, backdrop art elsewher
     source,
     /\[usesPortraitArtwork \? "portrait" : "landscape"\]: readyBackdrop/,
   );
-  assert.match(source, /revealed \|\| decoded \? "opacity-100" : "opacity-0"/);
+  assert.match(source, /preferHeroEdgeCandidate\([\s\S]*https:\/\/wsrv\.nl\//);
+  assert.match(source, /object-\[center_18%\] opacity-100/);
+  assert.doesNotMatch(source, /revealed \|\| decoded/);
 });
 
 test('shared artwork consumes backend TMDB metadata and emits responsive image candidates', () => {

@@ -90,9 +90,9 @@ export function buildHeroResponsiveSrcSet(
 /**
  * Build a deterministic fallback chain for a full-width hero image.
  *
- * Direct CDN hosts (image.tmdb.org, phimimg.com, img.phimapi.com, etc.) are fetched
- * directly first because their edge CDN is fastest, highly available, and avoids
- * serverless proxy latency or rate limits.
+ * TMDB hero backdrops use wsrv's resized WebP edge copy first. In practice some
+ * Vietnamese networks leave image.tmdb.org pending long enough to expose the
+ * dark hero placeholder. The direct TMDB URL remains the immediate fallback.
  */
 export function buildHeroImageCandidates(input: {
   heroBackdrop?: string;
@@ -112,9 +112,9 @@ export function buildHeroImageCandidates(input: {
     const proxiedRaw = rawProxyUrl(normalized);
     if (proxiedRaw && isTmdbImage(proxiedRaw)) {
       const sized = preferTmdbBackdropSize(proxiedRaw);
-      add(sized);
       const wsrv = wsrvImageUrl(sized, "backdrop");
       if (wsrv) add(wsrv);
+      add(sized);
       add(proxiedRaw);
       add(`${IMAGE_PROXY_PATH}?url=${encodeURIComponent(sized)}&strict=1`);
       add(strictProxyUrl(normalized));
@@ -123,9 +123,9 @@ export function buildHeroImageCandidates(input: {
 
     if (isTmdbImage(normalized)) {
       const sized = preferTmdbBackdropSize(normalized);
-      add(sized);
       const wsrv = wsrvImageUrl(sized, "backdrop");
       if (wsrv) add(wsrv);
+      add(sized);
       add(normalized);
       // Some mobile networks intermittently fail to reach TMDB's image CDN.
       // Relay the exact same film artwork before trying another film-owned
