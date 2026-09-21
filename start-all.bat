@@ -67,6 +67,8 @@ echo.
 
 rem 5. Next.js Web Frontend (Port 3000)
 echo [5/5] Kiem tra Next.js Web Frontend (Port 3000)...
+rem Previous recovery attempts may have left disposable Turbopack builds.
+for /d %%D in ("apps\web\.next-dev.stale-*") do rmdir /s /q "%%~fD" >nul 2>&1
 curl.exe -fsS --max-time 20 http://127.0.0.1:3000/api/health >nul 2>&1
 if not errorlevel 1 (
     echo [OK] Next.js Web Frontend da dang chay san tren cong 3000.
@@ -85,6 +87,9 @@ if not errorlevel 1 (
     for /f "tokens=5" %%P in ('netstat -ano ^| findstr ":3000 " ^| findstr "LISTENING"') do taskkill /PID %%P /T /F >nul 2>&1
     ping -n 2 127.0.0.1 >nul
     if exist "apps\web\.next-dev" move "apps\web\.next-dev" "apps\web\.next-dev.stale-%RANDOM%" >nul
+    rem The renamed directory is disposable Turbopack output. Delete stale
+    rem generations now so repeated recovery attempts do not consume gigabytes.
+    for /d %%D in ("apps\web\.next-dev.stale-*") do rmdir /s /q "%%~fD" >nul 2>&1
     echo [INFO] Dang khoi dong Next.js Web Frontend...
     set MEDIA_GATEWAY_INTERNAL_URL=http://127.0.0.1:8081
     echo.
