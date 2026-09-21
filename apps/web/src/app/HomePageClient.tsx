@@ -1491,6 +1491,16 @@ export default function HomePageClient({
     return deduplicate([...selected, ...pool]).slice(0, 10);
   }, [latestFilms, publicConfig?.homeTop10Slugs, top10List, trendingFilms]);
 
+  const weeklyMobileRowList = useMemo(() => {
+    const interleaved: FilmItem[] = [];
+    const length = Math.max(seriesRowList.length, singleRowList.length);
+    for (let index = 0; index < length; index += 1) {
+      if (seriesRowList[index]) interleaved.push(seriesRowList[index]);
+      if (singleRowList[index]) interleaved.push(singleRowList[index]);
+    }
+    return deduplicateSectionRow(interleaved).slice(0, 14);
+  }, [seriesRowList, singleRowList]);
+
   const customFeaturedSections = useMemo(() => {
     const rows = publicConfig?.homeFeaturedRows;
     if (!rows || typeof rows !== "object" || Array.isArray(rows)) return {};
@@ -1662,13 +1672,23 @@ export default function HomePageClient({
     ),
     historical: (
       <LazySection initiallyVisible>
-        <FilmSection
-          title={t("sections.historical", "Phim Cổ Trang")}
-          films={historicalRowList}
-          isLoading={historicalLoading}
-          href="/genre/co-trang"
-          cardVariant="poster-pill"
-        />
+        <div data-mobile-simple-section="historical" className="md:hidden">
+          <FilmSection
+            title={t("sections.historical", "Phim Cổ Trang")}
+            films={historicalRowList}
+            isLoading={historicalLoading}
+            href="/genre/co-trang"
+          />
+        </div>
+        <div className="hidden md:block">
+          <FilmSection
+            title={t("sections.historical", "Phim Cổ Trang")}
+            films={historicalRowList}
+            isLoading={historicalLoading}
+            href="/genre/co-trang"
+            cardVariant="poster-pill"
+          />
+        </div>
       </LazySection>
     ),
     theatrical: (
@@ -1834,11 +1854,21 @@ export default function HomePageClient({
             </LazySection>
 
             <LazySection>
-              <WeeklyCuratedShowcase
-                seriesFilms={seriesRowList}
-                singleFilms={singleRowList}
-                isLoading={seriesLoading || singleLoading}
-              />
+              <div data-mobile-simple-section="weekly" className="md:hidden">
+                <FilmSection
+                  title="Phim Bộ & Phim Lẻ Tuần Này"
+                  films={weeklyMobileRowList}
+                  isLoading={seriesLoading || singleLoading}
+                  href="/films"
+                />
+              </div>
+              <div className="hidden md:block">
+                <WeeklyCuratedShowcase
+                  seriesFilms={seriesRowList}
+                  singleFilms={singleRowList}
+                  isLoading={seriesLoading || singleLoading}
+                />
+              </div>
             </LazySection>
           </div>
       </div>

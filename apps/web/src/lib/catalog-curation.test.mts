@@ -162,3 +162,21 @@ test('homepage exposes the three requested catalogue sections with exact labels'
   );
   assert.match(source, /defaultSectionOrder\.filter\([\s\S]*?!savedSectionOrder\.includes/);
 });
+
+test('themed homepage collections collapse to standard card rails on mobile', () => {
+  const homepage = readFileSync('src/app/HomePageClient.tsx', 'utf8');
+
+  assert.match(
+    homepage,
+    /data-mobile-simple-section="historical"[\s\S]*className="md:hidden"[\s\S]*title=\{t\("sections\.historical", "Phim Cổ Trang"\)\}/,
+  );
+  assert.match(
+    homepage,
+    /className="hidden md:block"[\s\S]*cardVariant="poster-pill"/,
+  );
+  assert.match(
+    homepage,
+    /data-mobile-simple-section="weekly"[\s\S]*className="md:hidden"[\s\S]*<FilmSection[\s\S]*title="Phim Bộ & Phim Lẻ Tuần Này"/,
+  );
+  assert.match(homepage, /className="hidden md:block"[\s\S]*<WeeklyCuratedShowcase/);
+});
