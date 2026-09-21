@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import Image from "next/image";
-import Link from "next/link";
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import {
   Play,
   Star,
@@ -11,12 +11,13 @@ import {
   Clapperboard,
   Clock,
   ChevronDown,
-} from "lucide-react";
-import dynamic from "next/dynamic";
-import { FilmCard, FilmItem } from "@/components/film/FilmCard";
-import { Pagination } from "@/components/film/Pagination";
-import { LandscapeSpotlightRow } from "@/components/film/LandscapeSpotlightRow";
-import { UniverseTimelineSection } from "@/components/universe/UniverseTimelineSection";
+  LayoutGrid,
+} from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { FilmCard, FilmItem } from '@/components/film/FilmCard';
+import { Pagination } from '@/components/film/Pagination';
+import { LandscapeSpotlightRow } from '@/components/film/LandscapeSpotlightRow';
+import { UniverseTimelineSection } from '@/components/universe/UniverseTimelineSection';
 import {
   getUniverseFilms,
   getUniverseSpotlights,
@@ -26,29 +27,21 @@ import {
   CONAN_SUB_FRANCHISES,
   UniverseSpotlightItem,
   UniverseType,
-} from "@/lib/universe-catalog";
-import { cn } from "@/lib/utils";
-import {
-  buildArtworkCandidates,
-  isTmdbImageUrl,
-  isWsrvImageUrl,
-} from "@/lib/image-cdn";
-import { resolveImageUrl } from "@/lib/movie-image-url";
-import {
-  isImagePreloaded,
-  markImagePreloaded,
-  preloadImage,
-} from "@/lib/image-preload-cache";
+} from '@/lib/universe-catalog';
+import { cn } from '@/lib/utils';
+import { buildArtworkCandidates, isTmdbImageUrl, isWsrvImageUrl } from '@/lib/image-cdn';
+import { resolveImageUrl } from '@/lib/movie-image-url';
+import { isImagePreloaded, markImagePreloaded, preloadImage } from '@/lib/image-preload-cache';
 
 const TrailerModal = dynamic(
-  () => import("@/components/film/TrailerModal").then((m) => m.TrailerModal),
+  () => import('@/components/film/TrailerModal').then((m) => m.TrailerModal),
   { ssr: false },
 );
 
 function getUniverseLogoCandidates(titleLogo?: string | null): string[] {
   if (!titleLogo) return [];
-  return buildArtworkCandidates([titleLogo], "titleLogo", {
-    includeWsrvForTmdb: titleLogo.includes("image.tmdb.org"),
+  return buildArtworkCandidates([titleLogo], 'titleLogo', {
+    includeWsrvForTmdb: titleLogo.includes('image.tmdb.org'),
     preferEdge: true,
     strictProxy: true,
   });
@@ -82,7 +75,7 @@ function UniverseSpotlightBackdrop({
   isPriority: boolean;
 }) {
   const candidates = useMemo(() => {
-    return buildArtworkCandidates([item.heroBackdrop], "backdrop", {
+    return buildArtworkCandidates([item.heroBackdrop], 'backdrop', {
       includeWsrvForTmdb: true,
       preferEdge: true,
       strictProxy: true,
@@ -100,10 +93,8 @@ function UniverseSpotlightBackdrop({
   return (
     <div
       className={cn(
-        "absolute inset-0 transition-opacity duration-1000 ease-in-out bg-[#07080c]",
-        isActive
-          ? "opacity-100 z-0 pointer-events-auto"
-          : "opacity-0 -z-10 pointer-events-none",
+        'absolute inset-0 transition-opacity duration-1000 ease-in-out bg-[#07080c]',
+        isActive ? 'opacity-100 z-0 pointer-events-auto' : 'opacity-0 -z-10 pointer-events-none',
       )}
     >
       {/* Ambient atmospheric backdrop glow so hero is never pitch black */}
@@ -116,12 +107,10 @@ function UniverseSpotlightBackdrop({
           alt={item.name}
           fill
           priority={isPriority}
-          fetchPriority={isPriority ? "high" : "low"}
-          loading={isPriority ? "eager" : "lazy"}
-          decoding={isPriority ? "sync" : "async"}
-          unoptimized={
-            isWsrvImageUrl(src) || isTmdbImageUrl(src) || src.startsWith("/api/")
-          }
+          fetchPriority={isPriority ? 'high' : 'low'}
+          loading={isPriority ? 'eager' : 'lazy'}
+          decoding={isPriority ? 'sync' : 'async'}
+          unoptimized={isWsrvImageUrl(src) || isTmdbImageUrl(src) || src.startsWith('/api/')}
           sizes="100vw"
           onError={() => {
             if (candidateIdx < candidates.length - 1) {
@@ -144,32 +133,23 @@ function UniverseSpotlightLogo({
   name: string;
   isPriority?: boolean;
 }) {
-  const candidates = useMemo(
-    () => getUniverseLogoCandidates(titleLogo),
-    [titleLogo],
-  );
+  const candidates = useMemo(() => getUniverseLogoCandidates(titleLogo), [titleLogo]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
   const [hasFailedAll, setHasFailedAll] = useState(false);
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    const cachedIdx = candidates.findIndex((source) =>
-      isImagePreloaded(source),
-    );
+    const cachedIdx = candidates.findIndex((source) => isImagePreloaded(source));
     setCandidateIdx(cachedIdx >= 0 ? cachedIdx : 0);
     setHasFailedAll(!titleLogo);
     setLoadedSrc(cachedIdx >= 0 ? candidates[cachedIdx] : null);
   }, [candidates, titleLogo]);
 
-  const cachedIdx = candidates.findIndex((source) =>
-    isImagePreloaded(source),
-  );
+  const cachedIdx = candidates.findIndex((source) => isImagePreloaded(source));
   const resolvedIdx = cachedIdx >= 0 ? cachedIdx : candidateIdx;
   const src = candidates[resolvedIdx];
-  const isReady = Boolean(
-    src && (loadedSrc === src || isImagePreloaded(src)),
-  );
+  const isReady = Boolean(src && (loadedSrc === src || isImagePreloaded(src)));
 
   if (!titleLogo || hasFailedAll || !src) {
     return (
@@ -188,12 +168,10 @@ function UniverseSpotlightLogo({
         aria-hidden="true"
         fill
         priority={isPriority}
-        fetchPriority={isPriority ? "high" : "low"}
+        fetchPriority={isPriority ? 'high' : 'low'}
         loading="eager"
         decoding="sync"
-        unoptimized={
-          isWsrvImageUrl(src) || isTmdbImageUrl(src) || src.startsWith("/api/")
-        }
+        unoptimized={isWsrvImageUrl(src) || isTmdbImageUrl(src) || src.startsWith('/api/')}
         onLoad={() => {
           markImagePreloaded(src);
           setLoadedSrc(src);
@@ -207,8 +185,8 @@ function UniverseSpotlightLogo({
           }
         }}
         className={cn(
-          "object-contain object-left transition-opacity duration-200",
-          isReady ? "opacity-100" : "opacity-0",
+          'object-contain object-left transition-opacity duration-200',
+          isReady ? 'opacity-100' : 'opacity-0',
         )}
         sizes="(max-width: 768px) 320px, 520px"
       />
@@ -228,7 +206,7 @@ function UniverseThumbnailButton({
   const [useFallback, setUseFallback] = useState(false);
   const candidates = useMemo(
     () =>
-      buildArtworkCandidates([item.heroBackdrop], "thumbnail", {
+      buildArtworkCandidates([item.heroBackdrop], 'thumbnail', {
         includeWsrvForTmdb: true,
       }),
     [item.heroBackdrop],
@@ -240,10 +218,10 @@ function UniverseThumbnailButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "group relative h-14 w-24 sm:h-[62px] sm:w-[110px] lg:h-[68px] lg:w-[120px] rounded-xl overflow-hidden border transition-all duration-300 cursor-pointer shrink-0 bg-neutral-900/90",
+        'group relative h-14 w-24 sm:h-[62px] sm:w-[110px] lg:h-[68px] lg:w-[120px] rounded-xl overflow-hidden border transition-all duration-300 cursor-pointer shrink-0 bg-neutral-900/90',
         isActive
-          ? "border-white ring-2 ring-white/70 shadow-[0_4px_20px_rgba(0,0,0,0.8),0_0_12px_rgba(255,255,255,0.3)] z-10"
-          : "border-white/20 opacity-65 hover:opacity-100 hover:border-white/60",
+          ? 'border-white ring-2 ring-white/70 shadow-[0_4px_20px_rgba(0,0,0,0.8),0_0_12px_rgba(255,255,255,0.3)] z-10'
+          : 'border-white/20 opacity-65 hover:opacity-100 hover:border-white/60',
       )}
     >
       <Image
@@ -258,8 +236,8 @@ function UniverseThumbnailButton({
           if (!useFallback) setUseFallback(true);
         }}
         className={cn(
-          "object-cover transition-transform duration-500",
-          isActive ? "scale-105" : "group-hover:scale-105",
+          'object-cover transition-transform duration-500',
+          isActive ? 'scale-105' : 'group-hover:scale-105',
         )}
       />
       <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/95 via-black/60 to-transparent pointer-events-none" />
@@ -275,19 +253,19 @@ interface UniversePageClientProps {
 }
 
 export function UniversePageClient({ universe }: UniversePageClientProps) {
-  const isMarvel = universe === "marvel";
-  const isDC = universe === "dc";
-  const isDoraemon = universe === "doraemon";
-  const isConan = universe === "conan";
+  const isMarvel = universe === 'marvel';
+  const isDC = universe === 'dc';
+  const isDoraemon = universe === 'doraemon';
+  const isConan = universe === 'conan';
 
   // Data & Spotlights
   const spotlights = useMemo(() => getUniverseSpotlights(universe), [universe]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const slideActivationRequest = useRef(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [trailerFilm, setTrailerFilm] = useState<
-    (FilmItem & { trailer_url?: string }) | null
-  >(null);
+  const [trailerFilm, setTrailerFilm] = useState<(FilmItem & { trailer_url?: string }) | null>(
+    null,
+  );
 
   // Sub-franchise filter for full catalog
   const subFranchises = isMarvel
@@ -297,9 +275,35 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
       : isDoraemon
         ? DORAEMON_SUB_FRANCHISES
         : CONAN_SUB_FRANCHISES;
-  const [selectedSub, setSelectedSub] = useState("all");
+  const [selectedSub, setSelectedSub] = useState('all');
   const [page, setPage] = useState(1);
+  const [contentTab, setContentTab] = useState<'collection' | 'timeline'>('collection');
   const pageSize = 28;
+
+  const selectContentTab = useCallback(
+    (nextTab: 'collection' | 'timeline', shouldScroll = false) => {
+      setContentTab(nextTab);
+      if (typeof window === 'undefined') return;
+
+      const hash = nextTab === 'timeline' ? '#universe-timeline' : '#universe-content';
+      window.history.replaceState(null, '', hash);
+      if (shouldScroll) {
+        window.requestAnimationFrame(() => {
+          document
+            .getElementById('universe-content')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if ((!isMarvel && !isDC) || typeof window === 'undefined') return;
+    if (window.location.hash === '#universe-timeline') {
+      setContentTab('timeline');
+    }
+  }, [isDC, isMarvel]);
 
   // Active spotlight item
   const activeSpotlight: UniverseSpotlightItem = useMemo(() => {
@@ -312,11 +316,10 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
 
   useEffect(() => {
     const hero = heroRef.current;
-    if (!hero || typeof IntersectionObserver === "undefined") return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setIsHeroVisible(entry.isIntersecting),
-      { threshold: 0.05 },
-    );
+    if (!hero || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(([entry]) => setIsHeroVisible(entry.isIntersecting), {
+      threshold: 0.05,
+    });
     observer.observe(hero);
     return () => observer.disconnect();
   }, []);
@@ -330,14 +333,13 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
     if (!activeButton) return;
     const centeredLeft =
       activeButton.offsetLeft - (rail.clientWidth - activeButton.offsetWidth) / 2;
-    rail.scrollTo({ left: Math.max(0, centeredLeft), behavior: "smooth" });
+    rail.scrollTo({ left: Math.max(0, centeredLeft), behavior: 'smooth' });
   }, [currentIdx]);
 
   const activateSpotlight = useCallback(
     async (requestedIndex: number) => {
       if (!spotlights.length) return;
-      const nextIndex =
-        (requestedIndex + spotlights.length) % spotlights.length;
+      const nextIndex = (requestedIndex + spotlights.length) % spotlights.length;
       const requestId = ++slideActivationRequest.current;
 
       // Do not replace the painted title with an undecoded image. This keeps
@@ -373,14 +375,11 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
     if (!isHeroVisible || spotlights.length <= 1) return;
     const handle = window.setTimeout(() => {
       const item = spotlights[(currentIdx + 1) % spotlights.length];
-      const nextBackdrop = buildArtworkCandidates(
-        [item.heroBackdrop],
-        "backdrop",
-      )[0];
+      const nextBackdrop = buildArtworkCandidates([item.heroBackdrop], 'backdrop')[0];
       for (const source of [nextBackdrop]) {
         if (!source) continue;
         const image = new window.Image();
-        image.decoding = "async";
+        image.decoding = 'async';
         image.src = source;
       }
     }, 300);
@@ -394,7 +393,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
       slug: activeSpotlight.slug,
       name: activeSpotlight.name,
       origin_name: activeSpotlight.origin_name,
-      type: "single",
+      type: 'single',
       thumb_url: activeSpotlight.heroBackdrop,
       poster_url: activeSpotlight.heroBackdrop,
       year: activeSpotlight.year,
@@ -407,37 +406,37 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
 
   // Rails categorized by franchise
   const rail1 = useMemo(() => {
-    let sub = "avengers";
-    if (isDC) sub = "batman";
-    else if (isDoraemon) sub = "movies";
-    else if (isConan) sub = "movies";
+    let sub = 'avengers';
+    if (isDC) sub = 'batman';
+    else if (isDoraemon) sub = 'movies';
+    else if (isConan) sub = 'movies';
     const raw = getUniverseFilms(universe, { subFranchise: sub });
     return mapRawToFilmItems(raw);
   }, [universe, isDC, isDoraemon, isConan]);
 
   const rail2 = useMemo(() => {
-    let sub = "spiderman";
-    if (isDC) sub = "justice-league";
-    else if (isDoraemon) sub = "3d";
-    else if (isConan) sub = "black-org";
+    let sub = 'spiderman';
+    if (isDC) sub = 'justice-league';
+    else if (isDoraemon) sub = '3d';
+    else if (isConan) sub = 'black-org';
     const raw = getUniverseFilms(universe, { subFranchise: sub });
     return mapRawToFilmItems(raw);
   }, [universe, isDC, isDoraemon, isConan]);
 
   const rail3 = useMemo(() => {
-    let sub = "xmen";
-    if (isDC) sub = "superman";
-    else if (isDoraemon) sub = "adventure";
-    else if (isConan) sub = "kaito-kid";
+    let sub = 'xmen';
+    if (isDC) sub = 'superman';
+    else if (isDoraemon) sub = 'adventure';
+    else if (isConan) sub = 'kaito-kid';
     const raw = getUniverseFilms(universe, { subFranchise: sub });
     return mapRawToFilmItems(raw);
   }, [universe, isDC, isDoraemon, isConan]);
 
   const rail4 = useMemo(() => {
-    let sub = "disneyplus";
-    if (isDC) sub = "series";
-    else if (isDoraemon) sub = "classic";
-    else if (isConan) sub = "series";
+    let sub = 'disneyplus';
+    if (isDC) sub = 'series';
+    else if (isDoraemon) sub = 'classic';
+    else if (isConan) sub = 'series';
     const raw = getUniverseFilms(universe, { subFranchise: sub });
     return mapRawToFilmItems(raw);
   }, [universe, isDC, isDoraemon, isConan]);
@@ -525,10 +524,8 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                       key={item.id}
                       data-universe-logo-active={idx === currentIdx}
                       className={cn(
-                        "absolute inset-0 transition-opacity duration-200",
-                        idx === currentIdx
-                          ? "z-10 opacity-100"
-                          : "pointer-events-none opacity-0",
+                        'absolute inset-0 transition-opacity duration-200',
+                        idx === currentIdx ? 'z-10 opacity-100' : 'pointer-events-none opacity-0',
                       )}
                     >
                       <UniverseSpotlightLogo
@@ -574,20 +571,15 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                   href={`/watch/${activeSpotlight.slug}`}
                   data-universe-action="watch"
                   className={cn(
-                    "col-span-2 inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap px-5 py-2.5 text-xs font-extrabold transition-[background-color,border-color,transform] active:translate-y-px sm:col-auto sm:w-auto sm:text-sm",
+                    'col-span-2 inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap px-5 py-2.5 text-xs font-extrabold transition-[background-color,border-color,transform] active:translate-y-px sm:col-auto sm:w-auto sm:text-sm',
                     isDoraemon
-                      ? "rounded-[10px] border-2 border-[#78d7f5] border-b-[#08739e] bg-[#21a7db] text-[#041923] hover:bg-[#48bbe5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#78d7f5]"
+                      ? 'rounded-[10px] border-2 border-[#78d7f5] border-b-[#08739e] bg-[#21a7db] text-[#041923] hover:bg-[#48bbe5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#78d7f5]'
                       : isConan
-                        ? "rounded-[10px] border-2 border-[#ef6464] border-b-[#7f1717] bg-[#d83232] text-white hover:bg-[#e34848] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ef6464]"
-                        : "rounded-xl bg-white text-black shadow-lg shadow-black/40 hover:bg-neutral-100",
+                        ? 'rounded-[10px] border-2 border-[#ef6464] border-b-[#7f1717] bg-[#d83232] text-white hover:bg-[#e34848] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ef6464]'
+                        : 'rounded-xl bg-white text-black shadow-lg shadow-black/40 hover:bg-neutral-100',
                   )}
                 >
-                  <Play
-                    size={16}
-                    className={cn(
-                      isConan ? "fill-white" : "fill-current",
-                    )}
-                  />
+                  <Play size={16} className={cn(isConan ? 'fill-white' : 'fill-current')} />
                   <span>Xem Phim Ngay</span>
                 </Link>
 
@@ -597,12 +589,12 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                     onClick={() => setTrailerFilm(activeFilmItem)}
                     data-universe-action="trailer"
                     className={cn(
-                      "inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-xs font-bold transition-[background-color,border-color,transform] active:translate-y-px sm:w-auto sm:text-sm",
+                      'inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-xs font-bold transition-[background-color,border-color,transform] active:translate-y-px sm:w-auto sm:text-sm',
                       isDoraemon
-                        ? "rounded-[10px] border-2 border-[#278fba] bg-[#101c27] text-[#dff7ff] hover:border-[#64c9ed] hover:bg-[#162a39] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]"
+                        ? 'rounded-[10px] border-2 border-[#278fba] bg-[#101c27] text-[#dff7ff] hover:border-[#64c9ed] hover:bg-[#162a39] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]'
                         : isConan
-                          ? "rounded-[10px] border-2 border-[#a73a3a] bg-[#211415] text-[#ffe8e8] hover:border-[#e45757] hover:bg-[#30191b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]"
-                          : "rounded-xl border border-white/10 bg-[#181b24] text-white hover:bg-[#232836]",
+                          ? 'rounded-[10px] border-2 border-[#a73a3a] bg-[#211415] text-[#ffe8e8] hover:border-[#e45757] hover:bg-[#30191b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]'
+                          : 'rounded-xl border border-white/10 bg-[#181b24] text-white hover:bg-[#232836]',
                     )}
                   >
                     <Clapperboard size={16} />
@@ -614,30 +606,39 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                   href={`/film/${activeSpotlight.slug}`}
                   data-universe-action="detail"
                   className={cn(
-                    "inline-flex min-h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-xs font-bold transition-[background-color,border-color,transform] active:translate-y-px sm:w-auto sm:text-sm",
+                    'inline-flex min-h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-xs font-bold transition-[background-color,border-color,transform] active:translate-y-px sm:w-auto sm:text-sm',
                     isDoraemon
-                      ? "rounded-[10px] border-2 border-[#344b5c] bg-[#17212b] text-white hover:border-[#5b7b91] hover:bg-[#202e3a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]"
+                      ? 'rounded-[10px] border-2 border-[#344b5c] bg-[#17212b] text-white hover:border-[#5b7b91] hover:bg-[#202e3a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]'
                       : isConan
-                        ? "rounded-[10px] border-2 border-[#4f3434] bg-[#211b1b] text-white hover:border-[#805050] hover:bg-[#2d2222] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]"
-                        : "rounded-xl border border-white/10 bg-white/[0.04] font-semibold text-neutral-300 hover:bg-white/[0.08] hover:text-white sm:border-transparent sm:bg-transparent",
+                        ? 'rounded-[10px] border-2 border-[#4f3434] bg-[#211b1b] text-white hover:border-[#805050] hover:bg-[#2d2222] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]'
+                        : 'rounded-xl border border-white/10 bg-white/[0.04] font-semibold text-neutral-300 hover:bg-white/[0.08] hover:text-white sm:border-transparent sm:bg-transparent',
                   )}
                 >
                   <span>Chi tiết</span>
                   <ChevronRight size={14} />
                 </Link>
 
-                <a
-                  href={isMarvel || isDC ? "#universe-timeline" : "#full-catalog"}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isMarvel || isDC) {
+                      selectContentTab('timeline', true);
+                      return;
+                    }
+                    document
+                      .getElementById('full-catalog')
+                      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
                   data-universe-action="explore"
                   className={cn(
-                    "group col-span-2 inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-xs font-bold transition-[background-color,border-color,transform] active:translate-y-px sm:col-auto sm:w-auto sm:text-sm",
+                    'group col-span-2 inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-xs font-bold transition-[background-color,border-color,transform] active:translate-y-px sm:col-auto sm:w-auto sm:text-sm',
                     isMarvel
-                      ? "rounded-xl border border-red-500/35 bg-red-500/10 text-red-200 hover:bg-red-500/15"
+                      ? 'rounded-xl border border-red-500/35 bg-red-500/10 text-red-200 hover:bg-red-500/15'
                       : isDC
-                        ? "rounded-xl border border-sky-500/35 bg-sky-500/10 text-sky-200 hover:bg-sky-500/15"
+                        ? 'rounded-xl border border-sky-500/35 bg-sky-500/10 text-sky-200 hover:bg-sky-500/15'
                         : isDoraemon
-                          ? "rounded-[10px] border-2 border-[#278fba] bg-[#0b2634] text-[#8de3ff] hover:border-[#64c9ed] hover:bg-[#10384a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]"
-                          : "rounded-[10px] border-2 border-[#a73a3a] bg-[#321718] text-[#ff9b9b] hover:border-[#e45757] hover:bg-[#481d20] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]",
+                          ? 'rounded-[10px] border-2 border-[#278fba] bg-[#0b2634] text-[#8de3ff] hover:border-[#64c9ed] hover:bg-[#10384a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]'
+                          : 'rounded-[10px] border-2 border-[#a73a3a] bg-[#321718] text-[#ff9b9b] hover:border-[#e45757] hover:bg-[#481d20] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]',
                   )}
                 >
                   {isMarvel || isDC ? (
@@ -651,8 +652,12 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                       <span>Khám phá trọn bộ</span>
                     </>
                   )}
-                  <ChevronDown aria-hidden="true" size={14} className="transition-transform group-hover:translate-y-0.5" />
-                </a>
+                  <ChevronDown
+                    aria-hidden="true"
+                    size={14}
+                    className="transition-transform group-hover:translate-y-0.5"
+                  />
+                </button>
               </div>
             </div>
 
@@ -678,12 +683,12 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                   type="button"
                   onClick={() => void activateSpotlight(currentIdx - 1)}
                   className={cn(
-                    "cursor-pointer rounded-[10px] border-2 bg-[#10131a] p-2 text-white transition-[background-color,border-color,transform] active:scale-95 sm:p-2.5",
+                    'cursor-pointer rounded-[10px] border-2 bg-[#10131a] p-2 text-white transition-[background-color,border-color,transform] active:scale-95 sm:p-2.5',
                     isDoraemon
-                      ? "border-[#278fba] hover:border-[#64c9ed] hover:bg-[#162a39] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]"
+                      ? 'border-[#278fba] hover:border-[#64c9ed] hover:bg-[#162a39] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]'
                       : isConan
-                        ? "border-[#803333] hover:border-[#e45757] hover:bg-[#30191b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]"
-                        : "border-white/15 hover:border-white/30 hover:bg-[#20242e]",
+                        ? 'border-[#803333] hover:border-[#e45757] hover:bg-[#30191b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]'
+                        : 'border-white/15 hover:border-white/30 hover:bg-[#20242e]',
                   )}
                   aria-label="Previous"
                 >
@@ -693,12 +698,12 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                   type="button"
                   onClick={() => void activateSpotlight(currentIdx + 1)}
                   className={cn(
-                    "cursor-pointer rounded-[10px] border-2 bg-[#10131a] p-2 text-white transition-[background-color,border-color,transform] active:scale-95 sm:p-2.5",
+                    'cursor-pointer rounded-[10px] border-2 bg-[#10131a] p-2 text-white transition-[background-color,border-color,transform] active:scale-95 sm:p-2.5',
                     isDoraemon
-                      ? "border-[#278fba] hover:border-[#64c9ed] hover:bg-[#162a39] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]"
+                      ? 'border-[#278fba] hover:border-[#64c9ed] hover:bg-[#162a39] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]'
                       : isConan
-                        ? "border-[#803333] hover:border-[#e45757] hover:bg-[#30191b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]"
-                        : "border-white/15 hover:border-white/30 hover:bg-[#20242e]",
+                        ? 'border-[#803333] hover:border-[#e45757] hover:bg-[#30191b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]'
+                        : 'border-white/15 hover:border-white/30 hover:bg-[#20242e]',
                   )}
                   aria-label="Next"
                 >
@@ -710,153 +715,224 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
         </div>
       </section>
 
-      {/* ── 2. THEMED HORIZONTAL RAILS (DISNEY+ / HBO MAX STYLE) ─────────────── */}
-      <div className="relative z-20 max-w-[1760px] mx-auto px-4 sm:px-8 lg:px-14 pt-6 sm:pt-10 space-y-8 sm:space-y-12">
-        {/* Rail 1 */}
-        <LandscapeSpotlightRow
-          title={
-            isMarvel
-              ? "Biệt Đội Avengers & Sự Kiện Đa Vũ Trụ"
-              : isDC
-                ? "Kỵ Sĩ Bóng Đêm & Huyền Thoại Gotham"
-                : isDoraemon
-                  ? "Movie Chiếu Rạp Mới Nhất (Thế Hệ Mới)"
-                  : "Movie Chiếu Rạp Bom Tấn (Movie 1 - 28)"
-          }
-          films={rail1}
-        />
-
-        {/* Rail 2 */}
-        <LandscapeSpotlightRow
-          title={
-            isMarvel
-              ? "Người Nhện & Vũ Trụ Spider-Verse"
-              : isDC
-                ? "Liên Minh Công Lý & Siêu Anh Hùng DC"
-                : isDoraemon
-                  ? "Stand by Me & Kỷ Niệm Tuổi Thơ (3D)"
-                  : "Cuộc Chiến Tổ Chức Áo Đen & FBI"
-          }
-          films={rail2}
-        />
-
-        {/* Rail 3 */}
-        <LandscapeSpotlightRow
-          title={
-            isMarvel
-              ? "Dị Nhân X-Men & Đột Biến"
-              : isDC
-                ? "Thế Giới Phản Diện & Joker"
-                : isDoraemon
-                  ? "Phiêu Lưu Vũ Trụ & Thế Giới Diệu Kỳ"
-                  : "Màn Đối Đầu Siêu Đạo Tặc Kaito Kid"
-          }
-          films={rail3}
-        />
-
-        {/* Rail 4 */}
-        <LandscapeSpotlightRow
-          title={
-            isMarvel
-              ? "Marvel Series Độc Quyền (Disney+)"
-              : isDC
-                ? "DC Series & Hoạt Hình Huyền Thoại"
-                : isDoraemon
-                  ? "Movie Chiếu Rạp Kinh Điển (2D Tuyển Chọn)"
-                  : "Conan TV Series & Ngoại Truyện Đặc Biệt"
-          }
-          films={rail4}
-        />
-
-        {/* ── 3. CHRONOLOGICAL TIMELINE ROADMAP ─────────────────────────────── */}
+      {/* ── 2. UNIVERSE CONTENT ─────────────────────────────────────────────── */}
+      <div
+        id="universe-content"
+        className="relative z-20 mx-auto max-w-[1760px] scroll-mt-16 px-4 pt-5 sm:px-8 sm:pt-8 lg:px-14"
+      >
         {(isMarvel || isDC) && (
-          <UniverseTimelineSection universe={universe as "marvel" | "dc"} />
+          <div className="sticky top-16 z-30 -mx-4 mb-8 border-y border-white/[0.08] bg-[#090b10] px-4 py-3 shadow-[0_16px_34px_rgba(0,0,0,0.28)] sm:-mx-8 sm:mb-10 sm:px-8 lg:-mx-14 lg:px-14">
+            <div
+              role="tablist"
+              aria-label={`Nội dung ${isMarvel ? 'Marvel' : 'DC'}`}
+              className="mx-auto flex max-w-[1760px] items-center gap-1"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={contentTab === 'collection'}
+                aria-controls="universe-collection"
+                onClick={() => selectContentTab('collection')}
+                className={cn(
+                  'relative inline-flex min-h-11 flex-1 items-center justify-center gap-2 px-3 text-xs font-extrabold transition-colors active:translate-y-px sm:flex-none sm:px-5 sm:text-sm',
+                  contentTab === 'collection'
+                    ? 'text-white'
+                    : 'text-neutral-500 hover:text-neutral-200',
+                )}
+              >
+                <LayoutGrid aria-hidden="true" size={16} strokeWidth={2} />
+                <span>Khám phá</span>
+                {contentTab === 'collection' && (
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'absolute inset-x-3 -bottom-3 h-0.5',
+                      isMarvel ? 'bg-red-500' : 'bg-sky-400',
+                    )}
+                  />
+                )}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={contentTab === 'timeline'}
+                aria-controls="universe-timeline"
+                onClick={() => selectContentTab('timeline')}
+                className={cn(
+                  'relative inline-flex min-h-11 flex-1 items-center justify-center gap-2 px-3 text-xs font-extrabold transition-colors active:translate-y-px sm:flex-none sm:px-5 sm:text-sm',
+                  contentTab === 'timeline'
+                    ? 'text-white'
+                    : 'text-neutral-500 hover:text-neutral-200',
+                )}
+              >
+                <Clock aria-hidden="true" size={16} strokeWidth={2} />
+                <span>Dòng thời gian</span>
+                {contentTab === 'timeline' && (
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'absolute inset-x-3 -bottom-3 h-0.5',
+                      isMarvel ? 'bg-red-500' : 'bg-sky-400',
+                    )}
+                  />
+                )}
+              </button>
+            </div>
+          </div>
         )}
 
-        {/* ── 4. FULL UNIVERSE CATALOG (LƯỚI PHIM TOÀN BỘ 7 CỘT) ─────────────── */}
-        <section id="full-catalog" className="pt-8 sm:pt-12 pb-16 border-t border-white/[0.08]">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6">
-            <div className="flex items-center gap-3">
-              <div
-                className={cn(
-                  "w-1.5 h-6 rounded-full",
-                  isMarvel
-                    ? "bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.7)]"
-                    : isDC
-                      ? "bg-sky-500 shadow-[0_0_12px_rgba(14,165,233,0.7)]"
-                      : isDoraemon
-                        ? "bg-cyan-500 shadow-[0_0_12px_rgba(6,182,212,0.7)]"
-                        : "bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.7)]",
-                )}
-              />
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                {isMarvel
-                  ? "Kho Bom Tấn Marvel Toàn Diện"
+        {(!(isMarvel || isDC) || contentTab === 'collection') && (
+          <div
+            id="universe-collection"
+            role={isMarvel || isDC ? 'tabpanel' : undefined}
+            className="space-y-8 sm:space-y-12"
+          >
+            {/* Rail 1 */}
+            <LandscapeSpotlightRow
+              title={
+                isMarvel
+                  ? 'Biệt Đội Avengers & Sự Kiện Đa Vũ Trụ'
                   : isDC
-                    ? "Kho Kiệt Tác DC Toàn Diện"
+                    ? 'Kỵ Sĩ Bóng Đêm & Huyền Thoại Gotham'
                     : isDoraemon
-                      ? "Trọn Bộ 48 Movie Doraemon Chiếu Rạp"
-                      : "Trọn Bộ Thám Tử Lừng Danh Conan"}
-              </h2>
-              <span className="text-xs font-semibold text-neutral-400">
-                ({catalogFilms.length} phim)
-              </span>
-            </div>
+                      ? 'Movie Chiếu Rạp Mới Nhất (Thế Hệ Mới)'
+                      : 'Movie Chiếu Rạp Bom Tấn (Movie 1 - 28)'
+              }
+              films={rail1}
+            />
 
-            {/* Sub-franchise Filter Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-              {subFranchises.map((sub) => {
-                const isActive = selectedSub === sub.id;
-                return (
-                  <button
-                    key={sub.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedSub(sub.id);
-                      setPage(1);
-                    }}
+            {/* Rail 2 */}
+            <LandscapeSpotlightRow
+              title={
+                isMarvel
+                  ? 'Người Nhện & Vũ Trụ Spider-Verse'
+                  : isDC
+                    ? 'Liên Minh Công Lý & Siêu Anh Hùng DC'
+                    : isDoraemon
+                      ? 'Stand by Me & Kỷ Niệm Tuổi Thơ (3D)'
+                      : 'Cuộc Chiến Tổ Chức Áo Đen & FBI'
+              }
+              films={rail2}
+            />
+
+            {/* Rail 3 */}
+            <LandscapeSpotlightRow
+              title={
+                isMarvel
+                  ? 'Dị Nhân X-Men & Đột Biến'
+                  : isDC
+                    ? 'Thế Giới Phản Diện & Joker'
+                    : isDoraemon
+                      ? 'Phiêu Lưu Vũ Trụ & Thế Giới Diệu Kỳ'
+                      : 'Màn Đối Đầu Siêu Đạo Tặc Kaito Kid'
+              }
+              films={rail3}
+            />
+
+            {/* Rail 4 */}
+            <LandscapeSpotlightRow
+              title={
+                isMarvel
+                  ? 'Marvel Series Độc Quyền (Disney+)'
+                  : isDC
+                    ? 'DC Series & Hoạt Hình Huyền Thoại'
+                    : isDoraemon
+                      ? 'Movie Chiếu Rạp Kinh Điển (2D Tuyển Chọn)'
+                      : 'Conan TV Series & Ngoại Truyện Đặc Biệt'
+              }
+              films={rail4}
+            />
+
+            {/* ── 3. FULL UNIVERSE CATALOG (LƯỚI PHIM TOÀN BỘ 7 CỘT) ─────────────── */}
+            <section id="full-catalog" className="pt-8 sm:pt-12 pb-16 border-t border-white/[0.08]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6">
+                <div className="flex items-center gap-3">
+                  <div
                     className={cn(
-                      "px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer shrink-0 select-none",
-                      isActive
-                        ? isMarvel
-                          ? "bg-red-600 text-white shadow-lg shadow-red-600/30"
-                          : isDC
-                            ? "bg-sky-600 text-white shadow-lg shadow-sky-600/30"
-                            : isDoraemon
-                              ? "bg-cyan-600 text-white shadow-lg shadow-cyan-600/30"
-                              : "bg-rose-600 text-white shadow-lg shadow-rose-600/30"
-                        : "bg-white/[0.06] text-neutral-400 hover:text-white hover:bg-white/10 border border-white/10",
+                      'w-1.5 h-6 rounded-full',
+                      isMarvel
+                        ? 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.7)]'
+                        : isDC
+                          ? 'bg-sky-500 shadow-[0_0_12px_rgba(14,165,233,0.7)]'
+                          : isDoraemon
+                            ? 'bg-cyan-500 shadow-[0_0_12px_rgba(6,182,212,0.7)]'
+                            : 'bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.7)]',
                     )}
-                  >
-                    {sub.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+                  />
+                  <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                    {isMarvel
+                      ? 'Kho Bom Tấn Marvel Toàn Diện'
+                      : isDC
+                        ? 'Kho Kiệt Tác DC Toàn Diện'
+                        : isDoraemon
+                          ? 'Trọn Bộ 48 Movie Doraemon Chiếu Rạp'
+                          : 'Trọn Bộ Thám Tử Lừng Danh Conan'}
+                  </h2>
+                  <span className="text-xs font-semibold text-neutral-400">
+                    ({catalogFilms.length} phim)
+                  </span>
+                </div>
 
-          {/* Standard 7-Column Movie Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2.5 sm:gap-3.5 lg:gap-4">
-            {pagedFilms.map((film, index) => (
-              <FilmCard key={film._id || film.slug} film={film} priority={index < 7} />
-            ))}
-          </div>
+                {/* Sub-franchise Filter Pills */}
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+                  {subFranchises.map((sub) => {
+                    const isActive = selectedSub === sub.id;
+                    return (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedSub(sub.id);
+                          setPage(1);
+                        }}
+                        className={cn(
+                          'px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer shrink-0 select-none',
+                          isActive
+                            ? isMarvel
+                              ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                              : isDC
+                                ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/30'
+                                : isDoraemon
+                                  ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/30'
+                                  : 'bg-rose-600 text-white shadow-lg shadow-rose-600/30'
+                            : 'bg-white/[0.06] text-neutral-400 hover:text-white hover:bg-white/10 border border-white/10',
+                        )}
+                      >
+                        {sub.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="pt-8 sm:pt-12 flex justify-center">
-              <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={(p) => {
-                  setPage(p);
-                  const el = document.getElementById("full-catalog");
-                  if (el) el.scrollIntoView({ behavior: "smooth" });
-                }}
-              />
-            </div>
-          )}
-        </section>
+              {/* Standard 7-Column Movie Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2.5 sm:gap-3.5 lg:gap-4">
+                {pagedFilms.map((film, index) => (
+                  <FilmCard key={film._id || film.slug} film={film} priority={index < 7} />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="pt-8 sm:pt-12 flex justify-center">
+                  <Pagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={(p) => {
+                      setPage(p);
+                      const el = document.getElementById('full-catalog');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  />
+                </div>
+              )}
+            </section>
+          </div>
+        )}
+
+        {(isMarvel || isDC) && contentTab === 'timeline' && (
+          <UniverseTimelineSection universe={universe as 'marvel' | 'dc'} />
+        )}
       </div>
 
       {/* Trailer Modal */}
@@ -873,19 +949,19 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
 
 function mapRawToFilmItems(rawList: any[]): (FilmItem & { trailer_url?: string })[] {
   return rawList.map((item): FilmItem & { trailer_url?: string } => {
-    const pUrl = String(item.poster_url || item.thumb_url || "");
-    const tUrl = String(item.thumb_url || item.poster_url || "");
+    const pUrl = String(item.poster_url || item.thumb_url || '');
+    const tUrl = String(item.thumb_url || item.poster_url || '');
     return {
-      _id: String(item._id || item.id || item.slug || ""),
-      name: String(item.name || item.title || ""),
-      origin_name: String(item.origin_name || item.original_title || ""),
-      slug: String(item.slug || ""),
+      _id: String(item._id || item.id || item.slug || ''),
+      name: String(item.name || item.title || ''),
+      origin_name: String(item.origin_name || item.original_title || ''),
+      slug: String(item.slug || ''),
       poster_url: resolveImageUrl(pUrl, tUrl) || pUrl,
       thumb_url: resolveImageUrl(tUrl, pUrl) || tUrl,
       year: Number(item.year) || 2024,
-      episode_current: String(item.episode_current || "HD"),
-      quality: String(item.quality || "FHD"),
-      lang: String(item.lang || "Vietsub"),
+      episode_current: String(item.episode_current || 'HD'),
+      quality: String(item.quality || 'FHD'),
+      lang: String(item.lang || 'Vietsub'),
       category: Array.isArray(item.category) ? item.category : [],
       country: Array.isArray(item.country) ? item.country : [],
       vote_average: Number(item.vote_average || item.rating) || 8.2,

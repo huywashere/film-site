@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   ChevronLeft,
   ChevronRight,
@@ -18,44 +18,32 @@ import {
   CalendarDays,
   Languages,
   Sparkles,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { cardFont } from "@/lib/fonts";
-import { movieApi } from "@/lib/api";
-import { tmdbApi, type TmdbDiscoverOptions } from "@/lib/tmdb";
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { cardFont } from '@/lib/fonts';
+import { movieApi } from '@/lib/api';
+import { tmdbApi, type TmdbDiscoverOptions } from '@/lib/tmdb';
 
-function TelegramIcon({
-  className,
-  size = 20,
-}: {
-  className?: string;
-  size?: number;
-}) {
+function TelegramIcon({ className, size = 20 }: { className?: string; size?: number }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-    >
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
       <path d="M9.78 18.65l.28-4.2 7.64-6.88c.34-.31-.07-.48-.52-.19l-9.45 5.95-4.07-1.27c-.89-.28-.91-.88.19-1.31L19.8 4.63c.74-.28 1.39.18 1.15 1.31l-2.7 12.72c-.2 1-.79 1.25-1.6.78l-4.52-3.33-2.18 2.1c-.24.24-.44.44-.9.44z" />
     </svg>
   );
 }
 
 const SIDEBAR_ITEMS = [
-  { title: "Trang chủ", href: "/", icon: Home },
-  { title: "Duyệt Tìm", href: "/films", icon: SlidersHorizontal },
-  { title: "Chủ Đề", href: "/genres", icon: LayoutDashboard },
-  { title: "Xem Chung", href: "/watch-party", icon: Popcorn },
-  { title: "Bộ Sưu Tập", href: "/watchlist", icon: Layers },
-  { title: "Lịch Sử", href: "/history", icon: History },
+  { title: 'Trang chủ', href: '/', icon: Home },
+  { title: 'Duyệt Tìm', href: '/films', icon: SlidersHorizontal },
+  { title: 'Chủ Đề', href: '/genres', icon: LayoutDashboard },
+  { title: 'Xem Chung', href: '/watch-party', icon: Popcorn },
+  { title: 'Bộ Sưu Tập', href: '/watchlist', icon: Layers },
+  { title: 'Lịch Sử', href: '/history', icon: History },
   {
-    title: "Nhóm Telegram",
-    href: "https://t.me/+ijCR1KCdx2E0ZTA9",
+    title: 'Nhóm Telegram',
+    href: 'https://t.me/+ijCR1KCdx2E0ZTA9',
     isExternal: true,
     icon: TelegramIcon,
     isSpecial: true,
@@ -69,20 +57,20 @@ const MOVIE_WORLD_PREFETCH: Array<{
   discover: TmdbDiscoverOptions;
 }> = [
   {
-    slug: "hanh-dong",
-    discover: { with_genres: "28", sort_by: "popularity.desc" },
+    slug: 'hanh-dong',
+    discover: { with_genres: '28', sort_by: 'popularity.desc' },
   },
   {
-    slug: "vien-tuong",
-    discover: { with_genres: "878", sort_by: "popularity.desc" },
+    slug: 'vien-tuong',
+    discover: { with_genres: '878', sort_by: 'popularity.desc' },
   },
   {
-    slug: "kinh-di",
-    discover: { with_genres: "27", sort_by: "popularity.desc" },
+    slug: 'kinh-di',
+    discover: { with_genres: '27', sort_by: 'popularity.desc' },
   },
   {
-    slug: "tinh-cam",
-    discover: { with_genres: "10749", sort_by: "popularity.desc" },
+    slug: 'tinh-cam',
+    discover: { with_genres: '10749', sort_by: 'popularity.desc' },
   },
 ];
 
@@ -93,42 +81,32 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const warmedRoutesRef = useRef(new Set<string>());
 
-  const isHomePage = pathname === "/";
-  const isFilmDetailPage = pathname.startsWith("/film/");
-  const isWatchPage = pathname.startsWith("/watch/");
-  const isGenresPage = pathname === "/genres";
-  const isGenrePage = pathname.startsWith("/genre/") || isGenresPage;
-  const isCountryPage = pathname.startsWith("/country/");
-  const isFilmsPage = pathname === "/films" || pathname.startsWith("/films/");
-  const isBrowsePage = isHomePage || isGenrePage || isCountryPage || isFilmsPage;
+  const isHomePage = pathname === '/';
+  const isFilmDetailPage = pathname.startsWith('/film/');
+  const isWatchPage = pathname.startsWith('/watch/');
+  const isGenresPage = pathname === '/genres';
+  const isUniversePage = pathname.startsWith('/universe/');
+  const isGenrePage = pathname.startsWith('/genre/') || isGenresPage;
+  const isCountryPage = pathname.startsWith('/country/');
+  const isFilmsPage = pathname === '/films' || pathname.startsWith('/films/');
+  const isBrowsePage = isHomePage || isGenrePage || isCountryPage || isFilmsPage || isUniversePage;
 
-  // Trang xem phim, giới thiệu phim và trang Chủ Đề (/genres) luôn ghim cố định sidebar
-  const isPinnedPage = isFilmDetailPage || isWatchPage || isGenresPage;
+  // Keep quick navigation available from the first frame on home and every
+  // topic surface. Waiting for a scroll made the rail feel missing.
+  const isPinnedPage =
+    isFilmDetailPage ||
+    isWatchPage ||
+    isHomePage ||
+    isGenrePage ||
+    isCountryPage ||
+    isFilmsPage ||
+    isUniversePage;
   const shouldShowSidebar = isPinnedPage || isBrowsePage;
-
-  const [scrolledPastBanner, setScrolledPastBanner] = useState(false);
-
-  useEffect(() => {
-    if (!isBrowsePage || isPinnedPage) return;
-
-    const handleScroll = () => {
-      // Khi lướt đến phần body (qua Hero Banner khoảng 350-400px hoặc 40% viewport)
-      const threshold =
-        typeof window !== "undefined"
-          ? Math.min(window.innerHeight * 0.4, 380)
-          : 350;
-      setScrolledPastBanner(window.scrollY > threshold);
-    };
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [isBrowsePage, isPinnedPage, pathname]);
 
   useEffect(() => {
     try {
-      const v = localStorage.getItem("sidebar-collapsed");
-      if (v !== null) setCollapsed(v === "true");
+      const v = localStorage.getItem('sidebar-collapsed');
+      if (v !== null) setCollapsed(v === 'true');
     } catch (_e) {
       // ignore localStorage errors
     }
@@ -138,7 +116,7 @@ export function Sidebar() {
     const next = !collapsed;
     setCollapsed(next);
     try {
-      localStorage.setItem("sidebar-collapsed", String(next));
+      localStorage.setItem('sidebar-collapsed', String(next));
     } catch (_e) {
       // ignore localStorage errors
     }
@@ -146,7 +124,7 @@ export function Sidebar() {
 
   const warmRoute = useCallback(
     (href: string) => {
-      if (href.startsWith("http")) return;
+      if (href.startsWith('http')) return;
       try {
         router.prefetch(href);
       } catch (_e) {
@@ -156,47 +134,47 @@ export function Sidebar() {
       if (warmedRoutesRef.current.has(href)) return;
       warmedRoutesRef.current.add(href);
 
-      if (href === "/") {
+      if (href === '/') {
         void queryClient.prefetchQuery({
-          queryKey: ["home-feed-v1", 24],
+          queryKey: ['home-feed-v1', 24],
           queryFn: () => movieApi.getHomeFeed(24).then((response) => response.data),
           staleTime: 5 * 60 * 1000,
           gcTime: 60 * 60 * 1000,
         });
       }
 
-      if (href === "/films/series") {
+      if (href === '/films/series') {
         void queryClient.prefetchQuery({
-          queryKey: ["films-type", "series", 1],
+          queryKey: ['films-type', 'series', 1],
           queryFn: () => movieApi.getSeries(1).then((r) => r.data),
           staleTime: 15 * 60 * 1000,
         });
       }
 
-      if (href === "/films/single") {
+      if (href === '/films/single') {
         void queryClient.prefetchQuery({
-          queryKey: ["films-type", "single", 1],
+          queryKey: ['films-type', 'single', 1],
           queryFn: () => movieApi.getSingle(1).then((r) => r.data),
           staleTime: 15 * 60 * 1000,
         });
       }
 
-      if (href === "/films/anime") {
+      if (href === '/films/anime') {
         void queryClient.prefetchQuery({
-          queryKey: ["films-type", "anime", 1],
-          queryFn: () => movieApi.getByCountryFast("nhat-ban", 1).then((r) => r.data),
+          queryKey: ['films-type', 'anime', 1],
+          queryFn: () => movieApi.getByCountryFast('nhat-ban', 1).then((r) => r.data),
           staleTime: 15 * 60 * 1000,
         });
         void queryClient.prefetchQuery({
-          queryKey: ["anime-japan-page-2"],
-          queryFn: () => movieApi.getByCountryFast("nhat-ban", 2).then((r) => r.data),
+          queryKey: ['anime-japan-page-2'],
+          queryFn: () => movieApi.getByCountryFast('nhat-ban', 2).then((r) => r.data),
           staleTime: 1000 * 60 * 60,
         });
       }
 
-      if (href === "/films/tvshows") {
+      if (href === '/films/tvshows') {
         void queryClient.prefetchQuery({
-          queryKey: ["films-type", "tvshows", 1],
+          queryKey: ['films-type', 'tvshows', 1],
           queryFn: () => movieApi.getTvShows(1).then((r) => r.data),
           staleTime: 15 * 60 * 1000,
         });
@@ -205,25 +183,23 @@ export function Sidebar() {
       const countrySlug = href.match(/^\/country\/([^/?]+)/)?.[1];
       if (countrySlug) {
         void queryClient.prefetchQuery({
-          queryKey: ["country-fast", countrySlug, 1, ""],
+          queryKey: ['country-fast', countrySlug, 1, ''],
           queryFn: () =>
-            movieApi
-              .getByCountryFast(countrySlug, 1)
-              .then((response) => response.data),
+            movieApi.getByCountryFast(countrySlug, 1).then((response) => response.data),
           staleTime: 1000 * 60 * 60,
           gcTime: 1000 * 60 * 60 * 24,
         });
       }
 
-      if (href === "/watch-party" && typeof window !== "undefined") {
+      if (href === '/watch-party' && typeof window !== 'undefined') {
         const img = new window.Image();
-        img.src = "/images/cinema-hall-with-red-seat-wide-white-screen.webp";
+        img.src = '/images/cinema-hall-with-red-seat-wide-white-screen.webp';
       }
 
-      if (href === "/genres") {
+      if (href === '/genres') {
         for (const topic of MOVIE_WORLD_PREFETCH) {
           void queryClient.prefetchQuery({
-            queryKey: ["movie-world-topic", topic.slug, topic.discover],
+            queryKey: ['movie-world-topic', topic.slug, topic.discover],
             queryFn: async () => {
               const response = await tmdbApi.discoverMovies(topic.discover);
               return response?.results || [];
@@ -237,22 +213,19 @@ export function Sidebar() {
     [queryClient, router],
   );
 
-  // Thanh tab dọc hiển thị luôn ở trang xem phim & giới thiệu phim; ở trang chủ thì khi lướt tới phần body mới hiện
+  // The desktop rail is present immediately on home, catalogue and topic pages.
   if (!shouldShowSidebar) return null;
 
-  const isVisible = isPinnedPage ? true : scrolledPastBanner;
+  const isVisible = true;
 
   return (
     <>
-
       {/* ── VERTICALLY CENTERED SLIM SIDEBAR ── */}
       <aside
         className={cn(
           cardFont.className,
-          "hidden lg:flex fixed left-0 top-16 bottom-0 z-40 flex-col items-center justify-center transition-all duration-300 ease-in-out pointer-events-none",
-          isVisible && !collapsed
-            ? "opacity-100 translate-x-0"
-            : "opacity-0 -translate-x-full",
+          'hidden lg:flex fixed left-0 top-16 bottom-0 z-40 flex-col items-center justify-center transition-all duration-300 ease-in-out pointer-events-none',
+          isVisible && !collapsed ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-full',
         )}
         style={{ width: W }}
       >
@@ -271,8 +244,9 @@ export function Sidebar() {
           {SIDEBAR_ITEMS.map((item) => {
             const isActive =
               !item.isExternal &&
-              (pathname === item.href ||
-                (item.href !== "/" && pathname.startsWith(item.href)));
+              (item.href === '/genres'
+                ? isGenrePage || isCountryPage || isUniversePage
+                : pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href)));
 
             const Icon = item.icon;
             const isBilingual = Boolean((item as any).isBilingual);
@@ -283,10 +257,10 @@ export function Sidebar() {
                 {isActive && (
                   <span
                     className={cn(
-                      "absolute -left-1.5 top-1/2 -translate-y-1/2 rounded-r-full z-20",
+                      'absolute -left-1.5 top-1/2 -translate-y-1/2 rounded-r-full z-20',
                       isBilingual
-                        ? "bg-gradient-to-b from-cyan-400 to-violet-500 shadow-[0_0_10px_rgba(6,182,212,0.8)]"
-                        : "bg-violet-400",
+                        ? 'bg-gradient-to-b from-cyan-400 to-violet-500 shadow-[0_0_10px_rgba(6,182,212,0.8)]'
+                        : 'bg-violet-400',
                     )}
                     style={{ width: 3, height: 20 }}
                   />
@@ -296,10 +270,10 @@ export function Sidebar() {
                 {isBilingual ? (
                   <span
                     className={cn(
-                      "absolute inset-0 rounded-xl transition-all duration-300 z-0",
+                      'absolute inset-0 rounded-xl transition-all duration-300 z-0',
                       isActive
-                        ? "bg-gradient-to-br from-cyan-500 via-violet-600 to-blue-500"
-                        : "bg-gradient-to-br from-cyan-500/20 via-violet-600/15 to-blue-500/15 border border-cyan-400/30 group-hover:border-cyan-400/80",
+                        ? 'bg-gradient-to-br from-cyan-500 via-violet-600 to-blue-500'
+                        : 'bg-gradient-to-br from-cyan-500/20 via-violet-600/15 to-blue-500/15 border border-cyan-400/30 group-hover:border-cyan-400/80',
                     )}
                   />
                 ) : isActive ? (
@@ -313,14 +287,14 @@ export function Sidebar() {
                   size={20}
                   strokeWidth={isActive ? 2.2 : 2}
                   className={cn(
-                    "relative z-10 transition-transform group-hover:scale-110",
+                    'relative z-10 transition-transform group-hover:scale-110',
                     isBilingual
-                      ? "text-white group-hover:text-cyan-100"
+                      ? 'text-white group-hover:text-cyan-100'
                       : isActive
-                        ? "text-white"
+                        ? 'text-white'
                         : item.isSpecial && !isActive
-                          ? "text-[#229ED9] group-hover:text-[#38bdf8]"
-                          : "group-hover:text-violet-200",
+                          ? 'text-[#229ED9] group-hover:text-[#38bdf8]'
+                          : 'group-hover:text-violet-200',
                   )}
                 />
 
@@ -366,7 +340,7 @@ export function Sidebar() {
                   aria-label={item.title}
                   title={item.title}
                   className={cn(
-                    "relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 group cursor-pointer text-white/40 hover:text-white",
+                    'relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 group cursor-pointer text-white/40 hover:text-white',
                   )}
                 >
                   {content}
@@ -380,17 +354,18 @@ export function Sidebar() {
                 href={item.href}
                 prefetch={false}
                 aria-label={item.title}
+                aria-current={isActive ? 'page' : undefined}
                 title={item.title}
                 onMouseEnter={() => warmRoute(item.href)}
                 onFocus={() => warmRoute(item.href)}
                 onTouchStart={() => warmRoute(item.href)}
                 className={cn(
-                  "relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 group cursor-pointer",
+                  'relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 group cursor-pointer',
                   isActive
-                    ? "text-white font-bold"
+                    ? 'text-white font-bold'
                     : isBilingual
-                      ? "text-cyan-300 hover:text-white"
-                      : "text-white/40 hover:text-white",
+                      ? 'text-cyan-300 hover:text-white'
+                      : 'text-white/40 hover:text-white',
                 )}
               >
                 {content}

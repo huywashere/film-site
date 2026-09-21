@@ -1,20 +1,13 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import {
-  Bookmark,
-  Clapperboard,
-  History,
-  Home,
-  LayoutDashboard,
-  User,
-} from "lucide-react";
-import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
-import { useAuthStore } from "@/store/authStore";
-import { useAuthModalStore } from "@/store/authModalStore";
-import { cn } from "@/lib/utils";
-import { cardFont } from "@/lib/fonts";
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { Bookmark, Clapperboard, History, Home, LayoutDashboard, User } from 'lucide-react';
+import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
+import { useAuthStore } from '@/store/authStore';
+import { useAuthModalStore } from '@/store/authModalStore';
+import { cn } from '@/lib/utils';
+import { cardFont } from '@/lib/fonts';
 
 export function MobileBottomNav() {
   const pathname = usePathname();
@@ -22,57 +15,59 @@ export function MobileBottomNav() {
   const { user } = useAuthStore();
   const reduceMotion = useReducedMotion();
 
-  if (pathname === "/login" || pathname === "/register") {
+  if (pathname === '/login' || pathname === '/register') {
     return null;
   }
 
   const isProfileRoute =
-    pathname === "/user" ||
-    pathname.startsWith("/user/") ||
-    pathname === "/profile" ||
-    pathname.startsWith("/profile/");
+    pathname === '/user' ||
+    pathname.startsWith('/user/') ||
+    pathname === '/profile' ||
+    pathname.startsWith('/profile/');
 
   const isGenresRoute =
-    pathname === "/genres" ||
-    pathname.startsWith("/genre/");
+    pathname === '/genres' ||
+    pathname.startsWith('/genre/') ||
+    pathname.startsWith('/country/') ||
+    pathname.startsWith('/universe/');
 
   const isFilmsRoute =
-    (pathname === "/films" ||
-      pathname.startsWith("/films/") ||
-      pathname.startsWith("/film/") ||
-      pathname.startsWith("/watch/")) &&
+    (pathname === '/films' ||
+      pathname.startsWith('/films/') ||
+      pathname.startsWith('/film/') ||
+      pathname.startsWith('/watch/')) &&
     !isGenresRoute;
 
   const navItems = [
     {
-      label: "Home",
-      href: "/",
+      label: 'Home',
+      href: '/',
       icon: Home,
-      isActive: pathname === "/",
+      isActive: pathname === '/',
     },
     {
-      label: "Duyệt phim",
-      href: "/films",
+      label: 'Duyệt phim',
+      href: '/films',
       icon: Clapperboard,
       isActive: isFilmsRoute,
     },
     {
-      label: "Chủ đề",
-      href: "/genres",
+      label: 'Chủ đề',
+      href: '/genres',
       icon: LayoutDashboard,
       isActive: isGenresRoute,
     },
     {
-      label: "Tủ phim",
-      href: "/watchlist",
+      label: 'Tủ phim',
+      href: '/watchlist',
       icon: Bookmark,
-      isActive: pathname === "/watchlist",
+      isActive: pathname === '/watchlist',
     },
     {
-      label: "Lịch sử",
-      href: "/history",
+      label: 'Lịch sử',
+      href: '/history',
       icon: History,
-      isActive: pathname === "/history",
+      isActive: pathname === '/history',
     },
   ];
 
@@ -89,8 +84,8 @@ export function MobileBottomNav() {
       aria-label="Điều hướng nhanh di động"
       className={cn(
         cardFont.className,
-        "fixed bottom-3 inset-x-0 z-50 flex items-center justify-center px-3 pointer-events-none lg:hidden",
-        "pb-[max(0.4rem,env(safe-area-inset-bottom,0px))]",
+        'fixed bottom-3 inset-x-0 z-50 flex items-center justify-center px-3 pointer-events-none lg:hidden',
+        'pb-[max(0.4rem,env(safe-area-inset-bottom,0px))]',
       )}
     >
       {/* ── Outer Floating Dock Wrapper ── */}
@@ -119,7 +114,7 @@ export function MobileBottomNav() {
                 prefetch={false}
                 onTouchStart={warmRoute}
                 onPointerDown={warmRoute}
-                aria-current={item.isActive ? "page" : undefined}
+                aria-current={item.isActive ? 'page' : undefined}
                 onClick={() => router.push(item.href)}
                 className="group relative flex items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white/70 active:scale-95 transition-transform touch-manipulation select-none"
               >
@@ -130,7 +125,7 @@ export function MobileBottomNav() {
                     transition={
                       reduceMotion
                         ? { duration: 0 }
-                        : { type: "spring", stiffness: 450, damping: 35 }
+                        : { type: 'spring', stiffness: 450, damping: 35 }
                     }
                     className="absolute inset-0 rounded-full bg-white shadow-[0_2px_12px_rgba(255,255,255,0.25)]"
                   />
@@ -140,10 +135,10 @@ export function MobileBottomNav() {
                 <motion.div
                   layout
                   className={cn(
-                    "relative z-10 flex items-center gap-1.5 transition-colors duration-200 select-none",
+                    'relative z-10 flex items-center gap-1.5 transition-colors duration-200 select-none',
                     item.isActive
-                      ? "text-black font-black px-3 sm:px-3.5 py-2"
-                      : "text-neutral-400 hover:text-white p-2 sm:p-2.5",
+                      ? 'text-black font-black px-3 sm:px-3.5 py-2'
+                      : 'text-neutral-400 hover:text-white p-2 sm:p-2.5',
                   )}
                 >
                   <Icon size={20} strokeWidth={item.isActive ? 2.5 : 1.8} />
@@ -151,9 +146,9 @@ export function MobileBottomNav() {
                     {item.isActive && (
                       <motion.span
                         initial={{ opacity: 0, width: 0 }}
-                        animate={{ opacity: 1, width: "auto" }}
+                        animate={{ opacity: 1, width: 'auto' }}
                         exit={{ opacity: 0, width: 0 }}
-                        transition={{ duration: 0.16, ease: "easeOut" }}
+                        transition={{ duration: 0.16, ease: 'easeOut' }}
                         className="text-xs sm:text-[13px] font-black tracking-tight whitespace-nowrap overflow-hidden pr-0.5"
                       >
                         {item.label}
@@ -177,8 +172,8 @@ export function MobileBottomNav() {
             title={user.displayName || user.username}
             aria-label={`Trang cá nhân ${user.displayName || user.username}`}
             className={cn(
-              "relative flex h-12 w-12 sm:h-[50px] sm:w-[50px] shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-purple-400/90 shadow-[0_8px_25px_rgba(147,51,234,0.5),inset_0_1px_1px_rgba(255,255,255,0.35)] bg-gradient-to-tr from-purple-700 via-purple-600 to-indigo-500 overflow-hidden active:scale-90 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 touch-manipulation select-none",
-              isProfileRoute && "ring-2 ring-white ring-offset-2 ring-offset-black",
+              'relative flex h-12 w-12 sm:h-[50px] sm:w-[50px] shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-purple-400/90 shadow-[0_8px_25px_rgba(147,51,234,0.5),inset_0_1px_1px_rgba(255,255,255,0.35)] bg-gradient-to-tr from-purple-700 via-purple-600 to-indigo-500 overflow-hidden active:scale-90 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 touch-manipulation select-none',
+              isProfileRoute && 'ring-2 ring-white ring-offset-2 ring-offset-black',
             )}
           >
             {user.avatarUrl ? (
@@ -195,16 +190,14 @@ export function MobileBottomNav() {
               />
             ) : (
               <span className="text-white font-black text-xs">
-                {(user.displayName || user.username || "U")
-                  .slice(0, 2)
-                  .toUpperCase()}
+                {(user.displayName || user.username || 'U').slice(0, 2).toUpperCase()}
               </span>
             )}
           </Link>
         ) : (
           <button
             type="button"
-            onClick={() => useAuthModalStore.getState().openModal("login")}
+            onClick={() => useAuthModalStore.getState().openModal('login')}
             title="Đăng nhập"
             aria-label="Đăng nhập"
             className="relative flex h-12 w-12 sm:h-[50px] sm:w-[50px] shrink-0 cursor-pointer items-center justify-center rounded-full border border-purple-400/40 text-white shadow-[0_8px_25px_rgba(147,51,234,0.5),inset_0_1px_1px_rgba(255,255,255,0.35)] bg-gradient-to-tr from-purple-700 via-purple-600 to-indigo-500 hover:from-purple-600 hover:to-indigo-400 active:scale-90 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 touch-manipulation select-none"
