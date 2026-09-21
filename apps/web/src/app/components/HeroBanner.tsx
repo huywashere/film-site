@@ -815,29 +815,30 @@ function getMobileHeroBackdrop(src: string) {
     : src;
 }
 
-function preferHeroEdgeCandidate(candidates: string[]): string[] {
+function addHeroEdgeFallback(candidates: string[]): string[] {
   const edgeIndex = candidates.findIndex((candidate) =>
     candidate.startsWith("https://wsrv.nl/"),
   );
-  if (edgeIndex === 0) return candidates;
-  if (edgeIndex > 0) {
-    return [
-      candidates[edgeIndex],
-      ...candidates.filter((_, index) => index !== edgeIndex),
-    ];
-  }
+  if (edgeIndex >= 0) return candidates;
 
-  const directTmdb = candidates.find((candidate) => {
+  const directTmdbIndex = candidates.findIndex((candidate) => {
     try {
       return new URL(candidate).hostname === "image.tmdb.org";
     } catch {
       return false;
     }
   });
+  const directTmdb = candidates[directTmdbIndex];
   const edgeCandidate = directTmdb
     ? wsrvImageUrl(directTmdb, "poster")
     : null;
-  return edgeCandidate ? [edgeCandidate, ...candidates] : candidates;
+  if (!edgeCandidate) return candidates;
+
+  return [
+    ...candidates.slice(0, directTmdbIndex + 1),
+    edgeCandidate,
+    ...candidates.slice(directTmdbIndex + 1),
+  ];
 }
 
 async function preloadHeroBackdropCandidates(
@@ -921,7 +922,7 @@ function HeroBackdropImage({
     preferredLandscapeSrc,
   ]);
   const portraitCandidates = useMemo(() => {
-    const built = preferHeroEdgeCandidate(
+    const built = addHeroEdgeFallback(
       buildHeroCardImageCandidates(
         {
           heroBackdrop: film.heroBackdrop,
@@ -1476,7 +1477,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         "(max-width: 1023px) and (orientation: portrait)",
       ).matches;
       const candidates = usesPortraitArtwork
-        ? preferHeroEdgeCandidate(
+        ? addHeroEdgeFallback(
             buildHeroCardImageCandidates(
               {
                 heroBackdrop: item.heroBackdrop,
@@ -1534,7 +1535,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         "(max-width: 1023px) and (orientation: portrait)",
       ).matches;
       const backdropCandidates = usesPortraitArtwork
-        ? preferHeroEdgeCandidate(
+        ? addHeroEdgeFallback(
             buildHeroCardImageCandidates(
               {
                 heroBackdrop: target.heroBackdrop,

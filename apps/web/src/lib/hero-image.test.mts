@@ -7,13 +7,14 @@ import {
   buildHeroResponsiveSrcSet,
 } from './hero-image.ts';
 
-test('prefers a resized wsrv WebP hero while retaining direct TMDB fallback', () => {
+test('prefers direct TMDB hero while retaining wsrv and relay fallbacks', () => {
   const raw = 'https://image.tmdb.org/t/p/original/backdrop.jpg';
   const proxy = `/api/image-proxy?url=${encodeURIComponent(raw)}`;
   const candidates = buildHeroImageCandidates({ heroBackdrop: proxy });
 
-  assert.match(candidates[0], /^https:\/\/wsrv\.nl\/\?/);
-  assert.equal(candidates[1], 'https://image.tmdb.org/t/p/w1280/backdrop.jpg');
+  assert.equal(candidates[0], 'https://image.tmdb.org/t/p/w1280/backdrop.jpg');
+  assert.equal(candidates[1], raw);
+  assert.match(candidates[2], /^https:\/\/wsrv\.nl\/\?/);
   assert.match(candidates.at(-1) || '', /^\/api\/image-proxy\?/);
 });
 

@@ -90,9 +90,11 @@ export function buildHeroResponsiveSrcSet(
 /**
  * Build a deterministic fallback chain for a full-width hero image.
  *
- * TMDB hero backdrops use wsrv's resized WebP edge copy first. In practice some
- * Vietnamese networks leave image.tmdb.org pending long enough to expose the
- * dark hero placeholder. The direct TMDB URL remains the immediate fallback.
+ * TMDB hero backdrops use the correctly-sized TMDB CDN asset first. Hero cards
+ * already prove that this origin is reachable in the current browser, while a
+ * third-party wsrv request can be blocked by extensions, DNS filters, or some
+ * networks without reliably surfacing an image error. wsrv and the same-origin
+ * relay remain fallbacks for clients that cannot reach TMDB directly.
  */
 export function buildHeroImageCandidates(input: {
   heroBackdrop?: string;
@@ -113,9 +115,9 @@ export function buildHeroImageCandidates(input: {
     if (proxiedRaw && isTmdbImage(proxiedRaw)) {
       const sized = preferTmdbBackdropSize(proxiedRaw);
       const wsrv = wsrvImageUrl(sized, "backdrop");
-      if (wsrv) add(wsrv);
       add(sized);
       add(proxiedRaw);
+      if (wsrv) add(wsrv);
       add(`${IMAGE_PROXY_PATH}?url=${encodeURIComponent(sized)}&strict=1`);
       add(strictProxyUrl(normalized));
       continue;
@@ -124,9 +126,9 @@ export function buildHeroImageCandidates(input: {
     if (isTmdbImage(normalized)) {
       const sized = preferTmdbBackdropSize(normalized);
       const wsrv = wsrvImageUrl(sized, "backdrop");
-      if (wsrv) add(wsrv);
       add(sized);
       add(normalized);
+      if (wsrv) add(wsrv);
       // Some mobile networks intermittently fail to reach TMDB's image CDN.
       // Relay the exact same film artwork before trying another film-owned
       // source, so a network failure can never display an unrelated banner.
