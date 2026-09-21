@@ -35,6 +35,7 @@ import { cleanMovieDescription } from "@/lib/string-utils";
 import {
   buildHeroCardImageCandidates,
   buildHeroImageCandidates,
+  buildHeroResponsiveSrcSet,
 } from "@/lib/hero-image";
 import {
   tmdbApi,
@@ -797,8 +798,6 @@ function HeroThumbnailImage({
 }
 
 const preloadedHeroBackdrops = new Set<string>();
-const preferredHeroBackdrops = new Map<string, string>();
-
 function getMobileHeroBackdrop(src: string) {
   return src.includes("image.tmdb.org/t/p/")
     ? src.replace(
@@ -861,27 +860,22 @@ function HeroBackdropImage({
   film,
   isActive,
   revealed,
-  preferredSrc,
   onReady,
 }: {
   film: HeroFilm;
   isActive: boolean;
   revealed: boolean;
-  preferredSrc?: string;
   onReady: () => void;
 }) {
   const candidates = useMemo(() => {
-    const built = buildHeroImageCandidates({
+    return buildHeroImageCandidates({
         heroBackdrop: film.heroBackdrop,
         thumbUrl: film.thumb_url,
         posterUrl: film.poster_url,
       });
-    return preferredSrc
-      ? [preferredSrc, ...built.filter((candidate) => candidate !== preferredSrc)]
-      : built;
-  }, [film.heroBackdrop, film.poster_url, film.thumb_url, preferredSrc]);
-  const mobileCandidates = useMemo(() => {
-    const built = buildHeroCardImageCandidates(
+  }, [film.heroBackdrop, film.poster_url, film.thumb_url]);
+  const portraitCandidates = useMemo(() => {
+    return buildHeroCardImageCandidates(
         {
           heroBackdrop: film.heroBackdrop,
           thumbUrl: film.thumb_url,
@@ -889,42 +883,41 @@ function HeroBackdropImage({
         },
         "poster",
       ).map(getMobileHeroBackdrop);
-    return preferredSrc
-      ? [preferredSrc, ...built.filter((candidate) => candidate !== preferredSrc)]
-      : built;
-  }, [film.heroBackdrop, film.poster_url, film.thumb_url, preferredSrc]);
+  }, [film.heroBackdrop, film.poster_url, film.thumb_url]);
   const [candidateIndex, setCandidateIndex] = useState(0);
-  const [mobileCandidateIndex, setMobileCandidateIndex] = useState(0);
+  const [portraitCandidateIndex, setPortraitCandidateIndex] = useState(0);
   const [exhausted, setExhausted] = useState(false);
   const imageRef = useRef<HTMLImageElement>(null);
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
 
   const src = candidates[candidateIndex] || candidates[0];
-  const mobileSrc =
-    mobileCandidates[mobileCandidateIndex] ||
+  const portraitSrc =
+    portraitCandidates[portraitCandidateIndex] ||
     (src ? getMobileHeroBackdrop(src) : "");
+  const portraitSrcSet = buildHeroResponsiveSrcSet(portraitSrc, "poster");
+  const landscapeSrcSet = buildHeroResponsiveSrcSet(src, "backdrop");
 
   useEffect(() => {
     setCandidateIndex(0);
-    setMobileCandidateIndex(0);
+    setPortraitCandidateIndex(0);
     setExhausted(false);
-  }, [film.slug, candidates, mobileCandidates]);
+  }, [film.slug, candidates, portraitCandidates]);
 
   useEffect(() => {
     const image = imageRef.current;
     if (!image?.complete || image.naturalWidth <= 0) return;
     preloadedHeroBackdrops.add(image.currentSrc || src);
     onReadyRef.current();
-  }, [mobileSrc, src]);
+  }, [portraitSrc, src]);
 
   const tryNextCandidate = () => {
-    const isMobile =
+    const usesPortraitArtwork =
       typeof window !== "undefined" &&
-      window.matchMedia("(max-width: 767px)").matches;
-    if (isMobile) {
-      if (mobileCandidateIndex < mobileCandidates.length - 1) {
-        setMobileCandidateIndex((index) => index + 1);
+      window.matchMedia("(max-width: 1023px) and (orientation: portrait)").matches;
+    if (usesPortraitArtwork) {
+      if (portraitCandidateIndex < portraitCandidates.length - 1) {
+        setPortraitCandidateIndex((index) => index + 1);
       } else {
         setExhausted(true);
       }
@@ -942,13 +935,21 @@ function HeroBackdropImage({
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_35%,rgba(50,58,72,0.3),transparent_44%),linear-gradient(135deg,#0b0e13_0%,#151a22_52%,#0b0d12_100%)]" />
       {src && !exhausted && (
         <picture className="block h-full w-full">
-          {/* Mobile: poster w500 (~90KB) tải nhanh hơn 2-3x so với backdrop w1280 trên 4G */}
-          <source media="(max-width: 767px)" srcSet={mobileSrc} width={500} height={750} />
+          {/* Portrait phones/tablets use poster art; landscape devices keep the cinematic backdrop. */}
+          <source
+            media="(max-width: 1023px) and (orientation: portrait)"
+            srcSet={portraitSrcSet || portraitSrc}
+            sizes="100vw"
+            width={500}
+            height={750}
+          />
 
           <img
             ref={imageRef}
-            key={`${film.slug}-${candidateIndex}-${mobileCandidateIndex}`}
+            key={`${film.slug}-${candidateIndex}-${portraitCandidateIndex}`}
             src={src}
+            srcSet={landscapeSrcSet}
+            sizes="100vw"
             alt=""
             aria-hidden="true"
             referrerPolicy="strict-origin-when-cross-origin"
@@ -959,15 +960,15 @@ function HeroBackdropImage({
             onLoad={() => {
               const loadedSrc =
                 typeof window !== "undefined" &&
-                window.matchMedia("(max-width: 767px)").matches
-                  ? mobileSrc
+                window.matchMedia("(max-width: 1023px) and (orientation: portrait)").matches
+                  ? portraitSrc
                   : src;
               preloadedHeroBackdrops.add(loadedSrc);
               onReady();
             }}
             onError={tryNextCandidate}
             className={cn(
-              "h-full w-full object-cover object-[center_22%] brightness-[0.72] transition-opacity duration-300 ease-out md:object-center",
+              "h-full w-full object-cover object-[center_18%] brightness-[0.72] transition-opacity duration-300 ease-out sm:object-[center_20%] md:object-[center_24%] lg:object-center",
               revealed ? "opacity-100" : "opacity-0",
             )}
           />
@@ -1382,8 +1383,10 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         Boolean(item) && items.indexOf(item) === index,
     );
     preloadItems.forEach((item) => {
-      const isMobile = window.matchMedia("(max-width: 767px)").matches;
-      const candidates = isMobile
+      const usesPortraitArtwork = window.matchMedia(
+        "(max-width: 1023px) and (orientation: portrait)",
+      ).matches;
+      const candidates = usesPortraitArtwork
         ? buildHeroCardImageCandidates(
             {
               heroBackdrop: item.heroBackdrop,
@@ -1399,9 +1402,10 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
           });
       candidates.slice(0, 1).forEach((url) => {
         const img = new window.Image();
-        img.src = isMobile ? getMobileHeroBackdrop(url) : url;
+        const preloadUrl = usesPortraitArtwork ? getMobileHeroBackdrop(url) : url;
+        img.src = preloadUrl;
         img.onload = () => {
-          preloadedHeroBackdrops.add(url);
+          preloadedHeroBackdrops.add(preloadUrl);
         };
       });
     });
@@ -1435,8 +1439,10 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       if (preloadUrl) await preloadMovieLogo(preloadUrl);
       if (requestId !== slideActivationRequest.current) return;
 
-      const isMobile = window.matchMedia("(max-width: 767px)").matches;
-      const backdropCandidates = isMobile
+      const usesPortraitArtwork = window.matchMedia(
+        "(max-width: 1023px) and (orientation: portrait)",
+      ).matches;
+      const backdropCandidates = usesPortraitArtwork
         ? buildHeroCardImageCandidates(
             {
               heroBackdrop: target.heroBackdrop,
@@ -1455,7 +1461,6 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       );
       if (requestId !== slideActivationRequest.current) return;
       if (!readyBackdrop) return;
-      preferredHeroBackdrops.set(target.slug, readyBackdrop);
       markVisualReady(target.slug, "backdrop");
 
       if (prepared !== target) {
@@ -1830,7 +1835,6 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                   film={item as HeroFilm}
                   isActive={isActive}
                   revealed={visualReady}
-                  preferredSrc={preferredHeroBackdrops.get(item.slug)}
                   onReady={() => markVisualReady(item.slug, "backdrop")}
                 />
               )}

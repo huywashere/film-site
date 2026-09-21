@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { buildHeroCardImageCandidates, buildHeroImageCandidates } from './hero-image.ts';
+import {
+  buildHeroCardImageCandidates,
+  buildHeroImageCandidates,
+  buildHeroResponsiveSrcSet,
+} from './hero-image.ts';
 
 test('prefers a direct w1280 TMDB backdrop over the original proxy URL', () => {
   const raw = 'https://image.tmdb.org/t/p/original/backdrop.jpg';
@@ -214,6 +218,36 @@ test('title lookups keep provider artwork stable unless a showcase explicitly pr
   assert.match(source, /providerCandidates\?\.forEach[\s\S]*addTmdbCandidates\(\)/);
   assert.ok((series.match(/preferTmdb/g) || []).length >= 2);
   assert.match(series, /slice\(0, 30\)/);
+});
+
+test('builds art-directed TMDB srcsets for portrait and landscape heroes', () => {
+  const image = 'https://image.tmdb.org/t/p/original/artwork.jpg';
+
+  assert.equal(
+    buildHeroResponsiveSrcSet(image, 'poster'),
+    [
+      'https://image.tmdb.org/t/p/w342/artwork.jpg 342w',
+      'https://image.tmdb.org/t/p/w500/artwork.jpg 500w',
+      'https://image.tmdb.org/t/p/w780/artwork.jpg 780w',
+    ].join(', '),
+  );
+  assert.equal(
+    buildHeroResponsiveSrcSet(image, 'backdrop'),
+    [
+      'https://image.tmdb.org/t/p/w780/artwork.jpg 780w',
+      'https://image.tmdb.org/t/p/w1280/artwork.jpg 1280w',
+    ].join(', '),
+  );
+});
+
+test('hero uses poster art on portrait phones and tablets, backdrop art elsewhere', () => {
+  const source = readFileSync('src/app/components/HeroBanner.tsx', 'utf8');
+
+  assert.match(source, /\(max-width: 1023px\) and \(orientation: portrait\)/);
+  assert.match(source, /srcSet=\{portraitSrcSet \|\| portraitSrc\}/);
+  assert.match(source, /srcSet=\{landscapeSrcSet\}/);
+  assert.match(source, /object-\[center_18%\][\s\S]*md:object-\[center_24%\][\s\S]*lg:object-center/);
+  assert.doesNotMatch(source, /preferredHeroBackdrops/);
 });
 
 test('shared artwork consumes backend TMDB metadata and emits responsive image candidates', () => {

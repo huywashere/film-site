@@ -64,6 +64,29 @@ function normalizeMovieImage(value?: string): string | null {
   return resolved.replace(/^http:\/\//i, "https://");
 }
 
+export function buildHeroResponsiveSrcSet(
+  value: string | undefined,
+  kind: "poster" | "backdrop",
+): string | undefined {
+  const normalized = normalizeMovieImage(value);
+  if (!normalized) return undefined;
+  const unwrapped = rawProxyUrl(normalized) || normalized;
+  if (!isTmdbImage(unwrapped)) return undefined;
+
+  const sizes = kind === "poster"
+    ? [["w342", 342], ["w500", 500], ["w780", 780]] as const
+    : [["w780", 780], ["w1280", 1280]] as const;
+  return sizes
+    .map(([size, width]) => {
+      const url = unwrapped.replace(
+        /\/t\/p\/(?:original|w92|w154|w185|w300|w342|w500|w780|w1280)\//i,
+        `/t/p/${size}/`,
+      );
+      return `${url} ${width}w`;
+    })
+    .join(", ");
+}
+
 /**
  * Build a deterministic fallback chain for a full-width hero image.
  *
