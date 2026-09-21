@@ -111,22 +111,26 @@ test('topic pages keep quick navigation visible and omit the Top 10 feed', () =>
 
   assert.doesNotMatch(genres, /Top10RankedRow|ai-top10-recommendations/);
   assert.match(genres, /Chọn nhanh thế giới phim bạn muốn khám phá/);
-  assert.match(sidebar, /const isUniversePage = pathname\.startsWith\("\/universe\/"\)/);
-  assert.match(sidebar, /const isVisible = true/);
   assert.match(
     sidebar,
-    /item\.href === "\/genres"[\s\S]*isGenrePage \|\| isCountryPage \|\| isUniversePage/,
+    /const isUniversePage = pathname\.startsWith\(["']\/universe\/["']\)/,
   );
-  assert.match(mobileNav, /pathname\.startsWith\("\/universe\/"\)/);
+  assert.match(sidebar, /data-hero-banner=\"true\"/);
+  assert.match(sidebar, /const isVisible = !isHomePage \|\| scrolledPastHomeHero/);
+  assert.match(
+    sidebar,
+    /item\.href === ["']\/genres["'][\s\S]*isGenrePage \|\| isCountryPage \|\| isUniversePage/,
+  );
+  assert.match(mobileNav, /pathname\.startsWith\(["']\/universe\/["']\)/);
 });
 
 test('Marvel and DC expose the timeline as a dedicated content tab', () => {
   const universe = readFileSync('src/components/universe/UniversePageClient.tsx', 'utf8');
 
   assert.match(universe, /role="tablist"/);
-  assert.match(universe, /contentTab === "collection"/);
-  assert.match(universe, /contentTab === "timeline"/);
-  assert.match(universe, /contentTab === "timeline"[\s\S]*<UniverseTimelineSection/);
+  assert.match(universe, /contentTab === ["']collection["']/);
+  assert.match(universe, /contentTab === ["']timeline["']/);
+  assert.match(universe, /contentTab === ["']timeline["'][\s\S]*<UniverseTimelineSection/);
 });
 
 test('homepage exposes the three requested catalogue sections with exact labels', () => {

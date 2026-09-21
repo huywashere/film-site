@@ -79,6 +79,7 @@ export function Sidebar() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [collapsed, setCollapsed] = useState(false);
+  const [scrolledPastHomeHero, setScrolledPastHomeHero] = useState(false);
   const warmedRoutesRef = useRef(new Set<string>());
 
   const isHomePage = pathname === '/';
@@ -91,17 +92,39 @@ export function Sidebar() {
   const isFilmsPage = pathname === '/films' || pathname.startsWith('/films/');
   const isBrowsePage = isHomePage || isGenrePage || isCountryPage || isFilmsPage || isUniversePage;
 
-  // Keep quick navigation available from the first frame on home and every
-  // topic surface. Waiting for a scroll made the rail feel missing.
+  // Topic and catalogue pages expose quick navigation immediately. Home keeps
+  // the cinematic hero clean and reveals the rail only when its body begins.
   const isPinnedPage =
     isFilmDetailPage ||
     isWatchPage ||
-    isHomePage ||
     isGenrePage ||
     isCountryPage ||
     isFilmsPage ||
     isUniversePage;
   const shouldShowSidebar = isPinnedPage || isBrowsePage;
+
+  useEffect(() => {
+    if (!isHomePage) {
+      setScrolledPastHomeHero(false);
+      return;
+    }
+
+    const updateVisibility = () => {
+      const hero = document.querySelector<HTMLElement>('[data-hero-banner="true"]');
+      const pastHero = hero
+        ? hero.getBoundingClientRect().bottom <= 72
+        : window.scrollY > Math.min(window.innerHeight * 0.8, 720);
+      setScrolledPastHomeHero(pastHero);
+    };
+
+    updateVisibility();
+    window.addEventListener('scroll', updateVisibility, { passive: true });
+    window.addEventListener('resize', updateVisibility, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', updateVisibility);
+      window.removeEventListener('resize', updateVisibility);
+    };
+  }, [isHomePage, pathname]);
 
   useEffect(() => {
     try {
@@ -213,10 +236,10 @@ export function Sidebar() {
     [queryClient, router],
   );
 
-  // The desktop rail is present immediately on home, catalogue and topic pages.
+  // Home reveals the rail after the hero; every other supported page is immediate.
   if (!shouldShowSidebar) return null;
 
-  const isVisible = true;
+  const isVisible = !isHomePage || scrolledPastHomeHero;
 
   return (
     <>

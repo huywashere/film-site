@@ -20,10 +20,13 @@ test("universe spotlights load TMDB logos directly with wsrv fallback", () => {
     "utf8",
   );
 
-  assert.match(source, /buildArtworkCandidates\(\[titleLogo\], "titleLogo"/);
   assert.match(
     source,
-    /includeWsrvForTmdb: titleLogo\.includes\("image\.tmdb\.org"\)/,
+    /buildArtworkCandidates\(\[titleLogo\], ["']titleLogo["']/,
+  );
+  assert.match(
+    source,
+    /includeWsrvForTmdb: titleLogo\.includes\(["']image\.tmdb\.org["']\)/,
   );
   assert.match(source, /isTmdbImageUrl\(src\)/);
   assert.match(source, /alt=""[\s\S]*aria-hidden="true"/);
@@ -43,7 +46,7 @@ test("universe carousel decodes title logos before every slide activation", () =
   );
   assert.match(source, /onClick=\{\(\) => void activateSpotlight\(idx\)\}/);
   assert.match(source, /void activateSpotlight\(currentIdx \+ 1\)/);
-  assert.match(source, /isReady \? "opacity-100" : "opacity-0"/);
+  assert.match(source, /isReady \? ["']opacity-100["'] : ["']opacity-0["']/);
   assert.match(source, /spotlights\.map\(\(item, idx\) => \(/);
   assert.match(source, /data-universe-logo-active=\{idx === currentIdx\}/);
   assert.doesNotMatch(source, /key=\{activeSpotlight\.slug\}/);
