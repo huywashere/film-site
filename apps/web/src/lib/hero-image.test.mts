@@ -247,7 +247,15 @@ test('hero uses poster art on portrait phones and tablets, backdrop art elsewher
   assert.match(source, /srcSet=\{portraitSrcSet \|\| portraitSrc\}/);
   assert.match(source, /srcSet=\{landscapeSrcSet\}/);
   assert.match(source, /object-\[center_18%\][\s\S]*md:object-\[center_24%\][\s\S]*lg:object-center/);
-  assert.doesNotMatch(source, /preferredHeroBackdrops/);
+  assert.match(
+    source,
+    /preferredHeroBackdrops = new Map<[\s\S]*portrait\?: string; landscape\?: string/,
+  );
+  assert.match(
+    source,
+    /\[usesPortraitArtwork \? "portrait" : "landscape"\]: readyBackdrop/,
+  );
+  assert.match(source, /revealed \|\| decoded \? "opacity-100" : "opacity-0"/);
 });
 
 test('shared artwork consumes backend TMDB metadata and emits responsive image candidates', () => {
