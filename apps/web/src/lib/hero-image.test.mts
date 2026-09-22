@@ -7,15 +7,18 @@ import {
   buildHeroResponsiveSrcSet,
 } from './hero-image.ts';
 
-test('prefers direct TMDB hero while retaining wsrv and relay fallbacks', () => {
+test('prefers the cached same-origin TMDB relay while retaining direct and wsrv fallbacks', () => {
   const raw = 'https://image.tmdb.org/t/p/original/backdrop.jpg';
   const proxy = `/api/image-proxy?url=${encodeURIComponent(raw)}`;
   const candidates = buildHeroImageCandidates({ heroBackdrop: proxy });
 
-  assert.equal(candidates[0], 'https://image.tmdb.org/t/p/w1280/backdrop.jpg');
-  assert.equal(candidates[1], raw);
-  assert.match(candidates[2], /^https:\/\/wsrv\.nl\/\?/);
-  assert.match(candidates.at(-1) || '', /^\/api\/image-proxy\?/);
+  assert.equal(
+    candidates[0],
+    `/api/image-proxy?url=${encodeURIComponent('https://image.tmdb.org/t/p/w1280/backdrop.jpg')}&strict=1`,
+  );
+  assert.equal(candidates[1], 'https://image.tmdb.org/t/p/w1280/backdrop.jpg');
+  assert.equal(candidates[2], raw);
+  assert.ok(candidates.some((candidate) => /^https:\/\/wsrv\.nl\/\?/.test(candidate)));
 });
 
 test('uses compact TMDB artwork for above-the-fold hero cards', () => {
@@ -263,6 +266,17 @@ test('builds art-directed TMDB srcsets for portrait and landscape heroes', () =>
   );
 });
 
+test('keeps responsive hero variants on the same-origin relay', () => {
+  const raw = 'https://image.tmdb.org/t/p/w1280/artwork.jpg';
+  const proxy = `/api/image-proxy?url=${encodeURIComponent(raw)}&strict=1`;
+  const srcSet = buildHeroResponsiveSrcSet(proxy, 'backdrop') || '';
+
+  assert.match(srcSet, /^\/api\/image-proxy\?url=/);
+  assert.match(srcSet, /strict=1 780w/);
+  assert.match(srcSet, /strict=1 1280w/);
+  assert.doesNotMatch(srcSet, /, https:\/\/image\.tmdb\.org/);
+});
+
 test('hero uses poster art on portrait phones and tablets, backdrop art elsewhere', () => {
   const source = readFileSync('src/app/components/HeroBanner.tsx', 'utf8');
 
@@ -280,6 +294,7 @@ test('hero uses poster art on portrait phones and tablets, backdrop art elsewher
   );
   assert.match(source, /function addHeroEdgeFallback\([\s\S]*https:\/\/wsrv\.nl\//);
   assert.match(source, /wsrvImageUrl\(directTmdb, "poster"\)/);
+  assert.match(source, /function preferSameOriginHeroCandidates/);
   assert.match(source, /object-\[center_18%\] opacity-100/);
   assert.doesNotMatch(source, /revealed \|\| decoded/);
   assert.match(source, /netphim\.tmdb-hero\.v9/);

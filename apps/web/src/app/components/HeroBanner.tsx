@@ -842,6 +842,16 @@ function addHeroEdgeFallback(candidates: string[]): string[] {
   ];
 }
 
+function preferSameOriginHeroCandidates(candidates: string[]): string[] {
+  const relay = candidates.filter((candidate) =>
+    candidate.startsWith("/api/image-proxy?"),
+  );
+  const remaining = candidates.filter(
+    (candidate) => !candidate.startsWith("/api/image-proxy?"),
+  );
+  return [...relay, ...remaining];
+}
+
 async function preloadHeroBackdropCandidates(
   candidates: string[],
   timeoutMs = 2_400,
@@ -923,15 +933,17 @@ function HeroBackdropImage({
     preferredLandscapeSrc,
   ]);
   const portraitCandidates = useMemo(() => {
-    const built = addHeroEdgeFallback(
-      buildHeroCardImageCandidates(
-        {
-          heroBackdrop: film.heroBackdrop,
-          thumbUrl: film.thumb_url,
-          posterUrl: film.poster_url,
-        },
-        "poster",
-      ).map(getMobileHeroBackdrop),
+    const built = preferSameOriginHeroCandidates(
+      addHeroEdgeFallback(
+        buildHeroCardImageCandidates(
+          {
+            heroBackdrop: film.heroBackdrop,
+            thumbUrl: film.thumb_url,
+            posterUrl: film.poster_url,
+          },
+          "poster",
+        ).map(getMobileHeroBackdrop),
+      ),
     );
     return preferredPortraitSrc
       ? [
@@ -1499,14 +1511,16 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         "(max-width: 1023px) and (orientation: portrait)",
       ).matches;
       const candidates = usesPortraitArtwork
-        ? addHeroEdgeFallback(
-            buildHeroCardImageCandidates(
-              {
-                heroBackdrop: item.heroBackdrop,
-                thumbUrl: item.thumb_url,
-                posterUrl: item.poster_url,
-              },
-              "poster",
+        ? preferSameOriginHeroCandidates(
+            addHeroEdgeFallback(
+              buildHeroCardImageCandidates(
+                {
+                  heroBackdrop: item.heroBackdrop,
+                  thumbUrl: item.thumb_url,
+                  posterUrl: item.poster_url,
+                },
+                "poster",
+              ),
             ),
           )
         : buildHeroImageCandidates({
@@ -1557,15 +1571,17 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         "(max-width: 1023px) and (orientation: portrait)",
       ).matches;
       const backdropCandidates = usesPortraitArtwork
-        ? addHeroEdgeFallback(
-            buildHeroCardImageCandidates(
-              {
-                heroBackdrop: target.heroBackdrop,
-                thumbUrl: target.thumb_url,
-                posterUrl: target.poster_url,
-              },
-              "poster",
-            ).map(getMobileHeroBackdrop),
+        ? preferSameOriginHeroCandidates(
+            addHeroEdgeFallback(
+              buildHeroCardImageCandidates(
+                {
+                  heroBackdrop: target.heroBackdrop,
+                  thumbUrl: target.thumb_url,
+                  posterUrl: target.poster_url,
+                },
+                "poster",
+              ).map(getMobileHeroBackdrop),
+            ),
           )
         : buildHeroImageCandidates({
             heroBackdrop: target.heroBackdrop,

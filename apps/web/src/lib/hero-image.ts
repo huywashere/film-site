@@ -70,6 +70,7 @@ export function buildHeroResponsiveSrcSet(
 ): string | undefined {
   const normalized = normalizeMovieImage(value);
   if (!normalized) return undefined;
+  const useSameOriginRelay = normalized.startsWith(IMAGE_PROXY_PATH);
   const unwrapped = rawProxyUrl(normalized) || normalized;
   if (!isTmdbImage(unwrapped)) return undefined;
 
@@ -82,7 +83,10 @@ export function buildHeroResponsiveSrcSet(
         /\/t\/p\/(?:original|w92|w154|w185|w300|w342|w500|w780|w1280)\//i,
         `/t/p/${size}/`,
       );
-      return `${url} ${width}w`;
+      const source = useSameOriginRelay
+        ? `${IMAGE_PROXY_PATH}?url=${encodeURIComponent(url)}&strict=1`
+        : url;
+      return `${source} ${width}w`;
     })
     .join(", ");
 }
@@ -90,11 +94,11 @@ export function buildHeroResponsiveSrcSet(
 /**
  * Build a deterministic fallback chain for a full-width hero image.
  *
- * TMDB hero backdrops use the correctly-sized TMDB CDN asset first. Hero cards
- * already prove that this origin is reachable in the current browser, while a
- * third-party wsrv request can be blocked by extensions, DNS filters, or some
- * networks without reliably surfacing an image error. wsrv and the same-origin
- * relay remain fallbacks for clients that cannot reach TMDB directly.
+ * Hero backdrops use the same-origin cached relay first. Some browsers and
+ * regional networks allow small TMDB posters but intermittently drop large
+ * backdrop requests; relaying only the two visible hero images avoids that
+ * client-side dependency without using Vercel Image Optimization. Direct TMDB
+ * and wsrv remain independent fallbacks.
  */
 export function buildHeroImageCandidates(input: {
   heroBackdrop?: string;
@@ -115,10 +119,10 @@ export function buildHeroImageCandidates(input: {
     if (proxiedRaw && isTmdbImage(proxiedRaw)) {
       const sized = preferTmdbBackdropSize(proxiedRaw);
       const wsrv = wsrvImageUrl(sized, "backdrop");
+      add(`${IMAGE_PROXY_PATH}?url=${encodeURIComponent(sized)}&strict=1`);
       add(sized);
       add(proxiedRaw);
       if (wsrv) add(wsrv);
-      add(`${IMAGE_PROXY_PATH}?url=${encodeURIComponent(sized)}&strict=1`);
       add(strictProxyUrl(normalized));
       continue;
     }
@@ -126,13 +130,10 @@ export function buildHeroImageCandidates(input: {
     if (isTmdbImage(normalized)) {
       const sized = preferTmdbBackdropSize(normalized);
       const wsrv = wsrvImageUrl(sized, "backdrop");
+      add(`${IMAGE_PROXY_PATH}?url=${encodeURIComponent(sized)}&strict=1`);
       add(sized);
       add(normalized);
       if (wsrv) add(wsrv);
-      // Some mobile networks intermittently fail to reach TMDB's image CDN.
-      // Relay the exact same film artwork before trying another film-owned
-      // source, so a network failure can never display an unrelated banner.
-      add(`${IMAGE_PROXY_PATH}?url=${encodeURIComponent(sized)}&strict=1`);
       continue;
     }
 

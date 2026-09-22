@@ -1,6 +1,7 @@
 import HomePageClient from "./HomePageClient";
 import type { PublicSiteConfiguration } from "@/lib/api";
 import { CURATED_HERO_FRANCHISE_POOL } from "@/lib/curated-hero-pool";
+import { localImageProxyUrl } from "@/lib/image-cdn";
 
 export const revalidate = 60;
 
@@ -44,23 +45,32 @@ export default async function HomePage() {
     ? pinnedHeroFilms
     : pickRandomHeroFilms();
   const initialHero = initialHeroFilms[0];
+  const initialDesktopBackdrop = initialHero?.heroBackdrop
+    ? localImageProxyUrl(initialHero.heroBackdrop, { strict: true })
+    : null;
+  const initialMobileBackdrop = initialHero?.poster_url
+    ? localImageProxyUrl(
+        initialHero.poster_url.replace("/t/p/w500/", "/t/p/w780/"),
+        { strict: true },
+      )
+    : null;
 
   return (
     <>
-      {initialHero?.heroBackdrop && (
+      {initialDesktopBackdrop && (
         <link
           rel="preload"
           as="image"
-          href={initialHero.heroBackdrop}
+          href={initialDesktopBackdrop}
           media="(min-width: 768px)"
           fetchPriority="high"
         />
       )}
-      {initialHero?.poster_url && (
+      {initialMobileBackdrop && (
         <link
           rel="preload"
           as="image"
-          href={initialHero.poster_url.replace('/t/p/w500/', '/t/p/w780/')}
+          href={initialMobileBackdrop}
           media="(max-width: 767px)"
           fetchPriority="high"
         />
