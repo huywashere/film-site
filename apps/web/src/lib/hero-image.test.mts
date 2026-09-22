@@ -276,7 +276,7 @@ test('hero uses poster art on portrait phones and tablets, backdrop art elsewher
     source,
     /\[usesPortraitArtwork \? "portrait" : "landscape"\]: readyBackdrop/,
   );
-  assert.match(source, /preferHeroEdgeCandidate\([\s\S]*https:\/\/wsrv\.nl\//);
+  assert.match(source, /function addHeroEdgeFallback\([\s\S]*https:\/\/wsrv\.nl\//);
   assert.match(source, /wsrvImageUrl\(directTmdb, "poster"\)/);
   assert.match(source, /object-\[center_18%\] opacity-100/);
   assert.doesNotMatch(source, /revealed \|\| decoded/);

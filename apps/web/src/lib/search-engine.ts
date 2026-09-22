@@ -12,6 +12,7 @@
 
 import { normalizeText } from "@/lib/movie-normalizer";
 import { normalizeForSearch, tokenizeQuery } from "@/lib/text-utils";
+import { expandSearchAliases } from "@/lib/search-query-aliases";
 import type { NormalizedFilmItem } from "@/lib/movie-normalizer";
 
 // ── Text helpers ──────────────────────────────────────────────────
@@ -23,6 +24,22 @@ import type { NormalizedFilmItem } from "@/lib/movie-normalizer";
  */
 export function normalize(text: string): string {
   return normalizeForSearch(text) || normalizeText(text);
+}
+
+function expandSeasonVariants(value: string): string[] {
+  const normalized = normalize(value);
+  const match = normalized.match(/\b(?:phan|season|mua|s)\s*(\d+)\b/);
+  if (!match) return [normalized];
+  const base = normalized
+    .replace(/\b(?:phan|season|mua|s)\s*\d+\b/, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return [
+    normalized,
+    `${base} phan ${match[1]}`.trim(),
+    `${base} season ${match[1]}`.trim(),
+    `${base} s${match[1]}`.trim(),
+  ];
 }
 
 /** Tách thành mảng token, bỏ token rỗng và stopwords */
@@ -134,6 +151,10 @@ function scoreFilm(
   const normName = normalize(film.name || "");
   const normOrigin = normalize(film.origin_name || "");
   const normSlug = normalize(film.slug || "");
+  const compactQuery = normQuery.replace(/\s+/g, "");
+  const compactName = normName.replace(/\s+/g, "");
+  const compactOrigin = normOrigin.replace(/\s+/g, "");
+  const compactSlug = normSlug.replace(/\s+/g, "");
   const normMetadata = normalize(
     [
       ...searchableValues(film.actor),
@@ -146,12 +167,18 @@ function scoreFilm(
   let matchType: ScoredFilm["_matchType"] = "none";
 
   // ── 1. Exact match trên Name, Origin Name, hoặc Slug ──
-  if (normName === normQuery || normOrigin === normQuery) {
+  if (
+    normName === normQuery ||
+    normOrigin === normQuery ||
+    compactName === compactQuery ||
+    compactOrigin === compactQuery
+  ) {
     score += WEIGHTS.exact;
     matchType = "exact";
   } else if (
     normSlug === normQuery ||
-    normSlug.replace(/-/g, " ") === normQuery
+    normSlug.replace(/-/g, " ") === normQuery ||
+    compactSlug === compactQuery
   ) {
     score += WEIGHTS.slugExact;
     matchType = "exact";
@@ -162,7 +189,9 @@ function scoreFilm(
     if (
       normName.startsWith(normQuery) ||
       normOrigin.startsWith(normQuery) ||
-      normSlug.startsWith(normQuery)
+      normSlug.startsWith(normQuery) ||
+      compactName.startsWith(compactQuery) ||
+      compactOrigin.startsWith(compactQuery)
     ) {
       score += WEIGHTS.prefix;
       matchType = "prefix";
@@ -279,10 +308,23 @@ export function rankSearchResults(
       _matchType: "none" as const,
     }));
 
-  const normQuery = normalize(sanitizedQuery);
-  const queryTokens = tokenize(sanitizedQuery);
+  const queryVariants = Array.from(
+    new Set(
+      expandSearchAliases(sanitizedQuery)
+        .flatMap(expandSeasonVariants)
+        .filter(Boolean),
+    ),
+  ).slice(0, 24);
+  if (queryVariants.length === 0) queryVariants.push(normalize(sanitizedQuery));
 
-  const scored = films.map((film) => scoreFilm(film, normQuery, queryTokens));
+  const scored = films.map((film) => {
+    const candidates = queryVariants.map((variant) =>
+      scoreFilm(film, variant, tokenize(variant)),
+    );
+    return candidates.reduce((best, candidate) =>
+      candidate._searchScore > best._searchScore ? candidate : best,
+    );
+  });
 
   // Provider search endpoints sometimes append broadly related catalogue
   // items. Once at least one real text/actor match exists, hide entries that
@@ -310,6 +352,12 @@ export function expandQuery(query: string): string[] {
 
   variants.add(trimmed);
   variants.add(normalize(trimmed));
+  for (const alias of expandSearchAliases(trimmed)) variants.add(alias);
+  for (const alias of Array.from(variants)) {
+    for (const seasonVariant of expandSeasonVariants(alias)) {
+      variants.add(seasonVariant);
+    }
+  }
 
   // Bỏ stopwords tiếng Việt và tiếng Anh
   const stopwords = [

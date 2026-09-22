@@ -18,17 +18,61 @@ test("merges translated provider copies using all title aliases", () => {
           origin_name: "The Godfather",
           slug: "the-godfather",
           year: 1972,
+          type: "single",
         },
       ],
     },
     {
       source: "ophim",
-      items: [{ name: "Bố Già", slug: "bo-gia-1972", year: 1972 }],
+      items: [
+        { name: "Bố Già", slug: "bo-gia-1972", year: 1972, type: "single" },
+      ],
     },
   ]);
 
   assert.equal(items.length, 1);
   assert.deepEqual(items[0]._sources, ["kkphim", "ophim"]);
+});
+
+test("does not collapse a movie and series with the same title and year", () => {
+  const items = dedupeFilmsBySource([
+    {
+      source: "kkphim",
+      items: [
+        { name: "The Signal", slug: "the-signal-movie", year: 2024, type: "single" },
+      ],
+    },
+    {
+      source: "ophim",
+      items: [
+        { name: "The Signal", slug: "the-signal-series", year: 2024, type: "series" },
+      ],
+    },
+  ]);
+
+  assert.equal(items.length, 2);
+  assert.notEqual(items[0]._canonicalKey, items[1]._canonicalKey);
+});
+
+test("keeps seasons separate while merging equivalent season labels", () => {
+  const items = dedupeFilmsBySource([
+    {
+      source: "kkphim",
+      items: [
+        { name: "Silo Phần 2", slug: "silo-phan-2", year: 2024, type: "series" },
+        { name: "Silo Phần 1", slug: "silo-phan-1", year: 2023, type: "series" },
+      ],
+    },
+    {
+      source: "ophim",
+      items: [
+        { name: "Silo Season 2", slug: "silo-season-2", year: 2024, type: "series" },
+      ],
+    },
+  ]);
+
+  assert.equal(items.length, 2);
+  assert.equal(items.find((item) => item.year === 2024)?._duplicateCount, 2);
 });
 
 test("applies type, genre, country and year together", () => {
@@ -95,4 +139,47 @@ test("removes provider filler when genuine query matches exist", () => {
   const ranked = rankSearchResults(films, "bố già");
   assert.equal(ranked[0].slug, "bo-gia");
   assert.ok(!ranked.some((film) => film.slug === "phim-khac"));
+});
+
+test("ranks compact and multilingual franchise aliases consistently", () => {
+  const films = dedupeFilmsBySource([
+    {
+      source: "kkphim",
+      items: [
+        {
+          name: "Người Nhện: Không Còn Nhà",
+          origin_name: "Spider-Man: No Way Home",
+          slug: "spider-man-no-way-home",
+          year: 2021,
+          type: "single",
+        },
+        {
+          name: "Người Dơi",
+          origin_name: "The Batman",
+          slug: "the-batman",
+          year: 2022,
+          type: "single",
+        },
+      ],
+    },
+  ]);
+
+  for (const query of ["spiderman", "spider man", "người nhện", "nguoinhen"]) {
+    assert.equal(rankSearchResults(films, query)[0]?.slug, "spider-man-no-way-home");
+  }
+});
+
+test("finds season aliases without mixing different seasons", () => {
+  const films = dedupeFilmsBySource([
+    {
+      source: "kkphim",
+      items: [
+        { name: "Silo (Phần 1)", slug: "silo-phan-1", year: 2023, type: "series" },
+        { name: "Silo (Phần 2)", slug: "silo-phan-2", year: 2024, type: "series" },
+      ],
+    },
+  ]);
+
+  assert.equal(rankSearchResults(films, "silo season 2")[0]?.slug, "silo-phan-2");
+  assert.equal(rankSearchResults(films, "silo s1")[0]?.slug, "silo-phan-1");
 });

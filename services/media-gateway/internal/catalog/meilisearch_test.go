@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -162,5 +163,62 @@ func TestMeiliFailureOpensCircuitForImmediateProviderFallback(t *testing.T) {
 	}
 	if requests.Load() != before || time.Since(started) > 50*time.Millisecond {
 		t.Fatalf("open circuit should avoid another network call: before=%d after=%d elapsed=%s", before, requests.Load(), time.Since(started))
+	}
+}
+
+func TestMeiliSnapshotUpsertsAndPrunesOnlyMissingDocuments(t *testing.T) {
+	canonical := "film:single:the godfather:1972"
+	keepDigest := sha256.Sum256([]byte(canonical))
+	keepID := hex.EncodeToString(keepDigest[:])
+	staleID := strings.Repeat("a", 64)
+	var deletedFilter string
+	var upserted []map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		switch {
+		case request.Method == http.MethodPost && request.URL.Path == "/indexes":
+			writer.WriteHeader(http.StatusAccepted)
+		case request.Method == http.MethodPatch && strings.HasSuffix(request.URL.Path, "/settings"):
+			writer.WriteHeader(http.StatusAccepted)
+		case request.Method == http.MethodGet && strings.HasSuffix(request.URL.Path, "/documents"):
+			writer.Header().Set("Content-Type", "application/json")
+			_, _ = writer.Write([]byte(fmt.Sprintf(`{"results":[{"search_id":%q},{"search_id":%q}],"total":2,"offset":0,"limit":1000}`, keepID, staleID)))
+		case request.Method == http.MethodPut && strings.HasSuffix(request.URL.Path, "/documents"):
+			if err := json.NewDecoder(request.Body).Decode(&upserted); err != nil {
+				t.Fatal(err)
+			}
+			writer.WriteHeader(http.StatusAccepted)
+		case request.Method == http.MethodPost && strings.HasSuffix(request.URL.Path, "/documents/delete"):
+			var body map[string]any
+			if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
+				t.Fatal(err)
+			}
+			deletedFilter = firstString(body["filter"])
+			writer.WriteHeader(http.StatusAccepted)
+		default:
+			writer.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	index := newMeiliSearchIndex(config.Config{
+		MeiliURL: server.URL, MeiliIndex: "movies", MeiliTimeout: time.Second, MeiliBatchSize: 20,
+	})
+	defer index.Close()
+	err := index.SyncSnapshot(context.Background(), []map[string]any{{
+		"name": "Bố Già", "origin_name": "The Godfather", "slug": "the-godfather", "year": 1972,
+		"type": "single", "_canonicalKey": canonical,
+	}}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(upserted) != 1 || firstString(upserted[0]["search_id"]) != keepID {
+		t.Fatalf("snapshot did not upsert the canonical document: %#v", upserted)
+	}
+	if !strings.Contains(deletedFilter, staleID) || strings.Contains(deletedFilter, keepID) {
+		t.Fatalf("snapshot pruned the wrong ids: %q", deletedFilter)
+	}
+	status := index.Status(context.Background())
+	if status.LastSyncItems != 1 || status.LastSyncDeleted != 1 || status.LastSyncCompletedAt == 0 {
+		t.Fatalf("snapshot status is incomplete: %#v", status)
 	}
 }

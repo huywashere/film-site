@@ -270,6 +270,37 @@ func TestDedupeMergesSameSlugWhenOneProviderOmitsYear(t *testing.T) {
 	}
 }
 
+func TestDedupeKeepsMovieAndSeriesWithSameTitleSeparate(t *testing.T) {
+	items := dedupeGroups(map[string][]map[string]any{
+		"kkphim": {{"name": "The Signal", "slug": "the-signal-movie", "year": 2024, "type": "single"}},
+		"ophim":  {{"name": "The Signal", "slug": "the-signal-series", "year": 2024, "type": "series"}},
+	}, 0)
+	if len(items) != 2 {
+		t.Fatalf("movie and series identities must stay separate: %#v", items)
+	}
+	if firstString(items[0]["_canonicalKey"]) == firstString(items[1]["_canonicalKey"]) {
+		t.Fatalf("canonical identities unexpectedly collide: %#v", items)
+	}
+}
+
+func TestDedupeNormalizesSeasonLabelsWithoutCollapsingSeasons(t *testing.T) {
+	items := dedupeGroups(map[string][]map[string]any{
+		"kkphim": {
+			{"name": "Silo Phần 2", "slug": "silo-phan-2", "year": 2024, "type": "series"},
+			{"name": "Silo Phần 1", "slug": "silo-phan-1", "year": 2023, "type": "series"},
+		},
+		"ophim": {{"name": "Silo Season 2", "slug": "silo-season-2", "year": 2024, "type": "series"}},
+	}, 0)
+	if len(items) != 2 {
+		t.Fatalf("equivalent season labels should merge while seasons stay separate: %#v", items)
+	}
+	for _, item := range items {
+		if numberValue(item["year"]) == 2024 && numberValue(item["_duplicateCount"]) != 2 {
+			t.Fatalf("season two did not retain both provider sources: %#v", item)
+		}
+	}
+}
+
 func testConfig(origin string) config.Config {
 	return config.Config{
 		SigningSecret:           strings.Repeat("x", 32),

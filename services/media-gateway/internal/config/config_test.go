@@ -33,8 +33,11 @@ func TestLoadUsesProductionHardeningDefaults(t *testing.T) {
 	if cfg.CoreAPIURL != "http://api:4000/api/v1" {
 		t.Fatalf("media gateway must use the NestJS container port, got %s", cfg.CoreAPIURL)
 	}
-	if cfg.MeiliIndex != "movies" || cfg.MeiliWarmPages != 3 || cfg.MeiliSyncPages != 30 || cfg.MeiliBatchSize != 200 {
-		t.Fatalf("unexpected Meilisearch defaults: index=%s warm=%d sync=%d batch=%d", cfg.MeiliIndex, cfg.MeiliWarmPages, cfg.MeiliSyncPages, cfg.MeiliBatchSize)
+	if cfg.MeiliIndex != "movies" || cfg.MeiliWarmPages != 5 || cfg.MeiliSyncPages != 12 || cfg.MeiliFullSyncPages != 500 || cfg.MeiliBatchSize != 200 {
+		t.Fatalf("unexpected Meilisearch defaults: index=%s warm=%d sync=%d full=%d batch=%d", cfg.MeiliIndex, cfg.MeiliWarmPages, cfg.MeiliSyncPages, cfg.MeiliFullSyncPages, cfg.MeiliBatchSize)
+	}
+	if cfg.MeiliSyncInterval != 15*time.Minute || cfg.MeiliFullSyncInterval != 24*time.Hour || !cfg.MeiliPruneStale {
+		t.Fatalf("unexpected Meilisearch schedule defaults: incremental=%s full=%s prune=%v", cfg.MeiliSyncInterval, cfg.MeiliFullSyncInterval, cfg.MeiliPruneStale)
 	}
 }
 

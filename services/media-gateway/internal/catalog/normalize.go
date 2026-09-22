@@ -13,6 +13,8 @@ import (
 )
 
 var nonAlphaNumeric = regexp.MustCompile(`[^a-z0-9]+`)
+var identitySeason = regexp.MustCompile(`\b(?:phan|season|mua)\s*(\d+)\b`)
+var identityNoise = regexp.MustCompile(`\b(?:phim|movie|tap\s*\d+|full|hd|fhd|4k|cam|hdcam|vietsub|thuyet minh|long tieng|chieu rap)\b`)
 
 var sourcePriority = map[string]int{
 	"kkphim": 0,
@@ -363,11 +365,33 @@ func normalizeFilm(source string, film map[string]any, rank int) map[string]any 
 	return film
 }
 
+func canonicalMediaType(film map[string]any) string {
+	if tmdb, ok := film["tmdb"].(map[string]any); ok {
+		if value := normalizedMovieType(firstString(tmdb["type"])); value != "" {
+			return value
+		}
+	}
+	if value := normalizedMovieType(firstString(film["mediaType"], film["type"])); value != "" {
+		return value
+	}
+	// Provider list endpoints commonly omit type for single movies. Series and
+	// anime endpoints normally include an explicit type, so single is the least
+	// surprising compatibility fallback and avoids duplicate movie cards.
+	return "single"
+}
+
+func identityTitle(value string) string {
+	value = normalizeText(value)
+	value = identitySeason.ReplaceAllString(value, "season $1")
+	value = identityNoise.ReplaceAllString(value, " ")
+	return strings.Join(strings.Fields(value), " ")
+}
+
 func canonicalKey(film map[string]any, name, origin string, year int) string {
 	if tmdb, ok := film["tmdb"].(map[string]any); ok {
 		id := firstString(tmdb["id"])
 		if id != "" && id != "0" {
-			return "tmdb:" + firstString(tmdb["type"], "movie") + ":" + id
+			return "tmdb:" + canonicalMediaType(film) + ":" + id
 		}
 	}
 	if imdb, ok := film["imdb"].(map[string]any); ok {
@@ -375,33 +399,35 @@ func canonicalKey(film map[string]any, name, origin string, year int) string {
 			return "imdb:" + strings.ToLower(id)
 		}
 	}
-	primary := normalizeText(firstString(origin, name, film["slug"]))
+	mediaType := canonicalMediaType(film)
+	primary := identityTitle(firstString(origin, name, film["slug"]))
 	if year > 0 {
-		return fmt.Sprintf("film:%s:%d", primary, year)
+		return fmt.Sprintf("film:%s:%s:%d", mediaType, primary, year)
 	}
-	return "film:" + primary
+	return "film:" + mediaType + ":" + primary
 }
 
 func canonicalAliases(film map[string]any) []string {
 	name := firstString(film["name"], film["title"])
 	origin := firstString(film["origin_name"], film["original_name"])
 	year := numberValue(film["year"])
+	mediaType := canonicalMediaType(film)
 	aliases := map[string]bool{canonicalKey(film, name, origin, year): true}
 	// Provider slugs are stable identities even when one source omits year.
-	// Keeping this alias year-independent merges incomplete copies without
-	// collapsing remakes that use different provider slugs.
-	if slug := normalizeText(firstString(film["slug"])); slug != "" {
-		aliases["slug:"+slug] = true
+	// Keep this alias year-independent but media-type aware so incomplete copies
+	// merge without collapsing a movie and a series that share a title.
+	if slug := identityTitle(firstString(film["slug"])); slug != "" {
+		aliases["slug:"+mediaType+":"+slug] = true
 	}
 	for _, value := range []string{name, origin} {
-		title := normalizeText(value)
+		title := identityTitle(value)
 		if title == "" {
 			continue
 		}
 		if year > 0 {
-			aliases[fmt.Sprintf("title:%s:%d", title, year)] = true
+			aliases[fmt.Sprintf("title:%s:%s:%d", mediaType, title, year)] = true
 		} else {
-			aliases["title:"+title] = true
+			aliases["title:"+mediaType+":"+title] = true
 		}
 	}
 	result := make([]string, 0, len(aliases))

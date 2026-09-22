@@ -98,11 +98,29 @@ function getYear(record: Record<string, unknown>): number | undefined {
   return readNumber(record.year);
 }
 
+function getCanonicalMediaType(record: Record<string, unknown>): string {
+  const tmdbType = readNestedString(record, "tmdb", "type");
+  const value = normalizeText(
+    tmdbType ||
+      readString(record.mediaType) ||
+      readString(record.type) ||
+      "single",
+  );
+  if (["tv", "series", "phim bo", "tv series"].includes(value)) {
+    return "series";
+  }
+  if (["movie", "single", "phim le"].includes(value)) return "single";
+  if (["anime", "hoat hinh", "animation"].includes(value)) return "anime";
+  if (["tvshows", "tv shows", "shows"].includes(value)) return "tvshows";
+  return value || "single";
+}
+
 function cleanTitleForDedupe(text: string): string {
   if (!text) return "";
   return normalizeText(text)
+    .replace(/\b(?:phan|season|mua)\s*(\d+)\b/gi, "season $1")
     .replace(
-      /\b(phim|movie|tap\s*\d+|phan\s*\d+|season\s*\d+|full|hd|cam|hdcam|vietsub|thuyet minh|long tieng|chieu rap)\b/gi,
+      /\b(phim|movie|tap\s*\d+|full|hd|fhd|4k|cam|hdcam|vietsub|thuyet minh|long tieng|chieu rap)\b/gi,
       "",
     )
     .replace(/\s+/g, " ")
@@ -112,10 +130,7 @@ function cleanTitleForDedupe(text: string): string {
 function getCanonicalKey(record: Record<string, unknown>): string {
   const tmdbId =
     readNestedString(record, "tmdb", "id") || readString(record.tmdbId);
-  const tmdbType =
-    readNestedString(record, "tmdb", "type") ||
-    readString(record.mediaType) ||
-    "movie";
+  const tmdbType = getCanonicalMediaType(record);
   if (tmdbId && tmdbId !== "0") return `tmdb:${tmdbType}:${tmdbId}`;
 
   const imdbId =
@@ -126,11 +141,14 @@ function getCanonicalKey(record: Record<string, unknown>): string {
   const name = cleanTitleForDedupe(getFilmName(record) || "");
   const originName = cleanTitleForDedupe(getOriginName(record) || "");
   const slug = cleanTitleForDedupe(readString(record.slug) || "");
+  const mediaType = getCanonicalMediaType(record);
 
   // Use origin_name if available (standardized international title), otherwise name or slug
   const primaryTitle = originName || name || slug;
   if (primaryTitle) {
-    return year ? `film:${primaryTitle}:${year}` : `film:${primaryTitle}`;
+    return year
+      ? `film:${mediaType}:${primaryTitle}:${year}`
+      : `film:${mediaType}:${primaryTitle}`;
   }
 
   return `title:${name || slug || "unknown"}`;
@@ -138,6 +156,7 @@ function getCanonicalKey(record: Record<string, unknown>): string {
 
 function getFilmAliases(record: Record<string, unknown>): string[] {
   const year = getYear(record);
+  const mediaType = getCanonicalMediaType(record);
   const titles = [
     getFilmName(record),
     getOriginName(record),
@@ -151,10 +170,16 @@ function getFilmAliases(record: Record<string, unknown>): string[] {
   const aliases = new Set<string>();
   const canonical = getCanonicalKey(record);
   aliases.add(canonical);
+  const slug = cleanTitleForDedupe(readString(record.slug) || "");
+  if (slug) aliases.add(`slug:${mediaType}:${slug}`);
   for (const title of titles) {
     // A year is required for title aliases whenever it is known. This merges
     // provider translations without collapsing remakes with the same title.
-    aliases.add(year ? `title:${title}:${year}` : `title:${title}`);
+    aliases.add(
+      year
+        ? `title:${mediaType}:${title}:${year}`
+        : `title:${mediaType}:${title}`,
+    );
   }
   return Array.from(aliases);
 }

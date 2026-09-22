@@ -66,9 +66,26 @@ The Compose service exposes port `7700` only inside the Docker network. Set a
 unique `MEILI_MASTER_KEY` (minimum 32 random characters) on every environment;
 never use it in a `NEXT_PUBLIC_*` variable. Relevant tuning variables are
 `MEILI_MOVIES_INDEX`, `MEILI_TIMEOUT`, `MEILI_SYNC_INTERVAL`,
-`MEILI_WARM_PAGES`, `MEILI_SYNC_PAGES`, `MEILI_SYNC_PAUSE`, and
-`MEILI_BATCH_SIZE`. Startup warms a small recent window; periodic paced deep
-sync expands coverage without flooding upstream providers.
+`MEILI_WARM_PAGES`, `MEILI_SYNC_PAGES`, `MEILI_FULL_SYNC_INTERVAL`,
+`MEILI_FULL_SYNC_PAGES`, `MEILI_PRUNE_STALE`, `MEILI_SYNC_PAUSE`, and
+`MEILI_BATCH_SIZE`. Startup warms a small recent window; incremental sync keeps
+new releases fresh, while the daily bounded full snapshot covers the complete
+provider catalogue. Stale documents are removed only after every catalogue
+section reports a complete scan, so a provider outage cannot erase valid data.
+
+`GET /v1/search/status` reports document count, realtime queue drops, full-sync
+timestamps, indexed item count, stale deletions, and the last sync error. After
+deployment, run the repeatable quality and latency audit from this directory:
+
+```bash
+SEARCH_BASE_URL=https://media.example.com REQUIRE_MEILI=1 node scripts/audit-search-quality.mjs
+```
+
+The audit covers Vietnamese, original, compact and franchise queries, rejects
+duplicate canonical cards, checks the expected title in the top three, and
+enforces warm-cache p50/p95 budgets of 100/250 ms. Override the budgets with
+`SEARCH_P50_BUDGET_MS` and `SEARCH_P95_BUDGET_MS` only when the deployment
+region has a documented higher network baseline.
 
 ## Required production secrets
 

@@ -35,14 +35,20 @@ type meiliSearchIndex struct {
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 
-	setupMu     sync.Mutex
-	ready       atomic.Bool
-	retryAt     atomic.Int64
-	indexed     atomic.Int64
-	deleted     atomic.Int64
-	dropped     atomic.Int64
-	failures    atomic.Int64
-	lastWriteAt atomic.Int64
+	setupMu             sync.Mutex
+	ready               atomic.Bool
+	retryAt             atomic.Int64
+	indexed             atomic.Int64
+	deleted             atomic.Int64
+	dropped             atomic.Int64
+	failures            atomic.Int64
+	lastWriteAt         atomic.Int64
+	syncRunning         atomic.Bool
+	lastSyncStartedAt   atomic.Int64
+	lastSyncCompletedAt atomic.Int64
+	lastSyncItems       atomic.Int64
+	lastSyncDeleted     atomic.Int64
+	lastSyncError       atomic.Value
 }
 
 type meiliMutation struct {
@@ -51,16 +57,22 @@ type meiliMutation struct {
 }
 
 type meiliStatus struct {
-	Enabled       bool  `json:"enabled"`
-	Ready         bool  `json:"ready"`
-	QueueDepth    int   `json:"queueDepth"`
-	QueueCapacity int   `json:"queueCapacity"`
-	Indexed       int64 `json:"indexed"`
-	Deleted       int64 `json:"deleted"`
-	Dropped       int64 `json:"notIndexedQueueDrops"`
-	Failures      int64 `json:"failures"`
-	Documents     int   `json:"documents"`
-	LastWriteAt   int64 `json:"lastWriteAt"`
+	Enabled             bool   `json:"enabled"`
+	Ready               bool   `json:"ready"`
+	QueueDepth          int    `json:"queueDepth"`
+	QueueCapacity       int    `json:"queueCapacity"`
+	Indexed             int64  `json:"indexed"`
+	Deleted             int64  `json:"deleted"`
+	Dropped             int64  `json:"notIndexedQueueDrops"`
+	Failures            int64  `json:"failures"`
+	Documents           int    `json:"documents"`
+	LastWriteAt         int64  `json:"lastWriteAt"`
+	SyncRunning         bool   `json:"syncRunning"`
+	LastSyncStartedAt   int64  `json:"lastSyncStartedAt"`
+	LastSyncCompletedAt int64  `json:"lastSyncCompletedAt"`
+	LastSyncItems       int64  `json:"lastSyncItems"`
+	LastSyncDeleted     int64  `json:"lastSyncDeleted"`
+	LastSyncError       string `json:"lastSyncError,omitempty"`
 }
 
 type meiliSearchResponse struct {
@@ -192,7 +204,9 @@ func (m *meiliSearchIndex) Search(ctx context.Context, query string, page, limit
 		delete(hit, "search_id")
 		delete(hit, "search_aliases")
 		delete(hit, "search_aliases_normalized")
+		delete(hit, "search_aliases_compact")
 		delete(hit, "search_cast_normalized")
+		delete(hit, "search_director_normalized")
 		delete(hit, "search_type")
 		delete(hit, "search_year")
 		delete(hit, "search_status")
@@ -290,6 +304,116 @@ func (m *meiliSearchIndex) deleteDocuments(ctx context.Context, ids []string) er
 	return nil
 }
 
+type meiliDocumentsPage struct {
+	Results []struct {
+		SearchID string `json:"search_id"`
+	} `json:"results"`
+	Total  int `json:"total"`
+	Offset int `json:"offset"`
+	Limit  int `json:"limit"`
+}
+
+func (m *meiliSearchIndex) documentIDs(ctx context.Context) (map[string]bool, error) {
+	if err := m.ensureIndex(ctx); err != nil {
+		return nil, err
+	}
+	result := make(map[string]bool)
+	for offset := 0; ; offset += 1000 {
+		var page meiliDocumentsPage
+		path := fmt.Sprintf("/indexes/%s/documents?limit=1000&offset=%d&fields=search_id", url.PathEscape(m.index), offset)
+		if err := m.requestJSON(ctx, http.MethodGet, path, nil, &page, http.StatusOK); err != nil {
+			return nil, err
+		}
+		for _, document := range page.Results {
+			if document.SearchID != "" {
+				result[document.SearchID] = true
+			}
+		}
+		if len(page.Results) == 0 || offset+len(page.Results) >= page.Total {
+			break
+		}
+	}
+	return result, nil
+}
+
+// SyncSnapshot reliably writes a complete catalogue snapshot in bounded
+// batches. Unlike the best-effort realtime queue, this path applies
+// back-pressure and can safely prune documents that disappeared from a fully
+// completed provider scan.
+func (m *meiliSearchIndex) SyncSnapshot(ctx context.Context, movies []map[string]any, prune bool) error {
+	if m == nil || len(movies) == 0 {
+		return errors.New("search snapshot is empty")
+	}
+	if !m.syncRunning.CompareAndSwap(false, true) {
+		return errors.New("search snapshot sync is already running")
+	}
+	defer m.syncRunning.Store(false)
+	m.lastSyncStartedAt.Store(time.Now().Unix())
+	m.lastSyncError.Store("")
+
+	var existing map[string]bool
+	var err error
+	if prune {
+		existing, err = m.documentIDs(ctx)
+		if err != nil {
+			m.lastSyncError.Store(err.Error())
+			return err
+		}
+	}
+
+	documents := make([]map[string]any, 0, len(movies))
+	seen := make(map[string]bool, len(movies))
+	for _, movie := range movies {
+		document := meiliDocument(movie)
+		if document == nil {
+			continue
+		}
+		id := firstString(document["search_id"])
+		if id == "" || seen[id] {
+			continue
+		}
+		seen[id] = true
+		documents = append(documents, document)
+	}
+	if len(documents) == 0 {
+		err = errors.New("search snapshot contains no indexable documents")
+		m.lastSyncError.Store(err.Error())
+		return err
+	}
+
+	batchSize := maxInt(10, m.batchSize)
+	for start := 0; start < len(documents); start += batchSize {
+		end := minInt(start+batchSize, len(documents))
+		if err = m.upsert(ctx, documents[start:end]); err != nil {
+			m.lastSyncError.Store(err.Error())
+			return err
+		}
+	}
+
+	deleted := 0
+	if prune {
+		stale := make([]string, 0)
+		for id := range existing {
+			if !seen[id] {
+				stale = append(stale, id)
+			}
+		}
+		for start := 0; start < len(stale); start += 500 {
+			end := minInt(start+500, len(stale))
+			if err = m.deleteDocuments(ctx, stale[start:end]); err != nil {
+				m.lastSyncError.Store(err.Error())
+				return err
+			}
+			deleted += end - start
+		}
+	}
+
+	m.lastSyncItems.Store(int64(len(documents)))
+	m.lastSyncDeleted.Store(int64(deleted))
+	m.lastSyncCompletedAt.Store(time.Now().Unix())
+	return nil
+}
+
 func quotedCSV(values []string) string {
 	quoted := make([]string, 0, len(values))
 	for _, value := range values {
@@ -323,7 +447,7 @@ func (m *meiliSearchIndex) ensureIndex(ctx context.Context) error {
 		return err
 	}
 	settings := map[string]any{
-		"searchableAttributes": []string{"name", "origin_name", "search_aliases", "search_aliases_normalized", "actor", "search_cast_normalized", "director", "description"},
+		"searchableAttributes": []string{"name", "origin_name", "search_aliases", "search_aliases_normalized", "search_aliases_compact", "actor", "search_cast_normalized", "director", "search_director_normalized", "description"},
 		"filterableAttributes": []string{"search_type", "search_year", "search_status", "search_genres", "search_countries"},
 		"sortableAttributes":   []string{"year", "modified.time", "updatedAt", "search_popularity", "search_quality", "search_year"},
 		"displayedAttributes":  []string{"*"},
@@ -332,6 +456,7 @@ func (m *meiliSearchIndex) ensureIndex(ctx context.Context) error {
 			"enabled":             true,
 			"minWordSizeForTypos": map[string]int{"oneTypo": 4, "twoTypos": 8},
 		},
+		"synonyms": meiliSynonyms(),
 	}
 	if err := m.requestJSON(ctx, http.MethodPatch, "/indexes/"+url.PathEscape(m.index)+"/settings", settings, nil, http.StatusAccepted, http.StatusOK); err != nil {
 		return err
@@ -406,11 +531,15 @@ func meiliDocument(movie map[string]any) map[string]any {
 	if len(cast) == 0 {
 		cast = namedValues(movie["actors"])
 	}
+	directors := namedValues(movie["director"])
+	searchAliases := movieSearchAliases(movie)
 	document["search_id"] = hex.EncodeToString(digest[:])
 	document["search_aliases"] = aliases
-	document["search_aliases_normalized"] = normalizedStrings(aliases)
+	document["search_aliases_normalized"] = searchAliases
+	document["search_aliases_compact"] = compactStrings(searchAliases)
 	document["search_cast_normalized"] = normalizedStrings(cast)
-	document["search_type"] = normalizedMovieType(firstString(movie["type"]))
+	document["search_director_normalized"] = normalizedStrings(directors)
+	document["search_type"] = canonicalMediaType(movie)
 	document["search_year"] = numberValue(movie["year"])
 	document["search_status"] = normalizeText(firstString(movie["status"]))
 	document["search_genres"] = normalizedNamedValues(movie["category"], movie["genre"])
@@ -418,6 +547,16 @@ func meiliDocument(movie map[string]any) map[string]any {
 	document["search_popularity"] = maxInt(numberValue(movie["views"]), numberValue(movie["view"]))
 	document["search_quality"] = movieQualityScore(movie)
 	return document
+}
+
+func compactStrings(values []string) []string {
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		if compact := compactSearchText(value); compact != "" {
+			result = append(result, compact)
+		}
+	}
+	return uniqueStrings(result)
 }
 
 func normalizedStrings(values []string) []string {
@@ -470,6 +609,14 @@ func (m *meiliSearchIndex) Status(ctx context.Context) meiliStatus {
 	status.Dropped = m.dropped.Load()
 	status.Failures = m.failures.Load()
 	status.LastWriteAt = m.lastWriteAt.Load()
+	status.SyncRunning = m.syncRunning.Load()
+	status.LastSyncStartedAt = m.lastSyncStartedAt.Load()
+	status.LastSyncCompletedAt = m.lastSyncCompletedAt.Load()
+	status.LastSyncItems = m.lastSyncItems.Load()
+	status.LastSyncDeleted = m.lastSyncDeleted.Load()
+	if value := m.lastSyncError.Load(); value != nil {
+		status.LastSyncError, _ = value.(string)
+	}
 	var remote struct {
 		NumberOfDocuments int `json:"numberOfDocuments"`
 	}

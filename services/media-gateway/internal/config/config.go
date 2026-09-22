@@ -86,6 +86,9 @@ type Config struct {
 	MeiliSyncInterval       time.Duration
 	MeiliWarmPages          int
 	MeiliSyncPages          int
+	MeiliFullSyncInterval   time.Duration
+	MeiliFullSyncPages      int
+	MeiliPruneStale         bool
 	MeiliSyncPause          time.Duration
 	MeiliBatchSize          int
 	AnalysisEnabled         bool
@@ -153,10 +156,13 @@ func Load() (Config, error) {
 		MeiliAPIKey:             strings.TrimSpace(os.Getenv("MEILI_MASTER_KEY")),
 		MeiliIndex:              env("MEILI_MOVIES_INDEX", "movies"),
 		MeiliTimeout:            durationEnv("MEILI_TIMEOUT", 1200*time.Millisecond),
-		MeiliSyncInterval:       durationEnv("MEILI_SYNC_INTERVAL", 6*time.Hour),
-		MeiliWarmPages:          boundedIntEnv("MEILI_WARM_PAGES", 3, 1, 20),
-		MeiliSyncPages:          boundedIntEnv("MEILI_SYNC_PAGES", 30, 3, 100),
-		MeiliSyncPause:          durationEnv("MEILI_SYNC_PAUSE", 350*time.Millisecond),
+		MeiliSyncInterval:       durationEnv("MEILI_SYNC_INTERVAL", 15*time.Minute),
+		MeiliWarmPages:          boundedIntEnv("MEILI_WARM_PAGES", 5, 1, 20),
+		MeiliSyncPages:          boundedIntEnv("MEILI_SYNC_PAGES", 12, 3, 100),
+		MeiliFullSyncInterval:   durationEnv("MEILI_FULL_SYNC_INTERVAL", 24*time.Hour),
+		MeiliFullSyncPages:      boundedIntEnv("MEILI_FULL_SYNC_PAGES", 500, 20, 2000),
+		MeiliPruneStale:         boolEnv("MEILI_PRUNE_STALE", true),
+		MeiliSyncPause:          durationEnv("MEILI_SYNC_PAUSE", 250*time.Millisecond),
 		MeiliBatchSize:          boundedIntEnv("MEILI_BATCH_SIZE", 200, 10, 1000),
 		AnalysisEnabled:         boolEnv("HLS_ANALYZER_ENABLED", true),
 		AnalysisJobStream:       env("HLS_ANALYZER_JOB_STREAM", "netphim:hls:analysis:jobs"),

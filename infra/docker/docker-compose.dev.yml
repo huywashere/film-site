@@ -63,6 +63,14 @@ services:
       MEDIA_INTERNAL_TOKEN: ${MEDIA_INTERNAL_TOKEN:-netphim-development-media-token-change-me}
       MEILI_URL: http://meilisearch:7700
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-netphim-local-meili-master-key-32chars}
+      MEILI_SYNC_INTERVAL: ${MEILI_SYNC_INTERVAL:-15m}
+      MEILI_WARM_PAGES: ${MEILI_WARM_PAGES:-5}
+      MEILI_SYNC_PAGES: ${MEILI_SYNC_PAGES:-12}
+      MEILI_FULL_SYNC_INTERVAL: ${MEILI_FULL_SYNC_INTERVAL:-24h}
+      MEILI_FULL_SYNC_PAGES: ${MEILI_FULL_SYNC_PAGES:-500}
+      MEILI_PRUNE_STALE: ${MEILI_PRUNE_STALE:-true}
+      MEILI_SYNC_PAUSE: ${MEILI_SYNC_PAUSE:-250ms}
+      MEILI_BATCH_SIZE: ${MEILI_BATCH_SIZE:-200}
     ports:
       - '8081:8081'
     depends_on:

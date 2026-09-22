@@ -367,8 +367,13 @@ func (s *Service) Catalog(ctx context.Context, kind, value string, page, limit i
 		})
 		groups := make(map[string][]map[string]any)
 		counts := make([]map[string]any, 0, len(providers))
+		totalItems := 0
+		totalPages := 0
 		for source, payload := range providers {
 			items := extractItems(payload)
+			providerTotalItems, providerTotalPages := paginationTotals(payload)
+			totalItems = maxInt(totalItems, providerTotalItems)
+			totalPages = maxInt(totalPages, providerTotalPages)
 			if len(items) > 0 {
 				groups[source] = items
 				counts = append(counts, map[string]any{"source": source, "count": len(items)})
@@ -390,7 +395,17 @@ func (s *Service) Catalog(ctx context.Context, kind, value string, page, limit i
 		}
 		s.enrichMovies(ctx, items)
 		s.enqueueSearchItems(searchItems)
-		pagination := map[string]any{"currentPage": page, "totalItems": len(items), "totalItemsPerPage": limit, "totalPages": maxInt(page+1, 2)}
+		minimumTotal := (page-1)*limit + len(items)
+		if totalItems < minimumTotal {
+			totalItems = minimumTotal
+		}
+		if totalPages == 0 {
+			totalPages = page
+			if len(items) == limit {
+				totalPages++
+			}
+		}
+		pagination := map[string]any{"currentPage": page, "totalItems": totalItems, "totalItemsPerPage": limit, "totalPages": maxInt(1, totalPages)}
 		result := map[string]any{
 			"status": true, "items": items, "params": map[string]any{"pagination": pagination},
 			"pagination": pagination, "data": map[string]any{"items": items, "params": map[string]any{"pagination": pagination}},
@@ -647,34 +662,81 @@ func (s *Service) runSearchWarmup() {
 		return
 	case <-timer.C:
 	}
-	// Fast initial coverage makes search useful shortly after startup without
-	// competing with readiness and homepage traffic.
-	s.syncSearchIndex(s.searchCtx, s.cfg.MeiliWarmPages, 0)
+	// Fast initial coverage makes search useful shortly after startup. A full
+	// snapshot follows immediately so a fresh deployment does not need to wait
+	// until the daily maintenance window for complete keyword coverage.
+	s.syncSearchIndex(s.searchCtx, s.cfg.MeiliWarmPages, 0, false)
+	s.syncSearchIndex(s.searchCtx, s.cfg.MeiliFullSyncPages, s.cfg.MeiliSyncPause, true)
+	incrementalTimer := time.NewTimer(s.cfg.MeiliSyncInterval)
+	fullTimer := time.NewTimer(s.cfg.MeiliFullSyncInterval)
+	defer incrementalTimer.Stop()
+	defer fullTimer.Stop()
 	for {
-		timer.Reset(s.cfg.MeiliSyncInterval)
 		select {
 		case <-s.searchCtx.Done():
 			return
-		case <-timer.C:
+		case <-incrementalTimer.C:
+			s.syncSearchIndex(s.searchCtx, s.cfg.MeiliSyncPages, s.cfg.MeiliSyncPause, false)
+			incrementalTimer.Reset(s.cfg.MeiliSyncInterval)
+		case <-fullTimer.C:
+			s.syncSearchIndex(s.searchCtx, s.cfg.MeiliFullSyncPages, s.cfg.MeiliSyncPause, true)
+			fullTimer.Reset(s.cfg.MeiliFullSyncInterval)
 		}
-		// Deep sync expands the disposable index gradually. Pacing prevents a
-		// provider request storm and gives the bounded writer time to flush.
-		s.syncSearchIndex(s.searchCtx, s.cfg.MeiliSyncPages, s.cfg.MeiliSyncPause)
 	}
 }
 
-func (s *Service) syncSearchIndex(ctx context.Context, pages int, pause time.Duration) {
+func (s *Service) syncSearchIndex(ctx context.Context, pages int, pause time.Duration, requestPrune bool) {
+	if s.search == nil || pages < 1 {
+		return
+	}
+	byCanonical := make(map[string]map[string]any)
+	aliasToCanonical := make(map[string]string)
+	order := make([]string, 0, pages*64)
+	completeSnapshot := true
+	rank := 0
 	for _, kind := range []string{"latest", "series", "single", "anime"} {
+		kindComplete := false
 		for page := 1; page <= pages; page++ {
 			if ctx.Err() != nil {
 				return
 			}
-			_, _, err := s.Catalog(ctx, kind, "", page, 64)
+			payload, _, err := s.Catalog(ctx, kind, "", page, 64)
 			if err != nil {
+				completeSnapshot = false
 				break
 			}
-			// Catalog already enqueues each merged item. Enqueuing here again used
-			// to halve effective queue capacity and produced duplicate writes.
+			items := extractItems(payload)
+			for _, item := range items {
+				key := firstString(item["_canonicalKey"])
+				if key == "" {
+					key = canonicalKey(item, firstString(item["name"], item["title"]), firstString(item["origin_name"], item["original_name"]), numberValue(item["year"]))
+					item["_canonicalKey"] = key
+				}
+				aliases := canonicalAliases(item)
+				for _, alias := range aliases {
+					if existingKey := aliasToCanonical[alias]; existingKey != "" {
+						key = existingKey
+						break
+					}
+				}
+				if existing := byCanonical[key]; existing != nil {
+					mergeFilm(existing, item)
+				} else {
+					item["_rank"] = rank
+					rank++
+					byCanonical[key] = item
+					order = append(order, key)
+				}
+				for _, alias := range aliases {
+					aliasToCanonical[alias] = key
+				}
+			}
+
+			_, totalPages := paginationTotals(payload)
+			if len(items) == 0 || (totalPages > 0 && page >= totalPages) {
+				kindComplete = true
+				break
+			}
 			if pause > 0 {
 				timer := time.NewTimer(pause)
 				select {
@@ -685,7 +747,22 @@ func (s *Service) syncSearchIndex(ctx context.Context, pages int, pause time.Dur
 				}
 			}
 		}
+		if !kindComplete {
+			completeSnapshot = false
+		}
 	}
+
+	snapshot := make([]map[string]any, 0, len(order))
+	for _, key := range order {
+		if item := byCanonical[key]; item != nil {
+			snapshot = append(snapshot, item)
+		}
+	}
+	if len(snapshot) == 0 || ctx.Err() != nil {
+		return
+	}
+	prune := requestPrune && completeSnapshot && s.cfg.MeiliPruneStale
+	_ = s.search.SyncSnapshot(ctx, snapshot, prune)
 }
 
 // collectSearchProviders is deliberately separate from collectProviders:
@@ -1038,6 +1115,10 @@ func searchPath(source, query string, page, limit int) string {
 func rankSearch(items []map[string]any, query string) []map[string]any {
 	normalizedQuery := normalizeText(query)
 	queryTokens := strings.Fields(normalizedQuery)
+	queryVariants := queryAliases(query)
+	if len(queryVariants) == 0 {
+		queryVariants = []string{normalizedQuery}
+	}
 	type scoredItem struct {
 		item     map[string]any
 		score    int
@@ -1048,20 +1129,33 @@ func rankSearch(items []map[string]any, query string) []map[string]any {
 	for _, item := range items {
 		name := normalizeText(firstString(item["name"]))
 		origin := normalizeText(firstString(item["origin_name"]))
+		aliases := movieSearchAliases(item)
+		titleTargets := uniqueStrings(append([]string{name, origin, compactSearchText(name), compactSearchText(origin)}, aliases...))
 		metadata := normalizeText(strings.Join(append(namedValues(item["actor"]), namedValues(item["director"])...), " "))
-		targetTokens := strings.Fields(strings.TrimSpace(name + " " + origin + " " + metadata))
+		targetTokens := strings.Fields(strings.TrimSpace(strings.Join(titleTargets, " ") + " " + metadata))
 		value := 0
 		relevant := false
-		if name == normalizedQuery || origin == normalizedQuery {
-			value += 2000
-			relevant = true
+		bestTextScore := 0
+		for _, variant := range queryVariants {
+			variant = normalizeText(variant)
+			compactVariant := compactSearchText(variant)
+			for _, target := range titleTargets {
+				textScore := 0
+				switch {
+				case target == variant || target == compactVariant:
+					textScore = 2000
+				case strings.HasPrefix(target, variant) || strings.HasPrefix(target, compactVariant):
+					textScore = 1000
+				case strings.Contains(target, variant) || strings.Contains(target, compactVariant):
+					textScore = 500
+				}
+				if textScore > bestTextScore {
+					bestTextScore = textScore
+				}
+			}
 		}
-		if strings.HasPrefix(name, normalizedQuery) || strings.HasPrefix(origin, normalizedQuery) {
-			value += 1000
-			relevant = true
-		}
-		if strings.Contains(name, normalizedQuery) || strings.Contains(origin, normalizedQuery) {
-			value += 500
+		if bestTextScore > 0 {
+			value += bestTextScore
 			relevant = true
 		}
 		matchedTokens := 0
