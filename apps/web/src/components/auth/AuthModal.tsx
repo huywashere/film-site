@@ -42,7 +42,6 @@ import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
 import { CinematicAuthBackground } from "@/components/auth/CinematicAuthBackground";
 import { useGoogleOneTap } from "@/hooks/useGoogleOneTap";
 import {
-  getRandomAuthArtwork,
   LOGIN_COVER_ARTWORKS,
   type AuthArtwork,
 } from "@/lib/auth-artworks";
@@ -131,7 +130,9 @@ export function AuthModal({
 
   const isOpen = isPage ? true : modalStore.isOpen;
 
-  const [currentArtwork] = useState<AuthArtwork>(() => getRandomAuthArtwork());
+  // Keep the server and first client render identical. Random selection here
+  // caused hydration replacement and could interrupt the login submission.
+  const [currentArtwork] = useState<AuthArtwork>(LOGIN_COVER_ARTWORKS[0]);
 
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);

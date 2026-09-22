@@ -146,7 +146,9 @@ test('local login and topic artwork use wsrv without Vercel image quota', () => 
   assert.match(auth, /wsrvPublicImageUrl/);
   assert.match(auth, /srcSet=/);
   assert.match(auth, /640w,[\s\S]*1280w,[\s\S]*1920w/);
-  assert.match(auth, /onError=\{\(\) => setUseLocalFallback\(true\)\}/);
+  assert.match(auth, /const \[useCdnLayer, setUseCdnLayer\] = useState\(false\)/);
+  assert.match(auth, /onError=\{\(\) => setUseCdnLayer\(false\)\}/);
+  assert.doesNotMatch(auth, /getRandomAuthArtwork/);
   assert.match(topics, /backgroundImage: `url\('\$\{wsrvPublicImageUrl/);
 });
 

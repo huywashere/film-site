@@ -145,13 +145,10 @@ test.describe('critical visitor flows', () => {
       );
     });
     await page.reload();
-    await expect(
-      page.getByRole('link', { name: 'Phim khách thử nghiệm', exact: true }),
-    ).toBeVisible();
+    const savedMovie = page.locator('a[href="/film/demo-film"]').first();
+    await expect(savedMovie).toBeVisible();
     await page.reload();
-    await expect(
-      page.getByRole('link', { name: 'Phim khách thử nghiệm', exact: true }),
-    ).toBeVisible();
+    await expect(savedMovie).toBeVisible();
   });
 
   test('a guest watch progress is available in history', async ({ page }) => {

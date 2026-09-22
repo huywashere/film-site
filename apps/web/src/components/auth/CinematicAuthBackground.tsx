@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getRandomAuthArtwork, LOGIN_COVER_ARTWORKS } from "@/lib/auth-artworks";
+import { LOGIN_COVER_ARTWORKS } from "@/lib/auth-artworks";
 import { wsrvPublicImageUrl } from "@/lib/image-cdn";
 
 export interface CinematicAuthBackgroundProps {
@@ -10,18 +10,12 @@ export interface CinematicAuthBackgroundProps {
 
 export function CinematicAuthBackground({ artworkUrl }: CinematicAuthBackgroundProps) {
   const [activeUrl, setActiveUrl] = useState<string>(() => {
-    return artworkUrl || getRandomAuthArtwork().url;
+    return artworkUrl || LOGIN_COVER_ARTWORKS[0].url;
   });
 
-  // On localhost, wsrv.nl cannot reach the dev server and takes 30-60s or fails.
-  // We default to true on localhost for instantaneous 10ms rendering.
-  const [useLocalFallback, setUseLocalFallback] = useState(() => {
-    if (typeof window !== "undefined") {
-      const host = window.location.hostname;
-      return host === "localhost" || host === "127.0.0.1";
-    }
-    return false;
-  });
+  // The initial server/client tree uses the same-origin image only. Enable the
+  // CDN layer after hydration on public hosts; wsrv cannot fetch localhost.
+  const [useCdnLayer, setUseCdnLayer] = useState(false);
 
   useEffect(() => {
     if (artworkUrl && artworkUrl !== activeUrl) {
@@ -35,6 +29,9 @@ export function CinematicAuthBackground({ artworkUrl }: CinematicAuthBackgroundP
       const img = new Image();
       img.src = art.url;
     });
+
+    const host = window.location.hostname;
+    setUseCdnLayer(host !== "localhost" && host !== "127.0.0.1");
   }, []);
 
   const mobileUrl = wsrvPublicImageUrl(activeUrl, "backdrop", {
@@ -68,13 +65,13 @@ export function CinematicAuthBackground({ artworkUrl }: CinematicAuthBackgroundP
       />
 
       {/* Responsive Cloud CDN Layer with wsrv.nl - Progressive enhancement on production */}
-      {!useLocalFallback && (
+      {useCdnLayer && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           key={activeUrl}
-          src={useLocalFallback ? activeUrl : desktopUrl || activeUrl}
+          src={desktopUrl || activeUrl}
           srcSet={
-            !useLocalFallback && mobileUrl && tabletUrl && desktopUrl
+            mobileUrl && tabletUrl && desktopUrl
               ? `${mobileUrl} 640w, ${tabletUrl} 1280w, ${desktopUrl} 1920w`
               : undefined
           }
@@ -84,7 +81,7 @@ export function CinematicAuthBackground({ artworkUrl }: CinematicAuthBackgroundP
           loading="eager"
           decoding="async"
           fetchPriority="high"
-          onError={() => setUseLocalFallback(true)}
+          onError={() => setUseCdnLayer(false)}
           className="absolute inset-0 w-full h-full object-cover object-center scale-[1.02] filter brightness-[0.85] contrast-[1.03] select-none pointer-events-none transition-opacity duration-300 animate-in fade-in"
           referrerPolicy="no-referrer"
         />
