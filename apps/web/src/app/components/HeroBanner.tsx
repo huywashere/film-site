@@ -163,9 +163,10 @@ interface HeroFilm extends FilmItem {
   tmdbOnly?: boolean;
 }
 
-const HERO_SESSION_KEY = "netphim.tmdb-hero.v8";
+const HERO_SESSION_KEY = "netphim.tmdb-hero.v9";
 const HERO_INDEX_SESSION_KEY = "netphim.tmdb-hero-index.v3";
 const LEGACY_HERO_SESSION_KEYS = [
+  "netphim.tmdb-hero.v8",
   "netphim.tmdb-hero.v7",
   "netphim.tmdb-hero-index.v2",
 ] as const;
@@ -948,6 +949,11 @@ function HeroBackdropImage({
   const [portraitCandidateIndex, setPortraitCandidateIndex] = useState(0);
   const [exhausted, setExhausted] = useState(false);
   const [decoded, setDecoded] = useState(false);
+  // Keep the last decoded bitmap mounted underneath the candidate currently
+  // being tried. Responsive <picture> sources can be replaced after a resize,
+  // hydration or CDN retry; without this layer a late error removed artwork
+  // that the visitor had already seen and left the whole hero black.
+  const [lastGoodSource, setLastGoodSource] = useState("");
   const imageRef = useRef<HTMLImageElement>(null);
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
@@ -969,7 +975,9 @@ function HeroBackdropImage({
   useEffect(() => {
     const image = imageRef.current;
     if (!image?.complete || image.naturalWidth <= 0) return;
-    preloadedHeroBackdrops.add(image.currentSrc || src);
+    const loadedSource = image.currentSrc || src;
+    preloadedHeroBackdrops.add(loadedSource);
+    setLastGoodSource(loadedSource);
     setDecoded(true);
     onReadyRef.current();
   }, [portraitSrc, src]);
@@ -1000,20 +1008,24 @@ function HeroBackdropImage({
   ]);
 
   // Some upstream CDNs leave a request pending instead of emitting an error.
-  // Advance to the next same-film candidate so an active hero cannot remain
-  // on the dark placeholder indefinitely.
+  // Give a cold w1280 request enough time to finish before advancing. The old
+  // 1.8s deadline repeatedly cancelled valid downloads on slower connections,
+  // eventually exhausting every candidate and making the backdrop disappear.
   useEffect(() => {
     if (!isActive || decoded || exhausted) return;
     const timeout = window.setTimeout(() => {
+      if (document.visibilityState !== "visible") return;
       const image = imageRef.current;
       if (image?.complete && image.naturalWidth > 0) {
-        preloadedHeroBackdrops.add(image.currentSrc || src);
+        const loadedSource = image.currentSrc || src;
+        preloadedHeroBackdrops.add(loadedSource);
+        setLastGoodSource(loadedSource);
         setDecoded(true);
         onReadyRef.current();
         return;
       }
       tryNextCandidate();
-    }, 1_800);
+    }, 10_000);
 
     return () => window.clearTimeout(timeout);
   }, [decoded, exhausted, isActive, src, tryNextCandidate]);
@@ -1021,6 +1033,19 @@ function HeroBackdropImage({
   return (
     <>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_35%,rgba(50,58,72,0.3),transparent_44%),linear-gradient(135deg,#0b0e13_0%,#151a22_52%,#0b0d12_100%)]" />
+      {lastGoodSource && (!decoded || exhausted) && (
+        // This is an already decoded direct-CDN bitmap retained during retry;
+        // routing it through next/image would create a second transformation.
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          data-hero-backdrop-fallback="true"
+          src={lastGoodSource}
+          alt=""
+          aria-hidden="true"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover object-[center_18%] opacity-100 brightness-[0.72] sm:object-[center_20%] md:object-[center_24%] lg:object-center"
+        />
+      )}
       {src && !exhausted && (
         <picture className="block h-full w-full">
           {/* Portrait phones/tablets use poster art; landscape devices keep the cinematic backdrop. */}
@@ -1045,12 +1070,9 @@ function HeroBackdropImage({
             decoding={isActive ? "sync" : "async"}
             fetchPriority={isActive ? "high" : "low"}
             onLoad={() => {
-              const loadedSrc =
-                typeof window !== "undefined" &&
-                window.matchMedia("(max-width: 1023px) and (orientation: portrait)").matches
-                  ? portraitSrc
-                  : src;
+              const loadedSrc = imageRef.current?.currentSrc || src;
               preloadedHeroBackdrops.add(loadedSrc);
+              setLastGoodSource(loadedSrc);
               setDecoded(true);
               onReady();
             }}
@@ -1922,6 +1944,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
           return (
             <div
               key={`backdrop-${item.slug || idx}-${idx}`}
+              data-hero-slide-active={isActive ? "true" : "false"}
               className={cn(
                 "absolute inset-0 w-full h-full transition-all duration-1000 [transition-timing-function:cubic-bezier(0.25,1,0.5,1)] will-change-[opacity,transform] pointer-events-none",
                 isActive
