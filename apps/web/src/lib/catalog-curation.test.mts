@@ -122,6 +122,7 @@ test('topic pages keep quick navigation visible and use title-only topic cards',
     /item\.href === ["']\/genres["'][\s\S]*isGenrePage \|\| isCountryPage \|\| isUniversePage/,
   );
   assert.match(mobileNav, /pathname\.startsWith\(["']\/universe\/["']\)/);
+  assert.match(mobileNav, /if \(!mounted \|\| pathname === '\/login'/);
   assert.match(mobileNav, /window\.location\.assign\(href\)/);
   assert.doesNotMatch(mobileNav, /onClick=\{\(\) => router\.push/);
 });

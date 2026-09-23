@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Bookmark, Clapperboard, History, Home, LayoutDashboard, User } from 'lucide-react';
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
@@ -14,8 +15,15 @@ export function MobileBottomNav() {
   const router = useRouter();
   const { user } = useAuthStore();
   const reduceMotion = useReducedMotion();
+  const [mounted, setMounted] = useState(false);
 
-  if (pathname === '/login' || pathname === '/register') {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Static prerender does not always expose the final pathname on Vercel.
+  // Wait until mount so the active pill and label cannot mismatch hydration.
+  if (!mounted || pathname === '/login' || pathname === '/register') {
     return null;
   }
 
