@@ -1,19 +1,32 @@
 $ErrorActionPreference = "Stop"
 
-if (-not $env:DATABASE_URL) {
+if (-not $env:DIRECT_DATABASE_URL -and -not $env:DATABASE_URL) {
   $envFile = Join-Path $PSScriptRoot "..\apps\api\.env"
   if (Test-Path -LiteralPath $envFile) {
-    $line = Get-Content -LiteralPath $envFile |
-      Where-Object { $_ -match '^DATABASE_URL=' } |
+    $lines = Get-Content -LiteralPath $envFile
+    $line = $lines |
+      Where-Object { $_ -match '^DIRECT_DATABASE_URL=' } |
       Select-Object -First 1
+    if (-not $line) {
+      $line = $lines |
+        Where-Object { $_ -match '^DATABASE_URL=' } |
+        Select-Object -First 1
+    }
     if ($line) {
-      $env:DATABASE_URL = $line.Substring("DATABASE_URL=".Length).Trim().Trim('"')
+      $databaseConnectionUrl = ($line -replace '^[A-Z_]+=', '').Trim().Trim('"')
     }
   }
 }
 
-if (-not $env:DATABASE_URL) {
-  throw "DATABASE_URL is required (or define it in apps/api/.env)."
+$databaseConnectionUrl = if ($databaseConnectionUrl) {
+  $databaseConnectionUrl
+} elseif ($env:DIRECT_DATABASE_URL) {
+  $env:DIRECT_DATABASE_URL
+} else {
+  $env:DATABASE_URL
+}
+if (-not $databaseConnectionUrl) {
+  throw "DIRECT_DATABASE_URL or DATABASE_URL is required (or define one in apps/api/.env)."
 }
 $psqlCommand = Get-Command psql -ErrorAction SilentlyContinue
 $psqlPath = if ($psqlCommand) { $psqlCommand.Source } else { $null }
@@ -27,7 +40,7 @@ if (-not $psqlPath) {
   throw "psql is required. Install PostgreSQL client tools or run the SQL file inside the database container."
 }
 
-$builder = [System.UriBuilder]::new($env:DATABASE_URL)
+$builder = [System.UriBuilder]::new($databaseConnectionUrl)
 $prismaOnlyParameters = @("schema", "connection_limit", "pool_timeout")
 $queryPairs = @($builder.Query.TrimStart("?").Split("&", [System.StringSplitOptions]::RemoveEmptyEntries) | Where-Object {
   $name = ([System.Uri]::UnescapeDataString(($_ -split "=", 2)[0])).ToLowerInvariant()

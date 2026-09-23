@@ -17,6 +17,7 @@ var identitySeason = regexp.MustCompile(`\b(?:phan|season|mua)\s*(\d+)\b`)
 var identityNoise = regexp.MustCompile(`\b(?:phim|movie|tap\s*\d+|full|hd|fhd|4k|cam|hdcam|vietsub|thuyet minh|long tieng|chieu rap)\b`)
 
 var sourcePriority = map[string]int{
+	"manual": -1,
 	"kkphim": 0,
 	"ophim":  1,
 	"nguonc": 2,

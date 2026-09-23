@@ -28,18 +28,21 @@ info "Pulling latest code from GitHub..."
 git pull origin main
 log "Code updated"
 
+info "Validating required production configuration..."
+compose config --quiet
+log "Production configuration is complete"
+
 # 2. Rebuild images
 info "Rebuilding Docker images (chỉ rebuild service thay đổi)..."
 compose build
 
-# 3. Restart services với zero-downtime (rotate)
+# 3. Chạy migration từ image mới trước khi restart ứng dụng
+info "Running Prisma migrations..."
+compose run --rm --no-deps api sh -c 'cd /app/apps/api && DATABASE_URL="$DIRECT_DATABASE_URL" npx prisma migrate deploy'
+
+# 4. Restart services sau khi schema đã sẵn sàng
 info "Restarting services..."
 compose up -d --no-deps --remove-orphans
-
-# 4. Chạy migrations nếu có
-info "Running Prisma migrations..."
-compose exec api sh -c "cd /app/apps/api && npx prisma migrate deploy" || \
-    warn "Migration failed hoặc không có migration mới"
 
 # 5. Xóa old images
 info "Cleaning up old Docker images..."

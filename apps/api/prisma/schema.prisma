@@ -67,6 +67,15 @@ enum SyncJobStatus {
   @@map("sync_job_status")
 }
 
+enum MediaUploadStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+
+  @@map("media_upload_status")
+}
+
 enum AdType {
   BANNER_TOP
   BANNER_BOTTOM
@@ -204,6 +213,7 @@ model Follow {
   following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@id([followerId, followingId])
+  @@index([followingId])
   @@map("follows")
 }
 
@@ -243,10 +253,14 @@ model Movie {
   playbackEvents     PlaybackEvent[]
   subscriptions      MovieSubscription[]
   playlistItems      PlaylistItem[]
+  mediaUploadJobs    MediaUploadJob[]
 
   @@index([type, isHidden, year])
   @@index([isHidden, updatedAt(sort: Desc)])
   @@index([genres], type: Gin, map: "movies_genres_gin_idx")
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin, map: "movies_title_trgm_idx")
+  @@index([titleEn(ops: raw("gin_trgm_ops"))], type: Gin, map: "movies_titleEn_trgm_idx")
+  @@index([originName(ops: raw("gin_trgm_ops"))], type: Gin, map: "movies_originName_trgm_idx")
   @@map("movies")
 }
 
@@ -450,6 +464,34 @@ model MoviePlaybackSource {
   @@map("movie_playback_sources")
 }
 
+model MediaUploadJob {
+  id              String            @id @default(cuid())
+  movieId         String
+  episodeKey      String            @default("full")
+  episodeName     String?
+  serverName      String            @default("FlexPhim")
+  status          MediaUploadStatus @default(QUEUED)
+  sourcePath      String            @db.Text
+  outputKey       String?
+  manifestUrl     String?           @db.Text
+  durationSeconds Int?
+  sourceWidth     Int?
+  sourceHeight    Int?
+  progress        Int               @default(0)
+  errorMessage    String?           @db.Text
+  requestedBy     String
+  createdAt       DateTime          @default(now())
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  updatedAt       DateTime          @updatedAt
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([movieId, createdAt(sort: Desc)])
+  @@map("media_upload_jobs")
+}
+
 model PlaybackEvent {
   id         String   @id @default(cuid())
   eventType  String
@@ -608,6 +650,7 @@ model Review {
 
   @@index([movieId, createdAt(sort: Desc)])
   @@index([isHidden, createdAt(sort: Desc)])
+  @@index([userId])
   @@map("reviews")
 }
 
@@ -619,6 +662,7 @@ model ReviewLike {
   review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
 
   @@id([userId, reviewId])
+  @@index([reviewId])
   @@map("review_likes")
 }
 
@@ -825,5 +869,6 @@ model PlaylistItem {
 
   @@unique([playlistId, movieId]) // 1 phim chỉ xuất hiện 1 lần trong playlist
   @@index([playlistId, position])
+  @@index([movieId])
   @@map("playlist_items")
 }

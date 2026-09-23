@@ -98,21 +98,22 @@ RUN cd apps/web && \
 
 # ── Stage 4: API Production Runtime ───────────────────
 FROM node:${NODE_VERSION}-alpine AS api
-RUN apk add --no-cache openssl postgresql-client
+RUN apk add --no-cache openssl postgresql-client ffmpeg
 
 ENV NODE_ENV=production
 WORKDIR /app
 
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs && \
-    mkdir -p /app/backups && chown -R nestjs:nodejs /app/backups
+    mkdir -p /app/backups /app/media /app/uploads /app/transcode && \
+    chown -R nestjs:nodejs /app/backups /app/media /app/uploads /app/transcode
 
 # Copy the portable production package built by pnpm deploy.
 COPY --from=api-builder --chown=nestjs:nodejs /prod/api ./apps/api
 
 USER nestjs
 EXPOSE 4000
-CMD ["node", "apps/api/dist/main.js"]
+CMD ["node", "apps/api/dist/src/main.js"]
 
 # ── Stage 5: Web Production Runtime ───────────────────
 FROM node:${NODE_VERSION}-alpine AS web

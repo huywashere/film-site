@@ -6,16 +6,56 @@ services:
     image: postgres:16-alpine
     container_name: netphim_postgres
     restart: unless-stopped
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - track_io_timing=on
+      - -c
+      - log_min_duration_statement=${POSTGRES_LOG_MIN_DURATION_MS:-500}
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-netphim}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-netphim_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
     networks:
       - netphim_net
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-netphim} -d ${POSTGRES_DB:-netphim_db}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── PgBouncer (transaction pooling for short API requests) ──
+  pgbouncer:
+    image: edoburu/pgbouncer:v1.25.2-p0
+    container_name: netphim_pgbouncer
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-netphim}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-netphim_db}
+      POOL_MODE: transaction
+      AUTH_TYPE: scram-sha-256
+      MAX_CLIENT_CONN: ${PGBOUNCER_MAX_CLIENT_CONN:-300}
+      DEFAULT_POOL_SIZE: ${PGBOUNCER_DEFAULT_POOL_SIZE:-20}
+      MIN_POOL_SIZE: ${PGBOUNCER_MIN_POOL_SIZE:-5}
+      RESERVE_POOL_SIZE: ${PGBOUNCER_RESERVE_POOL_SIZE:-5}
+      SERVER_RESET_QUERY: DISCARD ALL
+    expose:
+      - '5432'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - netphim_net
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -h 127.0.0.1 -p 5432 -U ${POSTGRES_USER:-netphim} -d ${POSTGRES_DB:-netphim_db}',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,7 +74,15 @@ services:
     networks:
       - netphim_net
     healthcheck:
-      test: ['CMD', 'redis-cli', '--no-auth-warning', '-a', '${REDIS_PASSWORD:?REDIS_PASSWORD is required}', 'ping']
+      test:
+        [
+          'CMD',
+          'redis-cli',
+          '--no-auth-warning',
+          '-a',
+          '${REDIS_PASSWORD:?REDIS_PASSWORD is required}',
+          'ping',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -55,6 +103,26 @@ services:
     networks:
       - netphim_net
 
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: netphim_rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-netphim}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    expose:
+      - '5672'
+      - '15672'
+    networks:
+      - netphim_net
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 8
+
   # ── Internal Python recommendation engine ───────────────────
   recommendation-engine:
     build:
@@ -74,7 +142,13 @@ services:
     networks:
       - netphim_net
     healthcheck:
-      test: ['CMD', 'python', '-c', "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)",
+        ]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -95,12 +169,15 @@ services:
       NODE_ENV: production
       PORT: 4000
       # Database
-      DATABASE_URL: postgresql://${POSTGRES_USER:-netphim}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-netphim_db}
+      DATABASE_URL: 'postgresql://${POSTGRES_USER:-netphim}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@pgbouncer:5432/${POSTGRES_DB:-netphim_db}?schema=public&pgbouncer=true&connection_limit=${DATABASE_CONNECTION_LIMIT:-10}&pool_timeout=${DATABASE_POOL_TIMEOUT_SECONDS:-10}'
+      DIRECT_DATABASE_URL: postgresql://${POSTGRES_USER:-netphim}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-netphim_db}?schema=public
       # Redis
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-netphim}:${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}@rabbitmq:5672
+      RABBITMQ_ENABLED: ${RABBITMQ_ENABLED:-true}
       # JWT
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required}
@@ -128,15 +205,30 @@ services:
       REVALIDATE_SECRET: ${REVALIDATE_SECRET:?REVALIDATE_SECRET is required}
       NETPHIM_WEB_URL: http://web:3000
       BACKUP_DIR: /app/backups
+      API_PUBLIC_URL: ${API_PUBLIC_URL:?API_PUBLIC_URL is required}
+      MEDIA_STORAGE_DIR: /app/media
+      MEDIA_UPLOAD_TMP_DIR: /app/uploads
+      MEDIA_TRANSCODE_DIR: /app/transcode
+      MEDIA_UPLOAD_MAX_BYTES: ${MEDIA_UPLOAD_MAX_BYTES:-21474836480}
+      MEDIA_TRANSCODE_CONCURRENCY: ${MEDIA_TRANSCODE_CONCURRENCY:-1}
+      MEDIA_TRANSCODE_THREADS: ${MEDIA_TRANSCODE_THREADS:-2}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_REGION: ${S3_REGION:-auto}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:-}
       ADMIN_ALERT_WEBHOOK_URL: ${ADMIN_ALERT_WEBHOOK_URL}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_ALERT_CHAT_ID: ${TELEGRAM_ALERT_CHAT_ID}
       # Frontend URL (for CORS)
       FRONTEND_URL: ${FRONTEND_URL:-https://localhost}
     depends_on:
-      postgres:
+      pgbouncer:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       recommendation-engine:
         condition: service_healthy
@@ -144,6 +236,7 @@ services:
       - netphim_net
     volumes:
       - backup_data:/app/backups
+      - media_data:/app/media
     healthcheck:
       test: ['CMD-SHELL', 'wget -qO- http://localhost:4000/api/v1/health || exit 1']
       interval: 30s
@@ -335,7 +428,7 @@ services:
     networks:
       - netphim_net
     mem_limit: 192m
-    cpus: '0.50'
+    cpus: 0.50
     healthcheck:
       test: ['CMD', '/usr/local/bin/netphim-media-worker', 'healthcheck']
       interval: 20s
@@ -395,6 +488,8 @@ volumes:
   nginx_cache:
     driver: local
   backup_data:
+  media_data:
+  rabbitmq_data:
     driver: local
 
 networks:

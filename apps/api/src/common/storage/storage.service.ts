@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { createHash, createHmac } from "crypto";
 import { createWriteStream, promises as fs } from "fs";
-import { resolve, dirname, basename } from "path";
+import { resolve, dirname, basename, relative, sep } from "path";
 import { pipeline } from "stream/promises";
 
 export interface UploadResult {
@@ -22,6 +22,8 @@ export class StorageService {
   private readonly secretAccessKey: string | null;
   private readonly publicUrl: string | null;
   private readonly localBaseDir: string;
+  private readonly mediaBaseDir: string;
+  private readonly apiPublicUrl: string;
 
   constructor(private readonly config: ConfigService) {
     this.endpoint = this.config.get<string>("S3_ENDPOINT") || null;
@@ -34,6 +36,12 @@ export class StorageService {
     this.localBaseDir = resolve(
       this.config.get<string>("BACKUP_DIR", "./backups"),
     );
+    this.mediaBaseDir = resolve(
+      this.config.get<string>("MEDIA_STORAGE_DIR", "../../.local-data/media"),
+    );
+    this.apiPublicUrl = this.config
+      .get<string>("API_PUBLIC_URL", `http://localhost:${this.config.get("PORT", 3001)}`)
+      .replace(/\/$/, "");
 
     if (this.isS3Configured()) {
       this.logger.log(
@@ -109,6 +117,48 @@ export class StorageService {
     return {
       key: storageKey,
       url: `/backups/${basename(targetLocalPath)}`,
+      size: fileStat.size,
+      provider: "local",
+    };
+  }
+
+  /** Uploads a generated HLS artifact and returns a browser-playable URL. */
+  async uploadMediaFile(
+    localFilePath: string,
+    storageKey: string,
+    contentType: string,
+  ): Promise<UploadResult> {
+    const cleanKey = storageKey.replace(/^\/+/, "").replace(/^media\//, "");
+    const objectKey = `media/${cleanKey}`;
+    const fileStat = await fs.stat(localFilePath);
+
+    if (this.isS3Configured()) {
+      const fileBuffer = await fs.readFile(localFilePath);
+      await this.s3Request("PUT", objectKey, fileBuffer, contentType);
+      const cdnBase = this.publicUrl?.replace(/\/$/, "");
+      if (!cdnBase) {
+        throw new Error("S3_PUBLIC_URL is required for published media");
+      }
+      return {
+        key: objectKey,
+        url: `${cdnBase}/${objectKey}`,
+        size: fileStat.size,
+        provider: "s3",
+      };
+    }
+
+    const targetLocalPath = resolve(this.mediaBaseDir, cleanKey);
+    const escaped = relative(this.mediaBaseDir, targetLocalPath);
+    if (escaped.startsWith("..") || escaped.includes(`..${sep}`)) {
+      throw new Error("Invalid media storage key");
+    }
+    await fs.mkdir(dirname(targetLocalPath), { recursive: true });
+    if (resolve(localFilePath) !== targetLocalPath) {
+      await fs.copyFile(localFilePath, targetLocalPath);
+    }
+    return {
+      key: objectKey,
+      url: `${this.apiPublicUrl}/media/${cleanKey.replace(/\\/g, "/")}`,
       size: fileStat.size,
       provider: "local",
     };

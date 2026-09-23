@@ -42,6 +42,23 @@ export class MoviesController {
     return this.moviesService.getLatest(boundedInt(page, 1, 1, 10_000));
   }
 
+  /** Movies published by the first-party upload pipeline. */
+  @Get('published')
+  getPublished(@Query('limit') limit = 24, @Query('type') type?: string) {
+    return this.moviesService.getPublished(
+      boundedInt(limit, 24, 1, 100),
+      type && ['single', 'series', 'hoathinh', 'tvshows'].includes(type) ? type : undefined,
+    );
+  }
+
+  @Get('published-search')
+  searchPublished(@Query('keyword') keyword = '', @Query('limit') limit = 24) {
+    return this.moviesService.searchPublished(
+      String(keyword).slice(0, 120),
+      boundedInt(limit, 24, 1, 100),
+    );
+  }
+
   /** Public weekly ranking used by the home-page Top 10 row. */
   @Get('trending')
   getTrending(@Query('limit') limit = 20) {

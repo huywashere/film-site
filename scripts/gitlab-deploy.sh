@@ -50,6 +50,9 @@ git fetch origin main
 git checkout main
 git pull --ff-only origin main
 
+info "Validating required production configuration..."
+compose config --quiet || error "Production .env thiếu biến bắt buộc hoặc còn cấu hình không hợp lệ"
+
 # Lưu tag cũ để rollback nếu cần
 PREV_TAG=""
 if [[ -f "$PREV_TAG_FILE" ]]; then
@@ -104,13 +107,9 @@ log "Environment cập nhật"
 
 # ── Bước 4: Database migration ────────────────────────────────
 header "Bước 4: Prisma Migrations"
-# Chạy migration dùng image API mới (trước khi restart container)
-docker run --rm \
-    --network netphim_netphim_net \
-    --env-file "$APP_DIR/.env" \
-    "$REGISTRY_IMAGE/api:$IMAGE_TAG" \
-    /app/apps/api/node_modules/.bin/prisma migrate deploy \
-    --schema=/app/apps/api/prisma/schema.prisma \
+# Chạy migration bằng kết nối PostgreSQL trực tiếp, không đi qua transaction pool.
+compose run --rm --no-deps api sh -c \
+    'cd /app/apps/api && DATABASE_URL="$DIRECT_DATABASE_URL" ./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma' \
     || error "Migration thất bại — dừng deploy để tránh chạy code với schema cũ"
 log "Migrations hoàn tất"
 

@@ -1,5 +1,7 @@
 # Kien Truc He Thong FlexPhim / FlexPhim System Architecture Specification
 
+> Lưu ý: đây là tài liệu kiến trúc định hướng được viết trước một số thay đổi runtime. Danh mục backend, endpoint, cổng dịch vụ, RabbitMQ contract và database đang chạy hiện tại được chuẩn hóa tại [`docs/backend-reference.md`](../backend-reference.md).
+
 Tai lieu quy chuan kien truc he thong phan tan FlexPhim, phan dinh ranh gioi dich vu, luong du lieu, co che chiu loi va quy trinh van hanh monorepo.
 
 ---

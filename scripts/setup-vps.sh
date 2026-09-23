@@ -124,23 +124,40 @@ else
         chown $DEPLOY_USER:$DEPLOY_USER "$APP_DIR/.env"
         chmod 600 "$APP_DIR/.env"
         
-        # Tạo random JWT secrets
-        JWT_SECRET=$(openssl rand -base64 64 | tr -d '\n')
-        JWT_REFRESH_SECRET=$(openssl rand -base64 64 | tr -d '\n')
-        POSTGRES_PASS=$(openssl rand -base64 32 | tr -d '\n/+=' | cut -c1-32)
-        REDIS_PASS=$(openssl rand -base64 24 | tr -d '\n/+=' | cut -c1-24)
-        
-        # Thay thế placeholders
-        sed -i "s/CHANGE_THIS_STRONG_PASSWORD/$POSTGRES_PASS/g" "$APP_DIR/.env"
-        sed -i "s/CHANGE_THIS_REDIS_PASSWORD/$REDIS_PASS/g" "$APP_DIR/.env"
-        sed -i "s/CHANGE_THIS_JWT_SECRET_64_CHARS_MIN/$JWT_SECRET/g" "$APP_DIR/.env"
-        sed -i "s/CHANGE_THIS_REFRESH_SECRET_64_CHARS_MIN/$JWT_REFRESH_SECRET/g" "$APP_DIR/.env"
+        random_secret() { openssl rand -hex 48; }
+        set_env() {
+            local key="$1"
+            local value="$2"
+            if grep -q "^${key}=" "$APP_DIR/.env"; then
+                sed -i "s|^${key}=.*|${key}=${value}|" "$APP_DIR/.env"
+            else
+                printf '%s=%s\n' "$key" "$value" >> "$APP_DIR/.env"
+            fi
+        }
+
+        # Every purpose receives an independent secret. Never reuse JWT,
+        # encryption, internal-service or cache credentials.
+        set_env POSTGRES_PASSWORD "$(random_secret)"
+        set_env REDIS_PASSWORD "$(random_secret)"
+        set_env RABBITMQ_PASSWORD "$(random_secret)"
+        set_env MEILI_MASTER_KEY "$(random_secret)"
+        set_env JWT_SECRET "$(random_secret)"
+        set_env JWT_REFRESH_SECRET "$(random_secret)"
+        set_env TOTP_ENCRYPTION_KEY "$(random_secret)"
+        set_env HLS_PROXY_SECRET "$(random_secret)"
+        set_env RECOMMENDATION_ADMIN_TOKEN "$(random_secret)"
+        set_env MEDIA_INTERNAL_TOKEN "$(random_secret)"
+        set_env ADMIN_METRICS_TOKEN "$(random_secret)"
+        set_env REVALIDATE_SECRET "$(random_secret)"
+        set_env ADMIN_DASHBOARD_PASSWORD "$(random_secret)"
         
         log ".env đã được tạo với random secrets"
         warn "QUAN TRỌNG: Hãy chỉnh sửa $APP_DIR/.env để điền đúng:"
         echo "   - NEXT_PUBLIC_API_URL (URL của Cloudflare Tunnel hoặc domain của bạn)"
+        echo "   - API_PUBLIC_URL (domain HTTPS công khai của API)"
         echo "   - FRONTEND_URL"
         echo "   - TMDB_ACCESS_TOKEN (nếu chưa đúng)"
+        echo "   - Cloudflare R2 S3_* (bắt buộc nếu muốn media tồn tại qua lần deploy)"
         echo ""
         echo -e "${YELLOW}Nhấn Enter sau khi bạn đã chỉnh sửa .env...${NC}"
         read -r
@@ -168,7 +185,7 @@ sleep 15
 
 # Chạy Prisma migrations
 info "Chạy Prisma migrations..."
-sudo -u $DEPLOY_USER docker compose --project-directory "$APP_DIR" -f "$APP_DIR/infra/docker/docker-compose.yml" run --rm api sh -c "cd /app/apps/api && npx prisma migrate deploy"
+sudo -u $DEPLOY_USER docker compose --project-directory "$APP_DIR" -f "$APP_DIR/infra/docker/docker-compose.yml" run --rm --no-deps api sh -c 'cd /app/apps/api && DATABASE_URL="$DIRECT_DATABASE_URL" npx prisma migrate deploy'
 log "Database migrations hoàn tất"
 
 # Khởi động tất cả services

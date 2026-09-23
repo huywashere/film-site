@@ -17,6 +17,7 @@ import { AdsModule } from "../ads/ads.module";
 import { SystemNotificationsModule } from "../system-notifications/system-notifications.module";
 import { AdminSecurityService } from "./admin-security.service";
 import { AdminSyncSchedulerService } from "./admin-sync-scheduler.service";
+import { MediaIngestService } from "./media-ingest.service";
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { AdminSyncSchedulerService } from "./admin-sync-scheduler.service";
     AdminOperationsService,
     AdminSecurityService,
     AdminSyncSchedulerService,
+    MediaIngestService,
     AuditService,
     AdminAccessService,
     AdminSessionGuard,

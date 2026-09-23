@@ -15,10 +15,6 @@ describe('authenticated backend mutations', () => {
       /@Controller\(["']reports["']\)[\s\S]{0,100}@UseGuards\(AuthGuard\(["']jwt["']\)\)/,
     ],
     [
-      'src/telemetry/telemetry.controller.ts',
-      /@Post\(["']client\/batch["']\)[\s\S]{0,180}@UseGuards\(AuthGuard\(["']jwt["']\)\)/,
-    ],
-    [
       'src/ads/ads.controller.ts',
       /@Post\(["']:id\/view["']\)[\s\S]{0,180}@UseGuards\(AuthGuard\(["']jwt["']\)\)/,
     ],
@@ -28,6 +24,14 @@ describe('authenticated backend mutations', () => {
     ],
   ])('protects %s', (path, expectedGuard) => {
     expect(source(path)).toMatch(expectedGuard);
+  });
+
+  it('accepts anonymous client telemetry without discarding authenticated user context', () => {
+    const controller = source('src/telemetry/telemetry.controller.ts');
+    expect(controller).toMatch(
+      /@Post\(["']client\/batch["']\)[\s\S]{0,180}@UseGuards\(OptionalJwtAuthGuard\)/,
+    );
+    expect(controller).toContain('req.user?.id');
   });
 
   it('does not double-count requests with a second controller throttler guard', () => {

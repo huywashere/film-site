@@ -41,7 +41,6 @@ import {
   Plus,
   HelpCircle,
   SkipForward,
-  FastForward,
   Bug,
   Smartphone,
   Volume2,
@@ -58,7 +57,15 @@ import {
   CheckCircle2,
   Loader2,
 } from 'lucide-react';
-import { kkphimApi, movieApi, recommendationApi, siteConfigApi, vicdnApi, viewApi, watchHistoryApi } from '@/lib/api';
+import {
+  kkphimApi,
+  movieApi,
+  recommendationApi,
+  siteConfigApi,
+  vicdnApi,
+  viewApi,
+  watchHistoryApi,
+} from '@/lib/api';
 import { canUseUnsandboxedEmbed } from '@/lib/player-source-routing';
 import { extractFilmItems, normalizeText } from '@/lib/movie-normalizer';
 import { resolveImageUrl } from '@/components/film/FilmCard';
@@ -89,6 +96,7 @@ import { matchMovies } from '@/lib/dedupe';
 import type { MovieSource } from '@/types/movie';
 import WatchPageSkeleton from './loading';
 import { safeJsonLd } from '@/lib/safe-json-ld';
+import { cleanMovieDescription } from '@/lib/string-utils';
 import {
   buildTwoEmbedUrl,
   buildVidcoreEmbedUrl,
@@ -198,7 +206,9 @@ function AutoNextOverlay({
     <div className="absolute bottom-16 right-6 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
       <div className="bg-black/80 border border-white/20 rounded-[4px] px-5 py-3.5 flex items-center gap-4 backdrop-blur-md shadow-2xl">
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-white/50 font-semibold mb-0.5">Tập tiếp theo trong</p>
+          <p className="text-[10px] uppercase tracking-wider text-white/50 font-semibold mb-0.5">
+            Tập tiếp theo trong
+          </p>
           <p className="text-white font-extrabold text-2xl tabular-nums leading-none">{seconds}s</p>
         </div>
         <div className="flex gap-2">
@@ -246,11 +256,30 @@ function isUserAdmin(
 }
 
 // ── Sidebar Film Card Component with Direct TMDB / CDN Resolution ──
+function movieNameList(value: unknown): string {
+  if (!Array.isArray(value)) return '';
+  return value
+    .map((entry) => (typeof entry === 'string' ? entry : entry?.name))
+    .filter(Boolean)
+    .join(', ');
+}
+
 function SidebarFilmCard({ film, slug }: { film: any; slug: string }) {
+  const overview = cleanMovieDescription(film?.content || film?.description || film?.overview);
+  const runtime = film?.time || (film?.runtime ? `${film.runtime} phút` : '');
+  const details = [
+    { label: 'Thể loại', value: movieNameList(film?.category || film?.genres) },
+    { label: 'Quốc gia', value: movieNameList(film?.country || film?.countries) },
+    { label: 'Thời lượng', value: String(runtime).trim() },
+  ].filter((item) => item.value);
+
   return (
-    <div className="space-y-3 pb-4 border-b border-white/[0.08]">
+    <section
+      aria-labelledby="watch-movie-info-title"
+      className="space-y-3.5 rounded-xl border border-white/[0.08] bg-[#15161a] p-3.5"
+    >
       <div className="flex gap-3">
-        <div className="relative w-16 h-24 rounded-lg overflow-hidden flex-shrink-0 border border-white/[0.08] bg-neutral-900 shadow-md">
+        <div className="relative h-24 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-white/[0.08] bg-neutral-900 shadow-md">
           <TmdbArtwork
             film={film}
             kind="poster"
@@ -261,7 +290,10 @@ function SidebarFilmCard({ film, slug }: { film: any; slug: string }) {
           />
         </div>
         <div className="space-y-1 min-w-0 flex-1">
-          <h2 className="text-xs sm:text-sm font-bold text-white leading-snug line-clamp-2">
+          <h2
+            id="watch-movie-info-title"
+            className="line-clamp-2 text-sm font-bold leading-snug text-white"
+          >
             {film?.name}
           </h2>
           {film?.origin_name && film.origin_name !== film.name && (
@@ -299,11 +331,33 @@ function SidebarFilmCard({ film, slug }: { film: any; slug: string }) {
       </div>
       <Link
         href={`/film/${slug}`}
-        className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-semibold text-neutral-300 bg-white/[0.04] border border-white/[0.06] rounded-xl hover:text-white hover:bg-white/[0.08] transition-colors"
+        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-white/[0.09] bg-white/[0.05] py-2 text-xs font-semibold text-neutral-200 transition-colors hover:border-purple-400/35 hover:bg-purple-400/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70"
       >
         <Info size={13} /> Chi tiết phim
       </Link>
-    </div>
+
+      {(overview || details.length > 0) && (
+        <div className="border-t border-white/[0.08] pt-3">
+          <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-neutral-300">
+            <Film size={13} className="text-purple-300" aria-hidden="true" />
+            <span>Giới thiệu phim</span>
+          </div>
+          {overview && (
+            <p className="line-clamp-5 text-[11px] leading-[1.65] text-neutral-400">{overview}</p>
+          )}
+          {details.length > 0 && (
+            <dl className="mt-3 space-y-1.5 text-[10px] leading-4">
+              {details.map((item) => (
+                <div key={item.label} className="grid grid-cols-[64px_minmax(0,1fr)] gap-2">
+                  <dt className="text-neutral-500">{item.label}</dt>
+                  <dd className="line-clamp-2 text-neutral-300">{item.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -490,13 +544,7 @@ function EpisodeThumbnail({
 }
 
 // ── Resilient Watch Cast Avatar (Edge-Accelerated wsrv with Letter Fallback) ──
-function WatchCastAvatar({
-  name,
-  profilePath,
-}: {
-  name: string;
-  profilePath?: string | null;
-}) {
+function WatchCastAvatar({ name, profilePath }: { name: string; profilePath?: string | null }) {
   const tmdbUrl = profilePath ? tmdbProfile(profilePath, 'w185') : null;
   const candidates = useMemo(() => {
     if (!tmdbUrl) return [];
@@ -587,10 +635,6 @@ function KeyboardShortcutsModal({
     {
       key: 'P',
       desc: lang === 'en' ? 'Previous episode' : 'Quay lại tập trước',
-    },
-    {
-      key: 'B',
-      desc: lang === 'en' ? 'Skip Intro (+85s)' : 'Bỏ qua đoạn mở đầu (+85s)',
     },
     {
       key: '?',
@@ -1186,7 +1230,15 @@ function WatchTrailerView({
     return () => {
       active = false;
     };
-  }, [tmdbTrailerKey, urlMatch, film?.name, film?.title, film?.origin_name, film?.year, rawTrailerUrl]);
+  }, [
+    tmdbTrailerKey,
+    urlMatch,
+    film?.name,
+    film?.title,
+    film?.origin_name,
+    film?.year,
+    rawTrailerUrl,
+  ]);
 
   if (videosLoading || isResolving) {
     return (
@@ -1295,7 +1347,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   const [episodeSortOrder, setEpisodeSortOrder] = useState<'oldest' | 'newest'>('oldest');
   type WatchContentTab = 'episodes' | 'recommendations' | 'cast' | 'trailer' | 'collection';
   const [watchContentTab, setWatchContentTab] = useState<WatchContentTab>('episodes');
-  const [visitedTabs, setVisitedTabs] = useState<Set<WatchContentTab>>(() => new Set(['episodes', 'recommendations']));
+  const [visitedTabs, setVisitedTabs] = useState<Set<WatchContentTab>>(
+    () => new Set(['episodes', 'recommendations']),
+  );
 
   useEffect(() => {
     setVisitedTabs((prev) => {
@@ -1310,12 +1364,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       return localStorage.getItem('netphim_auto_next') !== 'false';
     }
     return true;
-  });
-  const [skipIntroConfig, setSkipIntroConfig] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('netphim_skip_intro') === 'true';
-    }
-    return false;
   });
   const [autoPlayConfig, setAutoPlayConfig] = useState(true);
   const [providerPriority, setProviderPriority] = useState(['kkphim', 'nguonc', 'vsmov', 'ophim']);
@@ -1694,8 +1742,14 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   const cleanTitle = useMemo(() => {
     const raw = film?.name || slug || '';
     return raw
-      .replace(/\s*\([^)]*(?:thuyết minh|lồng tiếng|vietsub|bản đẹp|full hd|raw|phần\s*\d+|season\s*\d+|ss\s*\d+)[^)]*\)/gi, '')
-      .replace(/\s*-\s*(?:thuyết minh|lồng tiếng|vietsub|bản đẹp|full hd|raw|phần\s*\d+|season\s*\d+|ss\s*\d+)/gi, '')
+      .replace(
+        /\s*\([^)]*(?:thuyết minh|lồng tiếng|vietsub|bản đẹp|full hd|raw|phần\s*\d+|season\s*\d+|ss\s*\d+)[^)]*\)/gi,
+        '',
+      )
+      .replace(
+        /\s*-\s*(?:thuyết minh|lồng tiếng|vietsub|bản đẹp|full hd|raw|phần\s*\d+|season\s*\d+|ss\s*\d+)/gi,
+        '',
+      )
       .replace(/\s*:\s*(?:phần\s*\d+|season\s*\d+|ss\s*\d+)/gi, '')
       .trim();
   }, [film?.name, slug]);
@@ -1703,8 +1757,14 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   const cleanOriginTitle = useMemo(() => {
     if (!film?.origin_name) return '';
     return String(film.origin_name)
-      .replace(/\s*\([^)]*(?:thuyết minh|lồng tiếng|vietsub|bản đẹp|full hd|raw|phần\s*\d+|season\s*\d+|ss\s*\d+)[^)]*\)/gi, '')
-      .replace(/\s*-\s*(?:thuyết minh|lồng tiếng|vietsub|bản đẹp|full hd|raw|phần\s*\d+|season\s*\d+|ss\s*\d+)/gi, '')
+      .replace(
+        /\s*\([^)]*(?:thuyết minh|lồng tiếng|vietsub|bản đẹp|full hd|raw|phần\s*\d+|season\s*\d+|ss\s*\d+)[^)]*\)/gi,
+        '',
+      )
+      .replace(
+        /\s*-\s*(?:thuyết minh|lồng tiếng|vietsub|bản đẹp|full hd|raw|phần\s*\d+|season\s*\d+|ss\s*\d+)/gi,
+        '',
+      )
       .trim();
   }, [film?.origin_name]);
 
@@ -1750,10 +1810,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     queryKey: ['watch-source-lookup', cleanTitle, cleanOriginTitle, film?.year],
     queryFn: async () => {
       const queries = [cleanTitle].filter(Boolean);
-      if (
-        cleanOriginTitle &&
-        cleanOriginTitle.toLowerCase() !== cleanTitle.toLowerCase()
-      ) {
+      if (cleanOriginTitle && cleanOriginTitle.toLowerCase() !== cleanTitle.toLowerCase()) {
         queries.push(cleanOriginTitle);
       }
 
@@ -1808,13 +1865,22 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         },
       ),
     );
-  }, [sourceLookupData, film?.name, film?.origin_name, film?.year, film?.tmdb, film?.tmdb_id, data?.movie?.tmdb]);
+  }, [
+    sourceLookupData,
+    film?.name,
+    film?.origin_name,
+    film?.year,
+    film?.tmdb,
+    film?.tmdb_id,
+    data?.movie?.tmdb,
+  ]);
 
   const sourceSlugFor = useCallback(
     (source: MovieSource) => {
       if (primarySource === source) return sourceSlug;
       if (bootstrapSourceSlugs?.[source]) return bootstrapSourceSlugs[source];
-      if (matchedSourceRecord?._sourceSlugs?.[source]) return matchedSourceRecord._sourceSlugs[source];
+      if (matchedSourceRecord?._sourceSlugs?.[source])
+        return matchedSourceRecord._sourceSlugs[source];
 
       // Direct fallback: check if any item from sourceLookupData matches the film
       const items = sourceLookupData?.data?.items || [];
@@ -2287,7 +2353,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         }));
         return {
           ...server,
-          server_name: String(server?.server_name || '').replace(/\r?\n|\r/g, ' ').trim(),
+          server_name: String(server?.server_name || '')
+            .replace(/\r?\n|\r/g, ' ')
+            .trim(),
           server_data: normalizedItems,
         };
       });
@@ -2400,7 +2468,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             ? sourceServer.server_data
             : [];
           for (const sourceEpisode of sourceEpisodes) {
-            const episodeNumber = episodeNumberFromLabel(sourceEpisode?.slug || sourceEpisode?.name);
+            const episodeNumber = episodeNumberFromLabel(
+              sourceEpisode?.slug || sourceEpisode?.name,
+            );
             if (episodeNumber && !episodeMap.has(episodeNumber)) {
               episodeMap.set(episodeNumber, sourceEpisode);
             }
@@ -2537,7 +2607,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
           }));
           return {
             ...s,
-            server_name: String(s?.server_name || '').replace(/\r?\n|\r/g, ' ').trim() || sourceLabel,
+            server_name:
+              String(s?.server_name || '')
+                .replace(/\r?\n|\r/g, ' ')
+                .trim() || sourceLabel,
             server_data: normalizedServerData,
           };
         })
@@ -2556,7 +2629,11 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             server_name: `Server ${i + 1}`,
             server_data: serverData,
             _source: sourceKey,
-            _type: resolveServerType(sourceKey, originalName, s.lang || s.language || s.audio || ''),
+            _type: resolveServerType(
+              sourceKey,
+              originalName,
+              s.lang || s.language || s.audio || '',
+            ),
             key: `${sourceKey}:${originalName || i}`,
             priority: sourcePriority(sourceKey, serverData, currentEp),
           };
@@ -2750,14 +2827,39 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       const set = new Set<string>();
       const raw = localStorage.getItem(`netphim_watched_eps_${slug}`);
       if (raw) {
-        (JSON.parse(raw) as string[]).forEach((k) => set.add(String(k).toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim()));
+        (JSON.parse(raw) as string[]).forEach((k) =>
+          set.add(
+            String(k)
+              .toLowerCase()
+              .replace(/^tập\s*/i, '')
+              .replace(/^tap-/i, '')
+              .replace(/^0+/, '')
+              .trim(),
+          ),
+        );
       }
       const entries = watchProgressStorage.getHistoryEntries();
       entries
         .filter((e) => e.slug === slug)
         .forEach((e) => {
-          if (e.epSlug) set.add(String(e.epSlug).toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim());
-          if (e.epName) set.add(String(e.epName).toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim());
+          if (e.epSlug)
+            set.add(
+              String(e.epSlug)
+                .toLowerCase()
+                .replace(/^tập\s*/i, '')
+                .replace(/^tap-/i, '')
+                .replace(/^0+/, '')
+                .trim(),
+            );
+          if (e.epName)
+            set.add(
+              String(e.epName)
+                .toLowerCase()
+                .replace(/^tập\s*/i, '')
+                .replace(/^tap-/i, '')
+                .replace(/^0+/, '')
+                .trim(),
+            );
         });
       return set;
     } catch {
@@ -3166,18 +3268,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       } else if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
         goNextEpisode();
-      } else if (e.key === 'i' || e.key === 'I' || e.key === 'b' || e.key === 'B') {
-        e.preventDefault();
-        if (artInstance) {
-          artInstance.currentTime = 85;
-          toast('Đã bỏ qua đoạn mở đầu (Intro)', 'info');
-        } else {
-          const videoEl = playerContainerRef.current?.querySelector('video');
-          if (videoEl) {
-            videoEl.currentTime = Math.min(videoEl.duration || Infinity, 85);
-            toast('Đã bỏ qua đoạn mở đầu (Intro)', 'info');
-          }
-        }
       } else if (e.key === '?') {
         e.preventDefault();
         setShowShortcutsGuide((prev) => !prev);
@@ -3932,7 +4022,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     poster={optimizedPlayerPoster || posterUrl}
                     title={film?.name || film?.title || ''}
                     subtitle={currentEpData?.name ? `Tập ${currentEpData.name}` : ''}
-                    subtitles={Array.isArray(currentEpData?.subtitles) ? currentEpData.subtitles : undefined}
+                    subtitles={
+                      Array.isArray(currentEpData?.subtitles) ? currentEpData.subtitles : undefined
+                    }
                     thumbnailVttUrl={[
                       currentEpData?.thumbnailVttUrl,
                       currentEpData?.thumbnail_vtt,
@@ -3944,7 +4036,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     skipOutroStart={currentEpData?.outro?.start}
                     initialTime={lastKnownPlaybackTimeRef.current || resumeAt}
                     autoPlay={autoPlayConfig}
-                    autoSkipIntro={skipIntroConfig}
                     autoSkipAds={useSettingsStore.getState().autoSkipAds ?? true}
                     servers={playerServers}
                     currentServerIndex={currentServer}
@@ -4081,9 +4172,15 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                         <Sparkles size={18} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-white">Đường truyền hiện tại đang chậm</p>
+                        <p className="text-xs font-bold text-white">
+                          Đường truyền hiện tại đang chậm
+                        </p>
                         <p className="mt-0.5 text-[11px] text-neutral-300 leading-snug">
-                          <span className="font-bold text-sky-300">{suggestedServerToast.serverName}</span> (Ping {suggestedServerToast.ping}ms) đang phản hồi rất nhanh. Bạn có muốn đổi không?
+                          <span className="font-bold text-sky-300">
+                            {suggestedServerToast.serverName}
+                          </span>{' '}
+                          (Ping {suggestedServerToast.ping}ms) đang phản hồi rất nhanh. Bạn có muốn
+                          đổi không?
                         </p>
                         <div className="mt-2.5 flex items-center gap-2">
                           <button
@@ -4121,7 +4218,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                 : 'xl:col-start-1 xl:row-start-3',
             )}
           >
-
             {/* ── EXPANDABLE SHORTCUTS & GESTURE GUIDE (Premium Clean Cinema Standard) ── */}
             {showShortcutsGuide && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 p-4 sm:p-5 bg-neutral-900/90 border border-white/10 rounded-2xl animate-in fade-in zoom-in-95 duration-200 shadow-2xl backdrop-blur-xl">
@@ -4437,9 +4533,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                     matchedEpisode?.slug || matchedEpisode?.name;
                                   setPlayerEngine(matchedEpisode?.link_m3u8 ? 'hls' : 'iframe');
                                   if (matchedEpisodeId)
-                                    router.replace(
-                                      watchUrlForEpisode(matchedEpisodeId, targetIdx),
-                                    );
+                                    router.replace(watchUrlForEpisode(matchedEpisodeId, targetIdx));
                                 }
                               }}
                               className={cn(
@@ -4523,9 +4617,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                     'cursor-not-allowed border-transparent opacity-25 grayscale',
                                 )}
                               >
-                                <span>
-                                  Server {serverNumber}
-                                </span>
+                                <span>Server {serverNumber}</span>
                                 {isActive && (
                                   <CheckCircle2
                                     size={12}
@@ -4633,7 +4725,8 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                 const rangeSize =
                                   serverData.length > 500 ? 100 : serverData.length > 100 ? 50 : 40;
                                 const totalRanges = Math.ceil(serverData.length / rangeSize);
-                                const nextOrder = episodeSortOrder === 'oldest' ? 'newest' : 'oldest';
+                                const nextOrder =
+                                  episodeSortOrder === 'oldest' ? 'newest' : 'oldest';
                                 setEpisodeSortOrder(nextOrder);
                                 if (serverData.length > 30) {
                                   setEpRangeIndex(
@@ -4752,14 +4845,32 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                               ref={epGridRef}
                               className="grid grid-cols-2 gap-2 p-0.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                             >
-                                {displayedEps.map((ep: any, i: number) => {
+                              {displayedEps.map((ep: any, i: number) => {
                                 const isActive =
                                   ep.slug === activeEpisodeKey || ep.name === activeEpisodeKey;
                                 const epNum = ep.name.replace(/^tập\s*/i, '');
-                                const epIdentifier = String(ep.slug || ep.name || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim();
-                                const rawSlugKey = String(ep.slug || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim();
-                                const rawNameKey = String(ep.name || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim();
-                                const numKey = String(epNum).toLowerCase().replace(/^0+/, '').trim();
+                                const epIdentifier = String(ep.slug || ep.name || '')
+                                  .toLowerCase()
+                                  .replace(/^tập\s*/i, '')
+                                  .replace(/^tap-/i, '')
+                                  .replace(/^0+/, '')
+                                  .trim();
+                                const rawSlugKey = String(ep.slug || '')
+                                  .toLowerCase()
+                                  .replace(/^tập\s*/i, '')
+                                  .replace(/^tap-/i, '')
+                                  .replace(/^0+/, '')
+                                  .trim();
+                                const rawNameKey = String(ep.name || '')
+                                  .toLowerCase()
+                                  .replace(/^tập\s*/i, '')
+                                  .replace(/^tap-/i, '')
+                                  .replace(/^0+/, '')
+                                  .trim();
+                                const numKey = String(epNum)
+                                  .toLowerCase()
+                                  .replace(/^0+/, '')
+                                  .trim();
                                 const progressPercent = Math.min(
                                   100,
                                   Math.max(
@@ -4775,21 +4886,28 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                 );
                                 const isWatched =
                                   !isActive &&
-                                  (
-                                    watchedEpisodeKeys.has(epIdentifier) ||
+                                  (watchedEpisodeKeys.has(epIdentifier) ||
                                     watchedEpisodeKeys.has(rawSlugKey) ||
                                     watchedEpisodeKeys.has(rawNameKey) ||
                                     watchedEpisodeKeys.has(numKey) ||
-                                    watchProgressStorage
-                                      .getHistoryEntries()
-                                      .some(
-                                        (entry) =>
-                                          entry.slug === slug &&
-                                          (String(entry.epSlug || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim() === epIdentifier ||
-                                            String(entry.epName || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim() === epIdentifier),
-                                      )
-                                  );
-                                const effectiveProgress = progressPercent > 0 ? progressPercent : (isWatched ? 100 : 0);
+                                    watchProgressStorage.getHistoryEntries().some(
+                                      (entry) =>
+                                        entry.slug === slug &&
+                                        (String(entry.epSlug || '')
+                                          .toLowerCase()
+                                          .replace(/^tập\s*/i, '')
+                                          .replace(/^tap-/i, '')
+                                          .replace(/^0+/, '')
+                                          .trim() === epIdentifier ||
+                                          String(entry.epName || '')
+                                            .toLowerCase()
+                                            .replace(/^tập\s*/i, '')
+                                            .replace(/^tap-/i, '')
+                                            .replace(/^0+/, '')
+                                            .trim() === epIdentifier),
+                                    ));
+                                const effectiveProgress =
+                                  progressPercent > 0 ? progressPercent : isWatched ? 100 : 0;
                                 return (
                                   <button
                                     key={ep.slug || ep.name || i}
@@ -4831,7 +4949,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                         <div
                                           className={cn(
                                             'h-full transition-all duration-300',
-                                            effectiveProgress >= 90 ? 'bg-purple-400' : 'bg-purple-500',
+                                            effectiveProgress >= 90
+                                              ? 'bg-purple-400'
+                                              : 'bg-purple-500',
                                           )}
                                           style={{ width: `${effectiveProgress}%` }}
                                         />
@@ -4851,10 +4971,28 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                 const isActive =
                                   ep.slug === activeEpisodeKey || ep.name === activeEpisodeKey;
                                 const epNum = ep.name.replace(/^tập\s*/i, '');
-                                const epIdentifier = String(ep.slug || ep.name || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim();
-                                const rawSlugKey = String(ep.slug || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim();
-                                const rawNameKey = String(ep.name || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim();
-                                const numKey = String(epNum).toLowerCase().replace(/^0+/, '').trim();
+                                const epIdentifier = String(ep.slug || ep.name || '')
+                                  .toLowerCase()
+                                  .replace(/^tập\s*/i, '')
+                                  .replace(/^tap-/i, '')
+                                  .replace(/^0+/, '')
+                                  .trim();
+                                const rawSlugKey = String(ep.slug || '')
+                                  .toLowerCase()
+                                  .replace(/^tập\s*/i, '')
+                                  .replace(/^tap-/i, '')
+                                  .replace(/^0+/, '')
+                                  .trim();
+                                const rawNameKey = String(ep.name || '')
+                                  .toLowerCase()
+                                  .replace(/^tập\s*/i, '')
+                                  .replace(/^tap-/i, '')
+                                  .replace(/^0+/, '')
+                                  .trim();
+                                const numKey = String(epNum)
+                                  .toLowerCase()
+                                  .replace(/^0+/, '')
+                                  .trim();
                                 const progressPercent = Math.min(
                                   100,
                                   Math.max(
@@ -4870,21 +5008,28 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                 );
                                 const isWatched =
                                   !isActive &&
-                                  (
-                                    watchedEpisodeKeys.has(epIdentifier) ||
+                                  (watchedEpisodeKeys.has(epIdentifier) ||
                                     watchedEpisodeKeys.has(rawSlugKey) ||
                                     watchedEpisodeKeys.has(rawNameKey) ||
                                     watchedEpisodeKeys.has(numKey) ||
-                                    watchProgressStorage
-                                      .getHistoryEntries()
-                                      .some(
-                                        (entry) =>
-                                          entry.slug === slug &&
-                                          (String(entry.epSlug || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim() === epIdentifier ||
-                                            String(entry.epName || '').toLowerCase().replace(/^tập\s*/i, '').replace(/^tap-/i, '').replace(/^0+/, '').trim() === epIdentifier),
-                                      )
-                                  );
-                                const effectiveProgress = progressPercent > 0 ? progressPercent : (isWatched ? 100 : 0);
+                                    watchProgressStorage.getHistoryEntries().some(
+                                      (entry) =>
+                                        entry.slug === slug &&
+                                        (String(entry.epSlug || '')
+                                          .toLowerCase()
+                                          .replace(/^tập\s*/i, '')
+                                          .replace(/^tap-/i, '')
+                                          .replace(/^0+/, '')
+                                          .trim() === epIdentifier ||
+                                          String(entry.epName || '')
+                                            .toLowerCase()
+                                            .replace(/^tập\s*/i, '')
+                                            .replace(/^tap-/i, '')
+                                            .replace(/^0+/, '')
+                                            .trim() === epIdentifier),
+                                    ));
+                                const effectiveProgress =
+                                  progressPercent > 0 ? progressPercent : isWatched ? 100 : 0;
 
                                 return (
                                   <button
@@ -4926,7 +5071,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                         <div
                                           className={cn(
                                             'h-full transition-all duration-300',
-                                            effectiveProgress >= 90 ? 'bg-purple-400' : 'bg-purple-500',
+                                            effectiveProgress >= 90
+                                              ? 'bg-purple-400'
+                                              : 'bg-purple-500',
                                           )}
                                           style={{ width: `${effectiveProgress}%` }}
                                         />
@@ -5000,7 +5147,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                             className="group min-w-0 text-center"
                           >
                             <div className="mx-auto aspect-square w-full max-w-28 overflow-hidden rounded-full border-2 border-white/[0.09] bg-white/[0.035] transition-all group-hover:-translate-y-0.5 group-hover:border-fuchsia-400/55 group-hover:shadow-[0_10px_28px_-14px_rgba(244,114,182,0.6)]">
-                              <WatchCastAvatar name={person.name} profilePath={person.profile_path} />
+                              <WatchCastAvatar
+                                name={person.name}
+                                profilePath={person.profile_path}
+                              />
                             </div>
                             <p className="mt-2 truncate text-[11px] font-bold text-neutral-200 group-hover:text-fuchsia-200 sm:text-xs">
                               {person.name}
@@ -5121,8 +5271,8 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
             {/* ── PLAYER QUICK ACTIONS PANEL (THU GỌN TINH TẾ) ── */}
             <div className="space-y-1.5 pb-3 border-b border-white/[0.08] select-none">
-              {/* 3 Playback Toggles in 1 compact grid row */}
-              <div className="grid grid-cols-3 gap-1.5">
+              {/* Playback toggles */}
+              <div className="grid grid-cols-2 gap-1.5">
                 {/* Rạp phim */}
                 <button
                   type="button"
@@ -5173,32 +5323,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     className={autoNextConfig ? 'text-white' : 'text-neutral-400'}
                   />
                   <span className="truncate">Tự chuyển</span>
-                </button>
-
-                {/* Bỏ qua Intro */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = !skipIntroConfig;
-                    setSkipIntroConfig(next);
-                    if (typeof window !== 'undefined') {
-                      localStorage.setItem('netphim_skip_intro', String(next));
-                    }
-                    toast(next ? 'Đã bật Tự động bỏ qua Intro' : 'Đã tắt Bỏ qua Intro', 'info');
-                  }}
-                  title={skipIntroConfig ? 'Tắt tự động bỏ qua intro' : 'Bật tự động bỏ qua intro'}
-                  className={cn(
-                    'flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 border',
-                    skipIntroConfig
-                      ? 'bg-white/15 text-white border-white/20 shadow-sm'
-                      : 'bg-white/[0.03] hover:bg-white/[0.07] text-neutral-400 hover:text-neutral-200 border-white/[0.06]',
-                  )}
-                >
-                  <FastForward
-                    size={12}
-                    className={skipIntroConfig ? 'text-white' : 'text-neutral-400'}
-                  />
-                  <span className="truncate">Bỏ intro</span>
                 </button>
               </div>
 

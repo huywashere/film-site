@@ -3,19 +3,16 @@ import { useEffect, useRef, useState } from 'react';
 import Artplayer from 'artplayer';
 import vi from 'artplayer/i18n/vi';
 import Hls from 'hls.js';
+import { Activity as activityIconNode, createElement as createLucideElement } from 'lucide';
 import { useSettingsStore } from '@/store/settingsStore';
 import { detectExplicitHlsAdRanges, inspectHlsAdRanges } from '@/lib/hls-ad-filter';
-import {
-  isTerminalHlsHttpStatus,
-  selectInitialHlsTransport,
-} from '@/lib/player-source-routing';
+import { isTerminalHlsHttpStatus, selectInitialHlsTransport } from '@/lib/player-source-routing';
 import {
   ARTPLAYER_EDITOR_LOADING_GIF,
   ARTPLAYER_SEEK_BACKWARD_10_SVG,
   ARTPLAYER_SEEK_FORWARD_10_SVG,
   ARTPLAYER_SCREENSHOT_SVG,
   ARTPLAYER_PIP_SVG,
-  ARTPLAYER_SERVER_ROUTER_SVG,
 } from './artplayer-editor-assets';
 import { attachNightModeAudio, isNightModeEnabled, setNightMode } from '@/lib/audio-effects';
 import { setupScrubberPreview } from './scrubber-preview';
@@ -208,7 +205,11 @@ export default function ArtPlayer({
         skippable?: boolean;
       }>,
     ) => {
-      const minStart = Math.max(minAdStartTimeRef.current ?? 360, skipIntroEndRef.current ?? 0, 360);
+      const minStart = Math.max(
+        minAdStartTimeRef.current ?? 360,
+        skipIntroEndRef.current ?? 0,
+        360,
+      );
       for (const range of nextRanges) {
         // Chỉ ngắt quảng cáo ở các đoạn sau phim, bỏ qua đoạn đầu phim để tránh cắt nhầm cảnh/intro
         if (range.start < minStart) {
@@ -276,7 +277,11 @@ export default function ArtPlayer({
         appendMarker('intro', introEnd, introEnd, 'Hết đoạn mở đầu');
       }
 
-      const minStart = Math.max(minAdStartTimeRef.current ?? 360, skipIntroEndRef.current ?? 0, 360);
+      const minStart = Math.max(
+        minAdStartTimeRef.current ?? 360,
+        skipIntroEndRef.current ?? 0,
+        360,
+      );
       detectedAdRangesRef.current.forEach((range, index) => {
         if (range.start < minStart) return;
         appendMarker('ad', range.start, range.end, `Quảng cáo ${index + 1}`);
@@ -493,8 +498,7 @@ export default function ArtPlayer({
         hls.on(Hls.Events.ERROR, (_event, data) => {
           if (!data.fatal) return;
           const upstreamStatus =
-            data.response?.code ||
-            (data.networkDetails as { status?: number } | null)?.status;
+            data.response?.code || (data.networkDetails as { status?: number } | null)?.status;
           if (
             data.type === Hls.ErrorTypes.NETWORK_ERROR &&
             isTerminalHlsHttpStatus(upstreamStatus)
@@ -565,13 +569,18 @@ export default function ArtPlayer({
               if (freezeCounter === 2 || freezeCounter === 3) {
                 const incidentNow = Date.now();
                 stallIncidentTimesRef.current.push(incidentNow);
-                stallIncidentTimesRef.current = stallIncidentTimesRef.current.filter((t) => incidentNow - t <= 60000);
+                stallIncidentTimesRef.current = stallIncidentTimesRef.current.filter(
+                  (t) => incidentNow - t <= 60000,
+                );
                 if (stallIncidentTimesRef.current.length >= 2) {
                   onStallSuggestServerRef.current?.();
                 }
 
                 try {
-                  const targetTime = Math.min((video.duration || Infinity) - 0.1, video.currentTime + 0.1);
+                  const targetTime = Math.min(
+                    (video.duration || Infinity) - 0.1,
+                    video.currentTime + 0.1,
+                  );
                   video.currentTime = targetTime;
                   void video.play().catch(() => {});
                 } catch {}
@@ -604,7 +613,9 @@ export default function ArtPlayer({
               stallRecoveries = 1;
               const incidentNow = Date.now();
               stallIncidentTimesRef.current.push(incidentNow);
-              stallIncidentTimesRef.current = stallIncidentTimesRef.current.filter((t) => incidentNow - t <= 60000);
+              stallIncidentTimesRef.current = stallIncidentTimesRef.current.filter(
+                (t) => incidentNow - t <= 60000,
+              );
               if (stallIncidentTimesRef.current.length >= 2) {
                 onStallSuggestServerRef.current?.();
               }
@@ -698,6 +709,13 @@ export default function ArtPlayer({
 
     const defaultSubtitle = effectiveSubtitles.find((t) => t.default) || effectiveSubtitles[0];
 
+    const serverHealthIconMarkup = createLucideElement(activityIconNode, {
+      width: 22,
+      height: 22,
+      'stroke-width': 1.9,
+      'aria-hidden': 'true',
+    }).outerHTML;
+
     const player = new Artplayer({
       container: containerRef.current,
       url: isHls ? hlsTransport.primary : url,
@@ -790,8 +808,8 @@ export default function ArtPlayer({
                 name: 'server-health',
                 position: 'right',
                 index: 19,
-                html: `<span class="art-icon netphim-server-health-btn" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">${ARTPLAYER_SERVER_ROUTER_SVG}</span>`,
-                tooltip: 'Máy chủ & Sức khỏe',
+                html: `<span class="art-icon netphim-server-health-btn" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">${serverHealthIconMarkup}</span>`,
+                tooltip: 'Đo sức khỏe luồng',
                 click: function () {
                   toggleServerPanelRef.current();
                 },
@@ -910,21 +928,6 @@ export default function ArtPlayer({
           },
         },
         {
-          html: 'Tự động bỏ qua mở đầu',
-          tooltip: autoSkipIntroRef.current ? 'Bật' : 'Tắt',
-          switch: autoSkipIntroRef.current,
-          onSwitch: function (item: any) {
-            const next = !item.switch;
-            item.tooltip = next ? 'Bật' : 'Tắt';
-            autoSkipIntroRef.current = next;
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('netphim_auto_skip_intro', String(next));
-              localStorage.setItem('netphim_skip_intro', String(next));
-            }
-            return next;
-          },
-        },
-        {
           html: 'Chế độ Ban đêm (Kích thoại)',
           tooltip: isNightModeEnabled() ? 'Bật' : 'Tắt',
           switch: isNightModeEnabled(),
@@ -1000,7 +1003,11 @@ export default function ArtPlayer({
       <span class="netphim-skip-ad-countdown" aria-hidden="true"></span>
     `;
     const findActiveAd = (time: number) => {
-      const minStart = Math.max(minAdStartTimeRef.current ?? 360, skipIntroEndRef.current ?? 0, 360);
+      const minStart = Math.max(
+        minAdStartTimeRef.current ?? 360,
+        skipIntroEndRef.current ?? 0,
+        360,
+      );
       return detectedAdRangesRef.current.find(
         (ad) =>
           ad.skippable === true &&
@@ -1043,53 +1050,6 @@ export default function ArtPlayer({
     skipAdButton.addEventListener('click', onSkipButtonClick);
 
     // =========================================================================
-    // Native ArtPlayer Skip Intro Button (Netflix Standard)
-    // =========================================================================
-    const skipIntroButton = document.createElement('button');
-    skipIntroButton.type = 'button';
-    skipIntroButton.className = 'netphim-skip-intro';
-    skipIntroButton.hidden = true;
-    skipIntroButton.setAttribute('aria-live', 'polite');
-    skipIntroButton.innerHTML = `
-      <span class="netphim-skip-intro-icon" aria-hidden="true">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M5 4v16l11-8L5 4zm12 0h2.5v16H17V4z" fill="currentColor"></path>
-        </svg>
-      </span>
-      <span class="netphim-skip-intro-label">Bỏ qua giới thiệu</span>
-    `;
-
-    const isIntroActive = (time: number) => {
-      const start = skipIntroStartRef.current ?? 0;
-      const end = skipIntroEndRef.current ?? 85;
-      const duration = Number.isFinite(player.duration) ? player.duration : 0;
-      return (
-        duration > 120 &&
-        end > start &&
-        time >= start &&
-        time < end - 0.5
-      );
-    };
-
-    const syncSkipIntroButton = () => {
-      const active = isIntroActive(player.currentTime);
-      skipIntroButton.hidden = !active;
-    };
-
-    const handleSkipIntro = () => {
-      const end = skipIntroEndRef.current ?? 85;
-      const duration = Number.isFinite(player.duration) ? player.duration : 0;
-      const target =
-        duration > 0 ? Math.min(Math.max(0, duration - 1), end + 0.1) : end + 0.1;
-      player.seek = target;
-      player.notice.show = 'Đã bỏ qua phần giới thiệu';
-      syncSkipIntroButton();
-    };
-
-    const onSkipIntroClick = () => handleSkipIntro();
-    skipIntroButton.addEventListener('click', onSkipIntroClick);
-
-    // =========================================================================
     // Mobile & Touch Double-Tap Seek (YouTube-style 10s ripple & badge)
     // =========================================================================
     (Artplayer as any).MOBILE_DBCLICK_PLAY = false;
@@ -1124,7 +1084,6 @@ export default function ArtPlayer({
     if (playerContainer) {
       playerContainer.appendChild(seekOverlay);
       playerContainer.appendChild(skipAdButton);
-      playerContainer.appendChild(skipIntroButton);
     }
 
     const leftSide = seekOverlay.querySelector<HTMLElement>('.is-left');
@@ -1227,8 +1186,8 @@ export default function ArtPlayer({
       if (!(target instanceof HTMLElement)) return false;
       return Boolean(
         target.closest(
-          '.art-bottom, .art-controls, .art-control, .art-state, .art-settings, .art-contextmenu, .art-layer-auto-playback, .art-notice, .art-loading, .netphim-skip-ad, .netphim-skip-intro, .art-layer-lock, .netphim-mobile-center-controls, .netphim-mobile-center-btn'
-        )
+          '.art-bottom, .art-controls, .art-control, .art-state, .art-settings, .art-contextmenu, .art-layer-auto-playback, .art-notice, .art-loading, .netphim-skip-ad, .art-layer-lock, .netphim-mobile-center-controls, .netphim-mobile-center-btn',
+        ),
       );
     };
 
@@ -1248,18 +1207,12 @@ export default function ArtPlayer({
       const touch = e.changedTouches[0];
       const now = Date.now();
       const pressDuration = now - touchStartTime;
-      const moveDistance = Math.hypot(
-        touch.clientX - touchStartX,
-        touch.clientY - touchStartY
-      );
+      const moveDistance = Math.hypot(touch.clientX - touchStartX, touch.clientY - touchStartY);
 
       if (pressDuration > 300 || moveDistance > 25) return;
 
       const timeSinceLastTap = now - lastTapTime;
-      const tapDistance = Math.hypot(
-        touch.clientX - lastTapX,
-        touch.clientY - lastTapY
-      );
+      const tapDistance = Math.hypot(touch.clientX - lastTapX, touch.clientY - lastTapY);
 
       const targetEl = (player as any).template?.$player || containerRef.current;
       const rect = targetEl?.getBoundingClientRect();
@@ -1289,7 +1242,7 @@ export default function ArtPlayer({
       const mouseEvent = event as MouseEvent;
       const x = (typeof mouseEvent.clientX === 'number' ? mouseEvent.clientX : 0) - rect.left;
       const width = rect.width;
-      const isMobile = window.innerWidth <= 1024 || ('ontouchstart' in window);
+      const isMobile = window.innerWidth <= 1024 || 'ontouchstart' in window;
 
       if (isMobile) {
         triggerSeekRipple(x < width / 2);
@@ -1340,7 +1293,6 @@ export default function ArtPlayer({
       }
 
       syncSkipAdButton();
-      syncSkipIntroButton();
       if (autoSkipIntroRef.current && !introAutoSkippedRef.current) {
         const start = skipIntroStartRef.current ?? 0;
         const end = skipIntroEndRef.current ?? 85;
@@ -1354,22 +1306,18 @@ export default function ArtPlayer({
           introAutoSkippedRef.current = true;
           player.seek = end + 0.1;
           player.notice.show = 'Đã tự động bỏ qua phần giới thiệu';
-          syncSkipIntroButton();
         }
       }
     });
     player.on('video:seeking', () => {
       if (seekOriginTime === null) seekOriginTime = lastStablePlaybackTime;
       syncSkipAdButton();
-      syncSkipIntroButton();
     });
     player.on('video:seeked', () => {
       syncSkipAdButton();
-      syncSkipIntroButton();
     });
     player.on('seek', () => {
       syncSkipAdButton();
-      syncSkipIntroButton();
     });
 
     // Keep business callbacks around ArtPlayer's native UI lifecycle.
@@ -1506,8 +1454,6 @@ export default function ArtPlayer({
       }
       skipAdButton.removeEventListener('click', onSkipButtonClick);
       skipAdButton.remove();
-      skipIntroButton.removeEventListener('click', onSkipIntroClick);
-      skipIntroButton.remove();
       if (playerContainer) {
         playerContainer.removeEventListener('touchstart', handleTouchStart);
         playerContainer.removeEventListener('touchend', handleTouchEnd);

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { Activity, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface PlayerServerItem {
@@ -106,7 +107,10 @@ export default function PlayerServerHealthPanel({
       const target = e.target as HTMLElement | null;
       if (!target) return;
       if (panelRef.current?.contains(target)) return;
-      if (target.closest('.netphim-server-health-btn') || target.closest('[data-name="server-health"]')) {
+      if (
+        target.closest('.netphim-server-health-btn') ||
+        target.closest('[data-name="server-health"]')
+      ) {
         return;
       }
       onClose();
@@ -144,26 +148,10 @@ export default function PlayerServerHealthPanel({
       {/* Header matching ArtPlayer sub-panel */}
       <div className="h-[38px] px-3.5 flex items-center justify-between border-b border-white/[0.08] text-white select-none">
         <div className="flex items-center gap-2 text-[13px] font-medium tracking-wide">
-          {/* Crisp, modern router / broadcasting node icon with Sky Cyan accent */}
-          <div className="w-5 h-5 rounded flex items-center justify-center bg-[#23ade5]/10 text-[#23ade5] shrink-0">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.9"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect x="2" y="14" width="20" height="7" rx="2" />
-              <circle cx="6.5" cy="17.5" r="1" fill="currentColor" />
-              <circle cx="10.5" cy="17.5" r="1" fill="currentColor" />
-              <path d="M15 14V6a2 2 0 0 0-2-2h-1" />
-              <path d="M18.5 5a5.5 5.5 0 0 1 0 7.5" />
-            </svg>
+          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[#23ade5]/10 text-[#23ade5]">
+            <Activity size={14} strokeWidth={1.9} aria-hidden="true" />
           </div>
-          <span className="font-medium text-white/95">Máy chủ phát</span>
+          <span className="font-medium text-white/95">Sức khỏe luồng phát</span>
         </div>
         <button
           type="button"
@@ -179,21 +167,15 @@ export default function PlayerServerHealthPanel({
             isTesting && 'text-[#23ade5]',
           )}
         >
-          {/* Clean, perfectly circular refresh arrow with crisp strokes */}
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={cn('transition-transform duration-500', isTesting && 'animate-spin text-[#23ade5]')}
-          >
-            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-            <polyline points="21 3 21 8 16 8" />
-          </svg>
+          <RefreshCw
+            size={13}
+            strokeWidth={2.2}
+            aria-hidden="true"
+            className={cn(
+              'transition-transform duration-500',
+              isTesting && 'animate-spin text-[#23ade5]',
+            )}
+          />
         </button>
       </div>
 
@@ -226,7 +208,9 @@ export default function PlayerServerHealthPanel({
               className={cn(
                 'group h-[38px] px-3.5 flex items-center justify-between transition-colors cursor-pointer select-none text-[13px]',
                 'hover:bg-white/10',
-                isActive ? 'text-[#23ade5] font-medium bg-[#23ade5]/[0.06]' : 'text-white/90 font-normal',
+                isActive
+                  ? 'text-[#23ade5] font-medium bg-[#23ade5]/[0.06]'
+                  : 'text-white/90 font-normal',
               )}
             >
               {/* Left: Glowing indicator dot + Server Name */}
@@ -254,19 +238,45 @@ export default function PlayerServerHealthPanel({
                 ) : ping !== undefined ? (
                   <div className="flex items-center gap-1.5" title={`Tốc độ phản hồi: ${ping}ms`}>
                     {/* 3-bar cellular/wifi signal strength indicator */}
-                    <svg width="12" height="11" viewBox="0 0 14 12" fill="none" className="shrink-0">
-                      <rect x="1" y="7.5" width="2.5" height="4.5" rx="0.75" fill={barColor} opacity={1} />
-                      <rect x="5.5" y="4.5" width="2.5" height="7.5" rx="0.75" fill={barColor} opacity={isFast || isMedium ? 1 : 0.25} />
-                      <rect x="10" y="1" width="2.5" height="11" rx="0.75" fill={barColor} opacity={isFast ? 1 : 0.25} />
+                    <svg
+                      width="12"
+                      height="11"
+                      viewBox="0 0 14 12"
+                      fill="none"
+                      className="shrink-0"
+                    >
+                      <rect
+                        x="1"
+                        y="7.5"
+                        width="2.5"
+                        height="4.5"
+                        rx="0.75"
+                        fill={barColor}
+                        opacity={1}
+                      />
+                      <rect
+                        x="5.5"
+                        y="4.5"
+                        width="2.5"
+                        height="7.5"
+                        rx="0.75"
+                        fill={barColor}
+                        opacity={isFast || isMedium ? 1 : 0.25}
+                      />
+                      <rect
+                        x="10"
+                        y="1"
+                        width="2.5"
+                        height="11"
+                        rx="0.75"
+                        fill={barColor}
+                        opacity={isFast ? 1 : 0.25}
+                      />
                     </svg>
                     <span
                       className={cn(
                         'text-[11.5px] font-medium tracking-tight font-mono',
-                        isFast
-                          ? 'text-emerald-400'
-                          : isMedium
-                            ? 'text-amber-400'
-                            : 'text-rose-400',
+                        isFast ? 'text-emerald-400' : isMedium ? 'text-amber-400' : 'text-rose-400',
                       )}
                     >
                       {ping}ms

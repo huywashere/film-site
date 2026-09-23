@@ -10,6 +10,7 @@ function secureProductionEnv() {
     REVALIDATE_SECRET: "e".repeat(48),
     HLS_PROXY_SECRET: "f".repeat(48),
     RECOMMENDATION_ADMIN_TOKEN: "g".repeat(48),
+    API_PUBLIC_URL: "https://api.netphim.example",
     FRONTEND_URL: "https://netphim.example",
     TURNSTILE_SECRET_KEY: "turnstile-secret",
     GITHUB_ADMIN_CLIENT_ID: "client-id",

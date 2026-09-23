@@ -36,17 +36,19 @@ RUN pnpm --filter api deploy --prod /prod/api && \
     cd /prod/api && ./node_modules/.bin/prisma generate --schema=prisma/schema.prisma
 
 FROM node:${NODE_VERSION}-alpine AS runtime
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl ffmpeg
 
 ENV NODE_ENV=production
 WORKDIR /app
 
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nestjs
+    adduser --system --uid 1001 nestjs && \
+    mkdir -p /app/media /app/uploads /app/transcode && \
+    chown -R nestjs:nodejs /app/media /app/uploads /app/transcode
 
 COPY --from=builder --chown=nestjs:nodejs /prod/api ./
 
 USER nestjs
 EXPOSE 3001
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]

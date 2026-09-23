@@ -19,14 +19,14 @@
 
   /* Inertial horizontal scroll snapping for mobile movie carousels */
   .mobile-snap-row,
-  [data-mobile-snap-row="true"] {
+  [data-mobile-snap-row='true'] {
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x mandatory;
     scroll-behavior: smooth;
   }
 
   .mobile-snap-item,
-  [data-mobile-snap-item="true"] {
+  [data-mobile-snap-item='true'] {
     scroll-snap-align: start;
     scroll-snap-stop: normal;
   }
@@ -37,7 +37,8 @@
   -webkit-tap-highlight-color: transparent !important;
 }
 
-html, body {
+html,
+body {
   -webkit-overflow-scrolling: touch;
 }
 
@@ -309,7 +310,9 @@ pre,
     background: #8b5cf6;
     border-radius: 9999px;
     border: 2px solid #141414;
-    transition: background 0.2s ease, box-shadow 0.2s ease;
+    transition:
+      background 0.2s ease,
+      box-shadow 0.2s ease;
   }
 
   ::-webkit-scrollbar-thumb:hover {
@@ -732,7 +735,9 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   font-variant-numeric: tabular-nums;
   text-align: center;
   line-height: 1.3;
-  transition: background-color 180ms ease, color 180ms ease;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
 }
 
 .art-video-player .netphim-skip-ad:hover .netphim-skip-ad-countdown {
@@ -751,101 +756,9 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   }
 }
 
-/* ── Floating Skip Intro Button (Netflix Standard) ── */
-.art-video-player .netphim-skip-intro {
-  position: absolute;
-  z-index: 60;
-  right: 28px;
-  bottom: 84px;
-  display: inline-flex;
-  min-height: 40px;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 18px 8px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.72);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
-  color: #ffffff;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  line-height: 1;
-  cursor: pointer;
-  user-select: none;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  animation: netphim-skip-enter 180ms ease-out both;
-  transition:
-    background-color 180ms ease,
-    color 180ms ease,
-    border-color 180ms ease,
-    transform 180ms ease,
-    box-shadow 180ms ease;
-}
-
-.art-video-player .netphim-skip-intro[hidden] {
-  display: none !important;
-}
-
-.art-video-player .netphim-skip-intro:hover {
-  background: #ffffff !important;
-  color: #000000 !important;
-  border-color: #ffffff !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
-  transform: translateY(-2px) scale(1.02);
-}
-
-.art-video-player .netphim-skip-intro:hover * {
-  color: #000000 !important;
-  fill: #000000 !important;
-}
-
-.art-video-player .netphim-skip-intro:active {
-  background: rgba(230, 230, 230, 0.95) !important;
-  transform: translateY(0) scale(0.98);
-}
-
-.art-video-player .netphim-skip-intro:focus-visible {
-  outline: 2px solid #ffffff;
-  outline-offset: 3px;
-}
-
-.art-video-player .netphim-skip-intro-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 15px;
-  height: 15px;
-  flex-shrink: 0;
-  color: inherit;
-  fill: currentColor;
-}
-
-.art-video-player .netphim-skip-intro-icon svg {
-  width: 15px;
-  height: 15px;
-  display: block;
-  fill: currentColor !important;
-  color: inherit !important;
-}
-
-.art-video-player .netphim-skip-intro-icon svg path {
-  fill: currentColor !important;
-}
-
-.art-video-player .netphim-skip-intro-label {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  white-space: nowrap;
-}
-
 /* Ensure stroke-based player control SVGs preserve fill:none */
-.art-video-player .art-control svg path[fill="none"],
-.art-video-player .art-control svg rect[fill="none"] {
+.art-video-player .art-control svg path[fill='none'],
+.art-video-player .art-control svg rect[fill='none'] {
   fill: none !important;
 }
 
@@ -927,7 +840,9 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
     margin: 0 !important;
   }
 
-  .art-video-player .art-controls .art-control:not(.art-control-progress):not(.art-control-thumbnails):not(.art-control-time) {
+  .art-video-player
+    .art-controls
+    .art-control:not(.art-control-progress):not(.art-control-thumbnails):not(.art-control-time) {
     width: 28px !important;
     min-width: 28px !important;
     max-width: 28px !important;
@@ -957,8 +872,8 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   }
 
   /* Suppress hover tooltips on mobile so they do not stick or cause width overflow */
-  .art-video-player [class*="hint--"]::before,
-  .art-video-player [class*="hint--"]::after {
+  .art-video-player [class*='hint--']::before,
+  .art-video-player [class*='hint--']::after {
     display: none !important;
   }
 
@@ -990,8 +905,7 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
     font-size: 12px !important;
   }
 
-  .art-video-player .netphim-skip-ad,
-  .art-video-player .netphim-skip-intro {
+  .art-video-player .netphim-skip-ad {
     right: 14px;
     bottom: 64px;
     min-height: 34px;
@@ -1001,15 +915,16 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
     letter-spacing: 0.06em;
   }
 
-  .art-video-player .netphim-skip-ad-label,
-  .art-video-player .netphim-skip-intro-label {
+  .art-video-player .netphim-skip-ad-label {
     font-size: 11px;
   }
 }
 
 /* Extra compact sizing for narrow phones (<= 380px) */
 @media (max-width: 380px) {
-  .art-video-player .art-controls .art-control:not(.art-control-progress):not(.art-control-thumbnails):not(.art-control-time) {
+  .art-video-player
+    .art-controls
+    .art-control:not(.art-control-progress):not(.art-control-thumbnails):not(.art-control-time) {
     width: 25px !important;
     min-width: 25px !important;
     max-width: 25px !important;
@@ -1029,8 +944,7 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .art-video-player .netphim-skip-ad,
-  .art-video-player .netphim-skip-intro {
+  .art-video-player .netphim-skip-ad {
     animation: none;
   }
 }
@@ -1096,7 +1010,9 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   z-index: 42;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 180ms ease, transform 180ms ease;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 
 .art-video-player .netphim-volume-hud.is-visible {
@@ -1121,8 +1037,11 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 
 /* 3. Subtitle Legibility & Typography (Netflix Standard) */
 .art-video-player .art-subtitle {
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.85) !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.95),
+    0 0 10px rgba(0, 0, 0, 0.85) !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
   font-weight: 600 !important;
   letter-spacing: 0.02em !important;
   line-height: 1.4 !important;
@@ -1145,7 +1064,9 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   z-index: 45;
   color: #fff;
   animation: netphim-pip-slide-up 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  transition: transform 180ms ease, opacity 180ms ease;
+  transition:
+    transform 180ms ease,
+    opacity 180ms ease;
 }
 
 .netphim-next-ep-pip[hidden] {
@@ -1188,7 +1109,9 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   color: #94a3b8;
   border: none;
   cursor: pointer;
-  transition: background-color 140ms ease, color 140ms ease;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
 }
 
 .netphim-next-ep-pip-close:hover {
@@ -1256,7 +1179,9 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   border: none;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(35, 173, 229, 0.35);
-  transition: transform 140ms ease, background-color 140ms ease;
+  transition:
+    transform 140ms ease,
+    background-color 140ms ease;
 }
 
 .netphim-next-ep-pip-play:hover {
@@ -1273,7 +1198,9 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   font-weight: 600;
   border: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
-  transition: background-color 140ms ease, color 140ms ease;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
 }
 
 .netphim-next-ep-pip-dismiss:hover {
@@ -1300,7 +1227,6 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
     backdrop-filter: none;
   }
 }
-
 
 @keyframes soundwave-1 {
   0%,
@@ -1499,11 +1425,14 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   color: #ffffff;
   display: inline-block;
   opacity: 0.6;
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 
 .netphim-mobile-seek-text {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -1514,7 +1443,8 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 
 /* Sequential wave animation across the 3 triangles */
 @keyframes netphim-tri-wave {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.35;
     transform: scale(0.9);
   }
@@ -1584,7 +1514,9 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   display: flex;
   flex-direction: column;
   align-items: center;
-  transition: opacity 0.16s cubic-bezier(0.16, 1, 0.3, 1), transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
   -webkit-user-select: none;
 }
@@ -1601,7 +1533,9 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   border-radius: 8px;
   border: 1.5px solid rgba(255, 255, 255, 0.3);
   background: #090a0f;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85), 0 2px 8px rgba(0, 0, 0, 0.6);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.85),
+    0 2px 8px rgba(0, 0, 0, 0.6);
   overflow: hidden;
   position: relative;
   display: flex;
@@ -1636,7 +1570,12 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 .netphim-scrubber-shimmer {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 50%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
   animation: netphim-scrub-shimmer 1.4s infinite;
   transform: translateX(-100%);
 }
@@ -1659,7 +1598,7 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   background: rgba(0, 0, 0, 0.88);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -1674,7 +1613,7 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   background: rgba(0, 0, 0, 0.88);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #e2e8f0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 11px;
   font-weight: 600;
   padding: 2.5px 7px;
@@ -1700,13 +1639,18 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 
 /* Bell swing/shake animation for episode notification banners */
 @keyframes netphim-bell-ring {
-  0%, 100% {
+  0%,
+  100% {
     transform: rotate(0deg);
   }
-  5%, 15%, 25% {
+  5%,
+  15%,
+  25% {
     transform: rotate(14deg);
   }
-  10%, 20%, 30% {
+  10%,
+  20%,
+  30% {
     transform: rotate(-14deg);
   }
   35% {
@@ -1742,7 +1686,9 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   gap: clamp(22px, 8vw, 44px);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
   -webkit-user-select: none;
 }
@@ -1783,7 +1729,10 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   padding: 0;
   background: #14151b;
   box-shadow: 0 5px 18px rgba(0, 0, 0, 0.58);
-  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease, border-color 0.15s ease;
+  transition:
+    transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+    background 0.15s ease,
+    border-color 0.15s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -1892,5 +1841,3 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
     transition: none;
   }
 }
-
-

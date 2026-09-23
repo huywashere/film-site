@@ -90,6 +90,43 @@ export function validateEnv(
     );
   }
 
+  if (isProduction) {
+    try {
+      const apiPublicUrl = new URL(String(config.API_PUBLIC_URL || ""));
+      if (apiPublicUrl.protocol !== "https:") {
+        problems.push("API_PUBLIC_URL must use HTTPS in production");
+      }
+    } catch {
+      problems.push("API_PUBLIC_URL must be a valid absolute URL in production");
+    }
+  }
+
+  const s3Keys = [
+    "S3_ENDPOINT",
+    "S3_BUCKET",
+    "S3_ACCESS_KEY_ID",
+    "S3_SECRET_ACCESS_KEY",
+    "S3_PUBLIC_URL",
+  ] as const;
+  const hasAnyS3Value = s3Keys.some(
+    (key) => typeof config[key] === "string" && config[key].length > 0,
+  );
+  if (hasAnyS3Value) {
+    for (const key of s3Keys) {
+      if (typeof config[key] !== "string" || config[key].length === 0) {
+        problems.push(`${key} is required when object storage is enabled`);
+      }
+    }
+    try {
+      const publicUrl = new URL(String(config.S3_PUBLIC_URL));
+      if (isProduction && publicUrl.protocol !== "https:") {
+        problems.push("S3_PUBLIC_URL must use HTTPS in production");
+      }
+    } catch {
+      problems.push("S3_PUBLIC_URL is not a valid absolute URL");
+    }
+  }
+
   if (isProduction && !config.TURNSTILE_SECRET_KEY) {
     problems.push(
       "TURNSTILE_SECRET_KEY is not set - credential authentication would be unprotected",

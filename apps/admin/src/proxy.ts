@@ -24,5 +24,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Large video bodies must reach the streaming route handler without being
+  // cloned/buffered by Proxy. That handler performs its own session + origin checks.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/admin/media/uploads).*)"],
 };

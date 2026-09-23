@@ -27,7 +27,6 @@ function normalizedTitle(value: string) {
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 }
-
 @Injectable()
 export class AdminOperationsService
   implements OnModuleInit, OnApplicationBootstrap, OnModuleDestroy
@@ -210,6 +209,7 @@ export class AdminOperationsService
         actors: Array.isArray(data.actors) ? data.actors.map(String) : [],
         directors: Array.isArray(data.directors) ? data.directors.map(String) : [],
         sources: ["manual"],
+        isHidden: true,
       },
     });
 
@@ -392,30 +392,165 @@ export class AdminOperationsService
     return response.json();
   }
 
-  async getAdvancedAnalytics(range = "30d") {
+  async getAdvancedAnalytics(range = '30d') {
     const days = Math.min(365, Math.max(1, Number.parseInt(range, 10) || 30));
     const since = new Date(Date.now() - days * 86_400_000);
-    const [views, searches, playbackErrors, buffers, providers, users] = await Promise.all([
-      this.prisma.viewLog.groupBy({ by: ["movieId"], where: { viewedAt: { gte: since } }, _count: { movieId: true }, orderBy: { _count: { movieId: "desc" } }, take: 20 }),
-      this.prisma.searchEvent.groupBy({ by: ["normalized"], where: { occurredAt: { gte: since } }, _count: { normalized: true }, _avg: { resultCount: true }, orderBy: { _count: { normalized: "desc" } }, take: 20 }),
-      this.prisma.playbackEvent.groupBy({ by: ["errorCode"], where: { occurredAt: { gte: since }, errorCode: { not: null } }, _count: { errorCode: true }, orderBy: { _count: { errorCode: "desc" } }, take: 12 }),
-      this.prisma.playbackEvent.aggregate({ where: { occurredAt: { gte: since }, bufferMs: { not: null } }, _avg: { bufferMs: true }, _max: { bufferMs: true }, _count: { bufferMs: true } }),
-      this.prisma.playbackEvent.groupBy({ by: ["provider"], where: { occurredAt: { gte: since }, provider: { not: null } }, _count: { provider: true }, _avg: { bufferMs: true }, orderBy: { _count: { provider: "desc" } } }),
-      this.prisma.refreshToken.groupBy({ by: ["userId"], where: { lastUsedAt: { gte: since } }, _count: { userId: true } }),
-    ]);
+    const [views, searches, playbackErrors, buffers, providers, users, database] =
+      await Promise.all([
+        this.prisma.viewLog.groupBy({
+          by: ['movieId'],
+          where: { viewedAt: { gte: since } },
+          _count: { movieId: true },
+          orderBy: { _count: { movieId: 'desc' } },
+          take: 20,
+        }),
+        this.prisma.searchEvent.groupBy({
+          by: ['normalized'],
+          where: { occurredAt: { gte: since } },
+          _count: { normalized: true },
+          _avg: { resultCount: true },
+          orderBy: { _count: { normalized: 'desc' } },
+          take: 20,
+        }),
+        this.prisma.playbackEvent.groupBy({
+          by: ['errorCode'],
+          where: { occurredAt: { gte: since }, errorCode: { not: null } },
+          _count: { errorCode: true },
+          orderBy: { _count: { errorCode: 'desc' } },
+          take: 12,
+        }),
+        this.prisma.playbackEvent.aggregate({
+          where: { occurredAt: { gte: since }, bufferMs: { not: null } },
+          _avg: { bufferMs: true },
+          _max: { bufferMs: true },
+          _count: { bufferMs: true },
+        }),
+        this.prisma.playbackEvent.groupBy({
+          by: ['provider'],
+          where: { occurredAt: { gte: since }, provider: { not: null } },
+          _count: { provider: true },
+          _avg: { bufferMs: true },
+          orderBy: { _count: { provider: 'desc' } },
+        }),
+        this.prisma.refreshToken.groupBy({
+          by: ['userId'],
+          where: { lastUsedAt: { gte: since } },
+          _count: { userId: true },
+        }),
+        this.getDatabaseQueryStats(),
+      ]);
     const movieIds = views.map((item) => item.movieId);
-    const movies = await this.prisma.movie.findMany({ where: { id: { in: movieIds } }, select: { id: true, title: true, posterUrl: true } });
+    const movies = await this.prisma.movie.findMany({
+      where: { id: { in: movieIds } },
+      select: { id: true, title: true, posterUrl: true },
+    });
     return {
       rangeDays: days,
       activeUsers: users.length,
       totalViews: views.reduce((sum, item) => sum + item._count.movieId, 0),
-      topMovies: views.map((item) => ({ ...movies.find((movie) => movie.id === item.movieId), id: item.movieId, views: item._count.movieId })),
-      searches: searches.map((item) => ({ query: item.normalized, count: item._count.normalized, averageResults: item._avg.resultCount || 0 })),
-      playbackErrors: playbackErrors.map((item) => ({ code: item.errorCode || "unknown", count: item._count.errorCode })),
-      buffering: { samples: buffers._count.bufferMs, averageMs: buffers._avg.bufferMs || 0, maxMs: buffers._max.bufferMs || 0 },
-      providers: providers.map((item) => ({ provider: item.provider || "unknown", events: item._count.provider, averageBufferMs: item._avg.bufferMs || 0 })),
+      topMovies: views.map((item) => ({
+        ...movies.find((movie) => movie.id === item.movieId),
+        id: item.movieId,
+        views: item._count.movieId,
+      })),
+      searches: searches.map((item) => ({
+        query: item.normalized,
+        count: item._count.normalized,
+        averageResults: item._avg.resultCount || 0,
+      })),
+      playbackErrors: playbackErrors.map((item) => ({
+        code: item.errorCode || 'unknown',
+        count: item._count.errorCode,
+      })),
+      buffering: {
+        samples: buffers._count.bufferMs,
+        averageMs: buffers._avg.bufferMs || 0,
+        maxMs: buffers._max.bufferMs || 0,
+      },
+      providers: providers.map((item) => ({
+        provider: item.provider || 'unknown',
+        events: item._count.provider,
+        averageBufferMs: item._avg.bufferMs || 0,
+      })),
       cache: await this.cache.inspectNamespaces(),
+      database,
     };
+  }
+
+  private async getDatabaseQueryStats() {
+    try {
+      const extension = await this.prisma.$queryRaw<
+        Array<{ installed: boolean; preloaded: boolean }>
+      >`
+        SELECT
+          EXISTS (
+            SELECT 1 FROM pg_extension WHERE extname = 'pg_stat_statements'
+          ) AS installed,
+          position(
+            'pg_stat_statements' IN current_setting('shared_preload_libraries')
+          ) > 0 AS preloaded
+      `;
+      if (!extension[0]?.installed) {
+        return {
+          enabled: false,
+          reason: 'pg_stat_statements chưa được bật',
+          topQueries: [],
+        };
+      }
+      if (!extension[0].preloaded) {
+        return {
+          enabled: false,
+          reason: 'PostgreSQL cần được restart để nạp pg_stat_statements',
+          topQueries: [],
+        };
+      }
+
+      const topQueries = await this.prisma.$queryRaw<
+        Array<{
+          calls: number;
+          totalExecMs: number;
+          meanExecMs: number;
+          returnedRows: number;
+          sharedBlocksHit: number;
+          sharedBlocksRead: number;
+          tempBlocksWritten: number;
+          query: string;
+        }>
+      >`
+        SELECT
+          calls::double precision AS "calls",
+          total_exec_time::double precision AS "totalExecMs",
+          mean_exec_time::double precision AS "meanExecMs",
+          rows::double precision AS "returnedRows",
+          shared_blks_hit::double precision AS "sharedBlocksHit",
+          shared_blks_read::double precision AS "sharedBlocksRead",
+          temp_blks_written::double precision AS "tempBlocksWritten",
+          left(regexp_replace(query, '\\s+', ' ', 'g'), 240) AS "query"
+        FROM pg_stat_statements
+        WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
+          AND query NOT ILIKE '%pg_stat_statements%'
+        ORDER BY total_exec_time DESC
+        LIMIT 10
+      `;
+
+      const sharedHits = topQueries.reduce((sum, query) => sum + query.sharedBlocksHit, 0);
+      const sharedReads = topQueries.reduce((sum, query) => sum + query.sharedBlocksRead, 0);
+      return {
+        enabled: true,
+        reason: null,
+        cacheHitRate: sharedHits + sharedReads > 0 ? sharedHits / (sharedHits + sharedReads) : 1,
+        topQueries,
+      };
+    } catch (error) {
+      return {
+        enabled: false,
+        reason:
+          error instanceof Error
+            ? error.message.slice(0, 240)
+            : 'Không thể đọc thống kê PostgreSQL',
+        topQueries: [],
+      };
+    }
   }
 
   private async monitorSystem() {
@@ -506,19 +641,40 @@ export class AdminOperationsService
   }
 
   private pgConnectionArgs() {
-    const url = new URL(process.env.DATABASE_URL || "");
-    return ["--host", url.hostname, "--port", url.port || "5432", "--username", decodeURIComponent(url.username), "--dbname", url.pathname.replace(/^\//, "")];
+    const url = this.postgresDirectUrl();
+    return [
+      '--host',
+      url.hostname,
+      '--port',
+      url.port || '5432',
+      '--username',
+      decodeURIComponent(url.username),
+      '--dbname',
+      url.pathname.replace(/^\//, ''),
+    ];
   }
 
   private runPgCommand(command: string, args: string[]) {
-    const url = new URL(process.env.DATABASE_URL || "");
+    const url = this.postgresDirectUrl();
     return new Promise<void>((resolvePromise, reject) => {
-      const child = spawn(this.pgExecutable(command), args, { shell: false, env: { ...process.env, PGPASSWORD: decodeURIComponent(url.password) }, stdio: ["ignore", "ignore", "pipe"] });
-      let error = "";
-      child.stderr.on("data", (chunk) => { error = `${error}${chunk}`.slice(-8000); });
-      child.once("error", reject);
-      child.once("exit", (code) => code === 0 ? resolvePromise() : reject(new Error(`${command} exited ${code}: ${error}`)));
+      const child = spawn(this.pgExecutable(command), args, {
+        shell: false,
+        env: { ...process.env, PGPASSWORD: decodeURIComponent(url.password) },
+        stdio: ['ignore', 'ignore', 'pipe'],
+      });
+      let error = '';
+      child.stderr.on('data', (chunk) => {
+        error = `${error}${chunk}`.slice(-8000);
+      });
+      child.once('error', reject);
+      child.once('exit', (code) =>
+        code === 0 ? resolvePromise() : reject(new Error(`${command} exited ${code}: ${error}`)),
+      );
     });
+  }
+
+  private postgresDirectUrl() {
+    return new URL(process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL || '');
   }
 
   private pgExecutable(command: string) {

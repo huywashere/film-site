@@ -13,6 +13,24 @@ export class TimeoutInterceptor implements NestInterceptor {
   constructor(private readonly timeoutMs: number = 8000) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const request = context.switchToHttp().getRequest<{
+      method?: string;
+      originalUrl?: string;
+      headers?: Record<string, string | string[] | undefined>;
+    }>();
+    const contentType = String(request?.headers?.["content-type"] || "");
+    const isAdminMediaUpload =
+      request?.method === "POST" &&
+      request?.originalUrl?.startsWith("/api/v1/admin/media/uploads") &&
+      contentType.toLowerCase().startsWith("multipart/form-data");
+
+    // A video upload is streamed and then handed to the background worker.
+    // Applying the global eight-second API timeout would terminate valid large
+    // uploads; authentication, file limits and transcoding timeouts still apply.
+    if (isAdminMediaUpload) {
+      return next.handle();
+    }
+
     return next.handle().pipe(
       timeout(this.timeoutMs),
       catchError((err) => {

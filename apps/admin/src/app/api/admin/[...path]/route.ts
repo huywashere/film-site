@@ -34,12 +34,18 @@ async function forward(
   const targetUrlStr = `${adminApiBaseUrl()}/admin/${path.join("/")}`;
   const target = new URL(targetUrlStr);
   request.nextUrl.searchParams.forEach((value, key) => target.searchParams.append(key, value));
+  const isMediaUpload =
+    request.method === "POST" && path.join("/") === "media/uploads";
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = isMediaUpload
+    ? undefined
+    : setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
     const body = ["GET", "HEAD"].includes(request.method)
       ? undefined
-      : await request.arrayBuffer();
+      : isMediaUpload
+        ? request.body
+        : await request.arrayBuffer();
 
     let response: Response;
     try {
@@ -49,14 +55,23 @@ async function forward(
         headers: {
           Accept: "application/json",
           "Content-Type": request.headers.get("content-type") || "application/json",
+          ...(isMediaUpload && request.headers.get("content-length")
+            ? { "Content-Length": request.headers.get("content-length")! }
+            : {}),
           "x-admin-session-token": sessionToken,
           "x-forwarded-for": request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "",
           "user-agent": request.headers.get("user-agent") || "FlexPhim-Control-Room",
         },
-        body: body && body.byteLength ? body : undefined,
+        body: isMediaUpload
+          ? (body as ReadableStream<Uint8Array> | null)
+          : body && (body as ArrayBuffer).byteLength
+            ? (body as ArrayBuffer)
+            : undefined,
         signal: controller.signal,
-      });
+        ...(isMediaUpload ? { duplex: "half" } : {}),
+      } as RequestInit & { duplex?: "half" });
     } catch (primaryErr) {
+      if (isMediaUpload) throw primaryErr;
       // Fallback: If 127.0.0.1 failed, try localhost or vice-versa
       const fallbackHost = target.hostname === "127.0.0.1" ? "localhost" : "127.0.0.1";
       const fallbackUrl = new URL(target.toString());
@@ -71,7 +86,10 @@ async function forward(
           "x-forwarded-for": request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "",
           "user-agent": request.headers.get("user-agent") || "FlexPhim-Control-Room",
         },
-        body: body && body.byteLength ? body : undefined,
+        body:
+          body && (body as ArrayBuffer).byteLength
+            ? (body as ArrayBuffer)
+            : undefined,
         signal: controller.signal,
       });
     }
@@ -95,7 +113,7 @@ async function forward(
       { status: 502 },
     );
   } finally {
-    clearTimeout(timer);
+    if (timer) clearTimeout(timer);
   }
 }
 

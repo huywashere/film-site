@@ -49,6 +49,82 @@ export class MoviesService {
 
   // ── Danh sách phim ──────────────────────────────────────────────
 
+  private databaseMovieItem(movie: {
+    id: string;
+    title: string;
+    titleEn: string | null;
+    originName: string | null;
+    posterUrl: string | null;
+    thumbUrl: string | null;
+    year: number | null;
+    type: string;
+    status: string | null;
+    totalEpisodes: number | null;
+    quality: string | null;
+    language: string | null;
+    description: string | null;
+    genres: string[];
+    countries: string[];
+    updatedAt: Date;
+  }) {
+    return {
+      _id: movie.id,
+      slug: movie.id,
+      name: movie.title,
+      origin_name: movie.originName || movie.titleEn || movie.title,
+      poster_url: movie.posterUrl || movie.thumbUrl || undefined,
+      thumb_url: movie.thumbUrl || movie.posterUrl || undefined,
+      year: movie.year || undefined,
+      type: movie.type,
+      status: movie.status || undefined,
+      episode_current: movie.totalEpisodes ? `Tập ${movie.totalEpisodes}` : 'Full',
+      quality: movie.quality || undefined,
+      lang: movie.language || undefined,
+      content: movie.description || undefined,
+      category: movie.genres.map((name) => ({ name, slug: name })),
+      country: movie.countries.map((name) => ({ name, slug: name })),
+      modified: { time: movie.updatedAt.toISOString() },
+      _source: 'manual',
+      _sources: ['manual', 'self-upload'],
+    };
+  }
+
+  async getPublished(limit = 24, type?: string) {
+    const safeLimit = Math.min(Math.max(limit, 1), 100);
+    const movies = await this.prisma.movie.findMany({
+      where: {
+        isHidden: false,
+        ...(type ? { type } : {}),
+        playbackSources: { some: { streamUrl: { not: null }, healthStatus: { not: 'down' } } },
+        sources: { hasSome: ['manual', 'self-upload'] },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: safeLimit,
+    });
+    return movies.map((movie) => this.databaseMovieItem(movie));
+  }
+
+  async searchPublished(keyword: string, limit = 24) {
+    const clean = keyword.trim().slice(0, 120);
+    if (!clean) return [];
+    const movies = await this.prisma.movie.findMany({
+      where: {
+        isHidden: false,
+        sources: { hasSome: ['manual', 'self-upload'] },
+        playbackSources: { some: { streamUrl: { not: null }, healthStatus: { not: 'down' } } },
+        OR: [
+          { id: { contains: clean.toLowerCase(), mode: 'insensitive' } },
+          { title: { contains: clean, mode: 'insensitive' } },
+          { titleEn: { contains: clean, mode: 'insensitive' } },
+          { originName: { contains: clean, mode: 'insensitive' } },
+        ],
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: Math.min(Math.max(limit, 1), 100),
+    });
+    return movies.map((movie) => this.databaseMovieItem(movie));
+  }
+
   // GET /danh-sach/phim-moi-cap-nhat?page=1
   async getLatest(page = 1) {
     return this.cachedGet(`latest:${page}`, `/danh-sach/phim-moi-cap-nhat?page=${page}`, 120);
@@ -325,7 +401,7 @@ export class MoviesService {
       ? this.formatCustomServers(dbMovie.playbackSources)
       : [];
 
-    if (dbMovie && (dbMovie.sources?.includes('manual') || !dbMovie.sources?.length)) {
+    if (dbMovie && !dbMovie.isHidden && (dbMovie.sources?.includes('manual') || !dbMovie.sources?.length)) {
       return {
         status: true,
         msg: '',
@@ -365,7 +441,7 @@ export class MoviesService {
       }
       return upstream;
     } catch (err) {
-      if (dbMovie) {
+      if (dbMovie && !dbMovie.isHidden) {
         return {
           status: true,
           msg: '',
@@ -481,14 +557,45 @@ export class MoviesService {
     }
 
     // ── 1. Fetch từ KKPhim (kèm Redis Cache 5 phút siêu tốc, đầy đủ metadata) ────────
-    const result = (await this.cachedGet(
-      `search:${normalized}:${page}:${limit}`,
-      `/v1/api/tim-kiem?keyword=${encodeURIComponent(normalized)}&page=${page}&limit=${limit}`,
-      300, // Cache 5 phút trong Redis
-    )) as any;
+    const [upstreamResult, localMovies] = await Promise.all([
+      this.cachedGet(
+        `search:${normalized}:${page}:${limit}`,
+        `/v1/api/tim-kiem?keyword=${encodeURIComponent(normalized)}&page=${page}&limit=${limit}`,
+        300,
+      ).catch(() => null) as Promise<any>,
+      this.searchPublished(keyword, Math.min(limit * 2, 100)),
+    ]);
+
+    const result = upstreamResult || {
+      status: 'success',
+      data: { items: [], params: { pagination: {} } },
+    };
+    const localItems = localMovies;
+    const upstreamItems: any[] = result?.data?.items || result?.items || [];
+    const canonical = (item: any) =>
+      `${String(item.origin_name || item.name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '')}:${item.year || ''}`;
+    const seen = new Set<string>();
+    const merged = [...localItems, ...upstreamItems].filter((item) => {
+      const key = canonical(item) || String(item.slug || item._id);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).slice(0, limit);
+    result.data = result.data || {};
+    result.data.items = merged;
+    result.data.params = result.data.params || {};
+    result.data.params.pagination = {
+      ...(result.data.params.pagination || {}),
+      currentPage: page,
+      totalItemsPerPage: limit,
+      totalItems: Math.max(
+        Number(result.data.params.pagination?.totalItems || 0),
+        merged.length,
+      ),
+    };
 
     // ── 2. Background index kết quả KKPhim vào RediSearch để làm giàu full-text index ───
-    const items: any[] = result?.data?.items || result?.items || [];
+    const items: any[] = merged;
     if (items.length > 0) {
       setImmediate(async () => {
         for (const film of items.slice(0, 24)) {

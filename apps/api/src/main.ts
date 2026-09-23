@@ -6,6 +6,7 @@ import * as cookieParser from "cookie-parser";
 import * as Sentry from "@sentry/node";
 import { AppModule } from "./app.module";
 import { AdminOperationsService } from "./admin/admin-operations.service";
+import { resolve } from "path";
 
 // ── Clean & Pretty Console Logger (Suppresses RouterExplorer route mapping spam) ──
 class CleanLogger extends ConsoleLogger {
@@ -58,6 +59,12 @@ async function bootstrap() {
   }
 
   app.use(cookieParser());
+  app.useStaticAssets(resolve(process.env.MEDIA_STORAGE_DIR || "../../.local-data/media"), {
+    prefix: "/media/",
+    immutable: true,
+    maxAge: "1y",
+    index: false,
+  });
   app.use((req, res, next) => {
     const isPublicMovieRead =
       req.method === "GET" &&

@@ -60,7 +60,6 @@ import { Optional, Inject, forwardRef } from "@nestjs/common";
 function adminKey(actor: AdminActor) {
   return (actor.email || actor.uid).toLowerCase();
 }
-
 @Injectable()
 export class AdminService implements OnModuleInit {
   private readonly runningSyncJobs = new Set<string>();
@@ -400,10 +399,13 @@ export class AdminService implements OnModuleInit {
   ) {
     const movie = await this.prisma.movie.findUnique({
       where: { id },
-      select: { title: true },
+      select: { title: true, sources: true },
     });
     if (!movie) throw new NotFoundException(`Không tìm thấy phim ID: ${id}`);
-    const providers = Array.from(new Set(items.map((item) => item.provider)));
+    const providers = Array.from(
+      new Set([...movie.sources, ...items.map((item) => item.provider)]),
+    );
+    const hasPlayableSource = items.some((item) => Boolean(item.streamUrl));
     await this.prisma.$transaction([
       this.prisma.moviePlaybackSource.deleteMany({ where: { movieId: id } }),
       ...(items.length
@@ -424,11 +426,19 @@ export class AdminService implements OnModuleInit {
                 outroStart: item.outroStart,
                 adCuePoints: item.adCuePoints || [],
                 priority: item.priority || 0,
+                healthStatus: item.streamUrl ? "operational" : "unknown",
+                lastCheckedAt: item.streamUrl ? new Date() : undefined,
               })),
             }),
           ]
         : []),
-      this.prisma.movie.update({ where: { id }, data: { sources: providers } }),
+      this.prisma.movie.update({
+        where: { id },
+        data: {
+          sources: providers,
+          ...(hasPlayableSource ? { isHidden: false } : {}),
+        },
+      }),
     ]);
     await this.auditService.logAction({
       adminId: adminUser.uid,
@@ -1434,106 +1444,141 @@ export class AdminService implements OnModuleInit {
           throw new Error("Nguồn không trả về danh sách phim hợp lệ");
         if (!items.length) break;
 
-        for (const item of items.slice(0, 100)) {
-          const id = String(item.slug || item._id || item.id || "").trim();
+        const pageItems = items.slice(0, 100);
+        const rowsById = new Map<
+          string,
+          {
+            id: string;
+            title: string;
+            originName: string | null;
+            posterUrl: string | null;
+            thumbUrl: string | null;
+            year: number | null;
+            type: string;
+            genres: string[];
+            countries: string[];
+            actors: string[];
+            directors: string[];
+            trailerUrl: string | null;
+          }
+        >();
+
+        for (const item of pageItems) {
+          const id = String(item.slug || item._id || item.id || '').trim();
           if (!id) {
             failedCount += 1;
             continue;
           }
-          try {
-            const exists = await this.prisma.movie.findUnique({
-              where: { id },
-              select: {
-                id: true,
-                sources: true,
-                genres: true,
-                countries: true,
-                actors: true,
-                directors: true,
-              },
-            });
-            const title = String(
-              item.name || item.title || item.original_name || id,
-            ).slice(0, 300);
-            const type = String(item.type || "unknown").slice(0, 40);
-            const genres = names(item.category || item.categories);
-            const countries = names(item.country || item.countries);
-            const actors = names(item.actor || item.actors);
-            const directors = names(item.director || item.directors);
-            await this.prisma.movie.upsert({
-              where: { id },
-              create: {
-                id,
-                title,
-                originName:
-                  String(item.origin_name || item.original_name || "").slice(
-                    0,
-                    300,
-                  ) || null,
-                posterUrl: imageUrl(item.poster_url, job.source)?.slice(0, 2048),
-                thumbUrl: imageUrl(item.thumb_url, job.source)?.slice(0, 2048),
-                year: Number(item.year) || null,
-                type,
-                genres,
-                countries,
-                actors,
-                directors,
-                trailerUrl:
-                  String(item.trailer_url || item.trailer || "").slice(
-                    0,
-                    2048,
-                  ) || null,
-                sources: [job.source],
-              },
-              update: {
-                title,
-                originName:
-                  String(item.origin_name || item.original_name || "").slice(
-                    0,
-                    300,
-                  ) || undefined,
-                posterUrl:
-                  imageUrl(item.poster_url, job.source)?.slice(0, 2048),
-                thumbUrl:
-                  imageUrl(item.thumb_url, job.source)?.slice(0, 2048),
-                year: Number(item.year) || undefined,
-                type,
-                ...(genres.length ? { genres } : {}),
-                ...(countries.length ? { countries } : {}),
-                ...(actors.length ? { actors } : {}),
-                ...(directors.length ? { directors } : {}),
-                sources: Array.from(
-                  new Set([...(exists?.sources || []), job.source]),
-                ),
-              },
-            });
-            await this.prisma.moviePlaybackSource.upsert({
-              where: {
-                movieId_provider_providerSlug_episodeKey_serverName: {
-                  movieId: id,
-                  provider: job.source,
-                  providerSlug: id,
-                  episodeKey: "catalog",
-                  serverName: job.source.toUpperCase(),
-                },
-              },
-              create: {
-                movieId: id,
-                provider: job.source,
-                providerSlug: id,
-                episodeKey: "catalog",
-                episodeName: "Chờ đồng bộ chi tiết",
-                serverName: job.source.toUpperCase(),
-              },
-              update: { healthStatus: "unknown", lastError: null },
-            });
-            if (exists) updatedCount += 1;
-            else createdCount += 1;
-          } catch {
-            failedCount += 1;
-          }
+          const rawYear = Number(item.year);
+          rowsById.set(id, {
+            id,
+            title: String(item.name || item.title || item.original_name || id).slice(0, 300),
+            originName: String(item.origin_name || item.original_name || '').slice(0, 300) || null,
+            posterUrl: imageUrl(item.poster_url, job.source)?.slice(0, 2048) || null,
+            thumbUrl: imageUrl(item.thumb_url, job.source)?.slice(0, 2048) || null,
+            year: Number.isFinite(rawYear) && rawYear > 0 ? Math.trunc(rawYear) : null,
+            type: String(item.type || 'unknown').slice(0, 40),
+            genres: names(item.category || item.categories),
+            countries: names(item.country || item.countries),
+            actors: names(item.actor || item.actors),
+            directors: names(item.director || item.directors),
+            trailerUrl: String(item.trailer_url || item.trailer || '').slice(0, 2048) || null,
+          });
         }
-        processedCount += items.slice(0, 100).length;
+
+        const rows = Array.from(rowsById.values());
+        if (rows.length) {
+          const existing = await this.prisma.movie.findMany({
+            where: { id: { in: rows.map((row) => row.id) } },
+            select: { id: true },
+          });
+          const existingIds = new Set(existing.map((movie) => movie.id));
+          const serializedRows = JSON.stringify(rows);
+
+          await this.prisma.$transaction(async (transaction) => {
+            await transaction.$executeRaw(Prisma.sql`
+              WITH payload AS (
+                SELECT value AS item
+                FROM jsonb_array_elements(${serializedRows}::jsonb)
+              )
+              INSERT INTO "movies" (
+                "id", "title", "originName", "posterUrl", "thumbUrl", "year",
+                "type", "genres", "countries", "actors", "directors",
+                "trailerUrl", "sources", "createdAt", "updatedAt"
+              )
+              SELECT
+                item->>'id',
+                item->>'title',
+                NULLIF(item->>'originName', ''),
+                NULLIF(item->>'posterUrl', ''),
+                NULLIF(item->>'thumbUrl', ''),
+                NULLIF(item->>'year', '')::integer,
+                item->>'type',
+                ARRAY(SELECT jsonb_array_elements_text(COALESCE(item->'genres', '[]'::jsonb))),
+                ARRAY(SELECT jsonb_array_elements_text(COALESCE(item->'countries', '[]'::jsonb))),
+                ARRAY(SELECT jsonb_array_elements_text(COALESCE(item->'actors', '[]'::jsonb))),
+                ARRAY(SELECT jsonb_array_elements_text(COALESCE(item->'directors', '[]'::jsonb))),
+                NULLIF(item->>'trailerUrl', ''),
+                ARRAY[${job.source}]::text[],
+                CURRENT_TIMESTAMP,
+                CURRENT_TIMESTAMP
+              FROM payload
+              ON CONFLICT ("id") DO UPDATE SET
+                "title" = EXCLUDED."title",
+                "originName" = COALESCE(EXCLUDED."originName", "movies"."originName"),
+                "posterUrl" = COALESCE(EXCLUDED."posterUrl", "movies"."posterUrl"),
+                "thumbUrl" = COALESCE(EXCLUDED."thumbUrl", "movies"."thumbUrl"),
+                "year" = COALESCE(EXCLUDED."year", "movies"."year"),
+                "type" = EXCLUDED."type",
+                "genres" = CASE WHEN cardinality(EXCLUDED."genres") > 0 THEN EXCLUDED."genres" ELSE "movies"."genres" END,
+                "countries" = CASE WHEN cardinality(EXCLUDED."countries") > 0 THEN EXCLUDED."countries" ELSE "movies"."countries" END,
+                "actors" = CASE WHEN cardinality(EXCLUDED."actors") > 0 THEN EXCLUDED."actors" ELSE "movies"."actors" END,
+                "directors" = CASE WHEN cardinality(EXCLUDED."directors") > 0 THEN EXCLUDED."directors" ELSE "movies"."directors" END,
+                "trailerUrl" = COALESCE(EXCLUDED."trailerUrl", "movies"."trailerUrl"),
+                "sources" = ARRAY(
+                  SELECT DISTINCT source_name
+                  FROM unnest(COALESCE("movies"."sources", ARRAY[]::text[]) || EXCLUDED."sources")
+                    AS source_names(source_name)
+                ),
+                "updatedAt" = CURRENT_TIMESTAMP
+            `);
+
+            await transaction.$executeRaw(Prisma.sql`
+              WITH payload AS (
+                SELECT value->>'id' AS movie_id
+                FROM jsonb_array_elements(${serializedRows}::jsonb)
+              )
+              INSERT INTO "movie_playback_sources" (
+                "id", "movieId", "provider", "providerSlug", "episodeKey",
+                "episodeName", "serverName", "adCuePoints", "priority",
+                "healthStatus", "createdAt", "updatedAt"
+              )
+              SELECT
+                'sync_' || md5(concat_ws('|', movie_id, ${job.source}, 'catalog')),
+                movie_id,
+                ${job.source},
+                movie_id,
+                'catalog',
+                'Chờ đồng bộ chi tiết',
+                ${job.source.toUpperCase()},
+                ARRAY[]::integer[],
+                0,
+                'unknown',
+                CURRENT_TIMESTAMP,
+                CURRENT_TIMESTAMP
+              FROM payload
+              ON CONFLICT ("movieId", "provider", "providerSlug", "episodeKey", "serverName")
+              DO UPDATE SET
+                "healthStatus" = 'unknown',
+                "lastError" = NULL,
+                "updatedAt" = CURRENT_TIMESTAMP
+            `);
+          });
+
+          updatedCount += rows.filter((row) => existingIds.has(row.id)).length;
+          createdCount += rows.filter((row) => !existingIds.has(row.id)).length;
+        }
+        processedCount += pageItems.length;
         await this.prisma.syncJob.update({
           where: { id: jobId },
           data: {

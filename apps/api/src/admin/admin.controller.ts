@@ -9,7 +9,15 @@ import {
   Query,
   UseGuards,
   Req,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
 } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { diskStorage } from "multer";
+import { mkdirSync } from "fs";
+import { extname, resolve } from "path";
+import { randomUUID } from "crypto";
 import { AdminService } from "./admin.service";
 import { AdminSessionGuard } from "./guards/admin-session.guard";
 import { AdminPermissionGuard } from "./guards/admin-permission.guard";
@@ -44,6 +52,20 @@ import {
   CreateSystemNotificationDto,
   UpdateSystemNotificationDto,
 } from "../system-notifications/system-notifications.dto";
+import { MediaIngestService } from "./media-ingest.service";
+import { CreateMediaUploadDto } from "./media-upload.dto";
+
+const mediaUploadDirectory = resolve(
+  process.env.MEDIA_UPLOAD_TMP_DIR || "../../.local-data/uploads",
+);
+const acceptedVideoTypes = new Set([
+  "video/mp4",
+  "video/x-matroska",
+  "video/webm",
+  "video/quicktime",
+  "video/x-msvideo",
+  "video/mpeg",
+]);
 
 function paginationValue(
   value: string | undefined,
@@ -66,6 +88,7 @@ export class AdminController {
     private readonly syncScheduler: AdminSyncSchedulerService,
     private readonly adsService: AdsService,
     private readonly systemNotificationsService: SystemNotificationsService,
+    private readonly mediaIngest: MediaIngestService,
   ) {}
 
   // ── 1. Overview Dashboard ─────────────────────────────────────────
@@ -104,6 +127,50 @@ export class AdminController {
   @RequireAdminPermissions("movies.write")
   createMovie(@Body() body: CreateMovieDto, @Req() req: any) {
     return this.operations.createMovie(body as unknown as Record<string, unknown>, req.user);
+  }
+
+  @Post("media/uploads")
+  @RequireAdminPermissions("movies.write")
+  @UseInterceptors(
+    FileInterceptor("file", {
+      storage: diskStorage({
+        destination: (_request, _file, callback) => {
+          mkdirSync(mediaUploadDirectory, { recursive: true });
+          callback(null, mediaUploadDirectory);
+        },
+        filename: (_request, file, callback) => {
+          const extension = extname(file.originalname).toLowerCase().slice(0, 12);
+          callback(null, `${Date.now()}-${randomUUID()}${extension}`);
+        },
+      }),
+      limits: {
+        files: 1,
+        fileSize: Math.min(
+          Math.max(Number(process.env.MEDIA_UPLOAD_MAX_BYTES || 20 * 1024 ** 3), 1),
+          100 * 1024 ** 3,
+        ),
+      },
+      fileFilter: (_request, file, callback) => {
+        if (!acceptedVideoTypes.has(file.mimetype)) {
+          callback(new BadRequestException("Định dạng video không được hỗ trợ"), false);
+          return;
+        }
+        callback(null, true);
+      },
+    }),
+  )
+  createMediaUpload(
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @Body() body: CreateMediaUploadDto,
+    @Req() req: any,
+  ) {
+    return this.mediaIngest.createJob(file, body, req.user);
+  }
+
+  @Get("media/uploads")
+  @RequireAdminPermissions("movies.read")
+  getMediaUploads(@Query("movieId") movieId?: string) {
+    return this.mediaIngest.listJobs(movieId?.slice(0, 180));
   }
 
   @Get("movies/duplicates")

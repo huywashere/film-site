@@ -278,6 +278,18 @@ func (s *Service) Bootstrap(ctx context.Context, slug string) (map[string]any, s
 		return payload, "HIT", nil
 	}
 	encoded, err, shared := s.flights.do(ctx, cacheKey, func() ([]byte, error) {
+		if s.cfg.CoreAPIURL != "" {
+			target := fmt.Sprintf("%s/movies/detail/%s", s.cfg.CoreAPIURL, url.PathEscape(slug))
+			if payload, coreErr := s.fetchJSONObject(ctx, target); coreErr == nil {
+				if movie := movieFromPayload(payload); movie != nil && firstString(movie["_source"]) == "manual" {
+					value, marshalErr := json.Marshal(payload)
+					if marshalErr == nil {
+						s.cache.Set(context.Background(), cacheKey, value, s.cfg.CatalogCacheTTL)
+					}
+					return value, marshalErr
+				}
+			}
+		}
 		providers := s.collectProviders(ctx, func(fetchCtx context.Context, provider Provider) (map[string]any, error) {
 			return s.fetchProvider(fetchCtx, provider, detailPath(provider.Source, slug), s.cfg.CatalogCacheTTL)
 		})
@@ -512,6 +524,44 @@ func (s *Service) buildAndCacheHomeFeed(ctx context.Context, cacheKey string, li
 		return nil, errors.New("home feed contains no usable sections")
 	}
 
+	// First-party uploads are authoritative and are prepended only after their
+	// HLS source has been published by the core API.
+	if s.cfg.CoreAPIURL != "" {
+		target := fmt.Sprintf("%s/movies/published?limit=%d", s.cfg.CoreAPIURL, limit)
+		if payload, fetchErr := s.fetchJSONArray(ctx, target); fetchErr == nil && len(payload) > 0 {
+			manual := make([]map[string]any, 0, len(payload))
+			for _, item := range payload {
+				if movie, ok := item.(map[string]any); ok {
+					manual = append(manual, movie)
+				}
+			}
+			for _, sectionKey := range []string{"latest", "series", "single"} {
+				selected := make([]map[string]any, 0, len(manual))
+				for _, movie := range manual {
+					mediaType := normalizeText(firstString(movie["type"]))
+					if sectionKey == "latest" || (sectionKey == "series" && (mediaType == "series" || mediaType == "tvshows")) || (sectionKey == "single" && mediaType == "single") {
+						selected = append(selected, movie)
+					}
+				}
+				if len(selected) == 0 {
+					continue
+				}
+				existing := make([]map[string]any, 0)
+				if raw, ok := sections[sectionKey].([]any); ok {
+					for _, item := range raw {
+						if movie, ok := item.(map[string]any); ok {
+							existing = append(existing, movie)
+						}
+					}
+				}
+				sections[sectionKey] = mapsToAny(dedupeGroups(map[string][]map[string]any{
+					"manual": selected,
+					"kkphim": existing,
+				}, limit))
+			}
+		}
+	}
+
 	result := map[string]any{
 		"status":      true,
 		"generatedAt": time.Now().UTC().Format(time.RFC3339),
@@ -542,25 +592,46 @@ func maxDuration(left, right time.Duration) time.Duration {
 	return right
 }
 
+func upstreamSearchLimit(limit int, filters SearchFilters) int {
+	if filters.active() {
+		return maxInt(limit, 64)
+	}
+	return limit
+}
+
 func (s *Service) SearchFiltered(ctx context.Context, query string, page, limit int, filters SearchFilters) (map[string]any, string, error) {
 	cacheKey := fmt.Sprintf("search:%s:%s:%d:%d", normalizeText(query), filters.cacheKey(), page, limit)
 	if payload, ok := s.readMapCache(ctx, cacheKey); ok {
 		return payload, "HIT", nil
 	}
 	encoded, err, shared := s.flights.do(ctx, cacheKey, func() ([]byte, error) {
-		if indexed, ok := s.searchIndexed(ctx, cacheKey, query, page, limit, filters); ok {
-			return indexed, nil
+		manual := make([]map[string]any, 0)
+		if s.cfg.CoreAPIURL != "" {
+			target := fmt.Sprintf("%s/movies/published-search?keyword=%s&limit=%d", s.cfg.CoreAPIURL, url.QueryEscape(query), upstreamSearchLimit(limit, filters))
+			if payload, fetchErr := s.fetchJSONArray(ctx, target); fetchErr == nil {
+				for _, item := range payload {
+					if movie, ok := item.(map[string]any); ok {
+						manual = append(manual, movie)
+					}
+				}
+			}
 		}
-		upstreamLimit := limit
-		if filters.active() {
-			upstreamLimit = maxInt(limit, 64)
+		if len(manual) == 0 {
+			if indexed, ok := s.searchIndexed(ctx, cacheKey, query, page, limit, filters); ok {
+				return indexed, nil
+			}
 		}
+		upstreamLimit := upstreamSearchLimit(limit, filters)
 		providers, successfulProviders := s.collectSearchProviders(ctx, query, page, upstreamLimit)
-		if successfulProviders == 0 {
+		if successfulProviders == 0 && len(manual) == 0 {
 			return nil, errors.New("no search provider responded")
 		}
 		groups := make(map[string][]map[string]any)
-		counts := make([]map[string]any, 0, len(providers))
+		counts := make([]map[string]any, 0, len(providers)+1)
+		if len(manual) > 0 {
+			groups["manual"] = manual
+			counts = append(counts, map[string]any{"source": "manual", "count": len(manual)})
+		}
 		totalItems := 0
 		totalPages := 0
 		for source, payload := range providers {
@@ -990,6 +1061,30 @@ func (s *Service) fetchJSONArray(ctx context.Context, target string) ([]any, err
 		return nil, errors.New("analytics response unavailable")
 	}
 	var payload []any
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, err
+	}
+	return payload, nil
+}
+
+func (s *Service) fetchJSONObject(ctx context.Context, target string) (map[string]any, error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
+	if err != nil {
+		return nil, err
+	}
+	response, err := s.client.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		return nil, fmt.Errorf("core API status %d", response.StatusCode)
+	}
+	body, err := io.ReadAll(io.LimitReader(response.Body, s.cfg.CatalogMaxBytes+1))
+	if err != nil || int64(len(body)) > s.cfg.CatalogMaxBytes {
+		return nil, errors.New("core API response unavailable")
+	}
+	var payload map[string]any
 	if err := json.Unmarshal(body, &payload); err != nil {
 		return nil, err
 	}

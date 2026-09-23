@@ -12,6 +12,7 @@ import {
   IconRefresh as RefreshCw,
   IconSearch as Search,
   IconTrash as Trash,
+  IconUpload as Upload,
   IconX as X,
 } from "@tabler/icons-react";
 import { adminFetch, queryString } from "@/lib/admin-api";
@@ -107,6 +108,16 @@ type SyncJob = {
   errorMessage?: string;
   createdAt: string;
 };
+type MediaUploadJob = {
+  id: string;
+  movieId: string;
+  episodeKey: string;
+  status: "QUEUED" | "PROCESSING" | "COMPLETED" | "FAILED";
+  progress: number;
+  manifestUrl?: string;
+  errorMessage?: string;
+  createdAt: string;
+};
 const syncStatusLabels: Record<string, string> = {
   QUEUED: "Đang chờ",
   RUNNING: "Đang đồng bộ",
@@ -117,6 +128,7 @@ const syncStatusLabels: Record<string, string> = {
 export default function MovieManagementPage() {
   const [data, setData] = useState<PageData | null>(null);
   const [jobs, setJobs] = useState<SyncJob[]>([]);
+  const [mediaJobs, setMediaJobs] = useState<MediaUploadJob[]>([]);
   const [search, setSearch] = useState("");
   const [type, setType] = useState("");
   const [hidden, setHidden] = useState("");
@@ -153,18 +165,24 @@ export default function MovieManagementPage() {
 
   const [isCreating, setIsCreating] = useState(false);
   const [newMovie, setNewMovie] = useState(initialNewMovieState);
+  const [newMovieFile, setNewMovieFile] = useState<File | null>(null);
 
   const openCreateModal = () => {
     setNewMovie({
       ...initialNewMovieState,
       year: new Date().getFullYear(),
     });
+    setNewMovieFile(null);
     setIsCreating(true);
   };
 
   const handleCreateMovie = async () => {
     if (!newMovie.title.trim()) {
       setError("Vui lòng nhập tên phim");
+      return;
+    }
+    if (newMovieFile && newMovie.streamUrl.trim()) {
+      setError("Chỉ chọn một nguồn ban đầu: tệp video hoặc link HLS.");
       return;
     }
     await mutate(
@@ -220,29 +238,52 @@ export default function MovieManagementPage() {
             }),
           });
         }
+        if (newMovieFile) {
+          const form = new FormData();
+          form.set("file", newMovieFile);
+          form.set("movieId", created.id);
+          form.set("episodeKey", newMovie.episodeKey.trim() || "full");
+          form.set(
+            "episodeName",
+            newMovie.episodeName.trim() ||
+              (newMovie.type === "single" ? "Tập Full" : "Tập 01"),
+          );
+          form.set("serverName", newMovie.serverName.trim() || "FlexPhim VIP");
+          await adminFetch("media/uploads", { method: "POST", body: form });
+        }
         setIsCreating(false);
       },
-      `Đã tạo phim "${newMovie.title}" thành công.`,
+      newMovieFile
+        ? `Đã nhận phim "${newMovie.title}". Hệ thống đang chuyển mã HLS nền.`
+        : `Đã tạo phim "${newMovie.title}" thành công.`,
     );
   };
 
   const load = useCallback(async () => {
     setError("");
     try {
-      const [movies, syncJobs] = await Promise.all([
+      const [movies, syncJobs, uploads] = await Promise.all([
         adminFetch<PageData>(
           `movies?${queryString({ page, limit: 15, search, type, isHidden: hidden })}`,
         ),
         adminFetch<SyncJob[]>("sync-jobs?limit=8"),
+        adminFetch<MediaUploadJob[]>("media/uploads"),
       ]);
       setData(movies);
       setJobs(syncJobs);
+      setMediaJobs(uploads);
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "Không thể tải thư viện",
       );
     }
   }, [hidden, page, search, type]);
+
+  useEffect(() => {
+    if (!mediaJobs.some((job) => job.status === "QUEUED" || job.status === "PROCESSING")) return;
+    const timer = window.setInterval(() => void load(), 5000);
+    return () => window.clearInterval(timer);
+  }, [load, mediaJobs]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 250);
@@ -458,6 +499,39 @@ export default function MovieManagementPage() {
         <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-[12px] text-rose-700">
           {error}
         </div>
+      )}
+
+      {mediaJobs.length > 0 && (
+        <section className="admin-card overflow-hidden">
+          <div className="border-b border-[var(--admin-line)] px-5 py-4">
+            <h2 className="text-[14px] font-bold text-slate-800">Tải lên và chuyển mã HLS</h2>
+            <p className="mt-1 text-[11px] text-slate-400">
+              Phim chỉ xuất hiện công khai sau khi playlist và toàn bộ segment đã tải lên thành công.
+            </p>
+          </div>
+          <div className="divide-y divide-[var(--admin-line)]">
+            {mediaJobs.slice(0, 12).map((job) => (
+              <div key={job.id} className="grid gap-2 px-5 py-3 text-[11px] sm:grid-cols-[1fr_120px_2fr]">
+                <div>
+                  <strong className="text-slate-700">{job.movieId}</strong>
+                  <span className="ml-2 text-slate-400">{job.episodeKey}</span>
+                </div>
+                <span className={job.status === "FAILED" ? "text-rose-600" : job.status === "COMPLETED" ? "text-emerald-600" : "text-violet-600"}>
+                  {job.status === "QUEUED" ? "Đang chờ" : job.status === "PROCESSING" ? "Đang xử lý" : job.status === "COMPLETED" ? "Đã công bố" : "Thất bại"}
+                </span>
+                <div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full rounded-full bg-violet-500 transition-all" style={{ width: `${Math.max(0, Math.min(job.progress, 100))}%` }} />
+                  </div>
+                  <div className="mt-1 flex justify-between text-[10px] text-slate-400">
+                    <span>{job.errorMessage || `${job.progress}%`}</span>
+                    <time>{new Date(job.createdAt).toLocaleString("vi-VN")}</time>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       <section className="admin-card overflow-hidden">
@@ -1504,6 +1578,29 @@ export default function MovieManagementPage() {
                     />
                   </label>
                   <label className="block text-[11px] font-semibold text-slate-600 sm:col-span-3">
+                    Tải tệp video gốc để hệ thống tự tạo HLS
+                    <span className="mt-1 flex min-h-20 cursor-pointer items-center gap-3 rounded-lg border border-dashed border-violet-300 bg-violet-50 px-4 py-3 text-violet-700">
+                      <Upload size={20} />
+                      <span className="min-w-0">
+                        <span className="block truncate font-bold">
+                          {newMovieFile?.name || "Chọn MP4, MKV, WebM, MOV hoặc AVI"}
+                        </span>
+                        <span className="block text-[10px] font-normal text-slate-500">
+                          Upload xong sẽ chạy FFmpeg nền, tạo 480p/720p/1080p rồi mới công bố.
+                        </span>
+                      </span>
+                    </span>
+                    <input
+                      type="file"
+                      accept="video/mp4,video/x-matroska,video/webm,video/quicktime,video/x-msvideo,video/mpeg"
+                      className="sr-only"
+                      onChange={(event) => setNewMovieFile(event.target.files?.[0] || null)}
+                    />
+                  </label>
+                  <div className="sm:col-span-3 flex items-center gap-3 text-[10px] text-slate-400">
+                    <span className="h-px flex-1 bg-slate-200" /> hoặc dùng nguồn có sẵn <span className="h-px flex-1 bg-slate-200" />
+                  </div>
+                  <label className="block text-[11px] font-semibold text-slate-600 sm:col-span-3">
                     Link phát HLS HTTPS (stream URL .m3u8)
                     <input
                       value={newMovie.streamUrl}
@@ -1512,6 +1609,7 @@ export default function MovieManagementPage() {
                         setNewMovie({ ...newMovie, streamUrl: e.target.value })
                       }
                       className="admin-control mt-1 w-full px-2.5 text-[11px]"
+                      disabled={Boolean(newMovieFile)}
                     />
                   </label>
                 </div>

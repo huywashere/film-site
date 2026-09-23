@@ -11,7 +11,6 @@ import { useEffect, useState, useCallback } from "react";
  *    when Snipping Tool, Lightshot, ShareX, or any external app takes focus.
  * 2. Mouse Leave Defense: Automatically obscures data when the cursor moves outside the browser window.
  * 3. Clipboard Purge on Capture: Wipes the OS clipboard upon PrintScreen/Snipping shortcuts.
- * 4. Forensic Security Watermark: Embeds non-intrusive metadata preventing untraceable camera photos.
  */
 export function AdminAntiScreenshot({ enabled = true }: { enabled?: boolean }) {
   const [isShieldActive, setIsShieldActive] = useState(false);
@@ -129,16 +128,6 @@ export function AdminAntiScreenshot({ enabled = true }: { enabled?: boolean }) {
           </div>
         </div>
       )}
-
-      {/* Subtle Forensic Watermark Matrix */}
-      <div
-        role="presentation"
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-0 z-[9998] overflow-hidden opacity-[0.035] select-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='320' height='180' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='20' y='90' fill='%23ffffff' font-size='13' font-weight='bold' font-family='sans-serif' transform='rotate(-22 160 90)'%3ENETPHIM ADMIN • CONFIDENTIAL%3C/text%3E%3C/svg%3E")`,
-        }}
-      />
     </>
   );
 }
