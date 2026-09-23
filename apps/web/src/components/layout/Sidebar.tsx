@@ -78,6 +78,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [scrolledPastHomeHero, setScrolledPastHomeHero] = useState(false);
   const warmedRoutesRef = useRef(new Set<string>());
@@ -112,6 +113,10 @@ export function Sidebar() {
     isUniversePage ||
     isUserActivityPage;
   const shouldShowSidebar = isPinnedPage || isBrowsePage;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!isHomePage) {
@@ -247,7 +252,10 @@ export function Sidebar() {
   );
 
   // Home reveals the rail after the hero; every other supported page is immediate.
-  if (!shouldShowSidebar) return null;
+  // Vercel's static prerender can expose a null pathname while the browser
+  // immediately sees the real route. Rendering only after mount keeps the
+  // server and first client tree identical and prevents hydration error #418.
+  if (!mounted || !shouldShowSidebar) return null;
 
   const isVisible = !isHomePage || scrolledPastHomeHero;
 

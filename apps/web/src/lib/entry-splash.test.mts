@@ -41,8 +41,7 @@ test('service worker never serves stale cached HTML after a deployment', () => {
   const services = source('src/components/layout/ClientBackgroundServices.tsx');
   assert.doesNotMatch(registration, /controllerchange|location\.reload/);
   assert.match(services, /<RegisterSW \/>/);
-  assert.match(services, /document\.addEventListener\("click", navigateSiteChrome, true\)/);
-  assert.match(services, /anchor\.closest\("\[data-site-chrome\]"\)/);
+  assert.match(services, /document\.addEventListener\("click", navigateInternalLink, true\)/);
   assert.match(services, /window\.location\.assign\(destination\.href\)/);
   assert.match(worker, /if \(isNextAsset\) return/);
 });

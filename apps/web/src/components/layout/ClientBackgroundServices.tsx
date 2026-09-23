@@ -11,7 +11,7 @@ export function ClientBackgroundServices() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const navigateSiteChrome = (event: MouseEvent) => {
+    const navigateInternalLink = (event: MouseEvent) => {
       if (
         event.button !== 0 ||
         event.metaKey ||
@@ -27,7 +27,6 @@ export function ClientBackgroundServices() {
       const anchor = target.closest<HTMLAnchorElement>("a[href]");
       if (
         !anchor ||
-        !anchor.closest("[data-site-chrome]") ||
         anchor.hasAttribute("download") ||
         (anchor.target && anchor.target !== "_self")
       ) {
@@ -49,8 +48,9 @@ export function ClientBackgroundServices() {
       window.location.assign(destination.href);
     };
 
-    document.addEventListener("click", navigateSiteChrome, true);
-    return () => document.removeEventListener("click", navigateSiteChrome, true);
+    document.addEventListener("click", navigateInternalLink, true);
+    return () =>
+      document.removeEventListener("click", navigateInternalLink, true);
   }, []);
 
   useEffect(() => {
