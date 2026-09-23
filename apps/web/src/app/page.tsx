@@ -52,6 +52,9 @@ export default async function HomePage() {
         { strict: true },
       )
     : null;
+  const initialTitleLogo = initialHero?.titleLogo
+    ? localImageProxyUrl(initialHero.titleLogo, { strict: true })
+    : null;
 
   return (
     <>
@@ -73,8 +76,8 @@ export default async function HomePage() {
           fetchPriority="high"
         />
       )}
-      {initialHero?.titleLogo && (
-        <link rel="preload" as="image" href={initialHero.titleLogo} fetchPriority="high" />
+      {initialTitleLogo && (
+        <link rel="preload" as="image" href={initialTitleLogo} fetchPriority="high" />
       )}
       <HomePageClient
         initialPublicConfig={initialPublicConfig}

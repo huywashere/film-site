@@ -329,6 +329,20 @@ test('homepage keeps the server hero stable and renders desktop controls in the 
   assert.doesNotMatch(hero, /matchMedia\("\(min-width: 1280px\)"\)/);
 });
 
+test('hero reveals its metadata atomically after the title artwork is ready', () => {
+  const source = readFileSync('src/app/components/HeroBanner.tsx', 'utf8');
+  const page = readFileSync('src/app/page.tsx', 'utf8');
+
+  assert.match(source, /const heroContentReady = Boolean\(visualReadiness\[film\.slug\]\?\.title\)/);
+  assert.match(source, /aria-busy=\{!heroContentReady\}/);
+  assert.match(source, /heroContentReady \? "opacity-100" : "opacity-0"/);
+  assert.match(source, /decoding="sync"/);
+  assert.match(source, /const sameOrigin = localImageProxyUrl\(clean, \{ strict: true \}\)/);
+  assert.match(source, /return \[sameOrigin, \.\.\.candidates\]/);
+  assert.match(page, /const initialTitleLogo = initialHero\?\.titleLogo/);
+  assert.match(page, /href=\{initialTitleLogo\}/);
+});
+
 test('shared artwork consumes backend TMDB metadata and emits responsive image candidates', () => {
   const artwork = readFileSync('src/components/film/TmdbArtwork.tsx', 'utf8');
   const hook = readFileSync('src/hooks/useTmdbArtwork.ts', 'utf8');

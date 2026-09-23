@@ -57,7 +57,11 @@ import {
 import {
   CURATED_HERO_FRANCHISE_POOL,
 } from "@/lib/curated-hero-pool";
-import { buildArtworkCandidates, wsrvImageUrl } from "@/lib/image-cdn";
+import {
+  buildArtworkCandidates,
+  localImageProxyUrl,
+  wsrvImageUrl,
+} from "@/lib/image-cdn";
 
 const TrailerModal = dynamic(
   () => import("@/components/film/TrailerModal").then((m) => m.TrailerModal),
@@ -552,13 +556,19 @@ function buildHeroLogoCandidates(url?: string | null): string[] {
   const clean = url.trim();
   if (!clean) return [];
 
-  // Production measurements show direct TMDB title logos paint faster than a
-  // cache-cold wsrv transform. Keep wsrv as the compact WebP fallback instead
-  // of blocking the first logo paint on another CDN hop.
-  return buildArtworkCandidates([clean], "titleLogo", {
+  const candidates = buildArtworkCandidates([clean], "titleLogo", {
     includeWsrvForTmdb: clean.includes("image.tmdb.org"),
     strictProxy: true,
-  }).filter((src) => !failedHeroLogos.has(src));
+  });
+  // Production timing showed the already-cached same-origin relay reaching
+  // first byte substantially sooner than a new browser connection to TMDB.
+  // Put the relay first so the preload and visible logo share one request;
+  // direct TMDB and wsrv remain exact-artwork fallbacks.
+  const sameOrigin = localImageProxyUrl(clean, { strict: true });
+  return [sameOrigin, ...candidates]
+    .filter((src): src is string => Boolean(src))
+    .filter((src, index, items) => items.indexOf(src) === index)
+    .filter((src) => !failedHeroLogos.has(src));
 }
 
 function getPrimaryHeroLogoUrl(url?: string | null): string | null {
@@ -652,7 +662,7 @@ function HeroMovieTitle({
           alt=""
           aria-hidden="true"
           referrerPolicy="strict-origin-when-cross-origin"
-          decoding="async"
+          decoding="sync"
           loading="eager"
           fetchPriority="high"
           onLoad={() => {
@@ -1900,6 +1910,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
 
   const ratingVal =
     film.tmdb?.vote_average || film.vote_average || film.rating || 8.3;
+  const heroContentReady = Boolean(visualReadiness[film.slug]?.title);
 
   const { durationStr, genresStr, ageRating, qualityBadge, langBadge } =
     getFilmDetailMeta(film);
@@ -2081,11 +2092,16 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         <div
           ref={contentRef}
           key={film.slug}
+          aria-busy={!heroContentReady}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchCancel}
-          className={`${heroSerifFont.className} max-w-2xl mx-auto w-full flex flex-col items-center pointer-events-auto touch-pan-y`}
+          className={cn(
+            heroSerifFont.className,
+            "max-w-2xl mx-auto w-full flex flex-col items-center pointer-events-auto touch-pan-y transition-opacity duration-300 ease-out",
+            heroContentReady ? "opacity-100" : "opacity-0",
+          )}
         >
               {/* Official TMDB title artwork with an accessible text fallback. */}
               <div className="w-full flex justify-center mb-1.5 sm:mb-2.5">
