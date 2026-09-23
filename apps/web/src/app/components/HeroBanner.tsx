@@ -635,8 +635,6 @@ function HeroMovieTitle({
 
   const title = film.origin_name || film.name;
   const hasLogoCandidate = Boolean(currentLogoSrc) && !hasError;
-  const logoLookupPending = !rawLogo && !film.titleLogoResolved;
-
   useEffect(() => {
     if (film.titleLogoResolved && !hasLogoCandidate) onReady();
   }, [film.titleLogoResolved, hasLogoCandidate, onReady]);
@@ -647,7 +645,7 @@ function HeroMovieTitle({
     >
       <h1
         data-hero-title-text={film.slug}
-        className={`absolute inset-x-0 max-w-xl sm:max-w-2xl mx-auto line-clamp-2 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase leading-[1.2] sm:leading-[1.15] tracking-tight text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] pt-2 pb-1 px-2 overflow-visible transition-opacity duration-200 ${logoLookupPending || hasLogoCandidate ? "opacity-0" : "opacity-100"}`}
+        className={`absolute inset-x-0 max-w-xl sm:max-w-2xl mx-auto line-clamp-2 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase leading-[1.2] sm:leading-[1.15] tracking-tight text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] pt-2 pb-1 px-2 overflow-visible transition-opacity duration-300 ${hasLogoCandidate && logoLoaded ? "opacity-0" : "opacity-100"}`}
         style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }}
       >
         {title}
@@ -2099,8 +2097,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
           onTouchCancel={handleTouchCancel}
           className={cn(
             heroSerifFont.className,
-            "max-w-2xl mx-auto w-full flex flex-col items-center pointer-events-auto touch-pan-y transition-opacity duration-300 ease-out",
-            heroContentReady ? "opacity-100" : "opacity-0",
+            "max-w-2xl mx-auto w-full flex flex-col items-center pointer-events-auto touch-pan-y opacity-100",
           )}
         >
               {/* Official TMDB title artwork with an accessible text fallback. */}

@@ -37,10 +37,11 @@ test('service worker never serves stale cached HTML after a deployment', () => {
   assert.match(worker, /fetch\(event\.request\)\.catch/);
   assert.match(config, /source: "\/sw\.js"/);
   assert.match(config, /no-cache, no-store, must-revalidate/);
-  assert.match(
-    source('src/components/layout/RegisterSW.tsx'),
-    /controllerchange/,
-  );
+  const registration = source('src/components/layout/RegisterSW.tsx');
+  const services = source('src/components/layout/ClientBackgroundServices.tsx');
+  assert.doesNotMatch(registration, /controllerchange|location\.reload/);
+  assert.match(services, /<RegisterSW \/>/);
+  assert.match(worker, /if \(isNextAsset\) return/);
 });
 
 test('FlexPhim branding is consistent while legacy client keys stay compatible', () => {

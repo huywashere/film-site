@@ -11,9 +11,9 @@ export function ClientBackgroundServices() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // These services are not required to paint or navigate the page. Starting
-    // them on first interaction avoids an artificial late burst of JavaScript
-    // and network work for visitors who are only reading the hero.
+    // These optional services are not required to paint or navigate the page.
+    // The service worker is intentionally mounted outside this gate: starting
+    // it on pointerdown used to race with and cancel the first navigation.
     const mount = () => setMounted(true);
     const options: AddEventListenerOptions = { passive: true, once: true };
     window.addEventListener("pointerdown", mount, options);
@@ -24,15 +24,17 @@ export function ClientBackgroundServices() {
     };
   }, []);
 
-  if (!mounted) return null;
-
   return (
     <>
       <RegisterSW />
-      <AntiDevTools />
-      <ClientTelemetry />
-      <OfflineDetector />
-      <ScrollToTopButton />
+      {mounted ? (
+        <>
+          <AntiDevTools />
+          <ClientTelemetry />
+          <OfflineDetector />
+          <ScrollToTopButton />
+        </>
+      ) : null}
     </>
   );
 }

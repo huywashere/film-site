@@ -83,11 +83,11 @@ test('deduplicates equivalent hero sources', () => {
   assert.equal(candidates.filter((candidate) => candidate === image).length, 1);
 });
 
-test('does not flash a text title while hero logo artwork is loading', () => {
+test('keeps a stable text title visible while hero logo artwork is loading', () => {
   const source = readFileSync('src/app/components/HeroBanner.tsx', 'utf8');
 
-  assert.match(source, /logoLookupPending \|\| hasLogoCandidate \? "opacity-0"/);
-  assert.match(source, /decoding="async"/);
+  assert.match(source, /hasLogoCandidate && logoLoaded \? "opacity-0" : "opacity-100"/);
+  assert.match(source, /decoding="sync"/);
   assert.match(source, /failedHeroLogos/);
   assert.match(source, /preloadMovieLogo/);
 });
@@ -184,7 +184,7 @@ test('hero banner waits for decoded title logos before revealing a slide', () =>
     /await Promise\.all\(initialLogoUrls\.map\(\(url\) => preloadMovieLogo\(url\)\)\)/,
   );
   assert.match(source, /const \[displayLogo\] = useState/);
-  assert.match(source, /logoLookupPending \|\| hasLogoCandidate/);
+  assert.match(source, /hasLogoCandidate && logoLoaded/);
   assert.match(source, /const activateSlide = useCallback/);
   assert.match(source, /const preloadUrl = getPrimaryHeroLogoUrl\(logoUrl\)/);
   assert.match(source, /if \(preloadUrl\) await preloadMovieLogo\(preloadUrl\)/);
@@ -329,13 +329,13 @@ test('homepage keeps the server hero stable and renders desktop controls in the 
   assert.doesNotMatch(hero, /matchMedia\("\(min-width: 1280px\)"\)/);
 });
 
-test('hero reveals its metadata atomically after the title artwork is ready', () => {
+test('hero keeps metadata visible while title artwork finishes decoding', () => {
   const source = readFileSync('src/app/components/HeroBanner.tsx', 'utf8');
   const page = readFileSync('src/app/page.tsx', 'utf8');
 
   assert.match(source, /const heroContentReady = Boolean\(visualReadiness\[film\.slug\]\?\.title\)/);
   assert.match(source, /aria-busy=\{!heroContentReady\}/);
-  assert.match(source, /heroContentReady \? "opacity-100" : "opacity-0"/);
+  assert.match(source, /touch-pan-y opacity-100/);
   assert.match(source, /decoding="sync"/);
   assert.match(source, /const sameOrigin = localImageProxyUrl\(clean, \{ strict: true \}\)/);
   assert.match(source, /return \[sameOrigin, \.\.\.candidates\]/);

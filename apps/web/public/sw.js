@@ -1,4 +1,4 @@
-const CACHE_NAME = "netphim-cache-v8";
+const CACHE_NAME = "netphim-cache-v9";
 const OFFLINE_URL = "/offline";
 
 // Never precache the homepage document. Serving cached HTML after a deploy can
@@ -63,8 +63,14 @@ self.addEventListener("fetch", (event) => {
   }
 
   const isNextAsset = url.pathname.startsWith("/_next/static/");
+
+  // Next build assets are content-hashed and already cached efficiently by
+  // the browser/CDN. Let them bypass the service worker so a deployment can
+  // never serve an obsolete chunk during client-side navigation.
+  if (isNextAsset) return;
+
   event.respondWith(
-    (isNextAsset ? fetch(event.request) : caches.match(event.request))
+    caches.match(event.request)
       .then((response) => {
         if (response) return response;
         return fetch(event.request);
@@ -72,7 +78,7 @@ self.addEventListener("fetch", (event) => {
       .then((networkResponse) => {
         if (
           networkResponse.status === 200 &&
-          (isNextAsset || url.pathname.startsWith("/fonts/"))
+          url.pathname.startsWith("/fonts/")
         ) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
