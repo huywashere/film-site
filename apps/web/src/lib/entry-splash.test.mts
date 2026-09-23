@@ -44,6 +44,10 @@ test('service worker never serves stale cached HTML after a deployment', () => {
   assert.match(services, /document\.addEventListener\("click", navigateInternalLink, true\)/);
   assert.match(services, /window\.location\.assign\(destination\.href\)/);
   assert.match(worker, /if \(isNextAsset\) return/);
+  assert.match(
+    source('src/components/layout/ConditionalFooter.tsx'),
+    /if \(!mounted \|\| pathname !== "\/"\)/,
+  );
 });
 
 test('FlexPhim branding is consistent while legacy client keys stay compatible', () => {
