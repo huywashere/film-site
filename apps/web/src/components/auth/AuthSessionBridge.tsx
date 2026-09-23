@@ -60,9 +60,17 @@ export function AuthSessionBridge() {
           const { data } = await authApi.getMe();
           if (active && data && data.id) store.setUser(data);
           return;
-        } catch {
-          // Preserve existing authenticated user session if present
-          if (active && !store.user) {
+        } catch (error) {
+          // Consult the current store instead of the pre-request snapshot. A
+          // login can finish while this bootstrap request is still pending.
+          const status = (error as { response?: { status?: number } })?.response
+            ?.status;
+          const currentUser = useAuthStore.getState().user;
+          if (
+            active &&
+            !currentUser &&
+            (status === 401 || status === 403)
+          ) {
             store.setUser(null);
           }
         }
@@ -81,4 +89,3 @@ export function AuthSessionBridge() {
 
   return null;
 }
-

@@ -71,6 +71,12 @@ body {
   will-change: opacity;
 }
 
+/* The pre-paint script sets this before the first browser frame. It prevents
+   the client splash from briefly reappearing on reload in the same tab. */
+html[data-entry-splash='skip'] #netphim-entry-splash {
+  display: none !important;
+}
+
 .netphim-splash-brand {
   animation: netphim-splash-brand-reveal 540ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -154,6 +160,7 @@ body {
 
 /* ── CSS Variables ──────────────────────────────────────────── */
 :root {
+  color-scheme: dark;
   --background: #141414;
   --background-rgb: 20, 20, 20;
   --foreground: #ffffff;

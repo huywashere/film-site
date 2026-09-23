@@ -1,18 +1,17 @@
-import { FilmCardSkeleton } from "@/components/film/FilmCard";
+'use client';
+
+import { useParams } from 'next/navigation';
+import {
+  CenteredCatalogSkeleton,
+  CinematicTopicSkeleton,
+} from '@/components/loading/CatalogPageSkeletons';
 
 export default function CountryPageLoading() {
-  return (
-    <div className="min-h-screen bg-[#07080b] text-white pt-20 md:pt-24 px-4 sm:px-8 max-w-[1720px] mx-auto pb-16">
-      <div className="mb-8 space-y-3 animate-pulse">
-        <div className="h-8 w-60 rounded-xl bg-white/10" />
-        <div className="h-4 w-80 rounded-md bg-white/[0.06]" />
-      </div>
+  const { slug } = useParams<{ slug: string }>();
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
-        {Array.from({ length: 14 }).map((_, i) => (
-          <FilmCardSkeleton key={i} />
-        ))}
-      </div>
-    </div>
-  );
+  if (slug === 'han-quoc' || slug === 'trung-quoc') {
+    return <CinematicTopicSkeleton background="#141414" />;
+  }
+
+  return <CenteredCatalogSkeleton columns="six" count={18} />;
 }

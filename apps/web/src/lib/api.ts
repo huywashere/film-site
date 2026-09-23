@@ -1368,11 +1368,17 @@ const defaultApiBase =
 
 // The Nest application has a fixed `/api/v1` prefix. Older local env files
 // used `/api`, which made every authenticated request return 404 after login.
-const API_BASE = configuredApiBase
+const directApiBase = configuredApiBase
   ? configuredApiBase.endsWith('/api')
     ? `${configuredApiBase}/v1`
     : configuredApiBase
   : defaultApiBase;
+
+// Browser authentication must stay first-party. In production, the Next.js
+// route proxy forwards /api/v1 to the configured Nest API and relays its
+// HttpOnly cookies on the FlexPhim origin. This avoids third-party-cookie
+// blocking when Vercel and the API are hosted on different sites.
+const API_BASE = process.env.NODE_ENV === 'production' ? '/api/v1' : directApiBase;
 
 export const api = axios.create({
   baseURL: API_BASE,
@@ -1388,6 +1394,20 @@ api.interceptors.request.use((config) => {
 });
 
 // Response interceptor — handle 401 with refresh
+let refreshInFlight: Promise<void> | null = null;
+
+function refreshSessionOnce() {
+  if (!refreshInFlight) {
+    refreshInFlight = axios
+      .post(`${API_BASE}/auth/refresh`, {}, { withCredentials: true })
+      .then(() => undefined)
+      .finally(() => {
+        refreshInFlight = null;
+      });
+  }
+  return refreshInFlight;
+}
+
 api.interceptors.response.use(
   (res) => {
     const metadata = (
@@ -1421,13 +1441,14 @@ api.interceptors.response.use(
     // global redirect here races the login UI and can send an already signed-in
     // user back to /login. Let the calling form surface that error instead.
     const isAuthFlowRequest =
-      /^\/auth\/(?:me|login|register|firebase|refresh|2fa\/login-verify)/.test(requestPath);
+      /^\/auth\/(?:login|register|firebase|refresh|2fa\/login-verify)/.test(requestPath);
 
     if (err.response?.status === 401 && !original._retry && !isAuthFlowRequest) {
       original._retry = true;
       try {
-        // Because withCredentials is true, this post will automatically send the refreshToken cookie
-        await axios.post(`${API_BASE}/auth/refresh`, {}, { withCredentials: true });
+        // Collapse simultaneous 401 responses into one refresh. Refresh-token
+        // rotation treats a second concurrent use as token reuse.
+        await refreshSessionOnce();
 
         // Retry original request (cookies are automatically sent)
         return api(original);

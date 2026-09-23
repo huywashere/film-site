@@ -21,6 +21,7 @@ import { GENRES_LIST, COUNTRIES_LIST } from "@/components/layout/Navbar";
 import { movieApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { cardFont } from "@/lib/fonts";
+import { BrowseFilmsSkeleton } from "@/components/loading/CatalogPageSkeletons";
 
 // ── Định nghĩa các tùy chọn bộ lọc ──────────────────────────────────────────
 
@@ -723,18 +724,7 @@ function BrowseFilmsContent() {
 
 export default function BrowseFilmsPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-[#0a0b10] text-white pt-24 px-8 max-w-[1720px] mx-auto">
-          <div className="h-8 w-48 bg-white/10 rounded-xl animate-pulse mb-8" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
-            {Array.from({ length: 14 }).map((_, i) => (
-              <FilmCardSkeleton key={i} />
-            ))}
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={<BrowseFilmsSkeleton />}>
       <BrowseFilmsContent />
     </Suspense>
   );

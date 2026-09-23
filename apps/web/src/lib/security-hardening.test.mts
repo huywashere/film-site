@@ -53,3 +53,21 @@ test('learning demo API is unavailable in production', () => {
   assert.match(route, /process\.env\.NODE_ENV === ["']production["']/);
   assert.match(route, /status:\s*404/);
 });
+
+test('authentication remains server-authoritative and refreshes through a first-party proxy', () => {
+  const api = source('src/lib/api.ts');
+  const session = source('src/lib/auth-session.ts');
+  const bridge = source('src/components/auth/AuthSessionBridge.tsx');
+  const proxy = source('src/app/api/v1/[...path]/route.ts');
+  const controller = source('../api/src/auth/auth.controller.ts');
+
+  assert.match(api, /NODE_ENV === 'production' \? '\/api\/v1'/);
+  assert.match(api, /refreshInFlight/);
+  assert.doesNotMatch(api, /\(\?:me\|login\|register/);
+  assert.doesNotMatch(session, /fallbackUser|browser-only app login/);
+  assert.match(session, /Never expose a browser-only authenticated state/);
+  assert.match(bridge, /useAuthStore\.getState\(\)\.user/);
+  assert.match(proxy, /firstPartyCookie/);
+  assert.match(proxy, /getSetCookie/);
+  assert.match(controller, /NODE_ENV === "production" \? "none" : "lax"/);
+});

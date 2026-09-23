@@ -12,6 +12,11 @@ export function LogoSplashIntro() {
   const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
+    if (document.documentElement.dataset.entrySplash === 'skip') {
+      setVisible(false);
+      return;
+    }
+
     const startedAt = performance.now();
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -28,6 +33,7 @@ export function LogoSplashIntro() {
         setLeaving(true);
         removeTimer = window.setTimeout(() => {
           document.body.style.overflow = previousOverflow;
+          document.documentElement.dataset.entrySplash = 'skip';
           setVisible(false);
         }, EXIT_DURATION_MS);
       }, remaining);

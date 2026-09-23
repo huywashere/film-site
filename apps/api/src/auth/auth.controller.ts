@@ -35,7 +35,11 @@ export class AuthController {
   ) {}
 
   private getCookieOptions(maxAge: number) {
-    const requestedSameSite = (process.env.COOKIE_SAME_SITE || "lax").toLowerCase();
+    const defaultSameSite =
+      process.env.NODE_ENV === "production" ? "none" : "lax";
+    const requestedSameSite = (
+      process.env.COOKIE_SAME_SITE || defaultSameSite
+    ).toLowerCase();
     const sameSite =
       requestedSameSite === "none"
         ? "none"

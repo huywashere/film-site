@@ -18,6 +18,37 @@ import { OperationalNotice } from "@/components/layout/OperationalNotice";
 import { LogoSplashIntro } from "@/components/layout/LogoSplashIntro";
 import { cardFont } from "@/lib/fonts";
 
+const PREPAINT_SCRIPT = `
+(() => {
+  const root = document.documentElement;
+
+  try {
+    const splashKey = "flexphim-entry-splash-v1";
+    const hasSeenSplash = sessionStorage.getItem(splashKey) === "1";
+    root.dataset.entrySplash = hasSeenSplash ? "skip" : "show";
+    if (!hasSeenSplash) sessionStorage.setItem(splashKey, "1");
+  } catch {
+    root.dataset.entrySplash = "show";
+  }
+
+  try {
+    const persisted = JSON.parse(localStorage.getItem("netphim-theme") || "null");
+    const state = persisted && persisted.state ? persisted.state : {};
+    const theme = state.theme === "light" ? "light" : "dark";
+    const pureBlack = theme === "dark" && state.pureBlack === true;
+
+    root.dataset.theme = theme;
+    root.classList.toggle("light", theme === "light");
+    root.classList.toggle("dark", theme === "dark");
+    root.classList.toggle("pure-black", pureBlack);
+    if (pureBlack) root.dataset.pureBlack = "true";
+    else delete root.dataset.pureBlack;
+  } catch {
+    root.dataset.theme = "dark";
+    root.classList.add("dark");
+  }
+})();`;
+
 export const viewport: Viewport = {
   themeColor: "#141414",
   width: "device-width",
@@ -107,6 +138,7 @@ export default function RootLayout({
   return (
     <html lang="vi" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: PREPAINT_SCRIPT }} />
         <meta name="referrer" content="strict-origin-when-cross-origin" />
         <link rel="icon" href="/flexphim-logo.svg" type="image/svg+xml" />
         <link rel="alternate icon" href="/flexphim-logo.png" type="image/png" />

@@ -9,8 +9,14 @@ function source(path: string) {
 test('root layout renders a bounded splash without remote poster artwork', () => {
   const layout = source('src/app/layout.tsx');
   const splash = source('src/components/layout/LogoSplashIntro.tsx');
+  const styles = source('src/app/globals.css');
 
   assert.match(layout, /LogoSplashIntro/);
+  assert.match(layout, /PREPAINT_SCRIPT/);
+  assert.match(layout, /flexphim-entry-splash-v1/);
+  assert.match(layout, /netphim-theme/);
+  assert.match(splash, /dataset\.entrySplash === 'skip'/);
+  assert.match(styles, /data-entry-splash='skip'/);
   assert.match(splash, /MAX_VISIBLE_MS = 1500/);
   assert.match(splash, /flexphim-logo\.svg/);
   assert.match(splash, /poster-grid-mobile\.webp/);
