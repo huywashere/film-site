@@ -956,16 +956,17 @@ async function getHomeFeed(limit = 24): Promise<HomeFeedPayload> {
     // Keep local/Vercel development functional when Gin is intentionally not
     // running. The fallback preserves the same response contract so homepage
     // components never need provider-specific branches.
-    const [latest, series, single, anime, horror, historical, theatrical, top10] = await Promise.all([
-      getFastCatalogPage(1, catalogRequests('latest', 1)),
-      getFastCatalogPage(1, catalogRequests('series', 1), 'series'),
-      getFastCatalogPage(1, catalogRequests('single', 1), 'single'),
-      getFastCatalogPage(1, catalogRequests('anime', 1), 'anime'),
-      getFastCatalogPage(1, catalogRequests('genre', 1, 'kinh-di')),
-      getFastCatalogPage(1, catalogRequests('genre', 1, 'co-trang')),
-      kkphimApi.getChieuRap(1, boundedLimit).catch(() => ({ data: { items: [] } })),
-      fetchCatalogGateway(`/top10?limit=${Math.min(boundedLimit, 30)}`).catch(() => []),
-    ]);
+    const [latest, series, single, anime, horror, historical, theatrical, top10] =
+      await Promise.all([
+        getFastCatalogPage(1, catalogRequests('latest', 1)),
+        getFastCatalogPage(1, catalogRequests('series', 1), 'series'),
+        getFastCatalogPage(1, catalogRequests('single', 1), 'single'),
+        getFastCatalogPage(1, catalogRequests('anime', 1), 'anime'),
+        getFastCatalogPage(1, catalogRequests('genre', 1, 'kinh-di')),
+        getFastCatalogPage(1, catalogRequests('genre', 1, 'co-trang')),
+        kkphimApi.getChieuRap(1, boundedLimit).catch(() => ({ data: { items: [] } })),
+        fetchCatalogGateway(`/top10?limit=${Math.min(boundedLimit, 30)}`).catch(() => []),
+      ]);
     const items = (payload: any) => payload?.data?.items || payload?.items || [];
     return {
       status: true,
@@ -1440,8 +1441,9 @@ api.interceptors.response.use(
     // signing in, exchanging a Firebase token, or recovering a session.  A
     // global redirect here races the login UI and can send an already signed-in
     // user back to /login. Let the calling form surface that error instead.
-    const isAuthFlowRequest =
-      /^\/auth\/(?:login|register|firebase|refresh|2fa\/login-verify)/.test(requestPath);
+    const isAuthFlowRequest = /^\/auth\/(?:login|register|firebase|refresh|2fa\/login-verify)/.test(
+      requestPath,
+    );
 
     if (err.response?.status === 401 && !original._retry && !isAuthFlowRequest) {
       original._retry = true;
@@ -1661,6 +1663,16 @@ export const viewApi = {
       provider?: string;
     },
   ) => api.post(`/movies/${encodeURIComponent(slug)}/view`, data),
+};
+
+export const publishedMovieApi = {
+  getLatest: (type: 'series' | 'single', limit = 16) =>
+    api
+      .get<any[]>(
+        `/movies/published?type=${encodeURIComponent(type)}&limit=${Math.max(1, Math.min(limit, 50))}`,
+      )
+      .then((res) => res.data)
+      .catch(() => [] as any[]),
 };
 
 // ── Ratings API ────────────────────────────────────────────

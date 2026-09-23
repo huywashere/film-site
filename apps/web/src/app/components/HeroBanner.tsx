@@ -1220,7 +1220,6 @@ async function loadFreshTmdbPlaylist(): Promise<HeroFilm[]> {
 
 export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
   const [current, setCurrent] = useState(0);
-  const [showDesktopFanCards, setShowDesktopFanCards] = useState(false);
   const [autoRotateEnabled, setAutoRotateEnabled] = useState(false);
   const [pageVisible, setPageVisible] = useState(true);
   const attemptedTitleLogos = useRef(new Set<string>());
@@ -1265,14 +1264,6 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
   const { user } = useAuthStore();
   const { toast } = useToast();
   const { t } = useTranslation();
-
-  useEffect(() => {
-    const query = window.matchMedia("(min-width: 1280px)");
-    const update = () => setShowDesktopFanCards(query.matches);
-    update();
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
 
   useEffect(() => {
     const enable = () => setAutoRotateEnabled(true);
@@ -2004,8 +1995,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
           ref={fanCardsRef}
           className="relative w-full h-full pointer-events-auto"
         >
-          {showDesktopFanCards &&
-            fanCards.map((cardEntry, index) => {
+          {fanCards.map((cardEntry, index) => {
               const cardFilm = cardEntry.film;
               const fanConfigs = [
                 {
@@ -2355,8 +2345,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
           </div>
         </div>
 
-        {showDesktopFanCards && (
-          <div className="hidden xl:flex items-center gap-2 overflow-x-auto p-1 scrollbar-none [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none]">
+        <div className="hidden xl:flex items-center gap-2 overflow-x-auto p-1 scrollbar-none [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none]">
             {visibleThumbnails.map(({ item, index: i }) => {
               const cardImg =
                 item.thumb_url ||
@@ -2402,8 +2391,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                 </div>
               );
             })}
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Official Trailer Modal */}

@@ -91,10 +91,29 @@ export class MoviesService {
 
   async getPublished(limit = 24, type?: string) {
     const safeLimit = Math.min(Math.max(limit, 1), 100);
+    const typeFilter =
+      type === 'series'
+        ? {
+            OR: [
+              { type: { in: ['series', 'tvshows'] } },
+              { type: 'hoathinh', totalEpisodes: { gt: 1 } },
+            ],
+          }
+        : type === 'single'
+          ? {
+              OR: [
+                { type: 'single' },
+                {
+                  type: 'hoathinh',
+                  OR: [{ totalEpisodes: null }, { totalEpisodes: { lte: 1 } }],
+                },
+              ],
+            }
+          : {};
     const movies = await this.prisma.movie.findMany({
       where: {
         isHidden: false,
-        ...(type ? { type } : {}),
+        ...typeFilter,
         playbackSources: { some: { streamUrl: { not: null }, healthStatus: { not: 'down' } } },
         sources: { hasSome: ['manual', 'self-upload'] },
       },

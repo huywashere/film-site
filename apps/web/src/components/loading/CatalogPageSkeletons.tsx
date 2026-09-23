@@ -238,18 +238,9 @@ export function TopicsIndexSkeleton() {
         'relative min-h-[100dvh] bg-[#0a0b10] pb-24 pt-16 text-white sm:pb-28 sm:pt-20',
       )}
     >
-      <div className="relative z-10 mx-auto w-full max-w-[1720px] space-y-8 px-3.5 sm:space-y-10 sm:px-6 md:pl-20 md:pr-6 lg:pl-24 lg:pr-10 xl:pl-28 xl:pr-12">
-        <div className="flex animate-pulse flex-col justify-between gap-1.5 border-b border-white/[0.08] pb-3 sm:flex-row sm:items-end sm:gap-2 sm:pb-4">
-          <SkeletonBlock className="h-7 w-24 rounded-lg sm:h-8 sm:w-28" />
-          <SkeletonBlock className="h-4 w-64 max-w-full rounded sm:w-72" />
-        </div>
-
+      <div className="relative z-10 mx-auto w-full max-w-[1720px] space-y-4 px-3.5 sm:px-6 md:pl-20 md:pr-6 lg:pl-24 lg:pr-10 xl:pl-28 xl:pr-12">
         <section className="space-y-4" aria-hidden="true">
-          <div className="flex animate-pulse items-center gap-2.5">
-            <SkeletonBlock className="h-5 w-1 rounded-full bg-red-600/60" />
-            <SkeletonBlock className="h-6 w-20 rounded-md" />
-            <SkeletonBlock className="h-6 w-20 rounded-full border border-white/[0.08]" />
-          </div>
+          <SkeletonBlock className="h-7 w-24 animate-pulse rounded-lg sm:h-8 sm:w-28" />
 
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
             {Array.from({ length: 10 }).map((_, index) => (
@@ -257,10 +248,8 @@ export function TopicsIndexSkeleton() {
                 key={index}
                 className="relative aspect-[4/3] min-h-[170px] animate-pulse overflow-hidden rounded-xl border border-white/[0.10] bg-[#0e1017] sm:aspect-[16/10] sm:min-h-[210px] sm:rounded-2xl"
               >
-                <div className="absolute inset-x-0 bottom-0 space-y-2 p-3 sm:p-[18px]">
-                  <SkeletonBlock className="h-2.5 w-2/3 rounded" />
+                <div className="absolute inset-x-0 bottom-0 p-3 sm:p-[18px]">
                   <SkeletonBlock className="h-4 w-1/2 rounded sm:h-5" />
-                  <SkeletonBlock className="h-3 w-4/5 rounded" />
                 </div>
               </div>
             ))}

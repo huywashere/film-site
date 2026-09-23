@@ -5,13 +5,11 @@ import { localImageProxyUrl } from "@/lib/image-cdn";
 
 export const revalidate = 60;
 
-function pickRandomHeroFilms() {
-  const pool = [...CURATED_HERO_FRANCHISE_POOL];
-  for (let index = pool.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [pool[index], pool[swapIndex]] = [pool[swapIndex], pool[index]];
-  }
-  return pool.slice(0, 6);
+function getDefaultHeroFilms() {
+  // Keep the server paint identical across hard reloads. Browsers retain the
+  // previous document while the next response is loading, so a randomized
+  // playlist made the old banner visibly flash before the new page appeared.
+  return CURATED_HERO_FRANCHISE_POOL.slice(0, 6);
 }
 
 async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration | null> {
@@ -43,7 +41,7 @@ export default async function HomePage() {
     .slice(0, 6);
   const initialHeroFilms = pinnedHeroFilms.length
     ? pinnedHeroFilms
-    : pickRandomHeroFilms();
+    : getDefaultHeroFilms();
   const initialHero = initialHeroFilms[0];
   const initialDesktopBackdrop = initialHero?.heroBackdrop
     ? localImageProxyUrl(initialHero.heroBackdrop, { strict: true })

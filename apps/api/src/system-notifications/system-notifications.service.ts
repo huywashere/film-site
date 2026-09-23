@@ -6,40 +6,16 @@ import {
   UpdateSystemNotificationDto,
 } from './system-notifications.dto';
 
-const PUBLIC_CACHE_KEY = 'system-notifications:public';
+const PUBLIC_CACHE_KEY = 'system-notifications:public:v2';
+
+const WELCOME_NOTIFICATION_TITLE = 'Chào mừng bạn đến với FlexPhim';
 
 const DEFAULT_SEEDS = [
   {
-    title: 'Chào mừng bạn đến với FlexPhim',
-    message:
-      'Xem phim chuẩn 4K siêu nét, tự động lọc sạch quảng cáo nhà cái từ gốc M3U8.',
+    title: WELCOME_NOTIFICATION_TITLE,
+    message: 'Xem phim chuẩn 4K siêu nét, tự động lọc sạch quảng cáo nhà cái từ gốc M3U8.',
     tag: 'Hệ thống',
     priority: 10,
-    isActive: true,
-  },
-  {
-    title: 'Chế độ Rạp Phim Mở Rộng',
-    message:
-      "Tính năng mở rộng khung hình cực đại (bấm nút 'Rạp phim' hoặc phím tắt 'T').",
-    tag: 'Tính năng',
-    priority: 8,
-    isActive: true,
-  },
-  {
-    title: 'Phòng Xem Chung (Watch Party)',
-    message:
-      'Tạo phòng xem cùng bạn bè, đồng bộ tua phim và trò chuyện trực tiếp mượt mà.',
-    tag: 'Watch Party',
-    link: '/watch-party',
-    priority: 6,
-    isActive: true,
-  },
-  {
-    title: 'Bộ Lọc Luồng Tự Động',
-    message:
-      'Hệ thống tự động định tuyến máy chủ m3u8 tối ưu nhất cho từng tập phim.',
-    tag: 'Hệ thống',
-    priority: 4,
     isActive: true,
   },
 ];
@@ -64,9 +40,10 @@ export class SystemNotificationsService {
       return cached;
     }
 
-    const count = await this.prisma.systemNotification.count();
-    if (count === 0) {
-      // Auto-seed default notifications on first run
+    const welcomeCount = await this.prisma.systemNotification.count({
+      where: { title: WELCOME_NOTIFICATION_TITLE },
+    });
+    if (welcomeCount === 0) {
       await this.prisma.systemNotification.createMany({
         data: DEFAULT_SEEDS,
         skipDuplicates: true,
@@ -77,6 +54,7 @@ export class SystemNotificationsService {
     const items = await this.prisma.systemNotification.findMany({
       where: {
         isActive: true,
+        title: WELCOME_NOTIFICATION_TITLE,
         OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
       },
       orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
@@ -90,12 +68,7 @@ export class SystemNotificationsService {
   /**
    * Admin: Get all notifications with pagination and search
    */
-  async getAllAdmin(query: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    tag?: string;
-  }) {
+  async getAllAdmin(query: { page?: number; limit?: number; search?: string; tag?: string }) {
     const page = Math.max(1, Number(query.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(query.limit) || 20));
     const skip = (page - 1) * limit;

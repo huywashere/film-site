@@ -104,17 +104,16 @@ test('browse quick filters do not duplicate Marvel and DC universe entries', () 
   assert.doesNotMatch(quickTypes, /Marvel Studios|DC Universe/);
 });
 
-test('topic pages keep quick navigation visible and omit the Top 10 feed', () => {
+test('topic pages keep quick navigation visible and use title-only topic cards', () => {
   const genres = readFileSync('src/app/genres/page.tsx', 'utf8');
   const sidebar = readFileSync('src/components/layout/Sidebar.tsx', 'utf8');
   const mobileNav = readFileSync('src/components/layout/MobileBottomNav.tsx', 'utf8');
 
   assert.doesNotMatch(genres, /Top10RankedRow|ai-top10-recommendations/);
-  assert.match(genres, /Chọn nhanh thế giới phim bạn muốn khám phá/);
-  assert.match(
-    sidebar,
-    /const isUniversePage = pathname\.startsWith\(["']\/universe\/["']\)/,
-  );
+  assert.match(genres, />\s*Chủ Đề\s*<\/h1>/);
+  assert.doesNotMatch(genres, /Chọn nhanh thế giới phim bạn muốn khám phá/);
+  assert.doesNotMatch(genres, /hub\.(?:tagline|highlight|countBadge)/);
+  assert.match(sidebar, /const isUniversePage = pathname\.startsWith\(["']\/universe\/["']\)/);
   assert.match(sidebar, /data-hero-banner=\"true\"/);
   assert.match(sidebar, /const isVisible = !isHomePage \|\| scrolledPastHomeHero/);
   assert.match(
@@ -170,10 +169,7 @@ test('themed homepage collections collapse to standard card rails on mobile', ()
     homepage,
     /data-mobile-simple-section="historical"[\s\S]*className="md:hidden"[\s\S]*title=\{t\("sections\.historical", "Phim Cổ Trang"\)\}/,
   );
-  assert.match(
-    homepage,
-    /className="hidden md:block"[\s\S]*cardVariant="poster-pill"/,
-  );
+  assert.match(homepage, /className="hidden md:block"[\s\S]*cardVariant="poster-pill"/);
   assert.match(
     homepage,
     /data-mobile-simple-section="weekly"[\s\S]*className="md:hidden"[\s\S]*<FilmSection[\s\S]*title="Phim Bộ & Phim Lẻ Tuần Này"/,

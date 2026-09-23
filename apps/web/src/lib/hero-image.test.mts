@@ -171,7 +171,7 @@ test('every topic banner is backed by TMDB artwork and Asian hubs preserve the f
   assert.doesNotMatch(topics, /image: "\/images\//);
   assert.equal((genres.match(/showFullBanner: true/g) || []).length, 2);
   assert.match(genres, /object-contain object-top/);
-  assert.match(genres, /hub\.showFullBanner \? 'h-\[64%\]' : 'h-\[80%\]'/);
+  assert.match(genres, /hub\.showFullBanner \? 'h-\[45%\]' : 'h-\[55%\]'/);
 });
 
 test('hero banner waits for decoded title logos before revealing a slide', () => {
@@ -179,7 +179,10 @@ test('hero banner waits for decoded title logos before revealing a slide', () =>
   const cache = readFileSync('src/lib/movie-logo-cache.ts', 'utf8');
   const preloader = readFileSync('src/lib/image-preload-cache.ts', 'utf8');
 
-  assert.match(source, /await Promise\.all\(initialLogoUrls\.map\(\(url\) => preloadMovieLogo\(url\)\)\)/);
+  assert.match(
+    source,
+    /await Promise\.all\(initialLogoUrls\.map\(\(url\) => preloadMovieLogo\(url\)\)\)/,
+  );
   assert.match(source, /const \[displayLogo\] = useState/);
   assert.match(source, /logoLookupPending \|\| hasLogoCandidate/);
   assert.match(source, /const activateSlide = useCallback/);
@@ -212,7 +215,10 @@ test('shared artwork never hides a successfully decoded native image', () => {
   assert.match(source, /image\?\.complete && image\.naturalWidth > 0/);
   assert.match(source, /backdropW1280/);
   assert.match(source, /const shouldAttemptArtwork = enabled && \(priority \|\| nearViewport\)/);
-  assert.match(source, /const src = shouldAttemptArtwork \? candidates\[candidateIndex\] : undefined/);
+  assert.match(
+    source,
+    /const src = shouldAttemptArtwork \? candidates\[candidateIndex\] : undefined/,
+  );
   assert.doesNotMatch(source, /loaded \? 'opacity-100'/);
 });
 
@@ -283,15 +289,15 @@ test('hero uses poster art on portrait phones and tablets, backdrop art elsewher
   assert.match(source, /\(max-width: 1023px\) and \(orientation: portrait\)/);
   assert.match(source, /srcSet=\{portraitSrcSet \|\| portraitSrc\}/);
   assert.match(source, /srcSet=\{landscapeSrcSet\}/);
-  assert.match(source, /object-\[center_18%\][\s\S]*md:object-\[center_24%\][\s\S]*lg:object-center/);
+  assert.match(
+    source,
+    /object-\[center_18%\][\s\S]*md:object-\[center_24%\][\s\S]*lg:object-center/,
+  );
   assert.match(
     source,
     /preferredHeroBackdrops = new Map<[\s\S]*portrait\?: string; landscape\?: string/,
   );
-  assert.match(
-    source,
-    /\[usesPortraitArtwork \? "portrait" : "landscape"\]: readyBackdrop/,
-  );
+  assert.match(source, /\[usesPortraitArtwork \? "portrait" : "landscape"\]: readyBackdrop/);
   assert.match(source, /function addHeroEdgeFallback\([\s\S]*https:\/\/wsrv\.nl\//);
   assert.match(source, /wsrvImageUrl\(directTmdb, "poster"\)/);
   assert.match(source, /function preferSameOriginHeroCandidates/);
@@ -310,6 +316,17 @@ test('hero keeps decoded artwork visible while a responsive source retries', () 
   assert.match(source, /setLastGoodSource\(loadedSource\)/);
   assert.match(source, /}, 10_000\)/);
   assert.match(source, /document\.visibilityState !== "visible"/);
+});
+
+test('homepage keeps the server hero stable and renders desktop controls in the first HTML', () => {
+  const page = readFileSync('src/app/page.tsx', 'utf8');
+  const hero = readFileSync('src/app/components/HeroBanner.tsx', 'utf8');
+
+  assert.match(page, /function getDefaultHeroFilms\(\)/);
+  assert.match(page, /CURATED_HERO_FRANCHISE_POOL\.slice\(0, 6\)/);
+  assert.doesNotMatch(page, /Math\.random\(\)/);
+  assert.doesNotMatch(hero, /showDesktopFanCards/);
+  assert.doesNotMatch(hero, /matchMedia\("\(min-width: 1280px\)"\)/);
 });
 
 test('shared artwork consumes backend TMDB metadata and emits responsive image candidates', () => {
@@ -351,4 +368,3 @@ test('video player keyboard seek step strictly locks to 10 seconds without doubl
   assert.match(watchPage, /triggerSeekRipple/);
   assert.match(watchPage, /e\.defaultPrevented\s*\|\|\s*\(e as any\)\._artHandled/);
 });
-

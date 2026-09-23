@@ -4,7 +4,6 @@ import { useMemo, useCallback, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Tv, Flame, Sparkles, Rocket, Shield, Languages } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { cardFont } from '@/lib/fonts';
 import { cn } from '@/lib/utils';
@@ -14,130 +13,73 @@ import { movieApi } from '@/lib/api';
 interface HubCard {
   slug: string;
   title: string;
-  tagline: string;
-  category: string;
-  highlight: string;
   href: string;
   image: string;
   showFullBanner?: boolean;
-  countBadge?: string;
-  icon: typeof Tv;
 }
 
 const HUBS: HubCard[] = [
   {
     slug: 'phim-han-quoc',
     title: 'Phim Hàn Quốc',
-    tagline: 'K-Drama • Tình Cảm • Hồi Hộp',
-    category: 'Hàn Quốc',
-    highlight: 'Tình cảm, gia đình, hình sự và các series Hàn nổi bật.',
     href: '/country/han-quoc',
     image: 'https://image.tmdb.org/t/p/w1280/wcP3FsRLog4GNEs9PFrDKKQdcof.jpg',
     showFullBanner: true,
-    countBadge: 'K-Drama tuyển chọn',
-    icon: Tv,
   },
   {
     slug: 'phim-trung-quoc',
     title: 'Phim Trung Quốc',
-    tagline: 'Cổ Trang • Tiên Hiệp • Ngôn Tình',
-    category: 'Trung Quốc',
-    highlight: 'Cổ trang, tiên hiệp, ngôn tình và phim hiện đại Trung Quốc.',
     href: '/country/trung-quoc',
     image: 'https://image.tmdb.org/t/p/w1280/5fhS6Bh4VnF0SOZyZnhNpc0XHDb.jpg',
     showFullBanner: true,
-    countBadge: 'Cổ trang & hiện đại',
-    icon: Flame,
   },
   {
     slug: 'anime-hoat-hinh',
     title: 'Anime & Hoạt Hình',
-    tagline: 'Shounen • Ghibli • 3D Chiếu Rạp',
-    category: 'Anime',
-    highlight: 'Anime dài tập, điện ảnh Nhật Bản và hoạt hình nổi bật.',
     href: '/films/anime',
     image: 'https://image.tmdb.org/t/p/w1280/3GQKYh6Trm8pxd2AypovoYQf4Ay.jpg',
-    countBadge: 'Anime & điện ảnh',
-    icon: Sparkles,
   },
   {
     slug: 'doraemon',
     title: 'Doraemon Movie',
-    tagline: 'Bảo Bối Thần Kỳ • Movie Chiếu Rạp • Stand by Me',
-    category: 'Doraemon',
-    highlight:
-      'Trọn bộ 48 movie chiếu rạp, Stand by Me 3D và những chuyến phiêu lưu kỳ thú của Doraemon và Nobita.',
     href: '/universe/doraemon',
     image: 'https://image.tmdb.org/t/p/w1280/Z3mSxuPRNiFYxf1LBoGz3YrJzC.jpg',
-    countBadge: '48 Movie',
-    icon: Sparkles,
   },
   {
     slug: 'conan',
     title: 'Thám Tử Lừng Danh Conan',
-    tagline: 'Thám Tử Nhí • 28 Movie Chiếu Rạp • Án Mạng Bí Ẩn',
-    category: 'Detective Conan',
-    highlight:
-      'Trọn bộ 28 Movie chiếu rạp bom tấn, TV series phá án ly kỳ và cuộc đối đầu Kaito Kid, Tổ Chức Áo Đen.',
     href: '/universe/conan',
     image: 'https://image.tmdb.org/t/p/w1280/4TMkOnI6rCYxqD059aeeQSBv5mc.jpg',
-    countBadge: '34+ Movie & Series',
-    icon: Shield,
   },
   {
     slug: 'khoa-hoc-vien-tuong',
     title: 'Khoa Học Viễn Tưởng',
-    tagline: 'Vũ Trụ • Đa Chiều • Tương Lai',
-    category: 'Viễn Tưởng',
-    highlight: 'Du hành vũ trụ, đa chiều, AI và những thế giới tương lai.',
     href: '/genre/vien-tuong',
     image: 'https://image.tmdb.org/t/p/w1280/eZ239CUp1d6OryZEBPnO2n87gMG.jpg',
-    countBadge: 'Không gian & tương lai',
-    icon: Rocket,
   },
   {
     slug: 'chien-tranh',
     title: 'Chiến Tranh & Lịch Sử',
-    tagline: 'Khốc Liệt • Hùng Tráng • Quả Cảm',
-    category: 'Chiến Tranh',
-    highlight: 'Chiến trường, tiểu sử và những dấu mốc lịch sử trên màn ảnh.',
     href: '/genre/chien-tranh',
     image: 'https://image.tmdb.org/t/p/w1280/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg',
-    countBadge: 'Chiến trường & lịch sử',
-    icon: Shield,
   },
   {
     slug: 'thuyet-minh-song-ngu-ai',
     title: 'Thuyết Minh Song Ngữ AI',
-    tagline: 'Giọng Đọc AI • Song Ngữ • Chuẩn Điện Ảnh',
-    category: 'Thuyết Minh AI',
-    highlight: 'Kho phim có lựa chọn giọng đọc và phụ đề song ngữ.',
     href: '/films/thuyet-minh-ai',
     image: 'https://image.tmdb.org/t/p/w1280/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg',
-    countBadge: 'Giọng đọc & phụ đề',
-    icon: Languages,
   },
   {
     slug: 'marvel',
     title: 'Vũ Trụ Marvel',
-    tagline: 'MCU • Multiverse • Avengers',
-    category: 'Marvel Studios',
-    highlight: 'Kỷ nguyên siêu anh hùng, biệt đội Avengers, Spider-Man và đa vũ trụ.',
     href: '/universe/marvel',
     image: 'https://image.tmdb.org/t/p/w1280/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg',
-    countBadge: '175+ Bom Tấn',
-    icon: Flame,
   },
   {
     slug: 'dc',
     title: 'Vũ Trụ DC',
-    tagline: 'Batman • Superman • Justice League',
-    category: 'DC Universe',
-    highlight: 'Hiệp sĩ bóng đêm Batman, Superman, Justice League và thế giới siêu anh hùng DC.',
     href: '/universe/dc',
     image: 'https://image.tmdb.org/t/p/w1280/dqK9Hag1054tghRQSqLSfrkvQnA.jpg',
-    countBadge: '180+ Kiệt Tác',
-    icon: Shield,
   },
 ];
 
@@ -307,34 +249,10 @@ export default function GenresPage() {
       )}
     >
       <div className="relative z-10 mx-auto w-full max-w-[1720px] px-3.5 sm:px-6 md:pl-20 md:pr-6 lg:pl-24 lg:pr-10 xl:pl-28 xl:pr-12 space-y-8 sm:space-y-10">
-        {/* Header Title */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-3 sm:pb-4 border-b border-white/[0.08] gap-1.5 sm:gap-2">
-          <div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
-              Chủ Đề
-            </h1>
-          </div>
-          <p className="text-[11px] sm:text-xs text-neutral-400 font-medium">
-            Chọn nhanh thế giới phim bạn muốn khám phá
-          </p>
-        </div>
-
-        {/* ── Chủ Đề Chuẩn Dark Cinematic ── */}
         <section aria-label="Danh sách chủ đề điện ảnh" className="space-y-4">
-          {/* Section Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="h-5 w-1 rounded-full bg-red-600" />
-              <h2
-                className={`${cardFont.className} text-lg md:text-xl font-extrabold text-white tracking-[-0.015em] flex items-center gap-2`}
-              >
-                Chủ Đề
-              </h2>
-              <span className="text-[10px] sm:text-[11px] font-semibold text-neutral-400 bg-white/[0.04] border border-white/[0.08] px-2.5 py-0.5 rounded-full">
-                {HUBS.length} Chủ Đề
-              </span>
-            </div>
-          </div>
+          <h1 className="text-xl font-black tracking-tight text-white sm:text-2xl lg:text-3xl">
+            Chủ Đề
+          </h1>
 
           {/* Image-first cinematic grid: 2 columns on mobile, 2 on tablet, 4 on desktop */}
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
@@ -369,28 +287,18 @@ export default function GenresPage() {
                           : 'bg-black/35 group-hover:bg-black/25',
                       )}
                     />
-                    {/* Deep bottom-to-top gradient ensuring text is 100% legible */}
                     <div
                       className={cn(
                         'absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#07080d] via-[#07080d]/95 via-50% to-transparent',
-                        hub.showFullBanner ? 'h-[64%]' : 'h-[80%]',
+                        hub.showFullBanner ? 'h-[45%]' : 'h-[55%]',
                       )}
                     />
                   </div>
 
-                  {/* Bottom Info Lockup */}
                   <div className="absolute inset-x-0 bottom-0 z-10 p-3 sm:p-4 sm:p-[18px]">
-                    <p className="mb-1 sm:mb-1.5 line-clamp-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.08em] sm:tracking-[0.12em] text-violet-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
-                      {hub.tagline}
-                    </p>
-
                     <h3 className="line-clamp-1 text-xs sm:text-base lg:text-[17px] font-black leading-tight tracking-[-0.02em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
                       {hub.title}
                     </h3>
-
-                    <p className="mt-0.5 sm:mt-1 line-clamp-2 max-w-full text-[10px] sm:text-[11px] font-medium leading-[1.35] sm:leading-[1.4] text-neutral-200 drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
-                      {hub.highlight}
-                    </p>
                   </div>
                 </Link>
               );

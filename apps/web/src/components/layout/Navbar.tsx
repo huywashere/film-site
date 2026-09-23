@@ -32,13 +32,15 @@ import { useAuthModalStore } from "@/store/authModalStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useTranslation } from "@/store/langStore";
 import { useThemeStore } from "@/store/themeStore";
-import { movieApi, systemNotificationApi } from "@/lib/api";
+import { movieApi, publishedMovieApi, systemNotificationApi } from "@/lib/api";
 import { resolveImageUrl } from "@/components/film/FilmCard";
 import { cn } from "@/lib/utils";
 import { cardFont } from "@/lib/fonts";
 import {
   NOTIFICATION_READ_STORAGE_KEY,
+  isNotificationRead,
   persistNotificationReadIds,
+  persistNotificationsReadThrough,
   readNotificationReadState,
 } from "@/lib/notification-read-state";
 import {
@@ -52,7 +54,9 @@ import { InteractiveAdminMascot } from "@/components/mascot/InteractiveAdminMasc
 
 const MobileSidebar = dynamic(
   () => import("./MobileSidebar").then((mod) => mod.MobileSidebar),
-  { ssr: false },
+  {
+    ssr: false,
+  },
 );
 
 // Lazy-load SpotlightSearchModal to avoid server-side issues
@@ -63,6 +67,75 @@ const SpotlightSearchModal = dynamic(
     ),
   { ssr: false },
 );
+
+const WELCOME_NOTIFICATION_ID = "welcome-flexphim-v1";
+const WELCOME_NOTIFICATION_TITLE = "Chào mừng bạn đến với FlexPhim";
+
+type MovieNotificationChannel = "series" | "single";
+
+type NavbarMovieNotification = {
+  id: string;
+  name: string;
+  episode: string;
+  poster?: string;
+  message: string;
+  time: string;
+  slug?: string;
+  publishedAt?: string | null;
+  read: boolean;
+};
+
+function notificationMovieItems(payload: any): any[] {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.data?.items)) return payload.data.items;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+}
+
+function movieNotificationTimestamp(item: any) {
+  const value =
+    item?.modified?.time ||
+    item?.updatedAt ||
+    item?.createdAt ||
+    item?.publishedAt;
+  const timestamp = value ? new Date(value).getTime() : 0;
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+async function loadMovieNotificationFeed(channel: MovieNotificationChannel) {
+  const [sourceResult, uploadedResult] = await Promise.allSettled([
+    channel === "series" ? movieApi.getSeries(1) : movieApi.getSingle(1),
+    publishedMovieApi.getLatest(channel, 16),
+  ]);
+  const sourceItems =
+    sourceResult.status === "fulfilled"
+      ? notificationMovieItems(sourceResult.value.data)
+      : [];
+  const uploadedItems =
+    uploadedResult.status === "fulfilled"
+      ? notificationMovieItems(uploadedResult.value)
+      : [];
+
+  const unique = new Map<string, any>();
+  [...uploadedItems, ...sourceItems].forEach((item) => {
+    const key = String(item?.slug || item?._id || item?.id || "").trim();
+    if (!key) return;
+    const current = unique.get(key);
+    if (
+      !current ||
+      movieNotificationTimestamp(item) > movieNotificationTimestamp(current)
+    ) {
+      unique.set(key, item);
+    }
+  });
+
+  return [...unique.values()]
+    .sort(
+      (a, b) => movieNotificationTimestamp(b) - movieNotificationTimestamp(a),
+    )
+    .slice(0, 12);
+}
 
 const NAV_LINKS = [
   { href: "/films/series", key: "nav.series", label: "Phim Bộ" },
@@ -331,7 +404,8 @@ export function Navbar() {
       if (href === "/") {
         void queryClient.prefetchQuery({
           queryKey: ["home-feed-v1", 24],
-          queryFn: () => movieApi.getHomeFeed(24).then((response) => response.data),
+          queryFn: () =>
+            movieApi.getHomeFeed(24).then((response) => response.data),
           staleTime: 5 * 60 * 1000,
           gcTime: 60 * 60 * 1000,
         });
@@ -350,12 +424,14 @@ export function Navbar() {
       } else if (href === "/films/anime") {
         void queryClient.prefetchQuery({
           queryKey: ["films-type", "anime", 1],
-          queryFn: () => movieApi.getByCountryFast("nhat-ban", 1).then((r) => r.data),
+          queryFn: () =>
+            movieApi.getByCountryFast("nhat-ban", 1).then((r) => r.data),
           staleTime: 15 * 60 * 1000,
         });
         void queryClient.prefetchQuery({
           queryKey: ["anime-japan-page-2"],
-          queryFn: () => movieApi.getByCountryFast("nhat-ban", 2).then((r) => r.data),
+          queryFn: () =>
+            movieApi.getByCountryFast("nhat-ban", 2).then((r) => r.data),
           staleTime: 1000 * 60 * 60,
         });
       } else if (href === "/schedule") {
@@ -374,7 +450,9 @@ export function Navbar() {
     [queryClient, router],
   );
 
-  const [notifTab, setNotifTab] = useState<"system" | "movies">("system");
+  const [notifTab, setNotifTab] = useState<"system" | MovieNotificationChannel>(
+    "system",
+  );
 
   const [systemNotifications, setSystemNotifications] = useState<
     Array<{
@@ -385,63 +463,40 @@ export function Navbar() {
       tag?: string;
       read: boolean;
       link?: string;
+      publishedAt?: string | null;
     }>
   >([
     {
-      id: "sys-1",
-      title: "Chào mừng bạn đến với FlexPhim",
+      id: WELCOME_NOTIFICATION_ID,
+      title: WELCOME_NOTIFICATION_TITLE,
       message:
         "Xem phim chuẩn 4K siêu nét, tự động lọc sạch quảng cáo nhà cái từ gốc M3U8.",
       time: "Hôm nay",
       tag: "Hệ thống",
       read: false,
-    },
-    {
-      id: "sys-2",
-      title: "Chế độ Rạp Phim Mở Rộng",
-      message:
-        "Tính năng mở rộng khung hình cực đại (bấm nút 'Rạp phim' hoặc phím tắt 'T').",
-      time: "Mới",
-      tag: "Tính năng",
-      read: false,
-    },
-    {
-      id: "sys-3",
-      title: "Phòng Xem Chung (Watch Party)",
-      message:
-        "Tạo phòng xem cùng bạn bè, đồng bộ tua phim và trò chuyện trực tiếp mượt mà.",
-      time: "Cộng đồng",
-      tag: "Watch Party",
-      read: false,
-    },
-    {
-      id: "sys-4",
-      title: "Bộ Lọc Luồng Tự Động",
-      message:
-        "Hệ thống tự động định tuyến máy chủ m3u8 tối ưu nhất cho từng tập phim.",
-      time: "Tối ưu",
-      tag: "Hệ thống",
-      read: false,
+      publishedAt: null,
     },
   ]);
 
-  const [movieNotifications, setMovieNotifications] = useState<
-    Array<{
-      id: string | number;
-      name?: string;
-      episode?: string;
-      poster?: string;
-      message: string;
-      time: string;
-      slug?: string;
-      read: boolean;
-    }>
+  const [seriesNotifications, setSeriesNotifications] = useState<
+    NavbarMovieNotification[]
+  >([]);
+  const [singleNotifications, setSingleNotifications] = useState<
+    NavbarMovieNotification[]
   >([]);
 
-  const { data: latestNotificationRes } = useQuery({
-    queryKey: ["navbar-latest-notifications"],
-    queryFn: () => movieApi.getLatest(1).then((r) => r.data),
-    staleTime: 1000 * 60 * 5,
+  const { data: seriesNotificationItems = [] } = useQuery({
+    queryKey: ["navbar-latest-notifications", "series"],
+    queryFn: () => loadMovieNotificationFeed("series"),
+    staleTime: 1000 * 60 * 2,
+    enabled: notificationsOpen,
+    refetchOnWindowFocus: false,
+  });
+
+  const { data: singleNotificationItems = [] } = useQuery({
+    queryKey: ["navbar-latest-notifications", "single"],
+    queryFn: () => loadMovieNotificationFeed("single"),
+    staleTime: 1000 * 60 * 2,
     enabled: notificationsOpen,
     refetchOnWindowFocus: false,
   });
@@ -457,19 +512,38 @@ export function Navbar() {
   useEffect(() => {
     const syncStoredReadState = () => {
       const stored = readNotificationReadState(window.localStorage);
-      const systemIds = new Set(stored.system);
-      const movieIds = new Set(stored.movies);
 
       setSystemNotifications((current) =>
         current.map((notification) => ({
           ...notification,
-          read: systemIds.has(String(notification.id)),
+          read: isNotificationRead(
+            stored,
+            "system",
+            notification.id,
+            notification.publishedAt,
+          ),
         })),
       );
-      setMovieNotifications((current) =>
+      setSeriesNotifications((current) =>
         current.map((notification) => ({
           ...notification,
-          read: movieIds.has(String(notification.id)),
+          read: isNotificationRead(
+            stored,
+            "series",
+            notification.id,
+            notification.publishedAt,
+          ),
+        })),
+      );
+      setSingleNotifications((current) =>
+        current.map((notification) => ({
+          ...notification,
+          read: isNotificationRead(
+            stored,
+            "single",
+            notification.id,
+            notification.publishedAt,
+          ),
         })),
       );
     };
@@ -486,80 +560,107 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
-    const rawItems =
-      latestNotificationRes?.items || latestNotificationRes?.data?.items || [];
-    if (rawItems.length > 0) {
-      const readMovieIds = new Set(
-        readNotificationReadState(window.localStorage).movies,
-      );
-      const liveItems = rawItems.slice(0, 8).map((item: any, idx: number) => {
-        const id = item.slug || `live-${idx}`;
+    const mapItems = (
+      rawItems: any[],
+      channel: MovieNotificationChannel,
+    ): NavbarMovieNotification[] => {
+      const stored = readNotificationReadState(window.localStorage);
+      return rawItems.map((item: any, idx: number) => {
+        const slug = String(item.slug || item._id || item.id || `movie-${idx}`);
+        const episode = item.episode_current || item.quality || "Mới cập nhật";
+        const publishedAt =
+          item?.modified?.time ||
+          item?.updatedAt ||
+          item?.createdAt ||
+          item?.publishedAt ||
+          null;
+        const updateKey = publishedAt || episode;
+        const id = `${channel}:${slug}:${updateKey}`;
         return {
           id,
           name: item.name || "Phim mới cập nhật",
-          episode: item.episode_current || item.quality || "Tập mới",
+          episode,
           poster: item.poster_url || item.thumb_url,
-          message: `Phim "${item.name}" vừa cập nhật (${item.episode_current || item.quality || "Tập mới"})`,
+          message: `Phim "${item.name}" vừa cập nhật (${episode})`,
           time: "Vừa cập nhật",
-          slug: item.slug,
-          read: readMovieIds.has(String(id)),
+          slug,
+          publishedAt,
+          read: isNotificationRead(stored, channel, id, publishedAt),
         };
       });
-      setMovieNotifications(liveItems);
-    }
-  }, [latestNotificationRes]);
+    };
+
+    setSeriesNotifications(mapItems(seriesNotificationItems, "series"));
+    setSingleNotifications(mapItems(singleNotificationItems, "single"));
+  }, [seriesNotificationItems, singleNotificationItems]);
 
   useEffect(() => {
     if (dynamicSystemNotifs && dynamicSystemNotifs.length > 0) {
-      const readSysIds = new Set(
-        readNotificationReadState(window.localStorage).system,
-      );
-      const items = dynamicSystemNotifs.map((item) => {
-        let timeLabel = "Hôm nay";
-        if (item.createdAt) {
-          const diffMs = Date.now() - new Date(item.createdAt).getTime();
-          const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-          if (diffHours < 1) timeLabel = "Vừa xong";
-          else if (diffHours < 24) timeLabel = `${diffHours} giờ trước`;
-          else timeLabel = `${Math.floor(diffHours / 24)} ngày trước`;
-        }
-        return {
-          id: item.id,
-          title: item.title,
-          message: item.message,
-          time: timeLabel,
-          tag: item.tag || "Hệ thống",
-          link: item.link || undefined,
-          read: readSysIds.has(String(item.id)),
-        };
-      });
-      setSystemNotifications(items);
+      const stored = readNotificationReadState(window.localStorage);
+      const items = dynamicSystemNotifs
+        .filter((item) => item.title.trim() === WELCOME_NOTIFICATION_TITLE)
+        .slice(0, 1)
+        .map((item) => {
+          let timeLabel = "Hôm nay";
+          if (item.createdAt) {
+            const diffMs = Date.now() - new Date(item.createdAt).getTime();
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            if (diffHours < 1) timeLabel = "Vừa xong";
+            else if (diffHours < 24) timeLabel = `${diffHours} giờ trước`;
+            else timeLabel = `${Math.floor(diffHours / 24)} ngày trước`;
+          }
+          return {
+            id: WELCOME_NOTIFICATION_ID,
+            title: item.title,
+            message: item.message,
+            time: timeLabel,
+            tag: item.tag || "Hệ thống",
+            link: item.link || undefined,
+            publishedAt: item.createdAt,
+            read: isNotificationRead(
+              stored,
+              "system",
+              WELCOME_NOTIFICATION_ID,
+              item.createdAt,
+            ),
+          };
+        });
+      if (items.length > 0) setSystemNotifications(items);
     }
   }, [dynamicSystemNotifs]);
 
   const { newMovieNotifications, commentNotifications } = useSettingsStore();
 
   const unreadSystem = systemNotifications.filter((n) => !n.read).length;
-  const unreadMovies = movieNotifications.filter((n) => !n.read).length;
-  const unreadCount = unreadSystem + unreadMovies;
+  const unreadSeries = seriesNotifications.filter((n) => !n.read).length;
+  const unreadSingle = singleNotifications.filter((n) => !n.read).length;
+  const unreadMovies = unreadSeries + unreadSingle;
+  const unreadCount = unreadSystem + (newMovieNotifications ? unreadMovies : 0);
 
   const markAllRead = () => {
     setSystemNotifications((current) =>
       current.map((notification) => ({ ...notification, read: true })),
     );
-    setMovieNotifications((current) =>
+    setSeriesNotifications((current) =>
       current.map((notification) => ({ ...notification, read: true })),
     );
-    persistNotificationReadIds(
-      window.localStorage,
-      "system",
-      systemNotifications.map((notification) => notification.id),
+    setSingleNotifications((current) =>
+      current.map((notification) => ({ ...notification, read: true })),
     );
-    persistNotificationReadIds(
-      window.localStorage,
-      "movies",
-      movieNotifications.map((notification) => notification.id),
-    );
+    const now = Date.now();
+    const channels = [
+      ["system", systemNotifications],
+      ["series", seriesNotifications],
+      ["single", singleNotifications],
+    ] as const;
+    channels.forEach(([channel, notifications]) => {
+      persistNotificationReadIds(
+        window.localStorage,
+        channel,
+        notifications.map((notification) => notification.id),
+      );
+      persistNotificationsReadThrough(window.localStorage, channel, now);
+    });
   };
 
   const markSystemAsRead = (id: string, link?: string) => {
@@ -578,13 +679,19 @@ export function Navbar() {
     }
   };
 
-  const markMovieAsRead = (id: string | number, slug?: string) => {
-    setMovieNotifications((current) =>
+  const markMovieAsRead = (
+    channel: MovieNotificationChannel,
+    id: string,
+    slug?: string,
+  ) => {
+    const setNotifications =
+      channel === "series" ? setSeriesNotifications : setSingleNotifications;
+    setNotifications((current) =>
       current.map((notification) =>
         notification.id === id ? { ...notification, read: true } : notification,
       ),
     );
-    persistNotificationReadIds(window.localStorage, "movies", [id]);
+    persistNotificationReadIds(window.localStorage, channel, [id]);
     if (slug) {
       router.push(`/film/${slug}`);
     }
@@ -850,8 +957,7 @@ export function Navbar() {
                     )}
                   </div>
 
-                  {/* Clean Monochrome Segmented Tabs */}
-                  <div className="grid grid-cols-2 p-1 bg-black/50 rounded-xl border border-white/[0.08] gap-1 mb-3.5">
+                  <div className="grid grid-cols-3 gap-1 rounded-xl border border-white/[0.08] bg-black/50 p-1 mb-3.5">
                     <button
                       type="button"
                       onClick={() => setNotifTab("system")}
@@ -868,30 +974,38 @@ export function Navbar() {
                       )}
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => setNotifTab("movies")}
-                      className={cn(
-                        "flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none",
-                        notifTab === "movies"
-                          ? "bg-neutral-800 text-white font-bold shadow-sm"
-                          : "text-neutral-400 hover:text-white",
-                      )}
-                    >
-                      <span>Phim mới</span>
-                      {unreadMovies > 0 && (
-                        <span
-                          className={cn(
-                            "text-[10px] px-1.5 py-0.2 rounded-full font-bold",
-                            notifTab === "movies"
-                              ? "bg-neutral-700 text-white"
-                              : "bg-neutral-800 text-neutral-400",
-                          )}
-                        >
-                          {unreadMovies}
-                        </span>
-                      )}
-                    </button>
+                    {(
+                      [
+                        ["series", "Phim Bộ", unreadSeries],
+                        ["single", "Phim Lẻ", unreadSingle],
+                      ] as const
+                    ).map(([channel, label, unread]) => (
+                      <button
+                        key={channel}
+                        type="button"
+                        onClick={() => setNotifTab(channel)}
+                        className={cn(
+                          "flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none",
+                          notifTab === channel
+                            ? "bg-neutral-800 text-white font-bold shadow-sm"
+                            : "text-neutral-400 hover:text-white",
+                        )}
+                      >
+                        <span>{label}</span>
+                        {unread > 0 && (
+                          <span
+                            className={cn(
+                              "rounded-full px-1.5 py-0.2 text-[10px] font-bold",
+                              notifTab === channel
+                                ? "bg-neutral-700 text-white"
+                                : "bg-neutral-800 text-neutral-400",
+                            )}
+                          >
+                            {unread}
+                          </span>
+                        )}
+                      </button>
+                    ))}
                   </div>
 
                   {/* Notification List Body */}
@@ -940,17 +1054,25 @@ export function Navbar() {
                           </div>
                         ))
                       )
-                    ) : movieNotifications.length === 0 ? (
+                    ) : (notifTab === "series"
+                        ? seriesNotifications
+                        : singleNotifications
+                      ).length === 0 ? (
                       <div className="p-8 text-center text-xs text-neutral-500">
                         {lang === "en"
                           ? "No new movie updates"
-                          : "Chưa có thông báo phim mới"}
+                          : `Chưa có ${notifTab === "series" ? "phim bộ" : "phim lẻ"} mới cập nhật`}
                       </div>
                     ) : (
-                      movieNotifications.map((n) => (
+                      (notifTab === "series"
+                        ? seriesNotifications
+                        : singleNotifications
+                      ).map((n) => (
                         <div
                           key={n.id}
-                          onClick={() => markMovieAsRead(n.id, n.slug)}
+                          onClick={() =>
+                            markMovieAsRead(notifTab, n.id, n.slug)
+                          }
                           className={cn(
                             "p-2.5 rounded-xl cursor-pointer transition-all flex items-center gap-3 border",
                             n.read
@@ -1000,7 +1122,10 @@ export function Navbar() {
                       {user.avatarUrl === "/avatars/admin-mascot-riso.png" ||
                       user.email?.toLowerCase() === "huywashere@gmail.com" ? (
                         <div className="w-8 h-8 rounded-full overflow-hidden border border-white/20 group-hover:border-violet-400 transition-all shadow-md bg-[#faf9f7] shrink-0">
-                          <InteractiveAdminMascot size={32} className="w-full h-full" />
+                          <InteractiveAdminMascot
+                            size={32}
+                            className="w-full h-full"
+                          />
                         </div>
                       ) : user.avatarUrl ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
@@ -1040,7 +1165,10 @@ export function Navbar() {
                         {user.avatarUrl === "/avatars/admin-mascot-riso.png" ||
                         user.email?.toLowerCase() === "huywashere@gmail.com" ? (
                           <div className="h-8 w-8 rounded-full overflow-hidden border border-white/20 shadow-md shrink-0 bg-[#faf9f7]">
-                            <InteractiveAdminMascot size={32} className="w-full h-full" />
+                            <InteractiveAdminMascot
+                              size={32}
+                              className="w-full h-full"
+                            />
                           </div>
                         ) : (
                           <img
@@ -1202,7 +1330,6 @@ export function Navbar() {
                 </button>
               )}
             </div>
-
           </div>
         </div>
       </header>
