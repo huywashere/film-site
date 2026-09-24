@@ -55,6 +55,23 @@ export function ClientBackgroundServices() {
         return;
       }
 
+      const isCatalogDestination =
+        destination.pathname === "/films" ||
+        destination.pathname.startsWith("/films/") ||
+        destination.pathname.startsWith("/genre/") ||
+        destination.pathname.startsWith("/country/");
+
+      // These routes depend on several upstream catalogues. A Next RSC
+      // transition can remain pending while one provider is cold, leaving the
+      // old tab visible and unresponsive. Their server-rendered document is
+      // already data-seeded, so navigate to it immediately and deterministically.
+      if (isCatalogDestination) {
+        event.stopImmediatePropagation();
+        clearFallback();
+        window.location.assign(destination.href);
+        return;
+      }
+
       // Do not interfere with Next's normal Link handling. Recover only when
       // its RSC request completed/aborted without committing the destination.
       clearFallback();

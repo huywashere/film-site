@@ -1,27 +1,113 @@
 import "server-only";
 
-import { headers } from "next/headers";
+import { normalizeNguonCPayload } from "@/lib/nguonc-normalizer";
+import { normalizeVicdnPayload } from "@/lib/vicdn-normalizer";
 
-const CATALOG_PATHS: Record<string, string> = {
-  latest: "/danh-sach/phim-moi-cap-nhat",
-  "phim-moi": "/danh-sach/phim-moi-cap-nhat",
-  series: "/v1/api/danh-sach/phim-bo",
-  "phim-bo": "/v1/api/danh-sach/phim-bo",
-  single: "/v1/api/danh-sach/phim-le",
-  "phim-le": "/v1/api/danh-sach/phim-le",
-  shows: "/v1/api/danh-sach/tv-shows",
-  tvshows: "/v1/api/danh-sach/tv-shows",
-  "tv-shows": "/v1/api/danh-sach/tv-shows",
-  anime: "/v1/api/danh-sach/hoat-hinh",
-  "hoat-hinh": "/v1/api/danh-sach/hoat-hinh",
-  vietsub: "/v1/api/danh-sach/phim-vietsub",
-  "phim-vietsub": "/v1/api/danh-sach/phim-vietsub",
-  "thuyet-minh": "/v1/api/danh-sach/phim-thuyet-minh",
-  thuyetminh: "/v1/api/danh-sach/phim-thuyet-minh",
-  "phim-thuyet-minh": "/v1/api/danh-sach/phim-thuyet-minh",
-  "long-tieng": "/v1/api/danh-sach/phim-long-tieng",
-  longtieng: "/v1/api/danh-sach/phim-long-tieng",
-  "phim-long-tieng": "/v1/api/danh-sach/phim-long-tieng",
+type CatalogSource = {
+  url: string;
+  transform?: (payload: any) => any;
+  headers?: Record<string, string>;
+};
+
+const BROWSER_HEADERS = {
+  Accept: "application/json, text/plain, */*",
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36",
+};
+
+function firstOrigin(value: string | undefined, fallback: string): string {
+  return (value?.split(/[\s,]+/).find(Boolean) || fallback).replace(/\/$/, "");
+}
+
+const ORIGINS = {
+  kkphim: firstOrigin(
+    process.env.KKPHIM_API_ORIGINS || process.env.KKPHIM_API_BASE,
+    "https://phimapi.com",
+  ),
+  nguonc: firstOrigin(
+    process.env.NGUONC_API_ORIGINS || process.env.NGUONC_API_BASE,
+    "https://phim.nguonc.com/api",
+  ),
+  vsmov: firstOrigin(
+    process.env.VSMOV_API_ORIGINS || process.env.VSMOV_API_BASE,
+    "https://vsmov.com/api",
+  ),
+  ophim: firstOrigin(
+    process.env.OPHIM_API_ORIGINS || process.env.OPHIM_API_BASE,
+    "https://ophim1.com",
+  ),
+  vicdn: firstOrigin(
+    process.env.VICDN_API_ORIGINS || process.env.VICDN_API_BASE,
+    "https://vicdn.cc/api",
+  ),
+};
+
+type CatalogKind =
+  | "latest"
+  | "series"
+  | "single"
+  | "shows"
+  | "anime"
+  | "vietsub"
+  | "thuyet-minh"
+  | "long-tieng"
+  | "chieu-rap"
+  | "dang-chieu"
+  | "hoan-thanh"
+  | "subteam";
+
+const TYPE_ALIASES: Record<string, CatalogKind> = {
+  latest: "latest",
+  "phim-moi": "latest",
+  series: "series",
+  "phim-bo": "series",
+  single: "single",
+  "phim-le": "single",
+  shows: "shows",
+  tvshows: "shows",
+  "tv-shows": "shows",
+  anime: "anime",
+  "hoat-hinh": "anime",
+  vietsub: "vietsub",
+  "phim-vietsub": "vietsub",
+  "thuyet-minh": "thuyet-minh",
+  thuyetminh: "thuyet-minh",
+  "phim-thuyet-minh": "thuyet-minh",
+  "thuyet-minh-ai": "thuyet-minh",
+  thuyetminhai: "thuyet-minh",
+  "song-ngu-ai": "thuyet-minh",
+  "song-ngu": "thuyet-minh",
+  songngu: "thuyet-minh",
+  "phim-song-ngu": "thuyet-minh",
+  "long-tieng": "long-tieng",
+  longtieng: "long-tieng",
+  "phim-long-tieng": "long-tieng",
+  "chieu-rap": "chieu-rap",
+  chieurap: "chieu-rap",
+  "phim-chieu-rap": "chieu-rap",
+  "dang-chieu": "dang-chieu",
+  ongoing: "dang-chieu",
+  "phim-bo-dang-chieu": "dang-chieu",
+  "hoan-thanh": "hoan-thanh",
+  completed: "hoan-thanh",
+  "phim-bo-hoan-thanh": "hoan-thanh",
+  subteam: "subteam",
+  "nhom-dich": "subteam",
+};
+
+const PROVIDER_SLUGS: Record<CatalogKind, string> = {
+  latest: "phim-moi-cap-nhat",
+  series: "phim-bo",
+  single: "phim-le",
+  shows: "tv-shows",
+  anime: "hoat-hinh",
+  vietsub: "phim-vietsub",
+  "thuyet-minh": "phim-thuyet-minh",
+  "long-tieng": "phim-long-tieng",
+  "chieu-rap": "phim-chieu-rap",
+  "dang-chieu": "dang-chieu",
+  "hoan-thanh": "hoan-thanh",
+  subteam: "subteam",
 };
 
 function extractItems(payload: any): unknown[] {
@@ -29,39 +115,193 @@ function extractItems(payload: any): unknown[] {
   return Array.isArray(items) ? items : [];
 }
 
+function withQuery(path: string, page: number, limit = 64): string {
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}page=${page}&limit=${limit}`;
+}
+
+function normalizeVsmovPayload(payload: any): any {
+  const cdnBase =
+    payload?.pathImage ||
+    payload?.data?.pathImage ||
+    "https://vsmov.com/storage/images/";
+  const cdn = cdnBase.endsWith("/") ? cdnBase : `${cdnBase}/`;
+  const normalizeItem = (item: any) => {
+    const fix = (value: unknown) => {
+      if (typeof value !== "string" || !value) return "";
+      if (/^https?:\/\//.test(value)) return value;
+      if (value.startsWith("//")) return `https:${value}`;
+      return `${cdn}${value.replace(/^\//, "")}`;
+    };
+    return {
+      ...item,
+      thumb_url: fix(item?.thumb_url),
+      poster_url: fix(item?.poster_url),
+    };
+  };
+
+  if (Array.isArray(payload?.items)) {
+    return { ...payload, items: payload.items.map(normalizeItem) };
+  }
+  if (Array.isArray(payload?.data?.items)) {
+    return {
+      ...payload,
+      data: { ...payload.data, items: payload.data.items.map(normalizeItem) },
+    };
+  }
+  return payload;
+}
+
+function directSource(path: string): CatalogSource {
+  const mappings: Array<{
+    prefix: string;
+    origin: string;
+    transform?: (payload: any) => any;
+    headers?: Record<string, string>;
+  }> = [
+    { prefix: "/api/kkphim", origin: ORIGINS.kkphim },
+    {
+      prefix: "/api/nguonc",
+      origin: ORIGINS.nguonc,
+      transform: normalizeNguonCPayload,
+      headers: {
+        ...BROWSER_HEADERS,
+        Referer: "https://phim.nguonc.com/",
+        Origin: "https://phim.nguonc.com",
+      },
+    },
+    {
+      prefix: "/api/vsmov",
+      origin: ORIGINS.vsmov,
+      transform: normalizeVsmovPayload,
+    },
+    { prefix: "/api/ophim", origin: ORIGINS.ophim },
+    {
+      prefix: "/api/vicdn",
+      origin: ORIGINS.vicdn,
+      transform: normalizeVicdnPayload,
+      headers: {
+        ...BROWSER_HEADERS,
+        Referer: "https://vicdn.cc/",
+        Origin: "https://vicdn.cc",
+      },
+    },
+  ];
+  const mapping = mappings.find(({ prefix }) => path.startsWith(prefix));
+  if (!mapping) return { url: path };
+  return {
+    url: `${mapping.origin}${path.slice(mapping.prefix.length)}`,
+    transform: mapping.transform,
+    headers: mapping.headers,
+  };
+}
+
+function typePaths(kind: CatalogKind, page: number): string[] {
+  if (kind === "latest") {
+    return [
+      withQuery("/api/kkphim/danh-sach/phim-moi-cap-nhat", page),
+      withQuery("/api/nguonc/films/phim-moi-cap-nhat", page),
+      withQuery("/api/vsmov/danh-sach/phim-moi-cap-nhat", page),
+      withQuery("/api/ophim/danh-sach/phim-moi-cap-nhat", page),
+    ];
+  }
+
+  const slug = PROVIDER_SLUGS[kind];
+  return [
+    withQuery(`/api/kkphim/v1/api/danh-sach/${slug}`, page),
+    withQuery(`/api/nguonc/films/danh-sach/${slug}`, page),
+    withQuery(`/api/vsmov/danh-sach/${slug}`, page),
+    withQuery(`/api/ophim/v1/api/danh-sach/${slug}`, page),
+  ];
+}
+
+function genrePaths(slug: string, page: number): string[] {
+  const safeSlug = encodeURIComponent(slug);
+  return [
+    withQuery(`/api/kkphim/v1/api/the-loai/${safeSlug}`, page),
+    withQuery(`/api/nguonc/films/the-loai/${safeSlug}`, page),
+    withQuery(`/api/vsmov/the-loai/${safeSlug}`, page),
+    withQuery(`/api/ophim/v1/api/the-loai/${safeSlug}`, page),
+    `/api/vicdn/type/${safeSlug}/${page}`,
+  ];
+}
+
+function countryPaths(slug: string, page: number): string[] {
+  const safeSlug = encodeURIComponent(slug);
+  return [
+    withQuery(`/api/kkphim/v1/api/quoc-gia/${safeSlug}`, page),
+    withQuery(`/api/nguonc/films/quoc-gia/${safeSlug}`, page),
+    withQuery(`/api/vsmov/quoc-gia/${safeSlug}`, page),
+    withQuery(`/api/ophim/v1/api/quoc-gia/${safeSlug}`, page),
+  ];
+}
+
 /**
- * Prime interaction-critical catalogue routes through the same first-party
- * proxy used by the browser. A bounded miss still lets React Query retry on
- * the client, but a healthy source reaches the first HTML instead of leaving
- * users on a route-level skeleton.
+ * Return the first provider that has actual films. All providers start at the
+ * same time so a slow/broken upstream cannot hold the route-level HTML open.
  */
+async function fetchFirstHealthyCatalog(paths: string[]): Promise<any | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 7_000);
+  const attempts = paths.map(async (path) => {
+    const source = directSource(path);
+    const response = await fetch(source.url, {
+      signal: controller.signal,
+      headers: source.headers || BROWSER_HEADERS,
+      next: { revalidate: 180 },
+    });
+    if (!response.ok) throw new Error(`Catalog source returned ${response.status}`);
+
+    const rawPayload = await response.json();
+    const payload = source.transform
+      ? source.transform(rawPayload)
+      : rawPayload;
+    if (payload?.error || payload?.status === false || extractItems(payload).length === 0) {
+      throw new Error("Catalog source returned no films");
+    }
+    return payload;
+  });
+
+  try {
+    return await Promise.any(attempts);
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+    controller.abort();
+  }
+}
+
 export async function getInitialFilmCatalog(
   type: string,
   page: number,
 ): Promise<any | null> {
-  const path = CATALOG_PATHS[type];
-  if (!path) return null;
+  const kind = TYPE_ALIASES[type];
+  if (!kind) return null;
+  return fetchFirstHealthyCatalog(typePaths(kind, page));
+}
 
-  try {
-    const requestHeaders = await headers();
-    const host =
-      requestHeaders.get("x-forwarded-host") || requestHeaders.get("host");
-    if (!host) return null;
+export async function getInitialGenreCatalog(
+  slug: string,
+  page: number,
+): Promise<any | null> {
+  return fetchFirstHealthyCatalog(genrePaths(slug, page));
+}
 
-    const forwardedProtocol = requestHeaders.get("x-forwarded-proto");
-    const protocol =
-      forwardedProtocol || (host.startsWith("localhost") ? "http" : "https");
-    const limit = path.includes("/v1/api/") ? "&limit=64" : "";
-    const url = `${protocol}://${host}/api/kkphim${path}?page=${page}${limit}`;
-    const response = await fetch(url, {
-      signal: AbortSignal.timeout(4_000),
-      next: { revalidate: 180 },
-    });
+export async function getInitialCountryCatalog(
+  slug: string,
+  page: number,
+): Promise<any | null> {
+  return fetchFirstHealthyCatalog(countryPaths(slug, page));
+}
 
-    if (!response.ok) return null;
-    const payload = await response.json();
-    return extractItems(payload).length > 0 ? payload : null;
-  } catch {
-    return null;
-  }
+export async function getInitialBrowseCatalog(
+  type: string | undefined,
+  genre: string | undefined,
+  country: string | undefined,
+  page: number,
+): Promise<any | null> {
+  if (genre) return getInitialGenreCatalog(genre, page);
+  if (country) return getInitialCountryCatalog(country, page);
+  return getInitialFilmCatalog(!type || type === "all" ? "latest" : type, page);
 }

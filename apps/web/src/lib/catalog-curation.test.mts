@@ -97,11 +97,40 @@ test('theatrical hot shelves keep current releases ahead of old hits', () => {
 });
 
 test('browse quick filters do not duplicate Marvel and DC universe entries', () => {
-  const source = readFileSync('src/app/films/page.tsx', 'utf8');
+  const source = readFileSync('src/app/films/BrowseFilmsClient.tsx', 'utf8');
   const quickTypes = source.match(/const QUICK_TYPES = \[[\s\S]*?\n\];/)?.[0];
 
   assert.ok(quickTypes);
   assert.doesNotMatch(quickTypes, /Marvel Studios|DC Universe/);
+});
+
+test('all catalog route families receive server-seeded films before hydration', () => {
+  const serverCatalog = readFileSync('src/lib/server-catalog.ts', 'utf8');
+  const browsePage = readFileSync('src/app/films/page.tsx', 'utf8');
+  const genrePage = readFileSync('src/app/genre/[slug]/page.tsx', 'utf8');
+  const countryPage = readFileSync('src/app/country/[slug]/page.tsx', 'utf8');
+  const genreClient = readFileSync('src/app/genre/[slug]/GenrePageClient.tsx', 'utf8');
+  const countryClient = readFileSync('src/app/country/[slug]/CountryPageClient.tsx', 'utf8');
+  const backgroundServices = readFileSync(
+    'src/components/layout/ClientBackgroundServices.tsx',
+    'utf8',
+  );
+
+  assert.match(serverCatalog, /Promise\.any\(attempts\)/);
+  assert.match(serverCatalog, /"chieu-rap": "chieu-rap"/);
+  assert.match(serverCatalog, /"phim-bo-dang-chieu": "dang-chieu"/);
+  assert.match(serverCatalog, /"phim-bo-hoan-thanh": "hoan-thanh"/);
+  assert.match(serverCatalog, /"song-ngu-ai": "thuyet-minh"/);
+  assert.match(browsePage, /getInitialBrowseCatalog/);
+  assert.match(genrePage, /getInitialGenreCatalog\(slug, page\)/);
+  assert.match(countryPage, /getInitialCountryCatalog\(slug, page\)/);
+  assert.match(genreClient, /initialDataUpdatedAt/);
+  assert.match(countryClient, /initialFastData/);
+  assert.doesNotMatch(browsePage, /["']use client["']/);
+  assert.doesNotMatch(genrePage, /["']use client["']/);
+  assert.doesNotMatch(countryPage, /["']use client["']/);
+  assert.match(backgroundServices, /const isCatalogDestination/);
+  assert.match(backgroundServices, /window\.location\.assign\(destination\.href\)/);
 });
 
 test('film type routes ship server data and cannot remain on a client-only skeleton', () => {
