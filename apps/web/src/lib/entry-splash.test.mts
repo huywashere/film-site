@@ -69,6 +69,13 @@ test('programmatic navigation has the same bounded recovery as links', () => {
   }
 });
 
+test('optional client telemetry never surfaces an upstream outage', () => {
+  const proxy = source('src/app/api/v1/[...path]/route.ts');
+
+  assert.match(proxy, /isTelemetry && !upstreamResponse\.ok/);
+  assert.match(proxy, /status: 204/);
+});
+
 test('FlexPhim branding is consistent while legacy client keys stay compatible', () => {
   const layout = source('src/app/layout.tsx');
   const navbar = source('src/components/layout/Navbar.tsx');

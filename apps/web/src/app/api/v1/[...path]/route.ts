@@ -75,6 +75,13 @@ async function proxyRequest(
     );
   }
 
+  if (isTelemetry && !upstreamResponse.ok) {
+    return new NextResponse(null, {
+      status: 204,
+      headers: { 'Cache-Control': 'no-store' },
+    });
+  }
+
   const responseHeaders = new Headers();
   upstreamResponse.headers.forEach((value, name) => {
     if (!HOP_BY_HOP_HEADERS.has(name.toLowerCase()) && name !== 'set-cookie') {

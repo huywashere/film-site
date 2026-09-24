@@ -82,6 +82,39 @@ async function visibleFilmCount() {
   return page.locator('a[href^="/film/"]:visible').count();
 }
 
+async function waitForVisibleFilmCards(label, timeout = 12_000) {
+  try {
+    await page
+      .locator('a[href^="/film/"]:visible')
+      .first()
+      .waitFor({ state: "visible", timeout });
+  } catch (error) {
+    const diagnostics = await page.evaluate(() => {
+      const links = [...document.querySelectorAll('a[href^="/film/"]')];
+      const sample = links[0];
+      const style = sample ? getComputedStyle(sample) : null;
+      const rect = sample?.getBoundingClientRect();
+      return {
+        url: location.href,
+        entrySplash: document.documentElement.dataset.entrySplash,
+        totalFilmLinks: links.length,
+        bodyText: document.body.innerText.slice(0, 500),
+        sample: sample
+          ? {
+              display: style?.display,
+              visibility: style?.visibility,
+              opacity: style?.opacity,
+              width: rect?.width,
+              height: rect?.height,
+            }
+          : null,
+      };
+    });
+    console.error(JSON.stringify({ label, diagnostics, pageErrors, consoleErrors }, null, 2));
+    throw error;
+  }
+}
+
 async function brokenFilmImages() {
   await page.waitForTimeout(2_500);
   return page.locator('a[href^="/film/"]:visible img').evaluateAll((images) =>
@@ -104,10 +137,7 @@ async function brokenFilmImages() {
 const results = {};
 
 await page.goto(`${baseURL}/films/series`, { waitUntil: "domcontentloaded" });
-await page
-  .locator('a[href^="/film/"]:visible')
-  .first()
-  .waitFor({ state: "visible", timeout: 8_000 });
+await waitForVisibleFilmCards("series-initial");
 results.seriesCards = await visibleFilmCount();
 results.seriesBrokenImages = await brokenFilmImages();
 
@@ -116,10 +146,7 @@ const nextPageButton = page.locator('button[aria-label="Trang tiếp"]:visible')
 await nextPageButton.waitFor({ state: "visible", timeout: 8_000 });
 await nextPageButton.click();
 await page.waitForURL(/\/films\/series\?page=2$/, { timeout: 12_000 });
-await page
-  .locator('a[href^="/film/"]:visible')
-  .first()
-  .waitFor({ state: "visible", timeout: 8_000 });
+await waitForVisibleFilmCards("series-page-2");
 results.paginationCards = await visibleFilmCount();
 results.programmaticNavigation =
   paginationOrigin === (await page.evaluate(() => performance.timeOrigin))
@@ -151,10 +178,7 @@ try {
   );
   throw error;
 }
-await page
-  .locator('a[href^="/film/"]:visible')
-  .first()
-  .waitFor({ state: "visible", timeout: 8_000 });
+await waitForVisibleFilmCards("single");
 results.singleCards = await visibleFilmCount();
 results.singleBrokenImages = await brokenFilmImages();
 results.clientNavigation =
@@ -230,6 +254,9 @@ results.consoleErrors = consoleErrors.filter(
     !message.includes("favicon") &&
     !message.includes("ERR_BLOCKED_BY_CLIENT"),
 );
+results.failedResponses = failedResources
+  .filter((resource) => resource.event === "response")
+  .slice(0, 20);
 
 const mobileContext = await browser.newContext({
   viewport: { width: 412, height: 915 },
