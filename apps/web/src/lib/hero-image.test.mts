@@ -210,17 +210,27 @@ test('large homepage showcases request original TMDB backdrops only near the vie
   assert.match(artwork, /add\(artworkQuery\.backdropOriginal\)/);
 });
 
-test('shared artwork reveals decoded native images without exposing broken candidates', () => {
+test('shared artwork renders provider images before hydration and keeps recovery state', () => {
   const source = readFileSync('src/components/film/TmdbArtwork.tsx', 'utf8');
 
   assert.match(source, /image\?\.complete && image\.naturalWidth > 0/);
   assert.match(source, /backdropW1280/);
-  assert.match(source, /const shouldAttemptArtwork = enabled && \(priority \|\| nearViewport\)/);
+  assert.match(source, /rawProviderPrimary\.startsWith\('\/api\/image-proxy\?'\)/);
+  assert.match(
+    source,
+    /enabled && \(priority \|\| nearViewport \|\| Boolean\(providerPrimary\)\)/,
+  );
   assert.match(
     source,
     /const src = shouldAttemptArtwork \? candidates\[candidateIndex\] : undefined/,
   );
-  assert.match(source, /loaded \? 'opacity-100' : 'opacity-0'/);
+  assert.match(source, /object-cover opacity-100/);
+  assert.doesNotMatch(source, /loaded \? 'opacity-100' : 'opacity-0'/);
+  assert.match(source, /data-artwork-loaded=\{loaded \? 'true' : 'false'\}/);
+  assert.match(
+    source,
+    /isPreOptimizedImageUrl\(src\) \|\| \/\^https\?:\\\/\\\//,
+  );
   assert.match(source, /setLoadedSrc\(src\)/);
 });
 

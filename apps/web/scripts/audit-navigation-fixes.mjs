@@ -134,24 +134,65 @@ async function brokenFilmImages() {
   );
 }
 
+async function waitForFirstRowPosters(label, timeout = 5_000) {
+  const startedAt = Date.now();
+  try {
+    await page.waitForFunction(
+      () => {
+        const cards = [...document.querySelectorAll('a[href^="/film/"]')]
+          .filter((link) => {
+            const rect = link.getBoundingClientRect();
+            return rect.width > 100 && rect.height > 150 && rect.bottom > 0;
+          });
+        if (cards.length < 4) return false;
+        const firstTop = Math.min(...cards.map((card) => card.getBoundingClientRect().top));
+        const firstRow = cards.filter(
+          (card) => Math.abs(card.getBoundingClientRect().top - firstTop) < 8,
+        );
+        return firstRow.length >= 4 && firstRow.every((card) => {
+          const image = card.querySelector('img');
+          return Boolean(
+            image &&
+              image.complete &&
+              image.naturalWidth > 0 &&
+              Number.parseFloat(getComputedStyle(image).opacity || '0') > 0.9,
+          );
+        });
+      },
+      undefined,
+      { timeout },
+    );
+  } catch (error) {
+    const diagnostics = await page.evaluate(() => {
+      const cards = [...document.querySelectorAll('a[href^="/film/"]')]
+        .filter((link) => link.getBoundingClientRect().height > 150)
+        .slice(0, 8);
+      return cards.map((card) => {
+        const image = card.querySelector('img');
+        return {
+          href: card.getAttribute('href'),
+          hasImage: Boolean(image),
+          complete: image?.complete ?? false,
+          naturalWidth: image?.naturalWidth ?? 0,
+          opacity: image ? getComputedStyle(image).opacity : null,
+          src: image?.currentSrc || image?.src || null,
+        };
+      });
+    });
+    console.error(JSON.stringify({ label, posterDiagnostics: diagnostics }, null, 2));
+    throw error;
+  }
+
+  return Date.now() - startedAt;
+}
+
 const results = {};
 
 await page.goto(`${baseURL}/films/series`, { waitUntil: "domcontentloaded" });
 await waitForVisibleFilmCards("series-initial");
+results.seriesFirstRowPosterReadyMs = await waitForFirstRowPosters("series-initial");
 results.seriesCards = await visibleFilmCount();
 results.seriesBrokenImages = await brokenFilmImages();
-
-const paginationOrigin = await page.evaluate(() => performance.timeOrigin);
-const nextPageButton = page.locator('button[aria-label="Trang tiếp"]:visible').first();
-await nextPageButton.waitFor({ state: "visible", timeout: 8_000 });
-await nextPageButton.click();
-await page.waitForURL(/\/films\/series\?page=2$/, { timeout: 12_000 });
-await waitForVisibleFilmCards("series-page-2");
-results.paginationCards = await visibleFilmCount();
-results.programmaticNavigation =
-  paginationOrigin === (await page.evaluate(() => performance.timeOrigin))
-    ? "next-client-transition"
-    : "bounded-document-fallback";
 
 await page.waitForTimeout(1_600);
 const timeOriginBeforeNavigation = await page.evaluate(() => performance.timeOrigin);
@@ -179,6 +220,7 @@ try {
   throw error;
 }
 await waitForVisibleFilmCards("single");
+results.singleFirstRowPosterReadyMs = await waitForFirstRowPosters("single");
 results.singleCards = await visibleFilmCount();
 results.singleBrokenImages = await brokenFilmImages();
 results.clientNavigation =
@@ -187,6 +229,22 @@ results.clientNavigation =
 results.navigationMode = results.clientNavigation
   ? "next-client-transition"
   : "bounded-document-fallback";
+
+// Exercise pagination separately so its previous page image queue does not
+// distort the real series -> single tab-switch timing above.
+await page.goto(`${baseURL}/films/series`, { waitUntil: "domcontentloaded" });
+await waitForVisibleFilmCards("series-pagination");
+const paginationOrigin = await page.evaluate(() => performance.timeOrigin);
+const nextPageButton = page.locator('button[aria-label="Trang tiếp"]:visible').first();
+await nextPageButton.waitFor({ state: "visible", timeout: 8_000 });
+await nextPageButton.click();
+await page.waitForURL(/\/films\/series\?page=2$/, { timeout: 12_000 });
+await waitForVisibleFilmCards("series-page-2");
+results.paginationCards = await visibleFilmCount();
+results.programmaticNavigation =
+  paginationOrigin === (await page.evaluate(() => performance.timeOrigin))
+    ? "next-client-transition"
+    : "bounded-document-fallback";
 
 await page.goto(`${baseURL}/genres`, { waitUntil: "networkidle" });
 await page.waitForFunction(

@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   alternateMovieArtworkUrl,
   normalizeMovieArtworkUrl,
+  resolveImageUrl,
 } from "./movie-image-url.ts";
 
 test("keeps the current KKPhim uploads/movies path intact", () => {
@@ -25,6 +26,17 @@ test("keeps legacy upload/vod artwork intact and only derives an alternate", () 
   );
 });
 
+test("preserves provider hostnames that arrive without an https scheme", () => {
+  assert.equal(
+    normalizeMovieArtworkUrl("danviet.vn/files/content/poster.jpg"),
+    "https://danviet.vn/files/content/poster.jpg",
+  );
+  assert.equal(
+    resolveImageUrl("danviet.vn/files/content/poster.jpg"),
+    "/api/image-proxy?url=https%3A%2F%2Fdanviet.vn%2Ffiles%2Fcontent%2Fposter.jpg",
+  );
+});
+
 test("rejects literal undefined and null strings", () => {
   assert.equal(normalizeMovieArtworkUrl("undefined"), null);
   assert.equal(normalizeMovieArtworkUrl("null"), null);
@@ -32,4 +44,3 @@ test("rejects literal undefined and null strings", () => {
   assert.equal(normalizeMovieArtworkUrl("   "), null);
   assert.equal(normalizeMovieArtworkUrl(undefined), null);
 });
-

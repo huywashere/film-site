@@ -11,6 +11,10 @@ export function normalizeMovieArtworkUrl(value?: unknown): string | null {
   if (resolved.startsWith("//")) resolved = `https:${resolved}`;
   else if (resolved.startsWith("http://")) {
     resolved = resolved.replace(/^http:\/\//i, "https://");
+  } else if (/^[a-z0-9.-]+\.[a-z]{2,}(?:\/|$)/i.test(resolved)) {
+    // Some feeds return an absolute hostname without a scheme. Treat it as
+    // its own origin instead of accidentally joining it to phimimg.com.
+    resolved = `https://${resolved}`;
   } else if (!resolved.startsWith("https://")) {
     resolved = `https://phimimg.com/${resolved.replace(/^\/+/, "")}`;
   }

@@ -67,7 +67,7 @@ function getSharedArtworkObserver(): IntersectionObserver | null {
           }
         }
       },
-      { rootMargin: '200px 0px', threshold: 0.01 },
+      { rootMargin: '800px 0px', threshold: 0.01 },
     );
   }
   return sharedArtworkObserver;
@@ -126,7 +126,9 @@ export function TmdbArtwork({
       ? resolveImageUrl(film.thumb_url, film.poster_url)
       : resolveImageUrl(film.poster_url, film.thumb_url);
   const providerPrimary = rawProviderPrimary
-    ? unwrapImageUrl(rawProviderPrimary) || rawProviderPrimary
+    ? rawProviderPrimary.startsWith('/api/image-proxy?')
+      ? rawProviderPrimary
+      : unwrapImageUrl(rawProviderPrimary) || rawProviderPrimary
     : null;
   const providerIsTmdb = isTmdbImageUrl(providerPrimary);
   const preferredProviderTmdbW1280 =
@@ -301,7 +303,12 @@ export function TmdbArtwork({
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
-  const shouldAttemptArtwork = enabled && (priority || nearViewport);
+  // Provider artwork is already present in the server payload. Render it for
+  // every card and let native `loading="lazy"` decide when to fetch it. This
+  // keeps catalog posters functional even before (or without) client
+  // hydration; the observer is still used to bound TMDB lookups and recovery.
+  const shouldAttemptArtwork =
+    enabled && (priority || nearViewport || Boolean(providerPrimary));
   const src = shouldAttemptArtwork ? candidates[candidateIndex] : undefined;
   const loaded = Boolean(src && loadedSrc === src);
   const exhaustedCandidates = candidateIndex >= candidates.length;
@@ -322,7 +329,12 @@ export function TmdbArtwork({
       : '(max-width: 640px) 30vw, (max-width: 1024px) 22vw, 16vw');
   const deliveredImageProps = useMemo(() => {
     if (!src) return null;
-    const alreadySized = isPreOptimizedImageUrl(src);
+    // Remote provider URLs have already been normalized and sized upstream.
+    // Sending an uncommon host through Next's optimizer produces a 400 when
+    // that host is intentionally absent from remotePatterns, so deliver all
+    // absolute artwork URLs directly and retain the same-origin relay as the
+    // next candidate.
+    const alreadySized = isPreOptimizedImageUrl(src) || /^https?:\/\//i.test(src);
     const nextImageProps = getImageProps({
       src,
       alt: alt || film.name,
@@ -459,10 +471,14 @@ export function TmdbArtwork({
             });
           }}
           className={cn(
-            'relative z-[1] h-full w-full object-cover transition-opacity duration-300',
-            loaded ? 'opacity-100' : 'opacity-0',
+            // Do not hide an already decoded server-rendered image while
+            // waiting for React's onLoad handler. On production navigations an
+            // image can finish before hydration and the event is then missed,
+            // leaving a valid poster permanently transparent.
+            'relative z-[1] h-full w-full object-cover opacity-100',
             imageClassName,
           )}
+          data-artwork-loaded={loaded ? 'true' : 'false'}
           data-artwork-source={
             src === tmdbUrl || /image\.tmdb\.org\/t\/p\//i.test(src) ? 'tmdb' : 'fallback'
           }
